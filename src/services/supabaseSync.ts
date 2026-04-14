@@ -6,6 +6,7 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { getCurrentUser } from './supabaseAuth';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { logger } from '../utils/logger';
 
 // ==================== TYPE DEFINITIONS ====================
 
@@ -87,7 +88,7 @@ export const syncWorkoutTemplate = async (
     });
 
   if (error) {
-    console.error('Error syncing workout template:', error);
+    logger.sync.error('Error syncing workout template', error);
     throw error;
   }
 };
@@ -102,7 +103,7 @@ export const fetchWorkoutTemplates = async (userId: string): Promise<WorkoutTemp
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching workout templates:', error);
+    logger.sync.error('Error fetching workout templates', error);
     return [];
   }
 
@@ -129,7 +130,7 @@ export const deleteCloudWorkoutTemplate = async (
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Error deleting cloud workout template:', error);
+    logger.sync.error('Error deleting cloud workout template', error);
     throw error;
   }
 };
@@ -159,7 +160,7 @@ export const syncWorkoutSession = async (
     });
 
   if (error) {
-    console.error('Error syncing workout session:', error);
+    logger.sync.error('Error syncing workout session', error);
     throw error;
   }
 };
@@ -174,7 +175,7 @@ export const fetchWorkoutSessions = async (userId: string): Promise<WorkoutSessi
     .order('start_time', { ascending: false });
 
   if (error) {
-    console.error('Error fetching workout sessions:', error);
+    logger.sync.error('Error fetching workout sessions', error);
     return [];
   }
 

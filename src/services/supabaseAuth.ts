@@ -5,6 +5,7 @@
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
+import { logger } from '../utils/logger';
 
 export type AuthCallback = (session: Session | null) => void;
 export type AuthUserCallback = (user: User | null) => void;
@@ -13,14 +14,14 @@ let authStateListenerSetup = false;
 
 export const initSupabaseAuth = (): void => {
   if (!isSupabaseConfigured() || !supabase) {
-    console.info('Supabase not configured - auth disabled');
+    logger.auth.info('Supabase not configured - auth disabled');
     return;
   }
 
   if (authStateListenerSetup) return;
 
   supabase.auth.onAuthStateChange((event, session) => {
-    console.log('Supabase auth event:', event);
+    logger.auth.info('Auth event', { event });
     if (session) {
       localStorage.setItem('supabase_session', JSON.stringify(session));
     } else {
@@ -58,7 +59,7 @@ export const signUp = async (email: string, password: string, metadata?: Record<
   });
 
   if (error) {
-    console.error('Sign up error:', error);
+    logger.auth.error('Sign up error', error);
     return { user: null, error: error.message };
   }
 
@@ -76,7 +77,7 @@ export const signIn = async (email: string, password: string): Promise<{ user: U
   });
 
   if (error) {
-    console.error('Sign in error:', error);
+    logger.auth.error('Sign in error', error);
     return { user: null, error: error.message };
   }
 
@@ -96,7 +97,7 @@ export const signInWithGoogle = async (): Promise<{ user: User | null; error: st
   });
 
   if (error) {
-    console.error('Google sign in error:', error);
+    logger.auth.error('Google sign in error', error);
     return { user: null, error: error.message };
   }
 
@@ -108,7 +109,7 @@ export const signOut = async (): Promise<void> => {
 
   const { error } = await supabase.auth.signOut();
   if (error) {
-    console.error('Sign out error:', error);
+    logger.auth.error('Sign out error', error);
   }
   localStorage.removeItem('supabase_session');
 };
@@ -123,7 +124,7 @@ export const resetPassword = async (email: string): Promise<{ error: string | nu
   });
 
   if (error) {
-    console.error('Reset password error:', error);
+    logger.auth.error('Reset password error', error);
     return { error: error.message };
   }
 
@@ -138,7 +139,7 @@ export const updatePassword = async (newPassword: string): Promise<{ error: stri
   const { error } = await supabase.auth.updateUser({ password: newPassword });
 
   if (error) {
-    console.error('Update password error:', error);
+    logger.auth.error('Update password error', error);
     return { error: error.message };
   }
 
@@ -153,7 +154,7 @@ export const updateUserMetadata = async (metadata: Record<string, unknown>): Pro
   const { error } = await supabase.auth.updateUser({ data: metadata });
 
   if (error) {
-    console.error('Update user metadata error:', error);
+    logger.auth.error('Update user metadata error', error);
     return { error: error.message };
   }
 

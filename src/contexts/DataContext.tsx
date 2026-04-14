@@ -4,6 +4,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Exercise, WorkoutSession, WorkoutTemplate, PersonalItem } from '../types';
+import { logger } from '../utils/logger';
 import { getPersonalExercises, createPersonalExercise, updatePersonalExercise, deletePersonalExercise } from '../services/workoutDb';
 import { getWorkoutSessions } from '../services/dataService';
 import { getWorkoutTemplates } from '../services/workoutService';
@@ -45,7 +46,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const loadData = useCallback(async () => {
     try {
-      console.log('[DataContext] Loading data from IndexedDB...');
+      logger.db.info('Loading data from IndexedDB...');
       
       // Load all data in parallel for better performance
       const [loadedExercises, loadedSessions, loadedTemplates, loadedPersonalItems] = await Promise.all([
@@ -67,14 +68,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setTemplates(loadedTemplates);
       setPersonalItems(loadedPersonalItems);
       
-      console.log('[DataContext] Data loaded successfully:', {
+      logger.db.info('Data loaded successfully', {
         exercises: loadedExercises.length,
         sessions: loadedSessions.length,
         templates: loadedTemplates.length,
         personalItems: loadedPersonalItems.length,
       });
     } catch (err) {
-      console.error('[DataContext] Failed to load data:', err);
+      logger.db.error('Failed to load data', err);
       setError(err instanceof Error ? err.message : 'Failed to load data');
     }
   }, []);
@@ -86,7 +87,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         item.id === id ? { ...item, ...updates } : item
       ));
     } catch (err) {
-      console.error('[DataContext] Failed to update personal item:', err);
+      logger.db.error('Failed to update personal item', err);
       throw err;
     }
   }, []);
@@ -96,7 +97,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       await deletePersonalExercise(id);
       setPersonalItems(prev => prev.filter(item => item.id !== id));
     } catch (err) {
-      console.error('[DataContext] Failed to remove personal item:', err);
+      logger.db.error('Failed to remove personal item', err);
       throw err;
     }
   }, []);
@@ -112,7 +113,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       } as any);
       setPersonalItems(prev => [...prev, { ...newItem, type: 'exercise' } as unknown as PersonalItem]);
     } catch (err) {
-      console.error('[DataContext] Failed to add personal item:', err);
+      logger.db.error('Failed to add personal item', err);
       throw err;
     }
   }, []);
