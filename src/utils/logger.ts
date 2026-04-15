@@ -43,13 +43,6 @@ const createLogger = (context: string) => {
     if (!shouldLog(level)) return;
 
     const formattedMessage = formatMessage(context, message, data);
-    const entry: LogEntry = {
-      timestamp: new Date().toISOString(),
-      level,
-      context,
-      message,
-      data,
-    };
 
     switch (level) {
       case 'debug':

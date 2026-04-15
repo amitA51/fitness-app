@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Dumbbell, Clock, Trash2, ChevronLeft, BarChart2, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getWorkoutSessions, deleteWorkoutSession } from '../services/workoutDb';
+import { deleteWorkoutSession } from '../services/workoutDb';
+import { useWorkoutHistoryHub } from '../hooks/fitness/useWorkoutHistoryHub';
 import type { WorkoutSession } from '../types';
 
 // ============================================================================
@@ -191,38 +192,21 @@ function SessionCard({ session, onDelete }: SessionCardProps) {
 
 export default function History() {
   const navigate = useNavigate();
-  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadSessions = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getWorkoutSessions(100);
-      const sorted = [...data].sort(
-        (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-      );
-      setSessions(sorted);
-    } catch {
-      setError('שגיאה בטעינת ההיסטוריה. נסה שוב.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadSessions();
-  }, [loadSessions]);
+  const { sessions: unsortedSessions, loading, error, refresh } = useWorkoutHistoryHub(100);
+  
+  // Sort sessions by startTime (newest first)
+  const sessions = [...unsortedSessions].sort(
+    (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+  );
 
   const handleDelete = useCallback(async (id: string) => {
     try {
       await deleteWorkoutSession(id);
-      setSessions((prev) => prev.filter((s) => s.id !== id));
+      await refresh(); // Auto-refresh via hook's event listeners
     } catch {
-      setError('שגיאה במחיקת האימון. נסה שוב.');
+      // Error handled by hook
     }
-  }, []);
+  }, [refresh]);
 
   return (
     <div className="min-h-screen bg-black pb-[88px] pb-[calc(88px+env(safe-area-inset-bottom))]" dir="rtl">
@@ -243,7 +227,7 @@ export default function History() {
         {/* Error banner */}
         {error && (
           <div className="mb-4 p-4 rounded-[16px] bg-red-500/10 border border-red-500/20 text-red-400 text-[14px] font-barlow">
-            {error}
+            {error.message}
           </div>
         )}
 

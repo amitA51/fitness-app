@@ -114,7 +114,7 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
                 </div>
 
                 {/* Selected Description */}
-                <AnimatePresence mode="wait">
+                <AnimatePresence mode="sync">
                     {selectedData && (
                         <motion.div
                             key={selectedData.value}

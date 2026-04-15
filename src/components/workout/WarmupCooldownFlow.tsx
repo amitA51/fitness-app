@@ -278,7 +278,7 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
       exit={{ opacity: 0 }}
     >
       <div className="h-full flex flex-col justify-center p-6 max-w-lg mx-auto safe-area-top safe-area-bottom">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync">
           {state.step === 'selection' ? (
             <motion.div
               key="selection"

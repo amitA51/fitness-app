@@ -60,7 +60,7 @@ export const SmoothLoader: React.FC<SmoothLoaderProps> = ({
 
   return (
     <div className={`relative ${className}`}>
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="sync">
         {!showContent ? (
           <motion.div
             key="skeleton"

@@ -475,7 +475,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(({
                     </div>
                 </div>
 
-                <AnimatePresence mode="wait">
+                <AnimatePresence mode="sync">
                     {mode === 'numpad' ? (
                         /* Number Grid */
                         <motion.div

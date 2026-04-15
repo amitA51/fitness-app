@@ -164,5 +164,7 @@ export const DumbbellIcon = Dumbbell;
 export const ClockIcon = Clock;
 export const ChevronLeftIcon = ChevronLeft;
 export const SettingsIcon = Settings;
+export const StarIcon = Star;
+export const LightningIcon = Zap;
 
 // Custom icon components can be added here

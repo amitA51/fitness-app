@@ -1,10 +1,10 @@
 // Extracted from WorkoutSummary.tsx
-import React from 'react';
+import React, { memo } from 'react';
 import { motion } from 'framer-motion';
-import { TrophyIcon, FlameIcon } from '../icons';
+import { TrophyIcon, FlameIcon } from '../../icons';
 
 export interface ExerciseSummaryItemData {
-    name: string;
+    name: string | undefined;
     setsCompleted: number;
     totalVolume: number;
     bestSet?: { weight: number; reps: number };
@@ -24,7 +24,7 @@ interface ExerciseSummaryItemProps {
     delay?: number;
 }
 
-export const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = ({
+export const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(({
     name,
     setsCompleted,
     totalVolume,
@@ -72,6 +72,9 @@ export const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = ({
         </div>
     </motion.div>
 );
+});
+
+ExerciseSummaryItem.displayName = 'ExerciseSummaryItem';
 
 // ============================================================
 // SUMMARY EXERCISE LIST
@@ -84,7 +87,7 @@ export interface SummaryExerciseListProps {
     startDelay?: number;
 }
 
-export const SummaryExerciseList: React.FC<SummaryExerciseListProps> = ({
+export const SummaryExerciseList: React.FC<SummaryExerciseListProps> = memo(({
     exercises,
     prExercises,
     maxItems,
@@ -122,4 +125,6 @@ export const SummaryExerciseList: React.FC<SummaryExerciseListProps> = ({
             </div>
         </motion.div>
     );
-};
+});
+
+SummaryExerciseList.displayName = 'SummaryExerciseList';

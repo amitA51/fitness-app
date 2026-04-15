@@ -6,6 +6,7 @@
 import { LOCAL_STORAGE_KEYS as LS } from '../constants';
 import { dbGet, dbPut, dbDelete, dbGetAll, dbClear } from './indexedDBCore';
 import { ValidationError, NotFoundError } from '../errors';
+import { logger } from '../utils/logger';
 import { getCurrentUser } from './supabaseAuth';
 import {
     syncBodyWeight,
@@ -38,7 +39,7 @@ const syncWithRetry = (
     operationName: string
 ): void => {
     withRetry(operation, 3, 500).catch(error => {
-        console.error(`Cloud sync failed after retries (${operationName}):`, error);
+        logger.workout.error(`Cloud sync failed after retries (${operationName})`, error);
     });
 };
 

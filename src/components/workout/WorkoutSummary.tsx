@@ -12,6 +12,7 @@ import { useCelebration } from '../../hooks/useCelebration';
 import { ModalOverlay } from '../ui/ModalOverlay';
 import { StatsGrid, ComparisonData } from './components/StatsGrid';
 import { SummaryExerciseList } from './components/SummaryExerciseList';
+import { Confetti } from './components/PRHighlights';
 
 // ============================================================
 // TYPES
@@ -277,6 +278,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({ isOpen, session, onClos
             closeOnEscape
             ariaLabel="סיכום אימון"
         >
+            {showConfetti && <Confetti show={true} />}
             <motion.div
                 initial={{ scale: 0.85, opacity: 0, y: 30 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -334,7 +336,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({ isOpen, session, onClos
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto min-h-0 -mx-2 px-2">
-                    <AnimatePresence mode="wait">
+                    <AnimatePresence mode="sync">
                         {view === 'overview' ? (
                             <motion.div
                                 key="overview"

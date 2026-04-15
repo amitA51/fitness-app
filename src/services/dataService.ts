@@ -5,9 +5,6 @@
 // with components that import from dataService
 
 export {
-    getWorkoutSessions,
-    saveWorkoutSession,
-    deleteWorkoutSession,
     getWorkoutTemplates,
     getWorkoutTemplate,
     createWorkoutTemplate,
@@ -24,42 +21,48 @@ export {
     saveBodyWeight,
     getBodyWeightHistory,
     getLatestBodyWeight,
+    getBuiltInWorkoutTemplates,
+    convertBuiltInToWorkoutTemplate,
+} from './workoutDb';
+
+export {
+    getWorkoutSessions,
+    saveWorkoutSession,
+    deleteWorkoutSession,
 } from './workoutDb';
 
 // Initialize built-in workout templates (creates sample templates if none exist)
 export const initializeBuiltInWorkoutTemplates = async (): Promise<void> => {
-    const { getWorkoutTemplates, createWorkoutTemplate } = await import('./workoutDb');
+    const {
+        getWorkoutTemplates,
+        createWorkoutTemplate,
+        getBuiltInWorkoutTemplates,
+        convertBuiltInToWorkoutTemplate,
+    } = await import('./workoutDb');
+
     const existing = await getWorkoutTemplates();
-    
-    if (existing.length === 0) {
-        // Create sample workout templates
-        await createWorkoutTemplate({
-            name: 'אימון חזה + כתפיים',
-            description: 'אימון כוח לחזה וכתפיים',
-            exercises: [],
-            lastUsed: null,
-            timesUsed: 0,
-            isFavorite: true,
-            updatedAt: new Date().toISOString(),
-        } as any);
-        await createWorkoutTemplate({
-            name: 'אימון גב + ידיים',
-            description: 'אימון כוח לגב וידיים',
-            exercises: [],
-            lastUsed: null,
-            timesUsed: 0,
-            isFavorite: true,
-            updatedAt: new Date().toISOString(),
-        } as any);
-        await createWorkoutTemplate({
-            name: 'אימון רגליים',
-            description: 'אימון כוח לרגליים',
-            exercises: [],
-            lastUsed: null,
-            timesUsed: 0,
-            isFavorite: false,
-            updatedAt: new Date().toISOString(),
-        } as any);
+
+    // Check if we have any built-in templates already
+    const hasBuiltIns = existing.some(t => t.isBuiltin);
+
+    if (!hasBuiltIns) {
+        // Create the 5 built-in workout templates
+        const builtInTemplates = getBuiltInWorkoutTemplates();
+
+        for (const builtin of builtInTemplates) {
+            const template = convertBuiltInToWorkoutTemplate(builtin);
+            await createWorkoutTemplate({
+                name: template.name,
+                description: template.description,
+                exercises: template.exercises,
+                muscleGroups: template.muscleGroups,
+                lastUsed: null,
+                timesUsed: 0,
+                isFavorite: false,
+                isBuiltin: true,
+                updatedAt: new Date().toISOString(),
+            } as any);
+        }
     }
 };
 

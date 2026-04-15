@@ -323,7 +323,7 @@ const FullTimer = memo<FullTimerProps>(({
             transition={animationConfig}
             className={`fixed inset-0 flex items-center justify-center ${largeText ? 'text-lg' : ''}`}
             style={{
-                zIndex: Z_INDEX.overlay,
+                zIndex: Z_INDEX.modal,
                 background: oledMode
                     ? 'rgba(0,0,0,0.98)'
                     : 'linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(10,10,10,0.98) 100%)',
@@ -599,7 +599,7 @@ const RestTimerOverlay = memo<RestTimerOverlayProps>(({
     }, []);
 
     return (
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync">
             {active && (
                 isMinimized ? (
                     <MiniTimer

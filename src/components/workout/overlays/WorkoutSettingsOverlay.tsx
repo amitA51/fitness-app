@@ -216,7 +216,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(({
                 <TabBar tabs={SETTINGS_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
                 <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-safe-bottom">
-                    <AnimatePresence mode="wait">
+                    <AnimatePresence mode="sync">
                         {/* GENERAL TAB */}
                         {activeTab === 'general' && (
                             <motion.div key="general" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="py-2">

@@ -1,5 +1,5 @@
 // Extracted from WorkoutSummary.tsx
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 
 const CONFETTI_COLORS = ['#a3e635', '#22d3ee', '#f43f5e', '#fbbf24', '#a855f7'];
@@ -12,10 +12,10 @@ interface ConfettiProps {
     show: boolean;
 }
 
-export const Confetti: React.FC<ConfettiProps> = ({ show }) => {
+export const Confetti: React.FC<ConfettiProps> = memo(({ show }) => {
     if (!show) return null;
 
-    const particles = React.useMemo(() =>
+    const particles = useMemo(() =>
         Array.from({ length: 50 }).map((_, i) => ({
             id: i,
             x: Math.random() * 100,
@@ -60,7 +60,9 @@ export const Confetti: React.FC<ConfettiProps> = ({ show }) => {
             ))}
         </div>
     );
-};
+});
+
+Confetti.displayName = 'Confetti';
 
 // ============================================================
 // RPE COMPARISON
@@ -72,7 +74,7 @@ export interface RPEDisplayProps {
     delay?: number;
 }
 
-export const RPEDisplay: React.FC<RPEDisplayProps> = ({
+export const RPEDisplay: React.FC<RPEDisplayProps> = memo(({
     avgRpeActual,
     avgRpeTarget,
     delay = 0.45
@@ -127,21 +129,22 @@ export const RPEDisplay: React.FC<RPEDisplayProps> = ({
             )}
         </motion.div>
     );
-};
+});
+
+RPEDisplay.displayName = 'RPEDisplay';
 
 // ============================================================
 // PR HIGHLIGHTS SECTION
 // ============================================================
 
-export interface PRHighlightsProps {
-    prsCount: number | null;
+interface PRHighlightsProps {
+    prsCount?: number | null;
     avgRpeActual: number | null;
     avgRpeTarget: number | null;
     showConfetti: boolean;
 }
 
-export const PRHighlights: React.FC<PRHighlightsProps> = ({
-    prsCount,
+export const PRHighlights: React.FC<PRHighlightsProps> = memo(({
     avgRpeActual,
     avgRpeTarget,
     showConfetti
@@ -155,4 +158,6 @@ export const PRHighlights: React.FC<PRHighlightsProps> = ({
             />
         </>
     );
-};
+});
+
+PRHighlights.displayName = 'PRHighlights';

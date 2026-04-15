@@ -1,6 +1,12 @@
+/**
+ * SparkOS Fitness - Templates Page (Premium Design System)
+ * Double-Bezel Cards, Spring Physics, Staggered Reveals
+ */
+
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Dumbbell, Clock, Star, Play, Trash2, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   getWorkoutTemplates,
   createWorkoutTemplate,
@@ -10,7 +16,26 @@ import {
 import type { WorkoutTemplate } from '../types';
 
 // ============================================================================
-// UTILITY
+// Spring Animation Variants
+// ============================================================================
+
+const springTransition = { type: 'spring' as const, stiffness: 100, damping: 20 };
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { ...springTransition, opacity: 1, y: 0 },
+};
+
+// ============================================================================
+// Utility Functions
 // ============================================================================
 
 function formatLastUsed(lastUsed: string | null): string {
@@ -25,7 +50,7 @@ function formatLastUsed(lastUsed: string | null): string {
 }
 
 // ============================================================================
-// CREATE TEMPLATE MODAL — iOS bottom sheet
+// Create Template Modal — Premium Bottom Sheet
 // ============================================================================
 
 interface CreateModalProps {
@@ -56,38 +81,47 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm"
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xl"
       onClick={onClose}
       dir="rtl"
     >
-      <div
-        className="w-full max-w-lg bg-[#1C1C1E] rounded-t-[28px] border-t border-white/[0.08] pt-2 pb-10 animate-slide-up"
+      <motion.div
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ ...springTransition, duration: 0.4 }}
         onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg bg-[#18181C] rounded-t-3xl border-t border-white/[0.08] pt-3 pb-10"
       >
-        {/* Drag handle */}
-        <div className="flex justify-center mb-4">
+        {/* Drag Handle */}
+        <div className="flex justify-center mb-5">
           <div className="w-10 h-1 rounded-full bg-white/20" />
         </div>
 
         <div className="px-6">
-          {/* Title row */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="font-barlow-condensed font-bold text-[22px] text-white">
+          {/* Title Row */}
+          <div className="flex items-center justify-between mb-7">
+            <h2 className="font-condensed font-bold text-[22px] text-white leading-tight">
               תבנית חדשה
             </h2>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={onClose}
-              className="w-[30px] h-[30px] flex items-center justify-center rounded-full bg-white/[0.10] text-[#8E8E93] hover:bg-white/[0.15] transition-colors"
+              className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"
             >
-              <X size={15} />
-            </button>
+              <X size={16} className="text-label-secondary" />
+            </motion.button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* iOS-style input */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Label */}
             <div>
-              <label className="block font-barlow text-[13px] text-[#8E8E93] mb-2 pr-1">
+              <label className="block text-[12px] font-semibold text-label-secondary mb-2 me-1">
                 שם התבנית
               </label>
               <input
@@ -96,41 +130,66 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="למשל: אימון חזה + כתפיים"
                 autoFocus
-                className="w-full bg-[#2C2C2E] rounded-[14px] px-4 py-3.5 text-white font-barlow text-[16px] placeholder:text-[#48484A] focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                className="
+                  w-full bg-surface-input rounded-xl 
+                  px-4 py-4 text-[16px] text-white
+                  placeholder:text-label-tertiary
+                  border border-white/6
+                  focus:outline-none 
+                  focus:border-primary/50 
+                  focus:ring-2 focus:ring-primary/15
+                  transition-all duration-200
+                "
               />
               {error && (
-                <p className="mt-2 font-barlow text-[13px] text-red-400 pr-1">
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 text-[13px] text-error"
+                >
                   {error}
-                </p>
+                </motion.p>
               )}
             </div>
 
-            <button
+            <motion.button
               type="submit"
               disabled={isSubmitting}
-              className="w-full min-h-[52px] py-3.5 rounded-[16px] bg-primary text-white font-barlow font-semibold text-[17px] disabled:opacity-50 transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
+              whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+              className="
+                w-full min-h-[52px] py-4 rounded-xl 
+                bg-primary text-white font-semibold text-[16px]
+                disabled:opacity-50
+                transition-all duration-200
+                hover:brightness-110
+              "
             >
-              {isSubmitting ? 'יוצר...' : 'צור תבנית'}
-            </button>
+              {isSubmitting ? (
+                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
+              ) : (
+                'צור תבנית'
+              )}
+            </motion.button>
           </form>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
 // ============================================================================
-// TEMPLATE CARD
+// Template Card — Premium Design
 // ============================================================================
 
 interface TemplateCardProps {
   template: WorkoutTemplate;
+  index: number;
   onStart: () => void;
   onToggleFavorite: () => void;
   onDelete: () => void;
 }
 
-function TemplateCard({ template, onStart, onToggleFavorite, onDelete }: TemplateCardProps) {
+function TemplateCard({ template, index, onStart, onToggleFavorite, onDelete }: TemplateCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -139,90 +198,163 @@ function TemplateCard({ template, onStart, onToggleFavorite, onDelete }: Templat
       onDelete();
     } else {
       setConfirmDelete(true);
+      setTimeout(() => setConfirmDelete(false), 3000);
     }
   };
 
-  const handleStartClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onStart();
-  };
-
-  const handleFavoriteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggleFavorite();
-  };
-
   return (
-    <div className="relative bg-[#111111] rounded-[20px] border border-white/[0.06] overflow-hidden transition-all duration-200 hover:border-white/[0.12] hover:bg-[#161616]">
-      <div className="p-4">
-        {/* Main content row */}
-        <div className="flex items-center gap-3">
-          {/* Left icon block */}
-          <div className="w-12 h-12 rounded-[14px] bg-primary/[0.12] flex items-center justify-center shrink-0">
-            <Dumbbell size={22} className="text-primary" />
-          </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ ...springTransition, delay: index * 0.06 }}
+      className="card-interactive overflow-hidden"
+    >
+      <div className="p-5">
+        {/* Main Content Row */}
+        <div className="flex items-center gap-4">
+          {/* Icon Block */}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0"
+          >
+            <Dumbbell size={24} className="text-primary" />
+          </motion.div>
 
-          {/* Middle: name + meta */}
+          {/* Content */}
           <div className="flex-1 min-w-0">
-            <p className="font-barlow-condensed font-bold text-[17px] text-white leading-tight truncate">
-              {template.name}
-            </p>
-            <div className="flex items-center gap-3 mt-0.5">
-              <span className="flex items-center gap-1 font-barlow text-[12px] text-[#8E8E93]">
-                <Dumbbell size={11} className="text-[#48484A]" />
+            <div className="flex items-start justify-between gap-2">
+              <p className="font-condensed font-bold text-[18px] text-white leading-tight truncate">
+                {template.name}
+              </p>
+              {template.isFavorite && (
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 3 }}
+                >
+                  <Star size={16} className="text-warning fill-warning flex-shrink-0" />
+                </motion.div>
+              )}
+            </div>
+            <div className="flex items-center gap-4 mt-2">
+              <span className="flex items-center gap-1.5 text-[12px] text-label-secondary">
+                <Dumbbell size={12} className="text-label-tertiary" />
                 {template.exercises.length} תרגילים
               </span>
-              <span className="flex items-center gap-1 font-barlow text-[12px] text-[#8E8E93]">
-                <Clock size={11} className="text-[#48484A]" />
+              <span className="flex items-center gap-1.5 text-[12px] text-label-secondary">
+                <Clock size={12} className="text-label-tertiary" />
                 {formatLastUsed(template.lastUsed)}
               </span>
             </div>
           </div>
 
-          {/* Right: favorite + play */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={handleFavoriteClick}
-              className="w-[44px] h-[44px] flex items-center justify-center rounded-xl transition-all duration-200 hover:bg-white/[0.06] active:scale-90"
+          {/* Actions */}
+          <div className="flex items-center gap-2 shrink-0">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onToggleFavorite}
+              className="w-11 h-11 rounded-xl flex items-center justify-center transition-colors hover:bg-white/6"
               aria-label={template.isFavorite ? 'הסר ממועדפים' : 'הוסף למועדפים'}
             >
               <Star
                 size={18}
                 className={
                   template.isFavorite
-                    ? 'text-yellow-400 fill-yellow-400'
-                    : 'text-[#48484A]'
+                    ? 'text-warning fill-warning'
+                    : 'text-label-tertiary'
                 }
               />
-            </button>
+            </motion.button>
 
-            <button
-              onClick={handleStartClick}
-              className="w-[44px] h-[44px] flex items-center justify-center rounded-full bg-primary transition-all duration-200 hover:opacity-90 active:scale-90"
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onStart}
+              className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center"
               aria-label="התחל אימון"
             >
-              <Play size={17} className="text-white fill-white mr-[-2px]" />
-            </button>
+              <Play size={18} className="text-white me-[-2px]" />
+            </motion.button>
           </div>
         </div>
 
-        {/* Delete row — appears on confirm */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.06]">
-          <button
+        {/* Delete Row */}
+        <div className="flex items-center justify-between mt-5 pt-4 border-t border-white/[0.04]">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             onClick={handleDeleteClick}
             onBlur={() => setConfirmDelete(false)}
-            className={`flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 rounded-[10px] font-barlow text-[13px] font-medium transition-all duration-200 ${
-              confirmDelete
-                ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                : 'text-[#48484A] hover:text-red-400 hover:bg-red-500/10'
-            }`}
+            className={`
+              flex items-center gap-2 min-h-[40px] px-4 py-2 rounded-xl 
+              text-[13px] font-medium transition-all duration-200
+              ${confirmDelete
+                ? 'bg-error/15 text-error border border-error/30'
+                : 'text-label-tertiary hover:text-error hover:bg-error/10'
+              }
+            `}
           >
-            <Trash2 size={13} />
+            <Trash2 size={14} />
             {confirmDelete ? 'בטוח? לחץ לאישור' : 'מחק'}
-          </button>
-          <span className="font-barlow text-[11px] text-[#48484A]">
+          </motion.button>
+          
+          <span className="text-[11px] text-label-tertiary">
             {template.timesUsed > 0 ? `${template.timesUsed} פעמים` : 'טרם בוצע'}
           </span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ============================================================================
+// Section Label
+// ============================================================================
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.p
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="section-title mb-3"
+    >
+      {children}
+    </motion.p>
+  );
+}
+
+// ============================================================================
+// Loading State
+// ============================================================================
+
+function LoadingState() {
+  return (
+    <div className="min-h-screen pb-[100px]" dir="rtl">
+      <div className="px-5 pt-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="w-32 h-10 rounded-xl skeleton-shimmer" />
+          <div className="w-11 h-11 rounded-xl skeleton-shimmer" />
+        </div>
+        
+        {/* Cards */}
+        <div className="flex flex-col gap-4">
+          {[1, 2, 3].map((i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="card p-5 h-[140px]"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl skeleton-shimmer" />
+                <div className="flex-1 space-y-3">
+                  <div className="w-48 h-5 rounded-lg skeleton-shimmer" />
+                  <div className="w-32 h-4 rounded-lg skeleton-shimmer" />
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
     </div>
@@ -230,19 +362,36 @@ function TemplateCard({ template, onStart, onToggleFavorite, onDelete }: Templat
 }
 
 // ============================================================================
-// SECTION HEADER (iOS-style label above card group)
+// Error State
 // ============================================================================
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
-    <p className="font-barlow text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8E8E93] mb-2 px-1">
-      {children}
-    </p>
+    <div className="min-h-screen pb-[100px] flex flex-col items-center justify-center px-6" dir="rtl">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-20 h-20 rounded-2xl bg-error/10 flex items-center justify-center mb-6"
+      >
+        <Trash2 size={32} className="text-error" />
+      </motion.div>
+      <p className="text-[17px] text-white mb-2 font-semibold">שגיאה בטעינה</p>
+      <p className="text-[14px] text-label-secondary mb-8 text-center">
+        לא הצלחנו לטעון את התבניות. נסה שוב.
+      </p>
+      <motion.button
+        whileTap={{ scale: 0.95 }}
+        onClick={onRetry}
+        className="btn btn-primary"
+      >
+        נסה שוב
+      </motion.button>
+    </div>
   );
 }
 
 // ============================================================================
-// MAIN COMPONENT
+// Main Component
 // ============================================================================
 
 export default function Templates() {
@@ -263,7 +412,7 @@ export default function Templates() {
       const data = await getWorkoutTemplates();
       setTemplates(data);
     } catch {
-      setError('שגיאה בטעינת התבניות. נסה לרענן את הדף.');
+      setError('שגיאה בטעינת התבניות');
     } finally {
       setIsLoading(false);
     }
@@ -309,140 +458,127 @@ export default function Templates() {
     setTemplates((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Loading state
+  // Loading State
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-black pb-[88px] pb-[calc(88px+env(safe-area-inset-bottom))]" dir="rtl">
-        <div className="px-4 pt-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="font-barlow-condensed font-bold text-3xl text-white tracking-wide">
-              תבניות
-            </h1>
-            <div className="w-10 h-10 rounded-full skeleton-shimmer" />
-          </div>
-          <div className="flex flex-col gap-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="bg-[#111111] rounded-[20px] border border-white/[0.06] h-28 skeleton-shimmer"
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingState />;
   }
 
-  // Error state
+  // Error State
   if (error) {
-    return (
-      <div className="min-h-screen bg-black pb-[88px] pb-[calc(88px+env(safe-area-inset-bottom))]" dir="rtl">
-        <div className="px-4 pt-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="font-barlow-condensed font-bold text-3xl text-white tracking-wide">
-              תבניות
-            </h1>
-          </div>
-          <div className="text-center py-16">
-            <p className="font-barlow text-red-400 mb-5">{error}</p>
-            <button
-              onClick={loadTemplates}
-              className="min-h-[44px] px-6 py-2.5 bg-primary text-white font-barlow font-semibold rounded-[14px] transition-all hover:opacity-90 active:scale-95"
-            >
-              נסה שוב
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return <ErrorState onRetry={loadTemplates} />;
   }
 
   const hasTemplates = templates.length > 0;
 
   return (
     <>
-      <div className="min-h-screen bg-black pb-[88px] pb-[calc(88px+env(safe-area-inset-bottom))]" dir="rtl">
-        <div className="px-4 pt-6">
+      <motion.div
+        className="min-h-screen pb-[100px]"
+        dir="rtl"
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+      >
+        <div className="px-5 pt-6">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="font-barlow-condensed font-bold text-3xl text-white tracking-wide leading-none">
+          <motion.div 
+            variants={itemVariants}
+            className="flex items-center justify-between mb-8"
+          >
+            <h1 className="font-condensed font-bold text-[28px] text-white leading-none tracking-tight">
               תבניות
             </h1>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.9 }}
               onClick={() => setShowCreateModal(true)}
-              className="w-10 h-10 rounded-full bg-primary flex items-center justify-center transition-all duration-200 hover:opacity-90 active:scale-90"
+              className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center"
               aria-label="צור תבנית חדשה"
             >
-              <Plus size={20} className="text-white" strokeWidth={2.5} />
-            </button>
-          </div>
+              <Plus size={20} className="text-white" />
+            </motion.button>
+          </motion.div>
 
-          {/* Empty state */}
+          {/* Empty State */}
           {!hasTemplates && (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-20 h-20 rounded-[24px] bg-primary/[0.10] flex items-center justify-center mb-5">
-                <Dumbbell size={32} className="text-primary" />
-              </div>
-              <p className="font-barlow-condensed font-bold text-[22px] text-white mb-1.5">
+            <motion.div
+              variants={itemVariants}
+              className="flex flex-col items-center justify-center py-20 text-center"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ ...springTransition, delay: 0.2 }}
+                className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center mb-6"
+              >
+                <Dumbbell size={40} className="text-primary" />
+              </motion.div>
+              <p className="font-condensed font-bold text-[22px] text-white mb-2">
                 אין תבניות עדיין
               </p>
-              <p className="font-barlow text-[14px] text-[#8E8E93] mb-7">
+              <p className="text-[14px] text-label-secondary mb-8 max-w-[260px]">
                 צור תבנית אימון ותתחיל להתאמן
               </p>
-              <button
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 min-h-[52px] px-8 py-3.5 bg-primary text-white font-barlow font-semibold text-[17px] rounded-[16px] transition-all hover:opacity-90 active:scale-[0.98]"
+                className="btn btn-primary btn-pill gap-2"
               >
-                <Plus size={20} strokeWidth={2.5} />
+                <Plus size={18} />
                 צור תבנית ראשונה
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           )}
 
-          {/* Favorites section */}
+          {/* Favorites Section */}
           {favorites.length > 0 && (
-            <div className="mb-6">
+            <motion.div variants={itemVariants} className="mb-8">
               <SectionLabel>מועדפים</SectionLabel>
-              <div className="flex flex-col gap-3">
-                {favorites.map((template) => (
+              <div className="flex flex-col gap-4">
+                {favorites.map((template, index) => (
                   <TemplateCard
                     key={template.id}
                     template={template}
+                    index={index}
                     onStart={() => navigate(`/workout/${template.id}`)}
                     onToggleFavorite={() => handleToggleFavorite(template)}
                     onDelete={() => handleDelete(template.id)}
                   />
                 ))}
               </div>
-            </div>
+            </motion.div>
           )}
 
-          {/* All templates section */}
+          {/* All Templates Section */}
           {regular.length > 0 && (
-            <div className="mb-6">
+            <motion.div variants={itemVariants} className="mb-8">
               {favorites.length > 0 && <SectionLabel>כל התבניות</SectionLabel>}
-              <div className="flex flex-col gap-3">
-                {regular.map((template) => (
+              <div className="flex flex-col gap-4">
+                {regular.map((template, index) => (
                   <TemplateCard
                     key={template.id}
                     template={template}
+                    index={favorites.length + index}
                     onStart={() => navigate(`/workout/${template.id}`)}
                     onToggleFavorite={() => handleToggleFavorite(template)}
                     onDelete={() => handleDelete(template.id)}
                   />
                 ))}
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
-      </div>
+      </motion.div>
 
-      {showCreateModal && (
-        <CreateModal
-          onClose={() => setShowCreateModal(false)}
-          onCreate={handleCreate}
-        />
-      )}
+      {/* Create Modal */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <CreateModal
+            onClose={() => setShowCreateModal(false)}
+            onCreate={handleCreate}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

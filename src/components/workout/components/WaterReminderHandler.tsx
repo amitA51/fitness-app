@@ -1,7 +1,7 @@
 // Extracted from ActiveWorkoutNew.tsx
 // Contains water reminder logic and toast management
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { WorkoutSettings } from '../../../types';
 import WaterReminderToast from '../WaterReminderToast';
 

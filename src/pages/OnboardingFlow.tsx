@@ -1015,7 +1015,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
 
             {/* Content */}
             <div className="flex-1 overflow-hidden">
-                <AnimatePresence mode="wait">
+                <AnimatePresence mode="sync">
                     {renderStep()}
                 </AnimatePresence>
             </div>

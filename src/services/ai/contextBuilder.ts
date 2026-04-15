@@ -3,7 +3,7 @@
 // ============================================================================
 
 import type { WorkoutSession, MacroNutrients } from '../../types';
-import type { RecoveryLog } from '../recoveryService';
+import type { RecoveryLog } from '../bodyStatsService';
 
 export interface AIContext {
   recentWorkouts: WorkoutSession[];
@@ -17,11 +17,11 @@ export interface AIContext {
 }
 
 function computeRecoveryScore(log: RecoveryLog): number {
-  const sleepScore = log.sleepHours >= 7 ? 25 : log.sleepHours >= 5 ? 15 : 5;
-  const qualityScore = log.sleepQuality * 5; // 5-25
-  const energyScore = log.energyLevel * 5; // 5-25
-  const stressScore = (6 - log.stressLevel) * 5; // 5-25 (lower stress = higher score)
-  return sleepScore + qualityScore + energyScore + stressScore;
+  const sleepHoursScore = log.sleepHours >= 7 ? 25 : log.sleepHours >= 5 ? 15 : 5;
+  const qualityScore = log.sleepQuality * 5;
+  const energyScore = log.energyLevel * 5;
+  const stressScore = (6 - log.stressLevel) * 5;
+  return sleepHoursScore + qualityScore + energyScore + stressScore;
 }
 
 export function buildSystemPrompt(context: AIContext): string {

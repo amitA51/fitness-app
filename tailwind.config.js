@@ -6,163 +6,223 @@ export default {
   ],
   theme: {
     extend: {
-      /* ── Color tokens ──────────────────────────────────────────────────── */
+      /* ── Color Tokens (Driven by CSS Variables) ─────────────────────────── */
       colors: {
-        // Semantic theme colors (driven by CSS variables)
-        primary:          'var(--color-primary)',
-        secondary:        'var(--color-secondary)',
-        accent:           'var(--color-accent)',
-        background:       'var(--color-background)',
-        surface:          'var(--color-surface)',
-        text:             'var(--color-text)',
+        // Primary accent (theme-aware)
+        primary: 'var(--color-primary)',
+        'primary-hover': 'var(--color-primary-hover)',
+
+        // Semantic colors
+        success: 'var(--color-success)',
+        warning: 'var(--color-warning)',
+        error: 'var(--color-error)',
+
+        // Text scale
         'text-secondary': 'var(--color-text-secondary)',
-        success:          'var(--color-success)',
-        warning:          'var(--color-warning)',
-        error:            'var(--color-error)',
+        'text-muted': 'var(--color-text-muted)',
 
-        // Apple OLED surface scale (static tokens)
-        'surface-1': '#111111',
-        'surface-2': '#1C1C1E',
-        'surface-3': '#2C2C2E',
+        // Surface scale (OLED Dark)
+        surface: {
+          DEFAULT: 'var(--color-surface)',
+          elevated: 'var(--color-surface-elevated)',
+          input: 'var(--color-surface-input)',
+          hover: 'var(--color-surface-hover)',
+        },
 
-        // Label / text scale
-        'label-secondary': '#8E8E93',
-        'label-tertiary':  '#48484A',
+        // Apple OLED static tokens (for reference)
+        'surface-1': '#111114',
+        'surface-2': '#18181C',
+        'surface-3': '#1F1F24',
+
+        // Label colors
+        'label-secondary': '#71717A',
+        'label-tertiary': '#52525B',
 
         // Separator
-        'separator': '#38383A',
+        'separator': 'rgba(255, 255, 255, 0.04)',
 
-        // Apple system colors (static — available as bg-apple-blue, etc.)
-        apple: {
-          blue:   '#0A84FF',
-          indigo: '#5E5CE6',
-          purple: '#BF5AF2',
-          pink:   '#FF375F',
-          red:    '#FF453A',
-          orange: '#FF9F0A',
-          yellow: '#FFD60A',
-          green:  '#30D158',
-          teal:   '#5AC8FA',
-          cyan:   '#64D2FF',
-        },
+        // Premium semantic colors
+        'success-muted': 'var(--color-success-muted)',
+        'warning-muted': 'var(--color-warning-muted)',
+        'error-muted': 'var(--color-error-muted)',
       },
 
       /* ── Typography ────────────────────────────────────────────────────── */
       fontFamily: {
-        sans:       ['Barlow', 'system-ui', '-apple-system', 'sans-serif'],
-        condensed:  ['Barlow Condensed', 'Barlow', 'system-ui', 'sans-serif'],
-        mono:       ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        sans: ['Outfit', 'system-ui', '-apple-system', 'sans-serif'],
+        condensed: ['Outfit Condensed', 'Outfit', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
 
-      /* ── Border radius ─────────────────────────────────────────────────── */
+      fontSize: {
+        '2xs': ['0.625rem', { lineHeight: '1rem' }],
+        '7xl': ['4.5rem', { lineHeight: '1' }],
+        '8xl': ['6rem', { lineHeight: '1' }],
+        '9xl': ['8rem', { lineHeight: '1' }],
+      },
+
+      letterSpacing: {
+        tighter: '-0.03em',
+        tight: '-0.02em',
+        normal: '0',
+        wide: '0.05em',
+        wider: '0.1em',
+        widest: '0.15em',
+      },
+
+      /* ── Border Radius ─────────────────────────────────────────────────── */
       borderRadius: {
-        '2.5xl': '20px',   // card radius
-        '3xl':   '24px',   // large card
-        '4xl':   '32px',   // extra large
+        'sm': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'xl': '20px',
+        '2xl': '24px',
+        '3xl': '32px',
+        '4xl': '40px',
+        'pill': '9999px',
       },
 
-      /* ── Box shadows ───────────────────────────────────────────────────── */
+      /* ── Box Shadows — Tinted, Diffused, Premium ───────────────────────── */
       boxShadow: {
-        'card':     '0 2px 8px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)',
-        'elevated': '0 8px 32px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.6)',
-        'glow':     '0 0 24px rgba(10,132,255,0.25)',
-        'glow-sm':  '0 0 12px rgba(10,132,255,0.2)',
-        'glow-lg':  '0 0 48px rgba(10,132,255,0.3)',
-        'inner-sm': 'inset 0 1px 0 rgba(255,255,255,0.06)',
+        'card': '0 4px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06)',
+        'elevated': '0 12px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.12)',
+        'glow': '0 0 32px rgba(59, 130, 246, 0.35)',
+        'glow-sm': '0 0 16px rgba(59, 130, 246, 0.35)',
+        'glow-lg': '0 0 48px rgba(59, 130, 246, 0.4)',
+        'inner': 'inset 0 1px 0 rgba(255, 255, 255, 0.06)',
+        'diffused': '0 20px 40px -15px rgba(0, 0, 0, 0.5)',
       },
 
-      /* ── Backdrop blur ─────────────────────────────────────────────────── */
+      /* ── Backdrop Blur ─────────────────────────────────────────────────── */
       backdropBlur: {
-        xs:  '4px',
-        sm:  '8px',
-        md:  '12px',
-        lg:  '16px',
-        xl:  '20px',
+        'xs': '4px',
+        'sm': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'xl': '20px',
         '2xl': '24px',
         '3xl': '40px',
       },
 
-      /* ── Backdrop saturate ─────────────────────────────────────────────── */
       backdropSaturate: {
-        150: '1.5',
-        180: '1.8',
-        200: '2',
+        '150': '1.5',
+        '180': '1.8',
+        '200': '2',
       },
 
       /* ── Animations ────────────────────────────────────────────────────── */
       animation: {
-        'fade-in':     'fadeIn 0.25s ease-out both',
-        'slide-up':    'slideUp 0.3s cubic-bezier(0.25,0.46,0.45,0.94) both',
-        'slide-down':  'slideDown 0.25s cubic-bezier(0.25,0.46,0.45,0.94) both',
-        'fade-scale':  'fadeScale 0.2s cubic-bezier(0.25,0.46,0.45,0.94) both',
-        'scale-in':    'scaleIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both',
-        'shimmer':     'shimmer 1.8s ease-in-out infinite',
-        'pulse-glow':  'pulseGlow 2.5s ease-in-out infinite',
-        'spin-slow':   'spin 3s linear infinite',
+        // Stagger reveal
+        'stagger': 'staggerReveal 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both',
+        'fade-scale': 'fadeScale 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both',
+
+        // Perpetual micro-interactions
+        'float': 'float 4s ease-in-out infinite',
+        'pulse-glow': 'pulseGlow 2.5s ease-in-out infinite',
+        'breathing': 'breathing 2s ease-in-out infinite',
+
+        // Loading
+        'shimmer': 'shimmer 1.8s ease-in-out infinite',
+        'spin-slow': 'spin 3s linear infinite',
+
+        // Entry
+        'scale-in': 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        'slide-up': 'slideUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both',
+        'slide-down': 'slideDown 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both',
+
+        // Navigation
+        'nav-dot-pop': 'navDotPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
       },
 
       /* ── Keyframes ─────────────────────────────────────────────────────── */
       keyframes: {
-        fadeIn: {
-          '0%':   { opacity: '0', transform: 'translateY(8px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        slideUp: {
-          '0%':   { opacity: '0', transform: 'translateY(20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        slideDown: {
-          '0%':   { opacity: '0', transform: 'translateY(-12px)' },
+        staggerReveal: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         fadeScale: {
-          '0%':   { opacity: '0', transform: 'scale(0.95)' },
+          '0%': { opacity: '0', transform: 'scale(0.92)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
-        scaleIn: {
-          '0%':   { opacity: '0', transform: 'scale(0.9)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
-        },
-        shimmer: {
-          '0%':   { backgroundPosition: '-200% center' },
-          '100%': { backgroundPosition: '200% center' },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-6px)' },
         },
         pulseGlow: {
-          '0%, 100%': { boxShadow: '0 0 8px rgba(10,132,255,0.3)' },
-          '50%':      { boxShadow: '0 0 24px rgba(10,132,255,0.6), 0 0 48px rgba(10,132,255,0.2)' },
+          '0%, 100%': { boxShadow: '0 0 8px rgba(59, 130, 246, 0.35)' },
+          '50%': { boxShadow: '0 0 24px rgba(59, 130, 246, 0.35), 0 0 48px rgba(59, 130, 246, 0.15)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% center' },
+          '100%': { backgroundPosition: '200% center' },
+        },
+        scaleIn: {
+          '0%': { opacity: '0', transform: 'scale(0.85)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(30px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideDown: {
+          '0%': { opacity: '0', transform: 'translateY(-20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        breathing: {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.6', transform: 'scale(0.95)' },
+        },
+        navDotPop: {
+          '0%': { transform: 'scale(0) translateX(-50%)', opacity: '0' },
+          '60%': { transform: 'scale(1.4) translateX(-50%)', opacity: '1' },
+          '100%': { transform: 'scale(1) translateX(-50%)', opacity: '1' },
+        },
+        spin: {
+          to: { transform: 'rotate(360deg)' },
         },
       },
 
-      /* ── Spacing scale (Tailwind 4/8/12/16/24/32/48/64 — confirmed) ────── */
-      // Tailwind includes the 4px base scale by default.
-      // Extend only custom steps here:
+      /* ── Spacing ──────────────────────────────────────────────────────── */
       spacing: {
         '4.5': '18px',
-        '13':  '52px',
-        '15':  '60px',
-        '18':  '72px',
-        '22':  '88px',
-        '26':  '104px',
-        '30':  '120px',
-        '34':  '136px',
+        '13': '52px',
+        '15': '60px',
+        '18': '72px',
+        '22': '88px',
+        '26': '104px',
+        '30': '120px',
+        '34': '136px',
       },
 
-      /* ── Transition timing ─────────────────────────────────────────────── */
+      /* ── Transition Timing (Premium Spring Physics) ────────────────────── */
       transitionTimingFunction: {
-        'spring':      'cubic-bezier(0.34, 1.56, 0.64, 1)',
-        'apple':       'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-        'apple-fast':  'cubic-bezier(0.4, 0, 0.2, 1)',
-        'decelerate':  'cubic-bezier(0, 0, 0.2, 1)',
-        'accelerate':  'cubic-bezier(0.4, 0, 1, 1)',
+        'spring-bounce': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'spring-smooth': 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        'spring-snappy': 'cubic-bezier(0.4, 0, 0.2, 1)',
+        'spring-700': 'cubic-bezier(0.32, 0.72, 0, 1)',
       },
 
-      /* ── Transition duration ───────────────────────────────────────────── */
       transitionDuration: {
-        '0':   '0ms',
+        '0': '0ms',
+        '75': '75ms',
+        '100': '100ms',
         '150': '150ms',
-        '250': '250ms',
-        '350': '350ms',
+        '200': '200ms',
+        '300': '300ms',
         '400': '400ms',
+        '500': '500ms',
+        '700': '700ms',
+      },
+
+      /* ── Z-Index Scale ─────────────────────────────────────────────────── */
+      zIndex: {
+        'dropdown': '40',
+        'sticky': '50',
+        'fixed': '60',
+        'modal-backdrop': '70',
+        'modal': '80',
+        'popover': '90',
+        'tooltip': '100',
       },
     },
   },

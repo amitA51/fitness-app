@@ -1,19 +1,17 @@
 // Extracted from ActiveWorkoutNew.tsx
 // Contains finish/cancel/save workflow handlers and state
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import React from 'react';
-import React.lazy from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import React, { lazy, Suspense } from 'react';
 import { WorkoutSession, WorkoutExercise, PersonalItem } from '../../../types';
 import { useWorkoutState, useWorkoutDispatch, useWorkoutDerived } from '../core/WorkoutContext';
 import { saveWorkoutSession, createWorkoutTemplate } from '../../../services/dataService';
 import { triggerHaptic } from '../../../utils/haptics';
 import { formatTime } from '../hooks/useWorkoutTimer';
-import { usePersonalRecords } from '../hooks/usePersonalRecords';
 
 // Lazy loaded
-const WorkoutSummary = React.lazy(() => import('../WorkoutSummary'));
-const ConfirmExitOverlay = React.lazy(() => import('./overlays/ConfirmExitOverlay'));
+const WorkoutSummary = lazy(() => import('../WorkoutSummary'));
+const ConfirmExitOverlay = lazy(() => import('../overlays/ConfirmExitOverlay'));
 
 export interface WorkoutStats {
     completedSets: number;
@@ -33,7 +31,7 @@ export interface WorkoutFinishState {
 export interface WorkoutFinishHandlers {
     handleFinishRequest: () => void;
     handleDiscardRequest: () => void;
-    handleConfirmFinish: (item: PersonalItem) => Promise<void>;
+    handleConfirmFinish: (item: PersonalItem) => Promise<unknown>;
     handleCancelConfirm: () => void;
 }
 
@@ -193,7 +191,7 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
 
     // Confirm Exit Overlay Component
     const FinishOverlay: React.FC<{ onExit: () => void }> = ({ onExit }) => (
-        <React.Suspense fallback={null}>
+        <Suspense fallback={null}>
             <ConfirmExitOverlay
                 isOpen={showFinishConfirm}
                 intent={finishIntent}
@@ -212,7 +210,7 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
                 isSaving={isSaving}
                 saveError={saveError}
             />
-        </React.Suspense>
+        </Suspense>
     );
 
     // Summary Overlay Component
@@ -220,7 +218,7 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
         if (!completedSession) return null;
 
         return (
-            <React.Suspense fallback={
+            <Suspense fallback={
                 <div className="fixed inset-0 z-[9999] bg-[var(--cosmos-bg-primary)] flex items-center justify-center">
                     <div className="text-white">תוצאות האימון...</div>
                 </div>
@@ -263,7 +261,7 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
                         });
                     }}
                 />
-            </React.Suspense>
+            </Suspense>
         );
     };
 

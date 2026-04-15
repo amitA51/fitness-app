@@ -26,26 +26,46 @@ export interface BodyMeasurement {
 
 export interface RecoveryLog {
   id: string;
-  date: string;
+  date: string; // YYYY-MM-DD
+  createdAt: string; // ISO timestamp
+
+  // Sleep
   sleepHours: number;
-  sleepQuality: 1 | 2 | 3 | 4 | 5;
-  muscleSoreness: number;
-  energyLevel: number;
-  stressLevel: number;
-  tightnessAreas: string[];
+  sleepQuality: 1 | 2 | 3 | 4 | 5; // 1=terrible, 5=great
+
+  // Body
+  sorenessLevel: 1 | 2 | 3 | 4 | 5; // 1=very sore, 5=fresh
+  energyLevel: 1 | 2 | 3 | 4 | 5; // 1=exhausted, 5=energized
+  stressLevel: 1 | 2 | 3 | 4 | 5; // 1=very stressed, 5=calm
+
+  // Tightness
+  tightAreas: string[]; // body part names
+
+  // Optional
   notes?: string;
-  createdAt: string;
+  sessionId?: string; // reference to workout session
+
+  // Computed
+  overallScore?: number; // 0-100, computed from components
 }
 
 export interface RecoveryScore {
+  overall: number; // 0-100
+  sleep: number; // 0-100
+  soreness: number; // 0-100
+  energy: number; // 0-100
+  stress: number; // 0-100
+  label: 'poor' | 'fair' | 'good' | 'excellent';
+}
+
+// Legacy alias for backwards compatibility
+export type LegacyRecoveryScore = RecoveryScore & {
   score: number;
   sleepScore: number;
   sorenessScore: number;
   energyScore: number;
   stressScore: number;
-  label: 'מעולה' | 'טובה' | 'בינונית' | 'חלשה' | 'גרועה';
-  color: string;
-}
+};
 
 export interface WeightTrend {
   change: number;
@@ -174,29 +194,77 @@ export async function getTodayRecoveryLog(): Promise<RecoveryLog | null> {
   return all.find((e) => e.date === today) || null;
 }
 
-export function calculateRecoveryScore(log: RecoveryLog): RecoveryScore {
-  const sleepScore = Math.min((log.sleepHours / 8) * 25, 25) * (log.sleepQuality / 5);
-  const sorenessScore = Math.max(0, (10 - log.muscleSoreness) / 10) * 25;
-  const energyScore = (log.energyLevel / 10) * 25;
-  const stressScore = Math.max(0, (10 - log.stressLevel) / 10) * 25;
-  const score = Math.round(sleepScore + sorenessScore + energyScore + stressScore);
+function mapSleepHoursToScore(hours: number): number {
+  if (hours <= 5) return 20;
+  if (hours <= 6) return 20 + (hours - 5) * 20;
+  if (hours <= 7) return 40 + (hours - 6) * 20;
+  if (hours <= 8) return 60 + (hours - 7) * 20;
+  if (hours <= 9) return 80 + (hours - 8) * 20;
+  return 100;
+}
 
-  let label: RecoveryScore['label'];
-  let color: string;
-  if (score >= 85) { label = 'מעולה'; color = '#22c55e'; }
-  else if (score >= 65) { label = 'טובה'; color = '#3b82f6'; }
-  else if (score >= 45) { label = 'בינונית'; color = '#f59e0b'; }
-  else if (score >= 25) { label = 'חלשה'; color = '#f97316'; }
-  else { label = 'גרועה'; color = '#ef4444'; }
+function getScoreLabel(score: number): RecoveryScore['label'] {
+  if (score <= 25) return 'poor';
+  if (score <= 50) return 'fair';
+  if (score <= 75) return 'good';
+  return 'excellent';
+}
+
+function getScoreColor(overall: number): string {
+  if (overall <= 25) return '#ef4444';
+  if (overall <= 50) return '#f97316';
+  if (overall <= 75) return '#f59e0b';
+  return '#22c55e';
+}
+
+export function calculateRecoveryScore(
+  log: RecoveryLog
+): RecoveryScore {
+  const rawSleepScore = mapSleepHoursToScore(log.sleepHours);
+  const sleep = Math.round(rawSleepScore * (log.sleepQuality / 5));
+  const soreness = log.sorenessLevel * 20;
+  const energy = log.energyLevel * 20;
+  const stress = log.stressLevel * 20;
+
+  const overall = Math.round(
+    sleep * 0.3 + soreness * 0.25 + energy * 0.25 + stress * 0.2
+  );
 
   return {
-    score,
-    sleepScore: Math.round(sleepScore),
-    sorenessScore: Math.round(sorenessScore),
-    energyScore: Math.round(energyScore),
-    stressScore: Math.round(stressScore),
-    label,
-    color,
+    overall,
+    sleep,
+    soreness,
+    energy,
+    stress,
+    label: getScoreLabel(overall),
+  };
+}
+
+// Backwards compatibility: returns score with color property
+export function getLegacyRecoveryScore(log: RecoveryLog): {
+  score: number;
+  sleepScore: number;
+  sorenessScore: number;
+  energyScore: number;
+  stressScore: number;
+  label: string;
+  color: string;
+} {
+  const result = calculateRecoveryScore(log);
+  const labelMap: Record<RecoveryScore['label'], string> = {
+    poor: 'גרועה',
+    fair: 'חלשה',
+    good: 'בינונית',
+    excellent: 'טובה',
+  };
+  return {
+    score: result.overall,
+    sleepScore: result.sleep,
+    sorenessScore: result.soreness,
+    energyScore: result.energy,
+    stressScore: result.stress,
+    label: labelMap[result.label],
+    color: getScoreColor(result.overall),
   };
 }
 
@@ -210,14 +278,18 @@ export async function getWeeklyRecoveryAverage(): Promise<{ avgSleep: number; av
 
   const avgSleep = Math.round((logs.reduce((s, l) => s + l.sleepHours, 0) / logs.length) * 10) / 10;
   const avgEnergy = Math.round((logs.reduce((s, l) => s + l.energyLevel, 0) / logs.length) * 10) / 10;
-  const avgSoreness = Math.round((logs.reduce((s, l) => s + l.muscleSoreness, 0) / logs.length) * 10) / 10;
+  const avgSoreness = Math.round((logs.reduce((s, l) => s + l.sorenessLevel, 0) / logs.length) * 10) / 10;
   const avgStress = Math.round((logs.reduce((s, l) => s + l.stressLevel, 0) / logs.length) * 10) / 10;
-  const avgScore = Math.round(logs.reduce((s, l) => s + calculateRecoveryScore(l).score, 0) / logs.length);
+  const avgScore = Math.round(logs.reduce((s, l) => s + calculateRecoveryScore(l).overall, 0) / logs.length);
 
   return { avgSleep, avgEnergy, avgSoreness, avgStress, avgScore };
 }
 
-export const TIGHTNESS_AREAS = [
-  'צוואר', 'כתפיים', 'גב עליון', 'גב תחתון', 'חזה', 'זרועות',
-  'אמות', 'בטן', 'ירכיים קדמיות', 'ירכיים אחוריות', 'תאומים', 'עקבים',
+export const BODY_AREAS: string[] = [
+  'צוואר', 'כתפיים', 'גב עליון', 'גב תחתון', 'חזה',
+  'ביצפס', 'טריצפס', 'אמות', 'בטן', 'מפרקי ירך',
+  'שרירי ארבע ראשי', 'ירך אחורית', 'תאומים', 'אכילס',
 ];
+
+// Alias for backwards compatibility
+export const TIGHTNESS_AREAS = BODY_AREAS;

@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { TrashIcon } from '../../icons';
 import { PersonalExercise } from '../../../types';
 
@@ -49,37 +49,70 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(({
         relative p-4 rounded-xl border transition-all cursor-pointer group overflow-hidden
         ${
           isSelectionMode
-            ? 'hover:border-[var(--cosmos-accent-primary)] hover:bg-[var(--cosmos-accent-primary)]/5 bg-white/5 border-white/10'
+            ? isSelected
+              ? 'border-[var(--cosmos-accent-primary)] bg-[var(--cosmos-accent-primary)]/10 shadow-[0_0_20px_rgba(99,102,241,0.15)]'
+              : 'hover:border-[var(--cosmos-accent-primary)]/50 hover:bg-[var(--cosmos-accent-primary)]/5 bg-white/5 border-white/10'
             : 'bg-[var(--bg-secondary)] border-white/5 hover:border-white/20 hover:bg-white/10'
         }
       `}
     >
-      {/* Selection Indicator */}
+      {/* Selection Indicator - Premium Checkbox */}
       {isSelectionMode && (
-        <div
-          className={`absolute top-4 left-4 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
+        <motion.div
+          className={`absolute top-4 left-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
             isSelected
-              ? 'border-[var(--cosmos-accent-primary)] bg-[var(--cosmos-accent-primary)]/20'
-              : 'border-white/20 group-hover:border-[var(--cosmos-accent-primary)]'
+              ? 'border-[var(--cosmos-accent-primary)] bg-[var(--cosmos-accent-primary)] scale-110'
+              : 'border-white/30 bg-transparent group-hover:border-[var(--cosmos-accent-primary)]/50'
           }`}
+          animate={isSelected ? { scale: [1, 1.1, 1] } : {}}
+          transition={{ duration: 0.2 }}
         >
-          <div
-            className={`w-3 h-3 rounded-full bg-[var(--cosmos-accent-primary)] transition-opacity transform ${
-              isSelected
-                ? 'opacity-100 scale-100'
-                : 'opacity-0 group-hover:opacity-100 scale-0 group-hover:scale-100'
-            }`}
-          />
-        </div>
+          <AnimatePresence>
+            {isSelected && (
+              <motion.svg
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="w-3.5 h-3.5 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={3}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </motion.svg>
+            )}
+          </AnimatePresence>
+        </motion.div>
       )}
 
+      {/* Selection Glow Effect */}
+      <AnimatePresence>
+        {isSelected && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle at center, rgba(99,102,241,0.1) 0%, transparent 70%)',
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       <div className="flex justify-between items-start">
-        <div className="flex-1 pl-8">
+        <div className={`flex-1 ${isSelectionMode ? 'pl-10' : ''}`}>
           {renderExerciseName(exercise.name ?? '')}
 
           <div className="flex flex-wrap gap-2 mt-2">
             {exercise.muscleGroup && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-white/70 uppercase tracking-widest border border-white/5">
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest border ${
+                isSelected
+                  ? 'bg-[var(--cosmos-accent-primary)]/20 text-[var(--cosmos-accent-primary)] border-[var(--cosmos-accent-primary)]/30'
+                  : 'bg-white/10 text-white/70 border-white/5'
+              }`}>
                 {exercise.muscleGroup}
               </span>
             )}

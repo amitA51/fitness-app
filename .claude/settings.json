@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(npx biome:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx playwright:*)",
+      "Read(//c/Users/עילאי/.claude/plugins/cache/ui-ux-pro-max-skill/ui-ux-pro-max/2.0.1/**)"
+    ]
+  },
+  "hooks": [
+    {
+      "matcher": {
+        "not": {
+          "filePath": [
+            "**/node_modules/**",
+            "**/.git/**",
+            "**/dist/**",
+            "**/build/**"
+          ]
+        }
+      },
+      "hook": "eslint-check"
+    }
+  ],
+  "model": {
+    "mandatory": true
+  }
+}

@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { getWorkoutSessions } from '../../services/dataService';
 import {
   calculateVolumeHistory,
-  calculateFrequency,
   getAverageVolume,
   calculateMuscleGroupDistribution,
+  calculateWeeklyVolumes,
+  calculateMuscleBalance,
+  forecastProgress,
   VolumeDataPoint,
-  FrequencyData,
   MuscleGroupData,
+  WeeklyVolume,
+  MuscleBalanceData,
+  ForecastData,
 } from '../../services/analyticsService';
 import {
   calculateStreak,
@@ -17,6 +21,10 @@ import {
 } from '../../services/achievementService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrophyIcon, FlameIcon } from '../icons';
+import TrendLineOverlay from './components/TrendLineOverlay';
+import MuscleRadarChart from './components/MuscleRadarChart';
+import ForecastChart from './ForecastChart';
+import WorkoutCalendar from './WorkoutCalendar';
 
 const MUSCLE_COLORS: Record<string, string> = {
   'חזה': '#ef4444',
@@ -83,9 +91,12 @@ const StatCard = ({
 );
 
 const AnalyticsDashboard: React.FC = () => {
+  const [sessions, setSessions] = useState<any[]>([]);
   const [volumeData, setVolumeData] = useState<VolumeDataPoint[]>([]);
-  const [frequencyData, setFrequencyData] = useState<FrequencyData[]>([]);
   const [muscleGroupData, setMuscleGroupData] = useState<MuscleGroupData[]>([]);
+  const [weeklyVolumes, setWeeklyVolumes] = useState<WeeklyVolume[]>([]);
+  const [muscleBalanceData, setMuscleBalanceData] = useState<MuscleBalanceData[]>([]);
+  const [forecastData, setForecastData] = useState<ForecastData | null>(null);
   const [avgVolume, setAvgVolume] = useState(0);
   const [streakInfo, setStreakInfo] = useState<StreakInfo>({
     currentStreak: 0,
@@ -96,24 +107,32 @@ const AnalyticsDashboard: React.FC = () => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredBar, setHoveredBar] = useState<number | null>(null);
+  const [hoveredTrendPoint, setHoveredTrendPoint] = useState<number | null>(null);
 
   useEffect(() => {
     const loadAnalytics = async () => {
-      const sessions = await getWorkoutSessions();
+      const workoutSessions = await getWorkoutSessions();
 
-      const volume = calculateVolumeHistory(sessions);
-      const frequency = calculateFrequency(sessions);
-      const avg = getAverageVolume(sessions);
-      const streak = calculateStreak(sessions);
-      const achieves = await getAchievements(sessions, streak);
-      const muscleGroups = calculateMuscleGroupDistribution(sessions);
+      const volume = calculateVolumeHistory(workoutSessions);
+      const avg = getAverageVolume(workoutSessions);
+      const streak = calculateStreak(workoutSessions);
+      const achieves = await getAchievements(workoutSessions, streak);
+      const muscleGroups = calculateMuscleGroupDistribution(workoutSessions);
+      
+      // New analytics data
+      const weekly = calculateWeeklyVolumes(workoutSessions, 12);
+      const balance = calculateMuscleBalance(workoutSessions, 12);
+      const forecast = forecastProgress(workoutSessions);
 
+      setSessions(workoutSessions);
       setVolumeData(volume);
-      setFrequencyData(frequency);
       setMuscleGroupData(muscleGroups);
       setAvgVolume(avg);
       setStreakInfo(streak);
       setAchievements(achieves);
+      setWeeklyVolumes(weekly);
+      setMuscleBalanceData(balance);
+      setForecastData(forecast);
       setLoading(false);
     };
     loadAnalytics();
@@ -133,7 +152,7 @@ const AnalyticsDashboard: React.FC = () => {
 
   const recentVolume = volumeData.slice(-10);
   const maxVolume = Math.max(...recentVolume.map(d => d.volume), 1);
-  const maxFreq = Math.max(...frequencyData.map(d => d.count), 1);
+  const maxWeeklyVolume = Math.max(...weeklyVolumes.map(d => d.totalVolume), 1);
   const unlockedAchievements = achievements.filter(a => a.progress === 100);
 
   return (
@@ -238,8 +257,181 @@ const AnalyticsDashboard: React.FC = () => {
         />
       </div>
 
-      {/* Premium Volume Chart */}
-      {recentVolume.length > 0 && (
+      {/* Enhanced Volume Chart with Trend Line */}
+      {weeklyVolumes.length >= 2 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="workout-glass-card rounded-2xl p-5"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[var(--cosmos-accent-primary)] rounded-full" />
+              מגמת נפח שבועית
+            </h3>
+            <div className="flex items-center gap-3 text-[9px]">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-0.5 bg-gradient-to-r from-[var(--cosmos-accent-primary)] to-[var(--cosmos-accent-cyan)] rounded" />
+                <span className="text-white/40">נפח</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-0.5 bg-yellow-400/80 rounded" />
+                <span className="text-white/40">מגמה</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-0.5 bg-yellow-400/50 rounded" style={{ borderTop: '2px dashed rgba(251, 191, 36, 0.5)' }} />
+                <span className="text-white/40">חיזוי</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-48 relative">
+            {/* SVG Chart with Trend Line */}
+            <svg 
+              width="100%" 
+              height="100%" 
+              viewBox={`0 0 ${weeklyVolumes.length * 60} 180`}
+              preserveAspectRatio="xMidYMid meet"
+              className="overflow-visible"
+            >
+              {/* Grid Lines */}
+              {[0, 1, 2, 3, 4].map(i => (
+                <line
+                  key={`grid-${i}`}
+                  x1="0"
+                  y1={i * 45}
+                  x2={weeklyVolumes.length * 60}
+                  y2={i * 45}
+                  stroke="rgba(255, 255, 255, 0.05)"
+                  strokeDasharray="4 4"
+                />
+              ))}
+
+              {/* Trend Line Overlay */}
+              <TrendLineOverlay
+                data={weeklyVolumes}
+                forecast={forecastData}
+                maxVolume={maxWeeklyVolume}
+                hoveredIndex={hoveredTrendPoint}
+                onHover={setHoveredTrendPoint}
+                svgWidth={weeklyVolumes.length * 60}
+                chartHeight={180}
+                barWidth={40}
+                barGap={20}
+              />
+
+              {/* Bars */}
+              {weeklyVolumes.map((week, i) => {
+                const height = (week.totalVolume / maxWeeklyVolume) * 140;
+                const barX = 10 + i * 60 + 20;
+                const isHovered = hoveredTrendPoint === i;
+                
+                return (
+                  <g key={i}>
+                    <motion.rect
+                      x={barX}
+                      y={170 - height}
+                      width={40}
+                      height={height}
+                      rx={4}
+                      fill={isHovered ? 'url(#barGradientHover)' : 'url(#barGradient)'}
+                      initial={{ height: 0, y: 170 }}
+                      animate={{ height, y: 170 - height }}
+                      transition={{ delay: 0.2 + i * 0.05, type: 'spring', stiffness: 200, damping: 15 }}
+                      onMouseEnter={() => setHoveredTrendPoint(i)}
+                      onMouseLeave={() => setHoveredTrendPoint(null)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    
+                    {/* Week Label */}
+                    <text
+                      x={barX + 20}
+                      y={185}
+                      textAnchor="middle"
+                      fontSize={8}
+                      fill="rgba(255, 255, 255, 0.4)"
+                    >
+                      {week.weekLabel.split('-W')[1] || week.weekLabel.slice(-2)}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* Gradients */}
+              <defs>
+                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--cosmos-accent-cyan)" />
+                  <stop offset="100%" stopColor="var(--cosmos-accent-primary)" />
+                </linearGradient>
+                <linearGradient id="barGradientHover" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--cosmos-accent-cyan)" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="var(--cosmos-accent-primary)" stopOpacity="0.9" />
+                </linearGradient>
+              </defs>
+            </svg>
+
+            {/* Enhanced Tooltip */}
+            <AnimatePresence>
+              {hoveredTrendPoint !== null && weeklyVolumes[hoveredTrendPoint] && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 5 }}
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20"
+                >
+                  <div className="bg-black/95 text-white text-[10px] px-3 py-2 rounded-lg whitespace-nowrap shadow-lg border border-white/10">
+                    <div className="font-bold text-sm mb-1">
+                      {weeklyVolumes[hoveredTrendPoint].totalVolume.toLocaleString()} ק״ג
+                    </div>
+                    <div className="text-white/50 text-[8px] mb-1">
+                      שבוע {weeklyVolumes[hoveredTrendPoint].weekLabel}
+                    </div>
+                    {weeklyVolumes[hoveredTrendPoint].changeFromPrevious !== null && (
+                      <div className={`text-[9px] ${
+                        weeklyVolumes[hoveredTrendPoint].changeFromPrevious! >= 0 
+                          ? 'text-green-400' 
+                          : 'text-red-400'
+                      }`}>
+                        {weeklyVolumes[hoveredTrendPoint].changeFromPrevious! >= 0 ? '↑' : '↓'}{' '}
+                        {Math.abs(weeklyVolumes[hoveredTrendPoint].changeFromPrevious!)}% מהשבוע הקודם
+                      </div>
+                    )}
+                    <div className="text-white/40 text-[8px] mt-1">
+                      {weeklyVolumes[hoveredTrendPoint].sessionCount} אימונים
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Forecast Summary */}
+          {forecastData && forecastData.predicted > 0 && (
+            <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-[9px]">
+              <div className="flex items-center gap-2">
+                <span className="text-white/40">חיזוי לשבוע הבא:</span>
+                <span className="text-yellow-400 font-medium">
+                  {forecastData.predicted.toLocaleString()} ק״ג
+                </span>
+                <span className={`${
+                  forecastData.trend === 'increasing' ? 'text-green-400' :
+                  forecastData.trend === 'decreasing' ? 'text-red-400' : 'text-white/40'
+                }`}>
+                  ({forecastData.trend === 'increasing' ? '↑ בעלייה' :
+                    forecastData.trend === 'decreasing' ? '↓ בירידה' : '→ יציב'})
+                </span>
+              </div>
+              <div className="text-white/30">
+                {Math.round(forecastData.confidence * 100)}% ביטחון
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* Legacy Volume Chart (for when no weekly data) */}
+      {weeklyVolumes.length < 2 && recentVolume.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -276,10 +468,7 @@ const AnalyticsDashboard: React.FC = () => {
                     background: `linear-gradient(to top, var(--cosmos-accent-primary), var(--cosmos-accent-cyan))`
                   }}
                 >
-                  {/* Glow Effect */}
                   <div className={`absolute inset-0 rounded-t-lg bg-gradient-to-t from-[var(--cosmos-accent-primary)] to-[var(--cosmos-accent-cyan)] blur-md transition-opacity ${isHovered ? 'opacity-50' : 'opacity-0'}`} />
-
-                  {/* Tooltip */}
                   <AnimatePresence>
                     {isHovered && (
                       <motion.div
@@ -300,7 +489,6 @@ const AnalyticsDashboard: React.FC = () => {
             })}
           </div>
 
-          {/* Legend */}
           <div className="mt-3 flex items-center justify-between text-[9px] text-white/30">
             <span>עבר</span>
             <span>אחרון</span>
@@ -308,71 +496,85 @@ const AnalyticsDashboard: React.FC = () => {
         </motion.div>
       )}
 
-      {/* Premium Frequency Heatmap */}
-      {frequencyData.length > 0 && (
+      {/* Workout Calendar - Monthly Heatmap */}
+      {sessions.length > 0 && (
+        <WorkoutCalendar sessions={sessions} />
+      )}
+
+      {/* Forecast Chart - Progress Forecasting */}
+      {sessions.length > 0 && (
+        <ForecastChart sessions={sessions} />
+      )}
+
+      {/* Muscle Balance - Radar Chart */}
+      {muscleBalanceData.length >= 3 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.35 }}
           className="workout-glass-card rounded-2xl p-5"
         >
           <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
-            תדירות אימונים לפי יום
+            <span className="w-1.5 h-1.5 bg-pink-400 rounded-full" />
+            איזון קבוצות שרירים
           </h3>
 
-          <div className="grid grid-cols-7 gap-2">
-            {frequencyData.map((dayData, i) => {
-              const intensity = dayData.count / maxFreq;
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.4 + i * 0.02, type: 'spring' }}
-                  whileHover={{ scale: 1.2, zIndex: 10 }}
-                  className="aspect-square rounded-lg relative group cursor-pointer transition-transform flex items-center justify-center"
-                  style={{
-                    background: intensity === 0
-                      ? 'rgba(255,255,255,0.05)'
-                      : `rgba(34, 211, 238, ${0.2 + intensity * 0.8})`,
-                    boxShadow: intensity > 0.5 ? `0 0 ${intensity * 15}px rgba(34, 211, 238, 0.3)` : 'none'
-                  }}
-                >
-                  <span className="text-[8px] text-white/40">{dayData.day.charAt(0)}</span>
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
-                    <div className="bg-black/95 text-white text-[9px] px-2 py-1 rounded-lg whitespace-nowrap shadow-lg border border-white/10">
-                      {dayData.day}: {dayData.count} אימונים
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+          <div className="flex gap-6 items-start">
+            {/* Radar Chart */}
+            <div className="flex-shrink-0">
+              <MuscleRadarChart 
+                data={muscleBalanceData}
+                size={180}
+                maxDisplay={8}
+              />
+            </div>
 
-          <div className="mt-4 flex items-center justify-center gap-3 text-[9px] text-white/40">
-            <span>פחות</span>
-            <div className="flex gap-1">
-              {[0, 0.25, 0.5, 0.75, 1].map((intensity, i) => (
+            {/* Enhanced Legend with Trends */}
+            <div className="flex-1 space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar">
+              {muscleBalanceData.slice(0, 6).map((muscle, i) => (
                 <motion.div
-                  key={i}
-                  whileHover={{ scale: 1.2 }}
-                  className="w-4 h-4 rounded"
-                  style={{
-                    background: intensity === 0
-                      ? 'rgba(255,255,255,0.05)'
-                      : `rgba(34, 211, 238, ${0.2 + intensity * 0.8})`
-                  }}
-                />
+                  key={muscle.muscle}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + i * 0.05 }}
+                  className="flex items-center gap-2 group cursor-pointer"
+                >
+                  <div 
+                    className="w-3 h-3 rounded-sm flex-shrink-0 group-hover:scale-110 transition-transform"
+                    style={{ 
+                      backgroundColor: muscle.isWeak ? '#ef4444' : 
+                        muscle.trend === 'up' ? '#22c55e' : 
+                        muscle.trend === 'down' ? '#ef4444' : '#fbbf24' 
+                    }}
+                  />
+                  <span className="text-xs text-white/70 flex-1 truncate group-hover:text-white transition-colors">
+                    {muscle.muscle}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    {muscle.trend === 'up' && (
+                      <span className="text-green-400 text-[9px]">↑</span>
+                    )}
+                    {muscle.trend === 'down' && (
+                      <span className="text-red-400 text-[9px]">↓</span>
+                    )}
+                    <span className="text-xs font-bold text-white/90">
+                      {muscle.percentage}%
+                    </span>
+                  </div>
+                  {muscle.isWeak && (
+                    <span className="text-[8px] text-red-400 bg-red-400/10 px-1 py-0.5 rounded">
+                      מוזנח
+                    </span>
+                  )}
+                </motion.div>
               ))}
             </div>
-            <span>יותר</span>
           </div>
         </motion.div>
       )}
 
-      {/* Muscle Group Distribution */}
-      {muscleGroupData.length > 0 && (
+      {/* Legacy Muscle Group Distribution (fallback) */}
+      {muscleBalanceData.length < 3 && muscleGroupData.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -444,6 +646,16 @@ const AnalyticsDashboard: React.FC = () => {
             </div>
           </div>
         </motion.div>
+      )}
+
+      {/* Workout Calendar - Monthly Heatmap */}
+      {sessions.length > 0 && (
+        <WorkoutCalendar sessions={sessions} />
+      )}
+
+      {/* Forecast Chart - Progress Forecasting */}
+      {sessions.length > 0 && (
+        <ForecastChart sessions={sessions} />
       )}
     </div>
   );

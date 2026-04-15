@@ -206,7 +206,7 @@ export const deleteCloudWorkoutSession = async (
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Error deleting cloud workout session:', error);
+    logger.sync.error('Error deleting cloud workout session', error);
     throw error;
   }
 };
@@ -240,7 +240,7 @@ export const syncPersonalExercise = async (
     });
 
   if (error) {
-    console.error('Error syncing personal exercise:', error);
+    logger.sync.error('Error syncing personal exercise', error);
     throw error;
   }
 };
@@ -255,7 +255,7 @@ export const fetchPersonalExercises = async (userId: string): Promise<PersonalEx
     .order('last_used', { ascending: false, nullsFirst: false });
 
   if (error) {
-    console.error('Error fetching personal exercises:', error);
+    logger.sync.error('Error fetching personal exercises', error);
     return [];
   }
 
@@ -290,7 +290,7 @@ export const deleteCloudPersonalExercise = async (
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Error deleting cloud personal exercise:', error);
+    logger.sync.error('Error deleting cloud personal exercise', error);
     throw error;
   }
 };
@@ -314,7 +314,7 @@ export const syncBodyWeight = async (
     });
 
   if (error) {
-    console.error('Error syncing body weight:', error);
+    logger.sync.error('Error syncing body weight', error);
     throw error;
   }
 };
@@ -329,7 +329,7 @@ export const fetchBodyWeight = async (userId: string): Promise<BodyWeightEntry[]
     .order('date', { ascending: false });
 
   if (error) {
-    console.error('Error fetching body weight:', error);
+    logger.sync.error('Error fetching body weight', error);
     return [];
   }
 
@@ -354,7 +354,7 @@ export const deleteCloudBodyWeight = async (
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Error deleting cloud body weight:', error);
+    logger.sync.error('Error deleting cloud body weight', error);
     throw error;
   }
 };
@@ -493,10 +493,10 @@ export const syncAllData = async (): Promise<SyncResult> => {
   try {
     // This would be called from the app's sync logic
     // to push all local IndexedDB data to Supabase
-    console.log('Syncing all data for user:', userId);
+    logger.sync.info('Syncing all data', { userId });
     return { success: true, syncedItems: 0 };
   } catch (error) {
-    console.error('Error syncing all data:', error);
+    logger.sync.error('Error syncing all data', error);
     return { success: false, error: String(error) };
   }
 };
@@ -516,7 +516,7 @@ export const pullAllData = async (): Promise<SyncResult> => {
       fetchBodyWeight(userId),
     ]);
 
-    console.log('Pulled data:', {
+    logger.sync.info('Pulled data', {
       templates: templates.length,
       sessions: sessions.length,
       exercises: exercises.length,
@@ -528,7 +528,7 @@ export const pullAllData = async (): Promise<SyncResult> => {
       syncedItems: templates.length + sessions.length + exercises.length + bodyWeight.length,
     };
   } catch (error) {
-    console.error('Error pulling all data:', error);
+    logger.sync.error('Error pulling all data', error);
     return { success: false, error: String(error) };
   }
 };
@@ -541,13 +541,13 @@ export const testConnection = async (): Promise<boolean> => {
   try {
     const { error } = await supabase.from('workout_templates').select('id').limit(1);
     if (error) {
-      console.error('Connection test failed:', error);
+      logger.sync.error('Connection test failed', error);
       return false;
     }
-    console.log('Supabase connection successful');
+    logger.sync.info('Supabase connection successful');
     return true;
   } catch (error) {
-    console.error('Connection test error:', error);
+    logger.sync.error('Connection test error', error);
     return false;
   }
 };

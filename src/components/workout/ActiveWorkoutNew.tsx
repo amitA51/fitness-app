@@ -36,7 +36,7 @@ import { useWorkoutSettings, useAccessibilitySettings, useDisplaySettings } from
 
 // Extracted components
 import { ParticleExplosion } from './effects';
-import { EmptyWorkoutState } from './states';
+import { PreWorkoutScreen } from './states';
 import { useCelebration } from '../../hooks/useCelebration';
 import OverlayErrorBoundary from './core/OverlayErrorBoundary';
 import OverlayLoader from './components/ui/OverlayLoader';
@@ -63,9 +63,11 @@ import {
     getWorkoutSessions,
     getPersonalExercises,
     saveWorkoutSession,
-    createWorkoutTemplate
+    createWorkoutTemplate,
+    getWorkoutTemplates,
 } from '../../services/dataService';
 import { getExerciseNames } from '../../services/prService';
+import { createWorkoutSet } from '../../types';
 
 // CSS
 import { triggerHaptic } from '../../utils/haptics';
@@ -92,7 +94,8 @@ export const WorkoutContent: React.FC<{
     item: PersonalItem;
     onUpdate: (id: string, updates: Partial<PersonalItem>) => void;
     onExit: () => void;
-}> = ({ item, onExit }) => {
+    initialTemplateId?: string;
+}> = ({ item, onExit, initialTemplateId }) => {
     const state = useWorkoutState();
     const dispatch = useWorkoutDispatch();
     const derived = useWorkoutDerived();
@@ -163,6 +166,39 @@ export const WorkoutContent: React.FC<{
         };
         loadNames();
     }, []);
+
+    // Load initial template if provided (from PreWorkoutScreen quick-start)
+    useEffect(() => {
+        if (!initialTemplateId || state.exercises.length > 0) return;
+
+        const loadTemplate = async () => {
+            try {
+                const templates = await getWorkoutTemplates();
+                const template = templates.find(t => t.id === initialTemplateId);
+                if (template && template.exercises && template.exercises.length > 0) {
+                    triggerHaptic('success');
+                    for (const ex of template.exercises) {
+                        const exercise: Exercise = {
+                            id: typeof crypto !== 'undefined' && 'randomUUID' in crypto
+                                ? `ex-${crypto.randomUUID()}`
+                                : `ex-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                            name: ex.name || ex.exerciseName || 'Unknown',
+                            muscleGroup: ex.muscleGroup,
+                            targetRestTime: ex.targetRestTime || 90,
+                            sets: (ex.sets && ex.sets.length > 0)
+                                ? ex.sets.map(s => createWorkoutSet({ reps: s.reps || 0, weight: s.weight || 0 }))
+                                : Array(4).fill(null).map(() => createWorkoutSet({ reps: 0, weight: 0 })),
+                        };
+                        dispatch({ type: 'ADD_EXERCISE', payload: exercise });
+                    }
+                }
+            } catch {
+                // Template loading failed, show selector
+                dispatch({ type: 'OPEN_SELECTOR' });
+            }
+        };
+        loadTemplate();
+    }, [initialTemplateId, state.exercises.length, dispatch]);
 
     // Workout start flow - runs on mount
     useEffect(() => {
@@ -618,16 +654,20 @@ export const WorkoutContent: React.FC<{
         );
     }
 
-    // If no current exercise OR exercise has no name, show empty state with selector
+    // If no current exercise OR exercise has no name, show PreWorkoutScreen for initial welcome
     if (!derived.currentExercise || !derived.currentExercise.name?.trim()) {
         return (
             <React.Suspense fallback={<div className="fixed inset-0 bg-[var(--cosmos-bg-primary)]" />}>
-                <EmptyWorkoutState
+                <PreWorkoutScreen
                     oledMode={!!workoutSettings.oledMode}
-                    onAddExercise={() => dispatch({ type: 'OPEN_SELECTOR' })}
+                    onStartWorkout={() => dispatch({ type: 'OPEN_SELECTOR' })}
                     onCancel={() => {
                         setFinishIntent('cancel');
                         setShowFinishConfirm(true);
+                    }}
+                    onSelectTemplate={(templateId: string) => {
+                        // Navigate to workout with template - full page navigation
+                        window.location.href = `/workout/${templateId}`;
                     }}
                 />
 

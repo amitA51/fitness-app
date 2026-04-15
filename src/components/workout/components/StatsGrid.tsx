@@ -1,7 +1,7 @@
 // Extracted from WorkoutSummary.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { motion } from 'framer-motion';
-import { TrophyIcon, FlameIcon, CheckCircleIcon, ClockIcon } from '../icons';
+import { TrophyIcon, FlameIcon, CheckCircleIcon, ClockIcon } from '../../icons';
 
 export interface ComparisonData {
     prevVolume: number;
@@ -23,7 +23,7 @@ interface AnimatedCounterProps {
     className?: string;
 }
 
-export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
+export const AnimatedCounter: React.FC<AnimatedCounterProps> = memo(({
     value,
     suffix = '',
     duration = 1200,
@@ -62,7 +62,9 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
             {displayValue.toLocaleString()}{suffix}
         </motion.span>
     );
-};
+});
+
+AnimatedCounter.displayName = 'AnimatedCounter';
 
 // ============================================================
 // ACTIVITY RING
@@ -76,7 +78,7 @@ interface ActivityRingProps {
     delay?: number;
 }
 
-export const ActivityRing: React.FC<ActivityRingProps> = ({
+export const ActivityRing: React.FC<ActivityRingProps> = memo(({
     progress,
     color,
     size = 80,
@@ -131,7 +133,7 @@ interface ComparisonBadgeProps {
     delay?: number;
 }
 
-export const ComparisonBadge: React.FC<ComparisonBadgeProps> = ({
+export const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(({
     label,
     current,
     previous,
@@ -198,7 +200,7 @@ interface StatCardProps {
     ringProgress?: number;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({
+export const StatCard: React.FC<StatCardProps> = memo(({
     icon,
     label,
     value,
@@ -254,6 +256,8 @@ export const StatCard: React.FC<StatCardProps> = ({
     </motion.div>
 );
 
+StatCard.displayName = 'StatCard';
+
 // ============================================================
 // STATS GRID (Combined Component)
 // ============================================================
@@ -266,7 +270,7 @@ export interface StatsGridProps {
     comparison?: ComparisonData | null;
 }
 
-export const StatsGrid: React.FC<StatsGridProps> = ({
+export const StatsGrid: React.FC<StatsGridProps> = memo(({
     totalVolume,
     duration,
     totalSets,
@@ -356,5 +360,3 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
         </>
     );
 };
-
-export { ComparisonBadge };

@@ -7,10 +7,10 @@ import {
 import {
   addBodyWeight, getBodyWeightsByDateRange, getLatestWeight, calculateWeightTrend, calculateBMI, getBMICategory,
   addBodyMeasurement, getBodyMeasurementsByDateRange, getLatestMeasurement,
-  addRecoveryLog, getRecoveryLogsByDateRange, getTodayRecoveryLog, calculateRecoveryScore, getWeeklyRecoveryAverage,
+  addRecoveryLog, getRecoveryLogsByDateRange, getTodayRecoveryLog, getLegacyRecoveryScore, getWeeklyRecoveryAverage,
   TIGHTNESS_AREAS,
 } from '../services/bodyStatsService';
-import type { BodyWeightEntry, BodyMeasurement, RecoveryLog, RecoveryScore, WeightTrend } from '../services/bodyStatsService';
+import type { BodyWeightEntry, BodyMeasurement, RecoveryLog, WeightTrend } from '../services/bodyStatsService';
 
 type ProgressTab = 'weight' | 'measurements' | 'recovery';
 
@@ -28,7 +28,7 @@ export default function ProgressPage() {
   const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
   const [latestMeasurement, setLatestMeasurement] = useState<BodyMeasurement | null>(null);
   const [todayRecovery, setTodayRecovery] = useState<RecoveryLog | null>(null);
-  const [recoveryScore, setRecoveryScore] = useState<RecoveryScore | null>(null);
+  const [recoveryScore, setRecoveryScore] = useState<ReturnType<typeof getLegacyRecoveryScore> | null>(null);
   const [weeklyRecovery, setWeeklyRecovery] = useState({ avgSleep: 0, avgEnergy: 0, avgSoreness: 0, avgStress: 0, avgScore: 0 });
   const [showAddWeight, setShowAddWeight] = useState(false);
   const [showAddMeasurement, setShowAddMeasurement] = useState(false);
@@ -45,19 +45,24 @@ export default function ProgressPage() {
   const loadData = useCallback(async () => {
     const today = new Date().toISOString().split('T')[0];
     const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
-    const weights = await getBodyWeightsByDateRange(monthAgo, today);
+    
+    // Parallel data loading for better performance
+    const [weights, latest, meas, latestMeas, rec, weekly] = await Promise.all([
+      getBodyWeightsByDateRange(monthAgo, today),
+      getLatestWeight(),
+      getBodyMeasurementsByDateRange(monthAgo, today),
+      getLatestMeasurement(),
+      getTodayRecoveryLog(),
+      getWeeklyRecoveryAverage(),
+    ]);
+    
     setWeightEntries(weights);
-    const latest = await getLatestWeight();
     setLatestWeight(latest);
     if (weights.length >= 2) setWeightTrend(calculateWeightTrend(weights));
-    const meas = await getBodyMeasurementsByDateRange(monthAgo, today);
     setMeasurements(meas);
-    const latestMeas = await getLatestMeasurement();
     setLatestMeasurement(latestMeas);
-    const rec = await getTodayRecoveryLog();
     setTodayRecovery(rec);
-    if (rec) setRecoveryScore(calculateRecoveryScore(rec));
-    const weekly = await getWeeklyRecoveryAverage();
+    if (rec) setRecoveryScore(getLegacyRecoveryScore(rec));
     setWeeklyRecovery(weekly);
   }, []);
 
@@ -84,10 +89,13 @@ export default function ProgressPage() {
       <div className="px-4 mb-5">
         <div className="flex gap-2 p-1 bg-white/[0.06] rounded-2xl">
           {TABS.map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            <button 
+              key={tab.key} 
+              onClick={() => setActiveTab(tab.key)}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                 activeTab === tab.key ? 'bg-[var(--color-primary)] text-white shadow-lg' : 'text-[#8E8E93]'
-              }`}>
+              }`}
+            >
               {tab.icon}{tab.label}
             </button>
           ))}
@@ -95,7 +103,7 @@ export default function ProgressPage() {
       </div>
 
       <div className="px-4">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync">
           {activeTab === 'weight' && (
             <motion.div key="weight" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               <WeightTab latestWeight={latestWeight} weightTrend={weightTrend} bmi={bmi} bmiCategory={bmiCategory} weightEntries={weightEntries} onAdd={() => setShowAddWeight(true)} />
@@ -290,7 +298,7 @@ function MeasurementsTab({ latestMeasurement, measurements, onAdd }: { latestMea
 }
 
 function RecoveryTab({ todayRecovery, recoveryScore, weeklyRecovery, onAdd }: {
-  todayRecovery: RecoveryLog | null; recoveryScore: RecoveryScore | null;
+  todayRecovery: RecoveryLog | null; recoveryScore: ReturnType<typeof getLegacyRecoveryScore> | null;
   weeklyRecovery: { avgSleep: number; avgEnergy: number; avgSoreness: number; avgStress: number; avgScore: number };
   onAdd: () => void;
 }) {
@@ -352,11 +360,11 @@ function RecoveryTab({ todayRecovery, recoveryScore, weeklyRecovery, onAdd }: {
               </div>
             </div>
 
-            {todayRecovery && todayRecovery.tightnessAreas.length > 0 && (
+            {todayRecovery && todayRecovery.tightAreas && todayRecovery.tightAreas.length > 0 && (
               <div className="pt-4 border-t border-white/[0.06]">
                 <p className="text-[11px] text-[#8E8E93] mb-2">אזורים תפוסים</p>
                 <div className="flex flex-wrap gap-2">
-                  {todayRecovery.tightnessAreas.map(area => (
+                  {todayRecovery.tightAreas.map(area => (
                     <span key={area} className="px-3 py-1.5 rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)] text-xs font-semibold border border-[var(--color-primary)]/20">{area}</span>
                   ))}
                 </div>
@@ -399,7 +407,7 @@ function RecoveryTab({ todayRecovery, recoveryScore, weeklyRecovery, onAdd }: {
           <h3 className="font-bold text-white text-sm mb-3">היסטוריית ריקאברי</h3>
           <div className="space-y-1">
             {history.slice().reverse().slice(0, 7).map(log => {
-              const score = calculateRecoveryScore(log);
+              const score = getLegacyRecoveryScore(log);
               return (
                 <div key={log.id} className="flex items-center justify-between py-2.5 border-b border-white/[0.06] last:border-0">
                   <span className="text-[#8E8E93] text-sm">{new Date(log.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}</span>
@@ -520,10 +528,10 @@ function AddMeasurementModal({ onSave, onClose, latest }: { onSave: (m: Omit<Bod
 function AddRecoveryModal({ onSave, onClose }: { onSave: (r: Omit<RecoveryLog, 'id' | 'createdAt'>) => Promise<void>; onClose: () => void }) {
   const [sleepHours, setSleepHours] = useState(7);
   const [sleepQuality, setSleepQuality] = useState<1 | 2 | 3 | 4 | 5>(3);
-  const [muscleSoreness, setMuscleSoreness] = useState(3);
-  const [energyLevel, setEnergyLevel] = useState(7);
-  const [stressLevel, setStressLevel] = useState(3);
-  const [tightness, setTightness] = useState<string[]>([]);
+  const [sorenessLevel, setSorenessLevel] = useState<1 | 2 | 3 | 4 | 5>(3);
+  const [energyLevel, setEnergyLevel] = useState<1 | 2 | 3 | 4 | 5>(3);
+  const [stressLevel, setStressLevel] = useState<1 | 2 | 3 | 4 | 5>(3);
+  const [tightAreas, setTightAreas] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
 
   return (
@@ -540,18 +548,18 @@ function AddRecoveryModal({ onSave, onClose }: { onSave: (r: Omit<RecoveryLog, '
         <div className="space-y-6">
           <SliderInput label="שעות שינה" value={sleepHours} onChange={setSleepHours} min={0} max={12} step={0.5} unit=" ש" color="#BF5AF2" />
           <SliderInput label="איכות שינה" value={sleepQuality} onChange={setSleepQuality} min={1} max={5} step={1} unit="" color="#BF5AF2" labels={['גרוע', 'עלוב', 'בסדר', 'טוב', 'מעולה']} />
-          <SliderInput label="כאב שרירים" value={muscleSoreness} onChange={setMuscleSoreness} min={1} max={10} step={1} unit="/10" color="#FF9F0A" />
-          <SliderInput label="רמת אנרגיה" value={energyLevel} onChange={setEnergyLevel} min={1} max={10} step={1} unit="/10" color="#30D158" />
-          <SliderInput label="רמת לחץ" value={stressLevel} onChange={setStressLevel} min={1} max={10} step={1} unit="/10" color="#0A84FF" />
+          <SliderInput label="רמת כאב" value={sorenessLevel} onChange={setSorenessLevel} min={1} max={5} step={1} unit="" color="#FF9F0A" labels={['כואב מאוד', 'כואב', 'בסדר', 'טוב', 'רענן']} />
+          <SliderInput label="רמת אנרגיה" value={energyLevel} onChange={setEnergyLevel} min={1} max={5} step={1} unit="" color="#30D158" labels={['מותש', 'נמוכה', 'בסדר', 'טובה', 'מלא אנרגיה']} />
+          <SliderInput label="רמת לחץ" value={stressLevel} onChange={setStressLevel} min={1} max={5} step={1} unit="" color="#0A84FF" labels={['מלחיץ מאוד', 'מלחיץ', 'בסדר', 'רגוע', 'רגוע לחלוטין']} />
 
           <div>
             <label className="text-sm text-[#8E8E93] mb-3 block font-medium">אזורים תפוסים</label>
             <div className="flex flex-wrap gap-2">
               {TIGHTNESS_AREAS.map(area => (
                 <button key={area}
-                  onClick={() => setTightness(prev => prev.includes(area) ? prev.filter(a => a !== area) : [...prev, area])}
+                  onClick={() => setTightAreas(prev => prev.includes(area) ? prev.filter(a => a !== area) : [...prev, area])}
                   className={`px-3.5 py-2 rounded-full text-xs font-semibold transition-all duration-150 ${
-                    tightness.includes(area)
+                    tightAreas.includes(area)
                       ? 'bg-[var(--color-primary)] text-white'
                       : 'bg-white/[0.08] text-[#8E8E93]'
                   }`}>
@@ -565,7 +573,7 @@ function AddRecoveryModal({ onSave, onClose }: { onSave: (r: Omit<RecoveryLog, '
             className="w-full bg-[#2C2C2E] rounded-[14px] py-3.5 px-4 text-white text-sm placeholder-[#8E8E93] outline-none focus:ring-1 focus:ring-[var(--color-primary)]/40" />
 
           <motion.button onClick={async () => {
-            await onSave({ date: new Date().toISOString().split('T')[0], sleepHours, sleepQuality, muscleSoreness, energyLevel, stressLevel, tightnessAreas: tightness, notes });
+            await onSave({ date: new Date().toISOString().split('T')[0], sleepHours, sleepQuality, sorenessLevel, energyLevel, stressLevel, tightAreas, notes });
           }} className="w-full py-4 rounded-2xl bg-[var(--color-primary)] text-white font-bold text-base" whileTap={{ scale: 0.98 }}>
             שמור
           </motion.button>

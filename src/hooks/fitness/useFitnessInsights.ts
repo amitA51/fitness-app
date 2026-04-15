@@ -20,6 +20,7 @@ import {
 } from '../../services/analyticsService';
 import { calculateStreak } from '../../services/achievementService';
 import { generateAIWorkoutInsight } from '../../services/aiWorkoutInsightService';
+import { logger } from '../../utils/logger';
 
 // ============================================================
 // TYPES - For UI agent to use
@@ -86,7 +87,7 @@ export function useFitnessInsights(): FitnessInsightsData {
             const data = await getWorkoutSessions(100); // Get last 100 sessions
             setSessions(data);
         } catch (e) {
-            console.error('Failed to load workout sessions:', e);
+            logger.analytics.error('Failed to load workout sessions', e);
             setError('שגיאה בטעינת נתוני האימונים');
         } finally {
             setLoading(false);
@@ -209,7 +210,7 @@ export function useFitnessInsights(): FitnessInsightsData {
             const insight = await generateAIWorkoutInsight(sessions);
             setAiInsight(insight);
         } catch (e) {
-            console.error('Failed to generate AI insight:', e);
+            logger.ai.error('Failed to generate AI insight', e);
             setAiInsight(null);
         } finally {
             setAiInsightLoading(false);

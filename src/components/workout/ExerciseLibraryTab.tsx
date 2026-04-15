@@ -138,7 +138,7 @@ const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
         onSuggestionSelect={onSelect}
       />
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="sync">
         {showAddForm ? (
           <motion.div
             key="form"

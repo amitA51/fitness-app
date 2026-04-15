@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Exercise, createWorkoutSet } from '../../types';
 import * as dataService from '../../services/dataService';
 import { CloseIcon } from '../icons';
@@ -8,7 +8,7 @@ interface QuickExerciseFormProps {
   onClose: () => void;
 }
 
-const QuickExerciseForm: React.FC<QuickExerciseFormProps> = ({ onAdd, onClose }) => {
+const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
     muscleGroup: '',
@@ -191,6 +191,8 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = ({ onAdd, onClose })
       </div>
     </div>
   );
-};
+});
+
+QuickExerciseForm.displayName = 'QuickExerciseForm';
 
 export default React.memo(QuickExerciseForm);

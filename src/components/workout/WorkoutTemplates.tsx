@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WorkoutTemplate } from '../../types';
 import * as dataService from '../../services/dataService';
-import { AddIcon, TrashIcon, PlayIcon, DumbbellIcon } from '../icons';
+import { AddIcon, TrashIcon, PlayIcon, StarIcon } from '../icons';
 import PlanEditorModal from './PlanEditorModal';
 import { showToast } from './components/ui/Toast';
 
@@ -10,6 +10,8 @@ interface WorkoutTemplatesProps {
   onStartWorkout: (template: WorkoutTemplate) => void;
   onClose?: () => void;
   isEmbedded?: boolean;
+  userTemplates?: WorkoutTemplate[];
+  builtinTemplates?: WorkoutTemplate[];
 }
 
 // Local Edit Icon
@@ -19,8 +21,27 @@ const EditIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({ onStartWorkout, onClose, isEmbedded = false }) => {
-  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+// Get icon for built-in templates
+const getBuiltinTemplateIcon = (templateName: string): string => {
+  const iconMap: Record<string, string> = {
+    'אימון כללי': '💪',
+    'חזה + כתפיים': '🦅',
+    'גב + זרועות': '🏋️',
+    'רגליים': '🦵',
+    'בטן + ליבה': '🔥',
+  };
+  return iconMap[templateName] || '⚡';
+};
+
+const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
+  onStartWorkout,
+  onClose,
+  isEmbedded = false,
+  userTemplates: userTemplatesProp,
+  builtinTemplates: builtinTemplatesProp,
+}) => {
+  const [userTemplates, setUserTemplates] = useState<WorkoutTemplate[]>([]);
+  const [builtinTemplates, setBuiltinTemplates] = useState<WorkoutTemplate[]>([]);
   const [showPlanEditor, setShowPlanEditor] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
   const [templateToDelete, setTemplateToDelete] = useState<WorkoutTemplate | null>(null);
@@ -30,10 +51,26 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({ onStartWorkout, onC
     loadTemplates();
   }, []);
 
+  // Update when props change
+  useEffect(() => {
+    if (userTemplatesProp) {
+      setUserTemplates(userTemplatesProp);
+    }
+    if (builtinTemplatesProp) {
+      setBuiltinTemplates(builtinTemplatesProp);
+    }
+  }, [userTemplatesProp, builtinTemplatesProp]);
+
   const loadTemplates = async () => {
     await dataService.initializeBuiltInWorkoutTemplates();
-    const data = await dataService.getWorkoutTemplates();
-    setTemplates(data);
+    const allData = await dataService.getWorkoutTemplates();
+
+    // Use prop values if available, otherwise use loaded data
+    const userT = userTemplatesProp || allData.filter(t => !t.isBuiltin);
+    const builtinT = builtinTemplatesProp || allData.filter(t => t.isBuiltin);
+
+    setUserTemplates(userT);
+    setBuiltinTemplates(builtinT);
   };
 
   const handleCreateNew = () => {
@@ -160,123 +197,216 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({ onStartWorkout, onC
         </div>
       </motion.button>
 
-      {/* Grid Layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {templates.map((template, index) => (
-          <motion.div
-            key={template.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-            onClick={() => onStartWorkout(template)}
-            onPointerDown={(e) => { e.preventDefault(); onStartWorkout(template); }}
-            className="workout-template-card relative overflow-hidden rounded-2xl cursor-pointer group"
-          >
-            {/* Card Background */}
-            <div className={`absolute inset-0 ${template.isBuiltin
-              ? 'bg-gradient-to-br from-[var(--cosmos-accent-primary)]/10 via-transparent to-[var(--cosmos-accent-cyan)]/5'
-              : 'bg-gradient-to-br from-white/5 to-white/[0.02]'
-              }`} />
+      {/* User Templates Section */}
+      {userTemplates.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm font-semibold text-white/70">תבניות אישיות</span>
+            <span className="text-xs text-white/40">({userTemplates.length})</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {userTemplates.map((template, index) => (
+              <motion.div
+                key={template.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                onClick={() => onStartWorkout(template)}
+                onPointerDown={(e) => { e.preventDefault(); onStartWorkout(template); }}
+                className="workout-template-card relative overflow-hidden rounded-2xl cursor-pointer group"
+              >
+                {/* Card Background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-white/[0.02]" />
 
-            {/* Hover Overlay */}
-            <div className="absolute inset-0 bg-[var(--cosmos-accent-primary)]/0 group-hover:bg-[var(--cosmos-accent-primary)]/5 transition-colors duration-300" />
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-[var(--cosmos-accent-primary)]/0 group-hover:bg-[var(--cosmos-accent-primary)]/5 transition-colors duration-300" />
 
-            {/* Decorative Corner */}
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[var(--cosmos-accent-primary)]/10 to-transparent rounded-bl-[100%] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity" />
+                {/* Decorative Corner */}
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[var(--cosmos-accent-primary)]/10 to-transparent rounded-bl-[100%] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity" />
 
-            {/* Card Border */}
-            <div className={`absolute inset-0 rounded-2xl border ${template.isBuiltin
-              ? 'border-[var(--cosmos-accent-primary)]/20 group-hover:border-[var(--cosmos-accent-primary)]/40'
-              : 'border-white/10 group-hover:border-white/20'
-              } transition-colors`} />
+                {/* Card Border */}
+                <div className="absolute inset-0 rounded-2xl border border-white/10 group-hover:border-white/20 transition-colors" />
 
-            {/* Content */}
-            <div className="relative z-10 p-5">
-              {/* Header Row */}
-              <div className="flex justify-between items-start mb-4">
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  className={`p-3 rounded-xl ${template.isBuiltin
-                    ? 'bg-gradient-to-br from-[var(--cosmos-accent-primary)]/20 to-[var(--cosmos-accent-primary)]/5'
-                    : 'bg-white/5'
-                    }`}
-                >
-                  {template.isBuiltin ? (
-                    <DumbbellIcon className="w-6 h-6 text-[var(--cosmos-accent-primary)]" />
-                  ) : (
-                    <PlayIcon className="w-6 h-6 text-white/70" />
-                  )}
-                </motion.div>
-
-                {!template.isBuiltin && (
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                    <motion.button
-                      onClick={e => handleEdit(template, e)}
-                      onPointerDown={(e) => { e.preventDefault(); handleEdit(template, e as unknown as React.MouseEvent); }}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="p-2 rounded-lg bg-white/10 text-white hover:bg-[var(--cosmos-accent-primary)] hover:text-black transition-colors"
+                {/* Content */}
+                <div className="relative z-10 p-5">
+                  {/* Header Row */}
+                  <div className="flex justify-between items-start mb-4">
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      className="p-3 rounded-xl bg-white/5"
                     >
-                      <EditIcon className="w-4 h-4" />
-                    </motion.button>
-                    <motion.button
-                      onClick={e => handleDelete(template, e)}
-                      onPointerDown={(e) => { e.preventDefault(); handleDelete(template, e as unknown as React.MouseEvent); }}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-colors"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </motion.button>
+                      <PlayIcon className="w-6 h-6 text-white/70" />
+                    </motion.div>
+
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      <motion.button
+                        onClick={e => handleEdit(template, e)}
+                        onPointerDown={(e) => { e.preventDefault(); handleEdit(template, e as unknown as React.MouseEvent); }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="p-2 rounded-lg bg-white/10 text-white hover:bg-[var(--cosmos-accent-primary)] hover:text-black transition-colors"
+                      >
+                        <EditIcon className="w-4 h-4" />
+                      </motion.button>
+                      <motion.button
+                        onClick={e => handleDelete(template, e)}
+                        onPointerDown={(e) => { e.preventDefault(); handleDelete(template, e as unknown as React.MouseEvent); }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </motion.button>
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Template Name */}
-              <h3 className="text-lg font-bold text-white mb-2 line-clamp-1 group-hover:text-[var(--cosmos-accent-primary)] transition-colors">
-                {template.name}
-              </h3>
+                  {/* Template Name */}
+                  <h3 className="text-lg font-bold text-white mb-2 line-clamp-1 group-hover:text-[var(--cosmos-accent-primary)] transition-colors">
+                    {template.name}
+                  </h3>
 
-              {/* Stats Row */}
-              <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)] mb-3">
-                <span className="flex items-center gap-1">
-                  <span className="text-[var(--cosmos-accent-primary)]">{template.exercises.length}</span>
-                  תרגילים
-                </span>
-                <span className="w-1 h-1 rounded-full bg-white/20" />
-                <span>{estimateDuration(template)}</span>
-              </div>
-
-              {/* Muscle Groups */}
-              {template.muscleGroups && template.muscleGroups.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {template.muscleGroups.slice(0, 3).map(muscle => (
-                    <span
-                      key={muscle}
-                      className="px-2 py-0.5 rounded-full bg-white/5 text-[10px] text-white/60 font-medium"
-                    >
-                      {muscle}
+                  {/* Stats Row */}
+                  <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)] mb-3">
+                    <span className="flex items-center gap-1">
+                      <span className="text-[var(--cosmos-accent-primary)]">{template.exercises.length}</span>
+                      תרגילים
                     </span>
-                  ))}
-                  {template.muscleGroups.length > 3 && (
-                    <span className="px-2 py-0.5 rounded-full bg-white/5 text-[10px] text-white/40">
-                      +{template.muscleGroups.length - 3}
-                    </span>
+                    <span className="w-1 h-1 rounded-full bg-white/20" />
+                    <span>{estimateDuration(template)}</span>
+                  </div>
+
+                  {/* Muscle Groups */}
+                  {template.muscleGroups && template.muscleGroups.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {template.muscleGroups.slice(0, 3).map(muscle => (
+                        <span
+                          key={muscle}
+                          className="px-2 py-0.5 rounded-full bg-white/5 text-[10px] text-white/60 font-medium"
+                        >
+                          {muscle}
+                        </span>
+                      ))}
+                      {template.muscleGroups.length > 3 && (
+                        <span className="px-2 py-0.5 rounded-full bg-white/5 text-[10px] text-white/40">
+                          +{template.muscleGroups.length - 3}
+                        </span>
+                      )}
+                    </div>
                   )}
-                </div>
-              )}
 
-              {/* Type Badge */}
-              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-wide ${template.isBuiltin
-                ? 'bg-[var(--cosmos-accent-primary)]/10 text-[var(--cosmos-accent-primary)]'
-                : 'bg-white/5 text-white/50'
-                }`}>
-                {template.isBuiltin ? '⭐ מובנה' : '👤 אישי'}
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+                  {/* Type Badge */}
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-wide bg-white/5 text-white/50">
+                    👤 אישי
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Built-in Templates Section */}
+      {builtinTemplates.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm font-semibold text-[var(--cosmos-accent-primary)]">תבניות מוכנות</span>
+            <span className="text-xs text-white/40">({builtinTemplates.length})</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--cosmos-accent-primary)]/10 text-[var(--cosmos-accent-primary)]">⭐</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {builtinTemplates.map((template, index) => (
+              <motion.div
+                key={template.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                onClick={() => onStartWorkout(template)}
+                onPointerDown={(e) => { e.preventDefault(); onStartWorkout(template); }}
+                className="workout-template-card relative overflow-hidden rounded-2xl cursor-pointer group"
+              >
+                {/* Card Background - Gradient for built-in */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[var(--cosmos-accent-primary)]/10 via-transparent to-[var(--cosmos-accent-cyan)]/5" />
+
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-[var(--cosmos-accent-primary)]/0 group-hover:bg-[var(--cosmos-accent-primary)]/10 transition-colors duration-300" />
+
+                {/* Decorative Corner */}
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[var(--cosmos-accent-primary)]/20 to-transparent rounded-bl-[100%] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                {/* Card Border */}
+                <div className="absolute inset-0 rounded-2xl border border-[var(--cosmos-accent-primary)]/20 group-hover:border-[var(--cosmos-accent-primary)]/40 transition-colors" />
+
+                {/* Content */}
+                <div className="relative z-10 p-5">
+                  {/* Header Row */}
+                  <div className="flex justify-between items-start mb-4">
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      className="p-3 rounded-xl bg-gradient-to-br from-[var(--cosmos-accent-primary)]/20 to-[var(--cosmos-accent-primary)]/5"
+                    >
+                      <span className="text-2xl">{getBuiltinTemplateIcon(template.name)}</span>
+                    </motion.div>
+
+                    {/* Built-in Badge */}
+                    <div className="px-2.5 py-1 rounded-lg bg-[var(--cosmos-accent-primary)]/10 text-[10px] text-[var(--cosmos-accent-primary)] font-bold flex items-center gap-1">
+                      <StarIcon className="w-3 h-3" />
+                      מובנה
+                    </div>
+                  </div>
+
+                  {/* Template Name */}
+                  <h3 className="text-lg font-bold text-white mb-2 line-clamp-1 group-hover:text-[var(--cosmos-accent-primary)] transition-colors">
+                    {template.name}
+                  </h3>
+
+                  {/* Stats Row */}
+                  <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)] mb-3">
+                    <span className="flex items-center gap-1">
+                      <span className="text-[var(--cosmos-accent-primary)]">{template.exercises.length}</span>
+                      תרגילים
+                    </span>
+                    <span className="w-1 h-1 rounded-full bg-white/20" />
+                    <span>{estimateDuration(template)}</span>
+                  </div>
+
+                  {/* Muscle Groups */}
+                  {template.muscleGroups && template.muscleGroups.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {template.muscleGroups.slice(0, 4).map(muscle => (
+                        <span
+                          key={muscle}
+                          className="px-2 py-0.5 rounded-full bg-[var(--cosmos-accent-primary)]/10 text-[10px] text-[var(--cosmos-accent-primary)] font-medium border border-[var(--cosmos-accent-primary)]/20"
+                        >
+                          {muscle}
+                        </span>
+                      ))}
+                      {template.muscleGroups.length > 4 && (
+                        <span className="px-2 py-0.5 rounded-full bg-[var(--cosmos-accent-primary)]/10 text-[10px] text-[var(--cosmos-accent-primary)]/60">
+                          +{template.muscleGroups.length - 4}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Quick Start Label */}
+                  <div className="mt-2 text-xs text-white/50">
+                    ✨ התחל מיידית
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {userTemplates.length === 0 && builtinTemplates.length === 0 && (
+        <div className="text-center py-12">
+          <span className="text-4xl mb-4 block">🏋️</span>
+          <h3 className="text-lg font-bold text-white mb-2">אין תבניות עדיין</h3>
+          <p className="text-sm text-white/50">צור תבנית חדשה או השתמש בתבניות מוכנות</p>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>

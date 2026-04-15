@@ -3,9 +3,10 @@
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { WorkoutProvider } from './components/workout/core';
 import { DataProvider } from './contexts/DataContext';
+import { logger } from './utils/logger';
 import Dashboard from './pages/Dashboard';
 import History from './pages/History';
 import WorkoutDetail from './pages/WorkoutDetail';
@@ -65,7 +66,7 @@ function App() {
             hapticsEnabled: true,
           }));
         } catch (e) {
-          console.error('Error parsing onboarding data:', e);
+          logger.app.error('Error parsing onboarding data', e);
         }
       }
     } else {
@@ -174,14 +175,25 @@ function AppContent({ theme, setTheme }: { theme: string; setTheme: (t: string) 
 function WorkoutPlaceholder() {
   const [WorkoutComponent, setWorkoutComponent] = React.useState<React.ComponentType | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const navigate = useNavigate();
+  const [params, setParams] = React.useState<{ templateId?: string }>({});
 
   React.useEffect(() => {
     import('./components/workout/ActiveWorkoutNew')
       .then((mod) => setWorkoutComponent(() => mod.WorkoutContent as React.ComponentType))
       .catch((err) => {
-        console.error('Failed to load workout:', err);
+        logger.app.error('Failed to load workout', err);
         setError('Failed to load workout');
       });
+  }, []);
+
+  // Get templateId from URL params (react-router v6)
+  React.useEffect(() => {
+    const path = window.location.pathname;
+    const match = path.match(/\/workout\/([^/]+)/);
+    if (match) {
+      setParams({ templateId: match[1] });
+    }
   }, []);
 
   if (error) {
@@ -204,13 +216,14 @@ function WorkoutPlaceholder() {
     <WorkoutProvider
       item={placeholderItem}
       onUpdate={() => {}}
-      onExit={() => window.history.back()}
+      onExit={() => navigate('/')}
     >
       <WorkoutComponent
         {...({
           item: placeholderItem,
           onUpdate: () => {},
-          onExit: () => window.history.back()
+          onExit: () => navigate('/'),
+          initialTemplateId: params.templateId,
         } as React.ComponentProps<typeof WorkoutComponent>)}
       />
     </WorkoutProvider>

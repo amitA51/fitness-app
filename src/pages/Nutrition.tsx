@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, X, Search, ChevronDown, ChevronUp,
@@ -209,7 +209,7 @@ export default function NutritionPage() {
 
       {/* Tab Content */}
       <div className="px-4">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync">
           {activeTab === 'log' && (
             <motion.div key="log" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {todayEntries.length === 0 ? (
@@ -270,7 +270,8 @@ export default function NutritionPage() {
   );
 }
 
-function EmptyMealState({ onAdd }: { onAdd: () => void }) {
+// ── Empty Meal State ─────────────────────────────────────────────────────────
+const EmptyMealState = memo(function EmptyMealState({ onAdd }: { onAdd: () => void }) {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-20 text-center">
       <div className="w-20 h-20 rounded-full bg-[var(--color-primary)]/15 flex items-center justify-center mb-5">
@@ -283,9 +284,10 @@ function EmptyMealState({ onAdd }: { onAdd: () => void }) {
       </motion.button>
     </motion.div>
   );
-}
+});
 
-function MealEntryCard({ entry, onDelete }: { entry: MealEntry; onDelete: (id: string) => void }) {
+// ── Meal Entry Card ──────────────────────────────────────────────────────────
+const MealEntryCard = memo(function MealEntryCard({ entry, onDelete }: { entry: MealEntry; onDelete: (id: string) => void }) {
   return (
     <motion.div layout className="bg-[#111111] rounded-[20px] border border-white/[0.06] p-4">
       <div className="flex items-start justify-between mb-3">
@@ -313,9 +315,10 @@ function MealEntryCard({ entry, onDelete }: { entry: MealEntry; onDelete: (id: s
       </div>
     </motion.div>
   );
-}
+});
 
-function FoodLibrary({ foods, onAddFood, searchQuery, onSearchChange }: { foods: FoodItem[]; onAddFood: (f: FoodItem) => void; searchQuery: string; onSearchChange: (q: string) => void }) {
+// ── Food Library ─────────────────────────────────────────────────────────────
+const FoodLibrary = memo(function FoodLibrary({ foods, onAddFood, searchQuery, onSearchChange }: { foods: FoodItem[]; onAddFood: (f: FoodItem) => void; searchQuery: string; onSearchChange: (q: string) => void }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   return (
     <div>
@@ -366,14 +369,15 @@ function FoodLibrary({ foods, onAddFood, searchQuery, onSearchChange }: { foods:
       </div>
     </div>
   );
-}
+});
 
-function MealPresetCard({ preset, onSelect }: { preset: MealPreset; onSelect: (m: MealType) => void }) {
+// ── Meal Preset Card ─────────────────────────────────────────────────────────
+const MealPresetCard = memo(function MealPresetCard({ preset, onSelect }: { preset: MealPreset; onSelect: (m: MealType) => void }) {
   const [showMealSelect, setShowMealSelect] = useState(false);
-  const totalCal = preset.meals.reduce((s, m) => {
+  const totalCal = useMemo(() => preset.meals.reduce((s, m) => {
     const f = getFoodLibrary().find(fd => fd.id === m.foodId);
     return s + (f ? f.calories * m.servings : 0);
-  }, 0);
+  }, 0), [preset.meals]);
   return (
     <div className="bg-[#111111] rounded-[20px] border border-white/[0.06] p-4">
       <div className="flex items-start justify-between mb-2">
@@ -407,7 +411,7 @@ function MealPresetCard({ preset, onSelect }: { preset: MealPreset; onSelect: (m
       )}
     </div>
   );
-}
+});
 
 function AddMealModal({
   selectedMealType, onMealTypeChange, selectedFoods, onAddFood, onRemoveFood, onServingsChange, onSave, onClose, searchQuery, onSearchChange,

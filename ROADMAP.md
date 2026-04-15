@@ -202,6 +202,71 @@
 
 ---
 
+## שינויים שבוצעו (2026-04-14)
+
+### Priority 1 - תשתית ואיכות קוד ✅
+- יצירת logger utility עם levels (debug/info/warn/error) וסביבה מבוססת dev/prod
+- עדכון קבצים מרכזיים להשתמש ב-logger: DataContext, supabaseAuth, App, useFitnessInsights
+- פיצול ActiveWorkoutNew.tsx לקומפוננטות קטנות:
+  - `WorkoutActions.tsx` - finish/cancel/save handlers
+  - `ExerciseSuggestionLoader.tsx` - exercise suggestions loading
+  - `WaterReminderHandler.tsx` - water reminder logic
+- פיצול WorkoutSummary.tsx לקומפוננטות:
+  - `StatsGrid.tsx` - animated counters, activity rings, stat cards
+  - `SummaryExerciseList.tsx` - exercise list for summary
+  - `PRHighlights.tsx` - confetti, RPE display
+- הסרת zustand מהפרויקט (לא היה בשימוש)
+
+### Priority 2 - חיבור מערכות קיימות ✅
+- חיבור `useFitnessInsights` ל-Dashboard:
+  - הסרת קוד כפול של טעינת sessions
+  - שימוש ב-streak, workoutsThisWeek, weeklyStats מה-hook
+- חיבור `supabaseSync` ל-Settings:
+  - הוספת ממשק סנכרון ענן עם כפתורי "העלה לענן" ו"הורד מהענן"
+  - תצוגת סטטוס חיבור (מחובר/לא מחובר)
+  - הודעות משוב בזמן אמת
+- חיבור `useWorkoutHistoryHub` ל-History:
+  - הסרת loading logic ידני
+  - שימוש ב-hook עם auto-refresh על אירועי WORKOUT_SAVED/WORKOUT_COMPLETED
+  - שמירה על סורטינג ופונקציונליות קיימת
+- איחוד `recoveryService` עם `bodyStatsService`:
+  - RecoveryLog interface מאוחד עם sleepQuality, sorenessLevel
+  - calculateRecoveryScore עם weighted scoring (sleep 30%, soreness 25%, energy 25%, stress 20%)
+  - BODY_AREAS משותף בשני הקבצים
+  - backwards compatibility עם getLegacyRecoveryScore
+- תיקון וחיבור `useWaterReminder`:
+  - הסרת התלות ב-SettingsContext שלא קיים
+  - קריאה ישירה מ-localStorage עם DEFAULT_WORKOUT_SETTINGS
+  - סנכרון עם settings changes (storage event + polling)
+  - שמירה על haptic feedback ו-notifications
+
+### Priority 3 - Analytics Engine ✅
+- `analyticsService` כבר מיושם עם פונקציות מלאות:
+  - calculateVolumeHistory, calculateMuscleGroupDistribution, forecastProgress, calculateFrequency, getProgressData
+
+### Priority 3.2 - AnalyticsDashboard משופר ✅
+- גרף נפח שבועי עם trend line:
+  - `TrendLineOverlay.tsx` - קו מגמה + חיזוי
+  - שימוש ב-`calculateWeeklyVolumes` ו-`forecastProgress`
+  - tooltips עם אחוז שינוי משבוע קודם
+- תרשים איזון שרירים (Radar Chart):
+  - `MuscleRadarChart.tsx` - radar chart SVG עם trends
+  - צביעה: ירוק=חזק, צהוב=יציב, אדום=מוזנח
+  - שימוש ב-`calculateMuscleBalance`
+- חיזוי התקדמות לפי תרגיל:
+  - `ForecastChart.tsx` - בחירת תרגיל + line chart + forecast
+  - שימוש ב-`calculateStrengthProgression` ו-`forecastProgress`
+- Calendar Heatmap של ימי אימון:
+  - `WorkoutCalendar.tsx` - לוח חודשי עם intensity
+  - navigation חודש קודם/הבא
+  - סטטיסטיקה חודשית
+
+### TypeScript ✅
+- tsconfig.json עם strict mode מופעל
+- TypeScript מקפלץ בהצלחה (0 שגיאות)
+
+---
+
 ## שינויים שבוצעו (2026-04-13)
 
 ### תיקוני CRITICAL/HIGH:

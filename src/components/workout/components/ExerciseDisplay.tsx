@@ -156,7 +156,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(({
 
 
     return (
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="sync" initial={false}>
             <motion.div
                 key={exercise.id}
                 initial={{ opacity: 0, x: 10 }}

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { User, Target, Dumbbell, Save, Check, Bell, Zap, ChevronLeft, Download, Share2, Copy } from 'lucide-react';
+import { User, Target, Dumbbell, Save, Check, Bell, Zap, ChevronLeft, Download, Share2, Copy, Cloud, CloudOff, RefreshCw } from 'lucide-react';
 import { exportWorkoutHistoryCSV, generateWeeklyReport, shareReport, copyToClipboard } from '../services/exportService';
+import { syncAllData, pullAllData, testConnection } from '../services/supabaseSync';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 // ============================================================================
 // CONSTANTS
@@ -264,6 +266,73 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
   const [workoutSaved, setWorkoutSaved] = useState(false);
   const [weeklyReport, setWeeklyReport] = useState<string | null>(null);
   const [copiedReport, setCopiedReport] = useState(false);
+
+  // Cloud sync state
+  const [cloudConnected, setCloudConnected] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  // Check Supabase connection on mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      if (!isSupabaseConfigured()) {
+        setCloudConnected(false);
+        return;
+      }
+      try {
+        const connected = await testConnection();
+        setCloudConnected(connected);
+      } catch {
+        setCloudConnected(false);
+      }
+    };
+    checkConnection();
+  }, []);
+
+  // Cloud sync handlers
+  const handleSyncToCloud = async () => {
+    if (!cloudConnected) {
+      setSyncMessage('חיבור לענן לא פעיל');
+      return;
+    }
+    setIsSyncing(true);
+    setSyncMessage('מסנכרן לענן...');
+    try {
+      const result = await syncAllData();
+      if (result.success) {
+        setSyncMessage('הסנכרון הושלם בהצלחה!');
+      } else {
+        setSyncMessage(result.error || 'שגיאה בסנכרון');
+      }
+    } catch {
+      setSyncMessage('שגיאה בסנכרון');
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setSyncMessage(null), 3000);
+    }
+  };
+
+  const handlePullFromCloud = async () => {
+    if (!cloudConnected) {
+      setSyncMessage('חיבור לענן לא פעיל');
+      return;
+    }
+    setIsSyncing(true);
+    setSyncMessage('מביא נתונים מהענן...');
+    try {
+      const result = await pullAllData();
+      if (result.success) {
+        setSyncMessage('הנתונים התעדכנו!');
+      } else {
+        setSyncMessage(result.error || 'שגיאה בטעינה');
+      }
+    } catch {
+      setSyncMessage('שגיאה בטעינה');
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setSyncMessage(null), 3000);
+    }
+  };
 
   useEffect(() => {
     setProfile(loadFromStorage<UserProfile>('user_profile', DEFAULT_PROFILE));
@@ -620,6 +689,53 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
             </SettingsRow>
           </SettingsCard>
         </div>
+
+        {/* ── CLOUD SYNC SECTION ─────────────────────────────────────────── */}
+        {isSupabaseConfigured() && (
+          <div className="mb-7">
+            <SectionLabel>סנכרון ענן</SectionLabel>
+            <SettingsCard>
+              <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
+                <div className={`w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 ${
+                  cloudConnected ? 'bg-green-500/20' : 'bg-gray-500/20'
+                }`}>
+                  {cloudConnected ? (
+                    <Cloud size={15} className="text-green-400" />
+                  ) : (
+                    <CloudOff size={15} className="text-gray-400" />
+                  )}
+                </div>
+                <span className="flex-1 font-barlow text-[15px] text-white">
+                  {cloudConnected ? 'מחובר לענן' : 'לא מחובר'}
+                </span>
+                {syncMessage && (
+                  <span className="font-barlow text-[12px] text-[#8E8E93] animate-pulse">
+                    {syncMessage}
+                  </span>
+                )}
+              </div>
+              <div className="h-px bg-white/[0.06] mx-4" />
+              <div className="flex gap-2 px-4 py-3">
+                <button
+                  onClick={handleSyncToCloud}
+                  disabled={isSyncing || !cloudConnected}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-primary/20 text-primary font-barlow text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
+                  העלה לענן
+                </button>
+                <button
+                  onClick={handlePullFromCloud}
+                  disabled={isSyncing || !cloudConnected}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-white/[0.06] text-white font-barlow text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Download size={14} />
+                  הורד מהענן
+                </button>
+              </div>
+            </SettingsCard>
+          </div>
+        )}
 
         {/* ── EXPORT & SHARE SECTION ────────────────────────────────────────── */}
         <div className="mb-7">

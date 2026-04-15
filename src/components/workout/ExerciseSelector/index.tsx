@@ -4,7 +4,7 @@
 // Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+import { motion, useMotionValue, useTransform, AnimatePresence, PanInfo } from 'framer-motion';
 import { PersonalExercise, Exercise, WorkoutGoal, WorkoutTemplate, createWorkoutSet } from '../../../types';
 import * as dataService from '../../../services/dataService';
 import { CloseIcon } from '../../icons';
@@ -12,11 +12,6 @@ import { getWorkoutTemplates } from '../../../services/dataService';
 import ExerciseLibraryTab from '../ExerciseLibraryTab';
 import WorkoutTemplates from '../WorkoutTemplates';
 import { ModalOverlay } from '../../ui/ModalOverlay';
-
-// ============================================================
-// STATIC DATA
-// ============================================================
-// (Removed MUSCLE_PRESETS as they are now internal to ExerciseLibraryTab)
 
 // ============================================================
 // TYPES
@@ -58,9 +53,11 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     onCreateNew: _onCreateNew,
     goal: _goal,
 }) => {
-    const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+    const [userTemplates, setUserTemplates] = useState<WorkoutTemplate[]>([]);
+    const [builtinTemplates, setBuiltinTemplates] = useState<WorkoutTemplate[]>([]);
     const [activeTab, setActiveTab] = useState<'exercises' | 'templates'>('exercises');
     const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
+    const [pendingExercises, setPendingExercises] = useState<PersonalExercise[]>([]);
 
     // Animations
     const y = useMotionValue(0);
@@ -74,8 +71,12 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
     const loadData = async () => {
         try {
-            const templateData = await getWorkoutTemplates();
-            setTemplates(templateData.filter(t => !t.isBuiltin));
+            const allTemplates = await getWorkoutTemplates();
+            // Separate user templates and built-in templates
+            const userT = allTemplates.filter(t => !t.isBuiltin);
+            const builtinT = allTemplates.filter(t => t.isBuiltin);
+            setUserTemplates(userT);
+            setBuiltinTemplates(builtinT);
         } catch {
             // Silently handle template loading errors
         }
@@ -84,54 +85,84 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     const handleSelect = useCallback((personalExercise: PersonalExercise) => {
         if (!personalExercise.name?.trim()) return;
 
-        const exercise: Exercise = {
-            id: makeExerciseId(),
-            name: personalExercise.name,
-            muscleGroup: personalExercise.muscleGroup,
-            targetRestTime: personalExercise.defaultRestTime || 90,
-            sets: Array(personalExercise.defaultSets || 4)
-                .fill(null)
-                .map(() => createWorkoutSet({ reps: 0, weight: 0 })),
-        };
+        triggerHaptic('light');
 
-        // Fire and forget analytics
-        dataService.incrementExerciseUse(personalExercise.id).catch(() => {
-            // Silently handle analytics errors
-        });
-
-        onSelect(exercise);
-
-        // Update Local Visual State
+        // Toggle selection - add to pending or remove from pending
         setSelectedExercises(prev => {
             const next = new Set(prev);
-            next.add(personalExercise.id);
+            if (next.has(personalExercise.id)) {
+                next.delete(personalExercise.id);
+            } else {
+                next.add(personalExercise.id);
+            }
             return next;
         });
 
-        triggerHaptic('light');
-    }, [onSelect]);
+        // Update pending exercises
+        setPendingExercises(prev => {
+            const exists = prev.find(e => e.id === personalExercise.id);
+            if (exists) {
+                return prev.filter(e => e.id !== personalExercise.id);
+            }
+            return [...prev, personalExercise];
+        });
+    }, []);
+
+    // Confirm selection and add all selected exercises to workout
+    const handleConfirmSelection = useCallback(() => {
+        if (pendingExercises.length === 0) return;
+
+        triggerHaptic('success');
+
+        // Add all pending exercises to workout
+        pendingExercises.forEach(personalExercise => {
+            const exercise: Exercise = {
+                id: makeExerciseId(),
+                name: personalExercise.name,
+                muscleGroup: personalExercise.muscleGroup,
+                targetRestTime: personalExercise.defaultRestTime || 90,
+                sets: Array(personalExercise.defaultSets || 4)
+                    .fill(null)
+                    .map(() => createWorkoutSet({ reps: 0, weight: 0 })),
+            };
+
+            // Fire and forget analytics
+            dataService.incrementExerciseUse(personalExercise.id).catch(() => {});
+
+            onSelect(exercise);
+        });
+
+        // Clear selection state
+        setSelectedExercises(new Set());
+        setPendingExercises([]);
+
+        onClose();
+    }, [pendingExercises, onSelect, onClose]);
 
     const handleTemplateSelect = useCallback((template: WorkoutTemplate) => {
         if (!template.exercises || template.exercises.length === 0) return;
 
         triggerHaptic('success');
+
+        // Add all exercises from template
         template.exercises.forEach(ex => {
             const exercise: Exercise = {
                 id: makeExerciseId(),
                 name: ex.name,
                 muscleGroup: ex.muscleGroup,
                 targetRestTime: ex.targetRestTime || 90,
-                sets: (ex.sets && ex.sets.length > 0) ? ex.sets.map(s => createWorkoutSet({ reps: s.reps || 0, weight: s.weight || 0 })) : Array(4).fill(null).map(() => createWorkoutSet({ reps: 0, weight: 0 })),
+                sets: (ex.sets && ex.sets.length > 0)
+                    ? ex.sets.map(s => createWorkoutSet({ reps: s.reps || 0, weight: s.weight || 0 }))
+                    : Array(4).fill(null).map(() => createWorkoutSet({ reps: 0, weight: 0 })),
             };
             onSelect(exercise);
-
-            setSelectedExercises(prev => {
-                const next = new Set(prev);
-                next.add(ex.id);
-                return next;
-            });
         });
 
+        // Clear selection
+        setSelectedExercises(new Set());
+        setPendingExercises([]);
+
+        // Close modal
         onClose();
     }, [onSelect, onClose]);
 
@@ -215,26 +246,39 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                         <button
                             type="button"
                             onClick={handleTabExercises}
-                            className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition-all ${activeTab === 'exercises'
-                                ? 'bg-white text-black'
-                                : 'bg-[var(--bg-tertiary)] text-[var(--gray-500)]'
+                            className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition-all relative ${
+                                activeTab === 'exercises'
+                                    ? 'bg-white text-black'
+                                    : 'bg-[var(--bg-tertiary)] text-[var(--gray-500)]'
                                 }`}
                         >
                             תרגילים
+                            {pendingExercises.length > 0 && (
+                                <motion.span
+                                    key="exercises-badge"
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[var(--cosmos-accent-primary)] text-white text-[10px] font-bold flex items-center justify-center"
+                                >
+                                    {pendingExercises.length}
+                                </motion.span>
+                            )}
                         </button>
                         <button
                             type="button"
                             onClick={handleTabTemplates}
-                            className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'templates'
-                                ? 'bg-white text-black'
-                                : 'bg-[var(--bg-tertiary)] text-[var(--gray-500)]'
+                            className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${
+                                activeTab === 'templates'
+                                    ? 'bg-white text-black'
+                                    : 'bg-[var(--bg-tertiary)] text-[var(--gray-500)]'
                                 }`}
                         >
                             תבניות
-                            {templates.length > 0 && (
-                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${activeTab === 'templates' ? 'bg-black/10' : 'bg-white/10'
+                            {(userTemplates.length + builtinTemplates.length) > 0 && (
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                    activeTab === 'templates' ? 'bg-black/10' : 'bg-white/10'
                                     }`}>
-                                    {templates.length}
+                                    {userTemplates.length + builtinTemplates.length}
                                 </span>
                             )}
                         </button>
@@ -256,45 +300,71 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                                 onStartWorkout={handleTemplateSelect}
                                 isEmbedded={true}
                                 onClose={undefined}
+                                userTemplates={userTemplates}
+                                builtinTemplates={builtinTemplates}
                             />
                         </div>
                     )}
                 </div>
 
-                {/* Footer */}
-                <div
-                    className="absolute bottom-0 inset-x-0 p-5 pt-4"
-                    style={{
-                        background: 'linear-gradient(to top, rgba(10,10,18,1) 0%, rgba(10,10,18,0.95) 60%, transparent 100%)'
-                    }}
-                >
-                    <div className="safe-area-bottom">
-                        <motion.button
-                            type="button"
-                            onClick={onClose}
-                            whileTap={{ scale: 0.97 }}
-                            className="w-full h-16 rounded-3xl font-bold text-lg transition-all flex items-center justify-center gap-3"
+                {/* Footer with Floating Action Button */}
+                <AnimatePresence>
+                    {pendingExercises.length > 0 && (
+                        <motion.div
+                            initial={{ y: 100, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 100, opacity: 0 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                            className="absolute bottom-0 inset-x-0 p-5 pt-4"
                             style={{
-                                background: selectedExercises.size > 0
-                                    ? 'linear-gradient(135deg, var(--cosmos-accent-primary) 0%, var(--cosmos-accent-cyan) 100%)'
-                                    : 'rgba(255,255,255,0.1)',
-                                boxShadow: selectedExercises.size > 0
-                                    ? '0 0 40px rgba(99, 102, 241, 0.5), 0 8px 32px rgba(0,0,0,0.3)'
-                                    : 'none',
-                                color: selectedExercises.size > 0 ? 'white' : 'rgba(255,255,255,0.6)'
+                                background: 'linear-gradient(to top, rgba(10,10,18,1) 0%, rgba(10,10,18,0.95) 60%, transparent 100%)'
                             }}
                         >
-                            {selectedExercises.size > 0 ? (
-                                <>
+                            <div className="safe-area-bottom">
+                                <motion.button
+                                    type="button"
+                                    onClick={handleConfirmSelection}
+                                    whileTap={{ scale: 0.97 }}
+                                    className="w-full h-16 rounded-3xl font-bold text-lg transition-all flex items-center justify-center gap-3"
+                                    style={{
+                                        background: 'linear-gradient(135deg, var(--cosmos-accent-primary) 0%, var(--cosmos-accent-cyan) 100%)',
+                                        boxShadow: '0 0 40px rgba(99, 102, 241, 0.5), 0 8px 32px rgba(0,0,0,0.3)',
+                                        color: 'white'
+                                    }}
+                                >
                                     <span className="text-xl">💪</span>
-                                    <span>סיום ({selectedExercises.size} תרגילים)</span>
-                                </>
-                            ) : (
-                                <span>חזרה לאימון</span>
-                            )}
-                        </motion.button>
-                    </div>
-                </div>
+                                    <span>התחל אימון ({pendingExercises.length} תרגילים)</span>
+                                </motion.button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Footer - Default state when no selection */}
+                <AnimatePresence>
+                    {pendingExercises.length === 0 && (
+                        <motion.div
+                            initial={{ y: 0, opacity: 1 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 100, opacity: 0 }}
+                            className="absolute bottom-0 inset-x-0 p-5 pt-4 pointer-events-none"
+                            style={{
+                                background: 'linear-gradient(to top, rgba(10,10,18,1) 0%, rgba(10,10,18,0.95) 60%, transparent 100%)'
+                            }}
+                        >
+                            <div className="safe-area-bottom">
+                                <motion.button
+                                    type="button"
+                                    onClick={onClose}
+                                    whileTap={{ scale: 0.97 }}
+                                    className="w-full h-16 rounded-3xl font-bold text-lg transition-all flex items-center justify-center gap-3 bg-white/10 text-white/60"
+                                >
+                                    <span>חזרה לאימון</span>
+                                </motion.button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Scrollbar and safe area styles */}
                 <style>{`

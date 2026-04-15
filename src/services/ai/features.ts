@@ -5,7 +5,7 @@
 import { getAIProvider, type ChatMessage } from './core';
 import { buildSystemPrompt, buildContext } from './contextBuilder';
 import type { WorkoutSession } from '../../types';
-import type { RecoveryLog } from '../recoveryService';
+import type { RecoveryLog } from '../bodyStatsService';
 import type { MacroNutrients } from '../../types';
 
 export async function getWorkoutAdvice(
