@@ -1,10 +1,8 @@
 import type { WorkoutSession } from '../types';
-import { getAIProvider, type ChatMessage } from './ai/core';
 import { buildContext, buildSystemPrompt } from './ai/contextBuilder';
+import { type ChatMessage, getAIProvider } from './ai/core';
 
-export async function generateAIWorkoutInsight(
-  sessions: WorkoutSession[]
-): Promise<string> {
+export async function generateAIWorkoutInsight(sessions: WorkoutSession[]): Promise<string> {
   if (sessions.length === 0) {
     return 'אין עדיין נתוני אימון. התחל להתאמן כדי לקבל תובנות מותאמות אישית!';
   }

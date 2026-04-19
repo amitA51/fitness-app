@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 interface RestTimerProps {
   targetSeconds: number;
@@ -10,7 +10,7 @@ interface RestTimerProps {
 
 /**
  * RestTimer - Mobile-first redesigned rest timer
- * Features: 
+ * Features:
  * - Timestamp-based timing (survives background)
  * - Hebrew UI
  * - Pause/resume with accurate time tracking
@@ -21,7 +21,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
   targetSeconds,
   onComplete,
   onSkip,
-  exerciseName
+  exerciseName,
 }) => {
   // Use timestamp-based approach for accuracy
   const [endTime, setEndTime] = useState(() => Date.now() + targetSeconds * 1000);
@@ -97,18 +97,21 @@ const RestTimer: React.FC<RestTimerProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }, []);
 
-  const adjustTime = useCallback((delta: number) => {
-    if (isPaused) {
-      setPausedTimeRemaining(prev => Math.max(0, prev + delta));
-      setSecondsLeft(prev => Math.max(0, prev + delta));
-    } else {
-      setEndTime(prev => prev + delta * 1000);
-      setSecondsLeft(prev => Math.max(0, prev + delta));
-    }
-    if ('vibrate' in navigator) {
-      navigator.vibrate(30);
-    }
-  }, [isPaused]);
+  const adjustTime = useCallback(
+    (delta: number) => {
+      if (isPaused) {
+        setPausedTimeRemaining((prev) => Math.max(0, prev + delta));
+        setSecondsLeft((prev) => Math.max(0, prev + delta));
+      } else {
+        setEndTime((prev) => prev + delta * 1000);
+        setSecondsLeft((prev) => Math.max(0, prev + delta));
+      }
+      if ('vibrate' in navigator) {
+        navigator.vibrate(30);
+      }
+    },
+    [isPaused]
+  );
 
   const togglePause = useCallback(() => {
     if (isPaused) {
@@ -146,15 +149,13 @@ const RestTimer: React.FC<RestTimerProps> = ({
         {/* Header */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-white mb-2">⏱️ זמן מנוחה</h2>
-          {exerciseName && (
-            <p className="text-white/50 text-sm">לפני הסט הבא של {exerciseName}</p>
-          )}
+          {exerciseName && <p className="text-white/50 text-sm">לפני הסט הבא של {exerciseName}</p>}
         </div>
 
         {/* Circular Progress */}
         <div className="relative w-64 h-64 mx-auto mb-8">
           {/* Background Circle */}
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 256 256">
+          <svg className="w-full h-full -rotate-90" viewBox="0 0 256 256" aria-hidden="true">
             <circle
               cx="128"
               cy="128"
@@ -168,7 +169,9 @@ const RestTimer: React.FC<RestTimerProps> = ({
               cx="128"
               cy="128"
               r="110"
-              stroke={isWarning ? '#ef4444' : isComplete ? '#22c55e' : 'var(--cosmos-accent-primary)'}
+              stroke={
+                isWarning ? '#ef4444' : isComplete ? '#22c55e' : 'var(--cosmos-accent-primary)'
+              }
               strokeWidth="12"
               fill="none"
               strokeLinecap="round"
@@ -177,7 +180,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
               style={{
                 filter: isWarning
                   ? 'drop-shadow(0 0 20px rgba(239,68,68,0.6))'
-                  : 'drop-shadow(0 0 15px var(--cosmos-accent-primary))'
+                  : 'drop-shadow(0 0 15px var(--cosmos-accent-primary))',
               }}
               transition={{ type: 'spring', damping: 30 }}
             />
@@ -189,17 +192,16 @@ const RestTimer: React.FC<RestTimerProps> = ({
               key={secondsLeft}
               initial={{ scale: 1.1 }}
               animate={{ scale: 1 }}
-              className={`text-6xl font-black tabular-nums ${isWarning
-                ? 'text-red-500'
-                : isComplete
-                  ? 'text-green-500'
-                  : 'text-white'
-                }`}
+              className={`text-6xl font-black tabular-nums ${
+                isWarning ? 'text-red-500' : isComplete ? 'text-green-500' : 'text-white'
+              }`}
               style={{
                 textShadow: isWarning
                   ? '0 0 30px rgba(239,68,68,0.5)'
-                  : '0 0 20px rgba(255,255,255,0.2)'
+                  : '0 0 20px rgba(255,255,255,0.2)',
               }}
+              aria-live="polite"
+              aria-atomic="true"
             >
               {formatTime(secondsLeft)}
             </motion.span>
@@ -221,6 +223,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
           <button
             type="button"
             onClick={() => adjustTime(-15)}
+            aria-label="הפחת 15 שניות"
             className="px-4 py-2 min-h-[44px] rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 font-semibold text-sm transition-transform duration-150 hover:scale-105 active:scale-95"
           >
             -15s
@@ -228,6 +231,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
           <button
             type="button"
             onClick={() => adjustTime(15)}
+            aria-label="הוסף 15 שניות"
             className="px-4 py-2 min-h-[44px] rounded-xl bg-[var(--cosmos-accent-secondary)]/10 border border-[var(--cosmos-accent-secondary)]/20 text-[var(--cosmos-accent-secondary)] font-semibold text-sm transition-transform duration-150 hover:scale-105 active:scale-95"
           >
             +15s
@@ -235,6 +239,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
           <button
             type="button"
             onClick={() => adjustTime(30)}
+            aria-label="הוסף 30 שניות"
             className="px-4 py-2 min-h-[44px] rounded-xl bg-[var(--cosmos-accent-secondary)]/10 border border-[var(--cosmos-accent-secondary)]/20 text-[var(--cosmos-accent-secondary)] font-semibold text-sm transition-transform duration-150 hover:scale-105 active:scale-95"
           >
             +30s
@@ -242,6 +247,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
           <button
             type="button"
             onClick={() => adjustTime(60)}
+            aria-label="הוסף 60 שניות"
             className="px-4 py-2 min-h-[44px] rounded-xl bg-[var(--cosmos-accent-secondary)]/10 border border-[var(--cosmos-accent-secondary)]/20 text-[var(--cosmos-accent-secondary)] font-semibold text-sm transition-transform duration-150 hover:scale-105 active:scale-95"
           >
             +60s
@@ -254,6 +260,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
           <button
             type="button"
             onClick={onSkip}
+            aria-label="דלג על המנוחה"
             className="flex-1 h-14 min-h-[56px] rounded-2xl bg-white/5 border border-white/20 text-white/80 font-bold text-base hover:bg-white/10 transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
           >
             דלג ⏭️
@@ -263,10 +270,12 @@ const RestTimer: React.FC<RestTimerProps> = ({
           <button
             type="button"
             onClick={togglePause}
-            className={`flex-1 h-14 min-h-[56px] rounded-2xl font-bold text-base transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] ${isPaused
-              ? 'bg-green-500 text-white shadow-[0_0_25px_rgba(34,197,94,0.4)]'
-              : 'bg-yellow-500/20 border border-yellow-500/40 text-yellow-400'
-              }`}
+            aria-label={isPaused ? 'המשך טיימר' : 'השהה טיימר'}
+            className={`flex-1 h-14 min-h-[56px] rounded-2xl font-bold text-base transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] ${
+              isPaused
+                ? 'bg-green-500 text-white shadow-[0_0_25px_rgba(34,197,94,0.4)]'
+                : 'bg-yellow-500/20 border border-yellow-500/40 text-yellow-400'
+            }`}
           >
             {isPaused ? '▶️ המשך' : '⏸️ השהה'}
           </button>
@@ -275,6 +284,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
           <button
             type="button"
             onClick={onComplete}
+            aria-label="סיים טיימר"
             className="flex-1 h-14 min-h-[56px] rounded-2xl bg-[var(--cosmos-accent-primary)] text-white font-bold text-base shadow-[0_0_25px_var(--cosmos-accent-primary)] hover:brightness-110 transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
           >
             סיים ✓
@@ -282,9 +292,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
         </div>
 
         {/* Hint */}
-        <p className="text-white/30 text-xs mt-4">
-          טיפ: הטיימר ימשיך גם ברקע
-        </p>
+        <p className="text-white/30 text-xs mt-4">טיפ: הטיימר ימשיך גם ברקע</p>
       </motion.div>
     </motion.div>
   );

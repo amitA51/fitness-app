@@ -1,343 +1,517 @@
-// SetEditBottomSheet - Android-style Bottom Sheet for editing completed sets
-// Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
-import { memo, useState, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { CloseIcon, CheckCircleIcon } from '../../icons';
-import { ModalOverlay } from '../../ui/ModalOverlay';
-import { WorkoutSet } from '../../../types';
+// SetEditBottomSheet - Sport Annual Editorial Design
+// Sharp corners · Navy header · Bone body
+// VISION: Bold · Editorial · Confident · Narrative · Printed
 
-// ============================================================
-// ANIMATION CONSTANTS (stable references)
-// ============================================================
+import { motion } from 'framer-motion';
+import { memo, useCallback, useMemo, useState } from 'react';
+import type { WorkoutSet } from '../../../types';
+import { CheckCircleIcon, CloseIcon } from '../../icons';
+import { ModalOverlay } from '../../ui/ModalOverlay';
+
+interface SetEditBottomSheetProps {
+  isOpen: boolean;
+  sets: WorkoutSet[];
+  exerciseName: string;
+  onClose: () => void;
+  onUpdateSet: (setIndex: number, updates: Partial<WorkoutSet>) => void;
+}
 
 const SHEET_TRANSITION = { type: 'spring' as const, damping: 30, stiffness: 300 };
 
-const CLOSE_BUTTON_HOVER = { scale: 1.1 };
-const CLOSE_BUTTON_TAP = { scale: 0.9 };
-
-interface SetEditBottomSheetProps {
-    isOpen: boolean;
-    sets: WorkoutSet[];
-    exerciseName: string;
-    onClose: () => void;
-    onUpdateSet: (setIndex: number, updates: Partial<WorkoutSet>) => void;
-}
-
-/**
- * Generate a stable key for a set based on its content and position
- * This is more stable than index alone when sets are reordered
- */
 const getSetKey = (set: WorkoutSet, index: number): string => {
-    // Use completedAt timestamp if available (unique for completed sets)
-    if (set.completedAt) {
-        return `set-${set.completedAt}`;
-    }
-    // For incomplete sets, use a combination of index and values
-    return `set-pending-${index}-${set.weight ?? 0}-${set.reps ?? 0}`;
+  if (set.completedAt) return `set-${set.completedAt}`;
+  return `set-pending-${index}-${set.weight ?? 0}-${set.reps ?? 0}`;
 };
 
-/**
- * SetEditBottomSheet - Android-friendly slide-up sheet for editing completed sets
- * Features:
- * - Slide up from bottom animation
- * - List of all sets with edit capability
- * - Weight and reps adjustment per set
- * - Double-tap protection on save
- * - Portal rendering for proper z-index stacking
- * - Focus trap and scroll lock
- */
-const SetEditBottomSheet = memo<SetEditBottomSheetProps>(({
-    isOpen,
-    sets,
-    exerciseName,
-    onClose,
-    onUpdateSet,
-}) => {
+const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
+  ({ isOpen, sets, exerciseName, onClose, onUpdateSet }) => {
     const [editingSetIndex, setEditingSetIndex] = useState<number | null>(null);
     const [tempWeight, setTempWeight] = useState<number>(0);
     const [tempReps, setTempReps] = useState<number>(0);
 
-    // Start editing a set
-    const handleStartEdit = useCallback((index: number) => {
+    const handleStartEdit = useCallback(
+      (index: number) => {
         const set = sets[index];
         if (set) {
-            setEditingSetIndex(index);
-            setTempWeight(set.weight || 0);
-            setTempReps(set.reps || 0);
+          setEditingSetIndex(index);
+          setTempWeight(set.weight || 0);
+          setTempReps(set.reps || 0);
         }
-    }, [sets]);
+      },
+      [sets]
+    );
 
-    // Save edits
     const handleSave = useCallback(() => {
-        if (editingSetIndex !== null) {
-            onUpdateSet(editingSetIndex, {
-                weight: tempWeight,
-                reps: tempReps,
-            });
-            setEditingSetIndex(null);
-        }
+      if (editingSetIndex !== null) {
+        onUpdateSet(editingSetIndex, { weight: tempWeight, reps: tempReps });
+        setEditingSetIndex(null);
+      }
     }, [editingSetIndex, tempWeight, tempReps, onUpdateSet]);
 
-    // Cancel edit
     const handleCancel = useCallback(() => {
-        setEditingSetIndex(null);
+      setEditingSetIndex(null);
     }, []);
 
-    // Weight adjustment handlers (stable references)
-    const handleDecreaseWeight = useCallback(() => {
-        setTempWeight(w => Math.max(0, w - 2.5));
-    }, []);
-
-    const handleIncreaseWeight = useCallback(() => {
-        setTempWeight(w => w + 2.5);
-    }, []);
-
-    const handleWeightChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        setTempWeight(Number(e.target.value));
-    }, []);
-
-    // Reps adjustment handlers (stable references)
-    const handleDecreaseReps = useCallback(() => {
-        setTempReps(r => Math.max(0, r - 1));
-    }, []);
-
-    const handleIncreaseReps = useCallback(() => {
-        setTempReps(r => r + 1);
-    }, []);
-
-    const handleRepsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        setTempReps(Number(e.target.value));
-    }, []);
-
-    // Memoize set keys to prevent recalculation
-    const setKeys = useMemo(() =>
-        sets.map((set, index) => getSetKey(set, index)),
-        [sets]);
+    const setKeys = useMemo(() => sets.map((set, index) => getSetKey(set, index)), [sets]);
 
     return (
-        <ModalOverlay
-            isOpen={isOpen}
-            onClose={onClose}
-            variant="none"
-            zLevel="ultra"
-            backdropOpacity={80}
-            blur="sm"
-            trapFocus
-            lockScroll
-            closeOnBackdropClick
-            closeOnEscape
-            ariaLabel="עריכת סטים"
+      <ModalOverlay
+        isOpen={isOpen}
+        onClose={onClose}
+        variant="none"
+        zLevel="ultra"
+        backdropOpacity={60}
+        blur="none"
+        trapFocus
+        lockScroll
+        closeOnBackdropClick
+        closeOnEscape
+        ariaLabel="עריכת סטים"
+      >
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={SHEET_TRANSITION}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background: 'var(--bone)',
+            borderTop: '2px solid var(--navy)',
+            maxHeight: '75vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
         >
-            {/* Bottom Sheet */}
-            <motion.div
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={SHEET_TRANSITION}
-                className="fixed bottom-0 left-0 right-0 bg-gradient-to-b from-[#1a1a2e] to-[#0f0f1a] rounded-t-[32px] max-h-[75vh] overflow-hidden border-t border-white/10"
-                onClick={e => e.stopPropagation()}
+          {/* Drag Handle */}
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}>
+            <div style={{ width: 48, height: 4, background: 'rgba(20,41,61,0.2)', borderRadius: 2 }} />
+          </div>
+
+          {/* Header */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '8px 20px 16px',
+              borderBottom: '1px solid var(--bone-deep)',
+            }}
+          >
+            <div>
+              <h3
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: 'var(--navy)',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                עריכת סטים
+              </h3>
+              <p
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  letterSpacing: '0.12em',
+                  color: 'var(--stone)',
+                  textTransform: 'uppercase',
+                  marginTop: 2,
+                }}
+              >
+                {exerciseName}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                width: 36,
+                height: 36,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'var(--bone-deep)',
+                border: '2px solid var(--navy)',
+                borderRadius: 0,
+                cursor: 'pointer',
+              }}
             >
-                {/* Drag Handle */}
-                <div className="flex justify-center pt-3 pb-2">
-                    <div className="w-12 h-1 bg-white/20 rounded-full" />
-                </div>
+              <CloseIcon style={{ width: 18, height: 18, color: 'var(--navy)' }} />
+            </button>
+          </div>
 
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 pb-4 border-b border-white/5">
-                    <div>
-                        <h3 className="text-lg font-bold text-white">עריכת סטים</h3>
-                        <p className="text-xs text-white/40 mt-0.5">{exerciseName}</p>
+          {/* Sets List */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: 16,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
+            {sets.map((set, index) => {
+              const isEditing = editingSetIndex === index;
+              const isCompleted = !!set.completedAt;
+
+              return (
+                <div
+                  key={setKeys[index]}
+                  style={{
+                    background: isEditing
+                      ? 'var(--mustard)'
+                      : isCompleted
+                        ? 'rgba(45,139,78,0.08)'
+                        : '#FFFFFF',
+                    border: `2px solid ${isEditing ? 'var(--navy)' : isCompleted ? 'var(--color-success)' : 'var(--navy)'}`,
+                    borderRadius: 0,
+                    padding: 16,
+                  }}
+                >
+                  {isEditing ? (
+                    /* Edit Mode */
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 10,
+                          letterSpacing: '0.15em',
+                          color: 'var(--navy)',
+                          textTransform: 'uppercase',
+                          fontWeight: 600,
+                          borderBottom: '1px solid rgba(20,41,61,0.2)',
+                          paddingBottom: 8,
+                        }}
+                      >
+                        סט {index + 1} — עריכה
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        {/* Weight */}
+                        <div>
+                          <label
+                            style={{
+                              display: 'block',
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: 9,
+                              letterSpacing: '0.15em',
+                              color: 'var(--navy)',
+                              textTransform: 'uppercase',
+                              marginBottom: 6,
+                              fontWeight: 600,
+                            }}
+                          >
+                            ק"ג
+                          </label>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <button
+                              type="button"
+                              onClick={() => setTempWeight((w) => Math.max(0, w - 2.5))}
+                              style={{
+                                width: 40,
+                                height: 40,
+                                background: 'var(--bone)',
+                                border: '2px solid var(--navy)',
+                                borderRadius: 0,
+                                cursor: 'pointer',
+                                fontFamily: 'var(--font-display)',
+                                fontWeight: 800,
+                                fontSize: 18,
+                                color: 'var(--navy)',
+                              }}
+                            >
+                              −
+                            </button>
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              step="0.25"
+                              value={tempWeight}
+                              onChange={(e) => setTempWeight(Number(e.target.value))}
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                flex: 1,
+                                height: 40,
+                                background: '#FFFFFF',
+                                border: '2px solid var(--navy)',
+                                borderRadius: 0,
+                                textAlign: 'center',
+                                fontFamily: 'var(--font-display)',
+                                fontWeight: 800,
+                                fontSize: 18,
+                                color: 'var(--navy)',
+                                outline: 'none',
+                                minWidth: 0,
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setTempWeight((w) => w + 2.5)}
+                              style={{
+                                width: 40,
+                                height: 40,
+                                background: 'var(--navy)',
+                                border: '2px solid var(--navy)',
+                                borderRadius: 0,
+                                cursor: 'pointer',
+                                fontFamily: 'var(--font-display)',
+                                fontWeight: 800,
+                                fontSize: 18,
+                                color: 'var(--mustard)',
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Reps */}
+                        <div>
+                          <label
+                            style={{
+                              display: 'block',
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: 9,
+                              letterSpacing: '0.15em',
+                              color: 'var(--navy)',
+                              textTransform: 'uppercase',
+                              marginBottom: 6,
+                              fontWeight: 600,
+                            }}
+                          >
+                            חזרות
+                          </label>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <button
+                              type="button"
+                              onClick={() => setTempReps((r) => Math.max(0, r - 1))}
+                              style={{
+                                width: 40,
+                                height: 40,
+                                background: 'var(--bone)',
+                                border: '2px solid var(--navy)',
+                                borderRadius: 0,
+                                cursor: 'pointer',
+                                fontFamily: 'var(--font-display)',
+                                fontWeight: 800,
+                                fontSize: 18,
+                                color: 'var(--navy)',
+                              }}
+                            >
+                              −
+                            </button>
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              value={tempReps}
+                              onChange={(e) => setTempReps(Number(e.target.value))}
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                flex: 1,
+                                height: 40,
+                                background: '#FFFFFF',
+                                border: '2px solid var(--navy)',
+                                borderRadius: 0,
+                                textAlign: 'center',
+                                fontFamily: 'var(--font-display)',
+                                fontWeight: 800,
+                                fontSize: 18,
+                                color: 'var(--navy)',
+                                outline: 'none',
+                                minWidth: 0,
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setTempReps((r) => r + 1)}
+                              style={{
+                                width: 40,
+                                height: 40,
+                                background: 'var(--navy)',
+                                border: '2px solid var(--navy)',
+                                borderRadius: 0,
+                                cursor: 'pointer',
+                                fontFamily: 'var(--font-display)',
+                                fontWeight: 800,
+                                fontSize: 18,
+                                color: 'var(--mustard)',
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          type="button"
+                          onClick={handleCancel}
+                          style={{
+                            flex: 1,
+                            padding: '12px 16px',
+                            background: 'var(--bone)',
+                            border: '2px solid var(--navy)',
+                            borderRadius: 0,
+                            cursor: 'pointer',
+                            fontFamily: 'var(--font-display)',
+                            fontWeight: 800,
+                            fontSize: 13,
+                            letterSpacing: '0.06em',
+                            textTransform: 'uppercase',
+                            color: 'var(--navy)',
+                          }}
+                        >
+                          ביטול
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSave}
+                          style={{
+                            flex: 1,
+                            padding: '12px 16px',
+                            background: 'var(--navy)',
+                            border: '2px solid var(--navy)',
+                            borderRadius: 0,
+                            cursor: 'pointer',
+                            fontFamily: 'var(--font-display)',
+                            fontWeight: 800,
+                            fontSize: 13,
+                            letterSpacing: '0.06em',
+                            textTransform: 'uppercase',
+                            color: 'var(--mustard)',
+                          }}
+                        >
+                          שמור
+                        </button>
+                      </div>
                     </div>
-                    <motion.button
-                        whileHover={CLOSE_BUTTON_HOVER}
-                        whileTap={CLOSE_BUTTON_TAP}
-                        onClick={onClose}
-                        className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center"
+                  ) : (
+                    /* View Mode */
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        direction: 'rtl',
+                      }}
+                      onClick={() => handleStartEdit(index)}
                     >
-                        <CloseIcon className="w-5 h-5 text-white/50" />
-                    </motion.button>
-                </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {isCompleted && (
+                          <CheckCircleIcon style={{ width: 20, height: 20, color: 'var(--color-success)' }} />
+                        )}
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-display)',
+                            fontWeight: 800,
+                            fontSize: 15,
+                            color: 'var(--navy)',
+                          }}
+                        >
+                          סט {index + 1}
+                        </span>
+                        {!isCompleted && (
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: 9,
+                              letterSpacing: '0.1em',
+                              color: 'var(--stone)',
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            (טרם הושלם)
+                          </span>
+                        )}
+                      </div>
 
-                {/* Sets List */}
-                <div className="p-4 overflow-y-auto max-h-[60vh] overscroll-contain">
-                    <div className="space-y-3">
-                        {sets.map((set, index) => {
-                            const isEditing = editingSetIndex === index;
-                            const isCompleted = !!set.completedAt;
-
-                            return (
-                                <motion.div
-                                    key={setKeys[index]}
-                                    layout
-                                    className={`
-                                        rounded-2xl p-4 transition-all
-                                        ${isEditing
-                                            ? 'bg-[var(--cosmos-accent-primary)]/10 border-2 border-[var(--cosmos-accent-primary)]/50'
-                                            : isCompleted
-                                                ? 'bg-emerald-500/10 border border-emerald-500/20'
-                                                : 'bg-white/5 border border-white/10'
-                                        }
-                                    `}
-                                >
-                                    {isEditing ? (
-                                        /* Edit Mode - Premium Layout */
-                                        <div className="space-y-4" dir="rtl">
-                                            <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-2">
-                                                <span className="text-sm font-bold text-[var(--cosmos-accent-primary)]">
-                                                    עריכת סט {index + 1}
-                                                </span>
-                                            </div>
-
-                                            {/* Inputs Row */}
-                                            <div className="grid grid-cols-2 gap-3">
-                                                {/* Weight Input */}
-                                                <div className="bg-black/20 p-3 rounded-xl border border-white/5">
-                                                    <label className="text-[10px] text-white/40 font-bold uppercase tracking-wider block mb-2 text-center">
-                                                        משקל (ק"ג)
-                                                    </label>
-                                                    <div className="flex items-center justify-between gap-1">
-                                                        <button
-                                                            onClick={handleDecreaseWeight}
-                                                            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 active:scale-95 transition-all"
-                                                        >
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14" /></svg>
-                                                        </button>
-                                                        <input
-                                                            type="number"
-                                                            value={tempWeight}
-                                                            onChange={handleWeightChange}
-                                                            className="w-full bg-transparent text-center text-xl font-bold text-white outline-none p-0"
-                                                        />
-                                                        <button
-                                                            onClick={handleIncreaseWeight}
-                                                            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 active:scale-95 transition-all"
-                                                        >
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {/* Reps Input */}
-                                                <div className="bg-black/20 p-3 rounded-xl border border-white/5">
-                                                    <label className="text-[10px] text-white/40 font-bold uppercase tracking-wider block mb-2 text-center">
-                                                        חזרות
-                                                    </label>
-                                                    <div className="flex items-center justify-between gap-1">
-                                                        <button
-                                                            onClick={handleDecreaseReps}
-                                                            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 active:scale-95 transition-all"
-                                                        >
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14" /></svg>
-                                                        </button>
-                                                        <input
-                                                            type="number"
-                                                            value={tempReps}
-                                                            onChange={handleRepsChange}
-                                                            className="w-full bg-transparent text-center text-xl font-bold text-white outline-none p-0"
-                                                        />
-                                                        <button
-                                                            onClick={handleIncreaseReps}
-                                                            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 active:scale-95 transition-all"
-                                                        >
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Action Buttons */}
-                                            <div className="flex gap-3 pt-2">
-                                                <button
-                                                    onClick={handleSave}
-                                                    className="flex-1 py-2.5 rounded-xl bg-[var(--cosmos-accent-primary)] text-black font-bold text-sm shadow-lg shadow-[var(--cosmos-accent-primary)]/20 active:scale-[0.98] transition-all"
-                                                >
-                                                    שמור שינויים
-                                                </button>
-                                                <button
-                                                    onClick={handleCancel}
-                                                    className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 font-medium text-sm hover:bg-white/10 active:scale-[0.98] transition-all"
-                                                >
-                                                    ביטול
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        /* View Mode */
-                                        <SetViewMode
-                                            set={set}
-                                            index={index}
-                                            isCompleted={isCompleted}
-                                            onEdit={handleStartEdit}
-                                        />
-                                    )}
-                                </motion.div>
-                            );
-                        })}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, direction: 'ltr' }}>
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-display)',
+                            fontWeight: 800,
+                            fontSize: 18,
+                            color: 'var(--navy)',
+                          }}
+                        >
+                          {set.weight || 0}
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: 11,
+                              color: 'var(--stone)',
+                              marginRight: 3,
+                            }}
+                          >
+                            kg
+                          </span>
+                        </span>
+                        <span style={{ color: 'var(--stone)' }}>×</span>
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-display)',
+                            fontWeight: 800,
+                            fontSize: 18,
+                            color: 'var(--navy)',
+                          }}
+                        >
+                          {set.reps || 0}
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: 11,
+                              color: 'var(--stone)',
+                              marginRight: 3,
+                            }}
+                          >
+                            reps
+                          </span>
+                        </span>
+                        <div
+                          style={{
+                            width: 32,
+                            height: 32,
+                            background: 'var(--bone-deep)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: 12,
+                              color: 'var(--stone)',
+                            }}
+                          >
+                            ✎
+                          </span>
+                        </div>
+                      </div>
                     </div>
+                  )}
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Bottom Safe Area */}
-                <div className="h-[env(safe-area-inset-bottom,16px)]" />
-            </motion.div>
-        </ModalOverlay>
+          <div style={{ height: 'env(safe-area-inset-bottom, 16px)' }} />
+        </motion.div>
+      </ModalOverlay>
     );
-});
+  }
+);
 
-/**
- * SetViewMode - Extracted view mode component to avoid inline handlers in map
- */
-const SetViewMode = memo<{
-    set: WorkoutSet;
-    index: number;
-    isCompleted: boolean;
-    onEdit: (index: number) => void;
-}>(({ set, index, isCompleted, onEdit }) => {
-    const handleClick = useCallback(() => {
-        onEdit(index);
-    }, [onEdit, index]);
-
-    return (
-        <div
-            className="flex items-center justify-between cursor-pointer"
-            onClick={handleClick}
-        >
-            <div className="flex items-center gap-3">
-                {isCompleted && (
-                    <CheckCircleIcon className="w-5 h-5 text-emerald-400" />
-                )}
-                <div>
-                    <span className="text-sm font-bold text-white">
-                        סט {index + 1}
-                    </span>
-                    {!isCompleted && (
-                        <span className="text-xs text-white/40 mr-2">(טרם הושלם)</span>
-                    )}
-                </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-                <div className="text-left">
-                    <div className="text-lg font-bold text-white">
-                        {set.weight || 0}
-                        <span className="text-xs text-white/40 mr-1">kg</span>
-                    </div>
-                </div>
-                <div className="text-white/20">×</div>
-                <div className="text-left">
-                    <div className="text-lg font-bold text-white">
-                        {set.reps || 0}
-                        <span className="text-xs text-white/40 mr-1">reps</span>
-                    </div>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
-                    <span className="text-white/40 text-xs">✎</span>
-                </div>
-            </div>
-        </div>
-    );
-});
-
-SetViewMode.displayName = 'SetViewMode';
 SetEditBottomSheet.displayName = 'SetEditBottomSheet';
 
 export default SetEditBottomSheet;

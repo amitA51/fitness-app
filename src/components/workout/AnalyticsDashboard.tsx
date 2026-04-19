@@ -1,48 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { getWorkoutSessions } from '../../services/dataService';
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  calculateVolumeHistory,
-  getAverageVolume,
-  calculateMuscleGroupDistribution,
-  calculateWeeklyVolumes,
-  calculateMuscleBalance,
-  forecastProgress,
-  VolumeDataPoint,
-  MuscleGroupData,
-  WeeklyVolume,
-  MuscleBalanceData,
-  ForecastData,
-} from '../../services/analyticsService';
-import {
+  type Achievement,
+  type StreakInfo,
   calculateStreak,
   getAchievements,
-  StreakInfo,
-  Achievement,
 } from '../../services/achievementService';
-import { motion, AnimatePresence } from 'framer-motion';
-import { TrophyIcon, FlameIcon } from '../icons';
-import TrendLineOverlay from './components/TrendLineOverlay';
-import MuscleRadarChart from './components/MuscleRadarChart';
+import {
+  type ForecastData,
+  type MuscleBalanceData,
+  type MuscleGroupData,
+  type VolumeDataPoint,
+  type WeeklyVolume,
+  calculateMuscleBalance,
+  calculateMuscleGroupDistribution,
+  calculateVolumeHistory,
+  calculateWeeklyVolumes,
+  forecastProgress,
+  getAverageVolume,
+} from '../../services/analyticsService';
+import { getWorkoutSessions } from '../../services/dataService';
+import type { WorkoutSession } from '../../types';
+import { FlameIcon, TrophyIcon } from '../icons';
 import ForecastChart from './ForecastChart';
 import WorkoutCalendar from './WorkoutCalendar';
+import MuscleRadarChart from './components/MuscleRadarChart';
+import TrendLineOverlay from './components/TrendLineOverlay';
 
 const MUSCLE_COLORS: Record<string, string> = {
-  'חזה': '#ef4444',
-  'גב': '#3b82f6',
-  'כתפיים': '#a855f7',
-  'רגליים': '#22c55e',
-  'ביצפס': '#f59e0b',
-  'טריצפס': '#ec4899',
-  'אמות': '#14b8a6',
-  'בטן': '#f97316',
-  'Core': '#f97316',
-  'Chest': '#ef4444',
-  'Back': '#3b82f6',
-  'Shoulders': '#a855f7',
-  'Legs': '#22c55e',
-  'Arms': '#f59e0b',
-  'Biceps': '#ec4899',
-  'Triceps': '#14b8a6',
+  חזה: '#ef4444',
+  גב: '#3b82f6',
+  כתפיים: '#a855f7',
+  רגליים: '#22c55e',
+  ביצפס: '#f59e0b',
+  טריצפס: '#ec4899',
+  אמות: '#14b8a6',
+  בטן: '#f97316',
+  Core: '#f97316',
+  Chest: '#ef4444',
+  Back: '#3b82f6',
+  Shoulders: '#a855f7',
+  Legs: '#22c55e',
+  Arms: '#f59e0b',
+  Biceps: '#ec4899',
+  Triceps: '#14b8a6',
 };
 
 function getMuscleColor(muscle: string, index: number): string {
@@ -52,46 +53,49 @@ function getMuscleColor(muscle: string, index: number): string {
 /**
  * Premium Stat Card Component
  */
-const StatCard = ({
-  icon,
-  label,
-  value,
-  sublabel,
-  gradient,
-  iconColor,
-  delay = 0
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-  sublabel: string;
-  gradient: string;
-  iconColor: string;
-  delay?: number;
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-    animate={{ opacity: 1, y: 0, scale: 1 }}
-    transition={{ delay, type: 'spring', stiffness: 200 }}
-    className={`workout-glass-card ${gradient} rounded-2xl p-4 relative overflow-hidden group`}
-  >
-    <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-    <div className="relative z-10">
-      <div className="flex items-center gap-2 mb-2">
-        <span className={iconColor}>{icon}</span>
-        <span className="text-[10px] text-[var(--cosmos-text-muted)] uppercase tracking-wider font-semibold">
-          {label}
-        </span>
+const StatCard = memo(
+  ({
+    icon,
+    label,
+    value,
+    sublabel,
+    gradient,
+    iconColor,
+    delay = 0,
+  }: {
+    icon: React.ReactNode;
+    label: string;
+    value: string | number;
+    sublabel: string;
+    gradient: string;
+    iconColor: string;
+    delay?: number;
+  }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay, type: 'spring', stiffness: 200 }}
+      className={`bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 ${gradient} rounded-2xl p-4 relative overflow-hidden group`}
+    >
+      <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      <div className="relative z-10">
+        <div className="flex items-center gap-2 mb-2">
+          <span className={iconColor}>{icon}</span>
+          <span className="text-[10px] text-[var(--cosmos-text-muted)] uppercase tracking-wider font-semibold">
+            {label}
+          </span>
+        </div>
+        <div className="text-3xl font-black text-white">{value}</div>
+        <div className="text-[10px] text-white/40 mt-1">{sublabel}</div>
       </div>
-      <div className="text-3xl font-black text-white">{value}</div>
-      <div className="text-[10px] text-white/40 mt-1">{sublabel}</div>
-    </div>
-    <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-white/5 rounded-full blur-xl group-hover:bg-white/10 transition-colors" />
-  </motion.div>
+      <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-white/5 rounded-full blur-xl group-hover:bg-white/10 transition-colors" />
+    </motion.div>
+  )
 );
+StatCard.displayName = 'StatCard';
 
 const AnalyticsDashboard: React.FC = () => {
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [volumeData, setVolumeData] = useState<VolumeDataPoint[]>([]);
   const [muscleGroupData, setMuscleGroupData] = useState<MuscleGroupData[]>([]);
   const [weeklyVolumes, setWeeklyVolumes] = useState<WeeklyVolume[]>([]);
@@ -118,7 +122,7 @@ const AnalyticsDashboard: React.FC = () => {
       const streak = calculateStreak(workoutSessions);
       const achieves = await getAchievements(workoutSessions, streak);
       const muscleGroups = calculateMuscleGroupDistribution(workoutSessions);
-      
+
       // New analytics data
       const weekly = calculateWeeklyVolumes(workoutSessions, 12);
       const balance = calculateMuscleBalance(workoutSessions, 12);
@@ -143,17 +147,30 @@ const AnalyticsDashboard: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <motion.div
           animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: 'linear' }}
           className="w-8 h-8 border-2 border-[var(--cosmos-accent-primary)] border-t-transparent rounded-full"
         />
       </div>
     );
   }
 
-  const recentVolume = volumeData.slice(-10);
-  const maxVolume = Math.max(...recentVolume.map(d => d.volume), 1);
-  const maxWeeklyVolume = Math.max(...weeklyVolumes.map(d => d.totalVolume), 1);
-  const unlockedAchievements = achievements.filter(a => a.progress === 100);
+  const recentVolume = useMemo(() => volumeData.slice(-10), [volumeData]);
+  const maxVolume = useMemo(
+    () => Math.max(...recentVolume.map((d) => d.volume), 1),
+    [recentVolume]
+  );
+  const maxWeeklyVolume = useMemo(
+    () => Math.max(...weeklyVolumes.map((d) => d.totalVolume), 1),
+    [weeklyVolumes]
+  );
+  const unlockedAchievements = useMemo(
+    () => achievements.filter((a) => a.progress === 100),
+    [achievements]
+  );
+
+  const handleTrendPointHover = useCallback((idx: number | null) => {
+    setHoveredTrendPoint(idx);
+  }, []);
 
   return (
     <div className="space-y-6 -mr-2 pr-2 overflow-y-auto custom-scrollbar max-h-[60vh]">
@@ -185,7 +202,7 @@ const AnalyticsDashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="workout-glass-card rounded-2xl p-5"
+          className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
         >
           <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
             <span className="w-1.5 h-1.5 bg-purple-400 rounded-full workout-pulse-glow" />
@@ -202,12 +219,15 @@ const AnalyticsDashboard: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 + i * 0.05 }}
                   whileHover={{ scale: 1.02, y: -2 }}
-                  className={`p-3 rounded-xl border transition-all ${isUnlocked
-                    ? 'bg-gradient-to-br from-yellow-500/20 to-orange-500/10 border-yellow-500/40 shadow-[0_0_15px_rgba(234,179,8,0.2)]'
-                    : 'bg-white/5 border-white/10 hover:border-white/20'
-                    }`}
+                  className={`p-3 rounded-xl border transition-all ${
+                    isUnlocked
+                      ? 'bg-gradient-to-br from-yellow-500/20 to-orange-500/10 border-yellow-500/40 shadow-[0_0_15px_rgba(234,179,8,0.2)]'
+                      : 'bg-white/5 border-white/10 hover:border-white/20'
+                  }`}
                 >
-                  <div className={`text-2xl mb-1 ${isUnlocked ? 'workout-fire-effect' : 'opacity-30 grayscale'}`}>
+                  <div
+                    className={`text-2xl mb-1 ${isUnlocked ? 'workout-fire-effect' : 'opacity-30 grayscale'}`}
+                  >
                     {achievement.icon}
                   </div>
                   <div
@@ -263,7 +283,7 @@ const AnalyticsDashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="workout-glass-card rounded-2xl p-5"
+          className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -280,7 +300,10 @@ const AnalyticsDashboard: React.FC = () => {
                 <span className="text-white/40">מגמה</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-3 h-0.5 bg-yellow-400/50 rounded" style={{ borderTop: '2px dashed rgba(251, 191, 36, 0.5)' }} />
+                <div
+                  className="w-3 h-0.5 bg-yellow-400/50 rounded"
+                  style={{ borderTop: '2px dashed rgba(251, 191, 36, 0.5)' }}
+                />
                 <span className="text-white/40">חיזוי</span>
               </div>
             </div>
@@ -288,15 +311,15 @@ const AnalyticsDashboard: React.FC = () => {
 
           <div className="h-48 relative">
             {/* SVG Chart with Trend Line */}
-            <svg 
-              width="100%" 
-              height="100%" 
+            <svg
+              width="100%"
+              height="100%"
               viewBox={`0 0 ${weeklyVolumes.length * 60} 180`}
               preserveAspectRatio="xMidYMid meet"
               className="overflow-visible"
             >
               {/* Grid Lines */}
-              {[0, 1, 2, 3, 4].map(i => (
+              {[0, 1, 2, 3, 4].map((i) => (
                 <line
                   key={`grid-${i}`}
                   x1="0"
@@ -314,7 +337,7 @@ const AnalyticsDashboard: React.FC = () => {
                 forecast={forecastData}
                 maxVolume={maxWeeklyVolume}
                 hoveredIndex={hoveredTrendPoint}
-                onHover={setHoveredTrendPoint}
+                onHover={handleTrendPointHover}
                 svgWidth={weeklyVolumes.length * 60}
                 chartHeight={180}
                 barWidth={40}
@@ -326,7 +349,7 @@ const AnalyticsDashboard: React.FC = () => {
                 const height = (week.totalVolume / maxWeeklyVolume) * 140;
                 const barX = 10 + i * 60 + 20;
                 const isHovered = hoveredTrendPoint === i;
-                
+
                 return (
                   <g key={i}>
                     <motion.rect
@@ -338,12 +361,17 @@ const AnalyticsDashboard: React.FC = () => {
                       fill={isHovered ? 'url(#barGradientHover)' : 'url(#barGradient)'}
                       initial={{ height: 0, y: 170 }}
                       animate={{ height, y: 170 - height }}
-                      transition={{ delay: 0.2 + i * 0.05, type: 'spring', stiffness: 200, damping: 15 }}
+                      transition={{
+                        delay: 0.2 + i * 0.05,
+                        type: 'spring',
+                        stiffness: 200,
+                        damping: 15,
+                      }}
                       onMouseEnter={() => setHoveredTrendPoint(i)}
                       onMouseLeave={() => setHoveredTrendPoint(null)}
                       style={{ cursor: 'pointer' }}
                     />
-                    
+
                     {/* Week Label */}
                     <text
                       x={barX + 20}
@@ -388,13 +416,16 @@ const AnalyticsDashboard: React.FC = () => {
                       שבוע {weeklyVolumes[hoveredTrendPoint].weekLabel}
                     </div>
                     {weeklyVolumes[hoveredTrendPoint].changeFromPrevious !== null && (
-                      <div className={`text-[9px] ${
-                        weeklyVolumes[hoveredTrendPoint].changeFromPrevious! >= 0 
-                          ? 'text-green-400' 
-                          : 'text-red-400'
-                      }`}>
+                      <div
+                        className={`text-[9px] ${
+                          weeklyVolumes[hoveredTrendPoint].changeFromPrevious! >= 0
+                            ? 'text-green-400'
+                            : 'text-red-400'
+                        }`}
+                      >
                         {weeklyVolumes[hoveredTrendPoint].changeFromPrevious! >= 0 ? '↑' : '↓'}{' '}
-                        {Math.abs(weeklyVolumes[hoveredTrendPoint].changeFromPrevious!)}% מהשבוע הקודם
+                        {Math.abs(weeklyVolumes[hoveredTrendPoint].changeFromPrevious!)}% מהשבוע
+                        הקודם
                       </div>
                     )}
                     <div className="text-white/40 text-[8px] mt-1">
@@ -414,12 +445,22 @@ const AnalyticsDashboard: React.FC = () => {
                 <span className="text-yellow-400 font-medium">
                   {forecastData.predicted.toLocaleString()} ק״ג
                 </span>
-                <span className={`${
-                  forecastData.trend === 'increasing' ? 'text-green-400' :
-                  forecastData.trend === 'decreasing' ? 'text-red-400' : 'text-white/40'
-                }`}>
-                  ({forecastData.trend === 'increasing' ? '↑ בעלייה' :
-                    forecastData.trend === 'decreasing' ? '↓ בירידה' : '→ יציב'})
+                <span
+                  className={`${
+                    forecastData.trend === 'increasing'
+                      ? 'text-green-400'
+                      : forecastData.trend === 'decreasing'
+                        ? 'text-red-400'
+                        : 'text-white/40'
+                  }`}
+                >
+                  (
+                  {forecastData.trend === 'increasing'
+                    ? '↑ בעלייה'
+                    : forecastData.trend === 'decreasing'
+                      ? '↓ בירידה'
+                      : '→ יציב'}
+                  )
                 </span>
               </div>
               <div className="text-white/30">
@@ -436,7 +477,7 @@ const AnalyticsDashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="workout-glass-card rounded-2xl p-5"
+          className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
         >
           <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
             <span className="w-1.5 h-1.5 bg-[var(--cosmos-accent-primary)] rounded-full" />
@@ -446,7 +487,7 @@ const AnalyticsDashboard: React.FC = () => {
           <div className="h-40 flex items-end justify-between gap-1.5 relative">
             {/* Grid Lines */}
             <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-              {[0, 1, 2, 3].map(i => (
+              {[0, 1, 2, 3].map((i) => (
                 <div key={i} className="border-t border-dashed border-white/5 w-full" />
               ))}
             </div>
@@ -459,16 +500,24 @@ const AnalyticsDashboard: React.FC = () => {
                   key={i}
                   initial={{ height: 0 }}
                   animate={{ height: `${height}%` }}
-                  transition={{ delay: 0.3 + i * 0.05, type: 'spring', stiffness: 200, damping: 15 }}
+                  transition={{
+                    delay: 0.3 + i * 0.05,
+                    type: 'spring',
+                    stiffness: 200,
+                    damping: 15,
+                  }}
                   onMouseEnter={() => setHoveredBar(i)}
                   onMouseLeave={() => setHoveredBar(null)}
-                  className={`flex-1 rounded-t-lg min-w-[12px] relative transition-all duration-200 cursor-pointer ${isHovered ? 'brightness-125' : ''
-                    }`}
+                  className={`flex-1 rounded-t-lg min-w-[12px] relative transition-all duration-200 cursor-pointer ${
+                    isHovered ? 'brightness-125' : ''
+                  }`}
                   style={{
-                    background: `linear-gradient(to top, var(--cosmos-accent-primary), var(--cosmos-accent-cyan))`
+                    background: `linear-gradient(to top, var(--cosmos-accent-primary), var(--cosmos-accent-cyan))`,
                   }}
                 >
-                  <div className={`absolute inset-0 rounded-t-lg bg-gradient-to-t from-[var(--cosmos-accent-primary)] to-[var(--cosmos-accent-cyan)] blur-md transition-opacity ${isHovered ? 'opacity-50' : 'opacity-0'}`} />
+                  <div
+                    className={`absolute inset-0 rounded-t-lg bg-gradient-to-t from-[var(--cosmos-accent-primary)] to-[var(--cosmos-accent-cyan)] blur-md transition-opacity ${isHovered ? 'opacity-50' : 'opacity-0'}`}
+                  />
                   <AnimatePresence>
                     {isHovered && (
                       <motion.div
@@ -497,14 +546,10 @@ const AnalyticsDashboard: React.FC = () => {
       )}
 
       {/* Workout Calendar - Monthly Heatmap */}
-      {sessions.length > 0 && (
-        <WorkoutCalendar sessions={sessions} />
-      )}
+      {sessions.length > 0 && <WorkoutCalendar sessions={sessions} />}
 
       {/* Forecast Chart - Progress Forecasting */}
-      {sessions.length > 0 && (
-        <ForecastChart sessions={sessions} />
-      )}
+      {sessions.length > 0 && <ForecastChart sessions={sessions} />}
 
       {/* Muscle Balance - Radar Chart */}
       {muscleBalanceData.length >= 3 && (
@@ -512,7 +557,7 @@ const AnalyticsDashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="workout-glass-card rounded-2xl p-5"
+          className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
         >
           <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
             <span className="w-1.5 h-1.5 bg-pink-400 rounded-full" />
@@ -522,11 +567,7 @@ const AnalyticsDashboard: React.FC = () => {
           <div className="flex gap-6 items-start">
             {/* Radar Chart */}
             <div className="flex-shrink-0">
-              <MuscleRadarChart 
-                data={muscleBalanceData}
-                size={180}
-                maxDisplay={8}
-              />
+              <MuscleRadarChart data={muscleBalanceData} size={180} maxDisplay={8} />
             </div>
 
             {/* Enhanced Legend with Trends */}
@@ -539,27 +580,25 @@ const AnalyticsDashboard: React.FC = () => {
                   transition={{ delay: 0.4 + i * 0.05 }}
                   className="flex items-center gap-2 group cursor-pointer"
                 >
-                  <div 
+                  <div
                     className="w-3 h-3 rounded-sm flex-shrink-0 group-hover:scale-110 transition-transform"
-                    style={{ 
-                      backgroundColor: muscle.isWeak ? '#ef4444' : 
-                        muscle.trend === 'up' ? '#22c55e' : 
-                        muscle.trend === 'down' ? '#ef4444' : '#fbbf24' 
+                    style={{
+                      backgroundColor: muscle.isWeak
+                        ? '#ef4444'
+                        : muscle.trend === 'up'
+                          ? '#22c55e'
+                          : muscle.trend === 'down'
+                            ? '#ef4444'
+                            : '#fbbf24',
                     }}
                   />
                   <span className="text-xs text-white/70 flex-1 truncate group-hover:text-white transition-colors">
                     {muscle.muscle}
                   </span>
                   <div className="flex items-center gap-1">
-                    {muscle.trend === 'up' && (
-                      <span className="text-green-400 text-[9px]">↑</span>
-                    )}
-                    {muscle.trend === 'down' && (
-                      <span className="text-red-400 text-[9px]">↓</span>
-                    )}
-                    <span className="text-xs font-bold text-white/90">
-                      {muscle.percentage}%
-                    </span>
+                    {muscle.trend === 'up' && <span className="text-green-400 text-[9px]">↑</span>}
+                    {muscle.trend === 'down' && <span className="text-red-400 text-[9px]">↓</span>}
+                    <span className="text-xs font-bold text-white/90">{muscle.percentage}%</span>
                   </div>
                   {muscle.isWeak && (
                     <span className="text-[8px] text-red-400 bg-red-400/10 px-1 py-0.5 rounded">
@@ -579,7 +618,7 @@ const AnalyticsDashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="workout-glass-card rounded-2xl p-5"
+          className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
         >
           <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
             <span className="w-1.5 h-1.5 bg-pink-400 rounded-full" />
@@ -638,9 +677,7 @@ const AnalyticsDashboard: React.FC = () => {
                   <span className="text-xs text-white/70 flex-1 truncate group-hover:text-white transition-colors">
                     {group.muscle}
                   </span>
-                  <span className="text-xs font-bold text-white/90">
-                    {group.percentage}%
-                  </span>
+                  <span className="text-xs font-bold text-white/90">{group.percentage}%</span>
                 </motion.div>
               ))}
             </div>
@@ -649,14 +686,10 @@ const AnalyticsDashboard: React.FC = () => {
       )}
 
       {/* Workout Calendar - Monthly Heatmap */}
-      {sessions.length > 0 && (
-        <WorkoutCalendar sessions={sessions} />
-      )}
+      {sessions.length > 0 && <WorkoutCalendar sessions={sessions} />}
 
       {/* Forecast Chart - Progress Forecasting */}
-      {sessions.length > 0 && (
-        <ForecastChart sessions={sessions} />
-      )}
+      {sessions.length > 0 && <ForecastChart sessions={sessions} />}
     </div>
   );
 };

@@ -84,5 +84,5 @@ export const WORKOUT_PROGRAMS: WorkoutProgram[] = [
 ];
 
 export const getProgramById = (id: string): WorkoutProgram | undefined => {
-  return WORKOUT_PROGRAMS.find(p => p.id === id);
+  return WORKOUT_PROGRAMS.find((p) => p.id === id);
 };

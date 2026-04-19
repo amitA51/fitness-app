@@ -1,277 +1,445 @@
-import { useState, useCallback } from 'react';
-import { Dumbbell, Clock, Trash2, ChevronLeft, BarChart2, Layers } from 'lucide-react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { ChevronLeft, Dumbbell, Trash2 } from 'lucide-react';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { deleteWorkoutSession } from '../services/workoutDb';
 import { useWorkoutHistoryHub } from '../hooks/fitness/useWorkoutHistoryHub';
+import { deleteWorkoutSession } from '../services/workoutDb';
 import type { WorkoutSession } from '../types';
 
-// ============================================================================
-// HELPERS
-// ============================================================================
-
+// ── Helpers ──────────────────────────────────────────────────────────────────
 const HEBREW_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 const HEBREW_MONTHS = [
-  'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
-  'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר',
+  'ינואר',
+  'פברואר',
+  'מרץ',
+  'אפריל',
+  'מאי',
+  'יוני',
+  'יולי',
+  'אוגוסט',
+  'ספטמבר',
+  'אוקטובר',
+  'נובמבר',
+  'דצמבר',
 ];
 
-function formatDate(dateStr: string): string {
+const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr);
-  const day = HEBREW_DAYS[date.getDay()];
-  const month = HEBREW_MONTHS[date.getMonth()];
-  return `יום ${day}, ${date.getDate()} ${month}`;
-}
+  return `יום ${HEBREW_DAYS[date.getDay()]}, ${date.getDate()} ${HEBREW_MONTHS[date.getMonth()]}`;
+};
 
-function formatDuration(seconds: number): string {
-  if (seconds < 3600) {
-    return `${Math.round(seconds / 60)} דקות`;
-  }
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.round((seconds % 3600) / 60);
-  return minutes > 0 ? `${hours}:${String(minutes).padStart(2, '0')} שעות` : `${hours} שעות`;
-}
+const formatDateISO = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  const y = String(date.getFullYear()).slice(2);
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${d}.${m}.${y}`;
+};
 
-function countCompletedSets(session: WorkoutSession): number {
-  return session.exercises.reduce(
-    (total, ex) => total + ex.sets.filter((s) => s.isCompleted).length,
-    0
-  );
-}
+const isThisWeek = (dateStr: string): boolean => {
+  const date = new Date(dateStr).getTime();
+  const sevenDaysAgo = Date.now() - 7 * 86400000;
+  return date > sevenDaysAgo;
+};
 
-// ============================================================================
-// SKELETON CARD
-// ============================================================================
+const formatDuration = (seconds: number): string => {
+  if (seconds < 3600) return `${Math.round(seconds / 60)}min`;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`;
+};
 
-function SkeletonCard() {
+const countCompletedSets = (session: WorkoutSession): number =>
+  session.exercises.reduce((total, ex) => total + ex.sets.filter((s) => s.isCompleted).length, 0);
+
+// ── SkeletonCard ───────────────────────────────────────────────────────────────
+const SkeletonCard = memo(function SkeletonCard() {
   return (
-    <div className="relative bg-[#111111] rounded-[20px] border border-white/[0.06] overflow-hidden p-4">
-      <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-primary/30 rounded-r-[20px]" />
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1 min-w-0 pr-4">
-          <div className="h-5 w-2/3 rounded-lg skeleton-shimmer mb-2" />
-          <div className="h-3.5 w-1/3 rounded-md skeleton-shimmer" />
-        </div>
-        <div className="w-8 h-8 rounded-xl skeleton-shimmer shrink-0" />
-      </div>
-      <div className="flex gap-3 mb-3">
-        <div className="h-7 w-24 rounded-full skeleton-shimmer" />
-        <div className="h-7 w-20 rounded-full skeleton-shimmer" />
-        <div className="h-7 w-28 rounded-full skeleton-shimmer" />
-      </div>
-      <div className="flex gap-2">
-        <div className="h-6 w-16 rounded-full skeleton-shimmer" />
-        <div className="h-6 w-20 rounded-full skeleton-shimmer" />
-        <div className="h-6 w-14 rounded-full skeleton-shimmer" />
+    <div className="card-outlined">
+      <div className="space-y-3">
+        <div className="h-3 w-1/3 skeleton-shimmer" />
+        <div className="h-6 w-2/3 skeleton-shimmer" />
+        <div className="h-3 w-1/2 skeleton-shimmer" />
       </div>
     </div>
   );
-}
+});
 
-// ============================================================================
-// SESSION CARD
-// ============================================================================
-
+// ── SessionCard ───────────────────────────────────────────────────────────────
 interface SessionCardProps {
   session: WorkoutSession;
   onDelete: (id: string) => void;
+  index: number;
 }
 
-function SessionCard({ session, onDelete }: SessionCardProps) {
+const SessionCard = memo(function SessionCard({ session, onDelete, index }: SessionCardProps) {
   const navigate = useNavigate();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const completedSets = countCompletedSets(session);
   const exerciseNames = session.exercises.map((e) => e.exerciseName);
+  const fresh = isThisWeek(session.date);
 
-  function handleDeleteClick(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (confirmDelete) {
-      onDelete(session.id);
-    } else {
-      setConfirmDelete(true);
-    }
-  }
+  const handleDeleteClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (confirmDelete) {
+        onDelete(session.id);
+      } else {
+        setConfirmDelete(true);
+      }
+    },
+    [confirmDelete, onDelete, session.id]
+  );
 
-  function handleCardClick() {
+  const handleCardClick = useCallback(() => {
     if (confirmDelete) {
       setConfirmDelete(false);
       return;
     }
     navigate(`/history/${session.id}`);
-  }
+  }, [confirmDelete, navigate, session.id]);
+
+  const vol =
+    session.totalVolume >= 1000
+      ? `${(session.totalVolume / 1000).toFixed(1)}K`
+      : session.totalVolume.toLocaleString();
+
+  const title =
+    session.exercises[0]?.exerciseName ||
+    (session.status === 'completed' ? 'אימון הושלם' : 'אימון בהליך');
+
+  return (
+    <button onClick={handleCardClick} className="w-full card-interactive text-right">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <span
+            className="eyebrow"
+            style={{
+              color: fresh ? 'var(--mustard)' : 'var(--stone)',
+              fontFamily: 'var(--font-mono)',
+            }}
+          >
+            №{String(index + 1).padStart(3, '0')} · {formatDateISO(session.date)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className="badge"
+            style={{
+              background: session.status === 'completed' ? 'var(--navy)' : 'var(--bone-deep)',
+              color: session.status === 'completed' ? 'var(--mustard)' : 'var(--navy)',
+            }}
+          >
+            {session.status === 'completed' ? 'DONE' : 'WIP'}
+          </span>
+          <button
+            onClick={handleDeleteClick}
+            className="w-9 h-9 flex items-center justify-center transition-colors"
+            style={{
+              background: confirmDelete ? 'var(--navy)' : 'transparent',
+              color: confirmDelete ? 'var(--mustard)' : 'var(--stone)',
+            }}
+            title={confirmDelete ? 'לחץ שוב לאישור' : 'מחק אימון'}
+          >
+            <Trash2 size={14} />
+          </button>
+          <ChevronLeft size={15} style={{ color: 'var(--stone)' }} />
+        </div>
+      </div>
+
+      <h3
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontWeight: 800,
+          fontSize: '22px',
+          lineHeight: 1,
+          color: 'var(--ink)',
+          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
+          marginBottom: '4px',
+        }}
+      >
+        {title}
+      </h3>
+      <p
+        style={{
+          fontFamily: 'var(--font-hebrew)',
+          fontSize: '12px',
+          color: 'var(--stone)',
+          marginBottom: '12px',
+        }}
+      >
+        {formatDate(session.date)}
+      </p>
+
+      <div
+        className="flex items-center gap-4"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '12px',
+          color: 'var(--navy)',
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+        }}
+      >
+        {session.duration > 0 && <span>{formatDuration(session.duration)}</span>}
+        <span style={{ color: 'var(--stone)' }}>·</span>
+        <span>{completedSets} SETS</span>
+        {session.totalVolume > 0 && (
+          <>
+            <span style={{ color: 'var(--stone)' }}>·</span>
+            <span>{vol}KG</span>
+          </>
+        )}
+      </div>
+
+      {exerciseNames.length > 0 && (
+        <div className="flex gap-2 flex-wrap mt-3">
+          {exerciseNames.slice(0, 3).map((name, idx) => (
+            <span key={idx} className="chip">
+              {name}
+            </span>
+          ))}
+          {exerciseNames.length > 3 && (
+            <span className="chip" style={{ background: 'var(--bone-deep)' }}>
+              +{exerciseNames.length - 3}
+            </span>
+          )}
+        </div>
+      )}
+
+      {confirmDelete && (
+        <p
+          className="mt-3"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            color: 'var(--navy)',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+          }}
+        >
+          לחץ שוב למחיקה
+        </p>
+      )}
+    </button>
+  );
+});
+
+// ── VirtualizedSessionList ───────────────────────────────────────────────────
+// data-virtualized="true" — window virtualization via @tanstack/react-virtual
+const VirtualizedSessionList = memo(function VirtualizedSessionList({
+  sessions,
+  onDelete,
+}: {
+  sessions: WorkoutSession[];
+  onDelete: (id: string) => void;
+}) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: sessions.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 192,
+    overscan: 5,
+  });
 
   return (
     <div
-      className="relative bg-[#111111] rounded-[20px] border border-white/[0.06] overflow-hidden cursor-pointer transition-all duration-200 hover:border-white/[0.12] hover:bg-[#161616] active:scale-[0.99]"
-      onClick={handleCardClick}
+      ref={parentRef}
+      className="space-y-3 overflow-y-auto"
+      style={{ height: 'calc(100vh - 340px)', WebkitOverflowScrolling: 'touch' }}
     >
-      {/* Primary color left border accent */}
-      <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-primary rounded-r-[20px]" />
-
-      <div className="p-4 pr-5">
-        {/* Header row */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0 pr-3">
-            <p className="font-barlow-condensed font-bold text-[17px] text-white leading-tight truncate">
-              {session.notes || 'אימון חופשי'}
-            </p>
-            <p className="text-[13px] text-[#8E8E93] mt-0.5 font-barlow">
-              {formatDate(session.date)}
-            </p>
+      <div
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          position: 'relative',
+          width: '100%',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((virtualRow) => (
+          <div
+            key={sessions[virtualRow.index].id}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${virtualRow.start}px)`,
+            }}
+          >
+            <SessionCard
+              session={sessions[virtualRow.index]}
+              onDelete={onDelete}
+              index={virtualRow.index}
+            />
           </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              onClick={handleDeleteClick}
-              className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-all duration-200 ${
-                confirmDelete
-                  ? 'bg-red-500/20 text-red-400 scale-95'
-                  : 'text-[#48484A] hover:text-red-400 hover:bg-red-500/10 active:scale-90'
-              }`}
-              title={confirmDelete ? 'לחץ שוב לאישור' : 'מחק אימון'}
-            >
-              <Trash2 size={16} />
-            </button>
-            <div className="min-w-[44px] min-h-[44px] flex items-center justify-center">
-              <ChevronLeft size={16} className="text-[#48484A]" />
-            </div>
-          </div>
-        </div>
-
-        {/* Stats pills row */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          <span className="flex items-center gap-1.5 bg-white/[0.06] rounded-full px-3 py-1.5 text-[12px] font-barlow font-medium text-[#8E8E93]">
-            <Clock size={12} className="text-blue-400 shrink-0" />
-            {formatDuration(session.duration)}
-          </span>
-
-          <span className="flex items-center gap-1.5 bg-white/[0.06] rounded-full px-3 py-1.5 text-[12px] font-barlow font-medium text-[#8E8E93]">
-            <Layers size={12} className="text-purple-400 shrink-0" />
-            {completedSets} סטים
-          </span>
-
-          <span className="flex items-center gap-1.5 bg-white/[0.06] rounded-full px-3 py-1.5 text-[12px] font-barlow font-medium text-[#8E8E93]">
-            <BarChart2 size={12} className="text-green-400 shrink-0" />
-            {session.totalVolume.toLocaleString()} ק"ג
-          </span>
-        </div>
-
-        {/* Exercise name chips */}
-        {exerciseNames.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {exerciseNames.slice(0, 3).map((name, idx) => (
-              <span
-                key={idx}
-                className="text-[11px] font-barlow text-[#48484A] bg-white/[0.04] border border-white/[0.06] rounded-full px-2.5 py-1 leading-none"
-              >
-                {name}
-              </span>
-            ))}
-            {exerciseNames.length > 3 && (
-              <span className="text-[11px] font-barlow text-[#48484A] bg-white/[0.04] border border-white/[0.06] rounded-full px-2.5 py-1 leading-none">
-                +{exerciseNames.length - 3}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Confirm delete message */}
-        {confirmDelete && (
-          <p className="mt-3 text-[12px] font-barlow text-red-400 font-medium">
-            לחץ שוב למחיקה
-          </p>
-        )}
+        ))}
       </div>
     </div>
   );
-}
+});
 
-// ============================================================================
-// HISTORY PAGE
-// ============================================================================
-
+// ── History Page ───────────────────────────────────────────────────────────────
 export default function History() {
   const navigate = useNavigate();
   const { sessions: unsortedSessions, loading, error, refresh } = useWorkoutHistoryHub(100);
-  
-  // Sort sessions by startTime (newest first)
-  const sessions = [...unsortedSessions].sort(
-    (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+
+  const sessions = useMemo(
+    () =>
+      [...unsortedSessions].sort(
+        (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+      ),
+    [unsortedSessions]
   );
 
-  const handleDelete = useCallback(async (id: string) => {
-    try {
-      await deleteWorkoutSession(id);
-      await refresh(); // Auto-refresh via hook's event listeners
-    } catch {
-      // Error handled by hook
-    }
-  }, [refresh]);
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        await deleteWorkoutSession(id);
+        await refresh();
+      } catch {
+        // Error handled by hook
+      }
+    },
+    [refresh]
+  );
+
+  const totalVolume = useMemo(
+    () => sessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0),
+    [sessions]
+  );
+  const lastMonthVolume = useMemo(() => {
+    const cutoff = Date.now() - 30 * 86400000;
+    return sessions
+      .filter((s) => new Date(s.startTime).getTime() > cutoff)
+      .reduce((sum, s) => sum + (s.totalVolume || 0), 0);
+  }, [sessions]);
+
+  const totalVolDisplay =
+    totalVolume >= 1000 ? `${(totalVolume / 1000).toFixed(1)}K` : totalVolume.toLocaleString();
+  const lastMonthDisplay =
+    lastMonthVolume >= 1000
+      ? `${(lastMonthVolume / 1000).toFixed(1)}K`
+      : lastMonthVolume.toLocaleString();
 
   return (
-    <div className="min-h-screen bg-black pb-[88px] pb-[calc(88px+env(safe-area-inset-bottom))]" dir="rtl">
-      <div className="px-4 pt-6">
+    <div className="min-h-screen pb-28" style={{ background: 'var(--bone)' }} dir="rtl">
+      {/* Masthead */}
+      <header className="masthead safe-area-top sticky top-0 z-20">
+        <div className="kicker">§04 · HISTORIA · {sessions.length} SESSIONS</div>
+        <h1
+          style={{
+            fontFamily: 'var(--font-hebrew)',
+            fontSize: 'clamp(44px, 12vw, 72px)',
+            lineHeight: 0.9,
+            marginTop: '8px',
+          }}
+        >
+          היסטוריה
+        </h1>
+      </header>
 
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="font-barlow-condensed font-bold text-3xl text-white tracking-wide leading-none">
-            היסטוריה
-          </h1>
-          {!loading && sessions.length > 0 && (
-            <p className="font-barlow text-[14px] text-[#8E8E93] mt-1.5">
-              {sessions.length} אימונים הושלמו
-            </p>
-          )}
-        </div>
-
-        {/* Error banner */}
+      <main>
         {error && (
-          <div className="mb-4 p-4 rounded-[16px] bg-red-500/10 border border-red-500/20 text-red-400 text-[14px] font-barlow">
+          <div
+            className="px-5 py-4 mx-5 mt-5"
+            style={{
+              background: 'var(--navy)',
+              color: 'var(--mustard)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '12px',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+            }}
+          >
             {error.message}
           </div>
         )}
 
-        {/* Loading — skeleton cards */}
-        {loading && (
-          <div className="flex flex-col gap-3">
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!loading && sessions.length === 0 && !error && (
-          <div className="flex flex-col items-center justify-center py-24 gap-5">
-            <div className="w-20 h-20 rounded-[24px] bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">
-              <Dumbbell size={36} className="text-[#48484A]" />
-            </div>
-            <div className="text-center">
-              <p className="font-barlow-condensed font-bold text-[20px] text-white">
-                עדיין לא ביצעת אימון
-              </p>
-              <p className="font-barlow text-[14px] text-[#8E8E93] mt-1.5">
-                התחל את האימון הראשון שלך עכשיו
-              </p>
-            </div>
-            <button
-              onClick={() => navigate('/workout')}
-              className="min-h-[44px] px-7 py-3 rounded-[14px] bg-primary text-white font-barlow font-semibold text-[15px] transition-all duration-200 hover:opacity-90 active:scale-95"
-            >
-              התחל אימון
-            </button>
-          </div>
-        )}
-
-        {/* Session list */}
+        {/* Block Hero — total sessions */}
         {!loading && sessions.length > 0 && (
-          <div className="flex flex-col gap-3">
-            {sessions.map((session) => (
-              <SessionCard key={session.id} session={session} onDelete={handleDelete} />
-            ))}
+          <div className="block-hero">
+            <span className="ribbon">§ TOTAL</span>
+            <div className="label">סך הכול אימונים</div>
+            <div className="number">{sessions.length}</div>
+            <div className="sub">SESSIONS LOGGED</div>
           </div>
         )}
-      </div>
+
+        {/* Data Strip — volume */}
+        {!loading && sessions.length > 0 && (
+          <div className="data-strip mx-5 mt-5">
+            <div>
+              <div className="val">
+                {totalVolDisplay}
+                <em>KG</em>
+              </div>
+              <div className="lbl">TOTAL VOLUME</div>
+            </div>
+            <div>
+              <div className="val">
+                {lastMonthDisplay}
+                <em>KG</em>
+              </div>
+              <div className="lbl">LAST 30 DAYS</div>
+            </div>
+          </div>
+        )}
+
+        {/* Chapter break */}
+        {!loading && sessions.length > 0 && (
+          <div className="chapter-break mt-5">
+            <span className="left">§01 · ALL SESSIONS</span>
+            <span className="right">אימונים</span>
+          </div>
+        )}
+
+        <div className="px-5 pt-5 space-y-3">
+          {loading && (
+            <div className="space-y-3">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          )}
+
+          {!loading && sessions.length === 0 && !error && (
+            <div className="flex flex-col items-center py-20 gap-5 text-center">
+              <div
+                className="w-16 h-16 flex items-center justify-center"
+                style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
+              >
+                <Dumbbell size={28} />
+              </div>
+              <div>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '24px',
+                    fontWeight: 800,
+                    color: 'var(--ink)',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  עדיין לא ביצעת אימון
+                </p>
+                <p className="eyebrow mt-2" style={{ color: 'var(--stone)' }}>
+                  START YOUR FIRST SESSION
+                </p>
+              </div>
+              <button onClick={() => navigate('/workout')} className="btn-primary">
+                התחל אימון
+              </button>
+            </div>
+          )}
+
+          {!loading && sessions.length > 0 && (
+            <VirtualizedSessionList sessions={sessions} onDelete={handleDelete} />
+          )}
+        </div>
+      </main>
     </div>
   );
 }

@@ -1,0 +1,388 @@
+/* ============================================================================
+   SPARKOS FITNESS - Motion System
+   מערכת אנימציות אחידה - Spring Physics לכל האפליקציה
+   ============================================================================ */
+
+/* ============================================================================
+   KEYFRAMES - דפוסי אנימציה
+   ============================================================================ */
+
+/* Stagger Reveal - כניסה עם stagger */
+@keyframes staggerReveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade Scale - כניסה עם scale */
+@keyframes fadeScale {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Float - תנועה קבועה קטנה */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Pulse Glow - הבהוב עם glow */
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px var(--color-primary-glow);
+  }
+  50% {
+    box-shadow: 0 0 24px var(--color-primary-glow), 0 0 48px rgba(59, 130, 246, 0.15);
+  }
+}
+
+/* Shimmer - לסקלטון */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Spin - סיבוב */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Scale In - כניסה עם scale up */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Slide Up - החלקה למעלה */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide Down - החלקה למטה */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Breathing - לאינדיקטורים */
+@keyframes breathing {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.95);
+  }
+}
+
+/* Nav Dot Pop - נקודת ניווט */
+@keyframes navDotPop {
+  0% {
+    transform: scale(0) translateX(-50%);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.4) translateX(-50%);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateX(-50%);
+    opacity: 1;
+  }
+}
+
+/* Toast Animations */
+@keyframes toastSlideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-120%) scale(0.92);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes toastSlideUp {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+    filter: blur(0px);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-80%) scale(0.94);
+    filter: blur(6px);
+  }
+}
+
+@keyframes toastProgress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* Glow Pulse - לאימון */
+@keyframes glowPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.5), 0 0 60px rgba(59, 130, 246, 0.2);
+  }
+}
+
+/* Gradient Shift - לגרדיאנטים */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* ============================================================================
+   ANIMATION UTILITY CLASSES
+   ============================================================================ */
+
+/* Base Animation Classes */
+.animate-stagger {
+  animation: staggerReveal 0.5s var(--ease-spring-smooth) both;
+}
+
+.animate-fade-scale {
+  animation: fadeScale 0.4s var(--ease-spring-smooth) both;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s var(--ease-spring-bounce) both;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s var(--ease-spring-smooth) both;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s var(--ease-spring-smooth) both;
+}
+
+.animate-breathing {
+  animation: breathing 2s ease-in-out infinite;
+}
+
+.animate-nav-dot-pop {
+  animation: navDotPop 0.35s var(--ease-spring-bounce) forwards;
+}
+
+.animate-glow-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+/* Toast Specific */
+.toast-enter {
+  animation: toastSlideDown 0.38s var(--ease-spring-bounce) forwards;
+}
+
+.toast-exit {
+  animation: toastSlideUp 0.28s var(--ease-spring-smooth) forwards;
+}
+
+.toast-progress {
+  animation: toastProgress linear forwards;
+}
+
+/* ============================================================================
+   STAGGER DELAYS
+   ============================================================================ */
+
+.delay-0 {
+  animation-delay: 0ms;
+}
+.delay-50 {
+  animation-delay: 50ms;
+}
+.delay-100 {
+  animation-delay: 100ms;
+}
+.delay-150 {
+  animation-delay: 150ms;
+}
+.delay-200 {
+  animation-delay: 200ms;
+}
+.delay-300 {
+  animation-delay: 300ms;
+}
+.delay-400 {
+  animation-delay: 400ms;
+}
+.delay-500 {
+  animation-delay: 500ms;
+}
+
+/* ============================================================================
+   TRANSITION UTILITIES
+   ============================================================================ */
+
+/* Spring Transitions */
+.transition-spring {
+  transition-timing-function: var(--ease-spring-smooth);
+  transition-duration: var(--duration-base);
+}
+
+.transition-spring-fast {
+  transition-timing-function: var(--ease-spring-snappy);
+  transition-duration: var(--duration-fast);
+}
+
+.transition-spring-slow {
+  transition-timing-function: var(--ease-spring-smooth);
+  transition-duration: var(--duration-slow);
+}
+
+/* Hover Scale Effects */
+.hover-lift {
+  transition: transform var(--duration-base) var(--ease-spring-smooth);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+.hover-scale {
+  transition: transform var(--duration-fast) var(--ease-spring-snappy);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* ============================================================================
+   REDUCED MOTION - נגישות
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html.reduce-motion,
+html.reduce-motion * {
+  scroll-behavior: auto !important;
+}
+
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* ============================================================================
+   PAGE-SPECIFIC MOTION VARIANTS
+   ============================================================================ */
+
+/* Dashboard - Energetic, bouncy */
+.page-dashboard .animate-entrance {
+  animation: staggerReveal 0.5s var(--ease-spring-bounce) both;
+}
+
+/* Workout - Dramatic, focused */
+.page-workout .animate-entrance {
+  animation: fadeScale 0.4s var(--ease-spring-smooth) both;
+}
+
+/* Nutrition - Calm, smooth */
+.page-nutrition .animate-entrance {
+  animation: slideUp 0.5s var(--ease-spring-smooth) both;
+}
+
+/* History - Minimal, quick */
+.page-history .animate-entrance {
+  animation: fadeScale 0.3s var(--ease-spring-snappy) both;
+}

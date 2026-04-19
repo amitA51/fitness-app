@@ -5,34 +5,35 @@
 
 import { useCallback, useMemo } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
+import { logger } from '../utils/logger';
 
 // Haptic intensity levels with corresponding vibration patterns
 export type HapticIntensity = 'light' | 'medium' | 'heavy';
 
 // Haptic effect types for different interactions
 export type HapticEffect =
-  | 'tap'           // Simple tap feedback
-  | 'success'       // Task completion, positive action
-  | 'error'         // Error or failed action
-  | 'warning'       // Warning or caution
-  | 'selection'     // Item selection change
-  | 'impact'        // Physical collision feel
-  | 'notification'  // Incoming notification
-  | 'swipe'         // Swipe gesture feedback
-  | 'longPress';    // Long press recognition
+  | 'tap' // Simple tap feedback
+  | 'success' // Task completion, positive action
+  | 'error' // Error or failed action
+  | 'warning' // Warning or caution
+  | 'selection' // Item selection change
+  | 'impact' // Physical collision feel
+  | 'notification' // Incoming notification
+  | 'swipe' // Swipe gesture feedback
+  | 'longPress'; // Long press recognition
 
 // Vibration patterns for each effect (in milliseconds)
 // Format: [vibrate, pause, vibrate, pause, ...]
 const VIBRATION_PATTERNS: Record<HapticEffect, number[]> = {
-  tap: [10],                        // Quiet Luxury: Softer tap
-  success: [15, 60, 15],            // Quiet Luxury: Gentler double pulse
-  error: [50, 50, 50, 50, 50],      // Slightly softer triple pulse
-  warning: [35, 120, 35],           // Gentler double with longer pause
-  selection: [6],                    // Very light
-  impact: [25],                      // Quieter single
+  tap: [10], // Quiet Luxury: Softer tap
+  success: [15, 60, 15], // Quiet Luxury: Gentler double pulse
+  error: [50, 50, 50, 50, 50], // Slightly softer triple pulse
+  warning: [35, 120, 35], // Gentler double with longer pause
+  selection: [6], // Very light
+  impact: [25], // Quieter single
   notification: [15, 100, 15, 100, 25], // Attention-grabbing but refined
-  swipe: [4, 15, 4],                // Very light sliding feel
-  longPress: [40],                  // Confirmation
+  swipe: [4, 15, 4], // Very light sliding feel
+  longPress: [40], // Confirmation
 };
 
 // Quiet Luxury: Additional refined haptic patterns for premium interactions
@@ -86,17 +87,14 @@ const INTENSITY_MULTIPLIERS: Record<HapticIntensity, number> = {
  * Check if the device supports vibration
  */
 const supportsVibration = (): boolean => {
-  return typeof window !== 'undefined' &&
-    'navigator' in window &&
-    'vibrate' in window.navigator;
+  return typeof window !== 'undefined' && 'navigator' in window && 'vibrate' in window.navigator;
 };
 
 /**
  * Check if running on iOS (different haptic system)
  */
 const isIOS = (): boolean => {
-  return typeof window !== 'undefined' &&
-    /iPad|iPhone|iPod/.test(navigator.userAgent);
+  return typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
 };
 
 /**
@@ -107,10 +105,13 @@ export const useHaptics = () => {
   const hapticFeedback = settings.workoutSettings?.hapticsEnabled ?? settings.soundEnabled;
 
   // Check device capabilities once
-  const capabilities = useMemo(() => ({
-    supportsVibration: supportsVibration(),
-    isIOS: isIOS(),
-  }), []);
+  const capabilities = useMemo(
+    () => ({
+      supportsVibration: supportsVibration(),
+      isIOS: isIOS(),
+    }),
+    []
+  );
 
   /**
    * Apply intensity multiplier to a vibration pattern
@@ -138,7 +139,7 @@ export const useHaptics = () => {
       try {
         window.navigator.vibrate(duration);
       } catch (e) {
-        console.warn('Vibration failed:', e);
+        logger.ui.warn('Vibration failed', e);
       }
     },
     [hapticFeedback, capabilities.supportsVibration]
@@ -166,7 +167,7 @@ export const useHaptics = () => {
       try {
         window.navigator.vibrate(adjustedPattern);
       } catch (e) {
-        console.warn('Haptic effect failed:', e);
+        logger.ui.warn('Haptic effect failed', e);
       }
     },
     [hapticFeedback, capabilities, applyIntensity]
@@ -193,7 +194,10 @@ export const useHaptics = () => {
   const hapticWarning = useCallback(() => triggerEffect('warning', 'medium'), [triggerEffect]);
   const hapticTap = useCallback(() => triggerEffect('tap', 'light'), [triggerEffect]);
   const hapticSelection = useCallback(() => triggerEffect('selection', 'light'), [triggerEffect]);
-  const hapticNotification = useCallback(() => triggerEffect('notification', 'medium'), [triggerEffect]);
+  const hapticNotification = useCallback(
+    () => triggerEffect('notification', 'medium'),
+    [triggerEffect]
+  );
 
   return {
     // Basic haptic

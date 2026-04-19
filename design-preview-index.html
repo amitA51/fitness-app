@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design Previews — Pick one</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,900&family=Instrument+Sans:wght@400;700&family=Instrument+Serif:ital@0;1&family=Big+Shoulders+Display:wght@900&family=Geist+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #F7F7F5;
+    color: #0D0D0D;
+    padding: 56px 24px 120px;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  .kicker {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #737373;
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144;
+    font-weight: 900;
+    font-size: 80px;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    margin-bottom: 16px;
+  }
+  .intro {
+    font-size: 16px;
+    line-height: 1.7;
+    color: #3A3A3A;
+    max-width: 640px;
+    margin-bottom: 56px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: #FAFAF7;
+    border: 1px solid #E5E5E5;
+    padding: 36px 32px;
+    position: relative;
+    transition: transform 160ms ease, box-shadow 160ms ease;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -24px rgba(0,0,0,0.2);
+  }
+  .card .num {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: #737373;
+  }
+  .swatch-row {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 20px;
+  }
+  .swatch-row > div {
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+  .card h2 {
+    margin-bottom: 6px;
+  }
+  .tagline {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #737373;
+    margin-bottom: 24px;
+  }
+  .sample {
+    border-top: 1px solid #E5E5E5;
+    padding-top: 20px;
+    margin-top: 16px;
+  }
+  .sample-label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #A0A0A0;
+    margin-bottom: 8px;
+  }
+  .arrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 24px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #0D0D0D;
+  }
+
+  /* ══ Card 01: Athletic Index ══ */
+  .c1 { background: #FAFAF7; }
+  .c1 h2 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144;
+    font-weight: 900;
+    font-size: 44px;
+    letter-spacing: -0.03em;
+    color: #0D0D0D;
+  }
+  .c1 .sample-text {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144;
+    font-weight: 900;
+    font-size: 72px;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    color: #0D0D0D;
+  }
+  .c1 .sample-text em { color: #FF5B1F; font-style: italic; font-weight: 400; }
+
+  /* ══ Card 02: Swiss Lab ══ */
+  .c2 { background: #FFFFFF;
+    background-image:
+      linear-gradient(#F2F2F2 1px, transparent 1px),
+      linear-gradient(90deg, #F2F2F2 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+  .c2 h2 {
+    font-family: 'Instrument Sans', sans-serif;
+    font-weight: 700;
+    font-size: 40px;
+    letter-spacing: -0.03em;
+    color: #0A0A0A;
+  }
+  .c2 .sample-text {
+    font-family: 'Instrument Sans', sans-serif;
+    font-weight: 700;
+    font-size: 56px;
+    letter-spacing: -0.03em;
+    color: #0A0A0A;
+  }
+  .c2 .sample-text em { color: #DC1F27; font-style: normal; }
+  .c2 .dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #DC1F27;
+    margin-right: 8px;
+    animation: pulse 1.6s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ══ Card 03: Muji Studio ══ */
+  .c3 { background: #F2EDE4; }
+  .c3 h2 {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: 48px;
+    color: #2B2B2B;
+    letter-spacing: -0.01em;
+  }
+  .c3 h2 em { color: #B85A2C; }
+  .c3 .sample-text {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 64px;
+    color: #2B2B2B;
+    letter-spacing: -0.02em;
+  }
+  .c3 .sample-text em { color: #B85A2C; font-style: normal; }
+
+  /* ══ Card 04: Sport Annual ══ */
+  .c4 { background: #F5F1EB; }
+  .c4 h2 {
+    font-family: 'Big Shoulders Display', sans-serif;
+    font-weight: 900;
+    font-size: 52px;
+    color: #14293D;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 0.9;
+  }
+  .c4 h2 em { color: #E8B82D; font-style: normal; }
+  .c4 .sample-text {
+    font-family: 'Big Shoulders Display', sans-serif;
+    font-weight: 900;
+    font-size: 88px;
+    color: #14293D;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 0.85;
+  }
+  .c4 .sample-text em { color: #E8B82D; font-style: normal; }
+
+  /* Element highlights */
+  .sig-row {
+    margin-top: 16px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #737373;
+    line-height: 2;
+  }
+
+  footer {
+    margin-top: 80px;
+    padding-top: 32px;
+    border-top: 1px solid #E5E5E5;
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #737373;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">Design concepts · 4 options · 19.04.26</div>
+  <h1>Pick one.</h1>
+  <p class="intro">
+    Four clean, light-background directions for the fitness app. Each has its own soul, color, typography, and signature elements. Click any card to see its full preview. When you've decided, tell me the number.
+  </p>
+
+  <div class="grid">
+
+    <a class="card c1" href="design-preview.html">
+      <div class="num">01 / Original</div>
+      <div class="swatch-row">
+        <div style="background: #FAFAF7"></div>
+        <div style="background: #E8E6DF"></div>
+        <div style="background: #6B6962"></div>
+        <div style="background: #0D0D0D"></div>
+        <div style="background: #FF5B1F"></div>
+      </div>
+      <h2>Athletic Index</h2>
+      <div class="tagline">Printed catalog · Paper + Ink + Tangerine</div>
+      <div class="sample">
+        <div class="sample-label">Display sample</div>
+        <div class="sample-text">Push <em>day.</em></div>
+      </div>
+      <div class="sig-row">
+        ⊕ registration marks · ★ passport stamps · 01 index · ticker tape · hand-drawn circles
+      </div>
+      <div class="arrow">→ View preview</div>
+    </a>
+
+    <a class="card c2" href="design-preview-swiss.html">
+      <div class="num">02 / New</div>
+      <div class="swatch-row">
+        <div style="background: #FFFFFF; border: 1px solid #E5E5E5"></div>
+        <div style="background: #EAEAEA"></div>
+        <div style="background: #737373"></div>
+        <div style="background: #0A0A0A"></div>
+        <div style="background: #DC1F27"></div>
+      </div>
+      <h2><span class="dot"></span>Swiss Lab</h2>
+      <div class="tagline">Laboratory notebook · White + Grid + Live dot</div>
+      <div class="sample">
+        <div class="sample-label">Display sample</div>
+        <div class="sample-text">Sample <em>003.</em></div>
+      </div>
+      <div class="sig-row">
+        visible 12-col grid · §01.A sample IDs · tick-mark gauges · red live dot · scientific tone
+      </div>
+      <div class="arrow">→ View preview</div>
+    </a>
+
+    <a class="card c3" href="design-preview-muji.html">
+      <div class="num">03 / New</div>
+      <div class="swatch-row">
+        <div style="background: #F2EDE4"></div>
+        <div style="background: #D4CAB5"></div>
+        <div style="background: #8B8680"></div>
+        <div style="background: #2B2B2B"></div>
+        <div style="background: #B85A2C"></div>
+        <div style="background: #8A9C72"></div>
+      </div>
+      <h2>Muji <em>Studio</em></h2>
+      <div class="tagline">Potter's workshop · Cream + Clay + Cord</div>
+      <div class="sample">
+        <div class="sample-label">Display sample</div>
+        <div class="sample-text">Push <em>day</em></div>
+      </div>
+      <div class="sig-row">
+        ensō brush circles · dot progress · italic serif · cord dividers · zen breathing space
+      </div>
+      <div class="arrow">→ View preview</div>
+    </a>
+
+    <a class="card c4" href="design-preview-annual.html">
+      <div class="num">04 / New</div>
+      <div class="swatch-row">
+        <div style="background: #F5F1EB"></div>
+        <div style="background: #EAE4DA"></div>
+        <div style="background: #7E7D78"></div>
+        <div style="background: #14293D"></div>
+        <div style="background: #E8B82D"></div>
+        <div style="background: #1A1A1A"></div>
+      </div>
+      <h2>SPORT <em>ANNUAL.</em></h2>
+      <div class="tagline">Editorial annual · Navy + Mustard + Bone</div>
+      <div class="sample">
+        <div class="sample-label">Display sample</div>
+        <div class="sample-text">WEEK <em>16.</em></div>
+      </div>
+      <div class="sig-row">
+        oversized condensed display · chapter breaks · color blocks · mustard ribbon · magazine hierarchy
+      </div>
+      <div class="arrow">→ View preview</div>
+    </a>
+
+  </div>
+
+  <footer>
+    Open each preview · compare · pick a number · then I rewrite VISION.md + start building.
+  </footer>
+</div>
+</body>
+</html>

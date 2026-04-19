@@ -1,7 +1,7 @@
 // Haptics utility - wrapper for vibration API with fallback patterns
 
 // Simple haptic feedback
-export const haptic = (duration: number = 50): void => {
+export const haptic = (duration = 50): void => {
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
     navigator.vibrate(duration);
   }
@@ -15,14 +15,14 @@ export const vibratePattern = (pattern: number[]): void => {
 };
 
 // Common patterns
-export const HAPTIC_PATTERNS: Record<string, number[]> = {
+export const HAPTIC_PATTERNS = {
   TAP: [20],
   SET_COMPLETE: [50, 50, 50],
   REST_END: [200, 100, 200],
   PR_ACHIEVED: [100, 50, 100, 50, 200],
   SUCCESS: [50, 50, 100],
   ERROR: [100, 50, 100],
-};
+} satisfies Record<string, number[]>;
 
 // Short feedback (for UI interactions)
 export const hapticTap = (): void => haptic(20);
@@ -40,7 +40,9 @@ export const hapticPR = (): void => vibratePattern(HAPTIC_PATTERNS.PR_ACHIEVED);
 export const hapticError = (): void => vibratePattern(HAPTIC_PATTERNS.ERROR);
 
 // Alias for triggerHaptic (used by components)
-export const triggerHaptic = (type: 'light' | 'medium' | 'heavy' | 'success' | 'selection' | undefined = 'medium'): void => {
+export const triggerHaptic = (
+  type: 'light' | 'medium' | 'heavy' | 'success' | 'selection' | undefined = 'medium'
+): void => {
   switch (type) {
     case 'light':
       haptic(20);

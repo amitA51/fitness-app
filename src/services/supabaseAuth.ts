@@ -3,8 +3,8 @@
  * SPARKOS Fitness App - Auth with Supabase
  */
 
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import type { User, Session } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
+import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { logger } from '../utils/logger';
 
 export type AuthCallback = (session: Session | null) => void;
@@ -36,18 +36,26 @@ export const initSupabaseAuth = (): void => {
 export const getCurrentUser = async (): Promise<User | null> => {
   if (!isSupabaseConfigured() || !supabase) return null;
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return user;
 };
 
 export const getSession = async (): Promise<Session | null> => {
   if (!isSupabaseConfigured() || !supabase) return null;
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   return session;
 };
 
-export const signUp = async (email: string, password: string, metadata?: Record<string, unknown>): Promise<{ user: User | null; error: string | null }> => {
+export const signUp = async (
+  email: string,
+  password: string,
+  metadata?: Record<string, unknown>
+): Promise<{ user: User | null; error: string | null }> => {
   if (!isSupabaseConfigured() || !supabase) {
     return { user: null, error: 'Supabase not configured' };
   }
@@ -66,7 +74,10 @@ export const signUp = async (email: string, password: string, metadata?: Record<
   return { user: data.user, error: null };
 };
 
-export const signIn = async (email: string, password: string): Promise<{ user: User | null; error: string | null }> => {
+export const signIn = async (
+  email: string,
+  password: string
+): Promise<{ user: User | null; error: string | null }> => {
   if (!isSupabaseConfigured() || !supabase) {
     return { user: null, error: 'Supabase not configured' };
   }
@@ -146,7 +157,9 @@ export const updatePassword = async (newPassword: string): Promise<{ error: stri
   return { error: null };
 };
 
-export const updateUserMetadata = async (metadata: Record<string, unknown>): Promise<{ error: string | null }> => {
+export const updateUserMetadata = async (
+  metadata: Record<string, unknown>
+): Promise<{ error: string | null }> => {
   if (!isSupabaseConfigured() || !supabase) {
     return { error: 'Supabase not configured' };
   }
@@ -166,7 +179,9 @@ export const onAuthStateChange = (callback: AuthCallback): (() => void) => {
     return () => {};
   }
 
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((_event, session) => {
     callback(session);
   });
 

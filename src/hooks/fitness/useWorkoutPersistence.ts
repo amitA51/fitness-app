@@ -1,4 +1,6 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { logger } from '../../utils/logger';
+import { safeJsonParse } from '../../utils/safeJson';
 
 export interface UseWorkoutPersistenceOptions {
   key: string;
@@ -39,7 +41,9 @@ export const useWorkoutPersistence = <T>(
       const saved = localStorage.getItem(key);
       if (!saved) return null;
 
-      const { state, timestamp } = JSON.parse(saved);
+      const parsed = safeJsonParse<{ state: unknown; timestamp: number }>(saved);
+      if (!parsed) return null;
+      const { state, timestamp } = parsed;
 
       // Check if session has expired
       if (Date.now() - timestamp > maxAge) {
@@ -49,7 +53,7 @@ export const useWorkoutPersistence = <T>(
 
       return state as T;
     } catch (error) {
-      console.error(`Failed to load state from ${key}:`, error);
+      logger.db.error('Failed to load state from ' + key, error);
       return null;
     }
   }, [key, maxAge]);
@@ -74,7 +78,7 @@ export const useWorkoutPersistence = <T>(
           };
           localStorage.setItem(key, JSON.stringify(snapshot));
         } catch (error) {
-          console.error(`Failed to save state to ${key}:`, error);
+          logger.db.error('Failed to save state to ' + key, error);
         }
       }, debounceMs);
     },
@@ -88,7 +92,7 @@ export const useWorkoutPersistence = <T>(
     try {
       localStorage.removeItem(key);
     } catch (error) {
-      console.error(`Failed to clear state from ${key}:`, error);
+      logger.db.error('Failed to clear state from ' + key, error);
     }
   }, [key]);
 

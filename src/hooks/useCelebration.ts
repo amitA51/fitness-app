@@ -2,8 +2,8 @@
 // SPARKOS FITNESS - Celebration Hook
 // ============================================================================
 
-import { useState, useCallback } from 'react';
-import { PersonalRecord } from '../types';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { PersonalRecord } from '../types';
 
 interface CelebrationOptions {
   onCelebrate?: () => void;
@@ -21,21 +21,31 @@ export const useCelebration = (options: CelebrationOptions = {}): CelebrationRes
   const { onCelebrate } = options;
   const [currentPR, setCurrentPR] = useState<PersonalRecord | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const celebrate = useCallback((_type: 'pr' | 'milestone' | 'streak' = 'pr') => {
-    // Trigger haptic feedback
-    if ('vibrate' in navigator) {
-      navigator.vibrate([100, 50, 100, 50, 200]);
-    }
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
-    // Call optional callback
-    onCelebrate?.();
-  }, [onCelebrate]);
+  const celebrate = useCallback(
+    (_type: 'pr' | 'milestone' | 'streak' = 'pr') => {
+      // Trigger haptic feedback
+      if ('vibrate' in navigator) {
+        navigator.vibrate([100, 50, 100, 50, 200]);
+      }
+
+      // Call optional callback
+      onCelebrate?.();
+    },
+    [onCelebrate]
+  );
 
   const triggerConfetti = useCallback(() => {
     setShowCelebration(true);
     // Auto-hide after 4 seconds
-    setTimeout(() => setShowCelebration(false), 4000);
+    timerRef.current = setTimeout(() => setShowCelebration(false), 4000);
   }, []);
 
   const hidePRCelebration = useCallback(() => {

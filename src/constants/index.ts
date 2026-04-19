@@ -13,7 +13,5 @@ export const STORAGE_KEYS = {
 export const LOCAL_STORAGE_KEYS = STORAGE_KEYS;
 
 // Re-export all constants
-// Note: Z_INDEX is exported only from zIndex.ts to avoid namespace conflict
-export { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES } from './designTokens';
 export * from './zIndex';
 export * from './workoutConstants';

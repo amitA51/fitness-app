@@ -3,9 +3,13 @@
 // ============================================================================
 
 // Play a beep sound
-export const playBeep = (frequency: number = 800, duration: number = 200): void => {
+export const playBeep = (frequency = 800, duration = 200): void => {
   try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioContext = new AudioContextClass();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
@@ -65,7 +69,7 @@ export const playDing = (): void => {
 };
 
 // Speak text (for voice feedback)
-export const speak = (text: string, lang: string = 'he-IL'): void => {
+export const speak = (text: string, lang = 'he-IL'): void => {
   if ('speechSynthesis' in window) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;

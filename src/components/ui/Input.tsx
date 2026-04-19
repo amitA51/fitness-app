@@ -1,99 +1,119 @@
-import React, { forwardRef } from 'react';
 import { motion } from 'framer-motion';
+import type React from 'react';
+import { forwardRef } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helper?: string;
+  success?: boolean;
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
 }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(({
-  label,
-  error,
-  helper,
-  icon,
-  iconPosition = 'left',
-  className = '',
-  id,
-  ...props
-}, ref) => {
-  const inputId = id || props.name || Math.random().toString(36).substring(2, 11);
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  (
+    { label, error, helper, success, icon, iconPosition = 'left', className = '', id, ...props },
+    ref
+  ) => {
+    const inputId = id || props.name || Math.random().toString(36).substring(2, 11);
 
-  return (
-    <div className={`flex flex-col gap-2 ${className}`}>
-      {/* Label */}
-      {label && (
-        <label
-          htmlFor={inputId}
-          className="text-[11px] font-semibold text-label-secondary uppercase tracking-wider me-1"
-        >
-          {label}
-        </label>
-      )}
+    // Determine border color by state
+    const stateBorder = error
+      ? '2px solid var(--color-error)'
+      : success
+        ? '2px solid var(--mustard)'
+        : '1px solid var(--bone-deep)';
 
-      {/* Input Wrapper */}
-      <div className="relative group">
-        <input
-          ref={ref}
-          id={inputId}
-          className={`
-            w-full
-            bg-surface-input
-            border rounded-xl
-            px-4 py-3.5
-            text-[15px] text-white
-            placeholder:text-label-tertiary
-            transition-all duration-200
-            focus:outline-none
-            ${icon && iconPosition === 'left' ? 'ps-11' : ''}
-            ${icon && iconPosition === 'right' ? 'pe-11' : ''}
-            ${error
-              ? 'border-error/50 focus:border-error focus:ring-2 focus:ring-error/20'
-              : 'border-white/6 focus:border-primary/50 focus:ring-2 focus:ring-primary/15'
-            }
-          `}
-          {...props}
-        />
-
-        {/* Icon */}
-        {icon && (
-          <div
-            className={`
-              absolute top-1/2 -translate-y-1/2
-              text-label-tertiary
-              transition-colors duration-200
-              group-focus-within:text-label-secondary
-              ${iconPosition === 'left' ? 'start-4' : 'end-4'}
-            `}
+    return (
+      <div className={`flex flex-col gap-2 ${className}`}>
+        {/* Label — mono eyebrow style */}
+        {label && (
+          <label
+            htmlFor={inputId}
+            className="uppercase"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              letterSpacing: '0.22em',
+              fontWeight: 600,
+              color: 'var(--stone)',
+            }}
           >
-            {icon}
-          </div>
+            {label}
+          </label>
+        )}
+
+        {/* Input Wrapper */}
+        <div className="relative group">
+          <input
+            ref={ref}
+            id={inputId}
+            className={`
+              input
+              ${icon && iconPosition === 'left' ? 'ps-11' : ''}
+              ${icon && iconPosition === 'right' ? 'pe-11' : ''}
+            `}
+            style={{
+              border: stateBorder,
+              borderRadius: 0,
+              fontFamily: 'var(--font-body)',
+            }}
+            {...props}
+          />
+
+          {/* Icon */}
+          {icon && (
+            <div
+              className={`
+                absolute top-1/2 -translate-y-1/2
+                transition-colors duration-200
+                ${iconPosition === 'left' ? 'start-4' : 'end-4'}
+              `}
+              style={{ color: 'var(--stone)' }}
+            >
+              {icon}
+            </div>
+          )}
+        </div>
+
+        {/* Error Message — mono */}
+        {error && (
+          <motion.span
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="uppercase"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              letterSpacing: '0.18em',
+              color: 'var(--color-error)',
+              fontWeight: 600,
+            }}
+          >
+            {error}
+          </motion.span>
+        )}
+
+        {/* Helper Text — mono, stone */}
+        {helper && !error && (
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              letterSpacing: '0.18em',
+              color: 'var(--stone)',
+              textTransform: 'uppercase',
+            }}
+          >
+            {helper}
+          </span>
         )}
       </div>
-
-      {/* Error Message */}
-      {error && (
-        <motion.span
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-          className="text-xs text-error font-medium me-1"
-        >
-          {error}
-        </motion.span>
-      )}
-
-      {/* Helper Text */}
-      {helper && !error && (
-        <span className="text-xs text-label-secondary font-medium me-1">
-          {helper}
-        </span>
-      )}
-    </div>
-  );
-});
+    );
+  }
+);
 
 Input.displayName = 'Input';
 

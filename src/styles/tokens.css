@@ -1,0 +1,258 @@
+/* ============================================================================
+   SPORT ANNUAL — Design Tokens
+   Bold · Editorial · Confident · Narrative · Printed
+   ============================================================================ */
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;600;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Assistant:wght@400;600;700;800&display=swap');
+
+/* ============================================================================
+   1. ANNUAL PALETTE
+   ============================================================================ */
+
+:root {
+  /* ── Primary Colors ──────────────────────────────────────────────────── */
+  --bone: #F5F1EB;
+  --bone-deep: #EAE4DA;
+  --bone-faint: #F9F7F3;
+  --navy: #14293D;
+  --navy-deep: #0B1A2B;
+  --navy-light: #1E3A54;
+  --mustard: #E8B82D;
+  --mustard-dark: #C49A1A;
+  --ink: #1A1A1A;
+  --stone: #7E7D78;
+  --stone-light: #A5A49F;
+
+  /* ── Semantic Colors ─────────────────────────────────────────────────── */
+  --color-primary: var(--navy);
+  --color-primary-hover: var(--navy-deep);
+  --color-primary-glow: rgba(20, 41, 61, 0.25);
+  --color-primary-subtle: rgba(20, 41, 61, 0.08);
+
+  --color-secondary: var(--mustard);
+  --color-secondary-hover: var(--mustard-dark);
+  --color-secondary-glow: rgba(232, 184, 45, 0.25);
+  --color-secondary-subtle: rgba(232, 184, 45, 0.12);
+
+  --color-accent: var(--mustard);
+
+  --color-success: #2D8B4E;
+  --color-success-muted: rgba(45, 139, 78, 0.12);
+  --color-warning: #C48A1A;
+  --color-warning-muted: rgba(196, 138, 26, 0.12);
+  --color-error: #C42B2B;
+  --color-error-muted: rgba(196, 43, 43, 0.12);
+
+  /* ── Surface Colors ──────────────────────────────────────────────────── */
+  --color-background: var(--bone);
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: var(--bone-deep);
+  --color-surface-input: #FFFFFF;
+  --color-surface-hover: var(--bone-faint);
+
+  /* ── Text Colors ─────────────────────────────────────────────────────── */
+  --color-text: var(--ink);
+  --color-text-secondary: var(--stone);
+  --color-text-muted: var(--stone-light);
+
+  /* ── Border Colors ───────────────────────────────────────────────────── */
+  --color-border: rgba(20, 41, 61, 0.12);
+  --color-border-strong: var(--navy);
+  --color-separator: var(--bone-deep);
+
+  /* ── Accent per page (all navy — annual identity) ─────────────────────── */
+  --accent-dashboard: var(--navy);
+  --accent-workout: var(--navy);
+  --accent-nutrition: var(--navy);
+  --accent-history: var(--navy);
+  --accent-settings: var(--navy);
+  --accent-progress: var(--navy);
+  --accent-templates: var(--navy);
+  --accent-current: var(--navy);
+
+  /* ── Legacy aliases (compat) ──────────────────────────────────────────── */
+  --accent: var(--navy);
+  --warning: var(--color-warning);
+  --bg-primary: var(--navy);
+  --bg-secondary: var(--bone);
+  --bg-tertiary: var(--bone-deep);
+  --bg-elevated: var(--bone-deep);
+  --gray-500: var(--stone);
+  --gray-600: var(--stone-light);
+  --gray-700: #3f3f46;
+  --gray-800: #27272a;
+  --gray-200: var(--bone-deep);
+  --surface-base: var(--bone);
+  --surface-elevated-alt: var(--bone-deep);
+  --surface-input: #FFFFFF;
+  --text-muted-alt: var(--stone-light);
+  --danger: var(--color-error);
+  --text-primary: var(--ink);
+
+  --cosmos-accent-primary: var(--navy);
+  --cosmos-accent-secondary: var(--mustard);
+  --cosmos-accent-tertiary: var(--stone);
+  --cosmos-accent-cyan: var(--navy);
+  --cosmos-accent-orange: var(--mustard);
+  --cosmos-text-muted: var(--stone-light);
+  --cosmos-success: var(--color-success);
+  --cosmos-warning: var(--color-warning);
+  --cosmos-error: var(--color-error);
+  --cosmos-glass-bg: rgba(245, 241, 235, 0.9);
+  --cosmos-glass-border: rgba(20, 41, 61, 0.1);
+  --cosmos-glass-highlight: rgba(255, 255, 255, 0.6);
+
+  --dynamic-accent-start: var(--navy);
+  --dynamic-accent-end: var(--navy-deep);
+  --dynamic-accent-glow: var(--color-primary-glow);
+
+  --surface-glass: rgba(245, 241, 235, 0.9);
+}
+
+/* ============================================================================
+   2. TYPOGRAPHY TOKENS
+   ============================================================================ */
+
+:root {
+  --font-display: 'Big Shoulders Display', 'Assistant', Impact, sans-serif;
+  --font-body: 'IBM Plex Sans', 'Assistant', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-hebrew: 'Assistant', system-ui, sans-serif;
+
+  --font-sans: var(--font-body);
+  --font-condensed: var(--font-display);
+
+  --text-display-hero: 120px;
+  --text-display-xl: 88px;
+  --text-display-lg: 48px;
+  --text-display: 36px;
+  --text-display-sm: 24px;
+  --text-title: 20px;
+  --text-headline: 18px;
+  --text-body-lg: 17px;
+  --text-body: 15px;
+  --text-body-sm: 13px;
+  --text-label: 11px;
+  --text-caption: 10px;
+
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+  --font-black: 900;
+
+  --leading-none: 1;
+  --leading-tight: 1.1;
+  --leading-snug: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.55;
+
+  --tracking-tighter: -0.04em;
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.05em;
+  --tracking-wider: 0.1em;
+  --tracking-widest: 0.15em;
+}
+
+html.large-text {
+  font-size: 1.125rem;
+}
+
+/* ============================================================================
+   3. SPACING TOKENS (4/8pt Grid)
+   ============================================================================ */
+
+:root {
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+}
+
+/* ============================================================================
+   4. BORDER RADIUS TOKENS
+   ============================================================================ */
+
+:root {
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+}
+
+/* ============================================================================
+   5. SHADOW TOKENS
+   ============================================================================ */
+
+:root {
+  --shadow-card: 0 1px 3px rgba(20, 41, 61, 0.08);
+  --shadow-elevated: 0 4px 12px rgba(20, 41, 61, 0.12);
+  --shadow-navy: 0 8px 24px rgba(11, 26, 43, 0.25);
+  --shadow-button: 0 2px 8px rgba(20, 41, 61, 0.15);
+  --shadow-button-hover: 0 4px 16px rgba(20, 41, 61, 0.2);
+  --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================================================
+   6. MOTION TOKENS
+   ============================================================================ */
+
+:root {
+  --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-in: cubic-bezier(0.55, 0.06, 0.68, 0.19);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring-bounce: var(--ease-spring);
+  --ease-spring-smooth: var(--ease-out);
+  --ease-spring-snappy: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring-soft: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --duration-instant: 75ms;
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --duration-chapter: 500ms;
+  --duration-bounce: 400ms;
+}
+
+/* ============================================================================
+   7. Z-INDEX SCALE
+   ============================================================================ */
+
+:root {
+  --z-base: 0;
+  --z-sticky: 20;
+  --z-nav: 40;
+  --z-dropdown: 60;
+  --z-overlay: 80;
+  --z-modal: 90;
+  --z-toast: 100;
+  --z-tooltip: 110;
+}
+
+/* ============================================================================
+   8. LAYOUT TOKENS
+   ============================================================================ */
+
+:root {
+  --max-width: 480px;
+  --content-padding: 20px;
+  --nav-height: 64px;
+  --header-height: auto;
+  --masthead-padding: 20px 24px;
+}

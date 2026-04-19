@@ -1,25 +1,26 @@
 /**
  * Accessible UI Components
- * 
+ *
  * Production-ready accessible components following WCAG 2.1 guidelines.
  * Includes proper ARIA attributes, keyboard navigation, and focus management.
  */
 
-import React, {
+import { AnimatePresence, motion } from 'framer-motion';
+import type React from 'react';
+import {
+  type ButtonHTMLAttributes,
+  type InputHTMLAttributes,
+  type KeyboardEvent,
+  type ReactNode,
   forwardRef,
   useCallback,
   useEffect,
   useId,
   useRef,
   useState,
-  type ReactNode,
-  type KeyboardEvent,
-  type ButtonHTMLAttributes,
-  type InputHTMLAttributes,
 } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { DURATION, fadeVariants, popInVariants } from '../../utils/animations';
 import { cn } from '../../utils/styles';
-import { fadeVariants, popInVariants, DURATION } from '../../utils/animations';
 
 // ============================================================================
 // Accessible Button
@@ -57,7 +58,8 @@ export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonPr
     ref
   ) => {
     const variantClasses = {
-      primary: 'bg-[var(--cosmos-accent-primary)] text-black hover:brightness-110 shadow-[0_0_15px_var(--dynamic-accent-glow)]',
+      primary:
+        'bg-[var(--cosmos-accent-primary)] text-black hover:brightness-110 shadow-[0_0_15px_var(--dynamic-accent-glow)]',
       secondary: 'bg-white/5 text-white border border-white/10 hover:bg-white/10',
       ghost: 'bg-transparent text-white hover:bg-white/5',
       danger: 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20',
@@ -71,6 +73,7 @@ export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonPr
 
     return (
       <button
+        type="button"
         ref={ref}
         disabled={disabled || isLoading}
         aria-busy={isLoading}
@@ -91,7 +94,10 @@ export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonPr
         {isLoading ? (
           <>
             <span className="sr-only">{loadingText}</span>
-            <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" aria-hidden="true" />
+            <span
+              className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"
+              aria-hidden="true"
+            />
             <span aria-hidden="true">{loadingText}</span>
           </>
         ) : (
@@ -169,13 +175,18 @@ export const AccessibleInput = forwardRef<HTMLInputElement, AccessibleInputProps
         >
           {label}
           {required && (
-            <span className="text-red-400 mr-1" aria-hidden="true">*</span>
+            <span className="text-red-400 mr-1" aria-hidden="true">
+              *
+            </span>
           )}
         </label>
 
         <div className="relative">
           {leftAddon && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden="true">
+            <div
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]"
+              aria-hidden="true"
+            >
               {leftAddon}
             </div>
           )}
@@ -187,10 +198,7 @@ export const AccessibleInput = forwardRef<HTMLInputElement, AccessibleInputProps
             required={required}
             aria-required={required}
             aria-invalid={!!error}
-            aria-describedby={cn(
-              helperText && helperId,
-              error && errorId
-            ) || undefined}
+            aria-describedby={cn(helperText && helperId, error && errorId) || undefined}
             className={cn(
               'w-full px-4 rounded-xl',
               'bg-white/5 border',
@@ -210,7 +218,10 @@ export const AccessibleInput = forwardRef<HTMLInputElement, AccessibleInputProps
           />
 
           {rightAddon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden="true">
+            <div
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]"
+              aria-hidden="true"
+            >
               {rightAddon}
             </div>
           )}
@@ -300,26 +311,23 @@ export const AccessibleModal: React.FC<AccessibleModalProps> = ({
   }, [isOpen, closeOnEscape, onClose]);
 
   // Trap focus inside modal
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLDivElement>) => {
-      if (e.key !== 'Tab' || !modalRef.current) return;
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Tab' || !modalRef.current) return;
 
-      const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
+    const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
 
-      if (e.shiftKey && document.activeElement === firstElement) {
-        e.preventDefault();
-        lastElement?.focus();
-      } else if (!e.shiftKey && document.activeElement === lastElement) {
-        e.preventDefault();
-        firstElement?.focus();
-      }
-    },
-    []
-  );
+    if (e.shiftKey && document.activeElement === firstElement) {
+      e.preventDefault();
+      lastElement?.focus();
+    } else if (!e.shiftKey && document.activeElement === lastElement) {
+      e.preventDefault();
+      firstElement?.focus();
+    }
+  }, []);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -385,12 +393,24 @@ export const AccessibleModal: React.FC<AccessibleModalProps> = ({
                 {title}
               </h2>
               <button
+                type="button"
                 onClick={onClose}
                 className="p-2 rounded-lg hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--cosmos-accent-primary)]"
                 aria-label="סגור"
               >
-                <svg className="w-5 h-5 text-[var(--text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-5 h-5 text-[var(--text-secondary)]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -403,9 +423,7 @@ export const AccessibleModal: React.FC<AccessibleModalProps> = ({
             )}
 
             {/* Content */}
-            <div className="p-6 max-h-[70vh] overflow-y-auto">
-              {children}
-            </div>
+            <div className="p-6 max-h-[70vh] overflow-y-auto">{children}</div>
           </motion.div>
         </div>
       )}
@@ -424,10 +442,7 @@ interface SkipLinkProps {
   children?: ReactNode;
 }
 
-export const SkipLink: React.FC<SkipLinkProps> = ({
-  targetId,
-  children = 'דלג לתוכן הראשי',
-}) => (
+export const SkipLink: React.FC<SkipLinkProps> = ({ targetId, children = 'דלג לתוכן הראשי' }) => (
   <a
     href={`#${targetId}`}
     className={cn(
@@ -453,10 +468,7 @@ interface VisuallyHiddenProps {
   as?: 'span' | 'div' | 'p' | 'label';
 }
 
-export const VisuallyHidden: React.FC<VisuallyHiddenProps> = ({
-  children,
-  as = 'span',
-}) => {
+export const VisuallyHidden: React.FC<VisuallyHiddenProps> = ({ children, as = 'span' }) => {
   const Element = as;
   return <Element className="sr-only">{children}</Element>;
 };
@@ -483,7 +495,7 @@ export const LiveRegion: React.FC<LiveRegionProps> = ({
 
   useEffect(() => {
     setCurrentMessage(message);
-    
+
     if (clearAfter && message) {
       const timer = setTimeout(() => setCurrentMessage(''), clearAfter);
       return () => clearTimeout(timer);
@@ -492,12 +504,7 @@ export const LiveRegion: React.FC<LiveRegionProps> = ({
   }, [message, clearAfter]);
 
   return (
-    <div
-      role="status"
-      aria-live={politeness}
-      aria-atomic="true"
-      className="sr-only"
-    >
+    <div role="status" aria-live={politeness} aria-atomic="true" className="sr-only">
       {currentMessage}
     </div>
   );
@@ -581,8 +588,8 @@ export const AccessibleTabs: React.FC<AccessibleTabsProps> = ({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const enabledTabs = tabs.filter(t => !t.disabled);
-    const currentEnabledIndex = enabledTabs.findIndex(t => t.id === tabs[index]?.id);
+    const enabledTabs = tabs.filter((t) => !t.disabled);
+    const currentEnabledIndex = enabledTabs.findIndex((t) => t.id === tabs[index]?.id);
 
     let newIndex: number | null = null;
 
@@ -607,18 +614,18 @@ export const AccessibleTabs: React.FC<AccessibleTabsProps> = ({
         e.preventDefault();
         setActiveTab(newTab.id);
         onChange?.(newTab.id);
-        
+
         // Focus the new tab
         const buttons = tablistRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
         const targetButton = Array.from(buttons || []).find(
-          btn => btn.getAttribute('aria-controls') === `panel-${newTab.id}`
+          (btn) => btn.getAttribute('aria-controls') === `panel-${newTab.id}`
         );
         targetButton?.focus();
       }
     }
   };
 
-  const activeContent = tabs.find(t => t.id === activeTab)?.content;
+  const activeContent = tabs.find((t) => t.id === activeTab)?.content;
 
   return (
     <div className={className}>
@@ -631,6 +638,7 @@ export const AccessibleTabs: React.FC<AccessibleTabsProps> = ({
       >
         {tabs.map((tab, index) => (
           <button
+            type="button"
             key={tab.id}
             role="tab"
             id={`tab-${tab.id}`}

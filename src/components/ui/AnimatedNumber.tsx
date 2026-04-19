@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, animate } from 'framer-motion';
+import { animate, motion, useMotionValue } from 'framer-motion';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface AnimatedNumberProps {
   /** The target number to animate to */
@@ -75,7 +76,8 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         style={{
-          color: direction === 'up' ? increaseColor : direction === 'down' ? decreaseColor : undefined,
+          color:
+            direction === 'up' ? increaseColor : direction === 'down' ? decreaseColor : undefined,
           transition: 'color 0.5s ease',
         }}
       >
@@ -119,10 +121,7 @@ export const AnimatedProgress: React.FC<{
 
   return (
     <div className={`relative w-full overflow-hidden rounded-full ${className}`}>
-      <div
-        className="w-full rounded-full bg-white/10"
-        style={{ height: `${height}px` }}
-      >
+      <div className="w-full rounded-full bg-white/10" style={{ height: `${height}px` }}>
         <motion.div
           className={`h-full rounded-full ${barClassName}`}
           initial={{ width: 0 }}

@@ -1,0 +1,584 @@
+/* ============================================================================
+   SPARKOS FITNESS - Components System
+   מערכת רכיבי UI אחידה - Cards, Buttons, Inputs, Badges
+   ============================================================================ */
+
+/* ============================================================================
+   CARD SYSTEM - מערכת כרטיסים
+   ============================================================================ */
+
+/* Base Card */
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--duration-base) var(--ease-spring-smooth), border-color
+    var(--duration-base), box-shadow var(--duration-base);
+}
+
+.card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Card Interactive - with tactile feedback */
+.card-interactive {
+  background: var(--color-surface);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--duration-base) var(--ease-spring-smooth), border-color
+    var(--duration-base), box-shadow var(--duration-base), background var(--duration-fast);
+  cursor: pointer;
+}
+
+.card-interactive:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-elevated);
+}
+
+.card-interactive:active {
+  transform: scale(0.98);
+}
+
+/* Card Elevated */
+.card-elevated {
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Card Outer - Double-bezel architecture (outer shell) */
+.card-outer {
+  position: relative;
+  background: var(--color-surface);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  padding: 1.5px;
+}
+
+.card-outer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Card Inner - Double-bezel (inner glass plate) */
+.card-inner {
+  position: relative;
+  background: var(--color-surface);
+  border-radius: calc(var(--radius-2xl) - 2px);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-inner);
+}
+
+/* ============================================================================
+   BUTTON SYSTEM - מערכת כפתורים
+   ============================================================================ */
+
+/* Base Button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-lg);
+  padding: 12px 24px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.01em;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  transition: filter var(--duration-fast) var(--ease-spring-snappy), transform var(--duration-fast)
+    var(--ease-spring-snappy), box-shadow var(--duration-fast), background var(--duration-fast);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Button Sizes */
+.btn-sm {
+  padding: 8px 16px;
+  min-height: 44px;
+  font-size: 13px;
+  border-radius: var(--radius-md);
+}
+
+.btn-md {
+  padding: 12px 24px;
+  min-height: 44px;
+  font-size: 15px;
+  border-radius: var(--radius-lg);
+}
+
+.btn-lg {
+  padding: 14px 32px;
+  min-height: 52px;
+  font-size: 16px;
+  border-radius: var(--radius-xl);
+}
+
+.btn-icon {
+  padding: 10px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-lg);
+  justify-content: center;
+}
+
+/* Button Variants */
+.btn-primary {
+  background: var(--color-primary);
+  color: #ffffff;
+  box-shadow: var(--shadow-button);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: var(--shadow-button-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: scale(0.97) translateY(0);
+  filter: brightness(0.95);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:active {
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-primary);
+}
+
+.btn-ghost:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.btn-ghost:active {
+  background: rgba(59, 130, 246, 0.15);
+  transform: scale(0.97);
+}
+
+.btn-glass {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: var(--color-text);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.13);
+}
+
+.btn-danger {
+  background: var(--color-error);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.25);
+}
+
+.btn-danger:hover {
+  filter: brightness(1.1);
+}
+
+.btn-danger:active {
+  transform: scale(0.97) translateY(0);
+}
+
+/* Pill Button */
+.btn-pill {
+  border-radius: var(--radius-full);
+  padding: 10px 20px;
+}
+
+/* Button with Arrow */
+.btn-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 12px 20px 12px 16px;
+}
+
+.btn-arrow .arrow-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  margin-right: 8px;
+  transition: transform var(--duration-fast), background var(--duration-fast);
+}
+
+.btn-arrow:hover .arrow-icon {
+  transform: translateX(2px) translateY(-1px);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ============================================================================
+   BADGE SYSTEM - מערכת תגיות
+   ============================================================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: var(--font-semibold);
+  border-radius: var(--radius-full);
+}
+
+.badge-success {
+  background: var(--color-success-muted);
+  color: var(--color-success);
+}
+
+.badge-warning {
+  background: var(--color-warning-muted);
+  color: var(--color-warning);
+}
+
+.badge-error {
+  background: var(--color-error-muted);
+  color: var(--color-error);
+}
+
+.badge-primary {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--color-primary);
+}
+
+.badge-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary);
+}
+
+/* ============================================================================
+   INPUT SYSTEM - מערכת קלט
+   ============================================================================ */
+
+.input {
+  width: 100%;
+  background: var(--color-surface-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--color-text);
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.input-error {
+  border-color: var(--color-error);
+}
+
+.input-error:focus {
+  box-shadow: 0 0 0 3px var(--color-error-muted);
+}
+
+/* ============================================================================
+   TOGGLE SWITCH - מתג
+   ============================================================================ */
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 51px;
+  height: 31px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-input);
+  transition: background-color var(--duration-fast);
+  cursor: pointer;
+}
+
+.toggle-switch input:checked + .toggle-track {
+  background-color: var(--color-primary);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: transform var(--duration-bounce) var(--ease-spring-bounce);
+  pointer-events: none;
+}
+
+.toggle-switch input:checked ~ .toggle-thumb {
+  transform: translateX(20px);
+}
+
+/* ============================================================================
+   GLASS & BLUR SURFACES - משטחי זכוכית
+   ============================================================================ */
+
+.glass {
+  background: rgba(17, 17, 20, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--color-border);
+}
+
+.glass-strong {
+  background: rgba(10, 10, 11, 0.9);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid var(--color-border);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================================================
+   SKELETON LOADING - טעינה
+   ============================================================================ */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 0%,
+    var(--color-surface-elevated) 50%,
+    var(--color-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ============================================================================
+   SEPARATOR - הפרדה
+   ============================================================================ */
+
+.separator {
+  height: 1px;
+  background: var(--color-separator);
+}
+
+.separator-inset {
+  height: 1px;
+  background: var(--color-separator);
+  margin-inline-start: 16px;
+}
+
+/* ============================================================================
+   SCROLLBAR - גלילה
+   ============================================================================ */
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-separator) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-separator);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* ============================================================================
+   LAYOUT UTILITIES - פריסה
+   ============================================================================ */
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* ============================================================================
+   SAFE AREA INSETS - אזורים בטוחים (iOS)
+   ============================================================================ */
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================================
+   TOUCH OPTIMIZATIONS - אופטימיזציה למגע
+   ============================================================================ */
+
+button,
+a,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+html {
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* ============================================================================
+   iOS-SPECIFIC FIXES
+   ============================================================================ */
+
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .fixed-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

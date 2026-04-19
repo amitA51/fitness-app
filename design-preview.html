@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="he" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Athletic Index — Design Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Heebo:wght@400;500;700;900&family=Noto+Serif+Hebrew:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAFAF7;
+    --rule: #E8E6DF;
+    --ash: #6B6962;
+    --ink: #0D0D0D;
+    --tangerine: #FF5B1F;
+    --font-display: 'Fraunces', 'Noto Serif Hebrew', Georgia, serif;
+    --font-body: 'Geist', 'Heebo', system-ui, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, 'Menlo', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    font-family: var(--font-body);
+    color: var(--ink);
+    background: var(--paper);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  body {
+    min-height: 100vh;
+    position: relative;
+  }
+
+  /* Paper grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.55;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.035 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    z-index: 9999;
+  }
+
+  .header {
+    padding: 56px 24px 8px;
+    max-width: 1400px;
+    margin: 0 auto;
+    border-bottom: 1px solid var(--rule);
+  }
+  .header-kicker {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-bottom: 16px;
+  }
+  .header-title {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 144;
+    font-weight: 900;
+    font-size: 84px;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  .header-title em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--ash);
+  }
+  .header-sub {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--ash);
+    max-width: 560px;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  .screens {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 64px 24px 160px;
+    display: grid;
+    gap: 80px;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  .phone {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    max-width: 420px;
+    margin: 0 auto;
+    position: relative;
+    box-shadow: 0 0 0 8px rgba(0,0,0,0.02);
+  }
+
+  /* ── Ticker tape ── */
+  .ticker {
+    border-bottom: 1px solid var(--rule);
+    overflow: hidden;
+    height: 34px;
+    position: relative;
+    background: var(--paper);
+  }
+  .ticker-inner {
+    display: inline-block;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--ash);
+    line-height: 34px;
+    animation: scroll 50s linear infinite;
+  }
+  .ticker-inner span { padding: 0 18px; }
+  .ticker-inner .pr { color: var(--tangerine); font-weight: 600; }
+  @keyframes scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .screen-body { padding: 28px 24px 32px; }
+
+  .date-row {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-bottom: 10px;
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 144;
+    font-weight: 900;
+    font-size: 78px;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    margin-bottom: 28px;
+  }
+
+  .hairline {
+    height: 1px;
+    background: var(--rule);
+    margin: 24px -24px;
+  }
+
+  /* ── Hero card w/ reg marks ── */
+  .hero-card {
+    position: relative;
+    padding: 44px 20px 32px;
+  }
+  .reg {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    color: var(--ash);
+  }
+  .reg svg { width: 100%; height: 100%; }
+  .reg-tl { top: 10px; left: 10px; }
+  .reg-tr { top: 10px; right: 10px; }
+  .reg-bl { bottom: 10px; left: 10px; }
+  .reg-br { bottom: 10px; right: 10px; }
+
+  .mini-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-bottom: 18px;
+  }
+
+  .hero-number {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 144;
+    font-weight: 900;
+    font-size: 180px;
+    line-height: 0.82;
+    letter-spacing: -0.05em;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .hero-sub {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 18px;
+    color: var(--ash);
+    margin-bottom: 28px;
+  }
+
+  .volume-wrap {
+    position: relative;
+    display: inline-block;
+    padding: 14px 22px 14px 18px;
+    margin-bottom: 4px;
+  }
+  .volume-num {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  .volume-unit {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ash);
+    margin-left: 4px;
+  }
+  .hand-circle {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    color: var(--tangerine);
+    width: 100%;
+    height: 100%;
+  }
+
+  .delta {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ash);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Section with index number ── */
+  .section-head {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 8px;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+  .idx-mono {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--ash);
+  }
+  .section-head-title {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .skill-row {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .skill-row:last-child { border-bottom: none; }
+  .skill-title {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 5px;
+    letter-spacing: -0.005em;
+  }
+  .skill-sub {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ash);
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+  }
+  .progress-bar {
+    height: 3px;
+    background: var(--rule);
+    position: relative;
+    width: 180px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--tangerine);
+  }
+  .skill-pct {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 20px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 2px;
+    margin-top: 36px;
+    transition: background 120ms ease;
+  }
+  .btn:hover { background: var(--tangerine); }
+  .btn.secondary {
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--ink);
+  }
+  .btn.secondary:hover { background: var(--ink); color: var(--paper); }
+
+  /* ── Active workout ── */
+  .session-clock {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ash);
+    letter-spacing: 0.1em;
+  }
+  .exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 18px 0 0;
+  }
+  .exercise-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .set-counter {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ash);
+    letter-spacing: 0.08em;
+  }
+
+  .hero-weight {
+    text-align: center;
+    padding: 20px 0 12px;
+  }
+  .hero-weight-num {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 144;
+    font-weight: 900;
+    font-size: 220px;
+    line-height: 0.78;
+    letter-spacing: -0.055em;
+    color: var(--ink);
+  }
+  .hero-weight-unit {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ash);
+    letter-spacing: 0.2em;
+    margin-top: 8px;
+  }
+  .hero-rpe {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--tangerine);
+    letter-spacing: 0.16em;
+    margin-top: 10px;
+    font-weight: 600;
+  }
+
+  .set-list { padding: 4px 0; }
+  .set-row {
+    display: grid;
+    grid-template-columns: 28px 56px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 11px 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .set-row:last-child { border-bottom: none; }
+  .set-idx { color: var(--ash); font-size: 10px; letter-spacing: 0.08em; }
+  .set-values { color: var(--ink); letter-spacing: 0.04em; }
+  .set-rpe { color: var(--ash); font-size: 11px; letter-spacing: 0.08em; }
+  .set-mark { color: var(--ash); display: flex; align-items: center; justify-content: flex-end; }
+  .set-row.done .set-values { color: var(--ash); }
+  .set-row.future .set-values,
+  .set-row.future .set-rpe,
+  .set-row.future .set-idx { color: var(--rule); }
+
+  /* ── Passport stamp ── */
+  .stamp {
+    display: inline-block;
+    transform: rotate(-6deg);
+    border: 1.5px solid var(--tangerine);
+    padding: 3px 7px 2px;
+    color: var(--tangerine);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    position: relative;
+    line-height: 1;
+    opacity: 0.92;
+    background: transparent;
+  }
+  .stamp::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    background: var(--paper);
+    mix-blend-mode: screen;
+    opacity: 0.25;
+    pointer-events: none;
+    filter: url(#stampDistress);
+  }
+
+  /* ── The Rack ── */
+  .rack { padding: 20px 0 8px; }
+  .rack-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--ash);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .rack-viz {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    margin-bottom: 12px;
+  }
+  .plate {
+    background: var(--ink);
+    border-radius: 1px;
+  }
+  .bar {
+    height: 3px;
+    width: 80px;
+    background: var(--ash);
+  }
+  .rack-calc {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ash);
+    text-align: center;
+    letter-spacing: 0.06em;
+  }
+
+  .btn-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 8px;
+    margin-top: 24px;
+  }
+  .btn-row .btn { margin-top: 0; }
+
+  /* ── Rest timer overlay demo ── */
+  .rest-timer {
+    text-align: center;
+    padding: 40px 0 36px;
+  }
+  .rest-timer-num {
+    font-family: var(--font-mono);
+    font-size: 120px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .rest-timer-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--ash);
+    text-transform: uppercase;
+    margin-top: 16px;
+    margin-bottom: 32px;
+  }
+  .rest-timer-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+  .rest-timer-btn {
+    padding: 10px 20px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    cursor: pointer;
+    border-radius: 2px;
+  }
+
+  /* ── Receipt ── */
+  .receipt-wrap { max-width: 320px; margin: 0 auto; }
+  .receipt {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 30px 22px 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink);
+    position: relative;
+    box-shadow: 0 0 0 8px rgba(0,0,0,0.02);
+  }
+  .receipt-brand {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 144;
+    font-style: italic;
+    font-size: 22px;
+    font-weight: 400;
+    text-align: center;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+  .receipt-meta {
+    text-align: center;
+    font-size: 10px;
+    color: var(--ash);
+    margin-bottom: 20px;
+    letter-spacing: 0.14em;
+  }
+  .dashed {
+    border-top: 1px dashed var(--rule);
+    margin: 14px 0;
+  }
+  .rx-line {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 8px;
+    padding: 3px 0;
+  }
+  .rx-idx { color: var(--ash); }
+  .rx-ex {
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .rx-set {
+    padding-left: 32px;
+    font-size: 10.5px;
+    line-height: 1.7;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .rx-totals {
+    font-size: 10px;
+    line-height: 1.9;
+    letter-spacing: 0.06em;
+  }
+  .rx-totals-row {
+    display: flex;
+    justify-content: space-between;
+  }
+  .rx-totals-row .lbl {
+    color: var(--ash);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .rx-totals-row .val { color: var(--ink); font-weight: 500; }
+
+  .perforation {
+    position: relative;
+    margin: 24px -22px 0;
+    height: 0;
+    border-top: 1.5px dashed var(--ash);
+  }
+  .perforation::before,
+  .perforation::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #f0eee6;
+    top: -8px;
+    border: 1px solid var(--rule);
+  }
+  .perforation::before { left: -8px; }
+  .perforation::after { right: -8px; }
+
+  .rx-thanks {
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--ash);
+    text-transform: uppercase;
+    padding: 22px 0 24px;
+  }
+
+  /* ── Skill Tree card ── */
+  .tree-card {
+    position: relative;
+    padding: 40px 24px;
+    border-top: 1px solid var(--rule);
+  }
+  .tree-node {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 8px 14px;
+    border: 1px solid var(--ink);
+    display: inline-block;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: var(--paper);
+  }
+  .tree-node.locked { border-color: var(--rule); color: var(--ash); }
+  .tree-node.active { border-color: var(--tangerine); color: var(--tangerine); }
+  .tree-node.done { background: var(--ink); color: var(--paper); }
+
+  /* ── Tokens showcase ── */
+  .tokens-wrap { display: grid; gap: 24px; }
+  .tokens-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 800px) {
+    .tokens-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .color-chip {
+    border: 1px solid var(--rule);
+    padding: 16px;
+    background: var(--paper);
+    position: relative;
+  }
+  .color-swatch {
+    width: 100%;
+    aspect-ratio: 2 / 1;
+    margin-bottom: 14px;
+    border-radius: 0;
+  }
+  .color-name {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ash);
+  }
+  .color-hex {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink);
+    margin-top: 2px;
+    letter-spacing: 0.05em;
+  }
+
+  .type-showcase { display: grid; gap: 0; }
+  .type-row {
+    padding: 20px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .type-row:last-child { border-bottom: none; }
+  .type-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-bottom: 10px;
+  }
+
+  /* Columns layout for mockups */
+  .two-col {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 48px;
+    align-items: start;
+  }
+
+  /* Footer */
+  .foot {
+    max-width: 1400px;
+    margin: 40px auto 0;
+    padding: 40px 24px 80px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ash);
+    display: flex;
+    justify-content: space-between;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- Global SVG defs -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="stampDistress">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3"/>
+      <feDisplacementMap in="SourceGraphic" scale="1.2"/>
+    </filter>
+  </defs>
+</svg>
+
+<header class="header">
+  <div class="header-kicker">Athletic Index · Design Preview · v0.1 · 19.04.26</div>
+  <h1 class="header-title">Athletic <em>Index</em></h1>
+  <p class="header-sub">
+    A training journal designed like a type specimen catalog crossed with a passport and an engineering notebook. Off-white paper, ink black, one tangerine accent. Scroll to see it live.
+  </p>
+</header>
+
+<main class="screens">
+
+  <!-- ══════ 01 · DASHBOARD ══════ -->
+  <section>
+    <div class="section-label">01 · Dashboard</div>
+    <div class="phone">
+      <div class="ticker">
+        <div class="ticker-inner">
+          <span class="pr">★ BENCH 92.5 KG</span>·<span class="pr">★ PULL-UP ×12</span>·<span>04 SESSIONS THIS WEEK</span>·<span class="pr">★ SQUAT 120 KG</span>·<span>+4.1% VOL</span>·<span>46,200 KG TOTAL</span>·<span class="pr">★ BENCH 92.5 KG</span>·<span class="pr">★ PULL-UP ×12</span>·<span>04 SESSIONS THIS WEEK</span>·<span class="pr">★ SQUAT 120 KG</span>·<span>+4.1% VOL</span>·<span>46,200 KG TOTAL</span>·
+        </div>
+      </div>
+
+      <div class="screen-body">
+        <div class="date-row">Sun · 19.04.26</div>
+        <h1 class="page-title">Push.</h1>
+
+        <div class="hairline"></div>
+
+        <div class="hero-card">
+          <div class="reg reg-tl"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1"><path d="M0 5V0H5"/><circle cx="0" cy="0" r="0.5" fill="currentColor"/></svg></div>
+          <div class="reg reg-tr"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1"><path d="M9 0H14V5"/></svg></div>
+          <div class="reg reg-bl"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1"><path d="M0 9V14H5"/></svg></div>
+          <div class="reg reg-br"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1"><path d="M9 14H14V9"/></svg></div>
+
+          <div class="mini-label">This week</div>
+          <div class="hero-number">04</div>
+          <div class="hero-sub">sessions</div>
+
+          <div class="volume-wrap">
+            <span class="volume-num">46,200</span><span class="volume-unit">kg</span>
+            <svg class="hand-circle" viewBox="0 0 200 60" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <path d="M 15 32 C 12 12, 50 5, 100 4 C 152 3, 195 12, 190 33 C 188 54, 145 57, 100 56 C 55 55, 12 51, 15 32 Z"/>
+            </svg>
+          </div>
+          <div class="delta">+4.1 % vs last week</div>
+        </div>
+
+        <div class="hairline"></div>
+
+        <div class="section-head">
+          <span class="idx-mono">01</span>
+          <span class="section-head-title">Skill tree</span>
+        </div>
+
+        <div class="skill-row">
+          <span class="idx-mono">→</span>
+          <div>
+            <div class="skill-title">Next · Muscle-up</div>
+            <div class="skill-sub">pull-up 3×8 ✓  ·  dip 3×10 ●</div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 67%"></div></div>
+          </div>
+          <div class="skill-pct">67%</div>
+        </div>
+        <div class="skill-row">
+          <span class="idx-mono">→</span>
+          <div>
+            <div class="skill-title">Bench 2×BW</div>
+            <div class="skill-sub">current · 1.15×BW</div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 22%"></div></div>
+          </div>
+          <div class="skill-pct">22%</div>
+        </div>
+        <div class="skill-row">
+          <span class="idx-mono">→</span>
+          <div>
+            <div class="skill-title">Free handstand · 30s</div>
+            <div class="skill-sub">current · 12s wall-assisted</div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 40%"></div></div>
+          </div>
+          <div class="skill-pct">40%</div>
+        </div>
+
+        <button class="btn">Start session</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════ 02 · ACTIVE WORKOUT + REST TIMER ══════ -->
+  <section>
+    <div class="section-label">02 · Active workout  ·  Rest timer</div>
+    <div class="two-col">
+
+      <!-- Active workout -->
+      <div class="phone">
+        <div class="screen-body">
+          <div class="session-clock">00:47:12</div>
+          <div class="exercise-header">
+            <div class="exercise-name">01 · Bench Press</div>
+            <div class="set-counter">3 / 5</div>
+          </div>
+          <div class="hairline"></div>
+
+          <div class="hero-weight">
+            <div class="hero-weight-num">90</div>
+            <div class="hero-weight-unit">KG  ·  × 6 REPS</div>
+            <div class="hero-rpe">RPE 8</div>
+          </div>
+
+          <div class="hairline"></div>
+
+          <div class="set-list">
+            <div class="set-row done">
+              <span class="set-idx">01</span>
+              <span class="set-values">80 × 8</span>
+              <span class="set-rpe">RPE 7</span>
+              <span class="set-mark">✓</span>
+            </div>
+            <div class="set-row done">
+              <span class="set-idx">02</span>
+              <span class="set-values">85 × 8</span>
+              <span class="set-rpe">RPE 8</span>
+              <span class="set-mark">✓</span>
+            </div>
+            <div class="set-row">
+              <span class="set-idx">03</span>
+              <span class="set-values" style="color: var(--ink); font-weight: 500">90 × 6</span>
+              <span class="set-rpe" style="color: var(--tangerine)">RPE 9</span>
+              <span class="set-mark"><span class="stamp">★ PR · 19.04.26</span></span>
+            </div>
+            <div class="set-row future">
+              <span class="set-idx">04</span>
+              <span class="set-values">90 × 6</span>
+              <span class="set-rpe">—</span>
+              <span class="set-mark"></span>
+            </div>
+            <div class="set-row future">
+              <span class="set-idx">05</span>
+              <span class="set-values">90 × ?</span>
+              <span class="set-rpe">—</span>
+              <span class="set-mark"></span>
+            </div>
+          </div>
+
+          <div class="hairline"></div>
+
+          <div class="rack">
+            <div class="rack-label">The rack</div>
+            <div class="rack-viz">
+              <div class="plate" style="width:7px;height:24px"></div>
+              <div class="plate" style="width:9px;height:34px"></div>
+              <div class="plate" style="width:12px;height:52px"></div>
+              <div class="bar"></div>
+              <div class="plate" style="width:12px;height:52px"></div>
+              <div class="plate" style="width:9px;height:34px"></div>
+              <div class="plate" style="width:7px;height:24px"></div>
+            </div>
+            <div class="rack-calc">20 + 2 × (20 + 10 + 2.5) = 90 kg</div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn">Log set</button>
+            <button class="btn secondary">Skip</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rest timer -->
+      <div class="phone">
+        <div class="screen-body">
+          <div class="session-clock">00:49:10</div>
+          <div class="exercise-header">
+            <div class="exercise-name">01 · Bench Press</div>
+            <div class="set-counter">3 / 5  ·  ✓</div>
+          </div>
+          <div class="hairline"></div>
+
+          <div class="rest-timer">
+            <div class="rest-timer-num">01:58</div>
+            <div class="rest-timer-label">Rest</div>
+            <div class="rest-timer-actions">
+              <button class="rest-timer-btn">Skip</button>
+              <button class="rest-timer-btn">+ 30s</button>
+            </div>
+          </div>
+
+          <div class="hairline"></div>
+
+          <div class="section-head" style="margin-top: 8px">
+            <span class="idx-mono">↓</span>
+            <span class="section-head-title">Up next</span>
+          </div>
+
+          <div style="padding: 16px 0 32px">
+            <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:12px">
+              <span style="color:var(--ink); font-weight:500; letter-spacing:0.04em">SET 04</span>
+              <span style="color: var(--ash)">90 kg  ·  × 6</span>
+            </div>
+            <div style="margin-top:10px; font-family:var(--font-mono); font-size:11px; color: var(--ash); line-height: 1.7">
+              Last attempt hit PR. Recommendation: hold 90 kg.
+              Target 6 clean reps at RPE 9.
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════ 03 · RECEIPT ══════ -->
+  <section>
+    <div class="section-label">03 · Receipt</div>
+    <div class="receipt-wrap">
+      <div class="receipt">
+        <div class="receipt-brand">Athletic Index</div>
+        <div class="receipt-meta">SUN · 19.04.26  ·  PUSH  ·  01:12:33</div>
+
+        <div class="dashed"></div>
+
+        <div class="rx-line"><span class="rx-idx">01</span><span class="rx-ex">Bench press</span></div>
+        <div class="rx-set">8 × 80 kg &nbsp;·&nbsp; RPE 7</div>
+        <div class="rx-set">8 × 85 kg &nbsp;·&nbsp; RPE 8</div>
+        <div class="rx-set">6 × 90 kg &nbsp;·&nbsp; RPE 9 <span class="stamp" style="font-size:8px; padding:2px 5px 1px">★ PR</span></div>
+
+        <div style="height:10px"></div>
+
+        <div class="rx-line"><span class="rx-idx">02</span><span class="rx-ex">Incline dumbbell</span></div>
+        <div class="rx-set">10 × 28 kg &nbsp;·&nbsp; RPE 7</div>
+        <div class="rx-set">10 × 28 kg &nbsp;·&nbsp; RPE 8</div>
+        <div class="rx-set">8 × 28 kg &nbsp;·&nbsp; RPE 9</div>
+
+        <div style="height:10px"></div>
+
+        <div class="rx-line"><span class="rx-idx">03</span><span class="rx-ex">Cable flyes</span></div>
+        <div class="rx-set">12 × 15 kg &nbsp;·&nbsp; RPE 7</div>
+        <div class="rx-set">12 × 15 kg &nbsp;·&nbsp; RPE 8</div>
+        <div class="rx-set">10 × 15 kg &nbsp;·&nbsp; RPE 9</div>
+
+        <div class="dashed"></div>
+
+        <div class="rx-totals">
+          <div class="rx-totals-row"><span class="lbl">Total</span><span class="val">12,420 kg</span></div>
+          <div class="rx-totals-row"><span class="lbl">vs last week</span><span class="val">+4.1 %</span></div>
+          <div class="rx-totals-row"><span class="lbl">Sessions week</span><span class="val">04</span></div>
+          <div class="rx-totals-row"><span class="lbl">Tree ▸ muscle-up</span><span class="val">+3 %</span></div>
+        </div>
+
+        <div class="perforation"></div>
+        <div class="rx-thanks">— Keep going —</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════ 04 · SKILL TREE NODES ══════ -->
+  <section>
+    <div class="section-label">04 · Skill tree nodes (sample)</div>
+    <div class="phone" style="max-width: 600px">
+      <div class="tree-card">
+        <div class="mini-label" style="margin-bottom: 24px">Upper body · Push line</div>
+
+        <div style="display:flex; flex-direction: column; gap: 16px; align-items:flex-start">
+          <span class="tree-node done">Push-up · 3×15 ✓</span>
+          <span style="color: var(--ash); font-family: var(--font-mono); font-size: 10px; padding-left: 12px">│</span>
+          <span class="tree-node done">Diamond push-up · 3×10 ✓</span>
+          <span style="color: var(--ash); font-family: var(--font-mono); font-size: 10px; padding-left: 12px">│</span>
+          <span class="tree-node active">Archer push-up · 40%  →</span>
+          <span style="color: var(--rule); font-family: var(--font-mono); font-size: 10px; padding-left: 12px">│</span>
+          <span class="tree-node locked">One-arm push-up  ✕</span>
+          <span style="color: var(--rule); font-family: var(--font-mono); font-size: 10px; padding-left: 12px">│</span>
+          <span class="tree-node locked">Planche progression  ✕</span>
+        </div>
+
+        <div class="hairline" style="margin: 36px -24px 24px"></div>
+        <div class="mini-label">Strength · Bench line</div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px">
+          <span class="tree-node done">1 × BW ✓</span>
+          <span class="tree-node done">1.1 × BW ✓</span>
+          <span class="tree-node active">1.25 × BW · 22%</span>
+          <span class="tree-node locked">1.5 × BW</span>
+          <span class="tree-node locked">2 × BW</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════ 05 · TOKENS ══════ -->
+  <section>
+    <div class="section-label">05 · Design tokens</div>
+    <div class="tokens-wrap">
+      <div class="tokens-grid">
+        <div class="color-chip">
+          <div class="color-swatch" style="background: #FAFAF7; border: 1px solid var(--rule)"></div>
+          <div class="color-name">Paper</div>
+          <div class="color-hex">#FAFAF7</div>
+        </div>
+        <div class="color-chip">
+          <div class="color-swatch" style="background: #E8E6DF"></div>
+          <div class="color-name">Rule</div>
+          <div class="color-hex">#E8E6DF</div>
+        </div>
+        <div class="color-chip">
+          <div class="color-swatch" style="background: #6B6962"></div>
+          <div class="color-name">Ash</div>
+          <div class="color-hex">#6B6962</div>
+        </div>
+        <div class="color-chip">
+          <div class="color-swatch" style="background: #0D0D0D"></div>
+          <div class="color-name">Ink</div>
+          <div class="color-hex">#0D0D0D</div>
+        </div>
+        <div class="color-chip">
+          <div class="color-swatch" style="background: #FF5B1F"></div>
+          <div class="color-name">Tangerine</div>
+          <div class="color-hex">#FF5B1F</div>
+        </div>
+      </div>
+
+      <div class="type-showcase">
+        <div class="type-row">
+          <div class="type-label">Display · Fraunces 900 · opsz 144</div>
+          <div style="font-family: var(--font-display); font-variation-settings: 'opsz' 144; font-weight: 900; font-size: 96px; line-height: 0.9; letter-spacing: -0.04em">Push. 90 × 6</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Display italic · Fraunces 400</div>
+          <div style="font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: 48px; color: var(--ash); letter-spacing: -0.02em">sessions · volume · streak</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Heading · Fraunces 700 · mixed HE/EN</div>
+          <div style="font-family: var(--font-display); font-weight: 700; font-size: 36px; letter-spacing: -0.02em">Sunday · <span style="font-family:'Noto Serif Hebrew', serif">יום א׳</span> · Push day</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Data · Geist Mono 500</div>
+          <div style="font-family: var(--font-mono); font-size: 18px; color: var(--ink); letter-spacing: 0.04em">
+            90 kg · 6 reps · RPE 8 · 01:12:33
+          </div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Body · Geist 400</div>
+          <div style="font-family: var(--font-body); font-size: 15px; color: var(--ink); line-height: 1.6; max-width: 640px">
+            Every completed workout generates a receipt — long, narrow, monospaced, looks like a specimen printout. Date, exercises, sets, volume totals, PRs flagged with stamps.
+          </div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Body · Heebo 400 · עברית</div>
+          <div style="font-family: 'Heebo', sans-serif; font-size: 15px; color: var(--ink); line-height: 1.7; direction: rtl; text-align: right; max-width: 640px; margin-right: auto">
+            כל אימון שמסתיים יוצר קבלה — ארוכה, צרה, במונוספייס, נראית כמו הדפס מפרטים. תאריך, תרגילים, סטים, סיכומי נפח, שיאים עם חותמות.
+          </div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Label · Geist Mono 500 · tracked</div>
+          <div style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ash)">
+            This week · Sessions · Total volume · 19.04.26
+          </div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Signature elements</div>
+          <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap; padding-top: 8px">
+            <div style="display: inline-flex; gap: 6px; align-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--ash); letter-spacing: 0.14em; text-transform: uppercase">
+              <svg width="18" height="18" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1"><path d="M0 5V0H5"/><path d="M9 0H14V5"/><path d="M0 9V14H5"/><path d="M9 14H14V9"/></svg>
+              Registration marks
+            </div>
+            <span class="stamp">★ PR · 19.04.26</span>
+            <div style="font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ash)">
+              <span style="font-family: var(--font-mono); color: var(--ash); margin-right: 6px">01</span>index numbers
+            </div>
+            <div style="position: relative; padding: 6px 14px; display: inline-block;">
+              <span style="font-family: var(--font-mono); font-size: 12px; color: var(--ink)">hand-drawn</span>
+              <svg style="position:absolute; inset:0; width:100%; height:100%; color: var(--tangerine);" viewBox="0 0 120 40" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <path d="M 8 20 C 6 6, 40 3, 60 3 C 90 3, 115 8, 112 22 C 110 36, 80 37, 60 37 C 30 37, 6 33, 8 20 Z"/>
+              </svg>
+            </div>
+            <div style="width: 140px; border-top: 1px dashed var(--ash); height: 0; position: relative">
+              <span style="position:absolute; top: -14px; left:50%; transform: translateX(-50%); background: var(--paper); padding: 0 6px; font-family: var(--font-mono); font-size: 9px; color: var(--ash); letter-spacing: 0.14em; text-transform:uppercase">perforation</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <span>Athletic Index · v0.1</span>
+  <span>paper + ink + tangerine · Fraunces × Geist</span>
+</footer>
+
+</body>
+</html>

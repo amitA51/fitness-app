@@ -1,16 +1,16 @@
 // ProgressBar - Ultra Premium Top Progress Indicator with Glow Effects
 // Features: Gradient animation, particle trail, milestone markers
 
+import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // ============================================================
 // TYPES
 // ============================================================
 
 interface ProgressBarProps {
-    progress: number; // 0-100
-    showMilestones?: boolean;
+  progress: number; // 0-100
+  showMilestones?: boolean;
 }
 
 // ============================================================
@@ -18,21 +18,21 @@ interface ProgressBarProps {
 // ============================================================
 
 const ProgressParticle = memo<{ delay: number }>(({ delay }) => (
-    <motion.div
-        className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-white"
-        initial={{ opacity: 0, scale: 0, x: 0 }}
-        animate={{ 
-            opacity: [0, 1, 0],
-            scale: [0, 1.5, 0],
-            x: [0, -20, -40],
-            y: [0, -5, 0]
-        }}
-        transition={{
-            duration: 1,
-            delay,
-            ease: 'easeOut',
-        }}
-    />
+  <motion.div
+    className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-white"
+    initial={{ opacity: 0, scale: 0, x: 0 }}
+    animate={{
+      opacity: [0, 1, 0],
+      scale: [0, 1.5, 0],
+      x: [0, -20, -40],
+      y: [0, -5, 0],
+    }}
+    transition={{
+      duration: 1,
+      delay,
+      ease: 'easeOut',
+    }}
+  />
 ));
 
 ProgressParticle.displayName = 'ProgressParticle';
@@ -42,107 +42,105 @@ ProgressParticle.displayName = 'ProgressParticle';
 // ============================================================
 
 const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }) => {
-    // Clamp progress between 0-100
-    const clampedProgress = Math.min(100, Math.max(0, progress));
-    
-    // Determine color based on progress
-    const gradientColors = useMemo(() => {
-        if (clampedProgress < 25) return 'from-cyan-400 via-cyan-500 to-cyan-400';
-        if (clampedProgress < 50) return 'from-cyan-400 via-lime-400 to-lime-500';
-        if (clampedProgress < 75) return 'from-lime-400 via-lime-500 to-emerald-500';
-        return 'from-lime-400 via-emerald-400 to-emerald-500';
-    }, [clampedProgress]);
+  // Clamp progress between 0-100
+  const clampedProgress = Math.min(100, Math.max(0, progress));
 
-    // Milestone positions
-    const milestones = [25, 50, 75, 100];
+  // Determine color based on progress
+  const gradientColors = useMemo(() => {
+    if (clampedProgress < 25) return 'from-cyan-400 via-cyan-500 to-cyan-400';
+    if (clampedProgress < 50) return 'from-cyan-400 via-lime-400 to-lime-500';
+    if (clampedProgress < 75) return 'from-lime-400 via-lime-500 to-emerald-500';
+    return 'from-lime-400 via-emerald-400 to-emerald-500';
+  }, [clampedProgress]);
 
-    return (
-        <div className="absolute top-0 left-0 right-0 h-1.5 z-[100] bg-white/5">
-            {/* Background Track */}
-            <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10" />
+  // Milestone positions
+  const milestones = [25, 50, 75, 100];
 
-            {/* Progress Fill */}
-            <motion.div
-                className={`
+  return (
+    <div className="absolute top-0 left-0 right-0 h-1.5 z-[100] bg-white/5">
+      {/* Background Track */}
+      <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10" />
+
+      {/* Progress Fill */}
+      <motion.div
+        className={`
                     absolute top-0 left-0 h-full
                     bg-gradient-to-r ${gradientColors}
                     shadow-[0_0_15px_var(--cosmos-accent-primary)]
                 `}
-                initial={{ width: 0 }}
-                animate={{ width: `${clampedProgress}%` }}
-                transition={{ 
-                    duration: 0.5, 
-                    ease: [0.34, 1.56, 0.64, 1] // Bounce easing
-                }}
-            >
-                {/* Shimmer effect */}
-                <motion.div
-                    className="absolute inset-0"
-                    style={{
-                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
-                        backgroundSize: '200% 100%',
-                    }}
-                    animate={{
-                        backgroundPosition: ['0% 0%', '200% 0%'],
-                    }}
-                    transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        ease: 'linear',
-                    }}
-                />
+        initial={{ width: 0 }}
+        animate={{ width: `${clampedProgress}%` }}
+        transition={{
+          duration: 0.5,
+          ease: [0.34, 1.56, 0.64, 1], // Bounce easing
+        }}
+      >
+        {/* Shimmer effect */}
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+            backgroundSize: '200% 100%',
+          }}
+          animate={{
+            backgroundPosition: ['0% 0%', '200% 0%'],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: 'linear',
+          }}
+        />
 
-                {/* Leading edge glow */}
-                <motion.div
-                    className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full"
-                    style={{
-                        background: 'radial-gradient(circle, rgba(163,230,53,0.8) 0%, transparent 70%)',
-                    }}
-                    animate={{
-                        scale: [0.8, 1.2, 0.8],
-                        opacity: [0.6, 1, 0.6],
-                    }}
-                    transition={{
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                    }}
-                />
-            </motion.div>
+        {/* Leading edge glow */}
+        <motion.div
+          className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(163,230,53,0.8) 0%, transparent 70%)',
+          }}
+          animate={{
+            scale: [0.8, 1.2, 0.8],
+            opacity: [0.6, 1, 0.6],
+          }}
+          transition={{
+            duration: 1,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: 'easeInOut',
+          }}
+        />
+      </motion.div>
 
-            {/* Milestone Markers */}
-            {showMilestones && milestones.map(milestone => (
-                <div
-                    key={milestone}
-                    className={`
+      {/* Milestone Markers */}
+      {showMilestones &&
+        milestones.map((milestone) => (
+          <div
+            key={milestone}
+            className={`
                         absolute top-0 bottom-0 w-[2px]
-                        ${clampedProgress >= milestone 
-                            ? 'bg-white/50' 
-                            : 'bg-white/10'
-                        }
+                        ${clampedProgress >= milestone ? 'bg-white/50' : 'bg-white/10'}
                     `}
-                    style={{ left: `${milestone}%` }}
-                >
-                    {/* Completion indicator */}
-                    <AnimatePresence>
-                        {clampedProgress >= milestone && (
-                            <motion.div
-                                initial={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-lg shadow-white/50"
-                            />
-                        )}
-                    </AnimatePresence>
-                </div>
-            ))}
+            style={{ left: `${milestone}%` }}
+          >
+            {/* Completion indicator */}
+            <AnimatePresence>
+              {clampedProgress >= milestone && (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-lg shadow-white/50"
+                />
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
 
-            {/* Percentage display on hover area (invisible) */}
-            <div 
-                className="absolute inset-0 cursor-default"
-                title={`${Math.round(clampedProgress)}% completed`}
-            />
-        </div>
-    );
+      {/* Percentage display on hover area (invisible) */}
+      <div
+        className="absolute inset-0 cursor-default"
+        title={`${Math.round(clampedProgress)}% completed`}
+      />
+    </div>
+  );
 });
 
 ProgressBar.displayName = 'ProgressBar';

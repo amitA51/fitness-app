@@ -1,6 +1,10 @@
-import React from 'react';
+// DeleteConfirmDialog - Sport Annual Editorial Design
+// Sharp corners · Navy header · Bone body
+// VISION: Bold · Editorial · Confident · Narrative · Printed
+
+import type React from 'react';
+import type { PersonalExercise } from '../../../types';
 import { TrashIcon } from '../../icons';
-import { PersonalExercise } from '../../../types';
 
 interface DeleteConfirmDialogProps {
   exercise: PersonalExercise | null;
@@ -16,26 +20,125 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   if (!exercise) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[13000] flex items-center justify-center p-6">
-      <div className="w-full max-w-sm bg-[var(--bg-secondary)] border border-white/10 rounded-3xl p-6 text-center shadow-2xl">
-        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-          <TrashIcon className="w-8 h-8 text-red-500" />
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(11,26,43,0.6)',
+        backdropFilter: 'blur(8px)',
+        zIndex: 13000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 360,
+          background: 'var(--bone)',
+          border: '2px solid var(--navy)',
+          padding: 24,
+          textAlign: 'center',
+        }}
+      >
+        {/* Icon */}
+        <div
+          style={{
+            width: 64,
+            height: 64,
+            background: 'rgba(196,43,43,0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px',
+          }}
+        >
+          <TrashIcon style={{ width: 32, height: 32, color: 'var(--color-error)' }} />
         </div>
-        <h3 className="text-xl font-bold mb-2 text-white">למחוק תרגיל?</h3>
-        <p className="text-sm text-white/70 mb-1 font-medium">{exercise.name}</p>
-        <p className="text-xs text-white/40 mb-6">
+
+        {/* Title */}
+        <h3
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 20,
+            color: 'var(--navy)',
+            marginBottom: 8,
+          }}
+        >
+          למחוק תרגיל?
+        </h3>
+
+        {/* Name */}
+        <p
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 16,
+            color: 'var(--ink)',
+            marginBottom: 4,
+          }}
+        >
+          {exercise.name}
+        </p>
+
+        {/* Description */}
+        <p
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.12em',
+            color: 'var(--stone)',
+            textTransform: 'uppercase',
+            marginBottom: 20,
+          }}
+        >
           המחיקה תסיר את התרגיל מהספרייה לצמיתות.
         </p>
-        <div className="flex gap-3">
+
+        {/* Buttons */}
+        <div style={{ display: 'flex', gap: 8 }}>
           <button
+            type="button"
             onClick={onCancel}
-            className="flex-1 h-12 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-all"
+            style={{
+              flex: 1,
+              padding: '14px 16px',
+              background: 'var(--bone-deep)',
+              border: '2px solid var(--navy)',
+              borderRadius: 0,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 13,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: 'var(--navy)',
+              minHeight: 48,
+            }}
           >
             ביטול
           </button>
           <button
+            type="button"
             onClick={onConfirm}
-            className="flex-1 h-12 rounded-xl bg-red-600/90 text-white font-bold hover:bg-red-500 shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all"
+            style={{
+              flex: 1,
+              padding: '14px 16px',
+              background: 'var(--color-error)',
+              border: '2px solid var(--color-error)',
+              borderRadius: 0,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 13,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: '#FFFFFF',
+              minHeight: 48,
+            }}
           >
             מחק
           </button>

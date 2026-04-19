@@ -6,77 +6,81 @@ export { default as ActiveWorkout } from './ActiveWorkoutNew';
 
 // Core - Named exports for tree-shaking
 export {
-    // Types
-    type RestTimerState,
-    type NumpadState,
-    type WorkoutState,
-    type WorkoutAction,
-    type ModalType,
-    type WorkoutContextValue,
-    type WorkoutDerivedValue,
-    type WorkoutProviderProps,
-    type WorkoutSummaryData,
-    // Values
-    HAPTIC_PATTERNS,
-    createInitialState,
-    // Reducer
-    workoutReducer,
-    // Provider
-    WorkoutProvider,
-    // Context hooks
-    WorkoutStateProvider,
-    WorkoutDispatchProvider,
-    WorkoutDerivedProvider,
-    useWorkoutState,
-    useWorkoutDispatch,
-    useWorkoutDerived,
-    useWorkout,
-    useCurrentExercise,
-    useWorkoutSettings,
-    useRestTimer,
-    useWorkoutOverlays,
-    useWorkoutCelebration,
+  // Types
+  type RestTimerState,
+  type NumpadState,
+  type WorkoutState,
+  type WorkoutAction,
+  type ModalType,
+  type WorkoutContextValue,
+  type WorkoutDerivedValue,
+  type WorkoutProviderProps,
+  type WorkoutSummaryData,
+  // Values
+  HAPTIC_PATTERNS,
+  createInitialState,
+  // Reducer
+  workoutReducer,
+  // Provider
+  WorkoutProvider,
+  // Context hooks
+  WorkoutStateProvider,
+  WorkoutDispatchProvider,
+  WorkoutDerivedProvider,
+  useWorkoutState,
+  useWorkoutDispatch,
+  useWorkoutDerived,
+  useWorkout,
+  useCurrentExercise,
+  useWorkoutSettings,
+  useRestTimer,
+  useWorkoutOverlays,
+  useWorkoutCelebration,
 } from './core';
 
 // Hooks (exclude duplicates from core)
-export { useWorkoutTimer, useRestTimer as useRestTimerHook, formatTime } from './hooks/useWorkoutTimer';
+export {
+  useWorkoutTimer,
+  useRestTimer as useRestTimerHook,
+  formatTime,
+} from './hooks/useWorkoutTimer';
 export { usePreviousData } from './hooks/usePreviousData';
 export { usePersonalRecords } from './hooks/usePersonalRecords';
 
 // Components - Already using named exports
 export {
-    SetInputCard,
-    SwipeComplete,
-    WorkoutHeader,
-    ExerciseDisplay,
-    ExerciseNav,
-    ProgressBar,
-    SetEditBottomSheet,
-    IntensityMeter,
-    ZONES,
-    getZoneFromIntensity,
-    PerformanceAnalytics,
-    calculateVolume,
-    formatDuration,
+  SetInputCard,
+  SwipeComplete,
+  WorkoutHeader,
+  ExerciseDisplay,
+  ExerciseNav,
+  ProgressBar,
+  SetEditBottomSheet,
+  IntensityMeter,
+  ZONES,
+  getZoneFromIntensity,
+  PerformanceAnalytics,
+  calculateVolume,
+  formatDuration,
 } from './components';
 
 // Overlays - Already using named exports
 export {
-    RestTimerOverlay,
-    NumpadOverlay,
-    ConfirmExitOverlay,
-    WorkoutSettingsOverlay,
+  RestTimerOverlay,
+  NumpadOverlay,
+  ConfirmExitOverlay,
+  WorkoutSettingsOverlay,
 } from './overlays';
 
 // Types (from main types.ts)
 export type {
-    Exercise,
-    WorkoutSet,
-    WorkoutSession,
-    WorkoutGoal,
-    WorkoutTemplate,
-    PersonalExercise,
-    AppSettings
+  Exercise,
+  WorkoutSet,
+  WorkoutSession,
+  WorkoutGoal,
+  WorkoutTemplate,
+  PersonalExercise,
+  AppSettings,
 } from '../../types';
 
 // Legacy exports (for backwards compatibility during migration)
@@ -93,3 +97,10 @@ export { default as WorkoutHistoryScreen } from './WorkoutHistoryScreen';
 // History Hook
 export { useWorkoutHistory } from './hooks/useWorkoutHistory';
 export type { WorkoutHistoryStats, UseWorkoutHistoryResult } from './hooks/useWorkoutHistory';
+
+// Progression Recommendation
+export {
+  ProgressionRecommendation,
+  ProgressionHistory,
+  ProgressionSummary,
+} from './ProgressionRecommendation';

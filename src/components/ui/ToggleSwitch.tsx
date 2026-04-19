@@ -1,5 +1,5 @@
-import React, { useId, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import React, { useId, useCallback } from 'react';
 import { triggerHaptic } from '../../utils/haptics';
 
 interface ToggleSwitchProps {
@@ -17,27 +17,25 @@ interface ToggleSwitchProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+// Sport Annual toggles — sharp rectangles, navy knob, mustard active track
 const sizeConfig = {
   sm: {
-    track: 'w-9 h-5',
-    thumb: 'w-3.5 h-3.5',
-    thumbOn: 'calc(100% - 1.125rem)',
-    thumbOff: '0.1875rem',
-    top: 'top-[3px]',
+    trackW: 32,
+    trackH: 18,
+    knob: 14,
+    padding: 2,
   },
   md: {
-    track: 'w-12 h-7',
-    thumb: 'w-5 h-5',
-    thumbOn: 'calc(100% - 1.5rem)',
-    thumbOff: '0.25rem',
-    top: 'top-1',
+    trackW: 40,
+    trackH: 24,
+    knob: 20,
+    padding: 2,
   },
   lg: {
-    track: 'w-14 h-8',
-    thumb: 'w-6 h-6',
-    thumbOn: 'calc(100% - 1.75rem)',
-    thumbOff: '0.25rem',
-    top: 'top-1',
+    trackW: 48,
+    trackH: 28,
+    knob: 22,
+    padding: 3,
   },
 };
 
@@ -54,21 +52,28 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   const switchId = id || generatedId;
 
   const config = sizeConfig[size];
+  const travel = config.trackW - config.knob - config.padding * 2;
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!disabled) {
-      if (!checked) triggerHaptic('light'); // Feedback on activation
-      onChange(e.target.checked);
-    }
-  }, [disabled, onChange, checked]);
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!disabled) {
+        if (!checked) triggerHaptic('light'); // Feedback on activation
+        onChange(e.target.checked);
+      }
+    },
+    [disabled, onChange, checked]
+  );
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
-      e.preventDefault();
-      triggerHaptic('light');
-      onChange(!checked);
-    }
-  }, [disabled, checked, onChange]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        triggerHaptic('light');
+        onChange(!checked);
+      }
+    },
+    [disabled, checked, onChange]
+  );
 
   return (
     <label
@@ -78,7 +83,10 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer group'}
       `}
     >
-      <div className="relative">
+      <div
+        className="relative"
+        style={{ width: config.trackW, height: config.trackH }}
+      >
         <input
           id={switchId}
           type="checkbox"
@@ -92,60 +100,56 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           disabled={disabled}
         />
 
-        {/* Track */}
+        {/* Track — sharp rect, 1px navy border */}
         <motion.div
-          className={`
-            block ${config.track} rounded-full 
-            transition-colors duration-200 ease-out
-            border border-transparent 
-            ${!disabled && 'group-hover:border-white/10'}
-            focus-within:ring-2 focus-within:ring-[var(--dynamic-accent-start)]/50 focus-within:ring-offset-2 focus-within:ring-offset-[var(--bg-primary)]
-          `}
+          className="block focus-within:ring-2 focus-within:ring-[var(--mustard)]"
+          style={{
+            width: config.trackW,
+            height: config.trackH,
+            borderRadius: 2,
+            border: '1px solid var(--navy)',
+          }}
           animate={{
-            backgroundColor: checked
-              ? 'var(--dynamic-accent-start)'
-              : 'var(--gray-200, rgba(120, 120, 128, 0.2))',
-            boxShadow: checked
-              ? '0 0 12px var(--dynamic-accent-glow), inset 0 1px 1px rgba(255,255,255,0.1)'
-              : 'inset 0 1px 3px rgba(0,0,0,0.15)',
+            backgroundColor: checked ? 'var(--mustard)' : 'var(--bone-deep)',
           }}
           transition={{ duration: 0.2 }}
         />
 
-        {/* Thumb */}
+        {/* Knob — navy sharp square */}
         <motion.div
-          className={`
-            absolute ${config.top} ${config.thumb} 
-            bg-white rounded-full shadow-lg
-            flex items-center justify-center
-          `}
+          className="absolute"
+          style={{
+            top: config.padding,
+            width: config.knob,
+            height: config.knob,
+            backgroundColor: 'var(--navy)',
+            borderRadius: 2,
+          }}
           animate={{
-            left: checked ? config.thumbOn : config.thumbOff,
-            scale: checked ? 1 : 0.9,
+            left: checked ? travel + config.padding : config.padding,
           }}
           transition={{
             type: 'spring',
             stiffness: 500,
             damping: 30,
           }}
-          whileTap={{ scale: 0.85 }}
-        >
-          {/* Inner shine effect */}
-          <div
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)',
-            }}
-          />
-        </motion.div>
+          whileTap={{ scale: 0.9 }}
+        />
       </div>
 
       {/* Optional label */}
       {label && (
-        <span className={`
-          text-sm font-medium transition-colors duration-200
-          ${checked ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}
-        `}>
+        <span
+          className="transition-colors duration-200"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '12px',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: checked ? 'var(--navy)' : 'var(--stone)',
+            fontWeight: 600,
+          }}
+        >
           {label}
         </span>
       )}

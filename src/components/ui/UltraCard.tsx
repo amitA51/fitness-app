@@ -1,4 +1,5 @@
-import React, { useRef, useState, useCallback } from 'react';
+import type React from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 type CardVariant = 'elevated' | 'sunken' | 'floating' | 'glass';
 
@@ -31,7 +32,8 @@ const variantStyles: Record<CardVariant, React.CSSProperties> = {
   glass: {
     background: 'var(--surface-glass)',
     backdropFilter: 'blur(var(--glass-blur, 24px)) saturate(var(--glass-saturate, 180%))',
-    WebkitBackdropFilter: 'blur(var(--glass-blur, 24px)) saturate(var(--glass-saturate, 180%))' as string,
+    WebkitBackdropFilter:
+      'blur(var(--glass-blur, 24px)) saturate(var(--glass-saturate, 180%))' as string,
     boxShadow: 'var(--shadow-sm)',
   },
 };
@@ -43,7 +45,7 @@ export const UltraCard: React.FC<UltraCardProps> = ({
   variant = 'elevated',
   hoverEffect = true,
   pressEffect = true,
-  cursorGlow = true,
+  cursorGlow = false, // Disabled by default for performance; enable per-card if needed
   noPadding = false,
   className = '',
   glowColor, // Legacy - intentionally unused
@@ -53,14 +55,17 @@ export const UltraCard: React.FC<UltraCardProps> = ({
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current || !cursorGlow) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    setMousePosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  }, [cursorGlow]);
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!cardRef.current || !cursorGlow) return;
+      const rect = cardRef.current.getBoundingClientRect();
+      setMousePosition({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    },
+    [cursorGlow]
+  );
 
   return (
     <div
@@ -87,15 +92,13 @@ export const UltraCard: React.FC<UltraCardProps> = ({
         <div
           className="absolute inset-0 pointer-events-none transition-opacity duration-300"
           style={{
-            background: `radial-gradient(350px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(var(--dynamic-accent-rgb, 0, 122, 255), 0.04), transparent 60%)`,
+            background: `radial-gradient(350px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(59, 130, 246, 0.04), transparent 60%)`,
           }}
         />
       )}
 
       {/* Content */}
-      <div className={`relative z-10 ${noPadding ? '' : 'p-6'}`}>
-        {children}
-      </div>
+      <div className={`relative z-10 ${noPadding ? '' : 'p-6'}`}>{children}</div>
     </div>
   );
 };
@@ -118,14 +121,24 @@ export const UltraCardHeader: React.FC<UltraCardHeaderProps> = ({
   <div className={`flex items-start justify-between mb-4 ${className}`}>
     <div className="flex items-center gap-3">
       {icon && (
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--color-accent-surface-cyan)', color: 'var(--dynamic-accent-start, #007AFF)' }}>
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{
+            background: 'rgba(6, 182, 212, 0.15)',
+            color: 'var(--dynamic-accent-start, #007AFF)',
+          }}
+        >
           {icon}
         </div>
       )}
       <div>
-        <h3 className="font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+        <h3 className="font-bold tracking-tight" style={{ color: 'var(--color-text)' }}>
+          {title}
+        </h3>
         {subtitle && (
-          <p className="text-sm text-theme-secondary mt-0.5">{subtitle}</p>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+            {subtitle}
+          </p>
         )}
       </div>
     </div>
@@ -138,13 +151,8 @@ interface UltraCardBodyProps {
   className?: string;
 }
 
-export const UltraCardBody: React.FC<UltraCardBodyProps> = ({
-  children,
-  className = '',
-}) => (
-  <div className={className}>
-    {children}
-  </div>
+export const UltraCardBody: React.FC<UltraCardBodyProps> = ({ children, className = '' }) => (
+  <div className={className}>{children}</div>
 );
 
 interface UltraCardFooterProps {
@@ -158,7 +166,10 @@ export const UltraCardFooter: React.FC<UltraCardFooterProps> = ({
   className = '',
   bordered = true,
 }) => (
-  <div className={`mt-4 pt-4 ${className}`} style={bordered ? { borderTop: '1px solid var(--border-subtle)' } : undefined}>
+  <div
+    className={`mt-4 pt-4 ${className}`}
+    style={bordered ? { borderTop: '1px solid var(--color-border)' } : undefined}
+  >
     {children}
   </div>
 );

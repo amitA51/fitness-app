@@ -180,93 +180,8 @@ export interface ExercisePR {
 }
 
 // ============================================================================
-// WORKOUT STATE TYPES
-// ============================================================================
-
-export interface WorkoutState {
-  activeSession: WorkoutSession | null;
-  isActive: boolean;
-  currentExerciseIndex: number;
-  currentSetIndex: number;
-  isResting: boolean;
-  restTimeRemaining: number;
-  elapsedTime: number;
-  isPaused: boolean;
-}
-
-export interface WorkoutDerivedValue {
-  totalExercises: number;
-  completedExercises: number;
-  totalSets: number;
-  completedSets: number;
-  totalVolume: number;
-  estimatedCalories: number;
-  progress: number; // 0-100
-}
-
-export interface HAPTIC_PATTERNS {
-  LIGHT: 'light';
-  MEDIUM: 'medium';
-  HEAVY: 'heavy';
-  SUCCESS: 'success';
-  WARNING: 'warning';
-  ERROR: 'error';
-}
-
-// ============================================================================
-// WORKOUT ACTIONS (for reducer)
-// ============================================================================
-
-export type WorkoutAction =
-  | { type: 'START_WORKOUT'; payload: { templateId?: string } }
-  | { type: 'END_WORKOUT' }
-  | { type: 'ADD_EXERCISE'; payload: Exercise }
-  | { type: 'REMOVE_EXERCISE'; payload: string }
-  | { type: 'REORDER_EXERCISES'; payload: { fromIndex: number; toIndex: number } }
-  | { type: 'START_SET'; payload: { exerciseId: string; setId: string } }
-  | { type: 'COMPLETE_SET'; payload: { exerciseId: string; setId: string; data: Partial<WorkoutSet> } }
-  | { type: 'START_REST'; payload: { duration: number } }
-  | { type: 'END_REST' }
-  | { type: 'TICK_TIMER'; payload: { elapsed: number; restRemaining: number } }
-  | { type: 'PAUSE_WORKOUT' }
-  | { type: 'RESUME_WORKOUT' }
-  | { type: 'SET_CURRENT_EXERCISE'; payload: number }
-  | { type: 'UPDATE_NOTES'; payload: string }
-  | { type: 'RATE_WORKOUT'; payload: number }
-  | { type: 'LOAD_STATE'; payload: WorkoutState };
-
-// ============================================================================
 // WORKOUT CONTEXT
 // ============================================================================
-
-export interface WorkoutContextType {
-  // State
-  state: WorkoutState;
-  derived: WorkoutDerivedValue;
-  
-  // Actions
-  startWorkout: (templateId?: string) => void;
-  endWorkout: () => Promise<void>;
-  addExercise: (exercise: Exercise) => void;
-  removeExercise: (exerciseId: string) => void;
-  reorderExercises: (fromIndex: number, toIndex: number) => void;
-  startSet: (exerciseId: string, setId: string) => void;
-  completeSet: (exerciseId: string, setId: string, data: Partial<WorkoutSet>) => void;
-  startRest: (duration: number) => void;
-  endRest: () => void;
-  pauseWorkout: () => void;
-  resumeWorkout: () => void;
-  rateWorkout: (rating: number) => void;
-  
-  // Templates
-  templates: WorkoutTemplate[];
-  createTemplate: (name: string, exercises: WorkoutTemplateExercise[]) => Promise<void>;
-  deleteTemplate: (id: string) => Promise<void>;
-  
-  // History
-  history: WorkoutSession[];
-  getHistoryByDateRange: (startDate: string, endDate: string) => WorkoutSession[];
-}
 
 // ============================================================================
 // NUTRITION TYPES (NEW)
@@ -378,12 +293,7 @@ export interface NutritionAnalytics {
 // UI TYPES
 // ============================================================================
 
-export type WorkoutTheme = 
-  | 'deepCosmos' 
-  | 'fireEnergy' 
-  | 'neonPulse' 
-  | 'oceanWave'
-  | 'forestGrove';
+export type WorkoutTheme = 'deepCosmos' | 'fireEnergy' | 'neonPulse' | 'oceanWave' | 'forestGrove';
 
 export interface ThemeColors {
   primary: string;
@@ -432,7 +342,9 @@ export type WarmupPreference = 'skip' | 'optional' | 'required';
 export type WarmupMode = 'skip' | 'optional' | 'required' | 'ask' | 'always' | 'never';
 
 // Helper to create a properly typed WorkoutSet
-export const createWorkoutSet = (overrides: Partial<WorkoutSet> & { reps: number; weight: number }): WorkoutSet => ({
+export const createWorkoutSet = (
+  overrides: Partial<WorkoutSet> & { reps: number; weight: number }
+): WorkoutSet => ({
   id: crypto.randomUUID?.() || Math.random().toString(36).slice(2),
   setNumber: 0,
   rpe: null,
@@ -451,7 +363,7 @@ export interface WorkoutSettings {
   // Display
   oledMode: boolean;
   selectedTheme: WorkoutTheme;
-  
+
   // Workout defaults
   defaultWorkoutGoal: 'strength' | 'hypertrophy' | 'endurance' | 'maintenance' | 'general';
   defaultRestTime: number;
@@ -461,13 +373,13 @@ export interface WorkoutSettings {
   cooldownPreference: 'always' | 'ask' | 'never';
   enableWarmup?: boolean;
   enableCooldown?: boolean;
-  
+
   // Behavior
   keepAwake: boolean;
   hapticsEnabled: boolean;
   autoIncrementWeight: boolean;
   weightIncrementAmount: number;
-  
+
   // Display options
   showGhostValues: boolean;
   showVolumePreview: boolean;
@@ -475,7 +387,7 @@ export interface WorkoutSettings {
   showPerformanceStats: boolean;
   showSetHistory?: boolean;
   compactMode: boolean;
-  
+
   // Audio
   soundEnabled: boolean;
   voiceCountdownEnabled: boolean;
@@ -484,7 +396,7 @@ export interface WorkoutSettings {
   countdownBeepEnabled: boolean;
   restTimerVibrate: boolean;
   restTimerSound: boolean;
-  
+
   // Reminders
   waterReminderEnabled: boolean;
   waterReminderInterval: number;
@@ -492,53 +404,53 @@ export interface WorkoutSettings {
   workoutReminderTime?: string;
   reminderDays?: number[];
   trackBodyWeight?: boolean;
-  
+
   // Accessibility
   reducedAnimations: boolean;
   largeText: boolean;
   highContrast: boolean;
-  
+
   // Progressive Overload
   enableProgressiveOverload: boolean;
   progressiveOverloadPercent: number;
   enableOneRepMaxTracking: boolean;
   showExerciseNotes: boolean;
-  
+
   // Smart Rest Timer
   smartRestEnabled: boolean;
   shortRestTime: number;
   mediumRestTime: number;
   longRestTime: number;
   extendRestAfterFailure: boolean;
-  
+
   // Workout Flow
   autoAdvanceExercise: boolean;
   confirmExerciseComplete: boolean;
   enableSupersets: boolean;
   showRestBetweenExercises: boolean;
-  
+
   // Personal Records
   enablePRAlerts: boolean;
   prCelebrationIntensity: 'off' | 'subtle' | 'full';
   trackVolumeRecords: boolean;
-  
+
   // Timer Display
   timerDisplayMode: 'countdown' | 'countup' | 'both';
   showTimerInHeader: boolean;
-  
+
   // Quick Actions
   enableQuickWeightButtons: boolean;
   quickWeightIncrement: number;
   enableQuickRepsButtons: boolean;
-  
+
   // Gym Mode
   gymModeEnabled: boolean;
   gymModeAutoLock: boolean;
-  
+
   // Body Weight Prompts
   promptWeightBeforeWorkout: boolean;
   promptWeightAfterWorkout: boolean;
-  
+
   // Analytics
   enableWorkoutAnalytics: boolean;
   showMuscleGroupBalance: boolean;
@@ -567,4 +479,24 @@ export interface PersonalRecord {
   oneRepMax?: number; // calculated 1RM
 }
 
-export type Screen = 'dashboard' | 'workout' | 'history' | 'templates' | 'settings' | 'today' | 'feed' | 'calendar' | 'assistant' | 'library' | 'fitness' | 'search' | 'passwords' | 'add' | 'investments' | 'views' | 'login' | 'signup' | 'logos' | 'insights';
+export type Screen =
+  | 'dashboard'
+  | 'workout'
+  | 'history'
+  | 'templates'
+  | 'settings'
+  | 'today'
+  | 'feed'
+  | 'calendar'
+  | 'assistant'
+  | 'library'
+  | 'fitness'
+  | 'search'
+  | 'passwords'
+  | 'add'
+  | 'investments'
+  | 'views'
+  | 'login'
+  | 'signup'
+  | 'logos'
+  | 'insights';

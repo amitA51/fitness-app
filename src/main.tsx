@@ -2,18 +2,23 @@
 // SPARKOS FITNESS - Main Entry Point
 // ============================================================================
 
+import { registerSW } from 'virtual:pwa-register';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { logger } from './utils/logger';
 import './styles/global.css';
+import './styles/tokens.css';
+import './styles/motion.css';
+import './styles/typography.css';
+import './styles/components.css';
 
-// Global error handler
 window.addEventListener('error', (event) => {
-  console.error('Global error:', event.error);
+  logger.app.error('Global error', event.error);
 });
 
 window.addEventListener('unhandledrejection', (event) => {
-  console.error('Unhandled promise rejection:', event.reason);
+  logger.app.error('Unhandled promise rejection', event.reason);
 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -21,3 +26,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <App />
   </React.StrictMode>
 );
+
+// Register service worker for PWA offline support
+registerSW({ immediate: true });

@@ -1,7 +1,13 @@
-import React, { memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// ExerciseCard - Sport Annual Editorial Design
+// Bone background · Navy border · Mustard selected state
+// Sharp corners · IBM Plex Mono labels · Big Shoulders Display
+// VISION: Bold · Editorial · Confident · Narrative · Printed
+
+import { AnimatePresence, motion } from 'framer-motion';
+import type React from 'react';
+import { memo } from 'react';
+import type { PersonalExercise } from '../../../types';
 import { TrashIcon } from '../../icons';
-import { PersonalExercise } from '../../../types';
 
 const hasHebrew = (text: string) => /[\u0590-\u05FF]/.test(text);
 
@@ -13,136 +19,228 @@ interface ExerciseCardProps {
   onDelete?: (exercise: PersonalExercise, e: React.MouseEvent) => void;
 }
 
-const ExerciseCard: React.FC<ExerciseCardProps> = memo(({
-  exercise,
-  isSelectionMode = false,
-  selectedIds,
-  onClick,
-  onDelete,
-}) => {
-  const renderExerciseName = (name: string) => {
-    if (name.includes('|')) {
-      const [first = '', second = ''] = name.split('|').map(s => s.trim());
-      const firstIsHebrew = hasHebrew(first);
-      return (
-        <div className="flex flex-col">
-          <span className="font-bold text-white text-base leading-tight">
-            {firstIsHebrew ? first : second}
-          </span>
-          <span className="text-xs text-white/50 font-medium">
-            {firstIsHebrew ? second : first}
-          </span>
-        </div>
-      );
-    }
-    return <span className="font-bold text-white text-base">{name}</span>;
-  };
-
-  const isSelected = selectedIds?.has(exercise.id);
-
-  return (
-    <motion.div
-      layoutId={`ex-${exercise.id}`}
-      key={exercise.id}
-      onClick={() => onClick?.(exercise)}
-      className={`
-        relative p-4 rounded-xl border transition-all cursor-pointer group overflow-hidden
-        ${
-          isSelectionMode
-            ? isSelected
-              ? 'border-[var(--cosmos-accent-primary)] bg-[var(--cosmos-accent-primary)]/10 shadow-[0_0_20px_rgba(99,102,241,0.15)]'
-              : 'hover:border-[var(--cosmos-accent-primary)]/50 hover:bg-[var(--cosmos-accent-primary)]/5 bg-white/5 border-white/10'
-            : 'bg-[var(--bg-secondary)] border-white/5 hover:border-white/20 hover:bg-white/10'
-        }
-      `}
-    >
-      {/* Selection Indicator - Premium Checkbox */}
-      {isSelectionMode && (
-        <motion.div
-          className={`absolute top-4 left-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-            isSelected
-              ? 'border-[var(--cosmos-accent-primary)] bg-[var(--cosmos-accent-primary)] scale-110'
-              : 'border-white/30 bg-transparent group-hover:border-[var(--cosmos-accent-primary)]/50'
-          }`}
-          animate={isSelected ? { scale: [1, 1.1, 1] } : {}}
-          transition={{ duration: 0.2 }}
-        >
-          <AnimatePresence>
-            {isSelected && (
-              <motion.svg
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="w-3.5 h-3.5 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={3}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </motion.svg>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      )}
-
-      {/* Selection Glow Effect */}
-      <AnimatePresence>
-        {isSelected && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: 'radial-gradient(circle at center, rgba(99,102,241,0.1) 0%, transparent 70%)',
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      <div className="flex justify-between items-start">
-        <div className={`flex-1 ${isSelectionMode ? 'pl-10' : ''}`}>
-          {renderExerciseName(exercise.name ?? '')}
-
-          <div className="flex flex-wrap gap-2 mt-2">
-            {exercise.muscleGroup && (
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest border ${
-                isSelected
-                  ? 'bg-[var(--cosmos-accent-primary)]/20 text-[var(--cosmos-accent-primary)] border-[var(--cosmos-accent-primary)]/30'
-                  : 'bg-white/10 text-white/70 border-white/5'
-              }`}>
-                {exercise.muscleGroup}
-              </span>
-            )}
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/40 flex items-center gap-1">
-              ⏱ {exercise.defaultRestTime || 90}s
+const ExerciseCard: React.FC<ExerciseCardProps> = memo(
+  ({ exercise, isSelectionMode = false, selectedIds, onClick, onDelete }) => {
+    const renderExerciseName = (name: string) => {
+      if (name.includes('|')) {
+        const [first = '', second = ''] = name.split('|').map((s) => s.trim());
+        const firstIsHebrew = hasHebrew(first);
+        return (
+          <div style={{ textAlign: 'right' }}>
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 15,
+                color: 'var(--navy)',
+                lineHeight: 1.1,
+                display: 'block',
+              }}
+            >
+              {firstIsHebrew ? first : second}
             </span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/40 flex items-center gap-1">
-              📊 {exercise.defaultSets || 4} sets
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.1em',
+                color: 'var(--stone)',
+                textTransform: 'uppercase',
+              }}
+            >
+              {firstIsHebrew ? second : first}
             </span>
           </div>
+        );
+      }
+      return (
+        <span
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 15,
+            color: 'var(--navy)',
+            lineHeight: 1.1,
+          }}
+        >
+          {name}
+        </span>
+      );
+    };
 
-          {exercise.notes && (
-            <p className="text-xs text-white/30 mt-2 line-clamp-1 italic">
-              "{exercise.notes}"
-            </p>
+    const isSelected = selectedIds?.has(exercise.id);
+
+    return (
+      <motion.div
+        layoutId={`ex-${exercise.id}`}
+        key={exercise.id}
+        onClick={() => onClick?.(exercise)}
+        style={{
+          position: 'relative',
+          padding: '14px',
+          background: isSelected ? 'var(--mustard)' : '#FFFFFF',
+          border: `2px solid ${isSelected ? 'var(--navy)' : 'var(--navy)'}`,
+          borderRadius: 0,
+          cursor: 'pointer',
+          transition: 'all 150ms',
+          marginBottom: 0,
+        }}
+        whileTap={{ scale: 0.98 }}
+        aria-label={`תרגיל: ${exercise.name ?? ''}`}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick?.(exercise);
+          }
+        }}
+      >
+        {/* Selection Checkbox */}
+        {isSelectionMode && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              width: 24,
+              height: 24,
+              background: isSelected ? 'var(--navy)' : 'var(--bone-deep)',
+              border: `2px solid ${isSelected ? 'var(--navy)' : 'rgba(20,41,61,0.3)'}`,
+              borderRadius: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 150ms',
+            }}
+          >
+            <AnimatePresence>
+              {isSelected && (
+                <motion.svg
+                  viewBox="0 0 24 24"
+                  role="img"
+                  aria-label="נבחר"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke={isSelected ? 'var(--mustard)' : 'var(--navy)'}
+                  strokeWidth={3}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </motion.svg>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* Content */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ flex: 1, paddingLeft: isSelectionMode ? 40 : 0 }}>
+            {renderExerciseName(exercise.name ?? '')}
+
+            {/* Meta chips */}
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 6,
+                marginTop: 8,
+                direction: 'ltr',
+              }}
+            >
+              {exercise.muscleGroup && (
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    padding: '2px 8px',
+                    background: isSelected ? 'rgba(20,41,61,0.15)' : 'var(--bone-deep)',
+                    color: isSelected ? 'var(--navy)' : 'var(--stone)',
+                    border: 'none',
+                    borderRadius: 0,
+                  }}
+                >
+                  {exercise.muscleGroup}
+                </span>
+              )}
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9,
+                  letterSpacing: '0.12em',
+                  color: 'var(--stone)',
+                  textTransform: 'uppercase',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 3,
+                }}
+              >
+                ⏱ {exercise.defaultRestTime || 90}s
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9,
+                  letterSpacing: '0.12em',
+                  color: 'var(--stone)',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {exercise.defaultSets || 4} סטים
+              </span>
+            </div>
+
+            {exercise.notes && (
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 12,
+                  color: 'var(--stone)',
+                  marginTop: 6,
+                  fontStyle: 'italic',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                "{exercise.notes}"
+              </p>
+            )}
+          </div>
+
+          {!isSelectionMode && onDelete && (
+            <button
+              type="button"
+              onClick={(e) => onDelete(exercise, e)}
+              style={{
+                padding: 8,
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--stone)',
+                transition: 'color 150ms',
+                flexShrink: 0,
+              }}
+              aria-label={`מחק ${exercise.name}`}
+            >
+              <TrashIcon className="w-4 h-4" />
+            </button>
           )}
         </div>
-
-        {!isSelectionMode && onDelete && (
-          <button
-            onClick={e => onDelete(exercise, e)}
-            className="p-2 -mt-2 -ml-2 text-white/10 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-          >
-            <TrashIcon className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-    </motion.div>
-  );
-});
+      </motion.div>
+    );
+  }
+);
 
 ExerciseCard.displayName = 'ExerciseCard';
 

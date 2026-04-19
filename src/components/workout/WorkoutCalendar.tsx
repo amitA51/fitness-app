@@ -1,24 +1,63 @@
-import React, { memo, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { WorkoutSession } from '../../types';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import type React from 'react';
+import { memo, useMemo, useState } from 'react';
+import type { WorkoutSession } from '../../types';
 
 interface WorkoutCalendarProps {
   sessions: WorkoutSession[];
 }
 
 const HEBREW_MONTHS = [
-  'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
-  'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
+  'ינואר',
+  'פברואר',
+  'מרץ',
+  'אפריל',
+  'מאי',
+  'יוני',
+  'יולי',
+  'אוגוסט',
+  'ספטמבר',
+  'אוקטובר',
+  'נובמבר',
+  'דצמבר',
 ];
 
 const HEBREW_DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 
 const HEBREW_NUMBERS: Record<number, string> = {
-  0: 'א', 1: 'ב', 2: 'ג', 3: 'ד', 4: 'ה', 5: 'ו', 6: 'ז', 7: 'ח', 8: 'ט', 9: 'י',
-  10: 'י״א', 11: 'י״ב', 12: 'י״ג', 13: 'י״ד', 14: 'ט״ו', 15: 'ט״ז', 16: 'י״ז',
-  17: 'י״ח', 18: 'י״ט', 19: 'כ', 20: 'כ״א', 21: 'כ״ב', 22: 'כ״ג', 23: 'כ״ד',
-  24: 'כ״ה', 25: 'כ״ו', 26: 'כ״ז', 27: 'כ״ח', 28: 'כ״ט', 29: 'ל', 30: 'ל״א', 31: 'ל״א'
+  0: 'א',
+  1: 'ב',
+  2: 'ג',
+  3: 'ד',
+  4: 'ה',
+  5: 'ו',
+  6: 'ז',
+  7: 'ח',
+  8: 'ט',
+  9: 'י',
+  10: 'י״א',
+  11: 'י״ב',
+  12: 'י״ג',
+  13: 'י״ד',
+  14: 'ט״ו',
+  15: 'ט״ז',
+  16: 'י״ז',
+  17: 'י״ח',
+  18: 'י״ט',
+  19: 'כ',
+  20: 'כ״א',
+  21: 'כ״ב',
+  22: 'כ״ג',
+  23: 'כ״ד',
+  24: 'כ״ה',
+  25: 'כ״ו',
+  26: 'כ״ז',
+  27: 'כ״ח',
+  28: 'כ״ט',
+  29: 'ל',
+  30: 'ל״א',
+  31: 'ל״א',
 };
 
 /**
@@ -34,7 +73,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
   // Calculate workout count per day
   const workoutCountByDay = useMemo(() => {
     const counts: Record<string, number> = {};
-    sessions.forEach(session => {
+    sessions.forEach((session) => {
       const date = session.date;
       counts[date] = (counts[date] || 0) + 1;
     });
@@ -51,9 +90,9 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const startPadding = firstDay.getDay(); // 0 = Sunday
-    
+
     const days: Array<{ day: number; date: string; isCurrentMonth: boolean }> = [];
-    
+
     // Previous month padding
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = startPadding - 1; i >= 0; i--) {
@@ -63,7 +102,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
         isCurrentMonth: false,
       });
     }
-    
+
     // Current month
     for (let d = 1; d <= lastDay.getDate(); d++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -73,7 +112,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
         isCurrentMonth: true,
       });
     }
-    
+
     // Next month padding (fill to 6 rows = 42 cells)
     const remaining = 42 - days.length;
     for (let i = 1; i <= remaining; i++) {
@@ -83,7 +122,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
         isCurrentMonth: false,
       });
     }
-    
+
     return days;
   }, [year, month]);
 
@@ -101,10 +140,10 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
     if (count === 0) {
       return { backgroundColor: 'rgba(255, 255, 255, 0.03)' };
     }
-    
+
     const intensity = Math.min(count / maxWorkouts, 1);
     const baseColor = `rgba(34, 211, 238, ${0.2 + intensity * 0.8})`;
-    
+
     return {
       backgroundColor: baseColor,
       boxShadow: intensity >= 0.7 ? `0 0 ${intensity * 10}px rgba(34, 211, 238, 0.4)` : 'none',
@@ -120,7 +159,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.35 }}
-      className="workout-glass-card rounded-2xl p-5"
+      className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
     >
       {/* Header with navigation */}
       <div className="flex items-center justify-between mb-4">
@@ -128,7 +167,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
           <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
           לוח אימונים
         </h3>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={goToPrevMonth}
@@ -136,11 +175,11 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
           >
             <ChevronRight size={16} className="text-white/60" />
           </button>
-          
+
           <span className="text-sm text-white font-medium min-w-[120px] text-center">
             {HEBREW_MONTHS[month]} {year}
           </span>
-          
+
           <button
             onClick={goToNextMonth}
             className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
@@ -162,7 +201,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1">
         {calendarDays.map((dayData, index) => {
-          const count = dayData.date ? (workoutCountByDay[dayData.date] || 0) : 0;
+          const count = dayData.date ? workoutCountByDay[dayData.date] || 0 : 0;
           const isToday = dayData.date === today;
           const isCurrentMonth = dayData.isCurrentMonth;
 
@@ -177,20 +216,20 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
                 aspect-square rounded-lg relative cursor-pointer
                 flex items-center justify-center
                 transition-all duration-200
-                ${isToday ? 'ring-2 ring-[var(--cosmos-accent-primary)]' : ''}
+                ${isToday ? 'ring-2 ring-[var(--accent-current)]' : ''}
                 ${!isCurrentMonth ? 'pointer-events-none' : ''}
               `}
               style={getIntensityStyle(count)}
             >
-              <span className={`text-[10px] ${
-                count > 0 ? 'text-white font-medium' : 'text-white/30'
-              }`}>
+              <span
+                className={`text-[10px] ${count > 0 ? 'text-white font-medium' : 'text-white/30'}`}
+              >
                 {HEBREW_NUMBERS[dayData.day] || dayData.day}
               </span>
-              
+
               {/* Workout indicator dot */}
               {count > 0 && (
-                <div 
+                <div
                   className="absolute bottom-0.5 w-1 h-1 rounded-full bg-white"
                   style={{ opacity: count >= 2 ? 1 : 0.7 }}
                 />
@@ -203,7 +242,9 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
                     {dayData.date && (
                       <>
                         {count > 0 ? (
-                          <span>{count} אימון{count > 1 ? '' : ''}</span>
+                          <span>
+                            {count} אימון{count > 1 ? '' : ''}
+                          </span>
                         ) : (
                           <span>ללא אימון</span>
                         )}
@@ -226,9 +267,10 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               key={i}
               className="w-4 h-4 rounded"
               style={{
-                backgroundColor: intensity === 0 
-                  ? 'rgba(255, 255, 255, 0.03)' 
-                  : `rgba(34, 211, 238, ${0.2 + intensity * 0.8})`
+                backgroundColor:
+                  intensity === 0
+                    ? 'rgba(255, 255, 255, 0.03)'
+                    : `rgba(34, 211, 238, ${0.2 + intensity * 0.8})`,
               }}
             />
           ))}
@@ -238,13 +280,13 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
 
       {/* Monthly stats */}
       <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[10px]">
-        <div className="text-white/40">
-          אימונים החודש:
-        </div>
+        <div className="text-white/40">אימונים החודש:</div>
         <div className="text-white font-medium">
-          {Object.entries(workoutCountByDay)
-            .filter(([date]) => date.startsWith(currentMonthStr))
-            .length} ימים
+          {
+            Object.entries(workoutCountByDay).filter(([date]) => date.startsWith(currentMonthStr))
+              .length
+          }{' '}
+          ימים
         </div>
       </div>
     </motion.div>

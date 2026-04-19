@@ -2,12 +2,24 @@
 // SPARKOS FITNESS - Data Context
 // ============================================================================
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { Exercise, WorkoutSession, WorkoutTemplate, PersonalItem } from '../types';
-import { logger } from '../utils/logger';
-import { getPersonalExercises, createPersonalExercise, updatePersonalExercise, deletePersonalExercise } from '../services/workoutDb';
+import type React from 'react';
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { getWorkoutSessions } from '../services/dataService';
+import {
+  createPersonalExercise,
+  deletePersonalExercise,
+  getPersonalExercises,
+  updatePersonalExercise,
+} from '../services/workoutDb';
 import { getWorkoutTemplates } from '../services/workoutService';
+import type {
+  CreatePersonalExerciseInput,
+  Exercise,
+  PersonalItem,
+  WorkoutSession,
+  WorkoutTemplate,
+} from '../types';
+import { logger } from '../utils/logger';
 
 interface DataContextValue {
   exercises: Exercise[];
@@ -47,27 +59,32 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const loadData = useCallback(async () => {
     try {
       logger.db.info('Loading data from IndexedDB...');
-      
-      // Load all data in parallel for better performance
-      const [loadedExercises, loadedSessions, loadedTemplates, loadedPersonalItems] = await Promise.all([
-        getPersonalExercises(),
-        getWorkoutSessions(100), // Get last 100 sessions
-        getWorkoutTemplates(),
-        getPersonalExercises().then(exercises => exercises.map(ex => ({
-          type: 'exercise' as const,
-          name: ex.name,
-          isActiveWorkout: false,
-          createdAt: ex.createdAt,
-          updatedAt: new Date().toISOString(),
-          ...ex
-        } as unknown as PersonalItem))),
-      ]);
+
+      const [loadedExercises, loadedSessions, loadedTemplates, loadedPersonalItems] =
+        await Promise.all([
+          getPersonalExercises(),
+          getWorkoutSessions(100),
+          getWorkoutTemplates(),
+          getPersonalExercises().then((exercises) =>
+            exercises.map(
+              (ex) =>
+                ({
+                  type: 'exercise' as const,
+                  name: ex.name,
+                  isActiveWorkout: false,
+                  createdAt: ex.createdAt,
+                  updatedAt: new Date().toISOString(),
+                  ...ex,
+                }) as unknown as PersonalItem
+            )
+          ),
+        ]);
 
       setExercises(loadedExercises);
       setSessions(loadedSessions);
       setTemplates(loadedTemplates);
       setPersonalItems(loadedPersonalItems);
-      
+
       logger.db.info('Data loaded successfully', {
         exercises: loadedExercises.length,
         sessions: loadedSessions.length,
@@ -83,9 +100,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const updatePersonalItem = useCallback(async (id: string, updates: Partial<PersonalItem>) => {
     try {
       await updatePersonalExercise(id, updates);
-      setPersonalItems(prev => prev.map(item =>
-        item.id === id ? { ...item, ...updates } : item
-      ));
+      setPersonalItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
+      );
     } catch (err) {
       logger.db.error('Failed to update personal item', err);
       throw err;
@@ -95,7 +112,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const removePersonalItem = useCallback(async (id: string) => {
     try {
       await deletePersonalExercise(id);
-      setPersonalItems(prev => prev.filter(item => item.id !== id));
+      setPersonalItems((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
       logger.db.error('Failed to remove personal item', err);
       throw err;
@@ -110,8 +127,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         lastWeight: null,
         lastReps: null,
         personalRecords: [],
-      } as any);
-      setPersonalItems(prev => [...prev, { ...newItem, type: 'exercise' } as unknown as PersonalItem]);
+      } as unknown as CreatePersonalExerciseInput);
+      setPersonalItems((prev) => [
+        ...prev,
+        { ...newItem, type: 'exercise' } as unknown as PersonalItem,
+      ]);
     } catch (err) {
       logger.db.error('Failed to add personal item', err);
       throw err;
@@ -126,24 +146,67 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   }, [loadData]);
 
   useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        logger.db.info('Loading data from IndexedDB...');
+
+        const [loadedExercises, loadedSessions, loadedTemplates, loadedPersonalItems] =
+          await Promise.all([
+            getPersonalExercises(),
+            getWorkoutSessions(100),
+            getWorkoutTemplates(),
+            getPersonalExercises().then((exercises) =>
+              exercises.map(
+                (ex) =>
+                  ({
+                    type: 'exercise' as const,
+                    name: ex.name,
+                    isActiveWorkout: false,
+                    createdAt: ex.createdAt,
+                    updatedAt: new Date().toISOString(),
+                    ...ex,
+                  }) as unknown as PersonalItem
+              )
+            ),
+          ]);
+
+        if (!cancelled) {
+          setExercises(loadedExercises);
+          setSessions(loadedSessions);
+          setTemplates(loadedTemplates);
+          setPersonalItems(loadedPersonalItems);
+
+          logger.db.info('Data loaded successfully', {
+            exercises: loadedExercises.length,
+            sessions: loadedSessions.length,
+            templates: loadedTemplates.length,
+            personalItems: loadedPersonalItems.length,
+          });
+
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          logger.db.error('Failed to load data', err);
+          setError(err instanceof Error ? err.message : 'Failed to load data');
+          setLoading(false);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    exercises, sessions, templates, personalItems, loading, error,
+    refreshData, updatePersonalItem, removePersonalItem, addPersonalItem,
+  }), [exercises, sessions, templates, personalItems, loading, error,
+    refreshData, updatePersonalItem, removePersonalItem, addPersonalItem]);
 
   return (
-    <DataContext.Provider
-      value={{
-        exercises,
-        sessions,
-        templates,
-        personalItems,
-        loading,
-        error,
-        refreshData,
-        updatePersonalItem,
-        removePersonalItem,
-        addPersonalItem,
-      }}
-    >
+    <DataContext.Provider value={contextValue}>
       {children}
     </DataContext.Provider>
   );

@@ -1,0 +1,416 @@
+/* ============================================================================
+   SPORT ANNUAL — Typography System
+   Big Shoulders Display × IBM Plex Sans × IBM Plex Mono × Assistant
+   ============================================================================ */
+
+/* ============================================================================
+   BASE TYPOGRAPHY
+   ============================================================================ */
+
+html {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-weight: var(--font-normal);
+  color: var(--color-text);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.heading {
+  font-family: var(--font-display);
+  font-weight: var(--font-extrabold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+   DISPLAY SCALE
+   ============================================================================ */
+
+.text-display-hero {
+  font-family: var(--font-display);
+  font-size: var(--text-display-hero);
+  font-weight: var(--font-black);
+  line-height: 0.82;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.text-display-xl {
+  font-family: var(--font-display);
+  font-size: var(--text-display-xl);
+  font-weight: var(--font-black);
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.text-display-lg {
+  font-family: var(--font-display);
+  font-size: var(--text-display-lg);
+  font-weight: var(--font-black);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.text-display {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  font-weight: var(--font-extrabold);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.text-display-sm {
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  font-weight: var(--font-extrabold);
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+   HEADING SCALE
+   ============================================================================ */
+
+h1,
+.h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-display-lg);
+  font-weight: var(--font-black);
+  text-transform: uppercase;
+}
+
+h2,
+.h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  font-weight: var(--font-extrabold);
+  text-transform: uppercase;
+}
+
+h3,
+.h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  font-weight: var(--font-extrabold);
+  text-transform: uppercase;
+}
+
+h4,
+.h4 {
+  font-family: var(--font-display);
+  font-size: var(--text-headline);
+  font-weight: var(--font-extrabold);
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+   BODY SCALE
+   ============================================================================ */
+
+.text-headline {
+  font-family: var(--font-body);
+  font-size: var(--text-headline);
+  font-weight: var(--font-bold);
+  line-height: 1.2;
+}
+
+/* ============================================================================
+   LABEL / CAPTION SCALE (IBM Plex Mono)
+   ============================================================================ */
+
+.text-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--font-semibold);
+  line-height: 1.4;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.text-caption {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: var(--font-medium);
+  line-height: 1.4;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+   FONT WEIGHT UTILITIES
+   ============================================================================ */
+
+.font-normal {
+  font-weight: var(--font-normal);
+}
+.font-medium {
+  font-weight: var(--font-medium);
+}
+.font-semibold {
+  font-weight: var(--font-semibold);
+}
+.font-bold {
+  font-weight: var(--font-bold);
+}
+.font-extrabold {
+  font-weight: var(--font-extrabold);
+}
+.font-black {
+  font-weight: var(--font-black);
+}
+
+/* ============================================================================
+   LINE HEIGHT UTILITIES
+   ============================================================================ */
+
+.leading-none {
+  line-height: 1;
+}
+.leading-tight {
+  line-height: var(--leading-tight);
+}
+.leading-snug {
+  line-height: var(--leading-snug);
+}
+.leading-normal {
+  line-height: var(--leading-normal);
+}
+.leading-relaxed {
+  line-height: var(--leading-relaxed);
+}
+
+/* ============================================================================
+   LETTER SPACING UTILITIES
+   ============================================================================ */
+
+.tracking-tighter {
+  letter-spacing: -0.04em;
+}
+.tracking-tight {
+  letter-spacing: -0.02em;
+}
+.tracking-normal {
+  letter-spacing: 0;
+}
+.tracking-wide {
+  letter-spacing: 0.05em;
+}
+.tracking-wider {
+  letter-spacing: 0.1em;
+}
+.tracking-widest {
+  letter-spacing: 0.15em;
+}
+.tracking-editorial {
+  letter-spacing: 0.08em;
+}
+.tracking-label {
+  letter-spacing: 0.18em;
+}
+.tracking-ribbon {
+  letter-spacing: 0.22em;
+}
+
+/* ============================================================================
+   TEXT COLOR UTILITIES
+   ============================================================================ */
+
+.text-primary-color {
+  color: var(--color-primary);
+}
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+.text-muted {
+  color: var(--color-text-muted);
+}
+.text-success {
+  color: var(--color-success);
+}
+.text-warning {
+  color: var(--color-warning);
+}
+.text-error {
+  color: var(--color-error);
+}
+.text-mustard {
+  color: var(--mustard);
+}
+.text-navy {
+  color: var(--navy);
+}
+.text-bone {
+  color: var(--bone);
+}
+.text-ink {
+  color: var(--ink);
+}
+
+/* Accent Colors per Page */
+.text-accent-dashboard {
+  color: var(--accent-dashboard);
+}
+.text-accent-workout {
+  color: var(--accent-workout);
+}
+.text-accent-nutrition {
+  color: var(--accent-nutrition);
+}
+.text-accent-history {
+  color: var(--accent-history);
+}
+
+/* ============================================================================
+   SPECIAL TYPOGRAPHY COMPONENTS
+   ============================================================================ */
+
+/* Eyebrow Label - Uppercase mono */
+.eyebrow {
+  font-family: var(--font-mono);
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-caption);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+}
+
+/* Section Title */
+.section-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+/* Hero Number - Oversized display */
+.hero-number {
+  font-family: var(--font-display);
+  font-size: 120px;
+  font-weight: var(--font-black);
+  line-height: 0.82;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* Monospace */
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Tabular Numbers */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================
+   RTL SUPPORT
+   ============================================================================ */
+
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .ltr-only {
+  direction: ltr;
+  text-align: left;
+}
+
+/* ============================================================================
+   ACCESSIBILITY
+   ============================================================================ */
+
+:focus-visible {
+  outline: 2px solid var(--mustard);
+  outline-offset: 2px;
+  border-radius: 0;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+::selection {
+  background: rgba(232, 184, 45, 0.3);
+  color: var(--ink);
+}
+
+.skip-link {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 110;
+  transform: translateY(-150%);
+  background: var(--navy);
+  color: var(--mustard);
+  padding: 10px 14px;
+  font-family: var(--font-display);
+  font-weight: var(--font-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  transition: transform var(--duration-fast) var(--ease-editorial);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* ============================================================================
+   PAGE-SPECIFIC TYPOGRAPHY
+   ============================================================================ */
+
+.page-dashboard h1,
+.page-dashboard .page-title {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: var(--font-black);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.page-workout h1,
+.page-workout .page-title {
+  font-family: var(--font-display);
+  font-size: 220px;
+  font-weight: var(--font-black);
+  letter-spacing: -0.04em;
+  line-height: 0.82;
+  text-transform: uppercase;
+}
+
+.page-settings h1,
+.page-settings .page-title {
+  font-family: var(--font-display);
+  font-size: var(--text-display-lg);
+  font-weight: var(--font-black);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}

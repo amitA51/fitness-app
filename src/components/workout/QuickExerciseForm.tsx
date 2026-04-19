@@ -1,6 +1,11 @@
+// QuickExerciseForm - Sport Annual Editorial Design
+// Sharp corners · Navy border · Bone background
+// VISION: Bold · Editorial · Confident · Narrative · Printed
+
 import React, { useState, memo } from 'react';
-import { Exercise, createWorkoutSet } from '../../types';
 import * as dataService from '../../services/dataService';
+import { type CreatePersonalExerciseInput, type Exercise, createWorkoutSet } from '../../types';
+import { logger } from '../../utils/logger';
 import { CloseIcon } from '../icons';
 
 interface QuickExerciseFormProps {
@@ -20,15 +25,12 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate name - prevent empty exercises
     const trimmedName = formData.name.trim();
     if (!trimmedName) {
       setNameError('יש להזין שם לתרגיל');
       return;
     }
 
-    // Create exercise for workout
     const exercise: Exercise = {
       id: `ex-${Date.now()}`,
       name: trimmedName,
@@ -39,15 +41,12 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
         .map(() => createWorkoutSet({ reps: 0, weight: 0 })),
     };
 
-    // 🎯 OPTIMISTIC: Add exercise and close immediately
     onAdd(exercise);
     onClose();
 
-    // Save to personal library in background if checked
     if (formData.saveToLibrary) {
       try {
         await dataService.createPersonalExercise({
-          id: `pe-${Date.now()}`,
           name: trimmedName,
           muscleGroup: formData.muscleGroup || undefined,
           defaultRestTime: formData.targetRestTime,
@@ -65,129 +64,267 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
           lastWeight: null,
           lastReps: null,
           personalRecords: [],
-        } as any);
+        } as unknown as CreatePersonalExerciseInput);
       } catch (error) {
-        console.error('Failed to save exercise to library:', error);
+        logger.workout.error('Failed to save exercise to library', error);
       }
     }
   };
 
   const muscleGroups = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Cardio', 'Other'];
 
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontFamily: 'var(--font-mono)',
+    fontSize: 10,
+    letterSpacing: '0.18em',
+    color: 'var(--stone)',
+    textTransform: 'uppercase',
+    marginBottom: 6,
+    fontWeight: 600,
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    background: '#FFFFFF',
+    border: '2px solid var(--navy)',
+    borderRadius: 0,
+    padding: '12px 14px',
+    fontFamily: 'var(--font-body)',
+    fontSize: 15,
+    color: 'var(--ink)',
+    outline: 'none',
+    direction: 'rtl',
+    textAlign: 'right',
+  };
+
   return (
-    <div className="aw-modal-overlay open">
-      <div className="aw-modal-card">
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(11,26,43,0.6)',
+        backdropFilter: 'blur(8px)',
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 480,
+          background: 'var(--bone)',
+          borderTop: '2px solid var(--navy)',
+          padding: '20px 20px 0',
+        }}
+      >
         {/* Header */}
-        <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-          <h2 className="text-xl font-bold text-white">תרגיל חדש</h2>
-          <button
-            onClick={onClose}
-            onPointerDown={(e) => { e.preventDefault(); onClose(); }}
-            className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 20,
+            paddingBottom: 16,
+            borderBottom: '2px solid var(--navy)',
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 22,
+              color: 'var(--navy)',
+              letterSpacing: '-0.01em',
+            }}
           >
-            <CloseIcon className="w-6 h-6" />
+            תרגיל חדש
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              width: 36,
+              height: 36,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'var(--bone-deep)',
+              border: '2px solid var(--navy)',
+              borderRadius: 0,
+              cursor: 'pointer',
+            }}
+          >
+            <CloseIcon style={{ width: 18, height: 18, color: 'var(--navy)' }} />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Name */}
           <div>
-            <label className="aw-label">שם התרגיל *</label>
+            <label style={labelStyle}>שם התרגיל *</label>
             <input
               type="text"
               value={formData.name}
-              onChange={e => {
+              onChange={(e) => {
                 setFormData({ ...formData, name: e.target.value });
                 if (nameError) setNameError(null);
               }}
-              placeholder="לדוגמה: Bench Press"
-              required
+              placeholder="לדוגמה: לחיצת חזה"
+              style={{
+                ...inputStyle,
+                borderColor: nameError ? 'var(--color-error)' : 'var(--navy)',
+              }}
               autoFocus
-              className={`aw-input ${nameError ? 'border-red-500 focus:border-red-500' : ''}`}
+              required
             />
             {nameError && (
-              <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
-                <span>⚠️</span> {nameError}
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 12,
+                  color: 'var(--color-error)',
+                  marginTop: 4,
+                }}
+              >
+                {nameError}
               </p>
             )}
           </div>
 
+          {/* Muscle Group */}
           <div>
-            <label className="aw-label">קבוצת שרירים</label>
+            <label style={labelStyle}>קבוצת שרירים</label>
             <select
               value={formData.muscleGroup}
-              onChange={e => setFormData({ ...formData, muscleGroup: e.target.value })}
-              className="aw-input appearance-none"
+              onChange={(e) => setFormData({ ...formData, muscleGroup: e.target.value })}
+              style={{ ...inputStyle, appearance: 'none' }}
             >
               <option value="">בחר (אופציונלי)</option>
-              {muscleGroups.map(group => (
-                <option key={group} value={group} className="text-black">
+              {muscleGroups.map((group) => (
+                <option key={group} value={group}>
                   {group}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Sets + Rest */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label className="aw-label">מנוחה (שניות)</label>
+              <label style={labelStyle}>מנוחה (שניות)</label>
               <input
                 type="number"
+                inputMode="numeric"
                 value={formData.targetRestTime}
-                onChange={e =>
-                  setFormData({ ...formData, targetRestTime: parseInt(e.target.value) || 90 })
+                onChange={(e) =>
+                  setFormData({ ...formData, targetRestTime: Number.parseInt(e.target.value) || 90 })
                 }
-                className="aw-input text-center"
+                style={{ ...inputStyle, textAlign: 'center' }}
               />
             </div>
             <div>
-              <label className="aw-label">מספר סטים</label>
+              <label style={labelStyle}>מספר סטים</label>
               <input
                 type="number"
+                inputMode="numeric"
                 value={formData.defaultSets}
-                onChange={e =>
-                  setFormData({ ...formData, defaultSets: parseInt(e.target.value) || 4 })
+                onChange={(e) =>
+                  setFormData({ ...formData, defaultSets: Number.parseInt(e.target.value) || 4 })
                 }
-                min="1"
-                max="10"
-                className="aw-input text-center"
+                min={1}
+                max={10}
+                style={{ ...inputStyle, textAlign: 'center' }}
               />
             </div>
           </div>
 
-          {/* Save to Library Checkbox */}
-          <label className="flex items-center gap-3 p-3 bg-white/5 rounded-xl cursor-pointer hover:bg-white/10 transition-colors border border-white/5">
+          {/* Save to Library */}
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '12px 14px',
+              background: 'var(--bone-deep)',
+              cursor: 'pointer',
+              direction: 'rtl',
+            }}
+          >
             <input
               type="checkbox"
               checked={formData.saveToLibrary}
-              onChange={e => setFormData({ ...formData, saveToLibrary: e.target.checked })}
-              className="w-5 h-5 rounded border-2 border-[var(--aw-accent)] text-[var(--aw-accent)] bg-transparent"
+              onChange={(e) => setFormData({ ...formData, saveToLibrary: e.target.checked })}
+              style={{
+                width: 20,
+                height: 20,
+                accentColor: 'var(--navy)',
+              }}
             />
-            <span className="text-sm text-white/90 font-medium">שמור לרשימה שלי</span>
+            <span
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 14,
+                color: 'var(--ink)',
+              }}
+            >
+              שמור לרשימה שלי
+            </span>
           </label>
 
           {/* Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div style={{ display: 'flex', gap: 8, paddingTop: 8, paddingBottom: 20 }}>
             <button
               type="submit"
               disabled={!formData.name.trim()}
-              className={`aw-btn-primary min-h-[48px] ${!formData.name.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+              style={{
+                flex: 1,
+                padding: '14px 20px',
+                background: formData.name.trim() ? 'var(--navy)' : 'var(--bone-deep)',
+                color: formData.name.trim() ? 'var(--mustard)' : 'var(--stone)',
+                border: '2px solid var(--navy)',
+                borderRadius: 0,
+                cursor: formData.name.trim() ? 'pointer' : 'not-allowed',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 13,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                minHeight: 48,
+              }}
             >
               הוסף תרגיל
             </button>
             <button
               type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onClose();
+              onClick={onClose}
+              style={{
+                padding: '14px 20px',
+                background: 'transparent',
+                color: 'var(--stone)',
+                border: '2px solid var(--bone-deep)',
+                borderRadius: 0,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 13,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                minHeight: 48,
               }}
-              className="aw-btn-secondary min-h-[48px]"
             >
               ביטול
             </button>
           </div>
         </form>
+
+        <div style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--bone)' }} />
       </div>
     </div>
   );

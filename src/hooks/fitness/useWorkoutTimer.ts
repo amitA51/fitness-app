@@ -4,7 +4,7 @@
  * Features: Countdown/countup, intervals, rest timer, lap times, audio cues
  */
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // Types
 export type TimerMode = 'stopwatch' | 'countdown' | 'interval';
@@ -122,7 +122,7 @@ export interface UseWorkoutTimerReturn {
 /**
  * Format seconds to time string
  */
-const formatTime = (totalSeconds: number, showHours: boolean = false): string => {
+const formatTime = (totalSeconds: number, showHours = false): string => {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = Math.floor(totalSeconds % 60);
@@ -136,9 +136,7 @@ const formatTime = (totalSeconds: number, showHours: boolean = false): string =>
 /**
  * Enhanced workout timer hook
  */
-export const useWorkoutTimer = (
-  options: UseWorkoutTimerOptions = {}
-): UseWorkoutTimerReturn => {
+export const useWorkoutTimer = (options: UseWorkoutTimerOptions = {}): UseWorkoutTimerReturn => {
   const {
     initialTime = 0,
     mode = 'stopwatch',
@@ -180,14 +178,12 @@ export const useWorkoutTimer = (
   const intervalProgress = useMemo(() => {
     if (!intervalConfig) return 0;
     const currentDuration = isRest ? intervalConfig.restDuration : intervalConfig.workDuration;
-    return 1 - (intervalTimeRemaining / currentDuration);
+    return 1 - intervalTimeRemaining / currentDuration;
   }, [intervalConfig, isRest, intervalTimeRemaining]);
 
   const bestLap = useMemo(() => {
     if (laps.length === 0) return null;
-    return laps.reduce((best, lap) =>
-      lap.duration < best.duration ? lap : best
-    );
+    return laps.reduce((best, lap) => (lap.duration < best.duration ? lap : best));
   }, [laps]);
 
   const averageLapTime = useMemo(() => {
@@ -214,7 +210,8 @@ export const useWorkoutTimer = (
 
       const delta = (timestamp - lastTickRef.current) / 1000;
 
-      if (delta >= 0.1) { // Update 10 times per second for smoother display
+      if (delta >= 0.1) {
+        // Update 10 times per second for smoother display
         accumulatedTimeRef.current += delta;
         const newTime = Math.floor(accumulatedTimeRef.current);
 
@@ -241,7 +238,7 @@ export const useWorkoutTimer = (
 
           // Interval mode logic
           if (mode === 'interval' && intervalConfig) {
-            setIntervalTimeRemaining(prev => {
+            setIntervalTimeRemaining((prev) => {
               const newRemaining = prev - 1;
 
               if (newRemaining <= 0) {
@@ -253,7 +250,7 @@ export const useWorkoutTimer = (
                     onComplete?.();
                     return 0;
                   }
-                  setCurrentRound(r => r + 1);
+                  setCurrentRound((r) => r + 1);
                   setIsRest(false);
                   onIntervalChange?.(false, currentRound + 1);
                   return intervalConfig.workDuration;
@@ -278,7 +275,21 @@ export const useWorkoutTimer = (
 
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
-  }, [isRunning, time, mode, initialTime, intervalConfig, isRest, currentRound, totalRounds, onTick, onCountdownWarning, onComplete, onIntervalChange, warningThresholds]);
+  }, [
+    isRunning,
+    time,
+    mode,
+    initialTime,
+    intervalConfig,
+    isRest,
+    currentRound,
+    totalRounds,
+    onTick,
+    onCountdownWarning,
+    onComplete,
+    onIntervalChange,
+    warningThresholds,
+  ]);
 
   // Controls
   const start = useCallback(() => {
@@ -338,7 +349,7 @@ export const useWorkoutTimer = (
       timestamp: new Date(),
     };
 
-    setLaps(prev => [...prev, newLap]);
+    setLaps((prev) => [...prev, newLap]);
     lastLapTimeRef.current = time;
     onLap?.(newLap);
   }, [time, laps.length, onLap]);
@@ -358,7 +369,7 @@ export const useWorkoutTimer = (
         onComplete?.();
         return;
       }
-      setCurrentRound(r => r + 1);
+      setCurrentRound((r) => r + 1);
       setIsRest(false);
       setIntervalTimeRemaining(intervalConfig.workDuration);
       onIntervalChange?.(false, currentRound + 1);

@@ -3,7 +3,7 @@
  * Manages daily recovery logs including sleep, soreness, energy, and stress tracking.
  */
 
-import { dbGetAll, dbPut, dbDelete, STORES } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbPut } from './indexedDBCore';
 
 // ============================================================================
 // TYPES
@@ -44,9 +44,20 @@ export interface RecoveryScore {
 }
 
 export const BODY_AREAS: string[] = [
-  'צוואר', 'כתפיים', 'גב עליון', 'גב תחתון', 'חזה',
-  'ביצפס', 'טריצפס', 'אמות', 'בטן', 'מפרקי ירך',
-  'שרירי ארבע ראשי', 'ירך אחורית', 'תאומים', 'אכילס',
+  'צוואר',
+  'כתפיים',
+  'גב עליון',
+  'גב תחתון',
+  'חזה',
+  'ביצפס',
+  'טריצפס',
+  'אמות',
+  'בטן',
+  'מפרקי ירך',
+  'שרירי ארבע ראשי',
+  'ירך אחורית',
+  'תאומים',
+  'אכילס',
 ];
 
 // ============================================================================
@@ -89,9 +100,7 @@ export function calculateRecoveryScore(
 
   // Overall: weighted average
   // sleep 30%, soreness 25%, energy 25%, stress 20%
-  const overall = Math.round(
-    sleep * 0.3 + soreness * 0.25 + energy * 0.25 + stress * 0.2
-  );
+  const overall = Math.round(sleep * 0.3 + soreness * 0.25 + energy * 0.25 + stress * 0.2);
 
   return {
     overall,
@@ -144,12 +153,10 @@ export async function getLatestRecoveryLog(): Promise<RecoveryLog | null> {
   if (all.length === 0) return null;
 
   const sorted = [...all].sort((a, b) => b.date.localeCompare(a.date));
-  return sorted[0];
+  return sorted[0] ?? null;
 }
 
-export async function getRecoveryLogBySession(
-  sessionId: string
-): Promise<RecoveryLog | null> {
+export async function getRecoveryLogBySession(sessionId: string): Promise<RecoveryLog | null> {
   const all = await dbGetAll<RecoveryLog>(STORES.RECOVERY_LOGS);
   const match = all.find((log) => log.sessionId === sessionId);
   return match ?? null;
@@ -163,9 +170,10 @@ export async function deleteRecoveryLog(id: string): Promise<void> {
 // ANALYTICS
 // ============================================================================
 
-export function getRecoveryTrend(
-  logs: RecoveryLog[]
-): { averageScore: number; trend: 'improving' | 'declining' | 'stable' } {
+export function getRecoveryTrend(logs: RecoveryLog[]): {
+  averageScore: number;
+  trend: 'improving' | 'declining' | 'stable';
+} {
   if (logs.length === 0) {
     return { averageScore: 0, trend: 'stable' };
   }
@@ -186,8 +194,7 @@ export function getRecoveryTrend(
   const recentLogs = sorted.slice(midIndex);
   const previousLogs = sorted.slice(0, midIndex);
 
-  const recentAvg =
-    recentLogs.reduce((sum, log) => sum + log.overallScore, 0) / recentLogs.length;
+  const recentAvg = recentLogs.reduce((sum, log) => sum + log.overallScore, 0) / recentLogs.length;
 
   const previousAvg =
     previousLogs.reduce((sum, log) => sum + log.overallScore, 0) / previousLogs.length;

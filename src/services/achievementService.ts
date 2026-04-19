@@ -2,8 +2,9 @@
 // SPARKOS FITNESS - Achievement Service
 // ============================================================================
 
-import { WorkoutSession } from '../types';
-import { dbGetAll, STORES } from './indexedDBCore';
+import type { WorkoutSession } from '../types';
+import { safeJsonParse } from '../utils/safeJson';
+import { STORES, dbGetAll } from './indexedDBCore';
 
 // ============================================================================
 // Types
@@ -320,7 +321,7 @@ function getUnlockedIds(): Set<string> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return new Set();
-    const parsed: unknown = JSON.parse(raw);
+    const parsed = safeJsonParse<unknown>(raw);
     if (Array.isArray(parsed)) {
       return new Set(parsed.filter((v): v is string => typeof v === 'string'));
     }
@@ -334,7 +335,7 @@ function getUnlockedTimestamps(): Map<string, string> {
   try {
     const raw = localStorage.getItem(`${STORAGE_KEY}_timestamps`);
     if (!raw) return new Map();
-    const parsed: unknown = JSON.parse(raw);
+    const parsed = safeJsonParse<unknown>(raw);
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
       return new Map(Object.entries(parsed as Record<string, string>));
     }
@@ -346,10 +347,7 @@ function getUnlockedTimestamps(): Map<string, string> {
 
 function persistUnlockedIds(unlockedIds: Set<string>, timestamps: Map<string, string>): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...unlockedIds]));
-  localStorage.setItem(
-    `${STORAGE_KEY}_timestamps`,
-    JSON.stringify(Object.fromEntries(timestamps))
-  );
+  localStorage.setItem(`${STORAGE_KEY}_timestamps`, JSON.stringify(Object.fromEntries(timestamps)));
 }
 
 // ============================================================================
@@ -364,8 +362,11 @@ function countMaxConsecutiveDays(dates: string[]): number {
   let currentStreak = 1;
 
   for (let i = 1; i < uniqueDates.length; i++) {
-    const prev = new Date(uniqueDates[i - 1]);
-    const curr = new Date(uniqueDates[i]);
+    const prevStr = uniqueDates[i - 1];
+    const currStr = uniqueDates[i];
+    if (!prevStr || !currStr) continue;
+    const prev = new Date(prevStr);
+    const curr = new Date(currStr);
     const diffMs = curr.getTime() - prev.getTime();
     const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
@@ -389,11 +390,7 @@ async function buildEvaluationData(
   const totalVolume = sessions.reduce((sum, s) => sum + (s.totalVolume ?? 0), 0);
   const totalSets = sessions.reduce(
     (sum, s) =>
-      sum +
-      (s.exercises ?? []).reduce(
-        (exerciseSum, e) => exerciseSum + (e.sets ?? []).length,
-        0
-      ),
+      sum + (s.exercises ?? []).reduce((exerciseSum, e) => exerciseSum + (e.sets ?? []).length, 0),
     0
   );
   const totalDurationSeconds = sessions.reduce((sum, s) => sum + (s.duration ?? 0), 0);
@@ -455,7 +452,7 @@ async function buildEvaluationData(
     const today = new Date();
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(today.getDate() - 6);
-    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0] ?? '';
 
     const recentEntries = mealEntries.filter((e) => {
       const date = e.date as string | undefined;
@@ -607,7 +604,7 @@ export const calculateStreak = (sessions: WorkoutSession[]): StreakInfo => {
     (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
   );
 
-  const lastWorkoutDate = sortedSessions[0].startTime;
+  const lastWorkoutDate = sortedSessions[0]?.startTime ?? null;
 
   // Count workouts this week
   const now = new Date();
@@ -615,9 +612,7 @@ export const calculateStreak = (sessions: WorkoutSession[]): StreakInfo => {
   weekStart.setDate(now.getDate() - now.getDay());
   weekStart.setHours(0, 0, 0, 0);
 
-  const workoutsThisWeek = sortedSessions.filter(
-    (s) => new Date(s.startTime) >= weekStart
-  ).length;
+  const workoutsThisWeek = sortedSessions.filter((s) => new Date(s.startTime) >= weekStart).length;
 
   // Calculate current streak
   let currentStreak = 0;
@@ -636,7 +631,9 @@ export const calculateStreak = (sessions: WorkoutSession[]): StreakInfo => {
   today.setHours(0, 0, 0, 0);
 
   for (let i = 0; i < uniqueDates.length; i++) {
-    const date = new Date(uniqueDates[i]);
+    const dateStr = uniqueDates[i];
+    if (!dateStr) continue;
+    const date = new Date(dateStr);
     const expectedDate = new Date(today);
     expectedDate.setDate(today.getDate() - i);
 

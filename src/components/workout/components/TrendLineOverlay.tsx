@@ -1,6 +1,7 @@
-import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { WeeklyVolume, ForecastData } from '../../../services/analyticsService';
+import type React from 'react';
+import { memo, useMemo } from 'react';
+import type { ForecastData, WeeklyVolume } from '../../../services/analyticsService';
 
 interface TrendLineOverlayProps {
   data: WeeklyVolume[];
@@ -30,39 +31,42 @@ const TrendLineOverlay: React.FC<TrendLineOverlayProps> = ({
   const trendPoints = useMemo(() => {
     if (data.length < 2) return [];
 
-    const volumes = data.map(w => w.totalVolume);
+    const volumes = data.map((w) => w.totalVolume);
     const n = volumes.length;
-    
+
     // Simple moving average for trend
     const points: { x: number; y: number }[] = [];
-    
+
     // Start point (first bar center)
+    const firstVol = volumes[0] ?? 0;
     const startX = 10 + barGap;
-    const startY = chartHeight - (volumes[0] / maxVolume) * (chartHeight - 30);
+    const startY = chartHeight - (firstVol / maxVolume) * (chartHeight - 30);
     points.push({ x: startX, y: startY });
-    
+
     // End point (last bar center)
+    const lastVol = volumes[n - 1] ?? 0;
     const endX = 10 + (n - 1) * (barWidth + barGap) + barWidth;
-    const endY = chartHeight - (volumes[n - 1] / maxVolume) * (chartHeight - 30);
+    const endY = chartHeight - (lastVol / maxVolume) * (chartHeight - 30);
     points.push({ x: endX, y: endY });
-    
+
     return points;
   }, [data, maxVolume, chartHeight, barWidth, barGap]);
 
   // Calculate forecast point
   const forecastPoint = useMemo(() => {
     if (!forecast || forecast.predicted <= 0 || data.length < 2) return null;
-    
+
     const lastBarX = 10 + (data.length - 1) * (barWidth + barGap) + barWidth;
     const forecastX = lastBarX + barWidth + barGap;
     const forecastY = chartHeight - (forecast.predicted / maxVolume) * (chartHeight - 30);
-    
+
     return { x: forecastX, y: forecastY, predicted: forecast.predicted };
   }, [forecast, data.length, maxVolume, chartHeight, barWidth, barGap]);
 
   if (trendPoints.length < 2) return null;
 
   const [startPoint, endPoint] = trendPoints;
+  if (!startPoint || !endPoint) return null;
 
   return (
     <g className="trend-overlay">
@@ -107,7 +111,7 @@ const TrendLineOverlay: React.FC<TrendLineOverlayProps> = ({
             animate={{ pathLength: 1 }}
             transition={{ delay: 0.9, duration: 0.5 }}
           />
-          
+
           {/* Forecast point */}
           <motion.circle
             cx={forecastPoint.x}
@@ -123,7 +127,7 @@ const TrendLineOverlay: React.FC<TrendLineOverlayProps> = ({
             onMouseEnter={() => onHover(data.length)}
             onMouseLeave={() => onHover(null)}
           />
-          
+
           {/* Forecast label */}
           <motion.text
             x={forecastPoint.x}

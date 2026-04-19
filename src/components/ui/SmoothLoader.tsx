@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface SmoothLoaderProps {
   /** Whether content is still loading */
@@ -103,10 +104,7 @@ export const InlineLoader: React.FC<{
 }> = ({ isLoading, children, className = '', spinnerSize = 20 }) => {
   return (
     <div className={`relative ${className}`}>
-      <div
-        className="transition-opacity duration-200"
-        style={{ opacity: isLoading ? 0.4 : 1 }}
-      >
+      <div className="transition-opacity duration-200" style={{ opacity: isLoading ? 0.4 : 1 }}>
         {children}
       </div>
 
@@ -127,7 +125,7 @@ export const InlineLoader: React.FC<{
               animate={{ rotate: 360 }}
               transition={{
                 duration: 0.8,
-                repeat: Infinity,
+                repeat: Number.POSITIVE_INFINITY,
                 ease: 'linear',
               }}
             />

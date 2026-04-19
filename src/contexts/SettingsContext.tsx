@@ -1,9 +1,11 @@
 // Settings Context - Provides app-wide settings access
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { AppSettings, WorkoutSettings } from '../types';
+import type React from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import type { AppSettings, WorkoutSettings } from '../types';
+import { safeJsonParse } from '../utils/safeJson';
 
 // Default workout settings
-const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
+export const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
   oledMode: false,
   selectedTheme: 'deepCosmos',
   defaultWorkoutGoal: 'general',
@@ -64,7 +66,7 @@ const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
   enableExportToCSV: true,
 };
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
   workoutSettings: DEFAULT_WORKOUT_SETTINGS,
   theme: 'deepCosmos',
   soundEnabled: true,
@@ -79,81 +81,100 @@ interface SettingsContextValue {
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
-export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    try {
-      const stored = localStorage.getItem('appSettings');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && typeof parsed === 'object') {
-          return {
-            ...DEFAULT_SETTINGS,
-            ...parsed,
-            workoutSettings: {
-              ...DEFAULT_WORKOUT_SETTINGS,
-              ...parsed.workoutSettings,
-            },
-          };
-        }
-      }
-    } catch {
-      // Ignore parse errors
+const mergeSettings = (stored?: Partial<AppSettings>): AppSettings => ({
+  ...DEFAULT_SETTINGS,
+  ...stored,
+  workoutSettings: {
+    ...DEFAULT_WORKOUT_SETTINGS,
+    ...stored?.workoutSettings,
+  },
+});
+
+export const loadStoredSettings = (): AppSettings => {
+  try {
+    const stored = localStorage.getItem('appSettings');
+    if (!stored) {
+      return DEFAULT_SETTINGS;
     }
-    return DEFAULT_SETTINGS;
-  });
+
+    const parsed = safeJsonParse<Partial<AppSettings>>(stored);
+    if (parsed && typeof parsed === 'object') {
+      return mergeSettings(parsed);
+    }
+  } catch {
+    // Ignore parse errors
+  }
+
+  return DEFAULT_SETTINGS;
+};
+
+const persistSettings = (settings: AppSettings) => {
+  try {
+    localStorage.setItem('appSettings', JSON.stringify(settings));
+  } catch {
+    // Ignore storage errors
+  }
+};
+
+export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [settings, setSettings] = useState<AppSettings>(() => loadStoredSettings());
 
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
-    setSettings(prev => {
-      const next = { ...prev, ...updates };
-      try {
-        localStorage.setItem('appSettings', JSON.stringify(next));
-      } catch {
-        // Ignore storage errors
-      }
+    setSettings((prev) => {
+      const next = mergeSettings({ ...prev, ...updates });
+      persistSettings(next);
       return next;
     });
   }, []);
 
   const updateWorkoutSettings = useCallback((updates: Partial<WorkoutSettings>) => {
-    setSettings(prev => {
-      const next = {
+    setSettings((prev) => {
+      const next = mergeSettings({
         ...prev,
         workoutSettings: {
           ...prev.workoutSettings,
           ...updates,
         },
-      };
-      try {
-        localStorage.setItem('appSettings', JSON.stringify(next));
-      } catch {
-        // Ignore storage errors
-      }
+      });
+      persistSettings(next);
       return next;
     });
   }, []);
 
-  const value = useMemo(() => ({
-    settings,
-    updateSettings,
-    updateWorkoutSettings,
-  }), [settings, updateSettings, updateWorkoutSettings]);
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', settings.theme);
+    document.documentElement.classList.toggle(
+      'reduce-motion',
+      settings.workoutSettings.reducedAnimations
+    );
+    document.documentElement.classList.toggle(
+      'high-contrast',
+      settings.workoutSettings.highContrast
+    );
+    document.documentElement.classList.toggle('large-text', settings.workoutSettings.largeText);
+  }, [
+    settings.theme,
+    settings.workoutSettings.highContrast,
+    settings.workoutSettings.largeText,
+    settings.workoutSettings.reducedAnimations,
+  ]);
 
-  return (
-    <SettingsContext.Provider value={value}>
-      {children}
-    </SettingsContext.Provider>
+  const value = useMemo(
+    () => ({
+      settings,
+      updateSettings,
+      updateWorkoutSettings,
+    }),
+    [settings, updateSettings, updateWorkoutSettings]
   );
+
+  return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 };
 
 export const useSettings = (): SettingsContextValue => {
   const context = useContext(SettingsContext);
   if (!context) {
-    // Return a fallback instead of throwing - some hooks use this optionally
-    return {
-      settings: DEFAULT_SETTINGS,
-      updateSettings: () => {},
-      updateWorkoutSettings: () => {},
-    };
+    throw new Error('useSettings must be used within a SettingsProvider');
   }
   return context;
 };

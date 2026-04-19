@@ -1,6 +1,7 @@
-import React, { memo, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MuscleBalanceData } from '../../../services/analyticsService';
+import type React from 'react';
+import { memo, useMemo, useState } from 'react';
+import type { MuscleBalanceData } from '../../../services/analyticsService';
 
 interface MuscleRadarChartProps {
   data: MuscleBalanceData[];
@@ -9,10 +10,10 @@ interface MuscleRadarChartProps {
 }
 
 const MUSCLE_STATUS_COLORS = {
-  strong: '#22c55e',    // green - well trained
-  stable: '#fbbf24',    // yellow - maintaining
-  weak: '#ef4444',      // red - neglected
-  neutral: '#8b5cf6',   // purple - default
+  strong: '#22c55e', // green - well trained
+  stable: '#fbbf24', // yellow - maintaining
+  weak: '#ef4444', // red - neglected
+  neutral: '#8b5cf6', // purple - default
 };
 
 /**
@@ -24,7 +25,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
   maxDisplay = 8,
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  
+
   // Take top muscles by volume, up to maxDisplay
   const displayData = useMemo(() => {
     return data.slice(0, maxDisplay);
@@ -34,7 +35,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
   const centerY = size / 2;
   const radius = size * 0.35;
   const labelRadius = size * 0.48;
-  
+
   const numPoints = displayData.length;
   const angleStep = (2 * Math.PI) / numPoints;
 
@@ -55,21 +56,23 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
     const r = labelRadius;
     const x = centerX + r * Math.cos(angle);
     const y = centerY + r * Math.sin(angle);
-    
+
     // Determine text anchor based on position
     let anchor = 'middle';
     if (Math.cos(angle) > 0.1) anchor = 'start';
     else if (Math.cos(angle) < -0.1) anchor = 'end';
-    
+
     return { x, y, anchor };
   };
 
   // Build polygon path
   const polygonPoints = useMemo(() => {
-    return displayData.map((muscle, i) => {
-      const point = getPoint(i, muscle.percentage);
-      return `${point.x},${point.y}`;
-    }).join(' ');
+    return displayData
+      .map((muscle, i) => {
+        const point = getPoint(i, muscle.percentage);
+        return `${point.x},${point.y}`;
+      })
+      .join(' ');
   }, [displayData]);
 
   // Build background polygon (full radius)
@@ -176,12 +179,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
         })}
 
         {/* Center dot */}
-        <circle
-          cx={centerX}
-          cy={centerY}
-          r={3}
-          fill="rgba(255, 255, 255, 0.3)"
-        />
+        <circle cx={centerX} cy={centerY} r={3} fill="rgba(255, 255, 255, 0.3)" />
 
         {/* Labels */}
         {displayData.map((muscle, i) => {
@@ -233,15 +231,24 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
       {/* Legend */}
       <div className="absolute -bottom-6 left-0 right-0 flex items-center justify-center gap-4 text-[8px]">
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: MUSCLE_STATUS_COLORS.strong }} />
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: MUSCLE_STATUS_COLORS.strong }}
+          />
           <span className="text-white/50">חזק</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: MUSCLE_STATUS_COLORS.stable }} />
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: MUSCLE_STATUS_COLORS.stable }}
+          />
           <span className="text-white/50">יציב</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: MUSCLE_STATUS_COLORS.weak }} />
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: MUSCLE_STATUS_COLORS.weak }}
+          />
           <span className="text-white/50">מוזנח</span>
         </div>
       </div>

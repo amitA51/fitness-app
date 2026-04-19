@@ -1,3 +1,5 @@
+import { safeJsonParse } from '../utils/safeJson';
+
 export interface NotificationConfig {
   workoutReminderEnabled: boolean;
   workoutReminderTime: string; // HH:MM
@@ -24,7 +26,7 @@ export function getNotificationConfig(): NotificationConfig {
   try {
     const stored = localStorage.getItem(CONFIG_KEY);
     if (!stored) return { ...DEFAULT_CONFIG };
-    return { ...DEFAULT_CONFIG, ...JSON.parse(stored) };
+    return { ...DEFAULT_CONFIG, ...(safeJsonParse<Partial<typeof DEFAULT_CONFIG>>(stored) ?? {}) };
   } catch {
     return { ...DEFAULT_CONFIG };
   }
@@ -59,10 +61,7 @@ export function showNotification(title: string, body: string, icon?: string): vo
 }
 
 export function showWorkoutReminder(): void {
-  showNotification(
-    '🏋️ זמן לאימון!',
-    'האימון המתוכנן שלך מחכה. בוא נתחיל!'
-  );
+  showNotification('🏋️ זמן לאימון!', 'האימון המתוכנן שלך מחכה. בוא נתחיל!');
 }
 
 export function showMissedWorkoutAlert(daysSince: number): void {
@@ -80,10 +79,7 @@ export function showPRNotification(exerciseName: string, type: string): void {
 }
 
 export function showNutritionReminder(): void {
-  showNotification(
-    '🍽️ תזכורת תזונה',
-    'אל תשכח לרשום את הארוחה שלך!'
-  );
+  showNotification('🍽️ תזכורת תזונה', 'אל תשכח לרשום את הארוחה שלך!');
 }
 
 export function checkMissedWorkouts(lastWorkoutDate: string | null): void {

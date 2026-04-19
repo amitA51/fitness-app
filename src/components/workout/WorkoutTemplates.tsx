@@ -1,8 +1,9 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { WorkoutTemplate } from '../../types';
 import * as dataService from '../../services/dataService';
-import { AddIcon, TrashIcon, PlayIcon, StarIcon } from '../icons';
+import type { WorkoutTemplate } from '../../types';
+import { logger } from '../../utils/logger';
+import { AddIcon, PlayIcon, StarIcon, TrashIcon } from '../icons';
 import PlanEditorModal from './PlanEditorModal';
 import { showToast } from './components/ui/Toast';
 
@@ -17,7 +18,12 @@ interface WorkoutTemplatesProps {
 // Local Edit Icon
 const EditIcon = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+    />
   </svg>
 );
 
@@ -27,7 +33,7 @@ const getBuiltinTemplateIcon = (templateName: string): string => {
     'אימון כללי': '💪',
     'חזה + כתפיים': '🦅',
     'גב + זרועות': '🏋️',
-    'רגליים': '🦵',
+    רגליים: '🦵',
     'בטן + ליבה': '🔥',
   };
   return iconMap[templateName] || '⚡';
@@ -66,8 +72,8 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
     const allData = await dataService.getWorkoutTemplates();
 
     // Use prop values if available, otherwise use loaded data
-    const userT = userTemplatesProp || allData.filter(t => !t.isBuiltin);
-    const builtinT = builtinTemplatesProp || allData.filter(t => t.isBuiltin);
+    const userT = userTemplatesProp || allData.filter((t) => !t.isBuiltin);
+    const builtinT = builtinTemplatesProp || allData.filter((t) => t.isBuiltin);
 
     setUserTemplates(userT);
     setBuiltinTemplates(builtinT);
@@ -98,7 +104,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
         isFavorite: false,
         isBuiltin: false,
         updatedAt: new Date().toISOString(),
-      } as any);
+      });
     }
     setShowPlanEditor(false);
     loadTemplates();
@@ -111,7 +117,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
       const removed = await dataService.removeDuplicateExercises();
       showToast(`נוקו ${removed} תרגילים כפולים!`, 'success');
     } catch (e) {
-      console.error(e);
+      logger.workout.error('WorkoutTemplates error', e);
       showToast('שגיאה בניקוי', 'error');
     } finally {
       setIsCleaning(false);
@@ -144,12 +150,12 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
   return (
     <div className={`space-y-6 ${isEmbedded ? '' : 'pb-20'}`}>
       {/* Header */}
-      <div className={`flex items-center z-10 py-4 -mx-2 px-2 gap-4 ${isEmbedded ? 'justify-end' : 'justify-between sticky top-0 bg-gradient-to-b from-[var(--bg-primary)] via-[var(--bg-primary)] to-transparent backdrop-blur-xl'}`}>
+      <div
+        className={`flex items-center z-10 py-4 -mx-2 px-2 gap-4 ${isEmbedded ? 'justify-end' : 'justify-between sticky top-0 bg-gradient-to-b from-[var(--bg-primary)] via-[var(--bg-primary)] to-transparent backdrop-blur-xl'}`}
+      >
         {!isEmbedded && (
           <div>
-            <h2 className="text-2xl font-black workout-gradient-text-accent">
-              תבניות אימון
-            </h2>
+            <h2 className="text-2xl font-black workout-gradient-text-accent">תבניות אימון</h2>
             <p className="text-sm text-[var(--text-secondary)] mt-1">בחר תבנית להתחלה מהירה</p>
           </div>
         )}
@@ -157,7 +163,10 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
         <div className="flex gap-2">
           <button
             onClick={handleCleanup}
-            onPointerDown={(e) => { e.preventDefault(); handleCleanup(); }}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              handleCleanup();
+            }}
             disabled={isCleaning}
             className="px-3 py-2.5 bg-white/5 text-white/50 hover:text-white rounded-xl font-medium text-xs transition-colors"
           >
@@ -167,7 +176,10 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
           {onClose && !isEmbedded && (
             <motion.button
               onClick={onClose}
-              onPointerDown={(e) => { e.preventDefault(); onClose(); }}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                onClose();
+              }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="px-4 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl font-semibold hover:bg-white/10 transition-all"
@@ -183,7 +195,10 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
       {/* Create New Button (Prominent) */}
       <motion.button
         onClick={handleCreateNew}
-        onPointerDown={(e) => { e.preventDefault(); handleCreateNew(); }}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          handleCreateNew();
+        }}
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.98 }}
         className="w-full h-20 rounded-2xl border border-dashed border-white/20 hover:border-[var(--cosmos-accent-primary)] hover:bg-[var(--cosmos-accent-primary)]/5 flex items-center justify-center gap-3 group transition-all mb-2"
@@ -192,7 +207,9 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
           <AddIcon className="w-5 h-5" />
         </div>
         <div className="flex flex-col items-start">
-          <span className="font-bold text-lg text-white group-hover:text-[var(--cosmos-accent-primary)] transition-colors">צור תבנית חדשה</span>
+          <span className="font-bold text-lg text-white group-hover:text-[var(--cosmos-accent-primary)] transition-colors">
+            צור תבנית חדשה
+          </span>
           <span className="text-xs text-white/40">התאם אישית תוכנית אימונים מלאה</span>
         </div>
       </motion.button>
@@ -212,8 +229,20 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() => onStartWorkout(template)}
-                onPointerDown={(e) => { e.preventDefault(); onStartWorkout(template); }}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  onStartWorkout(template);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onStartWorkout(template);
+                  }
+                }}
                 className="workout-template-card relative overflow-hidden rounded-2xl cursor-pointer group"
+                role="button"
+                tabIndex={0}
+                aria-label={`תבנית: ${template.name}`}
               >
                 {/* Card Background */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-white/[0.02]" />
@@ -240,8 +269,11 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
 
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                       <motion.button
-                        onClick={e => handleEdit(template, e)}
-                        onPointerDown={(e) => { e.preventDefault(); handleEdit(template, e as unknown as React.MouseEvent); }}
+                        onClick={(e) => handleEdit(template, e)}
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          handleEdit(template, e as unknown as React.MouseEvent);
+                        }}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         className="p-2 rounded-lg bg-white/10 text-white hover:bg-[var(--cosmos-accent-primary)] hover:text-black transition-colors"
@@ -249,8 +281,11 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                         <EditIcon className="w-4 h-4" />
                       </motion.button>
                       <motion.button
-                        onClick={e => handleDelete(template, e)}
-                        onPointerDown={(e) => { e.preventDefault(); handleDelete(template, e as unknown as React.MouseEvent); }}
+                        onClick={(e) => handleDelete(template, e)}
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          handleDelete(template, e as unknown as React.MouseEvent);
+                        }}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-colors"
@@ -268,7 +303,9 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                   {/* Stats Row */}
                   <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)] mb-3">
                     <span className="flex items-center gap-1">
-                      <span className="text-[var(--cosmos-accent-primary)]">{template.exercises.length}</span>
+                      <span className="text-[var(--cosmos-accent-primary)]">
+                        {template.exercises.length}
+                      </span>
                       תרגילים
                     </span>
                     <span className="w-1 h-1 rounded-full bg-white/20" />
@@ -278,7 +315,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                   {/* Muscle Groups */}
                   {template.muscleGroups && template.muscleGroups.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-3">
-                      {template.muscleGroups.slice(0, 3).map(muscle => (
+                      {template.muscleGroups.slice(0, 3).map((muscle) => (
                         <span
                           key={muscle}
                           className="px-2 py-0.5 rounded-full bg-white/5 text-[10px] text-white/60 font-medium"
@@ -309,9 +346,13 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
       {builtinTemplates.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-sm font-semibold text-[var(--cosmos-accent-primary)]">תבניות מוכנות</span>
+            <span className="text-sm font-semibold text-[var(--cosmos-accent-primary)]">
+              תבניות מוכנות
+            </span>
             <span className="text-xs text-white/40">({builtinTemplates.length})</span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--cosmos-accent-primary)]/10 text-[var(--cosmos-accent-primary)]">⭐</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--cosmos-accent-primary)]/10 text-[var(--cosmos-accent-primary)]">
+              ⭐
+            </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {builtinTemplates.map((template, index) => (
@@ -321,8 +362,20 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() => onStartWorkout(template)}
-                onPointerDown={(e) => { e.preventDefault(); onStartWorkout(template); }}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  onStartWorkout(template);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onStartWorkout(template);
+                  }
+                }}
                 className="workout-template-card relative overflow-hidden rounded-2xl cursor-pointer group"
+                role="button"
+                tabIndex={0}
+                aria-label={`תבנית: ${template.name}`}
               >
                 {/* Card Background - Gradient for built-in */}
                 <div className="absolute inset-0 bg-gradient-to-br from-[var(--cosmos-accent-primary)]/10 via-transparent to-[var(--cosmos-accent-cyan)]/5" />
@@ -362,7 +415,9 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                   {/* Stats Row */}
                   <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)] mb-3">
                     <span className="flex items-center gap-1">
-                      <span className="text-[var(--cosmos-accent-primary)]">{template.exercises.length}</span>
+                      <span className="text-[var(--cosmos-accent-primary)]">
+                        {template.exercises.length}
+                      </span>
                       תרגילים
                     </span>
                     <span className="w-1 h-1 rounded-full bg-white/20" />
@@ -372,7 +427,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                   {/* Muscle Groups */}
                   {template.muscleGroups && template.muscleGroups.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-3">
-                      {template.muscleGroups.slice(0, 4).map(muscle => (
+                      {template.muscleGroups.slice(0, 4).map((muscle) => (
                         <span
                           key={muscle}
                           className="px-2 py-0.5 rounded-full bg-[var(--cosmos-accent-primary)]/10 text-[10px] text-[var(--cosmos-accent-primary)] font-medium border border-[var(--cosmos-accent-primary)]/20"
@@ -389,9 +444,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                   )}
 
                   {/* Quick Start Label */}
-                  <div className="mt-2 text-xs text-white/50">
-                    ✨ התחל מיידית
-                  </div>
+                  <div className="mt-2 text-xs text-white/50">✨ התחל מיידית</div>
                 </div>
               </motion.div>
             ))}
@@ -422,8 +475,8 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              onClick={e => e.stopPropagation()}
-              className="w-full max-w-sm workout-glass-card rounded-3xl p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-3xl p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
             >
               <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
                 <TrashIcon className="w-8 h-8 text-red-400" />
@@ -436,7 +489,10 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               <div className="flex gap-3">
                 <motion.button
                   onClick={cancelDelete}
-                  onPointerDown={(e) => { e.preventDefault(); cancelDelete(); }}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    cancelDelete();
+                  }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="flex-1 h-12 rounded-2xl bg-white/5 border border-white/10 text-white/70 font-medium hover:bg-white/10 transition-all"
@@ -445,7 +501,10 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 </motion.button>
                 <motion.button
                   onClick={confirmDelete}
-                  onPointerDown={(e) => { e.preventDefault(); confirmDelete(); }}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    confirmDelete();
+                  }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-red-500 to-red-600 text-white font-bold shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] transition-all"
@@ -473,4 +532,3 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
 };
 
 export default React.memo(WorkoutTemplates);
-

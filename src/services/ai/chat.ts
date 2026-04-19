@@ -2,8 +2,8 @@
 // AI Chat - Chat management with history
 // ============================================================================
 
-import { getAIProvider, type ChatMessage } from './core';
-import { dbPut, dbGetAll, dbGet, dbDelete, STORES } from '../indexedDBCore';
+import { STORES, dbDelete, dbGet, dbGetAll, dbPut } from '../indexedDBCore';
+import { type ChatMessage, getAIProvider } from './core';
 
 export interface Conversation {
   id: string;
@@ -19,7 +19,7 @@ function generateId(): string {
   return 'conv-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
 }
 
-export async function createConversation(title: string = 'שיחה חדשה'): Promise<Conversation> {
+export async function createConversation(title = 'שיחה חדשה'): Promise<Conversation> {
   const conversation: Conversation = {
     id: generateId(),
     title,

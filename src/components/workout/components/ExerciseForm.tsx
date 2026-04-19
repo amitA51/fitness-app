@@ -1,7 +1,11 @@
-import React from 'react';
-import { SparklesIcon, AddIcon } from '../../icons';
-import { PersonalExercise } from '../../../types';
-import { WORKOUT, MUSCLE_GROUPS, EXERCISE_CATEGORIES } from '../../../constants';
+// ExerciseForm - Sport Annual Editorial Design
+// Sharp corners · Bone background · Navy border
+// VISION: Bold · Editorial · Confident · Narrative · Printed
+
+import type React from 'react';
+import { EXERCISE_CATEGORIES, MUSCLE_GROUPS, WORKOUT } from '../../../constants';
+import type { PersonalExercise } from '../../../types';
+import { AddIcon } from '../../icons';
 
 interface ExerciseFormData {
   name: string;
@@ -23,11 +27,11 @@ interface ExerciseFormProps {
 
 const muscleGroupOptions = Object.entries(MUSCLE_GROUPS)
   .filter(([key]) => key !== 'ALL')
-  .map(([_, value]) => value);
+  .map(([, value]) => value);
 
 const categoryOptions = Object.entries(EXERCISE_CATEGORIES)
   .filter(([key]) => key !== 'ALL')
-  .map(([_, value]) => value);
+  .map(([, value]) => value);
 
 export const ExerciseForm: React.FC<ExerciseFormProps> = ({
   formData,
@@ -35,141 +39,199 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
   onSubmit,
   onCancel,
 }) => {
-  const updateField = <K extends keyof ExerciseFormData>(
-    field: K,
-    value: ExerciseFormData[K]
-  ) => {
+  const updateField = <K extends keyof ExerciseFormData>(field: K, value: ExerciseFormData[K]) => {
     onChange({ ...formData, [field]: value });
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    background: '#FFFFFF',
+    border: '2px solid var(--navy)',
+    borderRadius: 0,
+    padding: '10px 14px',
+    fontFamily: 'var(--font-body)',
+    fontSize: 15,
+    color: 'var(--ink)',
+    outline: 'none',
+    direction: 'rtl',
+    textAlign: 'right',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontFamily: 'var(--font-mono)',
+    fontSize: 10,
+    letterSpacing: '0.18em',
+    textTransform: 'uppercase',
+    color: 'var(--stone)',
+    marginBottom: 6,
+    fontWeight: 600,
   };
 
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-[var(--bg-secondary)] p-5 rounded-2xl border border-white/10 space-y-4 shadow-2xl relative overflow-hidden"
+      style={{
+        background: '#FFFFFF',
+        border: '2px solid var(--navy)',
+        padding: 16,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+      }}
     >
-      <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-[var(--cosmos-accent-primary)] to-transparent opacity-50" />
-
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-base font-bold text-white flex items-center gap-2">
-          <SparklesIcon className="w-4 h-4 text-[var(--cosmos-accent-primary)]" />
-          יצירת תרגיל חדש
-        </h3>
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '1px solid var(--bone-deep)',
+          paddingBottom: 10,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'var(--mustard)',
+            fontWeight: 600,
+          }}
+        >
+          צור תרגיל
+        </span>
         <button
           type="button"
           onClick={onCancel}
-          className="text-xs text-white/40 hover:text-white px-2 py-1 bg-white/5 rounded-lg transition-colors"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--stone)',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+          }}
         >
           ביטול
         </button>
       </div>
 
-      <div className="space-y-4">
+      {/* Name */}
+      <div>
+        <label style={labelStyle}>שם התרגיל</label>
+        <input
+          type="text"
+          value={formData.name}
+          onChange={(e) => updateField('name', e.target.value)}
+          placeholder="לדוגמה: לחיצת חזה | Bench Press"
+          style={inputStyle}
+          autoFocus
+          required
+        />
+      </div>
+
+      {/* Muscle Group + Category */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <div>
-          <label className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-1 block">
-            שם התרגיל
-          </label>
+          <label style={labelStyle}>שריר ראשי</label>
+          <select
+            value={formData.muscleGroup}
+            onChange={(e) => updateField('muscleGroup', e.target.value)}
+            style={{ ...inputStyle, appearance: 'none' }}
+          >
+            <option value="">בחר...</option>
+            {muscleGroupOptions.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle}>קטגוריה</label>
+          <select
+            value={formData.category}
+            onChange={(e) => updateField('category', e.target.value as PersonalExercise['category'] ?? '')}
+            style={{ ...inputStyle, appearance: 'none' }}
+          >
+            <option value="">בחר...</option>
+            {categoryOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Sets + Rest + Tempo */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+        <div>
+          <label style={labelStyle}>סטים</label>
           <input
-            type="text"
-            value={formData.name}
-            onChange={e => updateField('name', e.target.value)}
-            placeholder="לדוגמה: לחיצת חזה | Bench Press"
-            className="w-full bg-black/30 border border-white/10 rounded-lg py-2 px-3 text-sm text-white focus:border-[var(--cosmos-accent-primary)] outline-none"
-            autoFocus
-            required
+            type="number"
+            inputMode="numeric"
+            value={formData.defaultSets}
+            onChange={(e) =>
+              updateField('defaultSets', Number.parseInt(e.target.value) || WORKOUT.DEFAULT_SETS)
+            }
+            min={WORKOUT.MIN_REPS}
+            max={WORKOUT.MAX_SETS}
+            style={{ ...inputStyle, textAlign: 'center' }}
           />
         </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-1 block">
-              שריר ראשי
-            </label>
-            <select
-              value={formData.muscleGroup}
-              onChange={e => updateField('muscleGroup', e.target.value)}
-              className="w-full bg-black/30 border border-white/10 rounded-lg py-2 px-3 text-sm text-white focus:border-[var(--cosmos-accent-primary)] outline-none appearance-none"
-            >
-              <option value="">בחר...</option>
-              {muscleGroupOptions.map(g => (
-                <option key={g} value={g} className="bg-gray-900 text-white">
-                  {g}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-1 block">
-              קטגוריה
-            </label>
-            <select
-              value={formData.category}
-              onChange={e =>
-                updateField('category', e.target.value as PersonalExercise['category'] ?? '')
-              }
-              className="w-full bg-black/30 border border-white/10 rounded-lg py-2 px-3 text-sm text-white focus:border-[var(--cosmos-accent-primary)] outline-none appearance-none"
-            >
-              <option value="">בחר...</option>
-              {categoryOptions.map(c => (
-                <option key={c} value={c} className="bg-gray-900 text-white capitalize">
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label style={labelStyle}>מנוחה (שניות)</label>
+          <input
+            type="number"
+            inputMode="numeric"
+            value={formData.defaultRestTime}
+            onChange={(e) =>
+              updateField(
+                'defaultRestTime',
+                Number.parseInt(e.target.value) || WORKOUT.DEFAULT_REST_TIME
+              )
+            }
+            style={{ ...inputStyle, textAlign: 'center' }}
+          />
         </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-1 block">
-              סטים
-            </label>
-            <input
-              type="number"
-              value={formData.defaultSets}
-              onChange={e =>
-                updateField('defaultSets', parseInt(e.target.value) || WORKOUT.DEFAULT_SETS)
-              }
-              min={WORKOUT.MIN_REPS}
-              max={WORKOUT.MAX_SETS}
-              className="w-full bg-black/30 border border-white/10 rounded-lg py-2 px-3 text-sm text-center text-white focus:border-[var(--cosmos-accent-primary)] outline-none"
-            />
-          </div>
-          <div>
-            <label className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-1 block">
-              מנוחה (שנ׳)
-            </label>
-            <input
-              type="number"
-              value={formData.defaultRestTime}
-              onChange={e =>
-                updateField('defaultRestTime', parseInt(e.target.value) || WORKOUT.DEFAULT_REST_TIME)
-              }
-              min={0}
-              max={WORKOUT.MAX_REST_TIME}
-              className="w-full bg-black/30 border border-white/10 rounded-lg py-2 px-3 text-sm text-center text-white focus:border-[var(--cosmos-accent-primary)] outline-none"
-            />
-          </div>
-          <div>
-            <label className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-1 block">
-              טמפו
-            </label>
-            <input
-              type="text"
-              value={formData.tempo}
-              onChange={e => updateField('tempo', e.target.value)}
-              placeholder="3-0-1"
-              className="w-full bg-black/30 border border-white/10 rounded-lg py-2 px-3 text-sm text-center text-white focus:border-[var(--cosmos-accent-primary)] outline-none"
-            />
-          </div>
+        <div>
+          <label style={labelStyle}>טמפו</label>
+          <input
+            type="text"
+            value={formData.tempo}
+            onChange={(e) => updateField('tempo', e.target.value)}
+            placeholder="3-1-1"
+            style={{ ...inputStyle, textAlign: 'center' }}
+          />
         </div>
-
-        <button
-          type="submit"
-          className="w-full py-3 bg-[var(--cosmos-accent-primary)] text-black font-bold rounded-xl shadow-lg hover:brightness-110 active:scale-98 transition-all"
-        >
-          שמור והוסף
-        </button>
       </div>
+
+      {/* Submit */}
+      <button
+        type="submit"
+        style={{
+          width: '100%',
+          padding: '14px 20px',
+          background: 'var(--navy)',
+          color: 'var(--mustard)',
+          border: 'none',
+          borderRadius: 0,
+          fontFamily: 'var(--font-display)',
+          fontWeight: 800,
+          fontSize: 13,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+          minHeight: 48,
+        }}
+      >
+        שמור והוסף
+      </button>
     </form>
   );
 };
@@ -181,11 +243,40 @@ interface AddExerciseButtonProps {
 export const AddExerciseButton: React.FC<AddExerciseButtonProps> = ({ onClick }) => (
   <button
     onClick={onClick}
-    className="shrink-0 w-full py-3 mb-4 border border-dashed border-white/20 hover:border-[var(--cosmos-accent-primary)] hover:bg-[var(--cosmos-accent-primary)]/5 rounded-xl text-white/60 hover:text-[var(--cosmos-accent-primary)] transition-all flex items-center justify-center gap-2 font-bold text-sm group"
+    type="button"
+    style={{
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      padding: '14px 20px',
+      background: 'transparent',
+      border: '2px dashed rgba(20,41,61,0.2)',
+      borderRadius: 0,
+      cursor: 'pointer',
+      fontFamily: 'var(--font-display)',
+      fontWeight: 800,
+      fontSize: 13,
+      letterSpacing: '0.06em',
+      textTransform: 'uppercase',
+      color: 'var(--stone)',
+      transition: 'all 150ms',
+    }}
   >
-    <div className="w-6 h-6 rounded-full bg-white/10 group-hover:bg-[var(--cosmos-accent-primary)] group-hover:text-black flex items-center justify-center transition-colors">
-      <AddIcon className="w-3.5 h-3.5" />
+    <div
+      style={{
+        width: 24,
+        height: 24,
+        background: 'var(--navy)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }}
+    >
+      <AddIcon className="w-3.5 h-3.5" style={{ color: 'var(--mustard)' }} />
     </div>
-    יצירת תרגיל מותאם אישית
+    צור תרגיל מותאם אישית
   </button>
 );

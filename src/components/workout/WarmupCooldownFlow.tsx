@@ -1,5 +1,7 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect, useRef, useCallback, useReducer, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { logger } from '../../utils/logger';
+import { safeJsonParseOr } from '../../utils/safeJson';
 
 interface WarmupCooldownFlowProps {
   type: 'warmup' | 'cooldown';
@@ -34,7 +36,13 @@ const DEFAULT_COOLDOWN: RoutineItem[] = [
   { id: 'c1', name: 'Static Stretching', nameHe: 'מתיחות סטטיות', duration: 60, selected: true },
   { id: 'c2', name: 'Deep Breathing', nameHe: 'נשימות עמוקות', duration: 60, selected: true },
   { id: 'c3', name: "Child's Pose", nameHe: 'תנוחת הילד', duration: 45, selected: true },
-  { id: 'c4', name: 'Hamstring Stretch', nameHe: 'מתיחת ירכיים אחוריות', duration: 45, selected: false },
+  {
+    id: 'c4',
+    name: 'Hamstring Stretch',
+    nameHe: 'מתיחת ירכיים אחוריות',
+    duration: 45,
+    selected: false,
+  },
   { id: 'c5', name: 'Quad Stretch', nameHe: 'מתיחת ירך קדמית', duration: 45, selected: false },
   { id: 'c6', name: 'Shoulder Stretch', nameHe: 'מתיחת כתפיים', duration: 30, selected: false },
 ];
@@ -63,7 +71,7 @@ type Action =
   | { type: 'TICK' };
 
 const reducer = (state: State, action: Action): State => {
-  const activeItems = state.items.filter(i => i.selected);
+  const activeItems = state.items.filter((i) => i.selected);
 
   switch (action.type) {
     case 'SET_ITEMS':
@@ -72,7 +80,7 @@ const reducer = (state: State, action: Action): State => {
     case 'TOGGLE_SELECTION':
       return {
         ...state,
-        items: state.items.map(item =>
+        items: state.items.map((item) =>
           item.id === action.id ? { ...item, selected: !item.selected } : item
         ),
       };
@@ -185,8 +193,8 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
     try {
       const saved = localStorage.getItem(storageKey);
       if (saved) {
-        const selections: Record<string, boolean> = JSON.parse(saved);
-        const merged = defaultItems.map(item => ({
+        const selections = safeJsonParseOr<Record<string, boolean>>(saved, {});
+        const merged = defaultItems.map((item) => ({
           ...item,
           selected: selections[item.id] ?? item.selected,
         }));
@@ -205,13 +213,13 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
     if (state.items.length === 0) return;
 
     const selections: Record<string, boolean> = {};
-    state.items.forEach(item => {
+    state.items.forEach((item) => {
       selections[item.id] = item.selected;
     });
     try {
       localStorage.setItem(storageKey, JSON.stringify(selections));
     } catch (e) {
-      console.error('Failed to save routine selections:', e);
+      logger.workout.error('Failed to save routine selections', e);
     }
   }, [state.items, storageKey]);
 
@@ -230,9 +238,12 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
     };
   }, [state.isPaused, state.step, state.timeLeft]);
 
-  const activeItems = useMemo(() => state.items.filter(i => i.selected), [state.items]);
+  const activeItems = useMemo(() => state.items.filter((i) => i.selected), [state.items]);
   const currentItem = activeItems[state.currentIndex];
-  const totalDuration = useMemo(() => activeItems.reduce((sum, i) => sum + i.duration, 0), [activeItems]);
+  const totalDuration = useMemo(
+    () => activeItems.reduce((sum, i) => sum + i.duration, 0),
+    [activeItems]
+  );
 
   const toggleSelection = useCallback((id: string) => {
     dispatch({ type: 'TOGGLE_SELECTION', id });
@@ -292,9 +303,7 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
                 <h2 className="text-3xl font-black text-white mb-2">
                   {type === 'warmup' ? 'חימום' : 'צינון'}
                 </h2>
-                <p className="text-white/60 text-sm">
-                  בחר את התרגילים שתרצה לבצע
-                </p>
+                <p className="text-white/60 text-sm">בחר את התרגילים שתרצה לבצע</p>
                 <p className="text-[var(--cosmos-accent-primary)] text-xs mt-1 font-medium">
                   סה״כ: {formatTime(totalDuration)} • {activeItems.length} תרגילים
                 </p>
@@ -302,24 +311,30 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
 
               {/* Exercise List */}
               <div className="flex-1 overflow-y-auto flex flex-col gap-2 custom-scrollbar pb-4">
-                {state.items.map(item => (
+                {state.items.map((item) => (
                   <motion.div
                     key={item.id}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => toggleSelection(item.id)}
-                    className={`p-4 min-h-[60px] rounded-2xl flex items-center justify-between cursor-pointer transition-all border ${item.selected
-                      ? 'bg-[var(--cosmos-accent-primary)]/15 border-[var(--cosmos-accent-primary)]'
-                      : 'bg-white/5 border-white/10 hover:border-white/20'
-                      }`}
+                    className={`p-4 min-h-[60px] rounded-2xl flex items-center justify-between cursor-pointer transition-all border ${
+                      item.selected
+                        ? 'bg-[var(--cosmos-accent-primary)]/15 border-[var(--cosmos-accent-primary)]'
+                        : 'bg-white/5 border-white/10 hover:border-white/20'
+                    }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${item.selected
-                        ? 'bg-[var(--cosmos-accent-primary)] border-[var(--cosmos-accent-primary)]'
-                        : 'border-white/30'
-                        }`}>
+                      <div
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          item.selected
+                            ? 'bg-[var(--cosmos-accent-primary)] border-[var(--cosmos-accent-primary)]'
+                            : 'border-white/30'
+                        }`}
+                      >
                         {item.selected && <span className="text-black text-sm">✓</span>}
                       </div>
-                      <span className={`font-semibold ${item.selected ? 'text-white' : 'text-white/60'}`}>
+                      <span
+                        className={`font-semibold ${item.selected ? 'text-white' : 'text-white/60'}`}
+                      >
                         {item.nameHe}
                       </span>
                     </div>
@@ -404,7 +419,7 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
                       style={{
                         filter: isWarning
                           ? 'drop-shadow(0 0 15px rgba(239,68,68,0.5))'
-                          : 'drop-shadow(0 0 10px rgba(99,102,241,0.3))'
+                          : 'drop-shadow(0 0 10px rgba(99,102,241,0.3))',
                       }}
                     />
                   </svg>
@@ -415,8 +430,13 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
                       key={state.timeLeft}
                       initial={{ scale: 1.1 }}
                       animate={{ scale: 1 }}
-                      className={`text-5xl font-black tabular-nums ${isWarning ? 'text-red-500' : state.timeLeft === 0 ? 'text-green-500' : 'text-white'
-                        }`}
+                      className={`text-5xl font-black tabular-nums ${
+                        isWarning
+                          ? 'text-red-500'
+                          : state.timeLeft === 0
+                            ? 'text-green-500'
+                            : 'text-white'
+                      }`}
                     >
                       {formatTime(state.timeLeft)}
                     </motion.span>
@@ -426,18 +446,14 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
                       </span>
                     )}
                     {state.timeLeft === 0 && (
-                      <span className="text-green-400 text-xs font-semibold mt-2">
-                        הושלם!
-                      </span>
+                      <span className="text-green-400 text-xs font-semibold mt-2">הושלם!</span>
                     )}
                   </div>
                 </div>
               </div>
 
               {/* Tip */}
-              <p className="text-white/30 text-xs mb-6">
-                לחץ על השעון להשהייה/המשך
-              </p>
+              <p className="text-white/30 text-xs mb-6">לחץ על השעון להשהייה/המשך</p>
 
               {/* Navigation Buttons */}
               <div className="w-full flex gap-3">
@@ -445,8 +461,11 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
                   whileTap={{ scale: 0.95 }}
                   onClick={prevExercise}
                   disabled={state.currentIndex === 0}
-                  className={`w-16 h-14 min-h-[56px] rounded-2xl bg-white/5 border border-white/20 flex items-center justify-center text-2xl text-white transition-all ${state.currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/10 active:scale-95'
-                    }`}
+                  className={`w-16 h-14 min-h-[56px] rounded-2xl bg-white/5 border border-white/20 flex items-center justify-center text-2xl text-white transition-all ${
+                    state.currentIndex === 0
+                      ? 'opacity-30 cursor-not-allowed'
+                      : 'hover:bg-white/10 active:scale-95'
+                  }`}
                 >
                   →
                 </motion.button>

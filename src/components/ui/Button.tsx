@@ -1,5 +1,5 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import type React from 'react';
 
 // ============================================================================
 // Types
@@ -19,76 +19,71 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 // ============================================================================
-// Premium Variant Styles (Spring Physics, No Glow, Tactile Feedback)
+// Sport Annual Variant Styles — sharp corners, editorial palette
 // ============================================================================
 
 const variantStyles: Record<ButtonVariant, string> = {
-  // Primary — solid fill with diffused shadow, no neon glow
+  // Primary — navy fill, mustard label
   primary: `
-    bg-primary text-white font-semibold
-    shadow-[0_4px_16px_rgba(59,130,246,0.25)]
-    hover:shadow-[0_6px_24px_rgba(59,130,246,0.35)]
-    hover:brightness-110
-    active:scale-[0.97] active:translate-y-0
-    active:shadow-[0_2px_8px_rgba(59,130,246,0.2)]
-    disabled:opacity-50 disabled:cursor-not-allowed
+    bg-[var(--navy)] text-[var(--mustard)]
+    hover:bg-[var(--navy-deep)]
+    active:bg-[var(--navy-deep)]
+    disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
-  // Secondary — ghost with border
+  // Secondary — bone fill, navy 2px border, navy label
   secondary: `
-    bg-transparent text-white font-medium
-    border border-white/12
-    hover:bg-white/6 hover:border-white/20
-    active:scale-[0.97] active:bg-white/4
+    bg-[var(--bone)] text-[var(--navy)]
+    border-2 border-[var(--navy)]
+    hover:bg-[var(--bone-deep)]
+    active:bg-[var(--bone-deep)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
-  // Ghost — text only, no border
+  // Ghost — transparent with navy text
   ghost: `
-    bg-transparent text-primary font-semibold
-    hover:bg-primary/10
-    active:bg-primary/15 active:scale-[0.97]
+    bg-transparent text-[var(--navy)]
+    hover:bg-[var(--bone-deep)]
+    active:bg-[var(--bone-deep)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
-  // Glass — frosted surface
+  // Glass — bone translucent
   glass: `
-    bg-white/6 backdrop-blur-xl text-white font-medium
-    border border-white/8
-    hover:bg-white/10 hover:border-white/13
-    active:scale-[0.97] active:bg-white/13
-    shadow-[0_4px_16px_rgba(0,0,0,0.2)]
+    bg-[var(--bone)]/80 backdrop-blur-md text-[var(--navy)]
+    border border-[var(--bone-deep)]
+    hover:bg-[var(--bone-deep)]
+    active:bg-[var(--bone-deep)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
-  // Danger — for destructive actions
+  // Danger — error-color fill, bone label
   danger: `
-    bg-error text-white font-semibold
-    shadow-[0_4px_16px_rgba(239,68,68,0.25)]
-    hover:brightness-110
-    active:scale-[0.97] active:translate-y-0
+    bg-[var(--color-error)] text-[var(--bone)]
+    hover:brightness-90
+    active:brightness-90
     disabled:opacity-50 disabled:cursor-not-allowed
   `,
 
-  // Pill — compact, rounded-full
+  // Pill — compact tag-style, kept sharp-cornered to match editorial aesthetic
   pill: `
-    bg-white/8 text-white/80 font-medium
-    border border-white/10
-    hover:bg-primary/15 hover:text-primary hover:border-primary/30
-    active:scale-[0.95]
+    bg-[var(--bone)] text-[var(--navy)]
+    border-2 border-[var(--navy)]
+    hover:bg-[var(--mustard)] hover:text-[var(--navy)]
+    active:bg-[var(--mustard)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 };
 
 // ============================================================================
-// Size Styles (44px Touch Target)
+// Size Styles — sharp corners, 44px+ touch target
 // ============================================================================
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm:   'px-4 py-2 min-h-[44px] text-[13px] rounded-lg gap-1.5',
-  md:   'px-6 py-3 min-h-[44px] text-[15px] rounded-xl gap-2',
-  lg:   'px-8 py-3.5 min-h-[52px] text-[16px] rounded-xl gap-2.5',
-  icon: 'p-2.5 min-w-[44px] min-h-[44px] rounded-lg justify-center',
+  sm: 'px-4 py-2 min-h-[44px] text-[12px] gap-1.5',
+  md: 'px-6 py-3 min-h-[48px] text-[14px] gap-2',
+  lg: 'px-8 py-4 min-h-[52px] text-[16px] gap-2.5',
+  icon: 'p-2.5 min-w-[44px] min-h-[44px] justify-center',
 };
 
 // ============================================================================
@@ -107,50 +102,58 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const isPill = variant === 'pill';
-
   return (
     <motion.button
       disabled={disabled || isLoading}
-      whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
-      whileTap={{ scale: disabled || isLoading ? 1 : 0.97 }}
+      whileHover={{ scale: disabled || isLoading ? 1 : 1.01 }}
+      whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={`
         relative inline-flex items-center justify-center cursor-pointer
-        transition-all duration-150
+        font-[var(--font-display)] font-extrabold uppercase tracking-[0.08em]
+        transition-colors duration-150
         focus-visible:outline-none
-        focus-visible:ring-2 focus-visible:ring-primary/60
-        focus-visible:ring-offset-2 focus-visible:ring-offset-transparent
+        focus-visible:ring-2 focus-visible:ring-[var(--mustard)]
+        focus-visible:ring-offset-0
         disabled:pointer-events-none
         ${variantStyles[variant]}
         ${sizeStyles[size]}
-        ${isPill ? 'rounded-full' : ''}
         ${fullWidth ? 'w-full' : ''}
         ${className}
       `}
-      {...props}
+      style={{ fontFamily: 'var(--font-display)', borderRadius: 0 }}
+      // biome-ignore lint/suspicious/noExplicitAny: framer-motion button prop type conflicts with native button events
+      {...(props as any)}
     >
       {isLoading ? (
-        // Premium loading spinner
+        // Navy/mustard spinner — sharp edges via border-current
         <span className="w-[18px] h-[18px] border-2 border-current border-t-transparent rounded-full animate-spin" />
       ) : (
         <>
-          {icon && (
-            <span className={children ? 'me-1.5' : ''}>{icon}</span>
-          )}
+          {icon && <span className={children ? 'me-1.5' : ''}>{icon}</span>}
 
           {!isLoading && children}
 
           {/* Button-in-Button Arrow Pattern */}
           {arrowIcon && (
-            <span className="
-              ms-1.5 w-7 h-7 rounded-full
-              bg-white/15 flex items-center justify-center
+            <span
+              className="
+              ms-1.5 w-7 h-7
+              bg-[var(--mustard)] text-[var(--navy)]
+              flex items-center justify-center
               transition-transform duration-150
-              group-hover:translate-x-0.5 group-hover:-translate-y-0.5
-            ">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="rotate-180">
-                <path d="M2 6H10M10 6L6 2M10 6L6 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              group-hover:translate-x-0.5
+            "
+              style={{ borderRadius: 0 }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="rotate-180" aria-hidden="true">
+                <path
+                  d="M2 6H10M10 6L6 2M10 6L6 10"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </span>
           )}

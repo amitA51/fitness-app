@@ -2,7 +2,7 @@
 // SPARKOS FITNESS - usePullToRefresh Hook
 // ============================================================================
 
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 interface UsePullToRefreshOptions {
   onRefresh: () => Promise<void>;
@@ -18,20 +18,23 @@ export const usePullToRefresh = ({ onRefresh, threshold = 80 }: UsePullToRefresh
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (window.scrollY === 0) {
-      startY.current = e.touches[0].clientY;
+      startY.current = e.touches[0]?.clientY ?? 0;
       setIsPulling(true);
     }
   }, []);
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!isPulling) return;
-    currentY.current = e.touches[0].clientY;
-    const pullDistance = currentY.current - startY.current;
-    pullDistanceRef.current = pullDistance;
-    if (pullDistance > 0) {
-      e.preventDefault();
-    }
-  }, [isPulling]);
+  const handleTouchMove = useCallback(
+    (e: TouchEvent) => {
+      if (!isPulling) return;
+      currentY.current = e.touches[0]?.clientY ?? 0;
+      const pullDistance = currentY.current - startY.current;
+      pullDistanceRef.current = pullDistance;
+      if (pullDistance > 0) {
+        e.preventDefault();
+      }
+    },
+    [isPulling]
+  );
 
   const handleTouchEnd = useCallback(async () => {
     if (!isPulling) return;

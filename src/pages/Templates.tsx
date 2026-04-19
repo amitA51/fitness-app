@@ -3,15 +3,15 @@
  * Double-Bezel Cards, Spring Physics, Staggered Reveals
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Clock, Dumbbell, Play, Plus, Star, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Dumbbell, Clock, Star, Play, Trash2, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-  getWorkoutTemplates,
   createWorkoutTemplate,
-  updateWorkoutTemplate,
   deleteWorkoutTemplate,
+  getWorkoutTemplates,
+  updateWorkoutTemplate,
 } from '../services/workoutDb';
 import type { WorkoutTemplate } from '../types';
 
@@ -207,118 +207,130 @@ function TemplateCard({ template, index, onStart, onToggleFavorite, onDelete }: 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...springTransition, delay: index * 0.06 }}
-      className="card-interactive overflow-hidden"
+      className="card-outlined"
     >
-      <div className="p-5">
-        {/* Main Content Row */}
-        <div className="flex items-center gap-4">
-          {/* Icon Block */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0"
-          >
-            <Dumbbell size={24} className="text-primary" />
-          </motion.div>
+      {/* Eyebrow row */}
+      <div className="flex items-center justify-between mb-3">
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.22em',
+            color: template.isFavorite ? 'var(--mustard)' : 'var(--stone)',
+            textTransform: 'uppercase',
+          }}
+        >
+          №{String(index + 1).padStart(3, '0')} · {formatLastUsed(template.lastUsed)}
+        </span>
+        {template.isFavorite && (
+          <Star size={14} fill="var(--mustard)" style={{ color: 'var(--mustard)' }} />
+        )}
+      </div>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <p className="font-condensed font-bold text-[18px] text-white leading-tight truncate">
-                {template.name}
-              </p>
-              {template.isFavorite && (
-                <motion.div
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 3 }}
-                >
-                  <Star size={16} className="text-warning fill-warning flex-shrink-0" />
-                </motion.div>
-              )}
-            </div>
-            <div className="flex items-center gap-4 mt-2">
-              <span className="flex items-center gap-1.5 text-[12px] text-label-secondary">
-                <Dumbbell size={12} className="text-label-tertiary" />
-                {template.exercises.length} תרגילים
-              </span>
-              <span className="flex items-center gap-1.5 text-[12px] text-label-secondary">
-                <Clock size={12} className="text-label-tertiary" />
-                {formatLastUsed(template.lastUsed)}
-              </span>
-            </div>
-          </div>
+      {/* Display title */}
+      <h3
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontWeight: 800,
+          fontSize: '28px',
+          lineHeight: 0.95,
+          color: 'var(--ink)',
+          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
+          marginBottom: '8px',
+        }}
+      >
+        {template.name}
+      </h3>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 shrink-0">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={onToggleFavorite}
-              className="w-11 h-11 rounded-xl flex items-center justify-center transition-colors hover:bg-white/6"
-              aria-label={template.isFavorite ? 'הסר ממועדפים' : 'הוסף למועדפים'}
-            >
-              <Star
-                size={18}
-                className={
-                  template.isFavorite
-                    ? 'text-warning fill-warning'
-                    : 'text-label-tertiary'
-                }
-              />
-            </motion.button>
+      {/* Mono stats line */}
+      <div
+        className="flex items-center gap-3 mb-4"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '12px',
+          color: 'var(--navy)',
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+        }}
+      >
+        <span className="flex items-center gap-1.5">
+          <Dumbbell size={12} />
+          {template.exercises.length} EX
+        </span>
+        <span style={{ color: 'var(--stone)' }}>·</span>
+        <span className="flex items-center gap-1.5">
+          <Clock size={12} />
+          {template.timesUsed > 0 ? `${template.timesUsed}×` : 'NEW'}
+        </span>
+      </div>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={onStart}
-              className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center"
-              aria-label="התחל אימון"
-            >
-              <Play size={18} className="text-white me-[-2px]" />
-            </motion.button>
-          </div>
+      {/* Exercise name chips */}
+      {template.exercises.length > 0 && (
+        <div className="flex gap-2 flex-wrap mb-4">
+          {template.exercises.slice(0, 3).map((ex, i) => (
+            <span key={i} className="chip">
+              {ex.exerciseName || 'תרגיל'}
+            </span>
+          ))}
+          {template.exercises.length > 3 && (
+            <span className="chip" style={{ background: 'var(--bone-deep)' }}>
+              +{template.exercises.length - 3}
+            </span>
+          )}
         </div>
+      )}
 
-        {/* Delete Row */}
-        <div className="flex items-center justify-between mt-5 pt-4 border-t border-white/[0.04]">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={handleDeleteClick}
-            onBlur={() => setConfirmDelete(false)}
-            className={`
-              flex items-center gap-2 min-h-[40px] px-4 py-2 rounded-xl 
-              text-[13px] font-medium transition-all duration-200
-              ${confirmDelete
-                ? 'bg-error/15 text-error border border-error/30'
-                : 'text-label-tertiary hover:text-error hover:bg-error/10'
-              }
-            `}
-          >
-            <Trash2 size={14} />
-            {confirmDelete ? 'בטוח? לחץ לאישור' : 'מחק'}
-          </motion.button>
-          
-          <span className="text-[11px] text-label-tertiary">
-            {template.timesUsed > 0 ? `${template.timesUsed} פעמים` : 'טרם בוצע'}
-          </span>
-        </div>
+      {/* Action row */}
+      <div
+        className="flex items-center gap-2 flex-wrap pt-3"
+        style={{ borderTop: '1px solid var(--bone-deep)' }}
+      >
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={onStart}
+          className="btn-primary flex items-center justify-center gap-2"
+          style={{ flex: 1, minHeight: '44px', padding: '12px 16px' }}
+          aria-label="התחל אימון"
+        >
+          <Play size={14} />
+          התחל
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={onToggleFavorite}
+          className="chip"
+          style={{
+            background: template.isFavorite ? 'var(--mustard)' : 'var(--bone)',
+            minHeight: '44px',
+            padding: '0 14px',
+          }}
+          aria-label={template.isFavorite ? 'הסר ממועדפים' : 'הוסף למועדפים'}
+        >
+          <Star
+            size={14}
+            fill={template.isFavorite ? 'var(--navy)' : 'none'}
+            style={{ color: 'var(--navy)' }}
+          />
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={handleDeleteClick}
+          onBlur={() => setConfirmDelete(false)}
+          className="chip"
+          style={{
+            background: confirmDelete ? 'var(--navy)' : 'var(--bone)',
+            color: confirmDelete ? 'var(--mustard)' : 'var(--navy)',
+            minHeight: '44px',
+            padding: '0 14px',
+          }}
+          aria-label={confirmDelete ? 'אישור מחיקת תבנית' : 'מחק תבנית'}
+        >
+          <Trash2 size={14} />
+          {confirmDelete && <span className="mr-1">?</span>}
+        </motion.button>
       </div>
     </motion.div>
-  );
-}
-
-// ============================================================================
-// Section Label
-// ============================================================================
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <motion.p
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="section-title mb-3"
-    >
-      {children}
-    </motion.p>
   );
 }
 
@@ -335,7 +347,7 @@ function LoadingState() {
           <div className="w-32 h-10 rounded-xl skeleton-shimmer" />
           <div className="w-11 h-11 rounded-xl skeleton-shimmer" />
         </div>
-        
+
         {/* Cards */}
         <div className="flex flex-col gap-4">
           {[1, 2, 3].map((i) => (
@@ -367,7 +379,10 @@ function LoadingState() {
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="min-h-screen pb-[100px] flex flex-col items-center justify-center px-6" dir="rtl">
+    <div
+      className="min-h-screen pb-[100px] flex flex-col items-center justify-center px-6"
+      dir="rtl"
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -379,11 +394,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
       <p className="text-[14px] text-label-secondary mb-8 text-center">
         לא הצלחנו לטעון את התבניות. נסה שוב.
       </p>
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        onClick={onRetry}
-        className="btn btn-primary"
-      >
+      <motion.button whileTap={{ scale: 0.95 }} onClick={onRetry} className="btn btn-primary">
         נסה שוב
       </motion.button>
     </div>
@@ -448,9 +459,7 @@ export default function Templates() {
     const updated = await updateWorkoutTemplate(template.id, {
       isFavorite: !template.isFavorite,
     });
-    setTemplates((prev) =>
-      prev.map((t) => (t.id === updated.id ? updated : t))
-    );
+    setTemplates((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
   };
 
   const handleDelete = async (id: string) => {
@@ -474,28 +483,37 @@ export default function Templates() {
     <>
       <motion.div
         className="min-h-screen pb-[100px]"
+        style={{ background: 'var(--bone)' }}
         dir="rtl"
         variants={containerVariants}
         initial="hidden"
         animate="show"
       >
-        <div className="px-5 pt-6">
-          {/* Header */}
-          <motion.div 
-            variants={itemVariants}
-            className="flex items-center justify-between mb-8"
+        {/* Masthead */}
+        <header className="masthead safe-area-top sticky top-0 z-20">
+          <div className="kicker">§06 · TEMPLATES · {templates.length} ROUTINES</div>
+          <h1
+            style={{
+              fontFamily: 'var(--font-hebrew)',
+              fontSize: 'clamp(44px, 12vw, 72px)',
+              lineHeight: 0.9,
+              marginTop: '8px',
+            }}
           >
-            <h1 className="font-condensed font-bold text-[28px] text-white leading-none tracking-tight">
-              תבניות
-            </h1>
+            תבניות
+          </h1>
+        </header>
+
+        <div className="px-5 pt-5">
+          {/* Primary CTA */}
+          <motion.div variants={itemVariants} className="mb-5">
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setShowCreateModal(true)}
-              className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center"
+              className="btn-primary w-full flex items-center justify-center gap-2"
               aria-label="צור תבנית חדשה"
             >
-              <Plus size={20} className="text-white" />
+              <Plus size={18} />+ תבנית חדשה
             </motion.button>
           </motion.div>
 
@@ -509,20 +527,30 @@ export default function Templates() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ ...springTransition, delay: 0.2 }}
-                className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center mb-6"
+                className="w-20 h-20 mb-6 flex items-center justify-center"
+                style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
               >
-                <Dumbbell size={40} className="text-primary" />
+                <Dumbbell size={36} />
               </motion.div>
-              <p className="font-condensed font-bold text-[22px] text-white mb-2">
+              <p
+                style={{
+                  fontFamily: 'var(--font-hebrew)',
+                  fontSize: '28px',
+                  fontWeight: 800,
+                  color: 'var(--ink)',
+                  textTransform: 'uppercase',
+                  marginBottom: '6px',
+                }}
+              >
                 אין תבניות עדיין
               </p>
-              <p className="text-[14px] text-label-secondary mb-8 max-w-[260px]">
-                צור תבנית אימון ותתחיל להתאמן
+              <p className="eyebrow mb-6" style={{ color: 'var(--stone)' }}>
+                CREATE YOUR FIRST ROUTINE
               </p>
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowCreateModal(true)}
-                className="btn btn-primary btn-pill gap-2"
+                className="btn-primary flex items-center gap-2"
               >
                 <Plus size={18} />
                 צור תבנית ראשונה
@@ -532,9 +560,12 @@ export default function Templates() {
 
           {/* Favorites Section */}
           {favorites.length > 0 && (
-            <motion.div variants={itemVariants} className="mb-8">
-              <SectionLabel>מועדפים</SectionLabel>
-              <div className="flex flex-col gap-4">
+            <motion.div variants={itemVariants} className="mb-6">
+              <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
+                <span className="left">§01 · FAVORITES</span>
+                <span className="right">מועדפים</span>
+              </div>
+              <div className="flex flex-col gap-4 mt-4">
                 {favorites.map((template, index) => (
                   <TemplateCard
                     key={template.id}
@@ -551,9 +582,17 @@ export default function Templates() {
 
           {/* All Templates Section */}
           {regular.length > 0 && (
-            <motion.div variants={itemVariants} className="mb-8">
-              {favorites.length > 0 && <SectionLabel>כל התבניות</SectionLabel>}
-              <div className="flex flex-col gap-4">
+            <motion.div variants={itemVariants} className="mb-6">
+              {favorites.length > 0 && (
+                <div
+                  className="chapter-break"
+                  style={{ marginInline: 'calc(-1 * var(--space-5))' }}
+                >
+                  <span className="left">§02 · ALL ROUTINES</span>
+                  <span className="right">כל התבניות</span>
+                </div>
+              )}
+              <div className="flex flex-col gap-4 mt-4">
                 {regular.map((template, index) => (
                   <TemplateCard
                     key={template.id}
@@ -573,10 +612,7 @@ export default function Templates() {
       {/* Create Modal */}
       <AnimatePresence>
         {showCreateModal && (
-          <CreateModal
-            onClose={() => setShowCreateModal(false)}
-            onCreate={handleCreate}
-          />
+          <CreateModal onClose={() => setShowCreateModal(false)} onCreate={handleCreate} />
         )}
       </AnimatePresence>
     </>

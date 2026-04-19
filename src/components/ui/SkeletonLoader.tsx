@@ -1,5 +1,4 @@
-import React from 'react';
-import { BORDER_RADIUS } from '../../constants/designTokens';
+import type React from 'react';
 
 // ========================================
 // Shimmer Animation Styles
@@ -11,10 +10,16 @@ const shimmerStyle: React.CSSProperties = {
   isolation: 'isolate',
 };
 
+// Sport Annual shimmer — bone-deep base, bone-faint highlight
 const ShimmerOverlay: React.FC<{ className?: string }> = ({ className = '' }) => (
   <div
-    className={`absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/[0.06] to-transparent ${className}`}
-    style={{ animationDuration: '2s' }}
+    className={`absolute inset-0 -translate-x-full animate-shimmer ${className}`}
+    style={{
+      animationDuration: '2s',
+      background:
+        'linear-gradient(to right, transparent, var(--bone-faint, #F9F7F3), transparent)',
+      opacity: 0.8,
+    }}
   />
 );
 
@@ -22,10 +27,24 @@ const ShimmerOverlay: React.FC<{ className?: string }> = ({ className = '' }) =>
 // Skeleton Primitive Components
 // ========================================
 
+// Sport Annual — sharp corners by default; legacy radius keys map to 0
+const RADIUS_MAP: Record<string, string> = {
+  full: '0',
+  lg: '0',
+  xl: '0',
+  md: '0',
+  sm: '0',
+};
+
+const getRadiusStyle = (radius?: string): string => {
+  if (!radius) return '0';
+  return RADIUS_MAP[radius] || '0';
+};
+
 interface SkeletonProps {
   width?: string | number;
   height?: string | number;
-  borderRadius?: keyof typeof BORDER_RADIUS;
+  borderRadius?: string;
   className?: string;
   shimmer?: boolean;
 }
@@ -33,17 +52,18 @@ interface SkeletonProps {
 export const SkeletonBox: React.FC<SkeletonProps> = ({
   width = '100%',
   height = '20px',
-  borderRadius = 'md',
+  borderRadius = '0',
   className = '',
   shimmer = true,
 }) => (
   <div
-    className={`bg-gradient-to-r from-white/[0.03] to-white/[0.015] ${className}`}
+    className={className}
     style={{
       ...shimmerStyle,
+      backgroundColor: 'var(--bone-deep)',
       width: typeof width === 'number' ? `${width}px` : width,
       height: typeof height === 'number' ? `${height}px` : height,
-      borderRadius: BORDER_RADIUS[borderRadius],
+      borderRadius: getRadiusStyle(borderRadius),
     }}
   >
     {shimmer && <ShimmerOverlay />}
@@ -56,8 +76,13 @@ export const SkeletonCircle: React.FC<{ size?: number; className?: string; shimm
   shimmer = true,
 }) => (
   <div
-    className={`bg-gradient-to-r from-white/[0.03] to-white/[0.015] rounded-full ${className}`}
-    style={{ ...shimmerStyle, width: `${size}px`, height: `${size}px` }}
+    className={`rounded-full ${className}`}
+    style={{
+      ...shimmerStyle,
+      backgroundColor: 'var(--bone-deep)',
+      width: `${size}px`,
+      height: `${size}px`,
+    }}
   >
     {shimmer && <ShimmerOverlay />}
   </div>
@@ -130,7 +155,7 @@ export const SkeletonTaskItem: React.FC = () => (
       <SkeletonBox height={18} width="60%" />
       <SkeletonBox height={14} width="35%" />
     </div>
-    <SkeletonBox height={24} width={24} borderRadius="md" />
+    <SkeletonBox height={24} width={24} borderRadius="12px" />
   </div>
 );
 
@@ -309,9 +334,7 @@ export const SkeletonCalendarGrid: React.FC = () => (
             style={{ ...shimmerStyle }}
           >
             <SkeletonBox height={16} width={20} className="mb-1" />
-            {Math.random() > 0.7 && (
-              <SkeletonBox height={8} width="80%" borderRadius="sm" />
-            )}
+            {Math.random() > 0.7 && <SkeletonBox height={8} width="80%" borderRadius="sm" />}
           </div>
         ))}
       </div>
@@ -371,7 +394,10 @@ export const SkeletonSettingsSection: React.FC<{ itemCount?: number }> = ({ item
   <div className="glass-panel rounded-2xl p-4 space-y-1 border border-white/5">
     <SkeletonBox height={20} width={100} className="mb-3" />
     {Array.from({ length: itemCount }).map((_, i) => (
-      <div key={i} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
+      <div
+        key={i}
+        className="flex items-center justify-between py-3 border-b border-white/5 last:border-0"
+      >
         <div className="flex items-center gap-3">
           <SkeletonCircle size={24} />
           <SkeletonBox height={18} width={120} />
@@ -422,8 +448,9 @@ export const SkeletonChatMessage: React.FC<{ isUser?: boolean }> = ({ isUser = f
     <SkeletonCircle size={36} />
     <div className={`flex-1 max-w-[80%] space-y-2 ${isUser ? 'items-end' : ''}`}>
       <div
-        className={`rounded-2xl p-4 space-y-2 ${isUser ? 'bg-[var(--dynamic-accent-start)]/20' : 'bg-white/5'
-          }`}
+        className={`rounded-2xl p-4 space-y-2 ${
+          isUser ? 'bg-[var(--dynamic-accent-start)]/20' : 'bg-white/5'
+        }`}
       >
         <SkeletonBox height={16} width="100%" />
         <SkeletonBox height={16} width="85%" />
@@ -603,8 +630,16 @@ export const screenSkeletonMap: Record<Screen, React.FC> = {
   add: AddScreenSkeleton,
   investments: LibraryScreenSkeleton,
   views: LibraryScreenSkeleton,
-  login: () => <div className="h-[80vh] flex items-center justify-center"><SkeletonCircle size={64} /></div>,
-  signup: () => <div className="h-[80vh] flex items-center justify-center"><SkeletonCircle size={64} /></div>,
+  login: () => (
+    <div className="h-[80vh] flex items-center justify-center">
+      <SkeletonCircle size={64} />
+    </div>
+  ),
+  signup: () => (
+    <div className="h-[80vh] flex items-center justify-center">
+      <SkeletonCircle size={64} />
+    </div>
+  ),
   logos: HomeScreenSkeleton,
   insights: LibraryScreenSkeleton,
 };

@@ -1,4 +1,4 @@
-import { dbGetAll, dbPut, dbDelete, STORES } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbPut } from './indexedDBCore';
 
 const BODY_MEASUREMENTS_STORE = 'body_measurements';
 
@@ -79,8 +79,14 @@ function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export async function addBodyWeight(entry: Omit<BodyWeightEntry, 'id' | 'createdAt'>): Promise<BodyWeightEntry> {
-  const newEntry: BodyWeightEntry = { ...entry, id: generateId('bw'), createdAt: new Date().toISOString() };
+export async function addBodyWeight(
+  entry: Omit<BodyWeightEntry, 'id' | 'createdAt'>
+): Promise<BodyWeightEntry> {
+  const newEntry: BodyWeightEntry = {
+    ...entry,
+    id: generateId('bw'),
+    createdAt: new Date().toISOString(),
+  };
   await dbPut(STORES.BODY_WEIGHT, newEntry);
   return newEntry;
 }
@@ -93,26 +99,40 @@ export async function deleteBodyWeight(id: string): Promise<void> {
   await dbDelete(STORES.BODY_WEIGHT, id);
 }
 
-export async function getBodyWeightsByDateRange(startDate: string, endDate: string): Promise<BodyWeightEntry[]> {
+export async function getBodyWeightsByDateRange(
+  startDate: string,
+  endDate: string
+): Promise<BodyWeightEntry[]> {
   const all = await dbGetAll<BodyWeightEntry>(STORES.BODY_WEIGHT);
-  return all.filter((e) => e.date >= startDate && e.date <= endDate).sort((a, b) => a.date.localeCompare(b.date));
+  return all
+    .filter((e) => e.date >= startDate && e.date <= endDate)
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function getLatestWeight(): Promise<BodyWeightEntry | null> {
   const all = await dbGetAll<BodyWeightEntry>(STORES.BODY_WEIGHT);
   if (all.length === 0) return null;
-  return all.sort((a, b) => b.date.localeCompare(a.date))[0];
+  return all.sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
 }
 
 export function calculateWeightTrend(entries: BodyWeightEntry[]): WeightTrend {
-  if (entries.length < 2) return { change: 0, changePercent: 0, direction: 'יציב', weeklyAvg: entries[0]?.weight || 0, dataPoints: entries.length };
+  if (entries.length < 2)
+    return {
+      change: 0,
+      changePercent: 0,
+      direction: 'יציב',
+      weeklyAvg: entries[0]?.weight || 0,
+      dataPoints: entries.length,
+    };
   const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
-  const latest = sorted[sorted.length - 1].weight;
-  const earliest = sorted[0].weight;
+  const latest = sorted[sorted.length - 1]?.weight ?? 0;
+  const earliest = sorted[0]?.weight ?? 0;
   const change = Math.round((latest - earliest) * 10) / 10;
   const changePercent = earliest === 0 ? 0 : Math.round((change / earliest) * 1000) / 10;
-  const weeklyAvg = Math.round((sorted.reduce((s, e) => s + e.weight, 0) / sorted.length) * 10) / 10;
-  const direction: WeightTrend['direction'] = Math.abs(change) < 0.3 ? 'יציב' : change > 0 ? 'עלייה' : 'ירידה';
+  const weeklyAvg =
+    Math.round((sorted.reduce((s, e) => s + e.weight, 0) / sorted.length) * 10) / 10;
+  const direction: WeightTrend['direction'] =
+    Math.abs(change) < 0.3 ? 'יציב' : change > 0 ? 'עלייה' : 'ירידה';
   return { change, changePercent, direction, weeklyAvg, dataPoints: entries.length };
 }
 
@@ -129,22 +149,33 @@ export function getBMICategory(bmi: number): { label: string; color: string } {
   return { label: 'השמנה', color: '#ef4444' };
 }
 
-export async function addBodyMeasurement(entry: Omit<BodyMeasurement, 'id' | 'createdAt'>): Promise<BodyMeasurement> {
+export async function addBodyMeasurement(
+  entry: Omit<BodyMeasurement, 'id' | 'createdAt'>
+): Promise<BodyMeasurement> {
   await getOrCreateMeasurementsStore();
-  const newEntry: BodyMeasurement = { ...entry, id: generateId('bm'), createdAt: new Date().toISOString() };
+  const newEntry: BodyMeasurement = {
+    ...entry,
+    id: generateId('bm'),
+    createdAt: new Date().toISOString(),
+  };
   await dbPut(BODY_MEASUREMENTS_STORE, newEntry);
   return newEntry;
 }
 
-export async function getBodyMeasurementsByDateRange(startDate: string, endDate: string): Promise<BodyMeasurement[]> {
+export async function getBodyMeasurementsByDateRange(
+  startDate: string,
+  endDate: string
+): Promise<BodyMeasurement[]> {
   const all = await dbGetAll<BodyMeasurement>(BODY_MEASUREMENTS_STORE);
-  return all.filter((e) => e.date >= startDate && e.date <= endDate).sort((a, b) => a.date.localeCompare(b.date));
+  return all
+    .filter((e) => e.date >= startDate && e.date <= endDate)
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function getLatestMeasurement(): Promise<BodyMeasurement | null> {
   const all = await dbGetAll<BodyMeasurement>(BODY_MEASUREMENTS_STORE);
   if (all.length === 0) return null;
-  return all.sort((a, b) => b.date.localeCompare(a.date))[0];
+  return all.sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
 }
 
 async function getOrCreateMeasurementsStore(): Promise<void> {
@@ -169,8 +200,14 @@ async function getOrCreateMeasurementsStore(): Promise<void> {
   }
 }
 
-export async function addRecoveryLog(entry: Omit<RecoveryLog, 'id' | 'createdAt'>): Promise<RecoveryLog> {
-  const newEntry: RecoveryLog = { ...entry, id: generateId('rec'), createdAt: new Date().toISOString() };
+export async function addRecoveryLog(
+  entry: Omit<RecoveryLog, 'id' | 'createdAt'>
+): Promise<RecoveryLog> {
+  const newEntry: RecoveryLog = {
+    ...entry,
+    id: generateId('rec'),
+    createdAt: new Date().toISOString(),
+  };
   await dbPut(STORES.RECOVERY_LOGS, newEntry);
   return newEntry;
 }
@@ -183,13 +220,18 @@ export async function deleteRecoveryLog(id: string): Promise<void> {
   await dbDelete(STORES.RECOVERY_LOGS, id);
 }
 
-export async function getRecoveryLogsByDateRange(startDate: string, endDate: string): Promise<RecoveryLog[]> {
+export async function getRecoveryLogsByDateRange(
+  startDate: string,
+  endDate: string
+): Promise<RecoveryLog[]> {
   const all = await dbGetAll<RecoveryLog>(STORES.RECOVERY_LOGS);
-  return all.filter((e) => e.date >= startDate && e.date <= endDate).sort((a, b) => a.date.localeCompare(b.date));
+  return all
+    .filter((e) => e.date >= startDate && e.date <= endDate)
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function getTodayRecoveryLog(): Promise<RecoveryLog | null> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0] ?? '';
   const all = await dbGetAll<RecoveryLog>(STORES.RECOVERY_LOGS);
   return all.find((e) => e.date === today) || null;
 }
@@ -217,18 +259,14 @@ function getScoreColor(overall: number): string {
   return '#22c55e';
 }
 
-export function calculateRecoveryScore(
-  log: RecoveryLog
-): RecoveryScore {
+export function calculateRecoveryScore(log: RecoveryLog): RecoveryScore {
   const rawSleepScore = mapSleepHoursToScore(log.sleepHours);
   const sleep = Math.round(rawSleepScore * (log.sleepQuality / 5));
   const soreness = log.sorenessLevel * 20;
   const energy = log.energyLevel * 20;
   const stress = log.stressLevel * 20;
 
-  const overall = Math.round(
-    sleep * 0.3 + soreness * 0.25 + energy * 0.25 + stress * 0.2
-  );
+  const overall = Math.round(sleep * 0.3 + soreness * 0.25 + energy * 0.25 + stress * 0.2);
 
   return {
     overall,
@@ -268,27 +306,53 @@ export function getLegacyRecoveryScore(log: RecoveryLog): {
   };
 }
 
-export async function getWeeklyRecoveryAverage(): Promise<{ avgSleep: number; avgEnergy: number; avgSoreness: number; avgStress: number; avgScore: number }> {
+export async function getWeeklyRecoveryAverage(): Promise<{
+  avgSleep: number;
+  avgEnergy: number;
+  avgSoreness: number;
+  avgStress: number;
+  avgScore: number;
+}> {
   const today = new Date();
   const weekAgo = new Date(today);
   weekAgo.setDate(weekAgo.getDate() - 7);
-  const logs = await getRecoveryLogsByDateRange(weekAgo.toISOString().split('T')[0], today.toISOString().split('T')[0]);
+  const logs = await getRecoveryLogsByDateRange(
+    weekAgo.toISOString().split('T')[0] ?? '',
+    today.toISOString().split('T')[0] ?? ''
+  );
 
-  if (logs.length === 0) return { avgSleep: 0, avgEnergy: 0, avgSoreness: 0, avgStress: 0, avgScore: 0 };
+  if (logs.length === 0)
+    return { avgSleep: 0, avgEnergy: 0, avgSoreness: 0, avgStress: 0, avgScore: 0 };
 
   const avgSleep = Math.round((logs.reduce((s, l) => s + l.sleepHours, 0) / logs.length) * 10) / 10;
-  const avgEnergy = Math.round((logs.reduce((s, l) => s + l.energyLevel, 0) / logs.length) * 10) / 10;
-  const avgSoreness = Math.round((logs.reduce((s, l) => s + l.sorenessLevel, 0) / logs.length) * 10) / 10;
-  const avgStress = Math.round((logs.reduce((s, l) => s + l.stressLevel, 0) / logs.length) * 10) / 10;
-  const avgScore = Math.round(logs.reduce((s, l) => s + calculateRecoveryScore(l).overall, 0) / logs.length);
+  const avgEnergy =
+    Math.round((logs.reduce((s, l) => s + l.energyLevel, 0) / logs.length) * 10) / 10;
+  const avgSoreness =
+    Math.round((logs.reduce((s, l) => s + l.sorenessLevel, 0) / logs.length) * 10) / 10;
+  const avgStress =
+    Math.round((logs.reduce((s, l) => s + l.stressLevel, 0) / logs.length) * 10) / 10;
+  const avgScore = Math.round(
+    logs.reduce((s, l) => s + calculateRecoveryScore(l).overall, 0) / logs.length
+  );
 
   return { avgSleep, avgEnergy, avgSoreness, avgStress, avgScore };
 }
 
 export const BODY_AREAS: string[] = [
-  'צוואר', 'כתפיים', 'גב עליון', 'גב תחתון', 'חזה',
-  'ביצפס', 'טריצפס', 'אמות', 'בטן', 'מפרקי ירך',
-  'שרירי ארבע ראשי', 'ירך אחורית', 'תאומים', 'אכילס',
+  'צוואר',
+  'כתפיים',
+  'גב עליון',
+  'גב תחתון',
+  'חזה',
+  'ביצפס',
+  'טריצפס',
+  'אמות',
+  'בטן',
+  'מפרקי ירך',
+  'שרירי ארבע ראשי',
+  'ירך אחורית',
+  'תאומים',
+  'אכילס',
 ];
 
 // Alias for backwards compatibility

@@ -1,8 +1,32 @@
-import { useState, useEffect } from 'react';
-import { User, Target, Dumbbell, Save, Check, Bell, Zap, ChevronLeft, Download, Share2, Copy, Cloud, CloudOff, RefreshCw } from 'lucide-react';
-import { exportWorkoutHistoryCSV, generateWeeklyReport, shareReport, copyToClipboard } from '../services/exportService';
-import { syncAllData, pullAllData, testConnection } from '../services/supabaseSync';
+import {
+  Bell,
+  Check,
+  ChevronLeft,
+  Cloud,
+  CloudOff,
+  Copy,
+  Download,
+  Dumbbell,
+  RefreshCw,
+  ArrowRightLeft,
+  ArrowUpFromLine,
+  User,
+  Zap,
+} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSettings } from '../contexts/SettingsContext';
 import { isSupabaseConfigured } from '../lib/supabase';
+import {
+  copyToClipboard,
+  exportWorkoutHistoryCSV,
+  generateWeeklyReport,
+  shareReport,
+} from '../services/exportService';
+import { STORES } from '../services/indexedDBCore';
+import { pullAllData, syncAllData, testConnection } from '../services/supabaseSync';
+import type { WorkoutSession } from '../types';
+import { logger } from '../utils/logger';
+import { safeJsonParseOr } from '../utils/safeJson';
 
 // ============================================================================
 // CONSTANTS
@@ -46,11 +70,9 @@ interface WorkoutPrefs {
   defaultRestTime: number;
   autoStartRest: boolean;
   hapticsEnabled: boolean;
-}
-
-interface SettingsProps {
-  theme: string;
-  onThemeChange: (theme: string) => void;
+  reducedAnimations: boolean;
+  largeText: boolean;
+  highContrast: boolean;
 }
 
 const DEFAULT_PROFILE: UserProfile = {
@@ -72,13 +94,16 @@ const DEFAULT_WORKOUT_PREFS: WorkoutPrefs = {
   defaultRestTime: 90,
   autoStartRest: true,
   hapticsEnabled: true,
+  reducedAnimations: false,
+  largeText: false,
+  highContrast: false,
 };
 
 function loadFromStorage<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return fallback;
-    return { ...fallback, ...JSON.parse(raw) } as T;
+    return { ...fallback, ...safeJsonParseOr<Partial<T>>(raw, {} as Partial<T>) } as T;
   } catch {
     return fallback;
   }
@@ -92,19 +117,39 @@ function saveToStorage<T>(key: string, value: T): void {
 // SUBCOMPONENTS
 // ============================================================================
 
-/** iOS-style section label — uppercase, small, above the card */
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="font-barlow text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8E8E93] mb-2 px-1">
-      {children}
-    </p>
-  );
+/** Editorial chapter-break section header */
+function SectionLabel({
+  children,
+  num,
+  titleEn,
+}: {
+  children: React.ReactNode;
+  num?: string;
+  titleEn?: string;
+}) {
+  if (num) {
+    return (
+      <div className="chapter-break mb-3" style={{ marginInline: 'calc(-1 * 1rem)' }}>
+        <span className="left">
+          §{num} · {titleEn}
+        </span>
+        <span className="right">{children}</span>
+      </div>
+    );
+  }
+  return <p className="section-title mb-3 px-1">{children}</p>;
 }
 
-/** iOS-style settings card wrapper */
+/** Editorial settings card wrapper */
 function SettingsCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-[#111111] rounded-[20px] border border-white/[0.06] overflow-hidden">
+    <div
+      className="overflow-hidden"
+      style={{
+        background: 'var(--bone)',
+        border: '2px solid var(--navy)',
+      }}
+    >
       {children}
     </div>
   );
@@ -119,21 +164,34 @@ interface SettingsRowProps {
   divider?: boolean;
 }
 
-function SettingsRow({ icon, iconBg, label, children, divider = true }: SettingsRowProps) {
+function SettingsRow({ icon, label, children, divider = true }: SettingsRowProps) {
   return (
     <div className="flex flex-col">
       <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
         {icon && (
           <div
-            className={`w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 ${iconBg ?? 'bg-primary/20'}`}
+            className="w-8 h-8 flex items-center justify-center shrink-0"
+            style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
           >
             {icon}
           </div>
         )}
-        <span className="flex-1 font-barlow text-[15px] text-white">{label}</span>
+        <span
+          className="flex-1"
+          style={{
+            fontFamily: 'var(--font-hebrew)',
+            fontSize: '15px',
+            fontWeight: 500,
+            color: 'var(--ink)',
+          }}
+        >
+          {label}
+        </span>
         <div className="shrink-0">{children}</div>
       </div>
-      {divider && <div className="h-px bg-white/[0.06] mx-4" />}
+      {divider && (
+        <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
+      )}
     </div>
   );
 }
@@ -147,10 +205,44 @@ interface ToggleProps {
 
 function Toggle({ checked, onChange, label }: ToggleProps) {
   return (
-    <label className="toggle-switch" aria-label={label}>
-      <input type="checkbox" checked={checked} onChange={onChange} />
-      <span className="toggle-track" />
-      <span className="toggle-thumb" />
+    <label
+      aria-label={label}
+      style={{
+        position: 'relative',
+        display: 'inline-block',
+        width: '52px',
+        height: '28px',
+        flexShrink: 0,
+        cursor: 'pointer',
+      }}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
+      />
+      <span
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: checked ? 'var(--mustard)' : 'var(--bone-deep)',
+          border: '2px solid var(--navy)',
+          transition: 'background 150ms ease',
+        }}
+      />
+      <span
+        style={{
+          position: 'absolute',
+          top: '2px',
+          left: checked ? '26px' : '2px',
+          width: '20px',
+          height: '20px',
+          background: 'var(--navy)',
+          transition: 'left 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          pointerEvents: 'none',
+        }}
+      />
     </label>
   );
 }
@@ -170,17 +262,35 @@ function NumberInput({ value, onChange, min, max, placeholder, unit }: NumberInp
     <div className="flex items-center gap-1.5">
       <input
         type="number"
+        inputMode="numeric"
+        pattern="[0-9]*"
         min={min}
         max={max}
         value={value}
-        onChange={(e) =>
-          onChange(e.target.value === '' ? '' : Number(e.target.value))
-        }
+        onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
         placeholder={placeholder}
-        className="w-20 bg-[#2C2C2E] rounded-[10px] px-2.5 py-1.5 text-white font-barlow text-[14px] text-left focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+        className="input"
+        style={{
+          width: '80px',
+          minHeight: '36px',
+          padding: '6px 10px',
+          textAlign: 'left',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '14px',
+        }}
       />
       {unit && (
-        <span className="font-barlow text-[13px] text-[#8E8E93]">{unit}</span>
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            letterSpacing: '0.18em',
+            color: 'var(--stone)',
+            textTransform: 'uppercase',
+          }}
+        >
+          {unit}
+        </span>
       )}
     </div>
   );
@@ -197,12 +307,17 @@ interface SaveButtonProps {
 function SaveButton({ onClick, saved, label, savedLabel = 'נשמר!' }: SaveButtonProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`w-full min-h-[52px] py-3.5 rounded-[16px] font-barlow font-semibold text-[16px] flex items-center justify-center gap-2 transition-all duration-200 ${
-        saved
-          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-          : 'bg-primary text-white hover:opacity-90 active:scale-[0.98]'
-      }`}
+      className={saved ? 'btn-secondary' : 'btn-primary'}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        ...(saved ? { color: 'var(--navy)', background: 'var(--mustard)' } : {}),
+      }}
     >
       {saved ? (
         <>
@@ -234,21 +349,42 @@ function ProfileAvatar({ name }: { name: string }) {
 
   return (
     <div className="flex flex-col items-center py-6">
-      <div className="w-20 h-20 rounded-full bg-primary/[0.15] border-2 border-primary/30 flex items-center justify-center mb-3">
+      <div
+        className="w-20 h-20 flex items-center justify-center mb-3"
+        style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
+      >
         {initials ? (
-          <span className="font-barlow-condensed font-bold text-[28px] text-primary leading-none">
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 900,
+              fontSize: '32px',
+              lineHeight: 1,
+              letterSpacing: '-0.02em',
+            }}
+          >
             {initials}
           </span>
         ) : (
-          <User size={32} className="text-primary/60" />
+          <User size={32} />
         )}
       </div>
       {name.trim() && (
-        <p className="font-barlow-condensed font-bold text-[20px] text-white">
+        <p
+          style={{
+            fontFamily: 'var(--font-hebrew)',
+            fontWeight: 800,
+            fontSize: '22px',
+            color: 'var(--ink)',
+            textTransform: 'uppercase',
+          }}
+        >
           {name.trim()}
         </p>
       )}
-      <p className="font-barlow text-[13px] text-[#8E8E93] mt-0.5">פרופיל אישי</p>
+      <p className="eyebrow mt-1" style={{ color: 'var(--stone)' }}>
+        § PERSONAL PROFILE
+      </p>
     </div>
   );
 }
@@ -257,7 +393,8 @@ function ProfileAvatar({ name }: { name: string }) {
 // MAIN SETTINGS PAGE
 // ============================================================================
 
-export default function Settings({ theme, onThemeChange }: SettingsProps) {
+export default function Settings() {
+  const { settings, updateSettings } = useSettings();
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [nutrition, setNutrition] = useState<NutritionGoals>(DEFAULT_NUTRITION);
   const [workoutPrefs, setWorkoutPrefs] = useState<WorkoutPrefs>(DEFAULT_WORKOUT_PREFS);
@@ -269,8 +406,25 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
 
   // Cloud sync state
   const [cloudConnected, setCloudConnected] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncingUp, setIsSyncingUp] = useState(false);
+  const [isSyncingDown, setIsSyncingDown] = useState(false);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+
+  const LAST_SYNC_KEY = 'last_sync_time';
+
+  const loadLastSyncTime = useCallback(() => {
+    try {
+      const stored = localStorage.getItem(LAST_SYNC_KEY);
+      if (stored) {
+        setLastSyncTime(stored);
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, []);
 
   // Check Supabase connection on mount
   useEffect(() => {
@@ -287,7 +441,26 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
       }
     };
     checkConnection();
+    loadLastSyncTime();
+  }, [loadLastSyncTime]);
+
+  // Load pending sync count when sync completes
+  const loadPendingCount = useCallback(async () => {
+    try {
+      const { dbGetAll: getAll } = await import('../services/indexedDBCore');
+      const pending = await getAll(STORES.PENDING_SYNC);
+      setPendingSyncCount(pending.length);
+    } catch {
+      // Ignore errors
+    }
   }, []);
+
+  useEffect(() => {
+    loadPendingCount();
+    // Refresh count periodically when there are pending items
+    const interval = setInterval(loadPendingCount, 30000);
+    return () => clearInterval(interval);
+  }, [loadPendingCount]);
 
   // Cloud sync handlers
   const handleSyncToCloud = async () => {
@@ -295,19 +468,23 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
       setSyncMessage('חיבור לענן לא פעיל');
       return;
     }
-    setIsSyncing(true);
-    setSyncMessage('מסנכרן לענן...');
+    setIsSyncingUp(true);
+    setSyncMessage('מעלה לענן...');
     try {
       const result = await syncAllData();
       if (result.success) {
-        setSyncMessage('הסנכרון הושלם בהצלחה!');
+        const now = new Date().toLocaleString('he-IL');
+        localStorage.setItem(LAST_SYNC_KEY, now);
+        setLastSyncTime(now);
+        setSyncMessage(`הועלו ${result.syncedItems} פריטים!`);
       } else {
-        setSyncMessage(result.error || 'שגיאה בסנכרון');
+        setSyncMessage(result.error || 'שגיאה בהעלאה');
       }
     } catch {
-      setSyncMessage('שגיאה בסנכרון');
+      setSyncMessage('שגיאה בהעלאה');
     } finally {
-      setIsSyncing(false);
+      setIsSyncingUp(false);
+      loadPendingCount();
       setTimeout(() => setSyncMessage(null), 3000);
     }
   };
@@ -317,28 +494,73 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
       setSyncMessage('חיבור לענן לא פעיל');
       return;
     }
-    setIsSyncing(true);
+    setIsSyncingDown(true);
     setSyncMessage('מביא נתונים מהענן...');
     try {
       const result = await pullAllData();
       if (result.success) {
-        setSyncMessage('הנתונים התעדכנו!');
+        const now = new Date().toLocaleString('he-IL');
+        localStorage.setItem(LAST_SYNC_KEY, now);
+        setLastSyncTime(now);
+        setSyncMessage(`התקבלו ${result.syncedItems} פריטים!`);
       } else {
         setSyncMessage(result.error || 'שגיאה בטעינה');
       }
     } catch {
       setSyncMessage('שגיאה בטעינה');
     } finally {
-      setIsSyncing(false);
+      setIsSyncingDown(false);
+      loadPendingCount();
       setTimeout(() => setSyncMessage(null), 3000);
+    }
+  };
+
+  const handleSyncAll = async () => {
+    if (!cloudConnected) {
+      setSyncMessage('חיבור לענן לא פעיל');
+      return;
+    }
+    setIsSyncingAll(true);
+    setSyncMessage('מסנכרן הכל...');
+    try {
+      // First sync local to cloud, then pull from cloud
+      const syncResult = await syncAllData();
+      if (!syncResult.success) {
+        setSyncMessage(syncResult.error || 'שגיאה בסנכרון');
+        return;
+      }
+      const pullResult = await pullAllData();
+      if (pullResult.success) {
+        const now = new Date().toLocaleString('he-IL');
+        localStorage.setItem(LAST_SYNC_KEY, now);
+        setLastSyncTime(now);
+        const totalItems = (syncResult.syncedItems || 0) + (pullResult.syncedItems || 0);
+        setSyncMessage(`סנכרון הושלם: ${totalItems} פריטים`);
+      } else {
+        setSyncMessage(pullResult.error || 'שגיאה בסנכרון');
+      }
+    } catch {
+      setSyncMessage('שגיאה בסנכרון');
+    } finally {
+      setIsSyncingAll(false);
+      loadPendingCount();
+      setTimeout(() => setSyncMessage(null), 4000);
     }
   };
 
   useEffect(() => {
     setProfile(loadFromStorage<UserProfile>('user_profile', DEFAULT_PROFILE));
     setNutrition(loadFromStorage<NutritionGoals>('nutrition_goals', DEFAULT_NUTRITION));
-    setWorkoutPrefs(loadFromStorage<WorkoutPrefs>('workout_prefs', DEFAULT_WORKOUT_PREFS));
-  }, []);
+    setWorkoutPrefs({
+      ...loadFromStorage<WorkoutPrefs>('workout_prefs', DEFAULT_WORKOUT_PREFS),
+      defaultRestTime: settings.workoutSettings.defaultRestTime,
+      autoStartRest: settings.workoutSettings.autoStartRest,
+      hapticsEnabled: settings.workoutSettings.hapticsEnabled,
+      reducedAnimations: settings.workoutSettings.reducedAnimations,
+      largeText: settings.workoutSettings.largeText,
+      highContrast: settings.workoutSettings.highContrast,
+    });
+  }, [settings.workoutSettings]);
 
   function handleSaveProfile() {
     saveToStorage('user_profile', profile);
@@ -354,25 +576,62 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
 
   function handleSaveWorkout() {
     saveToStorage('workout_prefs', workoutPrefs);
+    updateWorkoutSettings({
+      defaultRestTime: workoutPrefs.defaultRestTime,
+      autoStartRest: workoutPrefs.autoStartRest,
+      hapticsEnabled: workoutPrefs.hapticsEnabled,
+      reducedAnimations: workoutPrefs.reducedAnimations,
+      largeText: workoutPrefs.largeText,
+      highContrast: workoutPrefs.highContrast,
+    });
     setWorkoutSaved(true);
     setTimeout(() => setWorkoutSaved(false), 2000);
   }
 
   return (
-    <div className="min-h-screen bg-black pb-[88px] pb-[calc(88px+env(safe-area-inset-bottom))]" dir="rtl">
-      <div className="px-4 pt-6">
-
-        {/* Page title */}
-        <h1 className="font-barlow-condensed font-bold text-3xl text-white tracking-wide leading-none mb-6">
+    <div
+      className="min-h-screen pb-[88px] pb-[calc(88px+env(safe-area-inset-bottom))]"
+      style={{ background: 'var(--bone)' }}
+      dir="rtl"
+    >
+      {/* Masthead */}
+      <header className="masthead safe-area-top">
+        <div className="kicker">§07 · SETTINGS · CONFIG</div>
+        <h1
+          style={{
+            fontFamily: 'var(--font-hebrew)',
+            fontSize: 'clamp(44px, 12vw, 72px)',
+            lineHeight: 0.9,
+            marginTop: '8px',
+          }}
+        >
           הגדרות
         </h1>
+      </header>
+
+      <div className="px-4 pt-5">
+        <p
+          style={{
+            fontFamily: 'var(--font-hebrew)',
+            fontSize: '14px',
+            color: 'var(--stone)',
+            marginBottom: '20px',
+          }}
+        >
+          התאמות מובייל, אימון, תזונה וסנכרון במקום אחד.
+        </p>
 
         {/* ── PROFILE SECTION ─────────────────────────────────────────────── */}
         <div className="mb-7">
-          <SectionLabel>פרופיל</SectionLabel>
+          <SectionLabel num="01" titleEn="GENERAL · PROFILE">
+            כללי
+          </SectionLabel>
 
           {/* Avatar card */}
-          <div className="bg-[#111111] rounded-[20px] border border-white/[0.06] mb-3">
+          <div
+            className="mb-3"
+            style={{ background: 'var(--bone)', border: '2px solid var(--navy)' }}
+          >
             <ProfileAvatar name={profile.name} />
           </div>
 
@@ -380,24 +639,48 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
             {/* Name */}
             <div className="flex flex-col">
               <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
-                <div className="w-8 h-8 rounded-[8px] bg-blue-500/20 flex items-center justify-center shrink-0">
-                  <User size={15} className="text-blue-400" />
+                <div
+                  className="w-8 h-8 flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+                >
+                  <User size={15} />
                 </div>
-                <span className="font-barlow text-[15px] text-white flex-1">שם</span>
+                <span
+                  className="flex-1"
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    color: 'var(--ink)',
+                  }}
+                >
+                  שם
+                </span>
                 <input
                   type="text"
                   value={profile.name}
                   onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                   placeholder="הכנס שם..."
-                  className="w-36 bg-[#2C2C2E] rounded-[10px] px-2.5 py-1.5 text-white font-barlow text-[14px] text-right focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-[#48484A]"
+                  aria-label="שם"
+                  className="input"
+                  style={{
+                    width: '144px',
+                    minHeight: '36px',
+                    padding: '6px 10px',
+                    fontSize: '14px',
+                  }}
                 />
               </div>
-              <div className="h-px bg-white/[0.06] mx-4" />
+              <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
             </div>
 
             {/* Age */}
             <SettingsRow
-              icon={<span className="font-barlow-condensed font-bold text-[13px] text-orange-400">גיל</span>}
+              icon={
+                <span className="font-barlow-condensed font-bold text-[13px] text-orange-400">
+                  גיל
+                </span>
+              }
               iconBg="bg-orange-500/20"
               label="גיל"
               divider={true}
@@ -414,9 +697,13 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
 
             {/* Height */}
             <SettingsRow
-              icon={<span className="font-barlow-condensed font-bold text-[13px] text-teal-400">גב'</span>}
+              icon={
+                <span className="font-barlow-condensed font-bold text-[13px] text-teal-400">
+                  גב'
+                </span>
+              }
               iconBg="bg-teal-500/20"
-              label='גובה'
+              label="גובה"
               divider={true}
             >
               <NumberInput
@@ -432,16 +719,41 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
             {/* Weight goal */}
             <div className="flex flex-col">
               <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
-                <div className="w-8 h-8 rounded-[8px] bg-purple-500/20 flex items-center justify-center shrink-0">
-                  <Target size={15} className="text-purple-400" />
+                <div
+                  className="w-8 h-8 flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+                >
+                  <Target size={15} />
                 </div>
-                <span className="font-barlow text-[15px] text-white flex-1">מטרת משקל</span>
+                <span
+                  className="flex-1"
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    color: 'var(--ink)',
+                  }}
+                >
+                  מטרת משקל
+                </span>
                 <div className="relative flex items-center gap-1">
-                  <span className="font-barlow text-[14px] text-[#8E8E93]">{profile.weightGoal}</span>
-                  <ChevronLeft size={14} className="text-[#48484A]" />
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-hebrew)',
+                      fontSize: '14px',
+                      color: 'var(--navy)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {profile.weightGoal}
+                  </span>
+                  <ChevronLeft size={14} style={{ color: 'var(--stone)' }} />
                   <select
                     value={profile.weightGoal}
-                    onChange={(e) => setProfile({ ...profile, weightGoal: e.target.value as WeightGoal })}
+                    onChange={(e) =>
+                      setProfile({ ...profile, weightGoal: e.target.value as WeightGoal })
+                    }
+                    aria-label="מטרת משקל"
                     className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                   >
                     <option>ירידה במשקל</option>
@@ -450,22 +762,47 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
                   </select>
                 </div>
               </div>
-              <div className="h-px bg-white/[0.06] mx-4" />
+              <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
             </div>
 
             {/* Activity level */}
             <div className="flex flex-col">
               <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
-                <div className="w-8 h-8 rounded-[8px] bg-green-500/20 flex items-center justify-center shrink-0">
-                  <Zap size={15} className="text-green-400" />
+                <div
+                  className="w-8 h-8 flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+                >
+                  <Zap size={15} />
                 </div>
-                <span className="font-barlow text-[15px] text-white flex-1">רמת פעילות</span>
+                <span
+                  className="flex-1"
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    color: 'var(--ink)',
+                  }}
+                >
+                  רמת פעילות
+                </span>
                 <div className="relative flex items-center gap-1">
-                  <span className="font-barlow text-[14px] text-[#8E8E93]">{profile.activityLevel}</span>
-                  <ChevronLeft size={14} className="text-[#48484A]" />
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-hebrew)',
+                      fontSize: '14px',
+                      color: 'var(--navy)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {profile.activityLevel}
+                  </span>
+                  <ChevronLeft size={14} style={{ color: 'var(--stone)' }} />
                   <select
                     value={profile.activityLevel}
-                    onChange={(e) => setProfile({ ...profile, activityLevel: e.target.value as ActivityLevel })}
+                    onChange={(e) =>
+                      setProfile({ ...profile, activityLevel: e.target.value as ActivityLevel })
+                    }
+                    aria-label="רמת פעילות"
                     className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                   >
                     <option>לא פעיל</option>
@@ -480,17 +817,15 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
           </SettingsCard>
 
           <div className="mt-3">
-            <SaveButton
-              onClick={handleSaveProfile}
-              saved={profileSaved}
-              label="שמור פרופיל"
-            />
+            <SaveButton onClick={handleSaveProfile} saved={profileSaved} label="שמור פרופיל" />
           </div>
         </div>
 
         {/* ── NUTRITION SECTION ───────────────────────────────────────────── */}
         <div className="mb-7">
-          <SectionLabel>יעדי תזונה</SectionLabel>
+          <SectionLabel num="02" titleEn="NUTRITION · GOALS">
+            יעדי תזונה
+          </SectionLabel>
           <SettingsCard>
             <SettingsRow
               icon={<Target size={15} className="text-red-400" />}
@@ -523,7 +858,11 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
             </SettingsRow>
 
             <SettingsRow
-              icon={<span className="font-barlow-condensed font-bold text-[12px] text-yellow-400">פח</span>}
+              icon={
+                <span className="font-barlow-condensed font-bold text-[12px] text-yellow-400">
+                  פח
+                </span>
+              }
               iconBg="bg-yellow-500/20"
               label="פחמימות"
               divider={true}
@@ -538,7 +877,11 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
             </SettingsRow>
 
             <SettingsRow
-              icon={<span className="font-barlow-condensed font-bold text-[12px] text-orange-400">שמ</span>}
+              icon={
+                <span className="font-barlow-condensed font-bold text-[12px] text-orange-400">
+                  שמ
+                </span>
+              }
               iconBg="bg-orange-500/20"
               label="שומן"
               divider={false}
@@ -564,28 +907,40 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
 
         {/* ── WORKOUT SETTINGS SECTION ─────────────────────────────────────── */}
         <div className="mb-7">
-          <SectionLabel>הגדרות אימון</SectionLabel>
+          <SectionLabel num="03" titleEn="TRAINING · PREFS">
+            אימון
+          </SectionLabel>
           <SettingsCard>
             {/* Rest time pills */}
             <div className="px-4 py-4">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 rounded-[8px] bg-primary/20 flex items-center justify-center shrink-0">
-                  <Dumbbell size={15} className="text-primary" />
+                <div
+                  className="w-8 h-8 flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+                >
+                  <Dumbbell size={15} />
                 </div>
-                <span className="font-barlow text-[15px] text-white">זמן מנוחה ברירת מחדל</span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    color: 'var(--ink)',
+                  }}
+                >
+                  זמן מנוחה ברירת מחדל
+                </span>
               </div>
               <div className="flex flex-wrap gap-2 pr-11">
                 {REST_TIME_OPTIONS.map((opt) => (
                   <button
+                    type="button"
                     key={opt.value}
-                    onClick={() =>
-                      setWorkoutPrefs({ ...workoutPrefs, defaultRestTime: opt.value })
-                    }
-                    className={`min-h-[36px] px-3.5 py-1.5 rounded-full font-barlow text-[13px] font-medium transition-all duration-200 ${
-                      workoutPrefs.defaultRestTime === opt.value
-                        ? 'bg-primary text-white'
-                        : 'bg-white/[0.06] text-[#8E8E93] hover:bg-white/[0.10] border border-white/[0.06]'
-                    }`}
+                    onClick={() => setWorkoutPrefs({ ...workoutPrefs, defaultRestTime: opt.value })}
+                    className={`tab-item ${workoutPrefs.defaultRestTime === opt.value ? 'active' : ''}`}
+                    style={{
+                      border: '2px solid var(--navy)',
+                    }}
                   >
                     {opt.label}
                   </button>
@@ -593,7 +948,7 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
               </div>
             </div>
 
-            <div className="h-px bg-white/[0.06] mx-4" />
+            <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
 
             {/* Auto start rest */}
             <SettingsRow
@@ -616,7 +971,7 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
               icon={<Zap size={15} className="text-yellow-400" />}
               iconBg="bg-yellow-500/20"
               label="רטט (Haptic Feedback)"
-              divider={false}
+              divider={true}
             >
               <Toggle
                 checked={workoutPrefs.hapticsEnabled}
@@ -624,6 +979,54 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
                   setWorkoutPrefs({ ...workoutPrefs, hapticsEnabled: !workoutPrefs.hapticsEnabled })
                 }
                 label="רטט"
+              />
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<Bell size={15} className="text-blue-400" />}
+              iconBg="bg-blue-500/20"
+              label="הפחתת אנימציות"
+              divider={true}
+            >
+              <Toggle
+                checked={workoutPrefs.reducedAnimations}
+                onChange={() =>
+                  setWorkoutPrefs({
+                    ...workoutPrefs,
+                    reducedAnimations: !workoutPrefs.reducedAnimations,
+                  })
+                }
+                label="הפחתת אנימציות"
+              />
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<User size={15} className="text-purple-400" />}
+              iconBg="bg-purple-500/20"
+              label="טקסט גדול"
+              divider={true}
+            >
+              <Toggle
+                checked={workoutPrefs.largeText}
+                onChange={() =>
+                  setWorkoutPrefs({ ...workoutPrefs, largeText: !workoutPrefs.largeText })
+                }
+                label="טקסט גדול"
+              />
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<Zap size={15} className="text-orange-400" />}
+              iconBg="bg-orange-500/20"
+              label="ניגודיות גבוהה"
+              divider={false}
+            >
+              <Toggle
+                checked={workoutPrefs.highContrast}
+                onChange={() =>
+                  setWorkoutPrefs({ ...workoutPrefs, highContrast: !workoutPrefs.highContrast })
+                }
+                label="ניגודיות גבוהה"
               />
             </SettingsRow>
           </SettingsCard>
@@ -639,53 +1042,85 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
 
         {/* ── THEME SECTION ───────────────────────────────────────────────── */}
         <div className="mb-7">
-          <SectionLabel>ערכת נושא</SectionLabel>
+          <SectionLabel num="04" titleEn="DISPLAY · THEME">
+            תצוגה
+          </SectionLabel>
           <SettingsCard>
             {THEMES.map((t, idx) => (
               <div key={t.id} className="flex flex-col">
                 <button
-                  onClick={() => onThemeChange(t.id)}
-                  className="flex items-center gap-3 px-4 py-3.5 min-h-[56px] transition-colors hover:bg-white/[0.03] active:bg-white/[0.06]"
+                  type="button"
+                  onClick={() => updateSettings({ theme: t.id as typeof settings.theme })}
+                  aria-pressed={settings.theme === t.id}
+                  className="flex items-center gap-3 px-4 py-3.5 min-h-[56px] transition-colors"
+                  style={{
+                    background: settings.theme === t.id ? 'var(--bone-deep)' : 'transparent',
+                  }}
                 >
-                  {/* Color circle */}
+                  {/* Color square (editorial hard edge) */}
                   <div
-                    className="w-8 h-8 rounded-full shrink-0 border-[2.5px] transition-all duration-200"
-                    style={
-                      theme === t.id
-                        ? { backgroundColor: t.color, borderColor: 'rgba(255,255,255,0.5)' }
-                        : { backgroundColor: t.color, borderColor: 'transparent' }
-                    }
+                    className="w-8 h-8 shrink-0 transition-all duration-200"
+                    style={{
+                      backgroundColor: t.color,
+                      border:
+                        settings.theme === t.id ? '2px solid var(--navy)' : '2px solid transparent',
+                    }}
                   />
-                  <span className="font-barlow text-[15px] text-white flex-1 text-right">
+                  <span
+                    className="flex-1 text-right"
+                    style={{
+                      fontFamily: 'var(--font-hebrew)',
+                      fontSize: '15px',
+                      fontWeight: settings.theme === t.id ? 700 : 500,
+                      color: 'var(--ink)',
+                    }}
+                  >
                     {t.name}
                   </span>
-                  {theme === t.id && (
-                    <Check size={17} className="text-primary shrink-0" strokeWidth={2.5} />
+                  {settings.theme === t.id && (
+                    <Check size={17} style={{ color: 'var(--navy)' }} strokeWidth={2.5} />
                   )}
                 </button>
                 {idx < THEMES.length - 1 && (
-                  <div className="h-px bg-white/[0.06] mx-4" />
+                  <div
+                    style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }}
+                  />
                 )}
               </div>
             ))}
           </SettingsCard>
         </div>
 
+        {/* ── DATA SECTION ─────────────────────────────────────────────────── */}
+        <SectionLabel num="05" titleEn="DATA · STORAGE">
+          נתונים
+        </SectionLabel>
+
         {/* ── ABOUT SECTION ───────────────────────────────────────────────── */}
         <div className="mb-4">
-          <SectionLabel>אודות</SectionLabel>
           <SettingsCard>
-            <SettingsRow
-              label="גרסה"
-              divider={true}
-            >
-              <span className="font-barlow text-[14px] text-[#8E8E93]">1.0.0</span>
+            <SettingsRow label="גרסה" divider={true}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '12px',
+                  letterSpacing: '0.12em',
+                  color: 'var(--stone)',
+                }}
+              >
+                1.0.0
+              </span>
             </SettingsRow>
-            <SettingsRow
-              label="SparkOS Fitness"
-              divider={true}
-            >
-              <span className="font-barlow text-[14px] text-[#8E8E93]">אפליקציית כושר אישית</span>
+            <SettingsRow label="SparkOS Fitness" divider={false}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-hebrew)',
+                  fontSize: '13px',
+                  color: 'var(--stone)',
+                }}
+              >
+                אפליקציית כושר
+              </span>
             </SettingsRow>
           </SettingsCard>
         </div>
@@ -693,45 +1128,123 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
         {/* ── CLOUD SYNC SECTION ─────────────────────────────────────────── */}
         {isSupabaseConfigured() && (
           <div className="mb-7">
-            <SectionLabel>סנכרון ענן</SectionLabel>
+            <p className="section-title mb-3 px-1">§ CLOUD SYNC · סנכרון ענן</p>
             <SettingsCard>
+              {/* Connection Status Row */}
               <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
-                <div className={`w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 ${
-                  cloudConnected ? 'bg-green-500/20' : 'bg-gray-500/20'
-                }`}>
-                  {cloudConnected ? (
-                    <Cloud size={15} className="text-green-400" />
-                  ) : (
-                    <CloudOff size={15} className="text-gray-400" />
-                  )}
+                <div
+                  className="w-8 h-8 flex items-center justify-center shrink-0"
+                  style={{
+                    background: cloudConnected ? 'var(--mustard)' : 'var(--bone-deep)',
+                    color: 'var(--navy)',
+                  }}
+                >
+                  {cloudConnected ? <Cloud size={15} /> : <CloudOff size={15} />}
                 </div>
-                <span className="flex-1 font-barlow text-[15px] text-white">
+                <span
+                  className="flex-1"
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    color: 'var(--ink)',
+                  }}
+                >
                   {cloudConnected ? 'מחובר לענן' : 'לא מחובר'}
                 </span>
                 {syncMessage && (
-                  <span className="font-barlow text-[12px] text-[#8E8E93] animate-pulse">
+                  <span
+                    className="animate-pulse"
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10px',
+                      letterSpacing: '0.18em',
+                      color: 'var(--navy)',
+                      textTransform: 'uppercase',
+                    }}
+                    aria-live="polite"
+                  >
                     {syncMessage}
                   </span>
                 )}
               </div>
-              <div className="h-px bg-white/[0.06] mx-4" />
-              <div className="flex gap-2 px-4 py-3">
+              <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
+
+              {/* Status Info Row */}
+              <div className="px-4 py-3 flex flex-wrap gap-x-6 gap-y-2">
+                {/* Pending Sync Count */}
+                <div className="flex items-center gap-2">
+                  <RefreshCw size={12} style={{ color: 'var(--stone)' }} />
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      color: pendingSyncCount > 0 ? 'var(--mustard)' : 'var(--stone)',
+                      fontWeight: pendingSyncCount > 0 ? 600 : 400,
+                    }}
+                  >
+                    בהמתנה: {pendingSyncCount}
+                  </span>
+                </div>
+
+                {/* Last Sync Time */}
+                {lastSyncTime && (
+                  <div className="flex items-center gap-2">
+                    <Check size={12} style={{ color: 'var(--stone)' }} />
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        color: 'var(--stone)',
+                      }}
+                    >
+                      סנכרון אחרון: {lastSyncTime}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
+              <div
+                className="btn-row"
+                style={{ padding: '12px 16px', flexDirection: 'column', gap: '10px' }}
+              >
+                {/* Sync All Button - Primary */}
                 <button
-                  onClick={handleSyncToCloud}
-                  disabled={isSyncing || !cloudConnected}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-primary/20 text-primary font-barlow text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="button"
+                  onClick={handleSyncAll}
+                  disabled={isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected}
+                  className="btn-primary flex items-center justify-center gap-2"
+                  style={{ minHeight: '44px', padding: '12px', fontSize: '13px' }}
                 >
-                  <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
-                  העלה לענן
+                  <ArrowUpFromLine size={14} className={isSyncingAll ? 'animate-spin' : ''} />
+                  סנכרון מלא
                 </button>
-                <button
-                  onClick={handlePullFromCloud}
-                  disabled={isSyncing || !cloudConnected}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-white/[0.06] text-white font-barlow text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Download size={14} />
-                  הורד מהענן
-                </button>
+
+                {/* Individual Sync Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSyncToCloud}
+                    disabled={isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected}
+                    className="btn-primary flex items-center justify-center gap-2 flex-1"
+                    style={{ minHeight: '44px', padding: '12px', fontSize: '12px' }}
+                  >
+                    <RefreshCw size={14} className={isSyncingUp ? 'animate-spin' : ''} />
+                    {isSyncingUp ? 'מעלה...' : 'העלה לענן'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePullFromCloud}
+                    disabled={isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected}
+                    className="btn-secondary flex items-center justify-center gap-2 flex-1"
+                    style={{ minHeight: '44px', padding: '12px', fontSize: '12px' }}
+                  >
+                    <Download size={14} className={isSyncingDown ? 'animate-spin' : ''} />
+                    {isSyncingDown ? 'מביא...' : 'הורד מענן'}
+                  </button>
+                </div>
               </div>
             </SettingsCard>
           </div>
@@ -739,81 +1252,116 @@ export default function Settings({ theme, onThemeChange }: SettingsProps) {
 
         {/* ── EXPORT & SHARE SECTION ────────────────────────────────────────── */}
         <div className="mb-7">
-          <SectionLabel>ייצוא ושיתוף</SectionLabel>
+          <p className="section-title mb-3 px-1">§ EXPORT · ייצוא ושיתוף</p>
           <SettingsCard>
             <div className="flex flex-col">
               <button
+                type="button"
                 onClick={async () => {
                   try {
                     const { dbGetAll, STORES } = await import('../services/indexedDBCore');
-                    const sessions = await dbGetAll<any>(STORES.WORKOUT_SESSIONS);
+                    const sessions = await dbGetAll<WorkoutSession>(STORES.WORKOUT_SESSIONS);
                     exportWorkoutHistoryCSV(sessions);
                   } catch (e) {
-                    console.error('Export failed:', e);
+                    logger.app.error('Export failed', e);
                   }
                 }}
-                className="flex items-center gap-3 px-4 py-3.5 min-h-[52px] transition-colors hover:bg-white/[0.03] active:bg-white/[0.06]"
+                className="flex items-center gap-3 px-4 py-3.5 min-h-[52px] transition-colors"
               >
-                <div className="w-8 h-8 rounded-[8px] bg-blue-500/20 flex items-center justify-center shrink-0">
-                  <Download size={15} className="text-blue-400" />
+                <div
+                  className="w-8 h-8 flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+                >
+                  <Download size={15} />
                 </div>
-                <span className="font-barlow text-[15px] text-white flex-1 text-right">
+                <span
+                  className="flex-1 text-right"
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    color: 'var(--ink)',
+                  }}
+                >
                   ייצוא היסטוריית אימונים (CSV)
                 </span>
               </button>
-              <div className="h-px bg-white/[0.06] mx-4" />
+              <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
             </div>
 
             <div className="flex flex-col">
               <button
+                type="button"
                 onClick={async () => {
                   try {
                     const report = await generateWeeklyReport();
                     setWeeklyReport(report);
                   } catch (e) {
-                    console.error('Report generation failed:', e);
+                    logger.app.error('Report generation failed', e);
                   }
                 }}
-                className="flex items-center gap-3 px-4 py-3.5 min-h-[52px] transition-colors hover:bg-white/[0.03] active:bg-white/[0.06]"
+                className="flex items-center gap-3 px-4 py-3.5 min-h-[52px] transition-colors"
               >
-                <div className="w-8 h-8 rounded-[8px] bg-green-500/20 flex items-center justify-center shrink-0">
-                  <Share2 size={15} className="text-green-400" />
+                <div
+                  className="w-8 h-8 flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+                >
+                  <Share2 size={15} />
                 </div>
-                <span className="font-barlow text-[15px] text-white flex-1 text-right">
+                <span
+                  className="flex-1 text-right"
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    color: 'var(--ink)',
+                  }}
+                >
                   דוח שבועי
                 </span>
               </button>
-              <div className="h-px bg-white/[0.06] mx-4" />
             </div>
 
             {weeklyReport && (
-              <div className="px-4 py-3">
-                <pre className="whitespace-pre-wrap font-barlow text-[13px] text-[#8E8E93] bg-[#0A0A0A] rounded-[12px] p-3 border border-white/[0.04] max-h-[300px] overflow-y-auto">
+              <div className="px-4 py-3" style={{ borderTop: '1px solid var(--bone-deep)' }}>
+                <pre
+                  className="whitespace-pre-wrap max-h-[300px] overflow-y-auto"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '12px',
+                    color: 'var(--ink)',
+                    background: 'var(--bone-deep)',
+                    padding: '12px',
+                    border: '1px solid var(--navy)',
+                  }}
+                >
                   {weeklyReport}
                 </pre>
                 <div className="flex gap-2 mt-2">
                   <button
+                    type="button"
                     onClick={() => shareReport(weeklyReport)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-primary/20 text-primary font-barlow text-[13px]"
+                    className="chip"
+                    style={{ background: 'var(--mustard)' }}
                   >
-                    <Share2 size={13} /> שתף
+                    <Share2 size={12} /> שתף
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       copyToClipboard(weeklyReport);
                       setCopiedReport(true);
                       setTimeout(() => setCopiedReport(false), 2000);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-white/[0.06] text-[#8E8E93] font-barlow text-[13px]"
+                    className="chip"
                   >
-                    <Copy size={13} /> {copiedReport ? 'הועתק!' : 'העתק'}
+                    <Copy size={12} /> {copiedReport ? 'הועתק!' : 'העתק'}
                   </button>
                 </div>
               </div>
             )}
           </SettingsCard>
         </div>
-
       </div>
     </div>
   );

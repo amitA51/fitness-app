@@ -16,7 +16,10 @@ export interface FocusTrapOptions {
 }
 
 // Overload: called with (ref, options) or just (isActive: boolean)
-export function useFocusTrap(containerRef: React.RefObject<HTMLElement | null>, options?: FocusTrapOptions): void;
+export function useFocusTrap(
+  containerRef: React.RefObject<HTMLElement | null>,
+  options?: FocusTrapOptions
+): void;
 export function useFocusTrap(isActive?: boolean): { containerRef: React.RefObject<HTMLDivElement> };
 export function useFocusTrap(
   refOrActive?: React.RefObject<HTMLElement | null> | boolean,
@@ -145,5 +148,14 @@ export function useFocusTrap(
         previouslyFocusedElement.focus?.();
       }
     };
-  }, [isOpen, containerRef, closeOnEscape, closeOnClickOutside, lockScroll, autoFocus, restoreFocus, onClose]);
+  }, [
+    isOpen,
+    containerRef,
+    closeOnEscape,
+    closeOnClickOutside,
+    lockScroll,
+    autoFocus,
+    restoreFocus,
+    onClose,
+  ]);
 }

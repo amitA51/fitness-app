@@ -1,5 +1,5 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
 
 type SpinnerVariant = 'default' | 'dots' | 'pulse' | 'orbit' | 'gradient' | 'wave';
 type SpinnerSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -27,18 +27,19 @@ const sizeMap: Record<SpinnerSize, { container: string; text: string }> = {
   xl: { container: 'w-16 h-16', text: 'text-lg' },
 };
 
-// Default circular spinner
+// Default circular spinner — navy ring on bone-deep track
 const DefaultSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => (
   <motion.div
-    className={`${sizeMap[size].container} rounded-full border-2 border-white/20`}
+    className={`${sizeMap[size].container} rounded-full border-2`}
     style={{
-      borderTopColor: 'var(--dynamic-accent-start)',
-      borderRightColor: 'var(--dynamic-accent-end)',
+      borderColor: 'var(--bone-deep)',
+      borderTopColor: 'var(--navy)',
+      borderRightColor: 'var(--navy)',
     }}
     animate={{ rotate: 360 }}
     transition={{
       duration: 0.8,
-      repeat: Infinity,
+      repeat: Number.POSITIVE_INFINITY,
       ease: 'linear',
     }}
   />
@@ -46,7 +47,16 @@ const DefaultSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => (
 
 // Three bouncing dots
 const DotsSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
-  const dotSize = size === 'xs' ? 'w-1 h-1' : size === 'sm' ? 'w-1.5 h-1.5' : size === 'md' ? 'w-2 h-2' : size === 'lg' ? 'w-3 h-3' : 'w-4 h-4';
+  const dotSize =
+    size === 'xs'
+      ? 'w-1 h-1'
+      : size === 'sm'
+        ? 'w-1.5 h-1.5'
+        : size === 'md'
+          ? 'w-2 h-2'
+          : size === 'lg'
+            ? 'w-3 h-3'
+            : 'w-4 h-4';
 
   return (
     <div className="flex items-center gap-1">
@@ -54,14 +64,14 @@ const DotsSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
         <motion.div
           key={i}
           className={`${dotSize} rounded-full`}
-          style={{ backgroundColor: 'var(--dynamic-accent-start)' }}
+          style={{ backgroundColor: 'var(--navy)' }}
           animate={{
             y: [-2, 2, -2],
             opacity: [0.5, 1, 0.5],
           }}
           transition={{
             duration: 0.6,
-            repeat: Infinity,
+            repeat: Number.POSITIVE_INFINITY,
             delay: i * 0.15,
             ease: 'easeInOut',
           }}
@@ -71,32 +81,32 @@ const DotsSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
   );
 };
 
-// Pulsing circle
+// Pulsing circle — navy inner + mustard outer
 const PulseSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => (
   <div className="relative">
     <motion.div
       className={`${sizeMap[size].container} rounded-full`}
-      style={{ backgroundColor: 'var(--dynamic-accent-start)' }}
+      style={{ backgroundColor: 'var(--navy)' }}
       animate={{
         scale: [1, 1.2, 1],
         opacity: [0.7, 0.3, 0.7],
       }}
       transition={{
         duration: 1.2,
-        repeat: Infinity,
+        repeat: Number.POSITIVE_INFINITY,
         ease: 'easeInOut',
       }}
     />
     <motion.div
       className={`absolute inset-0 ${sizeMap[size].container} rounded-full`}
-      style={{ backgroundColor: 'var(--dynamic-accent-end)' }}
+      style={{ backgroundColor: 'var(--mustard)' }}
       animate={{
         scale: [1.2, 1, 1.2],
         opacity: [0.3, 0.7, 0.3],
       }}
       transition={{
         duration: 1.2,
-        repeat: Infinity,
+        repeat: Number.POSITIVE_INFINITY,
         ease: 'easeInOut',
       }}
     />
@@ -114,7 +124,7 @@ const OrbitSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
       animate={{ rotate: 360 }}
       transition={{
         duration: 1.5,
-        repeat: Infinity,
+        repeat: Number.POSITIVE_INFINITY,
         ease: 'linear',
       }}
     >
@@ -123,7 +133,7 @@ const OrbitSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
           key={i}
           className={`absolute ${dotSize} rounded-full`}
           style={{
-            backgroundColor: 'var(--dynamic-accent-start)',
+            backgroundColor: 'var(--navy)',
             top: '50%',
             left: '50%',
             transform: `rotate(${i * 90}deg) translateY(-150%)`,
@@ -135,7 +145,7 @@ const OrbitSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
           }}
           transition={{
             duration: 1,
-            repeat: Infinity,
+            repeat: Number.POSITIVE_INFINITY,
             delay: i * 0.2,
           }}
         />
@@ -146,19 +156,21 @@ const OrbitSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
 
 // Premium gradient rotating ring with glow
 const GradientSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
-  const sizeValue = size === 'xs' ? 16 : size === 'sm' ? 20 : size === 'md' ? 32 : size === 'lg' ? 48 : 64;
+  const sizeValue =
+    size === 'xs' ? 16 : size === 'sm' ? 20 : size === 'md' ? 32 : size === 'lg' ? 48 : 64;
   const strokeWidth = size === 'xs' || size === 'sm' ? 2 : 3;
   const radius = (sizeValue - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
 
   return (
     <div className="relative" style={{ width: sizeValue, height: sizeValue }}>
-      {/* Glow effect */}
+      {/* Glow effect — navy to mustard */}
       <motion.div
         className="absolute inset-0 rounded-full blur-md"
         style={{
-          background: 'linear-gradient(135deg, var(--dynamic-accent-start), var(--dynamic-accent-end))',
-          opacity: 0.4,
+          background:
+            'linear-gradient(135deg, var(--navy), var(--mustard))',
+          opacity: 0.3,
         }}
         animate={{
           opacity: [0.3, 0.6, 0.3],
@@ -166,7 +178,7 @@ const GradientSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
         }}
         transition={{
           duration: 1.5,
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
           ease: 'easeInOut',
         }}
       />
@@ -176,17 +188,19 @@ const GradientSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
         width={sizeValue}
         height={sizeValue}
         viewBox={`0 0 ${sizeValue} ${sizeValue}`}
+        role="img"
+        aria-label="טוען"
         animate={{ rotate: 360 }}
         transition={{
           duration: 1,
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
           ease: 'linear',
         }}
       >
         <defs>
           <linearGradient id="gradient-spinner" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="var(--dynamic-accent-start)" />
-            <stop offset="100%" stopColor="var(--dynamic-accent-end)" />
+            <stop offset="0%" stopColor="var(--navy)" />
+            <stop offset="100%" stopColor="var(--mustard)" />
           </linearGradient>
         </defs>
         <circle
@@ -207,16 +221,20 @@ const GradientSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
 
 // Wave/ripple effect spinner
 const WaveSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
-  const sizeValue = size === 'xs' ? 16 : size === 'sm' ? 20 : size === 'md' ? 32 : size === 'lg' ? 48 : 64;
+  const sizeValue =
+    size === 'xs' ? 16 : size === 'sm' ? 20 : size === 'md' ? 32 : size === 'lg' ? 48 : 64;
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: sizeValue, height: sizeValue }}>
+    <div
+      className="relative flex items-center justify-center"
+      style={{ width: sizeValue, height: sizeValue }}
+    >
       {[0, 1, 2].map((i) => (
         <motion.div
           key={i}
           className="absolute rounded-full"
           style={{
-            border: '2px solid var(--dynamic-accent-start)',
+            border: '2px solid var(--navy)',
             width: '100%',
             height: '100%',
           }}
@@ -226,7 +244,7 @@ const WaveSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
           }}
           transition={{
             duration: 1.5,
-            repeat: Infinity,
+            repeat: Number.POSITIVE_INFINITY,
             delay: i * 0.4,
             ease: 'easeOut',
           }}
@@ -238,14 +256,14 @@ const WaveSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
         style={{
           width: sizeValue * 0.25,
           height: sizeValue * 0.25,
-          backgroundColor: 'var(--dynamic-accent-start)',
+          backgroundColor: 'var(--mustard)',
         }}
         animate={{
           scale: [0.8, 1.1, 0.8],
         }}
         transition={{
           duration: 0.8,
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
           ease: 'easeInOut',
         }}
       />
@@ -290,7 +308,12 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={`${sizeMap[size].text} text-[var(--text-secondary)] font-medium`}
+          className={`${sizeMap[size].text} font-medium uppercase`}
+          style={{
+            fontFamily: 'var(--font-mono)',
+            letterSpacing: '0.18em',
+            color: 'var(--stone)',
+          }}
         >
           {text}
         </motion.span>

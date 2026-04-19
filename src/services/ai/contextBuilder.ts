@@ -2,7 +2,7 @@
 // AI Context Builder - Builds context from user data for AI prompts
 // ============================================================================
 
-import type { WorkoutSession, MacroNutrients } from '../../types';
+import type { MacroNutrients, WorkoutSession } from '../../types';
 import type { RecoveryLog } from '../bodyStatsService';
 
 export interface AIContext {
@@ -48,13 +48,13 @@ export function buildContext(
   // Calculate weekly volume from last week
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-  const lastWeekSessions = sessions.filter(s => new Date(s.startTime) >= oneWeekAgo);
+  const lastWeekSessions = sessions.filter((s) => new Date(s.startTime) >= oneWeekAgo);
   const weeklyVolume = lastWeekSessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
 
   // Volume trend
   const twoWeeksAgo = new Date();
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-  const prevWeekSessions = sessions.filter(s => {
+  const prevWeekSessions = sessions.filter((s) => {
     const d = new Date(s.startTime);
     return d >= twoWeeksAgo && d < oneWeekAgo;
   });
@@ -69,20 +69,24 @@ export function buildContext(
 
   // Muscle coverage
   const muscleSet = new Set<string>();
-  recentSessions.forEach(s => s.exercises.forEach(e => {
-    const muscle = e.muscleGroup || e.targetMuscle;
-    if (muscle) muscleSet.add(muscle);
-  }));
+  recentSessions.forEach((s) =>
+    s.exercises.forEach((e) => {
+      const muscle = e.muscleGroup || e.targetMuscle;
+      if (muscle) muscleSet.add(muscle);
+    })
+  );
 
   // Calculate weak muscles (below average volume)
   const muscleVolumes: Record<string, number> = {};
-  recentSessions.forEach(s => s.exercises.forEach(e => {
-    const muscle = e.muscleGroup || e.targetMuscle;
-    if (muscle) {
-      const vol = e.sets.reduce((sum, set) => sum + (set.weight * set.reps), 0);
-      muscleVolumes[muscle] = (muscleVolumes[muscle] || 0) + vol;
-    }
-  }));
+  recentSessions.forEach((s) =>
+    s.exercises.forEach((e) => {
+      const muscle = e.muscleGroup || e.targetMuscle;
+      if (muscle) {
+        const vol = e.sets.reduce((sum, set) => sum + set.weight * set.reps, 0);
+        muscleVolumes[muscle] = (muscleVolumes[muscle] || 0) + vol;
+      }
+    })
+  );
 
   const volumes = Object.values(muscleVolumes);
   const avgVolume = volumes.length > 0 ? volumes.reduce((a, b) => a + b, 0) / volumes.length : 0;
@@ -97,18 +101,23 @@ export function buildContext(
   // Nutrition compliance
   let nutritionCompliance: number | null = null;
   if (nutritionData && nutritionData.goal.calories > 0) {
-    const pct = Math.min(100, Math.round((nutritionData.dailyAverage.calories / nutritionData.goal.calories) * 100));
+    const pct = Math.min(
+      100,
+      Math.round((nutritionData.dailyAverage.calories / nutritionData.goal.calories) * 100)
+    );
     nutritionCompliance = pct;
   }
 
   // Streak
-  const uniqueDates = [...new Set(sessions.map(s => s.date))].sort().reverse();
+  const uniqueDates = [...new Set(sessions.map((s) => s.date))].sort().reverse();
   let streakDays = 0;
   if (uniqueDates.length > 0) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     for (let i = 0; i < uniqueDates.length; i++) {
-      const d = new Date(uniqueDates[i]);
+      const dateStr = uniqueDates[i];
+      if (!dateStr) break;
+      const d = new Date(dateStr);
       const expected = new Date(today);
       expected.setDate(today.getDate() - i);
       if (d.toDateString() === expected.toDateString()) streakDays++;

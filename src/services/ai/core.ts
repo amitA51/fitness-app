@@ -26,7 +26,7 @@ export class LocalFallbackProvider implements AIProvider {
   }
 
   async chat(messages: ChatMessage[]): Promise<string> {
-    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
     const query = lastUserMessage?.content.toLowerCase() || '';
 
     // Rule-based responses for fitness queries (in Hebrew)

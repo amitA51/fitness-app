@@ -1,7 +1,12 @@
-import React, { memo, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { WorkoutSession } from '../../types';
-import { getAllExerciseNames, calculateStrengthProgression, forecastProgress } from '../../services/analyticsService';
+import type React from 'react';
+import { memo, useMemo, useState } from 'react';
+import {
+  calculateStrengthProgression,
+  forecastProgress,
+  getAllExerciseNames,
+} from '../../services/analyticsService';
+import type { WorkoutSession } from '../../types';
 
 interface ForecastChartProps {
   sessions: WorkoutSession[];
@@ -12,7 +17,7 @@ interface ForecastChartProps {
  */
 const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
   const [selectedExercise, setSelectedExercise] = useState<string>('');
-  
+
   // Get all exercise names
   const exerciseNames = useMemo(() => {
     return getAllExerciseNames(sessions);
@@ -21,14 +26,14 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
   // Get progression data for selected exercise
   const progressionData = useMemo(() => {
     if (!selectedExercise || sessions.length === 0) return null;
-    
+
     // Find exercise ID
     const exerciseId = findExerciseId(sessions, selectedExercise);
     if (!exerciseId) return null;
-    
+
     const progression = calculateStrengthProgression(sessions, exerciseId);
     const forecast = forecastProgress(sessions, exerciseId);
-    
+
     return { progression, forecast };
   }, [selectedExercise, sessions]);
 
@@ -40,47 +45,59 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
   // Calculate points for line chart
   const chartPoints = useMemo(() => {
     if (!progressionData || progressionData.progression.length === 0) return [];
-    
+
     const { progression } = progressionData;
-    const volumes = progression.map(p => p.volume);
+    const volumes = progression.map((p) => p.volume);
     const maxVolume = Math.max(...volumes, 1);
-    
+
     return progression.map((point, i) => ({
-      x: padding.left + (i / Math.max(progression.length - 1, 1)) * (chartWidth - padding.left - padding.right),
-      y: chartHeight - padding.bottom - (point.volume / maxVolume) * (chartHeight - padding.top - padding.bottom),
+      x:
+        padding.left +
+        (i / Math.max(progression.length - 1, 1)) * (chartWidth - padding.left - padding.right),
+      y:
+        chartHeight -
+        padding.bottom -
+        (point.volume / maxVolume) * (chartHeight - padding.top - padding.bottom),
       data: point,
     }));
   }, [progressionData, chartWidth, chartHeight]);
 
   // Calculate forecast point
   const forecastPoint = useMemo(() => {
-    if (!progressionData || !progressionData.forecast || progressionData.forecast.predicted <= 0) return null;
+    if (!progressionData || !progressionData.forecast || progressionData.forecast.predicted <= 0)
+      return null;
     if (chartPoints.length === 0) return null;
-    
-    const volumes = progressionData.progression.map(p => p.volume);
+
+    const volumes = progressionData.progression.map((p) => p.volume);
     const maxVolume = Math.max(...volumes, 1);
-    
+
     return {
       x: chartWidth - padding.right,
-      y: chartHeight - padding.bottom - (progressionData.forecast.predicted / maxVolume) * (chartHeight - padding.top - padding.bottom),
+      y:
+        chartHeight -
+        padding.bottom -
+        (progressionData.forecast.predicted / maxVolume) *
+          (chartHeight - padding.top - padding.bottom),
     };
   }, [progressionData, chartPoints, chartWidth, chartHeight]);
 
   // Build SVG path
   const linePath = useMemo(() => {
     if (chartPoints.length < 2) return '';
-    
-    return chartPoints.map((point, i) => 
-      `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
-    ).join(' ');
+
+    return chartPoints.map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
   }, [chartPoints]);
 
   // Build area path
   const areaPath = useMemo(() => {
     if (chartPoints.length < 2) return '';
-    
+
+    const lastPoint = chartPoints[chartPoints.length - 1];
+    const firstPoint = chartPoints[0];
+    if (!lastPoint || !firstPoint) return '';
+
     const bottomY = chartHeight - padding.bottom;
-    return `${linePath} L ${chartPoints[chartPoints.length - 1].x} ${bottomY} L ${chartPoints[0].x} ${bottomY} Z`;
+    return `${linePath} L ${lastPoint.x} ${bottomY} L ${firstPoint.x} ${bottomY} Z`;
   }, [linePath, chartPoints, chartHeight, padding]);
 
   return (
@@ -88,7 +105,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
-      className="workout-glass-card rounded-2xl p-5"
+      className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -104,7 +121,9 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
           onChange={(e) => setSelectedExercise(e.target.value)}
           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white appearance-none cursor-pointer hover:bg-white/10 transition-colors focus:outline-none focus:border-[var(--cosmos-accent-primary)]"
         >
-          <option value="" className="bg-[#1a1a1a]">בחר תרגיל...</option>
+          <option value="" className="bg-[#1a1a1a]">
+            בחר תרגיל...
+          </option>
           {exerciseNames.map((name) => (
             <option key={name} value={name} className="bg-[#1a1a1a]">
               {name}
@@ -221,12 +240,20 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`${
-                  progressionData.forecast.trend === 'increasing' ? 'text-green-400' :
-                  progressionData.forecast.trend === 'decreasing' ? 'text-red-400' : 'text-white/40'
-                }`}>
-                  {progressionData.forecast.trend === 'increasing' ? '↑ בעלייה' :
-                   progressionData.forecast.trend === 'decreasing' ? '↓ בירידה' : '→ יציב'}
+                <span
+                  className={`${
+                    progressionData.forecast.trend === 'increasing'
+                      ? 'text-green-400'
+                      : progressionData.forecast.trend === 'decreasing'
+                        ? 'text-red-400'
+                        : 'text-white/40'
+                  }`}
+                >
+                  {progressionData.forecast.trend === 'increasing'
+                    ? '↑ בעלייה'
+                    : progressionData.forecast.trend === 'decreasing'
+                      ? '↓ בירידה'
+                      : '→ יציב'}
                 </span>
                 <span className="text-white/30">
                   {Math.round(progressionData.forecast.confidence * 100)}% ביטחון
@@ -239,9 +266,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
 
       {/* Empty state */}
       {selectedExercise && (!progressionData || chartPoints.length === 0) && (
-        <div className="text-center py-8 text-white/40 text-sm">
-          אין מספיק נתונים לתרגיל זה
-        </div>
+        <div className="text-center py-8 text-white/40 text-sm">אין מספיק נתונים לתרגיל זה</div>
       )}
     </motion.div>
   );

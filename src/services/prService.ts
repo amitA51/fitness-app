@@ -2,8 +2,9 @@
 // SPARKOS FITNESS - PR Service (Personal Records)
 // ============================================================================
 
-import { PersonalRecord, WorkoutSession } from '../types';
-import { STORES, dbGetByIndex, dbPut, dbGetAll, dbDelete } from './indexedDBCore';
+import type { PersonalRecord, WorkoutSession } from '../types';
+import { safeJsonParseOr } from '../utils/safeJson';
+import { STORES, dbDelete, dbGetAll, dbGetByIndex, dbPut } from './indexedDBCore';
 
 export type { PersonalRecord };
 
@@ -47,7 +48,7 @@ export const checkForNewPR = async (
   let newPR: PersonalRecord | null = null;
 
   // Check weight PR
-  const weightPR = existingPRs.find(pr => pr.type === 'weight');
+  const weightPR = existingPRs.find((pr) => pr.type === 'weight');
   if (!weightPR || weight > weightPR.weight) {
     newPR = {
       id: `pr-${exerciseId}-weight-${Date.now()}`,
@@ -63,7 +64,7 @@ export const checkForNewPR = async (
   }
 
   // Check volume PR
-  const volumePR = existingPRs.find(pr => pr.type === 'volume');
+  const volumePR = existingPRs.find((pr) => pr.type === 'volume');
   if (!volumePR || volume > (volumePR.maxWeight || 0) * (volumePR.reps || 0)) {
     const pr: PersonalRecord = {
       id: `pr-${exerciseId}-volume-${Date.now()}`,
@@ -106,11 +107,16 @@ export const getPRHistory = async (exerciseId: string): Promise<PersonalRecord[]
 };
 
 // Get best PR for each type for an exercise
-export const getBestPRs = async (exerciseId: string): Promise<Record<string, PersonalRecord | null>> => {
+export const getBestPRs = async (
+  exerciseId: string
+): Promise<Record<string, PersonalRecord | null>> => {
   const prs = await getPRsForExercise(exerciseId);
   return {
-    weight: prs.filter(p => p.type === 'weight').sort((a, b) => b.weight - a.weight)[0] || null,
-    volume: prs.filter(p => p.type === 'volume').sort((a, b) => (b.weight * b.reps) - (a.weight * a.reps))[0] || null,
+    weight: prs.filter((p) => p.type === 'weight').sort((a, b) => b.weight - a.weight)[0] || null,
+    volume:
+      prs
+        .filter((p) => p.type === 'volume')
+        .sort((a, b) => b.weight * b.reps - a.weight * a.reps)[0] || null,
   };
 };
 
@@ -137,20 +143,25 @@ export const getExerciseNames = (): string[] => {
   if (!stored) return [];
 
   try {
-    const exercises = JSON.parse(stored);
+    const exercises = safeJsonParseOr<{ name: string }[]>(stored, []);
     return exercises.map((e: { name: string }) => e.name);
   } catch {
     return [];
   }
 };
 
-export const getExerciseByName = (name: string): { id: string; name: string; muscleGroup?: string } | null => {
+export const getExerciseByName = (
+  name: string
+): { id: string; name: string; muscleGroup?: string } | null => {
   const stored = localStorage.getItem('personalExercises');
   if (!stored) return null;
 
   try {
-    const exercises = JSON.parse(stored);
-    return exercises.find((e: { name: string }) => e.name === name);
+    const exercises = safeJsonParseOr<{ id: string; name: string; muscleGroup?: string }[]>(
+      stored,
+      []
+    );
+    return exercises.find((e: { name: string }) => e.name === name) ?? null;
   } catch {
     return null;
   }
@@ -161,12 +172,14 @@ export const getExerciseByName = (name: string): { id: string; name: string; mus
 // ============================================================================
 
 // Calculate PRs from workout history
-export const calculatePRsFromHistory = (sessions: WorkoutSession[]): Map<string, PersonalRecord> => {
+export const calculatePRsFromHistory = (
+  sessions: WorkoutSession[]
+): Map<string, PersonalRecord> => {
   const prMap = new Map<string, PersonalRecord>();
 
-  sessions.forEach(session => {
-    session.exercises?.forEach(exercise => {
-      exercise.sets?.forEach(set => {
+  sessions.forEach((session) => {
+    session.exercises?.forEach((exercise) => {
+      exercise.sets?.forEach((set) => {
         if (!set.completedAt || set.isWarmup) return;
 
         const key = exercise.exerciseId || exercise.id;
@@ -228,7 +241,7 @@ export const isNewPR = (
 
   return {
     isWeightPR: !currentWeightPR || weight > currentWeightPR.weight,
-    isVolumePR: !currentVolumePR || (weight * reps) > (currentVolumePR.value ?? 0),
+    isVolumePR: !currentVolumePR || weight * reps > (currentVolumePR.value ?? 0),
   };
 };
 
@@ -237,9 +250,9 @@ export const exportWorkoutHistoryCSV = (sessions: WorkoutSession[]): void => {
   const headers = ['Date', 'Exercise', 'Sets', 'Reps', 'Weight', 'Volume'];
   const rows: string[][] = [];
 
-  sessions.forEach(session => {
-    session.exercises?.forEach(exercise => {
-      exercise.sets?.forEach(set => {
+  sessions.forEach((session) => {
+    session.exercises?.forEach((exercise) => {
+      exercise.sets?.forEach((set) => {
         if (set.isWarmup) return;
         rows.push([
           session.date || session.startTime,
@@ -253,13 +266,13 @@ export const exportWorkoutHistoryCSV = (sessions: WorkoutSession[]): void => {
     });
   });
 
-  const csv = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+  const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement('a');
   a.href = url;
-  a.download = `workout-history-${new Date().toISOString().split('T')[0]}.csv`;
+  a.download = `workout-history-${new Date().toISOString().split('T')[0] ?? ''}.csv`;
   a.click();
 
   URL.revokeObjectURL(url);
@@ -267,7 +280,7 @@ export const exportWorkoutHistoryCSV = (sessions: WorkoutSession[]): void => {
 
 // Get display text for a PR
 export function getPRDisplayText(pr: PersonalRecord): string {
-  const vol = pr.value ?? (pr.weight * pr.reps);
+  const vol = pr.value ?? pr.weight * pr.reps;
   const est1RM = calculateEst1RM(pr.weight, pr.reps);
   const parts: string[] = [];
   if (pr.type === 'weight') {

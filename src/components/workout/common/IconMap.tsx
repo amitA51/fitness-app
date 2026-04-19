@@ -1,22 +1,22 @@
 // Icon Map - Maps icon names to Lucide React icons
 import {
-  Dumbbell,
-  Flame,
-  Zap,
-  Target,
-  Trophy,
-  Timer,
-  Heart,
   Activity,
   BarChart3,
+  Bike,
   Calendar,
   Clock,
-  TrendingUp,
-  Weight,
+  Dumbbell,
+  Flame,
   Footprints,
-  Bike,
+  Heart,
+  type LucideIcon,
+  Target,
+  Timer,
+  TrendingUp,
+  Trophy,
   Waves,
-  LucideIcon,
+  Weight,
+  Zap,
 } from 'lucide-react';
 
 // Map of icon name strings to Lucide icon components
