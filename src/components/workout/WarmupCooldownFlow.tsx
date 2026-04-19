@@ -1,3 +1,8 @@
+// WarmupCooldownFlow - Sport Annual Editorial Design
+// Navy masthead + bone body · Sharp corners · Big Shoulders typography
+// Warmup: dynamic movement warmup routine
+// Cooldown: guided stretching routine
+
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect, useRef, useCallback, useReducer, useMemo } from 'react';
 import { logger } from '../../utils/logger';
@@ -12,12 +17,11 @@ interface WarmupCooldownFlowProps {
 interface RoutineItem {
   id: string;
   name: string;
-  nameHe: string; // Hebrew name
-  duration: number; // seconds
+  nameHe: string;
+  duration: number;
   selected: boolean;
 }
 
-// Storage keys for persistence
 const WARMUP_STORAGE_KEY = 'warmup_routine_selections';
 const COOLDOWN_STORAGE_KEY = 'cooldown_routine_selections';
 
@@ -36,13 +40,7 @@ const DEFAULT_COOLDOWN: RoutineItem[] = [
   { id: 'c1', name: 'Static Stretching', nameHe: 'מתיחות סטטיות', duration: 60, selected: true },
   { id: 'c2', name: 'Deep Breathing', nameHe: 'נשימות עמוקות', duration: 60, selected: true },
   { id: 'c3', name: "Child's Pose", nameHe: 'תנוחת הילד', duration: 45, selected: true },
-  {
-    id: 'c4',
-    name: 'Hamstring Stretch',
-    nameHe: 'מתיחת ירכיים אחוריות',
-    duration: 45,
-    selected: false,
-  },
+  { id: 'c4', name: 'Hamstring Stretch', nameHe: 'מתיחת ירכיים אחוריות', duration: 45, selected: false },
   { id: 'c5', name: 'Quad Stretch', nameHe: 'מתיחת ירך קדמית', duration: 45, selected: false },
   { id: 'c6', name: 'Shoulder Stretch', nameHe: 'מתיחת כתפיים', duration: 30, selected: false },
 ];
@@ -57,8 +55,8 @@ type State = {
   currentIndex: number;
   timeLeft: number;
   isPaused: boolean;
-  endTimestamp: number; // Timestamp-based for background accuracy
-  pausedRemaining: number; // Seconds left when paused
+  endTimestamp: number;
+  pausedRemaining: number;
 };
 
 type Action =
@@ -114,7 +112,6 @@ const reducer = (state: State, action: Action): State => {
           pausedRemaining: 0,
         };
       } else {
-        // Complete
         if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
         action.onComplete();
         return state;
@@ -140,14 +137,12 @@ const reducer = (state: State, action: Action): State => {
 
     case 'TOGGLE_PAUSE': {
       if (state.isPaused) {
-        // Resuming: set new endTimestamp from pausedRemaining
         return {
           ...state,
           isPaused: false,
           endTimestamp: Date.now() + state.pausedRemaining * 1000,
         };
       } else {
-        // Pausing: save remaining time
         const remaining = Math.max(0, Math.ceil((state.endTimestamp - Date.now()) / 1000));
         return {
           ...state,
@@ -159,7 +154,6 @@ const reducer = (state: State, action: Action): State => {
     }
 
     case 'TICK': {
-      // Timestamp-based: calculate actual remaining from endTimestamp
       const tickRemaining = Math.max(0, Math.ceil((state.endTimestamp - Date.now()) / 1000));
       return { ...state, timeLeft: tickRemaining };
     }
@@ -169,9 +163,623 @@ const reducer = (state: State, action: Action): State => {
   }
 };
 
-/**
- * WarmupCooldownFlow - Redesigned with persistence, Hebrew UI, larger timer
- */
+// ============================================================
+// HELPERS
+// ============================================================
+
+const formatTime = (seconds: number) => {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+};
+
+// ============================================================
+// SELECTION STEP
+// ============================================================
+
+interface SelectionStepProps {
+  type: 'warmup' | 'cooldown';
+  items: RoutineItem[];
+  activeItems: RoutineItem[];
+  totalDuration: number;
+  onToggle: (id: string) => void;
+  onStart: () => void;
+  onSkip: () => void;
+}
+
+const SelectionStep: React.FC<SelectionStepProps> = ({
+  type,
+  items,
+  activeItems,
+  totalDuration,
+  onToggle,
+  onStart,
+  onSkip,
+}) => {
+  const title = type === 'warmup' ? 'חימום' : 'צינון';
+  const subtitle = type === 'warmup' ? 'בחר תרגילי חימום' : 'בחר מתיחות לצינון';
+
+  return (
+    <motion.div
+      key="selection"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="flex flex-col h-full"
+    >
+      {/* Masthead */}
+      <div style={{ background: 'var(--navy)', flexShrink: 0 }}>
+        {/* Chapter strip */}
+        <div
+          className="chapter-break"
+          style={{ borderBottom: '1px solid rgba(245,241,235,0.1)' }}
+        >
+          <span className="left" style={{ color: 'var(--mustard)' }}>
+            §01 · {title}
+          </span>
+          <span className="right">{activeItems.length} תרגילים</span>
+        </div>
+
+        {/* Title area */}
+        <div className="px-5 pt-5 pb-6">
+          <h2
+            className="uppercase"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 900,
+              fontSize: 36,
+              color: 'var(--bone)',
+              lineHeight: 0.9,
+              letterSpacing: '-0.02em',
+              direction: 'ltr',
+              textAlign: 'left',
+            }}
+          >
+            {title}
+          </h2>
+          <p
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.15em',
+              color: 'rgba(245,241,235,0.45)',
+              textTransform: 'uppercase',
+              marginTop: 8,
+            }}
+          >
+            {subtitle}
+          </p>
+
+          {/* Total duration badge */}
+          <div
+            className="mt-3"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'rgba(245,241,235,0.08)',
+              padding: '6px 12px',
+              border: '1px solid rgba(245,241,235,0.15)',
+            }}
+          >
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                letterSpacing: '0.15em',
+                color: 'var(--mustard)',
+                textTransform: 'uppercase',
+              }}
+            >
+              {formatTime(totalDuration)}
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.15em',
+                color: 'rgba(245,241,235,0.4)',
+                textTransform: 'uppercase',
+              }}
+            >
+              סה״כ
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Bone body */}
+      <div
+        className="flex-1 overflow-y-auto overscroll-contain px-5 py-4"
+        style={{ background: 'var(--bone)' }}
+      >
+        <div className="flex flex-col gap-2 pb-4">
+          {items.map((item) => (
+            <motion.button
+              key={item.id}
+              onClick={() => onToggle(item.id)}
+              type="button"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px 16px',
+                background: item.selected ? 'var(--bone-deep)' : 'var(--bone)',
+                border: `2px solid ${item.selected ? 'var(--navy)' : 'var(--bone-deep)'}`,
+                cursor: 'pointer',
+                transition: 'all 150ms',
+                minHeight: 56,
+              }}
+              whileTap={{ scale: 0.99 }}
+            >
+              <div className="flex items-center gap-3">
+                {/* Checkbox */}
+                <div
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: 0,
+                    border: `2px solid ${item.selected ? 'var(--navy)' : 'var(--stone)'}`,
+                    background: item.selected ? 'var(--mustard)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  {item.selected && (
+                    <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                      <path
+                        d="M1 5L4.5 8.5L11 1"
+                        stroke="var(--navy)"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </div>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: 15,
+                    color: item.selected ? 'var(--navy)' : 'var(--stone)',
+                    letterSpacing: '-0.01em',
+                    textAlign: 'right',
+                  }}
+                >
+                  {item.nameHe}
+                </span>
+              </div>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 12,
+                  letterSpacing: '0.1em',
+                  color: item.selected ? 'var(--navy)' : 'var(--stone)',
+                  fontVariantNumeric: 'tabular-nums',
+                  flexShrink: 0,
+                }}
+              >
+                {formatTime(item.duration)}
+              </span>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      <div
+        className="flex flex-col gap-2 px-5 py-4"
+        style={{ background: 'var(--bone)', borderTop: '1px solid var(--bone-deep)' }}
+      >
+        <button
+          type="button"
+          onClick={onStart}
+          disabled={activeItems.length === 0}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '18px 24px',
+            background: 'var(--navy)',
+            color: 'var(--mustard)',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 14,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            opacity: activeItems.length === 0 ? 0.5 : 1,
+            transition: 'all 150ms',
+            minHeight: 52,
+          }}
+          onPointerDown={(e) => {
+            e.currentTarget.style.background = 'var(--navy-deep)';
+          }}
+          onPointerUp={(e) => {
+            e.currentTarget.style.background = 'var(--navy)';
+          }}
+          onPointerLeave={(e) => {
+            e.currentTarget.style.background = 'var(--navy)';
+          }}
+        >
+          התחל {title} ({activeItems.length})
+        </button>
+        <button
+          type="button"
+          onClick={onSkip}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '14px 24px',
+            background: 'transparent',
+            color: 'var(--stone)',
+            border: '2px solid var(--stone)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 13,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            transition: 'all 150ms',
+            minHeight: 48,
+          }}
+          onPointerDown={(e) => {
+            e.currentTarget.style.color = 'var(--navy)';
+            e.currentTarget.style.borderColor = 'var(--navy)';
+          }}
+          onPointerUp={(e) => {
+            e.currentTarget.style.color = 'var(--stone)';
+            e.currentTarget.style.borderColor = 'var(--stone)';
+          }}
+          onPointerLeave={(e) => {
+            e.currentTarget.style.color = 'var(--stone)';
+            e.currentTarget.style.borderColor = 'var(--stone)';
+          }}
+        >
+          דלג על {title}
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
+// ============================================================
+// ACTIVE STEP
+// ============================================================
+
+interface ActiveStepProps {
+  type: 'warmup' | 'cooldown';
+  currentItem: RoutineItem | undefined;
+  currentIndex: number;
+  totalItems: number;
+  timeLeft: number;
+  isPaused: boolean;
+  progress: number;
+  isWarning: boolean;
+  onTogglePause: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  onSkipAll: () => void;
+  isLast: boolean;
+}
+
+const ActiveStep: React.FC<ActiveStepProps> = ({
+  type,
+  currentItem,
+  currentIndex,
+  totalItems,
+  timeLeft,
+  isPaused,
+  progress,
+  isWarning,
+  onTogglePause,
+  onPrev,
+  onNext,
+  onSkipAll,
+  isLast,
+}) => {
+  const title = type === 'warmup' ? 'חימום' : 'צינון';
+
+  const timerColor = isWarning ? 'var(--color-error)' : 'var(--mustard)';
+
+  return (
+    <motion.div
+      key="active"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="flex flex-col"
+      style={{ height: '100%', background: 'var(--bone)' }}
+    >
+      {/* Navy header strip */}
+      <div
+        style={{
+          background: 'var(--navy)',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexShrink: 0,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            letterSpacing: '0.18em',
+            color: 'var(--mustard)',
+            textTransform: 'uppercase',
+          }}
+        >
+          {currentIndex + 1} / {totalItems}
+        </span>
+        <span
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 13,
+            letterSpacing: '0.06em',
+            color: 'rgba(245,241,235,0.5)',
+            textTransform: 'uppercase',
+          }}
+        >
+          {title}
+        </span>
+        <button
+          type="button"
+          onClick={onSkipAll}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: 'rgba(245,241,235,0.4)',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            padding: 0,
+          }}
+        >
+          דלג על הכל
+        </button>
+      </div>
+
+      {/* Exercise name */}
+      <div
+        className="text-center"
+        style={{
+          padding: '24px 20px 0',
+          background: 'var(--bone)',
+          flexShrink: 0,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.22em',
+            color: 'var(--stone)',
+            textTransform: 'uppercase',
+          }}
+        >
+          {type === 'warmup' ? 'תרגיל' : 'מתיחה'}
+        </span>
+        <h2
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 900,
+            fontSize: 28,
+            color: 'var(--navy)',
+            lineHeight: 1,
+            letterSpacing: '-0.02em',
+            marginTop: 6,
+            direction: 'rtl',
+          }}
+        >
+          {currentItem?.nameHe}
+        </h2>
+      </div>
+
+      {/* Timer — massive editorial number */}
+      <div
+        className="flex-1 flex items-center justify-center"
+        style={{ background: 'var(--bone)', minHeight: 0 }}
+        onClick={onTogglePause}
+      >
+        <div
+          style={{
+            position: 'relative',
+            width: 'min(240px, 60vw)',
+            height: 'min(240px, 60vw)',
+          }}
+        >
+          {/* SVG progress ring */}
+          <svg
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'rotate(-90deg)' }}
+            viewBox="0 0 240 240"
+          >
+            {/* Track */}
+            <circle
+              cx="120"
+              cy="120"
+              r="108"
+              stroke="var(--bone-deep)"
+              strokeWidth="6"
+              fill="none"
+            />
+            {/* Progress */}
+            <circle
+              cx="120"
+              cy="120"
+              r="108"
+              stroke={timerColor}
+              strokeWidth="6"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray={2 * Math.PI * 108}
+              strokeDashoffset={2 * Math.PI * 108 * (1 - progress / 100)}
+              style={{ transition: 'stroke-dashoffset 0.5s ease, stroke 0.3s ease' }}
+            />
+          </svg>
+
+          {/* Time + label */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <motion.span
+              key={timeLeft}
+              initial={{ scale: 1.08 }}
+              animate={{ scale: 1 }}
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 900,
+                fontSize: 'clamp(48px, 14vw, 72px)',
+                color: isWarning ? 'var(--color-error)' : 'var(--navy)',
+                letterSpacing: '-0.03em',
+                lineHeight: 1,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {formatTime(timeLeft)}
+            </motion.span>
+            {isPaused && (
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9,
+                  letterSpacing: '0.2em',
+                  color: 'var(--stone)',
+                  textTransform: 'uppercase',
+                  marginTop: 4,
+                }}
+              >
+                מושהה
+              </span>
+            )}
+            {timeLeft === 0 && (
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9,
+                  letterSpacing: '0.2em',
+                  color: 'var(--color-success)',
+                  textTransform: 'uppercase',
+                  marginTop: 4,
+                }}
+              >
+                הושלם!
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <div
+        style={{
+          padding: '0 20px 24px',
+          background: 'var(--bone)',
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            letterSpacing: '0.2em',
+            color: 'var(--stone)',
+            textTransform: 'uppercase',
+            textAlign: 'center',
+            marginBottom: 12,
+          }}
+        >
+          לחץ על השעון להשהייה / המשך
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onPrev}
+            disabled={currentIndex === 0}
+            style={{
+              width: 52,
+              height: 52,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'var(--bone-deep)',
+              color: currentIndex === 0 ? 'var(--stone-light)' : 'var(--navy)',
+              border: '2px solid var(--navy)',
+              borderRadius: 0,
+              cursor: currentIndex === 0 ? 'not-allowed' : 'pointer',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 900,
+              fontSize: 18,
+              opacity: currentIndex === 0 ? 0.5 : 1,
+              transition: 'all 150ms',
+            }}
+            aria-label="תרגיל קודם"
+          >
+            ←
+          </button>
+
+          <button
+            type="button"
+            onClick={onNext}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px 24px',
+              background: 'var(--navy)',
+              color: 'var(--mustard)',
+              border: 'none',
+              borderRadius: 0,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 14,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              transition: 'background 150ms',
+              minHeight: 52,
+            }}
+            onPointerDown={(e) => {
+              e.currentTarget.style.background = 'var(--navy-deep)';
+            }}
+            onPointerUp={(e) => {
+              e.currentTarget.style.background = 'var(--navy)';
+            }}
+            onPointerLeave={(e) => {
+              e.currentTarget.style.background = 'var(--navy)';
+            }}
+          >
+            {isLast ? 'סיום' : 'הבא →'}
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
+
 const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplete, onSkip }) => {
   const [state, dispatch] = useReducer(reducer, {
     step: 'selection',
@@ -188,7 +796,6 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
   const storageKey = type === 'warmup' ? WARMUP_STORAGE_KEY : COOLDOWN_STORAGE_KEY;
   const defaultItems = type === 'warmup' ? DEFAULT_WARMUP : DEFAULT_COOLDOWN;
 
-  // Load saved selections on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey);
@@ -208,10 +815,8 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
-  // Save selections whenever they change
   useEffect(() => {
     if (state.items.length === 0) return;
-
     const selections: Record<string, boolean> = {};
     state.items.forEach((item) => {
       selections[item.id] = item.selected;
@@ -223,15 +828,11 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
     }
   }, [state.items, storageKey]);
 
-  // Timer effect
   useEffect(() => {
     if (!state.isPaused && state.step === 'active' && state.timeLeft > 0) {
       timerRef.current = setTimeout(() => dispatch({ type: 'TICK' }), 1000);
     } else if (state.timeLeft === 0 && state.step === 'active' && !state.isPaused) {
-      // Vibrate when exercise ends
-      if ('vibrate' in navigator) {
-        navigator.vibrate([100, 50, 100]);
-      }
+      if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
     }
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -269,12 +870,6 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
     dispatch({ type: 'TOGGLE_PAUSE' });
   }, []);
 
-  const formatTime = useCallback((seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  }, []);
-
   const progress = currentItem
     ? ((currentItem.duration - state.timeLeft) / currentItem.duration) * 100
     : 0;
@@ -283,210 +878,49 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
 
   return (
     <motion.div
-      className="fixed inset-0 z-[11000] bg-black/95 backdrop-blur-xl"
+      className="fixed inset-0 z-[11000] flex flex-col"
+      style={{ background: 'var(--bone)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <div className="h-full flex flex-col justify-center p-6 max-w-lg mx-auto safe-area-top safe-area-bottom">
+      {/* Safe area top */}
+      <div style={{ paddingTop: 'env(safe-area-inset-top, 0)', background: 'var(--navy)', flexShrink: 0 }} />
+
+      <div className="flex-1 overflow-hidden">
         <AnimatePresence mode="sync">
           {state.step === 'selection' ? (
-            <motion.div
-              key="selection"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="w-full flex flex-col h-full"
-            >
-              {/* Header */}
-              <div className="text-center mb-6">
-                <h2 className="text-3xl font-black text-white mb-2">
-                  {type === 'warmup' ? 'חימום' : 'צינון'}
-                </h2>
-                <p className="text-white/60 text-sm">בחר את התרגילים שתרצה לבצע</p>
-                <p className="text-[var(--cosmos-accent-primary)] text-xs mt-1 font-medium">
-                  סה״כ: {formatTime(totalDuration)} • {activeItems.length} תרגילים
-                </p>
-              </div>
-
-              {/* Exercise List */}
-              <div className="flex-1 overflow-y-auto flex flex-col gap-2 custom-scrollbar pb-4">
-                {state.items.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => toggleSelection(item.id)}
-                    className={`p-4 min-h-[60px] rounded-2xl flex items-center justify-between cursor-pointer transition-all border ${
-                      item.selected
-                        ? 'bg-[var(--cosmos-accent-primary)]/15 border-[var(--cosmos-accent-primary)]'
-                        : 'bg-white/5 border-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                          item.selected
-                            ? 'bg-[var(--cosmos-accent-primary)] border-[var(--cosmos-accent-primary)]'
-                            : 'border-white/30'
-                        }`}
-                      >
-                        {item.selected && <span className="text-black text-sm">✓</span>}
-                      </div>
-                      <span
-                        className={`font-semibold ${item.selected ? 'text-white' : 'text-white/60'}`}
-                      >
-                        {item.nameHe}
-                      </span>
-                    </div>
-                    <span className="text-sm text-white/50 tabular-nums">
-                      {formatTime(item.duration)}
-                    </span>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="mt-auto pt-4 space-y-3">
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={onSkip}
-                  className="w-full h-14 min-h-[56px] rounded-2xl bg-transparent border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-all font-medium"
-                >
-                  דלג על {type === 'warmup' ? 'החימום' : 'הצינון'}
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={startRoutine}
-                  disabled={activeItems.length === 0}
-                  className="w-full h-14 min-h-[56px] rounded-2xl bg-[var(--cosmos-accent-primary)] text-black font-bold text-lg shadow-[0_0_25px_rgba(99,102,241,0.4)] hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  התחל שגרה ({activeItems.length})
-                </motion.button>
-              </div>
-            </motion.div>
+            <SelectionStep
+              type={type}
+              items={state.items}
+              activeItems={activeItems}
+              totalDuration={totalDuration}
+              onToggle={toggleSelection}
+              onStart={startRoutine}
+              onSkip={onSkip}
+            />
           ) : (
-            <motion.div
-              key="active"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="w-full flex flex-col items-center h-full"
-            >
-              {/* Progress Header */}
-              <div className="w-full flex justify-between items-center mb-6">
-                <span className="text-white/60 font-medium text-sm">
-                  {state.currentIndex + 1} / {activeItems.length}
-                </span>
-                <button
-                  onClick={onSkip}
-                  className="text-white/50 hover:text-white transition-colors text-sm"
-                >
-                  דלג על הכל
-                </button>
-              </div>
-
-              {/* Exercise Name */}
-              <h2 className="text-2xl font-bold text-white mb-6 text-center">
-                {currentItem?.nameHe}
-              </h2>
-
-              {/* Large Circular Timer - 200px */}
-              <div className="flex-1 flex items-center justify-center">
-                <div
-                  onClick={togglePause}
-                  className="relative w-[200px] h-[200px] rounded-full cursor-pointer hover:scale-105 transition-transform active:scale-95"
-                >
-                  {/* Background Ring */}
-                  <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 200 200">
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="90"
-                      stroke="rgba(255,255,255,0.1)"
-                      strokeWidth="10"
-                      fill="none"
-                    />
-                    <motion.circle
-                      cx="100"
-                      cy="100"
-                      r="90"
-                      stroke={isWarning ? '#ef4444' : 'var(--cosmos-accent-primary)'}
-                      strokeWidth="10"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeDasharray={2 * Math.PI * 90}
-                      strokeDashoffset={2 * Math.PI * 90 * (1 - progress / 100)}
-                      style={{
-                        filter: isWarning
-                          ? 'drop-shadow(0 0 15px rgba(239,68,68,0.5))'
-                          : 'drop-shadow(0 0 10px rgba(99,102,241,0.3))',
-                      }}
-                    />
-                  </svg>
-
-                  {/* Time Display */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <motion.span
-                      key={state.timeLeft}
-                      initial={{ scale: 1.1 }}
-                      animate={{ scale: 1 }}
-                      className={`text-5xl font-black tabular-nums ${
-                        isWarning
-                          ? 'text-red-500'
-                          : state.timeLeft === 0
-                            ? 'text-green-500'
-                            : 'text-white'
-                      }`}
-                    >
-                      {formatTime(state.timeLeft)}
-                    </motion.span>
-                    {state.isPaused && (
-                      <span className="text-yellow-400 text-xs font-semibold mt-2 animate-pulse">
-                        מושהה
-                      </span>
-                    )}
-                    {state.timeLeft === 0 && (
-                      <span className="text-green-400 text-xs font-semibold mt-2">הושלם!</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Tip */}
-              <p className="text-white/30 text-xs mb-6">לחץ על השעון להשהייה/המשך</p>
-
-              {/* Navigation Buttons */}
-              <div className="w-full flex gap-3">
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={prevExercise}
-                  disabled={state.currentIndex === 0}
-                  className={`w-16 h-14 min-h-[56px] rounded-2xl bg-white/5 border border-white/20 flex items-center justify-center text-2xl text-white transition-all ${
-                    state.currentIndex === 0
-                      ? 'opacity-30 cursor-not-allowed'
-                      : 'hover:bg-white/10 active:scale-95'
-                  }`}
-                >
-                  →
-                </motion.button>
-
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={nextExercise}
-                  className="flex-1 h-14 min-h-[56px] rounded-2xl bg-green-500 text-white font-bold text-lg shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:brightness-110 transition-all"
-                >
-                  {state.currentIndex === activeItems.length - 1 ? 'סיום' : 'הבא'}
-                </motion.button>
-              </div>
-            </motion.div>
+            <ActiveStep
+              type={type}
+              currentItem={currentItem}
+              currentIndex={state.currentIndex}
+              totalItems={activeItems.length}
+              timeLeft={state.timeLeft}
+              isPaused={state.isPaused}
+              progress={progress}
+              isWarning={isWarning}
+              onTogglePause={togglePause}
+              onPrev={prevExercise}
+              onNext={nextExercise}
+              onSkipAll={onSkip}
+              isLast={state.currentIndex === activeItems.length - 1}
+            />
           )}
         </AnimatePresence>
       </div>
 
-      <style>{`
-        .safe-area-top { padding-top: env(safe-area-inset-top, 0); }
-        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
-      `}</style>
+      {/* Safe area bottom */}
+      <div style={{ paddingBottom: 'env(safe-area-inset-bottom, 0)', background: 'var(--bone)', flexShrink: 0 }} />
     </motion.div>
   );
 };

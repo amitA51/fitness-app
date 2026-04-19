@@ -1,8 +1,10 @@
+// SummaryExerciseList - Sport Annual Editorial Design
+// Sharp corners, bone-deep cards, navy borders, Big Shoulders typography
+
 import { motion } from 'framer-motion';
-// Extracted from WorkoutSummary.tsx
 import type React from 'react';
 import { memo } from 'react';
-import { FlameIcon, TrophyIcon } from '../../icons';
+import { CheckCircleIcon } from '../../icons';
 
 export interface ExerciseSummaryItemData {
   name: string | undefined;
@@ -13,7 +15,7 @@ export interface ExerciseSummaryItemData {
 }
 
 // ============================================================
-// EXERCISE SUMMARY ITEM
+// EXERCISE ITEM
 // ============================================================
 
 interface ExerciseSummaryItemProps {
@@ -25,56 +27,104 @@ interface ExerciseSummaryItemProps {
   delay?: number;
 }
 
-export const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
+const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
   ({ name, setsCompleted, totalVolume, bestSet, isPR, delay = 0 }) => {
     return (
       <motion.div
-        initial={{ opacity: 0, x: -20 }}
+        initial={{ opacity: 0, x: -8 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ delay, type: 'spring', stiffness: 200 }}
-        className="relative premium-card p-4"
+        transition={{ delay, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '14px 16px',
+          background: isPR ? 'var(--mustard)' : 'var(--bone-deep)',
+          border: '2px solid var(--navy)',
+          position: 'relative',
+        }}
       >
+        {/* PR badge */}
         {isPR && (
           <motion.div
-            initial={{ scale: 0, rotate: -45 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: delay + 0.3, type: 'spring', stiffness: 400 }}
-            className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/30"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: delay + 0.2, type: 'spring', stiffness: 400 }}
+            style={{
+              position: 'absolute',
+              top: -8,
+              right: 12,
+              padding: '2px 8px',
+              background: 'var(--navy)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              fontWeight: 600,
+              letterSpacing: '0.2em',
+              color: 'var(--mustard)',
+              textTransform: 'uppercase',
+            }}
           >
-            <TrophyIcon className="w-4 h-4 text-white" />
+            PR
           </motion.div>
         )}
 
-        <div className="flex justify-between items-start mb-3">
-          <h4 className="text-base font-bold text-white leading-tight">{name}</h4>
-          <span className="text-xs text-white/40 bg-white/5 px-2 py-1 rounded-lg font-mono">
-            {setsCompleted} sets
+        <div className="flex items-center gap-3">
+          {isPR && (
+            <CheckCircleIcon
+              size={16}
+              strokeWidth={2.5}
+              style={{ color: 'var(--navy)', flexShrink: 0 }}
+            />
+          )}
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 15,
+              color: isPR ? 'var(--navy)' : 'var(--ink)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {name || 'תרגיל ללא שם'}
           </span>
         </div>
 
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1.5">
-            <FlameIcon className="w-3.5 h-3.5 text-orange-400" />
-            <span className="text-white/70 font-medium">{totalVolume.toLocaleString()} kg</span>
-          </div>
+        <div className="flex items-center gap-4">
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              letterSpacing: '0.08em',
+              color: isPR ? 'var(--navy)' : 'var(--stone)',
+              textTransform: 'uppercase',
+              direction: 'ltr',
+            }}
+          >
+            {setsCompleted} סטים
+          </span>
           {bestSet && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-white/30">Best:</span>
-              <span className="text-[var(--cosmos-accent-primary)] font-bold">
-                {bestSet.weight}kg × {bestSet.reps}
-              </span>
-            </div>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                letterSpacing: '0.05em',
+                color: isPR ? 'var(--navy)' : 'var(--ink)',
+                fontVariantNumeric: 'tabular-nums',
+                direction: 'ltr',
+              }}
+            >
+              {bestSet.weight}kg × {bestSet.reps}
+            </span>
           )}
         </div>
       </motion.div>
     );
   }
 );
-
 ExerciseSummaryItem.displayName = 'ExerciseSummaryItem';
 
 // ============================================================
-// SUMMARY EXERCISE LIST
+// SUMMARY LIST
 // ============================================================
 
 export interface SummaryExerciseListProps {
@@ -85,38 +135,51 @@ export interface SummaryExerciseListProps {
 }
 
 export const SummaryExerciseList: React.FC<SummaryExerciseListProps> = memo(
-  ({ exercises, prExercises, maxItems, startDelay = 0.5 }) => {
+  ({ exercises, prExercises, maxItems, startDelay = 0 }) => {
     const displayExercises = maxItems ? exercises.slice(0, maxItems) : exercises;
     const hasMore = maxItems && exercises.length > maxItems;
 
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: startDelay }}
-      >
-        <h3 className="text-xs font-bold text-white/30 uppercase tracking-[0.15em] mb-3 px-1">
-          סיכום תרגילים
-        </h3>
-        <div className="space-y-2">
-          {displayExercises.map((ex, i) => (
-            <ExerciseSummaryItem
-              key={ex.name ?? ''}
-              name={ex.name ?? ''}
-              setsCompleted={ex.setsCompleted}
-              totalVolume={ex.totalVolume}
-              bestSet={ex.bestSet}
-              isPR={prExercises.has(ex.name ?? '')}
-              delay={startDelay + i * 0.08}
-            />
-          ))}
-          {hasMore && (
-            <p className="text-center text-xs text-white/30 pt-2">
-              + {exercises.length - maxItems!} תרגילים נוספים
-            </p>
-          )}
+      <div className="flex flex-col gap-2">
+        <div
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.18em',
+            color: 'var(--stone)',
+            textTransform: 'uppercase',
+            marginBottom: 4,
+          }}
+        >
+          §02 · התרגילים
         </div>
-      </motion.div>
+        {displayExercises.map((ex, i) => (
+          <ExerciseSummaryItem
+            key={ex.name ?? ''}
+            name={ex.name ?? ''}
+            setsCompleted={ex.setsCompleted}
+            totalVolume={ex.totalVolume}
+            bestSet={ex.bestSet}
+            isPR={prExercises.has(ex.name ?? '')}
+            delay={startDelay + i * 0.06}
+          />
+        ))}
+        {hasMore && (
+          <p
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.12em',
+              color: 'var(--stone)',
+              textTransform: 'uppercase',
+              textAlign: 'center',
+              paddingTop: 8,
+            }}
+          >
+            + {exercises.length - maxItems!} תרגילים נוספים
+          </p>
+        )}
+      </div>
     );
   }
 );

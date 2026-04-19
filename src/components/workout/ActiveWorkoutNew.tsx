@@ -814,7 +814,7 @@ export const WorkoutContent: React.FC<{
       {state.showConfetti && <ParticleExplosion />}
 
       {/* Main Content - Editorial Annual Layout */}
-      <div className="relative z-10 flex flex-col flex-1">
+      <div className="relative z-10 flex flex-col flex-1 overflow-y-auto overscroll-contain">
         {/* Header (thin bone strip) */}
         <WorkoutHeader
           startTimestamp={state.startTimestamp}

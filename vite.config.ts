@@ -12,9 +12,9 @@ export default defineConfig({
       manifest: {
         name: 'SparkOS Fitness',
         short_name: 'SparkOS',
-        description: 'Training journal',
-        theme_color: '#000000',
-        background_color: '#000000',
+        description: 'SparkOS Fitness - Training journal',
+        theme_color: '#F5F1EB',
+        background_color: '#F5F1EB',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',

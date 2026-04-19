@@ -17,7 +17,7 @@ import { getWorkoutSessions } from '../../../services/dataService';
 import { getWorkoutTemplates } from '../../../services/workoutDb';
 import type { WorkoutTemplate } from '../../../types';
 import { triggerHaptic } from '../../../utils/haptics';
-import { DumbbellIcon, LightningIcon } from '../../icons';
+import { DumbbellIcon } from '../../icons';
 
 const NOISE_TEXTURE_SVG = `data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E`;
 
@@ -126,7 +126,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           for (let i = 0; i < sortedSessions.length; i++) {
-            const sessionDate = new Date(sortedSessions[i].startTime);
+            const sessionDate = new Date(sortedSessions[i]?.startTime ?? 0);
             sessionDate.setHours(0, 0, 0, 0);
             const daysDiff = Math.floor(
               (today.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24)
@@ -136,7 +136,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               let checkDate = new Date(today);
               checkDate.setDate(checkDate.getDate() - 1);
               for (let j = 1; j < sortedSessions.length; j++) {
-                const prevDate = new Date(sortedSessions[j].startTime);
+                const prevDate = new Date(sortedSessions[j]?.startTime ?? 0);
                 prevDate.setHours(0, 0, 0, 0);
                 const prevDiff = Math.floor(
                   (checkDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24)
@@ -234,9 +234,8 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
     else if (diffDays < 7) timeLabel = `לפני ${diffDays} ימים`;
     else timeLabel = `לפני ${Math.floor(diffDays / 7)} שבועות`;
     return {
-      sets: lastWorkout.completedSets,
       volume: lastWorkout.totalVolume,
-      exercises: lastWorkout.exercises.length,
+      exercises: lastWorkout.exerciseCount,
       timeLabel,
     };
   }, [lastWorkout]);
@@ -325,7 +324,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   textAlign: 'center',
                 }}
               >
-                {lastWorkoutLabel ? lastWorkoutLabel.sets : '—'}
+                {lastWorkoutLabel ? lastWorkoutLabel.exercises : '—'}
               </div>
               <div
                 className="uppercase mt-1"
@@ -572,7 +571,12 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
           )}
 
           {/* CTA Button */}
-          <motion.div key="cta" variants={itemVariants} className="mt-auto">
+          <motion.div
+            key="cta"
+            variants={itemVariants}
+            className="mt-auto"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
+          >
             {/* Start Workout Button */}
             <button
               type="button"
