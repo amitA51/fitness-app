@@ -7,14 +7,11 @@ import { motion } from 'framer-motion';
 import {
   Activity,
   ArrowRight,
-  BarChart2,
   ChevronLeft,
   Clock,
   Dumbbell,
   Flame,
   Star,
-  Target,
-  TrendingDown,
   TrendingUp,
   Trophy,
 } from 'lucide-react';
@@ -63,15 +60,6 @@ function formatTime(isoString: string): string {
   });
 }
 
-function formatDuration(seconds: number): string {
-  if (seconds < 3600) {
-    return `${Math.round(seconds / 60)} דקות`;
-  }
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.round((seconds % 3600) / 60);
-  return minutes > 0 ? `${hours} שעה ו-${minutes} דקות` : `${hours} שעות`;
-}
-
 function formatVolume(volume: number): string {
   if (volume >= 1000) {
     return `${(volume / 1000).toFixed(1)}k`;
@@ -79,18 +67,18 @@ function formatVolume(volume: number): string {
   return volume.toLocaleString();
 }
 
-function getMuscleGroupColor(muscle: string): { bg: string; text: string; border: string } {
-  const colors: Record<string, { bg: string; text: string; border: string }> = {
-    Chest: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/30' },
-    Back: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30' },
-    Shoulders: { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/30' },
-    Legs: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30' },
-    Triceps: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30' },
-    Biceps: { bg: 'bg-pink-500/10', text: 'text-pink-400', border: 'border-pink-500/30' },
-    Core: { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/30' },
-    Cardio: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30' },
+function getMuscleGroupColor(muscle: string): string {
+  const colors: Record<string, string> = {
+    Chest: 'var(--mustard)',
+    Back: 'var(--navy)',
+    Shoulders: 'var(--stone)',
+    Legs: 'var(--mustard-dark)',
+    Triceps: 'var(--navy-light)',
+    Biceps: 'var(--mustard)',
+    Core: 'var(--stone)',
+    Cardio: 'var(--navy)',
   };
-  return colors[muscle] || { bg: 'bg-white/5', text: 'text-white/70', border: 'border-white/20' };
+  return colors[muscle] || 'var(--navy)';
 }
 
 function calculateTotalSets(exercises: WorkoutExercise[]): number {
@@ -129,28 +117,25 @@ function getBestSet(sets: WorkoutSet[]): { weight: number; reps: number; volume:
 
 function DetailSkeleton() {
   return (
-    <div className="min-h-screen bg-black animate-pulse">
+    <div className="min-h-screen pb-28 animate-pulse" style={{ background: 'var(--bone)' }}>
       <div className="px-4 pt-6">
-        {/* Header skeleton */}
         <div className="flex items-center gap-4 mb-8">
-          <div className="w-10 h-10 rounded-full bg-white/10" />
+          <div className="w-10 h-10 bg-[var(--bone-deep)]" />
           <div className="flex-1">
-            <div className="h-6 w-40 bg-white/10 rounded-lg mb-2" />
-            <div className="h-4 w-24 bg-white/10 rounded" />
+            <div className="h-6 w-40 bg-[var(--bone-deep)] mb-2" />
+            <div className="h-4 w-24 bg-[var(--bone-deep)]" />
           </div>
         </div>
 
-        {/* Stats skeleton */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-[var(--color-surface)] rounded-[20px] p-4 h-24" />
+            <div key={i} className="bg-[var(--bone-deep)] p-4 h-24" />
           ))}
         </div>
 
-        {/* Exercise cards skeleton */}
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-[var(--color-surface)] rounded-[20px] p-4 h-32" />
+            <div key={i} className="bg-[var(--bone-deep)] p-4 h-32" />
           ))}
         </div>
       </div>
@@ -178,70 +163,117 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08, duration: 0.3 }}
-      className={`bg-[var(--color-surface)] rounded-[20px] border ${muscleColor.border} overflow-hidden`}
+      className="card-outlined"
     >
       {/* Exercise Header */}
-      <div className="p-4 pb-3">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-barlow-condensed font-bold text-[18px] text-white leading-tight truncate">
-              {exercise.exerciseName || exercise.name || 'תרגיל ללא שם'}
-            </h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span
-                className={`text-[11px] font-barlow px-2 py-0.5 rounded-full ${muscleColor.bg} ${muscleColor.text}`}
-              >
-                {exercise.targetMuscle || exercise.muscleGroup || 'שריר'}
-              </span>
-              {exercise.tempo && (
-                <span className="text-[11px] font-barlow text-[var(--color-text-secondary)]">
-                  טמפו: {exercise.tempo}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Volume badge */}
-          <div className="bg-white/5 rounded-lg px-2.5 py-1">
-            <span className="text-[13px] font-barlow font-bold text-white">
-              {formatVolume(totalVolume)} ק"ג
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1 min-w-0">
+          <h3
+            className="line-clamp-1"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '22px',
+              lineHeight: 1,
+              color: 'var(--ink)',
+              textTransform: 'uppercase',
+            }}
+          >
+            {exercise.exerciseName || exercise.name || 'תרגיל ללא שם'}
+          </h3>
+          <div className="flex items-center gap-2 mt-1">
+            <span
+              className="badge"
+              style={{ background: muscleColor, color: 'var(--bone)' }}
+            >
+              {exercise.targetMuscle || exercise.muscleGroup || 'שריר'}
             </span>
+            {exercise.tempo && (
+              <span className="eyebrow" style={{ color: 'var(--stone)' }}>
+                טמפו: {exercise.tempo}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Best Set Highlight */}
-        {bestSet && (
-          <div className={`flex items-center gap-2 p-2.5 rounded-xl ${muscleColor.bg} mb-3`}>
-            <Trophy size={14} className={muscleColor.text} />
-            <span className={`text-[12px] font-barlow ${muscleColor.text}`}>הסט הטוב ביותר:</span>
-            <span className="text-[13px] font-barlow font-bold text-white mr-auto">
-              {bestSet.weight} ק"ג × {bestSet.reps} חזרות
+        {/* Volume */}
+        <div className="shrink-0 ms-3">
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '20px',
+              color: 'var(--ink)',
+            }}
+          >
+            {formatVolume(totalVolume)}
+          </span>
+          <span className="eyebrow" style={{ color: 'var(--mustard)' }}> ק"ג</span>
+        </div>
+      </div>
+
+      {/* Best Set Highlight */}
+      {bestSet && (
+        <div
+          className="flex items-center gap-2 p-3 mb-3"
+          style={{ background: 'var(--mustard)' }}
+        >
+          <Trophy size={14} style={{ color: 'var(--navy)' }} />
+          <span className="eyebrow" style={{ color: 'var(--navy)' }}>הסט הטוב ביותר:</span>
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '15px',
+              color: 'var(--navy)',
+              marginInlineStart: 'auto',
+            }}
+          >
+            {bestSet.weight} ק"ג × {bestSet.reps} חזרות
+          </span>
+        </div>
+      )}
+
+      {/* Sets Grid */}
+      <div className="space-y-0">
+        <div
+          className="flex items-center py-2"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'var(--stone)',
+            borderBottom: '1px solid var(--bone-deep)',
+          }}
+        >
+          <span className="flex-1">סט</span>
+          <span className="w-16 text-center">משקל</span>
+          <span className="w-16 text-center">חזרות</span>
+          <span className="w-16 text-center">נפח</span>
+        </div>
+
+        {completedSets.map((set, setIndex) => (
+          <div
+            key={set.id || setIndex}
+            className="flex items-center py-2.5"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '13px',
+              color: 'var(--ink)',
+              borderBottom: setIndex < completedSets.length - 1 ? '1px solid var(--bone-deep)' : 'none',
+            }}
+          >
+            <span className="flex-1" style={{ color: 'var(--stone)' }}>
+              {set.setNumber || setIndex + 1}
+            </span>
+            <span className="w-16 text-center" style={{ fontWeight: 600 }}>{set.weight || 0} ק"ג</span>
+            <span className="w-16 text-center" style={{ fontWeight: 600 }}>{set.reps || 0}</span>
+            <span className="w-16 text-center" style={{ color: 'var(--stone)' }}>
+              {((set.weight || 0) * (set.reps || 0)).toLocaleString()}
             </span>
           </div>
-        )}
-
-        {/* Sets Grid */}
-        <div className="space-y-2">
-          <div className="flex items-center text-[11px] font-barlow text-[var(--color-text-secondary)] px-1">
-            <span className="flex-1">סט</span>
-            <span className="w-16 text-center">משקל</span>
-            <span className="w-16 text-center">חזרות</span>
-            <span className="w-16 text-center">נפח</span>
-          </div>
-
-          {completedSets.map((set, setIndex) => (
-            <div key={set.id || setIndex} className="flex items-center text-[13px] font-barlow">
-              <span className="flex-1 text-[var(--color-text-secondary)]">
-                {set.setNumber || setIndex + 1}
-              </span>
-              <span className="w-16 text-center text-white font-medium">{set.weight || 0} ק"ג</span>
-              <span className="w-16 text-center text-white font-medium">{set.reps || 0}</span>
-              <span className="w-16 text-center text-[var(--color-text-secondary)]">
-                {((set.weight || 0) * (set.reps || 0)).toLocaleString()}
-              </span>
-            </div>
-          ))}
-        </div>
+        ))}
       </div>
     </motion.div>
   );
@@ -249,34 +281,7 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
 
 // ============================================================================
 // STATS ROW
-// ============================================================================
-
-interface StatItemProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  subValue?: string;
-  trend?: 'up' | 'down' | 'neutral';
-}
-
-function StatItem({ icon, label, value, subValue, trend }: StatItemProps) {
-  return (
-    <div className="flex-1 bg-[var(--color-surface)] rounded-[16px] p-3 flex flex-col items-center text-center min-w-0">
-      <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center mb-2">
-        {icon}
-      </div>
-      <p className="text-[18px] font-bold text-white leading-none flex items-center gap-1">
-        {value}
-        {trend === 'up' && <TrendingUp size={12} className="text-green-400" />}
-        {trend === 'down' && <TrendingDown size={12} className="text-red-400" />}
-      </p>
-      <p className="text-[10px] text-[var(--color-text-secondary)] mt-1 leading-none">{label}</p>
-      {subValue && (
-        <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">{subValue}</p>
-      )}
-    </div>
-  );
-}
+// StatItem and getColor removed — using data-strip classes instead
 
 // ============================================================================
 // MUSCLE GROUP BREAKDOWN
@@ -308,50 +313,35 @@ function MuscleBreakdown({ exercises }: MuscleBreakdownProps) {
   const totalVolume = Object.values(muscleStats).reduce((sum, m) => sum + m.volume, 0);
   const sortedMuscles = Object.entries(muscleStats).sort((a, b) => b[1].volume - a[1].volume);
 
-  const getColor = (index: number): string => {
-    const colors = [
-      'bg-red-500',
-      'bg-blue-500',
-      'bg-green-500',
-      'bg-purple-500',
-      'bg-orange-500',
-      'bg-pink-500',
-      'bg-yellow-500',
-      'bg-cyan-500',
-    ];
-    return colors[index % colors.length] ?? 'bg-gray-500';
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="bg-[var(--color-surface)] rounded-[20px] p-4 border border-white/[0.06] mb-6"
+      className="card-outlined mb-6"
     >
-      <h3 className="font-barlow-condensed font-bold text-[16px] text-white mb-4 flex items-center gap-2">
-        <Activity size={16} className="text-primary" />
-        פילוח שרירים
+      <h3 className="section-title mb-4 flex items-center gap-2">
+        <Activity size={14} />
+        § MUSCLE BREAKDOWN · פילוח שרירים
       </h3>
 
-      {/* Volume bar chart */}
       <div className="space-y-3">
         {sortedMuscles.slice(0, 6).map(([muscle, stats], index) => {
           const percentage = totalVolume > 0 ? (stats.volume / totalVolume) * 100 : 0;
           return (
-            <div key={muscle}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[12px] font-barlow text-white">{muscle}</span>
-                <span className="text-[11px] font-barlow text-[var(--color-text-secondary)]">
-                  {stats.sets} סטים | {formatVolume(stats.volume)} ק"ג
+            <div key={muscle} className="skill-row">
+              <div className="skill-top">
+                <span className="skill-name">{muscle}</span>
+                <span className="skill-pct">
+                  {stats.sets} סטים · {formatVolume(stats.volume)} ק"ג
                 </span>
               </div>
-              <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+              <div className="skill-bar">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${percentage}%` }}
                   transition={{ delay: 0.3 + index * 0.05, duration: 0.5 }}
-                  className={`h-full rounded-full ${getColor(index)}`}
+                  className="skill-fill"
                 />
               </div>
             </div>
@@ -492,20 +482,20 @@ export default function WorkoutDetail() {
 
   if (error || !session) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6">
-        <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
-          <Dumbbell size={36} className="text-[#48484A]" />
+      <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: 'var(--bone)' }}>
+        <div className="w-20 h-20 flex items-center justify-center mb-6" style={{ background: 'var(--navy)', color: 'var(--mustard)' }}>
+          <Dumbbell size={36} />
         </div>
-        <h2 className="font-barlow-condensed font-bold text-[22px] text-white mb-2">
+        <h2 style={{ fontFamily: 'var(--font-hebrew)', fontWeight: 800, fontSize: '22px', color: 'var(--ink)', marginBottom: '8px' }}>
           {error || 'האימון לא נמצא'}
         </h2>
-        <p className="text-[14px] text-[var(--color-text-secondary)] mb-6 text-center">
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--stone)', marginBottom: '24px', textAlign: 'center' }}>
           לא ניתן לטעון את פרטי האימון
         </p>
         <button
           type="button"
           onClick={() => navigate('/history')}
-          className="min-h-[48px] px-6 py-3 bg-primary text-white rounded-[14px] font-barlow font-semibold text-[15px]"
+          className="btn-primary"
         >
           חזרה להיסטוריה
         </button>
@@ -519,118 +509,134 @@ export default function WorkoutDetail() {
 
   return (
     <div
-      className="min-h-screen bg-black pb-[100px] pb-[calc(100px+env(safe-area-inset-bottom))]"
+      className="min-h-screen pb-28"
+      style={{ background: 'var(--bone)' }}
       dir="rtl"
     >
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-black/90 backdrop-blur-lg border-b border-white/5 pt-[env(safe-area-inset-top)]">
-        <div className="flex items-center gap-3 px-4 py-4">
+      <div className="masthead safe-area-top sticky top-0 z-10">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => navigate('/history')}
-            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center active:scale-95 transition-transform"
+            className="w-10 h-10 flex items-center justify-center"
+            style={{ background: 'var(--mustard)', color: 'var(--navy)' }}
           >
-            <ChevronLeft size={20} className="text-white" />
+            <ChevronLeft size={20} />
           </button>
           <div className="flex-1">
-            <h1 className="font-barlow-condensed font-bold text-[20px] text-white">פרטי אימון</h1>
-            <p className="text-[12px] text-[var(--color-text-secondary)]">
-              {formatDate(session.date || session.startTime)}
-            </p>
+            <div className="kicker">WORKOUT DETAIL</div>
+            <h1
+              style={{
+                fontFamily: 'var(--font-hebrew)',
+                fontSize: 'clamp(32px, 8vw, 48px)',
+                fontWeight: 800,
+                lineHeight: 0.9,
+                color: 'var(--bone)',
+              }}
+            >
+              פרטי אימון
+            </h1>
           </div>
           {session.rating && (
-            <div className="flex items-center gap-1 text-yellow-400">
+            <div className="flex items-center gap-1" style={{ color: 'var(--mustard)' }}>
               <Star size={16} fill="currentColor" />
-              <span className="text-[14px] font-barlow font-bold">{session.rating}</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '18px' }}>{session.rating}</span>
             </div>
           )}
         </div>
+        <p
+          className="mt-2"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            letterSpacing: '0.22em',
+            color: 'var(--mustard)',
+            textTransform: 'uppercase',
+          }}
+        >
+          {formatDate(session.date || session.startTime)}
+        </p>
       </div>
 
-      <div className="px-4 pt-4">
+      <div className="px-5 pt-5">
         {/* Time Info */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[var(--color-surface)] rounded-[20px] p-4 mb-4 border border-white/[0.06]"
-        >
-          <div className="flex items-center justify-between">
+        <div className="card-outlined mb-4">
+          <div className="flex items-center justify-between py-3">
             <div className="flex items-center gap-2">
-              <Clock size={16} className="text-blue-400" />
-              <span className="text-[14px] font-barlow text-[var(--color-text-secondary)]">
+              <Clock size={16} style={{ color: 'var(--navy)' }} />
+              <span style={{ fontFamily: 'var(--font-hebrew)', fontSize: '14px', color: 'var(--stone)' }}>
                 שעת התחלה
               </span>
             </div>
-            <span className="text-[14px] font-barlow font-semibold text-white">
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '14px', fontWeight: 600, color: 'var(--ink)' }}>
               {formatTime(session.startTime)}
             </span>
           </div>
-          <div className="h-px bg-white/5 my-3" />
-          <div className="flex items-center justify-between">
+          <div style={{ height: '1px', background: 'var(--bone-deep)' }} />
+          <div className="flex items-center justify-between py-3">
             <div className="flex items-center gap-2">
-              <Clock size={16} className="text-green-400" />
-              <span className="text-[14px] font-barlow text-[var(--color-text-secondary)]">
+              <Clock size={16} style={{ color: 'var(--mustard)' }} />
+              <span style={{ fontFamily: 'var(--font-hebrew)', fontSize: '14px', color: 'var(--stone)' }}>
                 שעת סיום
               </span>
             </div>
-            <span className="text-[14px] font-barlow font-semibold text-white">
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '14px', fontWeight: 600, color: 'var(--ink)' }}>
               {session.endTime ? formatTime(session.endTime) : '—'}
             </span>
           </div>
-        </motion.div>
+        </div>
 
         {/* Stats Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 gap-3 mb-6"
-        >
-          <StatItem
-            icon={<Clock size={16} className="text-blue-400" />}
-            label="משך האימון"
-            value={formatDuration(session.duration)}
-          />
-          <StatItem
-            icon={<Dumbbell size={16} className="text-green-400" />}
-            label="נפח כולל"
-            value={`${formatVolume(session.totalVolume)} ק"ג`}
-          />
-          <StatItem
-            icon={<TrendingUp size={16} className="text-purple-400" />}
-            label="סטים"
-            value={totalSets.toString()}
-            subValue={`${totalReps} חזרות`}
-          />
-          <StatItem
-            icon={<Flame size={16} className="text-orange-400" />}
-            label="שריפת קלוריות"
-            value={estimatedCalories.toString()}
-            subValue="קלוריות (משוער)"
-          />
-        </motion.div>
+        <div className="data-strip mb-5">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Clock size={12} style={{ color: 'var(--navy)' }} />
+              <span className="eyebrow">DURATION</span>
+            </div>
+            <div className="val">
+              {Math.round(session.duration / 60)}
+              <em>MIN</em>
+            </div>
+            <div className="lbl">משך האימון</div>
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Dumbbell size={12} style={{ color: 'var(--navy)' }} />
+              <span className="eyebrow">VOLUME</span>
+            </div>
+            <div className="val">
+              {formatVolume(session.totalVolume)}
+              <em>KG</em>
+            </div>
+            <div className="lbl">נפח כולל</div>
+          </div>
+        </div>
 
-        {/* Goal Badge */}
-        {session.goalType && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/20 rounded-[16px] mb-6"
-          >
-            <Target size={16} className="text-primary" />
-            <span className="text-[13px] font-barlow text-primary">סוג אימון:</span>
-            <span className="text-[13px] font-barlow font-semibold text-white mr-auto">
-              {session.goalType === 'strength'
-                ? 'כוח'
-                : session.goalType === 'hypertrophy'
-                  ? 'נפח/שריר'
-                  : session.goalType === 'endurance'
-                    ? 'סיבולת'
-                    : 'תחזוקה'}
-            </span>
-          </motion.div>
-        )}
+        {/* Extra stats */}
+        <div className="data-strip mb-5">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp size={12} style={{ color: 'var(--navy)' }} />
+              <span className="eyebrow">SETS</span>
+            </div>
+            <div className="val">
+              {totalSets}
+            </div>
+            <div className="lbl">{totalReps} חזרות</div>
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Flame size={12} style={{ color: 'var(--navy)' }} />
+              <span className="eyebrow">CALORIES</span>
+            </div>
+            <div className="val">
+              {estimatedCalories}
+              <em>KCAL</em>
+            </div>
+            <div className="lbl">משוער</div>
+          </div>
+        </div>
 
         {/* Muscle Breakdown */}
         <MuscleBreakdown exercises={session.exercises} />
@@ -642,17 +648,12 @@ export default function WorkoutDetail() {
 
         {/* Exercises Section */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-barlow-condensed font-bold text-[20px] text-white flex items-center gap-2">
-              <BarChart2 size={18} className="text-primary" />
-              תרגילים ({session.exercises.length})
-            </h2>
-            <span className="text-[12px] font-barlow text-[var(--color-text-secondary)]">
-              {totalSets} סטים
-            </span>
+          <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
+            <span className="left">§ EXERCISES · {session.exercises.length}</span>
+            <span className="right">תרגילים</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3 mt-4">
             {session.exercises.map((exercise, index) => (
               <ExerciseCard key={exercise.id || index} exercise={exercise} index={index} />
             ))}
@@ -661,35 +662,32 @@ export default function WorkoutDetail() {
 
         {/* Notes Section */}
         {session.notes && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-[var(--color-surface)] rounded-[20px] p-4 border border-white/[0.06] mb-6"
-          >
-            <h3 className="font-barlow font-semibold text-[14px] text-[var(--color-text-secondary)] mb-2">
-              הערות
-            </h3>
-            <p className="text-[14px] font-barlow text-white leading-relaxed">{session.notes}</p>
-          </motion.div>
+          <div className="card-outlined mb-6">
+            <h3 className="section-title mb-2">§ NOTES · הערות</h3>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--ink)', lineHeight: 1.6 }}>
+              {session.notes}
+            </p>
+          </div>
         )}
 
         {/* Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="flex gap-3"
-        >
+        <div className="btn-row mb-6">
           <button
             type="button"
             onClick={() => navigate('/history')}
-            className="flex-1 min-h-[48px] py-3 bg-white/5 text-white rounded-[14px] font-barlow font-semibold text-[15px] flex items-center justify-center gap-2"
+            className="btn-primary focus-ring flex items-center justify-center gap-2"
           >
             <ArrowRight size={16} />
             חזרה להיסטוריה
           </button>
-        </motion.div>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="btn-secondary focus-ring"
+          >
+            דשבורד
+          </button>
+        </div>
       </div>
     </div>
   );

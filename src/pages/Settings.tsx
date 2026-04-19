@@ -8,8 +8,10 @@ import {
   Download,
   Dumbbell,
   RefreshCw,
-  ArrowRightLeft,
   ArrowUpFromLine,
+  Save,
+  Share2,
+  Target,
   User,
   Zap,
 } from 'lucide-react';
@@ -394,7 +396,7 @@ function ProfileAvatar({ name }: { name: string }) {
 // ============================================================================
 
 export default function Settings() {
-  const { settings, updateSettings } = useSettings();
+  const { settings, updateSettings, updateWorkoutSettings } = useSettings();
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [nutrition, setNutrition] = useState<NutritionGoals>(DEFAULT_NUTRITION);
   const [workoutPrefs, setWorkoutPrefs] = useState<WorkoutPrefs>(DEFAULT_WORKOUT_PREFS);

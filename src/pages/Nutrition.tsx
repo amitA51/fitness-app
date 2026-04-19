@@ -442,13 +442,15 @@ export default function NutritionPage() {
       {/* FAB */}
       <motion.button
         onClick={() => setShowAddMeal(true)}
-        className="fixed bottom-24 left-5 z-40 flex items-center justify-center"
+        className="fixed bottom-24 z-40 flex items-center justify-center"
         style={{
           width: '56px',
           height: '56px',
           background: 'var(--mustard)',
           color: 'var(--navy)',
           border: '2px solid var(--navy)',
+          left: '20px',
+          right: 'auto',
         }}
         whileTap={{ scale: 0.92 }}
         whileHover={{ scale: 1.06 }}

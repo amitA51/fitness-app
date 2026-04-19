@@ -248,8 +248,8 @@ const VirtualizedSessionList = memo(function VirtualizedSessionList({
   return (
     <div
       ref={parentRef}
-      className="space-y-3 overflow-y-auto"
-      style={{ height: 'calc(100vh - 340px)', WebkitOverflowScrolling: 'touch' }}
+      className="space-y-3"
+      style={{ minHeight: '200px' }}
     >
       <div
         style={{
