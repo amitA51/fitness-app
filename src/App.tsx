@@ -2,7 +2,7 @@
 // SPARKOS FITNESS - Root App Component
 // ============================================================================
 
-import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { memo, Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   BrowserRouter,
   Navigate,
@@ -45,18 +45,62 @@ const WorkoutContent = lazy(async () => {
 });
 
 // ============================================================================
-// Shared loading fallback
+// Route prefetch map - prefetch on hover/focus for instant navigation
+// ============================================================================
+
+const routePrefetchMap: Record<string, () => Promise<unknown>> = {
+  '/': () => import('./pages/Dashboard'),
+  '/history': () => import('./pages/History'),
+  '/nutrition': () => import('./pages/Nutrition'),
+  '/progress': () => import('./pages/Progress'),
+  '/settings': () => import('./pages/Settings'),
+  '/templates': () => import('./pages/Templates'),
+  '/workout': () => import('./components/workout/ActiveWorkoutNew'),
+};
+
+const prefetchedRoutes = new Set<string>();
+
+export function prefetchRoute(path: string) {
+  const base = path.split('/')[1] ? `/${path.split('/')[1]}` : '/';
+  const key = base === '/history' || base === '/workout' ? path.replace(/\/[^/]+$/, '') : base;
+  const loader = routePrefetchMap[key];
+  if (loader && !prefetchedRoutes.has(key)) {
+    prefetchedRoutes.add(key);
+    loader();
+  }
+}
+
+// ============================================================================
+// Shared loading fallback with skeleton
 // ============================================================================
 
 function PageLoader() {
   return (
     <div
-      className="min-h-screen bg-bone flex items-center justify-center"
+      className="min-h-screen bg-bone"
       role="status"
       aria-live="polite"
       aria-label="טוען"
     >
-      <div className="w-10 h-10 border-2 border-navy border-t-transparent animate-spin" />
+      <div style={{ padding: '24px 20px' }}>
+        <div className="animate-shimmer" style={{
+          height: 120,
+          background: 'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
+          backgroundSize: '200% 100%',
+          marginBottom: 16,
+        }} />
+        <div className="animate-shimmer" style={{
+          height: 80,
+          background: 'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
+          backgroundSize: '200% 100%',
+          marginBottom: 16,
+        }} />
+        <div className="animate-shimmer" style={{
+          height: 200,
+          background: 'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
+          backgroundSize: '200% 100%',
+        }} />
+      </div>
     </div>
   );
 }
@@ -73,14 +117,50 @@ const placeholderItem: {
 };
 
 // ============================================================================
+// Path-to-accent mapping (constant, no re-creation)
+// ============================================================================
+
+const PATH_ACCENT_MAP: Array<[RegExp, PageAccent]> = [
+  [/^\/$/, 'dashboard'],
+  [/^\/workout/, 'workout'],
+  [/^\/nutrition/, 'nutrition'],
+  [/^\/progress/, 'progress'],
+  [/^\/templates/, 'templates'],
+  [/^\/history/, 'history'],
+  [/^\/settings/, 'settings'],
+];
+
+const PATH_LABEL_MAP: Array<[RegExp, string]> = [
+  [/^\/$/, 'דשבורד'],
+  [/^\/workout/, 'אימון'],
+  [/^\/nutrition/, 'תזונה'],
+  [/^\/progress/, 'התקדמות'],
+  [/^\/templates/, 'תבניות'],
+  [/^\/history/, 'היסטוריה'],
+  [/^\/settings/, 'הגדרות'],
+];
+
+function getPageAccent(path: string): PageAccent {
+  for (const [regex, accent] of PATH_ACCENT_MAP) {
+    if (regex.test(path)) return accent;
+  }
+  return 'dashboard';
+}
+
+function getPageLabel(path: string): string {
+  for (const [regex, label] of PATH_LABEL_MAP) {
+    if (regex.test(path)) return label;
+  }
+  return 'מסך';
+}
+
+// ============================================================================
 // App Component
 // ============================================================================
 
 function App() {
-  // Auth + onboarding state
   const [appState, setAppState] = useState<'loading' | 'login' | 'onboarding' | 'app'>('loading');
 
-  // Check auth + onboarding status on mount
   useEffect(() => {
     const checkAuth = async () => {
       const session = await getSession();
@@ -96,7 +176,6 @@ function App() {
         return;
       }
 
-      // Authenticated + onboarded — load profile
       const data = safeJsonParse<OnboardingData>(localStorage.getItem('onboarding_data'));
       if (data) {
         localStorage.setItem(
@@ -126,20 +205,13 @@ function App() {
     checkAuth();
   }, []);
 
-  // Handle auth state changes
   useEffect(() => {
     const handleAuthChange = () => {
       const check = async () => {
         const session = await getSession();
         const onboardingDone = localStorage.getItem('onboarding_completed') === 'true';
-        if (!session) {
-          setAppState('login');
-          return;
-        }
-        if (!onboardingDone) {
-          setAppState('onboarding');
-          return;
-        }
+        if (!session) { setAppState('login'); return; }
+        if (!onboardingDone) { setAppState('onboarding'); return; }
         setAppState('app');
       };
       check();
@@ -158,23 +230,20 @@ function App() {
     };
   }, []);
 
-  // Handlers for onboarding
-  const handleOnboardingComplete = (data: OnboardingData) => {
+  const handleOnboardingComplete = useCallback((data: OnboardingData) => {
     saveOnboardingData(data);
     setAppState('app');
-  };
+  }, []);
 
-  const handleOnboardingSkip = () => {
+  const handleOnboardingSkip = useCallback(() => {
     localStorage.setItem('onboarding_completed', 'true');
     setAppState('app');
-  };
+  }, []);
 
-  // Show loading state while checking auth
   if (appState === 'loading') {
     return <PageLoader />;
   }
 
-  // Show login for unauthenticated users
   if (appState === 'login') {
     return (
       <BrowserRouter>
@@ -185,7 +254,6 @@ function App() {
     );
   }
 
-  // Show onboarding for first-time users
   if (appState === 'onboarding') {
     return (
       <Suspense fallback={<PageLoader />}>
@@ -194,7 +262,6 @@ function App() {
     );
   }
 
-  // Authenticated + onboarded
   return (
     <BrowserRouter>
       <AppShell />
@@ -202,41 +269,21 @@ function App() {
   );
 }
 
+// Memoized BottomNav to prevent re-renders on location changes within same accent
+const MemoizedBottomNav = memo(BottomNav);
+
 // Separate component to render the main app content
 function AppShell() {
   const location = useLocation();
   const mainRef = useRef<HTMLElement | null>(null);
   const prevPathRef = useRef<string | null>(null);
 
-  // Hide BottomNav during active workout
   const isWorkoutActive = location.pathname.startsWith('/workout');
 
-  // Determine page accent based on current path
-  const getPageAccent = (path: string): PageAccent => {
-    if (path === '/') return 'dashboard';
-    if (path.startsWith('/workout')) return 'workout';
-    if (path.startsWith('/nutrition')) return 'nutrition';
-    if (path.startsWith('/progress')) return 'progress';
-    if (path.startsWith('/templates')) return 'templates';
-    if (path.startsWith('/history')) return 'history';
-    if (path.startsWith('/settings')) return 'settings';
-    return 'dashboard';
-  };
-
-  const pageAccent = getPageAccent(location.pathname);
-  const pageLabel = (() => {
-    if (location.pathname === '/') return 'דשבורד';
-    if (location.pathname.startsWith('/workout')) return 'אימון';
-    if (location.pathname.startsWith('/nutrition')) return 'תזונה';
-    if (location.pathname.startsWith('/progress')) return 'התקדמות';
-    if (location.pathname.startsWith('/templates')) return 'תבניות';
-    if (location.pathname.startsWith('/history')) return 'היסטוריה';
-    if (location.pathname.startsWith('/settings')) return 'הגדרות';
-    return 'מסך';
-  })();
+  const pageAccent = useMemo(() => getPageAccent(location.pathname), [location.pathname]);
+  const pageLabel = useMemo(() => getPageLabel(location.pathname), [location.pathname]);
 
   useLayoutEffect(() => {
-    // Save scroll position for the previous route
     if (prevPathRef.current) {
       try {
         sessionStorage.setItem(`scroll:${prevPathRef.current}`, String(window.scrollY));
@@ -245,7 +292,6 @@ function AppShell() {
       }
     }
 
-    // Restore scroll position for the next route (mobile tab UX)
     const key = `scroll:${location.pathname}`;
     let restored = false;
     try {
@@ -265,7 +311,6 @@ function AppShell() {
       requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
     }
 
-    // Move screen-reader + keyboard focus to main content on navigation
     requestAnimationFrame(() => {
       const el = mainRef.current ?? (document.getElementById('main-content') as HTMLElement | null);
       el?.focus({ preventScroll: true });
@@ -292,6 +337,7 @@ function AppShell() {
               id="main-content"
               className={cn('flex-1', !isWorkoutActive && 'pb-24')}
               tabIndex={-1}
+              style={{ contain: 'layout style' }}
             >
               <Suspense fallback={<PageLoader />}>
                 <Routes>
@@ -357,7 +403,7 @@ function AppShell() {
                 </Routes>
               </Suspense>
             </main>
-            {!isWorkoutActive && <BottomNav />}
+            {!isWorkoutActive && <MemoizedBottomNav />}
           </div>
         </PageThemeProvider>
       </DataProvider>

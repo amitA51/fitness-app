@@ -340,7 +340,7 @@ function TemplateCard({ template, index, onStart, onToggleFavorite, onDelete }: 
 
 function LoadingState() {
   return (
-    <div className="min-h-screen pb-[100px]" dir="rtl">
+    <div className="pb-[88px]" dir="rtl">
       <div className="px-5 pt-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -380,7 +380,7 @@ function LoadingState() {
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <div
-      className="min-h-screen pb-[100px] flex flex-col items-center justify-center px-6"
+      className="pb-[88px] flex flex-col items-center justify-center px-6"
       dir="rtl"
     >
       <motion.div
@@ -482,7 +482,7 @@ export default function Templates() {
   return (
     <>
       <motion.div
-        className="min-h-screen pb-[100px]"
+        className="pb-[88px]"
         style={{ background: 'var(--bone)' }}
         dir="rtl"
         variants={containerVariants}

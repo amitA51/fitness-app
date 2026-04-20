@@ -2,6 +2,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChevronLeft, Dumbbell, Trash2 } from 'lucide-react';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useData } from '../contexts/DataContext';
 import { useWorkoutHistoryHub } from '../hooks/fitness/useWorkoutHistoryHub';
 import { deleteWorkoutSession } from '../services/workoutDb';
 import type { WorkoutSession } from '../types';
@@ -284,7 +285,8 @@ const VirtualizedSessionList = memo(function VirtualizedSessionList({
 // ── History Page ───────────────────────────────────────────────────────────────
 export default function History() {
   const navigate = useNavigate();
-  const { sessions: unsortedSessions, loading, error, refresh } = useWorkoutHistoryHub(100);
+  const { sessions: dataContextSessions } = useData();
+  const { sessions: unsortedSessions, loading, error, refresh } = useWorkoutHistoryHub(100, dataContextSessions);
 
   const sessions = useMemo(
     () =>
@@ -325,7 +327,7 @@ export default function History() {
       : lastMonthVolume.toLocaleString();
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: 'var(--bone)' }} dir="rtl">
+    <div className="pb-28" style={{ background: 'var(--bone)' }} dir="rtl">
       {/* Masthead */}
       <header className="masthead safe-area-top sticky top-0 z-20">
         <div className="kicker">§04 · HISTORIA · {sessions.length} SESSIONS</div>

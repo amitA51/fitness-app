@@ -14,6 +14,7 @@ import { TemplateQuickStart, TemplateStrip } from '../components/dashboard/Templ
 import { WeeklyGrid } from '../components/dashboard/WeeklyGrid';
 import { WeeklyStatsBlock } from '../components/dashboard/WeeklyStatsBlock';
 import { StreakCalendar } from '../components/fitness/StreakCalendar';
+import { useData } from '../contexts/DataContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { useFitnessInsights } from '../hooks/fitness/useFitnessInsights';
 import { useProgressionRecommendation } from '../hooks/fitness/useProgressionRecommendation';
@@ -28,7 +29,8 @@ export default function Dashboard() {
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [selectedWeekOffset, setSelectedWeekOffset] = useState(0);
 
-  const { workoutSessions } = useFitnessInsights();
+  const { sessions: dataContextSessions } = useData();
+  const { workoutSessions } = useFitnessInsights(dataContextSessions);
 
   const exercisesForProgression = useMemo(() => {
     const exerciseMap = new Map<string, { id: string; name: string }>();
@@ -49,7 +51,7 @@ export default function Dashboard() {
     return Array.from(exerciseMap.values()).slice(0, 10);
   }, [workoutSessions]);
 
-  const { exerciseRecommendations } = useProgressionRecommendation(exercisesForProgression);
+  const { exerciseRecommendations } = useProgressionRecommendation(exercisesForProgression, workoutSessions);
 
   useEffect(() => {
     async function load() {
@@ -86,8 +88,9 @@ export default function Dashboard() {
   }, [lastUsedTemplate, navigate]);
 
   const handleThemeChange = useCallback(() => {
+    const nextTheme = THEMES[(THEMES.indexOf(currentTheme as typeof THEMES[number]) + 1) % THEMES.length];
     updateSettings({
-      theme: THEMES[(THEMES.indexOf(currentTheme) + 1) % THEMES.length] ?? currentTheme,
+      theme: nextTheme ?? currentTheme,
     });
   }, [currentTheme, updateSettings]);
 
@@ -149,7 +152,7 @@ export default function Dashboard() {
   const handleNavigate = useCallback((path: string) => navigate(path), [navigate]);
 
   return (
-    <div className="min-h-screen pb-28" dir="rtl" style={{ background: 'var(--bone)' }}>
+    <div className="pb-28" dir="rtl" style={{ background: 'var(--bone)' }}>
       <Greeting onThemeChange={handleThemeChange} weekNumber={weeklyStats.weekNumber} />
 
       <main style={{ padding: '24px 20px 28px' }}>

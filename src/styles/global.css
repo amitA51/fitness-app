@@ -39,6 +39,7 @@ body {
   display: flex;
   flex-direction: column;
   background-color: var(--color-background);
+  contain: layout style;
 }
 
 /* ============================================================================
@@ -816,4 +817,55 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ============================================================================
+   RENDERING PERFORMANCE
+   ============================================================================ */
+
+/* Offscreen content optimization for long lists/feeds */
+.card-outlined,
+.card-interactive,
+.card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
+}
+
+/* GPU acceleration for animated elements */
+.animate-shimmer,
+.animate-spin,
+.animate-float,
+.animate-stagger,
+.animate-slide-up,
+.animate-fade-scale,
+.animate-scale-in {
+  will-change: transform, opacity;
+}
+
+/* Containment for frequently re-rendered sections */
+[style*="contain"] {
+  contain: layout style;
+}
+
+/* Page transition */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+main > * {
+  animation: pageEnter 200ms var(--ease-spring-smooth) both;
+}
+
+/* Scroll performance */
+.scroll-container {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }

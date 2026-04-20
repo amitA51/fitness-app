@@ -155,7 +155,7 @@ export default function ProgressPage() {
   });
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: 'var(--bone)' }} dir="rtl">
+    <div className="pb-28" style={{ background: 'var(--bone)' }} dir="rtl">
       <header className="masthead safe-area-top sticky top-0 z-20">
         <div className="kicker">§05 · PROGRESS · {todayISO}</div>
         <h1

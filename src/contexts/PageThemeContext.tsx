@@ -178,33 +178,41 @@ export function PageThemeProvider({ children, page }: PageThemeProviderProps) {
     [page, theme]
   );
 
-  // Apply CSS variables for this page's accent
+  // Apply CSS variables for this page's accent - batch DOM mutations
   React.useEffect(() => {
     const root = document.documentElement;
-    root.style.setProperty('--accent-current', theme.colors.primary);
-    root.style.setProperty('--accent-current-hover', theme.colors.primaryHover);
-    root.style.setProperty('--accent-current-glow', theme.colors.primaryGlow);
-    root.style.setProperty('--dynamic-accent-start', theme.colors.primary);
-    root.style.setProperty('--dynamic-accent-glow', theme.colors.primaryGlow);
-    root.style.setProperty('--bg-primary', theme.colors.primary);
+
+    // Batch all style changes together
+    const styles: [string, string][] = [
+      ['--accent-current', theme.colors.primary],
+      ['--accent-current-hover', theme.colors.primaryHover],
+      ['--accent-current-glow', theme.colors.primaryGlow],
+      ['--dynamic-accent-start', theme.colors.primary],
+      ['--dynamic-accent-glow', theme.colors.primaryGlow],
+      ['--bg-primary', theme.colors.primary],
+    ];
 
     if (theme.colors.gradient) {
-      root.style.setProperty('--accent-gradient-from', theme.colors.gradient.from);
-      root.style.setProperty('--accent-gradient-to', theme.colors.gradient.to);
-      root.style.setProperty('--dynamic-accent-end', theme.colors.gradient.to);
+      styles.push(
+        ['--accent-gradient-from', theme.colors.gradient.from],
+        ['--accent-gradient-to', theme.colors.gradient.to],
+        ['--dynamic-accent-end', theme.colors.gradient.to],
+      );
     }
 
-    // Set page class for page-specific styles
-    root.classList.remove(
-      'page-dashboard',
-      'page-workout',
-      'page-nutrition',
-      'page-history',
-      'page-progress',
-      'page-templates',
-      'page-settings'
-    );
-    root.classList.add(`page-${page}`);
+    // Use cssText for single DOM write instead of multiple setProperty calls
+    const cssVars = styles.map(([prop, val]) => `${prop}:${val}`).join(';');
+    root.style.cssText += `;${cssVars}`;
+
+    // Update page class
+    const pageClass = `page-${page}`;
+    if (!root.classList.contains(pageClass)) {
+      root.classList.remove(
+        'page-dashboard', 'page-workout', 'page-nutrition',
+        'page-history', 'page-progress', 'page-templates', 'page-settings'
+      );
+      root.classList.add(pageClass);
+    }
   }, [page, theme]);
 
   return <PageThemeContext.Provider value={value}>{children}</PageThemeContext.Provider>;

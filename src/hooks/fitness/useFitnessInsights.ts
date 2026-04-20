@@ -1,6 +1,7 @@
 /**
  * useFitnessInsights - Hook for Fitness Hub smart calculations
  * Aggregates workout data to provide insights for the UI
+ * Uses DataContext sessions when available to avoid duplicate IndexedDB reads
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -27,41 +28,32 @@ import { logger } from '../../utils/logger';
 // ============================================================
 
 export interface FitnessInsightsData {
-  // Loading & Error states
   loading: boolean;
   error: string | null;
 
-  // Core stats
   currentStreak: number;
   longestStreak: number;
   totalWorkouts: number;
   workoutsThisMonth: number;
   workoutsThisWeek: number;
 
-  // Last workout
   lastWorkout: LastWorkoutSummary | null;
 
-  // Muscle groups
   muscleGroups: MuscleGroupLastTrained[];
-  neglectedMuscles: string[]; // Muscles not trained in 7+ days
+  neglectedMuscles: string[];
 
-  // PRs
   allPRs: PersonalRecord[];
-  recentPRs: PersonalRecord[]; // PRs from last 7 days
+  recentPRs: PersonalRecord[];
 
-  // Raw sessions for history timeline
   workoutSessions: WorkoutSession[];
 
-  // Exercise data
   exerciseNames: string[];
   selectedExerciseProgress: StrengthProgressPoint[];
   selectedExerciseDelta: ProgressDelta[] | null;
 
-  // AI Insight
   aiInsight: string | null;
   aiInsightLoading: boolean;
 
-  // Actions
   refresh: () => Promise<void>;
   selectExercise: (name: string) => void;
   generateAIInsight: () => Promise<void>;
@@ -71,21 +63,23 @@ export interface FitnessInsightsData {
 // HOOK IMPLEMENTATION
 // ============================================================
 
-export function useFitnessInsights(): FitnessInsightsData {
-  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+export function useFitnessInsights(externalSessions?: WorkoutSession[]): FitnessInsightsData {
+  const [localSessions, setLocalSessions] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [aiInsightLoading, setAiInsightLoading] = useState(false);
 
-  // Load sessions
+  const sessions = externalSessions ?? localSessions;
+
   const loadSessions = async () => {
+    if (externalSessions) return;
     try {
       setLoading(true);
       setError(null);
-      const data = await getWorkoutSessions(100); // Get last 100 sessions
-      setSessions(data);
+      const data = await getWorkoutSessions(100);
+      setLocalSessions(data);
     } catch (e) {
       logger.analytics.error('Failed to load workout sessions', e);
       setError('שגיאה בטעינת נתוני האימונים');
@@ -95,12 +89,16 @@ export function useFitnessInsights(): FitnessInsightsData {
   };
 
   useEffect(() => {
+    if (externalSessions) {
+      setLoading(false);
+      return;
+    }
+
     loadSessions();
 
     const handleSave = () => loadSessions();
     const handleCompleted = () => loadSessions();
 
-    // Listen for both events to ensure hub stays in sync
     window.addEventListener('WORKOUT_SAVED', handleSave);
     window.addEventListener('WORKOUT_COMPLETED', handleCompleted);
 
@@ -108,9 +106,8 @@ export function useFitnessInsights(): FitnessInsightsData {
       window.removeEventListener('WORKOUT_SAVED', handleSave);
       window.removeEventListener('WORKOUT_COMPLETED', handleCompleted);
     };
-  }, []);
+  }, [externalSessions]);
 
-  // Computed values
   const computedData = useMemo(() => {
     if (sessions.length === 0) {
       return {
@@ -128,10 +125,7 @@ export function useFitnessInsights(): FitnessInsightsData {
       };
     }
 
-    // Streak
     const streakInfo = calculateStreak(sessions);
-
-    // Counts
     const completedSessions = sessions.filter((s) => s.endTime);
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -145,22 +139,14 @@ export function useFitnessInsights(): FitnessInsightsData {
       (s) => new Date(s.startTime) >= monthAgo
     ).length;
 
-    // Last workout
     const lastWorkout = getLastWorkoutSummary(sessions);
-
-    // Muscle groups
     const muscleGroups = getMuscleGroupDaysSince(sessions);
     const neglectedMuscles = muscleGroups.filter((mg) => mg.daysSince >= 7).map((mg) => mg.muscle);
 
-    // PRs
     const prMap = calculatePRsFromHistory(sessions);
     const allPRs = Array.from(prMap.values());
-    const recentPRs = allPRs.filter((pr) => {
-      const prDate = new Date(pr.date);
-      return prDate >= weekAgo;
-    });
+    const recentPRs = allPRs.filter((pr) => new Date(pr.date) >= weekAgo);
 
-    // Exercise names
     const exerciseNames = getAllExerciseNames(sessions);
 
     return {
@@ -178,7 +164,6 @@ export function useFitnessInsights(): FitnessInsightsData {
     };
   }, [sessions]);
 
-  // Selected exercise progress
   const selectedExerciseProgress = useMemo(() => {
     if (!selectedExercise || sessions.length === 0) return [];
     return calculateStrengthProgression(sessions, selectedExercise);
@@ -189,20 +174,15 @@ export function useFitnessInsights(): FitnessInsightsData {
     return getWeekOverWeekProgress(sessions);
   }, [sessions, selectedExercise]);
 
-  // Auto-select first exercise
   useEffect(() => {
     if (!selectedExercise && computedData.exerciseNames.length > 0) {
       const firstExercise = computedData.exerciseNames[0];
-      if (firstExercise) {
-        setSelectedExercise(firstExercise);
-      }
+      if (firstExercise) setSelectedExercise(firstExercise);
     }
   }, [computedData.exerciseNames, selectedExercise]);
 
-  // AI Insight generation
   const generateInsight = async () => {
     if (aiInsightLoading) return;
-
     try {
       setAiInsightLoading(true);
       const insight = await generateAIWorkoutInsight(sessions);
@@ -216,7 +196,7 @@ export function useFitnessInsights(): FitnessInsightsData {
   };
 
   return {
-    loading,
+    loading: externalSessions ? false : loading,
     error,
     ...computedData,
     workoutSessions: sessions,

@@ -15,7 +15,7 @@ import {
   User,
   Zap,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
 import { isSupabaseConfigured } from '../lib/supabase';
 import {
@@ -25,7 +25,6 @@ import {
   shareReport,
 } from '../services/exportService';
 import { STORES } from '../services/indexedDBCore';
-import { pullAllData, syncAllData, testConnection } from '../services/supabaseSync';
 import type { WorkoutSession } from '../types';
 import { logger } from '../utils/logger';
 import { safeJsonParseOr } from '../utils/safeJson';
@@ -436,6 +435,7 @@ export default function Settings() {
         return;
       }
       try {
+        const { testConnection } = await import('../services/supabaseSync');
         const connected = await testConnection();
         setCloudConnected(connected);
       } catch {
@@ -473,6 +473,7 @@ export default function Settings() {
     setIsSyncingUp(true);
     setSyncMessage('מעלה לענן...');
     try {
+      const { syncAllData } = await import('../services/supabaseSync');
       const result = await syncAllData();
       if (result.success) {
         const now = new Date().toLocaleString('he-IL');
@@ -499,6 +500,7 @@ export default function Settings() {
     setIsSyncingDown(true);
     setSyncMessage('מביא נתונים מהענן...');
     try {
+      const { pullAllData } = await import('../services/supabaseSync');
       const result = await pullAllData();
       if (result.success) {
         const now = new Date().toLocaleString('he-IL');
@@ -525,7 +527,7 @@ export default function Settings() {
     setIsSyncingAll(true);
     setSyncMessage('מסנכרן הכל...');
     try {
-      // First sync local to cloud, then pull from cloud
+      const { syncAllData, pullAllData } = await import('../services/supabaseSync');
       const syncResult = await syncAllData();
       if (!syncResult.success) {
         setSyncMessage(syncResult.error || 'שגיאה בסנכרון');
@@ -592,7 +594,7 @@ export default function Settings() {
 
   return (
     <div
-      className="min-h-screen pb-[88px] pb-[calc(88px+env(safe-area-inset-bottom))]"
+      className="pb-[88px]"
       style={{ background: 'var(--bone)' }}
       dir="rtl"
     >

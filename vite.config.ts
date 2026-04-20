@@ -21,22 +21,9 @@ export default defineConfig({
         dir: 'rtl',
         lang: 'he',
         icons: [
-          {
-            src: '/pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: '/pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-          {
-            src: '/pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable',
-          },
+          { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
       workbox: {
@@ -49,6 +36,24 @@ export default defineConfig({
               cacheName: 'supabase-api-cache',
               networkTimeoutSeconds: 5,
               expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-stylesheets',
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
@@ -74,16 +79,54 @@ export default defineConfig({
     open: true,
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'supabase': ['@supabase/supabase-js'],
-          'framer': ['framer-motion'],
-          'icons': ['lucide-react'],
-        },
+    target: 'es2020',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        drop_debugger: true,
+        passes: 2,
+        pure_funcs: ['console.debug'],
+      },
+      format: {
+        comments: false,
       },
     },
-    chunkSizeWarningLimit: 600,
+    cssTarget: 'chrome80',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+
+          if (id.includes('@supabase/supabase-js') || id.includes('@supabase')) {
+            return 'supabase';
+          }
+          if (id.includes('framer-motion')) {
+            return 'framer';
+          }
+          if (id.includes('lucide-react')) {
+            return 'icons';
+          }
+          if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-router')) {
+            return 'react-vendor';
+          }
+          if (id.includes('idb')) {
+            return 'idb';
+          }
+          if (id.includes('dompurify')) {
+            return 'dompurify';
+          }
+          if (id.includes('use-immer') || id.includes('immer')) {
+            return 'immer';
+          }
+        },
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+      },
+    },
+    chunkSizeWarningLimit: 200,
+    reportCompressedSize: false,
+    sourcemap: false,
   },
 });

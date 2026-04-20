@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Dumbbell, History, LayoutDashboard, Settings, UtensilsCrossed } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { prefetchRoute } from '../../App';
 
 const NAV_ITEMS = [
   { path: '/', label: 'דשבורד', icon: LayoutDashboard },
@@ -17,7 +18,7 @@ export default function BottomNav() {
     <nav
       aria-label="ניווט ראשי"
       className="fixed bottom-0 inset-x-0 z-nav bg-navy safe-area-bottom"
-      style={{ borderTop: '1px solid var(--navy-deep)' }}
+      style={{ borderTop: '1px solid var(--navy-deep)', contain: 'layout style paint' }}
     >
       <div className="flex justify-around items-center h-16 max-w-md mx-auto px-1">
         {NAV_ITEMS.map(({ path, label, icon: Icon }) => {
@@ -32,6 +33,8 @@ export default function BottomNav() {
               to={path}
               aria-current={isActive ? 'page' : undefined}
               aria-label={label}
+              onTouchStart={() => prefetchRoute(path)}
+              onMouseEnter={() => prefetchRoute(path)}
               onClick={(e) => {
                 if (!isActive) return;
                 e.preventDefault();

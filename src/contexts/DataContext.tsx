@@ -3,7 +3,7 @@
 // ============================================================================
 
 import type React from 'react';
-import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { getWorkoutSessions } from '../services/dataService';
 import {
   createPersonalExercise,
@@ -48,6 +48,17 @@ interface DataProviderProps {
   children: ReactNode;
 }
 
+function mapExerciseToPersonalItem(ex: Exercise): PersonalItem {
+  return {
+    type: 'exercise' as const,
+    name: ex.name,
+    isActiveWorkout: false,
+    createdAt: ex.createdAt,
+    updatedAt: new Date().toISOString(),
+    ...ex,
+  } as unknown as PersonalItem;
+}
+
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
@@ -55,30 +66,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [personalItems, setPersonalItems] = useState<PersonalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const initialLoadRef = useRef(false);
 
   const loadData = useCallback(async () => {
     try {
       logger.db.info('Loading data from IndexedDB...');
 
-      const [loadedExercises, loadedSessions, loadedTemplates, loadedPersonalItems] =
-        await Promise.all([
-          getPersonalExercises(),
-          getWorkoutSessions(100),
-          getWorkoutTemplates(),
-          getPersonalExercises().then((exercises) =>
-            exercises.map(
-              (ex) =>
-                ({
-                  type: 'exercise' as const,
-                  name: ex.name,
-                  isActiveWorkout: false,
-                  createdAt: ex.createdAt,
-                  updatedAt: new Date().toISOString(),
-                  ...ex,
-                }) as unknown as PersonalItem
-            )
-          ),
-        ]);
+      const [loadedExercises, loadedSessions, loadedTemplates] = await Promise.all([
+        getPersonalExercises(),
+        getWorkoutSessions(100),
+        getWorkoutTemplates(),
+      ]);
+
+      const loadedPersonalItems = loadedExercises.map(mapExerciseToPersonalItem);
 
       setExercises(loadedExercises);
       setSessions(loadedSessions);
@@ -89,7 +89,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         exercises: loadedExercises.length,
         sessions: loadedSessions.length,
         templates: loadedTemplates.length,
-        personalItems: loadedPersonalItems.length,
       });
     } catch (err) {
       logger.db.error('Failed to load data', err);
@@ -130,7 +129,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       } as unknown as CreatePersonalExerciseInput);
       setPersonalItems((prev) => [
         ...prev,
-        { ...newItem, type: 'exercise' } as unknown as PersonalItem,
+        mapExerciseToPersonalItem(newItem),
       ]);
     } catch (err) {
       logger.db.error('Failed to add personal item', err);
@@ -146,58 +145,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   }, [loadData]);
 
   useEffect(() => {
+    if (initialLoadRef.current) return;
+    initialLoadRef.current = true;
+
     let cancelled = false;
     (async () => {
       setLoading(true);
       setError(null);
       try {
-        logger.db.info('Loading data from IndexedDB...');
-
-        const [loadedExercises, loadedSessions, loadedTemplates, loadedPersonalItems] =
-          await Promise.all([
-            getPersonalExercises(),
-            getWorkoutSessions(100),
-            getWorkoutTemplates(),
-            getPersonalExercises().then((exercises) =>
-              exercises.map(
-                (ex) =>
-                  ({
-                    type: 'exercise' as const,
-                    name: ex.name,
-                    isActiveWorkout: false,
-                    createdAt: ex.createdAt,
-                    updatedAt: new Date().toISOString(),
-                    ...ex,
-                  }) as unknown as PersonalItem
-              )
-            ),
-          ]);
-
-        if (!cancelled) {
-          setExercises(loadedExercises);
-          setSessions(loadedSessions);
-          setTemplates(loadedTemplates);
-          setPersonalItems(loadedPersonalItems);
-
-          logger.db.info('Data loaded successfully', {
-            exercises: loadedExercises.length,
-            sessions: loadedSessions.length,
-            templates: loadedTemplates.length,
-            personalItems: loadedPersonalItems.length,
-          });
-
-          setLoading(false);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          logger.db.error('Failed to load data', err);
-          setError(err instanceof Error ? err.message : 'Failed to load data');
-          setLoading(false);
-        }
+        await loadData();
+        if (!cancelled) setLoading(false);
+      } catch {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [loadData]);
 
   const contextValue = useMemo(() => ({
     exercises, sessions, templates, personalItems, loading, error,

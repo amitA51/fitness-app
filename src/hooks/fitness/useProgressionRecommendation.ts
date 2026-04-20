@@ -1,11 +1,9 @@
 /**
  * useProgressionRecommendation - Hook for getting weight progression recommendations
- *
- * Provides personalized recommendations on when to increase/decrease weight
- * based on workout history, RPE, and consistency.
+ * Accepts optional external sessions to avoid duplicate IndexedDB reads
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getWorkoutSessions } from '../../services/dataService';
 import {
   type AIProgressionContext,
@@ -19,10 +17,6 @@ import {
 import type { WorkoutSession } from '../../types';
 import { logger } from '../../utils/logger';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
 export interface ProgressionExercise {
   id: string;
   name: string;
@@ -31,21 +25,12 @@ export interface ProgressionExercise {
 }
 
 export interface UseProgressionRecommendationResult {
-  // Loading states
   loading: boolean;
   error: string | null;
-
-  // Single exercise recommendation
   getRecommendation: (exerciseId: string) => ExerciseProgressionData | null;
   getRecommendationLabel: (rec: ProgressionRecommendation) => string;
-
-  // All exercises for current workout
   exerciseRecommendations: ExerciseProgressionData[];
-
-  // For AI integration
   getAIContext: (exerciseId: string) => AIProgressionContext | null;
-
-  // Actions
   refresh: () => Promise<void>;
 }
 
@@ -57,42 +42,47 @@ export interface UseProgressionForExerciseResult {
   refresh: () => Promise<void>;
 }
 
-// ============================================================================
-// HOOK: Get recommendations for multiple exercises
-// ============================================================================
-
 export function useProgressionRecommendation(
-  exercises: ProgressionExercise[]
+  exercises: ProgressionExercise[],
+  externalSessions?: WorkoutSession[]
 ): UseProgressionRecommendationResult {
-  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+  const [localSessions, setLocalSessions] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const loadedRef = useRef(false);
+
+  const sessions = externalSessions ?? localSessions;
 
   const loadSessions = useCallback(async () => {
+    if (externalSessions) return;
     try {
       setLoading(true);
       setError(null);
       const data = await getWorkoutSessions(50);
-      setSessions(data);
+      setLocalSessions(data);
     } catch (e) {
       logger.ai.error('Failed to load sessions for progression', e);
       setError('שגיאה בטעינת נתוני ההתקדמות');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [externalSessions]);
 
   useEffect(() => {
+    if (externalSessions) {
+      setLoading(false);
+      return;
+    }
+    if (loadedRef.current) return;
+    loadedRef.current = true;
     loadSessions();
-  }, [loadSessions]);
+  }, [externalSessions, loadSessions]);
 
-  // Calculate recommendations for all exercises
   const exerciseRecommendations = useMemo(() => {
     if (sessions.length === 0 || exercises.length === 0) return [];
     return calculateAllExercisesProgression(sessions, exercises);
   }, [sessions, exercises]);
 
-  // Get recommendation for specific exercise
   const getRecommendation = useCallback(
     (exerciseId: string): ExerciseProgressionData | null => {
       return exerciseRecommendations.find((r) => r.exerciseId === exerciseId) || null;
@@ -100,7 +90,6 @@ export function useProgressionRecommendation(
     [exerciseRecommendations]
   );
 
-  // Get AI context for a specific exercise
   const getAIContext = useCallback(
     (exerciseId: string): AIProgressionContext | null => {
       const data = getRecommendation(exerciseId);
@@ -111,7 +100,7 @@ export function useProgressionRecommendation(
   );
 
   return {
-    loading,
+    loading: externalSessions ? false : loading,
     error,
     getRecommendation,
     getRecommendationLabel,
