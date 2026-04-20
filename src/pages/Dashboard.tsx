@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChapterBreak } from '../components/dashboard/ChapterBreak';
 import { Greeting } from '../components/dashboard/Greeting';
+import { logger } from '../utils/logger';
 import { ImprovementScore } from '../components/dashboard/ImprovementScore';
 import { RecentWorkouts } from '../components/dashboard/RecentWorkouts';
 import { TemplateQuickStart, TemplateStrip } from '../components/dashboard/TemplateQuickStart';
@@ -58,8 +59,8 @@ export default function Dashboard() {
       try {
         const rawTemplates = await getWorkoutTemplates();
         setTemplates(rawTemplates);
-      } catch {
-        // Silent fail
+      } catch (err) {
+        logger.workout.warn('Failed to load templates on dashboard', err);
       }
     }
     load();

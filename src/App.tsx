@@ -24,6 +24,7 @@ import { logger } from './utils/logger';
 import { safeJsonParse } from './utils/safeJson';
 import { cn } from './utils/styles';
 import { getSession } from './services/supabaseAuth';
+import { initOfflineSync } from './services/offlineQueue';
 
 // ============================================================================
 // Lazy-loaded pages (code-splitting for better initial bundle size)
@@ -160,6 +161,10 @@ function getPageLabel(path: string): string {
 
 function App() {
   const [appState, setAppState] = useState<'loading' | 'login' | 'onboarding' | 'app'>('loading');
+
+  useEffect(() => {
+    initOfflineSync();
+  }, []);
 
   useEffect(() => {
     const checkAuth = async () => {

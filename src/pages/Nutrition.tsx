@@ -530,7 +530,7 @@ const MealEntryCard = memo(function MealEntryCard({
         </span>
         <button
           onClick={() => onDelete(entry.id)}
-          className="w-8 h-8 flex items-center justify-center transition-colors"
+          className="w-12 h-12 flex items-center justify-center transition-colors"
           style={{ color: 'var(--stone)' }}
           aria-label="מחק ארוחה"
         >
@@ -853,7 +853,8 @@ function AddMealModal({
             <h2 className="text-lg font-bold text-white">הוסף ארוחה</h2>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/[0.1] flex items-center justify-center text-[var(--color-text-secondary)]"
+              className="w-12 h-12 rounded-full bg-white/[0.1] flex items-center justify-center text-[var(--color-text-secondary)]"
+              aria-label="סגור"
             >
               <X size={17} />
             </button>
@@ -885,7 +886,8 @@ function AddMealModal({
                     <div className="flex items-center gap-2 mt-1.5">
                       <button
                         onClick={() => onServingsChange(food.id, -0.5)}
-                        className="w-7 h-7 rounded-lg bg-white/[0.1] text-white flex items-center justify-center font-bold text-base"
+                        className="w-12 h-12 rounded-lg bg-white/[0.1] text-white flex items-center justify-center font-bold text-base"
+                        aria-label="הפחת מנה"
                       >
                         −
                       </button>
@@ -894,7 +896,8 @@ function AddMealModal({
                       </span>
                       <button
                         onClick={() => onServingsChange(food.id, 0.5)}
-                        className="w-7 h-7 rounded-lg bg-white/[0.1] text-white flex items-center justify-center font-bold text-base"
+                        className="w-12 h-12 rounded-lg bg-white/[0.1] text-white flex items-center justify-center font-bold text-base"
+                        aria-label="הוסף מנה"
                       >
                         +
                       </button>

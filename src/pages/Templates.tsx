@@ -187,13 +187,16 @@ interface TemplateCardProps {
   onStart: () => void;
   onToggleFavorite: () => void;
   onDelete: () => void;
+  isDeleting?: boolean;
+  isFavoriting?: boolean;
 }
 
-function TemplateCard({ template, index, onStart, onToggleFavorite, onDelete }: TemplateCardProps) {
+function TemplateCard({ template, index, onStart, onToggleFavorite, onDelete, isDeleting, isFavoriting }: TemplateCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isDeleting) return;
     if (confirmDelete) {
       onDelete();
     } else {
@@ -297,37 +300,53 @@ function TemplateCard({ template, index, onStart, onToggleFavorite, onDelete }: 
           התחל
         </motion.button>
         <motion.button
-          whileTap={{ scale: 0.95 }}
+          whileTap={{ scale: isFavoriting ? 1 : 0.95 }}
           onClick={onToggleFavorite}
+          disabled={isFavoriting}
           className="chip"
           style={{
             background: template.isFavorite ? 'var(--mustard)' : 'var(--bone)',
             minHeight: '44px',
             padding: '0 14px',
+            opacity: isFavoriting ? 0.6 : 1,
           }}
           aria-label={template.isFavorite ? 'הסר ממועדפים' : 'הוסף למועדפים'}
+          aria-busy={isFavoriting}
         >
-          <Star
-            size={14}
-            fill={template.isFavorite ? 'var(--navy)' : 'none'}
-            style={{ color: 'var(--navy)' }}
-          />
+          {isFavoriting ? (
+            <div className="w-4 h-4 border-2 border-navy border-t-transparent animate-spin" />
+          ) : (
+            <Star
+              size={14}
+              fill={template.isFavorite ? 'var(--navy)' : 'none'}
+              style={{ color: 'var(--navy)' }}
+            />
+          )}
         </motion.button>
         <motion.button
-          whileTap={{ scale: 0.95 }}
+          whileTap={{ scale: isDeleting ? 1 : 0.95 }}
           onClick={handleDeleteClick}
           onBlur={() => setConfirmDelete(false)}
+          disabled={isDeleting}
           className="chip"
           style={{
             background: confirmDelete ? 'var(--navy)' : 'var(--bone)',
             color: confirmDelete ? 'var(--mustard)' : 'var(--navy)',
             minHeight: '44px',
             padding: '0 14px',
+            opacity: isDeleting ? 0.6 : 1,
           }}
           aria-label={confirmDelete ? 'אישור מחיקת תבנית' : 'מחק תבנית'}
+          aria-busy={isDeleting}
         >
-          <Trash2 size={14} />
-          {confirmDelete && <span className="mr-1">?</span>}
+          {isDeleting ? (
+            <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin" />
+          ) : (
+            <>
+              <Trash2 size={14} />
+              {confirmDelete && <span className="mr-1">?</span>}
+            </>
+          )}
         </motion.button>
       </div>
     </motion.div>
@@ -411,6 +430,9 @@ export default function Templates() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creatingId, setCreatingId] = useState<string | null>(null);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [favoritingIds, setFavoritingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadTemplates();
@@ -442,29 +464,52 @@ export default function Templates() {
   }, [templates]);
 
   const handleCreate = async (name: string) => {
-    const newTemplate = await createWorkoutTemplate({
-      name,
-      description: '',
-      exercises: [],
-      updatedAt: new Date().toISOString(),
-      lastUsed: null,
-      timesUsed: 0,
-      isFavorite: false,
-    });
-    setShowCreateModal(false);
-    navigate(`/workout/${newTemplate.id}`);
+    setCreatingId('temp');
+    try {
+      const newTemplate = await createWorkoutTemplate({
+        name,
+        description: '',
+        exercises: [],
+        updatedAt: new Date().toISOString(),
+        lastUsed: null,
+        timesUsed: 0,
+        isFavorite: false,
+      });
+      setShowCreateModal(false);
+      navigate(`/workout/${newTemplate.id}`);
+    } finally {
+      setCreatingId(null);
+    }
   };
 
   const handleToggleFavorite = async (template: WorkoutTemplate) => {
-    const updated = await updateWorkoutTemplate(template.id, {
-      isFavorite: !template.isFavorite,
-    });
-    setTemplates((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    setFavoritingIds((prev) => new Set(prev).add(template.id));
+    try {
+      const updated = await updateWorkoutTemplate(template.id, {
+        isFavorite: !template.isFavorite,
+      });
+      setTemplates((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    } finally {
+      setFavoritingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(template.id);
+        return next;
+      });
+    }
   };
 
   const handleDelete = async (id: string) => {
-    await deleteWorkoutTemplate(id);
-    setTemplates((prev) => prev.filter((t) => t.id !== id));
+    setDeletingIds((prev) => new Set(prev).add(id));
+    try {
+      await deleteWorkoutTemplate(id);
+      setTemplates((prev) => prev.filter((t) => t.id !== id));
+    } finally {
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
   };
 
   // Loading State
@@ -574,6 +619,8 @@ export default function Templates() {
                     onStart={() => navigate(`/workout/${template.id}`)}
                     onToggleFavorite={() => handleToggleFavorite(template)}
                     onDelete={() => handleDelete(template.id)}
+                    isDeleting={deletingIds.has(template.id)}
+                    isFavoriting={favoritingIds.has(template.id)}
                   />
                 ))}
               </div>
@@ -601,6 +648,8 @@ export default function Templates() {
                     onStart={() => navigate(`/workout/${template.id}`)}
                     onToggleFavorite={() => handleToggleFavorite(template)}
                     onDelete={() => handleDelete(template.id)}
+                    isDeleting={deletingIds.has(template.id)}
+                    isFavoriting={favoritingIds.has(template.id)}
                   />
                 ))}
               </div>

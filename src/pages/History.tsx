@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { useWorkoutHistoryHub } from '../hooks/fitness/useWorkoutHistoryHub';
 import { deleteWorkoutSession } from '../services/workoutDb';
+import { handleError } from '../utils/errorReporting';
 import type { WorkoutSession } from '../types';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -136,12 +137,13 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
           </span>
           <button
             onClick={handleDeleteClick}
-            className="w-9 h-9 flex items-center justify-center transition-colors"
+            className="w-9 h-9 min-w-[48px] min-h-[48px] flex items-center justify-center transition-colors"
             style={{
+              padding: '10px',
               background: confirmDelete ? 'var(--navy)' : 'transparent',
               color: confirmDelete ? 'var(--mustard)' : 'var(--stone)',
             }}
-            title={confirmDelete ? 'לחץ שוב לאישור' : 'מחק אימון'}
+            aria-label={confirmDelete ? 'לחץ שוב לאישור' : 'מחק אימון'}
           >
             <Trash2 size={14} />
           </button>
@@ -301,8 +303,9 @@ export default function History() {
       try {
         await deleteWorkoutSession(id);
         await refresh();
-      } catch {
-        // Error handled by hook
+      } catch (err) {
+        const { userMessage } = handleError(err, 'History.handleDelete', 'לא הצלחנו למחוק את האימון');
+        console.warn(userMessage);
       }
     },
     [refresh]

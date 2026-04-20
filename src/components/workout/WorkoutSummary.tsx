@@ -188,8 +188,8 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           durationChange: currentDuration - prevDuration,
           setsChange: currentSets - prevSets,
         });
-      } catch {
-        // silently handle
+      } catch (err) {
+        logger.workout.warn('Failed to load session comparison', err);
       }
     };
 
@@ -262,8 +262,8 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           title: 'סיכום אימון',
           text: `סיימתי אימון!\n⏱️ ${stats.duration} דקות\n🔥 ${stats.totalVolume.toLocaleString()} ק"ג נפח\n✅ ${stats.totalSets} סטים`,
         });
-      } catch {
-        // cancelled
+      } catch (err) {
+        logger.workout.warn('Failed to send workout completion notification', err);
       }
     }
   }, [stats]);

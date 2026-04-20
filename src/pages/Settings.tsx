@@ -208,11 +208,13 @@ function Toggle({ checked, onChange, label }: ToggleProps) {
   return (
     <label
       aria-label={label}
+      role="switch"
+      aria-checked={checked}
       style={{
         position: 'relative',
         display: 'inline-block',
         width: '52px',
-        height: '28px',
+        height: '32px',
         flexShrink: 0,
         cursor: 'pointer',
       }}
@@ -235,10 +237,10 @@ function Toggle({ checked, onChange, label }: ToggleProps) {
       <span
         style={{
           position: 'absolute',
-          top: '2px',
-          left: checked ? '26px' : '2px',
-          width: '20px',
-          height: '20px',
+          top: '0px',
+          left: checked ? '24px' : '0px',
+          width: '28px',
+          height: '28px',
           background: 'var(--navy)',
           transition: 'left 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           pointerEvents: 'none',

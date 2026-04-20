@@ -132,6 +132,8 @@ interface UseWorkoutSettingsReturn {
   // Voice/Sound helpers
   announceCountdown: (seconds: number, totalSeconds: number) => void;
   announceReady: () => void;
+  announceSetComplete: (nextExerciseName?: string) => void;
+  announceNextExercise: (name: string) => void;
   playRestEndSound: () => void;
   playSetCompleteSound: () => void;
 }
@@ -241,6 +243,35 @@ export function useWorkoutSettings(): UseWorkoutSettingsReturn {
     }
   }, [get, voiceCountdown, audioBeep]);
 
+  // Announce set complete + next exercise name (triggered after COMPLETE_SET)
+  const announceSetComplete = useCallback(
+    (nextExerciseName?: string) => {
+      if (!get('voiceCountdownEnabled')) return;
+
+      const lang = get('voiceLanguage');
+      const isHebrew = lang === 'he-IL';
+
+      const setDoneText = isHebrew ? 'סט הושלם' : 'Set complete';
+
+      if (nextExerciseName) {
+        const nextPrefix = isHebrew ? 'התרגיל הבא:' : 'Next exercise:';
+        voiceCountdown.speak(`${setDoneText}. ${nextPrefix} ${nextExerciseName}`);
+      } else {
+        voiceCountdown.speak(setDoneText);
+      }
+    },
+    [get, voiceCountdown]
+  );
+
+  // Announce next exercise name (standalone)
+  const announceNextExercise = useCallback(
+    (name: string) => {
+      if (!get('voiceCountdownEnabled')) return;
+      voiceCountdown.announceExercise(name);
+    },
+    [get, voiceCountdown]
+  );
+
   // Sound effects
   const playRestEndSound = useCallback(() => {
     if (!get('restTimerSound')) return;
@@ -276,6 +307,8 @@ export function useWorkoutSettings(): UseWorkoutSettingsReturn {
     keepScreenAwake,
     announceCountdown,
     announceReady,
+    announceSetComplete,
+    announceNextExercise,
     playRestEndSound,
     playSetCompleteSound,
   };

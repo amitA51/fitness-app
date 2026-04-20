@@ -1,7 +1,7 @@
 // ActiveWorkout - Main workout component that composes everything
 // This replaces the old 1295-line monolithic ActiveWorkout.tsx
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type {
   Exercise,
   PersonalExercise,
@@ -123,6 +123,9 @@ export const WorkoutContent: React.FC<{
   const [supersetMode, setSupersetMode] = useState(false);
   const [supersetFirstExerciseId, setSupersetFirstExerciseId] = useState<string | null>(null);
 
+  // Track last announced set count to avoid re-announcing on re-renders
+  const lastAnnouncedSetsRef = useRef(0);
+
   // Settings
   const workoutSettings: Partial<WorkoutSettings> = state.appSettings?.workoutSettings || {};
   const bgPrimary = (workoutSettings.oledMode as boolean) ? '#000000' : 'var(--bone)';
@@ -134,7 +137,7 @@ export const WorkoutContent: React.FC<{
   const celebration = useCelebration();
 
   // Settings hooks
-  const { keepScreenAwake } = useWorkoutSettings();
+  const { keepScreenAwake, announceSetComplete } = useWorkoutSettings();
   const displaySettings = useDisplaySettings();
 
   // Apply accessibility settings (this hook has side effects that apply to document)
@@ -147,6 +150,34 @@ export const WorkoutContent: React.FC<{
       if (releaseWakeLock) releaseWakeLock();
     };
   }, [keepScreenAwake]);
+
+  // Voice announcement: set complete + next exercise name
+  useEffect(() => {
+    const count = derived.completedSetsCount;
+    // Guard: only trigger when a NEW set is completed (not on re-render)
+    if (count === 0 || count === lastAnnouncedSetsRef.current) return;
+    lastAnnouncedSetsRef.current = count;
+
+    const currentEx = derived.currentExercise;
+    const exercises = state.exercises;
+    const currentIdx = state.currentExerciseIndex;
+
+    if (!currentEx) return;
+
+    // Determine next exercise: if current exercise has more sets pending,
+    // we don't announce next exercise name yet
+    const currentSets = currentEx.sets || [];
+    const hasMoreSets = currentSets.some((s) => !s.completedAt);
+
+    if (!hasMoreSets) {
+      // Current exercise is done — announce next exercise name
+      const nextExercise = exercises[currentIdx + 1];
+      announceSetComplete(nextExercise?.name);
+    } else {
+      // More sets remaining in current exercise
+      announceSetComplete();
+    }
+  }, [derived.completedSetsCount, derived.currentExercise, state.exercises, state.currentExerciseIndex, announceSetComplete]);
 
   // Load exercise suggestions
   useEffect(() => {

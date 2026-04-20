@@ -666,7 +666,7 @@ const RecoveryTab = memo(function RecoveryTab({
                   <div className="text-3xl font-black leading-none" style={{ color: scoreColor }}>
                     {recoveryScore.score}
                   </div>
-                  <div className="text-[10px] text-[var(--color-text-secondary)] mt-1">
+                  <div className="text-[11px] mt-1 font-mono" style={{ color: 'var(--stone)' }}>
                     {recoveryScore.label}
                   </div>
                 </div>
@@ -851,7 +851,7 @@ const RecoveryBar = memo(function RecoveryBar({
   return (
     <div>
       <div className="flex items-center justify-between text-xs mb-1.5">
-        <span className="text-[var(--color-text-secondary)]">{label}</span>
+        <span className="font-semibold" style={{ color: 'var(--stone)' }}>{label}</span>
         <span className="font-semibold" style={{ color }}>
           {value}/{max}
         </span>
