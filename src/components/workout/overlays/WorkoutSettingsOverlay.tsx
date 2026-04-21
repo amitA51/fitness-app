@@ -210,7 +210,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
             <button
               type="button"
               onClick={handleClose}
-              className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center active:bg-white/20"
+              className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center active:bg-white/20"
             >
               <CloseIcon className="w-5 h-5 text-white/70" />
             </button>

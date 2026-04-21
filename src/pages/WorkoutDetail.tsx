@@ -519,7 +519,7 @@ export default function WorkoutDetail() {
 
   return (
     <div
-      className="bg-black pb-[100px]"
+      className="bg-black pb-[max(100px,calc(env(safe-area-inset-bottom, 0px) + 100px))]"
       dir="rtl"
     >
       {/* Header */}
@@ -528,7 +528,7 @@ export default function WorkoutDetail() {
           <button
             type="button"
             onClick={() => navigate('/history')}
-            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center active:scale-95 transition-transform"
+            className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center active:scale-95 transition-transform"
           >
             <ChevronLeft size={20} className="text-white" />
           </button>

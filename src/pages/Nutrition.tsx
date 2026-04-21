@@ -158,9 +158,9 @@ export default function NutritionPage() {
   });
 
   return (
-    <div className="pb-28" style={{ background: 'var(--bone)' }} dir="rtl">
+    <div className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]" style={{ background: 'var(--bone)' }} dir="rtl">
       {/* Masthead */}
-      <header className="masthead safe-area-top sticky top-0 z-20">
+      <header className="masthead sticky top-0 z-20" style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}>
         <div className="kicker">
           §08 · NUTRITION · {todayMacros.calories || 0}/{MACRO_GOALS.calories} KCAL
         </div>
@@ -841,6 +841,7 @@ function AddMealModal({
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
         className="w-full max-w-lg bg-[var(--color-surface-elevated)] rounded-t-[28px] max-h-[88vh] overflow-y-auto"
+        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 16px))' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle */}
@@ -848,7 +849,7 @@ function AddMealModal({
           <div className="w-10 h-1 bg-white/20 rounded-full" />
         </div>
 
-        <div className="sticky top-0 bg-[var(--color-surface-elevated)] z-10 px-5 pt-2 pb-4 border-b border-white/[0.06]">
+        <div className="sticky top-0 bg-[var(--color-surface-elevated)] z-10 px-5 pt-[max(env(safe-area-inset-top,0px),8px)] pb-4 border-b border-white/[0.06]">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-white">הוסף ארוחה</h2>
             <button

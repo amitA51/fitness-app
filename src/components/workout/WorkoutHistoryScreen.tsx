@@ -225,7 +225,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onClose}
-          className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center"
+          className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center"
         >
           <ChevronLeftIcon className="w-5 h-5 text-white rotate-180" />
         </motion.button>
@@ -236,7 +236,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
           whileTap={{ scale: 0.95 }}
           onClick={refresh}
           disabled={loading}
-          className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60"
+          className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60"
         >
           <motion.div
             animate={loading ? { rotate: 360 } : {}}

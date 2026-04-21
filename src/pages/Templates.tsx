@@ -535,7 +535,7 @@ export default function Templates() {
         animate="show"
       >
         {/* Masthead */}
-        <header className="masthead safe-area-top sticky top-0 z-20">
+        <header className="masthead sticky top-0 z-20" style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}>
           <div className="kicker">§06 · TEMPLATES · {templates.length} ROUTINES</div>
           <h1
             style={{

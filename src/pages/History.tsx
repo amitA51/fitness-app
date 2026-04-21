@@ -330,9 +330,9 @@ export default function History() {
       : lastMonthVolume.toLocaleString();
 
   return (
-    <div className="pb-28" style={{ background: 'var(--bone)' }} dir="rtl">
+    <div className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]" style={{ background: 'var(--bone)' }} dir="rtl">
       {/* Masthead */}
-      <header className="masthead safe-area-top sticky top-0 z-20">
+      <header className="masthead sticky top-0 z-20" style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}>
         <div className="kicker">§04 · HISTORIA · {sessions.length} SESSIONS</div>
         <h1
           style={{

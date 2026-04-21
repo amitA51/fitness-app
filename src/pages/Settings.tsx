@@ -596,12 +596,12 @@ export default function Settings() {
 
   return (
     <div
-      className="pb-[88px]"
+      className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
       style={{ background: 'var(--bone)' }}
       dir="rtl"
     >
       {/* Masthead */}
-      <header className="masthead safe-area-top">
+      <header className="masthead" style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}>
         <div className="kicker">§07 · SETTINGS · CONFIG</div>
         <h1
           style={{

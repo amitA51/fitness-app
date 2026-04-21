@@ -217,7 +217,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-10 h-10 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-11 h-11 flex items-center justify-center transition-colors cursor-pointer"
                 style={{
                   background: 'rgba(245,241,235,0.1)',
                   borderRadius: 0,

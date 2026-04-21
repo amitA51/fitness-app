@@ -306,7 +306,7 @@ ${avgDuration < 30 ? '⚠️ אימונים קצרים - שקול להאריך' 
             </div>
 
             {/* Input */}
-            <div className="flex gap-2">
+            <div className="flex gap-2" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))', paddingTop: 12 }}>
               <input
                 type="text"
                 value={inputMessage}
@@ -450,9 +450,9 @@ ${avgDuration < 30 ? '⚠️ אימונים קצרים - שקול להאריך' 
       transition={{ type: 'spring', damping: 30 }}
     >
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10 safe-area-top">
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10" style={{ paddingTop: 'max(12px, env(safe-area-inset-top, 12px))' }}>
         <h2 className="text-lg font-bold text-white">מאמן AI</h2>
-        <button onClick={onClose} className="p-2 text-white/60 hover:text-white">
+        <button onClick={onClose} className="w-11 h-11 flex items-center justify-center text-white/60 hover:text-white">
           <CloseIcon className="w-6 h-6" />
         </button>
       </div>
@@ -490,10 +490,6 @@ ${avgDuration < 30 ? '⚠️ אימונים קצרים - שקול להאריך' 
         )}
         {renderContent}
       </div>
-
-      <style>{`
-        .safe-area-top { padding-top: env(safe-area-inset-top, 0); }
-      `}</style>
     </motion.div>
   );
 };

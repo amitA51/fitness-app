@@ -27,7 +27,7 @@ body {
   color: var(--color-text);
   min-height: 100vh;
   min-height: 100dvh;
-  overscroll-behavior: none;
+  overscroll-behavior-y: contain;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -303,6 +303,8 @@ body {
     background: var(--navy);
     color: var(--bone);
     padding: 20px 24px;
+    /* padding handled inline with calc(max()) for safe-area-inset support */
+    /* On notched devices, inline style adds extra top/left padding */
   }
 
   .masthead .kicker {
@@ -542,7 +544,7 @@ body {
   .aw-masthead {
     background: var(--navy);
     color: var(--bone);
-    padding: 16px 24px;
+    padding: max(16px, env(safe-area-inset-top, 16px)) 24px max(16px, env(safe-area-inset-bottom, 16px)) 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;

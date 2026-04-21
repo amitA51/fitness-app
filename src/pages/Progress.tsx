@@ -155,8 +155,8 @@ export default function ProgressPage() {
   });
 
   return (
-    <div className="pb-28" style={{ background: 'var(--bone)' }} dir="rtl">
-      <header className="masthead safe-area-top sticky top-0 z-20">
+    <div className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]" style={{ background: 'var(--bone)' }} dir="rtl">
+      <header className="masthead sticky top-0 z-20" style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}>
         <div className="kicker">§05 · PROGRESS · {todayISO}</div>
         <h1
           style={{

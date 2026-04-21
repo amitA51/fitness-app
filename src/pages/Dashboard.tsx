@@ -153,7 +153,7 @@ export default function Dashboard() {
   const handleNavigate = useCallback((path: string) => navigate(path), [navigate]);
 
   return (
-    <div className="pb-28" dir="rtl" style={{ background: 'var(--bone)' }}>
+      <div className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]" dir="rtl" style={{ background: 'var(--bone)' }}>
       <Greeting onThemeChange={handleThemeChange} weekNumber={weeklyStats.weekNumber} />
 
       <main style={{ padding: '24px 20px 28px' }}>
