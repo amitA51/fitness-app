@@ -2,7 +2,7 @@
 // SPARKOS FITNESS - usePullToRefresh Hook
 // ============================================================================
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 
 interface UsePullToRefreshOptions {
   onRefresh: () => Promise<void>;
@@ -10,49 +10,57 @@ interface UsePullToRefreshOptions {
 }
 
 export const usePullToRefresh = ({ onRefresh, threshold = 80 }: UsePullToRefreshOptions) => {
-  const [isPulling, setIsPulling] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const startY = useRef(0);
-  const currentY = useRef(0);
-  const pullDistanceRef = useRef(0);
+  // Use refs to avoid stale closure issues
+  const isPullingRef = useRef(false);
+  const isRefreshingRef = useRef(false);
+  const startYRef = useRef(0);
+  const currentYRef = useRef(0);
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
+    // Only start pulling if at the top of the page
     if (window.scrollY === 0) {
-      startY.current = e.touches[0]?.clientY ?? 0;
-      setIsPulling(true);
+      startYRef.current = e.touches[0]?.clientY ?? 0;
+      isPullingRef.current = true;
     }
   }, []);
 
   const handleTouchMove = useCallback(
     (e: TouchEvent) => {
-      if (!isPulling) return;
-      currentY.current = e.touches[0]?.clientY ?? 0;
-      const pullDistance = currentY.current - startY.current;
-      pullDistanceRef.current = pullDistance;
+      // Use ref to get current value (avoids stale closure)
+      if (!isPullingRef.current) return;
+      
+      currentYRef.current = e.touches[0]?.clientY ?? 0;
+      const pullDistance = currentYRef.current - startYRef.current;
+      
+      // Only prevent default for downward pull (positive distance)
+      // This allows the browser to handle upward scrolling naturally
       if (pullDistance > 0) {
         e.preventDefault();
       }
     },
-    [isPulling]
+    [] // No dependencies - uses refs
   );
 
   const handleTouchEnd = useCallback(async () => {
-    if (!isPulling) return;
-    const pullDistance = currentY.current - startY.current;
+    if (!isPullingRef.current) return;
+    
+    const pullDistance = currentYRef.current - startYRef.current;
 
     if (pullDistance > threshold) {
-      setIsRefreshing(true);
+      isRefreshingRef.current = true;
       await onRefresh();
-      setIsRefreshing(false);
+      isRefreshingRef.current = false;
     }
-    setIsPulling(false);
-    pullDistanceRef.current = 0;
-  }, [isPulling, onRefresh, threshold]);
+    
+    isPullingRef.current = false;
+  }, [onRefresh, threshold]);
 
+  // Return current values for UI updates (these won't cause re-renders from touch events)
   return {
-    isPulling,
-    isRefreshing,
-    pullDistance: pullDistanceRef.current,
+    // These are only for initial render - actual state is in refs
+    isPulling: isPullingRef.current,
+    isRefreshing: isRefreshingRef.current,
+    pullDistance: currentYRef.current - startYRef.current,
     threshold,
     handlers: {
       onTouchStart: handleTouchStart,

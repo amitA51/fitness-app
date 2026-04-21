@@ -4,7 +4,7 @@
  * Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChapterBreak } from '../components/dashboard/ChapterBreak';
 import { Greeting } from '../components/dashboard/Greeting';
@@ -22,6 +22,7 @@ import { useProgressionRecommendation } from '../hooks/fitness/useProgressionRec
 import { getWorkoutTemplates } from '../services/workoutDb';
 import type { WorkoutSession, WorkoutTemplate } from '../types';
 import { THEMES, getWeekNumber, getWeekStart, pad2 } from '../utils/dateUtils';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 
 export default function Dashboard() {
   const { settings, updateSettings } = useSettings();
@@ -32,6 +33,22 @@ export default function Dashboard() {
 
   const { sessions: dataContextSessions } = useData();
   const { workoutSessions } = useFitnessInsights(dataContextSessions);
+
+  // TEMPORARILY DISABLED FOR DEBUGGING - pull-to-refresh handlers are NOT applied
+  // const { isPulling, isRefreshing, pullDistance, threshold, handlers } = usePullToRefresh({
+  //   onRefresh: async () => {
+  //     const rawTemplates = await getWorkoutTemplates();
+  //     setTemplates(rawTemplates);
+  //   },
+  //   threshold: 80,
+  // });
+
+  // Placeholder values for when pull-to-refresh is disabled
+  const isPulling = false;
+  const isRefreshing = false;
+  const pullDistance = 0;
+  const threshold = 80;
+  const handlers = {};
 
   const exercisesForProgression = useMemo(() => {
     const exerciseMap = new Map<string, { id: string; name: string }>();
@@ -153,7 +170,42 @@ export default function Dashboard() {
   const handleNavigate = useCallback((path: string) => navigate(path), [navigate]);
 
   return (
-      <div className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]" dir="rtl" style={{ background: 'var(--bone)' }}>
+    <div
+      className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
+      dir="rtl"
+      style={{ background: 'var(--bone)' }}
+    >
+      {/* Pull-to-refresh indicator */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+          height: pullDistance > 0 ? Math.min(pullDistance, threshold * 1.5) : 0,
+          overflow: 'hidden',
+          transition: isPulling && !isRefreshing ? 'none' : 'height 0.3s ease',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+        }}
+      >
+        <div
+          style={{
+            width: pullDistance > threshold ? 28 : 20,
+            height: pullDistance > threshold ? 28 : 20,
+            border: '2px solid var(--navy)',
+            borderTopColor: 'transparent',
+            borderRadius: '50%',
+            animation: isRefreshing ? 'spin 0.7s linear infinite' : 'none',
+            opacity: isRefreshing ? 1 : pullDistance > 20 ? Math.min(pullDistance / threshold, 1) : 0,
+            transition: 'width 0.2s, height 0.2s, opacity 0.2s',
+          }}
+        />
+      </div>
+
       <Greeting onThemeChange={handleThemeChange} weekNumber={weeklyStats.weekNumber} />
 
       <main style={{ padding: '24px 20px 28px' }}>

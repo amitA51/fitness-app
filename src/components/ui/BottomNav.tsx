@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Dumbbell, History, LayoutDashboard, Settings, UtensilsCrossed } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { prefetchRoute } from '../../App';
+import { prefetchRoute } from '../../utils/routePrefetch';
 
 const NAV_ITEMS = [
   { path: '/', label: 'דשבורד', icon: LayoutDashboard },

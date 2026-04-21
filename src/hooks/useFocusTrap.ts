@@ -84,22 +84,20 @@ export function useFocusTrap(
     restoreFocus = true,
   } = options || {};
 
+  // Store scroll state in refs so cleanup can access them
+  const originalOverflowRef = useRef<string>('');
+  const containerRef_forLock = containerRef;
+
   useEffect(() => {
-    if (!isOpen || !containerRef.current) return;
+    if (!isOpen || !containerRef_forLock.current) return;
 
-    const container = containerRef.current;
-
-    // Lock scroll
+    // Lock scroll when modal opens
     if (lockScroll) {
-      const originalOverflow = document.body.style.overflow;
+      originalOverflowRef.current = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-      // Return cleanup for scroll
-      const restoreScroll = () => {
-        document.body.style.overflow = originalOverflow;
-      };
-      // We'll call this in the cleanup
-      var _restoreScroll = restoreScroll;
     }
+
+    const container = containerRef_forLock.current;
 
     const focusableElements = container.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -141,8 +139,9 @@ export function useFocusTrap(
 
     return () => {
       container.removeEventListener('keydown', handleKeyDown);
-      if (typeof _restoreScroll === 'function') {
-        _restoreScroll();
+      // Restore scroll when modal closes
+      if (lockScroll) {
+        document.body.style.overflow = originalOverflowRef.current;
       }
       if (restoreFocus && previouslyFocusedElement) {
         previouslyFocusedElement.focus?.();
@@ -150,7 +149,7 @@ export function useFocusTrap(
     };
   }, [
     isOpen,
-    containerRef,
+    containerRef_forLock,
     closeOnEscape,
     closeOnClickOutside,
     lockScroll,

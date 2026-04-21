@@ -20,6 +20,8 @@
 
 html {
   overflow-x: hidden;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 body {

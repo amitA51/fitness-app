@@ -1,0 +1,396 @@
+{"sessionId":"3417d2","location":"usePullToRefresh.ts","message":"handleTouchStart","data":{"callbackId":1,"scrollY":0,"isPulling":false,"touchY":342,"willSetPulling":true},"timestamp":1776781446222,"runId":"initial","hypothesisId":"A"}
+{"sessionId":"3417d2","location":"usePullToRefresh.ts","message":"handleTouchStart: set isPulling=true","data":{"callbackId":1},"timestamp":1776781446225,"runId":"initial","hypothesisId":"A"}
+{"sessionId":"3417d2","location":"usePullToRefresh.ts","message":"handleTouchEnd","data":{"isPulling":true},"timestamp":1776781446342,"runId":"initial","hypothesisId":"A"}
+{"sessionId":"3417d2","location":"usePullToRefresh.ts","message":"handleTouchStart","data":{"callbackId":1,"scrollY":0,"isPulling":false,"touchY":685,"willSetPulling":true},"timestamp":1776781451666,"runId":"initial","hypothesisId":"A"}
+{"sessionId":"3417d2","location":"usePullToRefresh.ts","message":"handleTouchStart: set isPulling=true","data":{"callbackId":1},"timestamp":1776781451668,"runId":"initial","hypothesisId":"A"}
+{"sessionId":"3417d2","location":"usePullToRefresh.ts","message":"handleTouchEnd","data":{"isPulling":true},"timestamp":1776781451772,"runId":"initial","hypothesisId":"A"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721565,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721584,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721595,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721606,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721614,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721623,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721633,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721641,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721654,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721888,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721901,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721908,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721915,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721921,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721929,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721931,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721935,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721944,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721948,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721960,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721966,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781721981,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781722309,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781722322,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781722331,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781722340,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781722348,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781722356,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781722364,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781722376,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781722847,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781722856,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781722865,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781722871,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781722880,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781722887,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781722896,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781722913,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723215,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723225,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723232,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723241,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723248,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723255,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723263,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723276,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723533,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723544,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723554,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723562,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723570,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723580,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":-25},"timestamp":1776781723590,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781723981,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781723992,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724001,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724006,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724011,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724017,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724022,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724027,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724032,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724038,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724045,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724054,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724066,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724083,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724347,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724355,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724362,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724368,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724373,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724384,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724388,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724390,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724397,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724404,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724414,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724429,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724643,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724655,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724662,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724669,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724675,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724679,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724686,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724690,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724695,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724702,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724709,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724717,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724728,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724945,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724955,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724962,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724968,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724973,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724977,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724982,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724986,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724991,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781724996,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781725003,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781725009,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781725016,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781725025,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781725037,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchStart","message":"Dashboard onTouchStart","data":{"scrollY":0,"touchY":492},"timestamp":1776781725750,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725827,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725839,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725842,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725850,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725857,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725864,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725868,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725879,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725887,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725898,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725902,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725913,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725920,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725930,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725937,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725947,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725954,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725962,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725969,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725977,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725985,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781725995,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781726002,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726280,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726291,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726297,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726304,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726308,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726311,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726316,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726320,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726325,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726332,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726338,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726344,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726353,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726359,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726366,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726382,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726589,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726602,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726610,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726616,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726620,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726625,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726630,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726635,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726641,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726646,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726655,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726665,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726675,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726692,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726878,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726885,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726893,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726897,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726902,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726907,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726911,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726915,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726921,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726929,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726934,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726937,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726944,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726953,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781726964,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727548,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727561,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727567,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727572,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727576,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727580,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727582,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727585,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727588,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727591,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":75},"timestamp":1776781727601,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727609,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727614,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727620,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727629,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727636,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727643,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727649,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727654,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727662,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727668,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727674,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":200},"timestamp":1776781727680,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727683,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727686,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727691,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727695,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727698,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727702,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727705,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727711,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727715,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":75},"timestamp":1776781727724,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727729,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727733,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727736,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727742,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727746,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727751,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727755,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727759,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727765,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727767,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727772,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727773,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727778,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727782,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727789,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727790,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727797,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727801,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727804,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727810,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727815,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727818,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727822,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727825,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727831,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727835,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727839,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727841,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727846,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727847,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727853,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727861,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":100},"timestamp":1776781727870,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727872,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727875,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727879,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727883,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727884,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727887,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727894,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727897,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727902,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727907,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727911,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727913,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727917,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727920,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727923,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727927,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727930,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727933,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727936,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727938,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727943,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727946,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727949,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727954,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727958,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727964,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727967,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727972,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727975,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727980,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727981,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727986,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727987,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781727993,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781727998,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728000,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728003,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728006,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728009,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728012,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728017,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728018,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728022,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728025,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728028,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728032,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728036,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728038,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728042,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728045,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728048,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728051,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728054,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728058,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728063,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728065,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728072,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728073,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728076,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728080,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728083,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781728089,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728095,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781728100,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781728106,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728111,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728114,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728116,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728120,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":50},"timestamp":1776781728127,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728131,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728132,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728138,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728143,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:wheel","message":"Wheel event captured","data":{"scrollY":0,"deltaY":25},"timestamp":1776781728159,"runId":"post-fix","hypothesisId":"D"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchStart","message":"Dashboard onTouchStart","data":{"scrollY":0,"touchY":520},"timestamp":1776781730438,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730493,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730500,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730506,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730515,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730523,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730531,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730539,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730548,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730556,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730566,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730573,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730581,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730589,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730598,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730606,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730614,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730620,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730629,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730636,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730643,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730650,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730659,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730666,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730676,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730681,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730688,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730696,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730704,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730710,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730718,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730725,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730736,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781730745,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchStart","message":"Dashboard onTouchStart","data":{"scrollY":0,"touchY":214},"timestamp":1776781731073,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731113,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731116,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731123,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731131,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731136,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731146,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731152,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731158,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731174,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731177,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731179,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731186,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731194,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731205,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731213,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731222,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731230,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731239,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731249,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731253,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731262,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731274,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731279,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731288,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731299,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731311,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731323,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731332,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731339,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731348,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731354,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731362,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731375,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731379,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731386,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731397,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731404,"runId":"post-fix","hypothesisId":"C"}
+{"sessionId":"3417d2","location":"Dashboard.tsx:onTouchMove","message":"Dashboard onTouchMove","data":{"scrollY":0},"timestamp":1776781731422,"runId":"post-fix","hypothesisId":"C"}
