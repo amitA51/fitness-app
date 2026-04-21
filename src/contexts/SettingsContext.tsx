@@ -142,7 +142,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', settings.theme);
     document.documentElement.classList.toggle(
       'reduce-motion',
       settings.workoutSettings.reducedAnimations
@@ -153,7 +152,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
     document.documentElement.classList.toggle('large-text', settings.workoutSettings.largeText);
   }, [
-    settings.theme,
     settings.workoutSettings.highContrast,
     settings.workoutSettings.largeText,
     settings.workoutSettings.reducedAnimations,

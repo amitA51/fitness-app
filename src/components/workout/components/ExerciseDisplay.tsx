@@ -1,15 +1,17 @@
 // ExerciseDisplay - Sport Annual Editorial Layout
 // Navy masthead + hero number, bone input tiles, chip actions, btn-row finish
 
-import { Edit, FileText, GripVertical, Minus, Plus, RotateCcw, Star } from 'lucide-react';
-import { memo, useMemo, useState } from 'react';
+import { Edit, FileText, GripVertical, Minus, MoreHorizontal, Plus, RotateCcw, Star } from 'lucide-react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import type { Exercise, WorkoutSet } from '../../../types';
 import type { SupersetGroup } from '../core/workoutTypes';
+import { useAnimatedNumber } from '../hooks/useAnimatedNumber';
 import { usePreviousData } from '../hooks/usePreviousData';
 import AlternativesSheet from './AlternativesSheet';
 import NotesBottomSheet from './NotesBottomSheet';
 import RPEPicker from './RPEPicker';
 import SetEditBottomSheet from './SetEditBottomSheet';
+import SlideToComplete from './SlideToComplete';
 
 // ============================================================
 // TYPES
@@ -75,6 +77,101 @@ const ChipButton = memo<ChipButtonProps>(({ icon, onClick, active, label, badge 
 ChipButton.displayName = 'ChipButton';
 
 // ============================================================
+// OVERFLOW CHIP MENU (… chip with editorial dropdown)
+// ============================================================
+
+interface OverflowItem {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  dot?: boolean;
+}
+
+interface OverflowChipMenuProps {
+  items: OverflowItem[];
+}
+
+const OverflowChipMenu = memo<OverflowChipMenuProps>(({ items }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent | PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
+  }, [open]);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div ref={ref} className="relative">
+      <ChipButton
+        icon={<MoreHorizontal size={18} strokeWidth={2.25} />}
+        onClick={() => setOpen((o) => !o)}
+        label="עוד"
+        active={open}
+      />
+      {open && (
+        <div
+          className="absolute z-50"
+          style={{
+            top: 'calc(100% + 6px)',
+            insetInlineStart: 0,
+            minWidth: 200,
+            background: 'var(--bone)',
+            border: '2px solid var(--navy)',
+            borderRadius: 0,
+            boxShadow: '4px 4px 0 var(--navy)',
+          }}
+        >
+          {items.map((it, idx) => (
+            <button
+              key={it.label}
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                it.onClick();
+                setOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 active:bg-[var(--bone-deep)] transition-colors"
+              style={{
+                background: 'var(--bone)',
+                color: 'var(--navy)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                letterSpacing: '0.08em',
+                borderBottom: idx === items.length - 1 ? 'none' : '1px solid var(--bone-deep)',
+                textTransform: 'uppercase',
+              }}
+            >
+              <span style={{ color: 'var(--mustard)', display: 'inline-flex' }}>{it.icon}</span>
+              <span className="flex-1 text-start">{it.label}</span>
+              {it.dot && (
+                <span
+                  aria-hidden
+                  style={{
+                    width: 8,
+                    height: 8,
+                    background: 'var(--mustard)',
+                    border: '1.5px solid var(--navy)',
+                  }}
+                />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+OverflowChipMenu.displayName = 'OverflowChipMenu';
+
+// ============================================================
 // INPUT TILE (card-outlined style with eyebrow + number + +/- chips)
 // ============================================================
 
@@ -99,7 +196,7 @@ const InputTile = memo<InputTileProps>(
     return (
       <div
         className="card-outlined flex flex-col"
-        style={{ padding: '14px 14px 12px', gap: 6 }}
+        style={{ padding: '10px 12px 10px', gap: 4 }}
       >
         {/* Eyebrow (mono mustard) */}
         <div className="flex items-center justify-between">
@@ -136,18 +233,19 @@ const InputTile = memo<InputTileProps>(
             e.stopPropagation();
             onTap();
           }}
-          className="w-full text-center py-1 active:scale-[0.98] transition-transform tabular-nums"
+          className="w-full text-center active:scale-[0.98] transition-transform tabular-nums"
           style={{
             fontFamily: 'var(--font-display)',
             fontWeight: 900,
-            fontSize: 64,
-            lineHeight: 0.9,
+            fontSize: 48,
+            lineHeight: 1,
             letterSpacing: '-0.03em',
             color: isGhost ? 'var(--bone-deep)' : 'var(--navy)',
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
             fontVariant: 'tabular-nums',
+            padding: '2px 0',
           }}
         >
           <span className="tabular-nums" style={{ fontVariant: 'tabular-nums' }}>
@@ -157,10 +255,10 @@ const InputTile = memo<InputTileProps>(
             <span
               style={{
                 fontFamily: 'var(--font-mono)',
-                fontSize: 14,
+                fontSize: 12,
                 letterSpacing: '0.18em',
                 color: 'var(--stone)',
-                marginInlineStart: 6,
+                marginInlineStart: 4,
                 verticalAlign: 'middle',
               }}
             >
@@ -179,7 +277,7 @@ const InputTile = memo<InputTileProps>(
                 e.stopPropagation();
                 onDecrement();
               }}
-              className="flex items-center justify-center h-10 active:scale-95 transition-transform"
+              className="flex items-center justify-center h-9 active:scale-95 transition-transform"
               style={{
                 background: 'var(--bone-deep)',
                 border: '2px solid var(--navy)',
@@ -188,7 +286,7 @@ const InputTile = memo<InputTileProps>(
               }}
               aria-label={`הורד ${label}`}
             >
-              <Minus size={18} strokeWidth={2.5} />
+              <Minus size={16} strokeWidth={2.5} />
             </button>
             <button
               type="button"
@@ -197,7 +295,7 @@ const InputTile = memo<InputTileProps>(
                 e.stopPropagation();
                 onIncrement();
               }}
-              className="flex items-center justify-center h-10 active:scale-95 transition-transform"
+              className="flex items-center justify-center h-9 active:scale-95 transition-transform"
               style={{
                 background: 'var(--navy)',
                 border: '2px solid var(--navy)',
@@ -206,7 +304,7 @@ const InputTile = memo<InputTileProps>(
               }}
               aria-label={`הוסף ${label}`}
             >
-              <Plus size={18} strokeWidth={2.5} />
+              <Plus size={16} strokeWidth={2.5} />
             </button>
           </div>
         )}
@@ -277,6 +375,10 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
       currentSet.reps && currentSet.reps > 0 ? currentSet.reps : previousSet?.reps || 0;
     const heroIsGhost = !currentSet.weight;
 
+    // Count-up animation on hero numbers (200ms, ease-spring, reduced-motion aware)
+    const animatedHeroWeight = useAnimatedNumber(heroWeight || 0, { duration: 200 });
+    const animatedHeroReps = useAnimatedNumber(heroReps || 0, { duration: 200 });
+
     const handleRepsTap = () => onOpenNumpad('reps');
     const handleIncrementReps = () => onUpdateSet('reps', (currentSet.reps || 0) + 1);
     const handleDecrementReps = () => onUpdateSet('reps', Math.max(0, (currentSet.reps || 0) - 1));
@@ -292,7 +394,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     }, [displaySetIndex]);
 
     return (
-      <div className="flex flex-col w-full max-w-lg mx-auto" style={{ gap: 0 }}>
+      <div className="flex flex-col w-full max-w-lg mx-auto h-full" style={{ gap: 0 }}>
         {/* ── AW MASTHEAD ── exercise + set counter */}
         <div className="aw-masthead">
           <div className="flex items-center gap-3 min-w-0">
@@ -358,10 +460,10 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               fontVariant: 'tabular-nums',
             }}
           >
-            {heroWeight || 0}
+            {animatedHeroWeight}
           </div>
           <div className="unit tabular-nums" style={{ fontVariant: 'tabular-nums' }}>
-            {heroWeight || 0} KG · × {heroReps || 0} REPS
+            KG · × {animatedHeroReps} REPS
           </div>
 
           {/* Volume preview (inline with unit line) */}
@@ -470,8 +572,8 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
 
         {/* ── INPUT TILES ── two card-outlined sharp tiles */}
         <div
-          className="grid grid-cols-2 px-5 py-5"
-          style={{ gap: 12, background: 'var(--bone)' }}
+          className="grid grid-cols-2 px-4 pt-4 pb-3"
+          style={{ gap: 10, background: 'var(--bone)' }}
         >
           <InputTile
             label="REPS"
@@ -500,10 +602,10 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
 
         {/* ── QUICK ACTIONS ROW ── */}
         <div
-          className="flex justify-between items-center px-5 pb-4"
+          className="flex justify-between items-center px-4 pb-3"
           style={{ background: 'var(--bone)' }}
         >
-          {/* Left: RPE / Notes chip buttons */}
+          {/* Left: RPE + overflow menu */}
           <div className="flex gap-2">
             {onUpdateRPE && (
               <ChipButton
@@ -534,49 +636,42 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               />
             )}
 
-            {onUpdateNotes && (
-              <ChipButton
-                icon={<FileText size={18} strokeWidth={2.25} />}
-                onClick={() => setShowNotesSheet(true)}
-                active={!!currentSet.notes}
-                label="הערות"
-                badge={
-                  currentSet.notes ? (
-                    <span
-                      className="absolute"
-                      style={{
-                        top: -3,
-                        insetInlineEnd: -3,
-                        width: 8,
-                        height: 8,
-                        background: 'var(--mustard)',
-                        border: '1.5px solid var(--navy)',
-                      }}
-                    />
-                  ) : undefined
-                }
-              />
-            )}
-
-            {completedSetsCount > 0 && onEditSet && (
-              <ChipButton
-                icon={<Edit size={16} strokeWidth={2.25} />}
-                onClick={() => setShowSetEditor(true)}
-                label="עריכת סטים"
-              />
-            )}
+            <OverflowChipMenu
+              items={[
+                ...(onUpdateNotes
+                  ? [
+                      {
+                        icon: <FileText size={14} strokeWidth={2.25} />,
+                        label: 'הערות',
+                        onClick: () => setShowNotesSheet(true),
+                        dot: !!currentSet.notes,
+                      },
+                    ]
+                  : []),
+                ...(completedSetsCount > 0 && onEditSet
+                  ? [
+                      {
+                        icon: <Edit size={14} strokeWidth={2.25} />,
+                        label: 'עריכת סטים',
+                        onClick: () => setShowSetEditor(true),
+                      },
+                    ]
+                  : []),
+                ...(!isInSuperset && onCreateSuperset
+                  ? [
+                      {
+                        icon: <Plus size={14} strokeWidth={2.5} />,
+                        label: 'סופרסט',
+                        onClick: () => onCreateSuperset(exercise.id),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
           </div>
 
-          {/* Right: superset / undo */}
+          {/* Right: undo */}
           <div className="flex gap-2">
-            {!isInSuperset && onCreateSuperset && (
-              <ChipButton
-                icon={<Plus size={18} strokeWidth={2.5} />}
-                onClick={() => onCreateSuperset(exercise.id)}
-                label="סופרסט"
-              />
-            )}
-
             {completedSetsCount > 0 && onUndo && (
               <ChipButton
                 icon={<RotateCcw size={18} strokeWidth={2.25} />}
@@ -587,33 +682,9 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           </div>
         </div>
 
-        {/* ── FINISH SET BUTTON ROW ── primary + secondary */}
-        <div className="px-5 pb-5" style={{ background: 'var(--bone)' }}>
-          <div className="btn-row">
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onCompleteSet();
-              }}
-              className="btn-primary"
-            >
-              סיים סט
-            </button>
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // "Skip" = complete without marking; for now call complete to advance
-                onCompleteSet();
-              }}
-              className="btn-secondary"
-            >
-              דלג
-            </button>
-          </div>
+        {/* ── FINISH SET ── slide-to-confirm */}
+        <div className="px-4 pb-4 pt-1" style={{ background: 'var(--bone)' }}>
+          <SlideToComplete label="סיים סט" onComplete={onCompleteSet} />
         </div>
 
         {/* ── BOTTOM SHEETS ── unchanged */}

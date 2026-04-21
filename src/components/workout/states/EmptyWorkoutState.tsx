@@ -1,50 +1,13 @@
-/**
- * EmptyWorkoutState - Empty state display when no exercises are added
- * Extracted from ActiveWorkoutNew.tsx for better code organization
- */
+// EmptyWorkoutState - VISION Sport Annual Editorial Design
+// Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
+// VISION: Bold · Editorial · Confident · Narrative · Printed
 
 import { type Variants, motion } from 'framer-motion';
 import React from 'react';
 import { triggerHaptic } from '../../../utils/haptics';
-import { DumbbellIcon } from '../../icons';
-
-// Constants
-const NOISE_TEXTURE_SVG = `data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E`;
-
-// Animation Variants
-const containerVariants: Variants = {
-  hidden: { scale: 0.9, opacity: 0 },
-  visible: { scale: 1, opacity: 1 },
-};
-
-const iconVariants: Variants = {
-  animate: {
-    scale: [1, 1.05, 1],
-    transition: {
-      repeat: Number.POSITIVE_INFINITY,
-      duration: 2,
-      ease: 'easeInOut',
-    },
-  },
-};
-
-const buttonVariants: Variants = {
-  animate: {
-    boxShadow: [
-      '0 0 20px rgba(99,102,241,0.4)',
-      '0 0 35px rgba(99,102,241,0.6)',
-      '0 0 20px rgba(99,102,241,0.4)',
-    ],
-    transition: {
-      repeat: Number.POSITIVE_INFINITY,
-      duration: 2,
-      ease: 'easeInOut',
-    },
-  },
-};
 
 interface EmptyWorkoutStateProps {
-  /** Whether OLED mode is enabled (true black background) */
+  /** Whether OLED mode is enabled */
   oledMode: boolean;
   /** Callback when user wants to add an exercise */
   onAddExercise: () => void;
@@ -53,62 +16,150 @@ interface EmptyWorkoutStateProps {
 }
 
 const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
-  ({ oledMode, onAddExercise, onCancel }) => (
+  ({ oledMode: _oledMode, onAddExercise, onCancel }) => (
     <div
-      className="fixed inset-0 text-[var(--cosmos-text-primary)] font-sans overflow-y-auto overscroll-contain z-[9999] flex flex-col items-center justify-center p-6 text-center transition-colors duration-500"
-      style={{ background: oledMode ? '#000000' : 'var(--cosmos-bg-primary)' }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'var(--bone)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+        zIndex: 9999,
+      }}
       role="main"
       aria-label="Empty workout state"
     >
-      {/* Background noise texture */}
-      <div
-        className="absolute inset-0 opacity-[0.04] pointer-events-none z-0 mix-blend-overlay"
-        style={{ backgroundImage: `url('${NOISE_TEXTURE_SVG}')` }}
-        aria-hidden="true"
-      />
-
       <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="relative z-10 flex flex-col items-center max-w-sm px-4"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          maxWidth: 320,
+          padding: '0 16px',
+          textAlign: 'center',
+        }}
       >
-        {/* Pulsing dumbbell icon */}
+        {/* Icon */}
         <motion.div
-          className="w-24 h-24 rounded-full bg-[var(--cosmos-accent-primary)]/10 flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(99,102,241,0.3)]"
-          variants={iconVariants}
-          animate="animate"
-          aria-hidden="true"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          style={{
+            width: 96,
+            height: 96,
+            background: 'var(--mustard)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 24,
+            border: '2px solid var(--navy)',
+          }}
         >
-          <DumbbellIcon className="w-10 h-10 text-[var(--cosmos-accent-primary)]" />
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M19 11H5M19 11C20.1046 11 21 11.8954 21 13V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V13C3 11.8954 3.89543 11 5 11M19 11V9C19 7.89543 18.1046 7 17 7M5 11V9C5 7.89543 5.89543 7 7 7M7 7V5C7 3.89543 7.89543 3 9 3H15C16.1046 3 17 3.89543 17 5V7M7 7H17"
+              stroke="var(--navy)"
+              strokeWidth="2"
+              strokeLinecap="square"
+            />
+          </svg>
         </motion.div>
 
-        <h1 className="text-3xl font-bold mb-2">בוא נתחיל! 💪</h1>
-        <p className="text-[var(--cosmos-text-muted)] mb-8 text-center leading-relaxed">
+        {/* Title */}
+        <h1
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 900,
+            fontSize: 28,
+            color: 'var(--navy)',
+            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
+            marginBottom: 8,
+          }}
+        >
+          להתחיל
+        </h1>
+
+        {/* Subtitle */}
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 14,
+            color: 'var(--stone)',
+            lineHeight: 1.6,
+            marginBottom: 32,
+          }}
+        >
           בחר את התרגיל הראשון שלך כדי להתחיל את האימון
         </p>
 
-        {/* Add exercise button - 56px height for touch target */}
+        {/* Add exercise button */}
         <motion.button
           onClick={() => {
             triggerHaptic('medium');
             onAddExercise();
           }}
-          className="w-full h-14 min-h-[56px] rounded-2xl bg-[var(--cosmos-accent-primary)] text-white font-bold text-lg tracking-wide shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:brightness-110 transition-all active:scale-95 mb-4 flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--cosmos-accent-primary)] focus:ring-offset-2"
-          variants={buttonVariants}
-          animate="animate"
+          whileTap={{ scale: 0.98 }}
+          style={{
+            width: '100%',
+            minHeight: 56,
+            background: 'var(--navy)',
+            color: 'var(--mustard)',
+            border: 'none',
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 16,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            marginBottom: 16,
+            transition: 'background 150ms ease',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.background = 'var(--navy-deep)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.background = 'var(--navy)';
+          }}
           aria-label="בחר תרגיל להוספה"
         >
-          <span className="text-xl" aria-hidden="true">
-            +
-          </span>{' '}
-          בחר תרגיל
+          <span style={{ fontSize: 20 }}>+</span> בחר תרגיל
         </motion.button>
 
-        {/* Cancel button - 44px min height for touch target */}
+        {/* Cancel button */}
         <button
           onClick={onCancel}
-          className="text-sm text-[var(--cosmos-text-muted)] hover:text-white transition-colors min-h-[44px] px-4 cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/30 rounded-lg"
+          style={{
+            minHeight: 44,
+            padding: '0 16px',
+            background: 'transparent',
+            color: 'var(--stone)',
+            border: '2px solid var(--bone-deep)',
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 13,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+            transition: 'all 150ms ease',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--navy)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--navy)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--bone-deep)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--stone)';
+          }}
           aria-label="ביטול האימון"
         >
           ביטול

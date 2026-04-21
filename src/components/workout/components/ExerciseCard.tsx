@@ -84,6 +84,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
           cursor: 'pointer',
           transition: 'all 150ms',
           marginBottom: 0,
+          touchAction: 'manipulation',
         }}
         whileTap={{ scale: 0.98 }}
         aria-label={`תרגיל: ${exercise.name ?? ''}`}
@@ -185,7 +186,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                   gap: 3,
                 }}
               >
-                ⏱ {exercise.defaultRestTime || 90}s
+                {exercise.defaultRestTime || 90}s
               </span>
               <span
                 style={{

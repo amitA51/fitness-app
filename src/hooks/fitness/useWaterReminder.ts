@@ -113,7 +113,7 @@ export const useWaterReminder = (isActive: boolean) => {
     triggerHaptic('medium');
 
     // Show notification
-    showNotification('💧 זמן לשתות מים!', 'הישאר מאוזן במהלך האימון');
+    showNotification('תזכורת מים', 'לגום מים במהלך האימון.');
 
     lastReminderRef.current = Date.now();
   }, [triggerHaptic]);

@@ -1,3 +1,7 @@
+// AnalyticsDashboard - VISION Sport Annual Editorial Design
+// Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
+// VISION: Bold · Editorial · Confident · Narrative · Printed
+
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -21,7 +25,6 @@ import {
 } from '../../services/analyticsService';
 import { getWorkoutSessions } from '../../services/dataService';
 import type { WorkoutSession } from '../../types';
-import { FlameIcon, TrophyIcon } from '../icons';
 import ForecastChart from './ForecastChart';
 import WorkoutCalendar from './WorkoutCalendar';
 import MuscleRadarChart from './components/MuscleRadarChart';
@@ -51,7 +54,7 @@ function getMuscleColor(muscle: string, index: number): string {
 }
 
 /**
- * Premium Stat Card Component
+ * StatCard - Sport Annual Editorial Style
  */
 const StatCard = memo(
   ({
@@ -59,36 +62,71 @@ const StatCard = memo(
     label,
     value,
     sublabel,
-    gradient,
-    iconColor,
     delay = 0,
   }: {
     icon: React.ReactNode;
     label: string;
     value: string | number;
     sublabel: string;
-    gradient: string;
-    iconColor: string;
     delay?: number;
   }) => (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay, type: 'spring', stiffness: 200 }}
-      className={`bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 ${gradient} rounded-2xl p-4 relative overflow-hidden group`}
+      style={{
+        background: 'var(--bone)',
+        border: '2px solid var(--navy)',
+        padding: 16,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
     >
-      <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-      <div className="relative z-10">
-        <div className="flex items-center gap-2 mb-2">
-          <span className={iconColor}>{icon}</span>
-          <span className="text-[10px] text-[var(--cosmos-text-muted)] uppercase tracking-wider font-semibold">
-            {label}
-          </span>
-        </div>
-        <div className="text-3xl font-black text-white">{value}</div>
-        <div className="text-[10px] text-white/40 mt-1">{sublabel}</div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          marginBottom: 8,
+        }}
+      >
+        <span style={{ fontSize: 24 }}>{icon}</span>
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.18em',
+            color: 'var(--stone)',
+            textTransform: 'uppercase',
+            fontWeight: 600,
+          }}
+        >
+          {label}
+        </span>
       </div>
-      <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-white/5 rounded-full blur-xl group-hover:bg-white/10 transition-colors" />
+      <div
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontWeight: 900,
+          fontSize: 32,
+          color: 'var(--navy)',
+          letterSpacing: '-0.02em',
+          lineHeight: 1,
+        }}
+      >
+        {value}
+      </div>
+      <div
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          color: 'var(--stone)',
+          letterSpacing: '0.08em',
+          marginTop: 4,
+        }}
+      >
+        {sublabel}
+      </div>
     </motion.div>
   )
 );
@@ -123,7 +161,6 @@ const AnalyticsDashboard: React.FC = () => {
       const achieves = await getAchievements(workoutSessions, streak);
       const muscleGroups = calculateMuscleGroupDistribution(workoutSessions);
 
-      // New analytics data
       const weekly = calculateWeeklyVolumes(workoutSessions, 12);
       const balance = calculateMuscleBalance(workoutSessions, 12);
       const forecast = forecastProgress(workoutSessions);
@@ -144,11 +181,24 @@ const AnalyticsDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: 256,
+        }}
+      >
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: 'linear' }}
-          className="w-8 h-8 border-2 border-[var(--cosmos-accent-primary)] border-t-transparent rounded-full"
+          style={{
+            width: 32,
+            height: 32,
+            border: '3px solid var(--navy)',
+            borderTopColor: 'transparent',
+            borderRadius: '50%',
+          }}
         />
       </div>
     );
@@ -173,25 +223,37 @@ const AnalyticsDashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-6 -mr-2 pr-2 overflow-y-auto custom-scrollbar max-h-[60vh]">
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 24,
+        marginRight: 8,
+        paddingRight: 8,
+        overflowY: 'auto',
+        maxHeight: '60vh',
+      }}
+    >
       {/* Header Stats Row */}
-      <div className="grid grid-cols-2 gap-3">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 12,
+        }}
+      >
         <StatCard
-          icon={<span className="text-2xl">🔥</span>}
+          icon={<span>·</span>}
           label="רצף נוכחי"
           value={streakInfo.currentStreak}
           sublabel="ימים רצופים"
-          gradient="bg-gradient-to-br from-orange-500/10 to-red-500/5"
-          iconColor="text-orange-400"
           delay={0}
         />
         <StatCard
-          icon={<TrophyIcon className="w-5 h-5" />}
+          icon={<span>§</span>}
           label="הישגים"
           value={`${unlockedAchievements.length}/${achievements.length}`}
           sublabel="פתוחים"
-          gradient="bg-gradient-to-br from-purple-500/10 to-pink-500/5"
-          iconColor="text-purple-400"
           delay={0.05}
         />
       </div>
@@ -202,14 +264,48 @@ const AnalyticsDashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
+          style={{
+            background: 'var(--bone)',
+            border: '2px solid var(--navy)',
+            padding: 20,
+          }}
         >
-          <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full workout-pulse-glow" />
-            הישגים
-          </h3>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 16,
+            }}
+          >
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                background: 'var(--mustard)',
+              }}
+            />
+            <h3
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 14,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: 'var(--navy)',
+              }}
+            >
+              הישגים
+            </h3>
+          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 8,
+            }}
+          >
             {achievements.slice(0, 6).map((achievement, i) => {
               const isUnlocked = achievement.progress === 100;
               return (
@@ -219,33 +315,64 @@ const AnalyticsDashboard: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 + i * 0.05 }}
                   whileHover={{ scale: 1.02, y: -2 }}
-                  className={`p-3 rounded-xl border transition-all ${
-                    isUnlocked
-                      ? 'bg-gradient-to-br from-yellow-500/20 to-orange-500/10 border-yellow-500/40 shadow-[0_0_15px_rgba(234,179,8,0.2)]'
-                      : 'bg-white/5 border-white/10 hover:border-white/20'
-                  }`}
+                  style={{
+                    padding: 12,
+                    background: isUnlocked ? 'var(--mustard)' : 'var(--bone-deep)',
+                    border: `2px solid ${isUnlocked ? 'var(--navy)' : 'var(--bone-deep)'}`,
+                    transition: 'all 150ms',
+                  }}
                 >
                   <div
-                    className={`text-2xl mb-1 ${isUnlocked ? 'workout-fire-effect' : 'opacity-30 grayscale'}`}
+                    style={{
+                      fontSize: 24,
+                      marginBottom: 4,
+                      filter: isUnlocked ? 'none' : 'grayscale(100%)',
+                      opacity: isUnlocked ? 1 : 0.3,
+                    }}
                   >
                     {achievement.icon}
                   </div>
                   <div
-                    className={`text-xs font-bold ${isUnlocked ? 'text-yellow-300' : 'text-white/60'}`}
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 800,
+                      fontSize: 12,
+                      color: isUnlocked ? 'var(--navy)' : 'var(--stone)',
+                      letterSpacing: '0.02em',
+                    }}
                   >
                     {achievement.name}
                   </div>
                   {!isUnlocked && (
-                    <div className="mt-2">
-                      <div className="bg-white/10 rounded-full h-1.5 overflow-hidden">
+                    <div style={{ marginTop: 8 }}>
+                      <div
+                        style={{
+                          height: 6,
+                          background: 'var(--bone)',
+                          overflow: 'hidden',
+                        }}
+                      >
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${achievement.progress}%` }}
                           transition={{ delay: 0.3 + i * 0.05, duration: 0.8 }}
-                          className="h-full bg-gradient-to-r from-[var(--cosmos-accent-primary)] to-[var(--cosmos-accent-cyan)]"
+                          style={{
+                            height: '100%',
+                            background: 'var(--mustard)',
+                          }}
                         />
                       </div>
-                      <div className="text-[9px] text-white/30 mt-1">{achievement.progress}%</div>
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 9,
+                          color: 'var(--stone)',
+                          letterSpacing: '0.05em',
+                          marginTop: 4,
+                        }}
+                      >
+                        {achievement.progress}%
+                      </div>
                     </div>
                   )}
                 </motion.div>
@@ -256,23 +383,25 @@ const AnalyticsDashboard: React.FC = () => {
       )}
 
       {/* Stats Cards Row 2 */}
-      <div className="grid grid-cols-2 gap-3">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 12,
+        }}
+      >
         <StatCard
-          icon={<FlameIcon className="w-5 h-5" />}
+          icon={<span>·</span>}
           label="נפח ממוצע"
           value={avgVolume.toLocaleString()}
           sublabel="ק״ג לאימון"
-          gradient="bg-gradient-to-br from-[var(--cosmos-accent-primary)]/10 to-[var(--cosmos-accent-primary)]/5"
-          iconColor="text-[var(--cosmos-accent-primary)]"
           delay={0.15}
         />
         <StatCard
-          icon={<TrophyIcon className="w-5 h-5" />}
+          icon={<span>✓</span>}
           label="סה״כ אימונים"
           value={volumeData.length}
           sublabel="אימונים הושלמו"
-          gradient="bg-gradient-to-br from-cyan-500/10 to-cyan-500/5"
-          iconColor="text-cyan-400"
           delay={0.2}
         />
       </div>
@@ -283,40 +412,84 @@ const AnalyticsDashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
+          style={{
+            background: 'var(--bone)',
+            border: '2px solid var(--navy)',
+            padding: 20,
+          }}
         >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-[var(--cosmos-accent-primary)] rounded-full" />
-              מגמת נפח שבועית
-            </h3>
-            <div className="flex items-center gap-3 text-[9px]">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-0.5 bg-gradient-to-r from-[var(--cosmos-accent-primary)] to-[var(--cosmos-accent-cyan)] rounded" />
-                <span className="text-white/40">נפח</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-0.5 bg-yellow-400/80 rounded" />
-                <span className="text-white/40">מגמה</span>
-              </div>
-              <div className="flex items-center gap-1">
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 16,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  background: 'var(--mustard)',
+                }}
+              />
+              <h3
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  color: 'var(--navy)',
+                }}
+              >
+                מגמת נפח שבועית
+              </h3>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                color: 'var(--stone)',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <div
-                  className="w-3 h-0.5 bg-yellow-400/50 rounded"
-                  style={{ borderTop: '2px dashed rgba(251, 191, 36, 0.5)' }}
+                  style={{
+                    width: 12,
+                    height: 3,
+                    background: 'var(--mustard)',
+                  }}
                 />
-                <span className="text-white/40">חיזוי</span>
+                <span>נפח</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div
+                  style={{
+                    width: 12,
+                    height: 3,
+                    background: 'var(--navy)',
+                  }}
+                />
+                <span>מגמה</span>
               </div>
             </div>
           </div>
 
-          <div className="h-48 relative">
+          <div style={{ height: 192, position: 'relative' }}>
             {/* SVG Chart with Trend Line */}
             <svg
               width="100%"
               height="100%"
               viewBox={`0 0 ${weeklyVolumes.length * 60} 180`}
               preserveAspectRatio="xMidYMid meet"
-              className="overflow-visible"
+              style={{ overflow: 'visible' }}
             >
               {/* Grid Lines */}
               {[0, 1, 2, 3, 4].map((i) => (
@@ -326,7 +499,8 @@ const AnalyticsDashboard: React.FC = () => {
                   y1={i * 45}
                   x2={weeklyVolumes.length * 60}
                   y2={i * 45}
-                  stroke="rgba(255, 255, 255, 0.05)"
+                  stroke="var(--bone-deep)"
+                  strokeWidth="1"
                   strokeDasharray="4 4"
                 />
               ))}
@@ -357,8 +531,6 @@ const AnalyticsDashboard: React.FC = () => {
                       y={170 - height}
                       width={40}
                       height={height}
-                      rx={4}
-                      fill={isHovered ? 'url(#barGradientHover)' : 'url(#barGradient)'}
                       initial={{ height: 0, y: 170 }}
                       animate={{ height, y: 170 - height }}
                       transition={{
@@ -369,7 +541,7 @@ const AnalyticsDashboard: React.FC = () => {
                       }}
                       onMouseEnter={() => setHoveredTrendPoint(i)}
                       onMouseLeave={() => setHoveredTrendPoint(null)}
-                      style={{ cursor: 'pointer' }}
+                      style={{ cursor: 'pointer', fill: isHovered ? 'var(--navy)' : 'var(--mustard)' }}
                     />
 
                     {/* Week Label */}
@@ -378,25 +550,14 @@ const AnalyticsDashboard: React.FC = () => {
                       y={185}
                       textAnchor="middle"
                       fontSize={8}
-                      fill="rgba(255, 255, 255, 0.4)"
+                      fill="var(--stone)"
+                      fontFamily="var(--font-mono)"
                     >
                       {week.weekLabel.split('-W')[1] || week.weekLabel.slice(-2)}
                     </text>
                   </g>
                 );
               })}
-
-              {/* Gradients */}
-              <defs>
-                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--cosmos-accent-cyan)" />
-                  <stop offset="100%" stopColor="var(--cosmos-accent-primary)" />
-                </linearGradient>
-                <linearGradient id="barGradientHover" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--cosmos-accent-cyan)" stopOpacity="0.9" />
-                  <stop offset="100%" stopColor="var(--cosmos-accent-primary)" stopOpacity="0.9" />
-                </linearGradient>
-              </defs>
             </svg>
 
             {/* Enhanced Tooltip */}
@@ -406,31 +567,63 @@ const AnalyticsDashboard: React.FC = () => {
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 5 }}
-                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20"
+                  style={{
+                    position: 'absolute',
+                    bottom: '100%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    marginBottom: 8,
+                    zIndex: 20,
+                    background: 'var(--navy)',
+                    padding: '8px 12px',
+                    minWidth: 120,
+                  }}
                 >
-                  <div className="bg-black/95 text-white text-[10px] px-3 py-2 rounded-lg whitespace-nowrap shadow-lg border border-white/10">
-                    <div className="font-bold text-sm mb-1">
-                      {weeklyVolumes[hoveredTrendPoint].totalVolume.toLocaleString()} ק״ג
-                    </div>
-                    <div className="text-white/50 text-[8px] mb-1">
-                      שבוע {weeklyVolumes[hoveredTrendPoint].weekLabel}
-                    </div>
-                    {weeklyVolumes[hoveredTrendPoint].changeFromPrevious !== null && (
-                      <div
-                        className={`text-[9px] ${
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 800,
+                      fontSize: 14,
+                      color: 'var(--mustard)',
+                      marginBottom: 4,
+                    }}
+                  >
+                    {weeklyVolumes[hoveredTrendPoint].totalVolume.toLocaleString()} ק״ג
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 8,
+                      color: 'rgba(245,241,235,0.5)',
+                      marginBottom: 4,
+                    }}
+                  >
+                    שבוע {weeklyVolumes[hoveredTrendPoint].weekLabel}
+                  </div>
+                  {weeklyVolumes[hoveredTrendPoint].changeFromPrevious !== null && (
+                    <div
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 9,
+                        color:
                           weeklyVolumes[hoveredTrendPoint].changeFromPrevious! >= 0
-                            ? 'text-green-400'
-                            : 'text-red-400'
-                        }`}
-                      >
-                        {weeklyVolumes[hoveredTrendPoint].changeFromPrevious! >= 0 ? '↑' : '↓'}{' '}
-                        {Math.abs(weeklyVolumes[hoveredTrendPoint].changeFromPrevious!)}% מהשבוע
-                        הקודם
-                      </div>
-                    )}
-                    <div className="text-white/40 text-[8px] mt-1">
-                      {weeklyVolumes[hoveredTrendPoint].sessionCount} אימונים
+                            ? '#22c55e'
+                            : '#ef4444',
+                      }}
+                    >
+                      {weeklyVolumes[hoveredTrendPoint].changeFromPrevious! >= 0 ? '↑' : '↓'}{' '}
+                      {Math.abs(weeklyVolumes[hoveredTrendPoint].changeFromPrevious!)}%
                     </div>
+                  )}
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 8,
+                      color: 'rgba(245,241,235,0.4)',
+                      marginTop: 4,
+                    }}
+                  >
+                    {weeklyVolumes[hoveredTrendPoint].sessionCount} אימונים
                   </div>
                 </motion.div>
               )}
@@ -439,20 +632,39 @@ const AnalyticsDashboard: React.FC = () => {
 
           {/* Forecast Summary */}
           {forecastData && forecastData.predicted > 0 && (
-            <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-[9px]">
-              <div className="flex items-center gap-2">
-                <span className="text-white/40">חיזוי לשבוע הבא:</span>
-                <span className="text-yellow-400 font-medium">
+            <div
+              style={{
+                marginTop: 12,
+                paddingTop: 12,
+                borderTop: '2px solid var(--bone-deep)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ color: 'var(--stone)' }}>חיזוי לשבוע הבא:</span>
+                <span
+                  style={{
+                    color: 'var(--navy)',
+                    fontWeight: 700,
+                  }}
+                >
                   {forecastData.predicted.toLocaleString()} ק״ג
                 </span>
                 <span
-                  className={`${
-                    forecastData.trend === 'increasing'
-                      ? 'text-green-400'
-                      : forecastData.trend === 'decreasing'
-                        ? 'text-red-400'
-                        : 'text-white/40'
-                  }`}
+                  style={{
+                    color:
+                      forecastData.trend === 'increasing'
+                        ? '#22c55e'
+                        : forecastData.trend === 'decreasing'
+                          ? '#ef4444'
+                          : 'var(--stone)',
+                  }}
                 >
                   (
                   {forecastData.trend === 'increasing'
@@ -463,9 +675,9 @@ const AnalyticsDashboard: React.FC = () => {
                   )
                 </span>
               </div>
-              <div className="text-white/30">
+              <span style={{ color: 'var(--stone)' }}>
                 {Math.round(forecastData.confidence * 100)}% ביטחון
-              </div>
+              </span>
             </div>
           )}
         </motion.div>
@@ -477,18 +689,65 @@ const AnalyticsDashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
+          style={{
+            background: 'var(--bone)',
+            border: '2px solid var(--navy)',
+            padding: 20,
+          }}
         >
-          <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-[var(--cosmos-accent-primary)] rounded-full" />
+          <h3
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 14,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: 'var(--navy)',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                background: 'var(--mustard)',
+              }}
+            />
             מגמת נפח (10 אימונים אחרונים)
           </h3>
 
-          <div className="h-40 flex items-end justify-between gap-1.5 relative">
+          <div
+            style={{
+              height: 160,
+              display: 'flex',
+              alignItems: 'flex-end',
+              justifyContent: 'space-between',
+              gap: 6,
+              position: 'relative',
+            }}
+          >
             {/* Grid Lines */}
-            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                pointerEvents: 'none',
+              }}
+            >
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="border-t border-dashed border-white/5 w-full" />
+                <div
+                  key={i}
+                  style={{
+                    borderTop: '1px dashed var(--bone-deep)',
+                    width: '100%',
+                  }}
+                />
               ))}
             </div>
 
@@ -508,27 +767,51 @@ const AnalyticsDashboard: React.FC = () => {
                   }}
                   onMouseEnter={() => setHoveredBar(i)}
                   onMouseLeave={() => setHoveredBar(null)}
-                  className={`flex-1 rounded-t-lg min-w-[12px] relative transition-all duration-200 cursor-pointer ${
-                    isHovered ? 'brightness-125' : ''
-                  }`}
                   style={{
-                    background: `linear-gradient(to top, var(--cosmos-accent-primary), var(--cosmos-accent-cyan))`,
+                    flex: 1,
+                    minWidth: 12,
+                    background: isHovered ? 'var(--navy)' : 'var(--mustard)',
+                    cursor: 'pointer',
+                    transition: 'all 150ms',
+                    position: 'relative',
                   }}
                 >
-                  <div
-                    className={`absolute inset-0 rounded-t-lg bg-gradient-to-t from-[var(--cosmos-accent-primary)] to-[var(--cosmos-accent-cyan)] blur-md transition-opacity ${isHovered ? 'opacity-50' : 'opacity-0'}`}
-                  />
                   <AnimatePresence>
                     {isHovered && (
                       <motion.div
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 5 }}
-                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20"
+                        style={{
+                          position: 'absolute',
+                          bottom: '100%',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          marginBottom: 8,
+                          zIndex: 20,
+                          background: 'var(--navy)',
+                          padding: '6px 10px',
+                          whiteSpace: 'nowrap',
+                        }}
                       >
-                        <div className="bg-black/95 text-white text-[10px] px-3 py-1.5 rounded-lg whitespace-nowrap shadow-lg border border-white/10">
-                          <div className="font-bold">{point.volume.toLocaleString()} ק״ג</div>
-                          <div className="text-white/50 text-[8px]">{point.date}</div>
+                        <div
+                          style={{
+                            fontFamily: 'var(--font-display)',
+                            fontWeight: 800,
+                            fontSize: 12,
+                            color: 'var(--mustard)',
+                          }}
+                        >
+                          {point.volume.toLocaleString()} ק״ג
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: 8,
+                            color: 'rgba(245,241,235,0.5)',
+                          }}
+                        >
+                          {point.date}
                         </div>
                       </motion.div>
                     )}
@@ -538,7 +821,19 @@ const AnalyticsDashboard: React.FC = () => {
             })}
           </div>
 
-          <div className="mt-3 flex items-center justify-between text-[9px] text-white/30">
+          <div
+            style={{
+              marginTop: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              color: 'var(--stone)',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+            }}
+          >
             <span>עבר</span>
             <span>אחרון</span>
           </div>
@@ -557,51 +852,139 @@ const AnalyticsDashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
+          style={{
+            background: 'var(--bone)',
+            border: '2px solid var(--navy)',
+            padding: 20,
+          }}
         >
-          <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-pink-400 rounded-full" />
+          <h3
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 14,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: 'var(--navy)',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                background: 'var(--mustard)',
+              }}
+            />
             איזון קבוצות שרירים
           </h3>
 
-          <div className="flex gap-6 items-start">
+          <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
             {/* Radar Chart */}
-            <div className="flex-shrink-0">
+            <div style={{ flexShrink: 0 }}>
               <MuscleRadarChart data={muscleBalanceData} size={180} maxDisplay={8} />
             </div>
 
             {/* Enhanced Legend with Trends */}
-            <div className="flex-1 space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar">
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                maxHeight: 200,
+                overflowY: 'auto',
+              }}
+            >
               {muscleBalanceData.slice(0, 6).map((muscle, i) => (
                 <motion.div
                   key={muscle.muscle}
                   initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4 + i * 0.05 }}
-                  className="flex items-center gap-2 group cursor-pointer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    cursor: 'pointer',
+                  }}
                 >
                   <div
-                    className="w-3 h-3 rounded-sm flex-shrink-0 group-hover:scale-110 transition-transform"
                     style={{
-                      backgroundColor: muscle.isWeak
+                      width: 12,
+                      height: 12,
+                      background: muscle.isWeak
                         ? '#ef4444'
                         : muscle.trend === 'up'
                           ? '#22c55e'
                           : muscle.trend === 'down'
                             ? '#ef4444'
-                            : '#fbbf24',
+                            : 'var(--mustard)',
+                      flexShrink: 0,
                     }}
                   />
-                  <span className="text-xs text-white/70 flex-1 truncate group-hover:text-white transition-colors">
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 12,
+                      color: 'var(--navy)',
+                      flex: 1,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {muscle.muscle}
                   </span>
-                  <div className="flex items-center gap-1">
-                    {muscle.trend === 'up' && <span className="text-green-400 text-[9px]">↑</span>}
-                    {muscle.trend === 'down' && <span className="text-red-400 text-[9px]">↓</span>}
-                    <span className="text-xs font-bold text-white/90">{muscle.percentage}%</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {muscle.trend === 'up' && (
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 9,
+                          color: '#22c55e',
+                        }}
+                      >
+                        ↑
+                      </span>
+                    )}
+                    {muscle.trend === 'down' && (
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 9,
+                          color: '#ef4444',
+                        }}
+                      >
+                        ↓
+                      </span>
+                    )}
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontWeight: 800,
+                        fontSize: 12,
+                        color: 'var(--navy)',
+                      }}
+                    >
+                      {muscle.percentage}%
+                    </span>
                   </div>
                   {muscle.isWeak && (
-                    <span className="text-[8px] text-red-400 bg-red-400/10 px-1 py-0.5 rounded">
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 8,
+                        color: '#ef4444',
+                        background: 'rgba(239,68,68,0.1)',
+                        padding: '2px 6px',
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
                       מוזנח
                     </span>
                   )}
@@ -618,17 +1001,47 @@ const AnalyticsDashboard: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
+          style={{
+            background: 'var(--bone)',
+            border: '2px solid var(--navy)',
+            padding: 20,
+          }}
         >
-          <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-pink-400 rounded-full" />
+          <h3
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 14,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: 'var(--navy)',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                background: 'var(--mustard)',
+              }}
+            />
             התפלגות קבוצות שרירים
           </h3>
 
-          <div className="flex gap-6">
+          <div style={{ display: 'flex', gap: 24 }}>
             {/* Pie Chart */}
-            <div className="relative w-32 h-32 flex-shrink-0">
-              <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+            <div
+              style={{
+                position: 'relative',
+                width: 128,
+                height: 128,
+                flexShrink: 0,
+              }}
+            >
+              <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
                 {(() => {
                   let cumulativePercentage = 0;
                   return muscleGroupData.map((group, i) => {
@@ -649,47 +1062,86 @@ const AnalyticsDashboard: React.FC = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.4 + i * 0.1 }}
-                        className="cursor-pointer hover:brightness-125 transition-all"
+                        style={{ cursor: 'pointer' }}
                       />
                     );
                   });
                 })()}
               </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-bold text-white">{muscleGroupData.length}</span>
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: 18,
+                    color: 'var(--navy)',
+                  }}
+                >
+                  {muscleGroupData.length}
+                </span>
               </div>
             </div>
 
             {/* Legend */}
-            <div className="flex-1 space-y-2">
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {muscleGroupData.slice(0, 5).map((group, i) => (
                 <motion.div
                   key={group.muscle}
                   initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 + i * 0.05 }}
-                  className="flex items-center gap-2 group cursor-pointer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    cursor: 'pointer',
+                  }}
                 >
                   <div
-                    className="w-3 h-3 rounded-sm flex-shrink-0 group-hover:scale-110 transition-transform"
-                    style={{ backgroundColor: getMuscleColor(group.muscle, i) }}
+                    style={{
+                      width: 12,
+                      height: 12,
+                      background: getMuscleColor(group.muscle, i),
+                      flexShrink: 0,
+                    }}
                   />
-                  <span className="text-xs text-white/70 flex-1 truncate group-hover:text-white transition-colors">
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 12,
+                      color: 'var(--navy)',
+                      flex: 1,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {group.muscle}
                   </span>
-                  <span className="text-xs font-bold text-white/90">{group.percentage}%</span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 800,
+                      fontSize: 12,
+                      color: 'var(--navy)',
+                    }}
+                  >
+                    {group.percentage}%
+                  </span>
                 </motion.div>
               ))}
             </div>
           </div>
         </motion.div>
       )}
-
-      {/* Workout Calendar - Monthly Heatmap */}
-      {sessions.length > 0 && <WorkoutCalendar sessions={sessions} />}
-
-      {/* Forecast Chart - Progress Forecasting */}
-      {sessions.length > 0 && <ForecastChart sessions={sessions} />}
     </div>
   );
 };

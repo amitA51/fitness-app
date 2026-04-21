@@ -5,9 +5,12 @@ import {
   type ExerciseChatMessage,
   askExerciseQuestion,
   getExerciseTutorial,
+  getWorkoutAdvice,
   suggestExercises,
 } from '../../services/ai';
+import { getRecoveryLogsByDateRange } from '../../services/bodyStatsService';
 import { getWorkoutSessions } from '../../services/dataService';
+import { DEFAULT_MACRO_GOALS, getTodayMacros } from '../../services/nutritionService';
 import type { Exercise } from '../../types';
 import { logger } from '../../utils/logger';
 import { CloseIcon } from '../icons';
@@ -177,51 +180,80 @@ const AICoach: React.FC<AICoachProps> = ({ onClose, currentExercise }) => {
       const sessions = await getWorkoutSessions(30);
 
       if (sessions.length < 3) {
-        setAnalysis('נדרשים לפחות 3 אימונים לניתוח מעמיק. המשך להתאמן!');
+        setAnalysis('נדרשים לפחות 3 אימונים לניתוח מעמיק.');
         return;
       }
 
-      // Calculate stats locally
-      const totalSessions = sessions.length;
-      const totalDuration = sessions.reduce(
-        (sum, s) => sum + ((s as { duration?: number }).duration ?? 0),
-        0
-      );
-      const avgDuration = Math.round(totalDuration / totalSessions / 60);
+      // Gather recovery logs for last 14 days and today's macros
+      const today = new Date();
+      const fourteenDaysAgo = new Date(today);
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+      const startIso = fourteenDaysAgo.toISOString().split('T')[0] ?? '';
+      const endIso = today.toISOString().split('T')[0] ?? '';
 
-      const exerciseCount: Record<string, number> = {};
-      const muscleCount: Record<string, number> = {};
-      let totalVolume = 0;
-      let totalSets = 0;
+      try {
+        const [recoveryLogs, todayMacros] = await Promise.all([
+          getRecoveryLogsByDateRange(startIso, endIso),
+          getTodayMacros(),
+        ]);
 
-      sessions.forEach((session) => {
-        session.exercises?.forEach((ex) => {
-          exerciseCount[ex.exerciseName] = (exerciseCount[ex.exerciseName] || 0) + 1;
-          if (ex.muscleGroup) {
-            muscleCount[ex.muscleGroup] = (muscleCount[ex.muscleGroup] || 0) + 1;
-          }
-          ex.sets?.forEach((set) => {
-            if (set.weight && set.reps) {
-              totalVolume += set.weight * set.reps;
-              totalSets++;
+        const advice = await getWorkoutAdvice(sessions, recoveryLogs, {
+          dailyAverage: todayMacros,
+          goal: DEFAULT_MACRO_GOALS,
+        });
+        setAnalysis(advice);
+      } catch (aiErr) {
+        logger.ai.warn('AI analysis unavailable, falling back to local analysis', aiErr);
+
+        // Fallback: local analysis without emoji markers
+        const totalSessions = sessions.length;
+        const totalDuration = sessions.reduce(
+          (sum, s) => sum + ((s as { duration?: number }).duration ?? 0),
+          0
+        );
+        const avgDuration = Math.round(totalDuration / totalSessions / 60);
+
+        const exerciseCount: Record<string, number> = {};
+        const muscleCount: Record<string, number> = {};
+        let totalVolume = 0;
+        let totalSets = 0;
+
+        sessions.forEach((session) => {
+          session.exercises?.forEach((ex) => {
+            exerciseCount[ex.exerciseName] = (exerciseCount[ex.exerciseName] || 0) + 1;
+            if (ex.muscleGroup) {
+              muscleCount[ex.muscleGroup] = (muscleCount[ex.muscleGroup] || 0) + 1;
             }
+            ex.sets?.forEach((set) => {
+              if (set.weight && set.reps) {
+                totalVolume += set.weight * set.reps;
+                totalSets++;
+              }
+            });
           });
         });
-      });
 
-      const topExercises = Object.entries(exerciseCount)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5);
+        const topExercises = Object.entries(exerciseCount)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 5);
 
-      const topMuscles = Object.entries(muscleCount)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 3);
+        const topMuscles = Object.entries(muscleCount)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 3);
 
-      // Volume calculations available in totalVolume and totalSets
+        const muscleAdvice =
+          topMuscles.length < 3
+            ? 'שקול לגוון יותר קבוצות שרירים'
+            : 'מגוון קבוצות שרירים טוב';
+        const durationAdvice =
+          avgDuration < 30
+            ? 'אימונים קצרים - שקול להאריך'
+            : avgDuration > 90
+              ? 'אימונים ארוכים - שקול לקצר'
+              : 'משך אימון אידיאלי';
 
-      // Build analysis text
-      const analysisText = `
-## 📊 ניתוח 30 הימים האחרונים
+        const analysisText = `
+## ניתוח 30 הימים האחרונים
 
 ### סטטיסטיקות כלליות
 - **${totalSessions}** אימונים סה״כ
@@ -236,11 +268,12 @@ ${topExercises.map(([name, count], i) => `${i + 1}. **${name}** - ${count} פע�
 ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')}
 
 ### המלצות
-${topMuscles.length < 3 ? '⚠️ שקול לגוון יותר קבוצות שרירים' : '✅ מגוון קבוצות שרירים טוב'}
-${avgDuration < 30 ? '⚠️ אימונים קצרים - שקול להאריך' : avgDuration > 90 ? '⚠️ אימונים ארוכים - שקול לקצר' : '✅ משך אימון אידיאלי'}
+- ${muscleAdvice}
+- ${durationAdvice}
       `.trim();
 
-      setAnalysis(analysisText);
+        setAnalysis(analysisText);
+      }
     } catch (e) {
       setError('לא ניתן לנתח את האימונים. נסה שוב.');
     } finally {
@@ -261,7 +294,7 @@ ${avgDuration < 30 ? '⚠️ אימונים קצרים - שקול להאריך' 
                   disabled={loading}
                   className="w-full py-3 rounded-xl bg-[var(--cosmos-accent-primary)]/10 border border-[var(--cosmos-accent-primary)]/30 text-[var(--cosmos-accent-primary)] font-medium text-sm"
                 >
-                  {loading ? 'טוען...' : `📖 הדרכה על ${currentExercise.name}`}
+                  {loading ? 'טוען...' : `הדרכה · ${currentExercise.name}`}
                 </button>
                 {tutorialContent && (
                   <motion.div
@@ -279,7 +312,6 @@ ${avgDuration < 30 ? '⚠️ אימונים קצרים - שקול להאריך' 
             <div className="flex-1 overflow-y-auto space-y-3 mb-4 custom-scrollbar">
               {messages.length === 0 && (
                 <div className="text-center text-white/40 py-8">
-                  <p className="text-2xl mb-2">🤖</p>
                   <p className="text-sm">שאל אותי כל שאלה על התרגיל!</p>
                   <p className="text-xs mt-1 text-white/30">למשל: "איך לשפר את הטכניקה?"</p>
                 </div>
@@ -319,9 +351,9 @@ ${avgDuration < 30 ? '⚠️ אימונים קצרים - שקול להאריך' 
               <button
                 onClick={handleSendMessage}
                 disabled={!inputMessage.trim() || loading || !currentExercise}
-                className="px-4 h-12 rounded-xl bg-[var(--cosmos-accent-primary)] text-black font-bold disabled:opacity-40"
+                className="px-5 h-12 rounded-xl bg-[var(--cosmos-accent-primary)] text-black font-bold disabled:opacity-40"
               >
-                ➤
+                שלח
               </button>
             </div>
           </div>
@@ -355,7 +387,7 @@ ${avgDuration < 30 ? '⚠️ אימונים קצרים - שקול להאריך' 
               disabled={loading}
               className="w-full h-12 rounded-xl bg-[var(--cosmos-accent-primary)] text-black font-bold disabled:opacity-50"
             >
-              {loading ? 'טוען המלצות...' : '✨ קבל המלצות AI'}
+              {loading ? 'טוען המלצות...' : 'קבל המלצות AI'}
             </button>
 
             {/* Results */}
@@ -370,9 +402,9 @@ ${avgDuration < 30 ? '⚠️ אימונים קצרים - שקול להאריך' 
                 >
                   <h4 className="font-bold text-white mb-1">{ex.name}</h4>
                   <div className="flex gap-3 text-xs text-white/50 mb-2">
-                    <span>⏱ {ex.defaultRestTime}s</span>
-                    <span>📊 {ex.defaultSets} סטים</span>
-                    <span>🎯 {ex.tempo}</span>
+                    <span>{ex.defaultRestTime}s מנוחה</span>
+                    <span>{ex.defaultSets} סטים</span>
+                    <span>tempo {ex.tempo}</span>
                   </div>
                   <p className="text-sm text-white/70">{ex.notes}</p>
                 </motion.div>
@@ -389,7 +421,7 @@ ${avgDuration < 30 ? '⚠️ אימונים קצרים - שקול להאריך' 
               disabled={loading}
               className="w-full h-12 rounded-xl bg-[var(--cosmos-accent-primary)] text-black font-bold disabled:opacity-50"
             >
-              {loading ? 'מנתח אימונים...' : '📊 נתח את האימונים שלי'}
+              {loading ? 'מנתח אימונים...' : 'נתח את האימונים שלי'}
             </button>
 
             {analysis && (

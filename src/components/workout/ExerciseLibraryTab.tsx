@@ -2,7 +2,6 @@
 // Clean bone background with no dark gradients
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { WORKOUT } from '../../constants';
 import * as dataService from '../../services/dataService';
@@ -135,7 +134,7 @@ const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
   return (
     <div
       className="flex flex-col"
-      style={{ height: '100%', background: 'transparent', overflow: 'hidden' }}
+      style={{ flex: 1, background: 'transparent' }}
     >
       <ExerciseFilter
         searchQuery={searchQuery}
@@ -146,42 +145,33 @@ const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
         onSuggestionSelect={onSelect}
       />
 
-      <AnimatePresence mode="sync">
-        {showAddForm ? (
-          <motion.div
-            key="form"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div style={{ padding: '0 5px 12px' }}>
-              <ExerciseForm
-                formData={formData}
-                onChange={setFormData}
-                onSubmit={handleCreate}
-                onCancel={() => setShowAddForm(false)}
-              />
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div key="button" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div style={{ padding: '0 5px 12px' }}>
-              <AddExerciseButton onClick={() => setShowAddForm(true)} />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {showAddForm && (
+        <div style={{ padding: '0 5px 12px' }}>
+          <ExerciseForm
+            formData={formData}
+            onChange={setFormData}
+            onSubmit={handleCreate}
+            onCancel={() => setShowAddForm(false)}
+          />
+        </div>
+      )}
+
+      {!showAddForm && (
+        <div style={{ padding: '0 5px 12px' }}>
+          <AddExerciseButton onClick={() => setShowAddForm(true)} />
+        </div>
+      )}
 
       {/* Exercise List */}
       <div
         style={{
           flex: 1,
           overflowY: 'auto',
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
           padding: '0 5px 20px',
           paddingLeft: 8,
-          scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(20,41,61,0.15) transparent',
+          minHeight: 0,
         }}
       >
         <ExerciseList

@@ -108,16 +108,16 @@ export async function generateWeeklyReport(): Promise<string> {
     })
     .join('\n\n');
 
-  return `📊 דוח שבועי - SparkOS Fitness
+  return `דוח שבועי · SparkOS Fitness
 
-📅 תקופה: ${new Date(oneWeekAgo).toLocaleDateString('he-IL')} - ${new Date().toLocaleDateString('he-IL')}
+תקופה: ${new Date(oneWeekAgo).toLocaleDateString('he-IL')} — ${new Date().toLocaleDateString('he-IL')}
 
 סיכום:
-🏋️ אימונים: ${weekSessions.length}
-⏱️ זמן ממוצע: ${avgDuration} דקות
-📊 נפח כולל: ${totalVolume.toLocaleString()} ק"ג
-✅ סטים: ${totalSets}
-💪 שרירים: ${Array.from(muscleGroups).join(', ')}
+אימונים: ${weekSessions.length}
+זמן ממוצע: ${avgDuration} דקות
+נפח כולל: ${totalVolume.toLocaleString()} ק"ג
+סטים: ${totalSets}
+שרירים: ${Array.from(muscleGroups).join(', ')}
 
 פירוט אימונים:
 ${exerciseDetails || 'אין אימונים השבוע'}`;

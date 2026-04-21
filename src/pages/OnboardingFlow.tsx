@@ -446,9 +446,9 @@ function ProfileStep({ data, onChange }: ProfileStepProps) {
           <div className="flex gap-3">
             {(
               [
-                { value: 'male', label: 'זכר', icon: '♂' },
-                { value: 'female', label: 'נקבה', icon: '♀' },
-                { value: 'other', label: 'אחר', icon: '⚥' },
+                { value: 'male', label: 'זכר', icon: '' },
+                { value: 'female', label: 'נקבה', icon: '' },
+                { value: 'other', label: 'אחר', icon: '' },
               ] as const
             ).map((opt) => (
               <button
@@ -819,9 +819,9 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
           <div className="flex gap-3">
             {(
               [
-                { value: 'morning', label: 'בוקר', icon: '🌅' },
-                { value: 'afternoon', label: 'צהריים', icon: '☀️' },
-                { value: 'evening', label: 'ערב', icon: '🌙' },
+                { value: 'morning', label: 'בוקר', icon: '' },
+                { value: 'afternoon', label: 'צהריים', icon: '' },
+                { value: 'evening', label: 'ערב', icon: '' },
               ] as const
             ).map((opt) => (
               <button

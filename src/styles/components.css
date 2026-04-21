@@ -556,14 +556,6 @@ textarea {
   -webkit-user-select: text;
 }
 
-html {
-  -webkit-overflow-scrolling: touch;
-}
-
-body {
-  overscroll-behavior-y: contain;
-}
-
 /* ============================================================================
    iOS-SPECIFIC FIXES
    ============================================================================ */

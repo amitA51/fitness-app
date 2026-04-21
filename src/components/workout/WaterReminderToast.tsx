@@ -25,10 +25,9 @@ const WaterReminderToast: React.FC<WaterReminderToastProps> = ({ isVisible, onDi
           onClick={onDismiss}
           className="fixed bottom-[100px] left-1/2 -translate-x-1/2 bg-cyan-500/20 border border-[var(--cosmos-accent-cyan)] backdrop-blur-md px-6 py-3 rounded-full flex items-center gap-3 z-[9000] shadow-[0_4px_20px_rgba(6,182,212,0.3)] cursor-pointer hover:bg-cyan-500/30 transition-colors"
         >
-          <span className="text-2xl">💧</span>
           <div>
-            <div className="font-bold text-white text-sm">שתה מים!</div>
-            <div className="text-xs text-white/80">זמן ללגום מעט מים</div>
+            <div className="font-bold text-white text-sm">תזכורת מים</div>
+            <div className="text-xs text-white/80">זמן ללגום מים</div>
           </div>
         </motion.div>
       )}

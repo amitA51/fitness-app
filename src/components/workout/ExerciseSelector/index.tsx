@@ -152,13 +152,13 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       backdropOpacity={60}
       blur="none"
       trapFocus
-      lockScroll
+      lockScroll={false}
       closeOnBackdropClick
       closeOnEscape
       ariaLabel="בחירת תרגילים"
     >
       <motion.div
-        className="fixed bottom-0 left-0 right-0 flex flex-col overflow-hidden"
+        className="fixed bottom-0 left-0 right-0 flex flex-col"
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
@@ -209,9 +209,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     textTransform: 'uppercase',
                   }}
                 >
-                  {pendingExercises.length > 0
-                    ? `${pendingExercises.length} נבחרו`
-                    : 'לחץ על תרגיל להוספה'}
+                  ספריית תרגילים
                 </p>
               </div>
               <button
@@ -275,11 +273,11 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
         {/* ── BONE BODY ── */}
         <div
-          className="flex-1 overflow-hidden relative flex flex-col"
-          style={{ background: 'var(--bone)', maxHeight: 'calc(90dvh - 160px)' }}
+          className="flex-1 relative flex flex-col overflow-hidden"
+          style={{ background: 'var(--bone)' }}
         >
           {activeTab === 'exercises' ? (
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-y-auto -webkit-overflow-scrolling-touch">
               <ExerciseLibraryTab
                 isSelectionMode={true}
                 onSelect={handleSelect}

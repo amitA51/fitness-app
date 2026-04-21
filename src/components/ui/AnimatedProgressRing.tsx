@@ -226,7 +226,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
               exit={{ scale: 0, y: 10 }}
               className="absolute -bottom-2"
             >
-              <span className="text-2xl">🎉</span>
+              <span className="text-2xl" aria-label="הושלם">§</span>
             </motion.div>
           )}
         </AnimatePresence>

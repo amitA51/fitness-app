@@ -20,6 +20,7 @@
 
 html {
   overflow-x: hidden;
+  overflow-y: auto;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
@@ -29,8 +30,6 @@ body {
   color: var(--color-text);
   min-height: 100vh;
   min-height: 100dvh;
-  overscroll-behavior-y: contain;
-  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -546,7 +545,7 @@ body {
   .aw-masthead {
     background: var(--navy);
     color: var(--bone);
-    padding: max(16px, env(safe-area-inset-top, 16px)) 24px max(16px, env(safe-area-inset-bottom, 16px)) 24px;
+    padding: 12px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -556,7 +555,7 @@ body {
   .aw-masthead .exercise {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: 20px;
+    font-size: 18px;
     text-transform: uppercase;
     letter-spacing: 0.02em;
     line-height: 1;
@@ -571,21 +570,27 @@ body {
     white-space: nowrap;
   }
 
-  /* AW Hero — massive weight number on navy */
+  /* AW Hero — massive weight number on navy, flexes to fill available space */
   .aw-hero {
     background: var(--navy);
     color: var(--bone);
     text-align: center;
-    padding: 20px 20px 24px;
+    padding: 20px 20px;
     position: relative;
-    overflow-y: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
   }
 
   .aw-hero .num {
     font-family: var(--font-display);
     font-weight: 900;
-    font-size: clamp(72px, 22vmin, 140px);
-    line-height: 0.82;
+    font-size: clamp(80px, 22vmin, 140px);
+    line-height: 0.85;
     letter-spacing: -0.04em;
     color: var(--bone);
     font-variant-numeric: tabular-nums;
@@ -593,30 +598,29 @@ body {
 
   .aw-hero .unit {
     font-family: var(--font-mono);
-    font-size: 14px;
-    letter-spacing: 0.3em;
+    font-size: 12px;
+    letter-spacing: 0.28em;
     text-transform: uppercase;
-    margin-top: 8px;
     color: rgba(245, 241, 235, 0.7);
   }
 
   .aw-hero .rpe {
     position: absolute;
-    top: 24px;
-    right: 20px;
+    top: 14px;
+    right: 16px;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.16em;
     background: var(--mustard);
     color: var(--navy);
-    padding: 4px 10px;
+    padding: 3px 8px;
     text-transform: uppercase;
     font-weight: 500;
   }
 
   [dir="rtl"] .aw-hero .rpe {
     right: auto;
-    left: 20px;
+    left: 16px;
   }
 
   /* AW Sets — list of sets recorded */

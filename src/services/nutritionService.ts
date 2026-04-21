@@ -1,6 +1,13 @@
 import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../types';
 import { STORES, dbDelete, dbGetAll, dbPut } from './indexedDBCore';
 
+export const DEFAULT_MACRO_GOALS: MacroNutrients = {
+  calories: 2500,
+  protein: 150,
+  carbs: 300,
+  fat: 80,
+};
+
 const FOOD_LIBRARY: FoodItem[] = [
   {
     id: 'food-1',
@@ -733,12 +740,12 @@ export const MEAL_TYPE_LABELS: Record<MealType, string> = {
 };
 
 export const MEAL_TYPE_ICONS: Record<MealType, string> = {
-  breakfast: '🌅',
-  lunch: '☀️',
-  dinner: '🌙',
-  snack: '🍎',
-  'pre-workout': '⚡',
-  'post-workout': '💪',
+  breakfast: '§',
+  lunch: '§',
+  dinner: '§',
+  snack: '§',
+  'pre-workout': '§',
+  'post-workout': '§',
 };
 
 export function calcFoodMacros(food: FoodItem): MacroNutrients {

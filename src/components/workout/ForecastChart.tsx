@@ -1,3 +1,7 @@
+// ForecastChart - VISION Sport Annual Editorial Design
+// Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
+// VISION: Bold · Editorial · Confident · Narrative · Printed
+
 import { motion } from 'framer-motion';
 import type React from 'react';
 import { memo, useMemo, useState } from 'react';
@@ -12,22 +16,16 @@ interface ForecastChartProps {
   sessions: WorkoutSession[];
 }
 
-/**
- * ForecastChart - Shows exercise progress with forecasting
- */
 const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
   const [selectedExercise, setSelectedExercise] = useState<string>('');
 
-  // Get all exercise names
   const exerciseNames = useMemo(() => {
     return getAllExerciseNames(sessions);
   }, [sessions]);
 
-  // Get progression data for selected exercise
   const progressionData = useMemo(() => {
     if (!selectedExercise || sessions.length === 0) return null;
 
-    // Find exercise ID
     const exerciseId = findExerciseId(sessions, selectedExercise);
     if (!exerciseId) return null;
 
@@ -37,12 +35,10 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
     return { progression, forecast };
   }, [selectedExercise, sessions]);
 
-  // Calculate chart dimensions
   const chartWidth = 300;
   const chartHeight = 120;
   const padding = { top: 10, right: 10, bottom: 20, left: 10 };
 
-  // Calculate points for line chart
   const chartPoints = useMemo(() => {
     if (!progressionData || progressionData.progression.length === 0) return [];
 
@@ -51,18 +47,12 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
     const maxVolume = Math.max(...volumes, 1);
 
     return progression.map((point, i) => ({
-      x:
-        padding.left +
-        (i / Math.max(progression.length - 1, 1)) * (chartWidth - padding.left - padding.right),
-      y:
-        chartHeight -
-        padding.bottom -
-        (point.volume / maxVolume) * (chartHeight - padding.top - padding.bottom),
+      x: padding.left + (i / Math.max(progression.length - 1, 1)) * (chartWidth - padding.left - padding.right),
+      y: chartHeight - padding.bottom - (point.volume / maxVolume) * (chartHeight - padding.top - padding.bottom),
       data: point,
     }));
   }, [progressionData, chartWidth, chartHeight]);
 
-  // Calculate forecast point
   const forecastPoint = useMemo(() => {
     if (!progressionData || !progressionData.forecast || progressionData.forecast.predicted <= 0)
       return null;
@@ -73,29 +63,20 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
 
     return {
       x: chartWidth - padding.right,
-      y:
-        chartHeight -
-        padding.bottom -
-        (progressionData.forecast.predicted / maxVolume) *
-          (chartHeight - padding.top - padding.bottom),
+      y: chartHeight - padding.bottom - (progressionData.forecast.predicted / maxVolume) * (chartHeight - padding.top - padding.bottom),
     };
   }, [progressionData, chartPoints, chartWidth, chartHeight]);
 
-  // Build SVG path
   const linePath = useMemo(() => {
     if (chartPoints.length < 2) return '';
-
     return chartPoints.map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
   }, [chartPoints]);
 
-  // Build area path
   const areaPath = useMemo(() => {
     if (chartPoints.length < 2) return '';
-
     const lastPoint = chartPoints[chartPoints.length - 1];
     const firstPoint = chartPoints[0];
     if (!lastPoint || !firstPoint) return '';
-
     const bottomY = chartHeight - padding.bottom;
     return `${linePath} L ${lastPoint.x} ${bottomY} L ${firstPoint.x} ${bottomY} Z`;
   }, [linePath, chartPoints, chartHeight, padding]);
@@ -105,27 +86,69 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
-      className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
+      style={{
+        background: 'var(--bone)',
+        border: '2px solid var(--navy)',
+        padding: 20,
+      }}
     >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full" />
-          חיזוי התקדמות לפי תרגיל
-        </h3>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              background: 'var(--mustard)',
+            }}
+          />
+          <h3
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 14,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: 'var(--navy)',
+            }}
+          >
+            חיזוי התקדמות לפי תרגיל
+          </h3>
+        </div>
       </div>
 
       {/* Exercise Selector */}
-      <div className="mb-4">
+      <div style={{ marginBottom: 16 }}>
         <select
           value={selectedExercise}
           onChange={(e) => setSelectedExercise(e.target.value)}
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white appearance-none cursor-pointer hover:bg-white/10 transition-colors focus:outline-none focus:border-[var(--cosmos-accent-primary)]"
+          style={{
+            width: '100%',
+            background: 'var(--bone-deep)',
+            border: '2px solid var(--navy)',
+            padding: '12px 16px',
+            fontFamily: 'var(--font-display)',
+            fontSize: 14,
+            color: 'var(--navy)',
+            cursor: 'pointer',
+            appearance: 'none',
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230b293b' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'left 12px center',
+            paddingLeft: 36,
+          }}
         >
-          <option value="" className="bg-[#1a1a1a]">
+          <option value="" style={{ background: '#FFFFFF' }}>
             בחר תרגיל...
           </option>
           {exerciseNames.map((name) => (
-            <option key={name} value={name} className="bg-[#1a1a1a]">
+            <option key={name} value={name} style={{ background: '#FFFFFF' }}>
               {name}
             </option>
           ))}
@@ -134,8 +157,8 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
 
       {/* Chart */}
       {selectedExercise && progressionData && chartPoints.length > 0 && (
-        <div className="relative">
-          <svg width={chartWidth} height={chartHeight} className="overflow-visible">
+        <div style={{ position: 'relative' }}>
+          <svg width={chartWidth} height={chartHeight} style={{ overflow: 'visible' }}>
             {/* Grid lines */}
             {[0, 0.5, 1].map((level, i) => (
               <line
@@ -144,7 +167,8 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                 y1={padding.top + level * (chartHeight - padding.top - padding.bottom)}
                 x2={chartWidth - padding.right}
                 y2={padding.top + level * (chartHeight - padding.top - padding.bottom)}
-                stroke="rgba(255, 255, 255, 0.05)"
+                stroke="var(--bone-deep)"
+                strokeWidth="1"
                 strokeDasharray="4 4"
               />
             ))}
@@ -154,7 +178,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
               d={areaPath}
               fill="url(#forecastGradient)"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.3 }}
+              animate={{ opacity: 0.2 }}
               transition={{ duration: 0.5 }}
             />
 
@@ -162,10 +186,10 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
             <motion.path
               d={linePath}
               fill="none"
-              stroke="url(#lineGradient)"
+              stroke="var(--navy)"
               strokeWidth={3}
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              strokeLinecap="square"
+              strokeLinejoin="miter"
               initial={{ pathLength: 0 }}
               animate={{ pathLength: 1 }}
               transition={{ duration: 1, ease: 'easeOut' }}
@@ -177,9 +201,9 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                 key={i}
                 cx={point.x}
                 cy={point.y}
-                r={4}
-                fill="var(--cosmos-accent-primary)"
-                stroke="white"
+                r={5}
+                fill="var(--mustard)"
+                stroke="var(--navy)"
                 strokeWidth={2}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -199,7 +223,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                   y1={chartPoints[chartPoints.length - 1]?.y || 0}
                   x2={forecastPoint.x}
                   y2={forecastPoint.y}
-                  stroke="rgba(251, 191, 36, 0.5)"
+                  stroke="var(--mustard)"
                   strokeWidth={2}
                   strokeDasharray="4 4"
                 />
@@ -207,8 +231,8 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                   cx={forecastPoint.x}
                   cy={forecastPoint.y}
                   r={6}
-                  fill="rgba(251, 191, 36, 0.3)"
-                  stroke="#fbbf24"
+                  fill="var(--mustard)"
+                  stroke="var(--navy)"
                   strokeWidth={2}
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -220,34 +244,49 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
             {/* Gradients */}
             <defs>
               <linearGradient id="forecastGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--cosmos-accent-primary)" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="var(--cosmos-accent-primary)" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="var(--cosmos-accent-primary)" />
-                <stop offset="100%" stopColor="var(--cosmos-accent-cyan)" />
+                <stop offset="0%" stopColor="var(--mustard)" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="var(--mustard)" stopOpacity="0" />
               </linearGradient>
             </defs>
           </svg>
 
           {/* Forecast info */}
           {progressionData.forecast && (
-            <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-[10px]">
-              <div className="flex items-center gap-2">
-                <span className="text-white/40">חיזוי:</span>
-                <span className="text-yellow-400 font-medium">
+            <div
+              style={{
+                marginTop: 12,
+                paddingTop: 12,
+                borderTop: '2px solid var(--bone-deep)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ color: 'var(--stone)' }}>חיזוי:</span>
+                <span
+                  style={{
+                    fontWeight: 700,
+                    color: 'var(--navy)',
+                  }}
+                >
                   {progressionData.forecast.predicted.toLocaleString()} ק״ג
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span
-                  className={`${
-                    progressionData.forecast.trend === 'increasing'
-                      ? 'text-green-400'
-                      : progressionData.forecast.trend === 'decreasing'
-                        ? 'text-red-400'
-                        : 'text-white/40'
-                  }`}
+                  style={{
+                    color:
+                      progressionData.forecast.trend === 'increasing'
+                        ? '#22c55e'
+                        : progressionData.forecast.trend === 'decreasing'
+                          ? '#ef4444'
+                          : 'var(--stone)',
+                  }}
                 >
                   {progressionData.forecast.trend === 'increasing'
                     ? '↑ בעלייה'
@@ -255,7 +294,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                       ? '↓ בירידה'
                       : '→ יציב'}
                 </span>
-                <span className="text-white/30">
+                <span style={{ color: 'var(--stone)' }}>
                   {Math.round(progressionData.forecast.confidence * 100)}% ביטחון
                 </span>
               </div>
@@ -266,13 +305,23 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
 
       {/* Empty state */}
       {selectedExercise && (!progressionData || chartPoints.length === 0) && (
-        <div className="text-center py-8 text-white/40 text-sm">אין מספיק נתונים לתרגיל זה</div>
+        <div
+          style={{
+            textAlign: 'center',
+            paddingTop: 32,
+            paddingBottom: 32,
+            fontFamily: 'var(--font-body)',
+            fontSize: 14,
+            color: 'var(--stone)',
+          }}
+        >
+          אין מספיק נתונים לתרגיל זה
+        </div>
       )}
     </motion.div>
   );
 };
 
-// Helper function to find exercise ID by name
 function findExerciseId(sessions: WorkoutSession[], exerciseName: string): string | null {
   for (const session of sessions) {
     for (const exercise of session.exercises) {

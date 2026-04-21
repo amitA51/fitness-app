@@ -163,12 +163,12 @@ export const ProgramCard: React.FC<ProgramCardProps> = ({
               className="px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1"
               style={{ backgroundColor: `${program.color}15`, color: program.color }}
             >
-              📅 {program.totalWeeks} שבועות
+              {program.totalWeeks} שבועות
             </span>
           )}
           {program.periodization && (
             <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-white/5 text-gray-400 flex items-center gap-1">
-              📈 {program.periodization === 'Linear' ? 'פרוגרסיה ליניארית' : program.periodization}
+              {program.periodization === 'Linear' ? 'פרוגרסיה ליניארית' : program.periodization}
             </span>
           )}
         </div>

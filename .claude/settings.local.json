@@ -3,7 +3,16 @@
     "allow": [
       "Bash(xargs ls *)",
       "Bash(npx tsc *)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(xargs grep *)",
+      "Bash(npm run *)",
+      "Bash(git stash *)",
+      "Bash(npx biome *)",
+      "Bash(node -e \"const s='\\\\u2713'; console.log\\(/\\\\p{Extended_Pictographic}/u.test\\(s\\)\\)\")",
+      "Bash(node -e \"for \\(const c of ['\\\\u00A7','\\\\u00B7','\\\\u2713','\\\\u2020','\\\\u203B','\\\\u25A0','\\\\u25AA']\\) console.log\\(c, /\\\\p{Extended_Pictographic}/u.test\\(c\\)\\)\")",
+      "Bash(node -e \"for \\(const c of ['\\\\u2642','\\\\u2640','\\\\u26A5','\\\\uD83C\\\\uDF05','\\\\u2600','\\\\uD83C\\\\uDF19']\\) console.log\\(JSON.stringify\\(c\\), /\\\\p{Extended_Pictographic}/u.test\\(c\\)\\)\")",
+      "Bash(git -C C:/Users/Admin/Desktop/fitness-app diff --stat)",
+      "Bash(git *)"
     ]
   }
 }

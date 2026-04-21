@@ -1,12 +1,10 @@
-import { Sparkles } from 'lucide-react';
 import { MONO_STYLE, greeting } from '../../utils/dateUtils';
 
 interface GreetingProps {
-  onThemeChange: () => void;
   weekNumber: number;
 }
 
-export function Greeting({ onThemeChange, weekNumber }: GreetingProps) {
+export function Greeting({ weekNumber }: GreetingProps) {
   const today = new Date().toLocaleDateString('he-IL', {
     weekday: 'short',
   });
@@ -34,7 +32,7 @@ export function Greeting({ onThemeChange, weekNumber }: GreetingProps) {
         paddingRight: rightPadding,
       }}
     >
-      <div style={{ paddingLeft: 48 }}>
+      <div>
         <div className="kicker" style={MONO_STYLE}>
           {today} · {todayFull} · שבוע {String(weekNumber).padStart(2, '0')}
         </div>
@@ -53,30 +51,6 @@ export function Greeting({ onThemeChange, weekNumber }: GreetingProps) {
           {greeting()}.
         </h1>
       </div>
-
-      <button
-        type="button"
-        onClick={onThemeChange}
-        aria-label="שנה ערכת נושא"
-        className="focus-ring"
-        style={{
-          position: 'absolute',
-          top: 'max(16px, env(safe-area-inset-top, 16px))',
-          left: 'max(16px, env(safe-area-inset-left, 16px))',
-          width: 44,
-          height: 44,
-          background: 'transparent',
-          border: '1px solid rgba(245, 241, 235, 0.3)',
-          borderRadius: 0,
-          color: 'var(--bone)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-        }}
-      >
-        <Sparkles size={16} />
-      </button>
     </header>
   );
 }

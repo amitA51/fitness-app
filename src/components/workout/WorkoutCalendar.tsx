@@ -1,5 +1,8 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+// WorkoutCalendar - VISION Sport Annual Editorial Design
+// Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
+// VISION: Bold · Editorial · Confident · Narrative · Printed
+
+import { motion } from 'framer-motion';
 import type React from 'react';
 import { memo, useMemo, useState } from 'react';
 import type { WorkoutSession } from '../../types';
@@ -61,16 +64,14 @@ const HEBREW_NUMBERS: Record<number, string> = {
 };
 
 /**
- * WorkoutCalendar - Monthly calendar heatmap showing workout days
+ * WorkoutCalendar - Sport Annual Editorial Calendar Heatmap
  */
 const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Get year and month
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  // Calculate workout count per day
   const workoutCountByDay = useMemo(() => {
     const counts: Record<string, number> = {};
     sessions.forEach((session) => {
@@ -80,20 +81,17 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
     return counts;
   }, [sessions]);
 
-  // Calculate max workouts in a single day for intensity calculation
   const maxWorkouts = useMemo(() => {
     return Math.max(1, ...Object.values(workoutCountByDay));
   }, [workoutCountByDay]);
 
-  // Get calendar grid for current month
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    const startPadding = firstDay.getDay(); // 0 = Sunday
+    const startPadding = firstDay.getDay();
 
     const days: Array<{ day: number; date: string; isCurrentMonth: boolean }> = [];
 
-    // Previous month padding
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = startPadding - 1; i >= 0; i--) {
       days.push({
@@ -103,7 +101,6 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
       });
     }
 
-    // Current month
     for (let d = 1; d <= lastDay.getDate(); d++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       days.push({
@@ -113,7 +110,6 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
       });
     }
 
-    // Next month padding (fill to 6 rows = 42 cells)
     const remaining = 42 - days.length;
     for (let i = 1; i <= remaining; i++) {
       days.push({
@@ -126,7 +122,6 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
     return days;
   }, [year, month]);
 
-  // Navigate months
   const goToPrevMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
   };
@@ -135,71 +130,173 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
     setCurrentDate(new Date(year, month + 1, 1));
   };
 
-  // Calculate intensity color
+  // VISION-annual intensity colors - mustard/bone gradient
   const getIntensityStyle = (count: number): React.CSSProperties => {
     if (count === 0) {
-      return { backgroundColor: 'rgba(255, 255, 255, 0.03)' };
+      return { backgroundColor: 'var(--bone-deep)' };
     }
 
     const intensity = Math.min(count / maxWorkouts, 1);
-    const baseColor = `rgba(34, 211, 238, ${0.2 + intensity * 0.8})`;
 
     return {
-      backgroundColor: baseColor,
-      boxShadow: intensity >= 0.7 ? `0 0 ${intensity * 10}px rgba(34, 211, 238, 0.4)` : 'none',
+      backgroundColor: intensity >= 0.5 ? 'var(--mustard)' : 'rgba(245, 176, 20, 0.3)',
     };
   };
 
-  // Check if date is today
   const today = new Date().toISOString().split('T')[0];
   const currentMonthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+  // Monthly workout count
+  const monthlyWorkoutDays = Object.entries(workoutCountByDay).filter(([date]) =>
+    date.startsWith(currentMonthStr)
+  ).length;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.35 }}
-      className="bg-[var(--color-surface)]/80 backdrop-blur-md border border-white/10 rounded-2xl p-5"
+      style={{
+        background: 'var(--bone)',
+        border: '2px solid var(--navy)',
+        padding: 20,
+      }}
     >
       {/* Header with navigation */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
-          לוח אימונים
-        </h3>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              background: 'var(--mustard)',
+              display: 'block',
+            }}
+          />
+          <h3
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 14,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: 'var(--navy)',
+            }}
+          >
+            לוח אימונים
+          </h3>
+        </div>
 
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             onClick={goToPrevMonth}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+            style={{
+              width: 36,
+              height: 36,
+              background: 'transparent',
+              border: '2px solid var(--navy)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'background 150ms ease',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background = 'var(--bone-deep)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = 'transparent';
+            }}
           >
-            <ChevronRight size={16} className="text-white/60" />
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 4L6 8L10 12" stroke="var(--navy)" strokeWidth="2" strokeLinecap="square" />
+            </svg>
           </button>
 
-          <span className="text-sm text-white font-medium min-w-[120px] text-center">
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 14,
+              color: 'var(--navy)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              minWidth: 140,
+              textAlign: 'center',
+            }}
+          >
             {HEBREW_MONTHS[month]} {year}
           </span>
 
           <button
             onClick={goToNextMonth}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+            style={{
+              width: 36,
+              height: 36,
+              background: 'transparent',
+              border: '2px solid var(--navy)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'background 150ms ease',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background = 'var(--bone-deep)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = 'transparent';
+            }}
           >
-            <ChevronLeft size={16} className="text-white/60" />
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M6 4L10 8L6 12" stroke="var(--navy)" strokeWidth="2" strokeLinecap="square" />
+            </svg>
           </button>
         </div>
       </div>
 
       {/* Day headers */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gap: 4,
+          marginBottom: 8,
+        }}
+      >
         {HEBREW_DAYS.map((day, i) => (
-          <div key={i} className="text-center text-[9px] text-white/40 font-medium py-1">
+          <div
+            key={i}
+            style={{
+              textAlign: 'center',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 600,
+              color: 'var(--stone)',
+              letterSpacing: '0.05em',
+              padding: '4px 0',
+            }}
+          >
             {day}
           </div>
         ))}
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gap: 4,
+        }}
+      >
         {calendarDays.map((dayData, index) => {
           const count = dayData.date ? workoutCountByDay[dayData.date] || 0 : 0;
           const isToday = dayData.date === today;
@@ -211,83 +308,127 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: isCurrentMonth ? 1 : 0.3 }}
               transition={{ delay: index * 0.01, type: 'spring', stiffness: 200 }}
-              whileHover={{ scale: 1.1, zIndex: 10 }}
-              className={`
-                aspect-square rounded-lg relative cursor-pointer
-                flex items-center justify-center
-                transition-all duration-200
-                ${isToday ? 'ring-2 ring-[var(--accent-current)]' : ''}
-                ${!isCurrentMonth ? 'pointer-events-none' : ''}
-              `}
-              style={getIntensityStyle(count)}
+              whileHover={isCurrentMonth ? { scale: 1.1 } : {}}
+              style={{
+                aspectRatio: '1',
+                position: 'relative',
+                cursor: isCurrentMonth ? 'pointer' : 'default',
+                border: isToday ? '2px solid var(--mustard)' : '2px solid var(--bone-deep)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 150ms ease',
+                ...getIntensityStyle(count),
+              }}
             >
               <span
-                className={`text-[10px] ${count > 0 ? 'text-white font-medium' : 'text-white/30'}`}
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  fontWeight: count > 0 ? 700 : 400,
+                  color: count > 0 ? 'var(--navy)' : 'var(--stone)',
+                  letterSpacing: '0.02em',
+                }}
               >
                 {HEBREW_NUMBERS[dayData.day] || dayData.day}
               </span>
 
-              {/* Workout indicator dot */}
+              {/* Workout indicator */}
               {count > 0 && (
                 <div
-                  className="absolute bottom-0.5 w-1 h-1 rounded-full bg-white"
-                  style={{ opacity: count >= 2 ? 1 : 0.7 }}
+                  style={{
+                    position: 'absolute',
+                    bottom: 2,
+                    width: 6,
+                    height: 6,
+                    background: 'var(--navy)',
+                  }}
                 />
               )}
-
-              {/* Tooltip */}
-              <AnimatePresence>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
-                  <div className="bg-black/95 text-white text-[9px] px-2 py-1 rounded whitespace-nowrap shadow-lg border border-white/10">
-                    {dayData.date && (
-                      <>
-                        {count > 0 ? (
-                          <span>
-                            {count} אימון{count > 1 ? '' : ''}
-                          </span>
-                        ) : (
-                          <span>ללא אימון</span>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </AnimatePresence>
             </motion.div>
           );
         })}
       </div>
 
       {/* Legend */}
-      <div className="mt-4 flex items-center justify-center gap-4 text-[9px] text-white/40">
+      <div
+        style={{
+          marginTop: 16,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          color: 'var(--stone)',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+        }}
+      >
         <span>פחות</span>
-        <div className="flex gap-1">
-          {[0, 0.33, 0.66, 1].map((intensity, i) => (
-            <div
-              key={i}
-              className="w-4 h-4 rounded"
-              style={{
-                backgroundColor:
-                  intensity === 0
-                    ? 'rgba(255, 255, 255, 0.03)'
-                    : `rgba(34, 211, 238, ${0.2 + intensity * 0.8})`,
-              }}
-            />
-          ))}
+        <div style={{ display: 'flex', gap: 4 }}>
+          <div
+            style={{
+              width: 16,
+              height: 16,
+              background: 'var(--bone-deep)',
+              border: '1px solid var(--navy)',
+            }}
+          />
+          <div
+            style={{
+              width: 16,
+              height: 16,
+              background: 'rgba(245, 176, 20, 0.3)',
+              border: '1px solid var(--navy)',
+            }}
+          />
+          <div
+            style={{
+              width: 16,
+              height: 16,
+              background: 'var(--mustard)',
+              border: '1px solid var(--navy)',
+            }}
+          />
         </div>
         <span>יותר</span>
       </div>
 
       {/* Monthly stats */}
-      <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[10px]">
-        <div className="text-white/40">אימונים החודש:</div>
-        <div className="text-white font-medium">
-          {
-            Object.entries(workoutCountByDay).filter(([date]) => date.startsWith(currentMonthStr))
-              .length
-          }{' '}
-          ימים
-        </div>
+      <div
+        style={{
+          marginTop: 16,
+          paddingTop: 12,
+          borderTop: '2px solid var(--navy)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            color: 'var(--stone)',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          אימונים החודש
+        </span>
+        <span
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 14,
+            color: 'var(--navy)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}
+        >
+          {monthlyWorkoutDays} ימים
+        </span>
       </div>
     </motion.div>
   );

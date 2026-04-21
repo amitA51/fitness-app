@@ -451,34 +451,6 @@ function Masthead() {
         </div>
       </div>
 
-      {/* Display headline */}
-      <div className="flex items-baseline gap-3">
-        <span
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 900,
-            fontSize: '64px',
-            lineHeight: 0.85,
-            color: 'var(--bone)',
-            letterSpacing: '-0.03em',
-          }}
-        >
-          01
-        </span>
-        <div>
-          <p
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '9px',
-              color: 'var(--mustard)',
-              letterSpacing: '0.28em',
-              textTransform: 'uppercase',
-            }}
-          >
-            Chapter
-          </p>
-        </div>
-      </div>
     </motion.div>
   );
 }

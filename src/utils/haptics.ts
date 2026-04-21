@@ -1,4 +1,31 @@
-// Haptics utility - wrapper for vibration API with fallback patterns
+// Haptic vocabulary for the app — centralize vibration patterns, keep language consistent.
+
+const canVibrate = () => typeof navigator !== 'undefined' && 'vibrate' in navigator;
+
+export const haptics = {
+  // Set complete: one crisp tick — confirmation, not celebration
+  tick: () => canVibrate() && navigator.vibrate(10),
+  // Adjustment (+15s, weight tweak): softer tick
+  soft: () => canVibrate() && navigator.vibrate(20),
+  // Pause / resume: medium
+  medium: () => canVibrate() && navigator.vibrate(40),
+  // Rest timer final-3 escalation: call once per second when sec in [3,2,1]
+  escalation: (sec: number) => {
+    if (!canVibrate()) return;
+    if (sec === 3) navigator.vibrate(20);
+    else if (sec === 2) navigator.vibrate(35);
+    else if (sec === 1) navigator.vibrate(60);
+  },
+  // Rest timer zero / session complete: deep thump
+  thump: () => canVibrate() && navigator.vibrate(120),
+  // PR stamp: double-thump — rare, ceremonial, but silent of UI copy
+  prStamp: () => canVibrate() && navigator.vibrate([80, 60, 40]),
+};
+
+// ----------------------------------------------------------------------------
+// Legacy API (kept to avoid import breakage across existing call sites).
+// Prefer the `haptics` vocabulary above for new code.
+// ----------------------------------------------------------------------------
 
 // Simple haptic feedback
 export const haptic = (duration = 50): void => {

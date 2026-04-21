@@ -614,7 +614,7 @@ export const getBuiltInWorkoutTemplates = (): BuiltInWorkoutTemplate[] => [
       },
     ],
     muscleGroups: ['חזה', 'גב', 'רגליים', 'כתפיים', 'יד קדמית', 'יד אחורית', 'בטן'],
-    icon: '💪',
+    icon: '§',
   },
   {
     id: 'builtin-chest-shoulders',
@@ -665,7 +665,7 @@ export const getBuiltInWorkoutTemplates = (): BuiltInWorkoutTemplate[] => [
       },
     ],
     muscleGroups: ['חזה', 'כתפיים'],
-    icon: '🦅',
+    icon: '§',
   },
   {
     id: 'builtin-back-arms',
@@ -723,7 +723,7 @@ export const getBuiltInWorkoutTemplates = (): BuiltInWorkoutTemplate[] => [
       },
     ],
     muscleGroups: ['גב', 'יד קדמית', 'יד אחורית'],
-    icon: '🏋️',
+    icon: '§',
   },
   {
     id: 'builtin-legs',
@@ -781,7 +781,7 @@ export const getBuiltInWorkoutTemplates = (): BuiltInWorkoutTemplate[] => [
       },
     ],
     muscleGroups: ['רגליים'],
-    icon: '🦵',
+    icon: '§',
   },
   {
     id: 'builtin-core',
@@ -832,7 +832,7 @@ export const getBuiltInWorkoutTemplates = (): BuiltInWorkoutTemplate[] => [
       },
     ],
     muscleGroups: ['בטן', 'ליבה'],
-    icon: '🔥',
+    icon: '§',
   },
 ];
 

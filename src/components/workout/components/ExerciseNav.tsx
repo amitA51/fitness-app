@@ -90,7 +90,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 8,
-          padding: '16px 20px',
+          padding: '10px 16px',
           background: 'var(--bone)',
           borderTop: '1px solid var(--bone-deep)',
         }}

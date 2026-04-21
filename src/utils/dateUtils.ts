@@ -48,8 +48,6 @@ export const pad2 = (n: number) => String(Math.max(0, Math.floor(n))).padStart(2
 
 export const DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'] as const;
 
-export const THEMES = ['deepCosmos', 'fireEnergy', 'neonPulse', 'oceanWave', 'forestGrove'] as const;
-
 export const MONO_STYLE: React.CSSProperties = {
   fontFamily: 'var(--font-mono)',
   textTransform: 'uppercase',

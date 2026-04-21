@@ -61,25 +61,25 @@ export function showNotification(title: string, body: string, icon?: string): vo
 }
 
 export function showWorkoutReminder(): void {
-  showNotification('🏋️ זמן לאימון!', 'האימון המתוכנן שלך מחכה. בוא נתחיל!');
+  showNotification('זמן לאימון', 'האימון המתוכנן ממתין.');
 }
 
 export function showMissedWorkoutAlert(daysSince: number): void {
   showNotification(
-    '⚠️ לא התאמנת מזמן',
-    `עברו ${daysSince} ימים מהאימון האחרון. חשוב לשמור על עקביות!`
+    'לא התאמנת מזמן',
+    `עברו ${daysSince} ימים מהאימון האחרון.`
   );
 }
 
 export function showPRNotification(exerciseName: string, type: string): void {
   showNotification(
-    '🏆 שיא אישי חדש!',
-    `${exerciseName} - שיא ${type === 'weight' ? 'משקל' : 'נפח'} חדש!`
+    'שיא אישי חדש',
+    `${exerciseName} · שיא ${type === 'weight' ? 'משקל' : 'נפח'}`
   );
 }
 
 export function showNutritionReminder(): void {
-  showNotification('🍽️ תזכורת תזונה', 'אל תשכח לרשום את הארוחה שלך!');
+  showNotification('תזכורת תזונה', 'רשום את הארוחה.');
 }
 
 export function checkMissedWorkouts(lastWorkoutDate: string | null): void {

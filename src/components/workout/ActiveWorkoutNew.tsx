@@ -18,12 +18,13 @@ import { WorkoutProvider } from './core/WorkoutProvider';
 
 // Components
 import { ExerciseDisplay, ExerciseNav, ProgressBar, WorkoutHeader } from './components';
+// Inline editorial rest strip (small — imported normally)
+import InlineRestTimer from './components/InlineRestTimer';
 
 // Settings types
 import type { WorkoutSettingsData } from './overlays/WorkoutSettingsOverlay';
 
 // Overlays (lazy - loaded on demand)
-const RestTimerOverlay = React.lazy(() => import('./overlays/RestTimerOverlay'));
 const NumpadOverlay = React.lazy(() => import('./overlays/NumpadOverlay'));
 const ConfirmExitOverlay = React.lazy(() => import('./overlays/ConfirmExitOverlay'));
 
@@ -504,6 +505,67 @@ export const WorkoutContent: React.FC<{
     [dispatch]
   );
 
+  // Horizontal swipe navigation between exercises.
+  // Pointer-based, RTL-aware, ignores gestures originating in interactive targets.
+  const swipeStartRef = useRef<{ x: number; y: number; t: number; id: number } | null>(null);
+
+  const handleSwipePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement | null;
+    if (
+      target &&
+      target.closest(
+        'button, input, textarea, select, [role="button"], [role="slider"], [data-no-swipe]'
+      )
+    ) {
+      swipeStartRef.current = null;
+      return;
+    }
+    swipeStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      t: Date.now(),
+      id: e.pointerId,
+    };
+  }, []);
+
+  const handleSwipePointerMove = useCallback((_e: React.PointerEvent<HTMLDivElement>) => {
+    // No-op — we decide on pointerup. Tracking here would require canceling scroll.
+  }, []);
+
+  const handleSwipePointerEnd = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      const start = swipeStartRef.current;
+      swipeStartRef.current = null;
+      if (!start || start.id !== e.pointerId) return;
+
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      const duration = Date.now() - start.t;
+
+      const MIN_DX = 70;
+      const MAX_DY = 40;
+      const MAX_DURATION = 400;
+
+      if (Math.abs(dx) < MIN_DX) return;
+      if (Math.abs(dy) > MAX_DY) return;
+      if (duration > MAX_DURATION) return;
+
+      const total = state.exercises.length;
+      if (total <= 1) return;
+
+      const isRTL = typeof document !== 'undefined' && document.dir === 'rtl';
+      // In RTL: positive dx (swipe right) → previous exercise. LTR is inverse.
+      const direction = dx > 0 ? (isRTL ? -1 : 1) : isRTL ? 1 : -1;
+      const nextIndex = state.currentExerciseIndex + direction;
+
+      if (nextIndex < 0 || nextIndex >= total) return;
+
+      triggerHaptic('light');
+      handleChangeExercise(nextIndex);
+    },
+    [handleChangeExercise, state.currentExerciseIndex, state.exercises.length]
+  );
+
   const handleOpenDrawer = useCallback(() => {
     dispatch({ type: 'TOGGLE_DRAWER', payload: true });
   }, [dispatch]);
@@ -869,8 +931,30 @@ export const WorkoutContent: React.FC<{
           </div>
         )}
 
+        {/* Inline Rest Timer (editorial strip, not a modal) */}
+        {state.restTimer.active && (
+          <InlineRestTimer
+            active={state.restTimer.active}
+            endTime={state.restTimer.endTime}
+            onSkip={handleSkipRest}
+            onAddTime={handleAddRestTime}
+            nextSetHint={
+              derived.activeSetIndex >= 0
+                ? `NEXT · SET ${String(derived.activeSetIndex + 1).padStart(2, '0')}`
+                : undefined
+            }
+          />
+        )}
+
         {/* Exercise Display (hero + inputs) */}
-        <div className="flex-1 flex items-stretch justify-center">
+        <div
+          className="flex-1 flex items-stretch justify-center"
+          onPointerDown={handleSwipePointerDown}
+          onPointerMove={handleSwipePointerMove}
+          onPointerUp={handleSwipePointerEnd}
+          onPointerCancel={handleSwipePointerEnd}
+          style={{ touchAction: 'pan-y' }}
+        >
           <ExerciseDisplay
             exercise={derived.currentExercise}
             displaySetIndex={derived.activeSetIndex}
@@ -896,7 +980,7 @@ export const WorkoutContent: React.FC<{
 
         {/* Navigation Footer */}
         <div
-          className="w-full pb-[env(safe-area-inset-bottom,16px)]"
+          className="w-full pb-[env(safe-area-inset-bottom,12px)]"
           style={{ background: 'var(--bone)' }}
         >
           <ExerciseNav
@@ -906,79 +990,10 @@ export const WorkoutContent: React.FC<{
             onOpenDrawer={handleOpenDrawer}
             onAddExercise={handleOpenSelector}
           />
-
-          {/* Stats Row — data-strip mini */}
-          <div className="data-strip mt-3 mx-4">
-            <div>
-              <div
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  letterSpacing: '0.22em',
-                  color: 'var(--stone)',
-                  textTransform: 'uppercase',
-                  marginBottom: 4,
-                }}
-              >
-                SETS
-              </div>
-              <div
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
-                  fontSize: 22,
-                  color: 'var(--navy)',
-                  letterSpacing: '-0.01em',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                {derived.completedSetsCount}
-                <span style={{ color: 'var(--stone)', fontVariantNumeric: 'tabular-nums' }}>/{derived.totalSets}</span>
-              </div>
-            </div>
-            <div>
-              <div
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  letterSpacing: '0.22em',
-                  color: 'var(--stone)',
-                  textTransform: 'uppercase',
-                  marginBottom: 4,
-                }}
-              >
-                VOLUME · KG
-              </div>
-              <div
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
-                  fontSize: 22,
-                  color: 'var(--navy)',
-                  letterSpacing: '-0.01em',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                {derived.totalVolume > 0 ? derived.totalVolume.toLocaleString() : '—'}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
       {/* === OVERLAYS === */}
-
-      {/* Rest Timer */}
-      <React.Suspense fallback={null}>
-        <RestTimerOverlay
-          active={state.restTimer.active}
-          endTime={state.restTimer.endTime}
-          oledMode={!!workoutSettings.oledMode}
-          onSkip={handleSkipRest}
-          onAddTime={handleAddRestTime}
-          onUndo={handleUndoSet}
-        />
-      </React.Suspense>
 
       {/* Numpad */}
       <React.Suspense fallback={null}>

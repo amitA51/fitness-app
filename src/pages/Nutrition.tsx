@@ -17,6 +17,7 @@ import {
 import type React from 'react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  DEFAULT_MACRO_GOALS as MACRO_GOALS,
   MEAL_TYPE_ICONS,
   MEAL_TYPE_LABELS,
   addFoodFromPreset,
@@ -38,13 +39,6 @@ const MACRO_COLORS = {
   protein: '#0A84FF',
   carbs: '#30D158',
   fat: '#FF453A',
-};
-
-const MACRO_GOALS: MacroNutrients = {
-  calories: 2500,
-  protein: 150,
-  carbs: 300,
-  fat: 80,
 };
 
 type MealTab = 'log' | 'library' | 'presets';

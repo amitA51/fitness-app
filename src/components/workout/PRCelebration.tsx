@@ -53,7 +53,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
         }
       } else {
         await navigator.clipboard.writeText(shareText);
-        showToast('הועתק ללוח!', 'success');
+        showToast('הועתק ללוח', 'success');
       }
     },
     [pr]

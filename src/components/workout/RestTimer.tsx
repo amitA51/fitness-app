@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { haptics } from '../../utils/haptics';
 
 interface RestTimerProps {
   targetSeconds: number;
@@ -42,10 +43,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
 
       if (remaining <= 0 && !completedRef.current) {
         completedRef.current = true;
-        // Vibrate on completion
-        if ('vibrate' in navigator) {
-          navigator.vibrate([200, 100, 200, 100, 200]);
-        }
+        haptics.thump();
         onComplete();
       }
     };
@@ -70,9 +68,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
         // Check if timer completed while in background
         if (remaining <= 0 && !completedRef.current) {
           completedRef.current = true;
-          if ('vibrate' in navigator) {
-            navigator.vibrate([200, 100, 200, 100, 200]);
-          }
+          haptics.thump();
           onComplete();
         }
       }
@@ -82,12 +78,11 @@ const RestTimer: React.FC<RestTimerProps> = ({
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [endTime, isPaused, onComplete]);
 
-  // Warning vibration at 3 seconds
+  // Final-3 escalation: haptics.escalation self-gates per-second
   useEffect(() => {
-    if (secondsLeft === 3 && !isPaused && !completedRef.current) {
-      if ('vibrate' in navigator) {
-        navigator.vibrate([50]);
-      }
+    if (isPaused || completedRef.current) return;
+    if (secondsLeft === 3 || secondsLeft === 2 || secondsLeft === 1) {
+      haptics.escalation(secondsLeft);
     }
   }, [secondsLeft, isPaused]);
 
@@ -106,9 +101,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
         setEndTime((prev) => prev + delta * 1000);
         setSecondsLeft((prev) => Math.max(0, prev + delta));
       }
-      if ('vibrate' in navigator) {
-        navigator.vibrate(30);
-      }
+      haptics.soft();
     },
     [isPaused]
   );
@@ -124,9 +117,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
       setPausedTimeRemaining(remaining);
       setIsPaused(true);
     }
-    if ('vibrate' in navigator) {
-      navigator.vibrate(50);
-    }
+    haptics.medium();
   }, [isPaused, endTime, pausedTimeRemaining]);
 
   const progress = ((initialTarget - secondsLeft) / initialTarget) * 100;
@@ -148,7 +139,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
       >
         {/* Header */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-2">⏱️ זמן מנוחה</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">זמן מנוחה</h2>
           {exerciseName && <p className="text-white/50 text-sm">לפני הסט הבא של {exerciseName}</p>}
         </div>
 
@@ -212,7 +203,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
                 animate={{ opacity: 1 }}
                 className="text-yellow-400 text-sm font-semibold mt-2"
               >
-                ⏸️ מושהה
+                מושהה
               </motion.span>
             )}
           </div>
@@ -263,7 +254,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
             aria-label="דלג על המנוחה"
             className="flex-1 h-14 min-h-[56px] rounded-2xl bg-white/5 border border-white/20 text-white/80 font-bold text-base hover:bg-white/10 transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
           >
-            דלג ⏭️
+            דלג
           </button>
 
           {/* Pause/Resume Button */}
@@ -277,7 +268,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
                 : 'bg-yellow-500/20 border border-yellow-500/40 text-yellow-400'
             }`}
           >
-            {isPaused ? '▶️ המשך' : '⏸️ השהה'}
+            {isPaused ? 'המשך' : 'השהה'}
           </button>
 
           {/* Complete Now Button */}
@@ -287,7 +278,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
             aria-label="סיים טיימר"
             className="flex-1 h-14 min-h-[56px] rounded-2xl bg-[var(--cosmos-accent-primary)] text-white font-bold text-base shadow-[0_0_25px_var(--cosmos-accent-primary)] hover:brightness-110 transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
           >
-            סיים ✓
+            סיים
           </button>
         </div>
 

@@ -1,12 +1,12 @@
+// WorkoutStartModal - VISION Sport Annual Editorial Design
+// Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
+
 import { motion } from 'framer-motion';
-// WorkoutStartModal - Premium Apple-style modal for starting workouts
-// Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
 import React, { useState, useEffect } from 'react';
 import * as dataService from '../../services/dataService';
 import type { PersonalExercise, WorkoutSession, WorkoutTemplate } from '../../types';
 import { triggerHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
-import { AddIcon, ClockIcon, CloseIcon, FlameIcon, PlayIcon } from '../icons';
 import { ModalOverlay } from '../ui/ModalOverlay';
 import WorkoutTemplates from './WorkoutTemplates';
 
@@ -19,9 +19,6 @@ interface WorkoutStartModalProps {
   onOpenHistory?: () => void;
 }
 
-/**
- * WorkoutStartModal - Premium Apple-style modal
- */
 const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
   isOpen,
   onClose,
@@ -77,8 +74,8 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
       onClose={onClose}
       variant="modal"
       zLevel="extreme"
-      backdropOpacity={80}
-      blur="md"
+      backdropOpacity={60}
+      blur="sm"
       trapFocus
       lockScroll
       closeOnBackdropClick
@@ -90,17 +87,65 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: '100%', opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="w-full max-w-lg bg-[var(--bg-secondary)] rounded-t-[32px] sm:rounded-[32px] max-h-[90dvh] overflow-hidden shadow-2xl border-t border-white/10 relative"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          maxWidth: 480,
+          margin: '0 auto',
+          background: 'var(--bone)',
+          maxHeight: '90dvh',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          borderTop: '2px solid var(--navy)',
+        }}
       >
         {/* Header */}
-        <div className="p-6 pb-4 border-b border-[var(--gray-600)]">
-          {/* Drag Handle (Mobile) */}
-          <div className="w-10 h-1 bg-[var(--gray-600)] rounded-full mx-auto mb-6 sm:hidden" />
-
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-black text-white tracking-tight">התחל אימון</h2>
-            <div className="flex items-center gap-2">
+        <div
+          style={{
+            padding: '20px 20px 16px',
+            borderBottom: '1px solid var(--bone-deep)',
+          }}
+        >
+          {/* Header Row */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 16,
+            }}
+          >
+            <div>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  letterSpacing: '0.22em',
+                  color: 'var(--mustard)',
+                  textTransform: 'uppercase',
+                }}
+              >
+                §01 · אימון
+              </span>
+              <h2
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 900,
+                  fontSize: 24,
+                  color: 'var(--navy)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '-0.01em',
+                  marginTop: 4,
+                }}
+              >
+                התחל אימון
+              </h2>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
               {onOpenHistory && (
                 <button
                   type="button"
@@ -113,10 +158,22 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                     e.stopPropagation();
                     onOpenHistory();
                   }}
-                  className="w-9 h-9 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center hover:bg-[var(--gray-600)] transition-colors cursor-pointer"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    background: 'transparent',
+                    border: '2px solid var(--navy)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
                   aria-label="היסטוריה"
                 >
-                  <ClockIcon className="w-5 h-5 text-[var(--gray-500)]" />
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <circle cx="9" cy="9" r="7" stroke="var(--navy)" strokeWidth="1.5" />
+                    <path d="M9 5V9L11.5 11.5" stroke="var(--navy)" strokeWidth="1.5" strokeLinecap="square" />
+                  </svg>
                 </button>
               )}
               <button
@@ -130,16 +187,33 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                   e.stopPropagation();
                   onClose();
                 }}
-                className="w-9 h-9 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center hover:bg-[var(--gray-600)] transition-colors cursor-pointer"
+                style={{
+                  width: 44,
+                  height: 44,
+                  background: 'var(--navy)',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
                 aria-label="סגור"
               >
-                <CloseIcon className="w-5 h-5 text-[var(--gray-500)]" />
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M5 5L13 13M13 5L5 13" stroke="var(--mustard)" strokeWidth="2" strokeLinecap="square" />
+                </svg>
               </button>
             </div>
           </div>
 
-          {/* Tabs - Apple Segmented Control */}
-          <div className="bg-[var(--bg-tertiary)] p-1 rounded-xl flex">
+          {/* Tabs - Editorial Segmented Control */}
+          <div
+            style={{
+              display: 'flex',
+              background: 'var(--bone-deep)',
+              padding: 4,
+            }}
+          >
             <button
               type="button"
               onClick={() => {
@@ -151,11 +225,20 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                 triggerHaptic('selection');
                 setActiveTab('templates');
               }}
-              className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-bold transition-all cursor-pointer ${
-                activeTab === 'templates'
-                  ? 'bg-[var(--gray-500)] text-white shadow-sm'
-                  : 'text-[var(--gray-500)] hover:text-white'
-              }`}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                background: activeTab === 'templates' ? 'var(--navy)' : 'transparent',
+                border: 'none',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 14,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                color: activeTab === 'templates' ? 'var(--mustard)' : 'var(--stone)',
+                cursor: 'pointer',
+                transition: 'all 150ms ease',
+              }}
             >
               תבניות
             </button>
@@ -170,11 +253,20 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                 triggerHaptic('selection');
                 setActiveTab('quick');
               }}
-              className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-bold transition-all cursor-pointer ${
-                activeTab === 'quick'
-                  ? 'bg-[var(--gray-500)] text-white shadow-sm'
-                  : 'text-[var(--gray-500)] hover:text-white'
-              }`}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                background: activeTab === 'quick' ? 'var(--navy)' : 'transparent',
+                border: 'none',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 14,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                color: activeTab === 'quick' ? 'var(--mustard)' : 'var(--stone)',
+                cursor: 'pointer',
+                transition: 'all 150ms ease',
+              }}
             >
               התחלה מהירה
             </button>
@@ -182,13 +274,35 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-4 md:p-5 overflow-y-auto max-h-[calc(90dvh-140px)] overscroll-contain pb-[calc(1.25rem_+_env(safe-area-inset-bottom))]">
+        <div
+          style={{
+            flex: 1,
+            overflow: 'auto',
+            padding: 16,
+            paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
+          }}
+        >
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-8 h-8 border-4 border-[var(--dynamic-accent-start)] border-t-transparent rounded-full animate-spin" />
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 48,
+              }}
+            >
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  border: '3px solid var(--navy)',
+                  borderTopColor: 'transparent',
+                  animation: 'spin 1s linear infinite',
+                }}
+              />
             </div>
           ) : activeTab === 'templates' ? (
-            <div className="space-y-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {/* Repeat Last Workout */}
               {lastSession && (
                 <motion.button
@@ -203,29 +317,74 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                     triggerHaptic('medium');
                     onRepeatLastWorkout(lastSession);
                   }}
-                  className="w-full p-4 rounded-xl bg-[var(--bg-tertiary)] active:bg-[var(--gray-600)] transition-colors text-start flex items-center gap-4 group"
+                  style={{
+                    width: '100%',
+                    padding: 16,
+                    background: 'var(--mustard)',
+                    border: '2px solid var(--navy)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 16,
+                    cursor: 'pointer',
+                    textAlign: 'right',
+                    transition: 'filter 150ms ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.filter = 'brightness(0.95)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.filter = 'none';
+                  }}
                 >
-                  <div className="w-12 h-12 rounded-full bg-[var(--dynamic-accent-start)]/10 flex items-center justify-center text-xl">
-                    🔄
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      background: 'var(--navy)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 24,
+                      flexShrink: 0,
+                      color: 'var(--mustard)',
+                    }}
+                  >
+                    §
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-white group-hover:text-[var(--dynamic-accent-start)] transition-colors">
+                  <div style={{ flex: 1 }}>
+                    <h3
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontWeight: 800,
+                        fontSize: 16,
+                        color: 'var(--navy)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.02em',
+                      }}
+                    >
                       חזור על אימון אחרון
                     </h3>
-                    <p className="text-xs text-[var(--gray-500)] mt-1">
-                      {lastSession.exercises.length} תרגילים •{' '}
-                      {formatRelativeTime(lastSession.startTime)}
+                    <p
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 11,
+                        color: 'var(--navy)',
+                        opacity: 0.7,
+                        letterSpacing: '0.05em',
+                        marginTop: 4,
+                      }}
+                    >
+                      {lastSession.exercises.length} תרגילים · {formatRelativeTime(lastSession.startTime)}
                     </p>
                   </div>
                 </motion.button>
               )}
 
-              {/* Templates Component (Replaces manual grid) */}
-              <div className="pt-2">
+              {/* Templates Component */}
+              <div style={{ paddingTop: 8 }}>
                 <WorkoutTemplates
                   onStartWorkout={(t) => {
                     onStartFromTemplate(t);
-                    // Close modal? usually startWorkout handles navigation.
                   }}
                   isEmbedded={true}
                 />
@@ -233,7 +392,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
             </div>
           ) : (
             /* Quick Start Tab */
-            <div className="space-y-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <motion.button
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -249,35 +408,132 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                   triggerHaptic('medium');
                   onStartEmpty();
                 }}
-                className="w-full p-5 rounded-2xl bg-[var(--dynamic-accent-start)] text-black active:scale-[0.98] transition-all flex items-center gap-4 group cursor-pointer"
+                style={{
+                  width: '100%',
+                  padding: 20,
+                  background: 'var(--navy)',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                  cursor: 'pointer',
+                  textAlign: 'right',
+                  transition: 'background 150ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'var(--navy-deep)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'var(--navy)';
+                }}
               >
-                <div className="w-12 h-12 rounded-full bg-black/10 flex items-center justify-center">
-                  <AddIcon className="w-6 h-6" />
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    background: 'var(--mustard)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 5V19M5 12H19" stroke="var(--navy)" strokeWidth="3" strokeLinecap="square" />
+                  </svg>
                 </div>
-                <div className="flex-1 text-start">
-                  <h3 className="text-lg font-black">התחל אימון ריק</h3>
-                  <p className="text-sm opacity-60 font-medium">בחר תרגילים תוך כדי תנועה</p>
+                <div style={{ flex: 1 }}>
+                  <h3
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 800,
+                      fontSize: 18,
+                      color: 'var(--mustard)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    התחל אימון ריק
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 11,
+                      color: 'rgba(245,241,235,0.6)',
+                      letterSpacing: '0.05em',
+                      marginTop: 4,
+                    }}
+                  >
+                    בחר תרגילים תוך כדי תנועה
+                  </p>
                 </div>
-                <PlayIcon className="w-6 h-6 opacity-60 group-hover:opacity-100 transition-opacity" />
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M8 5L13 10L8 15" stroke="var(--mustard)" strokeWidth="2" strokeLinecap="square" />
+                </svg>
               </motion.button>
 
               {/* Most Used Exercises */}
               {mostUsedExercises.length > 0 && (
-                <div className="space-y-3 pt-4">
-                  <h3 className="text-xs font-bold text-[var(--gray-500)] uppercase tracking-wide px-1 flex items-center gap-2">
-                    <FlameIcon className="w-4 h-4 text-[var(--warning)]" />
+                <div style={{ paddingTop: 16 }}>
+                  <h3
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      letterSpacing: '0.2em',
+                      color: 'var(--stone)',
+                      textTransform: 'uppercase',
+                      marginBottom: 12,
+                      paddingRight: 4,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <span style={{ color: 'var(--mustard)' }}>§</span>
                     הכי בשימוש
                   </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {mostUsedExercises.map((exercise, _index) => (
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, 1fr)',
+                      gap: 12,
+                    }}
+                  >
+                    {mostUsedExercises.map((exercise) => (
                       <div
                         key={exercise.id}
-                        className="p-3 rounded-xl bg-[var(--bg-tertiary)] border border-transparent"
+                        style={{
+                          padding: 12,
+                          background: 'var(--bone-deep)',
+                          border: '2px solid var(--navy)',
+                        }}
                       >
-                        <span className="text-sm font-bold text-white line-clamp-1">
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-display)',
+                            fontWeight: 800,
+                            fontSize: 13,
+                            color: 'var(--navy)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.02em',
+                            display: 'block',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
                           {exercise.name}
                         </span>
-                        <span className="text-[10px] text-[var(--gray-500)] block mt-0.5">
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: 10,
+                            color: 'var(--stone)',
+                            letterSpacing: '0.05em',
+                            marginTop: 4,
+                            display: 'block',
+                          }}
+                        >
                           {exercise.useCount || 0} פעמים
                         </span>
                       </div>

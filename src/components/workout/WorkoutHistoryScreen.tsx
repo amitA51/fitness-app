@@ -1,8 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
-// WorkoutHistoryScreen - Premium workout history with cloud sync
 import React, { useState, useMemo, memo } from 'react';
 import type { WorkoutSession } from '../../types';
-import { ChevronLeftIcon, ClockIcon, FlameIcon, TrophyIcon } from '../icons';
 import { useWorkoutHistory } from './hooks/useWorkoutHistory';
 
 // ============================================================
@@ -85,17 +83,41 @@ const getMainMuscleGroup = (session: WorkoutSession): string => {
 
 // Memoized StatCard for performance
 const StatCard = memo<{
-  icon: React.ReactNode;
   label: string;
   value: string | number;
-  color: string;
-}>(({ icon, label, value, color }) => (
-  <div className="flex-1 p-4 rounded-2xl bg-white/5 border border-white/10">
-    <div className={`flex items-center gap-2 mb-2 ${color}`}>
-      {icon}
-      <span className="text-[10px] uppercase tracking-wider text-white/50">{label}</span>
+}>(({ label, value }) => (
+  <div
+    style={{
+      flex: 1,
+      padding: '16px',
+      background: 'var(--bone-deep)',
+      border: '2px solid var(--navy)',
+    }}
+  >
+    <div
+      style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: 10,
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase',
+        color: 'var(--stone)',
+        marginBottom: 8,
+      }}
+    >
+      {label}
     </div>
-    <div className="text-2xl font-black text-white">{value}</div>
+    <div
+      style={{
+        fontFamily: 'var(--font-display)',
+        fontWeight: 800,
+        fontSize: 32,
+        color: 'var(--navy)',
+        letterSpacing: '-0.02em',
+        lineHeight: 1,
+      }}
+    >
+      {value}
+    </div>
   </div>
 ));
 
@@ -116,50 +138,183 @@ const SessionCard = memo<{
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
       onClick={onClick}
-      className="p-4 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-all group"
+      style={{
+        padding: '20px',
+        background: 'var(--bone)',
+        border: '2px solid var(--navy)',
+        cursor: 'pointer',
+        transition: 'background-color 150ms ease',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'var(--bone-deep)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'var(--bone)';
+      }}
     >
-      <div className="flex items-start justify-between mb-3">
+      {/* Header Row */}
+      <div className="flex items-start justify-between mb-4">
         <div>
-          <div className="text-white font-bold text-sm mb-1">{formatDate(session.startTime)}</div>
-          <div className="text-white/50 text-xs">
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 18,
+              color: 'var(--ink)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.02em',
+              marginBottom: 4,
+            }}
+          >
+            {formatDate(session.startTime)}
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              color: 'var(--stone)',
+              letterSpacing: '0.05em',
+            }}
+          >
             {new Date(session.startTime).toLocaleTimeString('he-IL', {
               hour: '2-digit',
               minute: '2-digit',
             })}
           </div>
         </div>
-        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--cosmos-accent-primary)]/20 text-[var(--cosmos-accent-primary)] text-xs font-medium">
+        {/* Muscle group badge */}
+        <div
+          style={{
+            padding: '6px 12px',
+            background: 'var(--mustard)',
+            color: 'var(--navy)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+          }}
+        >
           {mainMuscle}
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="text-center p-2 rounded-xl bg-white/5">
-          <div className="text-lg font-bold text-white">{session.exercises.length}</div>
-          <div className="text-[10px] text-white/40">תרגילים</div>
+      {/* Stats Grid - Editorial Data Strip */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          border: '2px solid var(--navy)',
+        }}
+      >
+        <div style={{ padding: '12px', textAlign: 'center', borderRight: '2px solid var(--navy)' }}>
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 24,
+              color: 'var(--navy)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {session.exercises.length}
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              letterSpacing: '0.15em',
+              color: 'var(--stone)',
+              textTransform: 'uppercase',
+              marginTop: 4,
+            }}
+          >
+            תרגילים
+          </div>
         </div>
-        <div className="text-center p-2 rounded-xl bg-white/5">
-          <div className="text-lg font-bold text-cyan-400">{completedSets}</div>
-          <div className="text-[10px] text-white/40">סטים</div>
+        <div style={{ padding: '12px', textAlign: 'center', borderRight: '2px solid var(--navy)' }}>
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 24,
+              color: 'var(--ink)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {completedSets}
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              letterSpacing: '0.15em',
+              color: 'var(--stone)',
+              textTransform: 'uppercase',
+              marginTop: 4,
+            }}
+          >
+            סטים
+          </div>
         </div>
-        <div className="text-center p-2 rounded-xl bg-white/5">
-          <div className="text-lg font-bold text-orange-400">{volume.toLocaleString()}</div>
-          <div className="text-[10px] text-white/40">נפח (ק"ג)</div>
+        <div style={{ padding: '12px', textAlign: 'center' }}>
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 24,
+              color: 'var(--mustard)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {volume.toLocaleString()}
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              letterSpacing: '0.15em',
+              color: 'var(--stone)',
+              textTransform: 'uppercase',
+              marginTop: 4,
+            }}
+          >
+            ק"ג
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
-        <div className="flex items-center gap-1 text-xs text-white/40">
-          <ClockIcon className="w-3 h-3" />
+      {/* Footer Row */}
+      <div
+        className="flex items-center justify-between mt-4"
+        style={{ paddingTop: 12, borderTop: '1px solid var(--bone-deep)' }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            color: 'var(--stone)',
+            letterSpacing: '0.05em',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M7 4V7L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" />
+          </svg>
           {formatDuration(session.startTime, session.endTime ?? undefined)}
         </div>
-        <ChevronLeftIcon className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: 'var(--navy)' }}>
+          <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
+        </svg>
       </div>
     </motion.div>
   );
@@ -218,25 +373,90 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[9000] bg-[var(--cosmos-bg-primary)] overflow-hidden flex flex-col"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9000,
+        background: 'var(--bone)',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
     >
-      {/* Header */}
-      <header className="flex items-center justify-between p-4 pt-[env(safe-area-inset-top,16px)] border-b border-white/10">
+      {/* Masthead Header */}
+      <header
+        style={{
+          background: 'var(--navy)',
+          color: 'var(--bone)',
+          padding: '16px 20px',
+          paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onClose}
-          className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center"
+          style={{
+            width: 44,
+            height: 44,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: '2px solid var(--mustard)',
+            cursor: 'pointer',
+            color: 'var(--mustard)',
+          }}
         >
-          <ChevronLeftIcon className="w-5 h-5 text-white rotate-180" />
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M11 4L6 9L11 14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square" />
+          </svg>
         </motion.button>
 
-        <h1 className="text-lg font-bold text-white">היסטוריית אימונים</h1>
+        <div style={{ textAlign: 'center' }}>
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.22em',
+              color: 'var(--mustard)',
+              textTransform: 'uppercase',
+            }}
+          >
+            §01 · היסטוריה
+          </span>
+          <h1
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 900,
+              fontSize: 20,
+              textTransform: 'uppercase',
+              letterSpacing: '0.02em',
+              color: 'var(--bone)',
+              marginTop: 2,
+            }}
+          >
+            היסטוריית אימונים
+          </h1>
+        </div>
 
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={refresh}
           disabled={loading}
-          className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60"
+          style={{
+            width: 44,
+            height: 44,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: '2px solid rgba(245,241,235,0.2)',
+            cursor: 'pointer',
+            color: 'rgba(245,241,235,0.6)',
+          }}
         >
           <motion.div
             animate={loading ? { rotate: 360 } : {}}
@@ -246,105 +466,274 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
               ease: 'linear',
             }}
           >
-            ↻
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path
+                d="M15 9A6 6 0 1 1 9 3"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="square"
+              />
+            </svg>
           </motion.div>
         </motion.button>
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className="p-4 space-y-6">
-          {/* Stats Row */}
-          <div className="flex gap-3">
-            <StatCard
-              icon={<TrophyIcon className="w-4 h-4" />}
-              label="סה״כ אימונים"
-              value={stats.totalWorkouts}
-              color="text-yellow-400"
-            />
-            <StatCard
-              icon={<FlameIcon className="w-4 h-4" />}
-              label="נפח ממוצע"
-              value={`${stats.averageVolume.toLocaleString()}`}
-              color="text-orange-400"
-            />
-            <StatCard
-              icon={<ClockIcon className="w-4 h-4" />}
-              label="זמן ממוצע"
-              value={`${stats.averageDuration}'`}
-              color="text-cyan-400"
+      <div className="flex-1 overflow-y-auto custom-scrollbar" style={{ padding: '20px' }}>
+        {/* Stats Row - Editorial Data Strip */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            border: '2px solid var(--navy)',
+            marginBottom: 20,
+          }}
+        >
+          <StatCard label="סה״כ אימונים" value={stats.totalWorkouts} />
+          <StatCard label="נפח ממוצע" value={`${stats.averageVolume.toLocaleString()}`} />
+          <StatCard label="זמן ממוצע" value={`${stats.averageDuration}'`} />
+        </div>
+
+        {/* Quick Stats - Mustard Block */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr auto 1fr',
+            alignItems: 'center',
+            background: 'var(--mustard)',
+            padding: '16px 20px',
+            marginBottom: 20,
+          }}
+        >
+          <div style={{ textAlign: 'center' }}>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 900,
+                fontSize: 36,
+                color: 'var(--navy)',
+                letterSpacing: '-0.02em',
+                lineHeight: 1,
+              }}
+            >
+              {stats.workoutsThisWeek}
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                letterSpacing: '0.18em',
+                color: 'var(--navy)',
+                textTransform: 'uppercase',
+                marginTop: 6,
+                opacity: 0.7,
+              }}
+            >
+              השבוע
+            </div>
+          </div>
+          <div style={{ width: 2, height: 40, background: 'var(--navy)', opacity: 0.3 }} />
+          <div style={{ textAlign: 'center' }}>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 900,
+                fontSize: 36,
+                color: 'var(--navy)',
+                letterSpacing: '-0.02em',
+                lineHeight: 1,
+              }}
+            >
+              {stats.workoutsThisMonth}
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                letterSpacing: '0.18em',
+                color: 'var(--navy)',
+                textTransform: 'uppercase',
+                marginTop: 6,
+                opacity: 0.7,
+              }}
+            >
+              החודש
+            </div>
+          </div>
+          <div style={{ width: 2, height: 40, background: 'var(--navy)', opacity: 0.3 }} />
+          <div style={{ textAlign: 'center' }}>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 900,
+                fontSize: 36,
+                color: 'var(--navy)',
+                letterSpacing: '-0.02em',
+                lineHeight: 1,
+              }}
+            >
+              {(stats.totalVolume / 1000).toFixed(0)}K
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                letterSpacing: '0.18em',
+                color: 'var(--navy)',
+                textTransform: 'uppercase',
+                marginTop: 6,
+                opacity: 0.7,
+              }}
+            >
+              נפח כולל
+            </div>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="relative" style={{ marginBottom: 20 }}>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="חיפוש לפי תרגיל או קבוצת שריר..."
+            style={{
+              width: '100%',
+              height: 48,
+              padding: '12px 16px',
+              background: '#FFFFFF',
+              border: '2px solid var(--navy)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 15,
+              color: 'var(--ink)',
+              outline: 'none',
+            }}
+          />
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div
+            style={{
+              padding: 16,
+              background: 'rgba(196, 43, 43, 0.1)',
+              border: '2px solid #C42B2B',
+              color: '#C42B2B',
+              fontFamily: 'var(--font-body)',
+              fontSize: 14,
+              marginBottom: 20,
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && sessions.length === 0 && (
+          <div className="flex items-center justify-center py-12">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: 'linear' }}
+              style={{
+                width: 32,
+                height: 32,
+                border: '3px solid var(--navy)',
+                borderTopColor: 'transparent',
+              }}
             />
           </div>
+        )}
 
-          {/* Quick Stats */}
-          <div className="flex gap-4 p-4 rounded-2xl bg-gradient-to-r from-[var(--cosmos-accent-primary)]/10 to-[var(--cosmos-accent-cyan)]/10 border border-[var(--cosmos-accent-primary)]/20">
-            <div className="flex-1 text-center">
-              <div className="text-2xl font-black text-[var(--cosmos-accent-primary)]">
-                {stats.workoutsThisWeek}
-              </div>
-              <div className="text-xs text-white/50">השבוע</div>
+        {/* Empty State */}
+        {!loading && sessions.length === 0 && (
+          <div className="text-center py-12">
+            <div
+              style={{
+                width: 80,
+                height: 80,
+                margin: '0 auto 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'var(--bone-deep)',
+                border: '2px solid var(--navy)',
+              }}
+            >
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style={{ color: 'var(--stone)' }}>
+                <path
+                  d="M16 4L20 12L28 13L22 19L24 28L16 24L8 28L10 19L4 13L12 12L16 4Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinejoin="miter"
+                />
+              </svg>
             </div>
-            <div className="w-px bg-white/10" />
-            <div className="flex-1 text-center">
-              <div className="text-2xl font-black text-[var(--cosmos-accent-cyan)]">
-                {stats.workoutsThisMonth}
-              </div>
-              <div className="text-xs text-white/50">החודש</div>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 18,
+                color: 'var(--ink)',
+                textTransform: 'uppercase',
+                marginBottom: 8,
+              }}
+            >
+              אין נתונים עדיין
             </div>
-            <div className="w-px bg-white/10" />
-            <div className="flex-1 text-center">
-              <div className="text-2xl font-black text-emerald-400">
-                {stats.totalVolume.toLocaleString()}
-              </div>
-              <div className="text-xs text-white/50">נפח כולל (ק״ג)</div>
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                color: 'var(--stone)',
+                letterSpacing: '0.05em',
+              }}
+            >
+              התחל להתאמן כדי ליצור את הפרק הראשון
             </div>
           </div>
+        )}
 
-          {/* Search */}
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="חיפוש לפי תרגיל או קבוצת שריר..."
-              className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[var(--cosmos-accent-primary)]/50"
-            />
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Loading */}
-          {loading && sessions.length === 0 && (
-            <div className="flex items-center justify-center py-12">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: 'linear' }}
-                className="w-8 h-8 border-2 border-[var(--cosmos-accent-primary)] border-t-transparent rounded-full"
-              />
-            </div>
-          )}
-
-          {/* Empty State */}
-          {!loading && sessions.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
-                <TrophyIcon className="w-8 h-8 text-white/30" />
+        {/* Sessions List */}
+        <AnimatePresence>
+          {groupedSessions.map((group) => (
+            <div key={group.key} className="space-y-3">
+              {/* Month Header */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                  marginBottom: 16,
+                  marginTop: 24,
+                  paddingBottom: 12,
+                  borderBottom: '3px solid var(--navy)',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 900,
+                    fontSize: 28,
+                    color: 'var(--navy)',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  {group.sessions.length}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: 14,
+                    color: 'var(--ink)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  {group.label}
+                </span>
               </div>
-              <div className="text-white/60 text-sm">ההיסטוריה ריקה</div>
-              <div className="text-white/40 text-xs mt-1">סיים אימון כדי לראות אותו כאן</div>
-            </div>
-          )}
-
-          {/* Sessions List */}
-          <AnimatePresence>
-            {groupedSessions.map((group) => (
-              <div key={group.key} className="space-y-3">
-                <div className="text-sm font-bold text-white/60 px-1">{group.label}</div>
+              <div className="space-y-3">
                 {group.sessions.map((session, index) => (
                   <SessionCard
                     key={session.id}
@@ -354,13 +743,13 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
                   />
                 ))}
               </div>
-            ))}
-          </AnimatePresence>
-        </div>
+            </div>
+          ))}
+        </AnimatePresence>
       </div>
 
       {/* Bottom Safe Area */}
-      <div className="h-[env(safe-area-inset-bottom,0px)]" />
+      <div style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />
     </motion.div>
   );
 };

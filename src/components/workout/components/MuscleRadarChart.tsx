@@ -216,7 +216,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
           <div className="text-white/70">{displayData[hoveredIndex].percentage}% מהנפח</div>
           <div className="flex items-center gap-1 mt-1">
             {displayData[hoveredIndex].isWeak && (
-              <span className="text-red-400 text-[8px]">⚠️ מוזנח</span>
+              <span className="text-red-400 text-[8px]">מוזנח</span>
             )}
             {displayData[hoveredIndex].trend === 'up' && (
               <span className="text-green-400 text-[8px]">↑ בעלייה</span>

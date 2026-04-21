@@ -260,7 +260,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
       try {
         await navigator.share({
           title: 'סיכום אימון',
-          text: `סיימתי אימון!\n⏱️ ${stats.duration} דקות\n🔥 ${stats.totalVolume.toLocaleString()} ק"ג נפח\n✅ ${stats.totalSets} סטים`,
+          text: `אימון · ${stats.duration} דקות · ${stats.totalVolume.toLocaleString()} ק"ג · ${stats.totalSets} סטים`,
         });
       } catch (err) {
         logger.workout.warn('Failed to send workout completion notification', err);
@@ -330,11 +330,11 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   <span style={{ color: 'var(--mustard)' }}>{prsCount}</span>
                   <br />
                   <span style={{ fontSize: 24, color: 'rgba(245,241,235,0.7)' }}>
-                    שיאים חדשים!
+                    שיאים חדשים
                   </span>
                 </>
               ) : (
-                'אימון הושלם!'
+                'אימון הושלם'
               )}
             </h2>
 

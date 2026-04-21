@@ -14,19 +14,16 @@ import { RecentWorkouts } from '../components/dashboard/RecentWorkouts';
 import { TemplateQuickStart, TemplateStrip } from '../components/dashboard/TemplateQuickStart';
 import { WeeklyGrid } from '../components/dashboard/WeeklyGrid';
 import { WeeklyStatsBlock } from '../components/dashboard/WeeklyStatsBlock';
-import { StreakCalendar } from '../components/fitness/StreakCalendar';
+import { ForecastNudge } from '../components/dashboard/ForecastNudge';
 import { useData } from '../contexts/DataContext';
-import { useSettings } from '../contexts/SettingsContext';
 import { useFitnessInsights } from '../hooks/fitness/useFitnessInsights';
 import { useProgressionRecommendation } from '../hooks/fitness/useProgressionRecommendation';
 import { getWorkoutTemplates } from '../services/workoutDb';
 import type { WorkoutSession, WorkoutTemplate } from '../types';
-import { THEMES, getWeekNumber, getWeekStart, pad2 } from '../utils/dateUtils';
+import { getWeekNumber, getWeekStart, pad2 } from '../utils/dateUtils';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 
 export default function Dashboard() {
-  const { settings, updateSettings } = useSettings();
-  const currentTheme = settings.theme;
   const navigate = useNavigate();
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [selectedWeekOffset, setSelectedWeekOffset] = useState(0);
@@ -105,13 +102,6 @@ export default function Dashboard() {
     else navigate('/workout');
   }, [lastUsedTemplate, navigate]);
 
-  const handleThemeChange = useCallback(() => {
-    const nextTheme = THEMES[(THEMES.indexOf(currentTheme as typeof THEMES[number]) + 1) % THEMES.length];
-    updateSettings({
-      theme: nextTheme ?? currentTheme,
-    });
-  }, [currentTheme, updateSettings]);
-
   const goToPrevWeek = useCallback(() => {
     setSelectedWeekOffset((prev) => prev - 1);
   }, []);
@@ -160,6 +150,21 @@ export default function Dashboard() {
     };
   }, [workoutSessions, selectedWeekOffset]);
 
+  const monthlyStats = useMemo(() => {
+    const now = Date.now();
+    const thirtyDaysAgo = now - 30 * 86400000;
+    const completed = workoutSessions.filter(
+      (s) => s.status === 'completed' && new Date(s.startTime).getTime() >= thirtyDaysAgo
+    );
+    const sessionCount = completed.length;
+    const volume = completed.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
+    const avgDurationMin =
+      sessionCount > 0
+        ? Math.round(completed.reduce((sum, s) => sum + (s.duration || 0), 0) / sessionCount / 60)
+        : 0;
+    return { sessionCount, volume, avgDurationMin };
+  }, [workoutSessions]);
+
   const recentWorkouts = useMemo(() => {
     return workoutSessions
       .filter((s) => s.status === 'completed')
@@ -173,7 +178,11 @@ export default function Dashboard() {
     <div
       className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
       dir="rtl"
-      style={{ background: 'var(--bone)' }}
+      style={{
+        background: 'var(--bone)',
+        touchAction: 'pan-y',
+        WebkitOverflowScrolling: 'touch',
+      }}
     >
       {/* Pull-to-refresh indicator */}
       <div
@@ -206,7 +215,7 @@ export default function Dashboard() {
         />
       </div>
 
-      <Greeting onThemeChange={handleThemeChange} weekNumber={weeklyStats.weekNumber} />
+      <Greeting weekNumber={weeklyStats.weekNumber} />
 
       <main style={{ padding: '24px 20px 28px' }}>
         <WeeklyStatsBlock
@@ -245,6 +254,8 @@ export default function Dashboard() {
         )}
 
         <TemplateStrip templates={sortedTemplates} onNavigate={handleNavigate} />
+
+        <ForecastNudge sessions={workoutSessions} />
 
         <ChapterBreak
           number="§02"
@@ -303,17 +314,12 @@ export default function Dashboard() {
               />
             </div>
           </div>
+
+          <MonthlyStatsRow stats={monthlyStats} />
         </div>
 
         <div style={{ marginTop: 16 }}>
           <ImprovementScore sessions={workoutSessions} />
-        </div>
-
-        <div className="card-outlined" style={{ marginTop: 16 }}>
-          <div className="eyebrow" style={{ marginBottom: 12 }}>
-            § streak · 30d
-          </div>
-          <StreakCalendar sessions={workoutSessions} days={30} />
         </div>
 
         <ChapterBreak
@@ -346,6 +352,66 @@ export default function Dashboard() {
 
         <div style={{ height: 24 }} />
       </main>
+    </div>
+  );
+}
+
+// ── MonthlyStatsRow — compact 30-day context row ─────────────────────────────
+function MonthlyStatsRow({
+  stats,
+}: {
+  stats: { sessionCount: number; volume: number; avgDurationMin: number };
+}) {
+  const volumeLabel =
+    Math.round(stats.volume) >= 1000
+      ? Math.round(stats.volume).toLocaleString('en-US')
+      : String(Math.round(stats.volume));
+
+  const cols: Array<{ val: string; lbl: string }> = [
+    { val: String(stats.sessionCount), lbl: '30d sessions' },
+    { val: volumeLabel || '—', lbl: 'kg · 30d' },
+    { val: stats.avgDurationMin > 0 ? String(stats.avgDurationMin) : '—', lbl: 'min · avg' },
+  ];
+
+  return (
+    <div
+      style={{
+        marginTop: 16,
+        paddingTop: 14,
+        borderTop: '1px solid var(--bone-deep)',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 1fr',
+        gap: 12,
+      }}
+    >
+      {cols.map((c) => (
+        <div key={c.lbl}>
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 24,
+              lineHeight: 1,
+              color: 'var(--navy)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {c.val}
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: 'var(--stone)',
+              marginTop: 4,
+            }}
+          >
+            {c.lbl}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

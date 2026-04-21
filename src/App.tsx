@@ -315,7 +315,7 @@ function AppShell() {
                 mainRef.current = el;
               }}
               id="main-content"
-              className={cn('flex-1', !isWorkoutActive && 'pb-24')}
+              className={cn('flex-1 overflow-y-auto', !isWorkoutActive && 'pb-24')}
               tabIndex={-1}
               style={{ contain: 'layout style' }}
             >

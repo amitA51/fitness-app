@@ -96,13 +96,13 @@ export async function generateWorkoutSummary(session: WorkoutSession): Promise<s
     })
     .join('\n');
 
-  return `סיכום אימון - ${session.date || 'היום'}
+  return `סיכום אימון · ${session.date || 'היום'}
 
-⏱️ משך: ${durationMin} דקות
-📊 נפח כולל: ${totalVolume.toLocaleString()} ק"ג
-✅ סטים: ${completedSets}/${totalSets}
+משך:   ${durationMin} דקות
+נפח:   ${totalVolume.toLocaleString()} ק"ג
+סטים:  ${completedSets}/${totalSets}
 
-פירוט לפי תרגיל:
+לפי תרגיל:
 ${exerciseSummary}`;
 }
 
