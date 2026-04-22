@@ -153,7 +153,7 @@ const NumpadButton = memo<{
     number: { backgroundColor: 'var(--bone)', color: 'var(--navy)' },
     action: { backgroundColor: 'var(--bone-deep)', color: 'var(--navy)' },
     delete: { backgroundColor: 'var(--bone)', color: 'var(--color-error)' },
-    submit: { backgroundColor: 'var(--mustard)', color: 'var(--navy)' },
+    submit: { backgroundColor: 'var(--mustard)', color: 'var(--color-on-mustard)' },
   };
 
   const getAriaLabel = (): string => {
@@ -537,7 +537,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                   fontFamily: 'var(--font-mono)',
                   fontSize: '10px',
                   letterSpacing: '0.22em',
-                  color: 'rgba(245,241,235,0.55)',
+                  color: 'rgba(var(--text-on-navy-rgb),0.55)',
                   fontWeight: 600,
                 }}
                 initial={{ opacity: 0, y: -10 }}

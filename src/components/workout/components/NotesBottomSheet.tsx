@@ -164,7 +164,7 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
               style={{
                 width: '100%',
                 padding: '14px 16px',
-                background: '#FFFFFF',
+                background: 'var(--color-surface-input)',
                 border: '2px solid var(--navy)',
                 borderRadius: 0,
                 fontFamily: 'var(--font-body)',

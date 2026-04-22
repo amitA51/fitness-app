@@ -111,7 +111,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
           placeholder="חיפוש תרגיל..."
           className="w-full"
           style={{
-            background: '#FFFFFF',
+            background: 'var(--color-surface-input)',
             border: '2px solid var(--navy)',
             borderRadius: 0,
             padding: '12px 44px 12px 44px',
@@ -161,7 +161,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
             right: 20,
             top: '100%',
             marginTop: 4,
-            background: '#FFFFFF',
+            background: 'var(--color-surface)',
             border: '2px solid var(--navy)',
             zIndex: 60,
             maxHeight: 280,

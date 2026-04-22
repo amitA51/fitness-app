@@ -6,10 +6,45 @@ import { fmtDate, isToday } from '../../utils/dateUtils';
 
 interface RecentWorkoutsProps {
   sessions: WorkoutSession[];
+  loading?: boolean;
 }
 
-export const RecentWorkouts = memo(function RecentWorkouts({ sessions }: RecentWorkoutsProps) {
+function SkeletonRow() {
+  return (
+    <div
+      className="card-outlined animate-shimmer"
+      style={{
+        padding: '14px 16px',
+        background:
+          'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
+        backgroundSize: '200% 100%',
+        height: 82,
+      }}
+      aria-hidden="true"
+    />
+  );
+}
+
+export const RecentWorkouts = memo(function RecentWorkouts({
+  sessions,
+  loading = false,
+}: RecentWorkoutsProps) {
   const navigate = useNavigate();
+
+  if (loading && sessions.length === 0) {
+    return (
+      <div
+        className="flex flex-col gap-2"
+        role="status"
+        aria-live="polite"
+        aria-label="טוען אימונים אחרונים"
+      >
+        <SkeletonRow />
+        <SkeletonRow />
+        <SkeletonRow />
+      </div>
+    );
+  }
 
   if (sessions.length === 0) {
     return (

@@ -144,11 +144,11 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
             paddingLeft: 36,
           }}
         >
-          <option value="" style={{ background: '#FFFFFF' }}>
+          <option value="" style={{ background: 'var(--color-surface)' }}>
             בחר תרגיל...
           </option>
           {exerciseNames.map((name) => (
-            <option key={name} value={name} style={{ background: '#FFFFFF' }}>
+            <option key={name} value={name} style={{ background: 'var(--color-surface)' }}>
               {name}
             </option>
           ))}

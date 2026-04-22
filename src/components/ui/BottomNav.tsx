@@ -73,14 +73,14 @@ export default function BottomNav() {
                 strokeWidth={isActive ? 2.2 : 1.8}
                 className="relative z-10 transition-colors"
                 style={{
-                  color: isActive ? 'var(--mustard)' : 'rgba(245, 241, 235, 0.4)',
+                  color: isActive ? 'var(--mustard)' : 'rgba(var(--text-on-navy-rgb), 0.4)',
                 }}
               />
 
               <span
                 className="relative z-10 font-mono text-[10px] font-semibold leading-none uppercase transition-colors"
                 style={{
-                  color: isActive ? 'var(--mustard)' : 'rgba(245, 241, 235, 0.4)',
+                  color: isActive ? 'var(--mustard)' : 'rgba(var(--text-on-navy-rgb), 0.4)',
                   letterSpacing: '0.08em',
                 }}
               >

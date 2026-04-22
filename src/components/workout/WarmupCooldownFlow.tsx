@@ -212,7 +212,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
         {/* Chapter strip */}
         <div
           className="chapter-break"
-          style={{ borderBottom: '1px solid rgba(245,241,235,0.1)' }}
+          style={{ borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)' }}
         >
           <span className="left" style={{ color: 'var(--mustard)' }}>
             §01 · {title}
@@ -242,7 +242,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               letterSpacing: '0.15em',
-              color: 'rgba(245,241,235,0.45)',
+              color: 'rgba(var(--text-on-navy-rgb),0.45)',
               textTransform: 'uppercase',
               marginTop: 8,
             }}
@@ -257,9 +257,9 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              background: 'rgba(245,241,235,0.08)',
+              background: 'rgba(var(--text-on-navy-rgb),0.08)',
               padding: '6px 12px',
-              border: '1px solid rgba(245,241,235,0.15)',
+              border: '1px solid rgba(var(--text-on-navy-rgb),0.15)',
             }}
           >
             <span
@@ -278,7 +278,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 letterSpacing: '0.15em',
-                color: 'rgba(245,241,235,0.4)',
+                color: 'rgba(var(--text-on-navy-rgb),0.4)',
                 textTransform: 'uppercase',
               }}
             >
@@ -526,7 +526,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
             fontWeight: 800,
             fontSize: 13,
             letterSpacing: '0.06em',
-            color: 'rgba(245,241,235,0.5)',
+            color: 'rgba(var(--text-on-navy-rgb),0.5)',
             textTransform: 'uppercase',
           }}
         >
@@ -538,7 +538,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
           style={{
             background: 'transparent',
             border: 'none',
-            color: 'rgba(245,241,235,0.4)',
+            color: 'rgba(var(--text-on-navy-rgb),0.4)',
             cursor: 'pointer',
             fontFamily: 'var(--font-mono)',
             fontSize: 10,

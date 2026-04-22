@@ -14,11 +14,11 @@ import type {
 } from '../types';
 import { logger } from '../utils/logger';
 import {
-  deleteWorkoutTemplate as deleteCloudWorkoutTemplate,
+  deleteCloudWorkoutTemplate,
   syncBodyWeight,
   syncWorkoutSession,
   syncWorkoutTemplate,
-} from './festoreService';
+} from './supabaseSync';
 import { dbClear, dbDelete, dbGet, dbGetAll, dbPut } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 

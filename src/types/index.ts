@@ -462,6 +462,7 @@ export interface AppSettings {
   theme: WorkoutTheme;
   soundEnabled: boolean;
   keepAwake: boolean;
+  darkMode: boolean;
 }
 
 export interface PersonalRecord {

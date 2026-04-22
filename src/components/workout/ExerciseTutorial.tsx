@@ -129,7 +129,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '16px 20px',
-          borderBottom: '1px solid rgba(245,241,235,0.1)',
+          borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)',
           background: 'var(--navy)',
           flexShrink: 0,
         }}
@@ -167,7 +167,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(245,241,235,0.1)',
+            background: 'rgba(var(--text-on-navy-rgb),0.1)',
             border: 'none',
             borderRadius: 0,
             cursor: 'pointer',
@@ -227,7 +227,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 flex: 1,
                 height: 4,
                 background:
-                  index <= activeStep ? 'var(--mustard)' : 'rgba(245,241,235,0.15)',
+                  index <= activeStep ? 'var(--mustard)' : 'rgba(var(--text-on-navy-rgb),0.15)',
                 borderRadius: 0,
                 transition: 'background 300ms',
               }}
@@ -239,7 +239,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             letterSpacing: '0.15em',
-            color: 'rgba(245,241,235,0.4)',
+            color: 'rgba(var(--text-on-navy-rgb),0.4)',
             textTransform: 'uppercase',
             marginTop: 8,
             textAlign: 'center',
@@ -291,7 +291,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     letterSpacing: '0.15em',
-                    color: 'rgba(245,241,235,0.4)',
+                    color: 'rgba(var(--text-on-navy-rgb),0.4)',
                     textTransform: 'uppercase',
                   }}
                 >
@@ -304,8 +304,8 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             <div
               style={{
                 padding: 20,
-                background: 'rgba(245,241,235,0.05)',
-                border: '2px solid rgba(245,241,235,0.1)',
+                background: 'rgba(var(--text-on-navy-rgb),0.05)',
+                border: '2px solid rgba(var(--text-on-navy-rgb),0.1)',
                 borderRadius: 0,
               }}
             >
@@ -389,8 +389,8 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 animate={{ height: 'auto', opacity: 1 }}
                 style={{
                   padding: 16,
-                  background: 'rgba(245,241,235,0.05)',
-                  border: '1px solid rgba(245,241,235,0.1)',
+                  background: 'rgba(var(--text-on-navy-rgb),0.05)',
+                  border: '1px solid rgba(var(--text-on-navy-rgb),0.1)',
                   borderRadius: 0,
                   maxHeight: 200,
                   overflowY: 'auto',
@@ -424,9 +424,9 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
           style={{
             flex: 1,
             padding: '14px 16px',
-            background: 'rgba(245,241,235,0.08)',
-            color: activeStep === 0 ? 'rgba(245,241,235,0.2)' : 'var(--bone)',
-            border: '2px solid rgba(245,241,235,0.15)',
+            background: 'rgba(var(--text-on-navy-rgb),0.08)',
+            color: activeStep === 0 ? 'rgba(var(--text-on-navy-rgb),0.2)' : 'var(--bone)',
+            border: '2px solid rgba(var(--text-on-navy-rgb),0.15)',
             borderRadius: 0,
             cursor: activeStep === 0 ? 'not-allowed' : 'pointer',
             fontFamily: 'var(--font-display)',
@@ -448,7 +448,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             flex: 1,
             padding: '14px 16px',
             background: 'var(--mustard)',
-            color: 'var(--navy)',
+            color: 'var(--color-on-mustard)',
             border: '2px solid var(--mustard)',
             borderRadius: 0,
             cursor: 'pointer',

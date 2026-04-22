@@ -148,7 +148,7 @@
 /* Button Variants */
 .btn-primary {
   background: var(--color-primary);
-  color: #ffffff;
+  color: var(--mustard);
   box-shadow: var(--shadow-button);
 }
 

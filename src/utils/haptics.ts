@@ -1,6 +1,15 @@
 // Haptic vocabulary for the app — centralize vibration patterns, keep language consistent.
+// Module-level enable flag is synced from SettingsProvider so user's Settings toggle
+// gates every vibration path (modern + legacy) without each call site knowing about it.
 
-const canVibrate = () => typeof navigator !== 'undefined' && 'vibrate' in navigator;
+let _hapticsEnabled = true;
+
+export const setHapticsEnabled = (enabled: boolean): void => {
+  _hapticsEnabled = enabled;
+};
+
+const canVibrate = () =>
+  _hapticsEnabled && typeof navigator !== 'undefined' && 'vibrate' in navigator;
 
 export const haptics = {
   // Set complete: one crisp tick — confirmation, not celebration
@@ -29,14 +38,14 @@ export const haptics = {
 
 // Simple haptic feedback
 export const haptic = (duration = 50): void => {
-  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+  if (canVibrate()) {
     navigator.vibrate(duration);
   }
 };
 
 // Haptic pattern (array of on/off durations)
 export const vibratePattern = (pattern: number[]): void => {
-  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+  if (canVibrate()) {
     navigator.vibrate(pattern);
   }
 };

@@ -97,7 +97,7 @@ interface PersonalRecord {
   weight: number;
   reps: number;
   date: string;
-  recordType: '1rm' | 'volume' | 'reps';
+  recordType: 'weight' | '1rm' | 'volume' | 'reps';
   createdAt?: string;
 }
 
@@ -109,6 +109,10 @@ interface RecoveryLog {
   sleepQuality?: number;
   sorenessLevel?: number;
   energyLevel?: number;
+  stressLevel?: number;
+  tightAreas?: string[];
+  overallScore?: number;
+  sessionId?: string;
   notes?: string;
   createdAt?: string;
 }
@@ -568,10 +572,14 @@ export const syncRecoveryLog = async (userId: string, log: RecoveryLog): Promise
     id: log.id,
     user_id: userId,
     date: log.date,
-    sleep_hours: log.sleepHours || null,
-    sleep_quality: log.sleepQuality || null,
-    soreness_level: log.sorenessLevel || null,
-    energy_level: log.energyLevel || null,
+    sleep_hours: log.sleepHours ?? null,
+    sleep_quality: log.sleepQuality ?? null,
+    soreness_level: log.sorenessLevel ?? null,
+    energy_level: log.energyLevel ?? null,
+    stress_level: log.stressLevel ?? null,
+    tight_areas: log.tightAreas ?? [],
+    overall_score: log.overallScore ?? null,
+    session_id: log.sessionId ?? null,
     notes: log.notes || null,
     created_at: log.createdAt || new Date().toISOString(),
   });
@@ -603,6 +611,10 @@ export const fetchRecoveryLogs = async (userId: string): Promise<RecoveryLog[]> 
     sleepQuality: row.sleep_quality,
     sorenessLevel: row.soreness_level,
     energyLevel: row.energy_level,
+    stressLevel: row.stress_level,
+    tightAreas: row.tight_areas || [],
+    overallScore: row.overall_score,
+    sessionId: row.session_id,
     notes: row.notes,
     createdAt: row.created_at,
   }));

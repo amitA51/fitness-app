@@ -63,7 +63,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
         className="w-full flex items-center justify-between px-4 text-left transition-colors duration-150"
         style={{
           minHeight: 48,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--color-surface-input)',
           border: isOpen ? '2px solid var(--navy)' : '1px solid var(--bone-deep)',
           borderRadius: 0,
           color: 'var(--ink)',

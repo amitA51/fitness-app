@@ -109,7 +109,7 @@ CREATE TABLE personal_records (
     weight DECIMAL(10, 2) NOT NULL,
     reps INTEGER NOT NULL,
     date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    record_type TEXT NOT NULL CHECK (record_type IN ('1rm', 'volume', 'reps')),
+    record_type TEXT NOT NULL CHECK (record_type IN ('weight', '1rm', 'volume', 'reps')),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -128,6 +128,10 @@ CREATE TABLE recovery_logs (
     sleep_quality INTEGER CHECK (sleep_quality >= 1 AND sleep_quality <= 5),
     soreness_level INTEGER CHECK (soreness_level >= 1 AND soreness_level <= 5),
     energy_level INTEGER CHECK (energy_level >= 1 AND energy_level <= 5),
+    stress_level INTEGER CHECK (stress_level >= 1 AND stress_level <= 5),
+    tight_areas JSONB DEFAULT '[]',
+    overall_score INTEGER CHECK (overall_score >= 0 AND overall_score <= 100),
+    session_id TEXT,
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -391,3 +395,19 @@ CREATE TRIGGER update_ai_conversations_updated_at
 CREATE TRIGGER update_user_settings_updated_at
     BEFORE UPDATE ON user_settings
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================
+-- MIGRATION SNIPPET (run on existing deployments)
+-- ============================================================
+-- Run these if you deployed schema.sql before 2026-04-22:
+--
+-- ALTER TABLE personal_records
+--   DROP CONSTRAINT IF EXISTS personal_records_record_type_check,
+--   ADD CONSTRAINT personal_records_record_type_check
+--   CHECK (record_type IN ('weight', '1rm', 'volume', 'reps'));
+--
+-- ALTER TABLE recovery_logs
+--   ADD COLUMN IF NOT EXISTS stress_level INTEGER CHECK (stress_level >= 1 AND stress_level <= 5),
+--   ADD COLUMN IF NOT EXISTS tight_areas JSONB DEFAULT '[]',
+--   ADD COLUMN IF NOT EXISTS overall_score INTEGER CHECK (overall_score >= 0 AND overall_score <= 100),
+--   ADD COLUMN IF NOT EXISTS session_id TEXT;

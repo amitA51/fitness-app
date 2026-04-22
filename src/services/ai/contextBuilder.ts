@@ -25,17 +25,16 @@ function computeRecoveryScore(log: RecoveryLog): number {
 }
 
 export function buildSystemPrompt(context: AIContext): string {
-  return `אתה מאמן כושר אישי מקצועי. ענה בעברית.
-נתוני המתאמן:
+  // ה-persona הגלובלי מוזרק אוטומטית ב-RemoteProvider (ראה ai/config.ts::withPersona).
+  // כאן רק מוסיפים את ההקשר הדינמי של המשתמש.
+  return `נתוני המתאמן (התייחס אליהם בתשובה):
 - מגמת נפח: ${context.volumeTrend}
 - נפח שבועי: ${context.weeklyVolume} ק"ג
-- שרירים שעבד: ${context.muscleCoverage.join(', ')}
+- שרירים שעבד: ${context.muscleCoverage.join(', ') || 'אין'}
 - שרירים חלשים: ${context.weakMuscles.join(', ') || 'אין'}
 - ציון התאוששות: ${context.recoveryScore ?? 'לא ידוע'}
 - עמידה בתזונה: ${context.nutritionCompliance !== null ? context.nutritionCompliance + '%' : 'לא ידוע'}
-- רצף אימונים: ${context.streakDays} ימים
-
-תן עצות מעשיות וספציפיות. התמקד בנתונים של המתאמן.`;
+- רצף אימונים: ${context.streakDays} ימים`;
 }
 
 export function buildContext(

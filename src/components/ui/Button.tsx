@@ -69,7 +69,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   pill: `
     bg-[var(--bone)] text-[var(--navy)]
     border-2 border-[var(--navy)]
-    hover:bg-[var(--mustard)] hover:text-[var(--navy)]
+    hover:bg-[var(--mustard)] hover:text-[var(--color-on-mustard)]
     active:bg-[var(--mustard)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
@@ -139,7 +139,7 @@ export const Button: React.FC<ButtonProps> = ({
             <span
               className="
               ms-1.5 w-7 h-7
-              bg-[var(--mustard)] text-[var(--navy)]
+              bg-[var(--mustard)] text-[var(--color-on-mustard)]
               flex items-center justify-center
               transition-transform duration-150
               group-hover:translate-x-0.5

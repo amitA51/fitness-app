@@ -960,7 +960,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                   style={{
                     flex: 1,
                     padding: '16px 20px',
-                    background: '#C42B2B',
+                    background: 'var(--color-error)',
                     border: 'none',
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,

@@ -3,7 +3,9 @@
  * Manages daily recovery logs including sleep, soreness, energy, and stress tracking.
  */
 
-import { STORES, dbDelete, dbGetAll, dbPut } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbPut, syncWithRetry } from './indexedDBCore';
+import { getCurrentUser } from './supabaseAuth';
+import { deleteCloudRecoveryLog, syncRecoveryLog } from './supabaseSync';
 
 // ============================================================================
 // TYPES
@@ -130,6 +132,20 @@ export async function saveRecoveryLog(
   };
 
   await dbPut(STORES.RECOVERY_LOGS, recoveryLog);
+
+  const user = await getCurrentUser();
+  if (user) {
+    // TODO: schema missing stress_level, tight_areas, overall_score — extra fields dropped in cloud
+    syncWithRetry(
+      () =>
+        syncRecoveryLog(
+          user.id,
+          recoveryLog as unknown as Parameters<typeof syncRecoveryLog>[1]
+        ),
+      `saveRecoveryLog:${recoveryLog.id}`
+    );
+  }
+
   return recoveryLog;
 }
 
@@ -164,6 +180,11 @@ export async function getRecoveryLogBySession(sessionId: string): Promise<Recove
 
 export async function deleteRecoveryLog(id: string): Promise<void> {
   await dbDelete(STORES.RECOVERY_LOGS, id);
+
+  const user = await getCurrentUser();
+  if (user) {
+    syncWithRetry(() => deleteCloudRecoveryLog(user.id, id), `deleteRecoveryLog:${id}`);
+  }
 }
 
 // ============================================================================

@@ -499,7 +499,7 @@ const FullTimer = memo<FullTimerProps>(
                   fontFamily: 'var(--font-mono)',
                   fontSize: '11px',
                   letterSpacing: '0.28em',
-                  color: isLastFive ? 'var(--mustard)' : 'rgba(245,241,235,0.55)',
+                  color: isLastFive ? 'var(--mustard)' : 'rgba(var(--text-on-navy-rgb),0.55)',
                   fontWeight: 600,
                 }}
               >
@@ -688,7 +688,7 @@ const FullTimer = memo<FullTimerProps>(
               fontFamily: 'var(--font-mono)',
               fontSize: '11px',
               letterSpacing: '0.18em',
-              color: 'rgba(245,241,235,0.55)',
+              color: 'rgba(var(--text-on-navy-rgb),0.55)',
               fontWeight: 600,
               borderRadius: 0,
               backgroundColor: 'transparent',

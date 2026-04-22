@@ -4,11 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../supabaseAuth', () => ({
   getCurrentUser: vi.fn(async () => null),
 }));
-vi.mock('../festoreService', () => ({
-  deleteBodyWeight: vi.fn(),
-  deletePersonalExercise: vi.fn(),
-  deleteWorkoutSession: vi.fn(),
-  deleteWorkoutTemplate: vi.fn(),
+vi.mock('../supabaseSync', () => ({
+  deleteCloudBodyWeight: vi.fn(),
+  deleteCloudPersonalExercise: vi.fn(),
+  deleteCloudWorkoutSession: vi.fn(),
+  deleteCloudWorkoutTemplate: vi.fn(),
   syncBodyWeight: vi.fn(),
   syncPersonalExercise: vi.fn(),
   syncWorkoutSession: vi.fn(),

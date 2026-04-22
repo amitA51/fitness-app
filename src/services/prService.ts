@@ -4,7 +4,9 @@
 
 import type { PersonalRecord, WorkoutSession } from '../types';
 import { safeJsonParseOr } from '../utils/safeJson';
-import { STORES, dbDelete, dbGetAll, dbGetByIndex, dbPut } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbGetByIndex, dbPut, syncWithRetry } from './indexedDBCore';
+import { getCurrentUser } from './supabaseAuth';
+import { deleteCloudPersonalRecord, syncPersonalRecord } from './supabaseSync';
 
 export type { PersonalRecord };
 
@@ -20,6 +22,23 @@ export const getPRsForExercise = async (exerciseId: string): Promise<PersonalRec
 // Save a new PR to IndexedDB
 export const savePR = async (pr: PersonalRecord): Promise<void> => {
   await dbPut(STORES.PERSONAL_RECORDS, pr);
+
+  const user = await getCurrentUser();
+  if (user) {
+    syncWithRetry(
+      () =>
+        syncPersonalRecord(user.id, {
+          id: pr.id,
+          exerciseId: pr.exerciseId,
+          exerciseName: pr.exerciseName,
+          weight: pr.weight,
+          reps: pr.reps,
+          date: pr.date,
+          recordType: pr.type,
+        }),
+      `savePR:${pr.id}`
+    );
+  }
 };
 
 // Get all PRs
@@ -30,6 +49,11 @@ export const getAllPRs = async (): Promise<PersonalRecord[]> => {
 // Delete a PR
 export const deletePR = async (prId: string): Promise<void> => {
   await dbDelete(STORES.PERSONAL_RECORDS, prId);
+
+  const user = await getCurrentUser();
+  if (user) {
+    syncWithRetry(() => deleteCloudPersonalRecord(user.id, prId), `deletePR:${prId}`);
+  }
 };
 
 // Check if a completed set is a new PR - this is the key real-time detection function

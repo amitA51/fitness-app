@@ -8,6 +8,7 @@ import {
   getWorkoutAdvice,
   suggestExercises,
 } from '../../services/ai';
+import { humanizeAIError } from '../../services/ai/errorMessages';
 import { getRecoveryLogsByDateRange } from '../../services/bodyStatsService';
 import { getWorkoutSessions } from '../../services/dataService';
 import { DEFAULT_MACRO_GOALS, getTodayMacros } from '../../services/nutritionService';
@@ -105,9 +106,7 @@ const AICoach: React.FC<AICoachProps> = ({ onClose, currentExercise }) => {
       }
     } catch (e: unknown) {
       logger.ai.error('Tutorial load error', e);
-      const errorMsg = e instanceof Error ? e.message : 'שגיאה לא ידועה';
 
-      // Try offline fallback
       const exerciseName = currentExercise.name;
       const offlineTip =
         Object.entries(offlineTips).find(([key]) =>
@@ -115,14 +114,7 @@ const AICoach: React.FC<AICoachProps> = ({ onClose, currentExercise }) => {
         )?.[1] || offlineTips['default'];
 
       setTutorialContent(offlineTip + '\n\n---\n_טיפ אופליין - התחבר לאינטרנט לתוכן מלא_');
-
-      if (errorMsg.includes('API Key')) {
-        setError('מפתח AI לא מוגדר. מציג טיפים אופליין.');
-      } else if (errorMsg.includes('429') || errorMsg.includes('rate')) {
-        setError('יותר מדי בקשות. מציג טיפים אופליין.');
-      } else {
-        setError(`מציג טיפים אופליין.`);
-      }
+      setError(humanizeAIError(e));
     } finally {
       setLoading(false);
     }
@@ -143,7 +135,8 @@ const AICoach: React.FC<AICoachProps> = ({ onClose, currentExercise }) => {
       const assistantMessage: ExerciseChatMessage = { role: 'assistant', content: response };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (e) {
-      setError('שגיאה בשליחת ההודעה. נסה שוב.');
+      logger.ai.error('Chat error', e);
+      setError(humanizeAIError(e));
     } finally {
       setLoading(false);
     }
@@ -166,7 +159,8 @@ const AICoach: React.FC<AICoachProps> = ({ onClose, currentExercise }) => {
       }));
       setSuggestions(mapped);
     } catch (e) {
-      setError('לא ניתן לקבל המלצות. נסה שוב.');
+      logger.ai.error('Suggestions error', e);
+      setError(humanizeAIError(e));
     } finally {
       setLoading(false);
     }
@@ -275,7 +269,8 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
         setAnalysis(analysisText);
       }
     } catch (e) {
-      setError('לא ניתן לנתח את האימונים. נסה שוב.');
+      logger.ai.error('Analysis error', e);
+      setError(humanizeAIError(e));
     } finally {
       setLoading(false);
     }

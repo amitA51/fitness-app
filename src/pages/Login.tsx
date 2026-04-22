@@ -420,7 +420,7 @@ function Masthead() {
           className="w-12 h-12 flex items-center justify-center"
           style={{ background: 'var(--mustard)' }}
         >
-          <Dumbbell size={24} style={{ color: 'var(--navy)' }} aria-hidden="true" />
+          <Dumbbell size={24} style={{ color: 'var(--color-on-mustard)' }} aria-hidden="true" />
         </div>
         <div>
           <h1
@@ -539,7 +539,7 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
               className="w-12 h-12 flex items-center justify-center"
               style={{ background: 'var(--mustard)' }}
             >
-              <User size={20} style={{ color: 'var(--navy)' }} aria-hidden="true" />
+              <User size={20} style={{ color: 'var(--color-on-mustard)' }} aria-hidden="true" />
             </div>
             <div>
               <h3
@@ -853,7 +853,7 @@ function SignInStep({ onBack, onForgotPassword, onSuccess, isSupabaseConfigured 
               className="p-4"
               style={{
                 background: 'var(--mustard)',
-                color: 'var(--navy)',
+                color: 'var(--color-on-mustard)',
               }}
             >
               <p
@@ -978,7 +978,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           className="w-20 h-20 flex items-center justify-center mb-6"
           style={{ background: 'var(--mustard)' }}
         >
-          <MailOpen size={36} style={{ color: 'var(--navy)' }} />
+          <MailOpen size={36} style={{ color: 'var(--color-on-mustard)' }} />
         </motion.div>
 
         <motion.h2
@@ -1503,7 +1503,7 @@ export default function LoginPage() {
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '9px',
-            color: 'rgba(245,241,235,0.4)',
+            color: 'rgba(var(--text-on-navy-rgb), 0.4)',
             letterSpacing: '0.22em',
             textTransform: 'uppercase',
           }}

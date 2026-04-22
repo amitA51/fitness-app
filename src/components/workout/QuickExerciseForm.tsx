@@ -86,7 +86,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    background: '#FFFFFF',
+    background: 'var(--color-surface-input)',
     border: '2px solid var(--navy)',
     borderRadius: 0,
     padding: '12px 14px',

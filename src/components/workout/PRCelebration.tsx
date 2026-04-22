@@ -172,10 +172,10 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                     style={{
                       display: 'grid',
                       gridTemplateColumns: '1fr 1fr',
-                      border: '2px solid rgba(245,241,235,0.15)',
+                      border: '2px solid rgba(var(--text-on-navy-rgb),0.15)',
                     }}
                   >
-                    <div className="text-center p-4" style={{ borderRight: '2px solid rgba(245,241,235,0.15)' }}>
+                    <div className="text-center p-4" style={{ borderRight: '2px solid rgba(var(--text-on-navy-rgb),0.15)' }}>
                       <div
                         style={{
                           fontFamily: 'var(--font-display)',
@@ -194,7 +194,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
                           letterSpacing: '0.22em',
-                          color: 'rgba(245,241,235,0.4)',
+                          color: 'rgba(var(--text-on-navy-rgb),0.4)',
                           textTransform: 'uppercase',
                           marginTop: 4,
                         }}
@@ -221,7 +221,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
                           letterSpacing: '0.22em',
-                          color: 'rgba(245,241,235,0.4)',
+                          color: 'rgba(var(--text-on-navy-rgb),0.4)',
                           textTransform: 'uppercase',
                           marginTop: 4,
                         }}
@@ -238,7 +238,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       fontFamily: 'var(--font-mono)',
                       fontSize: 11,
                       letterSpacing: '0.15em',
-                      color: 'rgba(245,241,235,0.35)',
+                      color: 'rgba(var(--text-on-navy-rgb),0.35)',
                       textTransform: 'uppercase',
                     }}
                   >
@@ -263,7 +263,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       justifyContent: 'center',
                       padding: '14px 20px',
                       background: 'var(--mustard)',
-                      color: 'var(--navy)',
+                      color: 'var(--color-on-mustard)',
                       border: 'none',
                       cursor: 'pointer',
                       fontFamily: 'var(--font-display)',
@@ -275,7 +275,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       minHeight: 48,
                     }}
                     onPointerDown={(e) => {
-                      e.currentTarget.style.background = '#D4A525';
+                      e.currentTarget.style.background = 'var(--mustard-deep)';
                     }}
                     onPointerUp={(e) => {
                       e.currentTarget.style.background = 'var(--mustard)';
@@ -296,7 +296,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       justifyContent: 'center',
                       padding: '12px 20px',
                       background: 'transparent',
-                      color: 'rgba(245,241,235,0.4)',
+                      color: 'rgba(var(--text-on-navy-rgb),0.4)',
                       border: 'none',
                       cursor: 'pointer',
                       fontFamily: 'var(--font-mono)',

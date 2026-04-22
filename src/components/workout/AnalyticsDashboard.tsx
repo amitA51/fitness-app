@@ -4,12 +4,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  type Achievement,
-  type StreakInfo,
-  calculateStreak,
-  getAchievements,
-} from '../../services/achievementService';
+import { type StreakInfo, calculateStreak } from '../../services/achievementService';
 import {
   type ForecastData,
   type MuscleBalanceData,
@@ -146,7 +141,6 @@ const AnalyticsDashboard: React.FC = () => {
     lastWorkoutDate: null,
     workoutsThisWeek: 0,
   });
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredBar, setHoveredBar] = useState<number | null>(null);
   const [hoveredTrendPoint, setHoveredTrendPoint] = useState<number | null>(null);
@@ -158,7 +152,6 @@ const AnalyticsDashboard: React.FC = () => {
       const volume = calculateVolumeHistory(workoutSessions);
       const avg = getAverageVolume(workoutSessions);
       const streak = calculateStreak(workoutSessions);
-      const achieves = await getAchievements(workoutSessions, streak);
       const muscleGroups = calculateMuscleGroupDistribution(workoutSessions);
 
       const weekly = calculateWeeklyVolumes(workoutSessions, 12);
@@ -170,7 +163,6 @@ const AnalyticsDashboard: React.FC = () => {
       setMuscleGroupData(muscleGroups);
       setAvgVolume(avg);
       setStreakInfo(streak);
-      setAchievements(achieves);
       setWeeklyVolumes(weekly);
       setMuscleBalanceData(balance);
       setForecastData(forecast);
@@ -213,10 +205,6 @@ const AnalyticsDashboard: React.FC = () => {
     () => Math.max(...weeklyVolumes.map((d) => d.totalVolume), 1),
     [weeklyVolumes]
   );
-  const unlockedAchievements = useMemo(
-    () => achievements.filter((a) => a.progress === 100),
-    [achievements]
-  );
 
   const handleTrendPointHover = useCallback((idx: number | null) => {
     setHoveredTrendPoint(idx);
@@ -234,175 +222,34 @@ const AnalyticsDashboard: React.FC = () => {
         maxHeight: '60vh',
       }}
     >
-      {/* Header Stats Row */}
+      {/* Stats Cards Row */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 12,
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 8,
         }}
       >
         <StatCard
           icon={<span>·</span>}
-          label="רצף נוכחי"
-          value={streakInfo.currentStreak}
-          sublabel="ימים רצופים"
+          label="השבוע"
+          value={streakInfo.workoutsThisWeek}
+          sublabel="אימונים"
           delay={0}
         />
-        <StatCard
-          icon={<span>§</span>}
-          label="הישגים"
-          value={`${unlockedAchievements.length}/${achievements.length}`}
-          sublabel="פתוחים"
-          delay={0.05}
-        />
-      </div>
-
-      {/* Achievements Grid */}
-      {achievements.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          style={{
-            background: 'var(--bone)',
-            border: '2px solid var(--navy)',
-            padding: 20,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              marginBottom: 16,
-            }}
-          >
-            <span
-              style={{
-                width: 10,
-                height: 10,
-                background: 'var(--mustard)',
-              }}
-            />
-            <h3
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 14,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                color: 'var(--navy)',
-              }}
-            >
-              הישגים
-            </h3>
-          </div>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: 8,
-            }}
-          >
-            {achievements.slice(0, 6).map((achievement, i) => {
-              const isUnlocked = achievement.progress === 100;
-              return (
-                <motion.div
-                  key={achievement.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2 + i * 0.05 }}
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  style={{
-                    padding: 12,
-                    background: isUnlocked ? 'var(--mustard)' : 'var(--bone-deep)',
-                    border: `2px solid ${isUnlocked ? 'var(--navy)' : 'var(--bone-deep)'}`,
-                    transition: 'all 150ms',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 24,
-                      marginBottom: 4,
-                      filter: isUnlocked ? 'none' : 'grayscale(100%)',
-                      opacity: isUnlocked ? 1 : 0.3,
-                    }}
-                  >
-                    {achievement.icon}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: 'var(--font-display)',
-                      fontWeight: 800,
-                      fontSize: 12,
-                      color: isUnlocked ? 'var(--navy)' : 'var(--stone)',
-                      letterSpacing: '0.02em',
-                    }}
-                  >
-                    {achievement.name}
-                  </div>
-                  {!isUnlocked && (
-                    <div style={{ marginTop: 8 }}>
-                      <div
-                        style={{
-                          height: 6,
-                          background: 'var(--bone)',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${achievement.progress}%` }}
-                          transition={{ delay: 0.3 + i * 0.05, duration: 0.8 }}
-                          style={{
-                            height: '100%',
-                            background: 'var(--mustard)',
-                          }}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 9,
-                          color: 'var(--stone)',
-                          letterSpacing: '0.05em',
-                          marginTop: 4,
-                        }}
-                      >
-                        {achievement.progress}%
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              );
-            })}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Stats Cards Row 2 */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 12,
-        }}
-      >
         <StatCard
           icon={<span>·</span>}
           label="נפח ממוצע"
           value={avgVolume.toLocaleString()}
-          sublabel="ק״ג לאימון"
-          delay={0.15}
+          sublabel='ק"ג'
+          delay={0.05}
         />
         <StatCard
-          icon={<span>✓</span>}
-          label="סה״כ אימונים"
+          icon={<span>·</span>}
+          label="סה״כ"
           value={volumeData.length}
-          sublabel="אימונים הושלמו"
-          delay={0.2}
+          sublabel="אימונים"
+          delay={0.1}
         />
       </div>
 
@@ -594,7 +441,7 @@ const AnalyticsDashboard: React.FC = () => {
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 8,
-                      color: 'rgba(245,241,235,0.5)',
+                      color: 'rgba(var(--text-on-navy-rgb),0.5)',
                       marginBottom: 4,
                     }}
                   >
@@ -619,7 +466,7 @@ const AnalyticsDashboard: React.FC = () => {
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 8,
-                      color: 'rgba(245,241,235,0.4)',
+                      color: 'rgba(var(--text-on-navy-rgb),0.4)',
                       marginTop: 4,
                     }}
                   >
@@ -808,7 +655,7 @@ const AnalyticsDashboard: React.FC = () => {
                           style={{
                             fontFamily: 'var(--font-mono)',
                             fontSize: 8,
-                            color: 'rgba(245,241,235,0.5)',
+                            color: 'rgba(var(--text-on-navy-rgb),0.5)',
                           }}
                         >
                           {point.date}

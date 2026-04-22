@@ -45,7 +45,7 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    background: '#FFFFFF',
+    background: 'var(--color-surface-input)',
     border: '2px solid var(--navy)',
     borderRadius: 0,
     padding: '10px 14px',
@@ -72,7 +72,7 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
     <form
       onSubmit={onSubmit}
       style={{
-        background: '#FFFFFF',
+        background: 'var(--color-surface)',
         border: '2px solid var(--navy)',
         padding: 16,
         display: 'flex',

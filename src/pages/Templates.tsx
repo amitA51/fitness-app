@@ -318,8 +318,8 @@ function TemplateCard({ template, index, onStart, onToggleFavorite, onDelete, is
           ) : (
             <Star
               size={14}
-              fill={template.isFavorite ? 'var(--navy)' : 'none'}
-              style={{ color: 'var(--navy)' }}
+              fill={template.isFavorite ? 'var(--color-on-mustard)' : 'none'}
+              style={{ color: template.isFavorite ? 'var(--color-on-mustard)' : 'var(--navy)' }}
             />
           )}
         </motion.button>

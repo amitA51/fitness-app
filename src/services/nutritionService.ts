@@ -1,5 +1,7 @@
 import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../types';
-import { STORES, dbDelete, dbGetAll, dbPut } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbPut, syncWithRetry } from './indexedDBCore';
+import { getCurrentUser } from './supabaseAuth';
+import { deleteCloudNutritionLog, syncNutritionLog } from './supabaseSync';
 
 export const DEFAULT_MACRO_GOALS: MacroNutrients = {
   calories: 2500,
@@ -613,6 +615,21 @@ export function addFoodFromPreset(presetId: string, mealType: MealType): MealEnt
   };
 
   dbPut(STORES.NUTRITION_LOGS, mealEntry);
+
+  void (async () => {
+    const user = await getCurrentUser();
+    if (user) {
+      syncWithRetry(
+        () =>
+          syncNutritionLog(
+            user.id,
+            mealEntry as unknown as Parameters<typeof syncNutritionLog>[1]
+          ),
+        `addMealEntryFromPreset:${mealEntry.id}`
+      );
+    }
+  })();
+
   return mealEntry;
 }
 
@@ -623,15 +640,38 @@ export async function addMealEntry(entry: Omit<MealEntry, 'id' | 'createdAt'>): 
     createdAt: new Date().toISOString(),
   };
   await dbPut(STORES.NUTRITION_LOGS, newEntry);
+
+  const user = await getCurrentUser();
+  if (user) {
+    syncWithRetry(
+      () =>
+        syncNutritionLog(user.id, newEntry as unknown as Parameters<typeof syncNutritionLog>[1]),
+      `addMealEntry:${newEntry.id}`
+    );
+  }
+
   return newEntry;
 }
 
 export async function updateMealEntry(entry: MealEntry): Promise<void> {
   await dbPut(STORES.NUTRITION_LOGS, entry);
+
+  const user = await getCurrentUser();
+  if (user) {
+    syncWithRetry(
+      () => syncNutritionLog(user.id, entry as unknown as Parameters<typeof syncNutritionLog>[1]),
+      `updateMealEntry:${entry.id}`
+    );
+  }
 }
 
 export async function deleteMealEntry(id: string): Promise<void> {
   await dbDelete(STORES.NUTRITION_LOGS, id);
+
+  const user = await getCurrentUser();
+  if (user) {
+    syncWithRetry(() => deleteCloudNutritionLog(user.id, id), `deleteMealEntry:${id}`);
+  }
 }
 
 export async function getMealEntriesByDate(date: string): Promise<MealEntry[]> {

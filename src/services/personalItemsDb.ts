@@ -1,6 +1,6 @@
 // Personal items database using IndexedDB
 import type { PersonalItem } from '../types';
-import { STORES, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbPut, initDB } from './indexedDBCore';
 
 // Ensure DB is initialized
 initDB();
@@ -16,13 +16,6 @@ export const addPersonalItem = async (
   } as PersonalItem;
 
   await dbPut(STORES.PERSONAL_ITEMS, newItem);
-
-  syncWithRetry(async () => {
-    const { isSupabaseConfigured, supabase } = await import('../lib/supabase');
-    if (isSupabaseConfigured()) {
-      await supabase.from('personal_items').upsert(newItem);
-    }
-  }, `personal_item_add_${newItem.id}`);
 
   return newItem;
 };
@@ -50,22 +43,8 @@ export const updatePersonalItem = async (
   };
 
   await dbPut(STORES.PERSONAL_ITEMS, updatedItem);
-
-  syncWithRetry(async () => {
-    const { isSupabaseConfigured, supabase } = await import('../lib/supabase');
-    if (isSupabaseConfigured()) {
-      await supabase.from('personal_items').upsert(updatedItem);
-    }
-  }, `personal_item_update_${id}`);
 };
 
 export const removePersonalItem = async (id: string): Promise<void> => {
   await dbDelete(STORES.PERSONAL_ITEMS, id);
-
-  syncWithRetry(async () => {
-    const { isSupabaseConfigured, supabase } = await import('../lib/supabase');
-    if (isSupabaseConfigured()) {
-      await supabase.from('personal_items').delete().eq('id', id);
-    }
-  }, `personal_item_delete_${id}`);
 };

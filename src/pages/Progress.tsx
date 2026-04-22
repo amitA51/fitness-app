@@ -543,7 +543,7 @@ const MeasurementsTab = memo(function MeasurementsTab({
                           fontFamily: 'var(--font-mono)',
                           fontSize: '11px',
                           letterSpacing: '0.12em',
-                          color: diff < 0 ? 'var(--navy)' : 'var(--mustard)',
+                          color: diff < 0 ? 'var(--color-on-mustard)' : 'var(--mustard)',
                           background: diff < 0 ? 'var(--mustard)' : 'var(--navy)',
                           padding: '2px 8px',
                         }}

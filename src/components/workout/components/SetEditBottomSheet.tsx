@@ -169,7 +169,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                       ? 'var(--mustard)'
                       : isCompleted
                         ? 'rgba(45,139,78,0.08)'
-                        : '#FFFFFF',
+                        : 'var(--color-surface)',
                     border: `2px solid ${isEditing ? 'var(--navy)' : isCompleted ? 'var(--color-success)' : 'var(--navy)'}`,
                     borderRadius: 0,
                     padding: 16,
@@ -239,7 +239,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                               style={{
                                 flex: 1,
                                 height: 40,
-                                background: '#FFFFFF',
+                                background: 'var(--color-surface-input)',
                                 border: '2px solid var(--navy)',
                                 borderRadius: 0,
                                 textAlign: 'center',
@@ -316,7 +316,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                               style={{
                                 flex: 1,
                                 height: 40,
-                                background: '#FFFFFF',
+                                background: 'var(--color-surface-input)',
                                 border: '2px solid var(--navy)',
                                 borderRadius: 0,
                                 textAlign: 'center',

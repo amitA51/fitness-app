@@ -78,7 +78,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
         style={{
           position: 'relative',
           padding: '14px',
-          background: isSelected ? 'var(--mustard)' : '#FFFFFF',
+          background: isSelected ? 'var(--mustard)' : 'var(--color-surface)',
           border: `2px solid ${isSelected ? 'var(--navy)' : 'var(--navy)'}`,
           borderRadius: 0,
           cursor: 'pointer',

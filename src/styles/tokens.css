@@ -19,9 +19,27 @@
   --navy-light: #1E3A54;
   --mustard: #E8B82D;
   --mustard-dark: #C49A1A;
+  --mustard-deep: #D4A525;
   --ink: #1A1A1A;
   --stone: #7E7D78;
   --stone-light: #A5A49F;
+
+  /* ── Anchor Tokens (DO NOT flip in dark mode) ─────────────────────────── */
+  /* Text on mustard surfaces stays dark navy in both light and dark modes,
+     because mustard itself is an anchor color that never flips. */
+  --color-on-mustard: #14293D;
+
+  /* ── Self-Flipping RGB Triplets (for rgba() composition) ──────────────── */
+  /* Use as: rgba(var(--text-on-navy-rgb), 0.4) for muted text on a
+     var(--navy) surface. The triplet flips in dark mode so the text
+     maintains contrast when navy surfaces invert. */
+  --text-on-navy-rgb: 245, 241, 235;
+  --ink-rgb: 26, 26, 26;
+  --bone-rgb: 245, 241, 235;
+
+  /* Scrim for modal/overlay backdrops — stays dark in both modes because
+     a scrim should always darken what's behind it. */
+  --color-scrim: rgba(11, 26, 43, 0.6);
 
   /* ── Semantic Colors ─────────────────────────────────────────────────── */
   --color-primary: var(--navy);
@@ -254,4 +272,69 @@ html.large-text {
   --nav-height: 64px;
   --header-height: auto;
   --masthead-padding: 20px 24px;
+}
+
+/* ============================================================================
+   12. DARK MODE VARIANT
+   Activated via html.dark (toggled by SettingsContext).
+   Inverts the bone/navy relationship; mustard stays as the anchor accent.
+   ============================================================================ */
+
+html.dark {
+  color-scheme: dark;
+
+  /* ── Primary Colors (inverted) ───────────────────────────────────────── */
+  --bone: #0B1A2B;
+  --bone-deep: #14293D;
+  --bone-faint: #1E3A54;
+  --navy: #F5F1EB;
+  --navy-deep: #FFFFFF;
+  --navy-light: #EAE4DA;
+  --mustard: #E8B82D;
+  --mustard-dark: #F2C951;
+  --mustard-deep: #D4A525;
+  --ink: #F5F1EB;
+  --stone: rgba(245, 241, 235, 0.65);
+  --stone-light: rgba(245, 241, 235, 0.42);
+
+  /* Anchor stays dark navy — mustard is unchanged, so text on it also stays dark */
+  --color-on-mustard: #14293D;
+
+  /* RGB triplets flip so rgba() compositions maintain contrast on inverted surfaces */
+  --text-on-navy-rgb: 20, 41, 61;
+  --ink-rgb: 245, 241, 235;
+  --bone-rgb: 11, 26, 43;
+
+  /* Scrim stays dark — darkens content behind modal regardless of theme */
+  --color-scrim: rgba(0, 0, 0, 0.7);
+
+  /* ── Semantic Surfaces (dark cards on dark bg) ───────────────────────── */
+  --color-surface: #14293D;
+  --color-surface-input: #1E3A54;
+  --color-surface-hover: #1E3A54;
+
+  /* ── Semantic Borders & Subtle Fills ─────────────────────────────────── */
+  --color-border: rgba(245, 241, 235, 0.14);
+  --color-primary-subtle: rgba(245, 241, 235, 0.08);
+  --color-primary-glow: rgba(245, 241, 235, 0.2);
+
+  /* ── Status Muted Fills (boosted alpha for dark bg legibility) ───────── */
+  --color-success-muted: rgba(45, 139, 78, 0.22);
+  --color-warning-muted: rgba(196, 138, 26, 0.22);
+  --color-error-muted: rgba(196, 43, 43, 0.22);
+
+  /* ── Glass / Cosmos overlays ─────────────────────────────────────────── */
+  --cosmos-glass-bg: rgba(20, 41, 61, 0.85);
+  --cosmos-glass-border: rgba(245, 241, 235, 0.1);
+  --cosmos-glass-highlight: rgba(245, 241, 235, 0.08);
+  --surface-glass: rgba(20, 41, 61, 0.85);
+
+  /* ── Legacy aliases that hard-coded light hex values ─────────────────── */
+  --surface-input: #1E3A54;
+  --gray-200: #1E3A54;
+
+  /* ── Shadows (stronger alpha for visible depth on dark) ──────────────── */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-navy: 0 8px 24px rgba(0, 0, 0, 0.6);
 }

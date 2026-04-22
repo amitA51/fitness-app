@@ -16,15 +16,15 @@ import type {
   WorkoutTemplate,
 } from '../types';
 import {
-  deleteBodyWeight as deleteCloudBodyWeight,
-  deletePersonalExercise as deleteCloudPersonalExercise,
-  deleteWorkoutSession as deleteCloudWorkoutSession,
-  deleteWorkoutTemplate as deleteCloudWorkoutTemplate,
+  deleteCloudBodyWeight,
+  deleteCloudPersonalExercise,
+  deleteCloudWorkoutSession,
+  deleteCloudWorkoutTemplate,
   syncBodyWeight,
   syncPersonalExercise,
   syncWorkoutSession,
   syncWorkoutTemplate,
-} from './festoreService';
+} from './supabaseSync';
 import {
   STORES,
   dbClear,

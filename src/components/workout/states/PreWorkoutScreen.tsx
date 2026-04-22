@@ -271,7 +271,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
         {/* Chapter strip */}
         <div
           className="chapter-break"
-          style={{ borderBottom: '1px solid rgba(245,241,235,0.1)' }}
+          style={{ borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)' }}
         >
           <span className="left" style={{ color: 'var(--mustard)' }}>
             §01 · אימון
@@ -309,7 +309,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               className="text-center"
               style={{
                 padding: '12px 8px',
-                borderRight: '1px solid rgba(245,241,235,0.15)',
+                borderRight: '1px solid rgba(var(--text-on-navy-rgb),0.15)',
               }}
             >
               <div
@@ -332,7 +332,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.22em',
-                  color: 'rgba(245,241,235,0.5)',
+                  color: 'rgba(var(--text-on-navy-rgb),0.5)',
                 }}
               >
                 סטים
@@ -344,7 +344,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               className="text-center"
               style={{
                 padding: '12px 8px',
-                borderRight: '1px solid rgba(245,241,235,0.15)',
+                borderRight: '1px solid rgba(var(--text-on-navy-rgb),0.15)',
               }}
             >
               <div
@@ -371,7 +371,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.22em',
-                  color: 'rgba(245,241,235,0.5)',
+                  color: 'rgba(var(--text-on-navy-rgb),0.5)',
                 }}
               >
                 ק"ג
@@ -400,7 +400,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.22em',
-                  color: 'rgba(245,241,235,0.5)',
+                  color: 'rgba(var(--text-on-navy-rgb),0.5)',
                 }}
               >
                 ימים
@@ -416,7 +416,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 letterSpacing: '0.15em',
-                color: 'rgba(245,241,235,0.35)',
+                color: 'rgba(var(--text-on-navy-rgb),0.35)',
                 textTransform: 'uppercase',
                 direction: 'ltr',
               }}

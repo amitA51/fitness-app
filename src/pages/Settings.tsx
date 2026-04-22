@@ -7,6 +7,7 @@ import {
   Copy,
   Download,
   Dumbbell,
+  Moon,
   RefreshCw,
   ArrowUpFromLine,
   Save,
@@ -319,7 +320,7 @@ function SaveButton({ onClick, saved, label, savedLabel = 'נשמר!' }: SaveBut
         alignItems: 'center',
         justifyContent: 'center',
         gap: '8px',
-        ...(saved ? { color: 'var(--navy)', background: 'var(--mustard)' } : {}),
+        ...(saved ? { color: 'var(--color-on-mustard)', background: 'var(--mustard)' } : {}),
       }}
     >
       {saved ? (
@@ -1052,6 +1053,39 @@ export default function Settings() {
             תצוגה
           </SectionLabel>
           <SettingsCard>
+            <div className="flex flex-col">
+              <div
+                className="flex items-center gap-3 px-4 py-3.5 min-h-[56px]"
+                style={{ background: 'transparent' }}
+              >
+                <div
+                  className="w-8 h-8 shrink-0 flex items-center justify-center"
+                  style={{
+                    backgroundColor: 'var(--navy)',
+                    border: '2px solid var(--navy)',
+                  }}
+                >
+                  <Moon size={16} style={{ color: 'var(--mustard)' }} strokeWidth={2.5} />
+                </div>
+                <span
+                  className="flex-1 text-right"
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '15px',
+                    fontWeight: settings.darkMode ? 700 : 500,
+                    color: 'var(--ink)',
+                  }}
+                >
+                  מצב כהה
+                </span>
+                <Toggle
+                  checked={settings.darkMode}
+                  onChange={() => updateSettings({ darkMode: !settings.darkMode })}
+                  label="מצב כהה"
+                />
+              </div>
+              <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
+            </div>
             {THEMES.map((t, idx) => (
               <div key={t.id} className="flex flex-col">
                 <button
@@ -1142,7 +1176,7 @@ export default function Settings() {
                   className="w-8 h-8 flex items-center justify-center shrink-0"
                   style={{
                     background: cloudConnected ? 'var(--mustard)' : 'var(--bone-deep)',
-                    color: 'var(--navy)',
+                    color: cloudConnected ? 'var(--color-on-mustard)' : 'var(--navy)',
                   }}
                 >
                   {cloudConnected ? <Cloud size={15} /> : <CloudOff size={15} />}
@@ -1348,7 +1382,7 @@ export default function Settings() {
                     type="button"
                     onClick={() => shareReport(weeklyReport)}
                     className="chip"
-                    style={{ background: 'var(--mustard)' }}
+                    style={{ background: 'var(--mustard)', color: 'var(--color-on-mustard)' }}
                   >
                     <Share2 size={12} /> שתף
                   </button>

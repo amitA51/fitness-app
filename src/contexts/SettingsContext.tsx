@@ -2,6 +2,7 @@
 import type React from 'react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { AppSettings, WorkoutSettings } from '../types';
+import { setHapticsEnabled } from '../utils/haptics';
 import { safeJsonParse } from '../utils/safeJson';
 
 // Default workout settings
@@ -71,6 +72,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'deepCosmos',
   soundEnabled: true,
   keepAwake: true,
+  darkMode: false,
 };
 
 interface SettingsContextValue {
@@ -151,11 +153,18 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       settings.workoutSettings.highContrast
     );
     document.documentElement.classList.toggle('large-text', settings.workoutSettings.largeText);
+    document.documentElement.classList.toggle('dark', settings.darkMode);
   }, [
     settings.workoutSettings.highContrast,
     settings.workoutSettings.largeText,
     settings.workoutSettings.reducedAnimations,
+    settings.darkMode,
   ]);
+
+  // Sync haptics toggle to the shared utils/haptics module so legacy callers respect it.
+  useEffect(() => {
+    setHapticsEnabled(settings.workoutSettings.hapticsEnabled);
+  }, [settings.workoutSettings.hapticsEnabled]);
 
   const value = useMemo(
     () => ({

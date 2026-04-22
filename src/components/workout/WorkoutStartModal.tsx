@@ -459,7 +459,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 11,
-                      color: 'rgba(245,241,235,0.6)',
+                      color: 'rgba(var(--text-on-navy-rgb),0.6)',
                       letterSpacing: '0.05em',
                       marginTop: 4,
                     }}

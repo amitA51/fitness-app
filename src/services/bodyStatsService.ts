@@ -1,4 +1,12 @@
-import { STORES, dbDelete, dbGetAll, dbPut } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbPut, syncWithRetry } from './indexedDBCore';
+import { getCurrentUser } from './supabaseAuth';
+import {
+  deleteCloudBodyWeight,
+  deleteCloudRecoveryLog,
+  syncBodyMeasurement,
+  syncBodyWeight,
+  syncRecoveryLog,
+} from './supabaseSync';
 
 const BODY_MEASUREMENTS_STORE = 'body_measurements';
 
@@ -88,15 +96,31 @@ export async function addBodyWeight(
     createdAt: new Date().toISOString(),
   };
   await dbPut(STORES.BODY_WEIGHT, newEntry);
+
+  const user = await getCurrentUser();
+  if (user) {
+    syncWithRetry(() => syncBodyWeight(user.id, newEntry), `addBodyWeight:${newEntry.id}`);
+  }
+
   return newEntry;
 }
 
 export async function updateBodyWeight(entry: BodyWeightEntry): Promise<void> {
   await dbPut(STORES.BODY_WEIGHT, entry);
+
+  const user = await getCurrentUser();
+  if (user) {
+    syncWithRetry(() => syncBodyWeight(user.id, entry), `updateBodyWeight:${entry.id}`);
+  }
 }
 
 export async function deleteBodyWeight(id: string): Promise<void> {
   await dbDelete(STORES.BODY_WEIGHT, id);
+
+  const user = await getCurrentUser();
+  if (user) {
+    syncWithRetry(() => deleteCloudBodyWeight(user.id, id), `deleteBodyWeight:${id}`);
+  }
 }
 
 export async function getBodyWeightsByDateRange(
@@ -159,6 +183,19 @@ export async function addBodyMeasurement(
     createdAt: new Date().toISOString(),
   };
   await dbPut(BODY_MEASUREMENTS_STORE, newEntry);
+
+  const user = await getCurrentUser();
+  if (user) {
+    syncWithRetry(
+      () =>
+        syncBodyMeasurement(
+          user.id,
+          newEntry as unknown as Parameters<typeof syncBodyMeasurement>[1]
+        ),
+      `addBodyMeasurement:${newEntry.id}`
+    );
+  }
+
   return newEntry;
 }
 
@@ -209,15 +246,40 @@ export async function addRecoveryLog(
     createdAt: new Date().toISOString(),
   };
   await dbPut(STORES.RECOVERY_LOGS, newEntry);
+
+  const user = await getCurrentUser();
+  if (user) {
+    // TODO: schema missing stress_level, tight_areas, overall_score — extra fields dropped in cloud
+    syncWithRetry(
+      () =>
+        syncRecoveryLog(user.id, newEntry as unknown as Parameters<typeof syncRecoveryLog>[1]),
+      `addRecoveryLog:${newEntry.id}`
+    );
+  }
+
   return newEntry;
 }
 
 export async function updateRecoveryLog(entry: RecoveryLog): Promise<void> {
   await dbPut(STORES.RECOVERY_LOGS, entry);
+
+  const user = await getCurrentUser();
+  if (user) {
+    // TODO: schema missing stress_level, tight_areas, overall_score — extra fields dropped in cloud
+    syncWithRetry(
+      () => syncRecoveryLog(user.id, entry as unknown as Parameters<typeof syncRecoveryLog>[1]),
+      `updateRecoveryLog:${entry.id}`
+    );
+  }
 }
 
 export async function deleteRecoveryLog(id: string): Promise<void> {
   await dbDelete(STORES.RECOVERY_LOGS, id);
+
+  const user = await getCurrentUser();
+  if (user) {
+    syncWithRetry(() => deleteCloudRecoveryLog(user.id, id), `deleteRecoveryLog:${id}`);
+  }
 }
 
 export async function getRecoveryLogsByDateRange(

@@ -195,7 +195,7 @@ body {
   /* Input */
   .input {
     width: 100%;
-    background-color: #FFFFFF;
+    background-color: var(--color-surface-input);
     border: 1px solid var(--bone-deep);
     border-radius: 0;
     padding: 12px 16px;

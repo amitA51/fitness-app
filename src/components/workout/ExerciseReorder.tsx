@@ -197,7 +197,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
             justifyContent: 'space-between',
             padding: '12px 20px',
             background: 'var(--navy)',
-            borderBottom: '1px solid rgba(245,241,235,0.1)',
+            borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)',
           }}
         >
           <div>
@@ -217,7 +217,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 letterSpacing: '0.12em',
-                color: 'rgba(245,241,235,0.5)',
+                color: 'rgba(var(--text-on-navy-rgb),0.5)',
                 textTransform: 'uppercase',
               }}
             >
@@ -231,7 +231,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
               style={{
                 padding: '8px 16px',
                 background: 'var(--mustard)',
-                color: 'var(--navy)',
+                color: 'var(--color-on-mustard)',
                 border: 'none',
                 borderRadius: 0,
                 fontFamily: 'var(--font-display)',
@@ -253,7 +253,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'rgba(245,241,235,0.1)',
+                background: 'rgba(var(--text-on-navy-rgb),0.1)',
                 border: 'none',
                 borderRadius: 0,
                 cursor: 'pointer',
@@ -403,7 +403,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
             alignItems: 'center',
             gap: 12,
             padding: '12px 16px',
-            background: isActive ? '#FFFFFF' : 'var(--bone-deep)',
+            background: isActive ? 'var(--color-surface)' : 'var(--bone-deep)',
             border: `2px solid ${isActive ? 'var(--mustard)' : 'var(--navy)'}`,
             borderLeft: isActive ? '4px solid var(--mustard)' : '2px solid var(--navy)',
           }}
@@ -590,7 +590,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
               <div
                 style={{
                   padding: '8px 16px 16px',
-                  background: '#FFFFFF',
+                  background: 'var(--color-surface)',
                   border: '2px solid var(--navy)',
                   borderTop: 'none',
                   display: 'flex',
@@ -798,7 +798,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                   style={{
                     flex: 1,
                     height: 36,
-                    background: '#FFFFFF',
+                    background: 'var(--color-surface-input)',
                     border: '2px solid var(--navy)',
                     borderRadius: 0,
                     textAlign: 'center',
@@ -883,7 +883,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                   style={{
                     flex: 1,
                     height: 36,
-                    background: '#FFFFFF',
+                    background: 'var(--color-surface-input)',
                     border: '2px solid var(--navy)',
                     borderRadius: 0,
                     textAlign: 'center',

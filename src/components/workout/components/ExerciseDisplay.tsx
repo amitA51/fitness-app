@@ -379,6 +379,20 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     const animatedHeroWeight = useAnimatedNumber(heroWeight || 0, { duration: 200 });
     const animatedHeroReps = useAnimatedNumber(heroReps || 0, { duration: 200 });
 
+    // Delta vs last session — only when user has actually entered a weight
+    const weightDelta = useMemo(() => {
+      const curr = currentSet.weight || 0;
+      const prev = previousSet?.weight || 0;
+      if (curr <= 0 || prev <= 0) return null;
+      const d = curr - prev;
+      const formatted = Number.isInteger(d) ? String(d) : d.toFixed(1);
+      if (d === 0) return { text: 'MATCH', color: 'rgba(var(--text-on-navy-rgb), 0.55)' };
+      if (d > 0) return { text: `+${formatted} KG`, color: 'var(--mustard)' };
+      return { text: `${formatted} KG`, color: 'rgba(var(--text-on-navy-rgb), 0.6)' };
+    }, [currentSet.weight, previousSet?.weight]);
+
+    const hasPrevReference = !!(previousSet && (previousSet.weight || previousSet.reps));
+
     const handleRepsTap = () => onOpenNumpad('reps');
     const handleIncrementReps = () => onUpdateSet('reps', (currentSet.reps || 0) + 1);
     const handleDecrementReps = () => onUpdateSet('reps', Math.max(0, (currentSet.reps || 0) - 1));
@@ -395,7 +409,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
 
     return (
       <div className="flex flex-col w-full max-w-lg mx-auto h-full" style={{ gap: 0 }}>
-        {/* ── AW MASTHEAD ── exercise + set counter */}
+        {/* ── AW MASTHEAD ── exercise + set-status pills */}
         <div className="aw-masthead">
           <div className="flex items-center gap-3 min-w-0">
             <span
@@ -412,8 +426,56 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               {exercise.name || 'תרגיל ללא שם'}
             </span>
           </div>
-          <div className="counter">
-            סט {displaySetIndex + 1} / {totalSets}
+          <div
+            className="flex items-center"
+            style={{ gap: 10 }}
+            aria-label={`סט ${displaySetIndex + 1} מתוך ${totalSets}, הושלמו ${completedSetsCount}`}
+          >
+            {totalSets <= 10 && (
+              <div
+                className="flex items-center"
+                style={{ gap: 4 }}
+                aria-hidden
+              >
+                {(exercise.sets || []).map((s, i) => {
+                  const isCurrent = i === displaySetIndex;
+                  const isComplete = !!s.completedAt;
+                  const isWarmup = !!s.isWarmup;
+                  let bg: string = 'transparent';
+                  let border: string = '1.5px solid rgba(var(--text-on-navy-rgb), 0.3)';
+                  const size = isCurrent ? 12 : 10;
+                  if (isCurrent) {
+                    bg = 'var(--mustard)';
+                    border = '2px solid var(--bone)';
+                  } else if (isComplete && isWarmup) {
+                    bg = 'transparent';
+                    border = '1.5px solid var(--mustard)';
+                  } else if (isComplete) {
+                    bg = 'var(--mustard)';
+                    border = '1.5px solid var(--mustard)';
+                  }
+                  return (
+                    <span
+                      key={s.id || i}
+                      style={{
+                        width: size,
+                        height: size,
+                        background: bg,
+                        border,
+                        borderRadius: 0,
+                        display: 'inline-block',
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            )}
+            <div
+              className="counter"
+              style={{ fontVariant: 'tabular-nums', minWidth: 40, textAlign: 'end' }}
+            >
+              {String(displaySetIndex + 1).padStart(2, '0')}/{String(totalSets).padStart(2, '0')}
+            </div>
           </div>
         </div>
 
@@ -456,7 +518,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           <div
             className="num tabular-nums"
             style={{
-              color: heroIsGhost ? 'rgba(245, 241, 235, 0.35)' : 'var(--bone)',
+              color: heroIsGhost ? 'rgba(var(--text-on-navy-rgb), 0.35)' : 'var(--bone)',
               fontVariant: 'tabular-nums',
             }}
           >
@@ -465,6 +527,43 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           <div className="unit tabular-nums" style={{ fontVariant: 'tabular-nums' }}>
             KG · × {animatedHeroReps} REPS
           </div>
+
+          {/* Last-session reference — answers "what did I do last time?" */}
+          {hasPrevReference && (
+            <div
+              className="tabular-nums"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.24em',
+                color: 'rgba(var(--text-on-navy-rgb), 0.5)',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+                gap: 10,
+                fontVariant: 'tabular-nums',
+                marginTop: 2,
+              }}
+            >
+              <span>
+                LAST · {previousSet?.weight || 0} × {previousSet?.reps || 0}
+                {previousSet?.rpe ? ` · RPE ${previousSet.rpe}` : ''}
+              </span>
+              {weightDelta && (
+                <span
+                  style={{
+                    color: weightDelta.color,
+                    letterSpacing: '0.16em',
+                    fontWeight: 700,
+                  }}
+                >
+                  {weightDelta.text}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Volume preview (inline with unit line) */}
           {showVolumePreview && (currentSet.weight || 0) > 0 && (currentSet.reps || 0) > 0 && (

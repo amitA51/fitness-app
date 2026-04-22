@@ -7,10 +7,15 @@ export {
   type ChatMessage,
   type AIProvider,
   type AIConfig,
+  type AIErrorCode,
+  AIError,
+  LocalFallbackProvider,
+  RemoteProvider,
   getAIProvider,
   setAIProvider,
   resetAIProvider,
 } from './ai/core';
+export { initAI } from './ai/bootstrap';
 export { type AIContext, buildContext, buildSystemPrompt } from './ai/contextBuilder';
 export {
   getWorkoutAdvice,
@@ -53,12 +58,16 @@ export async function getExerciseTutorial(exerciseName: string): Promise<string 
 export async function askExerciseQuestion(
   exerciseName: string,
   question: string,
-  _history?: ExerciseChatMessage[]
+  history?: ExerciseChatMessage[]
 ): Promise<string> {
   const provider = getAIProvider();
   const messages: ChatMessage[] = [
-    { role: 'system', content: 'אתה מאמן כושר מקצועי. ענה בעברית בקצרה ובמעשיות.' },
-    { role: 'user', content: `שאלה על ${exerciseName}: ${question}` },
+    {
+      role: 'system',
+      content: `תתייחס לשאלה שמתייחסת לתרגיל: ${exerciseName}. ענה קצר ומעשי.`,
+    },
+    ...(history ?? []),
+    { role: 'user', content: question },
   ];
   return provider.chat(messages);
 }

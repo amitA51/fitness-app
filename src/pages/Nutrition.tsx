@@ -441,7 +441,7 @@ export default function NutritionPage() {
           width: '56px',
           height: '56px',
           background: 'var(--mustard)',
-          color: 'var(--navy)',
+          color: 'var(--color-on-mustard)',
           border: '2px solid var(--navy)',
           left: '20px',
           right: 'auto',

@@ -9,7 +9,6 @@ export { default as ToggleSwitch } from './ToggleSwitch';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as AnimatedProgressRing } from './AnimatedProgressRing';
 export { default as SmoothLoader } from './SmoothLoader';
-export { default as EmptyState } from './EmptyState';
 export { default as LongPressMenu } from './LongPressMenu';
 export { PullToRefresh } from './PullToRefresh';
 export { PremiumSelect } from './PremiumSelect';

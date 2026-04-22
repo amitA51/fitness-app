@@ -453,9 +453,9 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             background: 'transparent',
-            border: '2px solid rgba(245,241,235,0.2)',
+            border: '2px solid rgba(var(--text-on-navy-rgb),0.2)',
             cursor: 'pointer',
-            color: 'rgba(245,241,235,0.6)',
+            color: 'rgba(var(--text-on-navy-rgb),0.6)',
           }}
         >
           <motion.div
@@ -601,7 +601,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
               width: '100%',
               height: 48,
               padding: '12px 16px',
-              background: '#FFFFFF',
+              background: 'var(--color-surface-input)',
               border: '2px solid var(--navy)',
               fontFamily: 'var(--font-body)',
               fontSize: 15,

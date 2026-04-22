@@ -4,7 +4,7 @@
  * Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChapterBreak } from '../components/dashboard/ChapterBreak';
 import { Greeting } from '../components/dashboard/Greeting';
@@ -28,24 +28,20 @@ export default function Dashboard() {
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [selectedWeekOffset, setSelectedWeekOffset] = useState(0);
 
-  const { sessions: dataContextSessions } = useData();
+  const { sessions: dataContextSessions, refreshData, loading: dataLoading } = useData();
   const { workoutSessions } = useFitnessInsights(dataContextSessions);
 
-  // TEMPORARILY DISABLED FOR DEBUGGING - pull-to-refresh handlers are NOT applied
-  // const { isPulling, isRefreshing, pullDistance, threshold, handlers } = usePullToRefresh({
-  //   onRefresh: async () => {
-  //     const rawTemplates = await getWorkoutTemplates();
-  //     setTemplates(rawTemplates);
-  //   },
-  //   threshold: 80,
-  // });
-
-  // Placeholder values for when pull-to-refresh is disabled
-  const isPulling = false;
-  const isRefreshing = false;
-  const pullDistance = 0;
-  const threshold = 80;
-  const handlers = {};
+  const { isPulling, isRefreshing, pullDistance, threshold, handlers } = usePullToRefresh({
+    onRefresh: async () => {
+      await Promise.all([
+        refreshData(),
+        getWorkoutTemplates()
+          .then(setTemplates)
+          .catch((err) => logger.workout.warn('Failed to refresh templates', err)),
+      ]);
+    },
+    threshold: 80,
+  });
 
   const exercisesForProgression = useMemo(() => {
     const exerciseMap = new Map<string, { id: string; name: string }>();
@@ -183,6 +179,7 @@ export default function Dashboard() {
         touchAction: 'pan-y',
         WebkitOverflowScrolling: 'touch',
       }}
+      {...handlers}
     >
       {/* Pull-to-refresh indicator */}
       <div
@@ -329,7 +326,7 @@ export default function Dashboard() {
           style={{ marginTop: 24, marginBottom: 16 }}
         />
 
-        <RecentWorkouts sessions={recentWorkouts} />
+        <RecentWorkouts sessions={recentWorkouts} loading={dataLoading} />
 
         {recentWorkouts.length > 0 && (
           <div className="btn-row" style={{ marginTop: 16 }}>

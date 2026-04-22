@@ -176,7 +176,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
           <div className="flex justify-center pt-3 pb-2">
             <div
               className="w-10 h-1 rounded-full"
-              style={{ background: 'rgba(245,241,235,0.3)' }}
+              style={{ background: 'rgba(var(--text-on-navy-rgb),0.3)' }}
             />
           </div>
 
@@ -205,7 +205,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     letterSpacing: '0.15em',
-                    color: 'rgba(245,241,235,0.5)',
+                    color: 'rgba(var(--text-on-navy-rgb),0.5)',
                     textTransform: 'uppercase',
                   }}
                 >
@@ -217,7 +217,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 onClick={onClose}
                 className="w-11 h-11 flex items-center justify-center transition-colors cursor-pointer"
                 style={{
-                  background: 'rgba(245,241,235,0.1)',
+                  background: 'rgba(var(--text-on-navy-rgb),0.1)',
                   borderRadius: 0,
                 }}
                 aria-label="סגור"
@@ -229,7 +229,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
             {/* Tabs — Apple Segmented */}
             <div
               className="mt-4 grid grid-cols-2 gap-0"
-              style={{ background: 'rgba(245,241,235,0.08)' }}
+              style={{ background: 'rgba(var(--text-on-navy-rgb),0.08)' }}
             >
               <button
                 type="button"
@@ -240,7 +240,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 className="py-2.5 text-sm font-bold text-center transition-all cursor-pointer"
                 style={{
                   background: activeTab === 'exercises' ? 'var(--mustard)' : 'transparent',
-                  color: activeTab === 'exercises' ? 'var(--navy)' : 'rgba(245,241,235,0.5)',
+                  color: activeTab === 'exercises' ? 'var(--color-on-mustard)' : 'rgba(var(--text-on-navy-rgb),0.5)',
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.04em',
                   textTransform: 'uppercase',
@@ -258,7 +258,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 className="py-2.5 text-sm font-bold text-center transition-all cursor-pointer"
                 style={{
                   background: activeTab === 'templates' ? 'var(--mustard)' : 'transparent',
-                  color: activeTab === 'templates' ? 'var(--navy)' : 'rgba(245,241,235,0.5)',
+                  color: activeTab === 'templates' ? 'var(--color-on-mustard)' : 'rgba(var(--text-on-navy-rgb),0.5)',
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.04em',
                   textTransform: 'uppercase',

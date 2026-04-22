@@ -164,10 +164,10 @@
 
 @keyframes toastProgress {
   from {
-    width: 100%;
+    transform: scaleX(1);
   }
   to {
-    width: 0%;
+    transform: scaleX(0);
   }
 }
 
@@ -263,7 +263,13 @@
 }
 
 .toast-progress {
+  width: 100%;
+  transform-origin: left center;
   animation: toastProgress linear forwards;
+}
+
+[dir='rtl'] .toast-progress {
+  transform-origin: right center;
 }
 
 /* ============================================================================

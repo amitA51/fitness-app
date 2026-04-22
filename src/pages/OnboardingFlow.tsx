@@ -927,7 +927,7 @@ function CompleteStep({ data }: CompleteStepProps) {
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
         className="w-28 h-28 flex items-center justify-center mb-8"
-        style={{ background: 'var(--mustard)', color: 'var(--navy)' }}
+        style={{ background: 'var(--mustard)', color: 'var(--color-on-mustard)' }}
       >
         <Check size={56} strokeWidth={3} />
       </motion.div>

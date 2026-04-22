@@ -302,7 +302,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           {/* Chapter strip */}
           <div
             className="chapter-break"
-            style={{ borderBottom: '1px solid rgba(245,241,235,0.1)' }}
+            style={{ borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)' }}
           >
             <span className="left" style={{ color: 'var(--mustard)' }}>
               §99 · סיכום
@@ -329,7 +329,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 <>
                   <span style={{ color: 'var(--mustard)' }}>{prsCount}</span>
                   <br />
-                  <span style={{ fontSize: 24, color: 'rgba(245,241,235,0.7)' }}>
+                  <span style={{ fontSize: 24, color: 'rgba(var(--text-on-navy-rgb),0.7)' }}>
                     שיאים חדשים
                   </span>
                 </>
@@ -344,7 +344,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 letterSpacing: '0.18em',
-                color: 'rgba(245,241,235,0.4)',
+                color: 'rgba(var(--text-on-navy-rgb),0.4)',
                 textTransform: 'uppercase',
                 marginTop: 8,
               }}

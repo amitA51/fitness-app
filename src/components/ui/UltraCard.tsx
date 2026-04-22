@@ -18,7 +18,7 @@ interface UltraCardProps extends React.HTMLAttributes<HTMLDivElement> {
 // Theme-aware card variants using CSS variables
 const variantStyles: Record<CardVariant, React.CSSProperties> = {
   elevated: {
-    background: 'var(--bg-card, #FFFFFF)',
+    background: 'var(--bg-card, var(--color-surface))',
     boxShadow: 'var(--shadow-sm)',
   },
   sunken: {
@@ -26,7 +26,7 @@ const variantStyles: Record<CardVariant, React.CSSProperties> = {
     boxShadow: 'var(--shadow-inner)',
   },
   floating: {
-    background: 'var(--bg-card, #FFFFFF)',
+    background: 'var(--bg-card, var(--color-surface))',
     boxShadow: 'var(--shadow-lg)',
   },
   glass: {
