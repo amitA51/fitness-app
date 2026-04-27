@@ -2,14 +2,9 @@
 // Sharp corners · Navy header · Bone body
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import {
-  AnimatePresence,
-  type PanInfo,
-  Reorder,
-  motion,
-  useDragControls,
-} from 'framer-motion';
-import React, { useState, useCallback, memo } from 'react';
+import { AnimatePresence, type PanInfo, Reorder, motion, useDragControls } from 'framer-motion';
+import { Link2 } from 'lucide-react';
+import React, { useState, useCallback, memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import type { Exercise, WorkoutSet } from '../../types';
 import {
@@ -21,6 +16,7 @@ import {
   EditIcon,
   TrashIcon,
 } from '../icons';
+import type { SupersetGroup } from './core/workoutTypes';
 
 interface ExerciseReorderProps {
   exercises: Exercise[];
@@ -34,6 +30,8 @@ interface ExerciseReorderProps {
     updates: { weight?: number; reps?: number }
   ) => void;
   onDeleteSet?: (exerciseIndex: number, setIndex: number) => void;
+  supersetGroups?: SupersetGroup[];
+  onCreateSupersetGroup?: (exerciseIds: string[]) => void;
   onClose: () => void;
 }
 
@@ -45,11 +43,47 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
   onDeleteExercise,
   onEditSet,
   onDeleteSet,
+  supersetGroups = [],
+  onCreateSupersetGroup,
   onClose,
 }) => {
   const [items, setItems] = useState(exercises);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [expandedExercise, setExpandedExercise] = useState<number | null>(null);
+
+  // Superset multi-select mode
+  const [supersetMode, setSupersetMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Map exercise ID → superset membership info for visual labels
+  const supersetMembership = useMemo(() => {
+    const map = new Map<string, { groupIndex: number; position: number; total: number }>();
+    supersetGroups.forEach((group, groupIndex) => {
+      group.exercises.forEach((id, position) => {
+        map.set(id, { groupIndex, position: position + 1, total: group.exercises.length });
+      });
+    });
+    return map;
+  }, [supersetGroups]);
+
+  const toggleSupersetMode = useCallback(() => {
+    setSupersetMode((prev) => {
+      const next = !prev;
+      if (!next) setSelectedIds([]);
+      return next;
+    });
+  }, []);
+
+  const toggleSelection = useCallback((id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }, []);
+
+  const confirmSuperset = useCallback(() => {
+    if (selectedIds.length < 2 || !onCreateSupersetGroup) return;
+    onCreateSupersetGroup(selectedIds);
+    setSelectedIds([]);
+    setSupersetMode(false);
+  }, [selectedIds, onCreateSupersetGroup]);
 
   React.useEffect(() => {
     setItems((currentItems) => {
@@ -210,7 +244,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                 letterSpacing: '-0.01em',
               }}
             >
-              סדר תרגילים
+              {supersetMode ? 'בחר תרגילים לסופרסט' : 'סדר תרגילים'}
             </h3>
             <p
               style={{
@@ -221,32 +255,106 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                 textTransform: 'uppercase',
               }}
             >
-              גרור כדי לשנות סדר
+              {supersetMode ? `נבחרו ${selectedIds.length} · מינימום 2` : 'גרור כדי לשנות סדר'}
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {supersetMode ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  confirmSuperset();
+                }}
+                disabled={selectedIds.length < 2}
+                style={{
+                  padding: '8px 16px',
+                  background:
+                    selectedIds.length < 2
+                      ? 'rgba(var(--text-on-navy-rgb),0.15)'
+                      : 'var(--mustard)',
+                  color:
+                    selectedIds.length < 2
+                      ? 'rgba(var(--text-on-navy-rgb),0.5)'
+                      : 'var(--color-on-mustard)',
+                  border: 'none',
+                  borderRadius: 0,
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: 13,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  cursor: selectedIds.length < 2 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                צור סופרסט
+              </button>
+            ) : (
+              <>
+                {onCreateSupersetGroup && items.length >= 2 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleSupersetMode();
+                    }}
+                    aria-label="צור סופרסט"
+                    style={{
+                      height: 36,
+                      padding: '0 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      background: 'rgba(var(--text-on-navy-rgb),0.1)',
+                      color: 'var(--bone)',
+                      border: '1px solid rgba(var(--text-on-navy-rgb),0.25)',
+                      borderRadius: 0,
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 11,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Link2 size={14} strokeWidth={2.25} />
+                    סופרסט
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--mustard)',
+                    color: 'var(--color-on-mustard)',
+                    border: 'none',
+                    borderRadius: 0,
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: 13,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                  }}
+                >
+                  שמור
+                </button>
+              </>
+            )}
             <button
               type="button"
-              onClick={handleSave}
-              style={{
-                padding: '8px 16px',
-                background: 'var(--mustard)',
-                color: 'var(--color-on-mustard)',
-                border: 'none',
-                borderRadius: 0,
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 13,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-              }}
-            >
-              שמור
-            </button>
-            <button
-              type="button"
-              onClick={handleClose}
+              onClick={
+                supersetMode
+                  ? (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleSupersetMode();
+                    }
+                  : handleClose
+              }
+              aria-label={supersetMode ? 'בטל' : 'סגור'}
               style={{
                 width: 36,
                 height: 36,
@@ -278,27 +386,38 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
             onReorder={handleReorder}
             style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
           >
-            {items.map((exercise, index) => (
-              <ExerciseReorderItem
-                key={exercise.id}
-                exercise={exercise}
-                index={index}
-                originalIndex={getOriginalExerciseIndex(exercise)}
-                isActive={index === currentIndex}
-                isExpanded={expandedExercise === index}
-                completedSets={getCompletedSets(exercise)}
-                totalSets={getTotalSets(exercise)}
-                isDeleteConfirm={deleteConfirm === index}
-                onSelect={() => {
-                  onSelectExercise(index);
-                  onClose();
-                }}
-                onDelete={(e) => handleDelete(index, e)}
-                onToggleExpand={(e) => toggleExpand(index, e)}
-                onEditSet={onEditSet}
-                onDeleteSet={onDeleteSet}
-              />
-            ))}
+            {items.map((exercise, index) => {
+              const membership = exercise.id ? supersetMembership.get(exercise.id) : undefined;
+              const isSelected = selectedIds.includes(exercise.id);
+              return (
+                <ExerciseReorderItem
+                  key={exercise.id}
+                  exercise={exercise}
+                  index={index}
+                  originalIndex={getOriginalExerciseIndex(exercise)}
+                  isActive={index === currentIndex}
+                  isExpanded={expandedExercise === index}
+                  completedSets={getCompletedSets(exercise)}
+                  totalSets={getTotalSets(exercise)}
+                  isDeleteConfirm={deleteConfirm === index}
+                  supersetMembership={membership}
+                  selectMode={supersetMode}
+                  isSelected={isSelected}
+                  onSelect={() => {
+                    if (supersetMode) {
+                      toggleSelection(exercise.id);
+                    } else {
+                      onSelectExercise(index);
+                      onClose();
+                    }
+                  }}
+                  onDelete={(e) => handleDelete(index, e)}
+                  onToggleExpand={(e) => toggleExpand(index, e)}
+                  onEditSet={onEditSet}
+                  onDeleteSet={onDeleteSet}
+                />
+              );
+            })}
           </Reorder.Group>
 
           {items.length === 0 && (
@@ -350,6 +469,9 @@ interface ExerciseReorderItemProps {
   completedSets: number;
   totalSets: number;
   isDeleteConfirm: boolean;
+  supersetMembership?: { groupIndex: number; position: number; total: number };
+  selectMode?: boolean;
+  isSelected?: boolean;
   onSelect: () => void;
   onDelete: (e: React.MouseEvent) => void;
   onToggleExpand: (e: React.MouseEvent) => void;
@@ -371,6 +493,9 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
     completedSets,
     totalSets,
     isDeleteConfirm,
+    supersetMembership,
+    selectMode,
+    isSelected,
     onSelect,
     onDelete,
     onToggleExpand,
@@ -379,6 +504,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
   }) => {
     const dragControls = useDragControls();
     const isComplete = completedSets === totalSets && totalSets > 0;
+    const inSuperset = !!supersetMembership;
 
     return (
       <Reorder.Item
@@ -403,9 +529,21 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
             alignItems: 'center',
             gap: 12,
             padding: '12px 16px',
-            background: isActive ? 'var(--color-surface)' : 'var(--bone-deep)',
-            border: `2px solid ${isActive ? 'var(--mustard)' : 'var(--navy)'}`,
-            borderLeft: isActive ? '4px solid var(--mustard)' : '2px solid var(--navy)',
+            background:
+              selectMode && isSelected
+                ? 'rgba(201,162,39,0.14)'
+                : isActive
+                  ? 'var(--color-surface)'
+                  : 'var(--bone-deep)',
+            border: `2px solid ${selectMode && isSelected ? 'var(--mustard)' : isActive ? 'var(--mustard)' : 'var(--navy)'}`,
+            borderLeft:
+              selectMode && isSelected
+                ? '4px solid var(--mustard)'
+                : isActive
+                  ? '4px solid var(--mustard)'
+                  : inSuperset
+                    ? '4px solid var(--mustard)'
+                    : '2px solid var(--navy)',
           }}
         >
           {/* Drag Handle */}
@@ -452,11 +590,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
               border: `2px solid ${isComplete ? 'var(--color-success)' : isActive ? 'var(--navy)' : 'var(--bone-deep)'}`,
             }}
           >
-            {isComplete ? (
-              <CheckCheckIcon style={{ width: 16, height: 16 }} />
-            ) : (
-              index + 1
-            )}
+            {isComplete ? <CheckCheckIcon style={{ width: 16, height: 16 }} /> : index + 1}
           </div>
 
           {/* Exercise Info */}
@@ -489,7 +623,15 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
             >
               {exercise.name || 'תרגיל ללא שם'}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginTop: 2,
+                flexWrap: 'wrap',
+              }}
+            >
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
@@ -503,7 +645,15 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
               </span>
               {exercise.muscleGroup && (
                 <>
-                  <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--stone)', display: 'inline-block' }} />
+                  <span
+                    style={{
+                      width: 4,
+                      height: 4,
+                      borderRadius: '50%',
+                      background: 'var(--stone)',
+                      display: 'inline-block',
+                    }}
+                  />
                   <span
                     style={{
                       fontFamily: 'var(--font-mono)',
@@ -514,6 +664,33 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                     }}
                   >
                     {exercise.muscleGroup}
+                  </span>
+                </>
+              )}
+              {supersetMembership && (
+                <>
+                  <span
+                    style={{
+                      width: 4,
+                      height: 4,
+                      borderRadius: '50%',
+                      background: 'var(--mustard)',
+                      display: 'inline-block',
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      letterSpacing: '0.14em',
+                      color: 'var(--navy)',
+                      background: 'var(--mustard)',
+                      padding: '1px 6px',
+                      textTransform: 'uppercase',
+                      fontWeight: 700,
+                    }}
+                  >
+                    סופרסט {supersetMembership.position}/{supersetMembership.total}
                   </span>
                 </>
               )}

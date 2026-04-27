@@ -114,9 +114,7 @@ export const RPEDisplay: React.FC<RPEDisplayProps> = memo(
               transition={{ duration: 1, delay: delay + 0.1 }}
             />
           </div>
-          <span className="text-sm tabular-nums">
-            {avgRpeActual.toFixed(1)}
-          </span>
+          <span className="text-sm tabular-nums">{avgRpeActual.toFixed(1)}</span>
         </div>
         {avgRpeTarget !== null && (
           <p className="text-[10px] text-white/30 mt-2">

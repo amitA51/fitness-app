@@ -168,8 +168,7 @@ const GradientSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
       <motion.div
         className="absolute inset-0 rounded-full blur-md"
         style={{
-          background:
-            'linear-gradient(135deg, var(--navy), var(--mustard))',
+          background: 'linear-gradient(135deg, var(--navy), var(--mustard))',
           opacity: 0.3,
         }}
         animate={{

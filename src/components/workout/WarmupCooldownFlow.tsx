@@ -3,7 +3,7 @@
 // Warmup: dynamic movement warmup routine
 // Cooldown: guided stretching routine
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import React, { useEffect, useRef, useCallback, useReducer, useMemo } from 'react';
 import { logger } from '../../utils/logger';
 import { safeJsonParseOr } from '../../utils/safeJson';
@@ -40,7 +40,13 @@ const DEFAULT_COOLDOWN: RoutineItem[] = [
   { id: 'c1', name: 'Static Stretching', nameHe: 'מתיחות סטטיות', duration: 60, selected: true },
   { id: 'c2', name: 'Deep Breathing', nameHe: 'נשימות עמוקות', duration: 60, selected: true },
   { id: 'c3', name: "Child's Pose", nameHe: 'תנוחת הילד', duration: 45, selected: true },
-  { id: 'c4', name: 'Hamstring Stretch', nameHe: 'מתיחת ירכיים אחוריות', duration: 45, selected: false },
+  {
+    id: 'c4',
+    name: 'Hamstring Stretch',
+    nameHe: 'מתיחת ירכיים אחוריות',
+    duration: 45,
+    selected: false,
+  },
   { id: 'c5', name: 'Quad Stretch', nameHe: 'מתיחת ירך קדמית', duration: 45, selected: false },
   { id: 'c6', name: 'Shoulder Stretch', nameHe: 'מתיחת כתפיים', duration: 30, selected: false },
 ];
@@ -602,7 +608,13 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
         >
           {/* SVG progress ring */}
           <svg
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'rotate(-90deg)' }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              transform: 'rotate(-90deg)',
+            }}
             viewBox="0 0 240 240"
           >
             {/* Track */}
@@ -828,16 +840,18 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
     }
   }, [state.items, storageKey]);
 
+  const shouldReduceMotion = useReducedMotion();
+
   useEffect(() => {
     if (!state.isPaused && state.step === 'active' && state.timeLeft > 0) {
       timerRef.current = setTimeout(() => dispatch({ type: 'TICK' }), 1000);
     } else if (state.timeLeft === 0 && state.step === 'active' && !state.isPaused) {
-      if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
+      if ('vibrate' in navigator && !shouldReduceMotion) navigator.vibrate([100, 50, 100]);
     }
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [state.isPaused, state.step, state.timeLeft]);
+  }, [state.isPaused, state.step, state.timeLeft, shouldReduceMotion]);
 
   const activeItems = useMemo(() => state.items.filter((i) => i.selected), [state.items]);
   const currentItem = activeItems[state.currentIndex];
@@ -885,7 +899,13 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
       exit={{ opacity: 0 }}
     >
       {/* Safe area top */}
-      <div style={{ paddingTop: 'env(safe-area-inset-top, 0)', background: 'var(--navy)', flexShrink: 0 }} />
+      <div
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0)',
+          background: 'var(--navy)',
+          flexShrink: 0,
+        }}
+      />
 
       <div className="flex-1 overflow-hidden">
         <AnimatePresence mode="sync">
@@ -920,7 +940,13 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
       </div>
 
       {/* Safe area bottom */}
-      <div style={{ paddingBottom: 'env(safe-area-inset-bottom, 0)', background: 'var(--bone)', flexShrink: 0 }} />
+      <div
+        style={{
+          paddingBottom: 'env(safe-area-inset-bottom, 0)',
+          background: 'var(--bone)',
+          flexShrink: 0,
+        }}
+      />
     </motion.div>
   );
 };

@@ -1,12 +1,13 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ChevronLeft, Dumbbell, Trash2 } from 'lucide-react';
+import { ChevronLeft, Trash2 } from 'lucide-react';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { WorkoutListSkeleton } from '../components/ui/SkeletonLoader';
 import { useData } from '../contexts/DataContext';
 import { useWorkoutHistoryHub } from '../hooks/fitness/useWorkoutHistoryHub';
 import { deleteWorkoutSession } from '../services/workoutDb';
-import { handleError } from '../utils/errorReporting';
 import type { WorkoutSession } from '../types';
+import { handleError } from '../utils/errorReporting';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const HEBREW_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
@@ -53,19 +54,6 @@ const formatDuration = (seconds: number): string => {
 
 const countCompletedSets = (session: WorkoutSession): number =>
   session.exercises.reduce((total, ex) => total + ex.sets.filter((s) => s.isCompleted).length, 0);
-
-// ── SkeletonCard ───────────────────────────────────────────────────────────────
-const SkeletonCard = memo(function SkeletonCard() {
-  return (
-    <div className="card-outlined">
-      <div className="space-y-3">
-        <div className="h-3 w-1/3 skeleton-shimmer" />
-        <div className="h-6 w-2/3 skeleton-shimmer" />
-        <div className="h-3 w-1/2 skeleton-shimmer" />
-      </div>
-    </div>
-  );
-});
 
 // ── SessionCard ───────────────────────────────────────────────────────────────
 interface SessionCardProps {
@@ -243,17 +231,16 @@ const VirtualizedSessionList = memo(function VirtualizedSessionList({
 
   const virtualizer = useVirtualizer({
     count: sessions.length,
-    getScrollElement: () => parentRef.current,
+    getScrollElement: () => {
+      const el = parentRef.current?.parentElement?.parentElement;
+      return el ?? null;
+    },
     estimateSize: () => 192,
     overscan: 5,
   });
 
   return (
-    <div
-      ref={parentRef}
-      className="space-y-3"
-      style={{ minHeight: '200px' }}
-    >
+    <div ref={parentRef}>
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
@@ -261,24 +248,24 @@ const VirtualizedSessionList = memo(function VirtualizedSessionList({
           width: '100%',
         }}
       >
-        {virtualizer.getVirtualItems().map((virtualRow) => (
-          <div
-            key={sessions[virtualRow.index].id}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${virtualRow.start}px)`,
-            }}
-          >
-            <SessionCard
-              session={sessions[virtualRow.index]}
-              onDelete={onDelete}
-              index={virtualRow.index}
-            />
-          </div>
-        ))}
+        {virtualizer.getVirtualItems().map((virtualRow) => {
+          const session = sessions[virtualRow.index];
+          if (!session) return null;
+          return (
+            <div
+              key={session.id}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+            >
+              <SessionCard session={session} onDelete={onDelete} index={virtualRow.index} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -288,7 +275,12 @@ const VirtualizedSessionList = memo(function VirtualizedSessionList({
 export default function History() {
   const navigate = useNavigate();
   const { sessions: dataContextSessions } = useData();
-  const { sessions: unsortedSessions, loading, error, refresh } = useWorkoutHistoryHub(100, dataContextSessions);
+  const {
+    sessions: unsortedSessions,
+    loading,
+    error,
+    refresh,
+  } = useWorkoutHistoryHub(100, dataContextSessions);
 
   const sessions = useMemo(
     () =>
@@ -304,7 +296,11 @@ export default function History() {
         await deleteWorkoutSession(id);
         await refresh();
       } catch (err) {
-        const { userMessage } = handleError(err, 'History.handleDelete', 'לא הצלחנו למחוק את האימון');
+        const { userMessage } = handleError(
+          err,
+          'History.handleDelete',
+          'לא הצלחנו למחוק את האימון'
+        );
         console.warn(userMessage);
       }
     },
@@ -330,9 +326,16 @@ export default function History() {
       : lastMonthVolume.toLocaleString();
 
   return (
-    <div className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]" style={{ background: 'var(--bone)' }} dir="rtl">
+    <div
+      className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
+      style={{ background: 'var(--bone)' }}
+      dir="rtl"
+    >
       {/* Masthead */}
-      <header className="masthead sticky top-0 z-20" style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}>
+      <header
+        className="masthead sticky top-0 z-20"
+        style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}
+      >
         <div className="kicker">§04 · HISTORIA · {sessions.length} SESSIONS</div>
         <h1
           style={{
@@ -402,38 +405,23 @@ export default function History() {
         )}
 
         <div className="px-5 pt-5 space-y-3">
-          {loading && (
-            <div className="space-y-3">
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
-            </div>
-          )}
+          {loading && <WorkoutListSkeleton count={3} />}
 
           {!loading && sessions.length === 0 && !error && (
-            <div className="flex flex-col items-center py-20 gap-5 text-center">
-              <div
-                className="w-16 h-16 flex items-center justify-center"
-                style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
+            <div className="flex flex-col items-center py-20 gap-5 text-center px-6">
+              <p
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '22px',
+                  fontWeight: 800,
+                  color: 'var(--ink)',
+                }}
               >
-                <Dumbbell size={28} />
-              </div>
-              <div>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-hebrew)',
-                    fontSize: '24px',
-                    fontWeight: 800,
-                    color: 'var(--ink)',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  עדיין לא ביצעת אימון
-                </p>
-                <p className="eyebrow mt-2" style={{ color: 'var(--stone)' }}>
-                  START YOUR FIRST SESSION
-                </p>
-              </div>
+                אין אימונים עדיין
+              </p>
+              <p style={{ color: 'var(--stone)', fontFamily: 'var(--font-body)', fontSize: 15 }}>
+                האימונים שתסיים יופיעו כאן
+              </p>
               <button onClick={() => navigate('/workout')} className="btn-primary">
                 התחל אימון
               </button>

@@ -24,6 +24,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 2,
     notes: 'Whole-body warmup.',
     tutorialText: 'Stand tall, jump feet out while raising arms overhead.',
+    secondaryMuscles: ['Calves', 'Shoulders'],
+    equipment: 'bodyweight',
   },
   {
     name: 'Treadmill Run',
@@ -34,6 +36,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 1,
     notes: 'Steady state cardio.',
     tutorialText: 'Maintain consistent pace.',
+    secondaryMuscles: ['Calves', 'Hamstrings', 'Quads'],
+    equipment: 'machine',
   },
 
   // ==================== Chest ====================
@@ -46,6 +50,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'חזה אמצעי - תרגיל בסיס קלאסי.',
     tutorialText: 'הורד מוט לאמצע החזה, דחוף למעלה בלי לנעול.',
+    secondaryMuscles: ['Triceps', 'Shoulders'],
+    equipment: 'barbell',
   },
   {
     name: 'לחיצת חזה בשיפוע חיובי | Incline Dumbbell Press',
@@ -56,6 +62,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'חזה עליון (Clavicular).',
     tutorialText: 'ספסל בזווית 30-45, דחוף משקולות למעלה.',
+    secondaryMuscles: ['Triceps', 'Shoulders'],
+    equipment: 'dumbbell',
   },
   {
     name: 'לחיצת חזה בשיפוע שלילי | Decline Bench Press',
@@ -66,6 +74,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'חזה תחתון (Costal).',
     tutorialText: 'ספסל בזווית שלילית, הורד מוט לחזה תחתון, דחוף למעלה.',
+    secondaryMuscles: ['Triceps', 'Shoulders'],
+    equipment: 'barbell',
   },
   {
     name: 'לחיצת חזה עם משקולות יד | Dumbbell Press',
@@ -76,6 +86,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'חזה - טווח תנועה גדול יותר ממוט.',
     tutorialText: 'החזק משקולות בגובה החזה, דחוף למעלה ויחד.',
+    secondaryMuscles: ['Triceps', 'Shoulders'],
+    equipment: 'dumbbell',
   },
   {
     name: 'פרפר בכבלים | Cable Fly',
@@ -86,6 +98,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'מתח מתמיד על החזה.',
     tutorialText: 'פתח ידיים לרווחה, כווץ חזה להביא ידיים ביחד.',
+    secondaryMuscles: ['Shoulders'],
+    equipment: 'cable',
   },
   {
     name: 'פרפר בכבלים - פולי עליון | High Cable Crossover',
@@ -96,6 +110,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'חזה תחתון ואמצעי.',
     tutorialText: 'כבלים מפוליות עליונות, הורד ידיים למטה ויחד בגובה המותן.',
+    secondaryMuscles: ['Shoulders'],
+    equipment: 'cable',
   },
   {
     name: 'פרפר בכבלים - פולי תחתון | Low Cable Crossover',
@@ -106,6 +122,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'חזה עליון.',
     tutorialText: 'כבלים מפוליות תחתונות, הרם ידיים למעלה ויחד בגובה החזה.',
+    secondaryMuscles: ['Shoulders'],
+    equipment: 'cable',
   },
   {
     name: 'פול-אובר | Dumbbell Pullover',
@@ -116,6 +134,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'הרחבת כלוב הצלעות + רחב גבי.',
     tutorialText: 'שכב על ספסל, הורד משקולת מאחורי הראש עם כיפוף מרפק קל, משוך חזרה מעל החזה.',
+    secondaryMuscles: ['Back', 'Triceps'],
+    equipment: 'dumbbell',
   },
   {
     name: 'לחיצת חזה במכונת האמר | Hammer Strength Chest Press',
@@ -126,6 +146,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'חזה - בידוד וכוח.',
     tutorialText: 'שב במכונה, דחוף ידיות קדימה, שלוט בחזרה.',
+    secondaryMuscles: ['Triceps', 'Shoulders'],
+    equipment: 'machine',
   },
   {
     name: 'מקבילים רחב | Chest Dips',
@@ -136,6 +158,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'חזה תחתון - כשהגוף נוטה קדימה.',
     tutorialText: 'על מקבילים רחבים, הטה גוף קדימה והורד, דחוף למעלה.',
+    secondaryMuscles: ['Triceps', 'Shoulders'],
+    equipment: 'bodyweight',
   },
   {
     name: 'לחיצת גיליוטינה | Guillotine Press',
@@ -146,6 +170,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'חזה עליון - מסוכן לכתפיים, דורש זהירות!',
     tutorialText: 'הורד מוט לצוואר/חזה עליון עם אחיזה רחבה, דחוף למעלה. משקל קל וזהירות.',
+    secondaryMuscles: ['Triceps', 'Shoulders'],
+    equipment: 'barbell',
   },
   {
     name: 'לחיצת סבנד | Svend Press',
@@ -156,6 +182,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כיווץ איזומטרי של החזה הפנימי.',
     tutorialText: 'לחץ שתי צלחות יחד בגובה החזה, הארך ידיים תוך כדי לחיצה, חזור.',
+    secondaryMuscles: ['Shoulders', 'Triceps'],
+    equipment: 'plate',
   },
   {
     name: 'לחיצת לנדמיין | Landmine Press',
@@ -166,6 +194,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'חזה עליון (חלק פנימי) + כתף קדמית.',
     tutorialText: 'החזק קצה המוט בכתף, דחוף למעלה באלכסון.',
+    secondaryMuscles: ['Shoulders', 'Triceps'],
+    equipment: 'barbell',
   },
   {
     name: 'שכיבות סמיכה | Push Up',
@@ -176,6 +206,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'חזה לרצפה.',
     tutorialText: 'שמור על תנוחת פלאנק, הורד חזה לרצפה.',
+    secondaryMuscles: ['Triceps', 'Shoulders', 'Core'],
+    equipment: 'bodyweight',
   },
 
   // ==================== Back ====================
@@ -188,6 +220,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'רחב גבי - טווח תנועה מלא.',
     tutorialText: 'משוך חזה לכיוון המוט, הורד עד הסוף.',
+    secondaryMuscles: ['Biceps', 'Forearms'],
+    equipment: 'bodyweight',
   },
   {
     name: 'מתח באחיזה הפוכה וצרה | Chin-Up',
@@ -198,6 +232,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'רחב גבי + דגש חזק על יד קדמית.',
     tutorialText: 'אחיזה הפוכה (כפות כלפייך), משוך סנטר מעל המוט.',
+    secondaryMuscles: ['Biceps', 'Forearms'],
+    equipment: 'bodyweight',
   },
   {
     name: 'משיכת פולי עליון | Lat Pulldown',
@@ -208,6 +244,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'רחב גבי - אחיזה רחבה.',
     tutorialText: 'משוך מוט לחזה עליון, כווץ רחב גבי.',
+    secondaryMuscles: ['Biceps', 'Forearms'],
+    equipment: 'cable',
   },
   {
     name: 'משיכת פולי עליון במשולש | V-Bar Pulldown',
@@ -218,6 +256,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'רחב גבי תחתון ופנימי.',
     tutorialText: 'השתמש במשולש V, משוך לחזה, כווץ רחב גבי.',
+    secondaryMuscles: ['Biceps', 'Forearms'],
+    equipment: 'cable',
   },
   {
     name: 'פול-אובר בכבל | Straight Arm Pulldown',
@@ -228,6 +268,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'רחב גבי נטו - ללא מעורבות יד קדמית.',
     tutorialText: 'שמור ידיים ישרות, משוך מוט למטה לירכיים, כווץ רחב גבי.',
+    secondaryMuscles: ['Triceps', 'Core'],
+    equipment: 'cable',
   },
   {
     name: 'חתירה בכבל בישיבה - אחיזה צרה | Seated Cable Row Close Grip',
@@ -238,6 +280,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'רחב גבי תחתון ומרכז הגב.',
     tutorialText: 'משוך ידית לבטן, כווץ שכמות.',
+    secondaryMuscles: ['Biceps', 'Traps'],
+    equipment: 'cable',
   },
   {
     name: 'חתירה בכבל בישיבה - אחיזה רחבה | Seated Cable Row Wide Grip',
@@ -248,6 +292,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'גב עליון, כתף אחורית ומעוינים.',
     tutorialText: 'מוט רחב, משוך לחזה, כווץ שכמות.',
+    secondaryMuscles: ['Shoulders', 'Traps'],
+    equipment: 'cable',
   },
   {
     name: 'חתירה ביד אחת | Single Arm Dumbbell Row',
@@ -258,6 +304,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'רחב גבי - עבודה על צד אחד למניעת חוסר פרופורציה.',
     tutorialText: 'משוך משקולת לירך, שלוט בהורדה.',
+    secondaryMuscles: ['Biceps', 'Traps'],
+    equipment: 'dumbbell',
   },
   {
     name: 'חתירה בטי-בר | T-Bar Row',
@@ -268,6 +316,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'עיבוי הגב, רחב גבי וטרפזים אמצעיים.',
     tutorialText: 'פסק על המוט, משוך משקל לחזה, כווץ גב.',
+    secondaryMuscles: ['Biceps', 'Traps', 'Traps'],
+    equipment: 'barbell',
   },
   {
     name: 'חתירה במוט | Barbell Row',
@@ -278,6 +328,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'פיתוח גב כולל.',
     tutorialText: 'הטה קדימה, משוך מוט לחזה תחתון, כווץ רחב גבי.',
+    secondaryMuscles: ['Biceps', 'Traps', 'Traps'],
+    equipment: 'barbell',
   },
   {
     name: 'משיכה לפנים | Face Pull',
@@ -288,6 +340,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כתף אחורית ושרוול מסובב.',
     tutorialText: 'משוך חבל לפנים, הפרד ידיים.',
+    secondaryMuscles: ['Shoulders', 'Traps'],
+    equipment: 'cable',
   },
   {
     name: 'פשיטת גב / סופרמן | Hyperextension',
@@ -298,6 +352,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'זוקפי הגב (גב תחתון), ישבן והמסטרינג.',
     tutorialText: 'על ספסל היפראקסטנשן, הורד גוף עליון ואז הרם לתנוחה ישרה.',
+    secondaryMuscles: ['Glutes', 'Hamstrings'],
+    equipment: 'bodyweight',
   },
   {
     name: 'ראק-פולס | Rack Pulls',
@@ -308,6 +364,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'גב עליון וטרפזים - חלק עליון של הדדליפט.',
     tutorialText: 'מוט בגובה ברכיים על הראק, בצע דדליפט מתנוחה זו.',
+    secondaryMuscles: ['Traps', 'Hamstrings', 'Glutes'],
+    equipment: 'barbell',
   },
   {
     name: 'דדליפט | Deadlift',
@@ -318,6 +376,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'שרשרת גב אחורית מלאה.',
     tutorialText: 'מוט מעל אמצע כף הרגל, דחוף רצפה הרחק, עמוד ישר.',
+    secondaryMuscles: ['Hamstrings', 'Glutes', 'Traps', 'Quads'],
+    equipment: 'barbell',
   },
 
   // ==================== Shoulders ====================
@@ -330,6 +390,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'לחיצה סטריקט לכוח.',
     tutorialText: 'דחוף מוט מעל הראש עם ליבה מהודקת.',
+    secondaryMuscles: ['Triceps', 'Traps', 'Core'],
+    equipment: 'barbell',
   },
   {
     name: 'לחיצת ארנולד | Arnold Press',
@@ -340,6 +402,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כל ראשי הכתף - סיבוב תוך כדי לחיצה.',
     tutorialText: 'התחל עם כפות כלפייך בגובה החזה, סובב ודחוף למעלה.',
+    secondaryMuscles: ['Triceps', 'Traps'],
+    equipment: 'dumbbell',
   },
   {
     name: 'הרחקה לצדדים | Dumbbell Lateral Raise',
@@ -350,6 +414,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כתף אמצעית.',
     tutorialText: 'הרם ידיים לצדדים עד מקביל לרצפה.',
+    secondaryMuscles: ['Traps'],
+    equipment: 'dumbbell',
   },
   {
     name: 'הרחקה לצדדים בכבל | Cable Lateral Raise',
@@ -360,6 +426,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כתף אמצעית - מתח מתמיד לאורך כל התנועה.',
     tutorialText: 'כבל בצד, הרם יד החוצה לגובה הכתף.',
+    secondaryMuscles: ['Traps'],
+    equipment: 'cable',
   },
   {
     name: 'הרחקה לצדדים בישיבה | Seated Lateral Raise',
@@ -370,6 +438,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כתף אמצעית - מונע רמאות עם הגוף.',
     tutorialText: 'בישיבה, הרם משקולות לצדדים עד מקביל.',
+    secondaryMuscles: ['Traps'],
+    equipment: 'dumbbell',
   },
   {
     name: 'הרמה לפנים | Front Raise',
@@ -380,6 +450,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כתף קדמית - אפשר עם משקולת/פלטה/כבל.',
     tutorialText: 'הרם משקל מולך לגובה הכתף.',
+    secondaryMuscles: ['Chest', 'Traps'],
+    equipment: 'dumbbell',
   },
   {
     name: 'חתירה אנכית | Upright Row',
@@ -390,6 +462,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כתף אמצעית וטרפזים - זהירות על מפרק הכתף.',
     tutorialText: 'משוך מוט/משקולות למעלה לאורך הגוף לגובה הסנטר, מרפקים גבוהים.',
+    secondaryMuscles: ['Traps', 'Biceps'],
+    equipment: 'barbell',
   },
   {
     name: 'פרפר הפוך במכונה | Reverse Pec Deck',
@@ -400,6 +474,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כתף אחורית.',
     tutorialText: 'פנים למכונה, פתח ידיים לאחור וכווץ כתפיים אחוריות.',
+    secondaryMuscles: ['Traps', 'Back'],
+    equipment: 'machine',
   },
   {
     name: 'הרחקה אופקית בכבל | Reverse Cable Fly',
@@ -410,6 +486,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כתף אחורית.',
     tutorialText: 'כבלים בגובה הפנים, משוך הצידה עם ידיים ישרות.',
+    secondaryMuscles: ['Traps', 'Back'],
+    equipment: 'cable',
   },
   {
     name: 'לחיצה מאחורי העורף | Behind the Neck Press',
@@ -420,6 +498,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כתף אמצעית - למתקדמים בלבד, דורש גמישות.',
     tutorialText: 'מוט מאחורי הראש, דחוף למעלה. התחל עם משקל קל.',
+    secondaryMuscles: ['Triceps', 'Traps'],
+    equipment: 'barbell',
   },
 
   // ==================== Legs - Quads ====================
@@ -432,6 +512,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'ארבע-ראשי - טווח תנועה מלא.',
     tutorialText: 'מוט על גב עליון, שב לאחור ולמטה עד מקביל.',
+    secondaryMuscles: ['Glutes', 'Hamstrings', 'Core'],
+    equipment: 'barbell',
   },
   {
     name: 'סקוואט קדמי | Front Squat',
@@ -442,6 +524,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'ארבע-ראשי - דגש חזק יותר מהסקוואט הרגיל + ליבה.',
     tutorialText: 'מוט על כתפיים קדמיות, מרפקים גבוהים, סקוואט עם גוף זקוף.',
+    secondaryMuscles: ['Glutes', 'Core', 'Quads'],
+    equipment: 'barbell',
   },
   {
     name: 'סקוואט גביע | Goblet Squat',
@@ -452,6 +536,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'ארבע-ראשי - מצוין לטכניקה.',
     tutorialText: 'החזק משקולת בגובה החזה, סקוואט למטה בין הרגליים.',
+    secondaryMuscles: ['Glutes', 'Core', 'Calves'],
+    equipment: 'dumbbell',
   },
   {
     name: 'בולגריאן ספליט סקוואט | Bulgarian Split Squat',
@@ -462,6 +548,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'ארבע-ראשי וישבן - עבודה על רגל אחת.',
     tutorialText: 'רגל אחורית על ספסל, הורד ברך קדמית ל-90 מעלות.',
+    secondaryMuscles: ['Glutes', 'Hamstrings', 'Core'],
+    equipment: 'dumbbell',
   },
   {
     name: 'האק סקוואט | Hack Squat',
@@ -472,6 +560,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'ארבע-ראשי - תמיכה לגב, מאפשר עומס גבוה.',
     tutorialText: 'סקוואט במכונה, דחוף פלטפורמה עם קוואדס.',
+    secondaryMuscles: ['Glutes', 'Calves'],
+    equipment: 'machine',
   },
   {
     name: "מכרעים / לאנג'ים | Lunges",
@@ -482,6 +572,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'ארבע-ראשי וישבן - הליכה או סטטי.',
     tutorialText: 'צעד קדימה, הורד ברך אחורית לרצפה, דחוף חזרה.',
+    secondaryMuscles: ['Glutes', 'Hamstrings', 'Core'],
+    equipment: 'dumbbell',
   },
   {
     name: 'מכרעים בהליכה | Walking Lunges',
@@ -492,6 +584,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'שמור גוף זקוף.',
     tutorialText: 'צעד קדימה, הורד ברך אחורית לרצפה.',
+    secondaryMuscles: ['Glutes', 'Hamstrings', 'Core'],
+    equipment: 'dumbbell',
   },
   {
     name: 'צעד וחצי / עלייה על מדרגה | Step Ups',
@@ -502,6 +596,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'ארבע-ראשי וישבן.',
     tutorialText: 'עלה על קופסה עם רגל אחת, דחוף דרך העקב.',
+    secondaryMuscles: ['Glutes', 'Hamstrings'],
+    equipment: 'dumbbell',
   },
   {
     name: 'סיסי סקוואט | Sissy Squat',
@@ -512,6 +608,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'בידוד קיצוני לארבע-ראשי - ליד הברך.',
     tutorialText: 'עלה על קצות האצבעות, הטה לאחור תוך כיפוף ברכיים, הורד גוף.',
+    secondaryMuscles: ['Calves', 'Hamstrings'],
+    equipment: 'bodyweight',
   },
   {
     name: 'פשיטת ברכיים | Leg Extension',
@@ -522,6 +620,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כווץ קוואדס בסוף.',
     tutorialText: 'הארך רגליים לגמרי בשליטה.',
+    secondaryMuscles: ['Calves'],
+    equipment: 'machine',
   },
   {
     name: 'לחיצת רגליים | Leg Press',
@@ -532,6 +632,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'רגליים ברוחב כתפיים.',
     tutorialText: 'הורד משקל עד שברכיים בזווית 90 מעלות.',
+    secondaryMuscles: ['Glutes', 'Hamstrings', 'Calves'],
+    equipment: 'machine',
   },
 
   // ==================== Hamstrings & Glutes ====================
@@ -544,6 +646,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'המסטרינג (מתיחה) וישבן.',
     tutorialText: 'ציר במותניים עם כיפוף ברך קל.',
+    secondaryMuscles: ['Glutes', 'Lower Back', 'Core'],
+    equipment: 'barbell',
   },
   {
     name: 'דדליפט סומו | Sumo Deadlift',
@@ -554,6 +658,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'ישבן, מקרבי ירך (ירך פנימית) והמסטרינג.',
     tutorialText: 'עמידה רחבה, אצבעות החוצה, אחיזה בין הברכיים, דחוף למעלה.',
+    secondaryMuscles: ['Quads', 'Glutes', 'Adductors'],
+    equipment: 'barbell',
   },
   {
     name: 'בוקר טוב | Good Mornings',
@@ -564,6 +670,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'המסטרינג וגב תחתון.',
     tutorialText: 'מוט על הגב, ציר במותניים עם כיפוף ברך קל.',
+    secondaryMuscles: ['Hamstrings', 'Lower Back', 'Core'],
+    equipment: 'barbell',
   },
   {
     name: 'הרחקת ירך במכונה | Hip Abductor Machine',
@@ -574,6 +682,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'ישבן צידי (Glute Medius).',
     tutorialText: 'דחוף ירכיים החוצה נגד הרפידות.',
+    secondaryMuscles: ['Glutes', 'TFL'],
+    equipment: 'machine',
   },
   {
     name: 'קירוב ירך במכונה | Hip Adductor Machine',
@@ -584,6 +694,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'מקרבי הירך (ירך פנימית).',
     tutorialText: 'לחץ ירכיים יחד נגד הרפידות.',
+    secondaryMuscles: ['Adductors', 'Glutes'],
+    equipment: 'machine',
   },
   {
     name: 'בעיטה אחורית בכבל | Cable Kickback',
@@ -594,6 +706,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'ישבן (Glute Maximus).',
     tutorialText: 'רצועת קרסול על כבל, בעט רגל לאחור וכווץ ישבן.',
+    secondaryMuscles: ['Hamstrings', 'Core'],
+    equipment: 'cable',
   },
   {
     name: 'כפיפת ברכיים בשכיבה | Lying Leg Curl',
@@ -604,6 +718,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'המסטרינג - בידוד.',
     tutorialText: 'כופף עקבים לישבן.',
+    secondaryMuscles: ['Glutes', 'Calves'],
+    equipment: 'machine',
   },
   {
     name: 'כפיפת ברכיים בישיבה | Seated Leg Curl',
@@ -614,6 +730,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'המסטרינג - בידוד.',
     tutorialText: 'לחץ רפידה למטה עם השוקיים, כופף רגליים.',
+    secondaryMuscles: ['Glutes', 'Calves'],
+    equipment: 'machine',
   },
   {
     name: 'גשר ישבן | Glute Bridge',
@@ -624,6 +742,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'הפעלת ישבן.',
     tutorialText: 'שכב על הגב, דחוף מותניים למעלה תוך כיווץ ישבן.',
+    secondaryMuscles: ['Hamstrings', 'Core', 'Lower Back'],
+    equipment: 'bodyweight',
   },
   {
     name: "היפ ת'ראסט | Hip Thrust",
@@ -634,6 +754,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'בונה ישבן ראשי.',
     tutorialText: 'גב על ספסל, מוט על המותניים, דחוף מותניים למעלה.',
+    secondaryMuscles: ['Hamstrings', 'Quads', 'Core'],
+    equipment: 'barbell',
   },
 
   // ==================== Calves ====================
@@ -646,6 +768,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'מתיחה מלאה בתחתית.',
     tutorialText: 'הרם עקבים כמה שיותר גבוה.',
+    secondaryMuscles: ['Achilles', 'Glutes'],
+    equipment: 'machine',
   },
   {
     name: 'הרמת עקבים בישיבה | Seated Calf Raise',
@@ -656,6 +780,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'שריר הסולאוס (השריר העמוק מתחת לתאומים).',
     tutorialText: 'בישיבה, משקל על הברכיים, הרם עקבים.',
+    secondaryMuscles: ['Soleus'],
+    equipment: 'machine',
   },
   {
     name: 'הרמת עקבים במכונת לחיצת רגליים | Leg Press Calf Raise',
@@ -666,6 +792,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'תאומים (Gastrocnemius).',
     tutorialText: 'במכונת לחיצת רגליים, דחוף רק עם כפות הרגליים.',
+    secondaryMuscles: ['Soleus'],
+    equipment: 'machine',
   },
   {
     name: 'הרמת עקבים חמור | Donkey Calf Raise',
@@ -676,6 +804,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'תאומים - מתיחה חזקה.',
     tutorialText: 'כפוף קדימה, משקל על גב תחתון, הרם עקבים.',
+    secondaryMuscles: ['Soleus', 'Glutes'],
+    equipment: 'bodyweight',
   },
 
   // ==================== Triceps ====================
@@ -688,6 +818,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'שמור מרפקים צמודים.',
     tutorialText: 'דחוף חבל/מוט למטה עד נעילת ידיים.',
+    secondaryMuscles: ['Forearms', 'Chest'],
+    equipment: 'cable',
   },
   {
     name: 'פשיטה עם חבל | Rope Pushdown',
@@ -698,6 +830,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'ראש צידי - מאפשר פיצול בסוף התנועה.',
     tutorialText: 'דחוף חבל למטה, פצל קצוות בסוף.',
+    secondaryMuscles: ['Forearms'],
+    equipment: 'cable',
   },
   {
     name: 'לחיצת חזה צרה | Close Grip Bench Press',
@@ -708,6 +842,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'כל היד האחורית - תרגיל בסיס.',
     tutorialText: 'ידיים ברוחב כתפיים, הורד מוט לחזה, דחוף למעלה.',
+    secondaryMuscles: ['Chest', 'Shoulders'],
+    equipment: 'barbell',
   },
   {
     name: 'לחיצה צרפתית | Skullcrusher',
@@ -718,6 +854,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'ראש ארוך וראש מדיאלי.',
     tutorialText: 'שכב על ספסל, הורד מוט למצח, הארך למעלה.',
+    secondaryMuscles: ['Forearms', 'Shoulders'],
+    equipment: 'barbell',
   },
   {
     name: 'פשיטת מרפקים מעל הראש | Overhead Tricep Extension',
@@ -728,6 +866,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'הראש הארוך - החלק הגדול של היד.',
     tutorialText: 'משקל מעל הראש, הורד מאחורי הראש, הארך למעלה.',
+    secondaryMuscles: ['Forearms', 'Shoulders'],
+    equipment: 'dumbbell',
   },
   {
     name: 'קיק-בק | Tricep Kickback',
@@ -738,6 +878,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'ראש צידי - חיטוב/כיווץ סופי.',
     tutorialText: 'כפוף קדימה, הארך יד לאחור וכווץ.',
+    secondaryMuscles: ['Forearms', 'Shoulders'],
+    equipment: 'dumbbell',
   },
   {
     name: 'מקבילים בין ספסלים | Bench Dips',
@@ -748,6 +890,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כל היד האחורית.',
     tutorialText: 'ידיים על ספסל מאחוריך, הורד גוף, דחוף למעלה.',
+    secondaryMuscles: ['Chest', 'Shoulders'],
+    equipment: 'bodyweight',
   },
   {
     name: 'מקבילים | Dips',
@@ -758,6 +902,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'חזה או יד אחורית.',
     tutorialText: 'הורד גוף עד מרפקים ב-90 מעלות, דחוף למעלה.',
+    secondaryMuscles: ['Chest', 'Shoulders'],
+    equipment: 'bodyweight',
   },
 
   // ==================== Biceps & Forearms ====================
@@ -770,6 +916,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'טכניקה נקייה.',
     tutorialText: 'כופף מוט לחזה, הורד לאט.',
+    secondaryMuscles: ['Forearms', 'Brachialis'],
+    equipment: 'barbell',
   },
   {
     name: 'כפיפת פטישים | Hammer Curls',
@@ -780,6 +928,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'בראכיאליס (שריר הצד שנותן עובי ליד) ואמות.',
     tutorialText: 'החזק משקולות באחיזה ניטרלית (כפות פנימה), כופף למעלה.',
+    secondaryMuscles: ['Forearms', 'Brachialis'],
+    equipment: 'dumbbell',
   },
   {
     name: 'כפיפה בכיסא כומר | Preacher Curl',
@@ -790,6 +940,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'ראש קצר - דגש על תחילת התנועה.',
     tutorialText: 'ידיים על רפידה, כופף משקל למעלה.',
+    secondaryMuscles: ['Forearms', 'Brachialis'],
+    equipment: 'barbell',
   },
   {
     name: 'כפיפה בשיפוע חיובי | Incline Dumbbell Curl',
@@ -800,6 +952,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'ראש ארוך - מתיחה חזקה בכתף.',
     tutorialText: 'על ספסל נטוי, תן לידיים להשתלשל, כופף למעלה.',
+    secondaryMuscles: ['Forearms', 'Brachialis'],
+    equipment: 'dumbbell',
   },
   {
     name: 'כפיפת ריכוז | Concentration Curl',
@@ -810,6 +964,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'דגש על הפיק (הגובה) של השריר.',
     tutorialText: 'בישיבה, מרפק על ירך פנימית, כופף למעלה וכווץ.',
+    secondaryMuscles: ['Forearms', 'Brachialis'],
+    equipment: 'dumbbell',
   },
   {
     name: 'כפיפת מוט באחיזה הפוכה | Reverse Curl',
@@ -820,6 +976,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'אמות ושריר הבראכיורדיאליס.',
     tutorialText: 'אחיזה עליונה, כופף מוט למעלה.',
+    secondaryMuscles: ['Forearms', 'Brachialis'],
+    equipment: 'barbell',
   },
   {
     name: 'כפיפת שורש כף היד | Wrist Curls',
@@ -830,6 +988,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'אמות (פלקסורים).',
     tutorialText: 'אמות על ספסל, כופף שורשי כף יד למעלה.',
+    secondaryMuscles: ['Forearms', 'Grip'],
+    equipment: 'dumbbell',
   },
   {
     name: '21 | 21s',
@@ -840,6 +1000,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'טכניקה לשריפת השריר.',
     tutorialText: '7 חזרות חצי תחתון, 7 חזרות חצי עליון, 7 חזרות מלאות.',
+    secondaryMuscles: ['Forearms', 'Brachialis'],
+    equipment: 'barbell',
   },
 
   // ==================== Abs & Core ====================
@@ -852,6 +1014,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'אל תתן למותניים לצנוח.',
     tutorialText: 'מרפקים מתחת לכתפיים, גוף בקו ישר.',
+    secondaryMuscles: ['Shoulders', 'Back', 'Glutes'],
+    equipment: 'bodyweight',
   },
   {
     name: 'כפיפות בטן | Crunch',
@@ -862,6 +1026,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כווץ בטן.',
     tutorialText: 'שכב על הגב, הרם כתפיים מהרצפה.',
+    secondaryMuscles: ['Obliques', 'Hip Flexors'],
+    equipment: 'bodyweight',
   },
   {
     name: 'כפיפות בטן בכבל | Cable Crunch',
@@ -872,6 +1038,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'קוביות (Rectus Abdominis) - מאפשר הוספת משקל.',
     tutorialText: 'כרע בכבל, כופף למטה והבא מרפקים לירכיים.',
+    secondaryMuscles: ['Obliques', 'Hip Flexors'],
+    equipment: 'cable',
   },
   {
     name: 'הרמת רגליים בתלייה | Hanging Leg Raise',
@@ -882,6 +1050,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'שלוט בנדנוד.',
     tutorialText: 'תלה ממוט, הרם רגליים ל-90 מעלות.',
+    secondaryMuscles: ['Hip Flexors', 'Obliques', 'Forearms'],
+    equipment: 'bodyweight',
   },
   {
     name: 'הרמת ברכיים בתלייה | Hanging Knee Raise',
@@ -892,6 +1062,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'בטן תחתונה.',
     tutorialText: 'תלה ממוט, הבא ברכיים לחזה.',
+    secondaryMuscles: ['Hip Flexors', 'Obliques', 'Forearms'],
+    equipment: 'bodyweight',
   },
   {
     name: 'גלגלת בטן | Ab Wheel Rollout',
@@ -902,6 +1074,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'כל שרירי הליבה - דורש כוח רב.',
     tutorialText: 'גלגל החוצה כמה שאפשר, משוך חזרה עם הליבה.',
+    secondaryMuscles: ['Shoulders', 'Back', 'Hip Flexors'],
+    equipment: 'bodyweight',
   },
   {
     name: 'טוויסט רוסי | Russian Twist',
@@ -912,6 +1086,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'אלכסונים (Obliques).',
     tutorialText: 'ישיבה בצורת V, סובב גוף מצד לצד.',
+    secondaryMuscles: ['Obliques', 'Hip Flexors'],
+    equipment: 'bodyweight',
   },
   {
     name: 'חוטב עצים בכבל | Woodchoppers',
@@ -922,6 +1098,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'אלכסונים וכוח סיבובי.',
     tutorialText: 'כבל גבוה/נמוך, משוך באלכסון לרוחב הגוף.',
+    secondaryMuscles: ['Obliques', 'Shoulders', 'Hip Flexors'],
+    equipment: 'cable',
   },
   {
     name: 'ואקום | Stomach Vacuum',
@@ -932,6 +1110,8 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 3,
     notes: 'רחב בטני (TVA) - השריר שמחזיק את הבטן בפנים.',
     tutorialText: 'נשוף לגמרי, משוך טבור לעמוד השדרה, החזק.',
+    secondaryMuscles: ['Diaphragm', 'Obliques'],
+    equipment: 'bodyweight',
   },
 ];
 

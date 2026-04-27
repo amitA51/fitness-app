@@ -16,8 +16,7 @@ const ShimmerOverlay: React.FC<{ className?: string }> = ({ className = '' }) =>
     className={`absolute inset-0 -translate-x-full animate-shimmer ${className}`}
     style={{
       animationDuration: '2s',
-      background:
-        'linear-gradient(to right, transparent, var(--bone-faint, #F9F7F3), transparent)',
+      background: 'linear-gradient(to right, transparent, var(--bone-faint, #F9F7F3), transparent)',
       opacity: 0.8,
     }}
   />
@@ -606,6 +605,24 @@ export const AddScreenSkeleton: React.FC = () => (
     </div>
   </div>
 );
+
+// ========================================
+// WorkoutListSkeleton
+// ========================================
+
+export function WorkoutListSkeleton({ count = 3 }: { count?: number }) {
+  return (
+    <div className="space-y-3 p-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="h-20 rounded-xl animate-pulse"
+          style={{ background: 'var(--bone-deep, #e8e2d6)' }}
+        />
+      ))}
+    </div>
+  );
+}
 
 // ========================================
 // Screen Skeleton Map for AppRouter

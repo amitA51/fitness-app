@@ -118,10 +118,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
         if (sessions.length > 0) {
           const sortedSessions = sessions
             .filter((s) => s.status === 'completed')
-            .sort(
-              (a, b) =>
-                new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-            );
+            .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
           let streak = 0;
           const today = new Date();
           today.setHours(0, 0, 0, 0);
@@ -133,7 +130,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
             );
             if (i === 0 && daysDiff <= 1) {
               streak = 1;
-              let checkDate = new Date(today);
+              const checkDate = new Date(today);
               checkDate.setDate(checkDate.getDate() - 1);
               for (let j = 1; j < sortedSessions.length; j++) {
                 const prevDate = new Date(sortedSessions[j]?.startTime ?? 0);
@@ -165,8 +162,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
       const muscle = neglectedMuscles[0];
       if (!muscle) return null;
       const hebrewName = MUSCLE_SUGGESTIONS[muscle.muscle] || muscle.muscle;
-      const daysText =
-        muscle.daysSince === 1 ? 'יום' : `${muscle.daysSince} ימים`;
+      const daysText = muscle.daysSince === 1 ? 'יום' : `${muscle.daysSince} ימים`;
       return {
         text: `מזמן לא אימנת ${hebrewName}`,
         subtext: `בפעם האחרונה לפני ${daysText}`,
@@ -264,10 +260,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
       />
 
       {/* ── NAVY MASTHEAD ── */}
-      <div
-        className="relative z-10 flex-shrink-0"
-        style={{ background: 'var(--navy)' }}
-      >
+      <div className="relative z-10 flex-shrink-0" style={{ background: 'var(--navy)' }}>
         {/* Chapter strip */}
         <div
           className="chapter-break"
@@ -276,7 +269,9 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
           <span className="left" style={{ color: 'var(--mustard)' }}>
             §01 · אימון
           </span>
-          <span className="right">{day} · {todayFull}</span>
+          <span className="right">
+            {day} · {todayFull}
+          </span>
         </div>
 
         {/* Main greeting area */}
@@ -421,8 +416,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 direction: 'ltr',
               }}
             >
-              אימון אחרון {lastWorkoutLabel.timeLabel} · {lastWorkoutLabel.exercises}{' '}
-              תרגילים
+              אימון אחרון {lastWorkoutLabel.timeLabel} · {lastWorkoutLabel.exercises} תרגילים
             </div>
           )}
         </div>
@@ -507,10 +501,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 §02 · התבניות שלך
               </div>
 
-              <div
-                className="grid grid-cols-2 gap-2"
-                style={{ direction: 'ltr' }}
-              >
+              <div className="grid grid-cols-2 gap-2" style={{ direction: 'ltr' }}>
                 {favoriteTemplates.map((template, index) => (
                   <motion.button
                     key={template.id}
@@ -611,9 +602,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               }}
               aria-label="התחל אימון"
             >
-              <DumbbellIcon
-                style={{ width: 20, height: 20, flexShrink: 0 }}
-              />
+              <DumbbellIcon style={{ width: 20, height: 20, flexShrink: 0 }} />
               התחל אימון
             </button>
 

@@ -1,6 +1,6 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface AnimatedProgressRingProps {
   percentage: number;
@@ -58,6 +58,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
   label,
   subLabel,
 }) => {
+  const shouldReduceMotion = useReducedMotion();
   const [showCelebration, setShowCelebration] = useState(false);
   const [prevPercentage, setPrevPercentage] = useState(percentage);
 
@@ -67,14 +68,14 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
 
   // Detect when we reach 100%
   useEffect(() => {
-    if (percentage >= 100 && prevPercentage < 100 && showConfetti) {
+    if (percentage >= 100 && prevPercentage < 100 && showConfetti && !shouldReduceMotion) {
       setShowCelebration(true);
       const timer = setTimeout(() => setShowCelebration(false), 2000);
       return () => clearTimeout(timer);
     }
     setPrevPercentage(percentage);
     return undefined;
-  }, [percentage, prevPercentage, showConfetti]);
+  }, [percentage, prevPercentage, showConfetti, shouldReduceMotion]);
 
   // Confetti colors - defined outside useMemo to avoid recreation
   const confettiColors = useMemo(
@@ -97,24 +98,17 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
     }));
   }, [confettiColors]);
 
-  // Gradient colors based on percentage
-  const getGradientColors = useCallback(() => {
-    if (percentage >= 100) {
-      return { start: '#10B981', end: '#34D399' }; // Green
-    }
-    if (percentage >= 75) {
-      return { start: '#00F0FF', end: '#7B61FF' }; // Cyan to Violet
-    }
-    if (percentage >= 50) {
-      return { start: '#7B61FF', end: '#C77DFF' }; // Violet shades
-    }
-    if (percentage >= 25) {
-      return { start: '#F97316', end: '#FBBF24' }; // Orange to Yellow
-    }
-    return { start: '#6B7280', end: '#9CA3AF' }; // Gray
+  // Gradient colors based on percentage. Memoized so the SVG `stop` elements
+  // and the radial-gradient background do not get a new prop reference on
+  // every parent render.
+  const gradientColors = useMemo(() => {
+    if (percentage >= 100) return { start: '#10B981', end: '#34D399' };
+    if (percentage >= 75) return { start: '#00F0FF', end: '#7B61FF' };
+    if (percentage >= 50) return { start: '#7B61FF', end: '#C77DFF' };
+    if (percentage >= 25) return { start: '#F97316', end: '#FBBF24' };
+    return { start: '#6B7280', end: '#9CA3AF' };
   }, [percentage]);
 
-  const gradientColors = getGradientColors();
   const gradientId = `progress-gradient-${size}`;
 
   return (
@@ -123,6 +117,11 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
         percentage >= 100 ? 'progress-ring-complete' : ''
       }`}
       style={{ width: size, height: size }}
+      role="progressbar"
+      aria-valuenow={Math.round(percentage)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={label || 'התקדמות'}
     >
       {/* Confetti */}
       <AnimatePresence>
@@ -143,19 +142,28 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
           height: size,
           background: `radial-gradient(circle, ${gradientColors.start}20 0%, transparent 70%)`,
         }}
-        animate={{
-          scale: percentage >= 100 ? [1, 1.1, 1] : 1,
-          opacity: percentage >= 100 ? [0.5, 1, 0.5] : 0.5,
-        }}
+        animate={
+          shouldReduceMotion
+            ? { scale: 1, opacity: 0.5 }
+            : {
+                scale: percentage >= 100 ? [1, 1.1, 1] : 1,
+                opacity: percentage >= 100 ? [0.5, 1, 0.5] : 0.5,
+              }
+        }
         transition={{
           duration: 2,
-          repeat: percentage >= 100 ? Number.POSITIVE_INFINITY : 0,
+          repeat: !shouldReduceMotion && percentage >= 100 ? Number.POSITIVE_INFINITY : 0,
           ease: 'easeInOut',
         }}
       />
 
       {/* SVG Ring */}
-      <svg className="progress-ring-container -rotate-90" width={size} height={size} role="img" aria-label="התקדמות">
+      <svg
+        className="progress-ring-container -rotate-90"
+        width={size}
+        height={size}
+        aria-hidden="true"
+      >
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor={gradientColors.start} />
@@ -195,7 +203,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset }}
           transition={{
-            duration: 1,
+            duration: shouldReduceMotion ? 0 : 1,
             ease: [0.22, 1, 0.36, 1],
           }}
           filter="url(#glow)"
@@ -206,9 +214,9 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <motion.span
           key={Math.round(percentage)}
-          initial={{ scale: 1.2, opacity: 0 }}
+          initial={shouldReduceMotion ? false : { scale: 1.2, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className={`font-bold text-white font-heading ${size < 50 ? 'text-[10px]' : size < 100 ? 'text-xl' : 'text-3xl'}`}
+          className={`font-bold text-white font-heading tabular-nums ${size < 50 ? 'text-[10px]' : size < 100 ? 'text-xl' : 'text-3xl'}`}
         >
           {Math.round(percentage)}%
         </motion.span>
@@ -226,7 +234,9 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
               exit={{ scale: 0, y: 10 }}
               className="absolute -bottom-2"
             >
-              <span className="text-2xl" aria-label="הושלם">§</span>
+              <span className="text-2xl" aria-label="הושלם">
+                §
+              </span>
             </motion.div>
           )}
         </AnimatePresence>

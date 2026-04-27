@@ -1,6 +1,6 @@
 // Workout Context - Split contexts to prevent unnecessary re-renders
 import type React from 'react';
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import { type WorkoutSet, createWorkoutSet } from '../../../types';
 import type { WorkoutAction, WorkoutDerivedValue, WorkoutState } from './workoutTypes';
 
@@ -118,36 +118,56 @@ export function useRestTimer() {
 }
 
 /**
- * Get UI overlay states
+ * Get UI overlay states. Return value is memoized so consumers only re-render
+ * when one of these specific fields changes (not on every dispatch).
  */
 export function useWorkoutOverlays() {
   const state = useWorkoutState();
-  return {
-    showSettings: state.showSettings,
-    showExerciseSelector: state.showExerciseSelector,
-    showQuickForm: state.showQuickForm,
-    showExerciseLibrary: state.showExerciseLibrary,
-    showGoalSelector: state.showGoalSelector,
-    showWarmup: state.showWarmup,
-    showCooldown: state.showCooldown,
-    showWaterReminder: state.showWaterReminder,
-    showTutorial: state.showTutorial,
-    showAICoach: state.showAICoach,
-    numpad: state.numpad,
-    isDrawerOpen: state.isDrawerOpen,
-  };
+  return useMemo(
+    () => ({
+      showSettings: state.showSettings,
+      showExerciseSelector: state.showExerciseSelector,
+      showQuickForm: state.showQuickForm,
+      showExerciseLibrary: state.showExerciseLibrary,
+      showGoalSelector: state.showGoalSelector,
+      showWarmup: state.showWarmup,
+      showCooldown: state.showCooldown,
+      showWaterReminder: state.showWaterReminder,
+      showTutorial: state.showTutorial,
+      showAICoach: state.showAICoach,
+      numpad: state.numpad,
+      isDrawerOpen: state.isDrawerOpen,
+    }),
+    [
+      state.showSettings,
+      state.showExerciseSelector,
+      state.showQuickForm,
+      state.showExerciseLibrary,
+      state.showGoalSelector,
+      state.showWarmup,
+      state.showCooldown,
+      state.showWaterReminder,
+      state.showTutorial,
+      state.showAICoach,
+      state.numpad,
+      state.isDrawerOpen,
+    ]
+  );
 }
 
 /**
- * Get celebration states
+ * Get celebration states. Memoized — see useWorkoutOverlays for rationale.
  */
 export function useWorkoutCelebration() {
   const state = useWorkoutState();
-  return {
-    showConfetti: state.showConfetti,
-    showPRCelebration: state.showPRCelebration,
-    pendingHaptic: state.pendingHaptic,
-  };
+  return useMemo(
+    () => ({
+      showConfetti: state.showConfetti,
+      showPRCelebration: state.showPRCelebration,
+      pendingHaptic: state.pendingHaptic,
+    }),
+    [state.showConfetti, state.showPRCelebration, state.pendingHaptic]
+  );
 }
 
 export default {

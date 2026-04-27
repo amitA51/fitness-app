@@ -13,14 +13,14 @@ import type {
   WorkoutTemplate,
 } from '../types';
 import { logger } from '../utils/logger';
+import { dbClear, dbDelete, dbGet, dbGetAll, dbPut } from './indexedDBCore';
+import { getCurrentUser } from './supabaseAuth';
 import {
   deleteCloudWorkoutTemplate,
   syncBodyWeight,
   syncWorkoutSession,
   syncWorkoutTemplate,
 } from './supabaseSync';
-import { dbClear, dbDelete, dbGet, dbGetAll, dbPut } from './indexedDBCore';
-import { getCurrentUser } from './supabaseAuth';
 
 const withRetry = async (
   operation: () => Promise<void>,

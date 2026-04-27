@@ -34,7 +34,11 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   const tutorialSteps: TutorialStep[] = useMemo(
     () => [
       { title: 'תחילת תנועה', description: `התחל את תנועת ${exerciseName} מהמצב ההתחלתי הנכון` },
-      { title: 'טכניקה', description: 'בצע את התרגיל בתנועה מבוקרת וישרה', tip: 'שמור על שרירי הליבה מכווצים לאורך כל התנועה' },
+      {
+        title: 'טכניקה',
+        description: 'בצע את התרגיל בתנועה מבוקרת וישרה',
+        tip: 'שמור על שרירי הליבה מכווצים לאורך כל התנועה',
+      },
       { title: 'סיום', description: 'השלם את הסט בצורה בטוחה ויציבה' },
     ],
     [exerciseName]
@@ -47,7 +51,11 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
         { title: 'אחיזה', description: 'אחז ברוחב כתפיים וחצי, פרקי ידיים ישרים' },
         { title: 'תנועה', description: 'הורד את המוט לאמצע החזה בשליטה' },
         { title: 'לחץ', description: 'דחף למעלה בקו ישר לכיוון הפנים' },
-        { title: 'טיפ חשוב', description: 'שמור על הגב צמוד לספסל', tip: 'אל תנעל את המרפקים לחלוטין' },
+        {
+          title: 'טיפ חשוב',
+          description: 'שמור על הגב צמוד לספסל',
+          tip: 'אל תנעל את המרפקים לחלוטין',
+        },
       ],
       Squat: [
         { title: 'מצב התחלתי', description: 'עמוד ברוחב כתפיים, מוט על הגב העליון' },
@@ -61,7 +69,11 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
         { title: 'אחיזה', description: 'אחז ברוחב כתפיים, שמור על זווית ישרה בגב' },
         { title: 'תנועה', description: 'הרם עם הרגליים, שמור על הגב ישר' },
         { title: 'סיום', description: 'נעל את הירכיים, כתפיים לאחור' },
-        { title: 'טיפ', description: 'אל תעגל את הגב - זו הטעות הנפוצה ביותר', tip: 'השתמש בחגורת אימון למשקולות כבדות' },
+        {
+          title: 'טיפ',
+          description: 'אל תעגל את הגב - זו הטעות הנפוצה ביותר',
+          tip: 'השתמש בחגורת אימון למשקולות כבדות',
+        },
       ],
     }),
     []
@@ -80,7 +92,8 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
-      if (e.key === 'ArrowRight') setActiveStep((prev) => Math.min(prev + 1, currentExerciseSteps.length - 1));
+      if (e.key === 'ArrowRight')
+        setActiveStep((prev) => Math.min(prev + 1, currentExerciseSteps.length - 1));
       else if (e.key === 'ArrowLeft') setActiveStep((prev) => Math.max(prev - 1, 0));
       else if (e.key === 'Escape') onClose();
     };
@@ -112,6 +125,9 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tutorial-title"
       style={{
         position: 'fixed',
         inset: 0,
@@ -147,6 +163,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             § {activeStep + 1}
           </div>
           <h2
+            id="tutorial-title"
             style={{
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
@@ -162,8 +179,8 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
           type="button"
           onClick={onClose}
           style={{
-            width: 36,
-            height: 36,
+            width: 44,
+            height: 44,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -239,7 +256,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             letterSpacing: '0.15em',
-            color: 'rgba(var(--text-on-navy-rgb),0.4)',
+            color: 'rgba(var(--text-on-navy-rgb),0.65)',
             textTransform: 'uppercase',
             marginTop: 8,
             textAlign: 'center',
@@ -291,7 +308,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     letterSpacing: '0.15em',
-                    color: 'rgba(var(--text-on-navy-rgb),0.4)',
+                    color: 'rgba(var(--text-on-navy-rgb),0.65)',
                     textTransform: 'uppercase',
                   }}
                 >

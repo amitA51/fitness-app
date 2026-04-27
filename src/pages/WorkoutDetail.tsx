@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   Clock,
   Dumbbell,
-  Flame,
   Star,
   Target,
   TrendingDown,
@@ -415,38 +414,6 @@ function usePreviousSession(current: WorkoutSession | null): WorkoutSession | nu
 }
 
 // ============================================================================
-// ESTIMATED CALORIES BURNED
-// ============================================================================
-
-function calculateEstimatedCalories(duration: number, exercises: WorkoutExercise[]): number {
-  // Base MET (Metabolic Equivalent of Task) for weight training is ~3.5-6
-  // Average ~4.5 MET for moderate intensity workout
-  // Calories = MET × weight (kg) × duration (hours)
-  // Assuming average body weight of 75kg
-
-  const averageMET = 4.5;
-  const averageWeight = 75; // kg
-  const durationHours = duration / 3600;
-
-  // Base calculation
-  let calories = averageMET * averageWeight * durationHours;
-
-  // Add intensity bonus based on total volume (more volume = higher intensity)
-  const totalVolume = exercises.reduce((sum, ex) => {
-    const exVolume = ex.sets
-      .filter((s) => s.isCompleted)
-      .reduce((setSum, set) => setSum + (set.weight || 0) * (set.reps || 0), 0);
-    return sum + exVolume;
-  }, 0);
-
-  // Each 1000kg of volume adds ~10% to intensity
-  const volumeBonus = Math.min((totalVolume / 1000) * 0.1, 0.5);
-  calories *= 1 + volumeBonus;
-
-  return Math.round(calories);
-}
-
-// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -515,7 +482,6 @@ export default function WorkoutDetail() {
 
   const totalSets = calculateTotalSets(session.exercises);
   const totalReps = calculateTotalReps(session.exercises);
-  const estimatedCalories = calculateEstimatedCalories(session.duration, session.exercises);
 
   return (
     <div
@@ -601,12 +567,6 @@ export default function WorkoutDetail() {
             label="סטים"
             value={totalSets.toString()}
             subValue={`${totalReps} חזרות`}
-          />
-          <StatItem
-            icon={<Flame size={16} className="text-orange-400" />}
-            label="שריפת קלוריות"
-            value={estimatedCalories.toString()}
-            subValue="קלוריות (משוער)"
           />
         </motion.div>
 

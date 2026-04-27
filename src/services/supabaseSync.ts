@@ -5,24 +5,39 @@
 
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import type {
+  BodyWeightEntry as CanonicalBodyWeightEntry,
+  PersonalExercise as CanonicalPersonalExercise,
+  WorkoutSession as CanonicalWorkoutSession,
+  WorkoutTemplate as CanonicalWorkoutTemplate,
+} from '../types';
 import { logger } from '../utils/logger';
 import { STORES } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import {
-  replaceAIConversationsFromCloud,
-  replaceBodyMeasurementsFromCloud,
-  replaceBodyWeightFromCloud,
-  replaceNutritionLogsFromCloud,
-  replacePersonalExercisesFromCloud,
-  replacePersonalRecordsFromCloud,
-  replaceRecoveryLogsFromCloud,
-  replaceUserSettingsFromCloud,
-  replaceWorkoutSessionsFromCloud,
-  replaceWorkoutTemplatesFromCloud,
+  mergeAIConversationsFromCloud,
+  mergeBodyMeasurementsFromCloud,
+  mergeBodyWeightFromCloud,
+  mergeNutritionLogsFromCloud,
+  mergePersonalExercisesFromCloud,
+  mergePersonalRecordsFromCloud,
+  mergeRecoveryLogsFromCloud,
+  mergeUserSettingsFromCloud,
+  mergeWorkoutSessionsFromCloud,
+  mergeWorkoutTemplatesFromCloud,
 } from './workoutDb';
 
 // ==================== TYPE DEFINITIONS ====================
 
+// These interfaces describe the shape of records flowing through the sync
+// layer. They are intentionally a superset — all fields beyond the canonical
+// DB columns are optional so callers can pass richer domain objects from
+// src/types without a cast, and mappers can safely ignore the extras.
+//
+// Option B (see Supabase sync handoff): rather than importing the canonical
+// types wholesale (which require non-null fields we don't always fetch from
+// the DB), we keep file-local interfaces that are structurally compatible
+// with the canonical ones by marking the extra fields optional.
 interface WorkoutTemplate {
   id: string;
   user_id?: string;
@@ -31,6 +46,12 @@ interface WorkoutTemplate {
   exercises: unknown[];
   createdAt?: string;
   updatedAt?: string;
+  // Canonical fields (optional here — present on domain objects from ../types)
+  lastUsed?: string | null;
+  timesUsed?: number;
+  isFavorite?: boolean;
+  muscleGroups?: string[];
+  isBuiltin?: boolean;
 }
 
 interface WorkoutSession {
@@ -39,12 +60,26 @@ interface WorkoutSession {
   title?: string;
   date?: string;
   startTime: string;
-  endTime?: string;
+  endTime?: string | null;
   duration?: number;
   exercises: unknown[];
   totalVolume?: number;
   notes?: string;
   createdAt?: string;
+  // Canonical fields (optional here)
+  updatedAt?: string;
+  status?: 'active' | 'completed' | 'cancelled';
+  templateId?: string | null;
+  rating?: number | null;
+  caloriesBurned?: number | null;
+  userId?: string;
+  workoutItemId?: string;
+  goalType?: string;
+  lastUsed?: string | null;
+  timesUsed?: number;
+  isFavorite?: boolean;
+  muscleGroups?: string[];
+  isBuiltin?: boolean;
 }
 
 interface PersonalExercise {
@@ -63,6 +98,19 @@ interface PersonalExercise {
   lastUsed?: string;
   createdAt?: string;
   updatedAt?: string;
+  // Canonical fields (optional — see ../types PersonalExercise/Exercise)
+  userId?: string;
+  targetMuscle?: string;
+  secondaryMuscles?: string[];
+  equipment?: string;
+  instructions?: string;
+  videoUrl?: string | null;
+  imageUrl?: string | null;
+  isCustom?: boolean;
+  isTimed?: boolean;
+  targetRestTime?: number;
+  lastWeight?: number | null;
+  lastReps?: number | null;
 }
 
 interface BodyWeightEntry {
@@ -71,6 +119,8 @@ interface BodyWeightEntry {
   weight: number;
   date: string;
   createdAt?: string;
+  // Canonical field (optional)
+  notes?: string;
 }
 
 interface BodyMeasurement {
@@ -1117,6 +1167,55 @@ export const syncAllData = async (): Promise<SyncResult> => {
   }
 };
 
+// Mappers that fill in required canonical-type fields with safe defaults when
+// pulling from Supabase. Columns we don't persist server-side (e.g. lastUsed
+// on templates, status on sessions) get reasonable defaults so the result
+// satisfies the canonical types in ../types without an unsafe cast.
+const toCanonicalTemplate = (t: WorkoutTemplate): CanonicalWorkoutTemplate => ({
+  id: t.id,
+  name: t.name,
+  description: t.description ?? '',
+  exercises: (t.exercises ?? []) as CanonicalWorkoutTemplate['exercises'],
+  createdAt: t.createdAt ?? new Date().toISOString(),
+  updatedAt: t.updatedAt ?? t.createdAt ?? new Date().toISOString(),
+  lastUsed: t.lastUsed ?? null,
+  timesUsed: t.timesUsed ?? 0,
+  isFavorite: t.isFavorite ?? false,
+  ...(t.muscleGroups !== undefined && { muscleGroups: t.muscleGroups }),
+  ...(t.isBuiltin !== undefined && { isBuiltin: t.isBuiltin }),
+});
+
+const toCanonicalSession = (s: WorkoutSession): CanonicalWorkoutSession => ({
+  id: s.id,
+  date: s.date ?? (s.startTime ? s.startTime.slice(0, 10) : new Date().toISOString().slice(0, 10)),
+  startTime: s.startTime,
+  endTime: s.endTime ?? null,
+  exercises: (s.exercises ?? []) as CanonicalWorkoutSession['exercises'],
+  duration: s.duration ?? 0,
+  status: s.status ?? (s.endTime ? 'completed' : 'active'),
+  templateId: s.templateId ?? null,
+  notes: s.notes ?? '',
+  rating: s.rating ?? null,
+  totalVolume: s.totalVolume ?? 0,
+  caloriesBurned: s.caloriesBurned ?? null,
+  createdAt: s.createdAt ?? s.startTime ?? new Date().toISOString(),
+  updatedAt: s.updatedAt ?? s.createdAt ?? s.startTime ?? new Date().toISOString(),
+});
+
+const toCanonicalPersonalExercise = (e: PersonalExercise): CanonicalPersonalExercise => ({
+  ...e,
+  id: e.id,
+  name: e.name,
+});
+
+const toCanonicalBodyWeight = (b: BodyWeightEntry): CanonicalBodyWeightEntry => ({
+  id: b.id,
+  date: b.date,
+  weight: b.weight,
+  notes: b.notes,
+  createdAt: b.createdAt ?? new Date().toISOString(),
+});
+
 export const pullAllData = async (): Promise<SyncResult> => {
   const userId = await getUserId();
   if (!userId) {
@@ -1149,16 +1248,16 @@ export const pullAllData = async (): Promise<SyncResult> => {
     ]);
 
     await Promise.all([
-      replaceWorkoutTemplatesFromCloud(templates),
-      replaceWorkoutSessionsFromCloud(sessions as unknown as WorkoutSession[]),
-      replacePersonalExercisesFromCloud(exercises as unknown as PersonalExercise[]),
-      replaceBodyWeightFromCloud(bodyWeight as unknown as BodyWeightEntry[]),
-      replaceBodyMeasurementsFromCloud(bodyMeasurements),
-      replacePersonalRecordsFromCloud(personalRecords),
-      replaceRecoveryLogsFromCloud(recoveryLogs),
-      replaceNutritionLogsFromCloud(nutritionLogs),
-      replaceUserSettingsFromCloud(userSettings),
-      replaceAIConversationsFromCloud(aiConversations),
+      mergeWorkoutTemplatesFromCloud(templates.map(toCanonicalTemplate)),
+      mergeWorkoutSessionsFromCloud(sessions.map(toCanonicalSession)),
+      mergePersonalExercisesFromCloud(exercises.map(toCanonicalPersonalExercise)),
+      mergeBodyWeightFromCloud(bodyWeight.map(toCanonicalBodyWeight)),
+      mergeBodyMeasurementsFromCloud(bodyMeasurements),
+      mergePersonalRecordsFromCloud(personalRecords),
+      mergeRecoveryLogsFromCloud(recoveryLogs),
+      mergeNutritionLogsFromCloud(nutritionLogs),
+      mergeUserSettingsFromCloud(userSettings),
+      mergeAIConversationsFromCloud(aiConversations),
     ]);
 
     const counts = {

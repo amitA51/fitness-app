@@ -10,10 +10,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   createWorkoutTemplate,
   deleteWorkoutTemplate,
+  getPersonalExercises,
   getWorkoutTemplates,
   updateWorkoutTemplate,
 } from '../services/workoutDb';
-import type { WorkoutTemplate } from '../types';
+import type { PersonalExercise, WorkoutTemplate, WorkoutTemplateExercise } from '../types';
 
 // ============================================================================
 // Spring Animation Variants
@@ -53,15 +54,61 @@ function formatLastUsed(lastUsed: string | null): string {
 // Create Template Modal — Premium Bottom Sheet
 // ============================================================================
 
+interface TemplateExerciseInput {
+  exerciseName: string;
+  targetSets: number;
+  targetReps: number;
+  restSeconds: number;
+}
+
 interface CreateModalProps {
   onClose: () => void;
-  onCreate: (name: string) => Promise<void>;
+  onCreate: (name: string, exercises: TemplateExerciseInput[]) => Promise<void>;
 }
 
 function CreateModal({ onClose, onCreate }: CreateModalProps) {
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Exercise builder state
+  const [exercises, setExercises] = useState<TemplateExerciseInput[]>([]);
+  const [showExercisePicker, setShowExercisePicker] = useState(false);
+  const [exerciseSearch, setExerciseSearch] = useState('');
+  const [allExercises, setAllExercises] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (showExercisePicker) {
+      getPersonalExercises().then((exs) => setAllExercises(exs));
+    }
+  }, [showExercisePicker]);
+
+  const filteredExercises = useMemo(
+    () =>
+      allExercises.filter((ex) =>
+        (ex.name || '').toLowerCase().includes(exerciseSearch.toLowerCase())
+      ),
+    [allExercises, exerciseSearch]
+  );
+
+  const handleAddExercise = (exercise: PersonalExercise) => {
+    const exName = exercise.name || 'תרגיל';
+    setExercises((prev) => [
+      ...prev,
+      {
+        exerciseName: exName,
+        targetSets: exercise.defaultSets ?? 3,
+        targetReps: 10,
+        restSeconds: exercise.defaultRestTime ?? 60,
+      },
+    ]);
+    setShowExercisePicker(false);
+    setExerciseSearch('');
+  };
+
+  const handleRemoveExercise = (index: number) => {
+    setExercises((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +120,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
     setIsSubmitting(true);
     setError(null);
     try {
-      await onCreate(trimmed);
+      await onCreate(trimmed, exercises);
     } catch {
       setError('שגיאה ביצירת התבנית. נסה שוב.');
       setIsSubmitting(false);
@@ -95,7 +142,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
         exit={{ y: '100%' }}
         transition={{ ...springTransition, duration: 0.4 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-[#18181C] rounded-t-3xl border-t border-white/[0.08] pt-3 pb-10"
+        className="w-full max-w-lg bg-[#18181C] rounded-t-3xl border-t border-white/[0.08] pt-3 pb-10 max-h-[90vh] overflow-y-auto"
       >
         {/* Drag Handle */}
         <div className="flex justify-center mb-5">
@@ -119,7 +166,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Label */}
+            {/* Name Input */}
             <div>
               <label className="block text-[12px] font-semibold text-label-secondary mb-2 me-1">
                 שם התבנית
@@ -151,6 +198,207 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                 </motion.p>
               )}
             </div>
+
+            {/* Exercise Builder Section */}
+            <div>
+              <label className="block text-[12px] font-semibold text-label-secondary mb-2 me-1">
+                תרגילים
+                <span
+                  className="ms-2"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    letterSpacing: '0.15em',
+                    color: 'var(--stone)',
+                  }}
+                >
+                  {exercises.length > 0 ? `${exercises.length} EXERCISES` : 'OPTIONAL'}
+                </span>
+              </label>
+
+              {/* Added exercise chips */}
+              {exercises.length > 0 && (
+                <div className="flex flex-col gap-2 mb-3">
+                  {exercises.map((ex, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      className="flex items-center justify-between rounded-xl px-3 py-2.5"
+                      style={{
+                        background: 'var(--bone)',
+                        border: '1px solid var(--bone-deep)',
+                      }}
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Dumbbell size={14} style={{ color: 'var(--navy)' }} />
+                        <span
+                          className="truncate"
+                          style={{
+                            fontFamily: 'var(--font-hebrew)',
+                            fontSize: '14px',
+                            fontWeight: 700,
+                            color: 'var(--ink)',
+                          }}
+                        >
+                          {ex.exerciseName}
+                        </span>
+                        <span
+                          className="whitespace-nowrap"
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '11px',
+                            letterSpacing: '0.04em',
+                            color: 'var(--navy)',
+                          }}
+                        >
+                          {ex.targetSets}×{ex.targetReps}
+                        </span>
+                        <span
+                          className="whitespace-nowrap"
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '10px',
+                            color: 'var(--stone)',
+                          }}
+                        >
+                          {ex.restSeconds}s
+                        </span>
+                      </div>
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        type="button"
+                        onClick={() => handleRemoveExercise(i)}
+                        className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center me-1"
+                        style={{ background: 'var(--bone-deep)' }}
+                        aria-label={`הסר ${ex.exerciseName}`}
+                      >
+                        <X size={12} style={{ color: 'var(--navy)' }} />
+                      </motion.button>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add Exercise button */}
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setShowExercisePicker(true)}
+                className="w-full py-3 rounded-xl flex items-center justify-center gap-2"
+                style={{
+                  border: '1.5px dashed var(--bone-deep)',
+                  color: 'var(--navy)',
+                  fontFamily: 'var(--font-hebrew)',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                }}
+              >
+                <Plus size={16} />
+                הוסף תרגיל
+              </motion.button>
+            </div>
+
+            {/* Exercise Picker Overlay */}
+            <AnimatePresence>
+              {showExercisePicker && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden rounded-xl"
+                  style={{
+                    background: 'var(--bone)',
+                    border: '1px solid var(--bone-deep)',
+                  }}
+                >
+                  <div className="p-3">
+                    <div className="flex items-center justify-between mb-3">
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-hebrew)',
+                          fontSize: '14px',
+                          fontWeight: 700,
+                          color: 'var(--ink)',
+                        }}
+                      >
+                        בחר תרגיל
+                      </span>
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        type="button"
+                        onClick={() => {
+                          setShowExercisePicker(false);
+                          setExerciseSearch('');
+                        }}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center"
+                        style={{ background: 'var(--bone-deep)' }}
+                      >
+                        <X size={12} style={{ color: 'var(--navy)' }} />
+                      </motion.button>
+                    </div>
+                    <input
+                      type="text"
+                      value={exerciseSearch}
+                      onChange={(e) => setExerciseSearch(e.target.value)}
+                      placeholder="חפש תרגיל..."
+                      autoFocus
+                      className="w-full rounded-lg px-3 py-2.5 text-[14px]"
+                      style={{
+                        background: 'var(--bone-deep)',
+                        border: '1px solid var(--bone-deep)',
+                        color: 'var(--ink)',
+                        fontFamily: 'var(--font-hebrew)',
+                      }}
+                    />
+                    <div
+                      className="mt-2 flex flex-col gap-1 max-h-[200px] overflow-y-auto"
+                      style={{
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: 'var(--bone-deep) transparent',
+                      }}
+                    >
+                      {filteredExercises.length === 0 && (
+                        <p
+                          className="text-center py-4"
+                          style={{
+                            fontFamily: 'var(--font-hebrew)',
+                            fontSize: '13px',
+                            color: 'var(--stone)',
+                          }}
+                        >
+                          לא נמצאו תרגילים
+                        </p>
+                      )}
+                      {filteredExercises.map((ex) => (
+                        <motion.button
+                          key={ex.id}
+                          type="button"
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleAddExercise(ex)}
+                          className="w-full text-right px-3 py-2.5 rounded-lg flex items-center justify-between"
+                          style={{
+                            fontFamily: 'var(--font-hebrew)',
+                            fontSize: '14px',
+                            fontWeight: 600,
+                            color: 'var(--ink)',
+                            transition: 'background 0.15s',
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background = 'var(--bone-deep)')
+                          }
+                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <span>{ex.name || 'תרגיל'}</span>
+                          <Plus size={14} style={{ color: 'var(--navy)' }} />
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <motion.button
               type="submit"
@@ -191,7 +439,15 @@ interface TemplateCardProps {
   isFavoriting?: boolean;
 }
 
-function TemplateCard({ template, index, onStart, onToggleFavorite, onDelete, isDeleting, isFavoriting }: TemplateCardProps) {
+function TemplateCard({
+  template,
+  index,
+  onStart,
+  onToggleFavorite,
+  onDelete,
+  isDeleting,
+  isFavoriting,
+}: TemplateCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -398,10 +654,7 @@ function LoadingState() {
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
-    <div
-      className="pb-[88px] flex flex-col items-center justify-center px-6"
-      dir="rtl"
-    >
+    <div className="pb-[88px] flex flex-col items-center justify-center px-6" dir="rtl">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -430,7 +683,7 @@ export default function Templates() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [creatingId, setCreatingId] = useState<string | null>(null);
+  const [_creatingId, setCreatingId] = useState<string | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [favoritingIds, setFavoritingIds] = useState<Set<string>>(new Set());
 
@@ -463,13 +716,25 @@ export default function Templates() {
     };
   }, [templates]);
 
-  const handleCreate = async (name: string) => {
+  const handleCreate = async (name: string, templateExercises: TemplateExerciseInput[] = []) => {
     setCreatingId('temp');
     try {
+      const exercises: WorkoutTemplateExercise[] = templateExercises.map((ex, i) => ({
+        id: crypto.randomUUID(),
+        exerciseId: '',
+        exerciseName: ex.exerciseName,
+        targetMuscle: '',
+        targetSets: ex.targetSets,
+        targetReps: ex.targetReps,
+        targetWeight: null,
+        restSeconds: ex.restSeconds,
+        order: i,
+        notes: '',
+      }));
       const newTemplate = await createWorkoutTemplate({
         name,
         description: '',
-        exercises: [],
+        exercises,
         updatedAt: new Date().toISOString(),
         lastUsed: null,
         timesUsed: 0,
@@ -535,7 +800,10 @@ export default function Templates() {
         animate="show"
       >
         {/* Masthead */}
-        <header className="masthead sticky top-0 z-20" style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}>
+        <header
+          className="masthead sticky top-0 z-20"
+          style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}
+        >
           <div className="kicker">§06 · TEMPLATES · {templates.length} ROUTINES</div>
           <h1
             style={{

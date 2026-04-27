@@ -226,6 +226,7 @@ export interface MacroNutrients {
   protein: number;
   carbs: number;
   fat: number;
+  fiber?: number;
 }
 
 // ============================================================================
@@ -324,7 +325,28 @@ export interface PersonalItem {
   name?: string;
   createdAt?: string;
   updatedAt?: string;
-  [key: string]: unknown;
+  // PersonalExercise-derived fields surfaced at this level
+  targetMuscle?: string;
+  muscleGroup?: string;
+  category?: string;
+  equipment?: string;
+  instructions?: string;
+  videoUrl?: string | null;
+  imageUrl?: string | null;
+  isCustom?: boolean;
+  isTimed?: boolean;
+  userId?: string;
+  lastWeight?: number | null;
+  lastReps?: number | null;
+  defaultRestTime?: number;
+  defaultSets?: number;
+  tempo?: string;
+  tutorialText?: string;
+  isFavorite?: boolean;
+  useCount?: number;
+  lastUsed?: string;
+  notes?: string;
+  isBuiltin?: boolean;
 }
 
 // Body weight entry
@@ -338,8 +360,8 @@ export interface BodyWeightEntry {
 
 // Workout goals (type alias)
 export type WorkoutGoal = 'strength' | 'hypertrophy' | 'endurance' | 'maintenance' | 'general';
-export type WarmupPreference = 'skip' | 'optional' | 'required';
-export type WarmupMode = 'skip' | 'optional' | 'required' | 'ask' | 'always' | 'never';
+export type WarmupPreference = 'required' | 'skip' | 'optional' | 'ask' | 'always' | 'never';
+export type WarmupMode = 'required' | 'skip' | 'optional' | 'ask' | 'always' | 'never';
 
 // Helper to create a properly typed WorkoutSet
 export const createWorkoutSet = (
@@ -463,6 +485,7 @@ export interface AppSettings {
   soundEnabled: boolean;
   keepAwake: boolean;
   darkMode: boolean;
+  unitSystem: 'metric' | 'imperial';
 }
 
 export interface PersonalRecord {

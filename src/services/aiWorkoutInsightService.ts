@@ -17,6 +17,9 @@ export async function generateAIWorkoutInsight(sessions: WorkoutSession[]): Prom
       content: `נתח את האימונים שלי מהתקופה האחרונה ותן תובנה קצרה אחת ומעשית. נתונים:
 - מגמת נפח: ${context.volumeTrend}
 - נפח שבועי: ${context.weeklyVolume} ק"ג
+- שינוי נפח שבועי: ${context.volumeChangePercent}%
+- ציון מוכנות מתמטי: ${context.readinessScore}/100
+- מגבלה מרכזית: ${context.primaryConstraint}
 - שרירים חלשים: ${context.weakMuscles.join(', ') || 'אין'}
 - רצף: ${context.streakDays} ימים`,
     },

@@ -34,38 +34,46 @@ export function useFocusTrap(
       if (!isActive || !containerRef.current) return;
 
       const container = containerRef.current;
-      const focusableElements = container.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
 
-      const firstElement = focusableElements[0] as HTMLElement;
-      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+      const getFocusable = () =>
+        Array.from(
+          container.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        );
 
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key !== 'Tab') return;
+        if (!container.contains(document.activeElement)) return;
+
+        const focusable = getFocusable();
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
 
         if (e.shiftKey) {
-          if (document.activeElement === firstElement) {
+          if (document.activeElement === first || !container.contains(document.activeElement)) {
             e.preventDefault();
-            lastElement?.focus();
+            last?.focus();
           }
         } else {
-          if (document.activeElement === lastElement) {
+          if (document.activeElement === last) {
             e.preventDefault();
-            firstElement?.focus();
+            first?.focus();
           }
         }
       };
 
-      container.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('keydown', handleKeyDown);
 
       // Auto-focus first element
-      if (focusableElements.length > 0) {
-        firstElement?.focus();
+      const initialFocusable = getFocusable();
+      if (initialFocusable.length > 0) {
+        initialFocusable[0]?.focus();
       }
 
       return () => {
-        container.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('keydown', handleKeyDown);
       };
     }, [isActive]);
 
@@ -99,14 +107,14 @@ export function useFocusTrap(
 
     const container = containerRef_forLock.current;
 
-    const focusableElements = container.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-
-    const firstElement = focusableElements[0] as HTMLElement;
-    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
     const previouslyFocusedElement = document.activeElement as HTMLElement;
+
+    const getFocusable = () =>
+      Array.from(
+        container.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && closeOnEscape && onClose) {
@@ -116,29 +124,38 @@ export function useFocusTrap(
       }
 
       if (e.key !== 'Tab') return;
+      if (!container.contains(document.activeElement)) return;
+
+      const focusable = getFocusable();
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
 
       if (e.shiftKey) {
-        if (document.activeElement === firstElement) {
+        if (document.activeElement === first) {
           e.preventDefault();
-          lastElement?.focus();
+          last?.focus();
         }
       } else {
-        if (document.activeElement === lastElement) {
+        if (document.activeElement === last) {
           e.preventDefault();
-          firstElement?.focus();
+          first?.focus();
         }
       }
     };
 
-    container.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
 
     // Auto-focus first element
-    if (autoFocus && focusableElements.length > 0) {
-      setTimeout(() => firstElement?.focus(), 50);
+    if (autoFocus) {
+      setTimeout(() => {
+        const focusable = getFocusable();
+        focusable[0]?.focus();
+      }, 50);
     }
 
     return () => {
-      container.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown);
       // Restore scroll when modal closes
       if (lockScroll) {
         document.body.style.overflow = originalOverflowRef.current;

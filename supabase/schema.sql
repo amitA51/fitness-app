@@ -116,6 +116,8 @@ CREATE TABLE personal_records (
 CREATE INDEX idx_personal_records_user_id ON personal_records(user_id);
 CREATE INDEX idx_personal_records_exercise_id ON personal_records(exercise_id);
 CREATE INDEX idx_personal_records_date ON personal_records(date DESC);
+-- Composite index to optimize per-user PR lookups for a specific exercise
+CREATE INDEX IF NOT EXISTS idx_personal_records_user_exercise ON personal_records(user_id, exercise_id);
 
 -- ============================================================
 -- RECOVERY LOGS

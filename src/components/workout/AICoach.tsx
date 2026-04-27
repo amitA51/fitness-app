@@ -236,9 +236,7 @@ const AICoach: React.FC<AICoachProps> = ({ onClose, currentExercise }) => {
           .slice(0, 3);
 
         const muscleAdvice =
-          topMuscles.length < 3
-            ? 'שקול לגוון יותר קבוצות שרירים'
-            : 'מגוון קבוצות שרירים טוב';
+          topMuscles.length < 3 ? 'שקול לגוון יותר קבוצות שרירים' : 'מגוון קבוצות שרירים טוב';
         const durationAdvice =
           avgDuration < 30
             ? 'אימונים קצרים - שקול להאריך'
@@ -333,7 +331,13 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
             </div>
 
             {/* Input */}
-            <div className="flex gap-2" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))', paddingTop: 12 }}>
+            <div
+              className="flex gap-2"
+              style={{
+                paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))',
+                paddingTop: 12,
+              }}
+            >
               <input
                 type="text"
                 value={inputMessage}
@@ -365,10 +369,11 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
                   <button
                     key={group}
                     onClick={() => setMuscleGroup(group)}
-                    className={`px-3 py-2 rounded-full text-xs font-medium transition-all ${
+                    aria-pressed={muscleGroup === group}
+                    className={`px-4 py-3 min-h-[44px] rounded-full text-xs font-medium transition-all ${
                       muscleGroup === group
                         ? 'bg-[var(--cosmos-accent-primary)] text-black'
-                        : 'bg-white/10 text-white/60'
+                        : 'bg-white/10 text-white/65'
                     }`}
                   >
                     {group}
@@ -475,11 +480,23 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: '100%' }}
       transition={{ type: 'spring', damping: 30 }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ai-coach-title"
     >
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10" style={{ paddingTop: 'max(12px, env(safe-area-inset-top, 12px))' }}>
-        <h2 className="text-lg font-bold text-white">מאמן AI</h2>
-        <button onClick={onClose} className="w-11 h-11 flex items-center justify-center text-white/60 hover:text-white">
+      <div
+        className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10"
+        style={{ paddingTop: 'max(12px, env(safe-area-inset-top, 12px))' }}
+      >
+        <h2 id="ai-coach-title" className="text-lg font-bold text-white">
+          מאמן AI
+        </h2>
+        <button
+          onClick={onClose}
+          className="w-11 h-11 flex items-center justify-center text-white/60 hover:text-white"
+          aria-label="סגור"
+        >
           <CloseIcon className="w-6 h-6" />
         </button>
       </div>
@@ -495,7 +512,8 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
             key={tab.id}
             onClick={() => !tab.disabled && setActiveTab(tab.id as CoachTab)}
             disabled={tab.disabled}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            aria-current={activeTab === tab.id ? 'page' : undefined}
+            className={`flex-1 py-3 min-h-[44px] rounded-xl text-sm font-semibold transition-all ${
               activeTab === tab.id
                 ? 'bg-[var(--cosmos-accent-primary)] text-black'
                 : tab.disabled

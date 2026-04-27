@@ -2,7 +2,7 @@
 // Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { type StreakInfo, calculateStreak } from '../../services/achievementService';
 import {
@@ -144,6 +144,7 @@ const AnalyticsDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [hoveredBar, setHoveredBar] = useState<number | null>(null);
   const [hoveredTrendPoint, setHoveredTrendPoint] = useState<number | null>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -171,6 +172,20 @@ const AnalyticsDashboard: React.FC = () => {
     loadAnalytics();
   }, []);
 
+  const recentVolume = useMemo(() => volumeData.slice(-10), [volumeData]);
+  const maxVolume = useMemo(
+    () => Math.max(...recentVolume.map((d) => d.volume), 1),
+    [recentVolume]
+  );
+  const maxWeeklyVolume = useMemo(
+    () => Math.max(...weeklyVolumes.map((d) => d.totalVolume), 1),
+    [weeklyVolumes]
+  );
+
+  const handleTrendPointHover = useCallback((idx: number | null) => {
+    setHoveredTrendPoint(idx);
+  }, []);
+
   if (loading) {
     return (
       <div
@@ -195,20 +210,6 @@ const AnalyticsDashboard: React.FC = () => {
       </div>
     );
   }
-
-  const recentVolume = useMemo(() => volumeData.slice(-10), [volumeData]);
-  const maxVolume = useMemo(
-    () => Math.max(...recentVolume.map((d) => d.volume), 1),
-    [recentVolume]
-  );
-  const maxWeeklyVolume = useMemo(
-    () => Math.max(...weeklyVolumes.map((d) => d.totalVolume), 1),
-    [weeklyVolumes]
-  );
-
-  const handleTrendPointHover = useCallback((idx: number | null) => {
-    setHoveredTrendPoint(idx);
-  }, []);
 
   return (
     <div
@@ -337,7 +338,11 @@ const AnalyticsDashboard: React.FC = () => {
               viewBox={`0 0 ${weeklyVolumes.length * 60} 180`}
               preserveAspectRatio="xMidYMid meet"
               style={{ overflow: 'visible' }}
+              role="img"
+              aria-label="מגמת נפח שבועית"
             >
+              <title>מגמת נפח שבועית</title>
+              <desc>גרף עמודות המציג את הנפח הכולל לפי שבועות עם קו מגמה</desc>
               {/* Grid Lines */}
               {[0, 1, 2, 3, 4].map((i) => (
                 <line
@@ -378,17 +383,21 @@ const AnalyticsDashboard: React.FC = () => {
                       y={170 - height}
                       width={40}
                       height={height}
-                      initial={{ height: 0, y: 170 }}
+                      initial={shouldReduceMotion ? false : { height: 0, y: 170 }}
                       animate={{ height, y: 170 - height }}
-                      transition={{
-                        delay: 0.2 + i * 0.05,
-                        type: 'spring',
-                        stiffness: 200,
-                        damping: 15,
-                      }}
+                      transition={
+                        shouldReduceMotion
+                          ? { duration: 0 }
+                          : { delay: 0.2 + i * 0.05, type: 'spring', stiffness: 200, damping: 15 }
+                      }
                       onMouseEnter={() => setHoveredTrendPoint(i)}
                       onMouseLeave={() => setHoveredTrendPoint(null)}
-                      style={{ cursor: 'pointer', fill: isHovered ? 'var(--navy)' : 'var(--mustard)' }}
+                      style={{
+                        cursor: 'pointer',
+                        fill: isHovered ? 'var(--navy)' : 'var(--mustard)',
+                      }}
+                      role="img"
+                      aria-label={`שבוע ${i + 1}: ${week.totalVolume.toLocaleString()} ק״ג`}
                     />
 
                     {/* Week Label */}
@@ -888,7 +897,10 @@ const AnalyticsDashboard: React.FC = () => {
                 flexShrink: 0,
               }}
             >
-              <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+              <svg
+                viewBox="0 0 100 100"
+                style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}
+              >
                 {(() => {
                   let cumulativePercentage = 0;
                   return muscleGroupData.map((group, i) => {

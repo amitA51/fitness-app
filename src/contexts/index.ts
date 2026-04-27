@@ -7,6 +7,8 @@ export {
   DEFAULT_WORKOUT_SETTINGS,
 } from './SettingsContext';
 export { DataProvider, useData } from './DataContext';
+export { AuthProvider, useAuth } from './AuthContext';
+export type { AuthStatus } from './AuthContext';
 export {
   PageThemeProvider,
   usePageTheme,

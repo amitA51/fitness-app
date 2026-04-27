@@ -172,7 +172,12 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                 >
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                     <circle cx="9" cy="9" r="7" stroke="var(--navy)" strokeWidth="1.5" />
-                    <path d="M9 5V9L11.5 11.5" stroke="var(--navy)" strokeWidth="1.5" strokeLinecap="square" />
+                    <path
+                      d="M9 5V9L11.5 11.5"
+                      stroke="var(--navy)"
+                      strokeWidth="1.5"
+                      strokeLinecap="square"
+                    />
                   </svg>
                 </button>
               )}
@@ -200,7 +205,12 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                 aria-label="סגור"
               >
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M5 5L13 13M13 5L5 13" stroke="var(--mustard)" strokeWidth="2" strokeLinecap="square" />
+                  <path
+                    d="M5 5L13 13M13 5L5 13"
+                    stroke="var(--mustard)"
+                    strokeWidth="2"
+                    strokeLinecap="square"
+                  />
                 </svg>
               </button>
             </div>
@@ -374,7 +384,8 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                         marginTop: 4,
                       }}
                     >
-                      {lastSession.exercises.length} תרגילים · {formatRelativeTime(lastSession.startTime)}
+                      {lastSession.exercises.length} תרגילים ·{' '}
+                      {formatRelativeTime(lastSession.startTime)}
                     </p>
                   </div>
                 </motion.button>
@@ -439,7 +450,12 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                   }}
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 5V19M5 12H19" stroke="var(--navy)" strokeWidth="3" strokeLinecap="square" />
+                    <path
+                      d="M12 5V19M5 12H19"
+                      stroke="var(--navy)"
+                      strokeWidth="3"
+                      strokeLinecap="square"
+                    />
                   </svg>
                 </div>
                 <div style={{ flex: 1 }}>
@@ -468,7 +484,12 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                   </p>
                 </div>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M8 5L13 10L8 15" stroke="var(--mustard)" strokeWidth="2" strokeLinecap="square" />
+                  <path
+                    d="M8 5L13 10L8 15"
+                    stroke="var(--mustard)"
+                    strokeWidth="2"
+                    strokeLinecap="square"
+                  />
                 </svg>
               </motion.button>
 

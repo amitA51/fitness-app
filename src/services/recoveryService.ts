@@ -1,9 +1,11 @@
 /**
  * Recovery Tracking Service
- * Manages daily recovery logs including sleep, soreness, energy, and stress tracking.
+ * @deprecated This file is NOT imported anywhere in the app.
+ * All recovery functionality lives in bodyStatsService.ts instead.
+ * This file can be safely deleted.
  */
 
-import { STORES, dbDelete, dbGetAll, dbPut, syncWithRetry } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbGetByRange, dbPut, syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudRecoveryLog, syncRecoveryLog } from './supabaseSync';
 
@@ -135,13 +137,22 @@ export async function saveRecoveryLog(
 
   const user = await getCurrentUser();
   if (user) {
-    // TODO: schema missing stress_level, tight_areas, overall_score — extra fields dropped in cloud
     syncWithRetry(
       () =>
-        syncRecoveryLog(
-          user.id,
-          recoveryLog as unknown as Parameters<typeof syncRecoveryLog>[1]
-        ),
+        syncRecoveryLog(user.id, {
+          id: recoveryLog.id,
+          date: recoveryLog.date,
+          sleepHours: recoveryLog.sleepHours,
+          sleepQuality: recoveryLog.sleepQuality,
+          sorenessLevel: recoveryLog.sorenessLevel,
+          energyLevel: recoveryLog.energyLevel,
+          stressLevel: recoveryLog.stressLevel,
+          tightAreas: recoveryLog.tightAreas,
+          overallScore: recoveryLog.overallScore,
+          sessionId: recoveryLog.sessionId,
+          notes: recoveryLog.notes,
+          createdAt: recoveryLog.createdAt,
+        }),
       `saveRecoveryLog:${recoveryLog.id}`
     );
   }
@@ -154,10 +165,13 @@ export async function getRecoveryLogs(
   endDate?: string
 ): Promise<RecoveryLog[]> {
   if (startDate && endDate) {
-    const all = await dbGetAll<RecoveryLog>(STORES.RECOVERY_LOGS);
-    return all
-      .filter((log: RecoveryLog) => log.date >= startDate && log.date <= endDate)
-      .sort((a: RecoveryLog, b: RecoveryLog) => a.date.localeCompare(b.date));
+    const ranged = await dbGetByRange<RecoveryLog>(
+      STORES.RECOVERY_LOGS,
+      'date',
+      startDate,
+      endDate
+    );
+    return ranged.sort((a, b) => a.date.localeCompare(b.date));
   }
 
   const all = await dbGetAll<RecoveryLog>(STORES.RECOVERY_LOGS);

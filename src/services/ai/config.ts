@@ -21,17 +21,15 @@ import type { ChatMessage } from './core';
 // אם תשנה את שם הפונקציה ב-Supabase תשנה גם כאן.
 export const AI_FUNCTION_NAME = 'ai-chat';
 
-// המודל שישלח ל-OpenRouter. שנה כאן כשתרצה מודל אחר.
-// רשימה מלאה: https://openrouter.ai/models
-// דוגמאות:
-//   - 'openai/gpt-4o-mini'                חסכוני וטוב
-//   - 'anthropic/claude-3-5-sonnet'       איכותי, יקר יותר
-//   - 'anthropic/claude-3-5-haiku'        מהיר וזול
-//   - 'google/gemini-2.0-flash-exp:free'  חינם (מוגבל)
-//   - 'meta-llama/llama-3.3-70b-instruct' חינמי ברמות מסוימות
+// המודל שישלח ל-Edge Function. שנה כאן כשתרצה מודל אחר.
+// OpenRouter models (https://openrouter.ai/models):
+//   - 'openai/gpt-oss-120b:free'        חינמי, איכותי (ברירת מחדל)
+//   - 'openai/gpt-4o-mini'              חסכוני וטוב
+//   - 'anthropic/claude-3-5-sonnet'     איכותי, יקר יותר
+//   - 'google/gemini-2.0-flash-exp:free' חינם
 //
 // >>> שנה כאן את מודל ברירת המחדל <<<
-export const AI_DEFAULT_MODEL = 'openai/gpt-4o-mini';
+export const AI_DEFAULT_MODEL = 'openai/gpt-oss-120b:free';
 
 // ----------------------------------------------------------------------------
 // SECTION 2 · פרמטרים לבקשה

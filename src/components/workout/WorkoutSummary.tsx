@@ -4,13 +4,17 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { getWorkoutSessions } from '../../services/dataService';
-import { exportWorkoutHistoryCSV, isNewPR, calculatePRsFromHistory } from '../../services/prService';
+import {
+  calculatePRsFromHistory,
+  exportWorkoutHistoryCSV,
+  isNewPR,
+} from '../../services/prService';
 import type { WorkoutSession } from '../../types';
 import { logger } from '../../utils/logger';
 import { CheckCircleIcon } from '../icons';
 import { ModalOverlay } from '../ui/ModalOverlay';
-import { SummaryExerciseList } from './components/SummaryExerciseList';
 import { type ComparisonData, StatsGrid } from './components/StatsGrid';
+import { SummaryExerciseList } from './components/SummaryExerciseList';
 
 interface WorkoutSummaryProps {
   isOpen: boolean;
@@ -43,7 +47,8 @@ const computeStats = (session: Partial<WorkoutSession>): ComputedStats => {
 
   const totalVolume = exercises.reduce(
     (sum, ex) =>
-      sum + workingSets(ex).reduce(
+      sum +
+      workingSets(ex).reduce(
         (setSum, set) =>
           set.completedAt && set.weight && set.reps ? setSum + set.weight * set.reps : setSum,
         0
@@ -58,7 +63,8 @@ const computeStats = (session: Partial<WorkoutSession>): ComputedStats => {
 
   const totalReps = exercises.reduce(
     (sum, ex) =>
-      sum + workingSets(ex).reduce(
+      sum +
+      workingSets(ex).reduce(
         (setSum, set) => (set.completedAt && set.reps ? setSum + set.reps : setSum),
         0
       ),
@@ -68,15 +74,11 @@ const computeStats = (session: Partial<WorkoutSession>): ComputedStats => {
   const duration =
     session.startTime && session.endTime
       ? Math.round(
-          (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) /
-            1000 /
-            60
+          (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000 / 60
         )
       : 0;
 
-  const exerciseCount = exercises.filter((ex) =>
-    workingSets(ex).some((s) => s.completedAt)
-  ).length;
+  const exerciseCount = exercises.filter((ex) => workingSets(ex).some((s) => s.completedAt)).length;
 
   const exerciseStats = exercises
     .map((ex) => {
@@ -137,8 +139,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         const previousSessions = allSessions
           .filter((s) => !currentStartMs || new Date(s.startTime || 0).getTime() < currentStartMs)
           .sort(
-            (a, b) =>
-              new Date(b.startTime || 0).getTime() - new Date(a.startTime || 0).getTime()
+            (a, b) => new Date(b.startTime || 0).getTime() - new Date(a.startTime || 0).getTime()
           );
 
         if (previousSessions.length === 0) return;

@@ -155,7 +155,9 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
           <label style={labelStyle}>קטגוריה</label>
           <select
             value={formData.category}
-            onChange={(e) => updateField('category', e.target.value as PersonalExercise['category'] ?? '')}
+            onChange={(e) =>
+              updateField('category', (e.target.value as PersonalExercise['category']) ?? '')
+            }
             style={{ ...inputStyle, appearance: 'none' }}
           >
             <option value="">בחר...</option>
@@ -173,22 +175,22 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
         <div>
           <label style={labelStyle}>סטים</label>
           <input
-            type="number"
+            type="text"
             inputMode="numeric"
+            pattern="[0-9]*"
             value={formData.defaultSets}
             onChange={(e) =>
               updateField('defaultSets', Number.parseInt(e.target.value) || WORKOUT.DEFAULT_SETS)
             }
-            min={WORKOUT.MIN_REPS}
-            max={WORKOUT.MAX_SETS}
             style={{ ...inputStyle, textAlign: 'center' }}
           />
         </div>
         <div>
           <label style={labelStyle}>מנוחה (שניות)</label>
           <input
-            type="number"
+            type="text"
             inputMode="numeric"
+            pattern="[0-9]*"
             value={formData.defaultRestTime}
             onChange={(e) =>
               updateField(

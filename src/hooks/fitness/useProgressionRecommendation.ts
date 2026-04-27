@@ -4,6 +4,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { calculateRecoveryScore, getTodayRecoveryLog } from '../../services/bodyStatsService';
 import { getWorkoutSessions } from '../../services/dataService';
 import {
   type AIProgressionContext,
@@ -14,6 +15,7 @@ import {
   calculateProgression,
   getRecommendationLabel,
 } from '../../services/progressionService';
+import { calculateTrainingLoad } from '../../services/trainingLoadService';
 import type { WorkoutSession } from '../../types';
 import { logger } from '../../utils/logger';
 
@@ -47,6 +49,8 @@ export function useProgressionRecommendation(
   externalSessions?: WorkoutSession[]
 ): UseProgressionRecommendationResult {
   const [localSessions, setLocalSessions] = useState<WorkoutSession[]>([]);
+  const [currentFatigueScore, setCurrentFatigueScore] = useState<number | null>(null);
+  const [todayRecoveryScore, setTodayRecoveryScore] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const loadedRef = useRef(false);
@@ -58,8 +62,14 @@ export function useProgressionRecommendation(
     try {
       setLoading(true);
       setError(null);
-      const data = await getWorkoutSessions(50);
+      const [data, recoveryLog] = await Promise.all([
+        getWorkoutSessions(50),
+        getTodayRecoveryLog(),
+      ]);
+      const trainingLoad = calculateTrainingLoad(data, recoveryLog ? [recoveryLog] : []);
       setLocalSessions(data);
+      setCurrentFatigueScore(trainingLoad.fatigueScore);
+      setTodayRecoveryScore(recoveryLog ? calculateRecoveryScore(recoveryLog).overall : null);
     } catch (e) {
       logger.ai.error('Failed to load sessions for progression', e);
       setError('שגיאה בטעינת נתוני ההתקדמות');
@@ -80,8 +90,13 @@ export function useProgressionRecommendation(
 
   const exerciseRecommendations = useMemo(() => {
     if (sessions.length === 0 || exercises.length === 0) return [];
-    return calculateAllExercisesProgression(sessions, exercises);
-  }, [sessions, exercises]);
+    return calculateAllExercisesProgression(
+      sessions,
+      exercises,
+      currentFatigueScore,
+      todayRecoveryScore
+    );
+  }, [sessions, exercises, currentFatigueScore, todayRecoveryScore]);
 
   const getRecommendation = useCallback(
     (exerciseId: string): ExerciseProgressionData | null => {
@@ -128,13 +143,19 @@ export function useProgressionForExercise(
     try {
       setLoading(true);
       setError(null);
-      const sessions = await getWorkoutSessions(50);
+      const [sessions, recoveryLog] = await Promise.all([
+        getWorkoutSessions(50),
+        getTodayRecoveryLog(),
+      ]);
+      const trainingLoad = calculateTrainingLoad(sessions, recoveryLog ? [recoveryLog] : []);
       const result = calculateProgression({
         exerciseId,
         exerciseName,
         targetReps,
         targetSets,
         sessions,
+        fatigueScore: trainingLoad.fatigueScore,
+        recoveryScore: recoveryLog ? calculateRecoveryScore(recoveryLog).overall : null,
       });
       setData(result);
     } catch (e) {
@@ -184,7 +205,11 @@ export function useAIEnhancedRecommendation(
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const workoutSessions = await getWorkoutSessions(50);
+      const [workoutSessions, recoveryLog] = await Promise.all([
+        getWorkoutSessions(50),
+        getTodayRecoveryLog(),
+      ]);
+      const trainingLoad = calculateTrainingLoad(workoutSessions, recoveryLog ? [recoveryLog] : []);
       setSessions(workoutSessions);
 
       const baseRec = calculateProgression({
@@ -193,6 +218,8 @@ export function useAIEnhancedRecommendation(
         targetReps: 8,
         targetSets: 4,
         sessions: workoutSessions,
+        fatigueScore: trainingLoad.fatigueScore,
+        recoveryScore: recoveryLog ? calculateRecoveryScore(recoveryLog).overall : null,
       });
 
       setData({
@@ -231,7 +258,7 @@ export function useAIEnhancedRecommendation(
       insight += `עקביות של ${Math.round(data.baseRecommendation.confidence)}% באימונים האחרונים.`;
     } else if (data.baseRecommendation.recommendation === 'MAINTAIN') {
       insight += `מומלץ להמשיך עם ${data.baseRecommendation.currentWeight} ק"ג `;
-      insight += `ולהתמקד בשיפור הטכניקה.`;
+      insight += 'ולהתמקד בשיפור הטכניקה.';
     } else if (data.baseRecommendation.recommendation === 'DECREASE_WEIGHT') {
       insight += `שים לב ל-RPE הגבוה - מומלץ להוריד משקל ל-${data.baseRecommendation.suggestedWeight} ק"ג.`;
       warnings.push('הימנע מאימון אינטנסיבי אם יש כאבים');
@@ -271,9 +298,11 @@ export function useAIEnhancedRecommendation(
 function buildSuggestedWorkout(ctx: AIProgressionContext): string {
   if (ctx.recommendation === 'INCREASE_WEIGHT') {
     return `${ctx.exerciseName}: ${ctx.targetSets} סטים × ${ctx.targetReps} חזרות × ${ctx.currentWeight + 2.5} ק"ג`;
-  } else if (ctx.recommendation === 'DECREASE_WEIGHT') {
-    return `${ctx.exerciseName}: ${ctx.targetSets} סטים × ${ctx.targetReps} חזרות × ${Math.round((ctx.currentWeight * 0.6) / 2.5) * 2.5} ק"ג (דלואד)`;
-  } else {
-    return `${ctx.exerciseName}: ${ctx.targetSets} סטים × ${ctx.targetReps} חזרות × ${ctx.currentWeight} ק"ג`;
   }
+
+  if (ctx.recommendation === 'DECREASE_WEIGHT') {
+    return `${ctx.exerciseName}: ${ctx.targetSets} סטים × ${ctx.targetReps} חזרות × ${Math.round((ctx.currentWeight * 0.6) / 2.5) * 2.5} ק"ג (דלואד)`;
+  }
+
+  return `${ctx.exerciseName}: ${ctx.targetSets} סטים × ${ctx.targetReps} חזרות × ${ctx.currentWeight} ק"ג`;
 }

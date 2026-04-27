@@ -112,7 +112,7 @@ export const Toast: React.FC<ToastProps> = ({
     // Portal-style: fixed, slides from top, centered
     <div
       className={`
-        fixed top-4 left-1/2 z-[200]
+        fixed bottom-24 left-1/2 z-[200]
         w-full max-w-[min(92vw,420px)]
         ${animClass}
       `}
@@ -131,7 +131,10 @@ export const Toast: React.FC<ToastProps> = ({
         }}
       >
         {/* Tinted progress bar along bottom edge */}
-        <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ backgroundColor: 'var(--bone-deep)' }}>
+        <div
+          className="absolute bottom-0 left-0 right-0 h-[2px]"
+          style={{ backgroundColor: 'var(--bone-deep)' }}
+        >
           <div
             className="h-full toast-progress"
             style={{ animationDuration: `${duration}ms`, backgroundColor: accent, opacity: 0.7 }}
@@ -210,13 +213,16 @@ export const Toast: React.FC<ToastProps> = ({
             <button
               onClick={triggerExit}
               aria-label="סגור הודעה"
-              className="flex items-center justify-center w-6 h-6 transition-colors duration-150"
+              className="flex items-center justify-center transition-colors duration-150"
               style={{
+                minWidth: 44,
+                minHeight: 44,
                 color: 'var(--stone)',
                 borderRadius: 0,
+                background: 'transparent',
               }}
             >
-              <X size={14} strokeWidth={2.5} />
+              <X size={16} strokeWidth={2.5} />
             </button>
           </div>
         </div>

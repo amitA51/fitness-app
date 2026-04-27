@@ -65,17 +65,11 @@ export function showWorkoutReminder(): void {
 }
 
 export function showMissedWorkoutAlert(daysSince: number): void {
-  showNotification(
-    'לא התאמנת מזמן',
-    `עברו ${daysSince} ימים מהאימון האחרון.`
-  );
+  showNotification('לא התאמנת מזמן', `עברו ${daysSince} ימים מהאימון האחרון.`);
 }
 
 export function showPRNotification(exerciseName: string, type: string): void {
-  showNotification(
-    'שיא אישי חדש',
-    `${exerciseName} · שיא ${type === 'weight' ? 'משקל' : 'נפח'}`
-  );
+  showNotification('שיא אישי חדש', `${exerciseName} · שיא ${type === 'weight' ? 'משקל' : 'נפח'}`);
 }
 
 export function showNutritionReminder(): void {

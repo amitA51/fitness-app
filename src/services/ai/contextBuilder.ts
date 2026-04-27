@@ -4,24 +4,30 @@
 
 import type { MacroNutrients, WorkoutSession } from '../../types';
 import type { RecoveryLog } from '../bodyStatsService';
+import {
+  type MuscleRecoveryState,
+  type TrainingLoadRecommendation,
+  calculateTrainingLoad,
+} from '../trainingLoadService';
 
 export interface AIContext {
   recentWorkouts: WorkoutSession[];
   volumeTrend: 'increasing' | 'decreasing' | 'stable';
   weeklyVolume: number;
+  previousWeeklyVolume: number;
+  volumeChangePercent: number;
+  acuteChronicRatio: number;
+  fatigueScore: number;
   muscleCoverage: string[];
+  muscleRecovery: MuscleRecoveryState[];
   weakMuscles: string[];
   recoveryScore: number | null;
   nutritionCompliance: number | null;
+  readinessScore: number;
+  readinessLabel: 'low' | 'moderate' | 'good' | 'high';
+  primaryConstraint: 'recovery' | 'load_spike' | 'high_rpe' | 'low_volume' | 'balanced';
+  trainingLoadRecommendation: TrainingLoadRecommendation;
   streakDays: number;
-}
-
-function computeRecoveryScore(log: RecoveryLog): number {
-  const sleepHoursScore = log.sleepHours >= 7 ? 25 : log.sleepHours >= 5 ? 15 : 5;
-  const qualityScore = log.sleepQuality * 5;
-  const energyScore = log.energyLevel * 5;
-  const stressScore = (6 - log.stressLevel) * 5;
-  return sleepHoursScore + qualityScore + energyScore + stressScore;
 }
 
 export function buildSystemPrompt(context: AIContext): string {
@@ -30,11 +36,20 @@ export function buildSystemPrompt(context: AIContext): string {
   return `נתוני המתאמן (התייחס אליהם בתשובה):
 - מגמת נפח: ${context.volumeTrend}
 - נפח שבועי: ${context.weeklyVolume} ק"ג
+- נפח שבוע קודם: ${context.previousWeeklyVolume} ק"ג
+- שינוי נפח שבועי: ${context.volumeChangePercent}%
+- יחס עומס acute/chronic: ${context.acuteChronicRatio}
+- ציון עייפות מתמטי: ${context.fatigueScore}/100
+- ציון מוכנות מתמטי: ${context.readinessScore}/100 (${context.readinessLabel})
+- מגבלת אימון מרכזית: ${context.primaryConstraint}
+- המלצת עומס מתמטית: ${context.trainingLoadRecommendation}
 - שרירים שעבד: ${context.muscleCoverage.join(', ') || 'אין'}
 - שרירים חלשים: ${context.weakMuscles.join(', ') || 'אין'}
 - ציון התאוששות: ${context.recoveryScore ?? 'לא ידוע'}
-- עמידה בתזונה: ${context.nutritionCompliance !== null ? context.nutritionCompliance + '%' : 'לא ידוע'}
-- רצף אימונים: ${context.streakDays} ימים`;
+- עמידה בתזונה: ${context.nutritionCompliance !== null ? `${context.nutritionCompliance}%` : 'לא ידוע'}
+- רצף אימונים: ${context.streakDays} ימים
+
+קודם השתמש בחישובים המתמטיים האלה כדי להחליט על עומס/מנוחה/דלואד. השתמש ב-AI רק כדי לנסח הסבר קצר וברור.`;
 }
 
 export function buildContext(
@@ -43,28 +58,11 @@ export function buildContext(
   nutritionData?: { dailyAverage: MacroNutrients; goal: MacroNutrients }
 ): AIContext {
   const recentSessions = sessions.slice(0, 10);
-
-  // Calculate weekly volume from last week
-  const oneWeekAgo = new Date();
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-  const lastWeekSessions = sessions.filter((s) => new Date(s.startTime) >= oneWeekAgo);
-  const weeklyVolume = lastWeekSessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
-
-  // Volume trend
-  const twoWeeksAgo = new Date();
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-  const prevWeekSessions = sessions.filter((s) => {
-    const d = new Date(s.startTime);
-    return d >= twoWeeksAgo && d < oneWeekAgo;
-  });
-  const prevVolume = prevWeekSessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
+  const trainingLoad = calculateTrainingLoad(sessions, recoveryLogs);
 
   let volumeTrend: 'increasing' | 'decreasing' | 'stable' = 'stable';
-  if (prevVolume > 0) {
-    const change = (weeklyVolume - prevVolume) / prevVolume;
-    if (change > 0.05) volumeTrend = 'increasing';
-    else if (change < -0.05) volumeTrend = 'decreasing';
-  }
+  if (trainingLoad.volumeChangePercent > 5) volumeTrend = 'increasing';
+  else if (trainingLoad.volumeChangePercent < -5) volumeTrend = 'decreasing';
 
   // Muscle coverage
   const muscleSet = new Set<string>();
@@ -92,10 +90,6 @@ export function buildContext(
   const weakMuscles = Object.entries(muscleVolumes)
     .filter(([, v]) => v < avgVolume * 0.8)
     .map(([m]) => m);
-
-  // Recovery score
-  const latestRecovery = recoveryLogs[0];
-  const recoveryScore = latestRecovery ? computeRecoveryScore(latestRecovery) : null;
 
   // Nutrition compliance
   let nutritionCompliance: number | null = null;
@@ -127,11 +121,20 @@ export function buildContext(
   return {
     recentWorkouts: recentSessions,
     volumeTrend,
-    weeklyVolume,
+    weeklyVolume: trainingLoad.weeklyVolume,
+    previousWeeklyVolume: trainingLoad.previousWeeklyVolume,
+    volumeChangePercent: trainingLoad.volumeChangePercent,
+    acuteChronicRatio: trainingLoad.acuteChronicRatio,
+    fatigueScore: trainingLoad.fatigueScore,
     muscleCoverage: Array.from(muscleSet),
+    muscleRecovery: trainingLoad.muscles,
     weakMuscles,
-    recoveryScore,
+    recoveryScore: trainingLoad.recoveryScore,
     nutritionCompliance,
+    primaryConstraint: trainingLoad.primaryConstraint,
+    readinessLabel: trainingLoad.readinessLabel,
+    readinessScore: trainingLoad.readinessScore,
+    trainingLoadRecommendation: trainingLoad.recommendation,
     streakDays,
   };
 }

@@ -1,5 +1,5 @@
 /* ============================================================================
-   SPORT ANNUAL — Typography System
+   SPARKOS FITNESS — Typography System
    Big Shoulders Display × IBM Plex Sans × IBM Plex Mono × Assistant
    ============================================================================ */
 
@@ -358,7 +358,7 @@ h4,
 }
 
 ::selection {
-  background: rgba(232, 184, 45, 0.3);
+  background: var(--color-secondary-glow);
   color: var(--ink);
 }
 

@@ -10,27 +10,84 @@ import { logger } from '../utils/logger';
 export type AuthCallback = (session: Session | null) => void;
 export type AuthUserCallback = (user: User | null) => void;
 
-let authStateListenerSetup = false;
-
+/**
+ * No-op kept for backward compatibility with call sites that imported
+ * `initSupabaseAuth`. The `AuthProvider` in `src/contexts/AuthContext.tsx`
+ * now owns the onAuthStateChange subscription. Calling this is safe but
+ * does nothing — new code should use `useAuth()` instead.
+ */
 export const initSupabaseAuth = (): void => {
   if (!isSupabaseConfigured() || !supabase) {
     logger.auth.info('Supabase not configured - auth disabled');
     return;
   }
+};
 
-  if (authStateListenerSetup) return;
+/**
+ * Detect Supabase auth errors that indicate an expired or otherwise invalid
+ * session. We match on:
+ *   - HTTP 401 status
+ *   - error.code === 'session_not_found' or 'invalid_token' / 'token_expired'
+ *   - message containing "token", "expired", "invalid JWT", or "JWT"
+ * When true, the cached session is stale and the caller should be logged out.
+ */
+const isSessionExpiredError = (err: unknown): boolean => {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as { status?: unknown; code?: unknown; message?: unknown };
 
-  supabase.auth.onAuthStateChange((event, session) => {
-    logger.auth.info('Auth event', { event });
-    if (session) {
-      localStorage.setItem('supabase_session', JSON.stringify(session));
-    } else {
-      localStorage.removeItem('supabase_session');
+  if (typeof e.status === 'number' && e.status === 401) return true;
+
+  if (typeof e.code === 'string') {
+    const code = e.code.toLowerCase();
+    if (
+      code === 'session_not_found' ||
+      code === 'invalid_token' ||
+      code === 'token_expired' ||
+      code.includes('expired')
+    ) {
+      return true;
     }
-    window.dispatchEvent(new CustomEvent('supabase_auth_change', { detail: { event, session } }));
-  });
+  }
 
-  authStateListenerSetup = true;
+  if (typeof e.message === 'string') {
+    const msg = e.message.toLowerCase();
+    if (
+      msg.includes('jwt expired') ||
+      msg.includes('invalid jwt') ||
+      msg.includes('token expired') ||
+      msg.includes('token has expired') ||
+      msg.includes('session expired') ||
+      msg.includes('session not found') ||
+      (msg.includes('token') && msg.includes('expired')) ||
+      (msg.includes('token') && msg.includes('invalid'))
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+/**
+ * Clear a stale session from storage and notify the app layer so it can
+ * bounce the user to the login screen. Best-effort — we swallow any error
+ * from signOut since the session was already invalid.
+ */
+const handleExpiredSession = async (err: unknown): Promise<void> => {
+  logger.auth.warn('Session expired or invalid — signing out', err);
+  try {
+    if (supabase) await supabase.auth.signOut();
+  } catch (signOutErr) {
+    logger.auth.error('signOut after expired session failed', signOutErr);
+  }
+  try {
+    localStorage.removeItem('supabase_session');
+  } catch {
+    // ignore storage errors
+  }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('auth:session-expired'));
+  }
 };
 
 export const getCurrentUser = async (): Promise<User | null> => {
@@ -38,7 +95,14 @@ export const getCurrentUser = async (): Promise<User | null> => {
 
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser();
+
+  if (error && isSessionExpiredError(error)) {
+    await handleExpiredSession(error);
+    return null;
+  }
+
   return user;
 };
 
@@ -47,7 +111,14 @@ export const getSession = async (): Promise<Session | null> => {
 
   const {
     data: { session },
+    error,
   } = await supabase.auth.getSession();
+
+  if (error && isSessionExpiredError(error)) {
+    await handleExpiredSession(error);
+    return null;
+  }
+
   return session;
 };
 

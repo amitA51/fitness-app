@@ -29,37 +29,36 @@ const HEBREW_MONTHS = [
 const HEBREW_DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 
 const HEBREW_NUMBERS: Record<number, string> = {
-  0: 'א',
-  1: 'ב',
-  2: 'ג',
-  3: 'ד',
-  4: 'ה',
-  5: 'ו',
-  6: 'ז',
-  7: 'ח',
-  8: 'ט',
-  9: 'י',
-  10: 'י״א',
-  11: 'י״ב',
-  12: 'י״ג',
-  13: 'י״ד',
-  14: 'ט״ו',
-  15: 'ט״ז',
-  16: 'י״ז',
-  17: 'י״ח',
-  18: 'י״ט',
-  19: 'כ',
-  20: 'כ״א',
-  21: 'כ״ב',
-  22: 'כ״ג',
-  23: 'כ״ד',
-  24: 'כ״ה',
-  25: 'כ״ו',
-  26: 'כ״ז',
-  27: 'כ״ח',
-  28: 'כ״ט',
-  29: 'ל',
-  30: 'ל״א',
+  1: 'א',
+  2: 'ב',
+  3: 'ג',
+  4: 'ד',
+  5: 'ה',
+  6: 'ו',
+  7: 'ז',
+  8: 'ח',
+  9: 'ט',
+  10: 'י',
+  11: 'י״א',
+  12: 'י״ב',
+  13: 'י״ג',
+  14: 'י״ד',
+  15: 'ט״ו',
+  16: 'ט״ז',
+  17: 'י״ז',
+  18: 'י״ח',
+  19: 'י״ט',
+  20: 'כ',
+  21: 'כ״א',
+  22: 'כ״ב',
+  23: 'כ״ג',
+  24: 'כ״ד',
+  25: 'כ״ה',
+  26: 'כ״ו',
+  27: 'כ״ז',
+  28: 'כ״ח',
+  29: 'כ״ט',
+  30: 'ל',
   31: 'ל״א',
 };
 
@@ -214,9 +213,15 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.background = 'transparent';
             }}
+            aria-label="חודש קודם"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 4L6 8L10 12" stroke="var(--navy)" strokeWidth="2" strokeLinecap="square" />
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path
+                d="M6 4L10 8L6 12"
+                stroke="var(--navy)"
+                strokeWidth="2"
+                strokeLinecap="square"
+              />
             </svg>
           </button>
 
@@ -256,7 +261,12 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
             }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M6 4L10 8L6 12" stroke="var(--navy)" strokeWidth="2" strokeLinecap="square" />
+              <path
+                d="M6 4L10 8L6 12"
+                stroke="var(--navy)"
+                strokeWidth="2"
+                strokeLinecap="square"
+              />
             </svg>
           </button>
         </div>
@@ -303,21 +313,26 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
           const isCurrentMonth = dayData.isCurrentMonth;
 
           return (
-            <motion.div
+            <div
               key={index}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: isCurrentMonth ? 1 : 0.3 }}
-              transition={{ delay: index * 0.01, type: 'spring', stiffness: 200 }}
-              whileHover={isCurrentMonth ? { scale: 1.1 } : {}}
+              role="gridcell"
+              aria-label={
+                dayData.date
+                  ? `${dayData.day} ${HEBREW_MONTHS[month]} ${year}${count > 0 ? `, ${count} אימונים` : ''}`
+                  : undefined
+              }
+              aria-current={isToday ? 'date' : undefined}
               style={{
                 aspectRatio: '1',
+                minHeight: 32,
                 position: 'relative',
+                opacity: isCurrentMonth ? 1 : 0.3,
                 cursor: isCurrentMonth ? 'pointer' : 'default',
                 border: isToday ? '2px solid var(--mustard)' : '2px solid var(--bone-deep)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'all 150ms ease',
+                transition: 'background 150ms ease',
                 ...getIntensityStyle(count),
               }}
             >
@@ -336,6 +351,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               {/* Workout indicator */}
               {count > 0 && (
                 <div
+                  aria-hidden="true"
                   style={{
                     position: 'absolute',
                     bottom: 2,
@@ -345,7 +361,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
                   }}
                 />
               )}
-            </motion.div>
+            </div>
           );
         })}
       </div>

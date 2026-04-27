@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { List, Plus } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo } from 'react';
 import type { Exercise } from '../../../types';
-import { cn } from '../../../utils/styles';
 import { ChevronLeftIcon } from '../../icons';
 
 type DotStatus = 'empty' | 'warmup-only' | 'partial' | 'complete';
@@ -104,16 +103,16 @@ const ExerciseNav = memo<ExerciseNavProps>(
               if (canGoPrev) {
                 e.preventDefault();
                 e.stopPropagation();
-                handleNext();
+                handlePrev();
               }
             }}
             disabled={!canGoPrev}
             aria-label="תרגיל קודם"
             style={{
               ...NAV_BTN,
-              background: canGoNext ? 'var(--bone)' : 'var(--bone-faint)',
-              color: canGoNext ? 'var(--navy)' : 'var(--stone-light)',
-              cursor: canGoNext ? 'pointer' : 'not-allowed',
+              background: canGoPrev ? 'var(--bone)' : 'var(--bone-faint)',
+              color: canGoPrev ? 'var(--navy)' : 'var(--stone-light)',
+              cursor: canGoPrev ? 'pointer' : 'not-allowed',
             }}
           >
             <ChevronLeftIcon className="rotate-180" />
@@ -123,23 +122,41 @@ const ExerciseNav = memo<ExerciseNavProps>(
           <button
             type="button"
             onPointerDown={(e) => {
-              if (canGoPrev) {
+              if (canGoNext) {
                 e.preventDefault();
                 e.stopPropagation();
-                handlePrev();
+                handleNext();
               }
             }}
-            disabled={!canGoPrev}
+            disabled={!canGoNext}
             aria-label="תרגיל הבא"
             style={{
               ...NAV_BTN,
-              background: canGoPrev ? 'var(--bone)' : 'var(--bone-faint)',
-              color: canGoPrev ? 'var(--navy)' : 'var(--stone-light)',
-              cursor: canGoPrev ? 'pointer' : 'not-allowed',
+              background: canGoNext ? 'var(--bone)' : 'var(--bone-faint)',
+              color: canGoNext ? 'var(--navy)' : 'var(--stone-light)',
+              cursor: canGoNext ? 'pointer' : 'not-allowed',
             }}
           >
             <ChevronLeftIcon />
           </button>
+
+          {/* X / Y position counter — always visible */}
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              color: 'var(--navy)',
+              minWidth: 48,
+              textAlign: 'center',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            <span className="tabular-nums">
+              {currentIndex + 1} / {exercises.length}
+            </span>
+          </span>
 
           {/* Progress Dots */}
           {exercises.length > 1 && exercises.length <= 8 && (
@@ -177,7 +194,6 @@ const ExerciseNav = memo<ExerciseNavProps>(
                       border: `2px solid ${isCurrent ? 'var(--navy)' : 'var(--bone-deep)'}`,
                       cursor: 'pointer',
                     }}
-                    whileHover={{ scale: 1.3 }}
                     whileTap={{ scale: 0.9 }}
                   />
                 );

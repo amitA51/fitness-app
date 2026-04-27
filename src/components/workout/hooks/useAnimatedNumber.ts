@@ -40,10 +40,7 @@ const prefersReducedMotion = (): boolean => {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 };
 
-export function useAnimatedNumber(
-  value: number,
-  opts: UseAnimatedNumberOptions = {}
-): number {
+export function useAnimatedNumber(value: number, opts: UseAnimatedNumberOptions = {}): number {
   const { duration = 200 } = opts;
   const [display, setDisplay] = useState<number>(value);
   const rafRef = useRef<number | null>(null);

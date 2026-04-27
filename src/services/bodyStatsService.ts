@@ -176,7 +176,6 @@ export function getBMICategory(bmi: number): { label: string; color: string } {
 export async function addBodyMeasurement(
   entry: Omit<BodyMeasurement, 'id' | 'createdAt'>
 ): Promise<BodyMeasurement> {
-  await getOrCreateMeasurementsStore();
   const newEntry: BodyMeasurement = {
     ...entry,
     id: generateId('bm'),
@@ -188,10 +187,21 @@ export async function addBodyMeasurement(
   if (user) {
     syncWithRetry(
       () =>
-        syncBodyMeasurement(
-          user.id,
-          newEntry as unknown as Parameters<typeof syncBodyMeasurement>[1]
-        ),
+        syncBodyMeasurement(user.id, {
+          id: newEntry.id,
+          date: newEntry.date,
+          measurements: {
+            chest: newEntry.chest,
+            waist: newEntry.waist,
+            hips: newEntry.hips,
+            arms: newEntry.arms,
+            thighs: newEntry.thighs,
+            neck: newEntry.neck,
+            bodyFat: newEntry.bodyFat,
+          },
+          notes: newEntry.notes,
+          createdAt: newEntry.createdAt,
+        }),
       `addBodyMeasurement:${newEntry.id}`
     );
   }
@@ -215,46 +225,53 @@ export async function getLatestMeasurement(): Promise<BodyMeasurement | null> {
   return all.sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
 }
 
-async function getOrCreateMeasurementsStore(): Promise<void> {
-  try {
-    await dbGetAll(BODY_MEASUREMENTS_STORE);
-  } catch {
-    const request = indexedDB.open('sparkos-fitness-db');
-    request.onsuccess = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(BODY_MEASUREMENTS_STORE)) {
-        db.close();
-        const version = db.version + 1;
-        const upgradeRequest = indexedDB.open('sparkos-fitness-db', version);
-        upgradeRequest.onupgradeneeded = (event) => {
-          const upgradedDb = (event.target as IDBOpenDBRequest).result;
-          if (!upgradedDb.objectStoreNames.contains(BODY_MEASUREMENTS_STORE)) {
-            upgradedDb.createObjectStore(BODY_MEASUREMENTS_STORE, { keyPath: 'id' });
-          }
-        };
-      }
-    };
-  }
-}
-
 export async function addRecoveryLog(
   entry: Omit<RecoveryLog, 'id' | 'createdAt'>
 ): Promise<RecoveryLog> {
+  const existingForDate = (await dbGetAll<RecoveryLog>(STORES.RECOVERY_LOGS))
+    .filter((log) => log.date === entry.date)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const canonicalLog = existingForDate[0];
+  const score = calculateRecoveryScore({
+    ...entry,
+    id: canonicalLog?.id ?? '',
+    createdAt: canonicalLog?.createdAt ?? '',
+  });
+
   const newEntry: RecoveryLog = {
     ...entry,
-    id: generateId('rec'),
-    createdAt: new Date().toISOString(),
+    id: canonicalLog?.id ?? generateId('rec'),
+    createdAt: canonicalLog?.createdAt ?? new Date().toISOString(),
+    overallScore: score.overall,
   };
   await dbPut(STORES.RECOVERY_LOGS, newEntry);
 
+  const duplicateLogs = existingForDate.slice(1);
+  await Promise.all(duplicateLogs.map((log) => dbDelete(STORES.RECOVERY_LOGS, log.id)));
+
   const user = await getCurrentUser();
   if (user) {
-    // TODO: schema missing stress_level, tight_areas, overall_score — extra fields dropped in cloud
     syncWithRetry(
       () =>
-        syncRecoveryLog(user.id, newEntry as unknown as Parameters<typeof syncRecoveryLog>[1]),
+        syncRecoveryLog(user.id, {
+          id: newEntry.id,
+          date: newEntry.date,
+          sleepHours: newEntry.sleepHours,
+          sleepQuality: newEntry.sleepQuality,
+          sorenessLevel: newEntry.sorenessLevel,
+          energyLevel: newEntry.energyLevel,
+          stressLevel: newEntry.stressLevel,
+          tightAreas: newEntry.tightAreas,
+          overallScore: newEntry.overallScore,
+          sessionId: newEntry.sessionId,
+          notes: newEntry.notes,
+          createdAt: newEntry.createdAt,
+        }),
       `addRecoveryLog:${newEntry.id}`
     );
+    duplicateLogs.forEach((log) => {
+      syncWithRetry(() => deleteCloudRecoveryLog(user.id, log.id), `deleteRecoveryLog:${log.id}`);
+    });
   }
 
   return newEntry;
@@ -265,9 +282,22 @@ export async function updateRecoveryLog(entry: RecoveryLog): Promise<void> {
 
   const user = await getCurrentUser();
   if (user) {
-    // TODO: schema missing stress_level, tight_areas, overall_score — extra fields dropped in cloud
     syncWithRetry(
-      () => syncRecoveryLog(user.id, entry as unknown as Parameters<typeof syncRecoveryLog>[1]),
+      () =>
+        syncRecoveryLog(user.id, {
+          id: entry.id,
+          date: entry.date,
+          sleepHours: entry.sleepHours,
+          sleepQuality: entry.sleepQuality,
+          sorenessLevel: entry.sorenessLevel,
+          energyLevel: entry.energyLevel,
+          stressLevel: entry.stressLevel,
+          tightAreas: entry.tightAreas,
+          overallScore: entry.overallScore,
+          sessionId: entry.sessionId,
+          notes: entry.notes,
+          createdAt: entry.createdAt,
+        }),
       `updateRecoveryLog:${entry.id}`
     );
   }
@@ -292,10 +322,14 @@ export async function getRecoveryLogsByDateRange(
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export async function getTodayRecoveryLog(): Promise<RecoveryLog | null> {
-  const today = new Date().toISOString().split('T')[0] ?? '';
+export async function getTodayRecoveryLog(now = new Date()): Promise<RecoveryLog | null> {
+  const today = now.toISOString().split('T')[0] ?? '';
   const all = await dbGetAll<RecoveryLog>(STORES.RECOVERY_LOGS);
-  return all.find((e) => e.date === today) || null;
+  return (
+    all
+      .filter((entry) => entry.date === today)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null
+  );
 }
 
 function mapSleepHoursToScore(hours: number): number {

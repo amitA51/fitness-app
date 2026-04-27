@@ -32,8 +32,13 @@ export const fmtDate = (d: string) => {
 };
 
 export const isToday = (d: string) => {
-  const diff = Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
-  return diff === 0;
+  const date = new Date(d);
+  const now = new Date();
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
 };
 
 export const greeting = () => {

@@ -88,8 +88,12 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
           }}
         >
           {/* Drag Handle */}
-          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}>
-            <div style={{ width: 48, height: 4, background: 'rgba(20,41,61,0.2)', borderRadius: 2 }} />
+          <div
+            style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}
+          >
+            <div
+              style={{ width: 48, height: 4, background: 'rgba(20,41,61,0.2)', borderRadius: 2 }}
+            />
           </div>
 
           {/* Header */}
@@ -408,7 +412,9 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {isCompleted && (
-                          <CheckCircleIcon style={{ width: 20, height: 20, color: 'var(--color-success)' }} />
+                          <CheckCircleIcon
+                            style={{ width: 20, height: 20, color: 'var(--color-success)' }}
+                          />
                         )}
                         <span
                           style={{
@@ -435,7 +441,9 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, direction: 'ltr' }}>
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, direction: 'ltr' }}
+                      >
                         <span
                           style={{
                             fontFamily: 'var(--font-display)',

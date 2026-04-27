@@ -9,12 +9,12 @@
 // הבחירה מי פעיל נעשית ב-src/services/ai/bootstrap.ts
 // ============================================================================
 
-import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 import {
-  AI_FUNCTION_NAME,
   AI_DEFAULT_MODEL,
-  AI_REQUEST_TIMEOUT_MS,
+  AI_FUNCTION_NAME,
   AI_MAX_TOKENS,
+  AI_REQUEST_TIMEOUT_MS,
   AI_TEMPERATURE,
   withPersona,
 } from './config';
@@ -144,11 +144,7 @@ export class RemoteProvider implements AIProvider {
         lastError = e;
         if (e instanceof AIError) {
           // לא לעשות retry לשגיאות שלא יעזור להם retry
-          if (
-            e.code === 'config_error' ||
-            e.code === 'auth_error' ||
-            e.code === 'bad_response'
-          ) {
+          if (e.code === 'config_error' || e.code === 'auth_error' || e.code === 'bad_response') {
             throw e;
           }
         }
@@ -157,9 +153,7 @@ export class RemoteProvider implements AIProvider {
         }
       }
     }
-    throw lastError instanceof AIError
-      ? lastError
-      : new AIError('unknown', String(lastError));
+    throw lastError instanceof AIError ? lastError : new AIError('unknown', String(lastError));
   }
 
   private async invokeOnce(body: Record<string, unknown>): Promise<string> {

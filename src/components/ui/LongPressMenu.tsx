@@ -67,6 +67,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const elementRef = useRef<HTMLDivElement>(null);
   const didLongPress = useRef(false);
+  const pressStartPos = useRef<{ x: number; y: number } | null>(null);
 
   const { triggerHaptic, hapticSuccess } = useHaptics();
 
@@ -128,6 +129,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
 
       didLongPress.current = false;
       setIsPressed(true);
+      pressStartPos.current = { x: touch.clientX, y: touch.clientY };
 
       longPressTimer.current = setTimeout(() => {
         openMenu(touch.clientX, touch.clientY);
@@ -136,13 +138,19 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
     [enabled, delay, openMenu]
   );
 
-  const handleTouchMove = useCallback(() => {
-    // Cancel long press if user moves finger
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!pressStartPos.current) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const dx = Math.abs(touch.clientX - pressStartPos.current.x);
+    const dy = Math.abs(touch.clientY - pressStartPos.current.y);
+    if (dx > 10 || dy > 10) {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+      setIsPressed(false);
     }
-    setIsPressed(false);
   }, []);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
@@ -165,6 +173,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
 
       didLongPress.current = false;
       setIsPressed(true);
+      pressStartPos.current = { x: e.clientX, y: e.clientY };
 
       longPressTimer.current = setTimeout(() => {
         openMenu(e.clientX, e.clientY);
@@ -244,6 +253,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
+        onContextMenu={(e) => e.preventDefault()}
         style={{ touchAction: 'pan-y' }}
       >
         {children}

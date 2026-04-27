@@ -7,7 +7,7 @@ import { isSupabaseConfigured } from '../lib/supabase';
 import { logger } from '../utils/logger';
 
 const DB_NAME = 'sparkos-fitness-db';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 // Store names
 export const STORES = {
@@ -23,6 +23,7 @@ export const STORES = {
   AI_CONVERSATIONS: 'ai_conversations',
   PENDING_SYNC: 'pending_sync',
   PERSONAL_ITEMS: 'personal_items',
+  WATER_LOGS: 'water_logs',
 } as const;
 
 // Promise-based DB helpers
@@ -64,6 +65,12 @@ export const initDB = (): Promise<IDBDatabase> => {
     request.onsuccess = () => {
       dbInstance = request.result;
       dbOpenPromise = null;
+      dbInstance.onclose = () => {
+        dbInstance = null;
+      };
+      dbInstance.onerror = () => {
+        dbInstance = null;
+      };
       resolve(dbInstance);
     };
 
@@ -134,6 +141,24 @@ export const initDB = (): Promise<IDBDatabase> => {
 
       if (!db.objectStoreNames.contains(STORES.PERSONAL_ITEMS)) {
         db.createObjectStore(STORES.PERSONAL_ITEMS, { keyPath: 'id' });
+      }
+
+      // ── v6 store: water logs ──────────────────────────────────
+
+      if (!db.objectStoreNames.contains(STORES.WATER_LOGS)) {
+        const waterStore = db.createObjectStore(STORES.WATER_LOGS, { keyPath: 'id' });
+        createIndexIfMissing(waterStore, 'date', 'date');
+      }
+
+      // ── v7 indexes: startTime index on workout_sessions ──────────────
+      // The Dashboard, History, Progress, and Active Workout screens all
+      // sort sessions by `startTime` descending. Without an index we were
+      // doing a full table scan + JS-side sort on every read. The cursor
+      // path in `getWorkoutSessions` reads only `limit` records via this
+      // index in proper order.
+      if (upgradeTx && db.objectStoreNames.contains(STORES.WORKOUT_SESSIONS)) {
+        const workoutStore = upgradeTx.objectStore(STORES.WORKOUT_SESSIONS);
+        createIndexIfMissing(workoutStore, 'startTime', 'startTime');
       }
     };
   });

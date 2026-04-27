@@ -268,7 +268,7 @@
   animation: toastProgress linear forwards;
 }
 
-[dir='rtl'] .toast-progress {
+[dir="rtl"] .toast-progress {
   transform-origin: right center;
 }
 

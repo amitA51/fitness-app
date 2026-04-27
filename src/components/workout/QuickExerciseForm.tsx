@@ -220,11 +220,15 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
             <div>
               <label style={labelStyle}>מנוחה (שניות)</label>
               <input
-                type="number"
+                type="text"
                 inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.targetRestTime}
                 onChange={(e) =>
-                  setFormData({ ...formData, targetRestTime: Number.parseInt(e.target.value) || 90 })
+                  setFormData({
+                    ...formData,
+                    targetRestTime: Number.parseInt(e.target.value) || 90,
+                  })
                 }
                 style={{ ...inputStyle, textAlign: 'center' }}
               />
@@ -232,14 +236,13 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
             <div>
               <label style={labelStyle}>מספר סטים</label>
               <input
-                type="number"
+                type="text"
                 inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.defaultSets}
                 onChange={(e) =>
                   setFormData({ ...formData, defaultSets: Number.parseInt(e.target.value) || 4 })
                 }
-                min={1}
-                max={10}
                 style={{ ...inputStyle, textAlign: 'center' }}
               />
             </div>

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { clearDatabase } from '../indexedDBCore';
 import {
   addPersonalItem,
   getPersonalItems,
@@ -13,8 +14,15 @@ interface StoredItem {
   updatedAt: string;
 }
 
-beforeEach(() => {
+// personalItemsDb generates ids via `item-${Date.now()}`; rapid consecutive
+// creates within the same millisecond collide and overwrite each other. Tick
+// between adds so each insert lands on a distinct timestamp.
+const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 2));
+
+beforeEach(async () => {
   localStorage.clear();
+  // personalItemsDb uses IndexedDB — clear it so tests start with an empty store.
+  await clearDatabase();
 });
 
 describe('personalItemsDb', () => {
@@ -31,7 +39,9 @@ describe('personalItemsDb', () => {
 
   it('lists all items', async () => {
     await addPersonalItem({ title: 'A' });
+    await tick();
     await addPersonalItem({ title: 'B' });
+    await tick();
     await addPersonalItem({ title: 'C' });
 
     const items = (await getPersonalItems()) as StoredItem[];
@@ -51,6 +61,7 @@ describe('personalItemsDb', () => {
 
   it('removes an item', async () => {
     const a = (await addPersonalItem({ title: 'keep' })) as StoredItem;
+    await tick();
     const b = (await addPersonalItem({ title: 'drop' })) as StoredItem;
 
     await removePersonalItem(b.id);

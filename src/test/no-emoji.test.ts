@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const ROOT = join(__dirname, '..');
 const EMOJI_RE = /\p{Extended_Pictographic}/u;

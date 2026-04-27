@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concrete Lab — Design Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=Miriam+Libre:wght@400;700&family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --concrete: #E5E3DE;
+    --concrete-mid: #CFCCC4;
+    --concrete-deep: #9A978E;
+    --ash: #5A5954;
+    --slate: #2B2A27;
+    --graphite: #141412;
+    --hazard: #C8FF2E;
+    --rust: #8A3B1F;
+    --steel: #7A8A8F;
+    --f-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+    --f-display: 'Space Grotesk', 'JetBrains Mono', system-ui, sans-serif;
+    --f-heb: 'Miriam Libre', 'Heebo', system-ui, sans-serif;
+    --f-heb-body: 'IBM Plex Sans Hebrew', 'Assistant', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    font-family: var(--f-mono);
+    color: var(--graphite);
+    background: var(--concrete);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ──── EXPOSED GRID SCAFFOLDING (signature element 1) ──── */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background-image:
+      linear-gradient(to right, var(--concrete-deep) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--concrete-deep) 1px, transparent 1px);
+    background-size: 80px 80px, 100% 8px;
+    opacity: 0.05;
+  }
+
+  /* ──── HEADER ──── */
+  .header {
+    background: var(--slate);
+    color: var(--concrete);
+    padding: 64px 32px 48px;
+    position: relative;
+    border-bottom: 4px solid var(--hazard);
+  }
+  .header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .scaffold-top {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 24px;
+    align-items: baseline;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(229, 227, 222, 0.55);
+    margin-bottom: 40px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(229, 227, 222, 0.12);
+  }
+  .scaffold-top .tag { color: var(--hazard); }
+  .title {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 180px;
+    line-height: 0.82;
+    letter-spacing: -0.04em;
+    color: var(--concrete);
+    text-transform: uppercase;
+  }
+  .title .accent {
+    color: var(--hazard);
+    position: relative;
+  }
+  .subhead {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: rgba(229, 227, 222, 0.65);
+    max-width: 620px;
+    margin-top: 32px;
+    line-height: 1.75;
+  }
+  .header-meta {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 48px;
+    border-top: 1px solid rgba(229, 227, 222, 0.18);
+  }
+  .header-meta .cell {
+    padding: 18px 16px 18px 0;
+    border-right: 1px solid rgba(229, 227, 222, 0.12);
+  }
+  .header-meta .cell:last-child { border-right: none; }
+  .header-meta .cell:not(:first-child) { padding-left: 16px; }
+  .header-meta .lbl {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(229, 227, 222, 0.5);
+    margin-bottom: 6px;
+  }
+  .header-meta .val {
+    font-family: var(--f-display);
+    font-weight: 500;
+    font-size: 18px;
+    color: var(--concrete);
+    letter-spacing: -0.01em;
+  }
+  .header-meta .val em { font-style: normal; color: var(--hazard); }
+
+  /* ──── SCREENS ──── */
+  .screens {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 80px 32px 160px;
+    display: grid;
+    gap: 96px;
+  }
+
+  /* ──── BLOCK HEADER ──── */
+  .block-head {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 24px;
+    align-items: baseline;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--graphite);
+    margin-bottom: 40px;
+  }
+  .block-num {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 72px;
+    line-height: 0.82;
+    color: var(--graphite);
+    letter-spacing: -0.03em;
+  }
+  .block-meta {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ash);
+  }
+  .block-title {
+    font-family: var(--f-mono);
+    font-weight: 800;
+    font-size: 28px;
+    line-height: 1;
+    color: var(--graphite);
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    margin-top: 6px;
+  }
+  .block-tag {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--concrete-deep);
+    align-self: start;
+  }
+
+  /* ──── PHONE ──── */
+  .phone-wrap {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 32px;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .phone-aside {
+    padding-top: 48px;
+  }
+  .phone-aside .scaffold-label {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--concrete-deep);
+    display: block;
+    margin-bottom: 16px;
+    padding-left: 12px;
+    border-left: 1px solid var(--concrete-deep);
+  }
+  .phone-aside .scaffold-label.live {
+    color: var(--graphite);
+    border-left-color: var(--hazard);
+    border-left-width: 4px;
+    padding-left: 9px;
+  }
+  .phone-aside .scaffold-note {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    color: var(--ash);
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    margin-top: 28px;
+    padding-left: 12px;
+  }
+  .phone {
+    background: var(--concrete);
+    border-top: 1px solid var(--concrete-deep);
+    border-left: 1px solid var(--concrete-deep);
+    max-width: 420px;
+    position: relative;
+  }
+
+  /* ──── DASHBOARD ──── */
+  .masthead {
+    background: var(--slate);
+    color: var(--concrete);
+    padding: 20px 20px 22px;
+    border-left: 4px solid var(--hazard);
+  }
+  .masthead .tag-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--hazard);
+    margin-bottom: 14px;
+  }
+  .masthead .tag-row .right {
+    color: rgba(229, 227, 222, 0.55);
+  }
+  .masthead .h {
+    font-family: var(--f-mono);
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 1.05;
+    text-transform: uppercase;
+    letter-spacing: 0;
+  }
+  .masthead .h .sub {
+    display: block;
+    color: rgba(229, 227, 222, 0.55);
+    font-size: 13px;
+    margin-top: 6px;
+    letter-spacing: 0.08em;
+  }
+
+  .body-inner { padding: 20px; }
+
+  /* ──── PANEL (half-frame card) ──── */
+  .panel {
+    background: var(--concrete-mid);
+    border-top: 1px solid var(--concrete-deep);
+    border-left: 1px solid var(--concrete-deep);
+    padding: 18px 18px 20px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .panel .scaffold {
+    position: absolute;
+    top: -18px;
+    left: 0;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--concrete-deep);
+    font-weight: 600;
+  }
+  .panel.active {
+    border-left: 4px solid var(--hazard);
+    padding-left: 15px;
+  }
+
+  /* ──── ENGRAVED HERO NUMBER ──── */
+  .engraved {
+    display: inline-block;
+    padding: 4px 8px;
+    background: var(--concrete);
+    color: var(--graphite);
+    font-family: var(--f-display);
+    font-weight: 700;
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+    box-shadow:
+      inset 0 1px 0 rgba(20, 20, 18, 0.1),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.18);
+  }
+
+  .hero-num {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 120px;
+    line-height: 0.82;
+    letter-spacing: -0.04em;
+    color: var(--graphite);
+    display: block;
+    margin: 4px 0 0 -2px;
+    padding: 2px 0;
+    position: relative;
+  }
+  .hero-num::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow:
+      inset 0 2px 0 rgba(20, 20, 18, 0.07),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.22);
+    pointer-events: none;
+  }
+
+  .panel .label {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-bottom: 2px;
+    font-weight: 600;
+  }
+  .panel .unit {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-top: 6px;
+  }
+  .panel .delta {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--graphite);
+    margin-top: 8px;
+    letter-spacing: 0.04em;
+  }
+  .panel .delta::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--hazard);
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  /* ──── DATA STRIP ──── */
+  .data-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    background: var(--concrete);
+    border-top: 1px solid var(--graphite);
+    border-bottom: 1px solid var(--graphite);
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .data-strip .cell {
+    padding: 14px 12px 12px;
+    border-right: 1px solid var(--concrete-deep);
+  }
+  .data-strip .cell:last-child { border-right: none; }
+  .data-strip .cell .v {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 38px;
+    line-height: 0.9;
+    color: var(--graphite);
+    letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+  .data-strip .cell .v em { font-style: normal; color: var(--graphite); }
+  .data-strip .cell .v .accent {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--hazard);
+    margin-left: 4px;
+    vertical-align: 12px;
+  }
+  .data-strip .cell .l {
+    font-family: var(--f-mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ash);
+    font-weight: 600;
+  }
+
+  /* ──── SECTION RULE ──── */
+  .section-rule {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ash);
+    padding: 16px 0 12px;
+    border-top: 1px solid var(--concrete-deep);
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  .section-rule .right {
+    color: var(--concrete-deep);
+  }
+
+  /* ──── PROGRESS BAR ──── */
+  .prog {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--concrete-deep);
+  }
+  .prog:last-child { border-bottom: none; }
+  .prog .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .prog .name {
+    font-family: var(--f-mono);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--graphite);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .prog .pct {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--graphite);
+    letter-spacing: -0.01em;
+  }
+  .prog .track {
+    height: 8px;
+    background: var(--concrete-deep);
+    position: relative;
+  }
+  .prog .fill {
+    height: 100%;
+    background: var(--hazard);
+    position: relative;
+  }
+  .prog .fill::after {
+    content: "";
+    position: absolute;
+    right: -3px;
+    top: -1px;
+    width: 6px;
+    height: 10px;
+    background: var(--hazard);
+  }
+  .prog .caption {
+    font-family: var(--f-mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-top: 6px;
+    font-weight: 600;
+  }
+
+  /* ──── BUTTON ROW ──── */
+  .btn-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 0;
+    margin-top: 24px;
+  }
+  .btn {
+    padding: 18px 20px;
+    font-family: var(--f-mono);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    color: var(--concrete);
+    background: var(--slate);
+    border-radius: 0;
+    position: relative;
+    transition: background 75ms linear, transform 75ms linear;
+  }
+  .btn:hover { background: var(--graphite); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary {
+    background: var(--slate);
+    color: var(--concrete);
+    border-left: 4px solid var(--hazard);
+    padding-left: 16px;
+  }
+  .btn.ghost {
+    background: transparent;
+    color: var(--graphite);
+    border: 1px solid var(--graphite);
+    padding: 17px 20px;
+  }
+  .btn.ghost:hover { background: var(--concrete-mid); }
+
+  /* ──── BOTTOM NAV ──── */
+  .nav {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: var(--slate);
+    border-top: 1px solid var(--graphite);
+  }
+  .nav .item {
+    padding: 14px 6px 12px;
+    text-align: center;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(229, 227, 222, 0.5);
+    position: relative;
+    cursor: pointer;
+  }
+  .nav .item.active {
+    color: var(--hazard);
+  }
+  .nav .item.active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--hazard);
+  }
+  .nav .item .icon {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 4px;
+    letter-spacing: 0;
+    opacity: 0.9;
+  }
+
+  /* ──── ACTIVE WORKOUT ──── */
+  .aw-masthead {
+    background: var(--slate);
+    color: var(--concrete);
+    padding: 16px 20px;
+    border-left: 4px solid var(--hazard);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .aw-masthead .left {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .aw-masthead .left .tag {
+    color: var(--hazard);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    margin-right: 8px;
+  }
+  .aw-masthead .right {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--hazard);
+    font-weight: 600;
+  }
+
+  .aw-hero {
+    background: var(--concrete-mid);
+    padding: 28px 20px 32px;
+    border-left: 1px solid var(--concrete-deep);
+    border-top: 1px solid var(--concrete-deep);
+    text-align: center;
+    position: relative;
+  }
+  .aw-hero .scaffold {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--concrete-deep);
+    font-weight: 600;
+  }
+  .aw-hero .rpe {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--graphite);
+    background: var(--hazard);
+    padding: 3px 8px 2px;
+    text-transform: uppercase;
+  }
+  .aw-hero .big {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 200px;
+    line-height: 0.82;
+    letter-spacing: -0.05em;
+    color: var(--graphite);
+    display: inline-block;
+    margin-top: 16px;
+    position: relative;
+  }
+  .aw-hero .big::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow:
+      inset 0 3px 0 rgba(20, 20, 18, 0.08),
+      inset 0 -2px 0 rgba(255, 255, 255, 0.26);
+    pointer-events: none;
+  }
+  .aw-hero .unit {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-top: 8px;
+    font-weight: 600;
+  }
+  .aw-hero .pr {
+    display: inline-block;
+    margin-left: 10px;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--graphite);
+    padding-left: 10px;
+    position: relative;
+  }
+  .aw-hero .pr::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    width: 6px;
+    height: 6px;
+    background: var(--hazard);
+  }
+
+  .aw-sets {
+    padding: 16px 20px 8px;
+  }
+  .aw-sets .section-head {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ash);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--concrete-deep);
+    margin-bottom: 4px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+  }
+  .aw-sets .section-head .right { color: var(--concrete-deep); }
+
+  .set-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--concrete-deep);
+    align-items: center;
+    font-family: var(--f-mono);
+    font-size: 13px;
+    position: relative;
+  }
+  .set-row:last-child { border-bottom: none; }
+  .set-row .idx {
+    font-family: var(--f-mono);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--ash);
+  }
+  .set-row .body {
+    font-family: var(--f-mono);
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--graphite);
+    letter-spacing: 0.02em;
+  }
+  .set-row .state {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--ash);
+    text-transform: uppercase;
+  }
+  .set-row.done .idx,
+  .set-row.done .body { color: var(--ash); }
+  .set-row.done .state { color: var(--concrete-deep); }
+  .set-row.future .idx,
+  .set-row.future .body { color: var(--concrete-deep); }
+  .set-row.future .state { color: var(--concrete-deep); }
+  .set-row.active {
+    border-left: 4px solid var(--hazard);
+    padding-left: 12px;
+    margin-left: -16px;
+    padding-right: 4px;
+    background: var(--concrete-mid);
+  }
+  .set-row.active .idx {
+    color: var(--graphite);
+    font-weight: 700;
+  }
+  .set-row.active .body {
+    color: var(--graphite);
+    font-weight: 700;
+  }
+  .set-row.active .state {
+    color: var(--graphite);
+  }
+  .set-row.active .state .dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--hazard);
+    margin-left: 4px;
+    vertical-align: middle;
+    animation: hazard-pulse 1200ms steps(8, end) infinite;
+  }
+  @keyframes hazard-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .rest-timer {
+    font-family: var(--f-display);
+    font-weight: 500;
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    color: var(--ash);
+    padding: 12px 20px 16px;
+    text-align: center;
+    border-top: 1px solid var(--concrete-deep);
+  }
+  .rest-timer .lbl {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--concrete-deep);
+    margin-right: 10px;
+    font-weight: 600;
+  }
+  .rest-timer .val {
+    color: var(--graphite);
+  }
+
+  /* ──── HISTORY ──── */
+  .hist-week {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ash);
+    padding: 16px 0 8px;
+    border-top: 1px solid var(--graphite);
+    margin-top: 16px;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+  }
+  .hist-week .right { color: var(--concrete-deep); font-weight: 500; }
+  .hist-week:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
+
+  .hist-card {
+    background: var(--concrete-mid);
+    border-top: 1px solid var(--concrete-deep);
+    border-left: 1px solid var(--concrete-deep);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    position: relative;
+  }
+  .hist-card.pr { border-left: 4px solid var(--hazard); padding-left: 13px; }
+  .hist-card .rec {
+    font-family: var(--f-mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--concrete-deep);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .hist-card .title {
+    font-family: var(--f-mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--graphite);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .hist-card .date {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--ash);
+    margin-bottom: 12px;
+  }
+  .hist-card .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--concrete-deep);
+    padding-top: 10px;
+  }
+  .hist-card .stats > div {
+    border-right: 1px solid var(--concrete-deep);
+    padding: 0 8px 0 0;
+  }
+  .hist-card .stats > div:first-child { padding-left: 0; }
+  .hist-card .stats > div:last-child { border-right: none; padding-right: 0; padding-left: 8px; }
+  .hist-card .stats .v {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--graphite);
+    letter-spacing: -0.01em;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .hist-card .stats .l {
+    font-family: var(--f-mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ash);
+    font-weight: 600;
+  }
+  .hist-card .pr-note {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--graphite);
+    font-weight: 700;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--concrete-deep);
+  }
+  .hist-card .pr-note::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--hazard);
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  /* ──── TOKENS ──── */
+  .tokens-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0;
+    border-top: 1px solid var(--graphite);
+    border-left: 1px solid var(--graphite);
+  }
+  .chip {
+    border-right: 1px solid var(--graphite);
+    border-bottom: 1px solid var(--graphite);
+    padding: 0;
+    background: var(--concrete);
+    position: relative;
+  }
+  .chip .scaffold {
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    font-family: var(--f-mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ash);
+    font-weight: 600;
+    z-index: 2;
+    mix-blend-mode: difference;
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .chip .swatch {
+    aspect-ratio: 2/1;
+  }
+  .chip .meta {
+    padding: 12px 14px 14px;
+    border-top: 1px solid var(--graphite);
+    background: var(--concrete);
+  }
+  .chip .name {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ash);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .chip .hex {
+    font-family: var(--f-mono);
+    font-size: 13px;
+    color: var(--graphite);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .chip .contrast {
+    font-family: var(--f-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--concrete-deep);
+    margin-top: 4px;
+    font-weight: 600;
+  }
+
+  /* ──── TYPE DEMO ──── */
+  .type-demo {
+    border-top: 1px solid var(--graphite);
+    border-left: 1px solid var(--graphite);
+    margin-top: 64px;
+    background: var(--concrete);
+  }
+  .type-row {
+    padding: 28px 32px;
+    border-bottom: 1px solid var(--concrete-deep);
+    position: relative;
+  }
+  .type-row:last-child { border-bottom: none; }
+  .type-row .scaffold {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-family: var(--f-mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--concrete-deep);
+    font-weight: 600;
+  }
+  .type-row .lbl {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  /* ──── COMPONENT GRID (buttons + input demo) ──── */
+  .comp-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+    margin-top: 64px;
+    border-top: 1px solid var(--graphite);
+    border-left: 1px solid var(--graphite);
+  }
+  .comp-cell {
+    border-right: 1px solid var(--graphite);
+    border-bottom: 1px solid var(--graphite);
+    background: var(--concrete-mid);
+    padding: 32px 28px;
+    position: relative;
+  }
+  .comp-cell .scaffold {
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    font-family: var(--f-mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--concrete-deep);
+    font-weight: 600;
+  }
+  .comp-cell .title {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-bottom: 18px;
+    margin-top: 8px;
+    font-weight: 600;
+  }
+  .comp-cell .stack { display: grid; gap: 10px; }
+
+  .input-demo {
+    padding: 10px 0 8px;
+    border-bottom: 1px solid var(--concrete-deep);
+  }
+  .input-demo.focused {
+    border-top: 4px solid var(--hazard);
+    border-bottom: 1px solid var(--graphite);
+    padding-top: 6px;
+  }
+  .input-demo .lbl {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .input-demo .val {
+    font-family: var(--f-mono);
+    font-size: 15px;
+    color: var(--graphite);
+    font-weight: 500;
+  }
+  .input-demo.focused .val {
+    color: var(--graphite);
+    font-weight: 600;
+  }
+
+  /* ──── VOICE / COPY DEMO ──── */
+  .voice-demo {
+    margin-top: 64px;
+    border-top: 1px solid var(--graphite);
+    border-left: 1px solid var(--graphite);
+    background: var(--concrete-mid);
+  }
+  .voice-demo .row {
+    display: grid;
+    grid-template-columns: 140px 1fr 1fr;
+    border-bottom: 1px solid var(--concrete-deep);
+    font-family: var(--f-mono);
+    font-size: 12px;
+  }
+  .voice-demo .row:last-child { border-bottom: none; }
+  .voice-demo .row.head {
+    background: var(--slate);
+    color: var(--hazard);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .voice-demo .cell {
+    padding: 12px 16px;
+    border-right: 1px solid var(--concrete-deep);
+  }
+  .voice-demo .cell:last-child { border-right: none; }
+  .voice-demo .cell.label {
+    color: var(--ash);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 10px;
+  }
+  .voice-demo .row.head .cell.label { color: var(--hazard); }
+  .voice-demo .cell.he {
+    font-family: var(--f-heb-body);
+    direction: rtl;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--graphite);
+  }
+
+  /* ──── FOOTER ──── */
+  footer {
+    padding: 40px 32px;
+    background: var(--slate);
+    color: var(--hazard);
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-align: center;
+    font-weight: 600;
+    border-top: 4px solid var(--hazard);
+  }
+  footer .sub {
+    color: rgba(229, 227, 222, 0.4);
+    margin-top: 8px;
+    letter-spacing: 0.14em;
+  }
+
+  /* ──── REDUCED MOTION ──── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .set-row.active .state .dot { animation: none !important; opacity: 1 !important; }
+  }
+
+  /* ──── RESPONSIVE ──── */
+  @media (max-width: 900px) {
+    .phone-wrap { grid-template-columns: 1fr; }
+    .phone-aside { padding-top: 0; order: -1; }
+    .title { font-size: 96px; }
+    .header-meta { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 520px) {
+    .header { padding: 40px 20px 32px; }
+    .screens { padding: 48px 20px 96px; gap: 64px; }
+    .title { font-size: 64px; }
+    .block-num { font-size: 48px; }
+    .block-title { font-size: 20px; }
+    .scaffold-top { grid-template-columns: 1fr; gap: 8px; }
+    .comp-grid { grid-template-columns: 1fr; }
+    .voice-demo .row { grid-template-columns: 1fr; }
+    .voice-demo .cell { border-right: none; border-bottom: 1px solid var(--concrete-deep); }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="scaffold-top">
+      <span class="tag">[BRIEF/05]</span>
+      <span>CONCRETE LAB · DESIGN PREVIEW · 2026.04</span>
+      <span>ALT / 05 OF 08</span>
+    </div>
+    <h1 class="title">CONCRETE<br><span class="accent">LAB.</span></h1>
+    <p class="subhead">
+      A training app as concrete instrument. Exposed grid. Monospace dominant. Half-frame panels. Zero radius. A single radioactive accent for LIVE state. Cold. Structural. Honest. The numbers are engraved, not printed.
+    </p>
+    <div class="header-meta">
+      <div class="cell">
+        <div class="lbl">[PALETTE]</div>
+        <div class="val">CONCRETE <em>·</em> GRAPHITE <em>·</em> HAZARD</div>
+      </div>
+      <div class="cell">
+        <div class="lbl">[TYPE]</div>
+        <div class="val">JETBRAINS MONO <em>×</em> SPACE GROTESK</div>
+      </div>
+      <div class="cell">
+        <div class="lbl">[RADIUS]</div>
+        <div class="val">0 <em>·</em> ALWAYS</div>
+      </div>
+      <div class="cell">
+        <div class="lbl">[ACCENT]</div>
+        <div class="val">#C8FF2E <em>·</em> 4PX BARS ONLY</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="screens">
+
+  <!-- ──── DASHBOARD ──── -->
+  <section>
+    <div class="block-head">
+      <div class="block-num">01</div>
+      <div>
+        <div class="block-meta">[BLOCK/01] · DASHBOARD · WEEK 16</div>
+        <div class="block-title">THE OVERVIEW.</div>
+      </div>
+      <div class="block-tag">[FIG/01.A]</div>
+    </div>
+
+    <div class="phone-wrap">
+      <aside class="phone-aside">
+        <span class="scaffold-label">[BLOCK/00]</span>
+        <span class="scaffold-label live">[BLOCK/01]</span>
+        <span class="scaffold-label">[BLOCK/02]</span>
+        <span class="scaffold-label">[SECTION/SKILLS]</span>
+        <span class="scaffold-label">[NAV/BOTTOM]</span>
+        <p class="scaffold-note">
+          Scaffolding labels sit outside each block.<br>
+          Hazard bar marks the live block.<br>
+          All type mono. All corners square.
+        </p>
+      </aside>
+
+      <div class="phone">
+        <div class="masthead">
+          <div class="tag-row">
+            <span>[SESSION/17] · 04.23 · THU · 18:42</span>
+            <span class="right">[LIVE]</span>
+          </div>
+          <div class="h">PUSH<br><span class="sub">WEEK 16 · DAY 03</span></div>
+        </div>
+
+        <div class="body-inner">
+          <div class="panel active">
+            <span class="scaffold">[FIG/01.A] WEEK VOLUME</span>
+            <div class="label">KG · TOTAL</div>
+            <span class="hero-num">46,200</span>
+            <div class="unit">WEEK 16 · +4.1% VS PRIOR</div>
+            <div class="delta">DELTA +1,820 · 7 DAYS</div>
+          </div>
+
+          <div class="data-strip" style="margin-bottom: 24px;">
+            <div class="cell">
+              <div class="v">04<span class="accent"></span></div>
+              <div class="l">DONE</div>
+            </div>
+            <div class="cell">
+              <div class="v">06</div>
+              <div class="l">GOAL</div>
+            </div>
+            <div class="cell">
+              <div class="v">67%</div>
+              <div class="l">RATIO</div>
+            </div>
+          </div>
+
+          <div class="section-rule">
+            <span>[SECTION/SKILLS] · 03 TRACKED</span>
+            <span class="right">[FIG/03]</span>
+          </div>
+
+          <div class="prog">
+            <div class="head">
+              <span class="name">MUSCLE-UP</span>
+              <span class="pct">67%</span>
+            </div>
+            <div class="track"><div class="fill" style="width: 67%"></div></div>
+            <div class="caption">[FIG/03.A] DELTA +3% · 14 DAYS</div>
+          </div>
+          <div class="prog">
+            <div class="head">
+              <span class="name">BENCH 2×BW</span>
+              <span class="pct">22%</span>
+            </div>
+            <div class="track"><div class="fill" style="width: 22%"></div></div>
+            <div class="caption">[FIG/03.B] DELTA +1% · 14 DAYS</div>
+          </div>
+          <div class="prog">
+            <div class="head">
+              <span class="name">HANDSTAND 30S</span>
+              <span class="pct">40%</span>
+            </div>
+            <div class="track"><div class="fill" style="width: 40%"></div></div>
+            <div class="caption">[FIG/03.C] DELTA +0% · 14 DAYS</div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn primary">START SESSION</button>
+            <button class="btn ghost">LOG</button>
+          </div>
+        </div>
+
+        <div class="nav">
+          <div class="item active"><span class="icon">▣</span>DASH</div>
+          <div class="item"><span class="icon">+</span>LOG</div>
+          <div class="item"><span class="icon">≡</span>HIST</div>
+          <div class="item"><span class="icon">◐</span>SET</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──── ACTIVE WORKOUT ──── -->
+  <section>
+    <div class="block-head">
+      <div class="block-num">02</div>
+      <div>
+        <div class="block-meta">[BLOCK/02] · ACTIVE SESSION · [LIVE]</div>
+        <div class="block-title">THE WORK.</div>
+      </div>
+      <div class="block-tag">[FIG/02.A]</div>
+    </div>
+
+    <div class="phone-wrap">
+      <aside class="phone-aside">
+        <span class="scaffold-label">[BLOCK/00]</span>
+        <span class="scaffold-label live">[BLOCK/01] HERO</span>
+        <span class="scaffold-label live">[SET/03/05]</span>
+        <span class="scaffold-label">[BLOCK/03] ACTIONS</span>
+        <span class="scaffold-label">[TIMER/REST]</span>
+        <p class="scaffold-note">
+          Hero number sits on concrete-mid<br>
+          with engraved inset shadows.<br>
+          Active row gets a 4px hazard bar<br>
+          on its leading edge. Pulse is stepped.
+        </p>
+      </aside>
+
+      <div class="phone">
+        <div class="aw-masthead">
+          <div class="left">
+            <span class="tag">[SESSION/17]</span>
+            BENCH PRESS
+          </div>
+          <div class="right">SET 03 / 05</div>
+        </div>
+
+        <div class="aw-hero">
+          <span class="scaffold">[FIG/01] LOAD</span>
+          <span class="rpe">RPE 9</span>
+          <div class="big">90</div>
+          <div class="unit">KG  ·  × 6 REPS  <span class="pr">[PR]</span></div>
+        </div>
+
+        <div class="aw-sets">
+          <div class="section-head">
+            <span>[SECTION/SET-LOG]</span>
+            <span class="right">05 TOTAL</span>
+          </div>
+
+          <div class="set-row done">
+            <span class="idx">01</span>
+            <span class="body">80 × 8 · RPE 7</span>
+            <span class="state">COMMIT</span>
+          </div>
+          <div class="set-row done">
+            <span class="idx">02</span>
+            <span class="body">85 × 8 · RPE 8</span>
+            <span class="state">COMMIT</span>
+          </div>
+          <div class="set-row active">
+            <span class="idx">03</span>
+            <span class="body">90 × 6 · RPE 9</span>
+            <span class="state">LIVE<span class="dot"></span></span>
+          </div>
+          <div class="set-row future">
+            <span class="idx">04</span>
+            <span class="body">90 × 6 · —</span>
+            <span class="state">PENDING</span>
+          </div>
+          <div class="set-row future">
+            <span class="idx">05</span>
+            <span class="body">90 × ? · —</span>
+            <span class="state">PENDING</span>
+          </div>
+        </div>
+
+        <div style="padding: 8px 20px 16px;">
+          <div class="btn-row">
+            <button class="btn primary">COMMIT SET</button>
+            <button class="btn ghost">SKIP</button>
+          </div>
+        </div>
+
+        <div class="rest-timer">
+          <span class="lbl">REST</span><span class="val">00:90</span>
+        </div>
+
+        <div class="nav">
+          <div class="item"><span class="icon">▣</span>DASH</div>
+          <div class="item active"><span class="icon">+</span>LOG</div>
+          <div class="item"><span class="icon">≡</span>HIST</div>
+          <div class="item"><span class="icon">◐</span>SET</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──── HISTORY ──── -->
+  <section>
+    <div class="block-head">
+      <div class="block-num">03</div>
+      <div>
+        <div class="block-meta">[BLOCK/03] · HISTORY · RECENT LOG</div>
+        <div class="block-title">THE RECORD.</div>
+      </div>
+      <div class="block-tag">[FIG/03.A]</div>
+    </div>
+
+    <div class="phone-wrap">
+      <aside class="phone-aside">
+        <span class="scaffold-label">[BLOCK/00] HEADER</span>
+        <span class="scaffold-label">[WEEK/16]</span>
+        <span class="scaffold-label">[WEEK/15]</span>
+        <span class="scaffold-label live">[PR] WK15</span>
+        <span class="scaffold-label">[NAV/BOTTOM]</span>
+        <p class="scaffold-note">
+          History cards are half-framed.<br>
+          A PR adds a 4px hazard bar<br>
+          to the leading edge.<br>
+          No celebration. Just a mark.
+        </p>
+      </aside>
+
+      <div class="phone">
+        <div class="masthead">
+          <div class="tag-row">
+            <span>[SECTION/LOG] · ALL RECORDS</span>
+            <span class="right">SORT: NEW</span>
+          </div>
+          <div class="h">HISTORY<br><span class="sub">127 TOTAL · 17 THIS MONTH</span></div>
+        </div>
+
+        <div class="body-inner">
+          <div class="hist-week">
+            <span>[WEEK/16] · CURRENT</span>
+            <span class="right">02 SESSIONS</span>
+          </div>
+
+          <div class="hist-card">
+            <div class="rec">[REC/2026.04.23]</div>
+            <div class="title">PUSH · BENCH FOCUS</div>
+            <div class="date">THU · 04.23 · 18:42</div>
+            <div class="stats">
+              <div>
+                <div class="v">46,200</div>
+                <div class="l">KG VOL</div>
+              </div>
+              <div>
+                <div class="v">06</div>
+                <div class="l">SETS</div>
+              </div>
+              <div>
+                <div class="v">52M</div>
+                <div class="l">DUR</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hist-card">
+            <div class="rec">[REC/2026.04.21]</div>
+            <div class="title">PULL · ROW BLOCK</div>
+            <div class="date">TUE · 04.21 · 17:10</div>
+            <div class="stats">
+              <div>
+                <div class="v">38,400</div>
+                <div class="l">KG VOL</div>
+              </div>
+              <div>
+                <div class="v">05</div>
+                <div class="l">SETS</div>
+              </div>
+              <div>
+                <div class="v">45M</div>
+                <div class="l">DUR</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hist-week">
+            <span>[WEEK/15] · PRIOR</span>
+            <span class="right">03 SESSIONS</span>
+          </div>
+
+          <div class="hist-card">
+            <div class="rec">[REC/2026.04.14]</div>
+            <div class="title">LEGS · SQUAT EMPHASIS</div>
+            <div class="date">MON · 04.14 · 18:00</div>
+            <div class="stats">
+              <div>
+                <div class="v">41,800</div>
+                <div class="l">KG VOL</div>
+              </div>
+              <div>
+                <div class="v">07</div>
+                <div class="l">SETS</div>
+              </div>
+              <div>
+                <div class="v">58M</div>
+                <div class="l">DUR</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hist-card pr">
+            <div class="rec">[REC/2026.04.12]</div>
+            <div class="title">PUSH · PR RECORDED</div>
+            <div class="date">SAT · 04.12 · 10:20</div>
+            <div class="stats">
+              <div>
+                <div class="v">44,100</div>
+                <div class="l">KG VOL</div>
+              </div>
+              <div>
+                <div class="v">06</div>
+                <div class="l">SETS</div>
+              </div>
+              <div>
+                <div class="v">49M</div>
+                <div class="l">DUR</div>
+              </div>
+            </div>
+            <div class="pr-note">[PR] BENCH · 92.5 × 5</div>
+          </div>
+        </div>
+
+        <div class="nav">
+          <div class="item"><span class="icon">▣</span>DASH</div>
+          <div class="item"><span class="icon">+</span>LOG</div>
+          <div class="item active"><span class="icon">≡</span>HIST</div>
+          <div class="item"><span class="icon">◐</span>SET</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──── TOKENS ──── -->
+  <section>
+    <div class="block-head">
+      <div class="block-num">04</div>
+      <div>
+        <div class="block-meta">[APPENDIX/A] · DESIGN TOKENS · PALETTE</div>
+        <div class="block-title">THE SYSTEM.</div>
+      </div>
+      <div class="block-tag">[FIG/04.A]</div>
+    </div>
+
+    <div class="tokens-grid">
+      <div class="chip">
+        <span class="scaffold">01</span>
+        <div class="swatch" style="background: #E5E3DE"></div>
+        <div class="meta">
+          <div class="name">CONCRETE</div>
+          <div class="hex">#E5E3DE</div>
+          <div class="contrast">PAGE · BG</div>
+        </div>
+      </div>
+      <div class="chip">
+        <span class="scaffold">02</span>
+        <div class="swatch" style="background: #CFCCC4"></div>
+        <div class="meta">
+          <div class="name">CONCRETE MID</div>
+          <div class="hex">#CFCCC4</div>
+          <div class="contrast">CARDS · INSET</div>
+        </div>
+      </div>
+      <div class="chip">
+        <span class="scaffold">03</span>
+        <div class="swatch" style="background: #9A978E"></div>
+        <div class="meta">
+          <div class="name">CONCRETE DEEP</div>
+          <div class="hex">#9A978E</div>
+          <div class="contrast">RULES · 1PX</div>
+        </div>
+      </div>
+      <div class="chip">
+        <span class="scaffold">04</span>
+        <div class="swatch" style="background: #5A5954"></div>
+        <div class="meta">
+          <div class="name">ASH</div>
+          <div class="hex">#5A5954</div>
+          <div class="contrast">5.9:1 · AA</div>
+        </div>
+      </div>
+      <div class="chip">
+        <span class="scaffold">05</span>
+        <div class="swatch" style="background: #2B2A27"></div>
+        <div class="meta">
+          <div class="name">SLATE</div>
+          <div class="hex">#2B2A27</div>
+          <div class="contrast">12.4:1 · AAA</div>
+        </div>
+      </div>
+      <div class="chip">
+        <span class="scaffold">06</span>
+        <div class="swatch" style="background: #141412"></div>
+        <div class="meta">
+          <div class="name">GRAPHITE</div>
+          <div class="hex">#141412</div>
+          <div class="contrast">15.8:1 · AAA</div>
+        </div>
+      </div>
+      <div class="chip">
+        <span class="scaffold">07 [HAZARD]</span>
+        <div class="swatch" style="background: #C8FF2E"></div>
+        <div class="meta">
+          <div class="name">HAZARD</div>
+          <div class="hex">#C8FF2E</div>
+          <div class="contrast">DECORATIVE · BARS ONLY</div>
+        </div>
+      </div>
+      <div class="chip">
+        <span class="scaffold">08</span>
+        <div class="swatch" style="background: #8A3B1F"></div>
+        <div class="meta">
+          <div class="name">RUST</div>
+          <div class="hex">#8A3B1F</div>
+          <div class="contrast">DESTRUCTIVE · RARE</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── COMPONENT GRID ──── -->
+    <div class="comp-grid">
+      <div class="comp-cell">
+        <span class="scaffold">[COMP/BTN]</span>
+        <div class="title">BUTTONS · 52PX MIN</div>
+        <div class="stack">
+          <button class="btn primary">COMMIT SET</button>
+          <button class="btn">LOG</button>
+          <button class="btn ghost">SKIP</button>
+          <button class="btn" style="background: var(--rust)">ABORT SESSION</button>
+        </div>
+      </div>
+      <div class="comp-cell">
+        <span class="scaffold">[COMP/INPUT]</span>
+        <div class="title">INPUTS · BOTTOM-RULED</div>
+        <div class="stack">
+          <div class="input-demo">
+            <div class="lbl">BODY WEIGHT · KG</div>
+            <div class="val">82</div>
+          </div>
+          <div class="input-demo focused">
+            <div class="lbl">DEFAULT REST · SEC</div>
+            <div class="val">90</div>
+          </div>
+          <div class="input-demo">
+            <div class="lbl">WEEKLY GOAL · SESSIONS</div>
+            <div class="val">04</div>
+          </div>
+        </div>
+      </div>
+      <div class="comp-cell">
+        <span class="scaffold">[COMP/STRIP]</span>
+        <div class="title">DATA STRIP</div>
+        <div class="data-strip" style="margin-bottom: 0;">
+          <div class="cell">
+            <div class="v">46,200<span class="accent"></span></div>
+            <div class="l">KG VOLUME</div>
+          </div>
+          <div class="cell">
+            <div class="v">+4.1%</div>
+            <div class="l">VS PRIOR</div>
+          </div>
+          <div class="cell">
+            <div class="v">06</div>
+            <div class="l">SETS</div>
+          </div>
+        </div>
+      </div>
+      <div class="comp-cell">
+        <span class="scaffold">[COMP/PROG]</span>
+        <div class="title">PROGRESS · HAZARD FILL</div>
+        <div class="prog">
+          <div class="head">
+            <span class="name">MUSCLE-UP</span>
+            <span class="pct">67%</span>
+          </div>
+          <div class="track"><div class="fill" style="width: 67%"></div></div>
+          <div class="caption">[FIG] DELTA +3% · 14 DAYS</div>
+        </div>
+        <div class="prog">
+          <div class="head">
+            <span class="name">BENCH 2×BW</span>
+            <span class="pct">22%</span>
+          </div>
+          <div class="track"><div class="fill" style="width: 22%"></div></div>
+          <div class="caption">[FIG] DELTA +1% · 14 DAYS</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── TYPE DEMO ──── -->
+    <div class="type-demo">
+      <div class="type-row">
+        <span class="scaffold">[TYPE/01]</span>
+        <div class="lbl">DISPLAY · SPACE GROTESK 700 · HERO NUMBERS</div>
+        <div style="font-family: var(--f-display); font-weight: 700; font-size: 120px; line-height: 0.82; letter-spacing: -0.05em; color: var(--graphite);">46,200</div>
+      </div>
+      <div class="type-row">
+        <span class="scaffold">[TYPE/02]</span>
+        <div class="lbl">BLOCK TITLE · JETBRAINS MONO 800 · UPPERCASE</div>
+        <div style="font-family: var(--f-mono); font-weight: 800; font-size: 32px; text-transform: uppercase; letter-spacing: 0.01em; color: var(--graphite);">[BLOCK/01] WEEK VOLUME</div>
+      </div>
+      <div class="type-row">
+        <span class="scaffold">[TYPE/03]</span>
+        <div class="lbl">BODY · JETBRAINS MONO 500 · DEFAULT</div>
+        <div style="font-family: var(--f-mono); font-weight: 500; font-size: 14px; line-height: 1.55; max-width: 620px; color: var(--graphite);">
+          The app is a building. Each screen is a stack of poured panels. Rules separate blocks. Scaffolding labels in the margin tag what each block is for. Hazard accents mark what is live. No hover lifts. No shadows. No ornament.
+        </div>
+      </div>
+      <div class="type-row">
+        <span class="scaffold">[TYPE/04]</span>
+        <div class="lbl">LABEL · JETBRAINS MONO 600 · UPPERCASE · TRACKED</div>
+        <div style="font-family: var(--f-mono); font-weight: 600; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ash);">[SESSION/17] · 04.23 · PUSH · COMPLETE · 52 MIN</div>
+      </div>
+      <div class="type-row">
+        <span class="scaffold">[TYPE/05]</span>
+        <div class="lbl">עברית · MIRIAM LIBRE 700 · כותרת</div>
+        <div style="font-family: var(--f-heb); font-weight: 700; font-size: 40px; color: var(--graphite); direction: rtl; text-align: right; letter-spacing: 0;">שבוע 16 · יום דחיפה</div>
+      </div>
+      <div class="type-row">
+        <span class="scaffold">[TYPE/06]</span>
+        <div class="lbl">עברית · IBM PLEX SANS HEBREW 500 · גוף</div>
+        <div style="font-family: var(--f-heb-body); font-weight: 500; font-size: 15px; line-height: 1.7; color: var(--graphite); direction: rtl; text-align: right; max-width: 620px;">
+          האפליקציה היא בניין. כל מסך הוא ערמה של לוחות יצוקים. קווים מפרידים בין בלוקים. תיוגי פיגומים בשוליים מסמנים על מה כל בלוק אחראי. פס חומצה מסמן מה חי.
+        </div>
+      </div>
+      <div class="type-row">
+        <span class="scaffold">[TYPE/07]</span>
+        <div class="lbl">DATA · JETBRAINS MONO · TABULAR</div>
+        <div style="font-family: var(--f-mono); font-size: 18px; color: var(--graphite); letter-spacing: 0.02em; font-variant-numeric: tabular-nums;">
+          [SET/03/05] · 90 × 6 · RPE 9 · 46,200 KG
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── VOICE DEMO ──── -->
+    <div class="voice-demo">
+      <div class="row head">
+        <div class="cell label">[CONTEXT]</div>
+        <div class="cell">EN</div>
+        <div class="cell">HE</div>
+      </div>
+      <div class="row">
+        <div class="cell label">Start</div>
+        <div class="cell">START SESSION</div>
+        <div class="cell he">התחל אימון</div>
+      </div>
+      <div class="row">
+        <div class="cell label">Commit set</div>
+        <div class="cell">COMMIT SET</div>
+        <div class="cell he">תעד סט</div>
+      </div>
+      <div class="row">
+        <div class="cell label">Skip</div>
+        <div class="cell">SKIP</div>
+        <div class="cell he">דלג</div>
+      </div>
+      <div class="row">
+        <div class="cell label">Abort</div>
+        <div class="cell">ABORT SESSION</div>
+        <div class="cell he">בטל אימון</div>
+      </div>
+      <div class="row">
+        <div class="cell label">Session tag</div>
+        <div class="cell">[SESSION/17] · COMPLETE · 52 MIN</div>
+        <div class="cell he">[אימון/17] · הסתיים · 52 דק׳</div>
+      </div>
+      <div class="row">
+        <div class="cell label">PR marker</div>
+        <div class="cell">[PR]</div>
+        <div class="cell he">[שיא]</div>
+      </div>
+      <div class="row">
+        <div class="cell label">Live set</div>
+        <div class="cell">[LIVE]</div>
+        <div class="cell he">[פעיל]</div>
+      </div>
+      <div class="row">
+        <div class="cell label">Empty state</div>
+        <div class="cell">NO DATA. LOG FIRST SESSION TO BEGIN RECORD.</div>
+        <div class="cell he">אין נתונים. תעד אימון ראשון לפתיחת הרישום.</div>
+      </div>
+      <div class="row">
+        <div class="cell label">Error toast</div>
+        <div class="cell">[REC/ERROR] COMMIT FAILED · RETRY</div>
+        <div class="cell he">[רישום/שגיאה] התיעוד נכשל · נסה שוב</div>
+      </div>
+      <div class="row">
+        <div class="cell label">Rest timer</div>
+        <div class="cell">REST · 00:90</div>
+        <div class="cell he">מנוחה · 00:90</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  CONCRETE LAB · CONCRETE + GRAPHITE + HAZARD · JETBRAINS MONO × SPACE GROTESK
+  <div class="sub">[ALT/05] · RAW · STRUCTURAL · MONOSPACED · EXPOSED · HONEST</div>
+</footer>
+
+</body>
+</html>

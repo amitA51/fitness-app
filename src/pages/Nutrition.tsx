@@ -3,6 +3,8 @@ import {
   Beef,
   BookOpen,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   Clock,
   Droplets,
@@ -16,8 +18,9 @@ import {
 } from 'lucide-react';
 import type React from 'react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { WaterTracker } from '../components/nutrition/WaterTracker';
 import {
-  DEFAULT_MACRO_GOALS as MACRO_GOALS,
+  DEFAULT_MACRO_GOALS,
   MEAL_TYPE_ICONS,
   MEAL_TYPE_LABELS,
   addFoodFromPreset,
@@ -25,10 +28,10 @@ import {
   calcFoodMacros,
   createQuickMeal,
   deleteMealEntry,
+  getDailyMacros,
   getFoodLibrary,
+  getMealEntriesByDate,
   getMealPresets,
-  getTodayMacros,
-  getTodayMealEntries,
   searchFoods,
 } from '../services/nutritionService';
 import type { MealPreset } from '../services/nutritionService';
@@ -51,22 +54,52 @@ export default function NutritionPage() {
     carbs: 0,
     fat: 0,
   });
+  // Effective macro goals — user-saved values from Settings, falling back to
+  // built-in defaults. Settings stores `number | ''`; an empty string means
+  // "use default for this macro".
+  const [macroGoals, setMacroGoals] = useState<MacroNutrients>(DEFAULT_MACRO_GOALS);
   const [activeTab, setActiveTab] = useState<MealTab>('log');
   const [showAddMeal, setShowAddMeal] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('lunch');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFoods, setSelectedFoods] = useState<(FoodItem & { servings: number })[]>([]);
+  const [selectedDate, setSelectedDate] = useState(
+    () => new Date().toISOString().split('T')[0] ?? ''
+  );
+  const [isToday, setIsToday] = useState(true);
+  const [waterHistory, setWaterHistory] = useState<{ date: string; total: number }[]>([]);
 
   const loadData = useCallback(async () => {
-    const entries = await getTodayMealEntries();
+    const dateToUse = isToday ? (new Date().toISOString().split('T')[0] ?? '') : selectedDate;
+    const entries = await getMealEntriesByDate(dateToUse);
     setTodayEntries(entries);
-    const macros = await getTodayMacros();
+    const macros = await getDailyMacros(dateToUse);
     setTodayMacros(macros);
+  }, [selectedDate, isToday]);
+
+  const loadWaterHistory = useCallback(async () => {
+    const { getWaterByDateRange } = await import('../services/waterService');
+    const today = new Date();
+    const dates: string[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      dates.push(d.toISOString().split('T')[0] ?? '');
+    }
+    const startDate = dates[0] ?? '';
+    const endDate = dates[dates.length - 1] ?? '';
+    const entries = await getWaterByDateRange(startDate, endDate);
+    const byDate = new Map<string, number>();
+    for (const e of entries) {
+      byDate.set(e.date, (byDate.get(e.date) ?? 0) + e.amountMl);
+    }
+    setWaterHistory(dates.map((d) => ({ date: d, total: byDate.get(d) ?? 0 })));
   }, []);
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+    loadWaterHistory();
+  }, [loadData, loadWaterHistory]);
 
   const handleSaveMeal = async () => {
     if (selectedFoods.length === 0) return;
@@ -100,12 +133,31 @@ export default function NutritionPage() {
   };
 
   const handleQuickPreset = async (preset: MealPreset, mealType: MealType) => {
-    const entry = addFoodFromPreset(preset.id, mealType);
+    const entry = await addFoodFromPreset(preset.id, mealType);
     if (entry) {
-      await addMealEntry(entry);
       loadData();
     }
   };
+
+  const goBack = useCallback(() => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d.toISOString().split('T')[0] ?? '');
+    setIsToday(false);
+  }, [selectedDate]);
+
+  const goForward = useCallback(() => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    const today = new Date().toISOString().split('T')[0] ?? '';
+    const newDate = d.toISOString().split('T')[0] ?? '';
+    if (newDate >= today) {
+      setSelectedDate(today);
+      setIsToday(true);
+    } else {
+      setSelectedDate(newDate);
+    }
+  }, [selectedDate]);
 
   const handleAddFood = (food: FoodItem) => {
     const existing = selectedFoods.find((f) => f.id === food.id);
@@ -134,10 +186,35 @@ export default function NutritionPage() {
   const filteredFoods = useMemo(() => searchFoods(searchQuery), [searchQuery]);
   const presets = useMemo(() => getMealPresets(), []);
 
-  const calPct = Math.min(Math.round((todayMacros.calories / MACRO_GOALS.calories) * 100), 100);
-  const proteinPct = Math.min(Math.round((todayMacros.protein / MACRO_GOALS.protein) * 100), 100);
-  const carbsPct = Math.min(Math.round((todayMacros.carbs / MACRO_GOALS.carbs) * 100), 100);
-  const fatPct = Math.min(Math.round((todayMacros.fat / MACRO_GOALS.fat) * 100), 100);
+  // Read the user's saved macro goals from Settings on mount and whenever
+  // Settings dispatches an update (Settings persists via `saveToStorage`).
+  useEffect(() => {
+    const apply = () => {
+      try {
+        const raw = localStorage.getItem('nutrition_goals');
+        if (!raw) return;
+        const parsed = JSON.parse(raw) as Partial<Record<keyof MacroNutrients, number | ''>>;
+        const pick = (v: number | '' | undefined, fallback: number) =>
+          typeof v === 'number' && v > 0 ? v : fallback;
+        setMacroGoals({
+          calories: pick(parsed.calories, DEFAULT_MACRO_GOALS.calories),
+          protein: pick(parsed.protein, DEFAULT_MACRO_GOALS.protein),
+          carbs: pick(parsed.carbs, DEFAULT_MACRO_GOALS.carbs),
+          fat: pick(parsed.fat, DEFAULT_MACRO_GOALS.fat),
+        });
+      } catch {
+        /* ignore corrupt JSON */
+      }
+    };
+    apply();
+    window.addEventListener('storage', apply);
+    return () => window.removeEventListener('storage', apply);
+  }, []);
+
+  const calPct = Math.min(Math.round((todayMacros.calories / macroGoals.calories) * 100), 100);
+  const proteinPct = Math.min(Math.round((todayMacros.protein / macroGoals.protein) * 100), 100);
+  const carbsPct = Math.min(Math.round((todayMacros.carbs / macroGoals.carbs) * 100), 100);
+  const fatPct = Math.min(Math.round((todayMacros.fat / macroGoals.fat) * 100), 100);
 
   const TABS: { key: MealTab; label: string; icon: React.ReactNode }[] = [
     { key: 'log', label: 'יומן', icon: <Clock size={15} /> },
@@ -152,11 +229,18 @@ export default function NutritionPage() {
   });
 
   return (
-    <div className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]" style={{ background: 'var(--bone)' }} dir="rtl">
+    <div
+      className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
+      style={{ background: 'var(--bone)' }}
+      dir="rtl"
+    >
       {/* Masthead */}
-      <header className="masthead sticky top-0 z-20" style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}>
+      <header
+        className="masthead sticky top-0 z-20"
+        style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}
+      >
         <div className="kicker">
-          §08 · NUTRITION · {todayMacros.calories || 0}/{MACRO_GOALS.calories} KCAL
+          §08 · NUTRITION · {todayMacros.calories || 0}/{macroGoals.calories} KCAL
         </div>
         <h1
           style={{
@@ -187,7 +271,7 @@ export default function NutritionPage() {
         <span className="ribbon">{calPct}% · GOAL</span>
         <div className="label">נצרך היום · CONSUMED TODAY</div>
         <div className="number">{todayMacros.calories || 0}</div>
-        <div className="sub">/ {MACRO_GOALS.calories} KCAL</div>
+        <div className="sub">/ {macroGoals.calories} KCAL</div>
         {/* Calorie bar */}
         <div
           className="mt-4"
@@ -226,7 +310,7 @@ export default function NutritionPage() {
             he: 'חלבון',
             icon: <Beef size={12} />,
             cur: todayMacros.protein,
-            goal: MACRO_GOALS.protein,
+            goal: macroGoals.protein,
             pct: proteinPct,
           },
           {
@@ -234,7 +318,7 @@ export default function NutritionPage() {
             he: 'פחמימות',
             icon: <Wheat size={12} />,
             cur: todayMacros.carbs,
-            goal: MACRO_GOALS.carbs,
+            goal: macroGoals.carbs,
             pct: carbsPct,
           },
           {
@@ -242,7 +326,7 @@ export default function NutritionPage() {
             he: 'שומן',
             icon: <Droplets size={12} />,
             cur: todayMacros.fat,
-            goal: MACRO_GOALS.fat,
+            goal: macroGoals.fat,
             pct: fatPct,
           },
         ].map((m, i) => (
@@ -318,10 +402,46 @@ export default function NutritionPage() {
         ))}
       </div>
 
+      <WaterTracker />
+
       {/* Chapter break + tabs */}
       <div className="chapter-break mt-5">
         <span className="left">§01 · MEALS</span>
         <span className="right">ארוחות</span>
+      </div>
+
+      {/* Date Navigator */}
+      <div className="px-5 pt-4">
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={goBack} className="chip" aria-label="יום קודם">
+            <ChevronRight size={14} />
+          </button>
+          <span
+            style={{
+              fontFamily: 'var(--font-hebrew)',
+              fontSize: '15px',
+              fontWeight: 600,
+              color: 'var(--ink)',
+            }}
+          >
+            {isToday
+              ? 'היום'
+              : new Date(selectedDate).toLocaleDateString('he-IL', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'short',
+                })}
+          </span>
+          <button
+            onClick={goForward}
+            disabled={isToday}
+            className="chip"
+            style={{ opacity: isToday ? 0.4 : 1 }}
+            aria-label="יום הבא"
+          >
+            <ChevronLeft size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Editorial Tab Bar */}
@@ -344,14 +464,16 @@ export default function NutritionPage() {
               onKeyDown={(e) => {
                 if (e.key === 'ArrowRight') {
                   e.preventDefault();
-                  const nextIdx = (idx + 1) % TABS.length;
-                  setActiveTab(TABS[nextIdx].key);
-                  document.getElementById(`nutrition-tab-${TABS[nextIdx].key}`)?.focus();
+                  const next = TABS[(idx + 1) % TABS.length];
+                  if (!next) return;
+                  setActiveTab(next.key);
+                  document.getElementById(`nutrition-tab-${next.key}`)?.focus();
                 } else if (e.key === 'ArrowLeft') {
                   e.preventDefault();
-                  const prevIdx = (idx - 1 + TABS.length) % TABS.length;
-                  setActiveTab(TABS[prevIdx].key);
-                  document.getElementById(`nutrition-tab-${TABS[prevIdx].key}`)?.focus();
+                  const prev = TABS[(idx - 1 + TABS.length) % TABS.length];
+                  if (!prev) return;
+                  setActiveTab(prev.key);
+                  document.getElementById(`nutrition-tab-${prev.key}`)?.focus();
                 }
               }}
               className={`tab-item ${activeTab === tab.key ? 'active' : ''} flex items-center gap-1.5`}
@@ -432,6 +554,74 @@ export default function NutritionPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Water History Chart */}
+      {waterHistory.length > 0 && (
+        <div className="px-5 mt-6">
+          <div
+            style={{
+              border: '2px solid var(--navy)',
+              background: 'var(--bone)',
+              padding: '18px 16px',
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="section-title flex items-center gap-2">
+                <Droplets size={14} />§ HYDRATION HISTORY · היסטוריית מים
+              </h3>
+            </div>
+            <div
+              className="h-28 flex items-end gap-2"
+              role="img"
+              aria-label="היסטוריית שתייה - 7 ימים"
+            >
+              {waterHistory.map((entry, i) => {
+                const maxMl = 2500;
+                const heightPct = Math.max(4, (entry.total / maxMl) * 100);
+                const isLast = i === waterHistory.length - 1;
+                return (
+                  <div key={entry.date} className="flex-1 flex flex-col items-center gap-1.5">
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '9px',
+                        color: 'var(--stone)',
+                      }}
+                    >
+                      {entry.total > 0 ? `${Math.round(entry.total / 250)}` : ''}
+                    </span>
+                    <motion.div
+                      className="w-full"
+                      style={{
+                        backgroundColor: isLast ? 'var(--mustard)' : 'var(--navy)',
+                        border: isLast ? '2px solid var(--navy)' : 'none',
+                        minHeight: 4,
+                      }}
+                      initial={{ height: 0 }}
+                      animate={{ height: `${heightPct}%` }}
+                      transition={{ delay: i * 0.06, duration: 0.5, ease: 'easeOut' }}
+                    />
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '9px',
+                        color: 'var(--stone)',
+                      }}
+                    >
+                      {new Date(entry.date).toLocaleDateString('he-IL', { day: 'numeric' })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-center gap-4 mt-3">
+              <span className="eyebrow" style={{ color: 'var(--stone)', fontSize: '10px' }}>
+                GLASSES (250ML) · GOAL: 2500ML
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FAB */}
       <motion.button
@@ -601,6 +791,12 @@ const MealEntryCard = memo(function MealEntryCard({
         <span>C {entry.totalMacros.carbs}G</span>
         <span style={{ color: 'var(--stone)' }}>·</span>
         <span>F {entry.totalMacros.fat}G</span>
+        {(entry.totalMacros.fiber ?? 0) > 0 && (
+          <>
+            <span style={{ color: 'var(--stone)' }}>·</span>
+            <span>Fb {Math.round(entry.totalMacros.fiber ?? 0)}G</span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -754,18 +950,22 @@ const MealPresetCard = memo(function MealPresetCard({
       </div>
       {showMealSelect ? (
         <div className="flex gap-2 flex-wrap">
-          {Object.entries(MEAL_TYPE_LABELS).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => {
-                onSelect(key as MealType);
-                setShowMealSelect(false);
-              }}
-              className="px-3 py-2 rounded-xl text-[12px] font-semibold bg-[var(--color-primary-subtle)] text-[var(--color-primary)] border border-[var(--color-primary)]/20"
-            >
-              {MEAL_TYPE_ICONS[key as MealType]} {label}
-            </button>
-          ))}
+          {Object.entries(MEAL_TYPE_LABELS).map(([key, label]) => {
+            const Icon = MEAL_TYPE_ICONS[key as MealType];
+            return (
+              <button
+                key={key}
+                onClick={() => {
+                  onSelect(key as MealType);
+                  setShowMealSelect(false);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold bg-[var(--color-primary-subtle)] text-[var(--color-primary)] border border-[var(--color-primary)]/20"
+              >
+                <Icon size={13} />
+                {label}
+              </button>
+            );
+          })}
         </div>
       ) : (
         <button
@@ -855,15 +1055,19 @@ function AddMealModal({
             </button>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-0.5 no-scrollbar">
-            {Object.entries(MEAL_TYPE_LABELS).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => onMealTypeChange(key as MealType)}
-                className={`flex-shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${selectedMealType === key ? 'bg-[var(--color-primary)] text-white' : 'bg-white/[0.08] text-[var(--color-text-secondary)]'}`}
-              >
-                {MEAL_TYPE_ICONS[key as MealType]} {label}
-              </button>
-            ))}
+            {Object.entries(MEAL_TYPE_LABELS).map(([key, label]) => {
+              const Icon = MEAL_TYPE_ICONS[key as MealType];
+              return (
+                <button
+                  key={key}
+                  onClick={() => onMealTypeChange(key as MealType)}
+                  className={`inline-flex items-center gap-1.5 flex-shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${selectedMealType === key ? 'bg-[var(--color-primary)] text-white' : 'bg-white/[0.08] text-[var(--color-text-secondary)]'}`}
+                >
+                  <Icon size={13} />
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 

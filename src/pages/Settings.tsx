@@ -1,4 +1,5 @@
 import {
+  ArrowUpFromLine,
   Bell,
   Check,
   ChevronLeft,
@@ -9,14 +10,13 @@ import {
   Dumbbell,
   Moon,
   RefreshCw,
-  ArrowUpFromLine,
   Save,
   Share2,
   Target,
   User,
   Zap,
 } from 'lucide-react';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
 import { isSupabaseConfigured } from '../lib/supabase';
 import {
@@ -25,22 +25,16 @@ import {
   generateWeeklyReport,
   shareReport,
 } from '../services/exportService';
-import { STORES } from '../services/indexedDBCore';
+import { STORES, dbClear } from '../services/indexedDBCore';
+import { getCurrentUser, signOut } from '../services/supabaseAuth';
 import type { WorkoutSession } from '../types';
 import { logger } from '../utils/logger';
 import { safeJsonParseOr } from '../utils/safeJson';
+import { calculateTDEE, getMacroGoalsForGoal } from '../utils/tdee';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
-
-const THEMES = [
-  { id: 'deepCosmos', name: 'יקום עמוק', color: '#6366f1' },
-  { id: 'fireEnergy', name: 'אנרגיית אש', color: '#f97316' },
-  { id: 'neonPulse', name: 'פולס ניאון', color: '#22d3ee' },
-  { id: 'oceanWave', name: 'גל אוקיינוס', color: '#0ea5e9' },
-  { id: 'forestGrove', name: 'יער ירוק', color: '#22c55e' },
-];
 
 const REST_TIME_OPTIONS = [
   { value: 30, label: '30 שנ' },
@@ -405,8 +399,19 @@ export default function Settings() {
   const [profileSaved, setProfileSaved] = useState(false);
   const [nutritionSaved, setNutritionSaved] = useState(false);
   const [workoutSaved, setWorkoutSaved] = useState(false);
+  const [notificationSettings, setNotificationSettings] = useState({
+    workoutReminderEnabled: false,
+    workoutReminderTime: '08:00',
+    missedWorkoutAlertDays: 3,
+    nutritionReminderEnabled: false,
+    prNotificationEnabled: true,
+  });
   const [weeklyReport, setWeeklyReport] = useState<string | null>(null);
   const [copiedReport, setCopiedReport] = useState(false);
+
+  // Account / Auth state
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Cloud sync state
   const [cloudConnected, setCloudConnected] = useState(false);
@@ -567,7 +572,39 @@ export default function Settings() {
       largeText: settings.workoutSettings.largeText,
       highContrast: settings.workoutSettings.highContrast,
     });
+    setNotificationSettings(loadFromStorage('notification_settings', {
+      workoutReminderEnabled: false,
+      workoutReminderTime: '08:00',
+      missedWorkoutAlertDays: 3,
+      nutritionReminderEnabled: false,
+      prNotificationEnabled: true,
+    }));
   }, [settings.workoutSettings]);
+
+  // Load auth user email on mount
+  useEffect(() => {
+    getCurrentUser().then((user) => {
+      if (user) setAuthEmail(user.email ?? null);
+    });
+  }, []);
+
+  const handleDeleteAllData = async () => {
+    const allStores = Object.values(STORES);
+    for (const store of allStores) {
+      await dbClear(store);
+    }
+    // Clear localStorage
+    const keysToClear = ['user_profile', 'nutrition_goals', 'workout_prefs', 'last_sync_time'];
+    for (const key of keysToClear) {
+      localStorage.removeItem(key);
+    }
+    window.location.reload();
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    setAuthEmail(null);
+  };
 
   function handleSaveProfile() {
     saveToStorage('user_profile', profile);
@@ -595,6 +632,12 @@ export default function Settings() {
     setTimeout(() => setWorkoutSaved(false), 2000);
   }
 
+  const toggleNotification = (key: string) => {
+    const updated = { ...notificationSettings, [key]: !notificationSettings[key as keyof typeof notificationSettings] };
+    setNotificationSettings(updated);
+    saveToStorage('notification_settings', updated);
+  };
+
   return (
     <div
       className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
@@ -602,7 +645,10 @@ export default function Settings() {
       dir="rtl"
     >
       {/* Masthead */}
-      <header className="masthead" style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}>
+      <header
+        className="masthead"
+        style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}
+      >
         <div className="kicker">§07 · SETTINGS · CONFIG</div>
         <h1
           style={{
@@ -823,9 +869,133 @@ export default function Settings() {
             </div>
           </SettingsCard>
 
+          {/* Unit System Card */}
+          <SettingsCard>
+            <SettingsRow
+              icon={
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: 'var(--navy)',
+                  }}
+                >
+                  KG
+                </span>
+              }
+              label="יחידות מידה"
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  background: 'var(--bone-deep)',
+                  border: '2px solid var(--navy)',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => updateSettings({ unitSystem: 'metric' })}
+                  style={{
+                    padding: '6px 14px',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 12,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    background: settings.unitSystem === 'metric' ? 'var(--navy)' : 'transparent',
+                    color: settings.unitSystem === 'metric' ? 'var(--mustard)' : 'var(--stone)',
+                    border: 'none',
+                    fontWeight: 600,
+                    transition: 'all 150ms ease',
+                  }}
+                  aria-pressed={settings.unitSystem === 'metric'}
+                >
+                  מטרי
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateSettings({ unitSystem: 'imperial' })}
+                  style={{
+                    padding: '6px 14px',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 12,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    background: settings.unitSystem === 'imperial' ? 'var(--navy)' : 'transparent',
+                    color: settings.unitSystem === 'imperial' ? 'var(--mustard)' : 'var(--stone)',
+                    border: 'none',
+                    fontWeight: 600,
+                    transition: 'all 150ms ease',
+                  }}
+                  aria-pressed={settings.unitSystem === 'imperial'}
+                >
+                  אימפריאלי
+                </button>
+              </div>
+            </SettingsRow>
+          </SettingsCard>
+
           <div className="mt-3">
             <SaveButton onClick={handleSaveProfile} saved={profileSaved} label="שמור פרופיל" />
           </div>
+        </div>
+
+        {/* ── ACCOUNT / AUTH SECTION ──────────────────────────────────────── */}
+        <div className="mb-7">
+          <SectionLabel num="01b" titleEn="ACCOUNT · AUTH">
+            חשבון
+          </SectionLabel>
+          <SettingsCard>
+            <SettingsRow
+              icon={<User size={15} />}
+              label={authEmail ?? 'לא מחובר לחשבון'}
+              divider={!!authEmail}
+            >
+              {authEmail ? (
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '12px',
+                    letterSpacing: '0.08em',
+                    color: 'var(--stone)',
+                  }}
+                >
+                  {authEmail}
+                </span>
+              ) : (
+                <span
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '13px',
+                    color: 'var(--stone)',
+                  }}
+                >
+                  לא מחובר
+                </span>
+              )}
+            </SettingsRow>
+            {authEmail && (
+              <div className="px-4 py-3">
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="btn-secondary"
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    minHeight: '44px',
+                  }}
+                >
+                  התנתק
+                </button>
+              </div>
+            )}
+          </SettingsCard>
         </div>
 
         {/* ── NUTRITION SECTION ───────────────────────────────────────────── */}
@@ -833,6 +1003,52 @@ export default function Settings() {
           <SectionLabel num="02" titleEn="NUTRITION · GOALS">
             יעדי תזונה
           </SectionLabel>
+
+          {profile.age && profile.height && profile.weightGoal && profile.activityLevel && (
+            <button
+              type="button"
+              onClick={() => {
+                const storedProfile = loadFromStorage<{ weight?: number; gender?: string }>(
+                  'user_profile',
+                  {}
+                );
+                const weightKg =
+                  typeof storedProfile.weight === 'number' ? storedProfile.weight : 70;
+                const heightCm = typeof profile.height === 'number' ? profile.height : 175;
+                const age = typeof profile.age === 'number' ? profile.age : 25;
+                const gender = (storedProfile.gender as 'male' | 'female' | 'other') ?? 'male';
+                const tdee = calculateTDEE(weightKg, heightCm, age, gender, profile.activityLevel);
+                const macros = getMacroGoalsForGoal(tdee, profile.weightGoal);
+                setNutrition({
+                  calories: macros.calories,
+                  protein: macros.protein,
+                  carbs: macros.carbs,
+                  fat: macros.fat,
+                });
+              }}
+              style={{
+                width: '100%',
+                marginBottom: 12,
+                padding: '10px 16px',
+                background: 'var(--navy)',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                color: 'var(--mustard)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <Zap size={13} />
+              חשב אוטומטית מהפרופיל (TDEE)
+            </button>
+          )}
+
           <SettingsCard>
             <SettingsRow
               icon={<Target size={15} className="text-red-400" />}
@@ -1047,17 +1263,58 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* ── NOTIFICATION SETTINGS SECTION ─────────────────────────────────── */}
+        <div className="mb-7">
+          <SectionLabel num="04" titleEn="NOTIFICATIONS · ALERTS">
+            התראות
+          </SectionLabel>
+          <SettingsCard>
+            <SettingsRow
+              icon={<Bell size={15} />}
+              label="תזכורת אימון"
+              divider={true}
+            >
+              <Toggle
+                checked={notificationSettings.workoutReminderEnabled}
+                onChange={() => toggleNotification('workoutReminderEnabled')}
+                label="תזכורת אימון"
+              />
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<Bell size={15} />}
+              label="תזכורת תזונה"
+              divider={true}
+            >
+              <Toggle
+                checked={notificationSettings.nutritionReminderEnabled}
+                onChange={() => toggleNotification('nutritionReminderEnabled')}
+                label="תזכורת תזונה"
+              />
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<Bell size={15} />}
+              label="התראת שיא אישי (PR)"
+              divider={false}
+            >
+              <Toggle
+                checked={notificationSettings.prNotificationEnabled}
+                onChange={() => toggleNotification('prNotificationEnabled')}
+                label="התראת PR"
+              />
+            </SettingsRow>
+          </SettingsCard>
+        </div>
+
         {/* ── THEME SECTION ───────────────────────────────────────────────── */}
         <div className="mb-7">
-          <SectionLabel num="04" titleEn="DISPLAY · THEME">
+          <SectionLabel num="05" titleEn="DISPLAY · THEME">
             תצוגה
           </SectionLabel>
           <SettingsCard>
-            <div className="flex flex-col">
-              <div
-                className="flex items-center gap-3 px-4 py-3.5 min-h-[56px]"
-                style={{ background: 'transparent' }}
-              >
+            <SettingsRow
+              icon={
                 <div
                   className="w-8 h-8 shrink-0 flex items-center justify-center"
                   style={{
@@ -1067,72 +1324,20 @@ export default function Settings() {
                 >
                   <Moon size={16} style={{ color: 'var(--mustard)' }} strokeWidth={2.5} />
                 </div>
-                <span
-                  className="flex-1 text-right"
-                  style={{
-                    fontFamily: 'var(--font-hebrew)',
-                    fontSize: '15px',
-                    fontWeight: settings.darkMode ? 700 : 500,
-                    color: 'var(--ink)',
-                  }}
-                >
-                  מצב כהה
-                </span>
-                <Toggle
-                  checked={settings.darkMode}
-                  onChange={() => updateSettings({ darkMode: !settings.darkMode })}
-                  label="מצב כהה"
-                />
-              </div>
-              <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
-            </div>
-            {THEMES.map((t, idx) => (
-              <div key={t.id} className="flex flex-col">
-                <button
-                  type="button"
-                  onClick={() => updateSettings({ theme: t.id as typeof settings.theme })}
-                  aria-pressed={settings.theme === t.id}
-                  className="flex items-center gap-3 px-4 py-3.5 min-h-[56px] transition-colors"
-                  style={{
-                    background: settings.theme === t.id ? 'var(--bone-deep)' : 'transparent',
-                  }}
-                >
-                  {/* Color square (editorial hard edge) */}
-                  <div
-                    className="w-8 h-8 shrink-0 transition-all duration-200"
-                    style={{
-                      backgroundColor: t.color,
-                      border:
-                        settings.theme === t.id ? '2px solid var(--navy)' : '2px solid transparent',
-                    }}
-                  />
-                  <span
-                    className="flex-1 text-right"
-                    style={{
-                      fontFamily: 'var(--font-hebrew)',
-                      fontSize: '15px',
-                      fontWeight: settings.theme === t.id ? 700 : 500,
-                      color: 'var(--ink)',
-                    }}
-                  >
-                    {t.name}
-                  </span>
-                  {settings.theme === t.id && (
-                    <Check size={17} style={{ color: 'var(--navy)' }} strokeWidth={2.5} />
-                  )}
-                </button>
-                {idx < THEMES.length - 1 && (
-                  <div
-                    style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }}
-                  />
-                )}
-              </div>
-            ))}
+              }
+              label="מצב כהה"
+            >
+              <Toggle
+                checked={settings.darkMode}
+                onChange={() => updateSettings({ darkMode: !settings.darkMode })}
+                label="מצב כהה"
+              />
+            </SettingsRow>
           </SettingsCard>
         </div>
 
         {/* ── DATA SECTION ─────────────────────────────────────────────────── */}
-        <SectionLabel num="05" titleEn="DATA · STORAGE">
+        <SectionLabel num="06" titleEn="DATA · STORAGE">
           נתונים
         </SectionLabel>
 
@@ -1400,6 +1605,92 @@ export default function Settings() {
                 </div>
               </div>
             )}
+          </SettingsCard>
+        </div>
+
+        {/* ── DANGER ZONE ─────────────────────────────────────────────────── */}
+        <div className="mb-7">
+          <p className="section-title mb-3 px-1" style={{ color: '#DC2626' }}>
+            § DANGER · אזור מסוכן
+          </p>
+          <SettingsCard>
+            <div className="px-4 py-4">
+              <p
+                style={{
+                  fontFamily: 'var(--font-hebrew)',
+                  fontSize: '14px',
+                  color: 'var(--ink)',
+                  marginBottom: '12px',
+                }}
+              >
+                מחיקת כל הנתונים תנקה את כל האימונים, ההעדפות וההגדרות. פעולה זו בלתי הפיכה.
+              </p>
+              {!confirmDelete ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(true)}
+                  style={{
+                    width: '100%',
+                    minHeight: '44px',
+                    padding: '12px',
+                    border: '2px solid #DC2626',
+                    background: 'transparent',
+                    color: '#DC2626',
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  מחק את כל הנתונים
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDeleteAllData}
+                    style={{
+                      flex: 1,
+                      minHeight: '44px',
+                      padding: '12px',
+                      border: '2px solid #DC2626',
+                      background: '#DC2626',
+                      color: 'white',
+                      fontFamily: 'var(--font-hebrew)',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    אשר מחיקה
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    className="btn-secondary"
+                    style={{
+                      flex: 1,
+                      minHeight: '44px',
+                      padding: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    ביטול
+                  </button>
+                </div>
+              )}
+            </div>
           </SettingsCard>
         </div>
       </div>

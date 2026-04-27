@@ -388,7 +388,7 @@ const SwipeComplete = memo<SwipeCompleteProps>(
 
         {/* Drag Hint (pulses when idle) */}
         {!isDragging && !isCompleting && !showUndo && (
-          <div className="absolute left-[70px] top-1/2 -translate-y-1/2 pointer-events-none opacity-30">
+          <div className="absolute left-[70px] top-1/2 -translate-y-1/2 pointer-events-none opacity-60">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path
                 d="M5 12h14M12 5l7 7-7 7"

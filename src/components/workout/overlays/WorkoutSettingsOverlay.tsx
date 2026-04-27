@@ -4,6 +4,7 @@
 
 import { AnimatePresence, type PanInfo, motion, useMotionValue, useTransform } from 'framer-motion';
 import { memo, useCallback, useEffect, useState } from 'react';
+import type { WorkoutSettings } from '../../../types';
 import { CloseIcon } from '../../icons';
 import { ModalOverlay } from '../../ui/ModalOverlay';
 import AnalyticsDashboard from '../AnalyticsDashboard';
@@ -33,103 +34,9 @@ import type { SettingsTab } from './SettingsPrimitives';
 
 interface WorkoutSettingsOverlayProps {
   isOpen: boolean;
-  settings: WorkoutSettingsData;
+  settings: Partial<WorkoutSettings>;
   onClose: () => void;
   onUpdateSetting: (key: string, value: unknown) => void;
-}
-
-export interface WorkoutSettingsData {
-  // Core
-  defaultRestTime?: number;
-  defaultSets?: number;
-  defaultWorkoutGoal?: string;
-  selectedTheme?: string;
-
-  // Display
-  oledMode?: boolean;
-  showGhostValues?: boolean;
-  showVolumePreview?: boolean;
-  showIntensityMeter?: boolean;
-  showPerformanceStats?: boolean;
-  compactMode?: boolean;
-
-  // Behavior
-  keepAwake?: boolean;
-  hapticsEnabled?: boolean;
-  autoStartRest?: boolean;
-  autoIncrementWeight?: boolean;
-  weightIncrementAmount?: number;
-
-  // Audio
-  soundEnabled?: boolean;
-  voiceCountdownEnabled?: boolean;
-  voiceLanguage?: 'he-IL' | 'en-US';
-  voiceVolume?: number;
-  countdownBeepEnabled?: boolean;
-  restTimerVibrate?: boolean;
-  restTimerSound?: boolean;
-
-  // Warmup/Cooldown
-  warmupPreference?: 'always' | 'ask' | 'never';
-  cooldownPreference?: 'always' | 'ask' | 'never';
-
-  // Reminders
-  waterReminderEnabled?: boolean;
-  waterReminderInterval?: number;
-  workoutRemindersEnabled?: boolean;
-
-  // Accessibility
-  reducedAnimations?: boolean;
-  largeText?: boolean;
-  highContrast?: boolean;
-
-  // === NEW ADVANCED SETTINGS ===
-
-  // Progressive Overload
-  enableProgressiveOverload?: boolean;
-  progressiveOverloadPercent?: number;
-  enableOneRepMaxTracking?: boolean;
-  showExerciseNotes?: boolean;
-
-  // Smart Rest Timer
-  smartRestEnabled?: boolean;
-  shortRestTime?: number;
-  mediumRestTime?: number;
-  longRestTime?: number;
-  extendRestAfterFailure?: boolean;
-
-  // Workout Flow
-  autoAdvanceExercise?: boolean;
-  confirmExerciseComplete?: boolean;
-  enableSupersets?: boolean;
-  showRestBetweenExercises?: boolean;
-
-  // Personal Records
-  enablePRAlerts?: boolean;
-  prCelebrationIntensity?: 'off' | 'subtle' | 'full';
-  trackVolumeRecords?: boolean;
-
-  // Timer Display
-  timerDisplayMode?: 'countdown' | 'countup' | 'both';
-  showTimerInHeader?: boolean;
-
-  // Quick Actions
-  enableQuickWeightButtons?: boolean;
-  quickWeightIncrement?: number;
-  enableQuickRepsButtons?: boolean;
-
-  // Gym Mode
-  gymModeEnabled?: boolean;
-  gymModeAutoLock?: boolean;
-
-  // Body Weight Prompts
-  promptWeightBeforeWorkout?: boolean;
-  promptWeightAfterWorkout?: boolean;
-
-  // Analytics
-  enableWorkoutAnalytics?: boolean;
-  showMuscleGroupBalance?: boolean;
-  enableExportToCSV?: boolean;
 }
 
 // ============================================================
@@ -152,13 +59,9 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
     }, [onClose]);
 
     const get = useCallback(
-      <K extends keyof WorkoutSettingsData>(key: K): WorkoutSettingsData[K] => {
+      <K extends keyof WorkoutSettings>(key: K): WorkoutSettings[K] | undefined => {
         const value = settings[key];
-        return value !== undefined
-          ? value
-          : ((DEFAULT_WORKOUT_SETTINGS as unknown as Record<string, unknown>)[
-              key
-            ] as WorkoutSettingsData[K]);
+        return value !== undefined ? value : DEFAULT_WORKOUT_SETTINGS[key];
       },
       [settings]
     );

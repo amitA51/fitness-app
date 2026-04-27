@@ -2,7 +2,6 @@
 // SPARKOS FITNESS - Main Entry Point
 // ============================================================================
 
-import { registerSW } from 'virtual:pwa-register';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -30,5 +29,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 );
 
-// Register service worker for PWA offline support
-registerSW({ immediate: true });
+// Register service worker for PWA offline support — production only.
+// In dev, the SW interferes with Vite's HMR WebSocket, causing connection failures.
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  import('virtual:pwa-register').then(({ registerSW }) => {
+    registerSW({ immediate: true });
+  }).catch((err) => {
+    logger.app.warn('SW registration skipped', err);
+  });
+}

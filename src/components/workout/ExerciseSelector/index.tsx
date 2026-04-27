@@ -14,11 +14,11 @@ import {
   type WorkoutTemplate,
   createWorkoutSet,
 } from '../../../types';
+import { triggerHaptic } from '../../../utils/haptics';
 import { CloseIcon, DumbbellIcon } from '../../icons';
 import { ModalOverlay } from '../../ui/ModalOverlay';
 import ExerciseLibraryTab from '../ExerciseLibraryTab';
 import WorkoutTemplates from '../WorkoutTemplates';
-import { triggerHaptic } from '../../../utils/haptics';
 
 const makeExerciseId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -40,8 +40,8 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   onCreateNew: _onCreateNew,
   goal: _goal,
 }) => {
-  const [userTemplates, setUserTemplates] = useState<WorkoutTemplate[]>([]);
-  const [builtinTemplates, setBuiltinTemplates] = useState<WorkoutTemplate[]>([]);
+  const [_userTemplates, setUserTemplates] = useState<WorkoutTemplate[]>([]);
+  const [_builtinTemplates, setBuiltinTemplates] = useState<WorkoutTemplate[]>([]);
   const [activeTab, setActiveTab] = useState<'exercises' | 'templates'>('exercises');
   const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
   const [pendingExercises, setPendingExercises] = useState<PersonalExercise[]>([]);
@@ -237,10 +237,14 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   triggerHaptic('selection');
                   setActiveTab('exercises');
                 }}
-                className="py-2.5 text-sm font-bold text-center transition-all cursor-pointer"
+                aria-current={activeTab === 'exercises' ? 'page' : undefined}
+                className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-mustard focus-visible:outline-offset-[-2px]"
                 style={{
                   background: activeTab === 'exercises' ? 'var(--mustard)' : 'transparent',
-                  color: activeTab === 'exercises' ? 'var(--color-on-mustard)' : 'rgba(var(--text-on-navy-rgb),0.5)',
+                  color:
+                    activeTab === 'exercises'
+                      ? 'var(--color-on-mustard)'
+                      : 'rgba(var(--text-on-navy-rgb),0.65)',
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.04em',
                   textTransform: 'uppercase',
@@ -255,10 +259,14 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   triggerHaptic('selection');
                   setActiveTab('templates');
                 }}
-                className="py-2.5 text-sm font-bold text-center transition-all cursor-pointer"
+                aria-current={activeTab === 'templates' ? 'page' : undefined}
+                className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-mustard focus-visible:outline-offset-[-2px]"
                 style={{
                   background: activeTab === 'templates' ? 'var(--mustard)' : 'transparent',
-                  color: activeTab === 'templates' ? 'var(--color-on-mustard)' : 'rgba(var(--text-on-navy-rgb),0.5)',
+                  color:
+                    activeTab === 'templates'
+                      ? 'var(--color-on-mustard)'
+                      : 'rgba(var(--text-on-navy-rgb),0.65)',
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.04em',
                   textTransform: 'uppercase',
@@ -286,10 +294,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
             </div>
           ) : (
             <div className="pt-4 px-5 h-full overflow-y-auto">
-              <WorkoutTemplates
-                onStartWorkout={handleTemplateSelect}
-                isEmbedded={true}
-              />
+              <WorkoutTemplates onStartWorkout={handleTemplateSelect} isEmbedded={true} />
             </div>
           )}
         </div>

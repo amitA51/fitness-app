@@ -1,0 +1,116 @@
+עצבל ךירצ התאש תוינדי תולועפ
+
+  .ןורחאל רתויב יטירקהמ — תופיחד יפל רדוסמ
+
+  ---
+  )החטבא( תועש 24 ךות — ףוחד
+
+  Supabase anon key-ה בוביס .1
+
+   לש clone ול שיש ימ לכ ,דוקהמ ותוא יתאצוהש ירחא םג .ןשיה netlify.toml-בו git history-ב אצמנ eyJhbGc…ducMВ חתפמה :המל
+  .ותוא אורקל לוכי CI logs-ל השיג וא ופירה
+
+  :ךיא
+  .ךלש טקיורפה → https://supabase.com/dashboard-ל סנכיה .1
+  2. Project Settings → API.
+  .Reset ץחל → anon public דיל .3
+  .האבה הלועפל שדחה חתפמה תא קתעה .4
+
+  ---
+  Netlify-ב הביבס ינתשמ תעיבק .2
+
+  .Dashboard-ב םתוא רידגתש דע לשכי build-ה .עמטומה netlify.toml-מ תודוסה תא יתאצוה :המל
+
+  :ךיא
+  1. https://app.netlify.com/ → ךלש רתאה.
+  2. Site configuration → Environment variables → Add a variable.
+  :תומושר שולש ףסוה .3
+
+  ┌────────────────────────┬──────────────────────────────────────────────────────────┐
+  │          Key           │                          Value                           │
+  ├────────────────────────┼──────────────────────────────────────────────────────────┤
+  │ VITE_SUPABASE_URL      │ https://qxhgmqxiomidmimpnjvs.supabase.co                 │
+  ├────────────────────────┼──────────────────────────────────────────────────────────┤
+  │ VITE_SUPABASE_ANON_KEY │ 1 בלשב תלביקש שדחה חתפמה                                 │
+  ├────────────────────────┼──────────────────────────────────────────────────────────┤
+  │ ALLOWED_ORIGIN         │ https://YOUR-SITE.netlify.app (ב ףלחה-domain ךלש יתימאה) │
+  └────────────────────────┴──────────────────────────────────────────────────────────┘
+
+  4. Deploys → Trigger deploy → Clear cache and deploy site הש ידכ-build םישדחה םיכרעה תא סופתי.
+
+  ---
+  Supabase Edge Function ןוכדע .3
+
+  .םוסחי app-הו CORS-ל null ריזחת איה וידעלב .דובעל ידכ ALLOWED_ORIGIN תשרוד וישכע ai-chat היצקנופה :המל
+
+  :טקיורפה תייקיתב terminal-המ — ךיא
+
+  )origins המכ שי םא דירפמכ קיספ( allow-list-ה תרדגה .1 #
+  supabase secrets set ALLOWED_ORIGIN=http://localhost:5173,https://YOUR-SITE.netlify.app
+
+  )גלד — היה רבכ םא( רדגומ OpenRouter לש חתפמהש אדו .2 #
+  supabase secrets set OPENROUTER_API_KEY=sk-or-v1-xxxxx
+
+  שדחה דוקה םע היצקנופה תא שדחמ סורפ .3 #
+  supabase functions deploy ai-chat
+
+  .npm install -g supabase :הנקתהה — supabase CLI-ה תא ךל ןיא םא
+
+  ---
+  ימוקמ תומיא .4
+
+  .רבשנ אל ךלש env.local.-הש אדוול :המל
+
+  :ךיא
+  :םישדחה םיכרעה םע טקיורפה לש root-ב םייק )env.local. וא( env.-ש קודב .1
+  VITE_SUPABASE_URL=https://qxhgmqxiomidmimpnjvs.supabase.co
+  VITE_SUPABASE_ANON_KEY=<שדחה חתפמה>
+  .בוט → לוסנוקב תואיגש ילב ןעטנ Login דומע תא האור התא םא — npm run dev ץרה .2
+
+  ---
+  )ךילהת תוטלחה( ףוחד אל ,בושח
+
+  permission gateguard-ה לע הטלחה .5
+
+  .תידיימ םימסחנו הז תא רובעל םיעדוי אל הנשמה ינכוס .3-4 יפ טאמ הז .facts גיצהל ינממ שרוד session-ב Edit לכ :היעבה
+
+  :תויורשפא 3
+
+  A. ה םע ראשיהל-gate. םע אובת הכירע לכ ;ףוסה דע דבל ךישממ ינא .חוטב לבא יטיא facts. 2-3~ :וראשנש םילגה לכל יכרעה ןמזה
+  .הפוצר הדובע תועש
+
+  B. ה תא תינמז תובכל-gate. ךרוע ~/.claude/settings.json וא .claude/settings.local.json ה תא ריסמו-hook
+  pre:edit-write:gateguard-fact-force (תא דירומ וא strict mode). והשמ םא :ןוכיסה .ריזחהל — ףוסב .4-5 יפ הריהמ היהת הצרהה
+  .יתוא רצועש ימ ןיא ,הטסי
+
+  C. ה תא םידירומ .תידירביה השיג-gate ל-standard דבלב (אל strict). לע רמוש facts םינטק םיצבקל םהילע גלדמ ,םילודג םיצבקל.
+  .ומצע hook-ב דוק יוניש שרוד
+
+  .ומייתסה םילגה לכש ירחא gate-ל הרזח םע ,B :ילש הצלמהה
+
+  ---
+  םילגה ךשמה לע הטלחה .6
+
+  :ראשנ המ
+
+  ┌─────────────┬───────────────────────────────────────────────────────────────────────────┬──────────────┬────────┐
+  │   ילב  │ םע ןמז תכרעה │                                    ןכות                                   │      לג     │
+  │             │                                                                           │     gate     │  gate  │
+  ├─────────────┼───────────────────────────────────────────────────────────────────────────┼──────────────┼────────┤
+  │ Reliability │ verify-error, queue depth, session-expired listener, localStorage         │ 50 קד 12 │        קד  │
+  │             │ try/catch, analyticsService throw + IDB ranges                            │              │        │
+  ├─────────────┼───────────────────────────────────────────────────────────────────────────┼──────────────┼────────┤
+  │ TypeScript  │ merge WorkoutSettings, kill as unknown as, PersonalItem cleanup, React.FC │ 60 קד 15 │        קד  │
+  │             │  removal                                                                  │              │        │
+  ├─────────────┼───────────────────────────────────────────────────────────────────────────┼──────────────┼────────┤
+  │ Performance │ ExerciseLibraryTab delay, WorkoutHistoryScreen virtualization,            │ 30 קד 8 │        קד   │
+  │             │ DataContext fetch                                                         │              │        │
+  ├─────────────┼───────────────────────────────────────────────────────────────────────────┼──────────────┼────────┤
+  │ A11y        │ Input aria, Toast role, lang-tag units, useDocumentTitle, LongPressMenu   │ 70 קד 18 │        קד  │
+  │             │ keyboard, RestTimer milestones                                            │              │        │
+  └─────────────┴───────────────────────────────────────────────────────────────────────────┴──────────────┴────────┘
+
+
+
+
+ברגע שאנלנו מסיימים תשאל אותי אם למחוק את המישמות כי זה אמור להיות קובץ זמני

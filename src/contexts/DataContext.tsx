@@ -3,7 +3,16 @@
 // ============================================================================
 
 import type React from 'react';
-import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { getWorkoutSessions } from '../services/dataService';
 import {
   createPersonalExercise,
@@ -12,13 +21,7 @@ import {
   updatePersonalExercise,
 } from '../services/workoutDb';
 import { getWorkoutTemplates } from '../services/workoutService';
-import type {
-  CreatePersonalExerciseInput,
-  Exercise,
-  PersonalItem,
-  WorkoutSession,
-  WorkoutTemplate,
-} from '../types';
+import type { Exercise, PersonalItem, WorkoutSession, WorkoutTemplate } from '../types';
 import { logger } from '../utils/logger';
 
 interface DataContextValue {
@@ -50,13 +53,22 @@ interface DataProviderProps {
 
 function mapExerciseToPersonalItem(ex: Exercise): PersonalItem {
   return {
-    type: 'exercise' as const,
+    id: ex.id,
+    type: 'exercise',
     name: ex.name,
-    isActiveWorkout: false,
+    targetMuscle: ex.targetMuscle,
+    muscleGroup: ex.muscleGroup,
+    equipment: ex.equipment,
+    instructions: ex.instructions,
+    videoUrl: ex.videoUrl,
+    imageUrl: ex.imageUrl,
+    isCustom: ex.isCustom,
+    isTimed: ex.isTimed,
+    notes: ex.notes,
     createdAt: ex.createdAt,
     updatedAt: new Date().toISOString(),
-    ...ex,
-  } as unknown as PersonalItem;
+    isActiveWorkout: false,
+  };
 }
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
@@ -121,16 +133,29 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const addPersonalItem = useCallback(async (item: Omit<PersonalItem, 'id' | 'createdAt'>) => {
     try {
       const newItem = await createPersonalExercise({
-        ...item,
+        name: item.name ?? '',
+        targetMuscle: item.targetMuscle,
+        muscleGroup: item.muscleGroup,
+        equipment: item.equipment,
+        instructions: item.instructions,
+        videoUrl: item.videoUrl,
+        imageUrl: item.imageUrl,
+        isCustom: item.isCustom,
+        isTimed: item.isTimed,
+        notes: item.notes,
+        category: item.category,
+        tempo: item.tempo,
+        defaultRestTime: item.defaultRestTime,
+        defaultSets: item.defaultSets,
+        tutorialText: item.tutorialText,
+        isFavorite: item.isFavorite,
+        useCount: item.useCount,
         userId: 'local-user',
         lastWeight: null,
         lastReps: null,
         personalRecords: [],
-      } as unknown as CreatePersonalExerciseInput);
-      setPersonalItems((prev) => [
-        ...prev,
-        mapExerciseToPersonalItem(newItem),
-      ]);
+      });
+      setPersonalItems((prev) => [...prev, mapExerciseToPersonalItem(newItem)]);
     } catch (err) {
       logger.db.error('Failed to add personal item', err);
       throw err;
@@ -159,20 +184,39 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [loadData]);
 
-  const contextValue = useMemo(() => ({
-    exercises, sessions, templates, personalItems, loading, error,
-    refreshData, updatePersonalItem, removePersonalItem, addPersonalItem,
-  }), [exercises, sessions, templates, personalItems, loading, error,
-    refreshData, updatePersonalItem, removePersonalItem, addPersonalItem]);
-
-  return (
-    <DataContext.Provider value={contextValue}>
-      {children}
-    </DataContext.Provider>
+  const contextValue = useMemo(
+    () => ({
+      exercises,
+      sessions,
+      templates,
+      personalItems,
+      loading,
+      error,
+      refreshData,
+      updatePersonalItem,
+      removePersonalItem,
+      addPersonalItem,
+    }),
+    [
+      exercises,
+      sessions,
+      templates,
+      personalItems,
+      loading,
+      error,
+      refreshData,
+      updatePersonalItem,
+      removePersonalItem,
+      addPersonalItem,
+    ]
   );
+
+  return <DataContext.Provider value={contextValue}>{children}</DataContext.Provider>;
 };
 
 export default DataContext;

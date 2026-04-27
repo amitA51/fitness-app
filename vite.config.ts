@@ -1,13 +1,13 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'robots.txt'],
       manifest: {
         name: 'SparkOS Fitness',
@@ -18,8 +18,10 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
+        scope: '/',
         dir: 'rtl',
         lang: 'he',
+        categories: ['health', 'fitness'],
         icons: [
           { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
@@ -28,13 +30,14 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigateFallbackDenylist: [/^\/__/, /^chrome-extension:\/\//],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-api-cache',
-              networkTimeoutSeconds: 5,
+              networkTimeoutSeconds: 2,
               expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
               cacheableResponse: { statuses: [0, 200] },
             },
@@ -83,7 +86,7 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: false,
+        drop_console: true,
         drop_debugger: true,
         passes: 2,
         pure_funcs: ['console.debug'],
@@ -98,6 +101,9 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes('node_modules')) return;
 
+          if (id.includes('@tanstack')) {
+            return 'tanstack';
+          }
           if (id.includes('@supabase/supabase-js') || id.includes('@supabase')) {
             return 'supabase';
           }

@@ -58,6 +58,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               border: stateBorder,
               borderRadius: 0,
               fontFamily: 'var(--font-body)',
+              minHeight: 48,
+              fontSize: 16,
             }}
             {...props}
           />

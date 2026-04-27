@@ -23,9 +23,10 @@ const LOG_LEVELS = {
 const currentLevel = (): LogLevel => {
   if (typeof window !== 'undefined') {
     const env = (window as { __DEV__?: boolean }).__DEV__;
-    if (env === false) return 'error';
+    if (env === false || env === undefined) return 'warn';
+    if (env === true) return 'debug';
   }
-  return 'info';
+  return 'warn';
 };
 
 const shouldLog = (level: LogLevel): boolean => {

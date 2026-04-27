@@ -28,7 +28,7 @@ interface ExerciseSummaryItemProps {
 }
 
 const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
-  ({ name, setsCompleted, totalVolume, bestSet, isPR, delay = 0 }) => {
+  ({ name, setsCompleted, totalVolume: _totalVolume, bestSet, isPR, delay = 0 }) => {
     return (
       <motion.div
         initial={{ opacity: 0, x: -8 }}

@@ -3,6 +3,7 @@ import {
   Activity,
   BarChart3,
   Battery,
+  Dumbbell,
   Heart,
   Minus,
   Moon,
@@ -38,14 +39,16 @@ import type {
   RecoveryLog,
   WeightTrend,
 } from '../services/bodyStatsService';
+import { getWorkoutSessions } from '../services/dataService';
 import { safeJsonParse } from '../utils/safeJson';
 
-type ProgressTab = 'weight' | 'measurements' | 'recovery';
+type ProgressTab = 'weight' | 'measurements' | 'recovery' | 'strength';
 
 const TABS: { key: ProgressTab; label: string; icon: React.ReactNode }[] = [
   { key: 'weight', label: 'משקל', icon: <Scale size={15} /> },
   { key: 'measurements', label: 'מדידות', icon: <Ruler size={15} /> },
   { key: 'recovery', label: 'ריקאברי', icon: <Heart size={15} /> },
+  { key: 'strength', label: 'כוח', icon: <Dumbbell size={15} /> },
 ];
 
 export default function ProgressPage() {
@@ -155,8 +158,15 @@ export default function ProgressPage() {
   });
 
   return (
-    <div className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]" style={{ background: 'var(--bone)' }} dir="rtl">
-      <header className="masthead sticky top-0 z-20" style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}>
+    <div
+      className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
+      style={{ background: 'var(--bone)' }}
+      dir="rtl"
+    >
+      <header
+        className="masthead sticky top-0 z-20"
+        style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}
+      >
         <div className="kicker">§05 · PROGRESS · {todayISO}</div>
         <h1
           style={{
@@ -202,14 +212,16 @@ export default function ProgressPage() {
               onKeyDown={(e) => {
                 if (e.key === 'ArrowRight') {
                   e.preventDefault();
-                  const nextIdx = (idx + 1) % TABS.length;
-                  setActiveTab(TABS[nextIdx].key);
-                  document.getElementById(`progress-tab-${TABS[nextIdx].key}`)?.focus();
+                  const next = TABS[(idx + 1) % TABS.length];
+                  if (!next) return;
+                  setActiveTab(next.key);
+                  document.getElementById(`progress-tab-${next.key}`)?.focus();
                 } else if (e.key === 'ArrowLeft') {
                   e.preventDefault();
-                  const prevIdx = (idx - 1 + TABS.length) % TABS.length;
-                  setActiveTab(TABS[prevIdx].key);
-                  document.getElementById(`progress-tab-${TABS[prevIdx].key}`)?.focus();
+                  const prev = TABS[(idx - 1 + TABS.length) % TABS.length];
+                  if (!prev) return;
+                  setActiveTab(prev.key);
+                  document.getElementById(`progress-tab-${prev.key}`)?.focus();
                 }
               }}
               className={`tab-item ${activeTab === tab.key ? 'active' : ''} flex items-center gap-1.5`}
@@ -279,6 +291,20 @@ export default function ProgressPage() {
                 weeklyRecovery={weeklyRecovery}
                 onAdd={handleShowAddRecovery}
               />
+            </motion.div>
+          )}
+          {activeTab === 'strength' && (
+            <motion.div
+              key="strength"
+              id="progress-panel-strength"
+              role="tabpanel"
+              aria-labelledby="progress-tab-strength"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <StrengthTab />
             </motion.div>
           )}
         </AnimatePresence>
@@ -841,6 +867,428 @@ const RecoveryTab = memo(function RecoveryTab({
   );
 });
 
+// ============================================================================
+// Strength Progress Tab
+// ============================================================================
+
+interface StrengthDataPoint {
+  date: string;
+  value: number;
+  volume: number;
+}
+
+interface ExerciseStrengthCurve {
+  exerciseName: string;
+  data: StrengthDataPoint[];
+  latestWeight: number;
+  change: number;
+  changePct: number;
+}
+
+const StrengthTab = memo(function StrengthTab() {
+  const [curves, setCurves] = useState<ExerciseStrengthCurve[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadStrengthData = async () => {
+      try {
+        setIsLoading(true);
+        const sessions = await getWorkoutSessions(100);
+
+        // Build a map of exercise name -> array of {date, maxWeight x reps (volume per set)}
+        const exerciseMap = new Map<string, StrengthDataPoint[]>();
+
+        for (const session of sessions) {
+          if (session.status !== 'completed') continue;
+          const date = session.date || session.startTime?.slice(0, 10);
+          if (!date) continue;
+
+          for (const exercise of session.exercises) {
+            const name = exercise.exerciseName || exercise.name;
+            if (!name) continue;
+
+            // Find the best set (highest weight x reps) for this exercise in this session
+            let bestWeight = 0;
+            let bestVolume = 0;
+            for (const set of exercise.sets || []) {
+              if (!set.isCompleted) continue;
+              const vol = (set.weight || 0) * (set.reps || 0);
+              if (vol > bestVolume) {
+                bestVolume = vol;
+                bestWeight = set.weight || 0;
+              }
+            }
+
+            if (bestVolume === 0) continue;
+
+            const existing = exerciseMap.get(name) || [];
+            existing.push({ date, value: bestWeight, volume: bestVolume });
+            exerciseMap.set(name, existing);
+          }
+        }
+
+        // Convert to curves and compute changes
+        const result: ExerciseStrengthCurve[] = [];
+        for (const [name, points] of exerciseMap.entries()) {
+          // Sort by date ascending
+          points.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+          // Deduplicate: keep best per date
+          const deduped = new Map<string, StrengthDataPoint>();
+          for (const p of points) {
+            const existing = deduped.get(p.date);
+            if (!existing || p.value > existing.value) {
+              deduped.set(p.date, p);
+            }
+          }
+          const uniquePoints = [...deduped.values()];
+
+          if (uniquePoints.length < 2) continue;
+
+          const latest = uniquePoints[uniquePoints.length - 1]!;
+          const earliest = uniquePoints[0]!;
+          const change = latest.value - earliest.value;
+          const changePct = earliest.value > 0 ? Math.round((change / earliest.value) * 100) : 0;
+
+          result.push({
+            exerciseName: name,
+            data: uniquePoints.slice(-15), // last 15 data points
+            latestWeight: latest.value,
+            change,
+            changePct,
+          });
+        }
+
+        // Sort by number of data points (most tracked first)
+        result.sort((a, b) => b.data.length - a.data.length);
+        setCurves(result);
+        if (result.length > 0 && !selectedExercise) {
+          setSelectedExercise(result[0]!.exerciseName);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadStrengthData();
+  }, []);
+
+  const activeCurve = curves.find((c) => c.exerciseName === selectedExercise);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
+          <span className="left">§04 · STRENGTH</span>
+          <span className="right">כוח</span>
+        </div>
+        <div className="card-outlined p-8 flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-[var(--mustard)] border-t-transparent animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (curves.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
+          <span className="left">§04 · STRENGTH</span>
+          <span className="right">כוח</span>
+        </div>
+        <div className="card-outlined">
+          <div className="flex flex-col items-center py-12 text-center gap-3">
+            <Dumbbell size={36} style={{ color: 'var(--stone)' }} />
+            <p
+              style={{
+                fontFamily: 'var(--font-hebrew)',
+                fontSize: '18px',
+                fontWeight: 700,
+                color: 'var(--ink)',
+              }}
+            >
+              אין נתוני כוח עדיין
+            </p>
+            <p
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                letterSpacing: '0.12em',
+                color: 'var(--stone)',
+                textTransform: 'uppercase',
+              }}
+            >
+              COMPLETE WORKOUTS TO TRACK STRENGTH PROGRESS
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const maxValue = activeCurve ? Math.max(...activeCurve.data.map((d) => d.value), 1) : 1;
+  const minValue = activeCurve ? Math.min(...activeCurve.data.map((d) => d.value)) : 0;
+  const range = maxValue - minValue || 1;
+
+  return (
+    <div className="space-y-4">
+      {/* Chapter break */}
+      <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
+        <span className="left">§04 · STRENGTH</span>
+        <span className="right">כוח</span>
+      </div>
+
+      {/* Exercise selector */}
+      <div className="flex gap-2 flex-wrap">
+        {curves.slice(0, 8).map((curve) => (
+          <button
+            key={curve.exerciseName}
+            onClick={() => setSelectedExercise(curve.exerciseName)}
+            className="chip"
+            style={{
+              background:
+                selectedExercise === curve.exerciseName ? 'var(--mustard)' : 'var(--bone)',
+              color:
+                selectedExercise === curve.exerciseName ? 'var(--color-on-mustard)' : 'var(--navy)',
+              borderColor: selectedExercise === curve.exerciseName ? 'var(--navy)' : 'transparent',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+            }}
+          >
+            <span style={{ fontFamily: 'var(--font-hebrew)', fontSize: '13px', fontWeight: 600 }}>
+              {curve.exerciseName.split('|')[0]?.trim() || curve.exerciseName}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Active exercise curve */}
+      {activeCurve && (
+        <>
+          {/* Hero stat */}
+          <div className="block-hero">
+            <div className="label">משקל מקסימלי · TOP WEIGHT</div>
+            <div className="number">{activeCurve.latestWeight}</div>
+            <div className="sub">KG</div>
+            {activeCurve.change !== 0 && (
+              <div
+                className="mt-3 inline-flex items-center gap-1.5"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  background: activeCurve.change > 0 ? 'var(--mustard)' : 'var(--navy)',
+                  color: activeCurve.change > 0 ? 'var(--color-on-mustard)' : 'var(--mustard)',
+                  padding: '4px 10px',
+                }}
+              >
+                {activeCurve.change > 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                {activeCurve.change > 0 ? '+' : ''}
+                {activeCurve.change}KG ({activeCurve.changePct > 0 ? '+' : ''}
+                {activeCurve.changePct}%)
+              </div>
+            )}
+          </div>
+
+          {/* Line chart */}
+          <div className="card-outlined">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="section-title flex items-center gap-2">
+                <BarChart3 size={14} />§ STRENGTH CURVE
+              </h3>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  color: 'var(--stone)',
+                  letterSpacing: '0.12em',
+                }}
+              >
+                {activeCurve.data.length} DATA POINTS
+              </span>
+            </div>
+
+            {/* SVG Line Chart */}
+            <div className="relative" style={{ height: '160px' }}>
+              <svg viewBox="0 0 300 140" className="w-full h-full" preserveAspectRatio="none">
+                {/* Grid lines */}
+                {[0, 0.25, 0.5, 0.75, 1].map((pct) => (
+                  <line
+                    key={pct}
+                    x1="0"
+                    y1={140 - pct * 120}
+                    x2="300"
+                    y2={140 - pct * 120}
+                    stroke="rgba(255,255,255,0.04)"
+                    strokeWidth="1"
+                  />
+                ))}
+
+                {/* Area fill */}
+                <path
+                  d={
+                    activeCurve.data
+                      .map((point, i) => {
+                        const x = (i / Math.max(activeCurve.data.length - 1, 1)) * 300;
+                        const y = 140 - ((point.value - minValue) / range) * 110 - 10;
+                        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                      })
+                      .join(' ') + ` L 300 140 L 0 140 Z`
+                  }
+                  fill="rgba(217, 169, 63, 0.08)"
+                />
+
+                {/* Line */}
+                <path
+                  d={activeCurve.data
+                    .map((point, i) => {
+                      const x = (i / Math.max(activeCurve.data.length - 1, 1)) * 300;
+                      const y = 140 - ((point.value - minValue) / range) * 110 - 10;
+                      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                    })
+                    .join(' ')}
+                  fill="none"
+                  stroke="var(--mustard)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                {/* Dots */}
+                {activeCurve.data.map((point, i) => {
+                  const x = (i / Math.max(activeCurve.data.length - 1, 1)) * 300;
+                  const y = 140 - ((point.value - minValue) / range) * 110 - 10;
+                  const isLast = i === activeCurve.data.length - 1;
+                  return (
+                    <g key={i}>
+                      <circle
+                        cx={x}
+                        cy={y}
+                        r={isLast ? 5 : 3}
+                        fill={isLast ? 'var(--mustard)' : 'var(--navy)'}
+                        stroke={isLast ? 'var(--navy)' : 'var(--mustard)'}
+                        strokeWidth={isLast ? 2 : 1}
+                      />
+                      {isLast && (
+                        <text
+                          x={x}
+                          y={y - 10}
+                          textAnchor="middle"
+                          fill="var(--mustard)"
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '9px',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {point.value}kg
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            {/* Date labels */}
+            <div className="flex justify-between mt-2">
+              {activeCurve.data.length > 0 && (
+                <>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '9px',
+                      color: 'var(--stone)',
+                    }}
+                  >
+                    {new Date(activeCurve.data[0]!.date).toLocaleDateString('he-IL', {
+                      day: 'numeric',
+                      month: 'short',
+                    })}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '9px',
+                      color: 'var(--stone)',
+                    }}
+                  >
+                    {new Date(
+                      activeCurve.data[activeCurve.data.length - 1]!.date
+                    ).toLocaleDateString('he-IL', {
+                      day: 'numeric',
+                      month: 'short',
+                    })}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Session-by-session detail */}
+          <div className="card-outlined">
+            <h3 className="section-title mb-3">§ HISTORY · היסטוריית משקל</h3>
+            <div className="space-y-1">
+              {activeCurve.data
+                .slice()
+                .reverse()
+                .slice(0, 10)
+                .map((point, i) => {
+                  const prevPoint = activeCurve.data[activeCurve.data.length - 1 - i - 1];
+                  const diff = prevPoint ? point.value - prevPoint.value : null;
+                  return (
+                    <div
+                      key={point.date}
+                      className="flex items-center justify-between py-2.5"
+                      style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                    >
+                      <span className="text-[var(--color-text-secondary)] text-[13px]">
+                        {new Date(point.date).toLocaleDateString('he-IL', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        {diff !== null && diff !== 0 && (
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '11px',
+                              color: diff > 0 ? 'var(--mustard)' : 'var(--color-on-mustard)',
+                              background: diff > 0 ? 'var(--navy)' : 'var(--mustard)',
+                              padding: '2px 8px',
+                            }}
+                          >
+                            {diff > 0 ? '+' : ''}
+                            {diff}
+                          </span>
+                        )}
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-display)',
+                            fontWeight: 800,
+                            fontSize: '18px',
+                            color: 'var(--ink)',
+                          }}
+                        >
+                          {point.value}
+                        </span>
+                        <span className="eyebrow" style={{ color: 'var(--stone)' }}>
+                          KG
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+});
+
 const RecoveryBar = memo(function RecoveryBar({
   label,
   value,
@@ -851,7 +1299,9 @@ const RecoveryBar = memo(function RecoveryBar({
   return (
     <div>
       <div className="flex items-center justify-between text-xs mb-1.5">
-        <span className="font-semibold" style={{ color: 'var(--stone)' }}>{label}</span>
+        <span className="font-semibold" style={{ color: 'var(--stone)' }}>
+          {label}
+        </span>
         <span className="font-semibold" style={{ color }}>
           {value}/{max}
         </span>

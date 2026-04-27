@@ -1,41 +1,44 @@
 /* ============================================================================
-   SPORT ANNUAL — Design Tokens
-   Bold · Editorial · Confident · Narrative · Printed
+   SPARKOS FITNESS — Design Tokens
+   Disciplined · Athletic · Data-driven · Direct · Energetic
    ============================================================================ */
 
 /* Google Fonts loaded via index.html with preconnect for performance */
 
 /* ============================================================================
-   1. ANNUAL PALETTE
+   1. TRAINING LOG PALETTE
    ============================================================================ */
 
 :root {
   /* ── Primary Colors ──────────────────────────────────────────────────── */
-  --bone: #F5F1EB;
-  --bone-deep: #EAE4DA;
-  --bone-faint: #F9F7F3;
-  --navy: #14293D;
-  --navy-deep: #0B1A2B;
-  --navy-light: #1E3A54;
-  --mustard: #E8B82D;
-  --mustard-dark: #C49A1A;
-  --mustard-deep: #D4A525;
-  --ink: #1A1A1A;
-  --stone: #7E7D78;
-  --stone-light: #A5A49F;
+  --bone: #f2f4ec;
+  --bone-deep: #e2e7d8;
+  --bone-faint: #fafbf7;
+  --navy: #132018;
+  --navy-deep: #09110d;
+  --navy-light: #203a2c;
+  --mustard: #d7ff38;
+  --mustard-dark: #b8e521;
+  --mustard-deep: #cbf12f;
+  --ink: #171a16;
+  /* Bumped from #7e7d78 / #a5a49f for WCAG 2.1 AA contrast on --bone.
+     --stone now passes 4.5:1 for body text; --stone-light passes 3:1 for
+     large/decorative use only. */
+  --stone: #626b5e;
+  --stone-light: #849079;
 
   /* ── Anchor Tokens (DO NOT flip in dark mode) ─────────────────────────── */
   /* Text on mustard surfaces stays dark navy in both light and dark modes,
      because mustard itself is an anchor color that never flips. */
-  --color-on-mustard: #14293D;
+  --color-on-mustard: #132018;
 
   /* ── Self-Flipping RGB Triplets (for rgba() composition) ──────────────── */
   /* Use as: rgba(var(--text-on-navy-rgb), 0.4) for muted text on a
      var(--navy) surface. The triplet flips in dark mode so the text
      maintains contrast when navy surfaces invert. */
-  --text-on-navy-rgb: 245, 241, 235;
-  --ink-rgb: 26, 26, 26;
-  --bone-rgb: 245, 241, 235;
+  --text-on-navy-rgb: 242, 244, 236;
+  --ink-rgb: 23, 26, 22;
+  --bone-rgb: 242, 244, 236;
 
   /* Scrim for modal/overlay backdrops — stays dark in both modes because
      a scrim should always darken what's behind it. */
@@ -44,28 +47,28 @@
   /* ── Semantic Colors ─────────────────────────────────────────────────── */
   --color-primary: var(--navy);
   --color-primary-hover: var(--navy-deep);
-  --color-primary-glow: rgba(20, 41, 61, 0.25);
-  --color-primary-subtle: rgba(20, 41, 61, 0.08);
+  --color-primary-glow: rgba(19, 32, 24, 0.25);
+  --color-primary-subtle: rgba(19, 32, 24, 0.08);
 
   --color-secondary: var(--mustard);
   --color-secondary-hover: var(--mustard-dark);
-  --color-secondary-glow: rgba(232, 184, 45, 0.25);
-  --color-secondary-subtle: rgba(232, 184, 45, 0.12);
+  --color-secondary-glow: rgba(215, 255, 56, 0.3);
+  --color-secondary-subtle: rgba(215, 255, 56, 0.16);
 
   --color-accent: var(--mustard);
 
-  --color-success: #2D8B4E;
-  --color-success-muted: rgba(45, 139, 78, 0.12);
-  --color-warning: #C48A1A;
-  --color-warning-muted: rgba(196, 138, 26, 0.12);
-  --color-error: #C42B2B;
-  --color-error-muted: rgba(196, 43, 43, 0.12);
+  --color-success: #2f8f58;
+  --color-success-muted: rgba(47, 143, 88, 0.12);
+  --color-warning: #a36a13;
+  --color-warning-muted: rgba(163, 106, 19, 0.12);
+  --color-error: #b83228;
+  --color-error-muted: rgba(184, 50, 40, 0.12);
 
   /* ── Surface Colors ──────────────────────────────────────────────────── */
   --color-background: var(--bone);
-  --color-surface: #FFFFFF;
+  --color-surface: #ffffff;
   --color-surface-elevated: var(--bone-deep);
-  --color-surface-input: #FFFFFF;
+  --color-surface-input: #ffffff;
   --color-surface-hover: var(--bone-faint);
 
   /* ── Text Colors ─────────────────────────────────────────────────────── */
@@ -74,7 +77,7 @@
   --color-text-muted: var(--stone-light);
 
   /* ── Border Colors ───────────────────────────────────────────────────── */
-  --color-border: rgba(20, 41, 61, 0.12);
+  --color-border: rgba(19, 32, 24, 0.12);
   --color-border-strong: var(--navy);
   --color-separator: var(--bone-deep);
 
@@ -102,7 +105,7 @@
   --gray-200: var(--bone-deep);
   --surface-base: var(--bone);
   --surface-elevated-alt: var(--bone-deep);
-  --surface-input: #FFFFFF;
+  --surface-input: #ffffff;
   --text-muted-alt: var(--stone-light);
   --danger: var(--color-error);
   --text-primary: var(--ink);
@@ -117,7 +120,7 @@
   --cosmos-warning: var(--color-warning);
   --cosmos-error: var(--color-error);
   --cosmos-glass-bg: rgba(245, 241, 235, 0.9);
-  --cosmos-glass-border: rgba(20, 41, 61, 0.1);
+  --cosmos-glass-border: rgba(19, 32, 24, 0.1);
   --cosmos-glass-highlight: rgba(255, 255, 255, 0.6);
 
   --dynamic-accent-start: var(--navy);
@@ -132,10 +135,10 @@
    ============================================================================ */
 
 :root {
-  --font-display: 'Big Shoulders Display', 'Assistant', Impact, sans-serif;
-  --font-body: 'IBM Plex Sans', 'Assistant', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
-  --font-hebrew: 'Assistant', system-ui, sans-serif;
+  --font-display: "Big Shoulders Display", "Assistant", Impact, sans-serif;
+  --font-body: "IBM Plex Sans", "Assistant", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-hebrew: "Assistant", system-ui, sans-serif;
 
   --font-sans: var(--font-body);
   --font-condensed: var(--font-display);
@@ -217,11 +220,11 @@ html.large-text {
    ============================================================================ */
 
 :root {
-  --shadow-card: 0 1px 3px rgba(20, 41, 61, 0.08);
-  --shadow-elevated: 0 4px 12px rgba(20, 41, 61, 0.12);
-  --shadow-navy: 0 8px 24px rgba(11, 26, 43, 0.25);
-  --shadow-button: 0 2px 8px rgba(20, 41, 61, 0.15);
-  --shadow-button-hover: 0 4px 16px rgba(20, 41, 61, 0.2);
+  --shadow-card: 0 1px 3px rgba(19, 32, 24, 0.08);
+  --shadow-elevated: 0 4px 12px rgba(19, 32, 24, 0.12);
+  --shadow-navy: 0 8px 24px rgba(9, 17, 13, 0.25);
+  --shadow-button: 0 2px 8px rgba(19, 32, 24, 0.15);
+  --shadow-button-hover: 0 4px 16px rgba(19, 32, 24, 0.2);
   --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
@@ -284,34 +287,34 @@ html.dark {
   color-scheme: dark;
 
   /* ── Primary Colors (inverted) ───────────────────────────────────────── */
-  --bone: #0B1A2B;
-  --bone-deep: #14293D;
-  --bone-faint: #1E3A54;
-  --navy: #F5F1EB;
-  --navy-deep: #FFFFFF;
-  --navy-light: #EAE4DA;
-  --mustard: #E8B82D;
-  --mustard-dark: #F2C951;
-  --mustard-deep: #D4A525;
-  --ink: #F5F1EB;
-  --stone: rgba(245, 241, 235, 0.65);
-  --stone-light: rgba(245, 241, 235, 0.42);
+  --bone: #09110d;
+  --bone-deep: #132018;
+  --bone-faint: #203a2c;
+  --navy: #f2f4ec;
+  --navy-deep: #ffffff;
+  --navy-light: #e2e7d8;
+  --mustard: #d7ff38;
+  --mustard-dark: #e4ff6f;
+  --mustard-deep: #cbf12f;
+  --ink: #f2f4ec;
+  --stone: rgba(242, 244, 236, 0.68);
+  --stone-light: rgba(242, 244, 236, 0.44);
 
   /* Anchor stays dark navy — mustard is unchanged, so text on it also stays dark */
-  --color-on-mustard: #14293D;
+  --color-on-mustard: #132018;
 
   /* RGB triplets flip so rgba() compositions maintain contrast on inverted surfaces */
-  --text-on-navy-rgb: 20, 41, 61;
-  --ink-rgb: 245, 241, 235;
-  --bone-rgb: 11, 26, 43;
+  --text-on-navy-rgb: 19, 32, 24;
+  --ink-rgb: 242, 244, 236;
+  --bone-rgb: 9, 17, 13;
 
   /* Scrim stays dark — darkens content behind modal regardless of theme */
   --color-scrim: rgba(0, 0, 0, 0.7);
 
   /* ── Semantic Surfaces (dark cards on dark bg) ───────────────────────── */
-  --color-surface: #14293D;
-  --color-surface-input: #1E3A54;
-  --color-surface-hover: #1E3A54;
+  --color-surface: #132018;
+  --color-surface-input: #203a2c;
+  --color-surface-hover: #203a2c;
 
   /* ── Semantic Borders & Subtle Fills ─────────────────────────────────── */
   --color-border: rgba(245, 241, 235, 0.14);
@@ -319,19 +322,19 @@ html.dark {
   --color-primary-glow: rgba(245, 241, 235, 0.2);
 
   /* ── Status Muted Fills (boosted alpha for dark bg legibility) ───────── */
-  --color-success-muted: rgba(45, 139, 78, 0.22);
-  --color-warning-muted: rgba(196, 138, 26, 0.22);
-  --color-error-muted: rgba(196, 43, 43, 0.22);
+  --color-success-muted: rgba(47, 143, 88, 0.22);
+  --color-warning-muted: rgba(163, 106, 19, 0.22);
+  --color-error-muted: rgba(184, 50, 40, 0.22);
 
   /* ── Glass / Cosmos overlays ─────────────────────────────────────────── */
-  --cosmos-glass-bg: rgba(20, 41, 61, 0.85);
+  --cosmos-glass-bg: rgba(19, 32, 24, 0.85);
   --cosmos-glass-border: rgba(245, 241, 235, 0.1);
   --cosmos-glass-highlight: rgba(245, 241, 235, 0.08);
-  --surface-glass: rgba(20, 41, 61, 0.85);
+  --surface-glass: rgba(19, 32, 24, 0.85);
 
   /* ── Legacy aliases that hard-coded light hex values ─────────────────── */
-  --surface-input: #1E3A54;
-  --gray-200: #1E3A54;
+  --surface-input: #203a2c;
+  --gray-200: #203a2c;
 
   /* ── Shadows (stronger alpha for visible depth on dark) ──────────────── */
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35);

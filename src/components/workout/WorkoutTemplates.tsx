@@ -117,6 +117,15 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
     setTemplateToDelete(null);
   };
 
+  useEffect(() => {
+    if (!templateToDelete) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setTemplateToDelete(null);
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [templateToDelete]);
+
   const estimateDuration = (template: WorkoutTemplate) => {
     const totalSets = template.exercises.reduce((sum, ex) => sum + (ex.sets?.length || 3), 0);
     const mins = totalSets * 3;
@@ -243,7 +252,12 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
           }}
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M10 4V16M4 10H16" stroke="var(--mustard)" strokeWidth="3" strokeLinecap="square" />
+            <path
+              d="M10 4V16M4 10H16"
+              stroke="var(--mustard)"
+              strokeWidth="3"
+              strokeLinecap="square"
+            />
           </svg>
         </div>
         <div style={{ textAlign: 'right' }}>
@@ -381,9 +395,10 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                       }}
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
+                      aria-label={`ערוך תבנית ${template.name}`}
                       style={{
-                        width: 32,
-                        height: 32,
+                        width: 44,
+                        height: 44,
                         background: 'transparent',
                         border: '2px solid var(--navy)',
                         cursor: 'pointer',
@@ -410,9 +425,10 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                       }}
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
+                      aria-label={`מחק תבנית ${template.name}`}
                       style={{
-                        width: 32,
-                        height: 32,
+                        width: 44,
+                        height: 44,
                         background: 'transparent',
                         border: '2px solid #C42B2B',
                         cursor: 'pointer',
@@ -861,6 +877,9 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={cancelDelete}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="template-delete-title"
             style={{
               position: 'fixed',
               inset: 0,
@@ -905,6 +924,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 </svg>
               </div>
               <h3
+                id="template-delete-title"
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,

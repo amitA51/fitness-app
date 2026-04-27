@@ -135,20 +135,10 @@ const MiniTimer = memo<MiniTimerProps>(
             backgroundColor: isLastFive ? 'var(--mustard)' : 'var(--bone)',
             border: '2px solid var(--navy)',
             borderRadius: 0,
+            /* Static shadow — animating box-shadow forces full repaint
+               every frame on mobile. Pulse moved to opacity overlay below. */
             boxShadow: '0 12px 28px rgba(11,26,43,0.25)',
           }}
-          animate={
-            isLastFive && !reducedAnimations
-              ? {
-                  boxShadow: [
-                    '0 0 12px rgba(232,184,45,0.6)',
-                    '0 0 28px rgba(232,184,45,0.9)',
-                    '0 0 12px rgba(232,184,45,0.6)',
-                  ],
-                }
-              : {}
-          }
-          transition={{ duration: 0.5, repeat: Number.POSITIVE_INFINITY }}
         >
           {/* Progress bar at top — mustard on navy */}
           <div
@@ -207,8 +197,16 @@ const MiniTimer = memo<MiniTimerProps>(
 
               {/* Time and label — display font + mono eyebrow */}
               <div className="text-start flex-1">
+                <span className="sr-only" aria-live="polite" aria-atomic="true">
+                  {timeLeft === 0
+                    ? 'מנוחה הסתיימה'
+                    : timeLeft <= 10 || timeLeft % 10 === 0
+                      ? `${timeLeft} שניות`
+                      : ''}
+                </span>
                 <motion.div
                   className={`${largeText ? 'text-4xl' : 'text-3xl'} tabular-nums`}
+                  aria-hidden="true"
                   style={{
                     fontFamily: 'var(--font-display)',
                     fontWeight: 900,
@@ -408,16 +406,20 @@ const FullTimer = memo<FullTimerProps>(
         className={`fixed inset-0 flex items-center justify-center ${largeText ? 'text-lg' : ''}`}
         style={{
           zIndex: Z_INDEX.modal,
-          background: oledMode ? 'rgba(11,26,43,0.98)' : 'rgba(11,26,43,0.92)',
-          backdropFilter: 'blur(12px)',
+          /* Solid scrim instead of backdrop-filter blur — blur on a fixed
+             full-screen layer is the most expensive composite property on
+             mobile. Solid alpha gives the same visual weight at zero cost. */
+          background: oledMode ? 'rgba(11,26,43,0.98)' : 'rgba(11,26,43,0.96)',
           paddingTop: 'env(safe-area-inset-top, 16px)',
           paddingBottom: 'env(safe-area-inset-bottom, 16px)',
           paddingLeft: 'env(safe-area-inset-left, 16px)',
           paddingRight: 'env(safe-area-inset-right, 16px)',
+          cursor: 'pointer',
         }}
         role="dialog"
         aria-modal="true"
         aria-label="טיימר מנוחה"
+        onClick={onMinimize}
       >
         <motion.div
           drag="y"
@@ -425,6 +427,8 @@ const FullTimer = memo<FullTimerProps>(
           dragElastic={{ top: 0, bottom: 0.5 }}
           onDragEnd={handleDragEnd}
           className="relative flex flex-col items-center w-full max-w-md px-6"
+          onClick={(e) => e.stopPropagation()}
+          style={{ cursor: 'default' }}
         >
           {/* Minimize hint - hide when reduced animations */}
           {!reducedAnimations && (
@@ -511,7 +515,10 @@ const FullTimer = memo<FullTimerProps>(
           {/* Controls — sharp-cornered editorial */}
           <div className="flex items-center gap-3 mb-6">
             <button
-              onClick={() => onAddTime(-10)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddTime(-10);
+              }}
               onPointerDown={(e) => {
                 e.preventDefault();
                 onAddTime(-10);
@@ -533,7 +540,10 @@ const FullTimer = memo<FullTimerProps>(
             </button>
 
             <button
-              onClick={onSkip}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSkip();
+              }}
               onPointerDown={(e) => {
                 e.preventDefault();
                 onSkip();
@@ -564,7 +574,10 @@ const FullTimer = memo<FullTimerProps>(
             </button>
 
             <button
-              onClick={() => onAddTime(30)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddTime(30);
+              }}
               onPointerDown={(e) => {
                 e.preventDefault();
                 onAddTime(30);
@@ -589,7 +602,10 @@ const FullTimer = memo<FullTimerProps>(
           {/* Undo button */}
           {onUndo && (
             <button
-              onClick={onUndo}
+              onClick={(e) => {
+                e.stopPropagation();
+                onUndo();
+              }}
               onPointerDown={(e) => {
                 e.preventDefault();
                 onUndo();
@@ -678,7 +694,10 @@ const FullTimer = memo<FullTimerProps>(
 
           {/* Minimize button */}
           <button
-            onClick={onMinimize}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMinimize();
+            }}
             onPointerDown={(e) => {
               e.preventDefault();
               onMinimize();

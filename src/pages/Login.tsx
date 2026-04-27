@@ -1,5 +1,5 @@
 /**
- * SPORT ANNUAL — Login Page
+ * SPARKOS FITNESS — Login Page
  * Sign In / Sign Up with Supabase Auth
  * Bold · Editorial · Confident · Narrative · Printed
  */
@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import {
   initSupabaseAuth,
   resetPassword,
@@ -103,7 +104,7 @@ const staggerItem = {
 };
 
 // ============================================================================
-// ANNUAL DESIGN — INPUT COMPONENTS
+// TRAINING LOG DESIGN — INPUT COMPONENTS
 // ============================================================================
 
 interface AnnualInputProps {
@@ -175,9 +176,7 @@ const AnnualInput = memo(function AnnualInput({
             fontFamily: 'var(--font-body)',
           }}
         />
-        {suffix && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2">{suffix}</div>
-        )}
+        {suffix && <div className="absolute right-4 top-1/2 -translate-y-1/2">{suffix}</div>}
       </div>
       {error && (
         <p
@@ -198,7 +197,7 @@ const AnnualInput = memo(function AnnualInput({
 });
 
 // ============================================================================
-// ANNUAL DESIGN — PASSWORD INPUT
+// TRAINING LOG DESIGN — PASSWORD INPUT
 // ============================================================================
 
 interface AnnualPasswordInputProps {
@@ -259,7 +258,7 @@ const AnnualPasswordInput = memo(function AnnualPasswordInput({
           onClick={() => setShow(!show)}
           className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
           style={{ color: 'var(--stone)' }}
-          aria-label={show ? 'Hide password' : 'Show password'}
+          aria-label={show ? 'הסתר סיסמה' : 'הצג סיסמה'}
         >
           {show ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
@@ -283,7 +282,7 @@ const AnnualPasswordInput = memo(function AnnualPasswordInput({
 });
 
 // ============================================================================
-// ANNUAL DESIGN — PRIMARY BUTTON
+// TRAINING LOG DESIGN — PRIMARY BUTTON
 // ============================================================================
 
 interface AnnualButtonProps {
@@ -327,7 +326,11 @@ const AnnualButton = memo(function AnnualButton({
         style={{ borderRadius: 0 }}
       >
         {loading ? (
-          <Loader2 size={18} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+          <Loader2
+            size={18}
+            className="animate-spin"
+            style={{ animation: 'spin 1s linear infinite' }}
+          />
         ) : null}
         {children}
       </button>
@@ -340,11 +343,18 @@ const AnnualButton = memo(function AnnualButton({
         type={type}
         onClick={onClick}
         disabled={disabled || loading}
-        className={cn(baseClasses, 'bg-[var(--bone)] text-[var(--navy)] border-2 border-[var(--navy)]')}
+        className={cn(
+          baseClasses,
+          'bg-[var(--bone)] text-[var(--navy)] border-2 border-[var(--navy)]'
+        )}
         style={{ borderRadius: 0 }}
       >
         {loading ? (
-          <Loader2 size={18} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+          <Loader2
+            size={18}
+            className="animate-spin"
+            style={{ animation: 'spin 1s linear infinite' }}
+          />
         ) : null}
         {children}
       </button>
@@ -360,7 +370,11 @@ const AnnualButton = memo(function AnnualButton({
       style={{ borderRadius: 0 }}
     >
       {loading ? (
-        <Loader2 size={18} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+        <Loader2
+          size={18}
+          className="animate-spin"
+          style={{ animation: 'spin 1s linear infinite' }}
+        />
       ) : null}
       {children}
     </button>
@@ -368,7 +382,7 @@ const AnnualButton = memo(function AnnualButton({
 });
 
 // ============================================================================
-// ANNUAL DESIGN — GHOST LINK BUTTON
+// TRAINING LOG DESIGN — GHOST LINK BUTTON
 // ============================================================================
 
 interface GhostLinkProps {
@@ -446,11 +460,10 @@ function Masthead() {
               marginTop: '2px',
             }}
           >
-            Annual Report · Fitness
+            Training Log · Fitness
           </p>
         </div>
       </div>
-
     </motion.div>
   );
 }
@@ -467,11 +480,7 @@ interface ChoiceStepProps {
 
 function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
   return (
-    <motion.div
-      key="choice"
-      {...slideFromRight}
-      className="flex flex-col gap-6 px-5 py-8"
-    >
+    <motion.div key="choice" {...slideFromRight} className="flex flex-col gap-6 px-5 py-8">
       {/* Sign In Card */}
       <motion.button
         variants={staggerItem}
@@ -500,7 +509,7 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
                   textTransform: 'uppercase',
                 }}
               >
-                Sign In
+                התחברות
               </h3>
               <p
                 style={{
@@ -511,7 +520,7 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
                   textTransform: 'uppercase',
                 }}
               >
-                Existing User
+                משתמש קיים
               </p>
             </div>
           </div>
@@ -552,7 +561,7 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
                   textTransform: 'uppercase',
                 }}
               >
-                Sign Up
+                הרשמה
               </h3>
               <p
                 style={{
@@ -563,7 +572,7 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
                   textTransform: 'uppercase',
                 }}
               >
-                Create New Account
+                יצירת חשבון חדש
               </p>
             </div>
           </div>
@@ -588,7 +597,7 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             textTransform: 'uppercase',
           }}
         >
-          Or
+          או
         </span>
         <div className="flex-1" style={{ height: '1px', background: 'var(--bone-deep)' }} />
       </div>
@@ -612,7 +621,7 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
           cursor: 'pointer',
         }}
       >
-        Continue as Guest
+        המשך כאורח
       </motion.button>
 
       {/* Google OAuth */}
@@ -655,7 +664,7 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
           />
         </svg>
-        Continue with Google
+        המשך עם Google
       </motion.button>
     </motion.div>
   );
@@ -672,7 +681,12 @@ interface SignInStepProps {
   isSupabaseConfigured: boolean;
 }
 
-function SignInStep({ onBack, onForgotPassword, onSuccess, isSupabaseConfigured }: SignInStepProps) {
+function SignInStep({
+  onBack,
+  onForgotPassword,
+  onSuccess,
+  isSupabaseConfigured,
+}: SignInStepProps) {
   const [form, setForm] = useState<SignInFormData>({
     email: '',
     password: '',
@@ -740,7 +754,7 @@ function SignInStep({ onBack, onForgotPassword, onSuccess, isSupabaseConfigured 
       <div className="px-5 pt-5">
         <GhostLink onClick={onBack}>
           <ArrowLeft size={14} />
-          Back
+          חזרה
         </GhostLink>
       </div>
 
@@ -763,7 +777,7 @@ function SignInStep({ onBack, onForgotPassword, onSuccess, isSupabaseConfigured 
                 lineHeight: 0.95,
               }}
             >
-              Sign In
+              התחברות
             </h2>
             <p
               style={{
@@ -775,13 +789,13 @@ function SignInStep({ onBack, onForgotPassword, onSuccess, isSupabaseConfigured 
                 marginTop: '6px',
               }}
             >
-              Existing User
+              משתמש קיים
             </p>
           </motion.div>
 
           <motion.div variants={staggerItem}>
             <AnnualInput
-              label="Email"
+              label={'דוא"ל'}
               type="email"
               value={form.email}
               onChange={(val) => setForm((f) => ({ ...f, email: val }))}
@@ -795,7 +809,7 @@ function SignInStep({ onBack, onForgotPassword, onSuccess, isSupabaseConfigured 
 
           <motion.div variants={staggerItem}>
             <AnnualPasswordInput
-              label="Password"
+              label="סיסמה"
               value={form.password}
               onChange={(val) => setForm((f) => ({ ...f, password: val }))}
               placeholder="••••••••"
@@ -821,7 +835,7 @@ function SignInStep({ onBack, onForgotPassword, onSuccess, isSupabaseConfigured 
                 padding: '4px 0',
               }}
             >
-              Forgot Password?
+              שכחתי סיסמה
             </button>
           </motion.div>
 
@@ -830,9 +844,15 @@ function SignInStep({ onBack, onForgotPassword, onSuccess, isSupabaseConfigured 
             <motion.div
               variants={staggerItem}
               className="p-4 flex items-start gap-3"
-              style={{ background: 'var(--color-error-muted)', borderLeft: '3px solid var(--color-error)' }}
+              style={{
+                background: 'var(--color-error-muted)',
+                borderLeft: '3px solid var(--color-error)',
+              }}
             >
-              <AlertCircle size={16} style={{ color: 'var(--color-error)', flexShrink: 0, marginTop: '2px' }} />
+              <AlertCircle
+                size={16}
+                style={{ color: 'var(--color-error)', flexShrink: 0, marginTop: '2px' }}
+              />
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
@@ -865,7 +885,8 @@ function SignInStep({ onBack, onForgotPassword, onSuccess, isSupabaseConfigured 
                   lineHeight: 1.5,
                 }}
               >
-                Supabase not configured — login disabled. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env
+                Supabase not configured — login disabled. Add VITE_SUPABASE_URL and
+                VITE_SUPABASE_ANON_KEY to .env
               </p>
             </motion.div>
           )}
@@ -874,7 +895,7 @@ function SignInStep({ onBack, onForgotPassword, onSuccess, isSupabaseConfigured 
         {/* Submit button */}
         <div className="px-5 pb-8">
           <AnnualButton type="submit" loading={loading} disabled={loading}>
-            Sign In
+            התחברות
           </AnnualButton>
         </div>
       </form>
@@ -995,7 +1016,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
             marginBottom: '12px',
           }}
         >
-          Check Your Email
+          בדוק את הדוא"ל שלך
         </motion.h2>
 
         <motion.p
@@ -1010,7 +1031,8 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
             marginBottom: '8px',
           }}
         >
-          We sent a verification link to</motion.p>
+          שלחנו קישור אימות אל
+        </motion.p>
 
         <motion.p
           initial={{ opacity: 0, y: 12 }}
@@ -1039,7 +1061,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
             lineHeight: 1.5,
           }}
         >
-          Click the link in the email to activate your account
+          לחץ על הקישור בדוא"ל כדי להפעיל את החשבון
         </motion.p>
 
         <motion.div
@@ -1049,7 +1071,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           className="mt-8"
         >
           <AnnualButton variant="secondary" onClick={onBack} fullWidth={false}>
-            Back to Sign In
+            חזרה להתחברות
           </AnnualButton>
         </motion.div>
       </motion.div>
@@ -1062,7 +1084,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
       <div className="px-5 pt-5">
         <GhostLink onClick={onBack}>
           <ArrowLeft size={14} />
-          Back
+          חזרה
         </GhostLink>
       </div>
 
@@ -1085,7 +1107,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
                 lineHeight: 0.95,
               }}
             >
-              New Account
+              חשבון חדש
             </h2>
             <p
               style={{
@@ -1097,7 +1119,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
                 marginTop: '6px',
               }}
             >
-              Create Your Account
+              צור את החשבון שלך
             </p>
           </motion.div>
 
@@ -1112,18 +1134,18 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
                 textTransform: 'uppercase',
               }}
             >
-              §01 · Profile
+              §01 · פרופיל
             </span>
             <div className="flex-1" style={{ height: '1px', background: 'var(--bone-deep)' }} />
           </motion.div>
 
           <motion.div variants={staggerItem}>
             <AnnualInput
-              label="Full Name"
+              label="שם מלא"
               type="text"
               value={form.fullName}
               onChange={(val) => setForm((f) => ({ ...f, fullName: val }))}
-              placeholder="John Smith"
+              placeholder="ישראל ישראלי"
               icon={<User size={16} />}
               error={errors.fullName}
               autoComplete="name"
@@ -1133,7 +1155,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
 
           <motion.div variants={staggerItem}>
             <AnnualInput
-              label="Email"
+              label={'דוא"ל'}
               type="email"
               value={form.email}
               onChange={(val) => setForm((f) => ({ ...f, email: val }))}
@@ -1155,27 +1177,27 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
                 textTransform: 'uppercase',
               }}
             >
-              §02 · Security
+              §02 · אבטחה
             </span>
             <div className="flex-1" style={{ height: '1px', background: 'var(--bone-deep)' }} />
           </motion.div>
 
           <motion.div variants={staggerItem}>
             <AnnualPasswordInput
-              label="Password"
+              label="סיסמה"
               value={form.password}
               onChange={(val) => setForm((f) => ({ ...f, password: val }))}
-              placeholder="6+ characters"
+              placeholder="לפחות 6 תווים"
               error={errors.password}
             />
           </motion.div>
 
           <motion.div variants={staggerItem}>
             <AnnualPasswordInput
-              label="Confirm Password"
+              label="אישור סיסמה"
               value={form.confirmPassword}
               onChange={(val) => setForm((f) => ({ ...f, confirmPassword: val }))}
-              placeholder="Re-enter your password"
+              placeholder="הזן שוב את הסיסמה"
               error={errors.confirmPassword}
             />
           </motion.div>
@@ -1185,9 +1207,15 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
             <motion.div
               variants={staggerItem}
               className="p-4 flex items-start gap-3"
-              style={{ background: 'var(--color-error-muted)', borderLeft: '3px solid var(--color-error)' }}
+              style={{
+                background: 'var(--color-error-muted)',
+                borderLeft: '3px solid var(--color-error)',
+              }}
             >
-              <AlertCircle size={16} style={{ color: 'var(--color-error)', flexShrink: 0, marginTop: '2px' }} />
+              <AlertCircle
+                size={16}
+                style={{ color: 'var(--color-error)', flexShrink: 0, marginTop: '2px' }}
+              />
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
@@ -1205,7 +1233,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
         {/* Submit button */}
         <div className="px-5 pb-8">
           <AnnualButton type="submit" loading={loading} disabled={loading}>
-            Create Account
+            צור חשבון
           </AnnualButton>
         </div>
       </form>
@@ -1287,7 +1315,7 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
             marginBottom: '12px',
           }}
         >
-          Reset Sent!
+          קישור נשלח!
         </motion.h2>
 
         <motion.p
@@ -1301,7 +1329,7 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
             lineHeight: 1.6,
           }}
         >
-          We sent a password reset link to
+          שלחנו קישור לאיפוס סיסמה אל
           <br />
           <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--navy)', fontWeight: 600 }}>
             {form.email}
@@ -1315,7 +1343,7 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
           className="mt-8"
         >
           <AnnualButton variant="secondary" onClick={onBack} fullWidth={false}>
-            Back to Sign In
+            חזרה להתחברות
           </AnnualButton>
         </motion.div>
       </motion.div>
@@ -1327,7 +1355,7 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
       <div className="px-5 pt-5">
         <GhostLink onClick={onBack}>
           <ArrowLeft size={14} />
-          Back
+          חזרה
         </GhostLink>
       </div>
 
@@ -1350,7 +1378,7 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
                 lineHeight: 0.95,
               }}
             >
-              Forgot Password?
+              שכחת סיסמה?
             </h2>
             <p
               style={{
@@ -1361,7 +1389,7 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
                 lineHeight: 1.5,
               }}
             >
-              We'll send a reset link to your email
+              נשלח קישור לאיפוס לדוא"ל שלך
             </p>
           </motion.div>
 
@@ -1383,10 +1411,19 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
             <motion.div
               variants={staggerItem}
               className="p-4 flex items-start gap-3"
-              style={{ background: 'var(--color-error-muted)', borderLeft: '3px solid var(--color-error)' }}
+              style={{
+                background: 'var(--color-error-muted)',
+                borderLeft: '3px solid var(--color-error)',
+              }}
             >
               <AlertCircle size={16} style={{ color: 'var(--color-error)', flexShrink: 0 }} />
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--color-error)' }}>
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '14px',
+                  color: 'var(--color-error)',
+                }}
+              >
                 {errors.general}
               </p>
             </motion.div>
@@ -1395,7 +1432,7 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
 
         <div className="px-5 pb-8">
           <AnnualButton type="submit" loading={loading} disabled={loading}>
-            Send Reset Link
+            שלח קישור איפוס
           </AnnualButton>
         </div>
       </form>
@@ -1409,6 +1446,7 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { skipAuth } = useAuth();
   const [step, setStep] = useState<FormStep>('choice');
   const [isSupabaseConfigured, setIsSupabaseConfigured] = useState(false);
 
@@ -1433,9 +1471,8 @@ export default function LoginPage() {
   }, []);
 
   const handleGuest = useCallback(() => {
-    // Dispatch event so App.tsx can skip auth + onboarding and go straight to app
-    window.dispatchEvent(new CustomEvent('skip_auth'));
-  }, []);
+    skipAuth();
+  }, [skipAuth]);
 
   const handleBack = useCallback(() => {
     setStep('choice');
@@ -1453,7 +1490,7 @@ export default function LoginPage() {
     >
       {/* Skip link */}
       <a href="#main-content" className="skip-link" style={{ top: '-100%' }}>
-        Skip to content
+        דלג לתוכן
       </a>
 
       {/* Masthead */}
@@ -1467,7 +1504,12 @@ export default function LoginPage() {
       >
         <AnimatePresence mode="wait">
           {step === 'choice' && (
-            <ChoiceStep key="choice" onSignIn={handleSignIn} onSignUp={handleSignUp} onGuest={handleGuest} />
+            <ChoiceStep
+              key="choice"
+              onSignIn={handleSignIn}
+              onSignUp={handleSignUp}
+              onGuest={handleGuest}
+            />
           )}
           {step === 'credentials' && (
             <SignInStep
@@ -1485,9 +1527,7 @@ export default function LoginPage() {
               isSupabaseConfigured={isSupabaseConfigured}
             />
           )}
-          {step === 'forgot-password' && (
-            <ForgotPasswordStep key="forgot" onBack={handleBack} />
-          )}
+          {step === 'forgot-password' && <ForgotPasswordStep key="forgot" onBack={handleBack} />}
         </AnimatePresence>
       </main>
 
@@ -1508,7 +1548,7 @@ export default function LoginPage() {
             textTransform: 'uppercase',
           }}
         >
-          SPARKOS · Annual Report · 2026
+          SPARKOS · Training Log · 2026
         </p>
       </motion.footer>
     </div>

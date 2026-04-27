@@ -1,3 +1,12 @@
+import {
+  Apple,
+  Coffee,
+  Dumbbell,
+  type LucideIcon,
+  Salad,
+  UtensilsCrossed,
+  Zap,
+} from 'lucide-react';
 import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../types';
 import { STORES, dbDelete, dbGetAll, dbPut, syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
@@ -558,8 +567,9 @@ function calcMacroTotals(foods: FoodItem[]): MacroNutrients {
       protein: acc.protein + Math.round(f.protein * f.servings * 10) / 10,
       carbs: acc.carbs + Math.round(f.carbs * f.servings * 10) / 10,
       fat: acc.fat + Math.round(f.fat * f.servings * 10) / 10,
+      fiber: (acc.fiber ?? 0) + Math.round((f.fiber ?? 0) * f.servings * 10) / 10,
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
   );
 }
 
@@ -583,7 +593,10 @@ export function searchFoods(query: string): FoodItem[] {
   );
 }
 
-export function addFoodFromPreset(presetId: string, mealType: MealType): MealEntry | null {
+export async function addFoodFromPreset(
+  presetId: string,
+  mealType: MealType
+): Promise<MealEntry | null> {
   const preset = MEAL_PRESETS.find((p) => p.id === presetId);
   if (!preset) return null;
 
@@ -614,17 +627,32 @@ export function addFoodFromPreset(presetId: string, mealType: MealType): MealEnt
     createdAt: new Date().toISOString(),
   };
 
-  dbPut(STORES.NUTRITION_LOGS, mealEntry);
+  await dbPut(STORES.NUTRITION_LOGS, mealEntry);
 
   void (async () => {
     const user = await getCurrentUser();
     if (user) {
       syncWithRetry(
         () =>
-          syncNutritionLog(
-            user.id,
-            mealEntry as unknown as Parameters<typeof syncNutritionLog>[1]
-          ),
+          syncNutritionLog(user.id, {
+            id: mealEntry.id,
+            date: mealEntry.date,
+            calories: Math.round(mealEntry.totalMacros.calories),
+            protein: Math.round(mealEntry.totalMacros.protein),
+            carbs: Math.round(mealEntry.totalMacros.carbs),
+            fat: Math.round(mealEntry.totalMacros.fat),
+            meals: mealEntry.meals.map((m) => ({
+              id: m.id,
+              name: m.name,
+              calories: Math.round(m.totalMacros.calories),
+              protein: Math.round(m.totalMacros.protein),
+              carbs: Math.round(m.totalMacros.carbs),
+              fat: Math.round(m.totalMacros.fat),
+              time: m.time,
+            })),
+            notes: mealEntry.notes,
+            createdAt: mealEntry.createdAt,
+          }),
         `addMealEntryFromPreset:${mealEntry.id}`
       );
     }
@@ -645,7 +673,25 @@ export async function addMealEntry(entry: Omit<MealEntry, 'id' | 'createdAt'>): 
   if (user) {
     syncWithRetry(
       () =>
-        syncNutritionLog(user.id, newEntry as unknown as Parameters<typeof syncNutritionLog>[1]),
+        syncNutritionLog(user.id, {
+          id: newEntry.id,
+          date: newEntry.date,
+          calories: Math.round(newEntry.totalMacros.calories),
+          protein: Math.round(newEntry.totalMacros.protein),
+          carbs: Math.round(newEntry.totalMacros.carbs),
+          fat: Math.round(newEntry.totalMacros.fat),
+          meals: newEntry.meals.map((m) => ({
+            id: m.id,
+            name: m.name,
+            calories: Math.round(m.totalMacros.calories),
+            protein: Math.round(m.totalMacros.protein),
+            carbs: Math.round(m.totalMacros.carbs),
+            fat: Math.round(m.totalMacros.fat),
+            time: m.time,
+          })),
+          notes: newEntry.notes,
+          createdAt: newEntry.createdAt,
+        }),
       `addMealEntry:${newEntry.id}`
     );
   }
@@ -659,7 +705,26 @@ export async function updateMealEntry(entry: MealEntry): Promise<void> {
   const user = await getCurrentUser();
   if (user) {
     syncWithRetry(
-      () => syncNutritionLog(user.id, entry as unknown as Parameters<typeof syncNutritionLog>[1]),
+      () =>
+        syncNutritionLog(user.id, {
+          id: entry.id,
+          date: entry.date,
+          calories: Math.round(entry.totalMacros.calories),
+          protein: Math.round(entry.totalMacros.protein),
+          carbs: Math.round(entry.totalMacros.carbs),
+          fat: Math.round(entry.totalMacros.fat),
+          meals: entry.meals.map((m) => ({
+            id: m.id,
+            name: m.name,
+            calories: Math.round(m.totalMacros.calories),
+            protein: Math.round(m.totalMacros.protein),
+            carbs: Math.round(m.totalMacros.carbs),
+            fat: Math.round(m.totalMacros.fat),
+            time: m.time,
+          })),
+          notes: entry.notes,
+          createdAt: entry.createdAt,
+        }),
       `updateMealEntry:${entry.id}`
     );
   }
@@ -699,8 +764,9 @@ export async function getDailyMacros(date: string): Promise<MacroNutrients> {
       protein: acc.protein + e.totalMacros.protein,
       carbs: acc.carbs + e.totalMacros.carbs,
       fat: acc.fat + e.totalMacros.fat,
+      fiber: (acc.fiber ?? 0) + (e.totalMacros.fiber ?? 0),
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
   );
 }
 
@@ -731,22 +797,40 @@ export interface DailyNutritionSummary {
 
 export async function getWeeklyNutritionSummary(): Promise<DailyNutritionSummary[]> {
   const today = new Date();
-  const results: DailyNutritionSummary[] = [];
-
+  const dates: string[] = [];
   for (let i = 6; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0] ?? '';
-    const macros = await getDailyMacros(dateStr);
-    const entries = await getMealEntriesByDate(dateStr);
-    results.push({
+    dates.push(date.toISOString().split('T')[0] ?? '');
+  }
+
+  const allEntries = await dbGetAll<MealEntry>(STORES.NUTRITION_LOGS);
+  const entriesByDate = new Map<string, MealEntry[]>();
+  for (const entry of allEntries) {
+    const existing = entriesByDate.get(entry.date) ?? [];
+    existing.push(entry);
+    entriesByDate.set(entry.date, existing);
+  }
+
+  return dates.map((dateStr) => {
+    const entries = entriesByDate.get(dateStr) ?? [];
+    const macros = entries.reduce<MacroNutrients>(
+      (acc, e) => ({
+        calories: acc.calories + e.totalMacros.calories,
+        protein: acc.protein + e.totalMacros.protein,
+        carbs: acc.carbs + e.totalMacros.carbs,
+        fat: acc.fat + e.totalMacros.fat,
+        fiber: (acc.fiber ?? 0) + (e.totalMacros.fiber ?? 0),
+      }),
+      { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
+    );
+    return {
       date: dateStr,
       macros,
       mealCount: entries.length,
       macroPercentages: getMacroPercentages(macros),
-    });
-  }
-  return results;
+    };
+  });
 }
 
 export function createQuickMeal(mealType: MealType, foods: FoodItem[]): MealEntry {
@@ -779,13 +863,13 @@ export const MEAL_TYPE_LABELS: Record<MealType, string> = {
   'post-workout': 'אחרי אימון',
 };
 
-export const MEAL_TYPE_ICONS: Record<MealType, string> = {
-  breakfast: '§',
-  lunch: '§',
-  dinner: '§',
-  snack: '§',
-  'pre-workout': '§',
-  'post-workout': '§',
+export const MEAL_TYPE_ICONS: Record<MealType, LucideIcon> = {
+  breakfast: Coffee,
+  lunch: Salad,
+  dinner: UtensilsCrossed,
+  snack: Apple,
+  'pre-workout': Dumbbell,
+  'post-workout': Zap,
 };
 
 export function calcFoodMacros(food: FoodItem): MacroNutrients {
@@ -794,5 +878,6 @@ export function calcFoodMacros(food: FoodItem): MacroNutrients {
     protein: Math.round(food.protein * food.servings * 10) / 10,
     carbs: Math.round(food.carbs * food.servings * 10) / 10,
     fat: Math.round(food.fat * food.servings * 10) / 10,
+    fiber: Math.round((food.fiber ?? 0) * food.servings * 10) / 10,
   };
 }

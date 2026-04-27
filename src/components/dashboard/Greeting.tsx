@@ -40,7 +40,7 @@ export function Greeting({ weekNumber }: GreetingProps) {
           style={{
             fontFamily: 'var(--font-display)',
             fontWeight: 900,
-            fontSize: 'clamp(40px, 11vw, 64px)',
+            fontSize: 'clamp(32px, 10vw, 64px)',
             lineHeight: 0.9,
             letterSpacing: '-0.02em',
             textTransform: 'uppercase',

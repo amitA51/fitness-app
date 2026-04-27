@@ -165,7 +165,6 @@ const NumpadButton = memo<{
 
   return (
     <motion.button
-      whileHover={{ scale: disabled ? 1 : 1.03, backgroundColor: 'var(--bone-deep)' }}
       whileTap={{ scale: 0.95 }}
       onClick={handleClick}
       onPointerDown={(e) => {
@@ -199,7 +198,6 @@ const PresetButton = memo<{
   const shouldReduceMotion = useReducedMotion();
   return (
     <motion.button
-      whileHover={shouldReduceMotion ? {} : { scale: 1.03 }}
       whileTap={{ scale: shouldReduceMotion ? 1 : 0.96 }}
       onClick={() => {
         triggerHaptic();
@@ -266,7 +264,6 @@ const ValueStepper = memo<{
           .map((inc) => (
             <motion.button
               key={`dec-${inc}`}
-              whileHover={shouldReduceMotion ? {} : { scale: 1.04 }}
               whileTap={{ scale: shouldReduceMotion ? 1 : 0.92 }}
               onClick={() => {
                 triggerHaptic();
@@ -321,7 +318,6 @@ const ValueStepper = memo<{
         {increments.map((inc) => (
           <motion.button
             key={`inc-${inc}`}
-            whileHover={shouldReduceMotion ? {} : { scale: 1.04 }}
             whileTap={{ scale: shouldReduceMotion ? 1 : 0.92 }}
             onClick={() => {
               triggerHaptic();
@@ -682,23 +678,32 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
             )}
           </AnimatePresence>
 
-          {/* Confirm Button — btn-primary */}
-          <div className="px-6 pb-6">
+          {/* Confirm Button — sticky at bottom so it stays reachable on small screens */}
+          <div
+            className="px-6 pb-6 pt-3"
+            style={{
+              position: 'sticky',
+              bottom: 0,
+              background: 'var(--bone)',
+              borderTop: '1px solid var(--bone-deep)',
+              zIndex: 2,
+            }}
+          >
             <motion.button
-              whileHover={shouldReduceMotion ? {} : { scale: 1.005 }}
               whileTap={{ scale: shouldReduceMotion ? 1 : 0.98 }}
               onClick={handleSubmit}
               onPointerDown={(e) => {
-                if (!(!value && numericValue === 0)) {
+                if (value !== '') {
                   e.preventDefault();
                   handleSubmit();
                 }
               }}
-              disabled={!value && numericValue === 0}
+              disabled={value === ''}
               className="btn-primary w-full"
               style={{
-                opacity: !value && numericValue === 0 ? 0.4 : 1,
-                cursor: !value && numericValue === 0 ? 'not-allowed' : 'pointer',
+                opacity: value === '' ? 0.4 : 1,
+                cursor: value === '' ? 'not-allowed' : 'pointer',
+                minHeight: 48,
               }}
               aria-label="אישור ערך"
             >

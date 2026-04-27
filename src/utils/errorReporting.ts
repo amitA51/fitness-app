@@ -17,7 +17,7 @@ export interface ErrorReport {
  * - Logs to console/logger
  * - Can be extended to send to error tracking service (e.g., Sentry)
  */
-export function reportError({ message, context, error, userMessage }: ErrorReport): void {
+export function reportError({ message, context, error }: ErrorReport): void {
   if (error) {
     logger.app.error(`[${context}] ${message}`, error);
   } else {
@@ -41,7 +41,7 @@ export function handleError(
     error: errorObj,
   });
   return {
-    userMessage: userMessage || fallbackMessage,
+    userMessage: fallbackMessage,
     error: errorObj,
   };
 }

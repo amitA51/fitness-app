@@ -83,10 +83,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer group'}
       `}
     >
-      <div
-        className="relative"
-        style={{ width: config.trackW, height: config.trackH }}
-      >
+      <div className="relative" style={{ width: config.trackW, height: config.trackH }}>
         <input
           id={switchId}
           type="checkbox"

@@ -2,7 +2,17 @@
 // SPARKOS FITNESS - Root App Component
 // ============================================================================
 
-import { memo, Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  Suspense,
+  lazy,
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   BrowserRouter,
   Navigate,
@@ -13,26 +23,25 @@ import {
   useParams,
 } from 'react-router-dom';
 import BottomNav from './components/ui/BottomNav';
+import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import { WorkoutProvider } from './components/workout/core';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
 import { type PageAccent, PageThemeProvider } from './contexts/PageThemeContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { PageErrorBoundary } from './errors/PageErrorBoundary';
 import type { OnboardingData } from './pages/OnboardingFlow';
+import { initOfflineSync } from './services/offlineQueue';
 import type { WorkoutExercise } from './types';
 import { logger } from './utils/logger';
 import { safeJsonParse } from './utils/safeJson';
 import { cn } from './utils/styles';
-import { prefetchRoute } from './utils/routePrefetch';
-import { getSession } from './services/supabaseAuth';
-import { initOfflineSync } from './services/offlineQueue';
 
 // ============================================================================
 // Lazy-loaded pages (code-splitting for better initial bundle size)
 // ============================================================================
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-const History = lazy(() => import('./pages/History'));
 const Login = lazy(() => import('./pages/Login'));
 const Nutrition = lazy(() => import('./pages/Nutrition'));
 const OnboardingFlow = lazy(() => import('./pages/OnboardingFlow'));
@@ -52,30 +61,37 @@ const WorkoutContent = lazy(async () => {
 
 function PageLoader() {
   return (
-    <div
-      className="min-h-screen bg-bone"
-      role="status"
-      aria-live="polite"
-      aria-label="טוען"
-    >
+    <div className="min-h-screen bg-bone" role="status" aria-live="polite" aria-label="טוען">
       <div style={{ padding: '24px 20px' }}>
-        <div className="animate-shimmer" style={{
-          height: 120,
-          background: 'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
-          backgroundSize: '200% 100%',
-          marginBottom: 16,
-        }} />
-        <div className="animate-shimmer" style={{
-          height: 80,
-          background: 'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
-          backgroundSize: '200% 100%',
-          marginBottom: 16,
-        }} />
-        <div className="animate-shimmer" style={{
-          height: 200,
-          background: 'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
-          backgroundSize: '200% 100%',
-        }} />
+        <div
+          className="animate-shimmer"
+          style={{
+            height: 120,
+            background:
+              'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
+            backgroundSize: '200% 100%',
+            marginBottom: 16,
+          }}
+        />
+        <div
+          className="animate-shimmer"
+          style={{
+            height: 80,
+            background:
+              'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
+            backgroundSize: '200% 100%',
+            marginBottom: 16,
+          }}
+        />
+        <div
+          className="animate-shimmer"
+          style={{
+            height: 200,
+            background:
+              'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
+            backgroundSize: '200% 100%',
+          }}
+        />
       </div>
     </div>
   );
@@ -135,96 +151,74 @@ function getPageLabel(path: string): string {
 // ============================================================================
 
 function App() {
-  const [appState, setAppState] = useState<'loading' | 'login' | 'onboarding' | 'app'>('loading');
+  return (
+    <AuthProvider>
+      <AppRouter />
+    </AuthProvider>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// AppRouter — consumes auth context to decide which top-level screen to show.
+// ----------------------------------------------------------------------------
+
+function AppRouter() {
+  const { status } = useAuth();
+  const [onboardingDone, setOnboardingDone] = useState<boolean>(
+    () => localStorage.getItem('onboarding_completed') === 'true'
+  );
 
   useEffect(() => {
     initOfflineSync();
   }, []);
 
+  // When the user becomes authenticated or enters guest mode, hydrate profile
+  // defaults from any previously saved onboarding data. Mirrors the old
+  // checkAuth() hydration so returning users keep their profile.
   useEffect(() => {
-    const checkAuth = async () => {
-      const session = await getSession();
-      const onboardingDone = localStorage.getItem('onboarding_completed') === 'true';
+    if (status !== 'authenticated' && status !== 'guest') return;
+    if (!onboardingDone) return;
 
-      if (!session) {
-        setAppState('login');
-        return;
-      }
+    const data = safeJsonParse<OnboardingData>(localStorage.getItem('onboarding_data'));
+    if (!data) return;
 
-      if (!onboardingDone) {
-        setAppState('onboarding');
-        return;
-      }
-
-      const data = safeJsonParse<OnboardingData>(localStorage.getItem('onboarding_data'));
-      if (data) {
-        localStorage.setItem(
-          'user_profile',
-          JSON.stringify({
-            name: data.name,
-            age: data.age,
-            height: data.height,
-            weight: data.weight,
-            gender: data.gender,
-            weightGoal: getWeightGoalFromOnboarding(data.primaryGoal),
-            activityLevel: getActivityLevelFromOnboarding(data.experienceLevel),
-          })
-        );
-        localStorage.setItem(
-          'workout_prefs',
-          JSON.stringify({
-            defaultRestTime: data.restBetweenSets,
-            autoStartRest: true,
-            hapticsEnabled: true,
-          })
-        );
-      }
-      setAppState('app');
-    };
-
-    checkAuth();
-  }, []);
-
-  useEffect(() => {
-    const handleAuthChange = () => {
-      const check = async () => {
-        const session = await getSession();
-        const onboardingDone = localStorage.getItem('onboarding_completed') === 'true';
-        if (!session) { setAppState('login'); return; }
-        if (!onboardingDone) { setAppState('onboarding'); return; }
-        setAppState('app');
-      };
-      check();
-    };
-
-    const handleSkipAuth = () => {
-      localStorage.setItem('onboarding_completed', 'true');
-      setAppState('app');
-    };
-
-    window.addEventListener('supabase_auth_change', handleAuthChange);
-    window.addEventListener('skip_auth', handleSkipAuth);
-    return () => {
-      window.removeEventListener('supabase_auth_change', handleAuthChange);
-      window.removeEventListener('skip_auth', handleSkipAuth);
-    };
-  }, []);
+    localStorage.setItem(
+      'user_profile',
+      JSON.stringify({
+        name: data.name,
+        age: data.age,
+        height: data.height,
+        weight: data.weight,
+        gender: data.gender,
+        weightGoal: getWeightGoalFromOnboarding(data.primaryGoal),
+        activityLevel: getActivityLevelFromOnboarding(data.experienceLevel),
+      })
+    );
+    localStorage.setItem(
+      'workout_prefs',
+      JSON.stringify({
+        defaultRestTime: data.restBetweenSets,
+        autoStartRest: true,
+        hapticsEnabled: true,
+      })
+    );
+  }, [status, onboardingDone]);
 
   const handleOnboardingComplete = useCallback((data: OnboardingData) => {
     saveOnboardingData(data);
-    setAppState('app');
+    setOnboardingDone(true);
   }, []);
 
   const handleOnboardingSkip = useCallback(() => {
     localStorage.setItem('onboarding_completed', 'true');
-    setAppState('app');
+    setOnboardingDone(true);
   }, []);
 
-  if (appState === 'loading') {
+  if (status === 'loading') {
     return <PageLoader />;
   }
 
-  if (appState === 'login') {
+  if (status === 'unauthenticated') {
     return (
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
@@ -234,7 +228,8 @@ function App() {
     );
   }
 
-  if (appState === 'onboarding') {
+  // authenticated or guest — either go through onboarding or into the app.
+  if (!onboardingDone) {
     return (
       <Suspense fallback={<PageLoader />}>
         <OnboardingFlow onComplete={handleOnboardingComplete} onSkip={handleOnboardingSkip} />
@@ -307,6 +302,7 @@ function AppShell() {
             דלג לתוכן הראשי
           </a>
           <div className="app-shell min-h-screen flex flex-col bg-bone text-ink">
+            <OfflineIndicator />
             <div className="sr-only" aria-live="polite">
               {pageLabel}
             </div>
@@ -352,14 +348,6 @@ function AppShell() {
                     element={
                       <PageErrorBoundary pageLabel="התבניות">
                         <Templates />
-                      </PageErrorBoundary>
-                    }
-                  />
-                  <Route
-                    path="/history"
-                    element={
-                      <PageErrorBoundary pageLabel="היסטוריית האימונים">
-                        <History />
                       </PageErrorBoundary>
                     }
                   />
@@ -435,8 +423,6 @@ function getWeightGoalFromOnboarding(goal: string): string {
       return 'עלייה במסה';
     case 'weight_loss':
       return 'ירידה במשקל';
-    case 'endurance':
-    case 'general':
     default:
       return 'שמירה על משקל';
   }

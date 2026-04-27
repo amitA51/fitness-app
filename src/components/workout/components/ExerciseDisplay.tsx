@@ -1,9 +1,23 @@
 // ExerciseDisplay - Sport Annual Editorial Layout
 // Navy masthead + hero number, bone input tiles, chip actions, btn-row finish
 
-import { Edit, FileText, GripVertical, Minus, MoreHorizontal, Plus, RotateCcw, Star } from 'lucide-react';
+import {
+  Edit,
+  FileText,
+  GripVertical,
+  Minus,
+  MoreHorizontal,
+  Plus,
+  RotateCcw,
+  Star,
+} from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import type { Exercise, WorkoutSet } from '../../../types';
+import {
+  calculateBarbellPlateLoad,
+  formatPlateLoad,
+  isBarbellExercise,
+} from '../../../utils/plateCalculator';
 import type { SupersetGroup } from '../core/workoutTypes';
 import { useAnimatedNumber } from '../hooks/useAnimatedNumber';
 import { usePreviousData } from '../hooks/usePreviousData';
@@ -182,6 +196,8 @@ interface InputTileProps {
   ghostValue?: number;
   showGhost?: boolean;
   unit?: string;
+  /** Controls which mobile keyboard opens when the numpad is triggered */
+  inputMode?: 'decimal' | 'numeric';
   onTap: () => void;
   onIncrement: () => void;
   onDecrement: () => void;
@@ -189,15 +205,24 @@ interface InputTileProps {
 }
 
 const InputTile = memo<InputTileProps>(
-  ({ label, eyebrow, value, ghostValue, showGhost, unit, onTap, onIncrement, onDecrement, showButtons }) => {
+  ({
+    label,
+    eyebrow,
+    value,
+    ghostValue,
+    showGhost,
+    unit,
+    inputMode = 'numeric',
+    onTap,
+    onIncrement,
+    onDecrement,
+    showButtons,
+  }) => {
     const displayValue = value > 0 ? value : showGhost && ghostValue ? ghostValue : 0;
     const isGhost = !value && showGhost && !!ghostValue;
 
     return (
-      <div
-        className="card-outlined flex flex-col"
-        style={{ padding: '10px 12px 10px', gap: 4 }}
-      >
+      <div className="card-outlined flex flex-col" style={{ padding: '10px 12px 10px', gap: 4 }}>
         {/* Eyebrow (mono mustard) */}
         <div className="flex items-center justify-between">
           <span
@@ -225,47 +250,64 @@ const InputTile = memo<InputTileProps>(
           </span>
         </div>
 
-        {/* Big number (tap-to-numpad) */}
-        <button
-          type="button"
-          onPointerDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onTap();
-          }}
-          className="w-full text-center active:scale-[0.98] transition-transform tabular-nums"
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 900,
-            fontSize: 48,
-            lineHeight: 1,
-            letterSpacing: '-0.03em',
-            color: isGhost ? 'var(--bone-deep)' : 'var(--navy)',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            fontVariant: 'tabular-nums',
-            padding: '2px 0',
-          }}
-        >
-          <span className="tabular-nums" style={{ fontVariant: 'tabular-nums' }}>
-            {displayValue}
-          </span>
-          {unit && (
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 12,
-                letterSpacing: '0.18em',
-                color: 'var(--stone)',
-                marginInlineStart: 4,
-                verticalAlign: 'middle',
-              }}
-            >
-              {unit.toUpperCase()}
+        {/* Big number (tap-to-numpad) — hidden input carries inputMode for mobile keyboard hint */}
+        <div className="relative">
+          <input
+            type="text"
+            inputMode={inputMode}
+            aria-hidden="true"
+            readOnly
+            tabIndex={-1}
+            style={{
+              position: 'absolute',
+              opacity: 0,
+              pointerEvents: 'none',
+              width: 1,
+              height: 1,
+              overflow: 'hidden',
+            }}
+          />
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onTap();
+            }}
+            className="w-full text-center active:scale-[0.98] transition-transform tabular-nums"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 900,
+              fontSize: 48,
+              lineHeight: 1,
+              letterSpacing: '-0.03em',
+              color: isGhost ? 'var(--bone-deep)' : 'var(--navy)',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontVariant: 'tabular-nums',
+              padding: '2px 0',
+            }}
+          >
+            <span className="tabular-nums" style={{ fontVariant: 'tabular-nums' }}>
+              {displayValue}
             </span>
-          )}
-        </button>
+            {unit && (
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 12,
+                  letterSpacing: '0.18em',
+                  color: 'var(--stone)',
+                  marginInlineStart: 4,
+                  verticalAlign: 'middle',
+                }}
+              >
+                {unit.toUpperCase()}
+              </span>
+            )}
+          </button>
+        </div>
 
         {/* +/- chip row */}
         {showButtons && (
@@ -393,6 +435,14 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
 
     const hasPrevReference = !!(previousSet && (previousSet.weight || previousSet.reps));
 
+    const plateLoadLabel = useMemo(() => {
+      if (!isBarbellExercise(exercise) || (currentSet.weight || 0) <= 20) {
+        return null;
+      }
+
+      return formatPlateLoad(calculateBarbellPlateLoad(currentSet.weight || 0));
+    }, [currentSet.weight, exercise]);
+
     const handleRepsTap = () => onOpenNumpad('reps');
     const handleIncrementReps = () => onUpdateSet('reps', (currentSet.reps || 0) + 1);
     const handleDecrementReps = () => onUpdateSet('reps', Math.max(0, (currentSet.reps || 0) - 1));
@@ -422,9 +472,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             >
               §{chapterNum}
             </span>
-            <span className="exercise truncate">
-              {exercise.name || 'תרגיל ללא שם'}
-            </span>
+            <span className="exercise truncate">{exercise.name || 'תרגיל ללא שם'}</span>
           </div>
           <div
             className="flex items-center"
@@ -432,17 +480,13 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             aria-label={`סט ${displaySetIndex + 1} מתוך ${totalSets}, הושלמו ${completedSetsCount}`}
           >
             {totalSets <= 10 && (
-              <div
-                className="flex items-center"
-                style={{ gap: 4 }}
-                aria-hidden
-              >
+              <div className="flex items-center" style={{ gap: 4 }} aria-hidden>
                 {(exercise.sets || []).map((s, i) => {
                   const isCurrent = i === displaySetIndex;
                   const isComplete = !!s.completedAt;
                   const isWarmup = !!s.isWarmup;
-                  let bg: string = 'transparent';
-                  let border: string = '1.5px solid rgba(var(--text-on-navy-rgb), 0.3)';
+                  let bg = 'transparent';
+                  let border = '1.5px solid rgba(var(--text-on-navy-rgb), 0.3)';
                   const size = isCurrent ? 12 : 10;
                   if (isCurrent) {
                     bg = 'var(--mustard)';
@@ -483,37 +527,37 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
         <div className="aw-hero" style={{ overflow: 'hidden' }}>
           {/* RPE badge / TAP RPE button */}
           {onUpdateRPE && currentSet.rpe ? (
-              <button
-                type="button"
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowRPEPicker(true);
-                }}
-                className="rpe"
-                style={{ border: 'none', cursor: 'pointer' }}
-              >
-                RPE {currentSet.rpe}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowRPEPicker(true);
-                }}
-                className="rpe"
-                style={{
-                  background: 'transparent',
-                  color: 'var(--mustard)',
-                  border: '1.5px solid var(--mustard)',
-                  cursor: 'pointer',
-                }}
-              >
-                TAP RPE
-              </button>
-            )}
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowRPEPicker(true);
+              }}
+              className="rpe"
+              style={{ border: 'none', cursor: 'pointer' }}
+            >
+              RPE {currentSet.rpe}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowRPEPicker(true);
+              }}
+              className="rpe"
+              style={{
+                background: 'transparent',
+                color: 'var(--mustard)',
+                border: '1.5px solid var(--mustard)',
+                cursor: 'pointer',
+              }}
+            >
+              TAP RPE
+            </button>
+          )}
 
           <div
             className="num tabular-nums"
@@ -578,6 +622,21 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               }}
             >
               VOL · {((currentSet.weight || 0) * (currentSet.reps || 0)).toLocaleString()} KG
+            </div>
+          )}
+
+          {plateLoadLabel && (
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.18em',
+                color: 'rgba(var(--text-on-navy-rgb), 0.68)',
+                textTransform: 'uppercase',
+                marginTop: 8,
+              }}
+            >
+              PLATES · {plateLoadLabel}
             </div>
           )}
         </div>
@@ -680,6 +739,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             value={currentSet.reps || 0}
             ghostValue={previousSet?.reps}
             showGhost={showGhostReps}
+            inputMode="numeric"
             onTap={handleRepsTap}
             onIncrement={handleIncrementReps}
             onDecrement={handleDecrementReps}
@@ -692,6 +752,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             ghostValue={previousSet?.weight}
             showGhost={showGhostWeight}
             unit="kg"
+            inputMode="decimal"
             onTap={handleWeightTap}
             onIncrement={handleIncrementWeight}
             onDecrement={handleDecrementWeight}

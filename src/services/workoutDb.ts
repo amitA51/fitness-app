@@ -10,21 +10,13 @@ import { NotFoundError, ValidationError } from '../errors';
 import type {
   BodyWeightEntry,
   CreatePersonalExerciseInput,
+  Exercise,
   PersonalExercise,
   PersonalItem,
   WorkoutSession,
   WorkoutTemplate,
 } from '../types';
-import {
-  deleteCloudBodyWeight,
-  deleteCloudPersonalExercise,
-  deleteCloudWorkoutSession,
-  deleteCloudWorkoutTemplate,
-  syncBodyWeight,
-  syncPersonalExercise,
-  syncWorkoutSession,
-  syncWorkoutTemplate,
-} from './supabaseSync';
+import { createWorkoutSet } from '../types';
 import {
   STORES,
   dbClear,
@@ -37,6 +29,16 @@ import {
 } from './indexedDBCore';
 import { addPersonalItem } from './personalItemsDb';
 import { getCurrentUser } from './supabaseAuth';
+import {
+  deleteCloudBodyWeight,
+  deleteCloudPersonalExercise,
+  deleteCloudWorkoutSession,
+  deleteCloudWorkoutTemplate,
+  syncBodyWeight,
+  syncPersonalExercise,
+  syncWorkoutSession,
+  syncWorkoutTemplate,
+} from './supabaseSync';
 
 // ==================== WORKOUT TEMPLATES ====================
 
@@ -130,25 +132,28 @@ export const loadWorkoutFromTemplate = async (templateId: string): Promise<Perso
   const template = await getWorkoutTemplate(templateId);
   if (!template) throw new NotFoundError('WorkoutTemplate', templateId);
 
-  const newWorkout = {
+  const exercises: Exercise[] = template.exercises.map((ex) => ({
+    id: ex.id,
+    name: ex.exerciseName,
+    targetMuscle: ex.targetMuscle,
+    muscleGroup: ex.muscleGroup,
+    tempo: ex.tempo,
+    targetRestTime: ex.targetRestTime ?? ex.restSeconds,
+    notes: ex.notes,
+    sets: (ex.sets ?? []).map((s) => createWorkoutSet({ reps: s.reps, weight: s.weight })),
+  }));
+
+  const newWorkout: Omit<PersonalItem, 'id' | 'createdAt' | 'updatedAt'> = {
     type: 'workout',
     title: template.name,
     content: template.description || '',
-    exercises: template.exercises.map((ex) => ({
-      ...ex,
-      name: ex.exerciseName,
-      sets:
-        ex.sets?.map((set) => ({
-          reps: set.reps,
-          weight: set.weight,
-        })) || [],
-    })),
+    exercises,
     workoutTemplateId: templateId,
     workoutStartTime: new Date().toISOString(),
     isActiveWorkout: true,
   };
 
-  return (await addPersonalItem(newWorkout)) as unknown as PersonalItem;
+  return addPersonalItem(newWorkout);
 };
 
 /**
@@ -208,12 +213,42 @@ export const getWorkoutSession = async (id: string): Promise<WorkoutSession | nu
 
 /**
  * Get workout sessions, sorted by start time (newest first).
+ *
+ * Uses a reverse cursor on the `startTime` index (added in DB v7) to read
+ * only the latest `limit` records — instead of loading the entire store
+ * into memory and sorting in JavaScript. Falls back to the previous full
+ * scan if the index isn't present (e.g. an older DB connection that
+ * hasn't been upgraded yet in this tab).
  */
 export const getWorkoutSessions = async (limit = 20): Promise<WorkoutSession[]> => {
-  const sessions = await dbGetAll<WorkoutSession>(LS.WORKOUT_SESSIONS);
-  return sessions
-    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
-    .slice(0, limit);
+  try {
+    const db = await initDB();
+    const store = db.transaction(LS.WORKOUT_SESSIONS, 'readonly').objectStore(LS.WORKOUT_SESSIONS);
+
+    if (!store.indexNames.contains('startTime')) {
+      throw new Error('startTime index missing — falling back to full scan');
+    }
+
+    return await new Promise<WorkoutSession[]>((resolve, reject) => {
+      const out: WorkoutSession[] = [];
+      const request = store.index('startTime').openCursor(null, 'prev');
+      request.onerror = () => reject(request.error);
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+        if (!cursor || out.length >= limit) {
+          resolve(out);
+          return;
+        }
+        out.push(cursor.value as WorkoutSession);
+        cursor.continue();
+      };
+    });
+  } catch {
+    const sessions = await dbGetAll<WorkoutSession>(LS.WORKOUT_SESSIONS);
+    return sessions
+      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+      .slice(0, limit);
+  }
 };
 
 /**
@@ -386,11 +421,7 @@ export const createPersonalExercise = async (
       getCurrentUser().then((user) => {
         if (user) {
           syncWithRetry(
-            () =>
-              syncPersonalExercise(
-                user.id,
-                newExercise as unknown as Parameters<typeof syncPersonalExercise>[1]
-              ),
+            () => syncPersonalExercise(user.id, { ...newExercise, name: newExercise.name ?? '' }),
             `createPersonalExercise:${newExercise.id}`
           );
         }
@@ -423,11 +454,7 @@ export const updatePersonalExercise = async (
       getCurrentUser().then((user) => {
         if (user) {
           syncWithRetry(
-            () =>
-              syncPersonalExercise(
-                user.id,
-                updated as unknown as Parameters<typeof syncPersonalExercise>[1]
-              ),
+            () => syncPersonalExercise(user.id, { ...updated, name: updated.name ?? '' }),
             `updatePersonalExercise:${id}`
           );
         }
@@ -891,7 +918,7 @@ export const replacePersonalExercisesFromCloud = async (
  */
 export const replaceBodyMeasurementsFromCloud = async (measurements: unknown[]): Promise<void> => {
   await dbClear(STORES.BODY_MEASUREMENTS);
-  await Promise.all(measurements.map((m) => dbPut(STORES.BODY_MEASUREMENTS, m)));
+  await Promise.all(measurements.map((m) => dbPut(STORES.BODY_MEASUREMENTS, m as object)));
 };
 
 /**
@@ -899,7 +926,7 @@ export const replaceBodyMeasurementsFromCloud = async (measurements: unknown[]):
  */
 export const replacePersonalRecordsFromCloud = async (records: unknown[]): Promise<void> => {
   await dbClear(STORES.PERSONAL_RECORDS);
-  await Promise.all(records.map((r) => dbPut(STORES.PERSONAL_RECORDS, r)));
+  await Promise.all(records.map((r) => dbPut(STORES.PERSONAL_RECORDS, r as object)));
 };
 
 /**
@@ -907,7 +934,7 @@ export const replacePersonalRecordsFromCloud = async (records: unknown[]): Promi
  */
 export const replaceRecoveryLogsFromCloud = async (logs: unknown[]): Promise<void> => {
   await dbClear(LS.RECOVERY_LOGS);
-  await Promise.all(logs.map((log) => dbPut(LS.RECOVERY_LOGS, log)));
+  await Promise.all(logs.map((log) => dbPut(LS.RECOVERY_LOGS, log as object)));
 };
 
 /**
@@ -915,7 +942,7 @@ export const replaceRecoveryLogsFromCloud = async (logs: unknown[]): Promise<voi
  */
 export const replaceNutritionLogsFromCloud = async (logs: unknown[]): Promise<void> => {
   await dbClear(LS.NUTRITION_LOGS);
-  await Promise.all(logs.map((log) => dbPut(LS.NUTRITION_LOGS, log)));
+  await Promise.all(logs.map((log) => dbPut(LS.NUTRITION_LOGS, log as object)));
 };
 
 /**
@@ -923,7 +950,7 @@ export const replaceNutritionLogsFromCloud = async (logs: unknown[]): Promise<vo
  */
 export const replaceUserSettingsFromCloud = async (settings: unknown[]): Promise<void> => {
   await dbClear(LS.USER_SETTINGS);
-  await Promise.all(settings.map((s) => dbPut(LS.USER_SETTINGS, s)));
+  await Promise.all(settings.map((s) => dbPut(LS.USER_SETTINGS, s as object)));
 };
 
 /**
@@ -931,5 +958,134 @@ export const replaceUserSettingsFromCloud = async (settings: unknown[]): Promise
  */
 export const replaceAIConversationsFromCloud = async (conversations: unknown[]): Promise<void> => {
   await dbClear(STORES.AI_CONVERSATIONS);
-  await Promise.all(conversations.map((c) => dbPut(STORES.AI_CONVERSATIONS, c)));
+  await Promise.all(conversations.map((c) => dbPut(STORES.AI_CONVERSATIONS, c as object)));
 };
+
+// ==================== MERGE FROM CLOUD (non-destructive) ====================
+
+/**
+ * Merge workout templates from cloud - keeps the most recent version of each record.
+ * Unlike replace, this preserves local-only records and resolves conflicts by updatedAt timestamp.
+ */
+export const mergeWorkoutTemplatesFromCloud = async (
+  cloudTemplates: WorkoutTemplate[]
+): Promise<{ added: number; updated: number; kept: number }> => {
+  const localTemplates = await dbGetAll<WorkoutTemplate>(STORES.WORKOUT_TEMPLATES);
+  const localMap = new Map(localTemplates.map((t) => [t.id, t]));
+
+  let added = 0;
+  let updated = 0;
+  let kept = 0;
+
+  for (const cloud of cloudTemplates) {
+    const local = localMap.get(cloud.id);
+    if (!local) {
+      // New from cloud - add it
+      await dbPut(STORES.WORKOUT_TEMPLATES, cloud);
+      added++;
+    } else {
+      // Both exist - keep the newer one
+      const localTime = new Date(local.updatedAt || local.createdAt).getTime();
+      const cloudTime = new Date(cloud.updatedAt || cloud.createdAt || '').getTime();
+      if (cloudTime > localTime) {
+        await dbPut(STORES.WORKOUT_TEMPLATES, cloud);
+        updated++;
+      } else {
+        kept++;
+      }
+    }
+  }
+
+  return { added, updated, kept };
+};
+
+/**
+ * Merge workout sessions from cloud.
+ */
+export const mergeWorkoutSessionsFromCloud = async (
+  cloudSessions: WorkoutSession[]
+): Promise<{ added: number; updated: number; kept: number }> => {
+  const localSessions = await dbGetAll<WorkoutSession>(STORES.WORKOUT_SESSIONS);
+  const localMap = new Map(localSessions.map((s) => [s.id, s]));
+
+  let added = 0;
+  let updated = 0;
+  let kept = 0;
+
+  for (const cloud of cloudSessions) {
+    const local = localMap.get(cloud.id);
+    if (!local) {
+      await dbPut(STORES.WORKOUT_SESSIONS, cloud);
+      added++;
+    } else {
+      const localTime = new Date(local.updatedAt || local.createdAt).getTime();
+      const cloudTime = new Date(cloud.updatedAt || cloud.createdAt || '').getTime();
+      if (cloudTime > localTime) {
+        await dbPut(STORES.WORKOUT_SESSIONS, cloud);
+        updated++;
+      } else {
+        kept++;
+      }
+    }
+  }
+
+  return { added, updated, kept };
+};
+
+/**
+ * Generic merge for simple timestamped records.
+ */
+async function mergeGenericRecords<
+  T extends { id?: string; createdAt?: string; updatedAt?: string },
+>(storeName: string, cloudRecords: T[]): Promise<{ added: number; updated: number; kept: number }> {
+  const localRecords = await dbGetAll<T>(storeName);
+  const localMap = new Map(localRecords.map((r) => [String(r.id ?? ''), r]));
+
+  let added = 0;
+  let updated = 0;
+  let kept = 0;
+
+  for (const cloud of cloudRecords) {
+    const local = localMap.get(String(cloud.id ?? ''));
+    if (!local) {
+      await dbPut(storeName, cloud);
+      added++;
+    } else {
+      const localTime = new Date(local.updatedAt || local.createdAt || '').getTime();
+      const cloudTime = new Date(cloud.updatedAt || cloud.createdAt || '').getTime();
+      if (cloudTime > localTime) {
+        await dbPut(storeName, cloud);
+        updated++;
+      } else {
+        kept++;
+      }
+    }
+  }
+
+  return { added, updated, kept };
+}
+
+export const mergeBodyWeightFromCloud = (
+  entries: { id: string; createdAt?: string; updatedAt?: string }[]
+) => mergeGenericRecords(STORES.BODY_WEIGHT, entries);
+export const mergeBodyMeasurementsFromCloud = (
+  measurements: { id: string; createdAt?: string; updatedAt?: string }[]
+) => mergeGenericRecords(STORES.BODY_MEASUREMENTS, measurements);
+export const mergePersonalRecordsFromCloud = (
+  records: { id: string; createdAt?: string; updatedAt?: string }[]
+) => mergeGenericRecords(STORES.PERSONAL_RECORDS, records);
+export const mergeRecoveryLogsFromCloud = (
+  logs: { id: string; createdAt?: string; updatedAt?: string }[]
+) => mergeGenericRecords(STORES.RECOVERY_LOGS, logs);
+export const mergeNutritionLogsFromCloud = (
+  logs: { id: string; createdAt?: string; updatedAt?: string }[]
+) => mergeGenericRecords(STORES.NUTRITION_LOGS, logs);
+export const mergeUserSettingsFromCloud = (
+  settings: { id?: string; createdAt?: string; updatedAt?: string }[]
+) => mergeGenericRecords(STORES.USER_SETTINGS, settings);
+export const mergeAIConversationsFromCloud = (
+  conversations: { id: string; createdAt?: string; updatedAt?: string }[]
+) => mergeGenericRecords(STORES.AI_CONVERSATIONS, conversations);
+export const mergePersonalExercisesFromCloud = (
+  exercises: { id: string; createdAt?: string; updatedAt?: string }[]
+) => mergeGenericRecords(STORES.PERSONAL_EXERCISES, exercises);

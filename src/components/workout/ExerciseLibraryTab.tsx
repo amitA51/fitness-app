@@ -7,8 +7,8 @@ import { WORKOUT } from '../../constants';
 import * as dataService from '../../services/dataService';
 import type { CreatePersonalExerciseInput, PersonalExercise } from '../../types';
 import { AddIcon } from '../icons';
-import { ExerciseFilter } from './components/ExerciseFilter';
 import { DeleteConfirmDialog } from './components/DeleteConfirmDialog';
+import { ExerciseFilter } from './components/ExerciseFilter';
 import { ExerciseForm } from './components/ExerciseForm';
 import { ExerciseList } from './components/ExerciseList';
 
@@ -40,28 +40,29 @@ const getInitialFormData = (): FormData => ({
   notes: '',
 });
 
-const formDataToExerciseInput = (formData: FormData): CreatePersonalExerciseInput => ({
-  name: formData.name,
-  targetMuscle: formData.muscleGroup || 'Other',
-  secondaryMuscles: [],
-  equipment: '',
-  instructions: '',
-  videoUrl: null,
-  imageUrl: null,
-  isCustom: true,
-  isTimed: false,
-  muscleGroup: formData.muscleGroup || 'Other',
-  category: formData.category || 'strength',
-  tempo: formData.tempo || undefined,
-  tutorialText: formData.tutorialText || undefined,
-  defaultRestTime: formData.defaultRestTime,
-  defaultSets: formData.defaultSets,
-  notes: formData.notes || undefined,
-  userId: '',
-  lastWeight: null,
-  lastReps: null,
-  personalRecords: [],
-}) as CreatePersonalExerciseInput;
+const formDataToExerciseInput = (formData: FormData): CreatePersonalExerciseInput =>
+  ({
+    name: formData.name,
+    targetMuscle: formData.muscleGroup || 'Other',
+    secondaryMuscles: [],
+    equipment: '',
+    instructions: '',
+    videoUrl: null,
+    imageUrl: null,
+    isCustom: true,
+    isTimed: false,
+    muscleGroup: formData.muscleGroup || 'Other',
+    category: formData.category || 'strength',
+    tempo: formData.tempo || undefined,
+    tutorialText: formData.tutorialText || undefined,
+    defaultRestTime: formData.defaultRestTime,
+    defaultSets: formData.defaultSets,
+    notes: formData.notes || undefined,
+    userId: '',
+    lastWeight: null,
+    lastReps: null,
+    personalRecords: [],
+  }) as CreatePersonalExerciseInput;
 
 const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
   onSelect,
@@ -132,10 +133,7 @@ const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
   }, [exercises, searchQuery, selectedMuscleGroup, selectedCategory]);
 
   return (
-    <div
-      className="flex flex-col"
-      style={{ flex: 1, background: 'transparent' }}
-    >
+    <div className="flex flex-col" style={{ flex: 1, background: 'transparent' }}>
       <ExerciseFilter
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}

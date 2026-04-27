@@ -34,7 +34,7 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
     useEffect(() => {
       if (isOpen) {
         setText(currentNotes);
-        setTimeout(() => textAreaRef.current?.focus(), 300);
+        setTimeout(() => textAreaRef.current?.focus(), 200);
       }
     }, [isOpen, currentNotes]);
 
@@ -83,8 +83,8 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
           }}
         >
           {/* Drag Handle */}
-          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}>
-            <div style={{ width: 48, height: 4, background: 'rgba(20,41,61,0.2)', borderRadius: 2 }} />
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-8 h-1 rounded-full bg-ink/20 mx-auto mb-4" />
           </div>
 
           {/* Header */}

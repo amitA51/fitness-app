@@ -130,9 +130,9 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
               <div className="px-6 pt-6 pb-5">
                 {/* Exercise name */}
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+                  animate={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+                  transition={{ delay: shouldReduceMotion ? 0 : 0.1 }}
                 >
                   <span
                     style={{
@@ -162,9 +162,13 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
 
                 {/* Big number display */}
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
+                  initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.15, type: 'spring', stiffness: 200 }}
+                  transition={
+                    shouldReduceMotion
+                      ? { duration: 0 }
+                      : { delay: 0.15, type: 'spring', stiffness: 200 }
+                  }
                   className="mt-5 mb-5"
                 >
                   {/* Data strip style */}
@@ -175,7 +179,10 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       border: '2px solid rgba(var(--text-on-navy-rgb),0.15)',
                     }}
                   >
-                    <div className="text-center p-4" style={{ borderRight: '2px solid rgba(var(--text-on-navy-rgb),0.15)' }}>
+                    <div
+                      className="text-center p-4"
+                      style={{ borderRight: '2px solid rgba(var(--text-on-navy-rgb),0.15)' }}
+                    >
                       <div
                         style={{
                           fontFamily: 'var(--font-display)',
@@ -194,7 +201,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
                           letterSpacing: '0.22em',
-                          color: 'rgba(var(--text-on-navy-rgb),0.4)',
+                          color: 'rgba(var(--text-on-navy-rgb),0.6)',
                           textTransform: 'uppercase',
                           marginTop: 4,
                         }}
@@ -221,7 +228,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
                           letterSpacing: '0.22em',
-                          color: 'rgba(var(--text-on-navy-rgb),0.4)',
+                          color: 'rgba(var(--text-on-navy-rgb),0.6)',
                           textTransform: 'uppercase',
                           marginTop: 4,
                         }}
@@ -238,7 +245,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       fontFamily: 'var(--font-mono)',
                       fontSize: 11,
                       letterSpacing: '0.15em',
-                      color: 'rgba(var(--text-on-navy-rgb),0.35)',
+                      color: 'rgba(var(--text-on-navy-rgb),0.6)',
                       textTransform: 'uppercase',
                     }}
                   >
@@ -248,9 +255,9 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
 
                 {/* Actions */}
                 <motion.div
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25 }}
+                  transition={{ delay: shouldReduceMotion ? 0 : 0.25 }}
                   className="flex flex-col gap-2"
                 >
                   <button
@@ -296,7 +303,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       justifyContent: 'center',
                       padding: '12px 20px',
                       background: 'transparent',
-                      color: 'rgba(var(--text-on-navy-rgb),0.4)',
+                      color: 'rgba(var(--text-on-navy-rgb),0.7)',
                       border: 'none',
                       cursor: 'pointer',
                       fontFamily: 'var(--font-mono)',

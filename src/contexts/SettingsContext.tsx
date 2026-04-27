@@ -73,6 +73,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   soundEnabled: true,
   keepAwake: true,
   darkMode: false,
+  unitSystem: 'metric',
 };
 
 interface SettingsContextValue {

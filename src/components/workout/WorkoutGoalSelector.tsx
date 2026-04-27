@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import type { WorkoutGoal } from '../../types';
 
 interface WorkoutGoalSelectorProps {
@@ -14,15 +15,34 @@ const GOALS: Array<{ id: WorkoutGoal; label: string; description: string }> = [
 ];
 
 export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSelectorProps) {
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-[100] bg-[rgba(11,26,43,0.6)] backdrop-blur-[8px] flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-[100] bg-[rgba(11,26,43,0.6)] backdrop-blur-[8px] flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="goal-selector-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="w-full max-w-md bg-bone border-2 border-navy shadow-navy overflow-hidden">
         {/* Masthead */}
         <div className="masthead">
           <div className="flex items-start justify-between gap-4">
             <div>
               <span className="kicker">§01 · בחר מטרה</span>
-              <h2 className="mt-2 text-3xl font-black uppercase tracking-tight leading-none">
+              <h2
+                id="goal-selector-title"
+                className="mt-2 text-3xl font-black uppercase tracking-tight leading-none"
+              >
                 מה מטרת האימון?
               </h2>
             </div>
@@ -41,11 +61,13 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                 key={goal.id}
                 type="button"
                 onClick={() => onSelect(goal.id)}
+                aria-label={`${goal.label}: ${goal.description}`}
                 className="w-full group text-right transition-all duration-150 ease-out"
                 style={{
                   background: 'var(--bone)',
                   border: '2px solid var(--navy)',
                   padding: '16px 20px',
+                  minHeight: 56,
                   cursor: 'pointer',
                 }}
                 onMouseEnter={(e) => {
@@ -66,13 +88,21 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                   <div className="flex-1">
                     <div
                       className="text-lg font-bold uppercase"
-                      style={{ fontFamily: 'var(--font-display)', color: 'var(--ink)', letterSpacing: '0.02em' }}
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        color: 'var(--ink)',
+                        letterSpacing: '0.02em',
+                      }}
                     >
                       {goal.label}
                     </div>
                     <div
                       className="text-xs mt-0.5"
-                      style={{ fontFamily: 'var(--font-mono)', color: 'var(--stone)', letterSpacing: '0.05em' }}
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        color: 'var(--stone)',
+                        letterSpacing: '0.05em',
+                      }}
                     >
                       {goal.description}
                     </div>
@@ -80,7 +110,12 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                   {/* Arrow */}
                   <span className="text-navy opacity-0 group-hover:opacity-100 transition-opacity">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <path d="M8 4L14 10L8 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square" />
+                      <path
+                        d="M8 4L14 10L8 16"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="square"
+                      />
                     </svg>
                   </span>
                 </div>

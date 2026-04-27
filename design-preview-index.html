@@ -6,7 +6,7 @@
 <title>Design Previews — Pick one</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,900&family=Instrument+Sans:wght@400;700&family=Instrument+Serif:ital@0;1&family=Big+Shoulders+Display:wght@900&family=Geist+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,900&family=Instrument+Sans:wght@400;700&family=Instrument+Serif:ital@0;1&family=Big+Shoulders+Display:wght@900&family=Geist+Mono:wght@400;500&family=Inter:wght@400;500&family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -188,6 +188,66 @@
   }
   .c3 .sample-text em { color: #B85A2C; font-style: normal; }
 
+  /* ══ Card 05: Concrete Lab ══ */
+  .c5 {
+    background: #E5E3DE;
+    background-image:
+      linear-gradient(#9A978E 1px, transparent 1px),
+      linear-gradient(90deg, #9A978E 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: -1px -1px;
+  }
+  .c5::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #C8FF2E;
+  }
+  .c5 .num { color: #5A5954; }
+  .c5 h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 36px;
+    color: #141412;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    line-height: 1;
+  }
+  .c5 h2 em { color: #141412; background: #C8FF2E; font-style: normal; padding: 0 6px; }
+  .c5 .tagline { color: #5A5954; }
+  .c5 .sample {
+    border-top: 1px solid #9A978E;
+  }
+  .c5 .sample-label { color: #5A5954; }
+  .c5 .sample-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 80px;
+    color: #141412;
+    letter-spacing: -0.05em;
+    line-height: 0.85;
+    display: inline-block;
+    padding: 4px 10px;
+    background: #CFCCC4;
+    box-shadow:
+      inset 0 2px 0 rgba(20,20,18,0.08),
+      inset 0 -1px 0 rgba(255,255,255,0.22);
+  }
+  .c5 .sample-text em {
+    font-style: normal;
+    color: #141412;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 40px;
+    font-weight: 800;
+    vertical-align: 16px;
+    margin-left: 6px;
+  }
+  .c5 .sig-row { color: #5A5954; }
+  .c5 .arrow { color: #141412; }
+
   /* ══ Card 04: Sport Annual ══ */
   .c4 { background: #F5F1EB; }
   .c4 h2 {
@@ -239,10 +299,10 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="kicker">Design concepts · 4 options · 19.04.26</div>
+  <div class="kicker">Design concepts · 5 options · 23.04.26</div>
   <h1>Pick one.</h1>
   <p class="intro">
-    Four clean, light-background directions for the fitness app. Each has its own soul, color, typography, and signature elements. Click any card to see its full preview. When you've decided, tell me the number.
+    Five clean, light-background directions for the fitness app. Each has its own soul, color, typography, and signature elements. Click any card to see its full preview. When you've decided, tell me the number.
   </p>
 
   <div class="grid">
@@ -329,6 +389,29 @@
       </div>
       <div class="sig-row">
         oversized condensed display · chapter breaks · color blocks · mustard ribbon · magazine hierarchy
+      </div>
+      <div class="arrow">→ View preview</div>
+    </a>
+
+    <a class="card c5" href="design-preview-brutalist.html">
+      <div class="num">05 / New</div>
+      <div class="swatch-row">
+        <div style="background: #E5E3DE"></div>
+        <div style="background: #CFCCC4"></div>
+        <div style="background: #9A978E"></div>
+        <div style="background: #5A5954"></div>
+        <div style="background: #2B2A27"></div>
+        <div style="background: #141412"></div>
+        <div style="background: #C8FF2E"></div>
+      </div>
+      <h2>CONCRETE <em>LAB.</em></h2>
+      <div class="tagline">[BLOCK/05] · Concrete + Graphite + Hazard</div>
+      <div class="sample">
+        <div class="sample-label">[FIG/05.A] · Engraved display</div>
+        <div class="sample-text">46,200<em>KG</em></div>
+      </div>
+      <div class="sig-row">
+        exposed 4-col grid · [BLOCK/NN] scaffolding labels · engraved numbers · hazard bars · raw rule lines · zero radius
       </div>
       <div class="arrow">→ View preview</div>
     </a>

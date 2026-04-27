@@ -50,19 +50,19 @@ export function WeeklyStatsBlock({
       >
         <div className="ribbon">THIS WEEK</div>
         <div className="label">אימונים</div>
-        <div className="number">{String(workoutsThisWeek).padStart(2, '0')}</div>
-        <div className="sub">
+        <div className="number tabular-nums">{String(workoutsThisWeek).padStart(2, '0')}</div>
+        <div className="sub tabular-nums">
           מתוך {weeklyGoal} · {pct}% יעד
         </div>
       </button>
 
       <div className="data-strip" style={{ marginTop: 2 }}>
         <div>
-          <div className="val">{volumeFormatted || '—'}</div>
+          <div className="val tabular-nums">{volumeFormatted || '—'}</div>
           <div className="lbl">kg volume</div>
         </div>
         <div>
-          <div className="val">{volDeltaFormatted}</div>
+          <div className="val tabular-nums">{volDeltaFormatted}</div>
           <div className="lbl">vs last week</div>
         </div>
       </div>

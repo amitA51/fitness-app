@@ -3,12 +3,50 @@ import { AnimatePresence, Reorder, motion } from 'framer-motion';
 // Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
 import type React from 'react';
 import { useState } from 'react';
-import type {
-  Exercise,
-  PersonalExercise,
-  WorkoutTemplate,
-  WorkoutTemplateExercise,
-} from '../../types';
+import type { PersonalExercise, WorkoutTemplate, WorkoutTemplateExercise } from '../../types';
+
+// In-flight editor shape — minimal subset used only within this modal
+type PlanEditorExercise = {
+  id: string;
+  name: string;
+  sets: { reps: number; weight: number }[];
+  muscleGroup?: string;
+  targetRestTime?: number;
+  tempo?: string;
+  notes?: string;
+};
+
+function templateExToEditorEx(ex: WorkoutTemplateExercise): PlanEditorExercise {
+  return {
+    id: ex.id,
+    name: ex.exerciseName,
+    sets: ex.sets ?? [],
+    muscleGroup: ex.muscleGroup,
+    targetRestTime: ex.targetRestTime ?? ex.restSeconds,
+    tempo: ex.tempo,
+    notes: ex.notes,
+  };
+}
+
+function editorExToTemplateEx(ex: PlanEditorExercise): WorkoutTemplateExercise {
+  return {
+    id: ex.id,
+    exerciseId: ex.id,
+    exerciseName: ex.name,
+    name: ex.name,
+    targetMuscle: ex.muscleGroup ?? '',
+    muscleGroup: ex.muscleGroup,
+    targetSets: 3,
+    targetReps: 10,
+    targetWeight: null,
+    restSeconds: ex.targetRestTime ?? 90,
+    targetRestTime: ex.targetRestTime,
+    order: 0,
+    notes: ex.notes ?? '',
+    sets: ex.sets,
+    tempo: ex.tempo,
+  };
+}
 import { logger } from '../../utils/logger';
 import { AddIcon, CloseIcon, DumbbellIcon, TrashIcon } from '../icons';
 import { ModalOverlay } from '../ui/ModalOverlay';
@@ -39,17 +77,17 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
   initialPlan,
 }) => {
   const [name, setName] = useState(initialPlan?.name || '');
-  const [exercises, setExercises] = useState<Exercise[]>(
-    (initialPlan?.exercises || []) as unknown as Exercise[]
+  const [exercises, setExercises] = useState<PlanEditorExercise[]>(
+    (initialPlan?.exercises ?? []).map(templateExToEditorEx)
   );
   const [showLibrary, setShowLibrary] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleAddExercise = (personalExercise: PersonalExercise) => {
-    const newExercise: Exercise = {
+    const newExercise: PlanEditorExercise = {
       id: `ex-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-      name: personalExercise.name,
-      sets: Array(personalExercise.defaultSets || 3).fill({
+      name: personalExercise.name ?? '',
+      sets: Array<{ reps: number; weight: number }>(personalExercise.defaultSets || 3).fill({
         reps: 10,
         weight: 0,
       }),
@@ -74,7 +112,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
     try {
       await onSave({
         name,
-        exercises: exercises as unknown as WorkoutTemplateExercise[],
+        exercises: exercises.map(editorExToTemplateEx),
         muscleGroups: Array.from(
           new Set(exercises.map((e) => e.muscleGroup).filter(Boolean) as string[])
         ),

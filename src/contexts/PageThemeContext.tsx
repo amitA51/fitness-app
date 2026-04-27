@@ -196,20 +196,26 @@ export function PageThemeProvider({ children, page }: PageThemeProviderProps) {
       styles.push(
         ['--accent-gradient-from', theme.colors.gradient.from],
         ['--accent-gradient-to', theme.colors.gradient.to],
-        ['--dynamic-accent-end', theme.colors.gradient.to],
+        ['--dynamic-accent-end', theme.colors.gradient.to]
       );
     }
 
-    // Use cssText for single DOM write instead of multiple setProperty calls
-    const cssVars = styles.map(([prop, val]) => `${prop}:${val}`).join(';');
-    root.style.cssText += `;${cssVars}`;
+    // Use setProperty for individual vars to avoid cssText accumulation
+    for (const [prop, val] of styles) {
+      root.style.setProperty(prop, val);
+    }
 
     // Update page class
     const pageClass = `page-${page}`;
     if (!root.classList.contains(pageClass)) {
       root.classList.remove(
-        'page-dashboard', 'page-workout', 'page-nutrition',
-        'page-history', 'page-progress', 'page-templates', 'page-settings'
+        'page-dashboard',
+        'page-workout',
+        'page-nutrition',
+        'page-history',
+        'page-progress',
+        'page-templates',
+        'page-settings'
       );
       root.classList.add(pageClass);
     }

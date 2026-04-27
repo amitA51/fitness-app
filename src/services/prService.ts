@@ -4,7 +4,7 @@
 
 import type { PersonalRecord, WorkoutSession } from '../types';
 import { safeJsonParseOr } from '../utils/safeJson';
-import { STORES, dbDelete, dbGetAll, dbGetByIndex, dbPut, syncWithRetry } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudPersonalRecord, syncPersonalRecord } from './supabaseSync';
 
@@ -14,9 +14,67 @@ export type { PersonalRecord };
 // IndexedDB PR Operations
 // ============================================================================
 
-// Get all PRs for a specific exercise
+// Local helper: index lookup using IDBKeyRange.only so we hit the `exerciseId`
+// index directly without scanning the full personal_records store. Kept in this
+// file (not added to indexedDBCore) because the shared `dbGetByIndex` helper
+// only accepts IDBValidKey and another agent may be editing that module.
+const dbGetByIndexRange = <T>(
+  storeName: string,
+  indexName: string,
+  range: IDBKeyRange
+): Promise<T[]> =>
+  initDB().then(
+    (db) =>
+      new Promise<T[]>((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readonly');
+        const store = tx.objectStore(storeName);
+        const index = store.index(indexName);
+        const request = index.getAll(range);
+        request.onsuccess = () => resolve(request.result as T[]);
+        request.onerror = () => reject(request.error);
+      })
+  );
+
+// Get all PRs for a specific exercise.
+// Uses the `exerciseId` index on STORES.PERSONAL_RECORDS with IDBKeyRange.only(exerciseId),
+// so this is an index seek, not a full store scan.
 export const getPRsForExercise = async (exerciseId: string): Promise<PersonalRecord[]> => {
-  return dbGetByIndex<PersonalRecord>(STORES.PERSONAL_RECORDS, 'exerciseId', exerciseId);
+  return dbGetByIndexRange<PersonalRecord>(
+    STORES.PERSONAL_RECORDS,
+    'exerciseId',
+    IDBKeyRange.only(exerciseId)
+  );
+};
+
+// Batched: fetch PRs for multiple exercises in a single readonly transaction.
+// Deduplicates ids and does one index lookup per unique exerciseId inside ONE tx,
+// instead of N separate transactions (one per set) as the old per-set loop did.
+// Returns a Map keyed by exerciseId -> PR[] (missing ids map to []).
+export const getPRsForMultipleExercises = async (
+  exerciseIds: string[]
+): Promise<Map<string, PersonalRecord[]>> => {
+  const result = new Map<string, PersonalRecord[]>();
+  const uniqueIds = Array.from(new Set(exerciseIds.filter((id) => !!id)));
+  if (uniqueIds.length === 0) return result;
+
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORES.PERSONAL_RECORDS, 'readonly');
+    const store = tx.objectStore(STORES.PERSONAL_RECORDS);
+    const index = store.index('exerciseId');
+
+    uniqueIds.forEach((id) => {
+      const req = index.getAll(IDBKeyRange.only(id));
+      req.onsuccess = () => {
+        result.set(id, (req.result as PersonalRecord[]) ?? []);
+      };
+      req.onerror = () => reject(req.error);
+    });
+
+    tx.oncomplete = () => resolve(result);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
 };
 
 // Save a new PR to IndexedDB
@@ -56,22 +114,23 @@ export const deletePR = async (prId: string): Promise<void> => {
   }
 };
 
-// Check if a completed set is a new PR - this is the key real-time detection function
-export const checkForNewPR = async (
+// Internal: diff a completed set against an in-memory list of existing PRs
+// for that exercise. Pure function — no IO. Returns a newly-broken PR or null,
+// plus the updated PR list so a caller iterating sets can keep state in sync
+// without re-hitting IndexedDB between sets.
+const diffSetAgainstPRs = (
   exerciseId: string,
   exerciseName: string,
   weight: number,
-  reps: number
-): Promise<PersonalRecord | null> => {
-  if (weight <= 0 || reps <= 0) return null;
+  reps: number,
+  existingPRs: PersonalRecord[]
+): { newPR: PersonalRecord | null; nextPRs: PersonalRecord[] } => {
+  if (weight <= 0 || reps <= 0) return { newPR: null, nextPRs: existingPRs };
 
-  const existingPRs = await getPRsForExercise(exerciseId);
   const volume = weight * reps;
   const est1RM = weight * (1 + reps / 30); // Epley formula
-
   let newPR: PersonalRecord | null = null;
 
-  // Check weight PR
   const weightPR = existingPRs.find((pr) => pr.type === 'weight');
   if (!weightPR || weight > weightPR.weight) {
     newPR = {
@@ -87,7 +146,6 @@ export const checkForNewPR = async (
     };
   }
 
-  // Check volume PR
   const volumePR = existingPRs.find((pr) => pr.type === 'volume');
   if (!volumePR || volume > (volumePR.maxWeight || 0) * (volumePR.reps || 0)) {
     const pr: PersonalRecord = {
@@ -101,16 +159,86 @@ export const checkForNewPR = async (
       maxWeight: weight,
       oneRepMax: est1RM,
     };
-    // If we already found a weight PR, only replace with volume PR if volume PR is "more impressive"
-    // Actually, return the best one. If both are new, prefer weight PR.
     if (!newPR) newPR = pr;
   }
+
+  const nextPRs = newPR ? [...existingPRs, newPR] : existingPRs;
+  return { newPR, nextPRs };
+};
+
+// Check if a completed set is a new PR - this is the key real-time detection function.
+// Single-call variant: does one index lookup for `exerciseId`, diffs, persists if needed.
+export const checkForNewPR = async (
+  exerciseId: string,
+  exerciseName: string,
+  weight: number,
+  reps: number
+): Promise<PersonalRecord | null> => {
+  if (weight <= 0 || reps <= 0) return null;
+
+  const existingPRs = await getPRsForExercise(exerciseId);
+  const { newPR } = diffSetAgainstPRs(exerciseId, exerciseName, weight, reps, existingPRs);
 
   if (newPR) {
     await savePR(newPR);
   }
-
   return newPR;
+};
+
+// Batched PR checker: preload PRs for all exercises touched in a workout in ONE
+// transaction, then diff each set in-memory. Replaces the previous per-set
+// pattern (10 exercises × 4 sets = 40 IDB transactions) with 1 read transaction
+// + at most one write per actually-broken PR.
+//
+// Usage:
+//   const checker = await createBatchedPRChecker(exerciseIds);
+//   for (const set of sets) {
+//     const pr = await checker.checkSet(exerciseId, exerciseName, weight, reps);
+//     if (pr) showToast(pr);
+//   }
+export interface BatchedPRChecker {
+  checkSet: (
+    exerciseId: string,
+    exerciseName: string,
+    weight: number,
+    reps: number
+  ) => Promise<PersonalRecord | null>;
+}
+
+export const createBatchedPRChecker = async (exerciseIds: string[]): Promise<BatchedPRChecker> => {
+  const cache = await getPRsForMultipleExercises(exerciseIds);
+
+  const checkSet = async (
+    exerciseId: string,
+    exerciseName: string,
+    weight: number,
+    reps: number
+  ): Promise<PersonalRecord | null> => {
+    if (weight <= 0 || reps <= 0) return null;
+
+    // Lazy-load any exercise we didn't preload (e.g. user added an exercise mid-workout).
+    let existingPRs = cache.get(exerciseId);
+    if (!existingPRs) {
+      existingPRs = await getPRsForExercise(exerciseId);
+      cache.set(exerciseId, existingPRs);
+    }
+
+    const { newPR, nextPRs } = diffSetAgainstPRs(
+      exerciseId,
+      exerciseName,
+      weight,
+      reps,
+      existingPRs
+    );
+
+    if (newPR) {
+      cache.set(exerciseId, nextPRs);
+      await savePR(newPR);
+    }
+    return newPR;
+  };
+
+  return { checkSet };
 };
 
 // ============================================================================

@@ -1,6 +1,6 @@
 /* ============================================================================
-   SPORT ANNUAL — Global Styles
-   Bold · Editorial · Confident · Narrative · Printed
+   SPARKOS FITNESS — Global Styles
+   Disciplined · Athletic · Data-driven · Direct · Energetic
    ============================================================================ */
 
 /* Tailwind CSS */
@@ -32,6 +32,8 @@ body {
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  line-height: 1.65;
 }
 
 .app-shell {
@@ -81,17 +83,17 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(20, 41, 61, 0.15);
+  background: rgba(var(--ink-rgb), 0.15);
   border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(20, 41, 61, 0.25);
+  background: rgba(var(--ink-rgb), 0.25);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(20, 41, 61, 0.15) transparent;
+  scrollbar-color: rgba(var(--ink-rgb), 0.15) transparent;
 }
 
 /* ============================================================================
@@ -122,8 +124,7 @@ body {
     border-radius: 0;
     padding: var(--space-5);
     cursor: pointer;
-    transition: background-color var(--duration-base) ease,
-      transform var(--duration-fast) ease;
+    transition: background-color var(--duration-base) ease, transform var(--duration-fast) ease;
   }
 
   .card-interactive:hover {
@@ -147,8 +148,7 @@ body {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: background-color var(--duration-fast) ease,
-      transform var(--duration-fast) ease;
+    transition: background-color var(--duration-fast) ease, transform var(--duration-fast) ease;
     min-height: 52px;
   }
 
@@ -179,8 +179,7 @@ body {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: background-color var(--duration-base) ease,
-      transform var(--duration-fast) ease;
+    transition: background-color var(--duration-base) ease, transform var(--duration-fast) ease;
     min-height: 52px;
   }
 
@@ -204,8 +203,7 @@ body {
     font-size: 0.9375rem;
     outline: none;
     min-height: 48px;
-    transition: border-color var(--duration-base) ease,
-      box-shadow var(--duration-base) ease;
+    transition: border-color var(--duration-base) ease, box-shadow var(--duration-base) ease;
   }
 
   .input::placeholder {
@@ -214,7 +212,7 @@ body {
 
   .input:focus {
     border-color: var(--navy);
-    box-shadow: 0 0 0 3px rgba(232, 184, 45, 0.3);
+    box-shadow: 0 0 0 3px var(--color-secondary-glow);
   }
 
   /* Badge / Pill */
@@ -714,19 +712,19 @@ body {
   }
 
   .safe-area-top {
-    padding-top: env(safe-area-inset-top);
+    padding-top: env(safe-area-inset-top, 0px);
   }
 
   .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .safe-area-left {
-    padding-left: env(safe-area-inset-left);
+    padding-left: env(safe-area-inset-left, 0px);
   }
 
   .safe-area-right {
-    padding-right: env(safe-area-inset-right);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   .no-scrollbar {
@@ -876,4 +874,249 @@ main > * {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
+}
+
+/* ============================================================================
+   VIEW TRANSITIONS API
+   ============================================================================ */
+
+/* View Transitions API styles - smooth page transitions */
+@supports (view-transition-name: none) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: var(--vt-duration, 250ms);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Fade + slide for page transitions */
+  ::view-transition-old(root) {
+    animation-name: vt-fade-out;
+  }
+
+  ::view-transition-new(root) {
+    animation-name: vt-fade-in;
+  }
+
+  @keyframes vt-fade-out {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(-6px); }
+  }
+
+  @keyframes vt-fade-in {
+    from { opacity: 0; transform: translateX(6px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* RTL support */
+  [dir="rtl"] ::view-transition-old(root) {
+    animation-name: vt-fade-out-rtl;
+  }
+
+  [dir="rtl"] ::view-transition-new(root) {
+    animation-name: vt-fade-in-rtl;
+  }
+
+  @keyframes vt-fade-out-rtl {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(6px); }
+  }
+
+  @keyframes vt-fade-in-rtl {
+    from { opacity: 0; transform: translateX(-6px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Shared element transitions */
+  ::view-transition-old(card-hero),
+  ::view-transition-new(card-hero) {
+    animation-duration: 350ms;
+    animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  ::view-transition-old(workout-set),
+  ::view-transition-new(workout-set) {
+    animation-duration: 200ms;
+  }
+
+  ::view-transition-old(slide-up),
+  ::view-transition-new(slide-up) {
+    animation-duration: 300ms;
+  }
+}
+
+/* Fallback for browsers without View Transitions API */
+@supports not (view-transition-name: none) {
+  main > * {
+    animation: page-fade-in 150ms ease-out;
+  }
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================================
+   SWIPE GESTURES
+   ============================================================================ */
+
+/* Swipeable list item base */
+.swipeable-item {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.swipeable-content {
+  position: relative;
+  z-index: 1;
+  background: inherit;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.swipeable-actions {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.swipeable-actions-left {
+  left: 0;
+  padding-left: 12px;
+  background: linear-gradient(to right, var(--color-success), transparent);
+}
+
+.swipeable-actions-right {
+  right: 0;
+  padding-right: 12px;
+  background: linear-gradient(to left, var(--color-danger), transparent);
+}
+
+.swipeable-item[data-swipe="left"] .swipeable-actions-left,
+.swipeable-item[data-swipe="right"] .swipeable-actions-right {
+  opacity: 1;
+}
+
+.swipeable-item[data-swipe="left"] .swipeable-content {
+  transform: translateX(80px);
+}
+
+.swipeable-item[data-swipe="right"] .swipeable-content {
+  transform: translateX(-80px);
+}
+
+/* ============================================================================
+   MOBILE KEYBOARD HANDLING
+   ============================================================================ */
+
+/* Prevent layout shift when keyboard opens */
+.app-shell {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure inputs are visible when keyboard opens */
+input:focus-visible,
+textarea:focus-visible {
+  position: relative;
+  z-index: 100;
+}
+
+/* Visual viewport height for mobile */
+@supports (height: 100dvh) {
+  .app-shell {
+    height: 100dvh;
+  }
+}
+
+/* ============================================================================
+   MOBILE TOUCH OPTIMIZATIONS
+   ============================================================================ */
+
+/* Active states for touch */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets on mobile */
+  .touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Prevent double-tap zoom */
+  .no-double-tap-zoom {
+    touch-action: manipulation;
+  }
+
+  /* Smooth scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Disable text selection on interactive elements */
+  button,
+  [role="button"],
+  .btn,
+  .nav-item {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* ============================================================================
+   MOBILE SCROLL PERFORMANCE
+   ============================================================================ */
+
+/* Momentum scrolling for iOS */
+.scroll-momentum {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: auto;
+}
+
+/* Snap scrolling for carousels */
+.scroll-snap {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll-snap > * {
+  scroll-snap-align: start;
+}
+
+/* ============================================================================
+   BOTTOM SHEET ENHANCEMENTS
+   ============================================================================ */
+
+/* Improved drag handle for bottom sheets */
+.bottom-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(var(--ink-rgb), 0.2);
+  border-radius: 2px;
+  cursor: grab;
+  transition: background 150ms ease;
+}
+
+.bottom-sheet-handle:active {
+  cursor: grabbing;
+  background: rgba(var(--ink-rgb), 0.4);
+}
+
+/* Backdrop blur for modals */
+.backdrop-blur-modal {
+  backdrop-filter: blur(8px) saturate(1.2);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
 }

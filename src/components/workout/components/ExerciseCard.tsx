@@ -19,60 +19,53 @@ interface ExerciseCardProps {
   onDelete?: (exercise: PersonalExercise, e: React.MouseEvent) => void;
 }
 
+const NAME_PRIMARY_STYLE: React.CSSProperties = {
+  fontFamily: 'var(--font-display)',
+  fontWeight: 800,
+  fontSize: 15,
+  color: 'var(--navy)',
+  lineHeight: 1.1,
+  display: 'block',
+};
+
+const NAME_SECONDARY_STYLE: React.CSSProperties = {
+  fontFamily: 'var(--font-mono)',
+  fontSize: 10,
+  letterSpacing: '0.1em',
+  color: 'var(--stone)',
+  textTransform: 'uppercase',
+};
+
+const NAME_SOLO_STYLE: React.CSSProperties = {
+  fontFamily: 'var(--font-display)',
+  fontWeight: 800,
+  fontSize: 15,
+  color: 'var(--navy)',
+  lineHeight: 1.1,
+};
+
+// Hoisted out of the component body — pure function of `name`. Avoids
+// re-creating a closure for every card on every scroll repaint.
+function renderExerciseName(name: string) {
+  if (name.includes('|')) {
+    const [first = '', second = ''] = name.split('|').map((s) => s.trim());
+    const firstIsHebrew = hasHebrew(first);
+    return (
+      <div style={{ textAlign: 'right' }}>
+        <span style={NAME_PRIMARY_STYLE}>{firstIsHebrew ? first : second}</span>
+        <span style={NAME_SECONDARY_STYLE}>{firstIsHebrew ? second : first}</span>
+      </div>
+    );
+  }
+  return <span style={NAME_SOLO_STYLE}>{name}</span>;
+}
+
 const ExerciseCard: React.FC<ExerciseCardProps> = memo(
   ({ exercise, isSelectionMode = false, selectedIds, onClick, onDelete }) => {
-    const renderExerciseName = (name: string) => {
-      if (name.includes('|')) {
-        const [first = '', second = ''] = name.split('|').map((s) => s.trim());
-        const firstIsHebrew = hasHebrew(first);
-        return (
-          <div style={{ textAlign: 'right' }}>
-            <span
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 15,
-                color: 'var(--navy)',
-                lineHeight: 1.1,
-                display: 'block',
-              }}
-            >
-              {firstIsHebrew ? first : second}
-            </span>
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '0.1em',
-                color: 'var(--stone)',
-                textTransform: 'uppercase',
-              }}
-            >
-              {firstIsHebrew ? second : first}
-            </span>
-          </div>
-        );
-      }
-      return (
-        <span
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            fontSize: 15,
-            color: 'var(--navy)',
-            lineHeight: 1.1,
-          }}
-        >
-          {name}
-        </span>
-      );
-    };
-
     const isSelected = selectedIds?.has(exercise.id);
 
     return (
       <motion.div
-        layoutId={`ex-${exercise.id}`}
         key={exercise.id}
         onClick={() => onClick?.(exercise)}
         style={{
@@ -131,11 +124,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                   stroke={isSelected ? 'var(--mustard)' : 'var(--navy)'}
                   strokeWidth={3}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </motion.svg>
               )}
             </AnimatePresence>
@@ -225,6 +214,11 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
               onClick={(e) => onDelete(exercise, e)}
               style={{
                 padding: 8,
+                minWidth: 44,
+                minHeight: 44,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',

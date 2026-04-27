@@ -4,7 +4,7 @@
 import { motion } from 'framer-motion';
 import type React from 'react';
 import { memo, useEffect, useState } from 'react';
-import { CheckCircleIcon, TrendingUp } from '../../icons';
+import { TrendingUp } from '../../icons';
 
 export interface ComparisonData {
   prevVolume: number;
@@ -139,7 +139,11 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
               letterSpacing: '0.1em',
             }}
           >
-            {isSame ? '≈' : isImprovement ? `+${Math.abs(change).toFixed(0)}%` : `-${Math.abs(change).toFixed(0)}%`}
+            {isSame
+              ? '≈'
+              : isImprovement
+                ? `+${Math.abs(change).toFixed(0)}%`
+                : `-${Math.abs(change).toFixed(0)}%`}
           </div>
           <div
             style={{
@@ -150,7 +154,8 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
               direction: 'ltr',
             }}
           >
-            {previous.toLocaleString()}{unit}
+            {previous.toLocaleString()}
+            {unit}
           </div>
         </div>
       </motion.div>

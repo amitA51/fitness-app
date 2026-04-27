@@ -2,7 +2,7 @@
 // Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import type React from 'react';
 import { memo, useMemo, useState } from 'react';
 import {
@@ -18,6 +18,7 @@ interface ForecastChartProps {
 
 const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
   const [selectedExercise, setSelectedExercise] = useState<string>('');
+  const shouldReduceMotion = useReducedMotion();
 
   const exerciseNames = useMemo(() => {
     return getAllExerciseNames(sessions);
@@ -47,8 +48,13 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
     const maxVolume = Math.max(...volumes, 1);
 
     return progression.map((point, i) => ({
-      x: padding.left + (i / Math.max(progression.length - 1, 1)) * (chartWidth - padding.left - padding.right),
-      y: chartHeight - padding.bottom - (point.volume / maxVolume) * (chartHeight - padding.top - padding.bottom),
+      x:
+        padding.left +
+        (i / Math.max(progression.length - 1, 1)) * (chartWidth - padding.left - padding.right),
+      y:
+        chartHeight -
+        padding.bottom -
+        (point.volume / maxVolume) * (chartHeight - padding.top - padding.bottom),
       data: point,
     }));
   }, [progressionData, chartWidth, chartHeight]);
@@ -63,7 +69,11 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
 
     return {
       x: chartWidth - padding.right,
-      y: chartHeight - padding.bottom - (progressionData.forecast.predicted / maxVolume) * (chartHeight - padding.top - padding.bottom),
+      y:
+        chartHeight -
+        padding.bottom -
+        (progressionData.forecast.predicted / maxVolume) *
+          (chartHeight - padding.top - padding.bottom),
     };
   }, [progressionData, chartPoints, chartWidth, chartHeight]);
 
@@ -158,7 +168,15 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
       {/* Chart */}
       {selectedExercise && progressionData && chartPoints.length > 0 && (
         <div style={{ position: 'relative' }}>
-          <svg width={chartWidth} height={chartHeight} style={{ overflow: 'visible' }}>
+          <svg
+            width={chartWidth}
+            height={chartHeight}
+            style={{ overflow: 'visible' }}
+            role="img"
+            aria-label={`תחזית התקדמות עבור ${selectedExercise}`}
+          >
+            <title>תחזית התקדמות</title>
+            <desc>{`גרף התקדמות נפח לאורך זמן עבור התרגיל ${selectedExercise}, כולל תחזית עתידית`}</desc>
             {/* Grid lines */}
             {[0, 0.5, 1].map((level, i) => (
               <line
@@ -190,9 +208,9 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
               strokeWidth={3}
               strokeLinecap="square"
               strokeLinejoin="miter"
-              initial={{ pathLength: 0 }}
+              initial={shouldReduceMotion ? false : { pathLength: 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ duration: 1, ease: 'easeOut' }}
+              transition={{ duration: shouldReduceMotion ? 0 : 1, ease: 'easeOut' }}
             />
 
             {/* Data points */}
@@ -205,9 +223,13 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                 fill="var(--mustard)"
                 stroke="var(--navy)"
                 strokeWidth={2}
-                initial={{ scale: 0 }}
+                initial={shouldReduceMotion ? false : { scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ delay: 0.5 + i * 0.1, type: 'spring', stiffness: 200 }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { delay: 0.5 + i * 0.1, type: 'spring', stiffness: 200 }
+                }
               />
             ))}
 

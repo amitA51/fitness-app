@@ -1,27 +1,24 @@
 /**
  * SparkOS Fitness — Dashboard
- * "Sport Annual" Editorial Design
- * Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
+ * SparkOS Fitness — Training Log Design
+ * Deep green · Volt · Chalk · Big Shoulders Display + IBM Plex Mono
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChapterBreak } from '../components/dashboard/ChapterBreak';
-import { Greeting } from '../components/dashboard/Greeting';
-import { logger } from '../utils/logger';
-import { ImprovementScore } from '../components/dashboard/ImprovementScore';
+import { DashboardHeader } from '../components/dashboard/DashboardHeader';
+import { RecentPRBanner } from '../components/dashboard/RecentPRBanner';
 import { RecentWorkouts } from '../components/dashboard/RecentWorkouts';
 import { TemplateQuickStart, TemplateStrip } from '../components/dashboard/TemplateQuickStart';
 import { WeeklyGrid } from '../components/dashboard/WeeklyGrid';
 import { WeeklyStatsBlock } from '../components/dashboard/WeeklyStatsBlock';
-import { ForecastNudge } from '../components/dashboard/ForecastNudge';
 import { useData } from '../contexts/DataContext';
 import { useFitnessInsights } from '../hooks/fitness/useFitnessInsights';
-import { useProgressionRecommendation } from '../hooks/fitness/useProgressionRecommendation';
-import { getWorkoutTemplates } from '../services/workoutDb';
-import type { WorkoutSession, WorkoutTemplate } from '../types';
-import { getWeekNumber, getWeekStart, pad2 } from '../utils/dateUtils';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { getWorkoutTemplates } from '../services/workoutDb';
+import type { WorkoutTemplate } from '../types';
+import { getWeekNumber, getWeekStart } from '../utils/dateUtils';
+import { logger } from '../utils/logger';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -42,27 +39,6 @@ export default function Dashboard() {
     },
     threshold: 80,
   });
-
-  const exercisesForProgression = useMemo(() => {
-    const exerciseMap = new Map<string, { id: string; name: string }>();
-    workoutSessions
-      .filter((s) => s.status === 'completed')
-      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
-      .slice(0, 20)
-      .forEach((session) => {
-        session.exercises?.forEach((ex) => {
-          if (!exerciseMap.has(ex.exerciseId)) {
-            exerciseMap.set(ex.exerciseId, {
-              id: ex.exerciseId,
-              name: ex.exerciseName || ex.name || 'תרגיל',
-            });
-          }
-        });
-      });
-    return Array.from(exerciseMap.values()).slice(0, 10);
-  }, [workoutSessions]);
-
-  const { exerciseRecommendations } = useProgressionRecommendation(exercisesForProgression, workoutSessions);
 
   useEffect(() => {
     async function load() {
@@ -161,13 +137,6 @@ export default function Dashboard() {
     return { sessionCount, volume, avgDurationMin };
   }, [workoutSessions]);
 
-  const recentWorkouts = useMemo(() => {
-    return workoutSessions
-      .filter((s) => s.status === 'completed')
-      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
-      .slice(0, 5);
-  }, [workoutSessions]);
-
   const handleNavigate = useCallback((path: string) => navigate(path), [navigate]);
 
   return (
@@ -206,15 +175,20 @@ export default function Dashboard() {
             borderTopColor: 'transparent',
             borderRadius: '50%',
             animation: isRefreshing ? 'spin 0.7s linear infinite' : 'none',
-            opacity: isRefreshing ? 1 : pullDistance > 20 ? Math.min(pullDistance / threshold, 1) : 0,
+            opacity: isRefreshing
+              ? 1
+              : pullDistance > 20
+                ? Math.min(pullDistance / threshold, 1)
+                : 0,
             transition: 'width 0.2s, height 0.2s, opacity 0.2s',
           }}
         />
       </div>
 
-      <Greeting weekNumber={weeklyStats.weekNumber} />
+      <DashboardHeader weekNumber={weeklyStats.weekNumber} />
 
       <main style={{ padding: '24px 20px 28px' }}>
+        {/* 1. Weekly Stats — most important CTA */}
         <WeeklyStatsBlock
           workoutsThisWeek={weeklyStats.workoutsThisWeek}
           weeklyGoal={weeklyStats.weeklyGoal}
@@ -225,127 +199,28 @@ export default function Dashboard() {
           onQuickStart={handleQuickStart}
         />
 
+        {/* 2. Quick start + Template favorites */}
         <TemplateQuickStart onQuickStart={handleQuickStart} />
-
-        {lastUsedTemplate && (
-          <button
-            type="button"
-            onClick={() => navigate('/workout')}
-            className="focus-ring"
-            style={{
-              width: '100%',
-              marginTop: 8,
-              padding: '6px 0',
-              background: 'transparent',
-              border: 'none',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              color: 'var(--stone)',
-              cursor: 'pointer',
-            }}
-          >
-            או התחל אימון חופשי
-          </button>
-        )}
-
         <TemplateStrip templates={sortedTemplates} onNavigate={handleNavigate} />
 
-        <ForecastNudge sessions={workoutSessions} />
-
-        <ChapterBreak
-          number="§02"
-          title="המלצות"
-          subtitle="next up"
-          style={{ marginTop: 24, marginBottom: 0 }}
-        />
-
-        {exerciseRecommendations.length > 0 ? (
-          <ProgressionSection exerciseRecommendations={exerciseRecommendations} />
-        ) : (
-          <FallbackSkillRows sessions={workoutSessions} />
-        )}
-
-        <ChapterBreak
-          number="§03"
-          title="שבוע"
-          subtitle={`week ${pad2(weeklyStats.weekNumber)}`}
-          style={{ marginTop: 24, marginBottom: 0 }}
-        />
-
-        <div className="card-outlined">
+        {/* 3. This week calendar */}
+        <div className="card-outlined" style={{ marginTop: 24 }}>
           <WeeklyGrid
             sessions={workoutSessions}
             weekOffset={selectedWeekOffset}
             onPrevWeek={goToPrevWeek}
             onNextWeek={goToNextWeek}
           />
-
-          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--bone-deep)' }}>
-            <div className="skill-top">
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  letterSpacing: '0.22em',
-                  textTransform: 'uppercase',
-                  color: 'var(--stone)',
-                }}
-              >
-                יעד שבועי
-              </span>
-              <span className="skill-pct">
-                {weeklyStats.workoutsThisWeek} / {weeklyStats.weeklyGoal}
-              </span>
-            </div>
-            <div className="skill-bar" style={{ marginTop: 10 }}>
-              <div
-                className="skill-fill"
-                style={{
-                  width: `${Math.min(
-                    (weeklyStats.workoutsThisWeek / weeklyStats.weeklyGoal) * 100,
-                    100
-                  )}%`,
-                }}
-              />
-            </div>
-          </div>
-
           <MonthlyStatsRow stats={monthlyStats} />
         </div>
 
-        <div style={{ marginTop: 16 }}>
-          <ImprovementScore sessions={workoutSessions} />
+        {/* 4. Recent workouts — quick access */}
+        <div style={{ marginTop: 24 }}>
+          <RecentWorkouts sessions={workoutSessions} loading={dataLoading} />
         </div>
 
-        <ChapterBreak
-          number="§04"
-          title="היסטוריה"
-          subtitle="recent"
-          style={{ marginTop: 24, marginBottom: 16 }}
-        />
-
-        <RecentWorkouts sessions={recentWorkouts} loading={dataLoading} />
-
-        {recentWorkouts.length > 0 && (
-          <div className="btn-row" style={{ marginTop: 16 }}>
-            <button
-              type="button"
-              onClick={() => navigate('/history')}
-              className="btn-primary focus-ring"
-            >
-              היסטוריה מלאה
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/history')}
-              className="btn-secondary focus-ring"
-            >
-              יומן
-            </button>
-          </div>
-        )}
+        {/* 5. PR highlights — factual data */}
+        <RecentPRBanner />
 
         <div style={{ height: 24 }} />
       </main>
@@ -406,99 +281,6 @@ function MonthlyStatsRow({
             }}
           >
             {c.lbl}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── ProgressionSection — skill-rows ──────────────────────────────────────────
-function ProgressionSection({
-  exerciseRecommendations,
-}: {
-  exerciseRecommendations: ReturnType<
-    typeof useProgressionRecommendation
-  >['exerciseRecommendations'];
-}) {
-  if (exerciseRecommendations.length === 0) return null;
-
-  const weight = (r: (typeof exerciseRecommendations)[number]) => {
-    if (r.recommendation === 'INCREASE_WEIGHT' || r.recommendation === 'INCREASE_REPS') return 0;
-    if (r.recommendation === 'MAINTAIN') return 1;
-    return 2;
-  };
-
-  const sorted = [...exerciseRecommendations].sort((a, b) => weight(a) - weight(b)).slice(0, 4);
-
-  return (
-    <div className="card-outlined" style={{ padding: '4px 20px' }}>
-      {sorted.map((r) => {
-        let pct = Math.max(10, Math.min(100, Math.round(r.confidence || 0)));
-        if (r.recommendation === 'INCREASE_WEIGHT' || r.recommendation === 'INCREASE_REPS') {
-          pct = Math.max(pct, 80);
-        } else if (r.recommendation === 'DECREASE_WEIGHT' || r.recommendation === 'DELOAD') {
-          pct = Math.min(pct, 35);
-        }
-
-        const target =
-          r.recommendation === 'MAINTAIN'
-            ? `${r.currentWeight} ק״ג`
-            : `${r.currentWeight} → ${r.suggestedWeight} ק״ג`;
-
-        return (
-          <div key={r.exerciseId} className="skill-row">
-            <div className="skill-top">
-              <span className="skill-name line-clamp-1">{r.exerciseName}</span>
-              <span className="skill-pct">{target}</span>
-            </div>
-            <div className="skill-bar">
-              <div className="skill-fill" style={{ width: `${pct}%` }} />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ── FallbackSkillRows — when no recommendations, show top exercises ──────────
-function FallbackSkillRows({ sessions }: { sessions: WorkoutSession[] }) {
-  const topExercises = useMemo(() => {
-    const countMap = new Map<string, { name: string; count: number; volume: number }>();
-    sessions
-      .filter((s) => s.status === 'completed')
-      .slice(0, 20)
-      .forEach((s) => {
-        s.exercises?.forEach((ex) => {
-          const name = ex.exerciseName || ex.name || 'תרגיל';
-          const key = ex.exerciseId || name;
-          const entry = countMap.get(key) || { name, count: 0, volume: 0 };
-          entry.count += 1;
-          entry.volume += (ex.sets || []).reduce(
-            (sum, set) => sum + (set.weight || 0) * (set.reps || 0),
-            0
-          );
-          countMap.set(key, entry);
-        });
-      });
-    const arr = Array.from(countMap.values()).sort((a, b) => b.count - a.count);
-    const max = arr[0]?.count || 1;
-    return arr.slice(0, 4).map((e) => ({ ...e, pct: Math.round((e.count / max) * 100) }));
-  }, [sessions]);
-
-  if (topExercises.length === 0) return null;
-
-  return (
-    <div className="card-outlined" style={{ padding: '4px 20px' }}>
-      {topExercises.map((e) => (
-        <div key={e.name} className="skill-row">
-          <div className="skill-top">
-            <span className="skill-name line-clamp-1">{e.name}</span>
-            <span className="skill-pct">{e.count}×</span>
-          </div>
-          <div className="skill-bar">
-            <div className="skill-fill" style={{ width: `${e.pct}%` }} />
           </div>
         </div>
       ))}

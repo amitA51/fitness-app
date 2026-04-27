@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import React, { useState, useMemo, memo } from 'react';
 import type { WorkoutSession } from '../../types';
 import { useWorkoutHistory } from './hooks/useWorkoutHistory';
@@ -127,8 +127,7 @@ StatCard.displayName = 'StatCard';
 const SessionCard = memo<{
   session: WorkoutSession;
   onClick: () => void;
-  index: number;
-}>(({ session, onClick, index }) => {
+}>(({ session, onClick }) => {
   const volume = useMemo(() => calculateSessionVolume(session), [session]);
   const mainMuscle = useMemo(() => getMainMuscleGroup(session), [session]);
   const completedSets = session.exercises.reduce(
@@ -138,10 +137,6 @@ const SessionCard = memo<{
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
       onClick={onClick}
       style={{
@@ -312,7 +307,13 @@ const SessionCard = memo<{
           </svg>
           {formatDuration(session.startTime, session.endTime ?? undefined)}
         </div>
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ color: 'var(--navy)' }}>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          style={{ color: 'var(--navy)' }}
+        >
           <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
         </svg>
       </div>
@@ -411,7 +412,12 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
           }}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M11 4L6 9L11 14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square" />
+            <path
+              d="M11 4L6 9L11 14"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="square"
+            />
           </svg>
         </motion.button>
 
@@ -659,7 +665,13 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
                 border: '2px solid var(--navy)',
               }}
             >
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style={{ color: 'var(--stone)' }}>
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 32 32"
+                fill="none"
+                style={{ color: 'var(--stone)' }}
+              >
                 <path
                   d="M16 4L20 12L28 13L22 19L24 28L16 24L8 28L10 19L4 13L12 12L16 4Z"
                   stroke="currentColor"
@@ -694,58 +706,56 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
         )}
 
         {/* Sessions List */}
-        <AnimatePresence>
-          {groupedSessions.map((group) => (
-            <div key={group.key} className="space-y-3">
-              {/* Month Header */}
-              <div
+        {groupedSessions.map((group) => (
+          <div key={group.key} className="space-y-3">
+            {/* Month Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                marginBottom: 16,
+                marginTop: 24,
+                paddingBottom: 12,
+                borderBottom: '3px solid var(--navy)',
+              }}
+            >
+              <span
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 16,
-                  marginBottom: 16,
-                  marginTop: 24,
-                  paddingBottom: 12,
-                  borderBottom: '3px solid var(--navy)',
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 900,
+                  fontSize: 28,
+                  color: 'var(--navy)',
+                  letterSpacing: '-0.02em',
+                  fontVariantNumeric: 'tabular-nums',
                 }}
               >
-                <span
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 900,
-                    fontSize: 28,
-                    color: 'var(--navy)',
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  {group.sessions.length}
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
-                    fontSize: 14,
-                    color: 'var(--ink)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  {group.label}
-                </span>
-              </div>
-              <div className="space-y-3">
-                {group.sessions.map((session, index) => (
-                  <SessionCard
-                    key={session.id}
-                    session={session}
-                    index={index}
-                    onClick={() => onSelectSession?.(session)}
-                  />
-                ))}
-              </div>
+                {group.sessions.length}
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  color: 'var(--ink)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {group.label}
+              </span>
             </div>
-          ))}
-        </AnimatePresence>
+            <div className="space-y-3">
+              {group.sessions.map((session) => (
+                <SessionCard
+                  key={session.id}
+                  session={session}
+                  onClick={() => onSelectSession?.(session)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Bottom Safe Area */}

@@ -21,9 +21,6 @@ import { ExerciseDisplay, ExerciseNav, ProgressBar, WorkoutHeader } from './comp
 // Inline editorial rest strip (small — imported normally)
 import InlineRestTimer from './components/InlineRestTimer';
 
-// Settings types
-import type { WorkoutSettingsData } from './overlays/WorkoutSettingsOverlay';
-
 // Overlays (lazy - loaded on demand)
 const NumpadOverlay = React.lazy(() => import('./overlays/NumpadOverlay'));
 const ConfirmExitOverlay = React.lazy(() => import('./overlays/ConfirmExitOverlay'));
@@ -37,12 +34,10 @@ import {
 } from './hooks/useWorkoutSettings';
 import { formatTime } from './hooks/useWorkoutTimer';
 
-import { useCelebration } from '../../hooks/useCelebration';
 import OverlayLoader from './components/ui/OverlayLoader';
 import { ToastContainer } from './components/ui/Toast';
 import OverlayErrorBoundary from './core/OverlayErrorBoundary';
 // Extracted components
-import { ParticleExplosion } from './effects';
 import { PreWorkoutScreen } from './states';
 
 // Existing components we preserve - WaterReminderToast kept static (small and frequently shown)
@@ -56,7 +51,6 @@ const AICoach = React.lazy(() => import('./AICoach'));
 const ExerciseSelector = React.lazy(() => import('./ExerciseSelector'));
 const QuickExerciseForm = React.lazy(() => import('./QuickExerciseForm'));
 const WorkoutSettingsOverlay = React.lazy(() => import('./overlays/WorkoutSettingsOverlay'));
-const PRCelebration = React.lazy(() => import('./PRCelebration'));
 const WarmupCooldownFlow = React.lazy(() => import('./WarmupCooldownFlow'));
 const WorkoutGoalSelector = React.lazy(() => import('./WorkoutGoalSelector'));
 const ExerciseReorder = React.lazy(() => import('./ExerciseReorder'));
@@ -75,6 +69,7 @@ import { createWorkoutSet } from '../../types';
 import { playSuccess } from '../../utils/audio';
 // CSS
 import { triggerHaptic } from '../../utils/haptics';
+import { logger } from '../../utils/logger';
 import { safeJsonParse } from '../../utils/safeJson';
 import { cn } from '../../utils/styles';
 
@@ -135,7 +130,6 @@ export const WorkoutContent: React.FC<{
   const { getPRForExercise } = usePersonalRecords(state.exercises, state.currentExerciseIndex);
 
   // Celebration System
-  const celebration = useCelebration();
 
   // Settings hooks
   const { keepScreenAwake, announceSetComplete } = useWorkoutSettings();
@@ -178,7 +172,13 @@ export const WorkoutContent: React.FC<{
       // More sets remaining in current exercise
       announceSetComplete();
     }
-  }, [derived.completedSetsCount, derived.currentExercise, state.exercises, state.currentExerciseIndex, announceSetComplete]);
+  }, [
+    derived.completedSetsCount,
+    derived.currentExercise,
+    state.exercises,
+    state.currentExerciseIndex,
+    announceSetComplete,
+  ]);
 
   // Load exercise suggestions
   useEffect(() => {
@@ -745,16 +745,22 @@ export const WorkoutContent: React.FC<{
       await saveWorkoutSession(session);
 
       // Verify session was saved by reading it back
+      let wasSaved = true;
       try {
         const { getWorkoutSessions } = await import('../../services/dataService');
         const savedSessions = await getWorkoutSessions(1);
-        const wasSaved = savedSessions.some((s) => s.id === session.id);
-
+        wasSaved = savedSessions.some((s) => s.id === session.id);
         if (!wasSaved) {
-          throw new Error('Session verification failed - session not found in database');
+          throw new Error('Session verification failed - not found in database');
         }
       } catch (verifyError) {
-        // Session may still be saved - continue without verification
+        logger.workout?.error?.('Workout save verification failed', verifyError);
+        wasSaved = false;
+      }
+
+      if (!wasSaved) {
+        setSaveError('שמירת האימון נכשלה. הנתונים נשמרו מקומית — נסה שוב כשהחיבור יציב.');
+        return;
       }
 
       // Mark workout as completed in localStorage to prevent restore loop
@@ -792,7 +798,16 @@ export const WorkoutContent: React.FC<{
       <React.Suspense
         fallback={
           <div className="fixed inset-0 z-[9999] bg-[var(--bone)] flex items-center justify-center">
-            <div style={{ color: 'var(--navy)', fontFamily: 'var(--font-mono)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>תוצאות האימון...</div>
+            <div
+              style={{
+                color: 'var(--navy)',
+                fontFamily: 'var(--font-mono)',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+              }}
+            >
+              תוצאות האימון...
+            </div>
           </div>
         }
       >
@@ -895,16 +910,11 @@ export const WorkoutContent: React.FC<{
   // Main workout UI
   return (
     <div
-      className={cn(
-        'relative flex flex-col min-h-screen font-sans transition-colors duration-500'
-      )}
+      className={cn('relative flex flex-col min-h-screen font-sans transition-colors duration-500')}
       style={{ background: bgPrimary, color: 'var(--ink)' }}
     >
       {/* Progress Bar */}
       <ProgressBar progress={derived.progressPercent} />
-
-      {/* Confetti */}
-      {state.showConfetti && <ParticleExplosion />}
 
       {/* Main Content - Editorial Annual Layout */}
       <div className="relative z-10 flex flex-col flex-1 overflow-y-auto overscroll-contain">
@@ -1036,7 +1046,7 @@ export const WorkoutContent: React.FC<{
         <React.Suspense fallback={<OverlayLoader />}>
           <WorkoutSettingsOverlay
             isOpen={state.showSettings}
-            settings={workoutSettings as unknown as WorkoutSettingsData}
+            settings={workoutSettings}
             onClose={() => handleToggleSettings(false)}
             onUpdateSetting={(key, value) =>
               dispatch({ type: 'UPDATE_SETTINGS', payload: { [key]: value } })
@@ -1165,17 +1175,6 @@ export const WorkoutContent: React.FC<{
           )}
         </React.Suspense>
       </OverlayErrorBoundary>
-
-      {/* PR Celebration */}
-      {celebration.currentPR && (
-        <React.Suspense fallback={null}>
-          <PRCelebration
-            isVisible={!!celebration.currentPR}
-            pr={celebration.currentPR}
-            onDismiss={celebration.hidePRCelebration}
-          />
-        </React.Suspense>
-      )}
 
       {/* Water Reminder Toast */}
       <WaterReminderToast

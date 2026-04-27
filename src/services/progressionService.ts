@@ -61,6 +61,12 @@ const WEIGHT_INCREMENT_SMALL = 2.5; // kg
 const WEIGHT_INCREMENT_MEDIUM = 5; // kg
 
 const DELOAD_PERCENT = 0.6; // 60% of last weight for deload
+const RECOVERY_SCORE_DELOAD_THRESHOLD = 40;
+const RECOVERY_SCORE_MAINTAIN_THRESHOLD = 65;
+const RECOVERY_DELOAD_PERCENT = 0.8;
+const FATIGUE_SCORE_DELOAD_THRESHOLD = 65;
+const FATIGUE_SCORE_MAINTAIN_THRESHOLD = 40;
+const FATIGUE_DELOAD_PERCENT = 0.85;
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -186,10 +192,12 @@ export interface ProgressionInput {
   targetReps: number;
   targetSets: number;
   sessions: WorkoutSession[];
+  fatigueScore?: number | null;
+  recoveryScore?: number | null;
 }
 
 export function calculateProgression(input: ProgressionInput): ExerciseProgressionData {
-  const { exerciseId, exerciseName, targetReps, sessions } = input;
+  const { exerciseId, exerciseName, targetReps, sessions, fatigueScore, recoveryScore } = input;
 
   const history = getExerciseHistory(sessions, exerciseId);
   const lastSession = history[history.length - 1] ?? null;
@@ -265,7 +273,7 @@ export function calculateProgression(input: ProgressionInput): ExerciseProgressi
     confidence = 75;
     reasons.push({
       code: 'RPE_INCREASING',
-      message: `RPE עולה - לשמור על המשקל ולהתמקד בטכניקה`,
+      message: 'RPE עולה - לשמור על המשקל ולהתמקד בטכניקה',
       priority: 1,
     });
   }
@@ -376,6 +384,60 @@ export function calculateProgression(input: ProgressionInput): ExerciseProgressi
     });
   }
 
+  if (recoveryScore != null && Number.isFinite(recoveryScore)) {
+    if (recoveryScore < RECOVERY_SCORE_DELOAD_THRESHOLD) {
+      recommendation = 'DELOAD';
+      suggestedWeight =
+        Math.round((currentWeight * RECOVERY_DELOAD_PERCENT) / WEIGHT_INCREMENT_SMALL) *
+        WEIGHT_INCREMENT_SMALL;
+      confidence = Math.max(confidence, 90);
+      reasons.push({
+        code: 'LOW_RECOVERY',
+        message: `התאוששות נמוכה (${Math.round(recoveryScore)}/100) - עדיף אימון קל או דלואד היום`,
+        priority: 100,
+      });
+    } else if (
+      recoveryScore < RECOVERY_SCORE_MAINTAIN_THRESHOLD &&
+      recommendation === 'INCREASE_WEIGHT'
+    ) {
+      recommendation = 'MAINTAIN';
+      suggestedWeight = currentWeight;
+      confidence = Math.min(confidence, 65);
+      reasons.push({
+        code: 'FAIR_RECOVERY',
+        message: `התאוששות חלקית (${Math.round(recoveryScore)}/100) - שמור משקל לפני העלאת עומס`,
+        priority: 90,
+      });
+    }
+  }
+
+  if (fatigueScore != null && Number.isFinite(fatigueScore)) {
+    if (fatigueScore >= FATIGUE_SCORE_DELOAD_THRESHOLD) {
+      recommendation = 'DELOAD';
+      suggestedWeight =
+        Math.round((currentWeight * FATIGUE_DELOAD_PERCENT) / WEIGHT_INCREMENT_SMALL) *
+        WEIGHT_INCREMENT_SMALL;
+      confidence = Math.max(confidence, 88);
+      reasons.push({
+        code: 'HIGH_TRAINING_LOAD',
+        message: `עומס אימון גבוה (${Math.round(fatigueScore)}/100) - מומלץ דלואד כדי להתאושש`,
+        priority: 110,
+      });
+    } else if (
+      fatigueScore >= FATIGUE_SCORE_MAINTAIN_THRESHOLD &&
+      recommendation === 'INCREASE_WEIGHT'
+    ) {
+      recommendation = 'MAINTAIN';
+      suggestedWeight = currentWeight;
+      confidence = Math.min(confidence, 68);
+      reasons.push({
+        code: 'ELEVATED_TRAINING_LOAD',
+        message: `עומס אימון בינוני (${Math.round(fatigueScore)}/100) - שמור משקל לפני העלאה`,
+        priority: 95,
+      });
+    }
+  }
+
   return {
     exerciseId,
     exerciseName,
@@ -450,7 +512,9 @@ export function buildAIProgressionContext(data: ExerciseProgressionData): AIProg
 
 export function calculateAllExercisesProgression(
   sessions: WorkoutSession[],
-  exercises: { id: string; name: string; targetReps?: number; targetSets?: number }[]
+  exercises: { id: string; name: string; targetReps?: number; targetSets?: number }[],
+  fatigueScore?: number | null,
+  recoveryScore?: number | null
 ): ExerciseProgressionData[] {
   return exercises.map((ex) =>
     calculateProgression({
@@ -459,6 +523,8 @@ export function calculateAllExercisesProgression(
       targetReps: ex.targetReps || 8,
       targetSets: ex.targetSets || 4,
       sessions,
+      fatigueScore,
+      recoveryScore,
     })
   );
 }

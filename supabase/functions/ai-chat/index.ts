@@ -23,26 +23,41 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 const PROVIDER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const PROVIDER_SECRET_NAME = 'OPENROUTER_API_KEY';
-// ה-referrer והכותרת הם דרישה של OpenRouter; בספקים אחרים הם לא חובה.
+
 const EXTRA_HEADERS: Record<string, string> = {
   'HTTP-Referer': 'https://sparkos-fitness.app',
   'X-Title': 'SPARKOS Fitness',
 };
 
-const DEFAULT_MODEL = 'openai/gpt-4o-mini';
+const DEFAULT_MODEL = 'openai/gpt-oss-120b:free';
 const DEFAULT_TEMPERATURE = 0.7;
 const DEFAULT_MAX_TOKENS = 1024;
 
 // ----------------------------------------------------------------------------
-// CORS — נפתח לכל origin כי זו אפליקציית PWA שרצה מכל מקום
+// CORS — origin allow-list מ-ALLOWED_ORIGIN env var (פסיק כמפריד).
+// אם origin לא נמצא ברשימה — מחזירים "null" (חוסם CORS).
 // ----------------------------------------------------------------------------
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Max-Age': '86400',
-};
+function getCorsOrigin(req: Request): string {
+  // @ts-expect-error Deno global
+  const raw = (Deno.env.get('ALLOWED_ORIGIN') ?? '') as string;
+  const allowed = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const origin = req.headers.get('origin') ?? '';
+  return allowed.length > 0 && allowed.includes(origin) ? origin : 'null';
+}
+
+function buildCorsHeaders(req: Request): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': getCorsOrigin(req),
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Max-Age': '86400',
+    Vary: 'Origin',
+  };
+}
 
 // ----------------------------------------------------------------------------
 // TYPES
@@ -64,15 +79,15 @@ interface ChatRequest {
 // HELPERS
 // ----------------------------------------------------------------------------
 
-function jsonResponse(body: unknown, status = 200): Response {
+function jsonResponse(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    headers: { ...buildCorsHeaders(req), 'Content-Type': 'application/json' },
   });
 }
 
-function errorResponse(code: string, message: string, status: number): Response {
-  return jsonResponse({ error: { code, message } }, status);
+function errorResponse(req: Request, code: string, message: string, status: number): Response {
+  return jsonResponse(req, { error: { code, message } }, status);
 }
 
 function validateRequest(body: unknown): ChatRequest | string {
@@ -104,17 +119,18 @@ function validateRequest(body: unknown): ChatRequest | string {
 // @ts-expect-error Deno global
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+    return new Response(null, { status: 204, headers: buildCorsHeaders(req) });
   }
 
   if (req.method !== 'POST') {
-    return errorResponse('method_not_allowed', 'Only POST is allowed', 405);
+    return errorResponse(req, 'method_not_allowed', 'Only POST is allowed', 405);
   }
 
   // @ts-expect-error Deno global
   const apiKey = Deno.env.get(PROVIDER_SECRET_NAME);
   if (!apiKey) {
     return errorResponse(
+      req,
       'config_error',
       `Missing ${PROVIDER_SECRET_NAME} in Supabase secrets`,
       500
@@ -125,12 +141,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
   try {
     body = await req.json();
   } catch {
-    return errorResponse('bad_request', 'Invalid JSON body', 400);
+    return errorResponse(req, 'bad_request', 'Invalid JSON body', 400);
   }
 
   const parsed = validateRequest(body);
   if (typeof parsed === 'string') {
-    return errorResponse('bad_request', parsed, 400);
+    return errorResponse(req, 'bad_request', parsed, 400);
   }
 
   const payload = {
@@ -153,7 +169,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'unknown';
-    return errorResponse('network_error', `Upstream fetch failed: ${msg}`, 502);
+    return errorResponse(req, 'network_error', `Upstream fetch failed: ${msg}`, 502);
   }
 
   if (!upstream.ok) {
@@ -163,7 +179,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (status === 401 || status === 403) code = 'auth_error';
     else if (status === 429) code = 'rate_limit';
     else if (status >= 500) code = 'provider_down';
-    return errorResponse(code, text.slice(0, 500), status);
+    return errorResponse(req, code, text.slice(0, 500), status);
   }
 
   const data = (await upstream.json()) as {
@@ -173,10 +189,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const content = data.choices?.[0]?.message?.content;
   if (typeof content !== 'string') {
-    return errorResponse('bad_response', 'Provider returned no content', 502);
+    return errorResponse(req, 'bad_response', 'Provider returned no content', 502);
   }
 
-  return jsonResponse({
+  return jsonResponse(req, {
     content,
     usage: data.usage ?? null,
     model: payload.model,

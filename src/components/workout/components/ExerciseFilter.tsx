@@ -61,8 +61,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
     const matches = exercises
       .filter(
         (ex) =>
-          ex.name?.toLowerCase().includes(query) ||
-          ex.muscleGroup?.toLowerCase().includes(query)
+          ex.name?.toLowerCase().includes(query) || ex.muscleGroup?.toLowerCase().includes(query)
       )
       .sort((a, b) => {
         const aExact = a.name?.toLowerCase().startsWith(query);
@@ -105,6 +104,11 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
         <input
           ref={inputRef}
           type="text"
+          inputMode="search"
+          enterKeyHint="search"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onFocus={() => searchQuery.length >= 2 && setShowSuggestions(suggestions.length > 0)}
@@ -116,7 +120,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
             borderRadius: 0,
             padding: '12px 44px 12px 44px',
             fontFamily: 'var(--font-body)',
-            fontSize: 15,
+            fontSize: 16 /* 16px prevents iOS auto-zoom */,
             color: 'var(--ink)',
             outline: 'none',
             direction: 'rtl',
@@ -266,7 +270,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
               flexShrink: 0,
             }}
           >
-            ⭐
+            FAV
           </span>
           {favorites.map((ex) => (
             <button
@@ -339,7 +343,10 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
 };
 
 // Inline DumbbellIcon to avoid circular import
-const DumbbellIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+const DumbbellIcon = ({
+  className,
+  style,
+}: { className?: string; style?: React.CSSProperties }) => (
   <svg
     className={className}
     style={style}

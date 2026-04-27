@@ -2,7 +2,7 @@
 // Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { type Variants, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import React from 'react';
 import { triggerHaptic } from '../../../utils/haptics';
 

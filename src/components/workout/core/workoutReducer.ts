@@ -40,32 +40,48 @@ const parseRestTimeString = (str: string): number => {
   return 0;
 };
 
-const createNextSet = (currentSet: WorkoutSet, nextSetNumber: number): WorkoutSet => ({
-  id: `set-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-  setNumber: nextSetNumber,
-  reps: currentSet.reps, // Auto-copy reps
-  weight: currentSet.weight, // Auto-copy weight
-  notes: '', // Clear notes
-  rpe: null, // Clear RPE
-  isWarmup: false,
-  isCompleted: false,
-  completedAt: null,
-});
+const createNextSet = (
+  currentSet: WorkoutSet,
+  nextSetNumber: number,
+  isTimed = false
+): WorkoutSet => {
+  const base: WorkoutSet = {
+    id: `set-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    setNumber: nextSetNumber,
+    reps: isTimed ? 0 : currentSet.reps, // reps don't apply to timed sets
+    weight: currentSet.weight, // weight still applies (e.g., loaded carry, weighted plank)
+    notes: '',
+    rpe: null,
+    isWarmup: false,
+    isCompleted: false,
+    completedAt: null,
+  };
+  if (isTimed) {
+    base.duration = currentSet.duration ?? 0; // inherit previous duration
+  }
+  return base;
+};
 
 /**
  * Create a new empty set with all required fields
  */
-const createEmptySet = (setNumber: number): WorkoutSet => ({
-  id: `set-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-  setNumber,
-  reps: 0,
-  weight: 0,
-  rpe: null,
-  isWarmup: false,
-  isCompleted: false,
-  notes: '',
-  completedAt: null,
-});
+const createEmptySet = (setNumber: number, isTimed = false): WorkoutSet => {
+  const base: WorkoutSet = {
+    id: `set-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    setNumber,
+    reps: 0,
+    weight: 0,
+    rpe: null,
+    isWarmup: false,
+    isCompleted: false,
+    notes: '',
+    completedAt: null,
+  };
+  if (isTimed) {
+    base.duration = 0;
+  }
+  return base;
+};
 
 const getActiveSetIndex = (sets: WorkoutSet[]): number => {
   const idx = sets.findIndex((s) => !s.completedAt);
@@ -145,7 +161,6 @@ const exerciseReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       draft.supersetGroups.push(superset);
       break;
     }
-
   }
 };
 
@@ -163,7 +178,7 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       const sets = exercise.sets ?? [];
       const activeIdx = getActiveSetIndex(sets);
       if (!sets[activeIdx]) {
-        sets[activeIdx] = createEmptySet(activeIdx + 1);
+        sets[activeIdx] = createEmptySet(activeIdx + 1, exercise.isTimed);
       }
       exercise.sets = sets;
 
@@ -180,7 +195,7 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       const sets = exercise.sets ?? [];
       const activeIdx = getActiveSetIndex(sets);
       if (!sets[activeIdx]) {
-        sets[activeIdx] = createEmptySet(activeIdx + 1);
+        sets[activeIdx] = createEmptySet(activeIdx + 1, exercise.isTimed);
       }
       exercise.sets = sets;
 
@@ -199,7 +214,7 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       // Logic: Only add next set if we haven't reached a target set count (not implemented yet)
       // OR if the user just completed the last existing set.
       if (activeIdx === sets.length - 1) {
-        const nextSet = createNextSet(currentSet, sets.length + 1);
+        const nextSet = createNextSet(currentSet, sets.length + 1, exercise.isTimed);
 
         // Apply auto-increment if enabled
         if (shouldIncrement && nextSet.weight) {
@@ -293,7 +308,13 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
 
         // Remove any empty set that follows (auto-generated)
         const nextSet = sets[lastCompletedIndex + 1];
-        if (nextSet && !nextSet.completedAt && nextSet.weight === 0 && nextSet.reps === 0) {
+        if (
+          nextSet &&
+          !nextSet.completedAt &&
+          nextSet.weight === 0 &&
+          nextSet.reps === 0 &&
+          (nextSet.duration ?? 0) === 0
+        ) {
           sets.splice(lastCompletedIndex + 1, 1);
         }
 
@@ -455,7 +476,7 @@ const uiReducer = (draft: WorkoutState, action: WorkoutAction): void => {
             const sets = exercise.sets ?? [];
             const activeIdx = getActiveSetIndex(sets);
             if (!sets[activeIdx]) {
-              sets[activeIdx] = createEmptySet(activeIdx + 1);
+              sets[activeIdx] = createEmptySet(activeIdx + 1, exercise.isTimed);
             }
             exercise.sets = sets;
             sets[activeIdx]![draft.numpad.target] = val;
