@@ -23,6 +23,7 @@
     "@supabase/supabase-js": "^2.103.0",
     "@tanstack/react-virtual": "^3.13.24",
     "dompurify": "^3.0.6",
+    "ecc-universal": "^1.10.0",
     "framer-motion": "^10.16.0",
     "idb": "^7.1.0",
     "lucide-react": "^0.294.0",
