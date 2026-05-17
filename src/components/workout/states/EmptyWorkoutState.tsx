@@ -21,7 +21,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'var(--bone)',
+        background: 'var(--fs-bg)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -52,18 +52,18 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
           style={{
             width: 96,
             height: 96,
-            background: 'var(--mustard)',
+            background: 'var(--fs-accent)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 24,
-            border: '2px solid var(--navy)',
+            border: '2px solid var(--fs-primary)',
           }}
         >
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
             <path
               d="M19 11H5M19 11C20.1046 11 21 11.8954 21 13V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V13C3 11.8954 3.89543 11 5 11M19 11V9C19 7.89543 18.1046 7 17 7M5 11V9C5 7.89543 5.89543 7 7 7M7 7V5C7 3.89543 7.89543 3 9 3H15C16.1046 3 17 3.89543 17 5V7M7 7H17"
-              stroke="var(--navy)"
+              stroke="var(--fs-primary)"
               strokeWidth="2"
               strokeLinecap="square"
             />
@@ -76,7 +76,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
             fontFamily: 'var(--font-display)',
             fontWeight: 900,
             fontSize: 28,
-            color: 'var(--navy)',
+            color: 'var(--fs-primary)',
             textTransform: 'uppercase',
             letterSpacing: '-0.01em',
             marginBottom: 8,
@@ -90,7 +90,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: 14,
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             lineHeight: 1.6,
             marginBottom: 32,
           }}
@@ -108,8 +108,8 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
           style={{
             width: '100%',
             minHeight: 56,
-            background: 'var(--navy)',
-            color: 'var(--mustard)',
+            background: 'var(--fs-primary)',
+            color: 'var(--fs-accent)',
             border: 'none',
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
@@ -125,10 +125,10 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
             transition: 'background 150ms ease',
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = 'var(--navy-deep)';
+            (e.currentTarget as HTMLElement).style.background = '#0D1A1C';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = 'var(--navy)';
+            (e.currentTarget as HTMLElement).style.background = 'var(--fs-primary)';
           }}
           aria-label="בחר תרגיל להוספה"
         >
@@ -142,8 +142,8 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
             minHeight: 44,
             padding: '0 16px',
             background: 'transparent',
-            color: 'var(--stone)',
-            border: '2px solid var(--bone-deep)',
+            color: 'var(--fs-muted)',
+            border: '2px solid var(--fs-surface-2)',
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
             fontSize: 13,
@@ -153,12 +153,12 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
             transition: 'all 150ms ease',
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = 'var(--navy)';
-            (e.currentTarget as HTMLElement).style.color = 'var(--navy)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--fs-primary)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--fs-primary)';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = 'var(--bone-deep)';
-            (e.currentTarget as HTMLElement).style.color = 'var(--stone)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'var(--fs-surface-2)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--fs-muted)';
           }}
           aria-label="ביטול האימון"
         >

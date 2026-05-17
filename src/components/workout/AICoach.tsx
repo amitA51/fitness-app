@@ -285,7 +285,7 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
                 <button
                   onClick={loadTutorial}
                   disabled={loading}
-                  className="w-full py-3 rounded-xl bg-[var(--cosmos-accent-primary)]/10 border border-[var(--cosmos-accent-primary)]/30 text-[var(--cosmos-accent-primary)] font-medium text-sm"
+                  className="w-full py-3 rounded-xl bg-[var(--fs-accent)]/10 border border-[var(--fs-accent)]/30 text-[var(--fs-accent)] font-medium text-sm"
                 >
                   {loading ? 'טוען...' : `הדרכה · ${currentExercise.name}`}
                 </button>
@@ -316,7 +316,7 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
                   animate={{ opacity: 1, y: 0 }}
                   className={`p-3 rounded-xl max-w-[85%] ${
                     msg.role === 'user'
-                      ? 'bg-[var(--cosmos-accent-primary)]/20 ml-auto text-white'
+                      ? 'bg-[var(--fs-accent)]/20 ml-auto text-white'
                       : 'bg-white/10 mr-auto text-white/90'
                   }`}
                 >
@@ -345,12 +345,12 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="שאל שאלה..."
                 disabled={!currentExercise}
-                className="flex-1 h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 outline-none focus:border-[var(--cosmos-accent-primary)] disabled:opacity-50"
+                className="flex-1 h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 outline-none focus:border-[var(--fs-accent)] disabled:opacity-50"
               />
               <button
                 onClick={handleSendMessage}
                 disabled={!inputMessage.trim() || loading || !currentExercise}
-                className="px-5 h-12 rounded-xl bg-[var(--cosmos-accent-primary)] text-black font-bold disabled:opacity-40"
+                className="px-5 h-12 rounded-xl bg-[var(--fs-accent)] text-black font-bold disabled:opacity-40"
               >
                 שלח
               </button>
@@ -372,7 +372,7 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
                     aria-pressed={muscleGroup === group}
                     className={`px-4 py-3 min-h-[44px] rounded-full text-xs font-medium transition-all ${
                       muscleGroup === group
-                        ? 'bg-[var(--cosmos-accent-primary)] text-black'
+                        ? 'bg-[var(--fs-accent)] text-black'
                         : 'bg-white/10 text-white/65'
                     }`}
                   >
@@ -385,7 +385,7 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
             <button
               onClick={handleGetSuggestions}
               disabled={loading}
-              className="w-full h-12 rounded-xl bg-[var(--cosmos-accent-primary)] text-black font-bold disabled:opacity-50"
+              className="w-full h-12 rounded-xl bg-[var(--fs-accent)] text-black font-bold disabled:opacity-50"
             >
               {loading ? 'טוען המלצות...' : 'קבל המלצות AI'}
             </button>
@@ -419,7 +419,7 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
             <button
               onClick={handleAnalyzeWorkouts}
               disabled={loading}
-              className="w-full h-12 rounded-xl bg-[var(--cosmos-accent-primary)] text-black font-bold disabled:opacity-50"
+              className="w-full h-12 rounded-xl bg-[var(--fs-accent)] text-black font-bold disabled:opacity-50"
             >
               {loading ? 'מנתח אימונים...' : 'נתח את האימונים שלי'}
             </button>
@@ -515,7 +515,7 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
             aria-current={activeTab === tab.id ? 'page' : undefined}
             className={`flex-1 py-3 min-h-[44px] rounded-xl text-sm font-semibold transition-all ${
               activeTab === tab.id
-                ? 'bg-[var(--cosmos-accent-primary)] text-black'
+                ? 'bg-[var(--fs-accent)] text-black'
                 : tab.disabled
                   ? 'bg-white/5 text-white/30 cursor-not-allowed'
                   : 'bg-white/10 text-white/70'

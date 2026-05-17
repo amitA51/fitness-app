@@ -38,10 +38,10 @@ import type { MealPreset } from '../services/nutritionService';
 import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../types';
 
 const MACRO_COLORS = {
-  calories: '#FF9F0A',
-  protein: '#0A84FF',
-  carbs: '#30D158',
-  fat: '#FF453A',
+  calories: '#E26E3F', // --fs-warn
+  protein: '#43C7A5', // --fs-accent
+  carbs: '#2C7F91', // --fs-accent-2
+  fat: '#E2FB70', // --fs-signal
 };
 
 type MealTab = 'log' | 'library' | 'presets';
@@ -231,7 +231,7 @@ export default function NutritionPage() {
   return (
     <div
       className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
-      style={{ background: 'var(--bone)' }}
+      style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
       {/* Masthead */}
@@ -244,10 +244,12 @@ export default function NutritionPage() {
         </div>
         <h1
           style={{
-            fontFamily: 'var(--font-hebrew)',
+            fontFamily: 'var(--font-display)',
             fontSize: 'clamp(44px, 12vw, 72px)',
             lineHeight: 0.9,
             marginTop: '8px',
+            fontWeight: 800,
+            textTransform: 'uppercase',
           }}
         >
           תזונה
@@ -258,7 +260,7 @@ export default function NutritionPage() {
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             letterSpacing: '0.22em',
-            color: 'var(--mustard)',
+            color: 'var(--fs-accent)',
             textTransform: 'uppercase',
           }}
         >
@@ -277,7 +279,7 @@ export default function NutritionPage() {
           className="mt-4"
           style={{
             height: '6px',
-            background: 'var(--navy)',
+            background: 'var(--fs-surface-2)',
             position: 'relative',
             overflow: 'hidden',
           }}
@@ -285,7 +287,7 @@ export default function NutritionPage() {
           <motion.div
             style={{
               height: '100%',
-              background: 'var(--bone)',
+              background: 'var(--fs-accent)',
             }}
             initial={{ width: 0 }}
             animate={{ width: `${calPct}%` }}
@@ -300,7 +302,7 @@ export default function NutritionPage() {
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr 1fr',
-          border: '2px solid var(--navy)',
+          border: '2px solid var(--fs-primary)',
           borderTop: 'none',
         }}
       >
@@ -333,9 +335,9 @@ export default function NutritionPage() {
           <div
             key={m.label}
             style={{
-              background: 'var(--bone)',
+              background: 'var(--fs-surface)',
               padding: '18px 14px',
-              borderInlineStart: i > 0 ? '2px solid var(--navy)' : 'none',
+              borderInlineStart: i > 0 ? '2px solid var(--fs-primary)' : 'none',
             }}
           >
             <div
@@ -344,7 +346,7 @@ export default function NutritionPage() {
                 fontFamily: 'var(--font-mono)',
                 fontSize: '10px',
                 letterSpacing: '0.22em',
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 textTransform: 'uppercase',
               }}
             >
@@ -357,7 +359,7 @@ export default function NutritionPage() {
                 fontWeight: 800,
                 fontSize: '32px',
                 lineHeight: 0.9,
-                color: 'var(--ink)',
+                color: 'var(--fs-ink)',
                 letterSpacing: '-0.02em',
               }}
             >
@@ -366,7 +368,7 @@ export default function NutritionPage() {
                 style={{
                   fontStyle: 'normal',
                   fontSize: '16px',
-                  color: 'var(--mustard)',
+                  color: 'var(--fs-accent)',
                   marginInlineStart: '2px',
                 }}
               >
@@ -377,12 +379,12 @@ export default function NutritionPage() {
               className="mt-2"
               style={{
                 height: '4px',
-                background: 'var(--bone-deep)',
+                background: 'var(--fs-surface-2)',
                 overflow: 'hidden',
               }}
             >
               <motion.div
-                style={{ height: '100%', background: 'var(--mustard)' }}
+                style={{ height: '100%', background: 'var(--fs-accent)' }}
                 initial={{ width: 0 }}
                 animate={{ width: `${m.pct}%` }}
                 transition={{ duration: 0.7, ease: 'easeOut' }}
@@ -393,7 +395,7 @@ export default function NutritionPage() {
               style={{
                 fontFamily: 'var(--font-hebrew)',
                 fontSize: '11px',
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
               }}
             >
               {m.he} · {m.cur}/{m.goal}
@@ -418,10 +420,10 @@ export default function NutritionPage() {
           </button>
           <span
             style={{
-              fontFamily: 'var(--font-hebrew)',
+              fontFamily: 'var(--font-body)',
               fontSize: '15px',
               fontWeight: 600,
-              color: 'var(--ink)',
+              color: 'var(--fs-ink)',
             }}
           >
             {isToday
@@ -448,7 +450,7 @@ export default function NutritionPage() {
       <div className="px-5 pt-4 pb-3">
         <div
           className="flex gap-1"
-          style={{ borderBottom: '2px solid var(--navy)' }}
+          style={{ borderBottom: '2px solid var(--fs-primary)' }}
           role="tablist"
           aria-label="תזונה"
         >
@@ -560,8 +562,9 @@ export default function NutritionPage() {
         <div className="px-5 mt-6">
           <div
             style={{
-              border: '2px solid var(--navy)',
-              background: 'var(--bone)',
+              border: '2px solid var(--fs-primary)',
+              background: 'var(--fs-surface)',
+              borderRadius: '22px 16px 22px 16px',
               padding: '18px 16px',
             }}
           >
@@ -585,7 +588,7 @@ export default function NutritionPage() {
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: '9px',
-                        color: 'var(--stone)',
+                        color: 'var(--fs-muted)',
                       }}
                     >
                       {entry.total > 0 ? `${Math.round(entry.total / 250)}` : ''}
@@ -593,8 +596,8 @@ export default function NutritionPage() {
                     <motion.div
                       className="w-full"
                       style={{
-                        backgroundColor: isLast ? 'var(--mustard)' : 'var(--navy)',
-                        border: isLast ? '2px solid var(--navy)' : 'none',
+                        backgroundColor: isLast ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+                        border: isLast ? '2px solid var(--fs-primary)' : 'none',
                         minHeight: 4,
                       }}
                       initial={{ height: 0 }}
@@ -605,7 +608,7 @@ export default function NutritionPage() {
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: '9px',
-                        color: 'var(--stone)',
+                        color: 'var(--fs-muted)',
                       }}
                     >
                       {new Date(entry.date).toLocaleDateString('he-IL', { day: 'numeric' })}
@@ -615,7 +618,7 @@ export default function NutritionPage() {
               })}
             </div>
             <div className="flex items-center justify-center gap-4 mt-3">
-              <span className="eyebrow" style={{ color: 'var(--stone)', fontSize: '10px' }}>
+              <span className="eyebrow" style={{ color: 'var(--fs-muted)', fontSize: '10px' }}>
                 GLASSES (250ML) · GOAL: 2500ML
               </span>
             </div>
@@ -630,9 +633,9 @@ export default function NutritionPage() {
         style={{
           width: '56px',
           height: '56px',
-          background: 'var(--mustard)',
-          color: 'var(--color-on-mustard)',
-          border: '2px solid var(--navy)',
+          background: 'var(--fs-accent)',
+          color: 'var(--fs-primary)',
+          border: '2px solid var(--fs-primary)',
           left: '20px',
           right: 'auto',
         }}
@@ -673,23 +676,23 @@ const EmptyMealState = memo(function EmptyMealState({ onAdd }: { onAdd: () => vo
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div
         className="w-16 h-16 flex items-center justify-center mb-4"
-        style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
+        style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-accent)' }}
       >
         <Flame size={26} />
       </div>
       <h3
         className="mb-2"
         style={{
-          fontFamily: 'var(--font-hebrew)',
+          fontFamily: 'var(--font-display)',
           fontSize: '22px',
           fontWeight: 800,
-          color: 'var(--ink)',
+          color: 'var(--fs-ink)',
           textTransform: 'uppercase',
         }}
       >
         עדיין לא תיעדת ארוחות
       </h3>
-      <p className="eyebrow mb-5" style={{ color: 'var(--stone)' }}>
+      <p className="eyebrow mb-5" style={{ color: 'var(--fs-muted)' }}>
         START TRACKING
       </p>
       <button onClick={onAdd} className="btn-primary flex items-center gap-2">
@@ -707,15 +710,36 @@ const MealEntryCard = memo(function MealEntryCard({
 }: { entry: MealEntry; onDelete: (id: string) => void }) {
   const mealLabel = entry.meals.map((m) => MEAL_TYPE_LABELS[m.name]).join(', ');
   return (
-    <div className="card-interactive">
-      <div className="flex items-start justify-between mb-2">
-        <span className="eyebrow" style={{ color: 'var(--mustard)' }}>
+    <div
+      style={{
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
+        padding: '20px',
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: 'var(--shadow-card)',
+      }}
+    >
+      {/* Accent side bar */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: '4px',
+          background: 'var(--fs-accent)',
+        }}
+      />
+      <div className="flex items-start justify-between mb-2" style={{ paddingInlineStart: '8px' }}>
+        <span className="eyebrow" style={{ color: 'var(--fs-accent)' }}>
           § {mealLabel}
         </span>
         <button
           onClick={() => onDelete(entry.id)}
           className="w-12 h-12 flex items-center justify-center transition-colors"
-          style={{ color: 'var(--stone)' }}
+          style={{ color: 'var(--fs-muted)' }}
           aria-label="מחק ארוחה"
         >
           <Trash2 size={14} />
@@ -724,37 +748,39 @@ const MealEntryCard = memo(function MealEntryCard({
 
       <h4
         style={{
-          fontFamily: 'var(--font-hebrew)',
+          fontFamily: 'var(--font-display)',
           fontWeight: 800,
           fontSize: '22px',
           lineHeight: 1,
-          color: 'var(--ink)',
+          color: 'var(--fs-ink)',
           marginBottom: '6px',
+          paddingInlineStart: '8px',
+          textTransform: 'uppercase',
         }}
       >
         {entry.name}
       </h4>
 
       {/* Calories — big display */}
-      <div className="flex items-baseline gap-2 mb-3">
+      <div className="flex items-baseline gap-2 mb-3" style={{ paddingInlineStart: '8px' }}>
         <span
           style={{
             fontFamily: 'var(--font-display)',
             fontWeight: 900,
             fontSize: '36px',
             lineHeight: 0.9,
-            color: 'var(--ink)',
+            color: 'var(--fs-ink)',
             letterSpacing: '-0.02em',
           }}
         >
           {entry.totalMacros.calories}
         </span>
-        <span className="eyebrow" style={{ color: 'var(--mustard)' }}>
+        <span className="eyebrow" style={{ color: 'var(--fs-muted)' }}>
           KCAL
         </span>
       </div>
 
-      <div className="flex gap-2 flex-wrap mb-3">
+      <div className="flex gap-2 flex-wrap mb-3" style={{ paddingInlineStart: '8px' }}>
         {entry.meals
           .flatMap((m) => m.foods)
           .slice(0, 4)
@@ -764,7 +790,7 @@ const MealEntryCard = memo(function MealEntryCard({
             </span>
           ))}
         {entry.meals.flatMap((m) => m.foods).length > 4 && (
-          <span className="chip" style={{ background: 'var(--bone-deep)' }}>
+          <span className="chip">
             +{entry.meals.flatMap((m) => m.foods).length - 4}
           </span>
         )}
@@ -773,27 +799,28 @@ const MealEntryCard = memo(function MealEntryCard({
       <div
         className="flex gap-3 pt-3"
         style={{
-          borderTop: '1px solid var(--bone-deep)',
+          borderTop: '1px solid var(--fs-surface-2)',
           fontFamily: 'var(--font-mono)',
           fontSize: '11px',
           letterSpacing: '0.12em',
-          color: 'var(--navy)',
+          color: 'var(--fs-primary)',
           textTransform: 'uppercase',
+          paddingInlineStart: '8px',
         }}
       >
         <span className="flex items-center gap-1">
           <Flame size={11} />
           {entry.totalMacros.calories}
         </span>
-        <span style={{ color: 'var(--stone)' }}>·</span>
+        <span style={{ color: 'var(--fs-muted)' }}>·</span>
         <span>P {entry.totalMacros.protein}G</span>
-        <span style={{ color: 'var(--stone)' }}>·</span>
+        <span style={{ color: 'var(--fs-muted)' }}>·</span>
         <span>C {entry.totalMacros.carbs}G</span>
-        <span style={{ color: 'var(--stone)' }}>·</span>
+        <span style={{ color: 'var(--fs-muted)' }}>·</span>
         <span>F {entry.totalMacros.fat}G</span>
         {(entry.totalMacros.fiber ?? 0) > 0 && (
           <>
-            <span style={{ color: 'var(--stone)' }}>·</span>
+            <span style={{ color: 'var(--fs-muted)' }}>·</span>
             <span>Fb {Math.round(entry.totalMacros.fiber ?? 0)}G</span>
           </>
         )}
@@ -820,39 +847,86 @@ const FoodLibrary = memo(function FoodLibrary({
       <div className="relative mb-4">
         <Search
           size={16}
-          className="absolute top-1/2 -translate-y-1/2 right-4 text-[var(--color-text-secondary)]"
+          className="absolute top-1/2 -translate-y-1/2 right-4"
+          style={{ color: 'var(--fs-muted)' }}
         />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="חפש מזון..."
-          className="w-full rounded-full py-3 pr-11 pl-5 text-[var(--color-text)] text-sm placeholder-[var(--color-text-secondary)] outline-none focus:ring-1 focus:ring-[var(--color-primary)]/40 input"
+          className="w-full py-3 pr-11 pl-5 text-sm outline-none"
+          style={{
+            backgroundColor: 'var(--fs-surface)',
+            border: '1px solid var(--fs-surface-2)',
+            borderRadius: 0,
+            color: 'var(--fs-ink)',
+            fontFamily: 'var(--font-body)',
+            minHeight: '48px',
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = 'var(--fs-accent)';
+            e.target.style.boxShadow = '0 0 0 2px rgba(67,199,165,0.2)';
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = 'var(--fs-surface-2)';
+            e.target.style.boxShadow = 'none';
+          }}
         />
       </div>
       <div className="space-y-2">
         {foods.map((food) => (
-          <div key={food.id} className="card overflow-hidden">
+          <div
+            key={food.id}
+            style={{
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--fs-surface-2)',
+              borderRadius: '22px 16px 22px 16px',
+              overflow: 'hidden',
+              boxShadow: 'var(--shadow-card)',
+            }}
+          >
             <button
               onClick={() => setExpanded(expanded === food.id ? null : food.id)}
               className="w-full flex items-center justify-between p-3 text-start"
             >
               <div>
-                <span className="font-medium text-[var(--color-text)] text-[14px]">
+                <span
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    color: 'var(--fs-ink)',
+                  }}
+                >
                   {food.name}
                 </span>
-                <span className="text-[11px] text-[var(--color-text-secondary)] ms-2">
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '11px',
+                    color: 'var(--fs-muted)',
+                    marginInlineStart: '8px',
+                  }}
+                >
                   {food.servingSize}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[14px] font-bold" style={{ color: MACRO_COLORS.calories }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    color: MACRO_COLORS.calories,
+                  }}
+                >
                   {food.calories} קל׳
                 </span>
                 {expanded === food.id ? (
-                  <ChevronUp size={15} className="text-[var(--color-text-secondary)]" />
+                  <ChevronUp size={15} style={{ color: 'var(--fs-muted)' }} />
                 ) : (
-                  <ChevronDown size={15} className="text-[var(--color-text-secondary)]" />
+                  <ChevronDown size={15} style={{ color: 'var(--fs-muted)' }} />
                 )}
               </div>
             </button>
@@ -866,7 +940,7 @@ const FoodLibrary = memo(function FoodLibrary({
                 >
                   <div
                     className="px-4 pb-4 pt-2"
-                    style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
+                    style={{ borderTop: '1px solid var(--fs-surface-2)' }}
                   >
                     <div className="grid grid-cols-4 gap-2 text-center text-xs mb-4">
                       {[
@@ -877,13 +951,30 @@ const FoodLibrary = memo(function FoodLibrary({
                       ].map((m) => (
                         <div
                           key={m.label}
-                          className="rounded-xl py-2"
-                          style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
+                          style={{
+                            borderRadius: '12px',
+                            padding: '8px 4px',
+                            backgroundColor: 'var(--fs-surface-2)',
+                          }}
                         >
-                          <div className="font-bold text-[14px]" style={{ color: m.color }}>
+                          <div
+                            style={{
+                              fontFamily: 'var(--font-display)',
+                              fontWeight: 700,
+                              fontSize: '14px',
+                              color: m.color,
+                            }}
+                          >
                             {m.val}
                           </div>
-                          <div className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">
+                          <div
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '10px',
+                              color: 'var(--fs-muted)',
+                              marginTop: '2px',
+                            }}
+                          >
                             {m.label}
                           </div>
                         </div>
@@ -891,9 +982,25 @@ const FoodLibrary = memo(function FoodLibrary({
                     </div>
                     <button
                       onClick={() => onAddFood(food)}
-                      className="w-full py-2.5 rounded-xl bg-[var(--color-primary)] text-white text-[13px] font-semibold"
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: 0,
+                        backgroundColor: 'var(--fs-primary)',
+                        color: 'var(--fs-accent)',
+                        fontFamily: 'var(--font-display)',
+                        fontSize: '13px',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                      }}
                     >
-                      <Plus size={14} className="inline-block me-1" />
+                      <Plus size={14} />
                       הוסף
                     </button>
                   </div>
@@ -922,26 +1029,76 @@ const MealPresetCard = memo(function MealPresetCard({
     [preset.meals]
   );
   return (
-    <div className="card">
-      <div className="flex items-start justify-between mb-3">
+    <div
+      style={{
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
+        padding: '20px',
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: 'var(--shadow-card)',
+      }}
+    >
+      {/* Accent side bar */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: '4px',
+          background: 'var(--fs-accent)',
+        }}
+      />
+      <div className="flex items-start justify-between mb-3" style={{ paddingInlineStart: '8px' }}>
         <div>
-          <h4 className="font-semibold text-[var(--color-text)] text-[14px]">{preset.name}</h4>
-          <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5">
+          <h4
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '14px',
+              color: 'var(--fs-ink)',
+              textTransform: 'uppercase',
+            }}
+          >
+            {preset.name}
+          </h4>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              color: 'var(--fs-muted)',
+              marginTop: '2px',
+            }}
+          >
             {preset.description}
           </p>
         </div>
-        <span className="text-[14px] font-bold" style={{ color: MACRO_COLORS.calories }}>
+        <span
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: '14px',
+            color: MACRO_COLORS.calories,
+          }}
+        >
           {totalCal} קל׳
         </span>
       </div>
-      <div className="flex flex-wrap gap-1.5 mb-3">
+      <div className="flex flex-wrap gap-1.5 mb-3" style={{ paddingInlineStart: '8px' }}>
         {preset.meals.map((m, i) => {
           const f = getFoodLibrary().find((fd) => fd.id === m.foodId);
           return f ? (
             <span
               key={i}
-              className="px-2 py-0.5 rounded-full text-[11px] text-[var(--color-text-secondary)]"
-              style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+              style={{
+                padding: '2px 8px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                color: 'var(--fs-muted)',
+                backgroundColor: 'var(--fs-surface-2)',
+              }}
             >
               {f.name} ×{m.servings}
             </span>
@@ -949,7 +1106,7 @@ const MealPresetCard = memo(function MealPresetCard({
         })}
       </div>
       {showMealSelect ? (
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap" style={{ paddingInlineStart: '8px' }}>
           {Object.entries(MEAL_TYPE_LABELS).map(([key, label]) => {
             const Icon = MEAL_TYPE_ICONS[key as MealType];
             return (
@@ -959,7 +1116,19 @@ const MealPresetCard = memo(function MealPresetCard({
                   onSelect(key as MealType);
                   setShowMealSelect(false);
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold bg-[var(--color-primary-subtle)] text-[var(--color-primary)] border border-[var(--color-primary)]/20"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  backgroundColor: 'var(--fs-surface-2)',
+                  color: 'var(--fs-primary)',
+                  border: '1px solid var(--fs-surface-2)',
+                  cursor: 'pointer',
+                }}
               >
                 <Icon size={13} />
                 {label}
@@ -970,9 +1139,25 @@ const MealPresetCard = memo(function MealPresetCard({
       ) : (
         <button
           onClick={() => setShowMealSelect(true)}
-          className="w-full py-2.5 rounded-xl bg-[var(--color-primary)] text-white text-[13px] font-semibold"
+          style={{
+            width: '100%',
+            padding: '10px',
+            borderRadius: 0,
+            backgroundColor: 'var(--fs-primary)',
+            color: 'var(--fs-accent)',
+            fontFamily: 'var(--font-display)',
+            fontSize: '13px',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '4px',
+          }}
         >
-          <Sparkles size={13} className="inline-block me-1" />
+          <Sparkles size={13} />
           הוסף מהיר
         </button>
       )}
@@ -1034,21 +1219,47 @@ function AddMealModal({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="w-full max-w-lg bg-[var(--color-surface-elevated)] rounded-t-[28px] max-h-[88vh] overflow-y-auto"
-        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 16px))' }}
+        className="w-full max-w-lg rounded-t-[28px] max-h-[88vh] overflow-y-auto"
+        style={{
+          background: 'var(--fs-surface)',
+          paddingBottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 bg-white/20 rounded-full" />
+          <div className="w-10 h-1 rounded-full" style={{ background: 'var(--fs-surface-2)' }} />
         </div>
 
-        <div className="sticky top-0 bg-[var(--color-surface-elevated)] z-10 px-5 pt-[max(env(safe-area-inset-top,0px),8px)] pb-4 border-b border-white/[0.06]">
+        <div
+          className="sticky top-0 z-10 px-5 pt-[max(env(safe-area-inset-top,0px),8px)] pb-4"
+          style={{
+            background: 'var(--fs-surface)',
+            borderBottom: '1px solid var(--fs-surface-2)',
+          }}
+        >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white">הוסף ארוחה</h2>
+            <h2
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '18px',
+                fontWeight: 800,
+                color: 'var(--fs-ink)',
+                textTransform: 'uppercase',
+              }}
+            >
+              הוסף ארוחה
+            </h2>
             <button
               onClick={onClose}
-              className="w-12 h-12 rounded-full bg-white/[0.1] flex items-center justify-center text-[var(--color-text-secondary)]"
+              className="w-12 h-12 flex items-center justify-center"
+              style={{
+                borderRadius: '50%',
+                background: 'var(--fs-surface-2)',
+                color: 'var(--fs-muted)',
+                border: 'none',
+                cursor: 'pointer',
+              }}
               aria-label="סגור"
             >
               <X size={17} />
@@ -1061,7 +1272,23 @@ function AddMealModal({
                 <button
                   key={key}
                   onClick={() => onMealTypeChange(key as MealType)}
-                  className={`inline-flex items-center gap-1.5 flex-shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${selectedMealType === key ? 'bg-[var(--color-primary)] text-white' : 'bg-white/[0.08] text-[var(--color-text-secondary)]'}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    flexShrink: 0,
+                    padding: '7px 14px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-hebrew)',
+                    transition: 'all 0.15s ease',
+                    ...(selectedMealType === key
+                      ? { backgroundColor: 'var(--fs-accent)', color: 'var(--fs-primary)' }
+                      : { backgroundColor: 'var(--fs-surface-2)', color: 'var(--fs-muted)' }),
+                  }}
                 >
                   <Icon size={13} />
                   {label}
@@ -1074,28 +1301,89 @@ function AddMealModal({
         <div className="p-5 space-y-4">
           {selectedFoods.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-white">מזונות שנבחרו</h3>
+              <h3
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '14px',
+                  fontWeight: 800,
+                  color: 'var(--fs-ink)',
+                  textTransform: 'uppercase',
+                }}
+              >
+                מזונות שנבחרו
+              </h3>
               {selectedFoods.map((food) => (
                 <div
                   key={food.id}
-                  className="flex items-center justify-between bg-white/[0.06] rounded-[14px] p-3.5"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: 'var(--fs-surface-2)',
+                    borderRadius: '14px',
+                    padding: '14px',
+                  }}
                 >
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-white">{food.name}</span>
+                  <div>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-hebrew)',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        color: 'var(--fs-ink)',
+                      }}
+                    >
+                      {food.name}
+                    </span>
                     <div className="flex items-center gap-2 mt-1.5">
                       <button
                         onClick={() => onServingsChange(food.id, -0.5)}
-                        className="w-12 h-12 rounded-lg bg-white/[0.1] text-white flex items-center justify-center font-bold text-base"
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '8px',
+                          backgroundColor: 'var(--fs-surface)',
+                          color: 'var(--fs-ink)',
+                          border: '1px solid var(--fs-surface-2)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          fontSize: '16px',
+                        }}
                         aria-label="הפחת מנה"
                       >
                         −
                       </button>
-                      <span className="text-sm text-white w-8 text-center font-medium">
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '14px',
+                          color: 'var(--fs-ink)',
+                          width: '32px',
+                          textAlign: 'center',
+                          fontWeight: 500,
+                        }}
+                      >
                         {food.servings}
                       </span>
                       <button
                         onClick={() => onServingsChange(food.id, 0.5)}
-                        className="w-12 h-12 rounded-lg bg-white/[0.1] text-white flex items-center justify-center font-bold text-base"
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '8px',
+                          backgroundColor: 'var(--fs-surface)',
+                          color: 'var(--fs-ink)',
+                          border: '1px solid var(--fs-surface-2)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          fontSize: '16px',
+                        }}
                         aria-label="הוסף מנה"
                       >
                         +
@@ -1103,20 +1391,48 @@ function AddMealModal({
                     </div>
                   </div>
                   <div className="text-end">
-                    <span className="text-sm font-bold" style={{ color: MACRO_COLORS.calories }}>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontWeight: 700,
+                        fontSize: '14px',
+                        color: MACRO_COLORS.calories,
+                      }}
+                    >
                       {calcFoodMacros(food).calories} קל׳
                     </span>
                     <button
                       onClick={() => onRemoveFood(food.id)}
-                      className="block text-xs text-red-400 mt-1"
+                      style={{
+                        display: 'block',
+                        fontSize: '12px',
+                        color: 'var(--fs-warn)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        marginTop: '4px',
+                      }}
                     >
                       הסר
                     </button>
                   </div>
                 </div>
               ))}
-              <div className="bg-white/[0.04] rounded-[14px] p-3.5 border border-white/[0.06]">
-                <div className="flex justify-around text-center text-xs">
+              <div
+                style={{
+                  backgroundColor: 'var(--fs-surface-2)',
+                  borderRadius: '14px',
+                  padding: '14px',
+                  border: '1px solid var(--fs-surface-2)',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-around',
+                    textAlign: 'center',
+                  }}
+                >
                   {[
                     { val: totalMacros.calories, label: 'קלוריות', color: MACRO_COLORS.calories },
                     { val: `${totalMacros.protein}ג`, label: 'חלבון', color: MACRO_COLORS.protein },
@@ -1124,10 +1440,26 @@ function AddMealModal({
                     { val: `${totalMacros.fat}ג`, label: 'שומן', color: MACRO_COLORS.fat },
                   ].map((m) => (
                     <div key={m.label}>
-                      <div className="font-black text-base" style={{ color: m.color }}>
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontWeight: 900,
+                          fontSize: '16px',
+                          color: m.color,
+                        }}
+                      >
                         {m.val}
                       </div>
-                      <div className="text-[var(--color-text-secondary)] mt-0.5">{m.label}</div>
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '10px',
+                          color: 'var(--fs-muted)',
+                          marginTop: '2px',
+                        }}
+                      >
+                        {m.label}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1138,14 +1470,34 @@ function AddMealModal({
           <div className="relative">
             <Search
               size={16}
-              className="absolute top-1/2 -translate-y-1/2 right-4 text-[var(--color-text-secondary)]"
+              className="absolute top-1/2 -translate-y-1/2 right-4"
+              style={{ color: 'var(--fs-muted)' }}
             />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="חפש מזון..."
-              className="w-full bg-[var(--color-surface-input)] rounded-[14px] py-3 pr-11 pl-4 text-white text-sm placeholder-[var(--color-text-secondary)] outline-none focus:ring-1 focus:ring-[var(--color-primary)]/40"
+              style={{
+                width: '100%',
+                backgroundColor: 'var(--fs-surface-2)',
+                border: '1px solid var(--fs-surface-2)',
+                borderRadius: '14px',
+                padding: '12px 40px 12px 16px',
+                color: 'var(--fs-ink)',
+                fontFamily: 'var(--font-hebrew)',
+                fontSize: '14px',
+                outline: 'none',
+                minHeight: '48px',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'var(--fs-accent)';
+                e.target.style.boxShadow = '0 0 0 2px rgba(67,199,165,0.2)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'var(--fs-surface-2)';
+                e.target.style.boxShadow = 'none';
+              }}
             />
           </div>
 
@@ -1154,15 +1506,49 @@ function AddMealModal({
               <button
                 key={food.id}
                 onClick={() => onAddFood(food)}
-                className="w-full flex items-center justify-between p-3.5 rounded-[14px] bg-white/[0.06] active:bg-white/[0.1] transition-colors text-start"
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '14px',
+                  borderRadius: '14px',
+                  backgroundColor: 'var(--fs-surface-2)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'start',
+                  transition: 'all 0.15s ease',
+                }}
               >
                 <div>
-                  <span className="text-sm text-white">{food.name}</span>
-                  <span className="text-[11px] text-[var(--color-text-secondary)] ms-2">
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-hebrew)',
+                      fontSize: '14px',
+                      color: 'var(--fs-ink)',
+                    }}
+                  >
+                    {food.name}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      color: 'var(--fs-muted)',
+                      marginInlineStart: '8px',
+                    }}
+                  >
                     {food.servingSize}
                   </span>
                 </div>
-                <span className="text-sm font-bold" style={{ color: MACRO_COLORS.calories }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    color: MACRO_COLORS.calories,
+                  }}
+                >
                   {food.calories} קל׳
                 </span>
               </button>
@@ -1172,7 +1558,20 @@ function AddMealModal({
           <motion.button
             onClick={onSave}
             disabled={selectedFoods.length === 0}
-            className="w-full py-4 rounded-2xl bg-[var(--color-primary)] text-white font-bold text-base disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              width: '100%',
+              padding: '16px',
+              borderRadius: 0,
+              backgroundColor: selectedFoods.length > 0 ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+              color: selectedFoods.length > 0 ? 'var(--fs-accent)' : 'var(--fs-muted)',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '16px',
+              textTransform: 'uppercase',
+              border: 'none',
+              cursor: selectedFoods.length > 0 ? 'pointer' : 'not-allowed',
+              opacity: selectedFoods.length > 0 ? 1 : 0.4,
+            }}
             whileTap={{ scale: selectedFoods.length > 0 ? 0.98 : 1 }}
           >
             שמור ארוחה {selectedFoods.length > 0 && `(${totalMacros.calories} קל׳)`}

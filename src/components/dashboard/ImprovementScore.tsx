@@ -56,7 +56,15 @@ export const ImprovementScore = memo(function ImprovementScore({
 
   if (!score) {
     return (
-      <div className="card-outlined">
+      <div
+        style={{
+          background: 'var(--fs-surface)',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: '22px 16px 22px 16px',
+          boxShadow: 'var(--shadow-card)',
+          padding: 16,
+        }}
+      >
         <div className="eyebrow" style={{ marginBottom: 8 }}>
           §&nbsp;Improvement
         </div>
@@ -66,7 +74,7 @@ export const ImprovementScore = memo(function ImprovementScore({
             fontWeight: 800,
             fontSize: 28,
             lineHeight: 1,
-            color: 'var(--navy)',
+            color: 'var(--fs-primary)',
             textTransform: 'uppercase',
             letterSpacing: '-0.01em',
           }}
@@ -78,7 +86,7 @@ export const ImprovementScore = memo(function ImprovementScore({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 11,
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             letterSpacing: '0.1em',
           }}
         >
@@ -92,14 +100,23 @@ export const ImprovementScore = memo(function ImprovementScore({
   const arrow = isPositive ? '+' : '−';
 
   return (
-    <div className="card-outlined">
+    <div
+      className="fs-accent-rail"
+      style={{
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
+        boxShadow: 'var(--shadow-card)',
+        padding: 16,
+      }}
+    >
       <div className="flex items-baseline justify-between mb-3">
         <span className="eyebrow">§&nbsp;Improvement · 7d</span>
         <span
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 11,
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             letterSpacing: '0.16em',
             textTransform: 'uppercase',
           }}
@@ -114,7 +131,7 @@ export const ImprovementScore = memo(function ImprovementScore({
           fontWeight: 900,
           fontSize: 48,
           lineHeight: 0.9,
-          color: 'var(--navy)',
+          color: 'var(--fs-ink)',
           letterSpacing: '-0.02em',
         }}
       >
@@ -124,14 +141,14 @@ export const ImprovementScore = memo(function ImprovementScore({
 
       <div
         className="mt-3 grid grid-cols-3 gap-2 pt-3"
-        style={{ borderTop: '1px solid var(--bone-deep)' }}
+        style={{ borderTop: '1px solid var(--fs-surface-2)' }}
       >
         <div>
           <div
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
               letterSpacing: '0.22em',
               textTransform: 'uppercase',
             }}
@@ -142,7 +159,7 @@ export const ImprovementScore = memo(function ImprovementScore({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 13,
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               fontWeight: 500,
             }}
           >
@@ -155,7 +172,7 @@ export const ImprovementScore = memo(function ImprovementScore({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
               letterSpacing: '0.22em',
               textTransform: 'uppercase',
             }}
@@ -166,7 +183,7 @@ export const ImprovementScore = memo(function ImprovementScore({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 13,
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               fontWeight: 500,
             }}
           >
@@ -179,7 +196,7 @@ export const ImprovementScore = memo(function ImprovementScore({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
               letterSpacing: '0.22em',
               textTransform: 'uppercase',
             }}
@@ -190,7 +207,7 @@ export const ImprovementScore = memo(function ImprovementScore({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 13,
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               fontWeight: 500,
             }}
           >

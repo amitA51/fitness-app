@@ -126,7 +126,7 @@ const calculateCompletedSets = (exercises: ExerciseData[]): number => {
 
 /** Individual stat card */
 const StatCard = memo<StatCardProps>(
-  ({ label, value, suffix = '', trend, trendValue, color = 'var(--cosmos-accent-primary)' }) => (
+  ({ label, value, suffix = '', trend, trendValue, color = 'var(--fs-accent)' }) => (
     <motion.div
       className="bg-white/5 rounded-2xl p-4 flex flex-col"
       initial={{ opacity: 0, scale: 0.9 }}
@@ -166,7 +166,7 @@ StatCard.displayName = 'StatCard';
 
 /** Mini circular progress */
 const MiniProgress = memo<{ progress: number; size?: number; color?: string }>(
-  ({ progress, size = 40, color = 'var(--cosmos-accent-primary)' }) => {
+  ({ progress, size = 40, color = 'var(--fs-accent)' }) => {
     const strokeWidth = 3;
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
@@ -223,7 +223,7 @@ const VolumeComparisonBar = memo<{
             className="h-full rounded-full"
             style={{
               background:
-                'linear-gradient(90deg, var(--cosmos-accent-primary), var(--cosmos-accent-secondary))',
+                'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
             }}
             initial={{ width: 0 }}
             animate={{ width: `${currentPercent}%` }}
@@ -281,7 +281,7 @@ const ExerciseProgressRow = memo<{ exercise: ExerciseData; index: number }>(
         <MiniProgress
           progress={progress}
           size={36}
-          color={progress >= 1 ? '#30D158' : 'var(--cosmos-accent-primary)'}
+          color={progress >= 1 ? '#30D158' : 'var(--fs-accent)'}
         />
 
         <div className="flex-1 min-w-0">
@@ -427,7 +427,7 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
             label="נפח כולל"
             value={stats.volume}
             suffix="ק״ג"
-            color="var(--cosmos-accent-primary)"
+            color="var(--fs-accent)"
             trend={stats.volumeTrend}
             trendValue={stats.volumeTrendValue}
           />
@@ -480,7 +480,7 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
                 background:
                   stats.progress >= 1
                     ? 'linear-gradient(90deg, #30D158, #34C759)'
-                    : 'linear-gradient(90deg, var(--cosmos-accent-primary), var(--cosmos-accent-secondary))',
+                    : 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
               }}
               initial={{ width: 0 }}
               animate={{ width: `${stats.progress * 100}%` }}

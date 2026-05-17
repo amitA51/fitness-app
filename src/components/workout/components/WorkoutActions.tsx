@@ -235,7 +235,7 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
     return (
       <Suspense
         fallback={
-          <div className="fixed inset-0 z-[9999] bg-[var(--cosmos-bg-primary)] flex items-center justify-center">
+          <div className="fixed inset-0 z-[9999] bg-[var(--fs-bg)] flex items-center justify-center">
             <div className="text-white">תוצאות האימון...</div>
           </div>
         }

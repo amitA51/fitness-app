@@ -1,5 +1,5 @@
 // ============================================================================
-// AIInsightCard - Dashboard AI fitness analysis card
+// AIInsightCard - Compact dashboard AI insight card (Fresh Steel style)
 // ============================================================================
 
 import { Activity, RefreshCw, Sparkles, Target, TrendingUp } from 'lucide-react';
@@ -48,55 +48,68 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
   if (sessions.length === 0) return null;
 
   const scoreColor = !insight
-    ? 'var(--stone)'
+    ? 'var(--fs-muted)'
     : insight.fitnessScore >= 75
-      ? '#10B981'
+      ? 'var(--fs-accent)'
       : insight.fitnessScore >= 50
-        ? '#F59E0B'
+        ? 'var(--fs-accent)'
         : insight.fitnessScore >= 25
-          ? '#F97316'
-          : '#EF4444';
+          ? 'var(--fs-warn)'
+          : 'var(--fs-warn)';
 
   const focusIcon = getFocusIcon(insight?.focusArea || '');
 
   return (
     <div
-      className="card-outlined"
       style={{
-        padding: '20px',
-        marginTop: 12,
+        background: 'var(--fs-surface)',
+        borderRadius: '22px 16px 22px 16px',
+        border: '1px solid var(--fs-surface-2)',
+        boxShadow: 'var(--shadow-card)',
+        padding: '16px',
         position: 'relative',
         overflow: 'hidden',
       }}
     >
+      {/* Accent side bar */}
+      <div
+        style={{
+          position: 'absolute',
+          insetInlineStart: 0,
+          top: 0,
+          bottom: 0,
+          width: 4,
+          background: 'var(--fs-accent)',
+        }}
+      />
+
       {/* Header */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 16,
+          marginBottom: 12,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Sparkles size={16} style={{ color: 'var(--mustard)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Sparkles size={12} style={{ color: 'var(--fs-signal)' }} />
           <span
             style={{
               fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: '0.22em',
+              fontSize: 8,
+              letterSpacing: '0.2em',
               textTransform: 'uppercase',
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
             }}
           >
-            AI Coach
+            תובנה אוטומטית
           </span>
         </div>
         <button
           type="button"
           onClick={loadInsight}
           disabled={loading}
-          className="focus-ring"
           style={{
             background: 'none',
             border: 'none',
@@ -104,66 +117,29 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
             padding: 4,
             display: 'flex',
             alignItems: 'center',
-            color: 'var(--stone)',
-            transition: 'transform 0.3s',
-            transform: loading ? 'rotate(360deg)' : 'none',
+            color: 'var(--fs-muted)',
           }}
           aria-label="רענן ניתוח"
         >
-          <RefreshCw size={14} />
+          <RefreshCw
+            size={12}
+            style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }}
+          />
         </button>
       </div>
 
       {loading && !insight && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 120 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: '50%',
-                background: 'var(--bone-deep)',
-                animation: 'pulse 1.5s ease-in-out infinite',
-              }}
-            />
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  height: 12,
-                  borderRadius: 6,
-                  background: 'var(--bone-deep)',
-                  width: '60%',
-                  marginBottom: 8,
-                  animation: 'pulse 1.5s ease-in-out infinite',
-                }}
-              />
-              <div
-                style={{
-                  height: 10,
-                  borderRadius: 5,
-                  background: 'var(--bone-deep)',
-                  width: '40%',
-                  animation: 'pulse 1.5s ease-in-out infinite',
-                }}
-              />
-            </div>
-          </div>
+        <div
+          style={{ minHeight: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
           <div
             style={{
-              height: 10,
-              borderRadius: 5,
-              background: 'var(--bone-deep)',
-              width: '100%',
-              animation: 'pulse 1.5s ease-in-out infinite',
-            }}
-          />
-          <div
-            style={{
-              height: 10,
-              borderRadius: 5,
-              background: 'var(--bone-deep)',
-              width: '80%',
-              animation: 'pulse 1.5s ease-in-out infinite',
+              width: 20,
+              height: 20,
+              border: '2px solid var(--fs-surface-2)',
+              borderTopColor: 'var(--fs-accent)',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
             }}
           />
         </div>
@@ -172,12 +148,12 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
       {error && !insight && (
         <div
           style={{
-            padding: '12px 16px',
-            background: '#FEF2F2',
+            padding: '8px 12px',
+            background: 'var(--fs-bg)',
             borderRadius: 8,
-            color: '#991B1B',
+            color: 'var(--fs-ink)',
             fontFamily: 'var(--font-hebrew)',
-            fontSize: 13,
+            fontSize: 12,
           }}
         >
           {error}
@@ -187,41 +163,41 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
       {insight && (
         <>
           {/* Score + Label */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-            {/* Circular score */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+            {/* Compact circular score */}
             <div
               style={{
                 position: 'relative',
-                width: 64,
-                height: 64,
+                width: 48,
+                height: 48,
                 flexShrink: 0,
               }}
             >
               <svg
-                width="64"
-                height="64"
-                viewBox="0 0 64 64"
+                width="48"
+                height="48"
+                viewBox="0 0 48 48"
                 style={{ transform: 'rotate(-90deg)' }}
                 role="img"
                 aria-label={`ציון כושר: ${insight.fitnessScore}`}
               >
                 <circle
-                  cx="32"
-                  cy="32"
-                  r="26"
+                  cx="24"
+                  cy="24"
+                  r="19"
                   fill="none"
-                  stroke="var(--bone-deep)"
-                  strokeWidth="5"
+                  stroke="var(--fs-surface-2)"
+                  strokeWidth="4"
                 />
                 <circle
-                  cx="32"
-                  cy="32"
-                  r="26"
+                  cx="24"
+                  cy="24"
+                  r="19"
                   fill="none"
                   stroke={scoreColor}
-                  strokeWidth="5"
+                  strokeWidth="4"
                   strokeLinecap="round"
-                  strokeDasharray={`${(insight.fitnessScore / 100) * 163.36} 163.36`}
+                  strokeDasharray={`${(insight.fitnessScore / 100) * 119.38} 119.38`}
                   style={{ transition: 'stroke-dasharray 0.8s ease' }}
                 />
               </svg>
@@ -232,9 +208,9 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
-                  fontSize: 18,
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 700,
+                  fontSize: 13,
                   color: scoreColor,
                 }}
               >
@@ -246,10 +222,10 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
               <div
                 style={{
                   fontFamily: 'var(--font-hebrew)',
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: 700,
-                  color: 'var(--navy)',
-                  marginBottom: 2,
+                  color: 'var(--fs-ink)',
+                  marginBottom: 1,
                 }}
               >
                 {insight.fitnessLabel}
@@ -260,10 +236,10 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
                   alignItems: 'center',
                   gap: 4,
                   fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  letterSpacing: '0.16em',
+                  fontSize: 9,
+                  letterSpacing: '0.12em',
                   textTransform: 'uppercase',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                 }}
               >
                 {focusIcon}
@@ -275,14 +251,14 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
           {/* Main recommendation */}
           <div
             style={{
-              padding: '10px 14px',
-              background: 'var(--bone-deep)',
-              borderRadius: 8,
-              marginBottom: 12,
+              padding: '8px 12px',
+              background: 'var(--fs-bg)',
+              borderRadius: 14,
+              marginBottom: 8,
               fontFamily: 'var(--font-hebrew)',
-              fontSize: 13,
+              fontSize: 12,
               lineHeight: 1.6,
-              color: 'var(--navy)',
+              color: 'var(--fs-ink)',
             }}
           >
             {insight.mainRecommendation}
@@ -290,28 +266,28 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
 
           {/* Tips */}
           {insight.tips.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {insight.tips.map((tip) => (
                 <div
                   key={tip}
                   style={{
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: 8,
+                    gap: 6,
                     fontFamily: 'var(--font-hebrew)',
-                    fontSize: 12,
+                    fontSize: 11,
                     lineHeight: 1.5,
-                    color: 'var(--stone)',
+                    color: 'var(--fs-muted)',
                   }}
                 >
                   <span
                     style={{
                       flexShrink: 0,
-                      width: 4,
-                      height: 4,
+                      width: 3,
+                      height: 3,
                       borderRadius: '50%',
-                      background: 'var(--mustard)',
-                      marginTop: 7,
+                      background: 'var(--fs-signal)',
+                      marginTop: 6,
                     }}
                   />
                   {tip}
@@ -326,7 +302,7 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'rgba(var(--bone-rgb, 245,243,240), 0.8)',
+                background: 'rgba(var(--bone-rgb, 238,243,241), 0.8)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -334,11 +310,8 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
               }}
             >
               <RefreshCw
-                size={20}
-                style={{
-                  color: 'var(--navy)',
-                  animation: 'spin 1s linear infinite',
-                }}
+                size={16}
+                style={{ color: 'var(--fs-primary)', animation: 'spin 1s linear infinite' }}
               />
             </div>
           )}
@@ -350,8 +323,8 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
 
 function getFocusIcon(focus: string) {
   const lower = focus.toLowerCase();
-  if (lower.includes('כוח') || lower.includes('strength')) return <Target size={12} />;
-  if (lower.includes('היפר') || lower.includes('hypertrophy')) return <TrendingUp size={12} />;
-  if (lower.includes('התאוש') || lower.includes('recovery')) return <Activity size={12} />;
-  return <Target size={12} />;
+  if (lower.includes('כוח') || lower.includes('strength')) return <Target size={10} />;
+  if (lower.includes('היפר') || lower.includes('hypertrophy')) return <TrendingUp size={10} />;
+  if (lower.includes('התאוש') || lower.includes('recovery')) return <Activity size={10} />;
+  return <Target size={10} />;
 }

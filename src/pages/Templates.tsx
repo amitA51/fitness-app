@@ -142,33 +142,68 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
         exit={{ y: '100%' }}
         transition={{ ...springTransition, duration: 0.4 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-[#18181C] rounded-t-3xl border-t border-white/[0.08] pt-3 pb-10 max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg pt-3 pb-10 max-h-[90vh] overflow-y-auto"
+        style={{ background: 'var(--fs-surface)', borderTop: '1px solid var(--fs-surface-2)' }}
       >
         {/* Drag Handle */}
         <div className="flex justify-center mb-5">
-          <div className="w-10 h-1 rounded-full bg-white/20" />
+          <div
+            style={{
+              width: '40px',
+              height: '4px',
+              background: 'var(--fs-surface-2)',
+              borderRadius: 0,
+            }}
+          />
         </div>
 
         <div className="px-6">
           {/* Title Row */}
           <div className="flex items-center justify-between mb-7">
-            <h2 className="font-condensed font-bold text-[22px] text-white leading-tight">
+            <h2
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: '22px',
+                color: 'var(--fs-ink)',
+                textTransform: 'uppercase',
+              }}
+            >
               תבנית חדשה
             </h2>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onClose}
-              className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"
+              style={{
+                width: '36px',
+                height: '36px',
+                background: 'var(--fs-surface-2)',
+                border: 'none',
+                borderRadius: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
             >
-              <X size={16} className="text-label-secondary" />
+              <X size={16} style={{ color: 'var(--fs-muted)' }} />
             </motion.button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name Input */}
             <div>
-              <label className="block text-[12px] font-semibold text-label-secondary mb-2 me-1">
+              <label
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: 'var(--fs-muted)',
+                  marginBottom: '8px',
+                  display: 'block',
+                }}
+              >
                 שם התבנית
               </label>
               <input
@@ -177,22 +212,28 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="למשל: אימון חזה + כתפיים"
                 autoFocus
-                className="
-                  w-full bg-surface-input rounded-xl 
-                  px-4 py-4 text-[16px] text-white
-                  placeholder:text-label-tertiary
-                  border border-white/6
-                  focus:outline-none 
-                  focus:border-primary/50 
-                  focus:ring-2 focus:ring-primary/15
-                  transition-all duration-200
-                "
+                style={{
+                  width: '100%',
+                  background: 'var(--fs-surface-2)',
+                  border: '1px solid var(--fs-surface-2)',
+                  borderRadius: 0,
+                  padding: '16px',
+                  color: 'var(--fs-ink)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '16px',
+                  outline: 'none',
+                }}
               />
               {error && (
                 <motion.p
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-2 text-[13px] text-error"
+                  style={{
+                    marginTop: '8px',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '13px',
+                    color: 'var(--fs-warn)',
+                  }}
                 >
                   {error}
                 </motion.p>
@@ -201,7 +242,16 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
 
             {/* Exercise Builder Section */}
             <div>
-              <label className="block text-[12px] font-semibold text-label-secondary mb-2 me-1">
+              <label
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: 'var(--fs-muted)',
+                  marginBottom: '8px',
+                  display: 'block',
+                }}
+              >
                 תרגילים
                 <span
                   className="ms-2"
@@ -209,7 +259,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                     fontFamily: 'var(--font-mono)',
                     fontSize: '10px',
                     letterSpacing: '0.15em',
-                    color: 'var(--stone)',
+                    color: 'var(--fs-muted)',
                   }}
                 >
                   {exercises.length > 0 ? `${exercises.length} EXERCISES` : 'OPTIONAL'}
@@ -227,19 +277,19 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                       exit={{ opacity: 0, y: -8 }}
                       className="flex items-center justify-between rounded-xl px-3 py-2.5"
                       style={{
-                        background: 'var(--bone)',
-                        border: '1px solid var(--bone-deep)',
+                        background: 'var(--fs-surface)',
+                        border: '1px solid var(--fs-surface-2)',
                       }}
                     >
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Dumbbell size={14} style={{ color: 'var(--navy)' }} />
+                        <Dumbbell size={14} style={{ color: 'var(--fs-primary)' }} />
                         <span
                           className="truncate"
                           style={{
-                            fontFamily: 'var(--font-hebrew)',
+                            fontFamily: 'var(--font-body)',
                             fontSize: '14px',
                             fontWeight: 700,
-                            color: 'var(--ink)',
+                            color: 'var(--fs-ink)',
                           }}
                         >
                           {ex.exerciseName}
@@ -250,7 +300,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                             fontFamily: 'var(--font-mono)',
                             fontSize: '11px',
                             letterSpacing: '0.04em',
-                            color: 'var(--navy)',
+                            color: 'var(--fs-primary)',
                           }}
                         >
                           {ex.targetSets}×{ex.targetReps}
@@ -260,7 +310,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                           style={{
                             fontFamily: 'var(--font-mono)',
                             fontSize: '10px',
-                            color: 'var(--stone)',
+                            color: 'var(--fs-muted)',
                           }}
                         >
                           {ex.restSeconds}s
@@ -271,10 +321,10 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                         type="button"
                         onClick={() => handleRemoveExercise(i)}
                         className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center me-1"
-                        style={{ background: 'var(--bone-deep)' }}
+                        style={{ background: 'var(--fs-surface-2)' }}
                         aria-label={`הסר ${ex.exerciseName}`}
                       >
-                        <X size={12} style={{ color: 'var(--navy)' }} />
+                        <X size={12} style={{ color: 'var(--fs-primary)' }} />
                       </motion.button>
                     </motion.div>
                   ))}
@@ -286,13 +336,17 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setShowExercisePicker(true)}
-                className="w-full py-3 rounded-xl flex items-center justify-center gap-2"
+                className="w-full py-3 flex items-center justify-center gap-2"
                 style={{
-                  border: '1.5px dashed var(--bone-deep)',
-                  color: 'var(--navy)',
-                  fontFamily: 'var(--font-hebrew)',
+                  border: '1.5px dashed var(--fs-surface-2)',
+                  color: 'var(--fs-primary)',
+                  fontFamily: 'var(--font-display)',
                   fontSize: '14px',
-                  fontWeight: 600,
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  background: 'transparent',
+                  borderRadius: 0,
+                  cursor: 'pointer',
                 }}
               >
                 <Plus size={16} />
@@ -309,18 +363,19 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden rounded-xl"
                   style={{
-                    background: 'var(--bone)',
-                    border: '1px solid var(--bone-deep)',
+                    background: 'var(--fs-surface)',
+                    border: '1px solid var(--fs-surface-2)',
                   }}
                 >
                   <div className="p-3">
                     <div className="flex items-center justify-between mb-3">
                       <span
                         style={{
-                          fontFamily: 'var(--font-hebrew)',
+                          fontFamily: 'var(--font-display)',
                           fontSize: '14px',
-                          fontWeight: 700,
-                          color: 'var(--ink)',
+                          fontWeight: 800,
+                          color: 'var(--fs-ink)',
+                          textTransform: 'uppercase',
                         }}
                       >
                         בחר תרגיל
@@ -333,9 +388,9 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                           setExerciseSearch('');
                         }}
                         className="w-7 h-7 rounded-lg flex items-center justify-center"
-                        style={{ background: 'var(--bone-deep)' }}
+                        style={{ background: 'var(--fs-surface-2)' }}
                       >
-                        <X size={12} style={{ color: 'var(--navy)' }} />
+                        <X size={12} style={{ color: 'var(--fs-primary)' }} />
                       </motion.button>
                     </div>
                     <input
@@ -344,28 +399,33 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                       onChange={(e) => setExerciseSearch(e.target.value)}
                       placeholder="חפש תרגיל..."
                       autoFocus
-                      className="w-full rounded-lg px-3 py-2.5 text-[14px]"
                       style={{
-                        background: 'var(--bone-deep)',
-                        border: '1px solid var(--bone-deep)',
-                        color: 'var(--ink)',
-                        fontFamily: 'var(--font-hebrew)',
+                        width: '100%',
+                        padding: '10px 12px',
+                        fontSize: '14px',
+                        background: 'var(--fs-surface-2)',
+                        border: '1px solid var(--fs-surface-2)',
+                        borderRadius: 0,
+                        color: 'var(--fs-ink)',
+                        fontFamily: 'var(--font-body)',
+                        outline: 'none',
                       }}
                     />
                     <div
                       className="mt-2 flex flex-col gap-1 max-h-[200px] overflow-y-auto"
                       style={{
                         scrollbarWidth: 'thin',
-                        scrollbarColor: 'var(--bone-deep) transparent',
+                        scrollbarColor: 'var(--fs-surface-2) transparent',
                       }}
                     >
                       {filteredExercises.length === 0 && (
                         <p
-                          className="text-center py-4"
                           style={{
-                            fontFamily: 'var(--font-hebrew)',
+                            fontFamily: 'var(--font-body)',
                             fontSize: '13px',
-                            color: 'var(--stone)',
+                            color: 'var(--fs-muted)',
+                            textAlign: 'center',
+                            padding: '16px',
                           }}
                         >
                           לא נמצאו תרגילים
@@ -377,21 +437,25 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                           type="button"
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleAddExercise(ex)}
-                          className="w-full text-right px-3 py-2.5 rounded-lg flex items-center justify-between"
+                          className="w-full text-right px-3 py-2.5 flex items-center justify-between"
                           style={{
-                            fontFamily: 'var(--font-hebrew)',
+                            fontFamily: 'var(--font-body)',
                             fontSize: '14px',
                             fontWeight: 600,
-                            color: 'var(--ink)',
+                            color: 'var(--fs-ink)',
                             transition: 'background 0.15s',
+                            background: 'transparent',
+                            border: 'none',
+                            borderRadius: 0,
+                            cursor: 'pointer',
                           }}
                           onMouseEnter={(e) =>
-                            (e.currentTarget.style.background = 'var(--bone-deep)')
+                            (e.currentTarget.style.background = 'var(--fs-surface-2)')
                           }
                           onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                         >
                           <span>{ex.name || 'תרגיל'}</span>
-                          <Plus size={14} style={{ color: 'var(--navy)' }} />
+                          <Plus size={14} style={{ color: 'var(--fs-primary)' }} />
                         </motion.button>
                       ))}
                     </div>
@@ -404,16 +468,34 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
               type="submit"
               disabled={isSubmitting}
               whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
-              className="
-                w-full min-h-[52px] py-4 rounded-xl 
-                bg-primary text-white font-semibold text-[16px]
-                disabled:opacity-50
-                transition-all duration-200
-                hover:brightness-110
-              "
+              style={{
+                width: '100%',
+                minHeight: '52px',
+                padding: '16px',
+                borderRadius: 0,
+                background: 'var(--fs-primary)',
+                color: 'var(--fs-accent)',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: '16px',
+                textTransform: 'uppercase',
+                border: 'none',
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                opacity: isSubmitting ? 0.5 : 1,
+              }}
             >
               {isSubmitting ? (
-                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
+                <span
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    border: '2px solid var(--fs-surface-2)',
+                    borderTopColor: 'var(--fs-accent)',
+                    borderRadius: 0,
+                    display: 'inline-block',
+                    animation: 'spin 0.8s linear infinite',
+                  }}
+                />
               ) : (
                 'צור תבנית'
               )}
@@ -475,14 +557,14 @@ function TemplateCard({
             fontFamily: 'var(--font-mono)',
             fontSize: '10px',
             letterSpacing: '0.22em',
-            color: template.isFavorite ? 'var(--mustard)' : 'var(--stone)',
+            color: template.isFavorite ? 'var(--fs-accent)' : 'var(--fs-muted)',
             textTransform: 'uppercase',
           }}
         >
           №{String(index + 1).padStart(3, '0')} · {formatLastUsed(template.lastUsed)}
         </span>
         {template.isFavorite && (
-          <Star size={14} fill="var(--mustard)" style={{ color: 'var(--mustard)' }} />
+          <Star size={14} fill="var(--fs-accent)" style={{ color: 'var(--fs-accent)' }} />
         )}
       </div>
 
@@ -493,7 +575,7 @@ function TemplateCard({
           fontWeight: 800,
           fontSize: '28px',
           lineHeight: 0.95,
-          color: 'var(--ink)',
+          color: 'var(--fs-ink)',
           textTransform: 'uppercase',
           letterSpacing: '-0.01em',
           marginBottom: '8px',
@@ -508,7 +590,7 @@ function TemplateCard({
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: '12px',
-          color: 'var(--navy)',
+          color: 'var(--fs-primary)',
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
         }}
@@ -517,7 +599,7 @@ function TemplateCard({
           <Dumbbell size={12} />
           {template.exercises.length} EX
         </span>
-        <span style={{ color: 'var(--stone)' }}>·</span>
+        <span style={{ color: 'var(--fs-muted)' }}>·</span>
         <span className="flex items-center gap-1.5">
           <Clock size={12} />
           {template.timesUsed > 0 ? `${template.timesUsed}×` : 'NEW'}
@@ -533,7 +615,7 @@ function TemplateCard({
             </span>
           ))}
           {template.exercises.length > 3 && (
-            <span className="chip" style={{ background: 'var(--bone-deep)' }}>
+            <span className="chip" style={{ background: 'var(--fs-surface-2)' }}>
               +{template.exercises.length - 3}
             </span>
           )}
@@ -543,7 +625,7 @@ function TemplateCard({
       {/* Action row */}
       <div
         className="flex items-center gap-2 flex-wrap pt-3"
-        style={{ borderTop: '1px solid var(--bone-deep)' }}
+        style={{ borderTop: '1px solid var(--fs-surface-2)' }}
       >
         <motion.button
           whileTap={{ scale: 0.95 }}
@@ -561,7 +643,7 @@ function TemplateCard({
           disabled={isFavoriting}
           className="chip"
           style={{
-            background: template.isFavorite ? 'var(--mustard)' : 'var(--bone)',
+            background: template.isFavorite ? 'var(--fs-accent)' : 'var(--fs-surface)',
             minHeight: '44px',
             padding: '0 14px',
             opacity: isFavoriting ? 0.6 : 1,
@@ -570,12 +652,15 @@ function TemplateCard({
           aria-busy={isFavoriting}
         >
           {isFavoriting ? (
-            <div className="w-4 h-4 border-2 border-navy border-t-transparent animate-spin" />
+            <div
+              className="w-4 h-4 border-2 border-t-transparent animate-spin"
+              style={{ borderColor: 'var(--fs-primary)', borderTopColor: 'transparent' }}
+            />
           ) : (
             <Star
               size={14}
-              fill={template.isFavorite ? 'var(--color-on-mustard)' : 'none'}
-              style={{ color: template.isFavorite ? 'var(--color-on-mustard)' : 'var(--navy)' }}
+              fill={template.isFavorite ? 'var(--fs-primary)' : 'none'}
+              style={{ color: template.isFavorite ? 'var(--fs-primary)' : 'var(--fs-primary)' }}
             />
           )}
         </motion.button>
@@ -586,8 +671,8 @@ function TemplateCard({
           disabled={isDeleting}
           className="chip"
           style={{
-            background: confirmDelete ? 'var(--navy)' : 'var(--bone)',
-            color: confirmDelete ? 'var(--mustard)' : 'var(--navy)',
+            background: confirmDelete ? 'var(--fs-primary)' : 'var(--fs-surface)',
+            color: confirmDelete ? 'var(--fs-accent)' : 'var(--fs-primary)',
             minHeight: '44px',
             padding: '0 14px',
             opacity: isDeleting ? 0.6 : 1,
@@ -662,8 +747,10 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
       >
         <Trash2 size={32} className="text-error" />
       </motion.div>
-      <p className="text-[17px] text-white mb-2 font-semibold">שגיאה בטעינה</p>
-      <p className="text-[14px] text-label-secondary mb-8 text-center">
+      <p className="mb-2 font-semibold" style={{ color: 'var(--fs-ink)', fontSize: '15px' }}>
+        שגיאה בטעינה
+      </p>
+      <p className="mb-8 text-center" style={{ color: 'var(--fs-muted)', fontSize: '15px' }}>
         לא הצלחנו לטעון את התבניות. נסה שוב.
       </p>
       <motion.button whileTap={{ scale: 0.95 }} onClick={onRetry} className="btn btn-primary">
@@ -793,7 +880,7 @@ export default function Templates() {
     <>
       <motion.div
         className="pb-[88px]"
-        style={{ background: 'var(--bone)' }}
+        style={{ background: 'var(--fs-bg)' }}
         dir="rtl"
         variants={containerVariants}
         initial="hidden"
@@ -807,10 +894,12 @@ export default function Templates() {
           <div className="kicker">§06 · TEMPLATES · {templates.length} ROUTINES</div>
           <h1
             style={{
-              fontFamily: 'var(--font-hebrew)',
+              fontFamily: 'var(--font-display)',
               fontSize: 'clamp(44px, 12vw, 72px)',
               lineHeight: 0.9,
               marginTop: '8px',
+              textTransform: 'uppercase',
+              fontWeight: 800,
             }}
           >
             תבניות
@@ -841,23 +930,23 @@ export default function Templates() {
                 animate={{ scale: 1 }}
                 transition={{ ...springTransition, delay: 0.2 }}
                 className="w-20 h-20 mb-6 flex items-center justify-center"
-                style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
+                style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)' }}
               >
                 <Dumbbell size={36} />
               </motion.div>
               <p
                 style={{
-                  fontFamily: 'var(--font-hebrew)',
+                  fontFamily: 'var(--font-display)',
                   fontSize: '28px',
                   fontWeight: 800,
-                  color: 'var(--ink)',
+                  color: 'var(--fs-ink)',
                   textTransform: 'uppercase',
                   marginBottom: '6px',
                 }}
               >
                 אין תבניות עדיין
               </p>
-              <p className="eyebrow mb-6" style={{ color: 'var(--stone)' }}>
+              <p className="eyebrow mb-6" style={{ color: 'var(--fs-muted)' }}>
                 CREATE YOUR FIRST ROUTINE
               </p>
               <motion.button

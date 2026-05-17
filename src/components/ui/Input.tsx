@@ -20,10 +20,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     // Determine border color by state
     const stateBorder = error
-      ? '2px solid var(--color-error)'
+      ? '2px solid var(--fs-warn)'
       : success
-        ? '2px solid var(--mustard)'
-        : '1px solid var(--bone-deep)';
+        ? '2px solid var(--fs-accent)'
+        : '1px solid var(--fs-surface-2)';
 
     return (
       <div className={`flex flex-col gap-2 ${className}`}>
@@ -37,7 +37,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               fontSize: '10px',
               letterSpacing: '0.22em',
               fontWeight: 600,
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
             }}
           >
             {label}
@@ -72,7 +72,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 transition-colors duration-200
                 ${iconPosition === 'left' ? 'start-4' : 'end-4'}
               `}
-              style={{ color: 'var(--stone)' }}
+              style={{ color: 'var(--fs-muted)' }}
             >
               {icon}
             </div>
@@ -90,7 +90,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               fontFamily: 'var(--font-mono)',
               fontSize: '10px',
               letterSpacing: '0.18em',
-              color: 'var(--color-error)',
+              color: 'var(--fs-warn)',
               fontWeight: 600,
             }}
           >
@@ -105,7 +105,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               fontFamily: 'var(--font-mono)',
               fontSize: '10px',
               letterSpacing: '0.18em',
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
               textTransform: 'uppercase',
             }}
           >

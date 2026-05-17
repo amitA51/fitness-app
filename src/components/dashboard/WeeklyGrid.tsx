@@ -64,25 +64,43 @@ export const WeeklyGrid = memo(function WeeklyGrid({
   }, [sessions, weekOffset]);
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
+    <div>
+      {/* Week navigation */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 14,
+        }}
+      >
         <button
           type="button"
           onClick={onPrevWeek}
-          className="chip focus-ring"
-          style={{ padding: '6px 10px' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 32,
+            height: 32,
+            borderRadius: 14,
+            border: '1px solid var(--fs-surface-2)',
+            background: 'var(--fs-surface)',
+            cursor: 'pointer',
+            color: 'var(--fs-ink)',
+          }}
           aria-label="שבוע קודם"
         >
-          <ChevronRight size={14} />
+          <ChevronRight size={16} />
         </button>
 
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span
             style={{
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
-              fontSize: 16,
-              color: 'var(--navy)',
+              fontSize: 15,
+              color: 'var(--fs-ink)',
               textTransform: 'uppercase',
               letterSpacing: '0.04em',
             }}
@@ -93,13 +111,14 @@ export const WeeklyGrid = memo(function WeeklyGrid({
             <span
               style={{
                 fontFamily: 'var(--font-mono)',
-                fontSize: 10,
+                fontSize: 9,
                 letterSpacing: '0.2em',
                 textTransform: 'uppercase',
-                background: 'var(--mustard)',
-                color: 'var(--navy)',
-                padding: '2px 6px',
+                background: 'var(--fs-accent)',
+                color: 'var(--fs-primary)',
+                padding: '2px 7px',
                 fontWeight: 600,
+                borderRadius: 2,
               }}
             >
               היום
@@ -111,41 +130,68 @@ export const WeeklyGrid = memo(function WeeklyGrid({
           type="button"
           onClick={onNextWeek}
           disabled={weekOffset >= 0}
-          className="chip focus-ring"
           style={{
-            padding: '6px 10px',
-            opacity: weekOffset >= 0 ? 0.3 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 32,
+            height: 32,
+            borderRadius: 14,
+            border: '1px solid var(--fs-surface-2)',
+            background: 'var(--fs-surface)',
             cursor: weekOffset >= 0 ? 'not-allowed' : 'pointer',
+            color: 'var(--fs-ink)',
+            opacity: weekOffset >= 0 ? 0.3 : 1,
           }}
           aria-label="שבוע הבא"
         >
-          <ChevronLeft size={14} />
+          <ChevronLeft size={16} />
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-[2px]">
+      {/* Day grid */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gap: 3,
+        }}
+      >
         {days.map((day) => {
-          const bg = day.active ? 'var(--navy)' : day.isToday ? 'var(--bone)' : 'var(--bone-deep)';
-          const color = day.active
-            ? 'var(--mustard)'
-            : day.isToday
-              ? 'var(--navy)'
-              : 'var(--stone)';
-          const border = day.isToday && !day.active ? '2px solid var(--navy)' : 'none';
+          let bg: string;
+          let color: string;
+          let border: string;
+
+          if (day.active) {
+            bg = 'var(--fs-accent)';
+            color = 'var(--fs-primary)';
+            border = 'none';
+          } else if (day.isToday) {
+            bg = 'var(--fs-surface)';
+            color = 'var(--fs-ink)';
+            border = '2px solid var(--fs-accent)';
+          } else {
+            bg = 'var(--fs-surface-2)';
+            color = 'var(--fs-muted)';
+            border = 'none';
+          }
 
           return (
             <div
               key={day.date.toISOString().split('T')[0]}
-              className="flex items-center justify-center"
               style={{
                 aspectRatio: '1 / 1',
+                minHeight: 48,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 background: bg,
                 color,
                 border,
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 18,
-                textTransform: 'uppercase',
+                borderRadius: 14,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                fontSize: day.isToday ? 16 : 14,
                 letterSpacing: '0',
               }}
             >

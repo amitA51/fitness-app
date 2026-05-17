@@ -1,5 +1,5 @@
-// InlineRestTimer - thin editorial rest strip replacing the full-screen overlay.
-// Navy strip, mustard shrinking progress fill, bone countdown. Sharp corners.
+// InlineRestTimer - Fresh Steel compact rest timer
+// Accent progress ring · surface-2 bg · compact layout
 
 import { memo, useEffect, useRef, useState } from 'react';
 import { triggerHaptic, vibratePattern } from '../../../utils/haptics';
@@ -36,9 +36,6 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
     const prefersReduced = usePrefersReducedMotion();
     const zeroFiredRef = useRef(false);
 
-    const secondsLeft = Math.ceil(timeLeft);
-    const isFinalThree = secondsLeft <= 3 && secondsLeft > 0;
-
     // Fire an end-of-timer buzz once when the countdown hits zero.
     useEffect(() => {
       if (!active) {
@@ -53,7 +50,12 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
 
     if (!active) return null;
 
-    const remainingWidth = Math.max(0, 100 - progress);
+    // SVG progress ring parameters
+    const size = 44;
+    const stroke = 8;
+    const radius = (size - stroke) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference * (1 - Math.min(1, Math.max(0, progress / 100)));
 
     const handleAdd15 = () => {
       triggerHaptic('light');
@@ -71,160 +73,134 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
         aria-live="polite"
         aria-label="טיימר מנוחה"
         style={{
-          position: 'relative',
-          width: '100%',
-          minHeight: 76,
-          backgroundColor: 'var(--navy)',
-          overflow: 'hidden',
-          borderRadius: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          padding: '8px 14px',
+          background: 'var(--fs-surface)',
+          borderBottom: '1px solid var(--fs-surface-2)',
           flexShrink: 0,
         }}
       >
-        {/* Mustard progress fill — shrinks from right/left edge as time elapses */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            insetInlineStart: 0,
-            width: `${remainingWidth}%`,
-            backgroundColor: 'var(--mustard)',
-            opacity: 0.22,
-            transition: 'width 0.3s linear',
-            pointerEvents: 'none',
-          }}
-        />
-
-        {/* Content overlay — three-column editorial */}
-        <div
-          style={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            padding: '14px 20px',
-            minHeight: 76,
-          }}
-        >
-          {/* Left — eyebrow + hint */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-            <span
+        {/* Left: progress ring + countdown */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* SVG progress ring */}
+          <svg
+            width={size}
+            height={size}
+            viewBox={`0 0 ${size} ${size}`}
+            style={{ transform: 'rotate(-90deg)' }}
+          >
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="var(--fs-rubber)"
+              stroke="var(--fs-surface-2)"
+              strokeWidth={stroke}
+            />
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke="var(--fs-accent)"
+              strokeWidth={stroke}
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              strokeLinecap="round"
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '0.28em',
-                color: 'var(--mustard)',
-                fontWeight: 600,
-                textTransform: 'uppercase',
+                transition: prefersReduced ? 'none' : 'stroke-dashoffset 0.3s linear',
+              }}
+            />
+          </svg>
+
+          {/* Time display */}
+          <div>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 22,
+                lineHeight: 1,
+                color: 'var(--fs-ink)',
+                fontVariantNumeric: 'tabular-nums',
+                letterSpacing: '0.02em',
               }}
             >
-              REST
-            </span>
+              {formatted}
+            </div>
             {nextSetHint && (
-              <span
+              <div
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  letterSpacing: '0.18em',
-                  color: 'var(--bone)',
-                  fontWeight: 500,
+                  fontSize: 9,
+                  letterSpacing: '0.08em',
+                  color: 'var(--fs-muted)',
                   textTransform: 'uppercase',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                  marginTop: 2,
                 }}
               >
                 {nextSetHint}
-              </span>
+              </div>
             )}
-          </div>
-
-          {/* Center — countdown */}
-          <div
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: 32,
-              lineHeight: 1,
-              color: 'var(--bone)',
-              letterSpacing: '0.04em',
-              fontVariantNumeric: 'tabular-nums',
-              transform: isFinalThree && !prefersReduced ? undefined : 'scale(1)',
-              animation:
-                isFinalThree && !prefersReduced
-                  ? 'inline-rest-pulse 1s ease-in-out infinite'
-                  : undefined,
-            }}
-          >
-            {formatted}
-          </div>
-
-          {/* Right — chips */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                handleAdd15();
-              }}
-              aria-label="הוסף 15 שניות"
-              style={{
-                minWidth: 52,
-                minHeight: 44,
-                padding: '0 12px',
-                backgroundColor: 'var(--mustard)',
-                color: 'var(--navy)',
-                border: '2px solid var(--navy)',
-                borderRadius: 0,
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                letterSpacing: '0.12em',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-              }}
-            >
-              +15
-            </button>
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                handleSkip();
-              }}
-              aria-label="דלג על המנוחה"
-              style={{
-                minWidth: 60,
-                minHeight: 44,
-                padding: '0 12px',
-                backgroundColor: 'transparent',
-                color: 'var(--mustard)',
-                border: '2px solid var(--mustard)',
-                borderRadius: 0,
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                letterSpacing: '0.12em',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-              }}
-            >
-              SKIP
-            </button>
           </div>
         </div>
 
-        <style>{`
-          @keyframes inline-rest-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-          }
-          @media (prefers-reduced-motion: reduce) {
-            [data-inline-rest-pulse] { animation: none !important; transform: none !important; }
-          }
-        `}</style>
+        {/* Right: actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              handleAdd15();
+            }}
+            aria-label="הוסף 15 שניות"
+            style={{
+              minWidth: 44,
+              minHeight: 32,
+              padding: '0 10px',
+              background: 'var(--fs-surface-2)',
+              color: 'var(--fs-ink)',
+              border: '1px solid var(--fs-steel)',
+              borderRadius: '10px 7px 10px 7px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.08em',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}
+          >
+            +15s
+          </button>
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              handleSkip();
+            }}
+            aria-label="דלג על המנוחה"
+            style={{
+              minWidth: 52,
+              minHeight: 32,
+              padding: '0 10px',
+              background: 'transparent',
+              color: 'var(--fs-accent)',
+              border: '1px solid var(--fs-accent)',
+              borderRadius: '10px 7px 10px 7px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.08em',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}
+          >
+            דלג
+          </button>
+        </div>
       </div>
     );
   }

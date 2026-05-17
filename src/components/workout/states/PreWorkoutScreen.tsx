@@ -240,7 +240,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
     <motion.div
       className="fixed inset-0 z-[9999] flex flex-col overflow-y-auto overscroll-contain"
       style={{
-        background: oledMode ? '#0B1A2B' : 'var(--bone)',
+        background: oledMode ? '#0B1A2B' : 'var(--fs-bg)',
       }}
       variants={containerVariants}
       initial="hidden"
@@ -260,13 +260,13 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
       />
 
       {/* ── NAVY MASTHEAD ── */}
-      <div className="relative z-10 flex-shrink-0" style={{ background: 'var(--navy)' }}>
+      <div className="relative z-10 flex-shrink-0" style={{ background: 'var(--fs-primary)' }}>
         {/* Chapter strip */}
         <div
           className="chapter-break"
-          style={{ borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)' }}
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
         >
-          <span className="left" style={{ color: 'var(--mustard)' }}>
+          <span className="left" style={{ color: 'var(--fs-accent)' }}>
             §01 · אימון
           </span>
           <span className="right">
@@ -285,7 +285,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,
                   fontSize: 48,
-                  color: 'var(--bone)',
+                  color: '#FFFFFF',
                   lineHeight: 0.88,
                   letterSpacing: '-0.02em',
                   direction: 'ltr',
@@ -304,7 +304,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               className="text-center"
               style={{
                 padding: '12px 8px',
-                borderRight: '1px solid rgba(var(--text-on-navy-rgb),0.15)',
+                borderRight: '1px solid rgba(255,255,255,0.15)',
               }}
             >
               <div
@@ -312,7 +312,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,
                   fontSize: 36,
-                  color: 'var(--mustard)',
+                  color: 'var(--fs-accent)',
                   lineHeight: 0.9,
                   letterSpacing: '-0.02em',
                   direction: 'ltr',
@@ -327,7 +327,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.22em',
-                  color: 'rgba(var(--text-on-navy-rgb),0.5)',
+                  color: 'rgba(255,255,255,0.5)',
                 }}
               >
                 סטים
@@ -339,7 +339,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               className="text-center"
               style={{
                 padding: '12px 8px',
-                borderRight: '1px solid rgba(var(--text-on-navy-rgb),0.15)',
+                borderRight: '1px solid rgba(255,255,255,0.15)',
               }}
             >
               <div
@@ -347,7 +347,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,
                   fontSize: 36,
-                  color: 'var(--bone)',
+                  color: '#FFFFFF',
                   lineHeight: 0.9,
                   letterSpacing: '-0.02em',
                   direction: 'ltr',
@@ -366,7 +366,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.22em',
-                  color: 'rgba(var(--text-on-navy-rgb),0.5)',
+                  color: 'rgba(255,255,255,0.5)',
                 }}
               >
                 ק"ג
@@ -380,7 +380,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,
                   fontSize: 36,
-                  color: workoutStreak > 0 ? 'var(--mustard)' : 'var(--bone)',
+                  color: workoutStreak > 0 ? 'var(--fs-accent)' : '#FFFFFF',
                   lineHeight: 0.9,
                   letterSpacing: '-0.02em',
                   direction: 'ltr',
@@ -395,7 +395,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.22em',
-                  color: 'rgba(var(--text-on-navy-rgb),0.5)',
+                  color: 'rgba(255,255,255,0.5)',
                 }}
               >
                 ימים
@@ -411,7 +411,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 letterSpacing: '0.15em',
-                color: 'rgba(var(--text-on-navy-rgb),0.35)',
+                color: 'rgba(255,255,255,0.35)',
                 textTransform: 'uppercase',
                 direction: 'ltr',
               }}
@@ -431,7 +431,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               <div
                 className="relative"
                 style={{
-                  background: 'var(--mustard)',
+                  background: 'var(--fs-accent)',
                   padding: '20px 20px',
                 }}
               >
@@ -439,11 +439,11 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 <div
                   className="absolute top-0 left-0 px-2 py-1"
                   style={{
-                    background: 'var(--navy)',
+                    background: 'var(--fs-primary)',
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
                     letterSpacing: '0.2em',
-                    color: 'var(--mustard)',
+                    color: 'var(--fs-accent)',
                     textTransform: 'uppercase',
                     fontWeight: 600,
                   }}
@@ -461,7 +461,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                       fontFamily: 'var(--font-display)',
                       fontWeight: 800,
                       fontSize: 22,
-                      color: 'var(--navy)',
+                      color: 'var(--fs-primary)',
                       lineHeight: 1,
                       letterSpacing: '-0.01em',
                     }}
@@ -494,39 +494,54 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
                   letterSpacing: '0.2em',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   textTransform: 'uppercase',
                 }}
               >
                 §02 · התבניות שלך
               </div>
 
-              <div className="grid grid-cols-2 gap-2" style={{ direction: 'ltr' }}>
+              <div
+                className="flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-none"
+                style={{
+                  display: 'flex',
+                  overflowX: 'auto',
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  gap: 8,
+                  paddingBottom: 4,
+                }}
+              >
                 {favoriteTemplates.map((template, index) => (
                   <motion.button
                     key={template.id}
                     onClick={() => handleTemplateSelect(template)}
+                    className="template-card fs-accent-rail"
                     style={{
-                      background: 'var(--bone-deep)',
-                      border: '2px solid var(--navy)',
+                      background: 'var(--fs-surface-2)',
+                      border: '2px solid var(--fs-primary)',
+                      borderRadius: '20px 14px 20px 14px',
                       padding: '14px',
                       cursor: 'pointer',
                       textAlign: 'right',
                       transition: 'all 150ms',
                       minHeight: 72,
+                      minWidth: 160,
+                      flexShrink: 0,
+                      scrollSnapAlign: 'start',
                     }}
                     whileTap={{ scale: 0.98 }}
                     initial={{ opacity: 0, x: 12 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2 + index * 0.07 }}
                     onPointerDown={(e) => {
-                      e.currentTarget.style.background = 'var(--bone-faint)';
+                      e.currentTarget.style.background = 'var(--fs-surface)';
                     }}
                     onPointerUp={(e) => {
-                      e.currentTarget.style.background = 'var(--bone-deep)';
+                      e.currentTarget.style.background = 'var(--fs-surface-2)';
                     }}
                     onPointerLeave={(e) => {
-                      e.currentTarget.style.background = 'var(--bone-deep)';
+                      e.currentTarget.style.background = 'var(--fs-surface-2)';
                     }}
                     aria-label={`התחל תבנית ${template.name}`}
                   >
@@ -535,7 +550,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                         fontFamily: 'var(--font-display)',
                         fontWeight: 800,
                         fontSize: 13,
-                        color: 'var(--navy)',
+                        color: 'var(--fs-primary)',
                         lineHeight: 1.1,
                         letterSpacing: '-0.01em',
                         marginBottom: 4,
@@ -549,7 +564,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                         fontFamily: 'var(--font-mono)',
                         fontSize: 9,
                         letterSpacing: '0.15em',
-                        color: 'var(--stone)',
+                        color: 'var(--fs-muted)',
                         textTransform: 'uppercase',
                       }}
                     >
@@ -572,16 +587,14 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
             <button
               type="button"
               onClick={handleStartWorkout}
-              className="w-full focus-ring"
+              className="start-workout-btn w-full focus-ring"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 12,
                 padding: '20px 24px',
-                background: 'var(--navy)',
-                color: 'var(--mustard)',
-                border: 'none',
+                color: 'var(--fs-primary)',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
@@ -589,16 +602,6 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
                 minHeight: 60,
-                transition: 'background 150ms',
-              }}
-              onPointerDown={(e) => {
-                e.currentTarget.style.background = 'var(--navy-deep)';
-              }}
-              onPointerUp={(e) => {
-                e.currentTarget.style.background = 'var(--navy)';
-              }}
-              onPointerLeave={(e) => {
-                e.currentTarget.style.background = 'var(--navy)';
               }}
               aria-label="התחל אימון"
             >
@@ -617,7 +620,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 justifyContent: 'center',
                 padding: '14px 24px',
                 background: 'transparent',
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 border: '2px solid transparent',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
@@ -629,15 +632,15 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 transition: 'all 150ms',
               }}
               onPointerDown={(e) => {
-                e.currentTarget.style.color = 'var(--navy)';
-                e.currentTarget.style.borderColor = 'var(--navy)';
+                e.currentTarget.style.color = 'var(--fs-primary)';
+                e.currentTarget.style.borderColor = 'var(--fs-primary)';
               }}
               onPointerUp={(e) => {
-                e.currentTarget.style.color = 'var(--stone)';
+                e.currentTarget.style.color = 'var(--fs-muted)';
                 e.currentTarget.style.borderColor = 'transparent';
               }}
               onPointerLeave={(e) => {
-                e.currentTarget.style.color = 'var(--stone)';
+                e.currentTarget.style.color = 'var(--fs-muted)';
                 e.currentTarget.style.borderColor = 'transparent';
               }}
               aria-label="ביטול וחזרה לדשבורד"

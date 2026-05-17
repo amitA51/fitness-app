@@ -302,7 +302,7 @@ export function SwipeableItem({
           transform: `translateX(${getTranslateX()}px)`,
           transition: direction === null ? 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
           willChange: 'transform',
-          background: 'var(--bone)',
+          background: 'var(--fs-bg)',
         }}
       >
         {children}

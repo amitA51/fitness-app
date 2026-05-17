@@ -143,43 +143,108 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-4xl h-full md:h-auto md:max-h-[85vh] bg-[var(--bg-secondary)] md:rounded-3xl border-0 md:border border-white/10 flex flex-col overflow-hidden shadow-2xl relative"
+        style={{
+          width: '100%',
+          maxWidth: '896px',
+          height: '100%',
+          maxHeight: '85vh',
+          background: 'var(--fs-bg)',
+          borderRadius: 0,
+          border: '0',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          boxShadow: 'var(--shadow-card)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-white/10 bg-white/5">
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: 16,
+            borderBottom: '1px solid var(--fs-surface-2)',
+            background: 'var(--fs-surface)',
+          }}
+        >
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-xl text-white/60 hover:text-white transition-colors"
+            style={{
+              padding: 8,
+              borderRadius: 0,
+              color: 'var(--fs-muted)',
+              cursor: 'pointer',
+              background: 'none',
+              border: 'none',
+            }}
           >
             <CloseIcon className="w-6 h-6" />
           </button>
-          <h2 className="text-xl font-bold text-white">
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '20px',
+              textTransform: 'uppercase',
+              color: 'var(--fs-ink)',
+            }}
+          >
             {initialPlan ? 'עריכת תוכנית' : 'תוכנית חדשה'}
           </h2>
           <button
             onClick={handleSave}
             disabled={isSaving || !name.trim()}
-            className={`p-2 rounded-xl flex items-center gap-2 font-bold transition-all ${
-              name.trim()
-                ? 'text-[var(--cosmos-accent-primary)] hover:bg-[var(--cosmos-accent-primary)]/10'
-                : 'text-white/30 cursor-not-allowed'
-            }`}
+            style={{
+              padding: 8,
+              borderRadius: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontWeight: 800,
+              fontFamily: 'var(--font-display)',
+              textTransform: 'uppercase',
+              background: name.trim() ? 'var(--fs-primary)' : 'transparent',
+              color: name.trim() ? 'var(--fs-accent)' : 'var(--fs-muted)',
+              border: name.trim() ? 'none' : '1px solid var(--fs-surface-2)',
+              cursor: name.trim() ? 'pointer' : 'not-allowed',
+              fontSize: '14px',
+              paddingLeft: 16,
+              paddingRight: 16,
+            }}
           >
             <span className="hidden sm:inline">{isSaving ? 'שומר...' : 'שמור'}</span>
             <SaveIcon className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        <div
+          style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}
+        >
           {/* Main Form */}
           <div
-            className={`flex-1 flex flex-col h-full overflow-hidden transition-all ${showLibrary ? 'hidden md:flex' : 'flex'}`}
+            style={{
+              flex: 1,
+              display: showLibrary ? 'none' : 'flex',
+              flexDirection: 'column',
+              height: '100%',
+              overflow: 'hidden',
+            }}
           >
-            <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+            <div style={{ padding: 24, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
               {/* Name Input */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-white/50 uppercase tracking-wider">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    color: 'var(--fs-muted)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                  }}
+                >
                   שם התוכנית
                 </label>
                 <input
@@ -187,20 +252,52 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="לדוגמה: יום חזה מפלצתי"
-                  className="w-full bg-transparent text-3xl font-bold text-white placeholder-white/20 outline-none border-b border-white/10 focus:border-[var(--cosmos-accent-primary)] transition-colors py-2"
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '30px',
+                    fontWeight: 800,
+                    color: 'var(--fs-ink)',
+                    outline: 'none',
+                    border: 'none',
+                    borderBottom: '1px solid var(--fs-surface-2)',
+                    padding: '8px 0',
+                  }}
                   autoFocus={!initialPlan}
                 />
               </div>
 
               {/* Exercises List */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-end">
-                  <label className="text-xs font-bold text-white/50 uppercase tracking-wider">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <label
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      color: 'var(--fs-muted)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                    }}
+                  >
                     תרגילים ({exercises.length})
                   </label>
                   <button
                     onClick={() => setShowLibrary(true)}
-                    className="text-sm font-bold text-[var(--cosmos-accent-primary)] hover:text-white transition-colors flex items-center gap-1"
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: '14px',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      color: 'var(--fs-accent)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
                   >
                     <AddIcon className="w-4 h-4" />
                     הוסף תרגיל
@@ -210,22 +307,50 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                 {exercises.length === 0 ? (
                   <div
                     onClick={() => setShowLibrary(true)}
-                    className="h-40 rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center text-white/30 cursor-pointer hover:border-[var(--cosmos-accent-primary)]/50 hover:bg-[var(--cosmos-accent-primary)]/5 transition-all group"
+                    style={{
+                      height: 160,
+                      borderRadius: 0,
+                      border: '2px dashed var(--fs-surface-2)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--fs-muted)',
+                      cursor: 'pointer',
+                      gap: 8,
+                    }}
                   >
-                    <DumbbellIcon className="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" />
-                    <span className="font-medium">לחץ כאן להוספת תרגילים</span>
+                    <DumbbellIcon className="w-8 h-8" />
+                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>לחץ כאן להוספת תרגילים</span>
                   </div>
                 ) : (
                   <Reorder.Group
                     axis="y"
                     values={exercises}
                     onReorder={setExercises}
-                    className="space-y-3"
+                    style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
                   >
                     {exercises.map((exercise) => (
                       <Reorder.Item key={exercise.id} value={exercise}>
-                        <div className="bg-white/5 border border-white/5 rounded-xl p-4 flex items-center gap-4 group hover:bg-white/10 transition-colors">
-                          <div className="cursor-grab active:cursor-grabbing text-white/20 hover:text-white/60">
+                        <div
+                          style={{
+                            background: 'var(--fs-surface)',
+                            border: '1px solid var(--fs-surface-2)',
+                            borderRadius: 0,
+                            padding: 16,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 16,
+                            boxShadow: 'var(--shadow-card)',
+                          }}
+                        >
+                          <div
+                            style={{
+                              cursor: 'grab',
+                              color: 'var(--fs-steel)',
+                              display: 'flex',
+                            }}
+                          >
                             <svg
                               className="w-6 h-6"
                               fill="none"
@@ -240,9 +365,11 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                               />
                             </svg>
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-bold text-white">{exercise.name}</h4>
-                            <div className="flex gap-2 text-xs text-white/50 mt-1">
+                          <div style={{ flex: 1 }}>
+                            <h4 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--fs-ink)', fontSize: '16px' }}>
+                              {exercise.name}
+                            </h4>
+                            <div style={{ display: 'flex', gap: 8, color: 'var(--fs-muted)', fontSize: '12px', marginTop: 4 }}>
                               <span>{(exercise.sets || []).length} סטים</span>
                               <span>•</span>
                               <span>{exercise.muscleGroup || 'כללי'}</span>
@@ -250,7 +377,14 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                           </div>
                           <button
                             onClick={(e) => handleRemoveExercise(exercise.id, e)}
-                            className="p-2 text-white/20 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                            style={{
+                              padding: 8,
+                              borderRadius: 0,
+                              color: 'var(--fs-muted)',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                            }}
                           >
                             <TrashIcon className="w-5 h-5" />
                           </button>
@@ -271,18 +405,53 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: '100%', opacity: 0 }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className="absolute inset-0 md:relative md:w-[450px] bg-[var(--bg-primary)] md:border-r border-white/10 z-20 flex flex-col"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'var(--fs-bg)',
+                  zIndex: 20,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderLeft: '1px solid var(--fs-surface-2)',
+                }}
               >
-                <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[var(--bg-primary)]">
-                  <h3 className="font-bold text-white">בחר תרגיל להוספה</h3>
+                <div
+                  style={{
+                    padding: 16,
+                    borderBottom: '1px solid var(--fs-surface-2)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    background: 'var(--fs-surface)',
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 800,
+                      fontSize: '16px',
+                      textTransform: 'uppercase',
+                      color: 'var(--fs-ink)',
+                    }}
+                  >
+                    בחר תרגיל להוספה
+                  </h3>
                   <button
                     onClick={() => setShowLibrary(false)}
-                    className="text-sm text-white/60 hover:text-white"
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '12px',
+                      color: 'var(--fs-muted)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      textTransform: 'uppercase',
+                    }}
                   >
                     סגור
                   </button>
                 </div>
-                <div className="flex-1 overflow-hidden p-2">
+                <div style={{ flex: 1, overflow: 'hidden', padding: 8 }}>
                   <ExerciseLibraryTab
                     onSelect={(ex) => handleAddExercise(ex)}
                     isSelectionMode={true}

@@ -39,8 +39,8 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '14px 16px',
-          background: isPR ? 'var(--mustard)' : 'var(--bone-deep)',
-          border: '2px solid var(--navy)',
+          background: isPR ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+          border: '2px solid var(--fs-primary)',
           position: 'relative',
         }}
       >
@@ -55,12 +55,12 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
               top: -8,
               right: 12,
               padding: '2px 8px',
-              background: 'var(--navy)',
+              background: 'var(--fs-primary)',
               fontFamily: 'var(--font-mono)',
               fontSize: 9,
               fontWeight: 600,
               letterSpacing: '0.2em',
-              color: 'var(--mustard)',
+              color: 'var(--fs-accent)',
               textTransform: 'uppercase',
             }}
           >
@@ -73,7 +73,7 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
             <CheckCircleIcon
               size={16}
               strokeWidth={2.5}
-              style={{ color: 'var(--navy)', flexShrink: 0 }}
+              style={{ color: 'var(--fs-primary)', flexShrink: 0 }}
             />
           )}
           <span
@@ -81,7 +81,7 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 15,
-              color: isPR ? 'var(--navy)' : 'var(--ink)',
+              color: isPR ? 'var(--fs-primary)' : 'var(--fs-ink)',
               letterSpacing: '-0.01em',
             }}
           >
@@ -95,7 +95,7 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
               letterSpacing: '0.08em',
-              color: isPR ? 'var(--navy)' : 'var(--stone)',
+              color: isPR ? 'var(--fs-primary)' : 'var(--fs-muted)',
               textTransform: 'uppercase',
               direction: 'ltr',
             }}
@@ -108,7 +108,7 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
                 fontFamily: 'var(--font-mono)',
                 fontSize: 12,
                 letterSpacing: '0.05em',
-                color: isPR ? 'var(--navy)' : 'var(--ink)',
+                color: isPR ? 'var(--fs-primary)' : 'var(--fs-ink)',
                 fontVariantNumeric: 'tabular-nums',
                 direction: 'ltr',
               }}
@@ -146,7 +146,7 @@ export const SummaryExerciseList: React.FC<SummaryExerciseListProps> = memo(
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             letterSpacing: '0.18em',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             textTransform: 'uppercase',
             marginBottom: 4,
           }}
@@ -170,7 +170,7 @@ export const SummaryExerciseList: React.FC<SummaryExerciseListProps> = memo(
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               letterSpacing: '0.12em',
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
               textTransform: 'uppercase',
               textAlign: 'center',
               paddingTop: 8,

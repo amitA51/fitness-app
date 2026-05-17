@@ -117,10 +117,12 @@ export const InlineLoader: React.FC<{
             className="absolute inset-0 flex items-center justify-center"
           >
             <motion.div
-              className="border-2 border-white/20 border-t-white rounded-full"
+              className="border-2"
               style={{
                 width: spinnerSize,
                 height: spinnerSize,
+                borderColor: 'var(--fs-surface-2)',
+                borderTopColor: 'var(--fs-accent)',
               }}
               animate={{ rotate: 360 }}
               transition={{
@@ -161,7 +163,7 @@ export const ErrorWithRetry: React.FC<{
       dir="rtl"
     >
       {!compact && (
-        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+        <div className="w-12 h-12 flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--fs-warn) 10%, transparent)' }}>
           <svg
             width="24"
             height="24"
@@ -169,7 +171,7 @@ export const ErrorWithRetry: React.FC<{
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
-            className="text-red-400"
+            style={{ color: 'var(--fs-warn)' }}
           >
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
@@ -178,18 +180,26 @@ export const ErrorWithRetry: React.FC<{
         </div>
       )}
 
-      <p className={`text-white/60 ${compact ? 'text-sm' : 'text-center'}`}>{message}</p>
+      <p className="text-center" style={{ color: 'var(--fs-muted)', fontSize: compact ? '0.875rem' : undefined }}>{message}</p>
 
       <button
         onClick={onRetry}
         className={`
           ${compact ? 'px-3 py-1.5 text-xs' : 'px-5 py-2.5 text-sm'}
-          bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20
-          text-white/80 font-medium rounded-xl
           transition-all duration-200
           active:scale-[0.97]
           flex items-center gap-2
         `}
+        style={{
+          background: 'var(--fs-primary)',
+          color: 'var(--fs-accent)',
+          fontFamily: 'var(--font-display)',
+          fontWeight: 800,
+          textTransform: 'uppercase',
+          borderRadius: 0,
+          border: 'none',
+          cursor: 'pointer',
+        }}
       >
         <svg
           width="14"
@@ -198,7 +208,7 @@ export const ErrorWithRetry: React.FC<{
           fill="none"
           stroke="currentColor"
           strokeWidth="2.5"
-          className="text-white/60"
+          style={{ color: 'var(--fs-accent)' }}
         >
           <polyline points="23 4 23 10 17 10" />
           <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />

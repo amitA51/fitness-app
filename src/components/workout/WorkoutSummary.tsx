@@ -291,21 +291,21 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg overflow-hidden flex flex-col"
         style={{
-          background: 'var(--bone)',
-          border: '2px solid var(--navy)',
+          background: 'var(--fs-bg)',
+          border: '2px solid var(--fs-primary)',
           borderRadius: 0,
           boxShadow: '0 8px 24px rgba(11,26,43,0.25)',
           maxHeight: '90dvh',
         }}
       >
         {/* ── NAVY MASTHEAD ── */}
-        <div style={{ background: 'var(--navy)', flexShrink: 0 }}>
+        <div style={{ background: 'var(--fs-primary)', flexShrink: 0 }}>
           {/* Chapter strip */}
           <div
             className="chapter-break"
-            style={{ borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)' }}
+            style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
           >
-            <span className="left" style={{ color: 'var(--mustard)' }}>
+            <span className="left" style={{ color: 'var(--fs-accent)' }}>
               §99 · סיכום
             </span>
             <span className="right">{dateLabel}</span>
@@ -319,7 +319,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 900,
                 fontSize: 48,
-                color: 'var(--bone)',
+                color: '#FFFFFF',
                 lineHeight: 0.88,
                 letterSpacing: '-0.02em',
                 direction: 'ltr',
@@ -328,9 +328,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             >
               {prsCount > 0 ? (
                 <>
-                  <span style={{ color: 'var(--mustard)' }}>{prsCount}</span>
+                  <span style={{ color: 'var(--fs-accent)' }}>{prsCount}</span>
                   <br />
-                  <span style={{ fontSize: 24, color: 'rgba(var(--text-on-navy-rgb),0.7)' }}>
+                  <span style={{ fontSize: 24, color: 'rgba(255,255,255,0.7)' }}>
                     שיאים חדשים
                   </span>
                 </>
@@ -345,7 +345,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 letterSpacing: '0.18em',
-                color: 'rgba(var(--text-on-navy-rgb),0.4)',
+                color: 'rgba(255,255,255,0.4)',
                 textTransform: 'uppercase',
                 marginTop: 8,
               }}
@@ -361,8 +361,8 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         <div
           className="flex"
           style={{
-            background: 'var(--bone)',
-            borderBottom: '2px solid var(--bone-deep)',
+            background: 'var(--fs-bg)',
+            borderBottom: '2px solid var(--fs-surface-2)',
             flexShrink: 0,
           }}
         >
@@ -378,10 +378,10 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               style={{
                 flex: 1,
                 padding: '14px 16px',
-                background: view === v ? 'var(--navy)' : 'transparent',
-                color: view === v ? 'var(--mustard)' : 'var(--stone)',
+                background: view === v ? 'var(--fs-primary)' : 'transparent',
+                color: view === v ? 'var(--fs-accent)' : 'var(--fs-muted)',
                 border: 'none',
-                borderBottom: view === v ? '2px solid var(--mustard)' : '2px solid transparent',
+                borderBottom: view === v ? '2px solid var(--fs-accent)' : '2px solid transparent',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
@@ -399,7 +399,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         {/* ── CONTENT ── */}
         <div
           className="flex-1 overflow-y-auto overscroll-contain px-5 py-5"
-          style={{ background: 'var(--bone)' }}
+          style={{ background: 'var(--fs-bg)' }}
         >
           <AnimatePresence mode="sync">
             {view === 'overview' ? (
@@ -449,9 +449,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                       justifyContent: 'space-between',
                       padding: '14px 16px',
                       background: prExercises.has(ex.name ?? '')
-                        ? 'var(--mustard)'
-                        : 'var(--bone-deep)',
-                      border: '2px solid var(--navy)',
+                        ? 'var(--fs-accent)'
+                        : 'var(--fs-surface-2)',
+                      border: '2px solid var(--fs-primary)',
                     }}
                   >
                     <div className="flex items-center gap-3">
@@ -459,7 +459,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                         <CheckCircleIcon
                           size={16}
                           strokeWidth={2.5}
-                          style={{ color: 'var(--navy)', flexShrink: 0 }}
+                          style={{ color: 'var(--fs-primary)', flexShrink: 0 }}
                         />
                       )}
                       <span
@@ -467,7 +467,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                           fontFamily: 'var(--font-display)',
                           fontWeight: 800,
                           fontSize: 14,
-                          color: prExercises.has(ex.name ?? '') ? 'var(--navy)' : 'var(--ink)',
+                          color: prExercises.has(ex.name ?? '') ? 'var(--fs-primary)' : 'var(--fs-ink)',
                           letterSpacing: '-0.01em',
                         }}
                       >
@@ -480,7 +480,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                           fontFamily: 'var(--font-mono)',
                           fontSize: 11,
                           letterSpacing: '0.1em',
-                          color: prExercises.has(ex.name ?? '') ? 'var(--navy)' : 'var(--stone)',
+                          color: prExercises.has(ex.name ?? '') ? 'var(--fs-primary)' : 'var(--fs-muted)',
                           textTransform: 'uppercase',
                         }}
                       >
@@ -492,7 +492,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                             fontFamily: 'var(--font-mono)',
                             fontSize: 12,
                             letterSpacing: '0.05em',
-                            color: prExercises.has(ex.name ?? '') ? 'var(--navy)' : 'var(--ink)',
+                            color: prExercises.has(ex.name ?? '') ? 'var(--fs-primary)' : 'var(--fs-ink)',
                             fontVariantNumeric: 'tabular-nums',
                           }}
                         >
@@ -511,8 +511,8 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         <div
           className="flex flex-col gap-2 px-5 py-4"
           style={{
-            background: 'var(--bone)',
-            borderTop: '2px solid var(--bone-deep)',
+            background: 'var(--fs-bg)',
+            borderTop: '2px solid var(--fs-surface-2)',
             flexShrink: 0,
           }}
         >
@@ -522,7 +522,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             onClick={onClose}
             onPointerDown={(e) => {
               e.preventDefault();
-              e.currentTarget.style.background = 'var(--navy-deep)';
+              e.currentTarget.style.background = '#0D1A1C';
             }}
             style={{
               width: '100%',
@@ -530,8 +530,8 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               padding: '16px 24px',
-              background: 'var(--navy)',
-              color: 'var(--mustard)',
+              background: 'var(--fs-accent)',
+              color: 'var(--fs-primary)',
               border: 'none',
               cursor: 'pointer',
               fontFamily: 'var(--font-display)',
@@ -543,10 +543,10 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               minHeight: 52,
             }}
             onPointerUp={(e) => {
-              e.currentTarget.style.background = 'var(--navy)';
+              e.currentTarget.style.background = 'var(--fs-accent)';
             }}
             onPointerLeave={(e) => {
-              e.currentTarget.style.background = 'var(--navy)';
+              e.currentTarget.style.background = 'var(--fs-accent)';
             }}
           >
             סיום
@@ -565,9 +565,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   justifyContent: 'center',
                   gap: 6,
                   padding: '12px 16px',
-                  background: 'var(--bone-deep)',
-                  color: 'var(--navy)',
-                  border: '2px solid var(--navy)',
+                  background: 'var(--fs-surface-2)',
+                  color: 'var(--fs-primary)',
+                  border: '2px solid var(--fs-primary)',
                   cursor: 'pointer',
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,
@@ -591,9 +591,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 justifyContent: 'center',
                 gap: 6,
                 padding: '12px 16px',
-                background: 'var(--bone-deep)',
-                color: 'var(--navy)',
-                border: '2px solid var(--navy)',
+                background: 'var(--fs-surface-2)',
+                color: 'var(--fs-primary)',
+                border: '2px solid var(--fs-primary)',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
@@ -617,9 +617,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   justifyContent: 'center',
                   gap: 6,
                   padding: '12px 16px',
-                  background: 'var(--bone-deep)',
-                  color: 'var(--navy)',
-                  border: '2px solid var(--navy)',
+                  background: 'var(--fs-surface-2)',
+                  color: 'var(--fs-primary)',
+                  border: '2px solid var(--fs-primary)',
                   cursor: 'pointer',
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,

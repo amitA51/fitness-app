@@ -2,7 +2,7 @@
 // Features: Gradient animation, particle trail, milestone markers
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 
 // ============================================================
 // TYPES
@@ -45,29 +45,21 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
   // Clamp progress between 0-100
   const clampedProgress = Math.min(100, Math.max(0, progress));
 
-  // Determine color based on progress
-  const gradientColors = useMemo(() => {
-    if (clampedProgress < 25) return 'from-cyan-400 via-cyan-500 to-cyan-400';
-    if (clampedProgress < 50) return 'from-cyan-400 via-lime-400 to-lime-500';
-    if (clampedProgress < 75) return 'from-lime-400 via-lime-500 to-emerald-500';
-    return 'from-lime-400 via-emerald-400 to-emerald-500';
-  }, [clampedProgress]);
-
   // Milestone positions
   const milestones = [25, 50, 75, 100];
 
   return (
-    <div className="absolute top-0 left-0 right-0 h-1.5 z-[100] bg-white/5">
+    <div
+      className="absolute top-0 left-0 right-0 h-1.5 z-[100]"
+      style={{ background: 'var(--fs-surface-2)' }}
+    >
       {/* Background Track */}
       <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10" />
 
       {/* Progress Fill */}
       <motion.div
-        className={`
-                    absolute top-0 left-0 h-full
-                    bg-gradient-to-r ${gradientColors}
-                    shadow-[0_0_15px_var(--cosmos-accent-primary)]
-                `}
+        className="absolute top-0 left-0 h-full shadow-[0_0_15px_var(--fs-accent)]"
+        style={{ background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))' }}
         initial={{ width: 0 }}
         animate={{ width: `${clampedProgress}%` }}
         transition={{
@@ -96,7 +88,8 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
         <motion.div
           className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(163,230,53,0.8) 0%, transparent 70%)',
+            background:
+              'radial-gradient(circle, color-mix(in srgb, var(--fs-accent) 80%, transparent) 0%, transparent 70%)',
           }}
           animate={{
             scale: [0.8, 1.2, 0.8],

@@ -10,10 +10,10 @@ interface MuscleRadarChartProps {
 }
 
 const MUSCLE_STATUS_COLORS = {
-  strong: '#22c55e', // green - well trained
+  strong: 'var(--fs-accent)', // green - well trained
   stable: '#fbbf24', // yellow - maintaining
-  weak: '#ef4444', // red - neglected
-  neutral: '#8b5cf6', // purple - default
+  weak: 'var(--fs-warn)', // red - neglected
+  neutral: 'var(--fs-accent)', // default
 };
 
 /**

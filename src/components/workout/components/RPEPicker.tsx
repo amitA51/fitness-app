@@ -1,9 +1,9 @@
-// RPEPicker - VISION Sport Annual Editorial Design
-// Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
+// RPEPicker - Fresh Steel Compact Design
+// Single button showing current RPE · on tap opens compact popover with 6-10 + tags
+// No full-screen modal overlay — small bottom popover
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useCallback, useState } from 'react';
-import { ModalOverlay } from '../../ui/ModalOverlay';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 interface RPEPickerProps {
   isOpen: boolean;
@@ -13,295 +13,279 @@ interface RPEPickerProps {
   onClose: () => void;
 }
 
-const RPE_DATA: {
-  value: number;
-  label: string;
-  color: string;
-  description: string;
-}[] = [
-  { value: 1, label: '1', color: '#2D8B4E', description: 'מאמץ מינימלי' },
-  { value: 2, label: '2', color: '#2D8B4E', description: 'קל מאוד' },
-  { value: 3, label: '3', color: '#2D8B4E', description: 'קל' },
-  { value: 4, label: '4', color: '#2D8B4E', description: 'בינוני-קל' },
-  { value: 5, label: '5', color: '#E8B82D', description: 'בינוני' },
-  { value: 6, label: '6', color: '#E8B82D', description: 'בינוני-קשה' },
-  { value: 7, label: '7', color: '#E8B82D', description: 'קשה' },
-  { value: 8, label: '8', color: '#E8B82D', description: 'קשה מאוד' },
-  { value: 9, label: '9', color: '#C42B2B', description: 'כמעט מקסימלי' },
-  { value: 10, label: '10', color: '#C42B2B', description: 'מקסימלי!' },
+const RPE_VALUES = [6, 7, 8, 9, 10];
+
+const RPE_TAGS = [
+  { label: 'טכניקה נקייה', value: 'clean' },
+  { label: 'כמעט כשל', value: 'near-failure' },
+  { label: 'כאב', value: 'pain' },
+  { label: 'להוריד עומס', value: 'deload' },
 ];
+
+const RPE_LABELS: Record<number, string> = {
+  6: 'בינוני-קשה',
+  7: 'קשה',
+  8: 'קשה מאוד',
+  9: 'כמעט מקסימלי',
+  10: 'מקסימלי!',
+};
 
 const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSelect, onClose }) => {
   const [selected, setSelected] = useState<number | null>(currentValue ?? null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
-  const handleSelect = useCallback((value: number) => {
-    setSelected((prev) => (prev === value ? null : value));
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate([5]);
-    }
+  // Sync selected when currentValue changes
+  useEffect(() => {
+    setSelected(currentValue ?? null);
+  }, [currentValue, isOpen]);
+
+  const handleSelect = useCallback(
+    (value: number) => {
+      const newValue = selected === value ? null : value;
+      setSelected(newValue);
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate([5]);
+      }
+      // Auto-select on tap (no confirm button needed)
+      onSelect(newValue);
+    },
+    [selected, onSelect]
+  );
+
+  const handleTagSelect = useCallback((tagValue: string) => {
+    setSelectedTag((prev) => (prev === tagValue ? null : tagValue));
   }, []);
 
-  const handleConfirm = useCallback(() => {
-    onSelect(selected);
-    onClose();
-  }, [selected, onSelect, onClose]);
+  // Close on backdrop click
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    },
+    [onClose]
+  );
 
-  const selectedData = selected ? RPE_DATA.find((r) => r.value === selected) : null;
+  const currentLabel = currentValue ? RPE_LABELS[currentValue] : null;
 
   return (
-    <ModalOverlay
-      isOpen={isOpen}
-      onClose={onClose}
-      variant="none"
-      zLevel="high"
-      backdropOpacity={60}
-      blur="sm"
-      trapFocus
-      lockScroll
-      closeOnBackdropClick
-      closeOnEscape
-      ariaLabel="דירוג מאמץ RPE"
-    >
-      <motion.div
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: 'var(--bone)',
-          borderTop: '2px solid var(--navy)',
-          paddingBottom: 'env(safe-area-inset-bottom, 16px)',
-        }}
-      >
-        {/* Header */}
-        <div
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
           style={{
-            padding: '20px 24px 16px',
-            borderBottom: '1px solid var(--bone-deep)',
+            position: 'fixed',
+            inset: 0,
+            zIndex: 999,
+            backgroundColor: 'rgba(13, 21, 22, 0.5)',
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
           }}
+          onClick={handleBackdropClick}
         >
-          <div
+          <motion.div
+            ref={popoverRef}
+            initial={{ y: '100%', opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+            onClick={(e) => e.stopPropagation()}
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: '0.22em',
-              color: 'var(--mustard)',
-              textTransform: 'uppercase',
-              marginBottom: 4,
+              width: '100%',
+              maxWidth: 400,
+              background: 'var(--fs-surface)',
+              borderTopLeftRadius: '24px 16px',
+              borderTopRightRadius: '24px 16px',
+              border: '1px solid var(--fs-steel)',
+              borderBottom: 'none',
+              padding: '20px 20px calc(20px + env(safe-area-inset-bottom, 8px))',
+              boxShadow: '0 -8px 30px rgba(0,0,0,0.08)',
             }}
           >
-            §01 · דירוג מאמץ
-          </div>
-          <h3
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 900,
-              fontSize: 22,
-              color: 'var(--navy)',
-              textTransform: 'uppercase',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            RPE
-          </h3>
-          {targetRPE && (
+            {/* Handle bar */}
             <div
               style={{
-                display: 'inline-flex',
+                width: 36,
+                height: 4,
+                borderRadius: 2,
+                background: 'var(--fs-surface-2)',
+                margin: '0 auto 16px',
+              }}
+            />
+
+            {/* Header */}
+            <div
+              style={{
+                display: 'flex',
                 alignItems: 'center',
-                gap: 6,
-                marginTop: 8,
-                padding: '4px 12px',
-                background: 'var(--mustard)',
+                justifyContent: 'space-between',
+                marginBottom: 16,
               }}
             >
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  color: 'var(--navy)',
-                  letterSpacing: '0.1em',
-                }}
-              >
-                יעד:
-              </span>
-              <span
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
-                  fontSize: 14,
-                  color: 'var(--navy)',
-                }}
-              >
-                RPE {targetRPE}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* RPE Grid */}
-        <div style={{ padding: '16px 20px' }}>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(5, 1fr)',
-              gap: 8,
-            }}
-          >
-            {RPE_DATA.map((rpe) => {
-              const isSelected = selected === rpe.value;
-              return (
-                <motion.button
-                  key={rpe.value}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleSelect(rpe.value)}
+              <div>
+                <span
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 4,
-                    padding: '16px 8px',
-                    background: isSelected ? rpe.color : 'var(--bone-deep)',
-                    border: isSelected ? `2px solid ${rpe.color}` : '2px solid var(--navy)',
-                    cursor: 'pointer',
-                    transition: 'all 150ms ease',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    letterSpacing: '0.22em',
+                    color: 'var(--fs-muted)',
+                    textTransform: 'uppercase',
+                    fontWeight: 700,
                   }}
                 >
-                  <span
+                  RPE · דירוג מאמץ
+                </span>
+                {currentLabel && (
+                  <div
                     style={{
                       fontFamily: 'var(--font-display)',
-                      fontWeight: 900,
-                      fontSize: 24,
-                      color: isSelected ? 'var(--navy)' : 'var(--stone)',
-                      letterSpacing: '-0.02em',
+                      fontWeight: 800,
+                      fontSize: 18,
+                      color: 'var(--fs-ink)',
+                      marginTop: 4,
                     }}
                   >
-                    {rpe.value}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 8,
-                      color: isSelected ? 'var(--navy)' : 'var(--stone)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      opacity: isSelected ? 1 : 0.7,
-                    }}
-                  >
-                    {rpe.description.slice(0, 4)}
-                  </span>
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
+                    {currentLabel}
+                  </div>
+                )}
+              </div>
+              {targetRPE && (
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    color: 'var(--fs-accent)',
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    padding: '4px 10px',
+                    background: 'var(--fs-surface-2)',
+                    borderRadius: '12px 8px 12px 8px',
+                  }}
+                >
+                  יעד: RPE {targetRPE}
+                </span>
+              )}
+            </div>
 
-        {/* Selected Description */}
-        <AnimatePresence mode="sync">
-          {selectedData && (
-            <motion.div
-              key={selectedData.value}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
+            {/* RPE Numbers */}
+            <div
               style={{
-                textAlign: 'center',
-                padding: '0 20px 16px',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                gap: 8,
+                marginBottom: 16,
               }}
             >
+              {RPE_VALUES.map((rpe) => {
+                const isActive = selected === rpe;
+                return (
+                  <motion.button
+                    key={rpe}
+                    whileTap={{ scale: 0.93 }}
+                    onClick={() => handleSelect(rpe)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 2,
+                      padding: '14px 4px',
+                      background: isActive ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+                      border: isActive
+                        ? '1.5px solid var(--fs-accent)'
+                        : '1.5px solid transparent',
+                      borderRadius: '14px 10px 14px 10px',
+                      cursor: 'pointer',
+                      transition: 'all 120ms ease',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontWeight: 900,
+                        fontSize: 22,
+                        lineHeight: 1,
+                        color: isActive ? '#FFFFFF' : 'var(--fs-ink)',
+                      }}
+                    >
+                      {rpe}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 8,
+                        color: isActive ? 'rgba(255,255,255,0.85)' : 'var(--fs-muted)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                      }}
+                    >
+                      {RPE_LABELS[rpe as keyof typeof RPE_LABELS]?.slice(0, 4) ?? ''}
+                    </span>
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            {/* Tags */}
+            <div>
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: selectedData.color,
+                  fontSize: 9,
+                  letterSpacing: '0.18em',
+                  color: 'var(--fs-muted)',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.15em',
+                  fontWeight: 700,
+                  display: 'block',
+                  marginBottom: 8,
                 }}
               >
-                {selectedData.description}
+                תיוג סט
               </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Actions */}
-        <div
-          style={{
-            display: 'flex',
-            gap: 12,
-            padding: '0 20px 24px',
-          }}
-        >
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1,
-              padding: '16px 20px',
-              background: 'transparent',
-              border: '2px solid var(--navy)',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: 14,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: 'var(--navy)',
-              cursor: 'pointer',
-            }}
-          >
-            ביטול
-          </button>
-          {selected && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              onClick={() => {
-                onSelect(null);
-                onClose();
-              }}
-              style={{
-                padding: '16px 20px',
-                background: 'transparent',
-                border: '2px solid #C42B2B',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 14,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: '#C42B2B',
-                cursor: 'pointer',
-              }}
-            >
-              נקה
-            </motion.button>
-          )}
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={handleConfirm}
-            style={{
-              flex: 1,
-              padding: '16px 20px',
-              background: 'var(--navy)',
-              border: 'none',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: 14,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: selectedData ? selectedData.color : 'var(--mustard)',
-              cursor: 'pointer',
-            }}
-          >
-            אישור
-          </motion.button>
-        </div>
-      </motion.div>
-    </ModalOverlay>
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                }}
+              >
+                {RPE_TAGS.map((tag) => {
+                  const isActive = selectedTag === tag.value;
+                  return (
+                    <button
+                      key={tag.value}
+                      type="button"
+                      onClick={() => handleTagSelect(tag.value)}
+                      style={{
+                        padding: '8px 14px',
+                        background: isActive ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+                        border: isActive
+                          ? '1.5px solid var(--fs-accent)'
+                          : '1.5px solid transparent',
+                        borderRadius: '14px 10px 14px 10px',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: isActive ? '#FFFFFF' : 'var(--fs-ink)',
+                        cursor: 'pointer',
+                        transition: 'all 120ms ease',
+                      }}
+                    >
+                      {tag.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 });
 

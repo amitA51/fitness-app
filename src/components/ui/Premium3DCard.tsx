@@ -99,17 +99,23 @@ export const Premium3DCard: React.FC<Premium3DCardProps> = ({
 
         {/* Card Background / Glass Layer */}
         <div
-          className="absolute inset-0 rounded-3xl bg-white/[0.03] border border-white/[0.05] backdrop-blur-xl shadow-xl transition-colors duration-500"
-          style={{ transform: 'translateZ(0px)' }}
+          className="absolute inset-0 border border-[var(--fs-surface-2)]"
+          style={{
+            transform: 'translateZ(0px)',
+            background: 'var(--fs-surface)',
+            borderRadius: 0,
+            boxShadow: 'var(--shadow-card)',
+          }}
         />
 
         {/* Specular Glare Effect */}
         <motion.div
-          className="absolute inset-0 rounded-3xl pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
+            borderRadius: 'var(--radius-asymmetric, 22px 16px 22px 16px)',
             background: `radial-gradient(
-                            circle at ${50 + x.get() * 100}% ${50 + y.get() * 100}%, 
-                            ${glareColor}, 
+                            circle at ${50 + x.get() * 100}% ${50 + y.get() * 100}%,
+                            ${glareColor},
                             transparent 80%
                         )`,
             transform: 'translateZ(1px)', // Sit slightly above background

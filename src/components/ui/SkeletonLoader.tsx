@@ -16,7 +16,7 @@ const ShimmerOverlay: React.FC<{ className?: string }> = ({ className = '' }) =>
     className={`absolute inset-0 -translate-x-full animate-shimmer ${className}`}
     style={{
       animationDuration: '2s',
-      background: 'linear-gradient(to right, transparent, var(--bone-faint, #F9F7F3), transparent)',
+      background: 'linear-gradient(to right, transparent, var(--fs-surface), transparent)',
       opacity: 0.8,
     }}
   />
@@ -59,7 +59,7 @@ export const SkeletonBox: React.FC<SkeletonProps> = ({
     className={className}
     style={{
       ...shimmerStyle,
-      backgroundColor: 'var(--bone-deep)',
+      backgroundColor: 'var(--fs-surface-2)',
       width: typeof width === 'number' ? `${width}px` : width,
       height: typeof height === 'number' ? `${height}px` : height,
       borderRadius: getRadiusStyle(borderRadius),
@@ -75,10 +75,10 @@ export const SkeletonCircle: React.FC<{ size?: number; className?: string; shimm
   shimmer = true,
 }) => (
   <div
-    className={`rounded-full ${className}`}
+    className={className}
     style={{
       ...shimmerStyle,
-      backgroundColor: 'var(--bone-deep)',
+      backgroundColor: 'var(--fs-surface-2)',
       width: `${size}px`,
       height: `${size}px`,
     }}
@@ -103,7 +103,7 @@ export const SkeletonText: React.FC<{ lines?: number; className?: string }> = ({
 // ========================================
 
 export const SkeletonCard: React.FC = () => (
-  <div className="themed-card p-4 space-y-3">
+  <div style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)', boxShadow: 'var(--shadow-card)', padding: 16 }}>
     <div className="flex items-start gap-4">
       <SkeletonCircle size={40} />
       <div className="flex-1 space-y-2">
@@ -133,7 +133,7 @@ export const SkeletonGrid: React.FC<{ count?: number; columns?: number }> = ({
 }) => (
   <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
     {Array.from({ length: count }).map((_, i) => (
-      <div key={i} className="themed-card p-4 space-y-3">
+      <div key={i} style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)', boxShadow: 'var(--shadow-card)', padding: 16 }}>
         <SkeletonCircle size={48} className="mx-auto" />
         <SkeletonBox height={20} />
         <SkeletonBox height={16} width="60%" className="mx-auto" />
@@ -148,7 +148,7 @@ export const SkeletonGrid: React.FC<{ count?: number; columns?: number }> = ({
 
 /** Skeleton for a single task item */
 export const SkeletonTaskItem: React.FC = () => (
-  <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5">
+  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}>
     <SkeletonCircle size={24} />
     <div className="flex-1 space-y-2">
       <SkeletonBox height={18} width="60%" />
@@ -160,7 +160,7 @@ export const SkeletonTaskItem: React.FC = () => (
 
 /** Skeleton for a habit item */
 export const SkeletonHabitItem: React.FC = () => (
-  <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5">
+  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}>
     <SkeletonCircle size={40} />
     <div className="flex-1 space-y-2">
       <SkeletonBox height={18} width="50%" />
@@ -175,7 +175,7 @@ export const SkeletonHabitItem: React.FC = () => (
 
 /** Skeleton for the quote widget */
 export const SkeletonQuoteWidget: React.FC = () => (
-  <div className="glass-panel rounded-[2rem] p-6 space-y-4 border border-white/5">
+  <div style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)', boxShadow: 'var(--shadow-card)', padding: 24 }}>
     <div className="flex items-center gap-2">
       <SkeletonCircle size={32} />
       <SkeletonBox height={16} width={100} />
@@ -189,7 +189,7 @@ export const SkeletonQuoteWidget: React.FC = () => (
 
 /** Skeleton for the gratitude tracker */
 export const SkeletonGratitudeWidget: React.FC = () => (
-  <div className="glass-panel rounded-[2rem] p-6 space-y-4 border border-white/5">
+  <div style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)', boxShadow: 'var(--shadow-card)', padding: 24 }}>
     <SkeletonBox height={20} width={150} />
     <div className="space-y-3">
       {Array.from({ length: 3 }).map((_, i) => (
@@ -230,7 +230,7 @@ export const HomeScreenSkeleton: React.FC = () => (
 
     {/* Tasks section skeleton */}
     <div className="px-4">
-      <div className="glass-panel rounded-[2rem] p-6 space-y-4 border border-white/5">
+      <div style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)', boxShadow: 'var(--shadow-card)', padding: 24 }}>
         <SkeletonBox height={24} width={120} />
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -242,7 +242,7 @@ export const HomeScreenSkeleton: React.FC = () => (
 
     {/* Habits section skeleton */}
     <div className="px-4">
-      <div className="glass-panel rounded-[2rem] p-6 space-y-4 border border-white/5">
+      <div style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)', boxShadow: 'var(--shadow-card)', padding: 24 }}>
         <SkeletonBox height={24} width={100} />
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -265,7 +265,7 @@ export const HomeScreenSkeleton: React.FC = () => (
 
 /** Skeleton for a feed card item */
 export const SkeletonFeedCard: React.FC = () => (
-  <div className="themed-card p-4 space-y-3 border border-white/5">
+  <div style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)', boxShadow: 'var(--shadow-card)', padding: 16 }}>
     <div className="flex items-start gap-3">
       <SkeletonBox height={80} width={80} borderRadius="lg" />
       <div className="flex-1 space-y-2">
@@ -329,8 +329,8 @@ export const SkeletonCalendarGrid: React.FC = () => (
         {Array.from({ length: 7 }).map((_, dayIndex) => (
           <div
             key={dayIndex}
-            className="aspect-square rounded-lg bg-white/5 p-1"
-            style={{ ...shimmerStyle }}
+            className="aspect-square p-1"
+            style={{ ...shimmerStyle, background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}
           >
             <SkeletonBox height={16} width={20} className="mb-1" />
             {Math.random() > 0.7 && <SkeletonBox height={8} width="80%" borderRadius="sm" />}
@@ -363,7 +363,7 @@ export const CalendarScreenSkeleton: React.FC = () => (
 
     {/* Calendar grid skeleton */}
     <div className="px-4">
-      <div className="glass-panel rounded-[2rem] p-4 border border-white/5">
+      <div style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)', boxShadow: 'var(--shadow-card)', padding: 16 }}>
         <SkeletonCalendarGrid />
       </div>
     </div>
@@ -372,7 +372,7 @@ export const CalendarScreenSkeleton: React.FC = () => (
     <div className="px-4 space-y-3">
       <SkeletonBox height={24} width={100} />
       {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+        <div key={i} className="flex items-center gap-3 p-3" style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}>
           <SkeletonBox height={40} width={4} borderRadius="full" />
           <div className="flex-1 space-y-2">
             <SkeletonBox height={18} width="70%" />
@@ -390,12 +390,13 @@ export const CalendarScreenSkeleton: React.FC = () => (
 
 /** Settings section skeleton */
 export const SkeletonSettingsSection: React.FC<{ itemCount?: number }> = ({ itemCount = 3 }) => (
-  <div className="glass-panel rounded-2xl p-4 space-y-1 border border-white/5">
+  <div style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)', boxShadow: 'var(--shadow-card)', padding: 16 }}>
     <SkeletonBox height={20} width={100} className="mb-3" />
     {Array.from({ length: itemCount }).map((_, i) => (
       <div
         key={i}
-        className="flex items-center justify-between py-3 border-b border-white/5 last:border-0"
+        className="flex items-center justify-between py-3 last:border-0"
+        style={{ borderBottom: i < itemCount - 1 ? '1px solid var(--fs-surface-2)' : 'none' }}
       >
         <div className="flex items-center gap-3">
           <SkeletonCircle size={24} />
@@ -417,7 +418,7 @@ export const SettingsScreenSkeleton: React.FC = () => (
 
     {/* User profile section */}
     <div className="px-4">
-      <div className="glass-panel rounded-2xl p-4 border border-white/5">
+      <div style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)', boxShadow: 'var(--shadow-card)', padding: 16 }}>
         <div className="flex items-center gap-4">
           <SkeletonCircle size={64} />
           <div className="flex-1 space-y-2">
@@ -447,9 +448,11 @@ export const SkeletonChatMessage: React.FC<{ isUser?: boolean }> = ({ isUser = f
     <SkeletonCircle size={36} />
     <div className={`flex-1 max-w-[80%] space-y-2 ${isUser ? 'items-end' : ''}`}>
       <div
-        className={`rounded-2xl p-4 space-y-2 ${
-          isUser ? 'bg-[var(--dynamic-accent-start)]/20' : 'bg-white/5'
-        }`}
+        className="p-4 space-y-2"
+        style={{
+          background: isUser ? 'var(--fs-surface-2)' : 'var(--fs-surface)',
+          border: '1px solid var(--fs-surface-2)',
+        }}
       >
         <SkeletonBox height={16} width="100%" />
         <SkeletonBox height={16} width="85%" />
@@ -479,7 +482,7 @@ export const AssistantScreenSkeleton: React.FC = () => (
     </div>
 
     {/* Input area skeleton */}
-    <div className="px-4 py-4 border-t border-white/5">
+    <div className="px-4 py-4" style={{ borderTop: '1px solid var(--fs-surface-2)' }}>
       <div className="flex items-center gap-3">
         <SkeletonBox height={48} width="100%" borderRadius="full" />
         <SkeletonCircle size={48} />
@@ -494,7 +497,7 @@ export const AssistantScreenSkeleton: React.FC = () => (
 
 /** Library item skeleton */
 export const SkeletonLibraryItem: React.FC = () => (
-  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}>
     <SkeletonBox height={60} width={60} borderRadius="lg" />
     <div className="flex-1 space-y-2">
       <SkeletonBox height={18} width="70%" />
@@ -538,7 +541,7 @@ export const LibraryScreenSkeleton: React.FC = () => (
 
 /** Password item skeleton */
 export const SkeletonPasswordItem: React.FC = () => (
-  <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5">
+  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}>
     <SkeletonCircle size={40} />
     <div className="flex-1 space-y-2">
       <SkeletonBox height={18} width="50%" />
@@ -586,7 +589,7 @@ export const AddScreenSkeleton: React.FC = () => (
     <div className="px-4">
       <div className="grid grid-cols-3 gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="glass-panel rounded-2xl p-4 space-y-2 border border-white/5">
+          <div key={i} style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)', boxShadow: 'var(--shadow-card)', padding: 16 }}>
             <SkeletonCircle size={48} className="mx-auto" />
             <SkeletonBox height={16} width="80%" className="mx-auto" />
           </div>
@@ -616,8 +619,8 @@ export function WorkoutListSkeleton({ count = 3 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="h-20 rounded-xl animate-pulse"
-          style={{ background: 'var(--bone-deep, #e8e2d6)' }}
+          className="h-20 animate-pulse"
+          style={{ background: 'var(--fs-surface-2)' }}
         />
       ))}
     </div>

@@ -216,7 +216,7 @@ const AddExerciseButton: React.FC<AddExerciseButtonProps> = ({ onClick }) => (
       fontSize: 13,
       letterSpacing: '0.06em',
       textTransform: 'uppercase',
-      color: 'var(--stone)',
+      color: 'var(--fs-muted)',
       transition: 'all 150ms',
     }}
   >

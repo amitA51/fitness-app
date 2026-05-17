@@ -59,7 +59,7 @@ export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonPr
   ) => {
     const variantClasses = {
       primary:
-        'bg-[var(--cosmos-accent-primary)] text-black hover:brightness-110 shadow-[0_0_15px_var(--dynamic-accent-glow)]',
+        'bg-[var(--fs-accent)] text-black hover:brightness-110 shadow-[0_0_15px_var(--dynamic-accent-glow)]',
       secondary: 'bg-white/5 text-white border border-white/10 hover:bg-white/10',
       ghost: 'bg-transparent text-white hover:bg-white/5',
       danger: 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20',
@@ -82,7 +82,7 @@ export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonPr
           'inline-flex items-center justify-center gap-2',
           'font-medium rounded-xl',
           'transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-[var(--cosmos-accent-primary)] focus:ring-offset-2 focus:ring-offset-transparent',
+          'focus:outline-none focus:ring-2 focus:ring-[var(--fs-accent)] focus:ring-offset-2 focus:ring-offset-transparent',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           'active:scale-[0.98]',
           variantClasses[variant],
@@ -205,7 +205,7 @@ export const AccessibleInput = forwardRef<HTMLInputElement, AccessibleInputProps
               error ? 'border-red-500/50' : 'border-white/10',
               'text-white placeholder:text-[var(--text-tertiary)]',
               'focus:outline-none focus:ring-2',
-              error ? 'focus:ring-red-500' : 'focus:ring-[var(--cosmos-accent-primary)]',
+              error ? 'focus:ring-red-500' : 'focus:ring-[var(--fs-accent)]',
               'focus:border-transparent',
               'transition-all duration-200',
               'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -395,7 +395,7 @@ export const AccessibleModal: React.FC<AccessibleModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 rounded-lg hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--cosmos-accent-primary)]"
+                className="p-2 rounded-lg hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--fs-accent)]"
                 aria-label="סגור"
               >
                 <svg
@@ -448,7 +448,7 @@ export const SkipLink: React.FC<SkipLinkProps> = ({ targetId, children = 'דלג
     className={cn(
       'absolute -top-10 right-4 z-50',
       'focus:top-4',
-      'bg-[var(--cosmos-accent-primary)] text-black',
+      'bg-[var(--fs-accent)] text-black',
       'px-4 py-2 rounded-lg font-medium',
       'transition-all duration-200',
       'focus:outline-none focus:ring-2 focus:ring-white'
@@ -634,35 +634,52 @@ export const AccessibleTabs: React.FC<AccessibleTabsProps> = ({
         ref={tablistRef}
         role="tablist"
         aria-orientation="horizontal"
-        className="flex gap-1 p-1 bg-white/5 rounded-xl"
+        className="flex gap-1"
+        style={{
+          background: 'var(--fs-surface-2)',
+          borderRadius: 16,
+          padding: 4,
+          border: '1px solid var(--fs-surface-2)',
+        }}
       >
-        {tabs.map((tab, index) => (
-          <button
-            type="button"
-            key={tab.id}
-            role="tab"
-            id={`tab-${tab.id}`}
-            aria-selected={activeTab === tab.id}
-            aria-controls={`panel-${tab.id}`}
-            aria-disabled={tab.disabled}
-            tabIndex={activeTab === tab.id ? 0 : -1}
-            disabled={tab.disabled}
-            onClick={() => handleTabClick(tab.id)}
-            onKeyDown={(e) => handleKeyDown(e, index)}
-            className={cn(
-              'flex-1 px-4 py-2 rounded-lg',
-              'text-sm font-medium',
-              'transition-all duration-200',
-              'focus:outline-none focus:ring-2 focus:ring-[var(--cosmos-accent-primary)] focus:ring-inset',
-              activeTab === tab.id
-                ? 'bg-[var(--cosmos-accent-primary)] text-black'
-                : 'text-[var(--text-secondary)] hover:text-white hover:bg-white/5',
-              tab.disabled && 'opacity-50 cursor-not-allowed'
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {tabs.map((tab, index) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              type="button"
+              key={tab.id}
+              role="tab"
+              id={`tab-${tab.id}`}
+              aria-selected={isActive}
+              aria-controls={`panel-${tab.id}`}
+              aria-disabled={tab.disabled}
+              tabIndex={isActive ? 0 : -1}
+              disabled={tab.disabled}
+              onClick={() => handleTabClick(tab.id)}
+              onKeyDown={(e) => handleKeyDown(e, index)}
+              className={cn(
+                'transition-all duration-200',
+                'focus:outline-none focus:ring-2 focus:ring-[var(--fs-accent)] focus:ring-inset',
+                tab.disabled && 'opacity-50 cursor-not-allowed'
+              )}
+              style={{
+                background: isActive ? 'var(--fs-primary)' : 'transparent',
+                color: isActive ? '#fff' : 'var(--fs-muted)',
+                borderRadius: 12,
+                minHeight: 36,
+                fontFamily: 'var(--font-body)',
+                fontWeight: 900,
+                fontSize: 12,
+                flex: '1 1 0',
+                padding: '0 8px',
+                border: 0,
+                cursor: tab.disabled ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab Panels */}

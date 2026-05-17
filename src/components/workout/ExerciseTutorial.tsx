@@ -131,7 +131,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'var(--navy-deep)',
+        background: '#0D1A1C',
         zIndex: 11000,
         display: 'flex',
         flexDirection: 'column',
@@ -146,7 +146,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
           justifyContent: 'space-between',
           padding: '16px 20px',
           borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)',
-          background: 'var(--navy)',
+          background: 'var(--fs-primary)',
           flexShrink: 0,
         }}
       >
@@ -156,7 +156,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               letterSpacing: '0.2em',
-              color: 'var(--mustard)',
+              color: 'var(--fs-accent)',
               textTransform: 'uppercase',
             }}
           >
@@ -168,7 +168,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 20,
-              color: 'var(--bone)',
+              color: 'var(--fs-surface)',
               letterSpacing: '-0.01em',
             }}
           >
@@ -191,7 +191,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
           }}
           aria-label="סגור"
         >
-          <CloseIcon style={{ width: 18, height: 18, color: 'var(--bone)' }} />
+          <CloseIcon style={{ width: 18, height: 18, color: 'var(--fs-surface)' }} />
         </button>
       </div>
 
@@ -202,7 +202,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             margin: '16px 20px 0',
             padding: '12px 16px',
             background: 'rgba(232,184,45,0.15)',
-            border: '2px solid var(--mustard)',
+            border: '2px solid var(--fs-accent)',
             borderRadius: 0,
           }}
         >
@@ -212,7 +212,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
                 letterSpacing: '0.2em',
-                color: 'var(--mustard)',
+                color: 'var(--fs-accent)',
                 textTransform: 'uppercase',
                 fontWeight: 600,
                 flexShrink: 0,
@@ -224,7 +224,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
               style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: 14,
-                color: 'var(--bone)',
+                color: 'var(--fs-surface)',
                 lineHeight: 1.55,
               }}
             >
@@ -244,7 +244,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 flex: 1,
                 height: 4,
                 background:
-                  index <= activeStep ? 'var(--mustard)' : 'rgba(var(--text-on-navy-rgb),0.15)',
+                  index <= activeStep ? 'var(--fs-accent)' : 'rgba(var(--text-on-navy-rgb),0.15)',
                 borderRadius: 0,
                 transition: 'background 300ms',
               }}
@@ -282,7 +282,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,
                   fontSize: 48,
-                  color: 'var(--mustard)',
+                  color: 'var(--fs-accent)',
                   lineHeight: 0.9,
                   letterSpacing: '-0.02em',
                   direction: 'ltr',
@@ -297,7 +297,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 22,
-                    color: 'var(--bone)',
+                    color: 'var(--fs-surface)',
                     letterSpacing: '-0.01em',
                   }}
                 >
@@ -330,7 +330,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: 16,
-                  color: 'var(--bone)',
+                  color: 'var(--fs-surface)',
                   lineHeight: 1.6,
                   direction: 'rtl',
                   textAlign: 'right',
@@ -345,7 +345,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                     marginTop: 12,
                     padding: '10px 14px',
                     background: 'rgba(232,184,45,0.15)',
-                    border: '1px solid var(--mustard)',
+                    border: '1px solid var(--fs-accent)',
                     borderRadius: 0,
                   }}
                 >
@@ -354,7 +354,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
                       letterSpacing: '0.15em',
-                      color: 'var(--mustard)',
+                      color: 'var(--fs-accent)',
                       textTransform: 'uppercase',
                       fontWeight: 600,
                       marginBottom: 4,
@@ -366,7 +366,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                     style={{
                       fontFamily: 'var(--font-body)',
                       fontSize: 14,
-                      color: 'var(--bone)',
+                      color: 'var(--fs-surface)',
                       lineHeight: 1.5,
                     }}
                   >
@@ -385,8 +385,8 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 width: '100%',
                 padding: '14px 20px',
                 background: showContent ? 'rgba(232,184,45,0.1)' : 'transparent',
-                color: 'var(--mustard)',
-                border: '2px solid var(--mustard)',
+                color: 'var(--fs-accent)',
+                border: '2px solid var(--fs-accent)',
                 borderRadius: 0,
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
@@ -413,7 +413,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                   overflowY: 'auto',
                   fontFamily: 'var(--font-body)',
                   fontSize: 14,
-                  color: 'var(--bone)',
+                  color: 'var(--fs-surface)',
                   whiteSpace: 'pre-wrap',
                   lineHeight: 1.6,
                 }}
@@ -442,7 +442,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             flex: 1,
             padding: '14px 16px',
             background: 'rgba(var(--text-on-navy-rgb),0.08)',
-            color: activeStep === 0 ? 'rgba(var(--text-on-navy-rgb),0.2)' : 'var(--bone)',
+            color: activeStep === 0 ? 'rgba(var(--text-on-navy-rgb),0.2)' : 'var(--fs-surface)',
             border: '2px solid rgba(var(--text-on-navy-rgb),0.15)',
             borderRadius: 0,
             cursor: activeStep === 0 ? 'not-allowed' : 'pointer',
@@ -464,9 +464,9 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
           style={{
             flex: 1,
             padding: '14px 16px',
-            background: 'var(--mustard)',
-            color: 'var(--color-on-mustard)',
-            border: '2px solid var(--mustard)',
+            background: 'var(--fs-accent)',
+            color: 'var(--fs-primary)',
+            border: '2px solid var(--fs-accent)',
             borderRadius: 0,
             cursor: 'pointer',
             fontFamily: 'var(--font-display)',
@@ -480,7 +480,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
         </button>
       </div>
 
-      <div style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--navy-deep)' }} />
+      <div style={{ height: 'env(safe-area-inset-bottom, 8px)', background: '#0D1A1C' }} />
     </motion.div>
   );
 };

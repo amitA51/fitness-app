@@ -66,7 +66,7 @@ export const AnimatedNumber = memo<AnimatedNumberProps>(
                         ${className}
                     `}
             style={{
-              fontFamily: 'var(--cosmos-font)',
+              fontFamily: 'var(--font-display)',
               fontVariantNumeric: 'tabular-nums',
               ...style,
             }}

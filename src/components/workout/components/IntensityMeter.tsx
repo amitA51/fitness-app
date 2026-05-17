@@ -278,7 +278,7 @@ const VolumeBar = memo<{ current: number; target: number }>(({ current, target }
           style={{
             background: isComplete
               ? 'linear-gradient(90deg, #30D158, #34C759)'
-              : 'linear-gradient(90deg, var(--cosmos-accent-primary), var(--cosmos-accent-secondary))',
+              : 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
             boxShadow: isComplete ? '0 0 12px #30D158' : undefined,
           }}
           transition={{ type: 'spring', stiffness: 100, damping: 20 }}

@@ -49,7 +49,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
             fontFamily: 'var(--font-mono)',
             fontSize: '10px',
             letterSpacing: '0.22em',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             fontWeight: 600,
           }}
         >
@@ -63,10 +63,10 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
         className="w-full flex items-center justify-between px-4 text-left transition-colors duration-150"
         style={{
           minHeight: 48,
-          backgroundColor: 'var(--color-surface-input)',
-          border: isOpen ? '2px solid var(--navy)' : '1px solid var(--bone-deep)',
+          backgroundColor: 'var(--fs-surface)',
+          border: isOpen ? '2px solid var(--fs-primary)' : '1px solid var(--fs-surface-2)',
           borderRadius: 0,
-          color: 'var(--ink)',
+          color: 'var(--fs-ink)',
           fontFamily: 'var(--font-body)',
           fontSize: '15px',
         }}
@@ -75,7 +75,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
         <span
           className="block truncate"
           style={{
-            color: selectedOption ? 'var(--ink)' : 'var(--stone-light)',
+            color: selectedOption ? 'var(--fs-ink)' : 'var(--fs-muted)',
           }}
         >
           {selectedOption ? selectedOption.label : placeholder}
@@ -92,7 +92,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
               strokeWidth={2}
               stroke="currentColor"
               className="w-4 h-4"
-              style={{ color: 'var(--navy)' }}
+              style={{ color: 'var(--fs-primary)' }}
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
             </svg>
@@ -109,10 +109,10 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className="absolute z-50 mt-1 w-full max-h-60 overflow-auto focus:outline-none custom-scrollbar"
             style={{
-              backgroundColor: 'var(--bone)',
-              border: '2px solid var(--navy)',
+              backgroundColor: 'var(--fs-bg)',
+              border: '2px solid var(--fs-primary)',
               borderRadius: 0,
-              boxShadow: '0 8px 24px rgba(11,26,43,0.18)',
+              boxShadow: 'var(--shadow-card)',
             }}
           >
             {options.map((option) => {
@@ -129,14 +129,14 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                     fontFamily: 'var(--font-mono)',
                     fontSize: '13px',
                     letterSpacing: '0.04em',
-                    color: isSelected ? 'var(--navy)' : 'var(--ink)',
-                    backgroundColor: isSelected ? 'var(--bone-deep)' : 'transparent',
-                    borderLeft: isSelected ? '3px solid var(--mustard)' : '3px solid transparent',
+                    color: isSelected ? 'var(--fs-primary)' : 'var(--fs-ink)',
+                    backgroundColor: isSelected ? 'var(--fs-surface-2)' : 'transparent',
+                    borderLeft: isSelected ? '3px solid var(--fs-accent)' : '3px solid transparent',
                     fontWeight: isSelected ? 600 : 400,
                     borderRadius: 0,
                   }}
                   whileHover={{
-                    backgroundColor: 'var(--bone-deep)',
+                    backgroundColor: 'var(--fs-surface-2)',
                   }}
                 >
                   <span className="block truncate">{option.label}</span>
@@ -144,7 +144,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                   {isSelected && (
                     <span
                       className="absolute inset-y-0 right-0 flex items-center pr-3"
-                      style={{ color: 'var(--mustard)' }}
+                      style={{ color: 'var(--fs-accent)' }}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"

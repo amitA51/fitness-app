@@ -14,9 +14,9 @@ interface ToastMessage {
 }
 
 const VARIANT_STYLES: Record<ToastVariant, { accent: string; eyebrow: string }> = {
-  success: { accent: 'var(--mustard)', eyebrow: 'SUCCESS' },
+  success: { accent: 'var(--fs-accent)', eyebrow: 'SUCCESS' },
   error: { accent: 'var(--color-error)', eyebrow: 'ERROR' },
-  info: { accent: 'var(--navy)', eyebrow: 'INFO' },
+  info: { accent: 'var(--fs-primary)', eyebrow: 'INFO' },
 };
 
 let toastId = 0;
@@ -48,8 +48,8 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         className="flex items-start gap-3 px-4 py-3"
         style={{
-          backgroundColor: 'var(--bone)',
-          border: '1px solid var(--bone-deep)',
+          backgroundColor: 'var(--fs-bg)',
+          border: '1px solid var(--fs-surface-2)',
           borderLeft: `3px solid ${style.accent}`,
           borderRadius: 0,
           boxShadow: '0 8px 24px rgba(11,26,43,0.12)',
@@ -73,7 +73,7 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
             style={{
               fontFamily: 'var(--font-body)',
               fontSize: '14px',
-              color: 'var(--ink)',
+              color: 'var(--fs-ink)',
               fontWeight: 600,
             }}
           >
@@ -85,7 +85,7 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
           className="transition-colors text-xs font-bold uppercase"
           style={{
             fontFamily: 'var(--font-mono)',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             letterSpacing: '0.08em',
             borderRadius: 0,
           }}

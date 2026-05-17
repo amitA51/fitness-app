@@ -1,11 +1,11 @@
-// SetInputCard - VISION Sport Annual Design
-// Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
+// SetInputCard - Fresh Steel Stepper Design
+// border-radius: 24px 16px 24px 16px · gradient bg · accent plus / surface-2 minus
+// Previous values ghosted with color-mix
 
 import { AnimatePresence, motion } from 'framer-motion';
 import type React from 'react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { triggerHaptic } from '../../../utils/haptics';
-import { AnimatedNumber } from './ui/AnimatedNumber';
 
 // ============================================================
 // TYPES
@@ -27,43 +27,30 @@ interface SetInputCardProps {
 }
 
 // ============================================================
-// GHOST INDICATOR
+// GHOST VALUE DISPLAY
 // ============================================================
 
-const GhostIndicator = memo(() => (
-  <div
+const GhostValue = memo<{ value: number; unit?: string }>(({ value, unit }) => (
+  <span
     style={{
       position: 'absolute',
-      top: 8,
-      right: 8,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 4,
+      top: 10,
+      insetInlineStart: 12,
+      fontFamily: 'var(--font-mono)',
+      fontSize: 10,
+      letterSpacing: '0.08em',
+      color: 'color-mix(in srgb, var(--fs-muted) 56%, transparent)',
+      direction: 'ltr',
+      lineHeight: 1,
+      marginBottom: 2,
     }}
   >
-    <div
-      style={{
-        width: 6,
-        height: 6,
-        borderRadius: '50%',
-        backgroundColor: 'var(--stone-light)',
-      }}
-    />
-    <span
-      style={{
-        fontSize: 8,
-        textTransform: 'uppercase',
-        letterSpacing: '0.15em',
-        color: 'var(--stone-light)',
-        fontFamily: 'var(--font-mono)',
-      }}
-    >
-      Prev
-    </span>
-  </div>
+    prev {value}
+    {unit || ''}
+  </span>
 ));
 
-GhostIndicator.displayName = 'GhostIndicator';
+GhostValue.displayName = 'GhostValue';
 
 // ============================================================
 // MAIN COMPONENT
@@ -85,7 +72,7 @@ const SetInputCard = memo<SetInputCardProps>(
     showButtons = true,
   }) => {
     const displayValue = value || (showGhost ? ghostValue : 0) || 0;
-    const isGhostValue = !value && showGhost && ghostValue;
+    const isGhostValue = !value && showGhost && !!ghostValue;
 
     const [shouldFlash, setShouldFlash] = useState(false);
     const prevValueRef = useRef(value);
@@ -124,7 +111,7 @@ const SetInputCard = memo<SetInputCardProps>(
       [onDecrement]
     );
 
-    const accent = accentColor || 'var(--navy)';
+    const accent = accentColor || 'var(--fs-accent)';
 
     return (
       <div
@@ -132,8 +119,13 @@ const SetInputCard = memo<SetInputCardProps>(
           position: 'relative',
           display: 'flex',
           flexDirection: 'column',
-          background: 'var(--bone)',
-          border: '2px solid var(--navy)',
+          background: `
+            radial-gradient(circle at 22px 22px, color-mix(in srgb, var(--fs-accent) 17%, transparent), transparent 28px),
+            linear-gradient(135deg, rgba(255, 255, 255, 0.72), transparent 54%),
+            var(--fs-surface)
+          `,
+          border: '1px solid var(--fs-steel)',
+          borderRadius: '24px 16px 24px 16px',
           overflow: 'hidden',
           cursor: 'pointer',
           transition: 'transform 150ms ease',
@@ -161,30 +153,42 @@ const SetInputCard = memo<SetInputCardProps>(
         role="button"
         tabIndex={0}
       >
+        {/* Repeating line pattern */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 'auto 11px 68px 11px',
+            height: 1,
+            background: `repeating-linear-gradient(90deg, var(--fs-surface-2) 0 1px, transparent 1px 12px)`,
+            pointerEvents: 'none',
+          }}
+        />
+
         {/* Header Row - Icon and Ghost */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'flex-end',
-            padding: 12,
+            padding: '10px 12px 0',
             position: 'relative',
+            zIndex: 1,
           }}
         >
           {icon && (
             <div
               style={{
-                width: 40,
-                height: 40,
+                width: 32,
+                height: 32,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'var(--mustard)',
+                background: 'var(--fs-accent)',
+                borderRadius: '8px 6px 8px 6px',
               }}
             >
               {icon}
             </div>
           )}
-          {isGhostValue && <GhostIndicator />}
         </div>
 
         {/* Content */}
@@ -194,54 +198,41 @@ const SetInputCard = memo<SetInputCardProps>(
             flexDirection: 'column',
             alignItems: 'center',
             flex: 1,
-            paddingLeft: 16,
-            paddingRight: 16,
-            paddingBottom: 20,
+            padding: '0 14px 14px',
+            position: 'relative',
+            zIndex: 1,
           }}
         >
-          {/* Label */}
-          <span
-            style={{
-              fontSize: 10,
-              textTransform: 'uppercase',
-              letterSpacing: '0.25em',
-              fontWeight: 600,
-              color: accent,
-              fontFamily: 'var(--font-mono)',
-              marginBottom: 8,
-            }}
-          >
-            {label}
-          </span>
+          {/* Ghost previous value */}
+          {showGhost && ghostValue && !value && <GhostValue value={ghostValue} unit={unit} />}
 
           {/* Value */}
-          <div style={{ position: 'relative' }}>
-            <AnimatedNumber
-              value={displayValue}
-              isGhost={!!isGhostValue}
-              className=""
+          <div
+            style={{ position: 'relative', display: 'flex', alignItems: 'baseline', minHeight: 56 }}
+          >
+            <span
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 900,
-                fontSize: 70,
+                fontWeight: 800,
+                fontSize: 48,
                 lineHeight: 1,
                 letterSpacing: '-0.03em',
-                color: isGhostValue ? 'var(--stone-light)' : 'var(--navy)',
+                color: isGhostValue
+                  ? 'color-mix(in srgb, var(--fs-muted) 56%, transparent)'
+                  : 'var(--fs-ink)',
                 direction: 'ltr',
               }}
-            />
+            >
+              {displayValue}
+            </span>
             {unit && (
               <span
                 style={{
-                  position: 'absolute',
-                  bottom: 4,
-                  right: 0,
-                  transform: 'translateX(100%)',
-                  marginLeft: 8,
-                  fontSize: 14,
+                  marginInlineStart: 4,
+                  fontSize: 12,
                   fontFamily: 'var(--font-mono)',
-                  color: 'var(--stone)',
-                  fontWeight: 500,
+                  color: 'var(--fs-muted)',
+                  fontWeight: 600,
                 }}
               >
                 {unit}
@@ -249,15 +240,30 @@ const SetInputCard = memo<SetInputCardProps>(
             )}
           </div>
 
+          {/* Label */}
+          <span
+            style={{
+              fontSize: 9,
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em',
+              fontWeight: 700,
+              color: accent,
+              fontFamily: 'var(--font-mono)',
+              marginTop: 4,
+            }}
+          >
+            {label}
+          </span>
+
           {/* Quick Buttons */}
           {showButtons && (
             <div
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
                 width: '100%',
-                marginTop: 20,
-                gap: 8,
+                marginTop: 10,
+                gap: 7,
               }}
               onPointerDown={(e) => e.stopPropagation()}
             >
@@ -265,14 +271,17 @@ const SetInputCard = memo<SetInputCardProps>(
                 type="button"
                 onClick={handleDecrement}
                 style={{
-                  flex: 1,
-                  padding: '16px 0',
-                  background: 'var(--bone-deep)',
-                  border: '2px solid var(--navy)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: 40,
+                  background: 'var(--fs-surface-2)',
+                  border: `1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))`,
+                  borderRadius: 15,
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,
-                  fontSize: 24,
-                  color: 'var(--navy)',
+                  fontSize: 20,
+                  color: 'var(--fs-ink)',
                   cursor: 'pointer',
                   transition: 'all 100ms ease',
                 }}
@@ -293,14 +302,17 @@ const SetInputCard = memo<SetInputCardProps>(
                 type="button"
                 onClick={handleIncrement}
                 style={{
-                  flex: 1,
-                  padding: '16px 0',
-                  background: 'var(--mustard)',
-                  border: '2px solid var(--navy)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: 40,
+                  background: 'var(--fs-accent)',
+                  border: `1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))`,
+                  borderRadius: 15,
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,
-                  fontSize: 24,
-                  color: 'var(--navy)',
+                  fontSize: 20,
+                  color: '#FFFFFF',
                   cursor: 'pointer',
                   transition: 'all 100ms ease',
                 }}
@@ -321,18 +333,20 @@ const SetInputCard = memo<SetInputCardProps>(
           )}
 
           {/* Step Hint */}
-          <span
-            style={{
-              marginTop: 16,
-              fontSize: 9,
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.15em',
-              color: 'var(--stone-light)',
-            }}
-          >
-            Step {incrementAmount}
-          </span>
+          {incrementAmount > 1 && (
+            <span
+              style={{
+                marginTop: 8,
+                fontSize: 8,
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.15em',
+                color: 'var(--fs-muted)',
+              }}
+            >
+              Step {incrementAmount}
+            </span>
+          )}
         </div>
 
         {/* Flash Effect */}
@@ -346,7 +360,8 @@ const SetInputCard = memo<SetInputCardProps>(
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'var(--mustard)',
+                background: 'var(--fs-accent)',
+                opacity: 0.15,
                 pointerEvents: 'none',
               }}
             />

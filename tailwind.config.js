@@ -80,8 +80,8 @@ export default {
       /* ── Typography ────────────────────────────────────────────────────── */
       fontFamily: {
         sans: ['IBM Plex Sans', 'Assistant', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['Big Shoulders Display', 'Assistant', 'Impact', 'sans-serif'],
-        condensed: ['Big Shoulders Display', 'Assistant', 'Impact', 'sans-serif'],
+        display: ['Bricolage Grotesque', 'Assistant', 'Impact', 'sans-serif'],
+        condensed: ['Bricolage Grotesque', 'Assistant', 'Impact', 'sans-serif'],
         mono: ['IBM Plex Mono', 'ui-monospace', 'monospace'],
         hebrew: ['Assistant', 'system-ui', 'sans-serif'],
       },

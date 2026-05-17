@@ -104,10 +104,10 @@ export const RPEDisplay: React.FC<RPEDisplayProps> = memo(
               style={{
                 backgroundColor:
                   avgRpeActual <= 6
-                    ? 'var(--cosmos-success)'
+                    ? 'var(--color-success)'
                     : avgRpeActual <= 8
-                      ? 'var(--cosmos-warning)'
-                      : 'var(--cosmos-error)',
+                      ? 'var(--fs-warn)'
+                      : 'var(--color-error)',
               }}
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(avgRpeActual * 10, 100)}%` }}

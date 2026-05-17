@@ -92,8 +92,8 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           className="w-full max-w-sm overflow-hidden"
           style={{
-            backgroundColor: 'var(--bone)',
-            border: '2px solid var(--navy)',
+            backgroundColor: 'var(--fs-surface)',
+            border: '2px solid var(--fs-primary)',
             borderRadius: 0,
             boxShadow: '0 12px 32px rgba(11,26,43,0.3)',
           }}
@@ -102,15 +102,15 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
           {/* Navy masthead */}
           <div
             className="px-6 py-5 flex items-center gap-4"
-            style={{ backgroundColor: 'var(--navy)' }}
+            style={{ backgroundColor: 'var(--fs-primary)' }}
           >
             <div
               className="flex items-center justify-center"
               style={{
                 width: 48,
                 height: 48,
-                backgroundColor: isFinishing ? 'var(--mustard)' : 'var(--color-error)',
-                color: 'var(--navy)',
+                backgroundColor: isFinishing ? 'var(--fs-accent)' : 'var(--fs-warn)',
+                color: 'var(--fs-primary)',
                 borderRadius: 0,
               }}
             >
@@ -127,7 +127,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   fontFamily: 'var(--font-mono)',
                   fontSize: '10px',
                   letterSpacing: '0.22em',
-                  color: 'var(--mustard)',
+                  color: 'var(--fs-accent)',
                   fontWeight: 600,
                 }}
               >
@@ -140,7 +140,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   fontSize: '22px',
                   fontWeight: 900,
                   letterSpacing: '-0.01em',
-                  color: 'var(--bone)',
+                  color: 'var(--fs-surface)',
                   lineHeight: 0.95,
                 }}
               >
@@ -157,7 +157,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
               style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: '14px',
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
               }}
             >
               {isFinishing ? 'האימון יישמר בהיסטוריה שלך' : 'כל ההתקדמות תאבד'}
@@ -168,17 +168,17 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
               <div
                 className="grid grid-cols-3 mb-4"
                 style={{
-                  border: '2px solid var(--navy)',
-                  backgroundColor: 'var(--bone)',
+                  border: '2px solid var(--fs-primary)',
+                  backgroundColor: 'var(--fs-surface)',
                 }}
               >
-                <div className="text-center p-3" style={{ borderRight: '2px solid var(--navy)' }}>
+                <div className="text-center p-3" style={{ borderRight: '2px solid var(--fs-primary)' }}>
                   <div
                     style={{
                       fontFamily: 'var(--font-display)',
                       fontSize: '32px',
                       fontWeight: 800,
-                      color: 'var(--navy)',
+                      color: 'var(--fs-primary)',
                       lineHeight: 0.9,
                       letterSpacing: '-0.02em',
                     }}
@@ -191,19 +191,19 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                       fontFamily: 'var(--font-mono)',
                       fontSize: '10px',
                       letterSpacing: '0.22em',
-                      color: 'var(--stone)',
+                      color: 'var(--fs-muted)',
                     }}
                   >
                     סטים
                   </div>
                 </div>
-                <div className="text-center p-3" style={{ borderRight: '2px solid var(--navy)' }}>
+                <div className="text-center p-3" style={{ borderRight: '2px solid var(--fs-primary)' }}>
                   <div
                     style={{
                       fontFamily: 'var(--font-display)',
                       fontSize: '32px',
                       fontWeight: 800,
-                      color: 'var(--navy)',
+                      color: 'var(--fs-primary)',
                       lineHeight: 0.9,
                       letterSpacing: '-0.02em',
                     }}
@@ -216,7 +216,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                       fontFamily: 'var(--font-mono)',
                       fontSize: '10px',
                       letterSpacing: '0.22em',
-                      color: 'var(--stone)',
+                      color: 'var(--fs-muted)',
                     }}
                   >
                     ק״ג
@@ -228,7 +228,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                       fontFamily: 'var(--font-display)',
                       fontSize: '32px',
                       fontWeight: 800,
-                      color: 'var(--navy)',
+                      color: 'var(--fs-primary)',
                       lineHeight: 0.9,
                       letterSpacing: '-0.02em',
                     }}
@@ -241,7 +241,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                       fontFamily: 'var(--font-mono)',
                       fontSize: '10px',
                       letterSpacing: '0.22em',
-                      color: 'var(--stone)',
+                      color: 'var(--fs-muted)',
                     }}
                   >
                     זמן
@@ -255,8 +255,8 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
               <div
                 className="p-3 mb-4"
                 style={{
-                  backgroundColor: 'var(--bone-deep)',
-                  borderLeft: '3px solid var(--color-error)',
+                  backgroundColor: 'var(--fs-surface-2)',
+                  borderLeft: '3px solid var(--fs-warn)',
                   borderRadius: 0,
                 }}
               >
@@ -266,7 +266,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                     fontFamily: 'var(--font-mono)',
                     fontSize: '11px',
                     letterSpacing: '0.12em',
-                    color: 'var(--color-error)',
+                    color: 'var(--fs-warn)',
                     fontWeight: 600,
                   }}
                 >
@@ -289,8 +289,8 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                 disabled={isSaving}
                 className="btn-primary flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: isFinishing ? 'var(--navy)' : 'var(--color-error)',
-                  color: isFinishing ? 'var(--mustard)' : 'var(--bone)',
+                  backgroundColor: isFinishing ? 'var(--fs-primary)' : 'var(--fs-warn)',
+                  color: isFinishing ? 'var(--fs-accent)' : 'var(--fs-surface)',
                   opacity: isSaving ? 0.7 : 1,
                   cursor: isSaving ? 'not-allowed' : 'pointer',
                 }}
@@ -363,7 +363,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   fontSize: '14px',
                   fontWeight: 800,
                   letterSpacing: '0.08em',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   padding: '14px 24px',
                   backgroundColor: 'transparent',
                   border: 'none',

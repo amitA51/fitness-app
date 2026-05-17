@@ -1,30 +1,17 @@
-// ExerciseDisplay - Sport Annual Editorial Layout
-// Navy masthead + hero number, bone input tiles, chip actions, btn-row finish
+// ExerciseDisplay - Fresh Steel Compact Active Workout Layout
+// Exercise panel (nav + name + set progress) → Two stepper cards → RPE button → Slide to complete
+// No hero masthead, no large numbers, no program meta ribbon
 
-import {
-  Edit,
-  FileText,
-  GripVertical,
-  Minus,
-  MoreHorizontal,
-  Plus,
-  RotateCcw,
-  Star,
-} from 'lucide-react';
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { Edit, FileText, MoreHorizontal, Plus, RotateCcw, Star } from 'lucide-react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Exercise, WorkoutSet } from '../../../types';
-import {
-  calculateBarbellPlateLoad,
-  formatPlateLoad,
-  isBarbellExercise,
-} from '../../../utils/plateCalculator';
 import type { SupersetGroup } from '../core/workoutTypes';
-import { useAnimatedNumber } from '../hooks/useAnimatedNumber';
 import { usePreviousData } from '../hooks/usePreviousData';
 import AlternativesSheet from './AlternativesSheet';
 import NotesBottomSheet from './NotesBottomSheet';
 import RPEPicker from './RPEPicker';
 import SetEditBottomSheet from './SetEditBottomSheet';
+import SetInputCard from './SetInputCard';
 import SlideToComplete from './SlideToComplete';
 
 // ============================================================
@@ -54,7 +41,7 @@ interface ExerciseDisplayProps {
 }
 
 // ============================================================
-// CHIP BUTTON (48px square, sharp corners)
+// CHIP BUTTON (40px, Fresh Steel styling)
 // ============================================================
 
 interface ChipButtonProps {
@@ -75,12 +62,14 @@ const ChipButton = memo<ChipButtonProps>(({ icon, onClick, active, label, badge 
     }}
     aria-label={label}
     title={label}
-    className="relative size-12 flex items-center justify-center transition-all active:scale-95"
+    className="relative flex items-center justify-center transition-all active:scale-95"
     style={{
-      background: active ? 'var(--mustard)' : 'var(--bone)',
-      border: '2px solid var(--navy)',
-      color: 'var(--navy)',
-      borderRadius: 0,
+      width: 44,
+      height: 40,
+      background: active ? 'var(--fs-accent)' : 'var(--fs-surface)',
+      border: '1px solid var(--fs-steel)',
+      borderRadius: '12px 8px 12px 8px',
+      color: active ? '#FFFFFF' : 'var(--fs-ink)',
     }}
   >
     {icon}
@@ -91,7 +80,7 @@ const ChipButton = memo<ChipButtonProps>(({ icon, onClick, active, label, badge 
 ChipButton.displayName = 'ChipButton';
 
 // ============================================================
-// OVERFLOW CHIP MENU (… chip with editorial dropdown)
+// OVERFLOW CHIP MENU
 // ============================================================
 
 interface OverflowItem {
@@ -123,7 +112,7 @@ const OverflowChipMenu = memo<OverflowChipMenuProps>(({ items }) => {
   return (
     <div ref={ref} className="relative">
       <ChipButton
-        icon={<MoreHorizontal size={18} strokeWidth={2.25} />}
+        icon={<MoreHorizontal size={16} strokeWidth={2.25} />}
         onClick={() => setOpen((o) => !o)}
         label="עוד"
         active={open}
@@ -134,11 +123,12 @@ const OverflowChipMenu = memo<OverflowChipMenuProps>(({ items }) => {
           style={{
             top: 'calc(100% + 6px)',
             insetInlineStart: 0,
-            minWidth: 200,
-            background: 'var(--bone)',
-            border: '2px solid var(--navy)',
-            borderRadius: 0,
-            boxShadow: '4px 4px 0 var(--navy)',
+            minWidth: 180,
+            background: 'var(--fs-surface)',
+            border: '1px solid var(--fs-steel)',
+            borderRadius: '14px 10px 14px 10px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            overflow: 'hidden',
           }}
         >
           {items.map((it, idx) => (
@@ -151,27 +141,27 @@ const OverflowChipMenu = memo<OverflowChipMenuProps>(({ items }) => {
                 it.onClick();
                 setOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 active:bg-[var(--bone-deep)] transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 active:bg-[var(--fs-surface-2)] transition-colors"
               style={{
-                background: 'var(--bone)',
-                color: 'var(--navy)',
+                background: 'var(--fs-surface)',
+                color: 'var(--fs-ink)',
                 fontFamily: 'var(--font-mono)',
-                fontSize: 12,
-                letterSpacing: '0.08em',
-                borderBottom: idx === items.length - 1 ? 'none' : '1px solid var(--bone-deep)',
+                fontSize: 11,
+                letterSpacing: '0.06em',
+                borderBottom: idx === items.length - 1 ? 'none' : '1px solid var(--fs-surface-2)',
                 textTransform: 'uppercase',
               }}
             >
-              <span style={{ color: 'var(--mustard)', display: 'inline-flex' }}>{it.icon}</span>
+              <span style={{ color: 'var(--fs-accent)', display: 'inline-flex' }}>{it.icon}</span>
               <span className="flex-1 text-start">{it.label}</span>
               {it.dot && (
                 <span
                   aria-hidden
                   style={{
-                    width: 8,
-                    height: 8,
-                    background: 'var(--mustard)',
-                    border: '1.5px solid var(--navy)',
+                    width: 6,
+                    height: 6,
+                    background: 'var(--fs-accent)',
+                    borderRadius: '50%',
                   }}
                 />
               )}
@@ -184,178 +174,6 @@ const OverflowChipMenu = memo<OverflowChipMenuProps>(({ items }) => {
 });
 
 OverflowChipMenu.displayName = 'OverflowChipMenu';
-
-// ============================================================
-// INPUT TILE (card-outlined style with eyebrow + number + +/- chips)
-// ============================================================
-
-interface InputTileProps {
-  label: string;
-  eyebrow: string;
-  value: number;
-  ghostValue?: number;
-  showGhost?: boolean;
-  unit?: string;
-  /** Controls which mobile keyboard opens when the numpad is triggered */
-  inputMode?: 'decimal' | 'numeric';
-  onTap: () => void;
-  onIncrement: () => void;
-  onDecrement: () => void;
-  showButtons: boolean;
-}
-
-const InputTile = memo<InputTileProps>(
-  ({
-    label,
-    eyebrow,
-    value,
-    ghostValue,
-    showGhost,
-    unit,
-    inputMode = 'numeric',
-    onTap,
-    onIncrement,
-    onDecrement,
-    showButtons,
-  }) => {
-    const displayValue = value > 0 ? value : showGhost && ghostValue ? ghostValue : 0;
-    const isGhost = !value && showGhost && !!ghostValue;
-
-    return (
-      <div className="card-outlined flex flex-col" style={{ padding: '10px 12px 10px', gap: 4 }}>
-        {/* Eyebrow (mono mustard) */}
-        <div className="flex items-center justify-between">
-          <span
-            className="eyebrow"
-            style={{
-              color: 'var(--mustard)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: '0.22em',
-              fontWeight: 600,
-            }}
-          >
-            {eyebrow}
-          </span>
-          <span
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
-              letterSpacing: '0.2em',
-              color: 'var(--stone)',
-              textTransform: 'uppercase',
-            }}
-          >
-            {label}
-          </span>
-        </div>
-
-        {/* Big number (tap-to-numpad) — hidden input carries inputMode for mobile keyboard hint */}
-        <div className="relative">
-          <input
-            type="text"
-            inputMode={inputMode}
-            aria-hidden="true"
-            readOnly
-            tabIndex={-1}
-            style={{
-              position: 'absolute',
-              opacity: 0,
-              pointerEvents: 'none',
-              width: 1,
-              height: 1,
-              overflow: 'hidden',
-            }}
-          />
-          <button
-            type="button"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onTap();
-            }}
-            className="w-full text-center active:scale-[0.98] transition-transform tabular-nums"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 900,
-              fontSize: 48,
-              lineHeight: 1,
-              letterSpacing: '-0.03em',
-              color: isGhost ? 'var(--bone-deep)' : 'var(--navy)',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              fontVariant: 'tabular-nums',
-              padding: '2px 0',
-            }}
-          >
-            <span className="tabular-nums" style={{ fontVariant: 'tabular-nums' }}>
-              {displayValue}
-            </span>
-            {unit && (
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 12,
-                  letterSpacing: '0.18em',
-                  color: 'var(--stone)',
-                  marginInlineStart: 4,
-                  verticalAlign: 'middle',
-                }}
-              >
-                {unit.toUpperCase()}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* +/- chip row */}
-        {showButtons && (
-          <div className="grid grid-cols-2 gap-1.5">
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onDecrement();
-              }}
-              className="flex items-center justify-center h-9 active:scale-95 transition-transform"
-              style={{
-                background: 'var(--bone-deep)',
-                border: '2px solid var(--navy)',
-                color: 'var(--navy)',
-                borderRadius: 0,
-              }}
-              aria-label={`הורד ${label}`}
-            >
-              <Minus size={16} strokeWidth={2.5} />
-            </button>
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onIncrement();
-              }}
-              className="flex items-center justify-center h-9 active:scale-95 transition-transform"
-              style={{
-                background: 'var(--navy)',
-                border: '2px solid var(--navy)',
-                color: 'var(--mustard)',
-                borderRadius: 0,
-              }}
-              aria-label={`הוסף ${label}`}
-            >
-              <Plus size={16} strokeWidth={2.5} />
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
-);
-
-InputTile.displayName = 'InputTile';
 
 // ============================================================
 // MAIN COMPONENT
@@ -376,7 +194,6 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     showGhostValues = true,
     enableQuickWeightButtons = true,
     enableQuickRepsButtons = true,
-    showVolumePreview = false,
     supersetGroups = [],
     onCreateSuperset,
   }) => {
@@ -410,390 +227,225 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
 
     const isInSuperset = supersetInfo !== null;
 
-    // Hero display values (target if set, else ghost previous)
-    const heroWeight =
-      currentSet.weight && currentSet.weight > 0 ? currentSet.weight : previousSet?.weight || 0;
-    const heroReps =
-      currentSet.reps && currentSet.reps > 0 ? currentSet.reps : previousSet?.reps || 0;
-    const heroIsGhost = !currentSet.weight;
+    const handleRepsTap = useCallback(() => onOpenNumpad('reps'), [onOpenNumpad]);
+    const handleIncrementReps = useCallback(
+      () => onUpdateSet('reps', (currentSet.reps || 0) + 1),
+      [currentSet.reps, onUpdateSet]
+    );
+    const handleDecrementReps = useCallback(
+      () => onUpdateSet('reps', Math.max(0, (currentSet.reps || 0) - 1)),
+      [currentSet.reps, onUpdateSet]
+    );
+    const handleWeightTap = useCallback(() => onOpenNumpad('weight'), [onOpenNumpad]);
+    const handleIncrementWeight = useCallback(
+      () => onUpdateSet('weight', (currentSet.weight || 0) + 2.5),
+      [currentSet.weight, onUpdateSet]
+    );
+    const handleDecrementWeight = useCallback(
+      () => onUpdateSet('weight', Math.max(0, (currentSet.weight || 0) - 2.5)),
+      [currentSet.weight, onUpdateSet]
+    );
 
-    // Count-up animation on hero numbers (200ms, ease-spring, reduced-motion aware)
-    const animatedHeroWeight = useAnimatedNumber(heroWeight || 0, { duration: 200 });
-    const animatedHeroReps = useAnimatedNumber(heroReps || 0, { duration: 200 });
-
-    // Delta vs last session — only when user has actually entered a weight
-    const weightDelta = useMemo(() => {
-      const curr = currentSet.weight || 0;
-      const prev = previousSet?.weight || 0;
-      if (curr <= 0 || prev <= 0) return null;
-      const d = curr - prev;
-      const formatted = Number.isInteger(d) ? String(d) : d.toFixed(1);
-      if (d === 0) return { text: 'MATCH', color: 'rgba(var(--text-on-navy-rgb), 0.55)' };
-      if (d > 0) return { text: `+${formatted} KG`, color: 'var(--mustard)' };
-      return { text: `${formatted} KG`, color: 'rgba(var(--text-on-navy-rgb), 0.6)' };
-    }, [currentSet.weight, previousSet?.weight]);
-
-    const hasPrevReference = !!(previousSet && (previousSet.weight || previousSet.reps));
-
-    const plateLoadLabel = useMemo(() => {
-      if (!isBarbellExercise(exercise) || (currentSet.weight || 0) <= 20) {
-        return null;
-      }
-
-      return formatPlateLoad(calculateBarbellPlateLoad(currentSet.weight || 0));
-    }, [currentSet.weight, exercise]);
-
-    const handleRepsTap = () => onOpenNumpad('reps');
-    const handleIncrementReps = () => onUpdateSet('reps', (currentSet.reps || 0) + 1);
-    const handleDecrementReps = () => onUpdateSet('reps', Math.max(0, (currentSet.reps || 0) - 1));
-    const handleWeightTap = () => onOpenNumpad('weight');
-    const handleIncrementWeight = () => onUpdateSet('weight', (currentSet.weight || 0) + 2.5);
-    const handleDecrementWeight = () =>
-      onUpdateSet('weight', Math.max(0, (currentSet.weight || 0) - 2.5));
-
-    // Exercise number label: §01 style from chapter number
-    const chapterNum = useMemo(() => {
-      const n = displaySetIndex + 1;
-      return n < 10 ? `0${n}` : String(n);
-    }, [displaySetIndex]);
+    // Next exercise name for hint - unused in compact layout
+    // const nextExerciseHint = useMemo(() => { return null; }, []);
 
     return (
-      <div className="flex flex-col w-full max-w-lg mx-auto h-full" style={{ gap: 0 }}>
-        {/* ── AW MASTHEAD ── exercise + set-status pills */}
-        <div className="aw-masthead">
-          <div className="flex items-center gap-3 min-w-0">
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                letterSpacing: '0.18em',
-                color: 'var(--mustard)',
-              }}
-            >
-              §{chapterNum}
-            </span>
-            <span className="exercise truncate">{exercise.name || 'תרגיל ללא שם'}</span>
-          </div>
+      <div
+        className="flex flex-col w-full"
+        style={{
+          gap: 0,
+          background: 'var(--fs-bg)',
+          minHeight: '100%',
+          flex: 1,
+        }}
+      >
+        {/* ── EXERCISE HERO PANEL ── name + set cockpit (asymmetric radius) ── */}
+        <div style={{ padding: '12px 14px 0', background: 'var(--fs-bg)' }}>
           <div
-            className="flex items-center"
-            style={{ gap: 10 }}
-            aria-label={`סט ${displaySetIndex + 1} מתוך ${totalSets}, הושלמו ${completedSetsCount}`}
-          >
-            {totalSets <= 10 && (
-              <div className="flex items-center" style={{ gap: 4 }} aria-hidden>
-                {(exercise.sets || []).map((s, i) => {
-                  const isCurrent = i === displaySetIndex;
-                  const isComplete = !!s.completedAt;
-                  const isWarmup = !!s.isWarmup;
-                  let bg = 'transparent';
-                  let border = '1.5px solid rgba(var(--text-on-navy-rgb), 0.3)';
-                  const size = isCurrent ? 12 : 10;
-                  if (isCurrent) {
-                    bg = 'var(--mustard)';
-                    border = '2px solid var(--bone)';
-                  } else if (isComplete && isWarmup) {
-                    bg = 'transparent';
-                    border = '1.5px solid var(--mustard)';
-                  } else if (isComplete) {
-                    bg = 'var(--mustard)';
-                    border = '1.5px solid var(--mustard)';
-                  }
-                  return (
-                    <span
-                      key={s.id || i}
-                      style={{
-                        width: size,
-                        height: size,
-                        background: bg,
-                        border,
-                        borderRadius: 0,
-                        display: 'inline-block',
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            )}
-            <div
-              className="counter"
-              style={{ fontVariant: 'tabular-nums', minWidth: 40, textAlign: 'end' }}
-            >
-              {String(displaySetIndex + 1).padStart(2, '0')}/{String(totalSets).padStart(2, '0')}
-            </div>
-          </div>
-        </div>
-
-        {/* ── AW HERO ── massive weight number */}
-        <div className="aw-hero" style={{ overflow: 'hidden' }}>
-          {/* RPE badge / TAP RPE button */}
-          {onUpdateRPE && currentSet.rpe ? (
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowRPEPicker(true);
-              }}
-              className="rpe"
-              style={{ border: 'none', cursor: 'pointer' }}
-            >
-              RPE {currentSet.rpe}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowRPEPicker(true);
-              }}
-              className="rpe"
-              style={{
-                background: 'transparent',
-                color: 'var(--mustard)',
-                border: '1.5px solid var(--mustard)',
-                cursor: 'pointer',
-              }}
-            >
-              TAP RPE
-            </button>
-          )}
-
-          <div
-            className="num tabular-nums"
             style={{
-              color: heroIsGhost ? 'rgba(var(--text-on-navy-rgb), 0.35)' : 'var(--bone)',
-              fontVariant: 'tabular-nums',
+              position: 'relative',
+              overflow: 'hidden',
+              borderRadius: '22px 16px 22px 16px',
+              padding: 16,
+              color: '#fff',
+              background: `linear-gradient(110deg, transparent 0 60%, rgba(255,255,255,0.12) 60% 62%, transparent 62%),
+                           linear-gradient(135deg, color-mix(in srgb, var(--fs-primary) 92%, #000), color-mix(in srgb, var(--fs-accent-2) 64%, var(--fs-primary))),
+                           var(--fs-primary)`,
             }}
           >
-            {animatedHeroWeight}
-          </div>
-          <div className="unit tabular-nums" style={{ fontVariant: 'tabular-nums' }}>
-            KG · × {animatedHeroReps} REPS
-          </div>
-
-          {/* Last-session reference — answers "what did I do last time?" */}
-          {hasPrevReference && (
+            {/* perforated strip */}
             <div
-              className="tabular-nums"
+              aria-hidden
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '0.24em',
-                color: 'rgba(var(--text-on-navy-rgb), 0.5)',
-                textTransform: 'uppercase',
-                display: 'flex',
+                position: 'absolute',
+                inset: 'auto 16px 12px 16px',
+                height: 7,
+                borderRadius: 999,
+                background:
+                  'repeating-linear-gradient(90deg, rgba(255,255,255,0.62) 0 1px, transparent 1px 13px), rgba(255,255,255,0.12)',
+              }}
+            />
+            {/* clipped polygon side */}
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                inset: '0 auto 0 0',
+                width: 44,
+                opacity: 0.72,
+                clipPath: 'polygon(44% 0, 100% 0, 56% 100%, 0 100%)',
+                background:
+                  'repeating-linear-gradient(180deg, rgba(255,255,255,0.24) 0 1px, transparent 1px 11px), linear-gradient(180deg, transparent, rgba(255,255,255,0.12), transparent)',
+              }}
+            />
+
+            {/* Exercise name header */}
+            <div style={{ position: 'relative', zIndex: 1, minWidth: 0 }}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: '#FFFFFF',
+                  display: 'block',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {exercise.name || 'תרגיל ללא שם'}
+              </span>
+            </div>
+
+            {/* set-cockpit inside */}
+            <div
+              style={{
+                position: 'relative',
+                zIndex: 1,
+                display: 'grid',
+                gridTemplateColumns: 'auto minmax(0,1fr) auto',
+                gap: 9,
                 alignItems: 'center',
-                justifyContent: 'center',
-                flexWrap: 'wrap',
-                gap: 10,
-                fontVariant: 'tabular-nums',
-                marginTop: 2,
+                marginTop: 14,
+                padding: 10,
+                border: '1px solid rgba(255,255,255,0.16)',
+                borderRadius: '18px 12px 18px 12px',
+                background: 'rgba(255,255,255,0.1)',
               }}
             >
-              <span>
-                LAST · {previousSet?.weight || 0} × {previousSet?.reps || 0}
-                {previousSet?.rpe ? ` · RPE ${previousSet.rpe}` : ''}
-              </span>
-              {weightDelta && (
-                <span
-                  style={{
-                    color: weightDelta.color,
-                    letterSpacing: '0.16em',
-                    fontWeight: 700,
-                  }}
-                >
-                  {weightDelta.text}
+              <div
+                style={{
+                  direction: 'ltr',
+                  display: 'grid',
+                  width: 50,
+                  height: 50,
+                  placeItems: 'center',
+                  border: '8px solid var(--fs-steel)',
+                  borderRadius: '50%',
+                  background: 'var(--fs-rubber)',
+                  color: 'var(--fs-accent)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  fontWeight: 900,
+                }}
+              >
+                {completedSetsCount + 1}/{totalSets}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <b style={{ display: 'block', fontFamily: 'var(--font-display)', fontSize: 14 }}>
+                  {exercise.name || ''}
+                </b>
+                <span style={{ display: 'block', opacity: 0.72, fontSize: 12, fontWeight: 800 }}>
+                  סט נוכחי
                 </span>
-              )}
+              </div>
+              <div
+                style={{
+                  direction: 'ltr',
+                  color: 'var(--fs-signal)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 12,
+                  fontWeight: 900,
+                }}
+              >
+                NEXT {currentSet.weight || previousSet?.weight || '—'}
+              </div>
             </div>
-          )}
-
-          {/* Volume preview (inline with unit line) */}
-          {showVolumePreview && (currentSet.weight || 0) > 0 && (currentSet.reps || 0) > 0 && (
-            <div
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                letterSpacing: '0.22em',
-                color: 'var(--mustard)',
-                textTransform: 'uppercase',
-                marginTop: 10,
-              }}
-            >
-              VOL · {((currentSet.weight || 0) * (currentSet.reps || 0)).toLocaleString()} KG
-            </div>
-          )}
-
-          {plateLoadLabel && (
-            <div
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '0.18em',
-                color: 'rgba(var(--text-on-navy-rgb), 0.68)',
-                textTransform: 'uppercase',
-                marginTop: 8,
-              }}
-            >
-              PLATES · {plateLoadLabel}
-            </div>
-          )}
+          </div>
         </div>
 
-        {/* ── PROGRAM META RIBBON ── */}
-        {exercise.programExtras && (
-          <div
-            className="flex flex-wrap items-center gap-2 px-5 py-3"
-            style={{
-              background: 'var(--bone-deep)',
-              borderBottom: '1px solid var(--navy)',
-            }}
-          >
-            {currentSet.isWarmup && (
-              <span className="chip" style={{ textTransform: 'uppercase' }}>
-                חימום
-              </span>
-            )}
-            {exercise.programExtras.rpeTarget && (
-              <span className="chip" style={{ textTransform: 'uppercase' }}>
-                RPE TARGET {exercise.programExtras.rpeTarget}
-              </span>
-            )}
-            {exercise.programExtras.restTime && (
-              <span className="chip" style={{ textTransform: 'uppercase' }}>
-                REST {exercise.programExtras.restTime}s
-              </span>
-            )}
-            {exercise.programExtras.intensityTechnique && (
-              <span className="chip" style={{ textTransform: 'uppercase' }}>
-                {exercise.programExtras.intensityTechnique}
-              </span>
-            )}
-            {exercise.tempo && (
-              <span className="chip" style={{ textTransform: 'uppercase' }}>
-                TEMPO {exercise.tempo}
-              </span>
-            )}
-            {isInSuperset && supersetInfo && (
-              <span className="chip" style={{ textTransform: 'uppercase' }}>
-                SUPERSET {supersetInfo.position}/{supersetInfo.total}
-              </span>
-            )}
-            {exercise.programExtras.alternatives &&
-              exercise.programExtras.alternatives.length > 0 && (
-                <button
-                  type="button"
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowAlternatives(true);
-                  }}
-                  className="chip"
-                  style={{ cursor: 'pointer', textTransform: 'uppercase' }}
-                >
-                  <GripVertical size={10} />
-                  חלופות ({exercise.programExtras.alternatives.length})
-                </button>
-              )}
-          </div>
-        )}
-
-        {/* ── PROGRAM NOTES ── */}
-        {exercise.programExtras?.notes && (
-          <div
-            className="px-5 py-3"
-            style={{
-              background: 'var(--bone)',
-              borderBottom: '1px solid var(--bone-deep)',
-              fontFamily: 'var(--font-body)',
-              fontSize: 13,
-              color: 'var(--ink)',
-              lineHeight: 1.55,
-            }}
-          >
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '0.22em',
-                color: 'var(--mustard)',
-                textTransform: 'uppercase',
-                marginInlineEnd: 8,
-              }}
-            >
-              NOTE —
-            </span>
-            {exercise.programExtras.notes}
-          </div>
-        )}
-
-        {/* ── INPUT TILES ── two card-outlined sharp tiles */}
+        {/* ── GRID OF TWO STEPPERS ──  ── */}
         <div
-          className="grid grid-cols-2 px-4 pt-4 pb-3"
-          style={{ gap: 10, background: 'var(--bone)' }}
+          className="grid grid-cols-2"
+          style={{
+            gap: 10,
+            padding: '12px 14px',
+            background: 'var(--fs-bg)',
+          }}
         >
-          <InputTile
-            label="REPS"
-            eyebrow="חזרות"
-            value={currentSet.reps || 0}
-            ghostValue={previousSet?.reps}
-            showGhost={showGhostReps}
-            inputMode="numeric"
-            onTap={handleRepsTap}
-            onIncrement={handleIncrementReps}
-            onDecrement={handleDecrementReps}
-            showButtons={enableQuickRepsButtons}
-          />
-          <InputTile
-            label="KG"
-            eyebrow="משקל"
+          <SetInputCard
+            label="משקל"
             value={currentSet.weight || 0}
             ghostValue={previousSet?.weight}
             showGhost={showGhostWeight}
             unit="kg"
-            inputMode="decimal"
+            incrementAmount={2.5}
             onTap={handleWeightTap}
             onIncrement={handleIncrementWeight}
             onDecrement={handleDecrementWeight}
             showButtons={enableQuickWeightButtons}
           />
+          <SetInputCard
+            label="חזרות"
+            value={currentSet.reps || 0}
+            ghostValue={previousSet?.reps}
+            showGhost={showGhostReps}
+            incrementAmount={1}
+            onTap={handleRepsTap}
+            onIncrement={handleIncrementReps}
+            onDecrement={handleDecrementReps}
+            showButtons={enableQuickRepsButtons}
+          />
         </div>
 
-        {/* ── QUICK ACTIONS ROW ── */}
+        {/* ── QUICK ACTIONS ROW ── RPE button + overflow + undo ── */}
         <div
-          className="flex justify-between items-center px-4 pb-3"
-          style={{ background: 'var(--bone)' }}
+          className="flex justify-between items-center"
+          style={{
+            padding: '0 14px 8px',
+            background: 'var(--fs-bg)',
+          }}
         >
-          {/* Left: RPE + overflow menu */}
+          {/* Left: RPE compact picker button + overflow */}
           <div className="flex gap-2">
             {onUpdateRPE && (
-              <ChipButton
-                icon={<Star size={18} strokeWidth={2.25} />}
-                onClick={() => setShowRPEPicker(true)}
-                active={!!currentSet.rpe}
-                label="RPE"
-                badge={
-                  currentSet.rpe ? (
-                    <span
-                      className="absolute flex items-center justify-center"
-                      style={{
-                        top: -6,
-                        insetInlineEnd: -6,
-                        width: 18,
-                        height: 18,
-                        background: 'var(--navy)',
-                        color: 'var(--mustard)',
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 10,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {currentSet.rpe}
-                    </span>
-                  ) : undefined
-                }
-              />
+              <button
+                type="button"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowRPEPicker(true);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '8px 14px',
+                  background: currentSet.rpe ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                  border: '1px solid var(--fs-steel)',
+                  borderRadius: '14px 10px 14px 10px',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: currentSet.rpe ? '#FFFFFF' : 'var(--fs-ink)',
+                  cursor: 'pointer',
+                  transition: 'all 120ms ease',
+                  minHeight: 40,
+                }}
+              >
+                <Star size={14} strokeWidth={2.25} fill={currentSet.rpe ? '#FFFFFF' : 'none'} />
+                RPE {currentSet.rpe || '—'}
+              </button>
             )}
 
             <OverflowChipMenu
@@ -805,7 +457,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                         label: 'הערות',
                         onClick: () => setShowNotesSheet(true),
                         dot: !!currentSet.notes,
-                      },
+                      } as OverflowItem,
                     ]
                   : []),
                 ...(completedSetsCount > 0 && onEditSet
@@ -814,7 +466,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                         icon: <Edit size={14} strokeWidth={2.25} />,
                         label: 'עריכת סטים',
                         onClick: () => setShowSetEditor(true),
-                      },
+                      } as OverflowItem,
                     ]
                   : []),
                 ...(!isInSuperset && onCreateSuperset
@@ -823,7 +475,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                         icon: <Plus size={14} strokeWidth={2.5} />,
                         label: 'סופרסט',
                         onClick: () => onCreateSuperset(exercise.id),
-                      },
+                      } as OverflowItem,
                     ]
                   : []),
               ]}
@@ -834,7 +486,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           <div className="flex gap-2">
             {completedSetsCount > 0 && onUndo && (
               <ChipButton
-                icon={<RotateCcw size={18} strokeWidth={2.25} />}
+                icon={<RotateCcw size={16} strokeWidth={2.25} />}
                 onClick={onUndo}
                 label="בטל סט אחרון"
               />
@@ -842,12 +494,21 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           </div>
         </div>
 
-        {/* ── FINISH SET ── slide-to-confirm */}
-        <div className="px-4 pb-4 pt-1" style={{ background: 'var(--bone)' }}>
-          <SlideToComplete label="סיים סט" onComplete={onCompleteSet} />
+        {/* ── SLIDE TO COMPLETE ── */}
+        <div
+          style={{
+            padding: '0 14px 12px',
+            background: 'var(--fs-bg)',
+          }}
+        >
+          <SlideToComplete
+            label="החלק לסימון סט כבוצע"
+            onComplete={onCompleteSet}
+            disabled={false}
+          />
         </div>
 
-        {/* ── BOTTOM SHEETS ── unchanged */}
+        {/* ── BOTTOM SHEETS ── */}
         {onEditSet && (
           <SetEditBottomSheet
             isOpen={showSetEditor}

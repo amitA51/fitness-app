@@ -261,7 +261,7 @@ const SwipeComplete = memo<SwipeCompleteProps>(
                     rounded-[20px] z-10
                     flex items-center justify-center 
                     cursor-grab active:cursor-grabbing
-                    ${isCompleting ? 'bg-emerald-500' : 'bg-[var(--cosmos-accent-primary)]'}
+                    ${isCompleting ? 'bg-emerald-500' : 'bg-[var(--fs-accent)]'}
                     ${disabled ? 'cursor-not-allowed' : ''}
                 `}
           style={{

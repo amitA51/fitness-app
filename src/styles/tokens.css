@@ -6,128 +6,97 @@
 /* Google Fonts loaded via index.html with preconnect for performance */
 
 /* ============================================================================
-   1. TRAINING LOG PALETTE
+     1. FRESH STEEL PALETTE
    ============================================================================ */
 
 :root {
-  /* ── Primary Colors ──────────────────────────────────────────────────── */
-  --bone: #f2f4ec;
-  --bone-deep: #e2e7d8;
-  --bone-faint: #fafbf7;
-  --navy: #132018;
-  --navy-deep: #09110d;
-  --navy-light: #203a2c;
-  --mustard: #d7ff38;
-  --mustard-dark: #b8e521;
-  --mustard-deep: #cbf12f;
-  --ink: #171a16;
-  /* Bumped from #7e7d78 / #a5a49f for WCAG 2.1 AA contrast on --bone.
-     --stone now passes 4.5:1 for body text; --stone-light passes 3:1 for
-     large/decorative use only. */
-  --stone: #626b5e;
-  --stone-light: #849079;
+  /* Fresh Steel Core Palette */
+  --fs-bg: #EEF3F1;
+  --fs-surface: #FFFFFF;
+  --fs-surface-2: #DBE6E3;
+  --fs-ink: #132327;
+  --fs-muted: #60706F;
+  --fs-primary: #16292D;
+  --fs-accent: #43C7A5;
+  --fs-accent-2: #2C7F91;
+  --fs-signal: #E2FB70;
+  --fs-warn: #E26E3F;
+  --fs-steel: #B9C8C6;
+  --fs-plate: #D7E0DE;
+  --fs-rubber: #0D1516;
 
-  /* ── Anchor Tokens (DO NOT flip in dark mode) ─────────────────────────── */
-  /* Text on mustard surfaces stays dark navy in both light and dark modes,
-     because mustard itself is an anchor color that never flips. */
-  --color-on-mustard: #132018;
+  /* Legacy Compat: map old variable names to Fresh Steel values */
+  --bone: var(--fs-bg);
+  --bone-deep: var(--fs-surface-2);
+  --bone-faint: #F6FAF8;
+  --navy: var(--fs-primary);
+  --navy-deep: #0D1A1C;
+  --navy-light: #1C363B;
+  --mustard: var(--fs-signal);
+  --mustard-dark: #C9E045;
+  --mustard-deep: #D8ED5C;
+  --ink: var(--fs-ink);
+  --stone: var(--fs-muted);
+  --stone-light: #93A09E;
 
-  /* ── Self-Flipping RGB Triplets (for rgba() composition) ──────────────── */
-  /* Use as: rgba(var(--text-on-navy-rgb), 0.4) for muted text on a
-     var(--navy) surface. The triplet flips in dark mode so the text
-     maintains contrast when navy surfaces invert. */
-  --text-on-navy-rgb: 242, 244, 236;
-  --ink-rgb: 23, 26, 22;
-  --bone-rgb: 242, 244, 236;
+  --color-on-mustard: var(--fs-primary);
 
-  /* Scrim for modal/overlay backdrops — stays dark in both modes because
-     a scrim should always darken what's behind it. */
-  --color-scrim: rgba(11, 26, 43, 0.6);
+  --text-on-navy-rgb: 238, 243, 241;
+  --ink-rgb: 19, 35, 39;
+  --bone-rgb: 238, 243, 241;
 
-  /* ── Semantic Colors ─────────────────────────────────────────────────── */
-  --color-primary: var(--navy);
+  --color-scrim: rgba(13, 21, 22, 0.6);
+
+  --color-primary: var(--fs-primary);
   --color-primary-hover: var(--navy-deep);
-  --color-primary-glow: rgba(19, 32, 24, 0.25);
-  --color-primary-subtle: rgba(19, 32, 24, 0.08);
+  --color-primary-glow: rgba(22, 41, 45, 0.25);
+  --color-primary-subtle: rgba(22, 41, 45, 0.08);
 
-  --color-secondary: var(--mustard);
-  --color-secondary-hover: var(--mustard-dark);
-  --color-secondary-glow: rgba(215, 255, 56, 0.3);
-  --color-secondary-subtle: rgba(215, 255, 56, 0.16);
+  --color-secondary: var(--fs-accent);
+  --color-secondary-hover: #35B392;
+  --color-secondary-glow: rgba(67, 199, 165, 0.3);
+  --color-secondary-subtle: rgba(67, 199, 165, 0.16);
 
-  --color-accent: var(--mustard);
+  --color-accent: var(--fs-accent);
 
-  --color-success: #2f8f58;
+  --color-success: #2F8F58;
   --color-success-muted: rgba(47, 143, 88, 0.12);
-  --color-warning: #a36a13;
-  --color-warning-muted: rgba(163, 106, 19, 0.12);
-  --color-error: #b83228;
+  --color-warning: var(--fs-warn);
+  --color-warning-muted: rgba(226, 110, 63, 0.12);
+  --color-error: #B83228;
   --color-error-muted: rgba(184, 50, 40, 0.12);
 
-  /* ── Surface Colors ──────────────────────────────────────────────────── */
-  --color-background: var(--bone);
-  --color-surface: #ffffff;
-  --color-surface-elevated: var(--bone-deep);
-  --color-surface-input: #ffffff;
-  --color-surface-hover: var(--bone-faint);
+  --color-background: var(--fs-bg);
+  --color-surface: var(--fs-surface);
+  --color-surface-elevated: var(--fs-surface-2);
+  --color-surface-input: var(--fs-surface);
+  --color-surface-hover: #F0F5F3;
 
-  /* ── Text Colors ─────────────────────────────────────────────────────── */
-  --color-text: var(--ink);
-  --color-text-secondary: var(--stone);
+  --color-text: var(--fs-ink);
+  --color-text-secondary: var(--fs-muted);
   --color-text-muted: var(--stone-light);
 
-  /* ── Border Colors ───────────────────────────────────────────────────── */
-  --color-border: rgba(19, 32, 24, 0.12);
-  --color-border-strong: var(--navy);
-  --color-separator: var(--bone-deep);
+  --color-border: rgba(19, 35, 39, 0.12);
+  --color-border-strong: var(--fs-primary);
+  --color-separator: var(--fs-surface-2);
 
-  /* ── Accent per page (all navy — annual identity) ─────────────────────── */
-  --accent-dashboard: var(--navy);
-  --accent-workout: var(--navy);
-  --accent-nutrition: var(--navy);
-  --accent-history: var(--navy);
-  --accent-settings: var(--navy);
-  --accent-progress: var(--navy);
-  --accent-templates: var(--navy);
-  --accent-current: var(--navy);
+  --accent-dashboard: var(--fs-accent);
+  --accent-workout: var(--fs-accent);
+  --accent-nutrition: var(--fs-accent);
+  --accent-history: var(--fs-accent);
+  --accent-settings: var(--fs-accent);
+  --accent-progress: var(--fs-accent);
+  --accent-templates: var(--fs-accent);
+  --accent-current: var(--fs-accent);
 
-  /* ── Legacy aliases (compat) ──────────────────────────────────────────── */
-  --accent: var(--navy);
-  --warning: var(--color-warning);
-  --bg-primary: var(--navy);
-  --bg-secondary: var(--bone);
-  --bg-tertiary: var(--bone-deep);
-  --bg-elevated: var(--bone-deep);
-  --gray-500: var(--stone);
-  --gray-600: var(--stone-light);
-  --gray-700: #3f3f46;
-  --gray-800: #27272a;
-  --gray-200: var(--bone-deep);
-  --surface-base: var(--bone);
-  --surface-elevated-alt: var(--bone-deep);
-  --surface-input: #ffffff;
-  --text-muted-alt: var(--stone-light);
-  --danger: var(--color-error);
-  --text-primary: var(--ink);
-
-  --cosmos-accent-primary: var(--navy);
-  --cosmos-accent-secondary: var(--mustard);
-  --cosmos-accent-tertiary: var(--stone);
-  --cosmos-accent-cyan: var(--navy);
-  --cosmos-accent-orange: var(--mustard);
-  --cosmos-text-muted: var(--stone-light);
-  --cosmos-success: var(--color-success);
-  --cosmos-warning: var(--color-warning);
-  --cosmos-error: var(--color-error);
-  --cosmos-glass-bg: rgba(245, 241, 235, 0.9);
-  --cosmos-glass-border: rgba(19, 32, 24, 0.1);
-  --cosmos-glass-highlight: rgba(255, 255, 255, 0.6);
-
-  --dynamic-accent-start: var(--navy);
-  --dynamic-accent-end: var(--navy-deep);
-  --dynamic-accent-glow: var(--color-primary-glow);
-
-  --surface-glass: rgba(245, 241, 235, 0.9);
+  /* Preview Page Tokens for layout consistency */
+  --page-bg: #eff3ef;
+  --page-ink: #111816;
+  --page-muted: #65716d;
+  --paper: rgba(255, 255, 255, 0.76);
+  --line: rgba(17, 24, 22, 0.12);
+  --line-strong: rgba(17, 24, 22, 0.2);
+  --shadow: 0 24px 80px rgba(17, 24, 22, 0.13);
 }
 
 /* ============================================================================
@@ -135,7 +104,7 @@
    ============================================================================ */
 
 :root {
-  --font-display: "Big Shoulders Display", "Assistant", Impact, sans-serif;
+  --font-display: "Bricolage Grotesque", "Assistant", Impact, sans-serif;
   --font-body: "IBM Plex Sans", "Assistant", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --font-hebrew: "Assistant", system-ui, sans-serif;
@@ -212,6 +181,7 @@ html.large-text {
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-2xl: 24px;
+  --radius-asymmetric: 22px 16px 22px 16px;
   --radius-full: 9999px;
 }
 
@@ -278,65 +248,88 @@ html.large-text {
 }
 
 /* ============================================================================
-   12. DARK MODE VARIANT
+     12. DARK MODE VARIANT (Fresh Steel Dark)
    Activated via html.dark (toggled by SettingsContext).
-   Inverts the bone/navy relationship; mustard stays as the anchor accent.
    ============================================================================ */
 
 html.dark {
   color-scheme: dark;
 
-  /* ── Primary Colors (inverted) ───────────────────────────────────────── */
-  --bone: #09110d;
-  --bone-deep: #132018;
-  --bone-faint: #203a2c;
-  --navy: #f2f4ec;
-  --navy-deep: #ffffff;
-  --navy-light: #e2e7d8;
-  --mustard: #d7ff38;
-  --mustard-dark: #e4ff6f;
-  --mustard-deep: #cbf12f;
-  --ink: #f2f4ec;
-  --stone: rgba(242, 244, 236, 0.68);
-  --stone-light: rgba(242, 244, 236, 0.44);
+  /* Fresh Steel Dark Core */
+  --fs-bg: #111918;
+  --fs-surface: #172321;
+  --fs-surface-2: #223431;
+  --fs-ink: #F1F8F5;
+  --fs-muted: #A8B8B4;
+  --fs-primary: #16292D;
+  --fs-accent: #43C7A5;
+  --fs-accent-2: #2C7F91;
+  --fs-signal: #E2FB70;
+  --fs-warn: #E26E3F;
+  --fs-steel: #536864;
+  --fs-plate: #223431;
+  --fs-rubber: #07100F;
 
-  /* Anchor stays dark navy — mustard is unchanged, so text on it also stays dark */
-  --color-on-mustard: #132018;
+  /* Legacy mapping */
+  --bone: var(--fs-bg);
+  --bone-deep: var(--fs-surface-2);
+  --bone-faint: #1E2E2C;
+  --navy: var(--fs-primary);
+  --navy-deep: #0A1413;
+  --navy-light: #1E322F;
+  --mustard: var(--fs-signal);
+  --mustard-dark: #C9E045;
+  --mustard-deep: #D8ED5C;
+  --ink: var(--fs-ink);
+  --stone: var(--fs-muted);
+  --stone-light: #7A918E;
 
-  /* RGB triplets flip so rgba() compositions maintain contrast on inverted surfaces */
-  --text-on-navy-rgb: 19, 32, 24;
-  --ink-rgb: 242, 244, 236;
-  --bone-rgb: 9, 17, 13;
+  --color-on-mustard: var(--fs-primary);
 
-  /* Scrim stays dark — darkens content behind modal regardless of theme */
+  --text-on-navy-rgb: 241, 248, 245;
+  --ink-rgb: 241, 248, 245;
+  --bone-rgb: 17, 25, 24;
+
   --color-scrim: rgba(0, 0, 0, 0.7);
 
-  /* ── Semantic Surfaces (dark cards on dark bg) ───────────────────────── */
-  --color-surface: #132018;
-  --color-surface-input: #203a2c;
-  --color-surface-hover: #203a2c;
+  --color-primary: var(--fs-primary);
+  --color-primary-hover: #0A1413;
+  --color-primary-glow: rgba(241, 248, 245, 0.2);
+  --color-primary-subtle: rgba(241, 248, 245, 0.08);
 
-  /* ── Semantic Borders & Subtle Fills ─────────────────────────────────── */
-  --color-border: rgba(245, 241, 235, 0.14);
-  --color-primary-subtle: rgba(245, 241, 235, 0.08);
-  --color-primary-glow: rgba(245, 241, 235, 0.2);
+  --color-secondary: var(--fs-accent);
+  --color-secondary-hover: #35B392;
+  --color-secondary-glow: rgba(67, 199, 165, 0.3);
+  --color-secondary-subtle: rgba(67, 199, 165, 0.16);
 
-  /* ── Status Muted Fills (boosted alpha for dark bg legibility) ───────── */
+  --color-accent: var(--fs-accent);
+
+  --color-background: var(--fs-bg);
+  --color-surface: var(--fs-surface);
+  --color-surface-elevated: var(--fs-surface-2);
+  --color-surface-input: var(--fs-surface);
+  --color-surface-hover: #1E2E2C;
+
+  --color-text: var(--fs-ink);
+  --color-text-secondary: var(--fs-muted);
+  --color-text-muted: var(--stone-light);
+
+  --color-border: rgba(241, 248, 245, 0.12);
+  --color-border-strong: var(--fs-accent);
+  --color-separator: var(--fs-surface-2);
+
   --color-success-muted: rgba(47, 143, 88, 0.22);
-  --color-warning-muted: rgba(163, 106, 19, 0.22);
+  --color-warning-muted: rgba(226, 110, 63, 0.22);
   --color-error-muted: rgba(184, 50, 40, 0.22);
 
-  /* ── Glass / Cosmos overlays ─────────────────────────────────────────── */
-  --cosmos-glass-bg: rgba(19, 32, 24, 0.85);
-  --cosmos-glass-border: rgba(245, 241, 235, 0.1);
-  --cosmos-glass-highlight: rgba(245, 241, 235, 0.08);
-  --surface-glass: rgba(19, 32, 24, 0.85);
+  --cosmos-glass-bg: rgba(23, 35, 33, 0.85);
+  --cosmos-glass-border: rgba(241, 248, 245, 0.1);
+  --cosmos-glass-highlight: rgba(241, 248, 245, 0.08);
+  --surface-glass: rgba(23, 35, 33, 0.85);
 
-  /* ── Legacy aliases that hard-coded light hex values ─────────────────── */
-  --surface-input: #203a2c;
-  --gray-200: #203a2c;
+  --surface-input: var(--fs-surface);
+  --gray-200: var(--fs-surface-2);
 
-  /* ── Shadows (stronger alpha for visible depth on dark) ──────────────── */
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35);
   --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.5);
   --shadow-navy: 0 8px 24px rgba(0, 0, 0, 0.6);

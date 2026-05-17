@@ -44,12 +44,12 @@ const PAGE_THEMES: Record<PageAccent, PageTheme> = {
   dashboard: {
     accent: 'dashboard',
     colors: {
-      primary: '#3B82F6', // Electric Blue
-      primaryHover: '#2563EB',
-      primaryGlow: 'rgba(59, 130, 246, 0.35)',
+      primary: '#43C7A5', // Fresh Steel Mint Teal
+      primaryHover: '#3AB595',
+      primaryGlow: 'rgba(67, 199, 165, 0.35)',
       gradient: {
-        from: '#3B82F6',
-        to: '#6366F1',
+        from: '#43C7A5',
+        to: '#2C7F91',
       },
     },
     mood: 'energetic',
@@ -57,12 +57,12 @@ const PAGE_THEMES: Record<PageAccent, PageTheme> = {
   workout: {
     accent: 'workout',
     colors: {
-      primary: '#8B5CF6', // Purple - Dramatic
-      primaryHover: '#7C3AED',
-      primaryGlow: 'rgba(139, 92, 246, 0.35)',
+      primary: '#43C7A5', // Fresh Steel Mint Teal
+      primaryHover: '#3AB595',
+      primaryGlow: 'rgba(67, 199, 165, 0.35)',
       gradient: {
-        from: '#8B5CF6',
-        to: '#EC4899', // Pink accent
+        from: '#43C7A5',
+        to: '#2C7F91',
       },
     },
     mood: 'focused',
@@ -70,12 +70,12 @@ const PAGE_THEMES: Record<PageAccent, PageTheme> = {
   nutrition: {
     accent: 'nutrition',
     colors: {
-      primary: '#22C55E', // Green - Health
-      primaryHover: '#16A34A',
-      primaryGlow: 'rgba(34, 197, 94, 0.35)',
+      primary: '#43C7A5', // Fresh Steel Mint Teal
+      primaryHover: '#3AB595',
+      primaryGlow: 'rgba(67, 199, 165, 0.35)',
       gradient: {
-        from: '#22C55E',
-        to: '#4ADE80',
+        from: '#43C7A5',
+        to: '#2C7F91',
       },
     },
     mood: 'calm',
@@ -83,12 +83,12 @@ const PAGE_THEMES: Record<PageAccent, PageTheme> = {
   history: {
     accent: 'history',
     colors: {
-      primary: '#06B6D4', // Cyan - Info
-      primaryHover: '#0891B2',
-      primaryGlow: 'rgba(6, 182, 212, 0.35)',
+      primary: '#43C7A5', // Fresh Steel Mint Teal
+      primaryHover: '#3AB595',
+      primaryGlow: 'rgba(67, 199, 165, 0.35)',
       gradient: {
-        from: '#06B6D4',
-        to: '#38BDF8',
+        from: '#43C7A5',
+        to: '#2C7F91',
       },
     },
     mood: 'calm',
@@ -96,12 +96,12 @@ const PAGE_THEMES: Record<PageAccent, PageTheme> = {
   progress: {
     accent: 'progress',
     colors: {
-      primary: '#F59E0B', // Amber - Achievement
-      primaryHover: '#D97706',
-      primaryGlow: 'rgba(245, 158, 11, 0.35)',
+      primary: '#43C7A5', // Fresh Steel Mint Teal
+      primaryHover: '#3AB595',
+      primaryGlow: 'rgba(67, 199, 165, 0.35)',
       gradient: {
-        from: '#F59E0B',
-        to: '#FBBF24',
+        from: '#43C7A5',
+        to: '#2C7F91',
       },
     },
     mood: 'energetic',
@@ -109,12 +109,12 @@ const PAGE_THEMES: Record<PageAccent, PageTheme> = {
   templates: {
     accent: 'templates',
     colors: {
-      primary: '#A855F7', // Purple - Creative
-      primaryHover: '#9333EA',
-      primaryGlow: 'rgba(168, 85, 247, 0.35)',
+      primary: '#43C7A5', // Fresh Steel Mint Teal
+      primaryHover: '#3AB595',
+      primaryGlow: 'rgba(67, 199, 165, 0.35)',
       gradient: {
-        from: '#A855F7',
-        to: '#C084FC',
+        from: '#43C7A5',
+        to: '#2C7F91',
       },
     },
     mood: 'focused',
@@ -122,9 +122,9 @@ const PAGE_THEMES: Record<PageAccent, PageTheme> = {
   settings: {
     accent: 'settings',
     colors: {
-      primary: '#71717A', // Neutral - Minimal
-      primaryHover: '#52525B',
-      primaryGlow: 'rgba(113, 113, 122, 0.35)',
+      primary: '#16292D', // Fresh Steel Dark Primary
+      primaryHover: '#0F1C1F',
+      primaryGlow: 'rgba(22, 41, 45, 0.35)',
     },
     mood: 'calm',
   },
@@ -148,9 +148,9 @@ const PageThemeContext = createContext<PageThemeContextValue | null>(null);
 const PAGE_THEME_FALLBACK: PageThemeContextValue = {
   theme: PAGE_THEMES.dashboard,
   accent: 'dashboard',
-  isDark: true,
+  isDark: false,
   getGradientClass: () => '',
-  getGlowClass: () => '0 0 20px rgba(59, 130, 246, 0.35)',
+  getGlowClass: () => '0 0 20px rgba(67, 199, 165, 0.35)',
 };
 
 // ============================================================================
@@ -169,7 +169,7 @@ export function PageThemeProvider({ children, page }: PageThemeProviderProps) {
     () => ({
       theme,
       accent: page,
-      isDark: true, // Always dark for this app
+      isDark: false, // Fresh Steel light mode default
       getGradientClass: () => '',
       getGlowClass: () => {
         return `0 0 20px ${theme.colors.primaryGlow}`;

@@ -26,22 +26,22 @@ import MuscleRadarChart from './components/MuscleRadarChart';
 import TrendLineOverlay from './components/TrendLineOverlay';
 
 const MUSCLE_COLORS: Record<string, string> = {
-  חזה: '#ef4444',
-  גב: '#3b82f6',
-  כתפיים: '#a855f7',
-  רגליים: '#22c55e',
-  ביצפס: '#f59e0b',
-  טריצפס: '#ec4899',
-  אמות: '#14b8a6',
-  בטן: '#f97316',
-  Core: '#f97316',
-  Chest: '#ef4444',
-  Back: '#3b82f6',
-  Shoulders: '#a855f7',
-  Legs: '#22c55e',
-  Arms: '#f59e0b',
-  Biceps: '#ec4899',
-  Triceps: '#14b8a6',
+  חזה: 'var(--fs-warn)',
+  גב: 'var(--fs-accent-2)',
+  כתפיים: 'var(--fs-accent)',
+  רגליים: 'var(--fs-accent)',
+  ביצפס: 'var(--fs-signal)',
+  טריצפס: 'var(--fs-accent-2)',
+  אמות: 'var(--fs-steel)',
+  בטן: 'var(--fs-warn)',
+  Core: 'var(--fs-warn)',
+  Chest: 'var(--fs-warn)',
+  Back: 'var(--fs-accent-2)',
+  Shoulders: 'var(--fs-accent)',
+  Legs: 'var(--fs-accent)',
+  Arms: 'var(--fs-signal)',
+  Biceps: 'var(--fs-accent-2)',
+  Triceps: 'var(--fs-steel)',
 };
 
 function getMuscleColor(muscle: string, index: number): string {
@@ -70,8 +70,8 @@ const StatCard = memo(
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay, type: 'spring', stiffness: 200 }}
       style={{
-        background: 'var(--bone)',
-        border: '2px solid var(--navy)',
+        background: 'var(--fs-surface)',
+        border: '2px solid var(--fs-primary)',
         padding: 16,
         position: 'relative',
         overflow: 'hidden',
@@ -91,7 +91,7 @@ const StatCard = memo(
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             letterSpacing: '0.18em',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             textTransform: 'uppercase',
             fontWeight: 600,
           }}
@@ -104,7 +104,7 @@ const StatCard = memo(
           fontFamily: 'var(--font-display)',
           fontWeight: 900,
           fontSize: 32,
-          color: 'var(--navy)',
+          color: 'var(--fs-primary)',
           letterSpacing: '-0.02em',
           lineHeight: 1,
         }}
@@ -115,7 +115,7 @@ const StatCard = memo(
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
-          color: 'var(--stone)',
+          color: 'var(--fs-muted)',
           letterSpacing: '0.08em',
           marginTop: 4,
         }}
@@ -202,7 +202,7 @@ const AnalyticsDashboard: React.FC = () => {
           style={{
             width: 32,
             height: 32,
-            border: '3px solid var(--navy)',
+            border: '3px solid var(--fs-primary)',
             borderTopColor: 'transparent',
             borderRadius: '50%',
           }}
@@ -261,8 +261,8 @@ const AnalyticsDashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
           style={{
-            background: 'var(--bone)',
-            border: '2px solid var(--navy)',
+            background: 'var(--fs-surface)',
+            border: '2px solid var(--fs-primary)',
             padding: 20,
           }}
         >
@@ -279,7 +279,7 @@ const AnalyticsDashboard: React.FC = () => {
                 style={{
                   width: 10,
                   height: 10,
-                  background: 'var(--mustard)',
+                  background: 'var(--fs-accent)',
                 }}
               />
               <h3
@@ -289,7 +289,7 @@ const AnalyticsDashboard: React.FC = () => {
                   fontSize: 14,
                   letterSpacing: '0.06em',
                   textTransform: 'uppercase',
-                  color: 'var(--navy)',
+                  color: 'var(--fs-primary)',
                 }}
               >
                 מגמת נפח שבועית
@@ -302,7 +302,7 @@ const AnalyticsDashboard: React.FC = () => {
                 gap: 12,
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
               }}
@@ -312,7 +312,7 @@ const AnalyticsDashboard: React.FC = () => {
                   style={{
                     width: 12,
                     height: 3,
-                    background: 'var(--mustard)',
+                    background: 'var(--fs-accent)',
                   }}
                 />
                 <span>נפח</span>
@@ -322,7 +322,7 @@ const AnalyticsDashboard: React.FC = () => {
                   style={{
                     width: 12,
                     height: 3,
-                    background: 'var(--navy)',
+                    background: 'var(--fs-primary)',
                   }}
                 />
                 <span>מגמה</span>
@@ -351,7 +351,7 @@ const AnalyticsDashboard: React.FC = () => {
                   y1={i * 45}
                   x2={weeklyVolumes.length * 60}
                   y2={i * 45}
-                  stroke="var(--bone-deep)"
+                  stroke="var(--fs-surface-2)"
                   strokeWidth="1"
                   strokeDasharray="4 4"
                 />
@@ -394,7 +394,7 @@ const AnalyticsDashboard: React.FC = () => {
                       onMouseLeave={() => setHoveredTrendPoint(null)}
                       style={{
                         cursor: 'pointer',
-                        fill: isHovered ? 'var(--navy)' : 'var(--mustard)',
+                        fill: isHovered ? 'var(--fs-primary)' : 'var(--fs-accent)',
                       }}
                       role="img"
                       aria-label={`שבוע ${i + 1}: ${week.totalVolume.toLocaleString()} ק״ג`}
@@ -406,7 +406,7 @@ const AnalyticsDashboard: React.FC = () => {
                       y={185}
                       textAnchor="middle"
                       fontSize={8}
-                      fill="var(--stone)"
+                      fill="var(--fs-muted)"
                       fontFamily="var(--font-mono)"
                     >
                       {week.weekLabel.split('-W')[1] || week.weekLabel.slice(-2)}
@@ -430,7 +430,7 @@ const AnalyticsDashboard: React.FC = () => {
                     transform: 'translateX(-50%)',
                     marginBottom: 8,
                     zIndex: 20,
-                    background: 'var(--navy)',
+                    background: 'var(--fs-primary)',
                     padding: '8px 12px',
                     minWidth: 120,
                   }}
@@ -440,7 +440,7 @@ const AnalyticsDashboard: React.FC = () => {
                       fontFamily: 'var(--font-display)',
                       fontWeight: 800,
                       fontSize: 14,
-                      color: 'var(--mustard)',
+                      color: 'var(--fs-accent)',
                       marginBottom: 4,
                     }}
                   >
@@ -463,8 +463,8 @@ const AnalyticsDashboard: React.FC = () => {
                         fontSize: 9,
                         color:
                           weeklyVolumes[hoveredTrendPoint].changeFromPrevious! >= 0
-                            ? '#22c55e'
-                            : '#ef4444',
+                            ? 'var(--fs-accent)'
+                            : 'var(--fs-warn)',
                       }}
                     >
                       {weeklyVolumes[hoveredTrendPoint].changeFromPrevious! >= 0 ? '↑' : '↓'}{' '}
@@ -492,7 +492,7 @@ const AnalyticsDashboard: React.FC = () => {
               style={{
                 marginTop: 12,
                 paddingTop: 12,
-                borderTop: '2px solid var(--bone-deep)',
+                borderTop: '2px solid var(--fs-surface-2)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -503,10 +503,10 @@ const AnalyticsDashboard: React.FC = () => {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: 'var(--stone)' }}>חיזוי לשבוע הבא:</span>
+                <span style={{ color: 'var(--fs-muted)' }}>חיזוי לשבוע הבא:</span>
                 <span
                   style={{
-                    color: 'var(--navy)',
+                    color: 'var(--fs-primary)',
                     fontWeight: 700,
                   }}
                 >
@@ -516,10 +516,10 @@ const AnalyticsDashboard: React.FC = () => {
                   style={{
                     color:
                       forecastData.trend === 'increasing'
-                        ? '#22c55e'
+                        ? 'var(--fs-accent)'
                         : forecastData.trend === 'decreasing'
-                          ? '#ef4444'
-                          : 'var(--stone)',
+                          ? 'var(--fs-warn)'
+                          : 'var(--fs-muted)',
                   }}
                 >
                   (
@@ -531,7 +531,7 @@ const AnalyticsDashboard: React.FC = () => {
                   )
                 </span>
               </div>
-              <span style={{ color: 'var(--stone)' }}>
+              <span style={{ color: 'var(--fs-muted)' }}>
                 {Math.round(forecastData.confidence * 100)}% ביטחון
               </span>
             </div>
@@ -546,8 +546,8 @@ const AnalyticsDashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
           style={{
-            background: 'var(--bone)',
-            border: '2px solid var(--navy)',
+            background: 'var(--fs-surface)',
+            border: '2px solid var(--fs-primary)',
             padding: 20,
           }}
         >
@@ -558,7 +558,7 @@ const AnalyticsDashboard: React.FC = () => {
               fontSize: 14,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               marginBottom: 16,
               display: 'flex',
               alignItems: 'center',
@@ -569,7 +569,7 @@ const AnalyticsDashboard: React.FC = () => {
               style={{
                 width: 10,
                 height: 10,
-                background: 'var(--mustard)',
+                background: 'var(--fs-accent)',
               }}
             />
             מגמת נפח (10 אימונים אחרונים)
@@ -600,7 +600,7 @@ const AnalyticsDashboard: React.FC = () => {
                 <div
                   key={i}
                   style={{
-                    borderTop: '1px dashed var(--bone-deep)',
+                    borderTop: '1px dashed var(--fs-surface-2)',
                     width: '100%',
                   }}
                 />
@@ -626,7 +626,7 @@ const AnalyticsDashboard: React.FC = () => {
                   style={{
                     flex: 1,
                     minWidth: 12,
-                    background: isHovered ? 'var(--navy)' : 'var(--mustard)',
+                    background: isHovered ? 'var(--fs-primary)' : 'var(--fs-accent)',
                     cursor: 'pointer',
                     transition: 'all 150ms',
                     position: 'relative',
@@ -645,7 +645,7 @@ const AnalyticsDashboard: React.FC = () => {
                           transform: 'translateX(-50%)',
                           marginBottom: 8,
                           zIndex: 20,
-                          background: 'var(--navy)',
+                          background: 'var(--fs-primary)',
                           padding: '6px 10px',
                           whiteSpace: 'nowrap',
                         }}
@@ -655,7 +655,7 @@ const AnalyticsDashboard: React.FC = () => {
                             fontFamily: 'var(--font-display)',
                             fontWeight: 800,
                             fontSize: 12,
-                            color: 'var(--mustard)',
+                            color: 'var(--fs-accent)',
                           }}
                         >
                           {point.volume.toLocaleString()} ק״ג
@@ -685,7 +685,7 @@ const AnalyticsDashboard: React.FC = () => {
               justifyContent: 'space-between',
               fontFamily: 'var(--font-mono)',
               fontSize: 9,
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
             }}
@@ -709,8 +709,8 @@ const AnalyticsDashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
           style={{
-            background: 'var(--bone)',
-            border: '2px solid var(--navy)',
+            background: 'var(--fs-surface)',
+            border: '2px solid var(--fs-primary)',
             padding: 20,
           }}
         >
@@ -721,7 +721,7 @@ const AnalyticsDashboard: React.FC = () => {
               fontSize: 14,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               marginBottom: 16,
               display: 'flex',
               alignItems: 'center',
@@ -732,7 +732,7 @@ const AnalyticsDashboard: React.FC = () => {
               style={{
                 width: 10,
                 height: 10,
-                background: 'var(--mustard)',
+                background: 'var(--fs-accent)',
               }}
             />
             איזון קבוצות שרירים
@@ -773,12 +773,12 @@ const AnalyticsDashboard: React.FC = () => {
                       width: 12,
                       height: 12,
                       background: muscle.isWeak
-                        ? '#ef4444'
+                        ? 'var(--fs-warn)'
                         : muscle.trend === 'up'
-                          ? '#22c55e'
+                          ? 'var(--fs-accent)'
                           : muscle.trend === 'down'
-                            ? '#ef4444'
-                            : 'var(--mustard)',
+                            ? 'var(--fs-warn)'
+                            : 'var(--fs-accent)',
                       flexShrink: 0,
                     }}
                   />
@@ -786,7 +786,7 @@ const AnalyticsDashboard: React.FC = () => {
                     style={{
                       fontFamily: 'var(--font-body)',
                       fontSize: 12,
-                      color: 'var(--navy)',
+                      color: 'var(--fs-primary)',
                       flex: 1,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -801,7 +801,7 @@ const AnalyticsDashboard: React.FC = () => {
                         style={{
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
-                          color: '#22c55e',
+                          color: 'var(--fs-accent)',
                         }}
                       >
                         ↑
@@ -812,7 +812,7 @@ const AnalyticsDashboard: React.FC = () => {
                         style={{
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
-                          color: '#ef4444',
+                          color: 'var(--fs-warn)',
                         }}
                       >
                         ↓
@@ -823,7 +823,7 @@ const AnalyticsDashboard: React.FC = () => {
                         fontFamily: 'var(--font-display)',
                         fontWeight: 800,
                         fontSize: 12,
-                        color: 'var(--navy)',
+                        color: 'var(--fs-primary)',
                       }}
                     >
                       {muscle.percentage}%
@@ -834,8 +834,8 @@ const AnalyticsDashboard: React.FC = () => {
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: 8,
-                        color: '#ef4444',
-                        background: 'rgba(239,68,68,0.1)',
+                        color: 'var(--fs-warn)',
+                        background: 'rgba(226,110,63,0.1)',
                         padding: '2px 6px',
                         letterSpacing: '0.05em',
                         textTransform: 'uppercase',
@@ -858,8 +858,8 @@ const AnalyticsDashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
           style={{
-            background: 'var(--bone)',
-            border: '2px solid var(--navy)',
+            background: 'var(--fs-surface)',
+            border: '2px solid var(--fs-primary)',
             padding: 20,
           }}
         >
@@ -870,7 +870,7 @@ const AnalyticsDashboard: React.FC = () => {
               fontSize: 14,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               marginBottom: 16,
               display: 'flex',
               alignItems: 'center',
@@ -881,7 +881,7 @@ const AnalyticsDashboard: React.FC = () => {
               style={{
                 width: 10,
                 height: 10,
-                background: 'var(--mustard)',
+                background: 'var(--fs-accent)',
               }}
             />
             התפלגות קבוצות שרירים
@@ -941,7 +941,7 @@ const AnalyticsDashboard: React.FC = () => {
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 18,
-                    color: 'var(--navy)',
+                    color: 'var(--fs-primary)',
                   }}
                 >
                   {muscleGroupData.length}
@@ -976,7 +976,7 @@ const AnalyticsDashboard: React.FC = () => {
                     style={{
                       fontFamily: 'var(--font-body)',
                       fontSize: 12,
-                      color: 'var(--navy)',
+                      color: 'var(--fs-primary)',
                       flex: 1,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -990,7 +990,7 @@ const AnalyticsDashboard: React.FC = () => {
                       fontFamily: 'var(--font-display)',
                       fontWeight: 800,
                       fontSize: 12,
-                      color: 'var(--navy)',
+                      color: 'var(--fs-primary)',
                     }}
                   >
                     {group.percentage}%

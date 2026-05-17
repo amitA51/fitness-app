@@ -214,13 +214,13 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
       className="flex flex-col h-full"
     >
       {/* Masthead */}
-      <div style={{ background: 'var(--navy)', flexShrink: 0 }}>
+      <div style={{ background: 'var(--fs-primary)', flexShrink: 0 }}>
         {/* Chapter strip */}
         <div
           className="chapter-break"
           style={{ borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)' }}
         >
-          <span className="left" style={{ color: 'var(--mustard)' }}>
+          <span className="left" style={{ color: 'var(--fs-accent)' }}>
             §01 · {title}
           </span>
           <span className="right">{activeItems.length} תרגילים</span>
@@ -234,7 +234,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
               fontFamily: 'var(--font-display)',
               fontWeight: 900,
               fontSize: 36,
-              color: 'var(--bone)',
+              color: 'var(--fs-surface)',
               lineHeight: 0.9,
               letterSpacing: '-0.02em',
               direction: 'ltr',
@@ -273,7 +273,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 11,
                 letterSpacing: '0.15em',
-                color: 'var(--mustard)',
+                color: 'var(--fs-accent)',
                 textTransform: 'uppercase',
               }}
             >
@@ -297,7 +297,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
       {/* Bone body */}
       <div
         className="flex-1 overflow-y-auto overscroll-contain px-5 py-4"
-        style={{ background: 'var(--bone)' }}
+        style={{ background: 'var(--fs-surface)' }}
       >
         <div className="flex flex-col gap-2 pb-4">
           {items.map((item) => (
@@ -310,8 +310,8 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '16px 16px',
-                background: item.selected ? 'var(--bone-deep)' : 'var(--bone)',
-                border: `2px solid ${item.selected ? 'var(--navy)' : 'var(--bone-deep)'}`,
+                background: item.selected ? 'var(--fs-surface-2)' : 'var(--fs-surface)',
+                border: `2px solid ${item.selected ? 'var(--fs-primary)' : 'var(--fs-surface-2)'}`,
                 cursor: 'pointer',
                 transition: 'all 150ms',
                 minHeight: 56,
@@ -325,8 +325,8 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                     width: 22,
                     height: 22,
                     borderRadius: 0,
-                    border: `2px solid ${item.selected ? 'var(--navy)' : 'var(--stone)'}`,
-                    background: item.selected ? 'var(--mustard)' : 'transparent',
+                    border: `2px solid ${item.selected ? 'var(--fs-primary)' : 'var(--fs-muted)'}`,
+                    background: item.selected ? 'var(--fs-accent)' : 'transparent',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -337,7 +337,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                     <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
                       <path
                         d="M1 5L4.5 8.5L11 1"
-                        stroke="var(--navy)"
+                        stroke="var(--fs-primary)"
                         strokeWidth="2.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -350,7 +350,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 15,
-                    color: item.selected ? 'var(--navy)' : 'var(--stone)',
+                    color: item.selected ? 'var(--fs-primary)' : 'var(--fs-muted)',
                     letterSpacing: '-0.01em',
                     textAlign: 'right',
                   }}
@@ -363,7 +363,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 12,
                   letterSpacing: '0.1em',
-                  color: item.selected ? 'var(--navy)' : 'var(--stone)',
+                  color: item.selected ? 'var(--fs-primary)' : 'var(--fs-muted)',
                   fontVariantNumeric: 'tabular-nums',
                   flexShrink: 0,
                 }}
@@ -378,7 +378,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
       {/* Action buttons */}
       <div
         className="flex flex-col gap-2 px-5 py-4"
-        style={{ background: 'var(--bone)', borderTop: '1px solid var(--bone-deep)' }}
+        style={{ background: 'var(--fs-surface)', borderTop: '1px solid var(--fs-surface-2)' }}
       >
         <button
           type="button"
@@ -390,8 +390,8 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             padding: '18px 24px',
-            background: 'var(--navy)',
-            color: 'var(--mustard)',
+            background: 'var(--fs-primary)',
+            color: 'var(--fs-accent)',
             border: 'none',
             cursor: 'pointer',
             fontFamily: 'var(--font-display)',
@@ -404,13 +404,13 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
             minHeight: 52,
           }}
           onPointerDown={(e) => {
-            e.currentTarget.style.background = 'var(--navy-deep)';
+            e.currentTarget.style.background = '#0D1A1C';
           }}
           onPointerUp={(e) => {
-            e.currentTarget.style.background = 'var(--navy)';
+            e.currentTarget.style.background = 'var(--fs-primary)';
           }}
           onPointerLeave={(e) => {
-            e.currentTarget.style.background = 'var(--navy)';
+            e.currentTarget.style.background = 'var(--fs-primary)';
           }}
         >
           התחל {title} ({activeItems.length})
@@ -425,8 +425,8 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
             justifyContent: 'center',
             padding: '14px 24px',
             background: 'transparent',
-            color: 'var(--stone)',
-            border: '2px solid var(--stone)',
+            color: 'var(--fs-muted)',
+            border: '2px solid var(--fs-muted)',
             cursor: 'pointer',
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
@@ -437,16 +437,16 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
             minHeight: 48,
           }}
           onPointerDown={(e) => {
-            e.currentTarget.style.color = 'var(--navy)';
-            e.currentTarget.style.borderColor = 'var(--navy)';
+            e.currentTarget.style.color = 'var(--fs-primary)';
+            e.currentTarget.style.borderColor = 'var(--fs-primary)';
           }}
           onPointerUp={(e) => {
-            e.currentTarget.style.color = 'var(--stone)';
-            e.currentTarget.style.borderColor = 'var(--stone)';
+            e.currentTarget.style.color = 'var(--fs-muted)';
+            e.currentTarget.style.borderColor = 'var(--fs-muted)';
           }}
           onPointerLeave={(e) => {
-            e.currentTarget.style.color = 'var(--stone)';
-            e.currentTarget.style.borderColor = 'var(--stone)';
+            e.currentTarget.style.color = 'var(--fs-muted)';
+            e.currentTarget.style.borderColor = 'var(--fs-muted)';
           }}
         >
           דלג על {title}
@@ -493,7 +493,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
 }) => {
   const title = type === 'warmup' ? 'חימום' : 'צינון';
 
-  const timerColor = isWarning ? 'var(--color-error)' : 'var(--mustard)';
+  const timerColor = isWarning ? 'var(--fs-warn)' : 'var(--fs-accent)';
 
   return (
     <motion.div
@@ -502,12 +502,12 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="flex flex-col"
-      style={{ height: '100%', background: 'var(--bone)' }}
+      style={{ height: '100%', background: 'var(--fs-surface)' }}
     >
       {/* Navy header strip */}
       <div
         style={{
-          background: 'var(--navy)',
+          background: 'var(--fs-primary)',
           padding: '16px 20px',
           display: 'flex',
           alignItems: 'center',
@@ -520,7 +520,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
             fontFamily: 'var(--font-mono)',
             fontSize: 11,
             letterSpacing: '0.18em',
-            color: 'var(--mustard)',
+            color: 'var(--fs-accent)',
             textTransform: 'uppercase',
           }}
         >
@@ -562,7 +562,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
         className="text-center"
         style={{
           padding: '24px 20px 0',
-          background: 'var(--bone)',
+          background: 'var(--fs-surface)',
           flexShrink: 0,
         }}
       >
@@ -571,7 +571,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             letterSpacing: '0.22em',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             textTransform: 'uppercase',
           }}
         >
@@ -582,7 +582,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
             fontFamily: 'var(--font-display)',
             fontWeight: 900,
             fontSize: 28,
-            color: 'var(--navy)',
+            color: 'var(--fs-primary)',
             lineHeight: 1,
             letterSpacing: '-0.02em',
             marginTop: 6,
@@ -596,7 +596,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
       {/* Timer — massive editorial number */}
       <div
         className="flex-1 flex items-center justify-center"
-        style={{ background: 'var(--bone)', minHeight: 0 }}
+        style={{ background: 'var(--fs-surface)', minHeight: 0 }}
         onClick={onTogglePause}
       >
         <div
@@ -622,7 +622,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               cx="120"
               cy="120"
               r="108"
-              stroke="var(--bone-deep)"
+              stroke="var(--fs-surface-2)"
               strokeWidth="6"
               fill="none"
             />
@@ -660,7 +660,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 900,
                 fontSize: 'clamp(48px, 14vw, 72px)',
-                color: isWarning ? 'var(--color-error)' : 'var(--navy)',
+                color: isWarning ? 'var(--fs-warn)' : 'var(--fs-primary)',
                 letterSpacing: '-0.03em',
                 lineHeight: 1,
                 fontVariantNumeric: 'tabular-nums',
@@ -674,7 +674,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.2em',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   textTransform: 'uppercase',
                   marginTop: 4,
                 }}
@@ -688,7 +688,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.2em',
-                  color: 'var(--color-success)',
+                  color: '#2F8F58',
                   textTransform: 'uppercase',
                   marginTop: 4,
                 }}
@@ -704,7 +704,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
       <div
         style={{
           padding: '0 20px 24px',
-          background: 'var(--bone)',
+          background: 'var(--fs-surface)',
           flexShrink: 0,
         }}
       >
@@ -713,7 +713,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
             fontFamily: 'var(--font-mono)',
             fontSize: 9,
             letterSpacing: '0.2em',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             textTransform: 'uppercase',
             textAlign: 'center',
             marginBottom: 12,
@@ -732,9 +732,9 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'var(--bone-deep)',
-              color: currentIndex === 0 ? 'var(--stone-light)' : 'var(--navy)',
-              border: '2px solid var(--navy)',
+              background: 'var(--fs-surface-2)',
+              color: currentIndex === 0 ? '#93A09E' : 'var(--fs-primary)',
+              border: '2px solid var(--fs-primary)',
               borderRadius: 0,
               cursor: currentIndex === 0 ? 'not-allowed' : 'pointer',
               fontFamily: 'var(--font-display)',
@@ -757,8 +757,8 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               padding: '16px 24px',
-              background: 'var(--navy)',
-              color: 'var(--mustard)',
+              background: 'var(--fs-primary)',
+              color: 'var(--fs-accent)',
               border: 'none',
               borderRadius: 0,
               cursor: 'pointer',
@@ -771,13 +771,13 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               minHeight: 52,
             }}
             onPointerDown={(e) => {
-              e.currentTarget.style.background = 'var(--navy-deep)';
+              e.currentTarget.style.background = '#0D1A1C';
             }}
             onPointerUp={(e) => {
-              e.currentTarget.style.background = 'var(--navy)';
+              e.currentTarget.style.background = 'var(--fs-primary)';
             }}
             onPointerLeave={(e) => {
-              e.currentTarget.style.background = 'var(--navy)';
+              e.currentTarget.style.background = 'var(--fs-primary)';
             }}
           >
             {isLast ? 'סיום' : 'הבא →'}
@@ -893,7 +893,7 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
   return (
     <motion.div
       className="fixed inset-0 z-[11000] flex flex-col"
-      style={{ background: 'var(--bone)' }}
+      style={{ background: 'var(--fs-surface)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -902,7 +902,7 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
       <div
         style={{
           paddingTop: 'env(safe-area-inset-top, 0)',
-          background: 'var(--navy)',
+          background: 'var(--fs-primary)',
           flexShrink: 0,
         }}
       />
@@ -943,7 +943,7 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
       <div
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0)',
-          background: 'var(--bone)',
+          background: 'var(--fs-surface)',
           flexShrink: 0,
         }}
       />

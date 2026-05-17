@@ -29,24 +29,47 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
     <div
       role="status"
       aria-label="שיאים אישיים חדשים"
+      className="fs-accent-rail"
       style={{
-        margin: '0 0 16px 0',
+        marginTop: 16,
         padding: '12px 16px',
-        border: '2px solid var(--mustard)',
-        background: 'var(--bone-faint)',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
+        boxShadow: 'var(--shadow-card)',
       }}
     >
       <div
         style={{
-          marginBottom: recentPRs.length > 0 ? 10 : 0,
-          fontFamily: 'var(--font-mono)',
-          fontSize: 10,
-          letterSpacing: '0.22em',
-          textTransform: 'uppercase',
-          color: 'var(--mustard-dark)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 10,
         }}
       >
-        <span>שיאים אישיים · 7 ימים</span>
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'var(--fs-signal)',
+            fontWeight: 600,
+          }}
+        >
+          § שיאים אישיים
+        </span>
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 8,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: 'var(--fs-muted)',
+          }}
+        >
+          7 ימים
+        </span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {recentPRs.map((pr) => (
@@ -55,25 +78,27 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
             style={{
               display: 'flex',
               justifyContent: 'space-between',
-              alignItems: 'baseline',
+              alignItems: 'center',
+              padding: '4px 0',
+              borderBottom: '1px solid var(--fs-surface-2)',
             }}
           >
             <span
               style={{
                 fontFamily: 'var(--font-hebrew)',
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: 600,
-                color: 'var(--ink)',
+                color: 'var(--fs-ink)',
               }}
             >
               {pr.exerciseName}
             </span>
             <span
               style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 18,
-                color: 'var(--navy)',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                fontSize: 15,
+                color: 'var(--fs-accent)',
                 letterSpacing: '-0.01em',
               }}
             >
@@ -81,12 +106,12 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
+                  fontSize: 8,
                   fontWeight: 400,
-                  color: 'var(--stone)',
-                  letterSpacing: '0.12em',
+                  color: 'var(--fs-muted)',
+                  letterSpacing: '0.1em',
                   textTransform: 'uppercase',
-                  marginRight: 6,
+                  marginRight: 4,
                 }}
               >
                 KG

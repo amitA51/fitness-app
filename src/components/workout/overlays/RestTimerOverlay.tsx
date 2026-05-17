@@ -132,9 +132,9 @@ const MiniTimer = memo<MiniTimerProps>(
         <motion.div
           className="relative mx-auto max-w-md overflow-hidden"
           style={{
-            backgroundColor: isLastFive ? 'var(--mustard)' : 'var(--bone)',
-            border: '2px solid var(--navy)',
-            borderRadius: 0,
+            backgroundColor: isLastFive ? 'var(--fs-accent)' : 'var(--fs-surface)',
+            border: '2px solid var(--fs-primary)',
+            borderRadius: '22px 16px 22px 16px',
             /* Static shadow — animating box-shadow forces full repaint
                every frame on mobile. Pulse moved to opacity overlay below. */
             boxShadow: '0 12px 28px rgba(11,26,43,0.25)',
@@ -143,11 +143,11 @@ const MiniTimer = memo<MiniTimerProps>(
           {/* Progress bar at top — mustard on navy */}
           <div
             className="absolute top-0 inset-x-0 h-1"
-            style={{ backgroundColor: 'var(--bone-deep)' }}
+            style={{ backgroundColor: 'var(--fs-surface-2)' }}
           >
             <motion.div
               className="h-full"
-              style={{ width: `${progress}%`, backgroundColor: 'var(--mustard)' }}
+              style={{ width: `${progress}%`, backgroundColor: 'var(--fs-accent)' }}
               transition={{ duration: 0.3 }}
             />
           </div>
@@ -168,7 +168,7 @@ const MiniTimer = memo<MiniTimerProps>(
                     cy="24"
                     r="20"
                     fill="none"
-                    stroke="var(--bone-deep)"
+                    stroke="var(--fs-surface-2)"
                     strokeWidth="4"
                   />
                   <circle
@@ -176,7 +176,7 @@ const MiniTimer = memo<MiniTimerProps>(
                     cy="24"
                     r="20"
                     fill="none"
-                    stroke={isLastFive ? 'var(--navy)' : 'var(--mustard)'}
+                    stroke={isLastFive ? 'var(--fs-primary)' : 'var(--fs-accent)'}
                     strokeWidth="4"
                     strokeLinecap="round"
                     strokeDasharray={125.6}
@@ -190,7 +190,7 @@ const MiniTimer = memo<MiniTimerProps>(
                     animate={ANIMATION.pulsing.animate}
                     transition={ANIMATION.pulsing.transition}
                   >
-                    <div style={{ width: 8, height: 8, backgroundColor: 'var(--navy)' }} />
+                    <div style={{ width: 8, height: 8, backgroundColor: 'var(--fs-primary)' }} />
                   </motion.div>
                 )}
               </div>
@@ -210,7 +210,7 @@ const MiniTimer = memo<MiniTimerProps>(
                   style={{
                     fontFamily: 'var(--font-display)',
                     fontWeight: 900,
-                    color: 'var(--navy)',
+                    color: 'var(--fs-primary)',
                     letterSpacing: '-0.02em',
                     lineHeight: 1,
                   }}
@@ -225,7 +225,7 @@ const MiniTimer = memo<MiniTimerProps>(
                     fontFamily: 'var(--font-mono)',
                     fontSize: '10px',
                     letterSpacing: '0.22em',
-                    color: isLastFive ? 'var(--navy)' : 'var(--stone)',
+                    color: isLastFive ? 'var(--fs-primary)' : 'var(--fs-muted)',
                     fontWeight: 600,
                   }}
                 >
@@ -244,9 +244,9 @@ const MiniTimer = memo<MiniTimerProps>(
                 }}
                 className="w-11 h-11 flex items-center justify-center transition-colors uppercase"
                 style={{
-                  backgroundColor: 'var(--bone)',
-                  border: '2px solid var(--navy)',
-                  color: 'var(--navy)',
+                  backgroundColor: 'var(--fs-surface)',
+                  border: '2px solid var(--fs-primary)',
+                  color: 'var(--fs-primary)',
                   fontFamily: 'var(--font-mono)',
                   fontSize: '11px',
                   fontWeight: 700,
@@ -265,8 +265,8 @@ const MiniTimer = memo<MiniTimerProps>(
                 }}
                 className="w-11 h-11 flex items-center justify-center active:brightness-90 transition-all"
                 style={{
-                  backgroundColor: 'var(--navy)',
-                  color: 'var(--mustard)',
+                  backgroundColor: 'var(--fs-primary)',
+                  color: 'var(--fs-accent)',
                   borderRadius: 0,
                 }}
                 aria-label="דלג על המנוחה"
@@ -341,7 +341,7 @@ const RingProgress = memo<{
         cy={size / 2}
         r={radius}
         fill="none"
-        stroke="var(--bone-deep)"
+        stroke="var(--fs-surface-2)"
         strokeWidth={strokeWidth}
       />
       <motion.circle
@@ -349,7 +349,7 @@ const RingProgress = memo<{
         cy={size / 2}
         r={radius}
         fill="none"
-        stroke="var(--mustard)"
+        stroke="var(--fs-accent)"
         strokeWidth={strokeWidth}
         strokeLinecap="butt"
         strokeDasharray={circumference}
@@ -438,7 +438,12 @@ const FullTimer = memo<FullTimerProps>(
               transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
             >
               <div
-                style={{ width: 48, height: 3, backgroundColor: 'var(--mustard)', marginBottom: 8 }}
+                style={{
+                  width: 48,
+                  height: 3,
+                  backgroundColor: 'var(--fs-accent)',
+                  marginBottom: 8,
+                }}
               />
               <span
                 className="uppercase"
@@ -446,7 +451,7 @@ const FullTimer = memo<FullTimerProps>(
                   fontFamily: 'var(--font-mono)',
                   fontSize: '10px',
                   letterSpacing: '0.28em',
-                  color: 'var(--mustard)',
+                  color: 'var(--fs-accent)',
                   fontWeight: 600,
                 }}
               >
@@ -489,7 +494,7 @@ const FullTimer = memo<FullTimerProps>(
                   fontWeight: 900,
                   letterSpacing: '-0.04em',
                   lineHeight: 0.85,
-                  color: isLastFive ? 'var(--mustard)' : 'var(--bone)',
+                  color: isLastFive ? 'var(--fs-accent)' : 'var(--fs-surface)',
                   textShadow: isLastFive ? '0 0 32px rgba(232,184,45,0.65)' : 'none',
                 }}
                 animate={isLastFive && !reducedAnimations ? { scale: [1, 1.08, 1] } : {}}
@@ -503,7 +508,7 @@ const FullTimer = memo<FullTimerProps>(
                   fontFamily: 'var(--font-mono)',
                   fontSize: '11px',
                   letterSpacing: '0.28em',
-                  color: isLastFive ? 'var(--mustard)' : 'rgba(var(--text-on-navy-rgb),0.55)',
+                  color: isLastFive ? 'var(--fs-accent)' : 'rgba(var(--text-on-navy-rgb),0.55)',
                   fontWeight: 600,
                 }}
               >
@@ -525,9 +530,9 @@ const FullTimer = memo<FullTimerProps>(
               }}
               className="w-14 h-14 flex items-center justify-center uppercase transition-colors"
               style={{
-                backgroundColor: 'var(--bone)',
-                color: 'var(--navy)',
-                border: '2px solid var(--bone)',
+                backgroundColor: 'var(--fs-surface)',
+                color: 'var(--fs-primary)',
+                border: '2px solid var(--fs-surface)',
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 700,
                 fontSize: '13px',
@@ -550,8 +555,8 @@ const FullTimer = memo<FullTimerProps>(
               }}
               className="px-8 h-14 flex items-center gap-2 uppercase transition-opacity active:opacity-80"
               style={{
-                backgroundColor: 'var(--mustard)',
-                color: 'var(--navy)',
+                backgroundColor: 'var(--fs-accent)',
+                color: 'var(--fs-primary)',
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: '16px',
@@ -584,9 +589,9 @@ const FullTimer = memo<FullTimerProps>(
               }}
               className="w-14 h-14 flex items-center justify-center uppercase transition-colors"
               style={{
-                backgroundColor: 'var(--bone)',
-                color: 'var(--navy)',
-                border: '2px solid var(--bone)',
+                backgroundColor: 'var(--fs-surface)',
+                color: 'var(--fs-primary)',
+                border: '2px solid var(--fs-surface)',
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 700,
                 fontSize: '13px',
@@ -615,7 +620,7 @@ const FullTimer = memo<FullTimerProps>(
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
                 letterSpacing: '0.12em',
-                color: 'var(--color-error)',
+                color: 'var(--fs-warn)',
                 fontWeight: 600,
                 backgroundColor: 'transparent',
                 borderRadius: 0,
@@ -647,8 +652,8 @@ const FullTimer = memo<FullTimerProps>(
               transition={{ delay: reducedAnimations ? 0 : 0.2 }}
               className="w-full p-4 text-center"
               style={{
-                backgroundColor: 'var(--bone)',
-                border: '2px solid var(--mustard)',
+                backgroundColor: 'var(--fs-surface)',
+                border: '2px solid var(--fs-accent)',
                 borderRadius: 0,
               }}
             >
@@ -658,7 +663,7 @@ const FullTimer = memo<FullTimerProps>(
                   fontFamily: 'var(--font-mono)',
                   fontSize: '10px',
                   letterSpacing: '0.28em',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   fontWeight: 600,
                 }}
               >
@@ -669,7 +674,7 @@ const FullTimer = memo<FullTimerProps>(
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,
-                  color: 'var(--navy)',
+                  color: 'var(--fs-primary)',
                   letterSpacing: '-0.01em',
                   lineHeight: 1,
                 }}
@@ -681,7 +686,7 @@ const FullTimer = memo<FullTimerProps>(
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: '12px',
-                  color: 'var(--navy)',
+                  color: 'var(--fs-primary)',
                 }}
               >
                 <span className="chip">{nextExercise.sets} סטים</span>

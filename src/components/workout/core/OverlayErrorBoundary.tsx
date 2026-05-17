@@ -51,7 +51,7 @@ class OverlayErrorBoundary extends Component<Props, State> {
             <p className="text-white/60 text-sm mb-5">משהו השתבש. האימון שלך לא נפגע.</p>
             <button
               onClick={this.handleDismiss}
-              className="w-full py-3 rounded-xl bg-[var(--cosmos-accent-primary,#a3e635)] text-black font-bold active:scale-[0.98] transition-transform"
+              className="w-full py-3 rounded-xl bg-[var(--fs-accent)] text-black font-bold active:scale-[0.98] transition-transform"
             >
               סגור וחזור לאימון
             </button>

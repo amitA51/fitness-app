@@ -99,15 +99,15 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
 
         {/* Track — sharp rect, 1px navy border */}
         <motion.div
-          className="block focus-within:ring-2 focus-within:ring-[var(--mustard)]"
+          className="block focus-within:ring-2 focus-within:ring-[var(--fs-accent)]"
           style={{
             width: config.trackW,
             height: config.trackH,
             borderRadius: 2,
-            border: '1px solid var(--navy)',
+            border: '1px solid var(--fs-primary)',
           }}
           animate={{
-            backgroundColor: checked ? 'var(--mustard)' : 'var(--bone-deep)',
+            backgroundColor: checked ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
           }}
           transition={{ duration: 0.2 }}
         />
@@ -119,8 +119,8 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
             top: config.padding,
             width: config.knob,
             height: config.knob,
-            backgroundColor: 'var(--navy)',
-            borderRadius: 2,
+            backgroundColor: 'var(--fs-primary)',
+            borderRadius: config.knob / 2,
           }}
           animate={{
             left: checked ? travel + config.padding : config.padding,
@@ -143,7 +143,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
             fontSize: '12px',
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
-            color: checked ? 'var(--navy)' : 'var(--stone)',
+            color: checked ? 'var(--fs-primary)' : 'var(--fs-muted)',
             fontWeight: 600,
           }}
         >

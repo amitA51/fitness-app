@@ -1,4 +1,3 @@
-import { Flame } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import type { WorkoutSession } from '../../types';
 
@@ -57,26 +56,28 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
     <div
       role="status"
       aria-label={`רצף אימונים: ${streak.current} ימים`}
+      className="fs-accent-rail"
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: 8,
-        padding: '8px 14px',
-        background: 'var(--navy)',
-        color: 'var(--mustard)',
+        padding: '10px 14px',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
+        color: 'var(--fs-accent)',
         fontFamily: 'var(--font-mono)',
         fontSize: 11,
         letterSpacing: '0.16em',
         textTransform: 'uppercase',
       }}
     >
-      <Flame size={14} style={{ flexShrink: 0 }} aria-hidden="true" />
       <span style={{ fontWeight: 600 }}>
         {streak.current} {streak.current === 1 ? 'יום' : 'ימים'}
       </span>
-      <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10 }}>STREAK</span>
+      <span style={{ color: 'var(--fs-steel)', fontSize: 10 }}>STREAK</span>
       {streak.best > streak.current && (
-        <span style={{ marginRight: 'auto', color: 'rgba(255,255,255,0.3)', fontSize: 10 }}>
+        <span style={{ marginRight: 'auto', color: 'var(--fs-muted)', fontSize: 10 }}>
           BEST: {streak.best}
         </span>
       )}

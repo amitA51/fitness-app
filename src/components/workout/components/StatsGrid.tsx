@@ -85,8 +85,8 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '12px 16px',
-          background: 'var(--bone-deep)',
-          border: '2px solid var(--navy)',
+          background: 'var(--fs-surface-2)',
+          border: '2px solid var(--fs-primary)',
         }}
       >
         <div>
@@ -95,7 +95,7 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               letterSpacing: '0.18em',
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
               textTransform: 'uppercase',
             }}
           >
@@ -106,7 +106,7 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 18,
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               letterSpacing: '-0.01em',
               marginTop: 2,
               fontVariantNumeric: 'tabular-nums',
@@ -128,11 +128,11 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
             style={{
               padding: '2px 8px',
               background: isSame
-                ? 'var(--bone-deep)'
+                ? 'var(--fs-surface-2)'
                 : isImprovement
-                  ? 'var(--mustard)'
+                  ? 'var(--fs-accent)'
                   : 'var(--color-error)',
-              color: isSame ? 'var(--stone)' : 'var(--navy)',
+              color: isSame ? 'var(--fs-muted)' : 'var(--fs-primary)',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               fontWeight: 600,
@@ -149,7 +149,7 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 9,
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
               letterSpacing: '0.05em',
               direction: 'ltr',
             }}
@@ -183,8 +183,8 @@ const StatCard: React.FC<StatCardProps> = memo(({ label, value, suffix, delay = 
       transition={{ delay, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       style={{
         padding: '16px',
-        background: 'var(--bone-deep)',
-        border: '2px solid var(--navy)',
+        background: 'var(--fs-surface-2)',
+        border: '2px solid var(--fs-primary)',
         textAlign: 'center',
       }}
     >
@@ -193,7 +193,7 @@ const StatCard: React.FC<StatCardProps> = memo(({ label, value, suffix, delay = 
           fontFamily: 'var(--font-mono)',
           fontSize: 9,
           letterSpacing: '0.22em',
-          color: 'var(--stone)',
+          color: 'var(--fs-muted)',
           textTransform: 'uppercase',
           marginBottom: 6,
         }}
@@ -205,7 +205,7 @@ const StatCard: React.FC<StatCardProps> = memo(({ label, value, suffix, delay = 
           fontFamily: 'var(--font-display)',
           fontWeight: 900,
           fontSize: 36,
-          color: 'var(--navy)',
+          color: 'var(--fs-primary)',
           letterSpacing: '-0.03em',
           lineHeight: 1,
           fontVariantNumeric: 'tabular-nums',
@@ -239,15 +239,15 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            border: '2px solid var(--navy)',
+            border: '2px solid var(--fs-primary)',
           }}
         >
           <StatCard label="נפח" value={totalVolume} suffix={' ק"ג'} delay={0.05} />
           <div
             style={{
               padding: '16px',
-              background: 'var(--navy)',
-              borderLeft: '2px solid var(--navy)',
+              background: 'var(--fs-primary)',
+              borderLeft: '2px solid var(--fs-primary)',
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
@@ -260,7 +260,7 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
                 letterSpacing: '0.22em',
-                color: 'var(--mustard)',
+                color: 'var(--fs-accent)',
                 textTransform: 'uppercase',
                 marginBottom: 6,
               }}
@@ -275,7 +275,7 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
                 fontFamily: 'var(--font-display)',
                 fontWeight: 900,
                 fontSize: 36,
-                color: prsCount && prsCount > 0 ? 'var(--mustard)' : 'var(--stone)',
+                color: prsCount && prsCount > 0 ? 'var(--fs-accent)' : 'var(--fs-muted)',
                 letterSpacing: '-0.03em',
                 lineHeight: 1,
                 fontVariantNumeric: 'tabular-nums',
@@ -300,7 +300,7 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 letterSpacing: '0.18em',
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 textTransform: 'uppercase',
                 marginBottom: 8,
                 display: 'flex',
@@ -308,7 +308,7 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
                 gap: 8,
               }}
             >
-              <TrendingUp size={12} strokeWidth={2.5} style={{ color: 'var(--mustard)' }} />
+              <TrendingUp size={12} strokeWidth={2.5} style={{ color: 'var(--fs-accent)' }} />
               בהשוואה לאימון הקודם
             </div>
             <div className="flex flex-col gap-2">

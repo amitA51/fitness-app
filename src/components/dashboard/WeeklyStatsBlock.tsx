@@ -31,41 +31,151 @@ export function WeeklyStatsBlock({
   })();
 
   return (
-    <>
+    <div
+      className="fs-accent-rail"
+      style={{
+        background: 'var(--fs-surface)',
+        borderRadius: '22px 16px 22px 16px',
+        border: '1px solid var(--fs-surface-2)',
+        padding: 20,
+        boxShadow: 'var(--shadow-card)',
+      }}
+    >
+      {/* Primary CTA */}
       <button
         type="button"
         onClick={onQuickStart}
         aria-label={
           lastUsedTemplate ? `התחל מחדש אימון ${lastUsedTemplate.name}` : 'התחל אימון חדש'
         }
-        className="block-hero focus-ring"
         style={{
-          display: 'block',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
           width: '100%',
-          textAlign: 'right',
-          border: 'none',
+          padding: '16px 20px',
+          background: 'linear-gradient(135deg, var(--fs-accent), var(--fs-accent-2))',
+          border: '2px solid var(--fs-accent)',
+          borderRadius: '22px 16px 22px 16px',
           cursor: 'pointer',
-          marginBottom: 0,
+          color: '#071412',
+          fontFamily: 'var(--font-display)',
+          fontWeight: 900,
+          fontSize: 22,
+          textAlign: 'right',
+          lineHeight: 1,
+          letterSpacing: '-0.01em',
         }}
       >
-        <div className="ribbon">THIS WEEK</div>
-        <div className="label">אימונים</div>
-        <div className="number tabular-nums">{String(workoutsThisWeek).padStart(2, '0')}</div>
-        <div className="sub tabular-nums">
-          מתוך {weeklyGoal} · {pct}% יעד
-        </div>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            background: 'var(--fs-accent)',
+            color: 'var(--fs-primary)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 18,
+            fontWeight: 600,
+            flexShrink: 0,
+          }}
+        >
+          →
+        </span>
+        <span>התחל אימון חדש</span>
       </button>
 
-      <div className="data-strip" style={{ marginTop: 2 }}>
-        <div>
-          <div className="val tabular-nums">{volumeFormatted || '—'}</div>
-          <div className="lbl">kg volume</div>
+      {/* Stats row */}
+      <div
+        style={{
+          marginTop: 16,
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 10,
+        }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
+              fontSize: 20,
+              lineHeight: 1,
+              color: 'var(--fs-ink)',
+            }}
+          >
+            {String(workoutsThisWeek).padStart(2, '0')}
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              color: 'var(--fs-muted)',
+              marginTop: 4,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            אימונים
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              color: 'var(--fs-muted)',
+              letterSpacing: '0.06em',
+            }}
+          >
+            מתוך {weeklyGoal} · {pct}% יעד
+          </div>
         </div>
-        <div>
-          <div className="val tabular-nums">{volDeltaFormatted}</div>
-          <div className="lbl">vs last week</div>
+        <div style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
+              fontSize: 20,
+              lineHeight: 1,
+              color: 'var(--fs-ink)',
+            }}
+          >
+            {volumeFormatted || '—'}
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              color: 'var(--fs-muted)',
+              marginTop: 4,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            kg volume
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              color: 'var(--fs-accent)',
+              letterSpacing: '0.06em',
+            }}
+          >
+            {volDeltaFormatted}
+          </div>
         </div>
       </div>
-    </>
+
+      {/* Weekly goal progress */}
+      <div className="fs-progress-track" style={{ marginTop: 12 }}>
+        <div
+          className="fs-progress-fill"
+          style={{ width: `${Math.min(Math.max(pct, 0), 100)}%` }}
+        />
+      </div>
+    </div>
   );
 }

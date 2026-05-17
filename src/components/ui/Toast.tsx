@@ -31,22 +31,22 @@ interface ToastTypeConfig {
 const TYPE_CONFIG: Record<StatusMessageType, ToastTypeConfig> = {
   success: {
     Icon: CheckCircle,
-    accent: 'var(--mustard)',
+    accent: 'var(--fs-accent)',
     eyebrow: 'SUCCESS',
   },
   error: {
     Icon: XCircle,
-    accent: 'var(--color-error)',
+    accent: 'var(--fs-warn)',
     eyebrow: 'ERROR',
   },
   info: {
     Icon: Info,
-    accent: 'var(--navy)',
+    accent: 'var(--fs-primary)',
     eyebrow: 'INFO',
   },
   warning: {
     Icon: AlertTriangle,
-    accent: 'var(--color-warning)',
+    accent: 'var(--fs-warn)',
     eyebrow: 'WARNING',
   },
 };
@@ -123,8 +123,8 @@ export const Toast: React.FC<ToastProps> = ({
       <div
         className="relative overflow-hidden"
         style={{
-          backgroundColor: 'var(--bone)',
-          border: '1px solid var(--bone-deep)',
+          backgroundColor: 'var(--fs-surface)',
+          border: '1px solid var(--fs-surface-2)',
           borderLeft: `3px solid ${accent}`,
           borderRadius: 0,
           boxShadow: '0 8px 24px rgba(11,26,43,0.12)',
@@ -133,7 +133,7 @@ export const Toast: React.FC<ToastProps> = ({
         {/* Tinted progress bar along bottom edge */}
         <div
           className="absolute bottom-0 left-0 right-0 h-[2px]"
-          style={{ backgroundColor: 'var(--bone-deep)' }}
+          style={{ backgroundColor: 'var(--fs-surface-2)' }}
         >
           <div
             className="h-full toast-progress"
@@ -168,7 +168,7 @@ export const Toast: React.FC<ToastProps> = ({
               style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: '14px',
-                color: 'var(--ink)',
+                color: 'var(--fs-ink)',
                 fontWeight: 600,
               }}
             >
@@ -180,7 +180,7 @@ export const Toast: React.FC<ToastProps> = ({
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: '12px',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                 }}
               >
                 {description}
@@ -201,7 +201,7 @@ export const Toast: React.FC<ToastProps> = ({
                   fontFamily: 'var(--font-display)',
                   fontSize: '12px',
                   letterSpacing: '0.08em',
-                  color: 'var(--navy)',
+                  color: 'var(--fs-primary)',
                   fontWeight: 800,
                   borderRadius: 0,
                 }}
@@ -217,7 +217,7 @@ export const Toast: React.FC<ToastProps> = ({
               style={{
                 minWidth: 44,
                 minHeight: 44,
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 borderRadius: 0,
                 background: 'transparent',
               }}

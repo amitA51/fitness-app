@@ -132,13 +132,13 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
   // VISION-annual intensity colors - mustard/bone gradient
   const getIntensityStyle = (count: number): React.CSSProperties => {
     if (count === 0) {
-      return { backgroundColor: 'var(--bone-deep)' };
+      return { backgroundColor: 'var(--fs-surface-2)' };
     }
 
     const intensity = Math.min(count / maxWorkouts, 1);
 
     return {
-      backgroundColor: intensity >= 0.5 ? 'var(--mustard)' : 'rgba(245, 176, 20, 0.3)',
+      backgroundColor: intensity >= 0.5 ? 'var(--fs-accent)' : 'var(--fs-signal)',
     };
   };
 
@@ -156,8 +156,8 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.35 }}
       style={{
-        background: 'var(--bone)',
-        border: '2px solid var(--navy)',
+        background: 'var(--fs-surface)',
+        border: '2px solid var(--fs-primary)',
         padding: 20,
       }}
     >
@@ -175,7 +175,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
             style={{
               width: 10,
               height: 10,
-              background: 'var(--mustard)',
+              background: 'var(--fs-accent)',
               display: 'block',
             }}
           />
@@ -186,7 +186,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               fontSize: 14,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
             }}
           >
             לוח אימונים
@@ -200,7 +200,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               width: 36,
               height: 36,
               background: 'transparent',
-              border: '2px solid var(--navy)',
+              border: '2px solid var(--fs-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -208,7 +208,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               transition: 'background 150ms ease',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'var(--bone-deep)';
+              (e.currentTarget as HTMLElement).style.background = 'var(--fs-surface-2)';
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.background = 'transparent';
@@ -218,7 +218,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path
                 d="M6 4L10 8L6 12"
-                stroke="var(--navy)"
+                stroke="var(--fs-primary)"
                 strokeWidth="2"
                 strokeLinecap="square"
               />
@@ -230,7 +230,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 14,
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               textTransform: 'uppercase',
               letterSpacing: '0.04em',
               minWidth: 140,
@@ -246,7 +246,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               width: 36,
               height: 36,
               background: 'transparent',
-              border: '2px solid var(--navy)',
+              border: '2px solid var(--fs-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -254,7 +254,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               transition: 'background 150ms ease',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'var(--bone-deep)';
+              (e.currentTarget as HTMLElement).style.background = 'var(--fs-surface-2)';
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.background = 'transparent';
@@ -263,7 +263,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
                 d="M6 4L10 8L6 12"
-                stroke="var(--navy)"
+                stroke="var(--fs-primary)"
                 strokeWidth="2"
                 strokeLinecap="square"
               />
@@ -289,7 +289,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               fontWeight: 600,
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
               letterSpacing: '0.05em',
               padding: '4px 0',
             }}
@@ -328,7 +328,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
                 position: 'relative',
                 opacity: isCurrentMonth ? 1 : 0.3,
                 cursor: isCurrentMonth ? 'pointer' : 'default',
-                border: isToday ? '2px solid var(--mustard)' : '2px solid var(--bone-deep)',
+                border: isToday ? '2px solid var(--fs-accent)' : '2px solid var(--fs-surface-2)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -341,7 +341,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
                   fontFamily: 'var(--font-mono)',
                   fontSize: 11,
                   fontWeight: count > 0 ? 700 : 400,
-                  color: count > 0 ? 'var(--navy)' : 'var(--stone)',
+                  color: count > 0 ? 'var(--fs-primary)' : 'var(--fs-muted)',
                   letterSpacing: '0.02em',
                 }}
               >
@@ -357,7 +357,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
                     bottom: 2,
                     width: 6,
                     height: 6,
-                    background: 'var(--navy)',
+                    background: 'var(--fs-primary)',
                   }}
                 />
               )}
@@ -376,7 +376,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
           gap: 12,
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
-          color: 'var(--stone)',
+          color: 'var(--fs-muted)',
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
         }}
@@ -387,24 +387,24 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
             style={{
               width: 16,
               height: 16,
-              background: 'var(--bone-deep)',
-              border: '1px solid var(--navy)',
+              background: 'var(--fs-surface-2)',
+              border: '1px solid var(--fs-primary)',
             }}
           />
           <div
             style={{
               width: 16,
               height: 16,
-              background: 'rgba(245, 176, 20, 0.3)',
-              border: '1px solid var(--navy)',
+              background: 'var(--fs-signal)',
+              border: '1px solid var(--fs-primary)',
             }}
           />
           <div
             style={{
               width: 16,
               height: 16,
-              background: 'var(--mustard)',
-              border: '1px solid var(--navy)',
+              background: 'var(--fs-accent)',
+              border: '1px solid var(--fs-primary)',
             }}
           />
         </div>
@@ -416,7 +416,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
         style={{
           marginTop: 16,
           paddingTop: 12,
-          borderTop: '2px solid var(--navy)',
+          borderTop: '2px solid var(--fs-primary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -426,7 +426,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 11,
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
           }}
@@ -438,7 +438,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
             fontSize: 14,
-            color: 'var(--navy)',
+            color: 'var(--fs-primary)',
             textTransform: 'uppercase',
             letterSpacing: '0.04em',
           }}

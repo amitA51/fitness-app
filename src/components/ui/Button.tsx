@@ -25,41 +25,41 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const variantStyles: Record<ButtonVariant, string> = {
   // Primary — navy fill, mustard label
   primary: `
-    bg-[var(--navy)] text-[var(--mustard)]
-    hover:bg-[var(--navy-deep)]
-    active:bg-[var(--navy-deep)]
+    bg-[var(--fs-primary)] text-[var(--fs-accent)]
+    hover:bg-[#0D1A1C]
+    active:bg-[#0D1A1C]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
   // Secondary — bone fill, navy 2px border, navy label
   secondary: `
-    bg-[var(--bone)] text-[var(--navy)]
-    border-2 border-[var(--navy)]
-    hover:bg-[var(--bone-deep)]
-    active:bg-[var(--bone-deep)]
+    bg-[var(--fs-surface)] text-[var(--fs-primary)]
+    border-2 border-[var(--fs-primary)]
+    hover:bg-[var(--fs-surface-2)]
+    active:bg-[var(--fs-surface-2)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
   // Ghost — transparent with navy text
   ghost: `
-    bg-transparent text-[var(--navy)]
-    hover:bg-[var(--bone-deep)]
-    active:bg-[var(--bone-deep)]
+    bg-transparent text-[var(--fs-primary)]
+    hover:bg-[var(--fs-surface-2)]
+    active:bg-[var(--fs-surface-2)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
   // Glass — bone translucent
   glass: `
-    bg-[var(--bone)]/80 backdrop-blur-md text-[var(--navy)]
-    border border-[var(--bone-deep)]
-    hover:bg-[var(--bone-deep)]
-    active:bg-[var(--bone-deep)]
+    bg-[var(--fs-surface)]/80 backdrop-blur-md text-[var(--fs-primary)]
+    border border-[var(--fs-surface-2)]
+    hover:bg-[var(--fs-surface-2)]
+    active:bg-[var(--fs-surface-2)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
   // Danger — error-color fill, bone label
   danger: `
-    bg-[var(--color-error)] text-[var(--bone)]
+    bg-[var(--fs-warn)] text-[var(--fs-surface)]
     hover:brightness-90
     active:brightness-90
     disabled:opacity-50 disabled:cursor-not-allowed
@@ -67,10 +67,24 @@ const variantStyles: Record<ButtonVariant, string> = {
 
   // Pill — compact tag-style, kept sharp-cornered to match editorial aesthetic
   pill: `
-    bg-[var(--bone)] text-[var(--navy)]
-    border-2 border-[var(--navy)]
-    hover:bg-[var(--mustard)] hover:text-[var(--color-on-mustard)]
-    active:bg-[var(--mustard)]
+    bg-[var(--fs-surface)] text-[var(--fs-primary)]
+    border-2 border-[var(--fs-primary)]
+    hover:bg-[var(--fs-accent)] hover:text-[var(--fs-primary)]
+    active:bg-[var(--fs-accent)]
+    disabled:opacity-40 disabled:cursor-not-allowed
+  `,
+
+  // Card-action — white pill on hero card (preview's hero-card CTA)
+  'card-action': `
+    hover:brightness-95
+    active:brightness-90
+    disabled:opacity-40 disabled:cursor-not-allowed
+  `,
+
+  // Start — accent gradient start workout button
+  start: `
+    hover:brightness-105
+    active:brightness-95
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 };
@@ -113,7 +127,7 @@ export const Button: React.FC<ButtonProps> = ({
         font-[var(--font-display)] font-extrabold uppercase tracking-[0.08em]
         transition-colors duration-150
         focus-visible:outline-none
-        focus-visible:ring-2 focus-visible:ring-[var(--mustard)]
+        focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]
         focus-visible:ring-offset-0
         disabled:pointer-events-none
         ${variantStyles[variant]}
@@ -121,7 +135,38 @@ export const Button: React.FC<ButtonProps> = ({
         ${fullWidth ? 'w-full' : ''}
         ${className}
       `}
-      style={{ fontFamily: 'var(--font-display)', borderRadius: 0 }}
+      style={
+        variant === 'card-action'
+          ? {
+              fontFamily: 'var(--font-body)',
+              fontWeight: 900,
+              borderRadius: 16,
+              minHeight: 50,
+              background: '#fff',
+              color: 'var(--fs-primary)',
+            }
+          : variant === 'start'
+            ? {
+                fontFamily: 'var(--font-body)',
+                fontWeight: 900,
+                borderRadius: 16,
+                minHeight: 58,
+                background:
+                  'linear-gradient(135deg, var(--fs-accent), color-mix(in srgb, var(--fs-accent-2) 42%, var(--fs-accent)))',
+                color: '#071412',
+              }
+            : size === 'icon'
+              ? {
+                  fontFamily: 'var(--font-display)',
+                  borderRadius: 15,
+                  width: 44,
+                  height: 44,
+                  background: 'var(--fs-surface)',
+                  color: 'var(--fs-ink)',
+                  border: '1px solid var(--fs-surface-2)',
+                }
+              : { fontFamily: 'var(--font-display)', borderRadius: 0 }
+      }
       // biome-ignore lint/suspicious/noExplicitAny: framer-motion button prop type conflicts with native button events
       {...(props as any)}
     >
@@ -139,7 +184,7 @@ export const Button: React.FC<ButtonProps> = ({
             <span
               className="
               ms-1.5 w-7 h-7
-              bg-[var(--mustard)] text-[var(--color-on-mustard)]
+              bg-[var(--fs-accent)] text-[var(--fs-primary)]
               flex items-center justify-center
               transition-transform duration-150
               group-hover:translate-x-0.5

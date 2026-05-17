@@ -142,8 +142,10 @@ function SettingsCard({ children }: { children: React.ReactNode }) {
     <div
       className="overflow-hidden"
       style={{
-        background: 'var(--bone)',
-        border: '2px solid var(--navy)',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
+        boxShadow: 'var(--shadow-card)',
       }}
     >
       {children}
@@ -154,7 +156,6 @@ function SettingsCard({ children }: { children: React.ReactNode }) {
 /** A single row inside a settings card */
 interface SettingsRowProps {
   icon?: React.ReactNode;
-  iconBg?: string;
   label: string;
   children: React.ReactNode;
   divider?: boolean;
@@ -167,7 +168,7 @@ function SettingsRow({ icon, label, children, divider = true }: SettingsRowProps
         {icon && (
           <div
             className="w-8 h-8 flex items-center justify-center shrink-0"
-            style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+            style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-primary)' }}
           >
             {icon}
           </div>
@@ -175,10 +176,10 @@ function SettingsRow({ icon, label, children, divider = true }: SettingsRowProps
         <span
           className="flex-1"
           style={{
-            fontFamily: 'var(--font-hebrew)',
+            fontFamily: 'var(--font-body)',
             fontSize: '15px',
             fontWeight: 500,
-            color: 'var(--ink)',
+            color: 'var(--fs-ink)',
           }}
         >
           {label}
@@ -186,7 +187,7 @@ function SettingsRow({ icon, label, children, divider = true }: SettingsRowProps
         <div className="shrink-0">{children}</div>
       </div>
       {divider && (
-        <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
+        <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
       )}
     </div>
   );
@@ -224,19 +225,21 @@ function Toggle({ checked, onChange, label }: ToggleProps) {
         style={{
           position: 'absolute',
           inset: 0,
-          background: checked ? 'var(--mustard)' : 'var(--bone-deep)',
-          border: '2px solid var(--navy)',
+          background: checked ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+          border: '2px solid var(--fs-primary)',
+          borderRadius: 0,
           transition: 'background 150ms ease',
         }}
       />
       <span
         style={{
           position: 'absolute',
-          top: '0px',
-          left: checked ? '24px' : '0px',
-          width: '28px',
-          height: '28px',
-          background: 'var(--navy)',
+          top: '2px',
+          left: checked ? '24px' : '2px',
+          width: '24px',
+          height: '24px',
+          background: checked ? 'var(--fs-surface)' : 'var(--fs-primary)',
+          borderRadius: '50%',
           transition: 'left 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           pointerEvents: 'none',
         }}
@@ -267,7 +270,6 @@ function NumberInput({ value, onChange, min, max, placeholder, unit }: NumberInp
         value={value}
         onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
         placeholder={placeholder}
-        className="input"
         style={{
           width: '80px',
           minHeight: '36px',
@@ -275,6 +277,11 @@ function NumberInput({ value, onChange, min, max, placeholder, unit }: NumberInp
           textAlign: 'left',
           fontFamily: 'var(--font-mono)',
           fontSize: '14px',
+          backgroundColor: 'var(--fs-surface)',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: 0,
+          color: 'var(--fs-ink)',
+          outline: 'none',
         }}
       />
       {unit && (
@@ -283,7 +290,7 @@ function NumberInput({ value, onChange, min, max, placeholder, unit }: NumberInp
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             letterSpacing: '0.18em',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             textTransform: 'uppercase',
           }}
         >
@@ -307,14 +314,25 @@ function SaveButton({ onClick, saved, label, savedLabel = 'נשמר!' }: SaveBut
     <button
       type="button"
       onClick={onClick}
-      className={saved ? 'btn-secondary' : 'btn-primary'}
       style={{
         width: '100%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         gap: '8px',
-        ...(saved ? { color: 'var(--color-on-mustard)', background: 'var(--mustard)' } : {}),
+        minHeight: '44px',
+        padding: '12px',
+        borderRadius: 0,
+        fontFamily: 'var(--font-display)',
+        fontSize: '14px',
+        fontWeight: 800,
+        textTransform: 'uppercase',
+        border: saved ? 'none' : '1px solid var(--fs-surface-2)',
+        cursor: 'pointer',
+        transition: 'all 0.15s ease',
+        ...(saved
+          ? { color: 'var(--fs-primary)', background: 'var(--fs-accent)' }
+          : { color: 'var(--fs-accent)', background: 'var(--fs-primary)' }),
       }}
     >
       {saved ? (
@@ -346,10 +364,10 @@ function ProfileAvatar({ name }: { name: string }) {
     .toUpperCase();
 
   return (
-    <div className="flex flex-col items-center py-6">
+    <div className="flex flex-col items-center py-6" style={{ background: 'var(--fs-primary)' }}>
       <div
         className="w-20 h-20 flex items-center justify-center mb-3"
-        style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
+        style={{ background: 'var(--fs-accent)', color: 'var(--fs-primary)' }}
       >
         {initials ? (
           <span
@@ -370,17 +388,17 @@ function ProfileAvatar({ name }: { name: string }) {
       {name.trim() && (
         <p
           style={{
-            fontFamily: 'var(--font-hebrew)',
+            fontFamily: 'var(--font-display)',
             fontWeight: 800,
             fontSize: '22px',
-            color: 'var(--ink)',
+            color: 'var(--fs-surface)',
             textTransform: 'uppercase',
           }}
         >
           {name.trim()}
         </p>
       )}
-      <p className="eyebrow mt-1" style={{ color: 'var(--stone)' }}>
+      <p className="eyebrow mt-1" style={{ color: 'var(--fs-accent)' }}>
         § PERSONAL PROFILE
       </p>
     </div>
@@ -572,13 +590,15 @@ export default function Settings() {
       largeText: settings.workoutSettings.largeText,
       highContrast: settings.workoutSettings.highContrast,
     });
-    setNotificationSettings(loadFromStorage('notification_settings', {
-      workoutReminderEnabled: false,
-      workoutReminderTime: '08:00',
-      missedWorkoutAlertDays: 3,
-      nutritionReminderEnabled: false,
-      prNotificationEnabled: true,
-    }));
+    setNotificationSettings(
+      loadFromStorage('notification_settings', {
+        workoutReminderEnabled: false,
+        workoutReminderTime: '08:00',
+        missedWorkoutAlertDays: 3,
+        nutritionReminderEnabled: false,
+        prNotificationEnabled: true,
+      })
+    );
   }, [settings.workoutSettings]);
 
   // Load auth user email on mount
@@ -633,7 +653,10 @@ export default function Settings() {
   }
 
   const toggleNotification = (key: string) => {
-    const updated = { ...notificationSettings, [key]: !notificationSettings[key as keyof typeof notificationSettings] };
+    const updated = {
+      ...notificationSettings,
+      [key]: !notificationSettings[key as keyof typeof notificationSettings],
+    };
     setNotificationSettings(updated);
     saveToStorage('notification_settings', updated);
   };
@@ -641,7 +664,7 @@ export default function Settings() {
   return (
     <div
       className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
-      style={{ background: 'var(--bone)' }}
+      style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
       {/* Masthead */}
@@ -652,10 +675,13 @@ export default function Settings() {
         <div className="kicker">§07 · SETTINGS · CONFIG</div>
         <h1
           style={{
-            fontFamily: 'var(--font-hebrew)',
+            fontFamily: 'var(--font-display)',
             fontSize: 'clamp(44px, 12vw, 72px)',
             lineHeight: 0.9,
             marginTop: '8px',
+            color: 'var(--fs-surface)',
+            textTransform: 'uppercase',
+            fontWeight: 800,
           }}
         >
           הגדרות
@@ -667,7 +693,7 @@ export default function Settings() {
           style={{
             fontFamily: 'var(--font-hebrew)',
             fontSize: '14px',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             marginBottom: '20px',
           }}
         >
@@ -683,7 +709,11 @@ export default function Settings() {
           {/* Avatar card */}
           <div
             className="mb-3"
-            style={{ background: 'var(--bone)', border: '2px solid var(--navy)' }}
+            style={{
+              borderRadius: '22px 16px 22px 16px',
+              overflow: 'hidden',
+              boxShadow: 'var(--shadow-card)',
+            }}
           >
             <ProfileAvatar name={profile.name} />
           </div>
@@ -694,7 +724,7 @@ export default function Settings() {
               <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
                 <div
                   className="w-8 h-8 flex items-center justify-center shrink-0"
-                  style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+                  style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-primary)' }}
                 >
                   <User size={15} />
                 </div>
@@ -704,7 +734,7 @@ export default function Settings() {
                     fontFamily: 'var(--font-hebrew)',
                     fontSize: '15px',
                     fontWeight: 500,
-                    color: 'var(--ink)',
+                    color: 'var(--fs-ink)',
                   }}
                 >
                   שם
@@ -715,26 +745,38 @@ export default function Settings() {
                   onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                   placeholder="הכנס שם..."
                   aria-label="שם"
-                  className="input"
                   style={{
                     width: '144px',
                     minHeight: '36px',
                     padding: '6px 10px',
                     fontSize: '14px',
+                    backgroundColor: 'var(--fs-surface)',
+                    border: '1px solid var(--fs-surface-2)',
+                    borderRadius: 0,
+                    color: 'var(--fs-ink)',
+                    fontFamily: 'var(--font-hebrew)',
+                    outline: 'none',
+                    textAlign: 'left',
                   }}
                 />
               </div>
-              <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
+              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
             </div>
 
             {/* Age */}
             <SettingsRow
               icon={
-                <span className="font-barlow-condensed font-bold text-[13px] text-orange-400">
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700,
+                    fontSize: '12px',
+                    color: 'var(--fs-warn)',
+                  }}
+                >
                   גיל
                 </span>
               }
-              iconBg="bg-orange-500/20"
               label="גיל"
               divider={true}
             >
@@ -751,11 +793,17 @@ export default function Settings() {
             {/* Height */}
             <SettingsRow
               icon={
-                <span className="font-barlow-condensed font-bold text-[13px] text-teal-400">
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700,
+                    fontSize: '12px',
+                    color: 'var(--fs-accent-2)',
+                  }}
+                >
                   גב'
                 </span>
               }
-              iconBg="bg-teal-500/20"
               label="גובה"
               divider={true}
             >
@@ -774,7 +822,7 @@ export default function Settings() {
               <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
                 <div
                   className="w-8 h-8 flex items-center justify-center shrink-0"
-                  style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+                  style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-primary)' }}
                 >
                   <Target size={15} />
                 </div>
@@ -784,7 +832,7 @@ export default function Settings() {
                     fontFamily: 'var(--font-hebrew)',
                     fontSize: '15px',
                     fontWeight: 500,
-                    color: 'var(--ink)',
+                    color: 'var(--fs-ink)',
                   }}
                 >
                   מטרת משקל
@@ -794,13 +842,13 @@ export default function Settings() {
                     style={{
                       fontFamily: 'var(--font-hebrew)',
                       fontSize: '14px',
-                      color: 'var(--navy)',
+                      color: 'var(--fs-primary)',
                       fontWeight: 600,
                     }}
                   >
                     {profile.weightGoal}
                   </span>
-                  <ChevronLeft size={14} style={{ color: 'var(--stone)' }} />
+                  <ChevronLeft size={14} style={{ color: 'var(--fs-muted)' }} />
                   <select
                     value={profile.weightGoal}
                     onChange={(e) =>
@@ -815,7 +863,7 @@ export default function Settings() {
                   </select>
                 </div>
               </div>
-              <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
+              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
             </div>
 
             {/* Activity level */}
@@ -823,7 +871,7 @@ export default function Settings() {
               <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
                 <div
                   className="w-8 h-8 flex items-center justify-center shrink-0"
-                  style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+                  style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-primary)' }}
                 >
                   <Zap size={15} />
                 </div>
@@ -833,7 +881,7 @@ export default function Settings() {
                     fontFamily: 'var(--font-hebrew)',
                     fontSize: '15px',
                     fontWeight: 500,
-                    color: 'var(--ink)',
+                    color: 'var(--fs-ink)',
                   }}
                 >
                   רמת פעילות
@@ -843,13 +891,13 @@ export default function Settings() {
                     style={{
                       fontFamily: 'var(--font-hebrew)',
                       fontSize: '14px',
-                      color: 'var(--navy)',
+                      color: 'var(--fs-primary)',
                       fontWeight: 600,
                     }}
                   >
                     {profile.activityLevel}
                   </span>
-                  <ChevronLeft size={14} style={{ color: 'var(--stone)' }} />
+                  <ChevronLeft size={14} style={{ color: 'var(--fs-muted)' }} />
                   <select
                     value={profile.activityLevel}
                     onChange={(e) =>
@@ -878,7 +926,7 @@ export default function Settings() {
                     fontFamily: 'var(--font-mono)',
                     fontSize: 12,
                     fontWeight: 700,
-                    color: 'var(--navy)',
+                    color: 'var(--fs-primary)',
                   }}
                 >
                   KG
@@ -889,8 +937,10 @@ export default function Settings() {
               <div
                 style={{
                   display: 'flex',
-                  background: 'var(--bone-deep)',
-                  border: '2px solid var(--navy)',
+                  background: 'var(--fs-surface-2)',
+                  border: '1px solid var(--fs-primary)',
+                  borderRadius: 0,
+                  overflow: 'hidden',
                 }}
               >
                 <button
@@ -903,8 +953,10 @@ export default function Settings() {
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
                     cursor: 'pointer',
-                    background: settings.unitSystem === 'metric' ? 'var(--navy)' : 'transparent',
-                    color: settings.unitSystem === 'metric' ? 'var(--mustard)' : 'var(--stone)',
+                    background:
+                      settings.unitSystem === 'metric' ? 'var(--fs-primary)' : 'transparent',
+                    color:
+                      settings.unitSystem === 'metric' ? 'var(--fs-accent)' : 'var(--fs-muted)',
                     border: 'none',
                     fontWeight: 600,
                     transition: 'all 150ms ease',
@@ -923,8 +975,10 @@ export default function Settings() {
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
                     cursor: 'pointer',
-                    background: settings.unitSystem === 'imperial' ? 'var(--navy)' : 'transparent',
-                    color: settings.unitSystem === 'imperial' ? 'var(--mustard)' : 'var(--stone)',
+                    background:
+                      settings.unitSystem === 'imperial' ? 'var(--fs-primary)' : 'transparent',
+                    color:
+                      settings.unitSystem === 'imperial' ? 'var(--fs-accent)' : 'var(--fs-muted)',
                     border: 'none',
                     fontWeight: 600,
                     transition: 'all 150ms ease',
@@ -959,7 +1013,7 @@ export default function Settings() {
                     fontFamily: 'var(--font-mono)',
                     fontSize: '12px',
                     letterSpacing: '0.08em',
-                    color: 'var(--stone)',
+                    color: 'var(--fs-muted)',
                   }}
                 >
                   {authEmail}
@@ -969,7 +1023,7 @@ export default function Settings() {
                   style={{
                     fontFamily: 'var(--font-hebrew)',
                     fontSize: '13px',
-                    color: 'var(--stone)',
+                    color: 'var(--fs-muted)',
                   }}
                 >
                   לא מחובר
@@ -981,7 +1035,6 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="btn-secondary"
                   style={{
                     width: '100%',
                     display: 'flex',
@@ -989,6 +1042,15 @@ export default function Settings() {
                     justifyContent: 'center',
                     gap: '8px',
                     minHeight: '44px',
+                    padding: '12px',
+                    borderRadius: 0,
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    border: '1px solid var(--fs-surface-2)',
+                    cursor: 'pointer',
+                    color: 'var(--fs-ink)',
+                    background: 'var(--fs-surface)',
                   }}
                 >
                   התנתק
@@ -1030,14 +1092,15 @@ export default function Settings() {
                 width: '100%',
                 marginBottom: 12,
                 padding: '10px 16px',
-                background: 'var(--navy)',
+                background: 'var(--fs-primary)',
                 border: 'none',
+                borderRadius: 0,
                 cursor: 'pointer',
                 fontFamily: 'var(--font-mono)',
                 fontSize: 11,
                 letterSpacing: '0.16em',
                 textTransform: 'uppercase',
-                color: 'var(--mustard)',
+                color: 'var(--fs-accent)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1051,8 +1114,7 @@ export default function Settings() {
 
           <SettingsCard>
             <SettingsRow
-              icon={<Target size={15} className="text-red-400" />}
-              iconBg="bg-red-500/20"
+              icon={<Target size={15} style={{ color: 'var(--fs-warn)' }} />}
               label="קלוריות יומיות"
               divider={true}
             >
@@ -1066,8 +1128,7 @@ export default function Settings() {
             </SettingsRow>
 
             <SettingsRow
-              icon={<Dumbbell size={15} className="text-blue-400" />}
-              iconBg="bg-blue-500/20"
+              icon={<Dumbbell size={15} style={{ color: 'var(--fs-accent)' }} />}
               label="חלבון"
               divider={true}
             >
@@ -1082,11 +1143,17 @@ export default function Settings() {
 
             <SettingsRow
               icon={
-                <span className="font-barlow-condensed font-bold text-[12px] text-yellow-400">
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700,
+                    fontSize: '12px',
+                    color: 'var(--fs-accent-2)',
+                  }}
+                >
                   פח
                 </span>
               }
-              iconBg="bg-yellow-500/20"
               label="פחמימות"
               divider={true}
             >
@@ -1101,11 +1168,17 @@ export default function Settings() {
 
             <SettingsRow
               icon={
-                <span className="font-barlow-condensed font-bold text-[12px] text-orange-400">
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700,
+                    fontSize: '12px',
+                    color: 'var(--fs-warn)',
+                  }}
+                >
                   שמ
                 </span>
               }
-              iconBg="bg-orange-500/20"
               label="שומן"
               divider={false}
             >
@@ -1139,7 +1212,7 @@ export default function Settings() {
               <div className="flex items-center gap-3 mb-3">
                 <div
                   className="w-8 h-8 flex items-center justify-center shrink-0"
-                  style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+                  style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-primary)' }}
                 >
                   <Dumbbell size={15} />
                 </div>
@@ -1148,7 +1221,7 @@ export default function Settings() {
                     fontFamily: 'var(--font-hebrew)',
                     fontSize: '15px',
                     fontWeight: 500,
-                    color: 'var(--ink)',
+                    color: 'var(--fs-ink)',
                   }}
                 >
                   זמן מנוחה ברירת מחדל
@@ -1160,9 +1233,18 @@ export default function Settings() {
                     type="button"
                     key={opt.value}
                     onClick={() => setWorkoutPrefs({ ...workoutPrefs, defaultRestTime: opt.value })}
-                    className={`tab-item ${workoutPrefs.defaultRestTime === opt.value ? 'active' : ''}`}
                     style={{
-                      border: '2px solid var(--navy)',
+                      padding: '8px 14px',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      borderRadius: 0,
+                      cursor: 'pointer',
+                      border: '1px solid var(--fs-surface-2)',
+                      transition: 'all 0.15s ease',
+                      ...(workoutPrefs.defaultRestTime === opt.value
+                        ? { background: 'var(--fs-primary)', color: 'var(--fs-accent)' }
+                        : { background: 'transparent', color: 'var(--fs-muted)' }),
                     }}
                   >
                     {opt.label}
@@ -1171,12 +1253,11 @@ export default function Settings() {
               </div>
             </div>
 
-            <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
+            <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
 
             {/* Auto start rest */}
             <SettingsRow
-              icon={<Bell size={15} className="text-green-400" />}
-              iconBg="bg-green-500/20"
+              icon={<Bell size={15} style={{ color: 'var(--fs-accent)' }} />}
               label="התחלה אוטומטית של טיימר"
               divider={true}
             >
@@ -1191,8 +1272,7 @@ export default function Settings() {
 
             {/* Haptics */}
             <SettingsRow
-              icon={<Zap size={15} className="text-yellow-400" />}
-              iconBg="bg-yellow-500/20"
+              icon={<Zap size={15} style={{ color: 'var(--fs-accent)' }} />}
               label="רטט (Haptic Feedback)"
               divider={true}
             >
@@ -1206,8 +1286,7 @@ export default function Settings() {
             </SettingsRow>
 
             <SettingsRow
-              icon={<Bell size={15} className="text-blue-400" />}
-              iconBg="bg-blue-500/20"
+              icon={<Bell size={15} style={{ color: 'var(--fs-accent-2)' }} />}
               label="הפחתת אנימציות"
               divider={true}
             >
@@ -1224,8 +1303,7 @@ export default function Settings() {
             </SettingsRow>
 
             <SettingsRow
-              icon={<User size={15} className="text-purple-400" />}
-              iconBg="bg-purple-500/20"
+              icon={<User size={15} style={{ color: 'var(--fs-accent)' }} />}
               label="טקסט גדול"
               divider={true}
             >
@@ -1239,8 +1317,7 @@ export default function Settings() {
             </SettingsRow>
 
             <SettingsRow
-              icon={<Zap size={15} className="text-orange-400" />}
-              iconBg="bg-orange-500/20"
+              icon={<Zap size={15} style={{ color: 'var(--fs-accent-2)' }} />}
               label="ניגודיות גבוהה"
               divider={false}
             >
@@ -1269,11 +1346,7 @@ export default function Settings() {
             התראות
           </SectionLabel>
           <SettingsCard>
-            <SettingsRow
-              icon={<Bell size={15} />}
-              label="תזכורת אימון"
-              divider={true}
-            >
+            <SettingsRow icon={<Bell size={15} />} label="תזכורת אימון" divider={true}>
               <Toggle
                 checked={notificationSettings.workoutReminderEnabled}
                 onChange={() => toggleNotification('workoutReminderEnabled')}
@@ -1281,11 +1354,7 @@ export default function Settings() {
               />
             </SettingsRow>
 
-            <SettingsRow
-              icon={<Bell size={15} />}
-              label="תזכורת תזונה"
-              divider={true}
-            >
+            <SettingsRow icon={<Bell size={15} />} label="תזכורת תזונה" divider={true}>
               <Toggle
                 checked={notificationSettings.nutritionReminderEnabled}
                 onChange={() => toggleNotification('nutritionReminderEnabled')}
@@ -1293,11 +1362,7 @@ export default function Settings() {
               />
             </SettingsRow>
 
-            <SettingsRow
-              icon={<Bell size={15} />}
-              label="התראת שיא אישי (PR)"
-              divider={false}
-            >
+            <SettingsRow icon={<Bell size={15} />} label="התראת שיא אישי (PR)" divider={false}>
               <Toggle
                 checked={notificationSettings.prNotificationEnabled}
                 onChange={() => toggleNotification('prNotificationEnabled')}
@@ -1318,11 +1383,12 @@ export default function Settings() {
                 <div
                   className="w-8 h-8 shrink-0 flex items-center justify-center"
                   style={{
-                    backgroundColor: 'var(--navy)',
-                    border: '2px solid var(--navy)',
+                    backgroundColor: 'var(--fs-primary)',
+                    border: '2px solid var(--fs-primary)',
+                    borderRadius: 0,
                   }}
                 >
-                  <Moon size={16} style={{ color: 'var(--mustard)' }} strokeWidth={2.5} />
+                  <Moon size={16} style={{ color: 'var(--fs-accent)' }} strokeWidth={2.5} />
                 </div>
               }
               label="מצב כהה"
@@ -1350,7 +1416,7 @@ export default function Settings() {
                   fontFamily: 'var(--font-mono)',
                   fontSize: '12px',
                   letterSpacing: '0.12em',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                 }}
               >
                 1.0.0
@@ -1361,7 +1427,7 @@ export default function Settings() {
                 style={{
                   fontFamily: 'var(--font-hebrew)',
                   fontSize: '13px',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                 }}
               >
                 אפליקציית כושר
@@ -1380,8 +1446,9 @@ export default function Settings() {
                 <div
                   className="w-8 h-8 flex items-center justify-center shrink-0"
                   style={{
-                    background: cloudConnected ? 'var(--mustard)' : 'var(--bone-deep)',
-                    color: cloudConnected ? 'var(--color-on-mustard)' : 'var(--navy)',
+                    background: cloudConnected ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+                    color: cloudConnected ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                    borderRadius: 0,
                   }}
                 >
                   {cloudConnected ? <Cloud size={15} /> : <CloudOff size={15} />}
@@ -1392,19 +1459,18 @@ export default function Settings() {
                     fontFamily: 'var(--font-hebrew)',
                     fontSize: '15px',
                     fontWeight: 500,
-                    color: 'var(--ink)',
+                    color: 'var(--fs-ink)',
                   }}
                 >
                   {cloudConnected ? 'מחובר לענן' : 'לא מחובר'}
                 </span>
                 {syncMessage && (
                   <span
-                    className="animate-pulse"
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '10px',
                       letterSpacing: '0.18em',
-                      color: 'var(--navy)',
+                      color: 'var(--fs-accent)',
                       textTransform: 'uppercase',
                     }}
                     aria-live="polite"
@@ -1413,18 +1479,18 @@ export default function Settings() {
                   </span>
                 )}
               </div>
-              <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
+              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
 
               {/* Status Info Row */}
               <div className="px-4 py-3 flex flex-wrap gap-x-6 gap-y-2">
                 {/* Pending Sync Count */}
                 <div className="flex items-center gap-2">
-                  <RefreshCw size={12} style={{ color: 'var(--stone)' }} />
+                  <RefreshCw size={12} style={{ color: 'var(--fs-muted)' }} />
                   <span
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '11px',
-                      color: pendingSyncCount > 0 ? 'var(--mustard)' : 'var(--stone)',
+                      color: pendingSyncCount > 0 ? 'var(--fs-accent)' : 'var(--fs-muted)',
                       fontWeight: pendingSyncCount > 0 ? 600 : 400,
                     }}
                   >
@@ -1435,12 +1501,12 @@ export default function Settings() {
                 {/* Last Sync Time */}
                 {lastSyncTime && (
                   <div className="flex items-center gap-2">
-                    <Check size={12} style={{ color: 'var(--stone)' }} />
+                    <Check size={12} style={{ color: 'var(--fs-muted)' }} />
                     <span
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: '11px',
-                        color: 'var(--stone)',
+                        color: 'var(--fs-muted)',
                       }}
                     >
                       סנכרון אחרון: {lastSyncTime}
@@ -1450,20 +1516,43 @@ export default function Settings() {
               </div>
 
               {/* Action Buttons */}
-              <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
+              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
               <div
-                className="btn-row"
-                style={{ padding: '12px 16px', flexDirection: 'column', gap: '10px' }}
+                style={{
+                  padding: '12px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                }}
               >
                 {/* Sync All Button - Primary */}
                 <button
                   type="button"
                   onClick={handleSyncAll}
                   disabled={isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected}
-                  className="btn-primary flex items-center justify-center gap-2"
-                  style={{ minHeight: '44px', padding: '12px', fontSize: '13px' }}
+                  style={{
+                    minHeight: '44px',
+                    padding: '12px',
+                    fontSize: '13px',
+                    borderRadius: 0,
+                    fontFamily: 'var(--font-hebrew)',
+                    fontWeight: 600,
+                    border: 'none',
+                    cursor:
+                      isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected
+                        ? 'not-allowed'
+                        : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    opacity:
+                      isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected ? 0.5 : 1,
+                    background: 'var(--fs-primary)',
+                    color: 'var(--fs-surface)',
+                  }}
                 >
-                  <ArrowUpFromLine size={14} className={isSyncingAll ? 'animate-spin' : ''} />
+                  <ArrowUpFromLine size={14} />
                   סנכרון מלא
                 </button>
 
@@ -1473,20 +1562,60 @@ export default function Settings() {
                     type="button"
                     onClick={handleSyncToCloud}
                     disabled={isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected}
-                    className="btn-primary flex items-center justify-center gap-2 flex-1"
-                    style={{ minHeight: '44px', padding: '12px', fontSize: '12px' }}
+                    style={{
+                      flex: 1,
+                      minHeight: '44px',
+                      padding: '12px',
+                      fontSize: '12px',
+                      borderRadius: 0,
+                      fontFamily: 'var(--font-hebrew)',
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor:
+                        isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected
+                          ? 'not-allowed'
+                          : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      opacity:
+                        isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected ? 0.5 : 1,
+                      background: 'var(--fs-primary)',
+                      color: 'var(--fs-surface)',
+                    }}
                   >
-                    <RefreshCw size={14} className={isSyncingUp ? 'animate-spin' : ''} />
+                    <RefreshCw size={14} />
                     {isSyncingUp ? 'מעלה...' : 'העלה לענן'}
                   </button>
                   <button
                     type="button"
                     onClick={handlePullFromCloud}
                     disabled={isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected}
-                    className="btn-secondary flex items-center justify-center gap-2 flex-1"
-                    style={{ minHeight: '44px', padding: '12px', fontSize: '12px' }}
+                    style={{
+                      flex: 1,
+                      minHeight: '44px',
+                      padding: '12px',
+                      fontSize: '12px',
+                      borderRadius: 0,
+                      fontFamily: 'var(--font-hebrew)',
+                      fontWeight: 600,
+                      border: '1px solid var(--fs-primary)',
+                      cursor:
+                        isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected
+                          ? 'not-allowed'
+                          : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      opacity:
+                        isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected ? 0.5 : 1,
+                      background: 'transparent',
+                      color: 'var(--fs-ink)',
+                    }}
                   >
-                    <Download size={14} className={isSyncingDown ? 'animate-spin' : ''} />
+                    <Download size={14} />
                     {isSyncingDown ? 'מביא...' : 'הורד מענן'}
                   </button>
                 </div>
@@ -1511,11 +1640,26 @@ export default function Settings() {
                     logger.app.error('Export failed', e);
                   }
                 }}
-                className="flex items-center gap-3 px-4 py-3.5 min-h-[52px] transition-colors"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '14px 16px',
+                  minHeight: '52px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'right',
+                }}
               >
                 <div
                   className="w-8 h-8 flex items-center justify-center shrink-0"
-                  style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+                  style={{
+                    background: 'var(--fs-surface-2)',
+                    color: 'var(--fs-primary)',
+                    borderRadius: '8px',
+                  }}
                 >
                   <Download size={15} />
                 </div>
@@ -1525,13 +1669,13 @@ export default function Settings() {
                     fontFamily: 'var(--font-hebrew)',
                     fontSize: '15px',
                     fontWeight: 500,
-                    color: 'var(--ink)',
+                    color: 'var(--fs-ink)',
                   }}
                 >
                   ייצוא היסטוריית אימונים (CSV)
                 </span>
               </button>
-              <div style={{ height: '1px', background: 'var(--bone-deep)', margin: '0 16px' }} />
+              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
             </div>
 
             <div className="flex flex-col">
@@ -1545,11 +1689,26 @@ export default function Settings() {
                     logger.app.error('Report generation failed', e);
                   }
                 }}
-                className="flex items-center gap-3 px-4 py-3.5 min-h-[52px] transition-colors"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '14px 16px',
+                  minHeight: '52px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'right',
+                }}
               >
                 <div
                   className="w-8 h-8 flex items-center justify-center shrink-0"
-                  style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+                  style={{
+                    background: 'var(--fs-surface-2)',
+                    color: 'var(--fs-primary)',
+                    borderRadius: '8px',
+                  }}
                 >
                   <Share2 size={15} />
                 </div>
@@ -1559,7 +1718,7 @@ export default function Settings() {
                     fontFamily: 'var(--font-hebrew)',
                     fontSize: '15px',
                     fontWeight: 500,
-                    color: 'var(--ink)',
+                    color: 'var(--fs-ink)',
                   }}
                 >
                   דוח שבועי
@@ -1568,16 +1727,17 @@ export default function Settings() {
             </div>
 
             {weeklyReport && (
-              <div className="px-4 py-3" style={{ borderTop: '1px solid var(--bone-deep)' }}>
+              <div className="px-4 py-3" style={{ borderTop: '1px solid var(--fs-surface-2)' }}>
                 <pre
                   className="whitespace-pre-wrap max-h-[300px] overflow-y-auto"
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: '12px',
-                    color: 'var(--ink)',
-                    background: 'var(--bone-deep)',
+                    color: 'var(--fs-ink)',
+                    background: 'var(--fs-surface-2)',
                     padding: '12px',
-                    border: '1px solid var(--navy)',
+                    border: '1px solid var(--fs-primary)',
+                    borderRadius: 0,
                   }}
                 >
                   {weeklyReport}
@@ -1586,8 +1746,20 @@ export default function Settings() {
                   <button
                     type="button"
                     onClick={() => shareReport(weeklyReport)}
-                    className="chip"
-                    style={{ background: 'var(--mustard)', color: 'var(--color-on-mustard)' }}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 0,
+                      fontFamily: 'var(--font-hebrew)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      background: 'var(--fs-accent)',
+                      color: 'var(--fs-primary)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
                   >
                     <Share2 size={12} /> שתף
                   </button>
@@ -1598,7 +1770,20 @@ export default function Settings() {
                       setCopiedReport(true);
                       setTimeout(() => setCopiedReport(false), 2000);
                     }}
-                    className="chip"
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 0,
+                      fontFamily: 'var(--font-hebrew)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      background: 'var(--fs-surface-2)',
+                      color: 'var(--fs-ink)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
                   >
                     <Copy size={12} /> {copiedReport ? 'הועתק!' : 'העתק'}
                   </button>
@@ -1610,7 +1795,7 @@ export default function Settings() {
 
         {/* ── DANGER ZONE ─────────────────────────────────────────────────── */}
         <div className="mb-7">
-          <p className="section-title mb-3 px-1" style={{ color: '#DC2626' }}>
+          <p className="section-title mb-3 px-1" style={{ color: 'var(--fs-warn)' }}>
             § DANGER · אזור מסוכן
           </p>
           <SettingsCard>
@@ -1619,7 +1804,7 @@ export default function Settings() {
                 style={{
                   fontFamily: 'var(--font-hebrew)',
                   fontSize: '14px',
-                  color: 'var(--ink)',
+                  color: 'var(--fs-ink)',
                   marginBottom: '12px',
                 }}
               >
@@ -1633,9 +1818,10 @@ export default function Settings() {
                     width: '100%',
                     minHeight: '44px',
                     padding: '12px',
-                    border: '2px solid #DC2626',
+                    borderRadius: 0,
+                    border: '2px solid var(--fs-warn)',
                     background: 'transparent',
-                    color: '#DC2626',
+                    color: 'var(--fs-warn)',
                     fontFamily: 'var(--font-hebrew)',
                     fontSize: '14px',
                     fontWeight: 600,
@@ -1657,9 +1843,10 @@ export default function Settings() {
                       flex: 1,
                       minHeight: '44px',
                       padding: '12px',
-                      border: '2px solid #DC2626',
-                      background: '#DC2626',
-                      color: 'white',
+                      borderRadius: 0,
+                      border: '2px solid var(--fs-warn)',
+                      background: 'var(--fs-warn)',
+                      color: 'var(--fs-surface)',
                       fontFamily: 'var(--font-hebrew)',
                       fontSize: '14px',
                       fontWeight: 700,
@@ -1675,11 +1862,18 @@ export default function Settings() {
                   <button
                     type="button"
                     onClick={() => setConfirmDelete(false)}
-                    className="btn-secondary"
                     style={{
                       flex: 1,
                       minHeight: '44px',
                       padding: '12px',
+                      borderRadius: 0,
+                      border: '1px solid var(--fs-surface-2)',
+                      background: 'transparent',
+                      color: 'var(--fs-ink)',
+                      fontFamily: 'var(--font-hebrew)',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',

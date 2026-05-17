@@ -1,7 +1,7 @@
 /**
  * SPARKOS FITNESS — Login Page
  * Sign In / Sign Up with Supabase Auth
- * Bold · Editorial · Confident · Narrative · Printed
+ * Fresh Steel Design — Minimal, Action-oriented
  */
 
 import { AnimatePresence, motion } from 'framer-motion';
@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   Check,
   ChevronRight,
-  Dumbbell,
   Eye,
   EyeOff,
   Loader2,
@@ -137,8 +136,14 @@ const AnnualInput = memo(function AnnualInput({
   return (
     <div className="w-full">
       <label
-        className="block section-title mb-2"
-        style={{ color: 'var(--stone)', letterSpacing: '0.18em' }}
+        className="block mb-2"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '11px',
+          color: 'var(--fs-muted)',
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+        }}
       >
         {label}
       </label>
@@ -146,7 +151,7 @@ const AnnualInput = memo(function AnnualInput({
         {icon && (
           <div
             className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ color: 'var(--stone)' }}
+            style={{ color: 'var(--fs-muted)' }}
           >
             {icon}
           </div>
@@ -160,20 +165,32 @@ const AnnualInput = memo(function AnnualInput({
           autoComplete={autoComplete}
           autoFocus={autoFocus}
           className={cn(
-            'w-full h-14 bg-white border-2 transition-all duration-200',
-            'font-[IBM_Plex_Sans,var(--font-body)] text-base text-[var(--ink)]',
-            'placeholder:text-[var(--stone-light)]',
+            'w-full h-14 transition-all duration-200',
+            'text-base',
+            'placeholder:opacity-60',
             'focus:outline-none',
             icon ? 'pl-12 pr-4' : 'px-4',
             suffix ? 'pr-12' : '',
-            error
-              ? 'border-[var(--color-error)] focus:shadow-[0_0_0_3px_var(--color-error-muted)]'
-              : 'border-[var(--bone-deep)] focus:border-[var(--navy)] focus:shadow-[0_0_0_3px_rgba(232,184,45,0.3)]',
             disabled ? 'opacity-50 cursor-not-allowed' : ''
           )}
           style={{
-            borderRadius: 0,
+            background: 'var(--fs-surface)',
+            border: error ? '1px solid var(--fs-warn)' : '1px solid var(--fs-surface-2)',
+            borderRadius: '22px 16px 22px 16px',
             fontFamily: 'var(--font-body)',
+            color: 'var(--fs-ink)',
+          }}
+          onFocus={(e) => {
+            if (!error) {
+              e.currentTarget.style.borderColor = 'var(--fs-accent)';
+              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(67, 199, 165, 0.2)';
+            }
+          }}
+          onBlur={(e) => {
+            if (!error) {
+              e.currentTarget.style.borderColor = 'var(--fs-surface-2)';
+              e.currentTarget.style.boxShadow = 'none';
+            }
           }}
         />
         {suffix && <div className="absolute right-4 top-1/2 -translate-y-1/2">{suffix}</div>}
@@ -184,7 +201,7 @@ const AnnualInput = memo(function AnnualInput({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
-            color: 'var(--color-error)',
+            color: 'var(--fs-warn)',
             letterSpacing: '0.05em',
           }}
         >
@@ -224,8 +241,14 @@ const AnnualPasswordInput = memo(function AnnualPasswordInput({
   return (
     <div className="w-full">
       <label
-        className="block section-title mb-2"
-        style={{ color: 'var(--stone)', letterSpacing: '0.18em' }}
+        className="block mb-2"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '11px',
+          color: 'var(--fs-muted)',
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+        }}
       >
         {label}
       </label>
@@ -239,25 +262,38 @@ const AnnualPasswordInput = memo(function AnnualPasswordInput({
           autoFocus={autoFocus}
           autoComplete={label === 'Password' ? 'current-password' : 'new-password'}
           className={cn(
-            'w-full h-14 bg-white border-2 transition-all duration-200',
-            'font-[IBM_Plex_Sans,var(--font-body)] text-base text-[var(--ink)]',
-            'placeholder:text-[var(--stone-light)]',
-            'focus:outline-none pr-12',
-            error
-              ? 'border-[var(--color-error)] focus:shadow-[0_0_0_3px_var(--color-error-muted)]'
-              : 'border-[var(--bone-deep)] focus:border-[var(--navy)] focus:shadow-[0_0_0_3px_rgba(232,184,45,0.3)]',
+            'w-full h-14 transition-all duration-200 pr-12',
+            'text-base',
+            'placeholder:opacity-60',
+            'focus:outline-none',
             disabled ? 'opacity-50 cursor-not-allowed' : ''
           )}
           style={{
-            borderRadius: 0,
+            background: 'var(--fs-surface)',
+            border: error ? '1px solid var(--fs-warn)' : '1px solid var(--fs-surface-2)',
+            borderRadius: '22px 16px 22px 16px',
             fontFamily: 'var(--font-body)',
+            color: 'var(--fs-ink)',
+            paddingLeft: '16px',
+          }}
+          onFocus={(e) => {
+            if (!error) {
+              e.currentTarget.style.borderColor = 'var(--fs-accent)';
+              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(67, 199, 165, 0.2)';
+            }
+          }}
+          onBlur={(e) => {
+            if (!error) {
+              e.currentTarget.style.borderColor = 'var(--fs-surface-2)';
+              e.currentTarget.style.boxShadow = 'none';
+            }
           }}
         />
         <button
           type="button"
           onClick={() => setShow(!show)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
-          style={{ color: 'var(--stone)' }}
+          className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+          style={{ color: 'var(--fs-muted)' }}
           aria-label={show ? 'הסתר סיסמה' : 'הצג סיסמה'}
         >
           {show ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -269,7 +305,7 @@ const AnnualPasswordInput = memo(function AnnualPasswordInput({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
-            color: 'var(--color-error)',
+            color: 'var(--fs-warn)',
             letterSpacing: '0.05em',
           }}
         >
@@ -307,8 +343,8 @@ const AnnualButton = memo(function AnnualButton({
   fullWidth = true,
 }: AnnualButtonProps) {
   const baseClasses = cn(
-    'h-[52px] px-6 font-[var(--font-display)] font-[var(--font-extrabold)] text-base',
-    'tracking-[0.08em] uppercase transition-all duration-150',
+    'h-[52px] px-6 text-base font-bold',
+    'tracking-[0.04em] transition-all duration-150',
     'focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2',
     'active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100',
     'flex items-center justify-center gap-3',
@@ -322,8 +358,15 @@ const AnnualButton = memo(function AnnualButton({
         type={type}
         onClick={onClick}
         disabled={disabled || loading}
-        className={cn(baseClasses, 'bg-[var(--navy)] text-[var(--mustard)]')}
-        style={{ borderRadius: 0 }}
+        className={baseClasses}
+        style={{
+          background: 'var(--fs-primary)',
+          color: 'var(--fs-accent)',
+          borderRadius: '22px 16px 22px 16px',
+          fontFamily: 'var(--font-display)',
+          fontWeight: 800,
+          textTransform: 'uppercase',
+        }}
       >
         {loading ? (
           <Loader2
@@ -343,11 +386,16 @@ const AnnualButton = memo(function AnnualButton({
         type={type}
         onClick={onClick}
         disabled={disabled || loading}
-        className={cn(
-          baseClasses,
-          'bg-[var(--bone)] text-[var(--navy)] border-2 border-[var(--navy)]'
-        )}
-        style={{ borderRadius: 0 }}
+        className={baseClasses}
+        style={{
+          background: 'var(--fs-surface)',
+          color: 'var(--fs-primary)',
+          border: '2px solid var(--fs-primary)',
+          borderRadius: '22px 16px 22px 16px',
+          fontFamily: 'var(--font-display)',
+          fontWeight: 800,
+          textTransform: 'uppercase',
+        }}
       >
         {loading ? (
           <Loader2
@@ -366,8 +414,14 @@ const AnnualButton = memo(function AnnualButton({
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      className={cn(baseClasses, 'bg-transparent text-[var(--navy)]')}
-      style={{ borderRadius: 0 }}
+      className={baseClasses}
+      style={{
+        background: 'transparent',
+        color: 'var(--fs-primary)',
+        fontFamily: 'var(--font-display)',
+        fontWeight: 800,
+        textTransform: 'uppercase',
+      }}
     >
       {loading ? (
         <Loader2
@@ -395,11 +449,11 @@ function GhostLink({ children, onClick }: GhostLinkProps) {
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center justify-center gap-2 transition-colors"
+      className="flex items-center justify-center gap-2 transition-colors hover:opacity-80"
       style={{
         fontFamily: 'var(--font-mono)',
         fontSize: '12px',
-        color: 'var(--stone)',
+        color: 'var(--fs-muted)',
         letterSpacing: '0.08em',
         textTransform: 'uppercase',
         minHeight: '44px',
@@ -416,7 +470,7 @@ function GhostLink({ children, onClick }: GhostLinkProps) {
 }
 
 // ============================================================================
-// MASTHEAD — top editorial header
+// MASTHEAD — FS brand lockup
 // ============================================================================
 
 function Masthead() {
@@ -425,45 +479,60 @@ function Masthead() {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full py-6 px-5"
-      style={{ background: 'var(--navy)' }}
+      className="w-full px-5 pt-8 pb-6 text-center"
+      style={{
+        background: 'linear-gradient(135deg, var(--fs-primary) 0%, var(--fs-accent-2) 100%)',
+      }}
     >
-      {/* Logo + Brand */}
-      <div className="flex items-center gap-4 mb-6">
+      {/* FS Brand Mark */}
+      <div className="flex items-center justify-center gap-3 mb-3">
         <div
-          className="w-12 h-12 flex items-center justify-center"
-          style={{ background: 'var(--mustard)' }}
+          className="w-14 h-14 flex items-center justify-center"
+          style={{
+            background: 'var(--fs-accent)',
+            borderRadius: 0,
+          }}
         >
-          <Dumbbell size={24} style={{ color: 'var(--color-on-mustard)' }} aria-hidden="true" />
-        </div>
-        <div>
-          <h1
-            className="leading-none tracking-tight"
+          <span
             style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 900,
+              fontFamily: '"Bricolage Grotesque", var(--font-display)',
+              fontWeight: 800,
               fontSize: '28px',
-              color: 'var(--bone)',
-              letterSpacing: '-0.02em',
-              textTransform: 'uppercase',
+              color: 'var(--fs-primary)',
+              lineHeight: 1,
             }}
           >
-            SPARKOS
-          </h1>
-          <p
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '9px',
-              color: 'var(--mustard)',
-              letterSpacing: '0.28em',
-              textTransform: 'uppercase',
-              marginTop: '2px',
-            }}
-          >
-            Training Log · Fitness
-          </p>
+            FS
+          </span>
         </div>
       </div>
+
+      {/* Tagline */}
+      <p
+        className="leading-snug"
+        style={{
+          fontFamily: '"Bricolage Grotesque", var(--font-display)',
+          fontWeight: 600,
+          fontSize: '22px',
+          color: 'var(--fs-surface)',
+          letterSpacing: '-0.01em',
+        }}
+      >
+        כתוב סטים. תראה התקדמות.
+      </p>
+
+      {/* Brief description */}
+      <p
+        className="mt-3 max-w-[280px] mx-auto"
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '14px',
+          color: 'rgba(var(--text-on-navy-rgb), 0.7)',
+          lineHeight: 1.5,
+        }}
+      >
+        רשמו אימונים, עקבו אחר משקלים וגלו איך הגוף שלכם מתפתח עם הזמן
+      </p>
     </motion.div>
   );
 }
@@ -487,35 +556,41 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
         initial="initial"
         animate="animate"
         onClick={onSignIn}
-        className="card-outlined text-right group"
-        style={{ cursor: 'pointer', background: 'var(--bone)' }}
+        className="text-right group"
+        style={{
+          cursor: 'pointer',
+          background: 'var(--fs-surface)',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: '22px 16px 22px 16px',
+          padding: '20px',
+          minHeight: '72px',
+        }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div
               className="w-12 h-12 flex items-center justify-center"
-              style={{ background: 'var(--navy)' }}
+              style={{ background: 'var(--fs-primary)', borderRadius: 0 }}
             >
-              <Lock size={20} style={{ color: 'var(--mustard)' }} aria-hidden="true" />
+              <Lock size={20} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
             </div>
             <div>
               <h3
                 className="mb-0.5"
                 style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 700,
                   fontSize: '18px',
-                  color: 'var(--navy)',
-                  textTransform: 'uppercase',
+                  color: 'var(--fs-ink)',
                 }}
               >
-                התחברות
+                כניסה עם חשבון
               </h3>
               <p
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: '10px',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                 }}
@@ -525,10 +600,10 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             </div>
           </div>
           <div
-            className="w-10 h-10 flex items-center justify-center transition-transform group-hover:translate-x-1"
-            style={{ background: 'var(--bone-deep)' }}
+            className="w-10 h-10 flex items-center justify-center transition-transform group-hover:-translate-x-1"
+            style={{ background: 'var(--fs-surface-2)', borderRadius: 0 }}
           >
-            <ChevronRight size={18} style={{ color: 'var(--navy)' }} aria-hidden="true" />
+            <ChevronRight size={18} style={{ color: 'var(--fs-ink)' }} aria-hidden="true" />
           </div>
         </div>
       </motion.button>
@@ -539,26 +614,32 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
         initial="initial"
         animate="animate"
         onClick={onSignUp}
-        className="card-outlined text-right group"
-        style={{ cursor: 'pointer', background: 'var(--bone)' }}
+        className="text-right group"
+        style={{
+          cursor: 'pointer',
+          background: 'var(--fs-surface)',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: '22px 16px 22px 16px',
+          padding: '20px',
+          minHeight: '72px',
+        }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div
               className="w-12 h-12 flex items-center justify-center"
-              style={{ background: 'var(--mustard)' }}
+              style={{ background: 'var(--fs-accent)', borderRadius: 0 }}
             >
-              <User size={20} style={{ color: 'var(--color-on-mustard)' }} aria-hidden="true" />
+              <User size={20} style={{ color: 'var(--fs-primary)' }} aria-hidden="true" />
             </div>
             <div>
               <h3
                 className="mb-0.5"
                 style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 700,
                   fontSize: '18px',
-                  color: 'var(--navy)',
-                  textTransform: 'uppercase',
+                  color: 'var(--fs-ink)',
                 }}
               >
                 הרשמה
@@ -567,7 +648,7 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: '10px',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                 }}
@@ -577,29 +658,29 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             </div>
           </div>
           <div
-            className="w-10 h-10 flex items-center justify-center transition-transform group-hover:translate-x-1"
-            style={{ background: 'var(--bone-deep)' }}
+            className="w-10 h-10 flex items-center justify-center transition-transform group-hover:-translate-x-1"
+            style={{ background: 'var(--fs-surface-2)', borderRadius: 0 }}
           >
-            <ChevronRight size={18} style={{ color: 'var(--navy)' }} aria-hidden="true" />
+            <ChevronRight size={18} style={{ color: 'var(--fs-ink)' }} aria-hidden="true" />
           </div>
         </div>
       </motion.button>
 
       {/* Divider */}
       <div className="flex items-center gap-4">
-        <div className="flex-1" style={{ height: '1px', background: 'var(--bone-deep)' }} />
+        <div className="flex-1" style={{ height: '1px', background: 'var(--fs-surface-2)' }} />
         <span
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '10px',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             letterSpacing: '0.15em',
             textTransform: 'uppercase',
           }}
         >
           או
         </span>
-        <div className="flex-1" style={{ height: '1px', background: 'var(--bone-deep)' }} />
+        <div className="flex-1" style={{ height: '1px', background: 'var(--fs-surface-2)' }} />
       </div>
 
       {/* Guest Button */}
@@ -608,20 +689,20 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
         initial="initial"
         animate="animate"
         onClick={onGuest}
-        className="w-full h-14 bg-[var(--bone-deep)] border-2 flex items-center justify-center gap-3 transition-all hover:bg-[var(--bone-faint)] active:scale-[0.98]"
+        className="w-full h-14 flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-[0.98]"
         style={{
-          borderColor: 'var(--bone-deep)',
-          borderRadius: 0,
+          background: 'var(--fs-surface)',
+          border: '1px solid var(--fs-primary)',
+          borderRadius: '22px 16px 22px 16px',
           fontFamily: 'var(--font-display)',
           fontWeight: 800,
           fontSize: '15px',
-          color: 'var(--navy)',
           textTransform: 'uppercase',
-          letterSpacing: '0.06em',
+          color: 'var(--fs-primary)',
           cursor: 'pointer',
         }}
       >
-        המשך כאורח
+        התחל כאורח
       </motion.button>
 
       {/* Google OAuth */}
@@ -635,14 +716,16 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             // Handle error - could use a toast here
           }
         }}
-        className="w-full h-14 bg-white border-2 flex items-center justify-center gap-3 transition-all hover:bg-[var(--bone-faint)] active:scale-[0.98]"
+        className="w-full h-14 flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-[0.98]"
         style={{
-          borderColor: 'var(--bone-deep)',
-          borderRadius: 0,
-          fontFamily: 'var(--font-body)',
-          fontWeight: 600,
+          background: 'var(--fs-surface)',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: '22px 16px 22px 16px',
+          fontFamily: 'var(--font-display)',
+          fontWeight: 800,
           fontSize: '15px',
-          color: 'var(--ink)',
+          textTransform: 'uppercase',
+          color: 'var(--fs-ink)',
           cursor: 'pointer',
         }}
       >
@@ -769,12 +852,12 @@ function SignInStep({
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 900,
-                fontSize: '32px',
-                color: 'var(--navy)',
+                fontWeight: 800,
+                fontSize: '28px',
+                color: 'var(--fs-ink)',
                 textTransform: 'uppercase',
                 letterSpacing: '-0.02em',
-                lineHeight: 0.95,
+                lineHeight: 1.1,
               }}
             >
               התחברות
@@ -783,7 +866,7 @@ function SignInStep({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '10px',
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 letterSpacing: '0.18em',
                 textTransform: 'uppercase',
                 marginTop: '6px',
@@ -826,7 +909,7 @@ function SignInStep({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
                 background: 'none',
@@ -845,19 +928,20 @@ function SignInStep({
               variants={staggerItem}
               className="p-4 flex items-start gap-3"
               style={{
-                background: 'var(--color-error-muted)',
-                borderLeft: '3px solid var(--color-error)',
+                background: 'rgba(226, 110, 63, 0.12)',
+                borderLeft: '3px solid var(--fs-warn)',
+                borderRadius: 0,
               }}
             >
               <AlertCircle
                 size={16}
-                style={{ color: 'var(--color-error)', flexShrink: 0, marginTop: '2px' }}
+                style={{ color: 'var(--fs-warn)', flexShrink: 0, marginTop: '2px' }}
               />
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: '14px',
-                  color: 'var(--color-error)',
+                  color: 'var(--fs-warn)',
                   lineHeight: 1.4,
                 }}
               >
@@ -872,8 +956,9 @@ function SignInStep({
               variants={staggerItem}
               className="p-4"
               style={{
-                background: 'var(--mustard)',
-                color: 'var(--color-on-mustard)',
+                background: 'var(--fs-accent)',
+                color: 'var(--fs-primary)',
+                borderRadius: 0,
               }}
             >
               <p
@@ -997,9 +1082,9 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
           className="w-20 h-20 flex items-center justify-center mb-6"
-          style={{ background: 'var(--mustard)' }}
+          style={{ background: 'var(--fs-accent)', borderRadius: '22px 16px 22px 16px' }}
         >
-          <MailOpen size={36} style={{ color: 'var(--color-on-mustard)' }} />
+          <MailOpen size={36} style={{ color: 'var(--fs-primary)' }} />
         </motion.div>
 
         <motion.h2
@@ -1008,9 +1093,9 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           transition={{ delay: 0.2 }}
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 900,
+            fontWeight: 800,
             fontSize: '28px',
-            color: 'var(--navy)',
+            color: 'var(--fs-ink)',
             textTransform: 'uppercase',
             letterSpacing: '-0.02em',
             marginBottom: '12px',
@@ -1026,7 +1111,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: '15px',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             lineHeight: 1.6,
             marginBottom: '8px',
           }}
@@ -1041,7 +1126,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '13px',
-            color: 'var(--navy)',
+            color: 'var(--fs-ink)',
             fontWeight: 600,
             marginBottom: '32px',
             wordBreak: 'break-all',
@@ -1057,7 +1142,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: '14px',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             lineHeight: 1.5,
           }}
         >
@@ -1099,12 +1184,12 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 900,
-                fontSize: '32px',
-                color: 'var(--navy)',
+                fontWeight: 800,
+                fontSize: '28px',
+                color: 'var(--fs-ink)',
                 textTransform: 'uppercase',
                 letterSpacing: '-0.02em',
-                lineHeight: 0.95,
+                lineHeight: 1.1,
               }}
             >
               חשבון חדש
@@ -1113,7 +1198,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '10px',
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 letterSpacing: '0.18em',
                 textTransform: 'uppercase',
                 marginTop: '6px',
@@ -1129,14 +1214,14 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '9px',
-                color: 'var(--mustard)',
+                color: 'var(--fs-muted)',
                 letterSpacing: '0.28em',
                 textTransform: 'uppercase',
               }}
             >
               §01 · פרופיל
             </span>
-            <div className="flex-1" style={{ height: '1px', background: 'var(--bone-deep)' }} />
+            <div className="flex-1" style={{ height: '1px', background: 'var(--fs-surface-2)' }} />
           </motion.div>
 
           <motion.div variants={staggerItem}>
@@ -1172,14 +1257,14 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '9px',
-                color: 'var(--mustard)',
+                color: 'var(--fs-muted)',
                 letterSpacing: '0.28em',
                 textTransform: 'uppercase',
               }}
             >
               §02 · אבטחה
             </span>
-            <div className="flex-1" style={{ height: '1px', background: 'var(--bone-deep)' }} />
+            <div className="flex-1" style={{ height: '1px', background: 'var(--fs-surface-2)' }} />
           </motion.div>
 
           <motion.div variants={staggerItem}>
@@ -1208,19 +1293,20 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               variants={staggerItem}
               className="p-4 flex items-start gap-3"
               style={{
-                background: 'var(--color-error-muted)',
-                borderLeft: '3px solid var(--color-error)',
+                background: 'rgba(226, 110, 63, 0.12)',
+                borderLeft: '3px solid var(--fs-warn)',
+                borderRadius: 0,
               }}
             >
               <AlertCircle
                 size={16}
-                style={{ color: 'var(--color-error)', flexShrink: 0, marginTop: '2px' }}
+                style={{ color: 'var(--fs-warn)', flexShrink: 0, marginTop: '2px' }}
               />
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: '14px',
-                  color: 'var(--color-error)',
+                  color: 'var(--fs-warn)',
                   lineHeight: 1.4,
                 }}
               >
@@ -1297,9 +1383,9 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 200, damping: 15 }}
           className="w-20 h-20 flex items-center justify-center mb-6"
-          style={{ background: 'var(--color-success)' }}
+          style={{ background: 'var(--fs-accent)', borderRadius: '22px 16px 22px 16px' }}
         >
-          <Check size={36} style={{ color: 'white' }} />
+          <Check size={36} style={{ color: 'var(--fs-primary)' }} />
         </motion.div>
 
         <motion.h2
@@ -1307,11 +1393,10 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 900,
+            fontFamily: 'var(--font-body)',
+            fontWeight: 700,
             fontSize: '28px',
-            color: 'var(--navy)',
-            textTransform: 'uppercase',
+            color: 'var(--fs-ink)',
             marginBottom: '12px',
           }}
         >
@@ -1325,13 +1410,13 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: '15px',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             lineHeight: 1.6,
           }}
         >
           שלחנו קישור לאיפוס סיסמה אל
           <br />
-          <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--navy)', fontWeight: 600 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--fs-ink)', fontWeight: 600 }}>
             {form.email}
           </span>
         </motion.p>
@@ -1370,12 +1455,12 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 900,
+                fontWeight: 800,
                 fontSize: '28px',
-                color: 'var(--navy)',
+                color: 'var(--fs-ink)',
                 textTransform: 'uppercase',
                 letterSpacing: '-0.02em',
-                lineHeight: 0.95,
+                lineHeight: 1.1,
               }}
             >
               שכחת סיסמה?
@@ -1384,7 +1469,7 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
               style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: '14px',
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 marginTop: '8px',
                 lineHeight: 1.5,
               }}
@@ -1412,16 +1497,17 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
               variants={staggerItem}
               className="p-4 flex items-start gap-3"
               style={{
-                background: 'var(--color-error-muted)',
-                borderLeft: '3px solid var(--color-error)',
+                background: 'rgba(226, 110, 63, 0.12)',
+                borderLeft: '3px solid var(--fs-warn)',
+                borderRadius: 0,
               }}
             >
-              <AlertCircle size={16} style={{ color: 'var(--color-error)', flexShrink: 0 }} />
+              <AlertCircle size={16} style={{ color: 'var(--fs-warn)', flexShrink: 0 }} />
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: '14px',
-                  color: 'var(--color-error)',
+                  color: 'var(--fs-warn)',
                 }}
               >
                 {errors.general}
@@ -1485,7 +1571,7 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-screen min-h-[100dvh] flex flex-col"
-      style={{ background: 'var(--bone)' }}
+      style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
       {/* Skip link */}
@@ -1500,7 +1586,7 @@ export default function LoginPage() {
       <main
         id="main-content"
         className="flex-1 flex flex-col"
-        style={{ background: 'var(--bone)' }}
+        style={{ background: 'var(--fs-bg)' }}
       >
         <AnimatePresence mode="wait">
           {step === 'choice' && (
@@ -1537,13 +1623,13 @@ export default function LoginPage() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
         className="px-5 py-6 text-center"
-        style={{ background: 'var(--navy)' }}
+        style={{ background: 'var(--fs-primary)' }}
       >
         <p
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '9px',
-            color: 'rgba(var(--text-on-navy-rgb), 0.4)',
+            color: 'var(--fs-muted)',
             letterSpacing: '0.22em',
             textTransform: 'uppercase',
           }}

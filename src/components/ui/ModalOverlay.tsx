@@ -201,8 +201,8 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
             .trim()}
           style={{
             zIndex: zIndexMap[zLevel],
-            // Editorial backdrop — semi-opaque navy (Sport Annual)
-            backgroundColor: `rgba(11, 26, 43, ${backdropOpacity / 100})`,
+            // Editorial backdrop — semi-opaque rubber (Fresh Steel)
+            backgroundColor: `rgba(13, 21, 22, ${backdropOpacity / 100})`,
           }}
           onClick={handleBackdropClick}
           role="dialog"

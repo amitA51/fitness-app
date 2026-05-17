@@ -32,9 +32,9 @@ const DefaultSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => (
   <motion.div
     className={`${sizeMap[size].container} rounded-full border-2`}
     style={{
-      borderColor: 'var(--bone-deep)',
-      borderTopColor: 'var(--navy)',
-      borderRightColor: 'var(--navy)',
+      borderColor: 'var(--fs-surface-2)',
+      borderTopColor: 'var(--fs-primary)',
+      borderRightColor: 'var(--fs-primary)',
     }}
     animate={{ rotate: 360 }}
     transition={{
@@ -64,7 +64,7 @@ const DotsSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
         <motion.div
           key={i}
           className={`${dotSize} rounded-full`}
-          style={{ backgroundColor: 'var(--navy)' }}
+          style={{ backgroundColor: 'var(--fs-primary)' }}
           animate={{
             y: [-2, 2, -2],
             opacity: [0.5, 1, 0.5],
@@ -86,7 +86,7 @@ const PulseSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => (
   <div className="relative">
     <motion.div
       className={`${sizeMap[size].container} rounded-full`}
-      style={{ backgroundColor: 'var(--navy)' }}
+      style={{ backgroundColor: 'var(--fs-primary)' }}
       animate={{
         scale: [1, 1.2, 1],
         opacity: [0.7, 0.3, 0.7],
@@ -99,7 +99,7 @@ const PulseSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => (
     />
     <motion.div
       className={`absolute inset-0 ${sizeMap[size].container} rounded-full`}
-      style={{ backgroundColor: 'var(--mustard)' }}
+      style={{ backgroundColor: 'var(--fs-accent)' }}
       animate={{
         scale: [1.2, 1, 1.2],
         opacity: [0.3, 0.7, 0.3],
@@ -133,7 +133,7 @@ const OrbitSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
           key={i}
           className={`absolute ${dotSize} rounded-full`}
           style={{
-            backgroundColor: 'var(--navy)',
+            backgroundColor: 'var(--fs-primary)',
             top: '50%',
             left: '50%',
             transform: `rotate(${i * 90}deg) translateY(-150%)`,
@@ -168,7 +168,7 @@ const GradientSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
       <motion.div
         className="absolute inset-0 rounded-full blur-md"
         style={{
-          background: 'linear-gradient(135deg, var(--navy), var(--mustard))',
+          background: 'linear-gradient(135deg, var(--fs-primary), var(--fs-accent))',
           opacity: 0.3,
         }}
         animate={{
@@ -198,8 +198,8 @@ const GradientSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
       >
         <defs>
           <linearGradient id="gradient-spinner" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="var(--navy)" />
-            <stop offset="100%" stopColor="var(--mustard)" />
+            <stop offset="0%" stopColor="var(--fs-primary)" />
+            <stop offset="100%" stopColor="var(--fs-accent)" />
           </linearGradient>
         </defs>
         <circle
@@ -233,7 +233,7 @@ const WaveSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
           key={i}
           className="absolute rounded-full"
           style={{
-            border: '2px solid var(--navy)',
+            border: '2px solid var(--fs-primary)',
             width: '100%',
             height: '100%',
           }}
@@ -255,7 +255,7 @@ const WaveSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
         style={{
           width: sizeValue * 0.25,
           height: sizeValue * 0.25,
-          backgroundColor: 'var(--mustard)',
+          backgroundColor: 'var(--fs-accent)',
         }}
         animate={{
           scale: [0.8, 1.1, 0.8],
@@ -311,7 +311,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
           style={{
             fontFamily: 'var(--font-mono)',
             letterSpacing: '0.18em',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
           }}
         >
           {text}

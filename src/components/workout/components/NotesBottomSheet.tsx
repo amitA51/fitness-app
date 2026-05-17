@@ -75,8 +75,8 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
             bottom: 0,
             left: 0,
             right: 0,
-            background: 'var(--bone)',
-            borderTop: '2px solid var(--navy)',
+            background: 'var(--fs-surface)',
+            borderTop: '2px solid var(--fs-primary)',
             display: 'flex',
             flexDirection: 'column',
             maxHeight: '70vh',
@@ -88,13 +88,13 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
           </div>
 
           {/* Header */}
-          <div style={{ padding: '8px 20px 16px', borderBottom: '1px solid var(--bone-deep)' }}>
+          <div style={{ padding: '8px 20px 16px', borderBottom: '1px solid var(--fs-surface-2)' }}>
             <h3
               style={{
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 20,
-                color: 'var(--navy)',
+                color: 'var(--fs-primary)',
                 letterSpacing: '-0.01em',
               }}
             >
@@ -105,7 +105,7 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 letterSpacing: '0.12em',
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 textTransform: 'uppercase',
                 marginTop: 2,
               }}
@@ -134,9 +134,9 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
                   style={{
                     flexShrink: 0,
                     padding: '6px 14px',
-                    background: 'var(--bone-deep)',
-                    color: 'var(--stone)',
-                    border: '2px solid var(--navy)',
+                    background: 'var(--fs-surface-2)',
+                    color: 'var(--fs-muted)',
+                    border: '2px solid var(--fs-primary)',
                     borderRadius: 0,
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
@@ -164,12 +164,12 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
               style={{
                 width: '100%',
                 padding: '14px 16px',
-                background: 'var(--color-surface-input)',
-                border: '2px solid var(--navy)',
+                background: 'var(--fs-surface)',
+                border: '2px solid var(--fs-primary)',
                 borderRadius: 0,
                 fontFamily: 'var(--font-body)',
                 fontSize: 15,
-                color: 'var(--ink)',
+                color: 'var(--fs-ink)',
                 outline: 'none',
                 resize: 'none',
                 direction: 'rtl',
@@ -196,7 +196,7 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.12em',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   textTransform: 'uppercase',
                 }}
               >
@@ -207,7 +207,7 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.12em',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   textTransform: 'uppercase',
                 }}
               >
@@ -230,8 +230,8 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
               style={{
                 flex: 1,
                 padding: '14px 16px',
-                background: 'var(--bone-deep)',
-                border: '2px solid var(--navy)',
+                background: 'var(--fs-surface-2)',
+                border: '2px solid var(--fs-primary)',
                 borderRadius: 0,
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
@@ -239,7 +239,7 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
                 fontSize: 13,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
-                color: 'var(--navy)',
+                color: 'var(--fs-primary)',
               }}
             >
               ביטול
@@ -254,7 +254,7 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
                 style={{
                   padding: '14px 16px',
                   background: 'rgba(196,43,43,0.1)',
-                  border: '2px solid var(--color-error)',
+                  border: '2px solid var(--fs-warn)',
                   borderRadius: 0,
                   cursor: 'pointer',
                   fontFamily: 'var(--font-display)',
@@ -262,7 +262,7 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
                   fontSize: 13,
                   letterSpacing: '0.06em',
                   textTransform: 'uppercase',
-                  color: 'var(--color-error)',
+                  color: 'var(--fs-warn)',
                 }}
               >
                 נקה
@@ -274,8 +274,8 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
               style={{
                 flex: 1,
                 padding: '14px 16px',
-                background: 'var(--navy)',
-                border: '2px solid var(--navy)',
+                background: 'var(--fs-primary)',
+                border: '2px solid var(--fs-primary)',
                 borderRadius: 0,
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
@@ -283,7 +283,7 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
                 fontSize: 13,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
-                color: 'var(--mustard)',
+                color: 'var(--fs-accent)',
               }}
             >
               שמור

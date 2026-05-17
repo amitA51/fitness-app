@@ -16,27 +16,27 @@ export const WORKOUT_THEMES = [
   {
     id: 'deepCosmos',
     name: 'Deep Cosmos',
-    colors: { primary: '#6366f1', secondary: '#8b5cf6', accent: '#22d3ee' },
+    colors: { primary: '#2C7F91', secondary: '#43C7A5', accent: '#16292D' },
   },
   {
     id: 'fireEnergy',
     name: 'Fire Energy',
-    colors: { primary: '#f97316', secondary: '#ef4444', accent: '#fbbf24' },
+    colors: { primary: '#E26E3F', secondary: '#D6453D', accent: '#fbbf24' },
   },
   {
     id: 'neonPulse',
     name: 'Neon Pulse',
-    colors: { primary: '#22d3ee', secondary: '#a855f7', accent: '#f472b6' },
+    colors: { primary: '#16292D', secondary: '#43C7A5', accent: '#2C7F91' },
   },
   {
     id: 'oceanWave',
     name: 'Ocean Wave',
-    colors: { primary: '#0ea5e9', secondary: '#06b6d4', accent: '#14b8a6' },
+    colors: { primary: '#2C7F91', secondary: '#16292D', accent: '#B9C8C6' },
   },
   {
     id: 'forestGrove',
     name: 'Forest Grove',
-    colors: { primary: '#22c55e', secondary: '#16a34a', accent: '#eab308' },
+    colors: { primary: '#43C7A5', secondary: '#16292D', accent: '#eab308' },
   },
 ];
 

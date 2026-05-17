@@ -1,6 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Bricolage+Grotesque:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap");
+
 /* ============================================================================
    SPARKOS FITNESS — Typography System
-   Big Shoulders Display × IBM Plex Sans × IBM Plex Mono × Assistant
+   Bricolage Grotesque × IBM Plex Sans × IBM Plex Mono × Assistant
    ============================================================================ */
 
 /* ============================================================================
@@ -254,16 +256,16 @@ h4,
   color: var(--color-error);
 }
 .text-mustard {
-  color: var(--mustard);
+  color: var(--fs-accent);
 }
 .text-navy {
-  color: var(--navy);
+  color: var(--fs-primary);
 }
 .text-bone {
-  color: var(--bone);
+  color: var(--fs-bg);
 }
 .text-ink {
-  color: var(--ink);
+  color: var(--fs-ink);
 }
 
 /* Accent Colors per Page */
@@ -317,7 +319,7 @@ h4,
   line-height: 0.82;
   letter-spacing: -0.04em;
   text-transform: uppercase;
-  color: var(--ink);
+  color: var(--fs-ink);
 }
 
 /* Monospace */
@@ -348,7 +350,7 @@ h4,
    ============================================================================ */
 
 :focus-visible {
-  outline: 2px solid var(--mustard);
+  outline: 2px solid var(--fs-accent);
   outline-offset: 2px;
   border-radius: 0;
 }
@@ -359,7 +361,7 @@ h4,
 
 ::selection {
   background: var(--color-secondary-glow);
-  color: var(--ink);
+  color: var(--fs-ink);
 }
 
 .skip-link {
@@ -368,8 +370,8 @@ h4,
   left: 12px;
   z-index: 110;
   transform: translateY(-150%);
-  background: var(--navy);
-  color: var(--mustard);
+  background: var(--fs-primary);
+  color: var(--fs-accent);
   padding: 10px 14px;
   font-family: var(--font-display);
   font-weight: var(--font-extrabold);

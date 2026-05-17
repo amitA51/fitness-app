@@ -46,17 +46,18 @@ export function ForecastNudge({ sessions }: ForecastNudgeProps) {
   return (
     <div
       role="note"
+      className="fs-accent-rail"
       style={{
         margin: '16px 0',
         padding: '10px 14px',
-        borderTop: '1px solid var(--navy)',
-        borderBottom: '1px solid var(--navy)',
-        background: 'transparent',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
         fontFamily: 'var(--font-mono)',
         fontSize: 11,
         letterSpacing: '0.16em',
         textTransform: 'uppercase',
-        color: 'var(--ink)',
+        color: 'var(--fs-ink)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -64,7 +65,7 @@ export function ForecastNudge({ sessions }: ForecastNudgeProps) {
       }}
     >
       <span>{nudge.label}</span>
-      <span style={{ color: 'var(--stone)', fontSize: 10 }}>{nudge.sub}</span>
+      <span style={{ color: 'var(--fs-muted)', fontSize: 10 }}>{nudge.sub}</span>
     </div>
   );
 }

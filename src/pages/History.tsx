@@ -106,7 +106,7 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
           <span
             className="eyebrow"
             style={{
-              color: fresh ? 'var(--mustard)' : 'var(--stone)',
+              color: fresh ? 'var(--fs-accent)' : 'var(--fs-muted)',
               fontFamily: 'var(--font-mono)',
             }}
           >
@@ -117,8 +117,8 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
           <span
             className="badge"
             style={{
-              background: session.status === 'completed' ? 'var(--navy)' : 'var(--bone-deep)',
-              color: session.status === 'completed' ? 'var(--mustard)' : 'var(--navy)',
+              background: session.status === 'completed' ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+              color: session.status === 'completed' ? 'var(--fs-accent)' : 'var(--fs-primary)',
             }}
           >
             {session.status === 'completed' ? 'DONE' : 'WIP'}
@@ -128,14 +128,14 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
             className="w-9 h-9 min-w-[48px] min-h-[48px] flex items-center justify-center transition-colors"
             style={{
               padding: '10px',
-              background: confirmDelete ? 'var(--navy)' : 'transparent',
-              color: confirmDelete ? 'var(--mustard)' : 'var(--stone)',
+              background: confirmDelete ? 'var(--fs-primary)' : 'transparent',
+              color: confirmDelete ? 'var(--fs-accent)' : 'var(--fs-muted)',
             }}
             aria-label={confirmDelete ? 'לחץ שוב לאישור' : 'מחק אימון'}
           >
             <Trash2 size={14} />
           </button>
-          <ChevronLeft size={15} style={{ color: 'var(--stone)' }} />
+          <ChevronLeft size={15} style={{ color: 'var(--fs-muted)' }} />
         </div>
       </div>
 
@@ -145,7 +145,7 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
           fontWeight: 800,
           fontSize: '22px',
           lineHeight: 1,
-          color: 'var(--ink)',
+          color: 'var(--fs-ink)',
           textTransform: 'uppercase',
           letterSpacing: '-0.01em',
           marginBottom: '4px',
@@ -157,7 +157,7 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
         style={{
           fontFamily: 'var(--font-hebrew)',
           fontSize: '12px',
-          color: 'var(--stone)',
+          color: 'var(--fs-muted)',
           marginBottom: '12px',
         }}
       >
@@ -169,17 +169,17 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: '12px',
-          color: 'var(--navy)',
+          color: 'var(--fs-primary)',
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
         }}
       >
         {session.duration > 0 && <span>{formatDuration(session.duration)}</span>}
-        <span style={{ color: 'var(--stone)' }}>·</span>
+        <span style={{ color: 'var(--fs-muted)' }}>·</span>
         <span>{completedSets} SETS</span>
         {session.totalVolume > 0 && (
           <>
-            <span style={{ color: 'var(--stone)' }}>·</span>
+            <span style={{ color: 'var(--fs-muted)' }}>·</span>
             <span>{vol}KG</span>
           </>
         )}
@@ -193,7 +193,7 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
             </span>
           ))}
           {exerciseNames.length > 3 && (
-            <span className="chip" style={{ background: 'var(--bone-deep)' }}>
+            <span className="chip" style={{ background: 'var(--fs-surface-2)' }}>
               +{exerciseNames.length - 3}
             </span>
           )}
@@ -206,7 +206,7 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
-            color: 'var(--navy)',
+            color: 'var(--fs-primary)',
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
           }}
@@ -328,7 +328,7 @@ export default function History() {
   return (
     <div
       className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
-      style={{ background: 'var(--bone)' }}
+      style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
       {/* Masthead */}
@@ -354,8 +354,8 @@ export default function History() {
           <div
             className="px-5 py-4 mx-5 mt-5"
             style={{
-              background: 'var(--navy)',
-              color: 'var(--mustard)',
+              background: 'var(--fs-primary)',
+              color: 'var(--fs-accent)',
               fontFamily: 'var(--font-mono)',
               fontSize: '12px',
               letterSpacing: '0.18em',
@@ -414,12 +414,12 @@ export default function History() {
                   fontFamily: 'var(--font-display)',
                   fontSize: '22px',
                   fontWeight: 800,
-                  color: 'var(--ink)',
+                  color: 'var(--fs-ink)',
                 }}
               >
                 אין אימונים עדיין
               </p>
-              <p style={{ color: 'var(--stone)', fontFamily: 'var(--font-body)', fontSize: 15 }}>
+              <p style={{ color: 'var(--fs-muted)', fontFamily: 'var(--font-body)', fontSize: 15 }}>
                 האימונים שתסיים יופיעו כאן
               </p>
               <button onClick={() => navigate('/workout')} className="btn-primary">

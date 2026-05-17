@@ -33,7 +33,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-md bg-bone border-2 border-navy shadow-navy overflow-hidden">
+      <div className="w-full max-w-md overflow-hidden" style={{ background: 'var(--fs-surface)', border: '2px solid var(--fs-primary)', boxShadow: '0 4px 12px rgba(22,41,45,0.3)' }}>
         {/* Masthead */}
         <div className="masthead">
           <div className="flex items-start justify-between gap-4">
@@ -51,7 +51,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
 
         {/* Content */}
         <div className="p-5">
-          <p className="text-sm text-stone mb-5" style={{ fontFamily: 'var(--font-body)' }}>
+          <p className="text-sm mb-5" style={{ fontFamily: 'var(--font-body)', color: 'var(--fs-muted)' }}>
             הבחירה תתאים את הזרימה ותעזור לך לעקוב אחר ההתקדמות.
           </p>
 
@@ -64,24 +64,24 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                 aria-label={`${goal.label}: ${goal.description}`}
                 className="w-full group text-right transition-all duration-150 ease-out"
                 style={{
-                  background: 'var(--bone)',
-                  border: '2px solid var(--navy)',
+                  background: 'var(--fs-surface)',
+                  border: '2px solid var(--fs-primary)',
                   padding: '16px 20px',
                   minHeight: 56,
                   cursor: 'pointer',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--bone-deep)';
+                  e.currentTarget.style.background = 'var(--fs-surface-2)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--bone)';
+                  e.currentTarget.style.background = 'var(--fs-surface)';
                 }}
               >
                 <div className="flex items-center gap-4">
                   {/* Chapter number style index */}
                   <span
-                    className="text-2xl font-black text-navy leading-none"
-                    style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}
+                    className="text-2xl font-black leading-none"
+                    style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', color: 'var(--fs-primary)' }}
                   >
                     {String(index + 1).padStart(2, '0')}
                   </span>
@@ -90,7 +90,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                       className="text-lg font-bold uppercase"
                       style={{
                         fontFamily: 'var(--font-display)',
-                        color: 'var(--ink)',
+                        color: 'var(--fs-ink)',
                         letterSpacing: '0.02em',
                       }}
                     >
@@ -100,7 +100,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                       className="text-xs mt-0.5"
                       style={{
                         fontFamily: 'var(--font-mono)',
-                        color: 'var(--stone)',
+                        color: 'var(--fs-muted)',
                         letterSpacing: '0.05em',
                       }}
                     >
@@ -108,7 +108,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                     </div>
                   </div>
                   {/* Arrow */}
-                  <span className="text-navy opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--fs-primary)' }}>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                       <path
                         d="M8 4L14 10L8 16"
@@ -138,7 +138,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
               fontWeight: 600,
               letterSpacing: '0.18em',
               textTransform: 'uppercase',
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
             }}
           >
             סגור

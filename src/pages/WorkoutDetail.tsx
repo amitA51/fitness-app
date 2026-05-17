@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   Clock,
   Dumbbell,
+  Sparkles,
   Star,
   Target,
   TrendingDown,
@@ -80,16 +81,16 @@ function formatVolume(volume: number): string {
 
 function getMuscleGroupColor(muscle: string): { bg: string; text: string; border: string } {
   const colors: Record<string, { bg: string; text: string; border: string }> = {
-    Chest: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/30' },
-    Back: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30' },
-    Shoulders: { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/30' },
-    Legs: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30' },
-    Triceps: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30' },
-    Biceps: { bg: 'bg-pink-500/10', text: 'text-pink-400', border: 'border-pink-500/30' },
-    Core: { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/30' },
-    Cardio: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30' },
+    Chest: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
+    Back: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
+    Shoulders: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
+    Legs: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
+    Triceps: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
+    Biceps: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
+    Core: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
+    Cardio: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
   };
-  return colors[muscle] || { bg: 'bg-white/5', text: 'text-white/70', border: 'border-white/20' };
+  return colors[muscle] || { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' };
 }
 
 function calculateTotalSets(exercises: WorkoutExercise[]): number {
@@ -128,28 +129,28 @@ function getBestSet(sets: WorkoutSet[]): { weight: number; reps: number; volume:
 
 function DetailSkeleton() {
   return (
-    <div className="bg-black animate-pulse">
+    <div style={{ background: 'var(--fs-bg)', animation: 'pulse 1.5s ease-in-out infinite' }}>
       <div className="px-4 pt-6">
         {/* Header skeleton */}
         <div className="flex items-center gap-4 mb-8">
-          <div className="w-10 h-10 rounded-full bg-white/10" />
+          <div className="w-10 h-10 rounded-full" style={{ background: 'var(--fs-surface-2)' }} />
           <div className="flex-1">
-            <div className="h-6 w-40 bg-white/10 rounded-lg mb-2" />
-            <div className="h-4 w-24 bg-white/10 rounded" />
+            <div className="h-6 w-40 rounded-lg mb-2" style={{ background: 'var(--fs-surface-2)' }} />
+            <div className="h-4 w-24 rounded" style={{ background: 'var(--fs-surface-2)' }} />
           </div>
         </div>
 
         {/* Stats skeleton */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-[var(--color-surface)] rounded-[20px] p-4 h-24" />
+            <div key={i} style={{ background: 'var(--fs-surface)', borderRadius: '22px 16px 22px 16px', padding: 16, height: 96 }} />
           ))}
         </div>
 
         {/* Exercise cards skeleton */}
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-[var(--color-surface)] rounded-[20px] p-4 h-32" />
+            <div key={i} style={{ background: 'var(--fs-surface)', borderRadius: '22px 16px 22px 16px', padding: 16, height: 128 }} />
           ))}
         </div>
       </div>
@@ -177,23 +178,60 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08, duration: 0.3 }}
-      className={`bg-[var(--color-surface)] rounded-[20px] border ${muscleColor.border} overflow-hidden`}
+      style={{
+        background: 'var(--fs-surface)',
+        borderRadius: '22px 16px 22px 16px',
+        border: '1px solid var(--color-border)',
+        boxShadow: 'var(--shadow-card)',
+        overflow: 'hidden',
+        position: 'relative',
+      }}
     >
+      {/* Accent side bar */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 4,
+          background: 'var(--fs-accent)',
+          borderTopLeftRadius: '22px',
+          borderBottomLeftRadius: '16px',
+        }}
+      />
+
       {/* Exercise Header */}
-      <div className="p-4 pb-3">
+      <div style={{ padding: '14px 16px 14px 20px' }}>
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
-            <h3 className="font-barlow-condensed font-bold text-[18px] text-white leading-tight truncate">
+            <h3
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 16,
+                color: 'var(--fs-ink)',
+                letterSpacing: '0.02em',
+                lineHeight: 1.2,
+              }}
+            >
               {exercise.exerciseName || exercise.name || 'תרגיל ללא שם'}
             </h3>
             <div className="flex items-center gap-2 mt-1">
               <span
-                className={`text-[11px] font-barlow px-2 py-0.5 rounded-full ${muscleColor.bg} ${muscleColor.text}`}
+                style={{
+                  fontSize: 10,
+                  fontFamily: 'var(--font-mono)',
+                  padding: '2px 8px',
+                  borderRadius: 9999,
+                  background: muscleColor.bg,
+                  color: muscleColor.text,
+                }}
               >
                 {exercise.targetMuscle || exercise.muscleGroup || 'שריר'}
               </span>
               {exercise.tempo && (
-                <span className="text-[11px] font-barlow text-[var(--color-text-secondary)]">
+                <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
                   טמפו: {exercise.tempo}
                 </span>
               )}
@@ -201,8 +239,8 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
           </div>
 
           {/* Volume badge */}
-          <div className="bg-white/5 rounded-lg px-2.5 py-1">
-            <span className="text-[13px] font-barlow font-bold text-white">
+          <div style={{ background: 'var(--fs-bg)', borderRadius: 8, padding: '4px 10px' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--fs-ink)' }}>
               {formatVolume(totalVolume)} ק"ג
             </span>
           </div>
@@ -210,10 +248,22 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
 
         {/* Best Set Highlight */}
         {bestSet && (
-          <div className={`flex items-center gap-2 p-2.5 rounded-xl ${muscleColor.bg} mb-3`}>
-            <Trophy size={14} className={muscleColor.text} />
-            <span className={`text-[12px] font-barlow ${muscleColor.text}`}>הסט הטוב ביותר:</span>
-            <span className="text-[13px] font-barlow font-bold text-white mr-auto">
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 12px',
+              borderRadius: 12,
+              background: muscleColor.bg,
+              marginBottom: 12,
+            }}
+          >
+            <Trophy size={14} style={{ color: muscleColor.text }} />
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: muscleColor.text }}>
+              הסט הטוב ביותר:
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--fs-ink)', marginRight: 'auto' }}>
               {bestSet.weight} ק"ג × {bestSet.reps} חזרות
             </span>
           </div>
@@ -221,21 +271,32 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
 
         {/* Sets Grid */}
         <div className="space-y-2">
-          <div className="flex items-center text-[11px] font-barlow text-[var(--color-text-secondary)] px-1">
+          <div
+            className="flex items-center"
+            style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)', padding: '0 4px' }}
+          >
             <span className="flex-1">סט</span>
-            <span className="w-16 text-center">משקל</span>
-            <span className="w-16 text-center">חזרות</span>
-            <span className="w-16 text-center">נפח</span>
+            <span style={{ width: 64, textAlign: 'center' }}>משקל</span>
+            <span style={{ width: 64, textAlign: 'center' }}>חזרות</span>
+            <span style={{ width: 64, textAlign: 'center' }}>נפח</span>
           </div>
 
           {completedSets.map((set, setIndex) => (
-            <div key={set.id || setIndex} className="flex items-center text-[13px] font-barlow">
-              <span className="flex-1 text-[var(--color-text-secondary)]">
+            <div
+              key={set.id || setIndex}
+              className="flex items-center"
+              style={{ fontSize: 12, fontFamily: 'var(--font-mono)' }}
+            >
+              <span className="flex-1" style={{ color: 'var(--fs-muted)' }}>
                 {set.setNumber || setIndex + 1}
               </span>
-              <span className="w-16 text-center text-white font-medium">{set.weight || 0} ק"ג</span>
-              <span className="w-16 text-center text-white font-medium">{set.reps || 0}</span>
-              <span className="w-16 text-center text-[var(--color-text-secondary)]">
+              <span style={{ width: 64, textAlign: 'center', color: 'var(--fs-ink)', fontWeight: 500 }}>
+                {set.weight || 0} ק"ג
+              </span>
+              <span style={{ width: 64, textAlign: 'center', color: 'var(--fs-ink)', fontWeight: 500 }}>
+                {set.reps || 0}
+              </span>
+              <span style={{ width: 64, textAlign: 'center', color: 'var(--fs-muted)' }}>
                 {((set.weight || 0) * (set.reps || 0)).toLocaleString()}
               </span>
             </div>
@@ -260,18 +321,70 @@ interface StatItemProps {
 
 function StatItem({ icon, label, value, subValue, trend }: StatItemProps) {
   return (
-    <div className="flex-1 bg-[var(--color-surface)] rounded-[16px] p-3 flex flex-col items-center text-center min-w-0">
-      <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center mb-2">
+    <div
+      style={{
+        flex: 1,
+        background: 'var(--fs-surface)',
+        borderRadius: '22px 16px 22px 16px',
+        border: '1px solid var(--color-border)',
+        boxShadow: 'var(--shadow-card)',
+        padding: 12,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        minWidth: 0,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 3,
+          background: 'var(--fs-accent)',
+          borderTopLeftRadius: '22px',
+          borderBottomLeftRadius: '16px',
+        }}
+      />
+      <div
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: '50%',
+          background: 'var(--fs-bg)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 8,
+        }}
+      >
         {icon}
       </div>
-      <p className="text-[18px] font-bold text-white leading-none flex items-center gap-1">
+      <p
+        style={{
+          fontSize: 18,
+          fontWeight: 700,
+          fontFamily: 'var(--font-mono)',
+          color: 'var(--fs-ink)',
+          lineHeight: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+        }}
+      >
         {value}
-        {trend === 'up' && <TrendingUp size={12} className="text-green-400" />}
-        {trend === 'down' && <TrendingDown size={12} className="text-red-400" />}
+        {trend === 'up' && <TrendingUp size={12} style={{ color: '#2F8F58' }} />}
+        {trend === 'down' && <TrendingDown size={12} style={{ color: '#B83228' }} />}
       </p>
-      <p className="text-[10px] text-[var(--color-text-secondary)] mt-1 leading-none">{label}</p>
+      <p style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)', marginTop: 4, lineHeight: 1 }}>
+        {label}
+      </p>
       {subValue && (
-        <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">{subValue}</p>
+        <p style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)', marginTop: 2 }}>{subValue}</p>
       )}
     </div>
   );
@@ -309,16 +422,16 @@ function MuscleBreakdown({ exercises }: MuscleBreakdownProps) {
 
   const getColor = (index: number): string => {
     const colors = [
-      'bg-red-500',
-      'bg-blue-500',
-      'bg-green-500',
-      'bg-purple-500',
-      'bg-orange-500',
-      'bg-pink-500',
-      'bg-yellow-500',
-      'bg-cyan-500',
+      'var(--fs-accent)',
+      'var(--fs-accent-2)',
+      'var(--fs-signal)',
+      '#43C7A5',
+      '#2C7F91',
+      '#E2FB70',
+      '#16292D',
+      '#60706F',
     ];
-    return colors[index % colors.length] ?? 'bg-gray-500';
+    return colors[index % colors.length] ?? 'var(--fs-muted)';
   };
 
   return (
@@ -326,10 +439,42 @@ function MuscleBreakdown({ exercises }: MuscleBreakdownProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="bg-[var(--color-surface)] rounded-[20px] p-4 border border-white/[0.06] mb-6"
+      style={{
+        background: 'var(--fs-surface)',
+        borderRadius: '22px 16px 22px 16px',
+        border: '1px solid var(--color-border)',
+        boxShadow: 'var(--shadow-card)',
+        padding: 16,
+        marginBottom: 24,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
     >
-      <h3 className="font-barlow-condensed font-bold text-[16px] text-white mb-4 flex items-center gap-2">
-        <Activity size={16} className="text-primary" />
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 4,
+          background: 'var(--fs-accent)',
+          borderTopLeftRadius: '22px',
+          borderBottomLeftRadius: '16px',
+        }}
+      />
+      <h3
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontWeight: 800,
+          fontSize: 14,
+          color: 'var(--fs-ink)',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <Activity size={14} style={{ color: 'var(--fs-accent)' }} />
         פילוח שרירים
       </h3>
 
@@ -340,17 +485,17 @@ function MuscleBreakdown({ exercises }: MuscleBreakdownProps) {
           return (
             <div key={muscle}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[12px] font-barlow text-white">{muscle}</span>
-                <span className="text-[11px] font-barlow text-[var(--color-text-secondary)]">
+                <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--fs-ink)' }}>{muscle}</span>
+                <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
                   {stats.sets} סטים | {formatVolume(stats.volume)} ק"ג
                 </span>
               </div>
-              <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+              <div style={{ height: 6, background: 'var(--fs-surface-2)', borderRadius: 9999, overflow: 'hidden' }}>
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${percentage}%` }}
                   transition={{ delay: 0.3 + index * 0.05, duration: 0.5 }}
-                  className={`h-full rounded-full ${getColor(index)}`}
+                  style={{ height: '100%', borderRadius: 9999, backgroundColor: getColor(index) }}
                 />
               </div>
             </div>
@@ -459,20 +604,42 @@ export default function WorkoutDetail() {
 
   if (error || !session) {
     return (
-      <div className="bg-black flex flex-col items-center justify-center p-6">
-        <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
-          <Dumbbell size={36} className="text-[#48484A]" />
+      <div style={{ background: 'var(--fs-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, minHeight: '100vh' }}>
+        <div
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            background: 'var(--fs-surface-2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 24,
+          }}
+        >
+          <Dumbbell size={36} style={{ color: 'var(--fs-muted)' }} />
         </div>
-        <h2 className="font-barlow-condensed font-bold text-[22px] text-white mb-2">
+        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22, color: 'var(--fs-ink)', marginBottom: 8 }}>
           {error || 'האימון לא נמצא'}
         </h2>
-        <p className="text-[14px] text-[var(--color-text-secondary)] mb-6 text-center">
+        <p style={{ fontSize: 14, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)', marginBottom: 24, textAlign: 'center' }}>
           לא ניתן לטעון את פרטי האימון
         </p>
         <button
           type="button"
           onClick={() => navigate('/history')}
-          className="min-h-[48px] px-6 py-3 bg-primary text-white rounded-[14px] font-barlow font-semibold text-[15px]"
+          style={{
+            minHeight: 48,
+            padding: '12px 24px',
+            background: 'var(--fs-primary)',
+            color: 'var(--fs-signal)',
+            borderRadius: 14,
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 600,
+            fontSize: 14,
+            border: 'none',
+            cursor: 'pointer',
+          }}
         >
           חזרה להיסטוריה
         </button>
@@ -485,29 +652,49 @@ export default function WorkoutDetail() {
 
   return (
     <div
-      className="bg-black pb-[max(100px,calc(env(safe-area-inset-bottom, 0px) + 100px))]"
+      className="pb-[max(100px,calc(env(safe-area-inset-bottom, 0px) + 100px))]"
+      style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-black/90 backdrop-blur-lg border-b border-white/5 pt-[env(safe-area-inset-top)]">
+      <div
+        className="sticky top-0 z-10"
+        style={{
+          background: 'var(--fs-bg)',
+          borderBottom: '1px solid var(--color-border)',
+          paddingTop: 'env(safe-area-inset-top)',
+        }}
+      >
         <div className="flex items-center gap-3 px-4 py-4">
           <button
             type="button"
             onClick={() => navigate('/history')}
-            className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center active:scale-95 transition-transform"
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--color-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
           >
-            <ChevronLeft size={20} className="text-white" />
+            <ChevronLeft size={20} style={{ color: 'var(--fs-ink)' }} />
           </button>
           <div className="flex-1">
-            <h1 className="font-barlow-condensed font-bold text-[20px] text-white">פרטי אימון</h1>
-            <p className="text-[12px] text-[var(--color-text-secondary)]">
+            <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: 'var(--fs-ink)' }}>
+              פרטי אימון
+            </h1>
+            <p style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
               {formatDate(session.date || session.startTime)}
             </p>
           </div>
           {session.rating && (
-            <div className="flex items-center gap-1 text-yellow-400">
+            <div className="flex items-center gap-1" style={{ color: 'var(--fs-signal)' }}>
               <Star size={16} fill="currentColor" />
-              <span className="text-[14px] font-barlow font-bold">{session.rating}</span>
+              <span style={{ fontSize: 14, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{session.rating}</span>
             </div>
           )}
         </div>
@@ -518,28 +705,49 @@ export default function WorkoutDetail() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-[var(--color-surface)] rounded-[20px] p-4 mb-4 border border-white/[0.06]"
+          style={{
+            background: 'var(--fs-surface)',
+            borderRadius: '22px 16px 22px 16px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-card)',
+            padding: 16,
+            marginBottom: 16,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
         >
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 4,
+              background: 'var(--fs-accent)',
+              borderTopLeftRadius: '22px',
+              borderBottomLeftRadius: '16px',
+            }}
+          />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Clock size={16} className="text-blue-400" />
-              <span className="text-[14px] font-barlow text-[var(--color-text-secondary)]">
+              <Clock size={14} style={{ color: 'var(--fs-accent-2)' }} />
+              <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
                 שעת התחלה
               </span>
             </div>
-            <span className="text-[14px] font-barlow font-semibold text-white">
+            <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--fs-ink)' }}>
               {formatTime(session.startTime)}
             </span>
           </div>
-          <div className="h-px bg-white/5 my-3" />
+          <div style={{ height: 1, background: 'var(--color-separator)', margin: '8px 0' }} />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Clock size={16} className="text-green-400" />
-              <span className="text-[14px] font-barlow text-[var(--color-text-secondary)]">
+              <Clock size={14} style={{ color: 'var(--fs-accent)' }} />
+              <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
                 שעת סיום
               </span>
             </div>
-            <span className="text-[14px] font-barlow font-semibold text-white">
+            <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--fs-ink)' }}>
               {session.endTime ? formatTime(session.endTime) : '—'}
             </span>
           </div>
@@ -553,17 +761,17 @@ export default function WorkoutDetail() {
           className="grid grid-cols-2 gap-3 mb-6"
         >
           <StatItem
-            icon={<Clock size={16} className="text-blue-400" />}
+            icon={<Clock size={14} style={{ color: 'var(--fs-accent-2)' }} />}
             label="משך האימון"
             value={formatDuration(session.duration)}
           />
           <StatItem
-            icon={<Dumbbell size={16} className="text-green-400" />}
+            icon={<Dumbbell size={14} style={{ color: 'var(--fs-accent)' }} />}
             label="נפח כולל"
             value={`${formatVolume(session.totalVolume)} ק"ג`}
           />
           <StatItem
-            icon={<TrendingUp size={16} className="text-purple-400" />}
+            icon={<TrendingUp size={14} style={{ color: 'var(--fs-signal)' }} />}
             label="סטים"
             value={totalSets.toString()}
             subValue={`${totalReps} חזרות`}
@@ -576,11 +784,20 @@ export default function WorkoutDetail() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/20 rounded-[16px] mb-6"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: 8,
+              background: 'var(--color-primary-subtle)',
+              border: '1px solid var(--color-primary-subtle)',
+              borderRadius: 16,
+              marginBottom: 24,
+            }}
           >
-            <Target size={16} className="text-primary" />
-            <span className="text-[13px] font-barlow text-primary">סוג אימון:</span>
-            <span className="text-[13px] font-barlow font-semibold text-white mr-auto">
+            <Target size={14} style={{ color: 'var(--fs-primary)' }} />
+            <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-primary)' }}>סוג אימון:</span>
+            <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--fs-ink)', marginRight: 'auto' }}>
               {session.goalType === 'strength'
                 ? 'כוח'
                 : session.goalType === 'hypertrophy'
@@ -602,12 +819,28 @@ export default function WorkoutDetail() {
 
         {/* Exercises Section */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-barlow-condensed font-bold text-[20px] text-white flex items-center gap-2">
-              <BarChart2 size={18} className="text-primary" />
+          <div
+            className="flex items-center justify-between mb-4"
+            style={{
+              borderBottom: '1px solid var(--color-border)',
+              paddingBottom: 8,
+            }}
+          >
+            <h2
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 18,
+                color: 'var(--fs-ink)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <BarChart2 size={16} style={{ color: 'var(--fs-accent)' }} />
               תרגילים ({session.exercises.length})
             </h2>
-            <span className="text-[12px] font-barlow text-[var(--color-text-secondary)]">
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
               {totalSets} סטים
             </span>
           </div>
@@ -619,18 +852,101 @@ export default function WorkoutDetail() {
           </div>
         </div>
 
+        {/* Next time recommendation */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          style={{
+            background: 'var(--fs-surface)',
+            borderRadius: '22px 16px 22px 16px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-card)',
+            padding: 16,
+            marginBottom: 24,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 4,
+              background: 'var(--fs-signal)',
+              borderTopLeftRadius: '22px',
+              borderBottomLeftRadius: '16px',
+            }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+            <Sparkles size={12} style={{ color: 'var(--fs-signal)' }} />
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 8,
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color: 'var(--fs-muted)',
+              }}
+            >
+              תובנה אוטומטית
+            </span>
+          </div>
+          <p
+            style={{
+              fontFamily: 'var(--font-hebrew)',
+              fontSize: 13,
+              lineHeight: 1.6,
+              color: 'var(--fs-ink)',
+            }}
+          >
+            {previousSession
+              ? `האימון הקודם היה עם נפח של ${formatVolume(previousSession.totalVolume)} ק"ג. ${
+                  session.totalVolume > previousSession.totalVolume
+                    ? `שיפור של ${formatVolume(session.totalVolume - previousSession.totalVolume)} ק"ג!`
+                    : 'נסה להוסיף סט או להעלות משקל בפעם הבאה.'
+                }`
+              : `המשך לעקוב אחר ההתקדמות שלך לאורך זמן.`}
+          </p>
+        </motion.div>
+
         {/* Notes Section */}
         {session.notes && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-[var(--color-surface)] rounded-[20px] p-4 border border-white/[0.06] mb-6"
+            transition={{ delay: 0.35 }}
+            style={{
+              background: 'var(--fs-surface)',
+              borderRadius: '22px 16px 22px 16px',
+              border: '1px solid var(--color-border)',
+              boxShadow: 'var(--shadow-card)',
+              padding: 16,
+              marginBottom: 24,
+              position: 'relative',
+              overflow: 'hidden',
+            }}
           >
-            <h3 className="font-barlow font-semibold text-[14px] text-[var(--color-text-secondary)] mb-2">
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 4,
+                background: 'var(--fs-accent)',
+                borderTopLeftRadius: '22px',
+                borderBottomLeftRadius: '16px',
+              }}
+            />
+            <h3 style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)', marginBottom: 8 }}>
               הערות
             </h3>
-            <p className="text-[14px] font-barlow text-white leading-relaxed">{session.notes}</p>
+            <p style={{ fontSize: 13, fontFamily: 'var(--font-hebrew)', color: 'var(--fs-ink)', lineHeight: 1.6 }}>
+              {session.notes}
+            </p>
           </motion.div>
         )}
 
@@ -638,15 +954,31 @@ export default function WorkoutDetail() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
+          transition={{ delay: 0.4 }}
           className="flex gap-3"
         >
           <button
             type="button"
             onClick={() => navigate('/history')}
-            className="flex-1 min-h-[48px] py-3 bg-white/5 text-white rounded-[14px] font-barlow font-semibold text-[15px] flex items-center justify-center gap-2"
+            style={{
+              flex: 1,
+              minHeight: 48,
+              padding: '12px 24px',
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '22px 16px 22px 16px',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
+              fontSize: 13,
+              color: 'var(--fs-ink)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              cursor: 'pointer',
+            }}
           >
-            <ArrowRight size={16} />
+            <ArrowRight size={14} />
             חזרה להיסטוריה
           </button>
         </motion.div>

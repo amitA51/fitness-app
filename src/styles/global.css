@@ -27,6 +27,12 @@ html {
 
 body {
   background-color: var(--color-background);
+  background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0) 44%),
+              repeating-linear-gradient(90deg, rgba(17,24,22,0.045) 0 1px, transparent 1px 28px),
+              repeating-linear-gradient(0deg, rgba(17,24,22,0.035) 0 1px, transparent 1px 28px),
+              radial-gradient(circle at 86% 10%, rgba(67,199,165,0.13), transparent 34%),
+              radial-gradient(circle at 12% 18%, rgba(181,230,59,0.12), transparent 30%),
+              var(--fs-bg);
   color: var(--color-text);
   min-height: 100vh;
   min-height: 100dvh;
@@ -53,8 +59,8 @@ body {
   position: absolute;
   top: -100%;
   left: 0;
-  background: var(--navy);
-  color: var(--mustard);
+  background: var(--fs-primary);
+  color: var(--fs-signal);
   padding: 0.5rem 1rem;
   z-index: 110;
   font-family: var(--font-display);
@@ -103,32 +109,32 @@ body {
 @layer components {
   /* Card — Default */
   .card {
-    background-color: var(--bone-deep);
-    border: 1px solid var(--bone-deep);
-    border-radius: 0;
+    background-color: var(--fs-surface-2);
+    border: 1px solid var(--fs-surface-2);
+    border-radius: 18px;
     padding: var(--space-5);
   }
 
   /* Card — Outlined (editorial) */
   .card-outlined {
-    background-color: var(--bone);
-    border: 2px solid var(--navy);
-    border-radius: 0;
+    background-color: var(--fs-surface);
+    border: 2px solid var(--fs-primary);
+    border-radius: 18px;
     padding: var(--space-5);
   }
 
   /* Card — Interactive */
   .card-interactive {
-    background-color: var(--bone);
-    border: 2px solid var(--navy);
-    border-radius: 0;
+    background-color: var(--fs-surface);
+    border: 2px solid var(--fs-primary);
+    border-radius: 18px;
     padding: var(--space-5);
     cursor: pointer;
     transition: background-color var(--duration-base) ease, transform var(--duration-fast) ease;
   }
 
   .card-interactive:hover {
-    background-color: var(--bone-deep);
+    background-color: var(--fs-surface-2);
   }
 
   .card-interactive:active {
@@ -137,8 +143,8 @@ body {
 
   /* Button — Primary (navy) */
   .btn-primary {
-    background-color: var(--navy);
-    color: var(--mustard);
+    background-color: var(--fs-primary);
+    color: var(--fs-accent);
     border: none;
     border-radius: 0;
     padding: 22px 24px;
@@ -153,7 +159,7 @@ body {
   }
 
   .btn-primary:hover {
-    background-color: var(--navy-deep);
+    background-color: #0D1A1C;
   }
 
   .btn-primary:active {
@@ -168,9 +174,9 @@ body {
 
   /* Button — Secondary (bone) */
   .btn-secondary {
-    background-color: var(--bone);
-    color: var(--navy);
-    border: 2px solid var(--navy);
+    background-color: var(--fs-surface);
+    color: var(--fs-primary);
+    border: 2px solid var(--fs-primary);
     border-radius: 0;
     padding: 22px 24px;
     font-family: var(--font-display);
@@ -184,7 +190,7 @@ body {
   }
 
   .btn-secondary:hover {
-    background-color: var(--bone-deep);
+    background-color: var(--fs-surface-2);
   }
 
   .btn-secondary:active {
@@ -195,10 +201,10 @@ body {
   .input {
     width: 100%;
     background-color: var(--color-surface-input);
-    border: 1px solid var(--bone-deep);
+    border: 1px solid var(--fs-surface-2);
     border-radius: 0;
     padding: 12px 16px;
-    color: var(--ink);
+    color: var(--fs-ink);
     font-family: var(--font-body);
     font-size: 0.9375rem;
     outline: none;
@@ -207,11 +213,11 @@ body {
   }
 
   .input::placeholder {
-    color: var(--stone-light);
+    color: #93A09E;
   }
 
   .input:focus {
-    border-color: var(--navy);
+    border-color: var(--fs-primary);
     box-shadow: 0 0 0 3px var(--color-secondary-glow);
   }
 
@@ -251,23 +257,25 @@ body {
   /* Divider */
   .divider {
     height: 1px;
-    background-color: var(--bone-deep);
+    background-color: var(--fs-surface-2);
     width: 100%;
   }
 
-  /* Chip / Tag */
+  /* Chip / Tag — Preview spec: rounded pill, currentColor border */
   .chip {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.25rem;
-    padding: 0.375rem 0.75rem;
-    background-color: var(--bone);
-    border: 2px solid var(--navy);
-    border-radius: 0;
+    min-height: 28px;
+    padding: 0 9px;
+    background-color: transparent;
+    border: 1px solid currentColor;
+    border-radius: 999px;
     font-family: var(--font-mono);
-    font-size: 0.75rem;
-    font-weight: var(--font-medium);
-    color: var(--navy);
+    font-size: 11px;
+    font-weight: var(--font-bold);
+    color: var(--fs-primary);
     letter-spacing: 0.04em;
   }
 
@@ -278,7 +286,7 @@ body {
     font-family: var(--font-mono);
     font-size: 0.75rem;
     font-weight: var(--font-semibold);
-    color: var(--stone);
+    color: var(--fs-muted);
     background: transparent;
     border: none;
     cursor: pointer;
@@ -289,18 +297,18 @@ body {
   }
 
   .tab-item:hover {
-    background-color: var(--bone-deep);
+    background-color: var(--fs-surface-2);
   }
 
   .tab-item.active {
-    background-color: var(--navy);
-    color: var(--mustard);
+    background-color: var(--fs-primary);
+    color: var(--fs-accent);
   }
 
   /* Masthead — navy block */
   .masthead {
-    background: var(--navy);
-    color: var(--bone);
+    background: var(--fs-primary);
+    color: var(--fs-bg);
     padding: 20px 24px;
     /* padding handled inline with calc(max()) for safe-area-inset support */
     /* On notched devices, inline style adds extra top/left padding */
@@ -310,7 +318,7 @@ body {
     font-family: var(--font-mono);
     font-size: 10px;
     letter-spacing: 0.22em;
-    color: var(--mustard);
+    color: var(--fs-accent);
     text-transform: uppercase;
   }
 
@@ -320,13 +328,13 @@ body {
     line-height: 0.9;
     letter-spacing: -0.02em;
     text-transform: uppercase;
-    color: var(--bone);
+    color: var(--fs-bg);
   }
 
   /* Chapter Break Strip */
   .chapter-break {
-    background: var(--navy);
-    color: var(--bone);
+    background: var(--fs-primary);
+    color: var(--fs-bg);
     padding: 16px 20px;
     display: flex;
     align-items: center;
@@ -337,7 +345,7 @@ body {
     font-family: var(--font-mono);
     font-size: 10px;
     letter-spacing: 0.28em;
-    color: var(--mustard);
+    color: var(--fs-accent);
     text-transform: uppercase;
   }
 
@@ -347,13 +355,13 @@ body {
     font-size: 20px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--bone);
+    color: var(--fs-bg);
   }
 
   /* Mustard Block — hero stat */
   .block-hero {
-    background: var(--mustard);
-    color: var(--navy);
+    background: var(--fs-accent);
+    color: var(--fs-primary);
     padding: 28px 22px;
     position: relative;
   }
@@ -388,8 +396,8 @@ body {
     position: absolute;
     top: 0;
     right: 0;
-    background: var(--navy);
-    color: var(--mustard);
+    background: var(--fs-primary);
+    color: var(--fs-accent);
     font-family: var(--font-mono);
     font-size: 10px;
     letter-spacing: 0.2em;
@@ -406,21 +414,21 @@ body {
   .data-strip {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    border: 2px solid var(--navy);
+    border: 2px solid var(--fs-primary);
   }
 
   .data-strip > div {
     padding: 18px 16px;
-    background: var(--bone);
+    background: var(--fs-surface);
   }
 
   .data-strip > div + div {
-    border-left: 2px solid var(--navy);
+    border-left: 2px solid var(--fs-primary);
   }
 
   [dir="rtl"] .data-strip > div + div {
     border-left: none;
-    border-right: 2px solid var(--navy);
+    border-right: 2px solid var(--fs-primary);
   }
 
   .data-strip .val {
@@ -428,28 +436,28 @@ body {
     font-weight: 800;
     font-size: 44px;
     line-height: 0.9;
-    color: var(--ink);
+    color: var(--fs-ink);
     letter-spacing: -0.02em;
     margin-bottom: 4px;
   }
 
   .data-strip .val em {
     font-style: normal;
-    color: var(--mustard);
+    color: var(--fs-accent);
   }
 
   .data-strip .lbl {
     font-family: var(--font-mono);
     font-size: 10px;
     letter-spacing: 0.22em;
-    color: var(--stone);
+    color: var(--fs-muted);
     text-transform: uppercase;
   }
 
   /* Skill Bar */
   .skill-row {
     padding: 16px 0;
-    border-bottom: 1px solid var(--bone-deep);
+    border-bottom: 1px solid var(--fs-surface-2);
   }
 
   .skill-row:last-child {
@@ -469,25 +477,25 @@ body {
     font-size: 20px;
     text-transform: uppercase;
     letter-spacing: 0;
-    color: var(--ink);
+    color: var(--fs-ink);
   }
 
   .skill-pct {
     font-family: var(--font-mono);
     font-size: 14px;
     font-weight: 500;
-    color: var(--navy);
+    color: var(--fs-primary);
   }
 
   .skill-bar {
     height: 8px;
-    background: var(--bone-deep);
+    background: var(--fs-surface-2);
     position: relative;
   }
 
   .skill-fill {
     height: 100%;
-    background: var(--mustard);
+    background: var(--fs-accent);
     transition: width 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 
@@ -498,7 +506,7 @@ body {
     gap: var(--space-4);
     align-items: baseline;
     padding-bottom: var(--space-4);
-    border-bottom: 3px solid var(--navy);
+    border-bottom: 3px solid var(--fs-primary);
     margin-bottom: var(--space-5);
   }
 
@@ -507,7 +515,7 @@ body {
     font-weight: 900;
     font-size: 56px;
     line-height: 0.85;
-    color: var(--navy);
+    color: var(--fs-primary);
     letter-spacing: -0.02em;
   }
 
@@ -516,7 +524,7 @@ body {
     font-size: 10px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--stone);
+    color: var(--fs-muted);
   }
 
   .chapter-head .chapter-title {
@@ -525,7 +533,7 @@ body {
     font-size: 24px;
     line-height: 0.95;
     letter-spacing: -0.01em;
-    color: var(--ink);
+    color: var(--fs-ink);
     text-transform: uppercase;
     margin-top: 4px;
   }
@@ -541,8 +549,8 @@ body {
 
   /* AW Masthead — top bar with exercise + set counter */
   .aw-masthead {
-    background: var(--navy);
-    color: var(--bone);
+    background: var(--fs-primary);
+    color: var(--fs-bg);
     padding: 12px 20px;
     display: flex;
     justify-content: space-between;
@@ -563,15 +571,15 @@ body {
     font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.18em;
-    color: var(--mustard);
+    color: var(--fs-accent);
     text-transform: uppercase;
     white-space: nowrap;
   }
 
   /* AW Hero — massive weight number on navy, flexes to fill available space */
   .aw-hero {
-    background: var(--navy);
-    color: var(--bone);
+    background: var(--fs-primary);
+    color: var(--fs-bg);
     text-align: center;
     padding: 20px 20px;
     position: relative;
@@ -590,7 +598,7 @@ body {
     font-size: clamp(80px, 22vmin, 140px);
     line-height: 0.85;
     letter-spacing: -0.04em;
-    color: var(--bone);
+    color: var(--fs-bg);
     font-variant-numeric: tabular-nums;
   }
 
@@ -609,8 +617,8 @@ body {
     font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.16em;
-    background: var(--mustard);
-    color: var(--navy);
+    background: var(--fs-accent);
+    color: var(--fs-primary);
     padding: 3px 8px;
     text-transform: uppercase;
     font-weight: 500;
@@ -630,7 +638,7 @@ body {
     font-family: var(--font-mono);
     font-size: 10px;
     letter-spacing: 0.28em;
-    color: var(--stone);
+    color: var(--fs-muted);
     text-transform: uppercase;
     margin-bottom: 12px;
     font-weight: var(--font-semibold);
@@ -642,7 +650,7 @@ body {
     grid-template-columns: 36px 1fr auto;
     gap: 12px;
     padding: 12px 0;
-    border-bottom: 1px solid var(--bone-deep);
+    border-bottom: 1px solid var(--fs-surface-2);
     align-items: center;
     font-family: var(--font-mono);
     font-size: 13px;
@@ -656,17 +664,17 @@ body {
     font-family: var(--font-display);
     font-weight: 800;
     font-size: 24px;
-    color: var(--navy);
+    color: var(--fs-primary);
     line-height: 1;
   }
 
   .set-row-annual .val {
-    color: var(--ink);
+    color: var(--fs-ink);
     letter-spacing: 0.04em;
   }
 
   .set-row-annual .mark {
-    color: var(--mustard);
+    color: var(--fs-accent);
     font-size: 18px;
     font-weight: 700;
   }
@@ -674,18 +682,18 @@ body {
   /* Set Row — done */
   .set-row-annual.done .num,
   .set-row-annual.done .val {
-    color: var(--stone);
+    color: var(--fs-muted);
   }
 
   /* Set Row — future */
   .set-row-annual.future .num,
   .set-row-annual.future .val {
-    color: var(--bone-deep);
+    color: var(--fs-surface-2);
   }
 
-  /* Set Row — active (mustard band) */
+  /* Set Row — active (accent band) */
   .set-row-annual.active {
-    background: var(--mustard);
+    background: var(--fs-accent);
     margin: 0 -20px;
     padding-left: 20px;
     padding-right: 20px;
@@ -694,12 +702,79 @@ body {
   .set-row-annual.active .num,
   .set-row-annual.active .val,
   .set-row-annual.active .mark {
-    color: var(--navy);
+    color: var(--fs-primary);
   }
 
   .set-row-annual.active .val {
     font-weight: 600;
   }
+}
+
+/* ──── FRESH STEEL CARD ──── */
+.card-fs {
+  background: var(--fs-surface);
+  border: 1px solid var(--fs-surface-2);
+  border-radius: var(--radius-asymmetric, 22px 16px 22px 16px);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-fs::before {
+  content: "";
+  position: absolute;
+  inset: 9px auto 9px 0;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--fs-accent);
+  opacity: 0;
+}
+
+.card-fs.accent::before {
+  opacity: 1;
+}
+
+/* ──── FRESH STEEL PANEL ──── */
+.panel {
+  position: relative;
+  overflow: hidden;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-asymmetric, 22px 16px 22px 16px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.58), transparent 48%), var(--fs-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 9px auto 9px 0;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--fs-accent);
+  opacity: 0.85;
+}
+
+.panel::after {
+  content: "";
+  position: absolute;
+  inset: 0 14px auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.1;
 }
 
 /* ============================================================================
@@ -741,7 +816,7 @@ body {
   }
 
   .focus-ring:focus-visible {
-    outline: 2px solid var(--mustard);
+    outline: 2px solid var(--fs-accent);
     outline-offset: 2px;
   }
 
@@ -752,7 +827,7 @@ body {
   }
 
   .text-gradient {
-    background: linear-gradient(135deg, var(--navy), var(--navy-light));
+    background: linear-gradient(135deg, var(--fs-primary), #1C363B);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

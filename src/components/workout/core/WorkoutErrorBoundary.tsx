@@ -169,9 +169,9 @@ class WorkoutErrorBoundary extends Component<Props, State> {
               onClick={this.handleRetry}
               className="
                                 w-full py-4 rounded-2xl
-                                bg-[var(--cosmos-accent-primary,#a3e635)] text-black
+                                bg-[var(--fs-accent)] text-black
                                 font-bold text-base
-                                shadow-lg shadow-[var(--cosmos-accent-primary,#a3e635)]/20
+                                shadow-lg shadow-[var(--fs-accent)]/20
                                 active:scale-[0.98] transition-transform
                             "
             >

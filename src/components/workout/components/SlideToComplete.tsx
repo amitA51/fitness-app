@@ -1,5 +1,5 @@
-// SlideToComplete — Sport Annual slide-to-confirm
-// Navy track, mustard thumb, drag across to trigger onComplete.
+// SlideToComplete — Fresh Steel slide-to-confirm
+// Pill shape (border-radius: 999px) · accent thumb · signal fill · check icon on complete
 // Haptic tick on threshold cross, success pattern on complete.
 // Keyboard: Enter / Space completes immediately (accessibility fallback).
 
@@ -13,8 +13,8 @@ interface SlideToCompleteProps {
   disabled?: boolean;
 }
 
-const THUMB_SIZE = 52;
-const TRACK_HEIGHT = 60;
+const THUMB_SIZE = 48;
+const TRACK_HEIGHT = 56;
 const TRACK_PAD = 4;
 const THRESHOLD = 0.85;
 
@@ -109,6 +109,9 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     ? 'none'
     : 'transform 280ms cubic-bezier(0.16, 1, 0.3, 1), width 280ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease';
 
+  // Pattern fill for track background
+  const patternFill = `repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 14px)`;
+
   return (
     <div
       ref={trackRef}
@@ -124,21 +127,22 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       className="relative w-full select-none overflow-hidden outline-none"
       style={{
         height: TRACK_HEIGHT,
-        background: 'var(--navy)',
-        borderRadius: 0,
+        background: `${patternFill}, var(--fs-primary)`,
+        borderRadius: 999,
         opacity: disabled ? 0.4 : 1,
         cursor: disabled ? 'not-allowed' : isDragging ? 'grabbing' : 'grab',
         touchAction: 'none',
       }}
     >
-      {/* Mustard fill — trails behind the thumb */}
+      {/* Accent fill — trails behind the thumb with opacity */}
       <div
         className="absolute top-0 bottom-0 pointer-events-none"
         style={{
           [isRTL ? 'right' : 'left']: 0,
           width: offset + THUMB_SIZE + TRACK_PAD,
-          background: 'var(--mustard)',
-          opacity: 0.18 + progress * 0.3,
+          background: 'var(--fs-accent)',
+          opacity: 0.12 + progress * 0.2,
+          borderRadius: 999,
           transition: snap,
         }}
       />
@@ -147,12 +151,12 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       <div
         className="absolute inset-0 flex items-center justify-center pointer-events-none"
         style={{
-          fontFamily: 'var(--font-display)',
-          fontWeight: 800,
-          fontSize: 16,
-          letterSpacing: '0.14em',
+          fontFamily: 'var(--font-mono)',
+          fontWeight: 700,
+          fontSize: 13,
+          letterSpacing: '0.12em',
           textTransform: 'uppercase',
-          color: 'var(--mustard)',
+          color: 'var(--fs-accent)',
           opacity: 1 - progress * 0.85,
           transition: isDragging ? 'none' : 'opacity 200ms ease',
           padding: `0 ${THUMB_SIZE + TRACK_PAD * 4}px`,
@@ -168,16 +172,16 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
           top: 0,
           bottom: 0,
           [isRTL ? 'left' : 'right']: 14,
-          color: 'rgba(232, 184, 45, 0.45)',
+          color: 'color-mix(in srgb, var(--fs-accent) 40%, transparent)',
           opacity: 1 - progress,
           transition: isDragging ? 'none' : 'opacity 200ms ease',
         }}
         aria-hidden
       >
         {isRTL ? (
-          <ChevronLeft size={18} strokeWidth={3} />
+          <ChevronLeft size={16} strokeWidth={3} />
         ) : (
-          <ChevronRight size={18} strokeWidth={3} />
+          <ChevronRight size={16} strokeWidth={3} />
         )}
       </div>
 
@@ -190,19 +194,21 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
           height: TRACK_HEIGHT - TRACK_PAD * 2,
           [isRTL ? 'right' : 'left']: TRACK_PAD,
           transform: `translateX(${offset * sign}px)`,
-          background: 'var(--mustard)',
-          color: 'var(--navy)',
+          background: 'var(--fs-accent)',
+          color: '#FFFFFF',
+          borderRadius: 999,
           transition: snap,
           pointerEvents: 'none',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
         }}
         aria-hidden
       >
         {isComplete ? (
-          <Check size={24} strokeWidth={3} />
+          <Check size={20} strokeWidth={3} />
         ) : isRTL ? (
-          <ChevronLeft size={22} strokeWidth={3} />
+          <ChevronLeft size={20} strokeWidth={3} />
         ) : (
-          <ChevronRight size={22} strokeWidth={3} />
+          <ChevronRight size={20} strokeWidth={3} />
         )}
       </div>
     </div>

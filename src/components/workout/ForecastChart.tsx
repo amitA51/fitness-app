@@ -97,8 +97,8 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
       style={{
-        background: 'var(--bone)',
-        border: '2px solid var(--navy)',
+        background: 'var(--fs-bg)',
+        border: '2px solid var(--fs-primary)',
         padding: 20,
       }}
     >
@@ -115,7 +115,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
             style={{
               width: 10,
               height: 10,
-              background: 'var(--mustard)',
+              background: 'var(--fs-accent)',
             }}
           />
           <h3
@@ -125,7 +125,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
               fontSize: 14,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
             }}
           >
             חיזוי התקדמות לפי תרגיל
@@ -140,12 +140,12 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
           onChange={(e) => setSelectedExercise(e.target.value)}
           style={{
             width: '100%',
-            background: 'var(--bone-deep)',
-            border: '2px solid var(--navy)',
+            background: 'var(--fs-surface-2)',
+            border: '2px solid var(--fs-primary)',
             padding: '12px 16px',
             fontFamily: 'var(--font-display)',
             fontSize: 14,
-            color: 'var(--navy)',
+            color: 'var(--fs-primary)',
             cursor: 'pointer',
             appearance: 'none',
             backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230b293b' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`,
@@ -154,11 +154,11 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
             paddingLeft: 36,
           }}
         >
-          <option value="" style={{ background: 'var(--color-surface)' }}>
+          <option value="" style={{ background: 'var(--fs-surface)' }}>
             בחר תרגיל...
           </option>
           {exerciseNames.map((name) => (
-            <option key={name} value={name} style={{ background: 'var(--color-surface)' }}>
+            <option key={name} value={name} style={{ background: 'var(--fs-surface)' }}>
               {name}
             </option>
           ))}
@@ -185,7 +185,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                 y1={padding.top + level * (chartHeight - padding.top - padding.bottom)}
                 x2={chartWidth - padding.right}
                 y2={padding.top + level * (chartHeight - padding.top - padding.bottom)}
-                stroke="var(--bone-deep)"
+                stroke="var(--fs-surface-2)"
                 strokeWidth="1"
                 strokeDasharray="4 4"
               />
@@ -204,7 +204,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
             <motion.path
               d={linePath}
               fill="none"
-              stroke="var(--navy)"
+              stroke="var(--fs-primary)"
               strokeWidth={3}
               strokeLinecap="square"
               strokeLinejoin="miter"
@@ -220,8 +220,8 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                 cx={point.x}
                 cy={point.y}
                 r={5}
-                fill="var(--mustard)"
-                stroke="var(--navy)"
+                fill="var(--fs-accent)"
+                stroke="var(--fs-primary)"
                 strokeWidth={2}
                 initial={shouldReduceMotion ? false : { scale: 0 }}
                 animate={{ scale: 1 }}
@@ -245,7 +245,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                   y1={chartPoints[chartPoints.length - 1]?.y || 0}
                   x2={forecastPoint.x}
                   y2={forecastPoint.y}
-                  stroke="var(--mustard)"
+                  stroke="var(--fs-accent)"
                   strokeWidth={2}
                   strokeDasharray="4 4"
                 />
@@ -253,8 +253,8 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                   cx={forecastPoint.x}
                   cy={forecastPoint.y}
                   r={6}
-                  fill="var(--mustard)"
-                  stroke="var(--navy)"
+                  fill="var(--fs-accent)"
+                  stroke="var(--fs-primary)"
                   strokeWidth={2}
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -266,8 +266,8 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
             {/* Gradients */}
             <defs>
               <linearGradient id="forecastGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--mustard)" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="var(--mustard)" stopOpacity="0" />
+                <stop offset="0%" stopColor="var(--fs-accent)" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="var(--fs-accent)" stopOpacity="0" />
               </linearGradient>
             </defs>
           </svg>
@@ -278,7 +278,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
               style={{
                 marginTop: 12,
                 paddingTop: 12,
-                borderTop: '2px solid var(--bone-deep)',
+                borderTop: '2px solid var(--fs-surface-2)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -289,11 +289,11 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: 'var(--stone)' }}>חיזוי:</span>
+                <span style={{ color: 'var(--fs-muted)' }}>חיזוי:</span>
                 <span
                   style={{
                     fontWeight: 700,
-                    color: 'var(--navy)',
+                    color: 'var(--fs-primary)',
                   }}
                 >
                   {progressionData.forecast.predicted.toLocaleString()} ק״ג
@@ -307,7 +307,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                         ? '#22c55e'
                         : progressionData.forecast.trend === 'decreasing'
                           ? '#ef4444'
-                          : 'var(--stone)',
+                          : 'var(--fs-muted)',
                   }}
                 >
                   {progressionData.forecast.trend === 'increasing'
@@ -316,7 +316,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                       ? '↓ בירידה'
                       : '→ יציב'}
                 </span>
-                <span style={{ color: 'var(--stone)' }}>
+                <span style={{ color: 'var(--fs-muted)' }}>
                   {Math.round(progressionData.forecast.confidence * 100)}% ביטחון
                 </span>
               </div>
@@ -334,7 +334,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
             paddingBottom: 32,
             fontFamily: 'var(--font-body)',
             fontSize: 14,
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
           }}
         >
           אין מספיק נתונים לתרגיל זה

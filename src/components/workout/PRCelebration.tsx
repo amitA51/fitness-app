@@ -84,8 +84,8 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
           >
             <div
               style={{
-                background: 'var(--navy)',
-                border: '2px solid var(--mustard)',
+                background: 'var(--fs-primary)',
+                border: '2px solid var(--fs-accent)',
                 boxShadow: '0 8px 24px rgba(11,26,43,0.4)',
                 position: 'relative',
                 overflow: 'hidden',
@@ -94,7 +94,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
               {/* Mustard ribbon top strip */}
               <div
                 style={{
-                  background: 'var(--mustard)',
+                  background: 'var(--fs-accent)',
                   padding: '8px 16px',
                   display: 'flex',
                   alignItems: 'center',
@@ -106,7 +106,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     letterSpacing: '0.28em',
-                    color: 'var(--navy)',
+                    color: 'var(--fs-primary)',
                     fontWeight: 600,
                     textTransform: 'uppercase',
                   }}
@@ -118,7 +118,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                     fontFamily: 'var(--font-display)',
                     fontWeight: 900,
                     fontSize: 16,
-                    color: 'var(--navy)',
+                    color: 'var(--fs-primary)',
                     letterSpacing: '-0.01em',
                   }}
                 >
@@ -139,7 +139,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
                       letterSpacing: '0.22em',
-                      color: 'var(--mustard)',
+                      color: 'var(--fs-accent)',
                       textTransform: 'uppercase',
                     }}
                   >
@@ -150,7 +150,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       fontFamily: 'var(--font-display)',
                       fontWeight: 900,
                       fontSize: 32,
-                      color: 'var(--bone)',
+                      color: 'var(--fs-surface)',
                       letterSpacing: '-0.02em',
                       lineHeight: 1,
                       marginTop: 4,
@@ -188,7 +188,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                           fontFamily: 'var(--font-display)',
                           fontWeight: 900,
                           fontSize: 48,
-                          color: 'var(--mustard)',
+                          color: 'var(--fs-accent)',
                           letterSpacing: '-0.03em',
                           lineHeight: 1,
                           fontVariantNumeric: 'tabular-nums',
@@ -215,7 +215,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                           fontFamily: 'var(--font-display)',
                           fontWeight: 900,
                           fontSize: 48,
-                          color: 'var(--bone)',
+                          color: 'var(--fs-surface)',
                           letterSpacing: '-0.03em',
                           lineHeight: 1,
                           fontVariantNumeric: 'tabular-nums',
@@ -269,8 +269,8 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       alignItems: 'center',
                       justifyContent: 'center',
                       padding: '14px 20px',
-                      background: 'var(--mustard)',
-                      color: 'var(--color-on-mustard)',
+                      background: 'var(--fs-accent)',
+                      color: 'var(--fs-primary)',
                       border: 'none',
                       cursor: 'pointer',
                       fontFamily: 'var(--font-display)',
@@ -282,13 +282,13 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       minHeight: 48,
                     }}
                     onPointerDown={(e) => {
-                      e.currentTarget.style.background = 'var(--mustard-deep)';
+                      e.currentTarget.style.background = '#35B392';
                     }}
                     onPointerUp={(e) => {
-                      e.currentTarget.style.background = 'var(--mustard)';
+                      e.currentTarget.style.background = 'var(--fs-accent)';
                     }}
                     onPointerLeave={(e) => {
-                      e.currentTarget.style.background = 'var(--mustard)';
+                      e.currentTarget.style.background = 'var(--fs-accent)';
                     }}
                   >
                     שתף את השיא

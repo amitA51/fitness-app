@@ -17,6 +17,7 @@ interface RestTimerProps {
  * - Pause/resume with accurate time tracking
  * - Flexible time adjustments
  * - Haptic feedback
+ * - Fresh Steel design
  */
 const RestTimer: React.FC<RestTimerProps> = ({
   targetSeconds,
@@ -126,10 +127,11 @@ const RestTimer: React.FC<RestTimerProps> = ({
 
   return (
     <motion.div
-      className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[11000] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[11000] flex items-center justify-center p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      style={{ backgroundColor: 'var(--fs-rubber)' }}
     >
       <motion.div
         className="w-full max-w-md text-center"
@@ -139,8 +141,23 @@ const RestTimer: React.FC<RestTimerProps> = ({
       >
         {/* Header */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-2">זמן מנוחה</h2>
-          {exerciseName && <p className="text-white/50 text-sm">לפני הסט הבא של {exerciseName}</p>}
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '28px',
+              textTransform: 'uppercase',
+              color: 'var(--fs-surface)',
+              marginBottom: 8,
+            }}
+          >
+            זמן מנוחה
+          </h2>
+          {exerciseName && (
+            <p style={{ color: 'var(--fs-muted)', fontSize: '14px' }}>
+              לפני הסט הבא של {exerciseName}
+            </p>
+          )}
         </div>
 
         {/* Circular Progress */}
@@ -151,7 +168,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
               cx="128"
               cy="128"
               r="110"
-              stroke="rgba(255,255,255,0.1)"
+              stroke="var(--fs-surface-2)"
               strokeWidth="12"
               fill="none"
             />
@@ -161,17 +178,17 @@ const RestTimer: React.FC<RestTimerProps> = ({
               cy="128"
               r="110"
               stroke={
-                isWarning ? '#ef4444' : isComplete ? '#22c55e' : 'var(--cosmos-accent-primary)'
+                isWarning ? 'var(--fs-warn)' : isComplete ? 'var(--fs-accent)' : 'var(--fs-accent)'
               }
               strokeWidth="12"
               fill="none"
-              strokeLinecap="round"
+              strokeLinecap="butt"
               strokeDasharray={2 * Math.PI * 110}
               strokeDashoffset={2 * Math.PI * 110 * (1 - progress / 100)}
               style={{
                 filter: isWarning
-                  ? 'drop-shadow(0 0 20px rgba(239,68,68,0.6))'
-                  : 'drop-shadow(0 0 15px var(--cosmos-accent-primary))',
+                  ? 'drop-shadow(0 0 20px var(--fs-warn))'
+                  : 'drop-shadow(0 0 15px var(--fs-accent))',
               }}
               transition={{ type: 'spring', damping: 30 }}
             />
@@ -183,13 +200,14 @@ const RestTimer: React.FC<RestTimerProps> = ({
               key={secondsLeft}
               initial={{ scale: 1.1 }}
               animate={{ scale: 1 }}
-              className={`text-6xl font-black tabular-nums ${
-                isWarning ? 'text-red-500' : isComplete ? 'text-green-500' : 'text-white'
-              }`}
               style={{
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                fontSize: '60px',
+                color: isWarning ? 'var(--fs-warn)' : isComplete ? 'var(--fs-accent)' : 'var(--fs-surface)',
                 textShadow: isWarning
-                  ? '0 0 30px rgba(239,68,68,0.5)'
-                  : '0 0 20px rgba(255,255,255,0.2)',
+                  ? '0 0 30px rgba(226, 110, 63, 0.5)'
+                  : '0 0 20px rgba(67, 199, 165, 0.3)',
               }}
               aria-live="polite"
               aria-atomic="true"
@@ -201,7 +219,14 @@ const RestTimer: React.FC<RestTimerProps> = ({
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-yellow-400 text-sm font-semibold mt-2"
+                style={{
+                  color: 'var(--fs-signal)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginTop: 8,
+                  textTransform: 'uppercase',
+                }}
               >
                 מושהה
               </motion.span>
@@ -215,7 +240,18 @@ const RestTimer: React.FC<RestTimerProps> = ({
             type="button"
             onClick={() => adjustTime(-15)}
             aria-label="הפחת 15 שניות"
-            className="px-4 py-2 min-h-[44px] rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 font-semibold text-sm transition-transform duration-150 hover:scale-105 active:scale-95"
+            style={{
+              padding: '8px 16px',
+              minHeight: 44,
+              borderRadius: 0,
+              border: '1px solid var(--fs-surface-2)',
+              background: 'var(--fs-surface-2)',
+              color: 'var(--fs-muted)',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
+              fontSize: '14px',
+              cursor: 'pointer',
+            }}
           >
             -15s
           </button>
@@ -223,7 +259,18 @@ const RestTimer: React.FC<RestTimerProps> = ({
             type="button"
             onClick={() => adjustTime(15)}
             aria-label="הוסף 15 שניות"
-            className="px-4 py-2 min-h-[44px] rounded-xl bg-[var(--cosmos-accent-secondary)]/10 border border-[var(--cosmos-accent-secondary)]/20 text-[var(--cosmos-accent-secondary)] font-semibold text-sm transition-transform duration-150 hover:scale-105 active:scale-95"
+            style={{
+              padding: '8px 16px',
+              minHeight: 44,
+              borderRadius: 0,
+              border: '1px solid var(--fs-surface-2)',
+              background: 'transparent',
+              color: 'var(--fs-accent)',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
+              fontSize: '14px',
+              cursor: 'pointer',
+            }}
           >
             +15s
           </button>
@@ -231,7 +278,18 @@ const RestTimer: React.FC<RestTimerProps> = ({
             type="button"
             onClick={() => adjustTime(30)}
             aria-label="הוסף 30 שניות"
-            className="px-4 py-2 min-h-[44px] rounded-xl bg-[var(--cosmos-accent-secondary)]/10 border border-[var(--cosmos-accent-secondary)]/20 text-[var(--cosmos-accent-secondary)] font-semibold text-sm transition-transform duration-150 hover:scale-105 active:scale-95"
+            style={{
+              padding: '8px 16px',
+              minHeight: 44,
+              borderRadius: 0,
+              border: '1px solid var(--fs-surface-2)',
+              background: 'transparent',
+              color: 'var(--fs-accent)',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
+              fontSize: '14px',
+              cursor: 'pointer',
+            }}
           >
             +30s
           </button>
@@ -239,7 +297,18 @@ const RestTimer: React.FC<RestTimerProps> = ({
             type="button"
             onClick={() => adjustTime(60)}
             aria-label="הוסף 60 שניות"
-            className="px-4 py-2 min-h-[44px] rounded-xl bg-[var(--cosmos-accent-secondary)]/10 border border-[var(--cosmos-accent-secondary)]/20 text-[var(--cosmos-accent-secondary)] font-semibold text-sm transition-transform duration-150 hover:scale-105 active:scale-95"
+            style={{
+              padding: '8px 16px',
+              minHeight: 44,
+              borderRadius: 0,
+              border: '1px solid var(--fs-surface-2)',
+              background: 'transparent',
+              color: 'var(--fs-accent)',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
+              fontSize: '14px',
+              cursor: 'pointer',
+            }}
           >
             +60s
           </button>
@@ -252,7 +321,20 @@ const RestTimer: React.FC<RestTimerProps> = ({
             type="button"
             onClick={onSkip}
             aria-label="דלג על המנוחה"
-            className="flex-1 h-14 min-h-[56px] rounded-2xl bg-white/5 border border-white/20 text-white/80 font-bold text-base hover:bg-white/10 transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+            style={{
+              flex: 1,
+              height: 56,
+              minHeight: 56,
+              borderRadius: 0,
+              border: '1px solid var(--fs-surface-2)',
+              background: 'transparent',
+              color: 'var(--fs-muted)',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '16px',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}
           >
             דלג
           </button>
@@ -262,11 +344,21 @@ const RestTimer: React.FC<RestTimerProps> = ({
             type="button"
             onClick={togglePause}
             aria-label={isPaused ? 'המשך טיימר' : 'השהה טיימר'}
-            className={`flex-1 h-14 min-h-[56px] rounded-2xl font-bold text-base transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] ${
-              isPaused
-                ? 'bg-green-500 text-white shadow-[0_0_25px_rgba(34,197,94,0.4)]'
-                : 'bg-yellow-500/20 border border-yellow-500/40 text-yellow-400'
-            }`}
+            style={{
+              flex: 1,
+              height: 56,
+              minHeight: 56,
+              borderRadius: 0,
+              border: isPaused ? 'none' : '1px solid var(--fs-signal)',
+              background: isPaused ? 'var(--fs-accent)' : 'transparent',
+              color: isPaused ? 'var(--fs-rubber)' : 'var(--fs-signal)',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '16px',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              boxShadow: isPaused ? '0 0 25px rgba(67, 199, 165, 0.4)' : 'none',
+            }}
           >
             {isPaused ? 'המשך' : 'השהה'}
           </button>
@@ -276,14 +368,37 @@ const RestTimer: React.FC<RestTimerProps> = ({
             type="button"
             onClick={onComplete}
             aria-label="סיים טיימר"
-            className="flex-1 h-14 min-h-[56px] rounded-2xl bg-[var(--cosmos-accent-primary)] text-white font-bold text-base shadow-[0_0_25px_var(--cosmos-accent-primary)] hover:brightness-110 transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+            style={{
+              flex: 1,
+              height: 56,
+              minHeight: 56,
+              borderRadius: 0,
+              border: 'none',
+              background: 'var(--fs-accent)',
+              color: 'var(--fs-rubber)',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '16px',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              boxShadow: '0 0 25px var(--fs-accent)',
+            }}
           >
             סיים
           </button>
         </div>
 
         {/* Hint */}
-        <p className="text-white/30 text-xs mt-4">טיפ: הטיימר ימשיך גם ברקע</p>
+        <p
+          style={{
+            color: 'var(--fs-muted)',
+            fontSize: '12px',
+            marginTop: 16,
+            opacity: 0.6,
+          }}
+        >
+          טיפ: הטיימר ימשיך גם ברקע
+        </p>
       </motion.div>
     </motion.div>
   );

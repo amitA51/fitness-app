@@ -43,8 +43,12 @@ export function OfflineIndicator() {
       <div
         role="status"
         aria-live="polite"
-        className="fixed top-0 inset-x-0 z-50 bg-ink text-bone text-center text-sm font-mono py-1"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)' }}
+        className="fixed top-0 inset-x-0 z-50 text-center text-sm font-mono py-1"
+        style={{
+          background: 'var(--fs-ink)',
+          color: 'var(--fs-bg)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)',
+        }}
       >
         {queueDepth} פעולות ממתינות לסנכרון
       </div>
@@ -56,8 +60,12 @@ export function OfflineIndicator() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed top-0 inset-x-0 z-50 bg-ink text-bone text-center text-sm font-mono py-2"
-      style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}
+      className="fixed top-0 inset-x-0 z-50 text-center text-sm font-mono py-2"
+      style={{
+        background: 'var(--fs-ink)',
+        color: 'var(--fs-bg)',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
+      }}
     >
       {queueDepth > 0
         ? `לא מחובר · ${queueDepth} פעולות בתור`

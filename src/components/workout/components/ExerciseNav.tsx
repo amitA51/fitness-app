@@ -1,41 +1,25 @@
-// ExerciseNav - Sport Annual Editorial Design
-// Bone background · Navy buttons · Mustard active dot
-// VISION: Bold · Editorial · Confident · Narrative · Printed
+// ExerciseNav - Fresh Steel Compact Design
+// Primary bg (#16292D) panel with white text · arrow buttons in surface bg · set progress as chips
 
-import { motion } from 'framer-motion';
-import { List, Plus } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo } from 'react';
+import { List } from 'lucide-react';
+import { memo, useCallback, useEffect } from 'react';
 import type { Exercise } from '../../../types';
 import { ChevronLeftIcon } from '../../icons';
-
-type DotStatus = 'empty' | 'warmup-only' | 'partial' | 'complete';
 
 interface ExerciseNavProps {
   exercises: Exercise[];
   currentIndex: number;
   onChangeExercise: (index: number) => void;
   onOpenDrawer: () => void;
-  onAddExercise: () => void;
-}
-
-function getDotStatus(exercise: Exercise): DotStatus {
-  const sets = exercise.sets || [];
-  if (sets.length === 0) return 'empty';
-  const completedSets = sets.filter((s) => s.completedAt);
-  if (completedSets.length === 0) return 'empty';
-  const allWarmup = completedSets.every((s) => s.isWarmup);
-  if (allWarmup) return 'warmup-only';
-  const workingSets = sets.filter((s) => !s.isWarmup);
-  const completedWorking = workingSets.filter((s) => s.completedAt);
-  if (completedWorking.length >= workingSets.length) return 'complete';
-  return 'partial';
 }
 
 const ExerciseNav = memo<ExerciseNavProps>(
-  ({ exercises, currentIndex, onChangeExercise, onOpenDrawer, onAddExercise }) => {
+  ({ exercises, currentIndex, onChangeExercise, onOpenDrawer }) => {
     const canGoPrev = currentIndex > 0;
     const canGoNext = currentIndex < exercises.length - 1;
-    const dotStatuses = useMemo(() => exercises.map(getDotStatus), [exercises]);
+    const currentExercise = exercises[currentIndex];
+    const totalSets = currentExercise?.sets?.length || 0;
+    const completedSets = currentExercise?.sets?.filter((s) => s.completedAt).length || 0;
 
     const handlePrev = useCallback(() => {
       if (canGoPrev) onChangeExercise(currentIndex - 1);
@@ -62,209 +46,238 @@ const ExerciseNav = memo<ExerciseNavProps>(
       return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleKeyDown]);
 
-    const NAV_BTN: React.CSSProperties = {
-      width: 44,
-      height: 44,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: 0,
-      border: '2px solid var(--navy)',
-      cursor: 'pointer',
-      transition: 'all 150ms',
-      minWidth: 44,
-      minHeight: 44,
-    };
-
-    const DOT_BASE: React.CSSProperties = {
-      borderRadius: '50%',
-      transition: 'all 150ms',
-    };
-
     return (
       <nav
         aria-label="ניווט בין תרגילים"
         style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          flexDirection: 'column',
           gap: 8,
-          padding: '10px 16px',
-          background: 'var(--bone)',
-          borderTop: '1px solid var(--bone-deep)',
+          padding: '10px 14px',
+          background: 'var(--fs-bg)',
+          borderTop: '1px solid var(--fs-surface-2)',
         }}
       >
-        {/* Prev/Next + Dots */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {/* Prev */}
-          <button
-            type="button"
-            onPointerDown={(e) => {
-              if (canGoPrev) {
-                e.preventDefault();
-                e.stopPropagation();
-                handlePrev();
-              }
-            }}
-            disabled={!canGoPrev}
-            aria-label="תרגיל קודם"
+        {/* Exercise rail — horizontally scrolling per-exercise tabs */}
+        {exercises.length > 1 && (
+          <div
             style={{
-              ...NAV_BTN,
-              background: canGoPrev ? 'var(--bone)' : 'var(--bone-faint)',
-              color: canGoPrev ? 'var(--navy)' : 'var(--stone-light)',
-              cursor: canGoPrev ? 'pointer' : 'not-allowed',
+              display: 'grid',
+              gridAutoFlow: 'column',
+              gridAutoColumns: 'minmax(98px,1fr)',
+              gap: 8,
+              overflowX: 'auto',
+              paddingBottom: 4,
+              scrollbarWidth: 'none',
             }}
           >
-            <ChevronLeftIcon className="rotate-180" />
-          </button>
+            {exercises.map((ex, i) => (
+              <button
+                key={ex.id}
+                type="button"
+                onClick={() => onChangeExercise(i)}
+                style={{
+                  minHeight: 58,
+                  padding: 9,
+                  border: '1px solid var(--fs-surface-2)',
+                  borderRadius: 16,
+                  background: i === currentIndex ? 'var(--fs-primary)' : 'var(--fs-surface)',
+                  color: i === currentIndex ? '#fff' : 'var(--fs-muted)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 900,
+                  display: 'grid',
+                  alignContent: 'center',
+                  gap: 3,
+                  cursor: 'pointer',
+                }}
+              >
+                <span
+                  style={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    fontSize: 12,
+                  }}
+                >
+                  {ex.name}
+                </span>
+                <small style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.72 }}>
+                  {ex.sets.length}× SETS
+                </small>
+              </button>
+            ))}
+          </div>
+        )}
 
-          {/* Next */}
-          <button
-            type="button"
-            onPointerDown={(e) => {
-              if (canGoNext) {
-                e.preventDefault();
-                e.stopPropagation();
-                handleNext();
-              }
-            }}
-            disabled={!canGoNext}
-            aria-label="תרגיל הבא"
-            style={{
-              ...NAV_BTN,
-              background: canGoNext ? 'var(--bone)' : 'var(--bone-faint)',
-              color: canGoNext ? 'var(--navy)' : 'var(--stone-light)',
-              cursor: canGoNext ? 'pointer' : 'not-allowed',
-            }}
-          >
-            <ChevronLeftIcon />
-          </button>
-
-          {/* X / Y position counter — always visible */}
-          <span
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 13,
-              fontWeight: 700,
-              letterSpacing: '0.08em',
-              color: 'var(--navy)',
-              minWidth: 48,
-              textAlign: 'center',
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
-            <span className="tabular-nums">
-              {currentIndex + 1} / {exercises.length}
-            </span>
-          </span>
-
-          {/* Progress Dots */}
-          {exercises.length > 1 && exercises.length <= 8 && (
-            <div
-              style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 8 }}
-              role="tablist"
-              aria-label="התקדמות תרגילים"
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+          }}
+        >
+          {/* Left: Prev + Center Panel */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1 }}>
+            {/* Prev */}
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                if (canGoPrev) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handlePrev();
+                }
+              }}
+              disabled={!canGoPrev}
+              aria-label="תרגיל קודם"
+              style={{
+                width: 36,
+                height: 36,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '12px 8px 12px 8px',
+                background: canGoPrev ? 'var(--fs-surface)' : 'var(--fs-surface-2)',
+                border: '1px solid var(--fs-steel)',
+                color: canGoPrev ? 'var(--fs-ink)' : 'var(--fs-muted)',
+                cursor: canGoPrev ? 'pointer' : 'not-allowed',
+                transition: 'all 150ms',
+                minWidth: 36,
+                minHeight: 36,
+              }}
             >
-              {exercises.map((exercise, i) => {
-                const isCurrent = i === currentIndex;
-                const status = dotStatuses[i] ?? 'empty';
+              <ChevronLeftIcon style={{ transform: 'rotate(180deg)' }} />
+            </button>
 
-                let dotColor: string;
-                if (status === 'complete') dotColor = 'var(--color-success)';
-                else if (status === 'partial') dotColor = 'var(--mustard)';
-                else if (status === 'warmup-only') dotColor = 'var(--color-warning)';
-                else dotColor = 'var(--bone-deep)';
-
-                return (
-                  <motion.button
-                    key={exercise.id}
-                    role="tab"
-                    aria-selected={isCurrent}
-                    aria-label={`תרגיל ${i + 1}${status === 'complete' ? ' - הושלם' : status === 'partial' ? ' - חלקי' : ''}`}
-                    onPointerDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onChangeExercise(i);
-                    }}
+            {/* Center: Exercise name + set progress */}
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                minHeight: 58,
+                padding: '0 14px',
+                background: 'var(--fs-primary)',
+                borderRadius: 16,
+                gap: 8,
+              }}
+            >
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: 15,
+                    color: '#FFFFFF',
+                    lineHeight: 1.2,
+                    display: 'block',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {currentExercise?.name || 'תרגיל'}
+                </span>
+                {/* Set progress chip */}
+                {totalSets > 0 && (
+                  <span
                     style={{
-                      ...DOT_BASE,
-                      width: isCurrent ? 12 : 8,
-                      height: isCurrent ? 12 : 8,
-                      background: isCurrent ? 'var(--mustard)' : dotColor,
-                      border: `2px solid ${isCurrent ? 'var(--navy)' : 'var(--bone-deep)'}`,
-                      cursor: 'pointer',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9,
+                      letterSpacing: '0.08em',
+                      color: 'rgba(255,255,255,0.6)',
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      marginTop: 2,
+                      padding: '1px 8px',
+                      background: 'rgba(255,255,255,0.1)',
+                      borderRadius: '8px 6px 8px 6px',
                     }}
-                    whileTap={{ scale: 0.9 }}
-                  />
-                );
-              })}
+                  >
+                    סט {completedSets}/{totalSets}
+                  </span>
+                )}
+              </div>
+              {/* Current/Total position */}
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  color: 'rgba(255,255,255,0.5)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {currentIndex + 1}/{exercises.length}
+              </span>
             </div>
-          )}
-        </div>
 
-        {/* Right: Add + List */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {/* Add */}
-          <button
-            type="button"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onAddExercise();
-            }}
-            aria-label="הוסף תרגיל"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              height: 44,
-              padding: '0 16px',
-              background: 'var(--mustard)',
-              color: 'var(--navy)',
-              border: '2px solid var(--navy)',
-              borderRadius: 0,
-              cursor: 'pointer',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: 13,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              transition: 'all 150ms',
-            }}
-          >
-            <Plus size={16} strokeWidth={2.5} />
-            <span>הוסף</span>
-          </button>
+            {/* Next */}
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                if (canGoNext) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNext();
+                }
+              }}
+              disabled={!canGoNext}
+              aria-label="תרגיל הבא"
+              style={{
+                width: 36,
+                height: 36,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '12px 8px 12px 8px',
+                background: canGoNext ? 'var(--fs-surface)' : 'var(--fs-surface-2)',
+                border: '1px solid var(--fs-steel)',
+                color: canGoNext ? 'var(--fs-ink)' : 'var(--fs-muted)',
+                cursor: canGoNext ? 'pointer' : 'not-allowed',
+                transition: 'all 150ms',
+                minWidth: 36,
+                minHeight: 36,
+              }}
+            >
+              <ChevronLeftIcon />
+            </button>
+          </div>
 
-          {/* List */}
-          <button
-            type="button"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onOpenDrawer();
-            }}
-            aria-label="רשימת תרגילים"
-            style={{
-              width: 44,
-              height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              background: 'var(--bone-deep)',
-              color: 'var(--navy)',
-              border: '2px solid var(--navy)',
-              borderRadius: 0,
-              cursor: 'pointer',
-              transition: 'all 150ms',
-              minWidth: 44,
-              minHeight: 44,
-            }}
-          >
-            <List size={18} strokeWidth={2} />
-          </button>
+          {/* Right: List */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onOpenDrawer();
+              }}
+              aria-label="רשימת תרגילים"
+              style={{
+                width: 36,
+                height: 36,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '12px 8px 12px 8px',
+                background: 'var(--fs-surface-2)',
+                border: '1px solid var(--fs-steel)',
+                color: 'var(--fs-ink)',
+                cursor: 'pointer',
+                transition: 'all 150ms',
+                minWidth: 36,
+                minHeight: 36,
+              }}
+            >
+              <List size={16} strokeWidth={2} />
+            </button>
+          </div>
         </div>
       </nav>
     );

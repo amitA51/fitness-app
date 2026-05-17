@@ -3,6 +3,9 @@ import {
   Activity,
   BarChart3,
   Battery,
+  Clock,
+  ChevronDown,
+  ChevronUp,
   Dumbbell,
   Heart,
   Minus,
@@ -10,12 +13,14 @@ import {
   Plus,
   Ruler,
   Scale,
+  Sparkles,
   TrendingDown,
   TrendingUp,
   X,
 } from 'lucide-react';
 import type React from 'react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   TIGHTNESS_AREAS,
   addBodyMeasurement,
@@ -40,6 +45,7 @@ import type {
   WeightTrend,
 } from '../services/bodyStatsService';
 import { getWorkoutSessions } from '../services/dataService';
+import type { WorkoutSession } from '../types';
 import { safeJsonParse } from '../utils/safeJson';
 
 type ProgressTab = 'weight' | 'measurements' | 'recovery' | 'strength';
@@ -50,6 +56,345 @@ const TABS: { key: ProgressTab; label: string; icon: React.ReactNode }[] = [
   { key: 'recovery', label: 'ריקאברי', icon: <Heart size={15} /> },
   { key: 'strength', label: 'כוח', icon: <Dumbbell size={15} /> },
 ];
+
+function formatDuration(seconds: number): string {
+  if (seconds < 3600) return `${Math.round(seconds / 60)} דקות`;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  return m > 0 ? `${h} שעה ו-${m} דקות` : `${h} שעות`;
+}
+
+function formatVolume(volume: number): string {
+  if (volume >= 1000) return `${(volume / 1000).toFixed(1)}k`;
+  return volume.toLocaleString();
+}
+
+// ============================================================================
+// Workout History Sub-Component — embedded at bottom of Progress page
+// ============================================================================
+
+function WorkoutHistoryList({ sessions }: { sessions: WorkoutSession[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  }, []);
+
+  if (sessions.length === 0) {
+    return (
+      <div
+        style={{
+          background: 'var(--fs-surface)',
+          borderRadius: '22px 16px 22px 16px',
+          padding: '20px',
+          textAlign: 'center',
+          border: '1px solid var(--fs-surface-2)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <Dumbbell size={24} style={{ color: 'var(--fs-muted)', marginBottom: 8 }} />
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 14,
+            color: 'var(--fs-muted)',
+          }}
+        >
+          עדיין אין אימונים
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {sessions.map((session) => {
+        const isExpanded = expandedId === session.id;
+        const completedSets = session.exercises.reduce(
+          (sum, ex) => sum + ex.sets.filter((s) => s.isCompleted).length,
+          0
+        );
+        const topExercises = session.exercises.slice(0, 4);
+        const dateStr = new Date(session.date || session.startTime).toLocaleDateString('he-IL', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+        });
+
+        return (
+          <motion.div
+            key={session.id}
+            layout
+            style={{
+              background: 'var(--fs-surface)',
+              borderRadius: '22px 16px 22px 16px',
+              border: '1px solid var(--fs-surface-2)',
+              boxShadow: 'var(--shadow-card)',
+              overflow: 'hidden',
+              position: 'relative',
+            }}
+          >
+            {/* Accent side bar */}
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 4,
+                background: 'var(--fs-accent)',
+                borderTopLeftRadius: '22px',
+                borderBottomLeftRadius: '16px',
+              }}
+            />
+
+            <div
+              onClick={() => toggleExpand(session.id)}
+              style={{
+                padding: '14px 16px 14px 20px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: 16,
+                    color: 'var(--fs-ink)',
+                    letterSpacing: '0.02em',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {session.exercises[0]?.exerciseName || 'אימון'}
+                </div>
+                <div
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    color: 'var(--fs-muted)',
+                    letterSpacing: '0.05em',
+                    marginTop: 2,
+                  }}
+                >
+                  {dateStr}
+                </div>
+              </div>
+
+              {/* Stats chips */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    color: 'var(--fs-muted)',
+                  }}
+                >
+                  <Clock size={10} style={{ verticalAlign: 'middle', marginLeft: 2 }} />
+                  {formatDuration(session.duration)}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    color: 'var(--fs-muted)',
+                  }}
+                >
+                  {completedSets} סטים
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    color: 'var(--fs-accent)',
+                  }}
+                >
+                  {formatVolume(session.totalVolume)} ק"ג
+                </span>
+                {isExpanded ? (
+                  <ChevronUp size={14} style={{ color: 'var(--fs-muted)' }} />
+                ) : (
+                  <ChevronDown size={14} style={{ color: 'var(--fs-muted)' }} />
+                )}
+              </div>
+            </div>
+
+            {/* Expanded exercises */}
+            {isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                style={{
+                  borderTop: '1px solid var(--fs-surface-2)',
+                  padding: '10px 16px 14px 20px',
+                }}
+              >
+                {topExercises.map((ex, i) => {
+                  const bestSet = ex.sets
+                    .filter((s) => s.isCompleted)
+                    .reduce(
+                      (best, s) => {
+                        const vol = (s.weight || 0) * (s.reps || 0);
+                        return vol > best.volume ? { weight: s.weight || 0, reps: s.reps || 0, volume: vol } : best;
+                      },
+                      { weight: 0, reps: 0, volume: 0 }
+                    );
+                  return (
+                    <div
+                      key={ex.id || i}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '6px 0',
+                        borderBottom: i < topExercises.length - 1 ? '1px solid var(--fs-surface-2)' : 'none',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-body)',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: 'var(--fs-ink)',
+                        }}
+                      >
+                        {ex.exerciseName || ex.name}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 11,
+                          color: 'var(--fs-muted)',
+                        }}
+                      >
+                        {bestSet.weight > 0
+                          ? `${bestSet.weight}ק"ג × ${bestSet.reps}`
+                          : `${ex.sets.filter((s) => s.isCompleted).length} סטים`}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                {session.exercises.length > 4 && (
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      color: 'var(--fs-muted)',
+                      textAlign: 'center',
+                      padding: '6px 0',
+                    }}
+                  >
+                    +{session.exercises.length - 4} תרגילים נוספים
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/history/${session.id}`);
+                  }}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    marginTop: 8,
+                    padding: '8px',
+                    background: 'var(--fs-bg)',
+                    border: '1px solid var(--fs-surface-2)',
+                    borderRadius: 8,
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    letterSpacing: '0.05em',
+                    color: 'var(--fs-accent-2)',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                  }}
+                >
+                  לפרטים מלאים →
+                </button>
+              </motion.div>
+            )}
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ============================================================================
+// AI Insight Card (embedded, lightweight)
+// ============================================================================
+
+function ProgressInsightCard({ sessions }: { sessions: WorkoutSession[] }) {
+  const completedCount = sessions.filter((s) => s.status === 'completed').length;
+  const totalVolume = sessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
+  const totalPRs = sessions.filter((s) => s.rating && s.rating >= 4).length;
+
+  if (completedCount === 0) return null;
+
+  return (
+    <div
+      style={{
+        background: 'var(--fs-surface)',
+        borderRadius: '22px 16px 22px 16px',
+        border: '1px solid var(--fs-surface-2)',
+        boxShadow: 'var(--shadow-card)',
+        padding: '16px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Accent side bar */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 4,
+          background: 'var(--fs-accent)',
+          borderTopLeftRadius: '22px',
+          borderBottomLeftRadius: '16px',
+        }}
+      />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+        <Sparkles size={14} style={{ color: 'var(--fs-signal)' }} />
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--fs-muted)',
+          }}
+        >
+          תובנה אוטומטית
+        </span>
+      </div>
+
+      <div
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 13,
+          lineHeight: 1.6,
+          color: 'var(--fs-ink)',
+        }}
+      >
+        {completedCount === 1
+          ? 'התחלת את המסע! כל אימון מקרב אותך למטרה.'
+          : `ביצעת ${completedCount} אימונים עם נפח כולל של ${formatVolume(totalVolume)} ק"ג. ${totalPRs > 0 ? `יש לך ${totalPRs} אימונים מצטיינים! ` : ''}המשך כך!`}
+      </div>
+    </div>
+  );
+}
 
 export default function ProgressPage() {
   const [activeTab, setActiveTab] = useState<ProgressTab>('weight');
@@ -69,6 +414,7 @@ export default function ProgressPage() {
     avgStress: 0,
     avgScore: 0,
   });
+  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [showAddWeight, setShowAddWeight] = useState(false);
   const [showAddMeasurement, setShowAddMeasurement] = useState(false);
   const [showAddRecovery, setShowAddRecovery] = useState(false);
@@ -89,13 +435,14 @@ export default function ProgressPage() {
     const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
 
     // Parallel data loading for better performance
-    const [weights, latest, meas, latestMeas, rec, weekly] = await Promise.all([
+    const [weights, latest, meas, latestMeas, rec, weekly, loadedSessions] = await Promise.all([
       getBodyWeightsByDateRange(monthAgo, today),
       getLatestWeight(),
       getBodyMeasurementsByDateRange(monthAgo, today),
       getLatestMeasurement(),
       getTodayRecoveryLog(),
       getWeeklyRecoveryAverage(),
+      getWorkoutSessions(50),
     ]);
 
     setWeightEntries(weights);
@@ -106,6 +453,7 @@ export default function ProgressPage() {
     setTodayRecovery(rec);
     if (rec) setRecoveryScore(getLegacyRecoveryScore(rec));
     setWeeklyRecovery(weekly);
+    setSessions(loadedSessions.filter((s) => s.status === 'completed'));
   }, []);
 
   useEffect(() => {
@@ -117,6 +465,15 @@ export default function ProgressPage() {
     [latestWeight, userHeight]
   );
   const bmiCategory = useMemo(() => (bmi ? getBMICategory(bmi) : null), [bmi]);
+
+  // Compute auto metrics for insight row
+  const completedSessions = useMemo(() => sessions.filter((s) => s.status === 'completed'), [sessions]);
+  const metrics = useMemo(() => {
+    const count = completedSessions.length;
+    const volume = completedSessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
+    const prs = completedSessions.filter((s) => s.rating && s.rating >= 4).length;
+    return { count, volume, prs };
+  }, [completedSessions]);
 
   const handleShowAddWeight = useCallback(() => setShowAddWeight(true), []);
   const handleShowAddMeasurement = useCallback(() => setShowAddMeasurement(true), []);
@@ -160,20 +517,31 @@ export default function ProgressPage() {
   return (
     <div
       className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
-      style={{ background: 'var(--bone)' }}
+      style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
+      {/* Header */}
       <header
         className="masthead sticky top-0 z-20"
-        style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}
+        style={{
+          paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
+          background: 'var(--fs-bg)',
+        }}
       >
-        <div className="kicker">§05 · PROGRESS · {todayISO}</div>
+        <div
+          className="kicker"
+          style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.22em', color: 'var(--fs-muted)' }}
+        >
+          §05 · PROGRESS · {todayISO}
+        </div>
         <h1
           style={{
-            fontFamily: 'var(--font-hebrew)',
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
             fontSize: 'clamp(44px, 12vw, 72px)',
             lineHeight: 0.9,
             marginTop: '8px',
+            color: 'var(--fs-ink)',
           }}
         >
           התקדמות
@@ -184,7 +552,7 @@ export default function ProgressPage() {
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             letterSpacing: '0.22em',
-            color: 'var(--mustard)',
+            color: 'var(--fs-accent-2)',
             textTransform: 'uppercase',
           }}
         >
@@ -192,11 +560,169 @@ export default function ProgressPage() {
         </p>
       </header>
 
-      {/* Editorial Tab Bar */}
-      <div className="px-5 pt-5 pb-3">
+      {/* Insight Card */}
+      <div className="px-5 pt-4">
+        <ProgressInsightCard sessions={completedSessions} />
+      </div>
+
+      {/* Metrics Row */}
+      {metrics.count > 0 && (
+        <div
+          className="px-5 pt-3"
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}
+        >
+          <div
+            style={{
+              background: 'var(--fs-surface)',
+              borderRadius: '22px 16px 22px 16px',
+              border: '1px solid var(--fs-surface-2)',
+              boxShadow: 'var(--shadow-card)',
+              padding: '12px 10px',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 3,
+                background: 'var(--fs-accent)',
+                borderTopLeftRadius: '22px',
+                borderBottomLeftRadius: '16px',
+              }}
+            />
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                fontSize: 22,
+                color: 'var(--fs-ink)',
+                lineHeight: 1,
+              }}
+            >
+              {metrics.count}
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 8,
+                letterSpacing: '0.12em',
+                color: 'var(--fs-muted)',
+                marginTop: 4,
+                textTransform: 'uppercase',
+              }}
+            >
+              אימונים
+            </div>
+          </div>
+          <div
+            style={{
+              background: 'var(--fs-surface)',
+              borderRadius: '22px 16px 22px 16px',
+              border: '1px solid var(--fs-surface-2)',
+              boxShadow: 'var(--shadow-card)',
+              padding: '12px 10px',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 3,
+                background: 'var(--fs-accent)',
+                borderTopLeftRadius: '22px',
+                borderBottomLeftRadius: '16px',
+              }}
+            />
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                fontSize: 22,
+                color: 'var(--fs-ink)',
+                lineHeight: 1,
+              }}
+            >
+              {formatVolume(metrics.volume)}
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 8,
+                letterSpacing: '0.12em',
+                color: 'var(--fs-muted)',
+                marginTop: 4,
+                textTransform: 'uppercase',
+              }}
+            >
+              נפח (ק"ג)
+            </div>
+          </div>
+          <div
+            style={{
+              background: 'var(--fs-surface)',
+              borderRadius: '22px 16px 22px 16px',
+              border: '1px solid var(--fs-surface-2)',
+              boxShadow: 'var(--shadow-card)',
+              padding: '12px 10px',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 3,
+                background: 'var(--fs-accent)',
+                borderTopLeftRadius: '22px',
+                borderBottomLeftRadius: '16px',
+              }}
+            />
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                fontSize: 22,
+                color: 'var(--fs-ink)',
+                lineHeight: 1,
+              }}
+            >
+              {metrics.prs}
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 8,
+                letterSpacing: '0.12em',
+                color: 'var(--fs-muted)',
+                marginTop: 4,
+                textTransform: 'uppercase',
+              }}
+            >
+              PRs
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Editorial Tab Bar — compact */}
+      <div className="px-5 pt-4 pb-2">
         <div
           className="flex gap-1"
-          style={{ borderBottom: '2px solid var(--navy)' }}
+          style={{
+            borderBottom: '1px solid var(--fs-surface-2)',
+            gap: 0,
+          }}
           role="tablist"
           aria-label="התקדמות"
         >
@@ -224,7 +750,25 @@ export default function ProgressPage() {
                   document.getElementById(`progress-tab-${prev.key}`)?.focus();
                 }
               }}
-              className={`tab-item ${activeTab === tab.key ? 'active' : ''} flex items-center gap-1.5`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '8px 12px',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.08em',
+                fontWeight: activeTab === tab.key ? 700 : 400,
+                color: activeTab === tab.key ? 'var(--fs-ink)' : 'var(--fs-muted)',
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === tab.key ? '2px solid var(--fs-accent)' : '2px solid transparent',
+                cursor: 'pointer',
+                transition: 'color 0.15s, border-color 0.15s',
+                textTransform: 'uppercase',
+                marginBottom: -1,
+                whiteSpace: 'nowrap',
+              }}
             >
               {tab.icon}
               {tab.label}
@@ -233,6 +777,7 @@ export default function ProgressPage() {
         </div>
       </div>
 
+      {/* Tab Content */}
       <div className="px-5">
         <AnimatePresence mode="sync">
           {activeTab === 'weight' && (
@@ -310,6 +855,33 @@ export default function ProgressPage() {
         </AnimatePresence>
       </div>
 
+      {/* Workout History at Bottom */}
+      <div className="px-5 pt-6">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 12,
+          }}
+        >
+          <div style={{ flex: 1, height: 1, background: 'var(--fs-surface-2)' }} />
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              color: 'var(--fs-muted)',
+            }}
+          >
+            היסטוריית אימונים
+          </span>
+          <div style={{ flex: 1, height: 1, background: 'var(--fs-surface-2)' }} />
+        </div>
+        <WorkoutHistoryList sessions={completedSessions} />
+      </div>
+
       <AnimatePresence>
         {showAddWeight && (
           <AddWeightModal onSave={handleSaveWeight} onClose={handleCloseAddWeight} />
@@ -361,13 +933,79 @@ const WeightTab = memo(function WeightTab({
         <span className="right">משקל</span>
       </div>
 
-      {/* Hero stat block — mustard */}
+      {/* Hero stat block */}
       {latestWeight ? (
-        <div className="block-hero">
-          <span className="ribbon">BMI {bmi ?? '—'}</span>
-          <div className="label">משקל נוכחי · CURRENT</div>
-          <div className="number">{latestWeight.weight}</div>
-          <div className="sub">KG</div>
+        <div
+          style={{
+            background: 'var(--fs-surface)',
+            borderRadius: '22px 16px 22px 16px',
+            border: '1px solid var(--fs-surface-2)',
+            boxShadow: 'var(--shadow-card)',
+            padding: '20px',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 4,
+              background: 'var(--fs-accent)',
+              borderTopLeftRadius: '22px',
+              borderBottomLeftRadius: '16px',
+            }}
+          />
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              background: 'var(--fs-signal)',
+              color: 'var(--fs-primary)',
+              padding: '3px 8px',
+            }}
+          >
+            BMI {bmi ?? '—'}
+          </span>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              letterSpacing: '0.18em',
+              color: 'var(--fs-muted)',
+              marginTop: 12,
+              textTransform: 'uppercase',
+            }}
+          >
+            משקל נוכחי · CURRENT
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 48,
+              color: 'var(--fs-ink)',
+              lineHeight: 0.9,
+              marginTop: 4,
+            }}
+          >
+            {latestWeight.weight}
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              color: 'var(--fs-muted)',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+            }}
+          >
+            KG
+          </div>
           {bmiCategory && (
             <div
               className="mt-3 inline-block"
@@ -376,8 +1014,8 @@ const WeightTab = memo(function WeightTab({
                 fontSize: '11px',
                 letterSpacing: '0.18em',
                 textTransform: 'uppercase',
-                background: 'var(--navy)',
-                color: 'var(--mustard)',
+                background: 'var(--fs-primary)',
+                color: 'var(--fs-signal)',
                 padding: '4px 10px',
               }}
             >
@@ -386,15 +1024,24 @@ const WeightTab = memo(function WeightTab({
           )}
         </div>
       ) : (
-        <div className="card-outlined">
+        <div
+          style={{
+            background: 'var(--fs-surface)',
+            borderRadius: '22px 16px 22px 16px',
+            border: '1px solid var(--fs-surface-2)',
+            boxShadow: 'var(--shadow-card)',
+            padding: '20px',
+          }}
+        >
           <div className="flex flex-col items-center py-8 text-center gap-3">
-            <Scale size={32} style={{ color: 'var(--stone)' }} />
+            <Scale size={32} style={{ color: 'var(--fs-muted)' }} />
             <p
               style={{
-                fontFamily: 'var(--font-hebrew)',
+                fontFamily: 'var(--font-display)',
                 fontSize: '18px',
-                fontWeight: 700,
-                color: 'var(--ink)',
+                fontWeight: 800,
+                color: 'var(--fs-ink)',
+                textTransform: 'uppercase',
               }}
             >
               עדיין לא תיעדת משקל
@@ -412,7 +1059,7 @@ const WeightTab = memo(function WeightTab({
           <div>
             <div
               className="val"
-              style={{ color: weightTrend.direction === 'ירידה' ? 'var(--navy)' : 'var(--ink)' }}
+              style={{ color: weightTrend.direction === 'ירידה' ? 'var(--fs-primary)' : 'var(--fs-ink)' }}
             >
               {weightTrend.change > 0 ? '+' : ''}
               {weightTrend.change}
@@ -436,9 +1083,26 @@ const WeightTab = memo(function WeightTab({
 
       {/* 7-bar chart */}
       {last7.length > 1 && (
-        <div className="card-outlined">
+        <div
+          style={{
+            background: 'var(--fs-surface)',
+            borderRadius: '22px 16px 22px 16px',
+            border: '1px solid var(--fs-surface-2)',
+            boxShadow: 'var(--shadow-card)',
+            padding: '20px',
+          }}
+        >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="section-title flex items-center gap-2">
+            <h3
+              className="section-title flex items-center gap-2"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.15em',
+                color: 'var(--fs-muted)',
+                textTransform: 'uppercase',
+              }}
+            >
               <BarChart3 size={14} />§ 7-DAY TREND
             </h3>
           </div>
@@ -452,7 +1116,7 @@ const WeightTab = memo(function WeightTab({
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '9px',
-                      color: 'var(--stone)',
+                      color: 'var(--fs-muted)',
                     }}
                   >
                     {entry.weight}
@@ -460,8 +1124,8 @@ const WeightTab = memo(function WeightTab({
                   <motion.div
                     className="w-full"
                     style={{
-                      backgroundColor: isLast ? 'var(--mustard)' : 'var(--bone-deep)',
-                      border: isLast ? '2px solid var(--navy)' : 'none',
+                      backgroundColor: isLast ? 'var(--fs-signal)' : 'var(--fs-surface-2)',
+                      border: isLast ? '2px solid var(--fs-primary)' : 'none',
                     }}
                     initial={{ height: 0 }}
                     animate={{ height: `${heightPct}%` }}
@@ -471,7 +1135,7 @@ const WeightTab = memo(function WeightTab({
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '9px',
-                      color: 'var(--stone)',
+                      color: 'var(--fs-muted)',
                     }}
                   >
                     {new Date(entry.date).toLocaleDateString('he-IL', { day: 'numeric' })}
@@ -528,10 +1192,43 @@ const MeasurementsTab = memo(function MeasurementsTab({
         <span className="right">מידות</span>
       </div>
 
-      <div className="card-outlined">
+      <div
+        style={{
+          background: 'var(--fs-surface)',
+          borderRadius: '22px 16px 22px 16px',
+          border: '1px solid var(--fs-surface-2)',
+          boxShadow: 'var(--shadow-card)',
+          padding: '20px',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 4,
+            background: 'var(--fs-accent)',
+            borderTopLeftRadius: '22px',
+            borderBottomLeftRadius: '16px',
+          }}
+        />
         <div className="flex items-center justify-between mb-4">
-          <h2 className="section-title">§ LATEST UPDATE · עדכון אחרון</h2>
-          <button onClick={onAdd} className="chip" style={{ background: 'var(--mustard)' }}>
+          <h2
+            className="section-title"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.15em',
+              color: 'var(--fs-muted)',
+              textTransform: 'uppercase',
+            }}
+          >
+            § LATEST UPDATE · עדכון אחרון
+          </h2>
+          <button onClick={onAdd} className="chip" style={{ background: 'var(--fs-signal)', color: 'var(--fs-primary)' }}>
             <Plus size={12} />
             עדכן
           </button>
@@ -549,7 +1246,7 @@ const MeasurementsTab = memo(function MeasurementsTab({
                   className="flex items-center justify-between"
                   style={{
                     padding: '14px 0',
-                    borderBottom: '1px solid var(--bone-deep)',
+                    borderBottom: '1px solid var(--fs-surface-2)',
                   }}
                 >
                   <span
@@ -557,7 +1254,7 @@ const MeasurementsTab = memo(function MeasurementsTab({
                       fontFamily: 'var(--font-hebrew)',
                       fontSize: '16px',
                       fontWeight: 700,
-                      color: 'var(--ink)',
+                      color: 'var(--fs-ink)',
                     }}
                   >
                     {label}
@@ -569,8 +1266,8 @@ const MeasurementsTab = memo(function MeasurementsTab({
                           fontFamily: 'var(--font-mono)',
                           fontSize: '11px',
                           letterSpacing: '0.12em',
-                          color: diff < 0 ? 'var(--color-on-mustard)' : 'var(--mustard)',
-                          background: diff < 0 ? 'var(--mustard)' : 'var(--navy)',
+                          color: diff < 0 ? 'var(--fs-primary)' : 'var(--fs-signal)',
+                          background: diff < 0 ? 'var(--fs-signal)' : 'var(--fs-primary)',
                           padding: '2px 8px',
                         }}
                       >
@@ -583,12 +1280,12 @@ const MeasurementsTab = memo(function MeasurementsTab({
                         fontFamily: 'var(--font-display)',
                         fontWeight: 800,
                         fontSize: '20px',
-                        color: 'var(--ink)',
+                        color: 'var(--fs-ink)',
                       }}
                     >
                       {curr ? `${curr}` : '—'}
                     </span>
-                    <span className="eyebrow" style={{ color: 'var(--stone)' }}>
+                    <span className="eyebrow" style={{ color: 'var(--fs-muted)' }}>
                       CM
                     </span>
                   </div>
@@ -598,13 +1295,13 @@ const MeasurementsTab = memo(function MeasurementsTab({
           </div>
         ) : (
           <div className="flex flex-col items-center py-10 text-center">
-            <Ruler size={36} style={{ color: 'var(--stone)' }} className="mb-3" />
+            <Ruler size={36} style={{ color: 'var(--fs-muted)' }} className="mb-3" />
             <p
               className="mb-5"
               style={{
                 fontFamily: 'var(--font-hebrew)',
                 fontSize: '16px',
-                color: 'var(--ink)',
+                color: 'var(--fs-ink)',
               }}
             >
               עדיין לא תיעדת מידות
@@ -657,7 +1354,7 @@ const RecoveryTab = memo(function RecoveryTab({
     load();
   }, []);
 
-  const scoreColor = recoveryScore?.color ?? 'var(--color-text-secondary)';
+  const scoreColor = recoveryScore?.color ?? 'var(--fs-muted)';
   const scorePct = recoveryScore ? recoveryScore.score : 0;
 
   return (
@@ -669,10 +1366,43 @@ const RecoveryTab = memo(function RecoveryTab({
       </div>
 
       {/* Recovery score */}
-      <div className="card-outlined">
+      <div
+        style={{
+          background: 'var(--fs-surface)',
+          borderRadius: '22px 16px 22px 16px',
+          border: '1px solid var(--fs-surface-2)',
+          boxShadow: 'var(--shadow-card)',
+          padding: '20px',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 4,
+            background: 'var(--fs-accent)',
+            borderTopLeftRadius: '22px',
+            borderBottomLeftRadius: '16px',
+          }}
+        />
         <div className="flex items-center justify-between mb-5">
-          <h2 className="section-title">§ TODAY · ציון ריקאברי</h2>
-          <button onClick={onAdd} className="chip" style={{ background: 'var(--mustard)' }}>
+          <h2
+            className="section-title"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.15em',
+              color: 'var(--fs-muted)',
+              textTransform: 'uppercase',
+            }}
+          >
+            § TODAY · ציון ריקאברי
+          </h2>
+          <button onClick={onAdd} className="chip" style={{ background: 'var(--fs-signal)', color: 'var(--fs-primary)' }}>
             <Plus size={12} />
             עדכן
           </button>
@@ -683,7 +1413,7 @@ const RecoveryTab = memo(function RecoveryTab({
             <div className="flex items-center gap-6 mb-5">
               {/* CSS circle score */}
               <div className="relative w-28 h-28 flex-shrink-0 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full bg-white/[0.06]" />
+                <div className="absolute inset-0 rounded-full" style={{ background: 'var(--fs-surface-2)' }} />
                 <div
                   className="absolute inset-2 rounded-full"
                   style={{ backgroundColor: `${scoreColor}18` }}
@@ -692,17 +1422,10 @@ const RecoveryTab = memo(function RecoveryTab({
                   <div className="text-3xl font-black leading-none" style={{ color: scoreColor }}>
                     {recoveryScore.score}
                   </div>
-                  <div className="text-[11px] mt-1 font-mono" style={{ color: 'var(--stone)' }}>
+                  <div className="text-[11px] mt-1 font-mono" style={{ color: 'var(--fs-muted)' }}>
                     {recoveryScore.label}
                   </div>
                 </div>
-                {/* Arc indicator */}
-                {/*
-                  Circle math: r=50, so circumference = 2 * π * 50 ≈ 314.16.
-                  We use 314 as the integer approximation for strokeDasharray calculations.
-                  The first value is the filled portion (scorePct * 3.14 ≈ scorePct% of the circumference).
-                  The second value is the remaining unfilled portion.
-                */}
                 <svg
                   className="absolute inset-0 w-full h-full -rotate-90"
                   viewBox="0 0 112 112"
@@ -714,7 +1437,7 @@ const RecoveryTab = memo(function RecoveryTab({
                     cy="56"
                     r="50"
                     fill="none"
-                    stroke="rgba(255,255,255,0.06)"
+                    stroke="var(--fs-surface-2)"
                     strokeWidth="6"
                   />
                   <motion.circle
@@ -738,37 +1461,45 @@ const RecoveryTab = memo(function RecoveryTab({
                   label="שינה"
                   value={recoveryScore.sleepScore}
                   max={25}
-                  color="#a855f7"
+                  color="var(--fs-accent)"
                 />
                 <RecoveryBar
                   label="כאב"
                   value={recoveryScore.sorenessScore}
                   max={25}
-                  color="#f59e0b"
+                  color="var(--fs-warn)"
                 />
                 <RecoveryBar
                   label="אנרגיה"
                   value={recoveryScore.energyScore}
                   max={25}
-                  color="#22c55e"
+                  color="var(--fs-signal)"
                 />
                 <RecoveryBar
                   label="לחץ"
                   value={recoveryScore.stressScore}
                   max={25}
-                  color="#3b82f6"
+                  color="var(--fs-accent)"
                 />
               </div>
             </div>
 
             {todayRecovery && todayRecovery.tightAreas && todayRecovery.tightAreas.length > 0 && (
-              <div className="pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                <p className="text-[11px] text-[var(--color-text-secondary)] mb-2">אזורים תפוסים</p>
+              <div className="pt-4" style={{ borderTop: '1px solid var(--fs-surface-2)' }}>
+                <p className="text-[11px]" style={{ color: 'var(--fs-muted)', marginBottom: 8 }}>אזורים תפוסים</p>
                 <div className="flex flex-wrap gap-2">
                   {todayRecovery.tightAreas.map((area) => (
                     <span
                       key={area}
-                      className="px-3 py-1 rounded-full text-[11px] font-semibold bg-[var(--color-primary-subtle)] text-[var(--color-primary)] border border-[var(--color-primary)]/20"
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '9999px',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        background: 'var(--color-primary-subtle)',
+                        color: 'var(--fs-primary)',
+                        border: '1px solid var(--color-primary-subtle)',
+                      }}
                     >
                       {area}
                     </span>
@@ -779,8 +1510,8 @@ const RecoveryTab = memo(function RecoveryTab({
           </div>
         ) : (
           <div className="flex flex-col items-center py-10 text-center gap-3">
-            <Heart size={30} className="text-[var(--color-text-secondary)]" />
-            <p className="text-[13px] text-[var(--color-text-secondary)]">
+            <Heart size={30} style={{ color: 'var(--fs-muted)' }} />
+            <p style={{ fontSize: 13, color: 'var(--fs-muted)' }}>
               עדיין לא דיווחת על ההתאוששות שלך
             </p>
             <button onClick={onAdd} className="btn-primary">
@@ -792,14 +1523,45 @@ const RecoveryTab = memo(function RecoveryTab({
 
       {/* Weekly avg */}
       {weeklyRecovery.avgScore > 0 && (
-        <div className="card-outlined">
-          <h3 className="section-title mb-4 flex items-center gap-2">
+        <div
+          style={{
+            background: 'var(--fs-surface)',
+            borderRadius: '22px 16px 22px 16px',
+            border: '1px solid var(--fs-surface-2)',
+            boxShadow: 'var(--shadow-card)',
+            padding: '20px',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 4,
+              background: 'var(--fs-accent)',
+              borderTopLeftRadius: '22px',
+              borderBottomLeftRadius: '16px',
+            }}
+          />
+          <h3
+            className="section-title mb-4 flex items-center gap-2"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.15em',
+              color: 'var(--fs-muted)',
+              textTransform: 'uppercase',
+            }}
+          >
             <Activity size={14} />§ WEEKLY AVG · ממוצע שבועי
           </h3>
           <div className="data-strip">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Moon size={12} style={{ color: 'var(--navy)' }} />
+                <Moon size={12} style={{ color: 'var(--fs-primary)' }} />
                 <span className="eyebrow">SLEEP</span>
               </div>
               <div className="val">
@@ -810,7 +1572,7 @@ const RecoveryTab = memo(function RecoveryTab({
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Battery size={12} style={{ color: 'var(--navy)' }} />
+                <Battery size={12} style={{ color: 'var(--fs-primary)' }} />
                 <span className="eyebrow">ENERGY</span>
               </div>
               <div className="val">
@@ -825,8 +1587,41 @@ const RecoveryTab = memo(function RecoveryTab({
 
       {/* History */}
       {history.length > 0 && (
-        <div className="card-outlined">
-          <h3 className="section-title mb-3">§ HISTORY · היסטוריית ריקאברי</h3>
+        <div
+          style={{
+            background: 'var(--fs-surface)',
+            borderRadius: '22px 16px 22px 16px',
+            border: '1px solid var(--fs-surface-2)',
+            boxShadow: 'var(--shadow-card)',
+            padding: '20px',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 4,
+              background: 'var(--fs-accent)',
+              borderTopLeftRadius: '22px',
+              borderBottomLeftRadius: '16px',
+            }}
+          />
+          <h3
+            className="section-title mb-3"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.15em',
+              color: 'var(--fs-muted)',
+              textTransform: 'uppercase',
+            }}
+          >
+            § HISTORY · היסטוריית ריקאברי
+          </h3>
           <div className="space-y-1">
             {history
               .slice()
@@ -838,16 +1633,16 @@ const RecoveryTab = memo(function RecoveryTab({
                   <div
                     key={log.id}
                     className="flex items-center justify-between py-2.5"
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                    style={{ borderBottom: '1px solid var(--fs-surface-2)' }}
                   >
-                    <span className="text-[var(--color-text-secondary)] text-[13px]">
+                    <span style={{ color: 'var(--fs-muted)', fontSize: 13 }}>
                       {new Date(log.date).toLocaleDateString('he-IL', {
                         day: 'numeric',
                         month: 'short',
                       })}
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-medium" style={{ color: score.color }}>
+                      <span style={{ fontSize: 11, fontWeight: 500, color: score.color }}>
                         {score.label}
                       </span>
                       <div
@@ -982,8 +1777,19 @@ const StrengthTab = memo(function StrengthTab() {
           <span className="left">§04 · STRENGTH</span>
           <span className="right">כוח</span>
         </div>
-        <div className="card-outlined p-8 flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-[var(--mustard)] border-t-transparent animate-spin" />
+        <div
+          style={{
+            background: 'var(--fs-surface)',
+            borderRadius: '22px 16px 22px 16px',
+            border: '1px solid var(--fs-surface-2)',
+            boxShadow: 'var(--shadow-card)',
+            padding: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div style={{ width: 24, height: 24, border: '2px solid var(--fs-signal)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         </div>
       </div>
     );
@@ -996,15 +1802,24 @@ const StrengthTab = memo(function StrengthTab() {
           <span className="left">§04 · STRENGTH</span>
           <span className="right">כוח</span>
         </div>
-        <div className="card-outlined">
+        <div
+          style={{
+            background: 'var(--fs-surface)',
+            borderRadius: '22px 16px 22px 16px',
+            border: '1px solid var(--fs-surface-2)',
+            boxShadow: 'var(--shadow-card)',
+            padding: '20px',
+          }}
+        >
           <div className="flex flex-col items-center py-12 text-center gap-3">
-            <Dumbbell size={36} style={{ color: 'var(--stone)' }} />
+            <Dumbbell size={36} style={{ color: 'var(--fs-muted)' }} />
             <p
               style={{
-                fontFamily: 'var(--font-hebrew)',
+                fontFamily: 'var(--font-display)',
                 fontSize: '18px',
-                fontWeight: 700,
-                color: 'var(--ink)',
+                fontWeight: 800,
+                color: 'var(--fs-ink)',
+                textTransform: 'uppercase',
               }}
             >
               אין נתוני כוח עדיין
@@ -1014,7 +1829,7 @@ const StrengthTab = memo(function StrengthTab() {
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
                 letterSpacing: '0.12em',
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 textTransform: 'uppercase',
               }}
             >
@@ -1047,10 +1862,10 @@ const StrengthTab = memo(function StrengthTab() {
             className="chip"
             style={{
               background:
-                selectedExercise === curve.exerciseName ? 'var(--mustard)' : 'var(--bone)',
+                selectedExercise === curve.exerciseName ? 'var(--fs-signal)' : 'var(--fs-surface-2)',
               color:
-                selectedExercise === curve.exerciseName ? 'var(--color-on-mustard)' : 'var(--navy)',
-              borderColor: selectedExercise === curve.exerciseName ? 'var(--navy)' : 'transparent',
+                selectedExercise === curve.exerciseName ? 'var(--fs-primary)' : 'var(--fs-ink)',
+              borderColor: selectedExercise === curve.exerciseName ? 'var(--fs-primary)' : 'transparent',
               borderWidth: '1px',
               borderStyle: 'solid',
             }}
@@ -1066,10 +1881,62 @@ const StrengthTab = memo(function StrengthTab() {
       {activeCurve && (
         <>
           {/* Hero stat */}
-          <div className="block-hero">
-            <div className="label">משקל מקסימלי · TOP WEIGHT</div>
-            <div className="number">{activeCurve.latestWeight}</div>
-            <div className="sub">KG</div>
+          <div
+            style={{
+              background: 'var(--fs-surface)',
+              borderRadius: '22px 16px 22px 16px',
+              border: '1px solid var(--fs-surface-2)',
+              boxShadow: 'var(--shadow-card)',
+              padding: '20px',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 4,
+                background: 'var(--fs-accent)',
+                borderTopLeftRadius: '22px',
+                borderBottomLeftRadius: '16px',
+              }}
+            />
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                letterSpacing: '0.18em',
+                color: 'var(--fs-muted)',
+                textTransform: 'uppercase',
+              }}
+            >
+              משקל מקסימלי · TOP WEIGHT
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 48,
+                color: 'var(--fs-ink)',
+                lineHeight: 0.9,
+                marginTop: 4,
+              }}
+            >
+              {activeCurve.latestWeight}
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                color: 'var(--fs-muted)',
+                letterSpacing: '0.12em',
+              }}
+            >
+              KG
+            </div>
             {activeCurve.change !== 0 && (
               <div
                 className="mt-3 inline-flex items-center gap-1.5"
@@ -1078,8 +1945,8 @@ const StrengthTab = memo(function StrengthTab() {
                   fontSize: '11px',
                   letterSpacing: '0.18em',
                   textTransform: 'uppercase',
-                  background: activeCurve.change > 0 ? 'var(--mustard)' : 'var(--navy)',
-                  color: activeCurve.change > 0 ? 'var(--color-on-mustard)' : 'var(--mustard)',
+                  background: activeCurve.change > 0 ? 'var(--fs-signal)' : 'var(--fs-primary)',
+                  color: activeCurve.change > 0 ? 'var(--fs-primary)' : 'var(--fs-signal)',
                   padding: '4px 10px',
                 }}
               >
@@ -1092,16 +1959,33 @@ const StrengthTab = memo(function StrengthTab() {
           </div>
 
           {/* Line chart */}
-          <div className="card-outlined">
+          <div
+            style={{
+              background: 'var(--fs-surface)',
+              borderRadius: '22px 16px 22px 16px',
+              border: '1px solid var(--fs-surface-2)',
+              boxShadow: 'var(--shadow-card)',
+              padding: '20px',
+            }}
+          >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="section-title flex items-center gap-2">
+              <h3
+                className="section-title flex items-center gap-2"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  letterSpacing: '0.15em',
+                  color: 'var(--fs-muted)',
+                  textTransform: 'uppercase',
+                }}
+              >
                 <BarChart3 size={14} />§ STRENGTH CURVE
               </h3>
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: '10px',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   letterSpacing: '0.12em',
                 }}
               >
@@ -1120,7 +2004,7 @@ const StrengthTab = memo(function StrengthTab() {
                     y1={140 - pct * 120}
                     x2="300"
                     y2={140 - pct * 120}
-                    stroke="rgba(255,255,255,0.04)"
+                    stroke="var(--fs-surface-2)"
                     strokeWidth="1"
                   />
                 ))}
@@ -1136,7 +2020,7 @@ const StrengthTab = memo(function StrengthTab() {
                       })
                       .join(' ') + ` L 300 140 L 0 140 Z`
                   }
-                  fill="rgba(217, 169, 63, 0.08)"
+                  fill="rgba(67, 199, 165, 0.08)"
                 />
 
                 {/* Line */}
@@ -1149,7 +2033,7 @@ const StrengthTab = memo(function StrengthTab() {
                     })
                     .join(' ')}
                   fill="none"
-                  stroke="var(--mustard)"
+                  stroke="var(--fs-accent)"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -1166,8 +2050,8 @@ const StrengthTab = memo(function StrengthTab() {
                         cx={x}
                         cy={y}
                         r={isLast ? 5 : 3}
-                        fill={isLast ? 'var(--mustard)' : 'var(--navy)'}
-                        stroke={isLast ? 'var(--navy)' : 'var(--mustard)'}
+                        fill={isLast ? 'var(--fs-accent)' : 'var(--fs-primary)'}
+                        stroke={isLast ? 'var(--fs-primary)' : 'var(--fs-accent)'}
                         strokeWidth={isLast ? 2 : 1}
                       />
                       {isLast && (
@@ -1175,7 +2059,7 @@ const StrengthTab = memo(function StrengthTab() {
                           x={x}
                           y={y - 10}
                           textAnchor="middle"
-                          fill="var(--mustard)"
+                          fill="var(--fs-accent)"
                           style={{
                             fontFamily: 'var(--font-mono)',
                             fontSize: '9px',
@@ -1199,7 +2083,7 @@ const StrengthTab = memo(function StrengthTab() {
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '9px',
-                      color: 'var(--stone)',
+                      color: 'var(--fs-muted)',
                     }}
                   >
                     {new Date(activeCurve.data[0]!.date).toLocaleDateString('he-IL', {
@@ -1211,7 +2095,7 @@ const StrengthTab = memo(function StrengthTab() {
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '9px',
-                      color: 'var(--stone)',
+                      color: 'var(--fs-muted)',
                     }}
                   >
                     {new Date(
@@ -1227,8 +2111,41 @@ const StrengthTab = memo(function StrengthTab() {
           </div>
 
           {/* Session-by-session detail */}
-          <div className="card-outlined">
-            <h3 className="section-title mb-3">§ HISTORY · היסטוריית משקל</h3>
+          <div
+            style={{
+              background: 'var(--fs-surface)',
+              borderRadius: '22px 16px 22px 16px',
+              border: '1px solid var(--fs-surface-2)',
+              boxShadow: 'var(--shadow-card)',
+              padding: '20px',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 4,
+                background: 'var(--fs-accent)',
+                borderTopLeftRadius: '22px',
+                borderBottomLeftRadius: '16px',
+              }}
+            />
+            <h3
+              className="section-title mb-3"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.15em',
+                color: 'var(--fs-muted)',
+                textTransform: 'uppercase',
+              }}
+            >
+              § HISTORY · היסטוריית משקל
+            </h3>
             <div className="space-y-1">
               {activeCurve.data
                 .slice()
@@ -1241,9 +2158,9 @@ const StrengthTab = memo(function StrengthTab() {
                     <div
                       key={point.date}
                       className="flex items-center justify-between py-2.5"
-                      style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                      style={{ borderBottom: '1px solid var(--fs-surface-2)' }}
                     >
-                      <span className="text-[var(--color-text-secondary)] text-[13px]">
+                      <span style={{ color: 'var(--fs-muted)', fontSize: 13 }}>
                         {new Date(point.date).toLocaleDateString('he-IL', {
                           day: 'numeric',
                           month: 'short',
@@ -1255,8 +2172,8 @@ const StrengthTab = memo(function StrengthTab() {
                             style={{
                               fontFamily: 'var(--font-mono)',
                               fontSize: '11px',
-                              color: diff > 0 ? 'var(--mustard)' : 'var(--color-on-mustard)',
-                              background: diff > 0 ? 'var(--navy)' : 'var(--mustard)',
+                              color: diff > 0 ? 'var(--fs-signal)' : 'var(--fs-primary)',
+                              background: diff > 0 ? 'var(--fs-primary)' : 'var(--fs-signal)',
                               padding: '2px 8px',
                             }}
                           >
@@ -1269,12 +2186,12 @@ const StrengthTab = memo(function StrengthTab() {
                             fontFamily: 'var(--font-display)',
                             fontWeight: 800,
                             fontSize: '18px',
-                            color: 'var(--ink)',
+                            color: 'var(--fs-ink)',
                           }}
                         >
                           {point.value}
                         </span>
-                        <span className="eyebrow" style={{ color: 'var(--stone)' }}>
+                        <span className="eyebrow" style={{ color: 'var(--fs-muted)' }}>
                           KG
                         </span>
                       </div>
@@ -1299,17 +2216,16 @@ const RecoveryBar = memo(function RecoveryBar({
   return (
     <div>
       <div className="flex items-center justify-between text-xs mb-1.5">
-        <span className="font-semibold" style={{ color: 'var(--stone)' }}>
+        <span className="font-semibold" style={{ color: 'var(--fs-muted)' }}>
           {label}
         </span>
         <span className="font-semibold" style={{ color }}>
           {value}/{max}
         </span>
       </div>
-      <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
+      <div style={{ height: 6, background: 'var(--fs-surface-2)', borderRadius: '9999px', overflow: 'hidden' }}>
         <motion.div
-          className="h-full rounded-full"
-          style={{ backgroundColor: color }}
+          style={{ height: '100%', borderRadius: '9999px', backgroundColor: color }}
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.6 }}
@@ -1340,17 +2256,18 @@ const AddWeightModal = memo(function AddWeightModal({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="w-full max-w-lg bg-[var(--color-surface-elevated)] rounded-t-[28px] p-6"
+        className="w-full max-w-lg p-6"
+        style={{ background: 'var(--fs-surface)', borderTop: '1px solid var(--fs-surface-2)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-center mb-4">
-          <div className="w-10 h-1 bg-white/20 rounded-full" />
+          <div style={{ width: '40px', height: '4px', background: 'var(--fs-surface-2)', borderRadius: 0 }} />
         </div>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-white">עדכון משקל</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '18px', color: 'var(--fs-ink)', textTransform: 'uppercase' }}>עדכון משקל</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/[0.1] flex items-center justify-center text-[var(--color-text-secondary)]"
+            style={{ width: '32px', height: '32px', background: 'var(--fs-surface-2)', border: 'none', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fs-muted)', cursor: 'pointer' }}
           >
             <X size={17} />
           </button>
@@ -1362,18 +2279,18 @@ const AddWeightModal = memo(function AddWeightModal({
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="0.0"
-              className="w-36 text-center bg-transparent text-white font-black text-6xl border-b-2 border-[var(--color-primary)] focus:outline-none"
+              style={{ width: '144px', textAlign: 'center', background: 'transparent', color: 'var(--fs-ink)', fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '48px', borderBottom: '2px solid var(--fs-accent)', outline: 'none' }}
               step="0.1"
               inputMode="decimal"
             />
-            <div className="text-lg text-[var(--color-text-secondary)] mt-2 font-medium">ק״ג</div>
+            <div style={{ fontSize: '18px', color: 'var(--fs-muted)', marginTop: '8px', fontWeight: 500, fontFamily: 'var(--font-body)' }}>ק״ג</div>
           </div>
           <input
             type="text"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="הערות (אופציונלי)"
-            className="w-full bg-[var(--color-surface-input)] rounded-[14px] py-3.5 px-4 text-white text-sm placeholder-[#8E8E93] outline-none focus:ring-1 focus:ring-[var(--color-primary)]/40"
+            style={{ width: '100%', background: 'var(--fs-surface-2)', border: '1px solid var(--fs-surface-2)', borderRadius: 0, padding: '14px 16px', color: 'var(--fs-ink)', fontFamily: 'var(--font-body)', fontSize: '14px', outline: 'none' }}
           />
           <motion.button
             onClick={async () => {
@@ -1383,7 +2300,7 @@ const AddWeightModal = memo(function AddWeightModal({
               setSaving(false);
             }}
             disabled={!weight || saving}
-            className="w-full py-4 rounded-2xl bg-[var(--color-primary)] text-white font-bold text-base disabled:opacity-40"
+            style={{ width: '100%', padding: '16px', borderRadius: 0, background: !weight || saving ? 'var(--fs-surface-2)' : 'var(--fs-primary)', color: !weight || saving ? 'var(--fs-muted)' : 'var(--fs-accent)', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '16px', textTransform: 'uppercase', border: 'none', cursor: !weight || saving ? 'not-allowed' : 'pointer', opacity: !weight || saving ? 0.4 : 1 }}
             whileTap={{ scale: weight ? 0.98 : 1 }}
           >
             שמור
@@ -1435,17 +2352,18 @@ const AddMeasurementModal = memo(function AddMeasurementModal({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="w-full max-w-lg bg-[var(--color-surface-elevated)] rounded-t-[28px] p-6 max-h-[82vh] overflow-y-auto"
+        className="w-full max-w-lg p-6 max-h-[82vh] overflow-y-auto"
+        style={{ background: 'var(--fs-surface)', borderTop: '1px solid var(--fs-surface-2)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-center mb-4">
-          <div className="w-10 h-1 bg-white/20 rounded-full" />
+          <div style={{ width: '40px', height: '4px', background: 'var(--fs-surface-2)', borderRadius: 0 }} />
         </div>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-white">עדכון מידות</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '18px', color: 'var(--fs-ink)', textTransform: 'uppercase' }}>עדכון מידות</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/[0.1] flex items-center justify-center text-[var(--color-text-secondary)]"
+            style={{ width: '32px', height: '32px', background: 'var(--fs-surface-2)', border: 'none', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fs-muted)', cursor: 'pointer' }}
           >
             <X size={17} />
           </button>
@@ -1453,7 +2371,7 @@ const AddMeasurementModal = memo(function AddMeasurementModal({
         <div className="grid grid-cols-2 gap-3">
           {fields.map((f) => (
             <div key={f.label}>
-              <label className="text-[11px] text-[var(--color-text-secondary)] mb-1.5 block font-medium">
+              <label style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--fs-muted)', marginBottom: '6px', display: 'block', fontWeight: 500 }}>
                 {f.label} (ס״מ)
               </label>
               <input
@@ -1461,7 +2379,7 @@ const AddMeasurementModal = memo(function AddMeasurementModal({
                 value={f.value}
                 onChange={(e) => f.setter(e.target.value)}
                 placeholder="—"
-                className="w-full bg-[var(--color-surface-input)] rounded-[14px] py-3 px-4 text-white text-sm placeholder-[#8E8E93] outline-none focus:ring-1 focus:ring-[var(--color-primary)]/40 text-center"
+                style={{ width: '100%', background: 'var(--fs-surface-2)', border: '1px solid var(--fs-surface-2)', borderRadius: 0, padding: '12px 16px', color: 'var(--fs-ink)', fontFamily: 'var(--font-body)', fontSize: '14px', outline: 'none', textAlign: 'center' }}
                 step="0.1"
                 inputMode="decimal"
               />
@@ -1481,7 +2399,7 @@ const AddMeasurementModal = memo(function AddMeasurementModal({
               notes: '',
             });
           }}
-          className="w-full py-4 rounded-2xl bg-[var(--color-primary)] text-white font-bold text-base mt-5"
+          style={{ width: '100%', padding: '16px', borderRadius: 0, background: 'var(--fs-primary)', color: 'var(--fs-accent)', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '16px', textTransform: 'uppercase', border: 'none', cursor: 'pointer', marginTop: '20px' }}
           whileTap={{ scale: 0.98 }}
         >
           שמור מידות
@@ -1516,17 +2434,18 @@ const AddRecoveryModal = memo(function AddRecoveryModal({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="w-full max-w-lg bg-[var(--color-surface-elevated)] rounded-t-[28px] p-6 max-h-[88vh] overflow-y-auto"
+        className="w-full max-w-lg p-6 max-h-[88vh] overflow-y-auto"
+        style={{ background: 'var(--fs-surface)', borderTop: '1px solid var(--fs-surface-2)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-center mb-4">
-          <div className="w-10 h-1 bg-white/20 rounded-full" />
+          <div style={{ width: '40px', height: '4px', background: 'var(--fs-surface-2)', borderRadius: 0 }} />
         </div>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-white">דיווח ריקאברי</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '18px', color: 'var(--fs-ink)', textTransform: 'uppercase' }}>דיווח ריקאברי</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/[0.1] flex items-center justify-center text-[var(--color-text-secondary)]"
+            style={{ width: '32px', height: '32px', background: 'var(--fs-surface-2)', border: 'none', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fs-muted)', cursor: 'pointer' }}
           >
             <X size={17} />
           </button>
@@ -1540,7 +2459,7 @@ const AddRecoveryModal = memo(function AddRecoveryModal({
             max={12}
             step={0.5}
             unit=" ש"
-            color="#BF5AF2"
+            color="var(--fs-accent)"
           />
           <SliderInput
             label="איכות שינה"
@@ -1550,7 +2469,7 @@ const AddRecoveryModal = memo(function AddRecoveryModal({
             max={5}
             step={1}
             unit=""
-            color="#BF5AF2"
+            color="var(--fs-accent)"
             labels={['גרוע', 'עלוב', 'בסדר', 'טוב', 'מעולה']}
           />
           <SliderInput
@@ -1561,7 +2480,7 @@ const AddRecoveryModal = memo(function AddRecoveryModal({
             max={5}
             step={1}
             unit=""
-            color="#FF9F0A"
+            color="var(--fs-warn)"
             labels={['כואב מאוד', 'כואב', 'בסדר', 'טוב', 'רענן']}
           />
           <SliderInput
@@ -1572,7 +2491,7 @@ const AddRecoveryModal = memo(function AddRecoveryModal({
             max={5}
             step={1}
             unit=""
-            color="#30D158"
+            color="var(--fs-signal)"
             labels={['מותש', 'נמוכה', 'בסדר', 'טובה', 'מלא אנרגיה']}
           />
           <SliderInput
@@ -1583,12 +2502,12 @@ const AddRecoveryModal = memo(function AddRecoveryModal({
             max={5}
             step={1}
             unit=""
-            color="#0A84FF"
+            color="var(--fs-accent)"
             labels={['מלחיץ מאוד', 'מלחיץ', 'בסדר', 'רגוע', 'רגוע לחלוטין']}
           />
 
           <div>
-            <label className="text-sm text-[var(--color-text-secondary)] mb-3 block font-medium">
+            <label style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--fs-muted)', marginBottom: '12px', display: 'block', fontWeight: 500 }}>
               אזורים תפוסים
             </label>
             <div className="flex flex-wrap gap-2">
@@ -1600,11 +2519,19 @@ const AddRecoveryModal = memo(function AddRecoveryModal({
                       prev.includes(area) ? prev.filter((a) => a !== area) : [...prev, area]
                     )
                   }
-                  className={`px-3.5 py-2 rounded-full text-xs font-semibold transition-all duration-150 ${
-                    tightAreas.includes(area)
-                      ? 'bg-[var(--color-primary)] text-white'
-                      : 'bg-white/[0.08] text-[var(--color-text-secondary)]'
-                  }`}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: 0,
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    fontFamily: 'var(--font-display)',
+                    textTransform: 'uppercase',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    background: tightAreas.includes(area) ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+                    color: tightAreas.includes(area) ? 'var(--fs-accent)' : 'var(--fs-muted)',
+                  }}
                 >
                   {area}
                 </button>
@@ -1617,7 +2544,7 @@ const AddRecoveryModal = memo(function AddRecoveryModal({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="הערות (אופציונלי)"
-            className="w-full bg-[var(--color-surface-input)] rounded-[14px] py-3.5 px-4 text-white text-sm placeholder-[#8E8E93] outline-none focus:ring-1 focus:ring-[var(--color-primary)]/40"
+            style={{ width: '100%', background: 'var(--fs-surface-2)', border: '1px solid var(--fs-surface-2)', borderRadius: 0, padding: '14px 16px', color: 'var(--fs-ink)', fontFamily: 'var(--font-body)', fontSize: '14px', outline: 'none' }}
           />
 
           <motion.button
@@ -1633,7 +2560,7 @@ const AddRecoveryModal = memo(function AddRecoveryModal({
                 notes,
               });
             }}
-            className="w-full py-4 rounded-2xl bg-[var(--color-primary)] text-white font-bold text-base"
+            style={{ width: '100%', padding: '16px', borderRadius: 0, background: 'var(--fs-primary)', color: 'var(--fs-accent)', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '16px', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}
             whileTap={{ scale: 0.98 }}
           >
             שמור
@@ -1668,11 +2595,8 @@ const SliderInput = memo(function SliderInput({
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-[var(--color-text-secondary)] font-medium">{label}</span>
-        <span className="font-black text-base" style={{ color }}>
-          {value}
-          {unit}
-        </span>
+        <span style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--fs-muted)', fontWeight: 500 }}>{label}</span>
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '16px', color }}>{value}{unit}</span>
       </div>
       <input
         type="range"
@@ -1681,11 +2605,11 @@ const SliderInput = memo(function SliderInput({
         step={step}
         value={value}
         onChange={(e) => onChange(Number.parseFloat(e.target.value))}
-        className="w-full h-2 rounded-lg appearance-none cursor-pointer"
-        style={{ accentColor: color }}
+        className="w-full h-2 appearance-none cursor-pointer"
+        style={{ accentColor: color, borderRadius: 0 }}
       />
       {labels && (
-        <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mt-1.5">
+        <div className="flex justify-between" style={{ fontFamily: 'var(--font-body)', fontSize: '10px', color: 'var(--fs-muted)', marginTop: '6px' }}>
           {labels.map((l) => (
             <span key={l}>{l}</span>
           ))}

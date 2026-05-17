@@ -26,9 +26,9 @@ export const SetProgress = memo<SetProgressProps>(
 
           if (isCurrent) {
             widthClass = 'w-6';
-            bgClass = isWarmup ? 'bg-orange-400' : 'bg-[var(--cosmos-accent-primary)]';
+            bgClass = isWarmup ? 'bg-orange-400' : 'bg-[var(--fs-accent)]';
           } else if (isCompleted) {
-            bgClass = isWarmup ? 'bg-orange-400/60' : 'bg-[#30D158]';
+            bgClass = isWarmup ? 'bg-orange-400/60' : 'bg-[var(--fs-primary)]';
           } else if (isWarmup) {
             bgClass = 'bg-orange-400/30';
           }

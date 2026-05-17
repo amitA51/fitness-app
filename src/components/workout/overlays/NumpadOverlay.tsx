@@ -69,7 +69,7 @@ const AnimatedValue = memo<{ value: string; target: 'weight' | 'reps' | null }>(
             fontWeight: 900,
             lineHeight: 0.85,
             letterSpacing: '-0.03em',
-            color: 'var(--navy)',
+            color: 'var(--fs-primary)',
           }}
           animate={shouldReduceMotion ? {} : { scale: isChanging ? [1, 1.04, 1] : 1 }}
           transition={{ duration: 0.15 }}
@@ -103,7 +103,7 @@ const AnimatedValue = memo<{ value: string; target: 'weight' | 'reps' | null }>(
             fontFamily: 'var(--font-mono)',
             fontSize: '14px',
             letterSpacing: '0.2em',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -142,7 +142,7 @@ const NumpadButton = memo<{
     width: 72,
     height: 72,
     borderRadius: 0,
-    border: '1px solid var(--navy)',
+    border: '1px solid var(--fs-primary)',
     fontFamily: 'var(--font-display)',
     fontWeight: 800,
     fontSize: variant === 'number' ? 32 : 20,
@@ -150,10 +150,10 @@ const NumpadButton = memo<{
   };
 
   const variantStyle: Record<string, React.CSSProperties> = {
-    number: { backgroundColor: 'var(--bone)', color: 'var(--navy)' },
-    action: { backgroundColor: 'var(--bone-deep)', color: 'var(--navy)' },
-    delete: { backgroundColor: 'var(--bone)', color: 'var(--color-error)' },
-    submit: { backgroundColor: 'var(--mustard)', color: 'var(--color-on-mustard)' },
+    number: { backgroundColor: 'var(--fs-surface)', color: 'var(--fs-primary)' },
+    action: { backgroundColor: 'var(--fs-surface-2)', color: 'var(--fs-primary)' },
+    delete: { backgroundColor: 'var(--fs-surface)', color: 'var(--fs-warn)' },
+    submit: { backgroundColor: 'var(--fs-accent)', color: 'var(--fs-primary)' },
   };
 
   const getAriaLabel = (): string => {
@@ -211,10 +211,10 @@ const PresetButton = memo<{
       className="relative transition-all uppercase"
       style={{
         padding: '8px 14px',
-        borderRadius: 0,
-        border: '2px solid var(--navy)',
-        backgroundColor: isSelected ? 'var(--mustard)' : 'var(--bone)',
-        color: 'var(--navy)',
+        borderRadius: 999,
+        border: '2px solid var(--fs-primary)',
+        backgroundColor: isSelected ? 'var(--fs-accent)' : 'var(--fs-surface)',
+        color: 'var(--fs-primary)',
         fontFamily: 'var(--font-mono)',
         fontSize: '12px',
         letterSpacing: '0.04em',
@@ -229,8 +229,8 @@ const PresetButton = memo<{
           style={{
             width: 8,
             height: 8,
-            backgroundColor: 'var(--mustard)',
-            border: '1px solid var(--navy)',
+            backgroundColor: 'var(--fs-accent)',
+            border: '1px solid var(--fs-primary)',
             borderRadius: 0,
           }}
           animate={shouldReduceMotion ? {} : { scale: [1, 1.2, 1] }}
@@ -276,9 +276,9 @@ const ValueStepper = memo<{
               }}
               className="w-11 h-11 flex items-center justify-center transition-all"
               style={{
-                backgroundColor: 'var(--bone)',
-                border: '2px solid var(--color-error)',
-                color: 'var(--color-error)',
+                backgroundColor: 'var(--fs-surface)',
+                border: '2px solid var(--fs-warn)',
+                color: 'var(--fs-warn)',
                 fontFamily: 'var(--font-mono)',
                 fontSize: '12px',
                 fontWeight: 700,
@@ -295,8 +295,8 @@ const ValueStepper = memo<{
       <div
         className="px-4 py-2 min-w-[64px] text-center"
         style={{
-          backgroundColor: 'var(--bone-deep)',
-          border: '2px solid var(--navy)',
+          backgroundColor: 'var(--fs-surface-2)',
+          border: '2px solid var(--fs-primary)',
           borderRadius: 0,
         }}
       >
@@ -306,7 +306,7 @@ const ValueStepper = memo<{
             fontFamily: 'var(--font-display)',
             fontSize: '18px',
             fontWeight: 800,
-            color: 'var(--navy)',
+            color: 'var(--fs-primary)',
           }}
         >
           {currentValue}
@@ -330,9 +330,9 @@ const ValueStepper = memo<{
             }}
             className="w-11 h-11 flex items-center justify-center transition-all"
             style={{
-              backgroundColor: 'var(--mustard)',
-              border: '2px solid var(--navy)',
-              color: 'var(--navy)',
+              backgroundColor: 'var(--fs-accent)',
+              border: '2px solid var(--fs-primary)',
+              color: 'var(--fs-primary)',
               fontFamily: 'var(--font-mono)',
               fontSize: '12px',
               fontWeight: 700,
@@ -358,7 +358,7 @@ const GhostValue = memo<{ value: number; label: string; entryX?: number }>(
       <motion.div
         className="flex items-center gap-2 px-3 py-1.5 uppercase"
         style={{
-          backgroundColor: 'var(--bone-deep)',
+          backgroundColor: 'var(--fs-surface-2)',
           borderRadius: 0,
           fontFamily: 'var(--font-mono)',
           letterSpacing: '0.08em',
@@ -366,10 +366,10 @@ const GhostValue = memo<{ value: number; label: string; entryX?: number }>(
         initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: entryX }}
         animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
       >
-        <span style={{ fontSize: '10px', color: 'var(--stone)', fontWeight: 600 }}>{label}</span>
+        <span style={{ fontSize: '10px', color: 'var(--fs-muted)', fontWeight: 600 }}>{label}</span>
         <span
           className="tabular-nums"
-          style={{ fontSize: '13px', color: 'var(--navy)', fontWeight: 700 }}
+          style={{ fontSize: '13px', color: 'var(--fs-primary)', fontWeight: 700 }}
         >
           {value}
         </span>
@@ -517,15 +517,15 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
           }
           className="w-full max-w-md mx-auto pb-safe-bottom overflow-hidden fixed bottom-0 left-0 right-0"
           style={{
-            backgroundColor: 'var(--bone)',
-            borderTop: '2px solid var(--navy)',
-            borderRadius: 0,
+            backgroundColor: 'var(--fs-bg)',
+            borderTop: '2px solid var(--fs-primary)',
+            borderRadius: '24px 24px 0 0',
             boxShadow: '0 -12px 32px rgba(11,26,43,0.2)',
           }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Navy Masthead — exercise + label */}
-          <div className="px-6 py-4" style={{ backgroundColor: 'var(--navy)' }}>
+          <div className="px-6 py-4" style={{ backgroundColor: 'var(--fs-primary)' }}>
             {exerciseName && (
               <motion.div
                 className="text-center mb-1 uppercase"
@@ -533,7 +533,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                   fontFamily: 'var(--font-mono)',
                   fontSize: '10px',
                   letterSpacing: '0.22em',
-                  color: 'rgba(var(--text-on-navy-rgb),0.55)',
+                  color: 'rgba(255,255,255,0.55)',
                   fontWeight: 600,
                 }}
                 initial={{ opacity: 0, y: -10 }}
@@ -548,7 +548,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
                 letterSpacing: '0.28em',
-                color: 'var(--mustard)',
+                color: 'var(--fs-accent)',
                 fontWeight: 700,
               }}
             >
@@ -575,19 +575,10 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
 
           {/* Mode Toggle — sharp tabs */}
           <div className="flex justify-center mb-4 px-6">
-            <div className="flex" style={{ border: '2px solid var(--navy)', borderRadius: 0 }}>
+            <div className="tab-row">
               <motion.button
                 onClick={() => setMode('numpad')}
-                className="px-4 py-2 uppercase transition-all"
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '11px',
-                  letterSpacing: '0.12em',
-                  fontWeight: 600,
-                  backgroundColor: mode === 'numpad' ? 'var(--navy)' : 'var(--bone)',
-                  color: mode === 'numpad' ? 'var(--mustard)' : 'var(--navy)',
-                  borderRadius: 0,
-                }}
+                className={'tab' + (mode === 'numpad' ? ' active' : '')}
                 whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
                 aria-label="מקלדת מספרים"
               >
@@ -595,17 +586,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
               </motion.button>
               <motion.button
                 onClick={() => setMode('stepper')}
-                className="px-4 py-2 uppercase transition-all"
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '11px',
-                  letterSpacing: '0.12em',
-                  fontWeight: 600,
-                  backgroundColor: mode === 'stepper' ? 'var(--navy)' : 'var(--bone)',
-                  color: mode === 'stepper' ? 'var(--mustard)' : 'var(--navy)',
-                  borderRadius: 0,
-                  borderInlineEnd: '2px solid var(--navy)',
-                }}
+                className={'tab' + (mode === 'stepper' ? ' active' : '')}
                 whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
                 aria-label="כפתורי עלייה וירידה"
               >
@@ -684,8 +665,8 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
             style={{
               position: 'sticky',
               bottom: 0,
-              background: 'var(--bone)',
-              borderTop: '1px solid var(--bone-deep)',
+              background: 'var(--fs-bg)',
+              borderTop: '1px solid var(--fs-surface-2)',
               zIndex: 2,
             }}
           >

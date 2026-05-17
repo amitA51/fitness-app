@@ -61,14 +61,14 @@ const WorkoutContent = lazy(async () => {
 
 function PageLoader() {
   return (
-    <div className="min-h-screen bg-bone" role="status" aria-live="polite" aria-label="טוען">
+    <div className="min-h-screen" role="status" aria-live="polite" aria-label="טוען" style={{ background: 'var(--fs-bg)' }}>
       <div style={{ padding: '24px 20px' }}>
         <div
           className="animate-shimmer"
           style={{
             height: 120,
             background:
-              'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
+              'linear-gradient(90deg, var(--fs-surface-2) 25%, var(--fs-surface) 50%, var(--fs-surface-2) 75%)',
             backgroundSize: '200% 100%',
             marginBottom: 16,
           }}
@@ -78,7 +78,7 @@ function PageLoader() {
           style={{
             height: 80,
             background:
-              'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
+              'linear-gradient(90deg, var(--fs-surface-2) 25%, var(--fs-surface) 50%, var(--fs-surface-2) 75%)',
             backgroundSize: '200% 100%',
             marginBottom: 16,
           }}
@@ -88,7 +88,7 @@ function PageLoader() {
           style={{
             height: 200,
             background:
-              'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
+              'linear-gradient(90deg, var(--fs-surface-2) 25%, var(--fs-surface) 50%, var(--fs-surface-2) 75%)',
             backgroundSize: '200% 100%',
           }}
         />
@@ -301,7 +301,7 @@ function AppShell() {
           <a href="#main-content" className="skip-link">
             דלג לתוכן הראשי
           </a>
-          <div className="app-shell min-h-screen flex flex-col bg-bone text-ink">
+          <div className="app-shell min-h-screen flex flex-col" style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}>
             <OfflineIndicator />
             <div className="sr-only" aria-live="polite">
               {pageLabel}
@@ -397,7 +397,7 @@ function WorkoutPlaceholder() {
             aria-live="polite"
             aria-label="טוען את מסך האימון"
           >
-            <div className="w-8 h-8 border-2 border-navy border-t-transparent animate-spin" />
+            <div className="w-8 h-8 animate-spin" style={{ border: '2px solid var(--fs-primary)', borderTopColor: 'transparent', borderRadius: '50%' }} />
           </div>
         }
       >

@@ -99,7 +99,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
       <div className="relative" style={{ marginBottom: 12 }}>
         <SearchIcon
           className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5"
-          style={{ color: 'var(--stone)' }}
+          style={{ color: 'var(--fs-muted)' }}
         />
         <input
           ref={inputRef}
@@ -115,13 +115,13 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
           placeholder="חיפוש תרגיל..."
           className="w-full"
           style={{
-            background: 'var(--color-surface-input)',
-            border: '2px solid var(--navy)',
+            background: 'var(--fs-surface)',
+            border: '2px solid var(--fs-primary)',
             borderRadius: 0,
             padding: '12px 44px 12px 44px',
             fontFamily: 'var(--font-body)',
             fontSize: 16 /* 16px prevents iOS auto-zoom */,
-            color: 'var(--ink)',
+            color: 'var(--fs-ink)',
             outline: 'none',
             direction: 'rtl',
             textAlign: 'right',
@@ -135,9 +135,9 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
             }}
             className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center cursor-pointer"
             style={{
-              background: 'var(--bone-deep)',
+              background: 'var(--fs-surface-2)',
               borderRadius: 0,
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
             }}
             aria-label="נקה חיפוש"
           >
@@ -165,8 +165,8 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
             right: 20,
             top: '100%',
             marginTop: 4,
-            background: 'var(--color-surface)',
-            border: '2px solid var(--navy)',
+            background: 'var(--fs-surface)',
+            border: '2px solid var(--fs-primary)',
             zIndex: 60,
             maxHeight: 280,
             overflowY: 'auto',
@@ -185,7 +185,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                 background: 'transparent',
                 border: 'none',
                 borderBottom:
-                  index < suggestions.length - 1 ? '1px solid var(--bone-deep)' : 'none',
+                  index < suggestions.length - 1 ? '1px solid var(--fs-surface-2)' : 'none',
                 cursor: 'pointer',
                 textAlign: 'right',
               }}
@@ -195,14 +195,14 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                   style={{
                     width: 36,
                     height: 36,
-                    background: 'var(--bone-deep)',
+                    background: 'var(--fs-surface-2)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
                   }}
                 >
-                  <DumbbellIcon className="w-4 h-4" style={{ color: 'var(--navy)' }} />
+                  <DumbbellIcon className="w-4 h-4" style={{ color: 'var(--fs-primary)' }} />
                 </div>
                 <div>
                   <div
@@ -210,7 +210,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                       fontFamily: 'var(--font-display)',
                       fontWeight: 800,
                       fontSize: 14,
-                      color: 'var(--navy)',
+                      color: 'var(--fs-primary)',
                       textAlign: 'right',
                     }}
                   >
@@ -221,7 +221,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
                       letterSpacing: '0.12em',
-                      color: 'var(--stone)',
+                      color: 'var(--fs-muted)',
                       textTransform: 'uppercase',
                     }}
                   >
@@ -235,7 +235,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
                     letterSpacing: '0.2em',
-                    color: 'var(--mustard)',
+                    color: 'var(--fs-accent)',
                     textTransform: 'uppercase',
                     fontWeight: 600,
                   }}
@@ -264,7 +264,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               letterSpacing: '0.2em',
-              color: 'var(--mustard)',
+              color: 'var(--fs-accent)',
               textTransform: 'uppercase',
               alignSelf: 'center',
               flexShrink: 0,
@@ -278,8 +278,8 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
               onClick={() => handleSuggestionClick(ex)}
               style={{
                 padding: '4px 12px',
-                background: 'var(--mustard)',
-                color: 'var(--navy)',
+                background: 'var(--fs-accent)',
+                color: 'var(--fs-primary)',
                 border: 'none',
                 borderRadius: 0,
                 fontFamily: 'var(--font-display)',
@@ -318,8 +318,8 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
               onClick={() => onMuscleGroupChange(group)}
               style={{
                 padding: '6px 14px',
-                background: isActive ? 'var(--navy)' : 'var(--bone-deep)',
-                color: isActive ? 'var(--bone)' : 'var(--stone)',
+                background: isActive ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+                color: isActive ? 'var(--fs-surface)' : 'var(--fs-muted)',
                 border: isActive ? 'none' : '1px solid rgba(20,41,61,0.15)',
                 borderRadius: 0,
                 fontFamily: 'var(--font-mono)',

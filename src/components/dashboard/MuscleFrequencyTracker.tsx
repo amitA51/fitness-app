@@ -73,7 +73,16 @@ export const MuscleFrequencyTracker = memo(function MuscleFrequencyTracker({
   if (muscleData.length === 0) return null;
 
   return (
-    <div className="card-outlined">
+    <div
+      className="fs-accent-rail"
+      style={{
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
+        boxShadow: 'var(--shadow-card)',
+        padding: 16,
+      }}
+    >
       <div className="flex items-baseline justify-between mb-3">
         <span
           style={{
@@ -81,7 +90,7 @@ export const MuscleFrequencyTracker = memo(function MuscleFrequencyTracker({
             fontSize: 10,
             letterSpacing: '0.22em',
             textTransform: 'uppercase',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
           }}
         >
           § MUSCLE BALANCE · 30D
@@ -95,10 +104,10 @@ export const MuscleFrequencyTracker = memo(function MuscleFrequencyTracker({
           const isOverdue = m.daysSince >= 5;
           const freshnessColor =
             m.daysSince <= 2
-              ? 'var(--color-success)'
+              ? 'var(--fs-accent)'
               : m.daysSince <= 4
-                ? 'var(--mustard)'
-                : 'var(--color-error)';
+                ? 'var(--fs-accent)'
+                : 'var(--fs-warn)';
 
           return (
             <div key={m.muscle} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -110,7 +119,7 @@ export const MuscleFrequencyTracker = memo(function MuscleFrequencyTracker({
                     fontFamily: 'var(--font-hebrew)',
                     fontSize: 13,
                     fontWeight: 600,
-                    color: 'var(--ink)',
+                    color: 'var(--fs-ink)',
                   }}
                 >
                   {label}
@@ -132,7 +141,7 @@ export const MuscleFrequencyTracker = memo(function MuscleFrequencyTracker({
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: 9,
-                        color: 'var(--color-error)',
+                        color: 'var(--fs-warn)',
                         letterSpacing: '0.1em',
                       }}
                     >
@@ -143,7 +152,7 @@ export const MuscleFrequencyTracker = memo(function MuscleFrequencyTracker({
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
-                      color: 'var(--stone)',
+                      color: 'var(--fs-muted)',
                     }}
                   >
                     {m.sessions}×
@@ -152,8 +161,10 @@ export const MuscleFrequencyTracker = memo(function MuscleFrequencyTracker({
               </div>
               <div
                 style={{
-                  height: 3,
-                  background: 'var(--bone-deep)',
+                  position: 'relative',
+                  height: 8,
+                  background: 'var(--fs-surface-2)',
+                  border: '1px solid var(--fs-surface-2)',
                   overflow: 'hidden',
                 }}
               >
@@ -161,8 +172,18 @@ export const MuscleFrequencyTracker = memo(function MuscleFrequencyTracker({
                   style={{
                     height: '100%',
                     width: `${pct}%`,
-                    background: isOverdue ? 'var(--color-error-muted)' : 'var(--navy)',
+                    background: isOverdue ? 'var(--fs-warn)' : 'var(--fs-accent)',
                     transition: 'width 300ms ease',
+                  }}
+                />
+                <div
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background:
+                      'repeating-linear-gradient(90deg, transparent 0 16px, rgba(19,35,39,0.14) 16px 17px)',
+                    pointerEvents: 'none',
                   }}
                 />
               </div>

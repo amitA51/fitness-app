@@ -92,7 +92,7 @@ export const PremiumButton = memo<PremiumButtonProps>(
                 ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
                 ${
                   isIncrement
-                    ? 'bg-[var(--cosmos-accent-primary)] text-black shadow-lg shadow-[var(--cosmos-accent-primary)]/25'
+                    ? 'bg-[var(--fs-accent)] text-black shadow-lg shadow-[var(--fs-accent)]/25'
                     : 'bg-[var(--bg-elevated)] text-white border border-white/5'
                 }
             `}

@@ -45,13 +45,13 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    background: 'var(--color-surface-input)',
-    border: '2px solid var(--navy)',
+    background: 'var(--fs-surface)',
+    border: '2px solid var(--fs-primary)',
     borderRadius: 0,
     padding: '10px 14px',
     fontFamily: 'var(--font-body)',
     fontSize: 15,
-    color: 'var(--ink)',
+    color: 'var(--fs-ink)',
     outline: 'none',
     direction: 'rtl',
     textAlign: 'right',
@@ -63,7 +63,7 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
     fontSize: 10,
     letterSpacing: '0.18em',
     textTransform: 'uppercase',
-    color: 'var(--stone)',
+    color: 'var(--fs-muted)',
     marginBottom: 6,
     fontWeight: 600,
   };
@@ -72,8 +72,8 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
     <form
       onSubmit={onSubmit}
       style={{
-        background: 'var(--color-surface)',
-        border: '2px solid var(--navy)',
+        background: 'var(--fs-surface)',
+        border: '2px solid var(--fs-primary)',
         padding: 16,
         display: 'flex',
         flexDirection: 'column',
@@ -86,7 +86,7 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: '1px solid var(--bone-deep)',
+          borderBottom: '1px solid var(--fs-surface-2)',
           paddingBottom: 10,
         }}
       >
@@ -96,7 +96,7 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
             fontSize: 10,
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
-            color: 'var(--mustard)',
+            color: 'var(--fs-accent)',
             fontWeight: 600,
           }}
         >
@@ -110,7 +110,7 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
             fontSize: 10,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
@@ -219,8 +219,8 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
         style={{
           width: '100%',
           padding: '14px 20px',
-          background: 'var(--navy)',
-          color: 'var(--mustard)',
+          background: 'var(--fs-primary)',
+          color: 'var(--fs-accent)',
           border: 'none',
           borderRadius: 0,
           fontFamily: 'var(--font-display)',
@@ -262,7 +262,7 @@ export const AddExerciseButton: React.FC<AddExerciseButtonProps> = ({ onClick })
       fontSize: 13,
       letterSpacing: '0.06em',
       textTransform: 'uppercase',
-      color: 'var(--stone)',
+      color: 'var(--fs-muted)',
       transition: 'all 150ms',
     }}
   >
@@ -270,14 +270,14 @@ export const AddExerciseButton: React.FC<AddExerciseButtonProps> = ({ onClick })
       style={{
         width: 24,
         height: 24,
-        background: 'var(--navy)',
+        background: 'var(--fs-primary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
       }}
     >
-      <AddIcon className="w-3.5 h-3.5" style={{ color: 'var(--mustard)' }} />
+      <AddIcon className="w-3.5 h-3.5" style={{ color: 'var(--fs-accent)' }} />
     </div>
     צור תרגיל מותאם אישית
   </button>

@@ -145,7 +145,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 letterSpacing: '0.22em',
-                color: 'var(--mustard)',
+                color: 'var(--fs-accent)',
                 textTransform: 'uppercase',
               }}
             >
@@ -156,7 +156,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 900,
                 fontSize: 28,
-                color: 'var(--navy)',
+                color: 'var(--fs-primary)',
                 textTransform: 'uppercase',
                 letterSpacing: '-0.01em',
                 marginTop: 4,
@@ -178,13 +178,13 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
             style={{
               padding: '10px 16px',
               background: 'transparent',
-              border: '2px solid var(--navy)',
+              border: '2px solid var(--fs-primary)',
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
               fontWeight: 600,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               cursor: 'pointer',
             }}
           >
@@ -201,14 +201,14 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               whileTap={{ scale: 0.98 }}
               style={{
                 padding: '10px 20px',
-                background: 'var(--navy)',
+                background: 'var(--fs-primary)',
                 border: 'none',
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 14,
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
-                color: 'var(--mustard)',
+                color: 'var(--fs-accent)',
                 cursor: 'pointer',
               }}
             >
@@ -230,7 +230,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
         style={{
           width: '100%',
           padding: '20px 24px',
-          background: 'var(--mustard)',
+          background: 'var(--fs-accent)',
           border: 'none',
           cursor: 'pointer',
           textAlign: 'right',
@@ -244,7 +244,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
           style={{
             width: 44,
             height: 44,
-            background: 'var(--navy)',
+            background: 'var(--fs-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -254,7 +254,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path
               d="M10 4V16M4 10H16"
-              stroke="var(--mustard)"
+              stroke="var(--fs-accent)"
               strokeWidth="3"
               strokeLinecap="square"
             />
@@ -266,7 +266,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 18,
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               textTransform: 'uppercase',
               letterSpacing: '0.02em',
             }}
@@ -277,7 +277,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               opacity: 0.7,
               letterSpacing: '0.05em',
               marginTop: 4,
@@ -298,7 +298,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               gap: 12,
               marginBottom: 16,
               paddingBottom: 12,
-              borderBottom: '3px solid var(--navy)',
+              borderBottom: '3px solid var(--fs-primary)',
             }}
           >
             <span
@@ -306,7 +306,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 14,
-                color: 'var(--navy)',
+                color: 'var(--fs-primary)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
               }}
@@ -317,7 +317,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 letterSpacing: '0.1em',
               }}
             >
@@ -348,25 +348,25 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 style={{
-                  background: 'var(--bone)',
-                  border: '2px solid var(--navy)',
+                  background: 'var(--fs-surface)',
+                  border: '2px solid var(--fs-primary)',
                   cursor: 'pointer',
                   position: 'relative',
                   overflow: 'hidden',
                   transition: 'background-color 150ms ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--bone-deep)';
+                  e.currentTarget.style.background = 'var(--fs-surface-2)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--bone)';
+                  e.currentTarget.style.background = 'var(--fs-surface)';
                 }}
               >
                 {/* Header */}
                 <div
                   style={{
                     padding: '16px 20px',
-                    borderBottom: '1px solid var(--bone-deep)',
+                    borderBottom: '1px solid var(--fs-surface-2)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -377,7 +377,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                       fontFamily: 'var(--font-display)',
                       fontWeight: 800,
                       fontSize: 16,
-                      color: 'var(--ink)',
+                      color: 'var(--fs-ink)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.02em',
                     }}
@@ -400,7 +400,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                         width: 44,
                         height: 44,
                         background: 'transparent',
-                        border: '2px solid var(--navy)',
+                        border: '2px solid var(--fs-primary)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -410,7 +410,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                         <path
                           d="M10 2L12 4L4 12H2V10L10 2Z"
-                          stroke="var(--navy)"
+                          stroke="var(--fs-primary)"
                           strokeWidth="1.5"
                           strokeLinejoin="miter"
                         />
@@ -460,7 +460,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontFamily: 'var(--font-display)',
                           fontWeight: 800,
                           fontSize: 24,
-                          color: 'var(--navy)',
+                          color: 'var(--fs-primary)',
                           letterSpacing: '-0.01em',
                         }}
                       >
@@ -471,7 +471,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
                           letterSpacing: '0.15em',
-                          color: 'var(--stone)',
+                          color: 'var(--fs-muted)',
                           textTransform: 'uppercase',
                           marginTop: 4,
                         }}
@@ -482,7 +482,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                     <div
                       style={{
                         width: 1,
-                        background: 'var(--bone-deep)',
+                        background: 'var(--fs-surface-2)',
                       }}
                     />
                     <div style={{ textAlign: 'center' }}>
@@ -491,7 +491,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontFamily: 'var(--font-display)',
                           fontWeight: 800,
                           fontSize: 24,
-                          color: 'var(--mustard)',
+                          color: 'var(--fs-accent)',
                           letterSpacing: '-0.01em',
                         }}
                       >
@@ -502,7 +502,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
                           letterSpacing: '0.15em',
-                          color: 'var(--stone)',
+                          color: 'var(--fs-muted)',
                           textTransform: 'uppercase',
                           marginTop: 4,
                         }}
@@ -520,11 +520,11 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           key={muscle}
                           style={{
                             padding: '4px 10px',
-                            background: 'var(--bone-deep)',
-                            border: '1px solid var(--navy)',
+                            background: 'var(--fs-surface-2)',
+                            border: '1px solid var(--fs-primary)',
                             fontFamily: 'var(--font-mono)',
                             fontSize: 10,
-                            color: 'var(--navy)',
+                            color: 'var(--fs-primary)',
                             letterSpacing: '0.05em',
                             textTransform: 'uppercase',
                           }}
@@ -539,7 +539,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                             background: 'transparent',
                             fontFamily: 'var(--font-mono)',
                             fontSize: 10,
-                            color: 'var(--stone)',
+                            color: 'var(--fs-muted)',
                           }}
                         >
                           +{template.muscleGroups.length - 3}
@@ -555,12 +555,12 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                     position: 'absolute',
                     top: 0,
                     left: 0,
-                    background: 'var(--navy)',
+                    background: 'var(--fs-primary)',
                     padding: '4px 10px',
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
                     letterSpacing: '0.2em',
-                    color: 'var(--mustard)',
+                    color: 'var(--fs-accent)',
                     textTransform: 'uppercase',
                   }}
                 >
@@ -582,7 +582,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               gap: 12,
               marginBottom: 16,
               paddingBottom: 12,
-              borderBottom: '3px solid var(--mustard)',
+              borderBottom: '3px solid var(--fs-accent)',
             }}
           >
             <span
@@ -590,7 +590,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 14,
-                color: 'var(--navy)',
+                color: 'var(--fs-primary)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
               }}
@@ -601,7 +601,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 letterSpacing: '0.1em',
               }}
             >
@@ -610,10 +610,10 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
             <span
               style={{
                 padding: '4px 8px',
-                background: 'var(--mustard)',
+                background: 'var(--fs-accent)',
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
-                color: 'var(--navy)',
+                color: 'var(--fs-primary)',
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
               }}
@@ -645,8 +645,8 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 style={{
-                  background: 'var(--mustard)',
-                  border: '2px solid var(--navy)',
+                  background: 'var(--fs-accent)',
+                  border: '2px solid var(--fs-primary)',
                   cursor: 'pointer',
                   position: 'relative',
                   overflow: 'hidden',
@@ -663,7 +663,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 <div
                   style={{
                     padding: '20px',
-                    borderBottom: '1px solid var(--navy)',
+                    borderBottom: '1px solid var(--fs-primary)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -675,7 +675,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                         fontFamily: 'var(--font-display)',
                         fontWeight: 800,
                         fontSize: 18,
-                        color: 'var(--navy)',
+                        color: 'var(--fs-primary)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.02em',
                       }}
@@ -687,7 +687,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                     style={{
                       width: 44,
                       height: 44,
-                      background: 'var(--navy)',
+                      background: 'var(--fs-primary)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -713,7 +713,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontFamily: 'var(--font-display)',
                           fontWeight: 800,
                           fontSize: 24,
-                          color: 'var(--navy)',
+                          color: 'var(--fs-primary)',
                           letterSpacing: '-0.01em',
                         }}
                       >
@@ -724,7 +724,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
                           letterSpacing: '0.15em',
-                          color: 'var(--navy)',
+                          color: 'var(--fs-primary)',
                           opacity: 0.7,
                           textTransform: 'uppercase',
                           marginTop: 4,
@@ -736,7 +736,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                     <div
                       style={{
                         width: 1,
-                        background: 'var(--navy)',
+                        background: 'var(--fs-primary)',
                         opacity: 0.3,
                       }}
                     />
@@ -746,7 +746,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontFamily: 'var(--font-display)',
                           fontWeight: 800,
                           fontSize: 24,
-                          color: 'var(--navy)',
+                          color: 'var(--fs-primary)',
                           letterSpacing: '-0.01em',
                         }}
                       >
@@ -757,7 +757,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
                           letterSpacing: '0.15em',
-                          color: 'var(--navy)',
+                          color: 'var(--fs-primary)',
                           opacity: 0.7,
                           textTransform: 'uppercase',
                           marginTop: 4,
@@ -776,10 +776,10 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           key={muscle}
                           style={{
                             padding: '4px 10px',
-                            background: 'var(--navy)',
+                            background: 'var(--fs-primary)',
                             fontFamily: 'var(--font-mono)',
                             fontSize: 10,
-                            color: 'var(--mustard)',
+                            color: 'var(--fs-accent)',
                             letterSpacing: '0.05em',
                             textTransform: 'uppercase',
                           }}
@@ -794,7 +794,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                             background: 'transparent',
                             fontFamily: 'var(--font-mono)',
                             fontSize: 10,
-                            color: 'var(--navy)',
+                            color: 'var(--fs-primary)',
                             opacity: 0.7,
                           }}
                         >
@@ -809,11 +809,11 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 <div
                   style={{
                     padding: '8px 20px',
-                    background: 'var(--navy)',
+                    background: 'var(--fs-primary)',
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     letterSpacing: '0.15em',
-                    color: 'var(--mustard)',
+                    color: 'var(--fs-accent)',
                     textTransform: 'uppercase',
                   }}
                 >
@@ -836,10 +836,10 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'var(--bone-deep)',
-              border: '2px solid var(--navy)',
+              background: 'var(--fs-surface-2)',
+              border: '2px solid var(--fs-primary)',
               fontSize: 32,
-              color: 'var(--mustard)',
+              color: 'var(--fs-accent)',
             }}
           >
             §
@@ -849,7 +849,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 18,
-              color: 'var(--ink)',
+              color: 'var(--fs-ink)',
               textTransform: 'uppercase',
               marginBottom: 8,
             }}
@@ -860,7 +860,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
               letterSpacing: '0.05em',
             }}
           >
@@ -900,8 +900,8 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               style={{
                 width: '100%',
                 maxWidth: 360,
-                background: 'var(--bone)',
-                border: '2px solid var(--navy)',
+                background: 'var(--fs-surface)',
+                border: '2px solid var(--fs-primary)',
                 padding: 24,
                 textAlign: 'center',
               }}
@@ -929,7 +929,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,
                   fontSize: 20,
-                  color: 'var(--ink)',
+                  color: 'var(--fs-ink)',
                   textTransform: 'uppercase',
                   marginBottom: 8,
                 }}
@@ -940,7 +940,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: 15,
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   marginBottom: 24,
                 }}
               >
@@ -958,13 +958,13 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                     flex: 1,
                     padding: '16px 20px',
                     background: 'transparent',
-                    border: '2px solid var(--navy)',
+                    border: '2px solid var(--fs-primary)',
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 14,
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
-                    color: 'var(--navy)',
+                    color: 'var(--fs-primary)',
                     cursor: 'pointer',
                   }}
                 >
@@ -980,7 +980,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                   style={{
                     flex: 1,
                     padding: '16px 20px',
-                    background: 'var(--color-error)',
+                    background: 'var(--fs-warn)',
                     border: 'none',
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,

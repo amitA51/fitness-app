@@ -120,7 +120,13 @@ const MobileInput = memo(function MobileInput({
       {label && (
         <label
           className="block mb-2 px-1"
-          style={{ fontFamily: 'var(--font-hebrew)', fontSize: '14px', color: 'var(--stone)' }}
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            color: 'var(--fs-muted)',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+          }}
         >
           {label}
         </label>
@@ -142,13 +148,23 @@ const MobileInput = memo(function MobileInput({
           placeholder={placeholder}
           min={min}
           max={max}
-          className="w-full h-14 bg-white border-2 px-4 font-[var(--font-body)] text-base
-                        placeholder:text-[var(--stone-light)] focus:outline-none focus:border-[var(--navy)]
-                        transition-all appearance-none"
+          className="w-full h-14 px-4 text-base placeholder:opacity-60 focus:outline-none transition-all appearance-none"
           style={{
+            background: 'var(--fs-surface)',
+            border: '1px solid var(--fs-surface-2)',
+            borderRadius: '22px 16px 22px 16px',
+            fontFamily: 'var(--font-body)',
+            color: 'var(--fs-ink)',
             paddingLeft: unit ? '3rem' : undefined,
             paddingRight: unit ? '3rem' : undefined,
-            borderColor: 'var(--bone-deep)',
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--fs-accent)';
+            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(67, 199, 165, 0.2)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--fs-surface-2)';
+            e.currentTarget.style.boxShadow = 'none';
           }}
         />
         {unit && (
@@ -157,7 +173,7 @@ const MobileInput = memo(function MobileInput({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '14px',
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
               left: '1rem',
             }}
           >
@@ -188,17 +204,18 @@ const MobileToggle = memo(function MobileToggle({
       onClick={() => onChange(!checked)}
       className="w-full flex items-center justify-between p-4 transition-colors min-h-[72px]"
       style={{
-        background: checked ? 'var(--mustard)' : 'var(--bone-deep)',
-        border: checked ? '2px solid var(--navy)' : '2px solid transparent',
+        background: checked ? 'var(--fs-accent)' : 'var(--fs-surface)',
+        border: checked ? '2px solid var(--fs-accent)' : '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
       }}
     >
       <div className="text-right flex-1 ml-4">
         <p
           style={{
-            fontFamily: 'var(--font-hebrew)',
+            fontFamily: 'var(--font-body)',
             fontWeight: 600,
             fontSize: '16px',
-            color: 'var(--ink)',
+            color: checked ? 'var(--fs-primary)' : 'var(--fs-ink)',
           }}
         >
           {label}
@@ -208,7 +225,7 @@ const MobileToggle = memo(function MobileToggle({
             style={{
               fontFamily: 'var(--font-body)',
               fontSize: '14px',
-              color: 'var(--stone)',
+              color: checked ? 'var(--fs-primary)' : 'var(--fs-muted)',
               marginTop: '2px',
             }}
           >
@@ -219,15 +236,18 @@ const MobileToggle = memo(function MobileToggle({
       <div
         className="w-14 h-8 relative flex-shrink-0"
         style={{
-          background: checked ? 'var(--navy)' : 'var(--bone-deep)',
-          border: '2px solid var(--navy)',
+          background: checked ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+          border: '2px solid var(--fs-primary)',
+          borderRadius: '22px',
         }}
       >
         <div
-          className="absolute top-1 w-6 h-6 bg-white shadow-lg transition-all"
+          className="absolute top-1 w-6 h-6 shadow-lg transition-all"
           style={{
             left: checked ? 'auto' : '4px',
             right: checked ? '4px' : 'auto',
+            borderRadius: '50%',
+            background: 'var(--fs-surface)',
           }}
         />
       </div>
@@ -251,16 +271,10 @@ function ProgressDots({ currentStep, totalSteps }: ProgressDotsProps) {
         <motion.div
           key={i}
           layoutId={`progress-dot-${i}`}
-          className={`h-1.5 rounded-full ${
-            i === currentStep ? 'w-8' : i < currentStep ? 'w-3' : 'w-3'
-          }`}
+          className="h-1.5 rounded-full"
           style={{
-            backgroundColor:
-              i === currentStep
-                ? 'var(--navy)'
-                : i < currentStep
-                  ? 'var(--mustard)'
-                  : 'var(--bone-deep)',
+            width: i === currentStep ? '24px' : '8px',
+            backgroundColor: i <= currentStep ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
           }}
           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
         />
@@ -291,8 +305,12 @@ function StepHeader({ title, subtitle, icon }: StepHeaderProps) {
         <motion.div
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
-          className="w-16 h-16 flex items-center justify-center mx-auto mb-4"
-          style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
+          className="w-14 h-14 flex items-center justify-center mx-auto mb-4"
+          style={{
+            background: 'var(--fs-primary)',
+            color: 'var(--fs-accent)',
+            borderRadius: '22px 16px 22px 16px',
+          }}
         >
           {icon}
         </motion.div>
@@ -301,8 +319,8 @@ function StepHeader({ title, subtitle, icon }: StepHeaderProps) {
         style={{
           fontFamily: 'var(--font-display)',
           fontWeight: 800,
-          fontSize: '30px',
-          color: 'var(--navy)',
+          fontSize: '26px',
+          color: 'var(--fs-ink)',
           textTransform: 'uppercase',
           letterSpacing: '-0.02em',
           marginBottom: '8px',
@@ -310,7 +328,7 @@ function StepHeader({ title, subtitle, icon }: StepHeaderProps) {
       >
         {title}
       </h2>
-      <p style={{ fontFamily: 'var(--font-hebrew)', fontSize: '16px', color: 'var(--stone)' }}>
+      <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--fs-muted)' }}>
         {subtitle}
       </p>
     </motion.div>
@@ -323,17 +341,30 @@ function StepHeader({ title, subtitle, icon }: StepHeaderProps) {
 
 function WelcomeStep({ onNext }: { onNext: () => void }) {
   return (
-    <div className="w-full" style={{ background: 'var(--bone)', color: 'var(--ink)' }} dir="rtl">
+    <div className="w-full" style={{ color: 'var(--fs-ink)' }} dir="rtl">
       <div className="flex-1 flex flex-col items-center justify-center text-center px-6 pt-8">
-        {/* App Icon */}
+        {/* App Icon - FS Brand Mark */}
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }}
-          className="w-32 h-32 flex items-center justify-center mb-8"
-          style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
+          className="w-28 h-28 flex items-center justify-center mb-6"
+          style={{
+            background: 'var(--fs-primary)',
+            borderRadius: '22px 16px 22px 16px',
+          }}
         >
-          <Dumbbell size={64} />
+          <span
+            style={{
+              fontFamily: '"Bricolage Grotesque", var(--font-display)',
+              fontWeight: 800,
+              fontSize: '56px',
+              color: 'var(--fs-accent)',
+              lineHeight: 1,
+            }}
+          >
+            FS
+          </span>
         </motion.div>
 
         <motion.h1
@@ -341,11 +372,10 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
           style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 900,
-            fontSize: '48px',
-            color: 'var(--navy)',
-            textTransform: 'uppercase',
+            fontFamily: 'var(--font-body)',
+            fontWeight: 700,
+            fontSize: '32px',
+            color: 'var(--fs-ink)',
             letterSpacing: '-0.02em',
           }}
         >
@@ -357,9 +387,9 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
           style={{
-            fontFamily: 'var(--font-hebrew)',
-            fontSize: '18px',
-            color: 'var(--stone)',
+            fontFamily: 'var(--font-body)',
+            fontSize: '16px',
+            color: 'var(--fs-muted)',
             marginTop: '8px',
           }}
         >
@@ -373,7 +403,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: '14px',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             maxWidth: '280px',
             marginTop: '4px',
           }}
@@ -386,7 +416,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.65 }}
-          className="flex gap-6 mt-12"
+          className="flex gap-8 mt-12"
         >
           {[
             { icon: <Target size={22} />, label: 'יעדים' },
@@ -396,12 +426,21 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
             <div key={i} className="flex flex-col items-center gap-3">
               <div
                 className="w-14 h-14 flex items-center justify-center"
-                style={{ background: 'var(--bone-deep)', color: 'var(--navy)' }}
+                style={{
+                  background: 'var(--fs-surface)',
+                  border: '1px solid var(--fs-surface-2)',
+                  borderRadius: 0,
+                  color: 'var(--fs-accent)',
+                }}
               >
                 {item.icon}
               </div>
               <span
-                style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--stone)' }}
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '14px',
+                  color: 'var(--fs-muted)',
+                }}
               >
                 {item.label}
               </span>
@@ -419,8 +458,18 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         <button
           type="button"
           onClick={onNext}
-          className="btn-primary w-full flex items-center justify-center gap-3"
-          style={{ minHeight: '56px' }}
+          className="w-full flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+          style={{
+            background: 'var(--fs-primary)',
+            color: 'var(--fs-accent)',
+            borderRadius: '22px 16px 22px 16px',
+            minHeight: '56px',
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            border: 'none',
+            cursor: 'pointer',
+          }}
         >
           בוא נתחיל
           <ChevronRight size={24} />
@@ -450,7 +499,7 @@ function ProfileStep({ data, onChange }: ProfileStepProps) {
       <StepHeader
         title="קצת עליך"
         subtitle="נזדקק למידע הבסיסי כדי להתאים את המערכת אליך"
-        icon={<User size={28} className="text-primary" />}
+        icon={<User size={24} />}
       />
 
       <div className="flex-1 px-4 space-y-5 overflow-y-auto pb-4">
@@ -466,7 +515,13 @@ function ProfileStep({ data, onChange }: ProfileStepProps) {
         <div>
           <label
             className="block mb-3 px-1"
-            style={{ fontFamily: 'var(--font-hebrew)', fontSize: '14px', color: 'var(--stone)' }}
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              color: 'var(--fs-muted)',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+            }}
           >
             מגדר
           </label>
@@ -484,11 +539,14 @@ function ProfileStep({ data, onChange }: ProfileStepProps) {
                 onClick={() => onChange({ gender: opt.value })}
                 className="flex-1 min-h-[56px] transition-all flex flex-col items-center justify-center gap-1"
                 style={{
-                  background: data.gender === opt.value ? 'var(--mustard)' : 'var(--bone-deep)',
+                  background: data.gender === opt.value ? 'var(--fs-accent)' : 'var(--fs-surface)',
                   border:
-                    data.gender === opt.value ? '2px solid var(--navy)' : '2px solid transparent',
-                  color: data.gender === opt.value ? 'var(--navy)' : 'var(--stone)',
-                  fontFamily: 'var(--font-hebrew)',
+                    data.gender === opt.value
+                      ? '2px solid var(--fs-accent)'
+                      : '1px solid var(--fs-surface-2)',
+                  borderRadius: '22px 16px 22px 16px',
+                  color: data.gender === opt.value ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                  fontFamily: 'var(--font-body)',
                   fontWeight: data.gender === opt.value ? 700 : 500,
                   fontSize: '16px',
                 }}
@@ -558,52 +616,32 @@ function GoalsStep({ data, onChange }: GoalsStepProps) {
       title: 'בניית כוח',
       description: 'הגדלת הכוח והיכולות הפיזיות',
       icon: <Zap size={24} />,
-      color: 'orange',
     },
     {
       value: 'muscle' as const,
       title: 'בניית שריר',
       description: 'הגדלת מסת השריר והנפח',
       icon: <Dumbbell size={24} />,
-      color: 'primary',
     },
     {
       value: 'endurance' as const,
       title: 'סיבולת',
       description: 'שיפור הסיבולת והקאנדישן הגופני',
       icon: <TrendingUp size={24} />,
-      color: 'green',
     },
     {
       value: 'weight_loss' as const,
       title: 'ירידה במשקל',
       description: 'הורדת אחוזי השומן בגוף',
       icon: <Flame size={24} />,
-      color: 'purple',
     },
     {
       value: 'general' as const,
       title: 'כושר כללי',
       description: 'שמירה על אורח חיים בריא',
       icon: <Target size={24} />,
-      color: 'blue',
     },
   ];
-
-  const getColorClasses = (color: string, selected: boolean) => {
-    const colors: Record<string, string> = {
-      primary: selected ? 'border-[var(--navy)]' : 'border-transparent',
-      green: selected ? 'border-[var(--navy)]' : 'border-transparent',
-      orange: selected ? 'border-[var(--navy)]' : 'border-transparent',
-      blue: selected ? 'border-[var(--navy)]' : 'border-transparent',
-      purple: selected ? 'border-[var(--navy)]' : 'border-transparent',
-    };
-    return colors[color] || colors.primary;
-  };
-
-  const getIconColor = (_color: string) => {
-    return 'var(--navy)';
-  };
 
   return (
     <motion.div
@@ -615,7 +653,7 @@ function GoalsStep({ data, onChange }: GoalsStepProps) {
       <StepHeader
         title="מה המטרה שלך?"
         subtitle="בחר את המטרה העיקרית שלך"
-        icon={<Target size={28} className="text-primary" />}
+        icon={<Target size={24} />}
       />
 
       <div className="flex-1 px-4 space-y-3 overflow-y-auto pb-4">
@@ -625,27 +663,40 @@ function GoalsStep({ data, onChange }: GoalsStepProps) {
             type="button"
             whileTap={{ scale: 0.98 }}
             onClick={() => onChange({ primaryGoal: goal.value })}
-            className={`w-full p-4 border-2 transition-all flex items-center gap-4 text-right
-                            ${getColorClasses(goal.color, data.primaryGoal === goal.value)}`}
+            className="w-full p-4 transition-all flex items-center gap-4 text-right"
             style={{
-              background: data.primaryGoal === goal.value ? 'var(--mustard)' : 'var(--bone-deep)',
+              background:
+                data.primaryGoal === goal.value ? 'var(--fs-accent)' : 'var(--fs-surface)',
+              border:
+                data.primaryGoal === goal.value
+                  ? '2px solid var(--fs-accent)'
+                  : '1px solid var(--fs-surface-2)',
+              borderRadius: '22px 16px 22px 16px',
             }}
           >
             <div
               className="w-12 h-12 flex items-center justify-center shrink-0"
               style={{
-                background: data.primaryGoal === goal.value ? 'var(--bone-deep)' : 'var(--bone)',
+                background:
+                  data.primaryGoal === goal.value ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+                borderRadius: 0,
               }}
             >
-              <span style={{ color: getIconColor(goal.color) }}>{goal.icon}</span>
+              <span
+                style={{
+                  color: data.primaryGoal === goal.value ? 'var(--fs-accent)' : 'var(--fs-muted)',
+                }}
+              >
+                {goal.icon}
+              </span>
             </div>
             <div className="flex-1">
               <p
                 style={{
-                  fontFamily: 'var(--font-hebrew)',
+                  fontFamily: 'var(--font-body)',
                   fontWeight: 600,
                   fontSize: '16px',
-                  color: 'var(--ink)',
+                  color: 'var(--fs-ink)',
                 }}
               >
                 {goal.title}
@@ -654,7 +705,7 @@ function GoalsStep({ data, onChange }: GoalsStepProps) {
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: '14px',
-                  color: 'var(--stone)',
+                  color: data.primaryGoal === goal.value ? 'var(--fs-primary)' : 'var(--fs-muted)',
                   marginTop: '2px',
                 }}
               >
@@ -666,7 +717,11 @@ function GoalsStep({ data, onChange }: GoalsStepProps) {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 className="w-7 h-7 flex items-center justify-center shrink-0"
-                style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
+                style={{
+                  background: 'var(--fs-primary)',
+                  color: 'var(--fs-accent)',
+                  borderRadius: 0,
+                }}
               >
                 <Check size={16} strokeWidth={3} />
               </motion.div>
@@ -694,31 +749,20 @@ function ExperienceStep({ data, onChange }: ExperienceStepProps) {
       title: 'מתחיל',
       description: 'פחות משנה של אימונים סדירים',
       icon: <User size={24} />,
-      color: 'green',
     },
     {
       value: 'intermediate' as const,
       title: 'בינוני',
       description: '1-3 שנות אימון סדיר',
       icon: <TrendingUp size={24} />,
-      color: 'blue',
     },
     {
       value: 'advanced' as const,
       title: 'מתקדם',
       description: 'מעל 3 שנות אימון',
       icon: <Award size={24} />,
-      color: 'purple',
     },
   ];
-
-  const getColorClasses = (_color: string, selected: boolean) => {
-    return selected ? 'border-[var(--navy)]' : 'border-transparent';
-  };
-
-  const getIconColor = (_color: string) => {
-    return 'var(--navy)';
-  };
 
   return (
     <motion.div
@@ -730,7 +774,7 @@ function ExperienceStep({ data, onChange }: ExperienceStepProps) {
       <StepHeader
         title="רמת הניסיון"
         subtitle="זה יעזור לנו להתאים את התוכנית"
-        icon={<Dumbbell size={28} style={{ color: 'var(--mustard)' }} />}
+        icon={<Dumbbell size={24} />}
       />
 
       <div className="flex-1 px-4 space-y-4 overflow-y-auto pb-4">
@@ -740,29 +784,43 @@ function ExperienceStep({ data, onChange }: ExperienceStepProps) {
             type="button"
             whileTap={{ scale: 0.98 }}
             onClick={() => onChange({ experienceLevel: level.value })}
-            className={`w-full p-4 border-2 transition-all flex items-center gap-4 text-right
-                            ${getColorClasses(level.color, data.experienceLevel === level.value)}`}
+            className="w-full p-4 transition-all flex items-center gap-4 text-right"
             style={{
               background:
-                data.experienceLevel === level.value ? 'var(--mustard)' : 'var(--bone-deep)',
+                data.experienceLevel === level.value ? 'var(--fs-accent)' : 'var(--fs-surface)',
+              border:
+                data.experienceLevel === level.value
+                  ? '2px solid var(--fs-accent)'
+                  : '1px solid var(--fs-surface-2)',
+              borderRadius: '22px 16px 22px 16px',
             }}
           >
             <div
               className="w-12 h-12 flex items-center justify-center shrink-0"
               style={{
                 background:
-                  data.experienceLevel === level.value ? 'var(--bone-deep)' : 'var(--bone)',
+                  data.experienceLevel === level.value
+                    ? 'var(--fs-primary)'
+                    : 'var(--fs-surface-2)',
+                borderRadius: 0,
               }}
             >
-              <span style={{ color: getIconColor(level.color) }}>{level.icon}</span>
+              <span
+                style={{
+                  color:
+                    data.experienceLevel === level.value ? 'var(--fs-accent)' : 'var(--fs-muted)',
+                }}
+              >
+                {level.icon}
+              </span>
             </div>
             <div className="flex-1">
               <p
                 style={{
-                  fontFamily: 'var(--font-hebrew)',
+                  fontFamily: 'var(--font-body)',
                   fontWeight: 600,
                   fontSize: '16px',
-                  color: 'var(--ink)',
+                  color: 'var(--fs-ink)',
                 }}
               >
                 {level.title}
@@ -771,7 +829,8 @@ function ExperienceStep({ data, onChange }: ExperienceStepProps) {
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: '14px',
-                  color: 'var(--stone)',
+                  color:
+                    data.experienceLevel === level.value ? 'var(--fs-primary)' : 'var(--fs-muted)',
                   marginTop: '2px',
                 }}
               >
@@ -783,7 +842,11 @@ function ExperienceStep({ data, onChange }: ExperienceStepProps) {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 className="w-7 h-7 flex items-center justify-center shrink-0"
-                style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
+                style={{
+                  background: 'var(--fs-primary)',
+                  color: 'var(--fs-accent)',
+                  borderRadius: 0,
+                }}
               >
                 <Check size={16} strokeWidth={3} />
               </motion.div>
@@ -796,10 +859,11 @@ function ExperienceStep({ data, onChange }: ExperienceStepProps) {
           <label
             className="block mb-4 px-1"
             style={{
-              fontFamily: 'var(--font-hebrew)',
-              fontSize: '16px',
-              fontWeight: 600,
-              color: 'var(--ink)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: 'var(--fs-muted)',
             }}
           >
             ימי אימון בשבוע
@@ -812,16 +876,18 @@ function ExperienceStep({ data, onChange }: ExperienceStepProps) {
                 onClick={() => onChange({ preferredWorkoutDays: day })}
                 className="min-w-[52px] h-14 snap-center transition-all flex-shrink-0"
                 style={{
-                  fontFamily: 'var(--font-display)',
+                  fontFamily: '"Bricolage Grotesque", var(--font-display)',
                   fontWeight: 800,
-                  fontSize: '18px',
+                  fontSize: '20px',
                   background:
-                    data.preferredWorkoutDays === day ? 'var(--navy)' : 'var(--bone-deep)',
-                  color: data.preferredWorkoutDays === day ? 'var(--mustard)' : 'var(--stone)',
+                    data.preferredWorkoutDays === day ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                  color:
+                    data.preferredWorkoutDays === day ? 'var(--fs-primary)' : 'var(--fs-muted)',
                   border:
                     data.preferredWorkoutDays === day
-                      ? '2px solid var(--navy)'
-                      : '2px solid transparent',
+                      ? '2px solid var(--fs-accent)'
+                      : '1px solid var(--fs-surface-2)',
+                  borderRadius: 0,
                 }}
               >
                 {day}
@@ -830,7 +896,7 @@ function ExperienceStep({ data, onChange }: ExperienceStepProps) {
           </div>
           <p
             className="mt-3 px-1 text-center"
-            style={{ fontFamily: 'var(--font-hebrew)', fontSize: '14px', color: 'var(--stone)' }}
+            style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--fs-muted)' }}
           >
             {data.preferredWorkoutDays === 1
               ? 'יום אימון אחד בשבוע'
@@ -864,29 +930,37 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
       <StepHeader
         title="העדפות אימון"
         subtitle="התאם אישית את חווית האימון"
-        icon={<Dumbbell size={28} style={{ color: 'var(--mustard)' }} />}
+        icon={<Dumbbell size={24} />}
       />
 
-      <div className="flex-1 px-4 space-y-4 overflow-y-auto pb-4">
+      <div className="flex-1 px-4 space-y-5 overflow-y-auto pb-4">
         {/* Workout Duration Slider */}
-        <div className="card-outlined p-4">
+        <div
+          className="p-4"
+          style={{
+            background: 'var(--fs-surface)',
+            border: '1px solid var(--fs-surface-2)',
+            borderRadius: '22px 16px 22px 16px',
+          }}
+        >
           <div className="flex items-center justify-between mb-3">
             <label
               style={{
-                fontFamily: 'var(--font-hebrew)',
-                fontSize: '16px',
-                fontWeight: 500,
-                color: 'var(--ink)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: 'var(--fs-muted)',
               }}
             >
               משך אימון
             </label>
             <span
               style={{
-                fontFamily: 'var(--font-display)',
+                fontFamily: '"Bricolage Grotesque", var(--font-display)',
                 fontWeight: 800,
-                fontSize: '18px',
-                color: 'var(--navy)',
+                fontSize: '24px',
+                color: 'var(--fs-accent)',
               }}
             >
               {data.workoutDuration} דק׳
@@ -899,12 +973,28 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
             step={15}
             value={data.workoutDuration}
             onChange={(e) => onChange({ workoutDuration: Number(e.target.value) })}
-            className="w-full h-3 appearance-none cursor-pointer"
-            style={{ accentColor: 'var(--mustard)', background: 'var(--bone-deep)' }}
+            className="w-full h-2 appearance-none cursor-pointer rounded-full"
+            style={{ accentColor: 'var(--fs-accent)', background: 'var(--fs-surface-2)' }}
           />
           <div className="flex justify-between mt-2">
-            <span className="eyebrow">30 דק׳</span>
-            <span className="eyebrow">120 דק׳</span>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                color: 'var(--fs-muted)',
+              }}
+            >
+              30 דק׳
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                color: 'var(--fs-muted)',
+              }}
+            >
+              120 דק׳
+            </span>
           </div>
         </div>
 
@@ -913,10 +1003,11 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
           <label
             className="block mb-3 px-1"
             style={{
-              fontFamily: 'var(--font-hebrew)',
-              fontSize: '16px',
-              fontWeight: 500,
-              color: 'var(--ink)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: 'var(--fs-muted)',
             }}
           >
             שעת אימון מועדפת
@@ -935,16 +1026,17 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
                 onClick={() => onChange({ preferredTime: opt.value })}
                 className="flex-1 min-h-[56px] transition-all flex flex-col items-center justify-center gap-1"
                 style={{
-                  fontFamily: 'var(--font-hebrew)',
+                  fontFamily: 'var(--font-body)',
                   fontWeight: data.preferredTime === opt.value ? 700 : 500,
                   fontSize: '14px',
                   background:
-                    data.preferredTime === opt.value ? 'var(--mustard)' : 'var(--bone-deep)',
+                    data.preferredTime === opt.value ? 'var(--fs-accent)' : 'var(--fs-surface)',
                   border:
                     data.preferredTime === opt.value
-                      ? '2px solid var(--navy)'
-                      : '2px solid transparent',
-                  color: data.preferredTime === opt.value ? 'var(--navy)' : 'var(--stone)',
+                      ? '2px solid var(--fs-accent)'
+                      : '1px solid var(--fs-surface-2)',
+                  borderRadius: '22px 16px 22px 16px',
+                  color: data.preferredTime === opt.value ? 'var(--fs-primary)' : 'var(--fs-muted)',
                 }}
               >
                 <span className="text-2xl">{opt.icon}</span>
@@ -954,21 +1046,27 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
           </div>
         </div>
 
-        {/* Rest Between Sets */}
+        {/* Rest Between Sets - FS Stepper Style */}
         <div>
           <div className="flex items-center justify-between mb-3 px-1">
             <label
               style={{
-                fontFamily: 'var(--font-hebrew)',
-                fontSize: '16px',
-                fontWeight: 500,
-                color: 'var(--ink)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: 'var(--fs-muted)',
               }}
             >
               מנוחה בין סטים
             </label>
             <span
-              style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--navy)' }}
+              style={{
+                fontFamily: '"Bricolage Grotesque", var(--font-display)',
+                fontWeight: 800,
+                fontSize: '24px',
+                color: 'var(--fs-accent)',
+              }}
             >
               {data.restBetweenSets} שנ׳
             </span>
@@ -979,9 +1077,19 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
                 key={sec}
                 type="button"
                 onClick={() => onChange({ restBetweenSets: sec })}
-                className={`tab-item flex-1 min-h-[48px] ${data.restBetweenSets === sec ? 'active' : ''}`}
+                className="flex-1 min-h-[48px] transition-all"
                 style={{
-                  border: '2px solid var(--navy)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: data.restBetweenSets === sec ? 700 : 500,
+                  fontSize: '14px',
+                  background:
+                    data.restBetweenSets === sec ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                  color: data.restBetweenSets === sec ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                  border:
+                    data.restBetweenSets === sec
+                      ? '2px solid var(--fs-accent)'
+                      : '1px solid var(--fs-surface-2)',
+                  borderRadius: 0,
                 }}
               >
                 {sec}ש
@@ -1049,7 +1157,11 @@ function CompleteStep({ data }: CompleteStepProps) {
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
         className="w-28 h-28 flex items-center justify-center mb-8"
-        style={{ background: 'var(--mustard)', color: 'var(--color-on-mustard)' }}
+        style={{
+          background: 'var(--fs-accent)',
+          borderRadius: '22px 16px 22px 16px',
+          color: 'var(--fs-primary)',
+        }}
       >
         <Check size={56} strokeWidth={3} />
       </motion.div>
@@ -1060,11 +1172,11 @@ function CompleteStep({ data }: CompleteStepProps) {
         transition={{ delay: 0.4 }}
         style={{
           fontFamily: 'var(--font-display)',
-          fontWeight: 900,
-          fontSize: '36px',
-          color: 'var(--navy)',
-          textTransform: 'uppercase',
+          fontWeight: 800,
+          fontSize: '32px',
+          color: 'var(--fs-ink)',
           letterSpacing: '-0.02em',
+          textTransform: 'uppercase',
         }}
       >
         {data.name ? `${data.name}, ` : ''}מוכן לאימון!
@@ -1075,9 +1187,9 @@ function CompleteStep({ data }: CompleteStepProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
         style={{
-          fontFamily: 'var(--font-hebrew)',
-          fontSize: '16px',
-          color: 'var(--stone)',
+          fontFamily: 'var(--font-body)',
+          fontSize: '15px',
+          color: 'var(--fs-muted)',
           marginBottom: '32px',
         }}
       >
@@ -1092,23 +1204,42 @@ function CompleteStep({ data }: CompleteStepProps) {
         className="w-full space-y-3"
       >
         {data.primaryGoal && (
-          <div className="card-outlined p-4 flex items-center gap-4">
+          <div
+            className="p-4 flex items-center gap-4"
+            style={{
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--fs-surface-2)',
+              borderRadius: '22px 16px 22px 16px',
+            }}
+          >
             <div
-              className="w-12 h-12 flex items-center justify-center"
-              style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
+              className="w-12 h-12 flex items-center justify-center shrink-0"
+              style={{
+                background: 'var(--fs-primary)',
+                color: 'var(--fs-accent)',
+                borderRadius: 0,
+              }}
             >
               <Target size={22} />
             </div>
             <div className="text-right flex-1">
-              <p className="eyebrow" style={{ color: 'var(--stone)' }}>
+              <p
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  color: 'var(--fs-muted)',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                }}
+              >
                 המטרה שלך
               </p>
               <p
                 style={{
-                  fontFamily: 'var(--font-hebrew)',
+                  fontFamily: 'var(--font-body)',
                   fontWeight: 700,
                   fontSize: '16px',
-                  color: 'var(--ink)',
+                  color: 'var(--fs-ink)',
                 }}
               >
                 {getGoalLabel(data.primaryGoal)}
@@ -1117,23 +1248,38 @@ function CompleteStep({ data }: CompleteStepProps) {
           </div>
         )}
 
-        <div className="card-outlined p-4 flex items-center gap-4">
+        <div
+          className="p-4 flex items-center gap-4"
+          style={{
+            background: 'var(--fs-surface)',
+            border: '1px solid var(--fs-surface-2)',
+            borderRadius: '22px 16px 22px 16px',
+          }}
+        >
           <div
-            className="w-12 h-12 flex items-center justify-center"
-            style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
+            className="w-12 h-12 flex items-center justify-center shrink-0"
+            style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)', borderRadius: 0 }}
           >
             <Calendar size={22} />
           </div>
           <div className="text-right flex-1">
-            <p className="eyebrow" style={{ color: 'var(--stone)' }}>
+            <p
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                color: 'var(--fs-muted)',
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+              }}
+            >
               תדירות אימונים
             </p>
             <p
               style={{
-                fontFamily: 'var(--font-hebrew)',
+                fontFamily: 'var(--font-body)',
                 fontWeight: 700,
                 fontSize: '16px',
-                color: 'var(--ink)',
+                color: 'var(--fs-ink)',
               }}
             >
               {data.preferredWorkoutDays} ימים בשבוע
@@ -1141,23 +1287,38 @@ function CompleteStep({ data }: CompleteStepProps) {
           </div>
         </div>
 
-        <div className="card-outlined p-4 flex items-center gap-4">
+        <div
+          className="p-4 flex items-center gap-4"
+          style={{
+            background: 'var(--fs-surface)',
+            border: '1px solid var(--fs-surface-2)',
+            borderRadius: '22px 16px 22px 16px',
+          }}
+        >
           <div
-            className="w-12 h-12 flex items-center justify-center"
-            style={{ background: 'var(--navy)', color: 'var(--mustard)' }}
+            className="w-12 h-12 flex items-center justify-center shrink-0"
+            style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)', borderRadius: 0 }}
           >
             <Clock size={22} />
           </div>
           <div className="text-right flex-1">
-            <p className="eyebrow" style={{ color: 'var(--stone)' }}>
+            <p
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                color: 'var(--fs-muted)',
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+              }}
+            >
               משך כל אימון
             </p>
             <p
               style={{
-                fontFamily: 'var(--font-hebrew)',
+                fontFamily: 'var(--font-body)',
                 fontWeight: 700,
                 fontSize: '16px',
-                color: 'var(--ink)',
+                color: 'var(--fs-ink)',
               }}
             >
               {data.workoutDuration} דקות
@@ -1232,9 +1393,29 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
   return (
     <div
       className="fixed inset-0 z-[9999] flex flex-col"
-      style={{ background: 'var(--bone)' }}
+      style={{
+        background: 'var(--fs-bg)',
+        backgroundImage:
+          'linear-gradient(rgba(19,35,39,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(19,35,39,0.03) 1px, transparent 1px)',
+        backgroundSize: '24px 24px',
+      }}
       dir="rtl"
     >
+      {/* Progress bar at top */}
+      {currentStep > 0 && currentStep < STEPS.length - 1 && (
+        <div className="w-full h-1" style={{ background: 'var(--fs-surface-2)' }}>
+          <motion.div
+            className="h-full"
+            style={{ background: 'var(--fs-accent)' }}
+            initial={{ width: 0 }}
+            animate={{
+              width: `${((currentStep - 1) / (STEPS.length - 2)) * 100}%`,
+            }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          />
+        </div>
+      )}
+
       {/* Skip Button - safe area aware */}
       {currentStep > 0 && currentStep < STEPS.length - 1 && (
         <div className="absolute top-0 left-0 right-0 p-4 z-10 pt-[calc(1rem+env(safe-area-inset-top))]">
@@ -1246,7 +1427,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
               fontSize: '12px',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -1259,21 +1440,21 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
         </div>
       )}
 
-      {/* Progress */}
+      {/* Content */}
+      <div className="flex-1 overflow-hidden pt-8">
+        <AnimatePresence mode="sync">{renderStep()}</AnimatePresence>
+      </div>
+
+      {/* Compact dots at bottom */}
       {currentStep > 0 && currentStep < STEPS.length - 1 && (
         <ProgressDots currentStep={currentStep - 1} totalSteps={STEPS.length - 2} />
       )}
-
-      {/* Content */}
-      <div className="flex-1 overflow-hidden">
-        <AnimatePresence mode="sync">{renderStep()}</AnimatePresence>
-      </div>
 
       {/* Navigation - thumb zone optimized */}
       {currentStep > 0 && (
         <div
           className="px-4 pb-4 pt-2"
-          style={{ paddingBottom: 'calc(1rem+env(safe-area-inset-bottom))' }}
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
         >
           <div className="flex gap-3">
             {currentStep < STEPS.length - 1 && (
@@ -1281,23 +1462,32 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
                 type="button"
                 onClick={goBack}
                 className="w-16 h-16 flex items-center justify-center active:scale-95 transition-transform"
-                style={{ background: 'var(--bone-deep)' }}
+                style={{
+                  background: 'var(--fs-surface)',
+                  border: '1px solid var(--fs-surface-2)',
+                  borderRadius: '22px 16px 22px 16px',
+                }}
               >
-                <ChevronLeft size={28} style={{ color: 'var(--navy)' }} />
+                <ChevronLeft size={28} style={{ color: 'var(--fs-ink)' }} />
               </button>
             )}
             <button
               type="button"
               onClick={goNext}
               disabled={!canProceed()}
-              className={
-                canProceed()
-                  ? 'btn-primary flex-1 flex items-center justify-center gap-3'
-                  : 'btn-primary flex-1 flex items-center justify-center gap-3 opacity-40 cursor-not-allowed'
-              }
-              style={{ minHeight: '56px' }}
+              className="flex-1 flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+              style={{
+                background: canProceed() ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+                color: canProceed() ? 'var(--fs-accent)' : 'var(--fs-muted)',
+                borderRadius: '22px 16px 22px 16px',
+                minHeight: '56px',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                border: 'none',
+              }}
             >
-              {currentStep === STEPS.length - 2 ? 'סיום' : 'המשך'}
+              {currentStep === STEPS.length - 2 ? 'סיום' : 'הבא'}
               <ChevronRight size={24} />
             </button>
           </div>

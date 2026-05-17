@@ -47,7 +47,6 @@ import WaterReminderToast from './WaterReminderToast';
 // Following Vercel best practices: bundle-dynamic-imports
 const WorkoutSummary = React.lazy(() => import('./WorkoutSummary'));
 const ExerciseTutorial = React.lazy(() => import('./ExerciseTutorial'));
-const AICoach = React.lazy(() => import('./AICoach'));
 const ExerciseSelector = React.lazy(() => import('./ExerciseSelector'));
 const QuickExerciseForm = React.lazy(() => import('./QuickExerciseForm'));
 const WorkoutSettingsOverlay = React.lazy(() => import('./overlays/WorkoutSettingsOverlay'));
@@ -124,7 +123,6 @@ export const WorkoutContent: React.FC<{
 
   // Settings
   const workoutSettings: Partial<WorkoutSettings> = state.appSettings?.workoutSettings || {};
-  const bgPrimary = (workoutSettings.oledMode as boolean) ? '#000000' : 'var(--bone)';
 
   // PR tracking
   const { getPRForExercise } = usePersonalRecords(state.exercises, state.currentExerciseIndex);
@@ -574,10 +572,6 @@ export const WorkoutContent: React.FC<{
     dispatch({ type: 'TOGGLE_DRAWER', payload: false });
   }, [dispatch]);
 
-  const handleOpenSelector = useCallback(() => {
-    dispatch({ type: 'OPEN_SELECTOR' });
-  }, [dispatch]);
-
   const handleCloseSelector = useCallback(() => {
     dispatch({ type: 'CLOSE_SELECTOR' });
   }, [dispatch]);
@@ -797,10 +791,10 @@ export const WorkoutContent: React.FC<{
     return (
       <React.Suspense
         fallback={
-          <div className="fixed inset-0 z-[9999] bg-[var(--bone)] flex items-center justify-center">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{background: 'var(--fs-bg)'}}>
             <div
               style={{
-                color: 'var(--navy)',
+                color: 'var(--fs-primary)',
                 fontFamily: 'var(--font-mono)',
                 letterSpacing: '0.18em',
                 textTransform: 'uppercase',
@@ -865,7 +859,7 @@ export const WorkoutContent: React.FC<{
   // If no current exercise OR exercise has no name, show PreWorkoutScreen for initial welcome
   if (!derived.currentExercise || !derived.currentExercise.name?.trim()) {
     return (
-      <React.Suspense fallback={<div className="fixed inset-0 bg-[var(--bone)]" />}>
+      <React.Suspense fallback={<div className="fixed inset-0" style={{background: 'var(--fs-bg)'}} />}>
         <PreWorkoutScreen
           oledMode={!!workoutSettings.oledMode}
           onStartWorkout={() => {
@@ -910,15 +904,15 @@ export const WorkoutContent: React.FC<{
   // Main workout UI
   return (
     <div
-      className={cn('relative flex flex-col min-h-screen font-sans transition-colors duration-500')}
-      style={{ background: bgPrimary, color: 'var(--ink)' }}
+      className={cn('relative flex flex-col h-dvh font-sans transition-colors duration-500')}
+      style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
     >
       {/* Progress Bar */}
       <ProgressBar progress={derived.progressPercent} />
 
-      {/* Main Content - Editorial Annual Layout */}
-      <div className="relative z-10 flex flex-col flex-1 overflow-y-auto overscroll-contain">
-        {/* Header (thin bone strip) */}
+      {/* Main Content - Fresh Steel Compact Layout */}
+      <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
+        {/* Header */}
         <WorkoutHeader
           startTimestamp={state.startTimestamp}
           totalPausedTime={state.totalPausedTime}
@@ -930,18 +924,31 @@ export const WorkoutContent: React.FC<{
           onOpenTutorial={() =>
             dispatch({ type: 'SHOW_TUTORIAL', payload: derived.currentExercise?.name || '' })
           }
-          onOpenAICoach={() => dispatch({ type: 'OPEN_AI_COACH' })}
         />
 
-        {/* Superset Mode Indicator — chapter-break strip */}
+        {/* Superset Mode Indicator */}
         {supersetMode && (
-          <div className="chapter-break">
-            <span className="left">SUPERSET · בחר תרגיל שני</span>
-            <span className="right">2 / 2</span>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '4px 14px',
+              background: 'var(--fs-accent)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.12em',
+              color: '#FFFFFF',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+            }}
+          >
+            <span>SUPERSET · בחר תרגיל שני</span>
+            <span>2 / 2</span>
           </div>
         )}
 
-        {/* Inline Rest Timer (editorial strip, not a modal) */}
+        {/* Inline Rest Timer */}
         {state.restTimer.active && (
           <InlineRestTimer
             active={state.restTimer.active}
@@ -956,14 +963,14 @@ export const WorkoutContent: React.FC<{
           />
         )}
 
-        {/* Exercise Display (hero + inputs) */}
+        {/* Exercise Display - fills remaining space */}
         <div
-          className="flex-1 flex items-stretch justify-center"
+          className="flex-1 flex items-stretch"
           onPointerDown={handleSwipePointerDown}
           onPointerMove={handleSwipePointerMove}
           onPointerUp={handleSwipePointerEnd}
           onPointerCancel={handleSwipePointerEnd}
-          style={{ touchAction: 'pan-y' }}
+          style={{ touchAction: 'pan-y', overflow: 'hidden' }}
         >
           <ExerciseDisplay
             exercise={derived.currentExercise}
@@ -990,15 +997,14 @@ export const WorkoutContent: React.FC<{
 
         {/* Navigation Footer */}
         <div
-          className="w-full pb-[env(safe-area-inset-bottom,12px)]"
-          style={{ background: 'var(--bone)' }}
+          className="w-full"
+          style={{ background: 'var(--fs-bg)' }}
         >
           <ExerciseNav
             exercises={state.exercises}
             currentIndex={state.currentExerciseIndex}
             onChangeExercise={handleChangeExercise}
             onOpenDrawer={handleOpenDrawer}
-            onAddExercise={handleOpenSelector}
           />
         </div>
       </div>
@@ -1166,13 +1172,13 @@ export const WorkoutContent: React.FC<{
             />
           )}
 
-          {/* AI Coach */}
-          {state.showAICoach && derived.currentExercise && (
+          {/* AI Coach (temporarily hidden for Fresh Steel redesign) */}
+          {/* {state.showAICoach && derived.currentExercise && (
             <AICoach
               currentExercise={derived.currentExercise}
               onClose={() => dispatch({ type: 'CLOSE_AI_COACH' })}
             />
-          )}
+          )} */}
         </React.Suspense>
       </OverlayErrorBoundary>
 

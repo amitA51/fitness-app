@@ -1,6 +1,6 @@
 // ============================================================================
 // RecentWorkouts — Full history with exercise details on dashboard
-// Editorial "Sport Annual" design: Navy · Mustard · Bone
+// Editorial "Fresh Steel" design: Dark · Accent · Signal
 // ============================================================================
 
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -19,13 +19,16 @@ const PAGE_SIZE = 5;
 function SkeletonRow() {
   return (
     <div
-      className="card-outlined animate-shimmer"
+      className="animate-shimmer"
       style={{
         padding: '14px 16px',
         background:
-          'linear-gradient(90deg, var(--bone-deep) 25%, var(--bone-faint) 50%, var(--bone-deep) 75%)',
+          'linear-gradient(90deg, var(--fs-surface-2) 25%, var(--fs-surface) 50%, var(--fs-surface-2) 75%)',
         backgroundSize: '200% 100%',
         height: 82,
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
+        boxShadow: 'var(--shadow-card)',
       }}
       aria-hidden="true"
     />
@@ -67,7 +70,7 @@ function ExerciseDetail({ exercise }: { exercise: WorkoutSession['exercises'][nu
             fontFamily: 'var(--font-hebrew)',
             fontSize: 12,
             fontWeight: 600,
-            color: 'var(--navy)',
+            color: 'var(--fs-ink)',
           }}
         >
           {name}
@@ -82,18 +85,18 @@ function ExerciseDetail({ exercise }: { exercise: WorkoutSession['exercises'][nu
           fontFamily: 'var(--font-mono)',
           fontSize: 11,
           letterSpacing: '0.04em',
-          color: 'var(--stone)',
+          color: 'var(--fs-muted)',
         }}
       >
-        <span style={{ color: 'var(--navy)', fontWeight: 700 }}>
+        <span style={{ color: 'var(--fs-primary)', fontWeight: 700 }}>
           {bestSet.weight > 0 ? `${bestSet.weight}` : ''}
         </span>
         {bestSet.weight > 0 && <span>ק"ג</span>}
-        <span style={{ color: 'var(--bone-deep)' }}>×</span>
+        <span style={{ color: 'var(--fs-surface-2)' }}>×</span>
         <span>
           {workingSets.length}×{bestSet.reps}
         </span>
-        <span style={{ color: 'var(--bone-deep)' }}>·</span>
+        <span style={{ color: 'var(--fs-surface-2)' }}>·</span>
         <span>{volLabel} ק"ג</span>
       </div>
     </div>
@@ -121,7 +124,16 @@ function WorkoutCard({
   const hasExercises = exercises.length > 0;
 
   return (
-    <div className="card-outlined" style={{ overflow: 'hidden' }}>
+    <div
+      className="fs-accent-rail"
+      style={{
+        overflow: 'hidden',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
+        boxShadow: 'var(--shadow-card)',
+      }}
+    >
       {/* Main clickable row */}
       <button
         type="button"
@@ -145,7 +157,7 @@ function WorkoutCard({
             fontSize: 10,
             letterSpacing: '0.22em',
             textTransform: 'uppercase',
-            color: today ? 'var(--mustard)' : 'var(--stone)',
+            color: today ? 'var(--fs-accent)' : 'var(--fs-muted)',
             marginBottom: 4,
           }}
         >
@@ -167,7 +179,7 @@ function WorkoutCard({
               fontWeight: 800,
               fontSize: 18,
               lineHeight: 1.1,
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               textTransform: 'uppercase',
               letterSpacing: '0.02em',
               flex: 1,
@@ -181,7 +193,7 @@ function WorkoutCard({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 12,
-              color: 'var(--ink)',
+              color: 'var(--fs-ink)',
               letterSpacing: '0.04em',
               flexShrink: 0,
             }}
@@ -207,7 +219,7 @@ function WorkoutCard({
             alignItems: 'center',
             justifyContent: 'center',
             gap: 4,
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
           }}
           aria-label={expanded ? 'הסתר תרגילים' : 'הצג תרגילים'}
           aria-expanded={expanded}
@@ -233,7 +245,7 @@ function WorkoutCard({
           id={`workout-exercises-${session.id}`}
           style={{
             padding: '0 16px 14px',
-            borderTop: '1px solid var(--bone-deep)',
+            borderTop: '1px solid var(--fs-surface-2)',
             marginTop: 4,
           }}
         >
@@ -241,7 +253,7 @@ function WorkoutCard({
             <div
               key={ex.id || i}
               style={{
-                borderBottom: i < exercises.length - 1 ? '1px dashed var(--bone-deep)' : 'none',
+                borderBottom: i < exercises.length - 1 ? '1px dashed var(--fs-surface-2)' : 'none',
               }}
             >
               <ExerciseDetail exercise={ex} />
@@ -279,7 +291,16 @@ export const RecentWorkouts = memo(function RecentWorkouts({
 
   if (completed.length === 0) {
     return (
-      <div className="card-outlined text-center" style={{ padding: '40px 20px' }}>
+      <div
+        style={{
+          padding: '40px 20px',
+          textAlign: 'center',
+          background: 'var(--fs-surface)',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: '22px 16px 22px 16px',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
         <div className="eyebrow" style={{ marginBottom: 12 }}>
           § no sessions yet
         </div>
@@ -289,7 +310,7 @@ export const RecentWorkouts = memo(function RecentWorkouts({
             fontWeight: 900,
             fontSize: 28,
             lineHeight: 0.95,
-            color: 'var(--navy)',
+            color: 'var(--fs-primary)',
             textTransform: 'uppercase',
             letterSpacing: '-0.01em',
             marginBottom: 16,
@@ -324,7 +345,7 @@ export const RecentWorkouts = memo(function RecentWorkouts({
             fontSize: 10,
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
           }}
           className="focus-ring"
         >

@@ -78,7 +78,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
     fontFamily: 'var(--font-mono)',
     fontSize: 10,
     letterSpacing: '0.18em',
-    color: 'var(--stone)',
+    color: 'var(--fs-muted)',
     textTransform: 'uppercase',
     marginBottom: 6,
     fontWeight: 600,
@@ -86,13 +86,13 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    background: 'var(--color-surface-input)',
-    border: '2px solid var(--navy)',
+    background: 'var(--fs-surface)',
+    border: '2px solid var(--fs-primary)',
     borderRadius: 0,
     padding: '12px 14px',
     fontFamily: 'var(--font-body)',
     fontSize: 15,
-    color: 'var(--ink)',
+    color: 'var(--fs-ink)',
     outline: 'none',
     direction: 'rtl',
     textAlign: 'right',
@@ -118,8 +118,8 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
         style={{
           width: '100%',
           maxWidth: 480,
-          background: 'var(--bone)',
-          borderTop: '2px solid var(--navy)',
+          background: 'var(--fs-surface)',
+          borderTop: '2px solid var(--fs-primary)',
           padding: '20px 20px 0',
         }}
       >
@@ -131,7 +131,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
             alignItems: 'center',
             marginBottom: 20,
             paddingBottom: 16,
-            borderBottom: '2px solid var(--navy)',
+            borderBottom: '2px solid var(--fs-primary)',
           }}
         >
           <h2
@@ -139,7 +139,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 22,
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               letterSpacing: '-0.01em',
             }}
           >
@@ -154,13 +154,13 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'var(--bone-deep)',
-              border: '2px solid var(--navy)',
+              background: 'var(--fs-surface-2)',
+              border: '2px solid var(--fs-primary)',
               borderRadius: 0,
               cursor: 'pointer',
             }}
           >
-            <CloseIcon style={{ width: 18, height: 18, color: 'var(--navy)' }} />
+            <CloseIcon style={{ width: 18, height: 18, color: 'var(--fs-primary)' }} />
           </button>
         </div>
 
@@ -179,7 +179,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
               placeholder="לדוגמה: לחיצת חזה"
               style={{
                 ...inputStyle,
-                borderColor: nameError ? 'var(--color-error)' : 'var(--navy)',
+                borderColor: nameError ? 'var(--fs-warn)' : 'var(--fs-primary)',
               }}
               autoFocus
               required
@@ -189,7 +189,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: 12,
-                  color: 'var(--color-error)',
+                  color: 'var(--fs-warn)',
                   marginTop: 4,
                 }}
               >
@@ -255,7 +255,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
               alignItems: 'center',
               gap: 12,
               padding: '12px 14px',
-              background: 'var(--bone-deep)',
+              background: 'var(--fs-surface-2)',
               cursor: 'pointer',
               direction: 'rtl',
             }}
@@ -267,14 +267,14 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
               style={{
                 width: 20,
                 height: 20,
-                accentColor: 'var(--navy)',
+                accentColor: 'var(--fs-primary)',
               }}
             />
             <span
               style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: 14,
-                color: 'var(--ink)',
+                color: 'var(--fs-ink)',
               }}
             >
               שמור לרשימה שלי
@@ -289,9 +289,9 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
               style={{
                 flex: 1,
                 padding: '14px 20px',
-                background: formData.name.trim() ? 'var(--navy)' : 'var(--bone-deep)',
-                color: formData.name.trim() ? 'var(--mustard)' : 'var(--stone)',
-                border: '2px solid var(--navy)',
+                background: formData.name.trim() ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+                color: formData.name.trim() ? 'var(--fs-accent)' : 'var(--fs-muted)',
+                border: '2px solid var(--fs-primary)',
                 borderRadius: 0,
                 cursor: formData.name.trim() ? 'pointer' : 'not-allowed',
                 fontFamily: 'var(--font-display)',
@@ -310,8 +310,8 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
               style={{
                 padding: '14px 20px',
                 background: 'transparent',
-                color: 'var(--stone)',
-                border: '2px solid var(--bone-deep)',
+                color: 'var(--fs-muted)',
+                border: '2px solid var(--fs-surface-2)',
                 borderRadius: 0,
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
@@ -327,7 +327,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
           </div>
         </form>
 
-        <div style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--bone)' }} />
+        <div style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--fs-surface)' }} />
       </div>
     </div>
   );

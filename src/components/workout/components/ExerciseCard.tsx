@@ -23,7 +23,7 @@ const NAME_PRIMARY_STYLE: React.CSSProperties = {
   fontFamily: 'var(--font-display)',
   fontWeight: 800,
   fontSize: 15,
-  color: 'var(--navy)',
+  color: 'var(--fs-primary)',
   lineHeight: 1.1,
   display: 'block',
 };
@@ -32,7 +32,7 @@ const NAME_SECONDARY_STYLE: React.CSSProperties = {
   fontFamily: 'var(--font-mono)',
   fontSize: 10,
   letterSpacing: '0.1em',
-  color: 'var(--stone)',
+  color: 'var(--fs-muted)',
   textTransform: 'uppercase',
 };
 
@@ -40,7 +40,7 @@ const NAME_SOLO_STYLE: React.CSSProperties = {
   fontFamily: 'var(--font-display)',
   fontWeight: 800,
   fontSize: 15,
-  color: 'var(--navy)',
+  color: 'var(--fs-primary)',
   lineHeight: 1.1,
 };
 
@@ -71,9 +71,11 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
         style={{
           position: 'relative',
           padding: '14px',
-          background: isSelected ? 'var(--mustard)' : 'var(--color-surface)',
-          border: `2px solid ${isSelected ? 'var(--navy)' : 'var(--navy)'}`,
-          borderRadius: 0,
+          background: isSelected
+            ? 'var(--fs-accent)'
+            : 'linear-gradient(135deg, rgba(255,255,255,0.58), transparent 48%), var(--fs-surface)',
+          border: '1px solid var(--fs-steel)',
+          borderRadius: '22px 16px 22px 16px',
           cursor: 'pointer',
           transition: 'all 150ms',
           marginBottom: 0,
@@ -99,8 +101,8 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
               left: 12,
               width: 24,
               height: 24,
-              background: isSelected ? 'var(--navy)' : 'var(--bone-deep)',
-              border: `2px solid ${isSelected ? 'var(--navy)' : 'rgba(20,41,61,0.3)'}`,
+              background: isSelected ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+              border: `2px solid ${isSelected ? 'var(--fs-primary)' : 'rgba(20,41,61,0.3)'}`,
               borderRadius: 0,
               display: 'flex',
               alignItems: 'center',
@@ -121,7 +123,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                   width="14"
                   height="14"
                   fill="none"
-                  stroke={isSelected ? 'var(--mustard)' : 'var(--navy)'}
+                  stroke={isSelected ? 'var(--fs-accent)' : 'var(--fs-primary)'}
                   strokeWidth={3}
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -154,8 +156,8 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                     letterSpacing: '0.18em',
                     textTransform: 'uppercase',
                     padding: '2px 8px',
-                    background: isSelected ? 'rgba(20,41,61,0.15)' : 'var(--bone-deep)',
-                    color: isSelected ? 'var(--navy)' : 'var(--stone)',
+                    background: isSelected ? 'rgba(20,41,61,0.15)' : 'var(--fs-surface-2)',
+                    color: isSelected ? 'var(--fs-primary)' : 'var(--fs-muted)',
                     border: 'none',
                     borderRadius: 0,
                   }}
@@ -168,7 +170,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.12em',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   textTransform: 'uppercase',
                   display: 'flex',
                   alignItems: 'center',
@@ -182,7 +184,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.12em',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   textTransform: 'uppercase',
                 }}
               >
@@ -195,7 +197,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: 12,
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   marginTop: 6,
                   fontStyle: 'italic',
                   overflow: 'hidden',
@@ -222,7 +224,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                 background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 transition: 'color 150ms',
                 flexShrink: 0,
               }}

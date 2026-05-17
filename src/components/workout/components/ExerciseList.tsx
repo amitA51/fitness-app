@@ -46,14 +46,14 @@ const ExerciseList: React.FC<ExerciseListProps> = memo(
         >
           <DumbbellIcon
             className="w-12 h-12"
-            style={{ margin: '0 auto 16px', color: 'var(--bone-deep)' }}
+            style={{ margin: '0 auto 16px', color: 'var(--fs-surface-2)' }}
           />
           <div
             style={{
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 18,
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               marginBottom: 8,
             }}
           >
@@ -63,7 +63,7 @@ const ExerciseList: React.FC<ExerciseListProps> = memo(
             style={{
               fontFamily: 'var(--font-body)',
               fontSize: 14,
-              color: 'var(--stone)',
+              color: 'var(--fs-muted)',
             }}
           >
             נסה לשנות את הסינון או צור תרגיל חדש

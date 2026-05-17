@@ -171,12 +171,12 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── NAVY MASTHEAD ── */}
-        <div style={{ background: 'var(--navy)' }}>
+        <div style={{ background: 'var(--fs-primary)' }}>
           {/* Drag Handle */}
           <div className="flex justify-center pt-3 pb-2">
             <div
-              className="w-10 h-1 rounded-full"
-              style={{ background: 'rgba(var(--text-on-navy-rgb),0.3)' }}
+              className="w-10 h-1"
+              style={{ background: 'var(--fs-surface)', opacity: 0.3 }}
             />
           </div>
 
@@ -190,7 +190,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     fontFamily: 'var(--font-display)',
                     fontWeight: 900,
                     fontSize: 28,
-                    color: 'var(--bone)',
+                    color: 'var(--fs-surface)',
                     letterSpacing: '-0.01em',
                     lineHeight: 0.95,
                     direction: 'ltr',
@@ -205,7 +205,8 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     letterSpacing: '0.15em',
-                    color: 'rgba(var(--text-on-navy-rgb),0.5)',
+                    color: 'var(--fs-surface)',
+                    opacity: 0.5,
                     textTransform: 'uppercase',
                   }}
                 >
@@ -217,19 +218,20 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 onClick={onClose}
                 className="w-11 h-11 flex items-center justify-center transition-colors cursor-pointer"
                 style={{
-                  background: 'rgba(var(--text-on-navy-rgb),0.1)',
+                  background: 'var(--fs-surface)',
+                  opacity: 0.1,
                   borderRadius: 0,
                 }}
                 aria-label="סגור"
               >
-                <CloseIcon className="w-5 h-5" style={{ color: 'var(--bone)' }} />
+                <CloseIcon className="w-5 h-5" style={{ color: 'var(--fs-surface)' }} />
               </button>
             </div>
 
             {/* Tabs — Apple Segmented */}
             <div
               className="mt-4 grid grid-cols-2 gap-0"
-              style={{ background: 'rgba(var(--text-on-navy-rgb),0.08)' }}
+              style={{ background: 'var(--fs-surface)', opacity: 0.08 }}
             >
               <button
                 type="button"
@@ -238,13 +240,13 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   setActiveTab('exercises');
                 }}
                 aria-current={activeTab === 'exercises' ? 'page' : undefined}
-                className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-mustard focus-visible:outline-offset-[-2px]"
+                className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
                 style={{
-                  background: activeTab === 'exercises' ? 'var(--mustard)' : 'transparent',
+                  background: activeTab === 'exercises' ? 'var(--fs-accent)' : 'transparent',
                   color:
                     activeTab === 'exercises'
-                      ? 'var(--color-on-mustard)'
-                      : 'rgba(var(--text-on-navy-rgb),0.65)',
+                      ? 'var(--fs-primary)'
+                      : 'var(--fs-surface)',
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.04em',
                   textTransform: 'uppercase',
@@ -260,13 +262,13 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   setActiveTab('templates');
                 }}
                 aria-current={activeTab === 'templates' ? 'page' : undefined}
-                className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-mustard focus-visible:outline-offset-[-2px]"
+                className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
                 style={{
-                  background: activeTab === 'templates' ? 'var(--mustard)' : 'transparent',
+                  background: activeTab === 'templates' ? 'var(--fs-accent)' : 'transparent',
                   color:
                     activeTab === 'templates'
-                      ? 'var(--color-on-mustard)'
-                      : 'rgba(var(--text-on-navy-rgb),0.65)',
+                      ? 'var(--fs-primary)'
+                      : 'var(--fs-surface)',
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.04em',
                   textTransform: 'uppercase',
@@ -282,7 +284,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         {/* ── BONE BODY ── */}
         <div
           className="flex-1 relative flex flex-col overflow-hidden"
-          style={{ background: 'var(--bone)' }}
+          style={{ background: 'var(--fs-surface)' }}
         >
           {activeTab === 'exercises' ? (
             <div className="flex-1 flex flex-col overflow-y-auto -webkit-overflow-scrolling-touch">
@@ -308,8 +310,8 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               exit={{ y: 100, opacity: 0 }}
               className="px-5 py-4"
               style={{
-                background: 'var(--bone)',
-                borderTop: '2px solid var(--navy)',
+                background: 'var(--fs-surface)',
+                borderTop: '2px solid var(--fs-primary)',
               }}
             >
               <button
@@ -317,8 +319,8 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 onClick={handleConfirmSelection}
                 className="w-full flex items-center justify-center gap-3 cursor-pointer"
                 style={{
-                  background: 'var(--navy)',
-                  color: 'var(--mustard)',
+                  background: 'var(--fs-primary)',
+                  color: 'var(--fs-accent)',
                   borderRadius: 0,
                   padding: '18px 24px',
                   fontFamily: 'var(--font-display)',
@@ -341,8 +343,8 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               exit={{ opacity: 0 }}
               className="px-5 py-4"
               style={{
-                background: 'var(--bone)',
-                borderTop: '1px solid var(--bone-deep)',
+                background: 'var(--fs-surface)',
+                borderTop: '1px solid var(--fs-surface-2)',
               }}
             >
               <button
@@ -351,8 +353,8 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 className="w-full cursor-pointer"
                 style={{
                   background: 'transparent',
-                  color: 'var(--stone)',
-                  border: '2px solid var(--bone-deep)',
+                  color: 'var(--fs-muted)',
+                  border: '2px solid var(--fs-surface-2)',
                   borderRadius: 0,
                   padding: '14px 24px',
                   fontFamily: 'var(--font-display)',
@@ -370,7 +372,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         </AnimatePresence>
 
         {/* Safe area bottom */}
-        <div style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--bone)' }} />
+        <div style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--fs-surface)' }} />
       </motion.div>
     </ModalOverlay>
   );

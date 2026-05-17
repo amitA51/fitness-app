@@ -95,19 +95,19 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
           right: 0,
           maxWidth: 480,
           margin: '0 auto',
-          background: 'var(--bone)',
+          background: 'var(--fs-surface)',
           maxHeight: '90dvh',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          borderTop: '2px solid var(--navy)',
+          borderTop: '2px solid var(--fs-primary)',
         }}
       >
         {/* Header */}
         <div
           style={{
             padding: '20px 20px 16px',
-            borderBottom: '1px solid var(--bone-deep)',
+            borderBottom: '1px solid var(--fs-surface-2)',
           }}
         >
           {/* Header Row */}
@@ -125,7 +125,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
                   letterSpacing: '0.22em',
-                  color: 'var(--mustard)',
+                  color: 'var(--fs-accent)',
                   textTransform: 'uppercase',
                 }}
               >
@@ -136,7 +136,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,
                   fontSize: 24,
-                  color: 'var(--navy)',
+                  color: 'var(--fs-primary)',
                   textTransform: 'uppercase',
                   letterSpacing: '-0.01em',
                   marginTop: 4,
@@ -162,7 +162,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                     width: 44,
                     height: 44,
                     background: 'transparent',
-                    border: '2px solid var(--navy)',
+                    border: '2px solid var(--fs-primary)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -171,10 +171,10 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                   aria-label="היסטוריה"
                 >
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <circle cx="9" cy="9" r="7" stroke="var(--navy)" strokeWidth="1.5" />
+                    <circle cx="9" cy="9" r="7" stroke="var(--fs-primary)" strokeWidth="1.5" />
                     <path
                       d="M9 5V9L11.5 11.5"
-                      stroke="var(--navy)"
+                      stroke="var(--fs-primary)"
                       strokeWidth="1.5"
                       strokeLinecap="square"
                     />
@@ -195,7 +195,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                 style={{
                   width: 44,
                   height: 44,
-                  background: 'var(--navy)',
+                  background: 'var(--fs-primary)',
                   border: 'none',
                   display: 'flex',
                   alignItems: 'center',
@@ -207,7 +207,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <path
                     d="M5 5L13 13M13 5L5 13"
-                    stroke="var(--mustard)"
+                    stroke="var(--fs-accent)"
                     strokeWidth="2"
                     strokeLinecap="square"
                   />
@@ -220,7 +220,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
           <div
             style={{
               display: 'flex',
-              background: 'var(--bone-deep)',
+              background: 'var(--fs-surface-2)',
               padding: 4,
             }}
           >
@@ -238,14 +238,14 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
               style={{
                 flex: 1,
                 padding: '10px 16px',
-                background: activeTab === 'templates' ? 'var(--navy)' : 'transparent',
+                background: activeTab === 'templates' ? 'var(--fs-primary)' : 'transparent',
                 border: 'none',
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 14,
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
-                color: activeTab === 'templates' ? 'var(--mustard)' : 'var(--stone)',
+                color: activeTab === 'templates' ? 'var(--fs-accent)' : 'var(--fs-muted)',
                 cursor: 'pointer',
                 transition: 'all 150ms ease',
               }}
@@ -266,14 +266,14 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
               style={{
                 flex: 1,
                 padding: '10px 16px',
-                background: activeTab === 'quick' ? 'var(--navy)' : 'transparent',
+                background: activeTab === 'quick' ? 'var(--fs-primary)' : 'transparent',
                 border: 'none',
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 14,
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
-                color: activeTab === 'quick' ? 'var(--mustard)' : 'var(--stone)',
+                color: activeTab === 'quick' ? 'var(--fs-accent)' : 'var(--fs-muted)',
                 cursor: 'pointer',
                 transition: 'all 150ms ease',
               }}
@@ -305,7 +305,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                 style={{
                   width: 32,
                   height: 32,
-                  border: '3px solid var(--navy)',
+                  border: '3px solid var(--fs-primary)',
                   borderTopColor: 'transparent',
                   animation: 'spin 1s linear infinite',
                 }}
@@ -330,8 +330,8 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                   style={{
                     width: '100%',
                     padding: 16,
-                    background: 'var(--mustard)',
-                    border: '2px solid var(--navy)',
+                    background: 'var(--fs-accent)',
+                    border: '2px solid var(--fs-primary)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 16,
@@ -350,13 +350,13 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                     style={{
                       width: 48,
                       height: 48,
-                      background: 'var(--navy)',
+                      background: 'var(--fs-primary)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: 24,
                       flexShrink: 0,
-                      color: 'var(--mustard)',
+                      color: 'var(--fs-accent)',
                     }}
                   >
                     §
@@ -367,7 +367,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                         fontFamily: 'var(--font-display)',
                         fontWeight: 800,
                         fontSize: 16,
-                        color: 'var(--navy)',
+                        color: 'var(--fs-primary)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.02em',
                       }}
@@ -378,7 +378,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: 11,
-                        color: 'var(--navy)',
+                        color: 'var(--fs-primary)',
                         opacity: 0.7,
                         letterSpacing: '0.05em',
                         marginTop: 4,
@@ -422,7 +422,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                 style={{
                   width: '100%',
                   padding: 20,
-                  background: 'var(--navy)',
+                  background: 'var(--fs-primary)',
                   border: 'none',
                   display: 'flex',
                   alignItems: 'center',
@@ -432,17 +432,17 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                   transition: 'background 150ms ease',
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'var(--navy-deep)';
+                  (e.currentTarget as HTMLElement).style.background = '#0D1A1C';
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'var(--navy)';
+                  (e.currentTarget as HTMLElement).style.background = 'var(--fs-primary)';
                 }}
               >
                 <div
                   style={{
                     width: 48,
                     height: 48,
-                    background: 'var(--mustard)',
+                    background: 'var(--fs-accent)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -452,7 +452,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path
                       d="M12 5V19M5 12H19"
-                      stroke="var(--navy)"
+                      stroke="var(--fs-primary)"
                       strokeWidth="3"
                       strokeLinecap="square"
                     />
@@ -464,7 +464,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                       fontFamily: 'var(--font-display)',
                       fontWeight: 800,
                       fontSize: 18,
-                      color: 'var(--mustard)',
+                      color: 'var(--fs-accent)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em',
                     }}
@@ -486,7 +486,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path
                     d="M8 5L13 10L8 15"
-                    stroke="var(--mustard)"
+                    stroke="var(--fs-accent)"
                     strokeWidth="2"
                     strokeLinecap="square"
                   />
@@ -501,7 +501,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
                       letterSpacing: '0.2em',
-                      color: 'var(--stone)',
+                      color: 'var(--fs-muted)',
                       textTransform: 'uppercase',
                       marginBottom: 12,
                       paddingRight: 4,
@@ -510,7 +510,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                       gap: 8,
                     }}
                   >
-                    <span style={{ color: 'var(--mustard)' }}>§</span>
+                    <span style={{ color: 'var(--fs-accent)' }}>§</span>
                     הכי בשימוש
                   </h3>
                   <div
@@ -525,8 +525,8 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                         key={exercise.id}
                         style={{
                           padding: 12,
-                          background: 'var(--bone-deep)',
-                          border: '2px solid var(--navy)',
+                          background: 'var(--fs-surface-2)',
+                          border: '2px solid var(--fs-primary)',
                         }}
                       >
                         <span
@@ -534,7 +534,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                             fontFamily: 'var(--font-display)',
                             fontWeight: 800,
                             fontSize: 13,
-                            color: 'var(--navy)',
+                            color: 'var(--fs-primary)',
                             textTransform: 'uppercase',
                             letterSpacing: '0.02em',
                             display: 'block',
@@ -549,7 +549,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                           style={{
                             fontFamily: 'var(--font-mono)',
                             fontSize: 10,
-                            color: 'var(--stone)',
+                            color: 'var(--fs-muted)',
                             letterSpacing: '0.05em',
                             marginTop: 4,
                             display: 'block',

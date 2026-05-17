@@ -196,10 +196,10 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
           left: 0,
           right: 0,
           zIndex: 9999,
-          background: 'var(--bone)',
+          background: 'var(--fs-surface)',
           maxHeight: '85vh',
           overflow: 'hidden',
-          borderTop: '2px solid var(--navy)',
+          borderTop: '2px solid var(--fs-primary)',
           boxShadow: '0 -8px 32px rgba(11,26,43,0.25)',
         }}
       >
@@ -230,7 +230,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '12px 20px',
-            background: 'var(--navy)',
+            background: 'var(--fs-primary)',
             borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)',
           }}
         >
@@ -240,7 +240,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 18,
-                color: 'var(--bone)',
+                color: 'var(--fs-surface)',
                 letterSpacing: '-0.01em',
               }}
             >
@@ -273,11 +273,11 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                   background:
                     selectedIds.length < 2
                       ? 'rgba(var(--text-on-navy-rgb),0.15)'
-                      : 'var(--mustard)',
+                      : 'var(--fs-accent)',
                   color:
                     selectedIds.length < 2
                       ? 'rgba(var(--text-on-navy-rgb),0.5)'
-                      : 'var(--color-on-mustard)',
+                      : 'var(--fs-primary)',
                   border: 'none',
                   borderRadius: 0,
                   fontFamily: 'var(--font-display)',
@@ -308,7 +308,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                       alignItems: 'center',
                       gap: 6,
                       background: 'rgba(var(--text-on-navy-rgb),0.1)',
-                      color: 'var(--bone)',
+                      color: 'var(--fs-surface)',
                       border: '1px solid rgba(var(--text-on-navy-rgb),0.25)',
                       borderRadius: 0,
                       fontFamily: 'var(--font-mono)',
@@ -327,8 +327,8 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                   onClick={handleSave}
                   style={{
                     padding: '8px 16px',
-                    background: 'var(--mustard)',
-                    color: 'var(--color-on-mustard)',
+                    background: 'var(--fs-accent)',
+                    color: 'var(--fs-primary)',
                     border: 'none',
                     borderRadius: 0,
                     fontFamily: 'var(--font-display)',
@@ -367,7 +367,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                 cursor: 'pointer',
               }}
             >
-              <CloseIcon style={{ width: 18, height: 18, color: 'var(--bone)' }} />
+              <CloseIcon style={{ width: 18, height: 18, color: 'var(--fs-surface)' }} />
             </button>
           </div>
         </div>
@@ -433,7 +433,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,
                   fontSize: 18,
-                  color: 'var(--navy)',
+                  color: 'var(--fs-primary)',
                 }}
               >
                 אין תרגילים
@@ -442,7 +442,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: 14,
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   marginTop: 4,
                 }}
               >
@@ -533,17 +533,17 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
               selectMode && isSelected
                 ? 'rgba(201,162,39,0.14)'
                 : isActive
-                  ? 'var(--color-surface)'
-                  : 'var(--bone-deep)',
-            border: `2px solid ${selectMode && isSelected ? 'var(--mustard)' : isActive ? 'var(--mustard)' : 'var(--navy)'}`,
+                  ? 'var(--fs-surface)'
+                  : 'var(--fs-surface-2)',
+            border: `2px solid ${selectMode && isSelected ? 'var(--fs-accent)' : isActive ? 'var(--fs-accent)' : 'var(--fs-primary)'}`,
             borderLeft:
               selectMode && isSelected
-                ? '4px solid var(--mustard)'
+                ? '4px solid var(--fs-accent)'
                 : isActive
-                  ? '4px solid var(--mustard)'
+                  ? '4px solid var(--fs-accent)'
                   : inSuperset
-                    ? '4px solid var(--mustard)'
-                    : '2px solid var(--navy)',
+                    ? '4px solid var(--fs-accent)'
+                    : '2px solid var(--fs-primary)',
           }}
         >
           {/* Drag Handle */}
@@ -560,7 +560,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
             }}
           >
             <DragHandleIcon
-              style={{ width: 20, height: 20, color: 'var(--stone)', display: 'block' }}
+              style={{ width: 20, height: 20, color: 'var(--fs-muted)', display: 'block' }}
             />
           </div>
 
@@ -576,18 +576,18 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
               background: isComplete
                 ? 'rgba(45,139,78,0.15)'
                 : isActive
-                  ? 'var(--mustard)'
-                  : 'var(--bone)',
+                  ? 'var(--fs-accent)'
+                  : 'var(--fs-surface)',
               color: isComplete
-                ? 'var(--color-success)'
+                ? '#2F8F58'
                 : isActive
-                  ? 'var(--navy)'
-                  : 'var(--stone)',
+                  ? 'var(--fs-primary)'
+                  : 'var(--fs-muted)',
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 14,
               flexShrink: 0,
-              border: `2px solid ${isComplete ? 'var(--color-success)' : isActive ? 'var(--navy)' : 'var(--bone-deep)'}`,
+              border: `2px solid ${isComplete ? '#2F8F58' : isActive ? 'var(--fs-primary)' : 'var(--fs-surface-2)'}`,
             }}
           >
             {isComplete ? <CheckCheckIcon style={{ width: 16, height: 16 }} /> : index + 1}
@@ -615,7 +615,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 14,
-                color: isActive ? 'var(--navy)' : 'var(--ink)',
+                color: isActive ? 'var(--fs-primary)' : 'var(--fs-ink)',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -637,7 +637,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
                   letterSpacing: '0.1em',
-                  color: isComplete ? 'var(--color-success)' : 'var(--stone)',
+                  color: isComplete ? '#2F8F58' : 'var(--fs-muted)',
                   textTransform: 'uppercase',
                 }}
               >
@@ -650,7 +650,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                       width: 4,
                       height: 4,
                       borderRadius: '50%',
-                      background: 'var(--stone)',
+                      background: 'var(--fs-muted)',
                       display: 'inline-block',
                     }}
                   />
@@ -659,7 +659,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
                       letterSpacing: '0.1em',
-                      color: 'var(--stone)',
+                      color: 'var(--fs-muted)',
                       textTransform: 'uppercase',
                     }}
                   >
@@ -674,7 +674,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                       width: 4,
                       height: 4,
                       borderRadius: '50%',
-                      background: 'var(--mustard)',
+                      background: 'var(--fs-accent)',
                       display: 'inline-block',
                     }}
                   />
@@ -683,8 +683,8 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
                       letterSpacing: '0.14em',
-                      color: 'var(--navy)',
-                      background: 'var(--mustard)',
+                      color: 'var(--fs-primary)',
+                      background: 'var(--fs-accent)',
                       padding: '1px 6px',
                       textTransform: 'uppercase',
                       fontWeight: 700,
@@ -711,9 +711,9 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: isExpanded ? 'var(--mustard)' : 'var(--bone)',
-              color: isExpanded ? 'var(--navy)' : 'var(--stone)',
-              border: '2px solid var(--navy)',
+              background: isExpanded ? 'var(--fs-accent)' : 'var(--fs-surface)',
+              color: isExpanded ? 'var(--fs-primary)' : 'var(--fs-muted)',
+              border: '2px solid var(--fs-primary)',
               borderRadius: 0,
               cursor: 'pointer',
               flexShrink: 0,
@@ -741,9 +741,9 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: isDeleteConfirm ? 'rgba(196,43,43,0.15)' : 'var(--bone)',
-              color: isDeleteConfirm ? 'var(--color-error)' : 'var(--stone)',
-              border: '2px solid var(--navy)',
+              background: isDeleteConfirm ? 'rgba(196,43,43,0.15)' : 'var(--fs-surface)',
+              color: isDeleteConfirm ? 'var(--fs-warn)' : 'var(--fs-muted)',
+              border: '2px solid var(--fs-primary)',
               borderRadius: 0,
               cursor: 'pointer',
               flexShrink: 0,
@@ -767,8 +767,8 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
               <div
                 style={{
                   padding: '8px 16px 16px',
-                  background: 'var(--color-surface)',
-                  border: '2px solid var(--navy)',
+                  background: 'var(--fs-surface)',
+                  border: '2px solid var(--fs-primary)',
                   borderTop: 'none',
                   display: 'flex',
                   flexDirection: 'column',
@@ -796,7 +796,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
                       letterSpacing: '0.1em',
-                      color: 'var(--stone)',
+                      color: 'var(--fs-muted)',
                       textTransform: 'uppercase',
                     }}
                   >
@@ -826,11 +826,11 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 letterSpacing: '0.15em',
-                color: 'var(--color-error)',
+                color: 'var(--fs-warn)',
                 textTransform: 'uppercase',
                 background: 'rgba(196,43,43,0.12)',
                 padding: '4px 12px',
-                border: '1px solid var(--color-error)',
+                border: '1px solid var(--fs-warn)',
                 borderRadius: 0,
               }}
             >
@@ -904,8 +904,8 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
       return (
         <div
           style={{
-            background: 'var(--bone-deep)',
-            border: '2px solid var(--navy)',
+            background: 'var(--fs-surface-2)',
+            border: '2px solid var(--fs-primary)',
             padding: 12,
             display: 'flex',
             flexDirection: 'column',
@@ -918,7 +918,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               letterSpacing: '0.15em',
-              color: 'var(--mustard)',
+              color: 'var(--fs-accent)',
               textTransform: 'uppercase',
             }}
           >
@@ -932,7 +932,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.15em',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   textTransform: 'uppercase',
                   display: 'block',
                   marginBottom: 4,
@@ -951,14 +951,14 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                   style={{
                     width: 36,
                     height: 36,
-                    background: 'var(--bone)',
-                    border: '2px solid var(--navy)',
+                    background: 'var(--fs-surface)',
+                    border: '2px solid var(--fs-primary)',
                     borderRadius: 0,
                     cursor: 'pointer',
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 16,
-                    color: 'var(--navy)',
+                    color: 'var(--fs-primary)',
                   }}
                 >
                   −
@@ -975,14 +975,14 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                   style={{
                     flex: 1,
                     height: 36,
-                    background: 'var(--color-surface-input)',
-                    border: '2px solid var(--navy)',
+                    background: 'var(--fs-surface)',
+                    border: '2px solid var(--fs-primary)',
                     borderRadius: 0,
                     textAlign: 'center',
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 16,
-                    color: 'var(--navy)',
+                    color: 'var(--fs-primary)',
                     outline: 'none',
                     minWidth: 0,
                   }}
@@ -997,14 +997,14 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                   style={{
                     width: 36,
                     height: 36,
-                    background: 'var(--navy)',
-                    border: '2px solid var(--navy)',
+                    background: 'var(--fs-primary)',
+                    border: '2px solid var(--fs-primary)',
                     borderRadius: 0,
                     cursor: 'pointer',
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 16,
-                    color: 'var(--mustard)',
+                    color: 'var(--fs-accent)',
                   }}
                 >
                   +
@@ -1017,7 +1017,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.15em',
-                  color: 'var(--stone)',
+                  color: 'var(--fs-muted)',
                   textTransform: 'uppercase',
                   display: 'block',
                   marginBottom: 4,
@@ -1036,14 +1036,14 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                   style={{
                     width: 36,
                     height: 36,
-                    background: 'var(--bone)',
-                    border: '2px solid var(--navy)',
+                    background: 'var(--fs-surface)',
+                    border: '2px solid var(--fs-primary)',
                     borderRadius: 0,
                     cursor: 'pointer',
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 16,
-                    color: 'var(--navy)',
+                    color: 'var(--fs-primary)',
                   }}
                 >
                   −
@@ -1060,14 +1060,14 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                   style={{
                     flex: 1,
                     height: 36,
-                    background: 'var(--color-surface-input)',
-                    border: '2px solid var(--navy)',
+                    background: 'var(--fs-surface)',
+                    border: '2px solid var(--fs-primary)',
                     borderRadius: 0,
                     textAlign: 'center',
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 16,
-                    color: 'var(--navy)',
+                    color: 'var(--fs-primary)',
                     outline: 'none',
                     minWidth: 0,
                   }}
@@ -1082,14 +1082,14 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                   style={{
                     width: 36,
                     height: 36,
-                    background: 'var(--navy)',
-                    border: '2px solid var(--navy)',
+                    background: 'var(--fs-primary)',
+                    border: '2px solid var(--fs-primary)',
                     borderRadius: 0,
                     cursor: 'pointer',
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 16,
-                    color: 'var(--mustard)',
+                    color: 'var(--fs-accent)',
                   }}
                 >
                   +
@@ -1105,8 +1105,8 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
               style={{
                 flex: 1,
                 padding: '10px 16px',
-                background: 'var(--bone-deep)',
-                border: '2px solid var(--navy)',
+                background: 'var(--fs-surface-2)',
+                border: '2px solid var(--fs-primary)',
                 borderRadius: 0,
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
@@ -1114,7 +1114,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                 fontSize: 12,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
-                color: 'var(--navy)',
+                color: 'var(--fs-primary)',
               }}
             >
               ביטול
@@ -1125,8 +1125,8 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
               style={{
                 flex: 1,
                 padding: '10px 16px',
-                background: 'var(--mustard)',
-                border: '2px solid var(--navy)',
+                background: 'var(--fs-accent)',
+                border: '2px solid var(--fs-primary)',
                 borderRadius: 0,
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
@@ -1134,7 +1134,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                 fontSize: 12,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
-                color: 'var(--navy)',
+                color: 'var(--fs-primary)',
               }}
             >
               שמור
@@ -1151,8 +1151,8 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '8px 12px',
-          background: isCompleted ? 'rgba(45,139,78,0.08)' : 'var(--bone)',
-          border: `1px solid ${isCompleted ? 'var(--color-success)' : 'var(--bone-deep)'}`,
+          background: isCompleted ? 'rgba(45,139,78,0.08)' : 'var(--fs-surface)',
+          border: `1px solid ${isCompleted ? '#2F8F58' : 'var(--fs-surface-2)'}`,
           borderRadius: 0,
           cursor: 'pointer',
           direction: 'rtl',
@@ -1161,14 +1161,14 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {isCompleted && (
-            <CheckCheckIcon style={{ width: 16, height: 16, color: 'var(--color-success)' }} />
+            <CheckCheckIcon style={{ width: 16, height: 16, color: '#2F8F58' }} />
           )}
           <span
             style={{
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 13,
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
             }}
           >
             סט {setIndex + 1}
@@ -1179,7 +1179,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
                 letterSpacing: '0.1em',
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 textTransform: 'uppercase',
               }}
             >
@@ -1194,7 +1194,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 15,
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
             }}
           >
             {set.weight || 0}
@@ -1202,20 +1202,20 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 marginRight: 2,
               }}
             >
               kg
             </span>
           </span>
-          <span style={{ color: 'var(--stone)', fontSize: 12 }}>×</span>
+          <span style={{ color: 'var(--fs-muted)', fontSize: 12 }}>×</span>
           <span
             style={{
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 15,
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
             }}
           >
             {set.reps || 0}
@@ -1223,14 +1223,14 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                color: 'var(--stone)',
+                color: 'var(--fs-muted)',
                 marginRight: 2,
               }}
             >
               reps
             </span>
           </span>
-          <EditIcon style={{ width: 14, height: 14, color: 'var(--stone)' }} />
+          <EditIcon style={{ width: 14, height: 14, color: 'var(--fs-muted)' }} />
           {canDelete && (
             <button
               type="button"
@@ -1251,7 +1251,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                 style={{
                   width: 14,
                   height: 14,
-                  color: deleteConfirm ? 'var(--color-error)' : 'var(--stone)',
+                  color: deleteConfirm ? 'var(--fs-warn)' : 'var(--fs-muted)',
                 }}
               />
             </button>

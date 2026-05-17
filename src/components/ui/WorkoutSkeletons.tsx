@@ -20,7 +20,7 @@ const Shimmer: FC<{ className?: string }> = ({ className = '' }) => (
     className={`absolute inset-0 -translate-x-full animate-shimmer ${className}`}
     style={{
       animationDuration: '1.8s',
-      background: 'linear-gradient(to right, transparent, var(--bone-faint, #F5F3EF), transparent)',
+      background: 'linear-gradient(to right, transparent, var(--fs-surface), transparent)',
       opacity: 0.9,
     }}
   />
@@ -36,7 +36,7 @@ const SkeletonBox: FC<{
     className={className}
     style={{
       ...shimmerStyle,
-      backgroundColor: 'var(--bone-deep)',
+      backgroundColor: 'var(--fs-surface-2)',
       width: typeof width === 'number' ? `${width}px` : width,
       height: typeof height === 'number' ? `${height}px` : height,
       borderRadius: typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius,
@@ -51,10 +51,10 @@ const SkeletonCircle: FC<{ size?: number; className?: string }> = ({
   className = '',
 }) => (
   <div
-    className={`rounded-full ${className}`}
+    className={className}
     style={{
       ...shimmerStyle,
-      backgroundColor: 'var(--bone-deep)',
+      backgroundColor: 'var(--fs-surface-2)',
       width: `${size}px`,
       height: `${size}px`,
     }}
@@ -71,7 +71,7 @@ export const DashboardSkeleton: FC = () => (
   <div
     className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
     dir="rtl"
-    style={{ background: 'var(--bone)' }}
+    style={{ background: 'var(--fs-bg)' }}
   >
     {/* Greeting */}
     <div style={{ padding: '24px 20px 0' }}>
@@ -115,7 +115,7 @@ export const DashboardSkeleton: FC = () => (
       <div style={{ marginBottom: 24 }}>
         <div
           style={{
-            background: 'var(--navy)',
+            background: 'var(--fs-primary)',
             padding: '12px 16px',
             marginBottom: 12,
           }}
@@ -123,14 +123,14 @@ export const DashboardSkeleton: FC = () => (
           <SkeletonBox height={10} width="40%" className="mb-2" />
           <SkeletonBox height={14} width="60%" />
         </div>
-        <div style={{ border: '2px solid var(--navy)', padding: 16 }}>
+        <div style={{ border: '2px solid var(--fs-primary)', padding: 16 }}>
           {[1, 2, 3].map((i) => (
             <div
               key={i}
               style={{
                 paddingBottom: 16,
                 marginBottom: 12,
-                borderBottom: '1px solid var(--bone-deep)',
+                borderBottom: '1px solid var(--fs-surface-2)',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -147,14 +147,14 @@ export const DashboardSkeleton: FC = () => (
       <div style={{ marginBottom: 20 }}>
         <div
           style={{
-            background: 'var(--navy)',
+            background: 'var(--fs-primary)',
             padding: '12px 16px',
             marginBottom: 12,
           }}
         >
           <SkeletonBox height={10} width="30%" />
         </div>
-        <div style={{ border: '2px solid var(--navy)', padding: 16 }}>
+        <div style={{ border: '2px solid var(--fs-primary)', padding: 16 }}>
           <div
             style={{
               display: 'grid',
@@ -181,11 +181,11 @@ export const DashboardSkeleton: FC = () => (
 // ========================================
 
 export const WorkoutSkeleton: FC = () => (
-  <div dir="rtl" style={{ background: 'var(--navy)', minHeight: '100vh' }}>
+  <div dir="rtl" style={{ background: 'var(--fs-primary)', minHeight: '100vh' }}>
     {/* Masthead */}
     <div
       style={{
-        background: 'var(--navy)',
+        background: 'var(--fs-primary)',
         padding: '12px 20px',
         display: 'flex',
         justifyContent: 'space-between',
@@ -202,7 +202,7 @@ export const WorkoutSkeleton: FC = () => (
     {/* Hero Section */}
     <div
       style={{
-        background: 'var(--navy)',
+        background: 'var(--fs-primary)',
         textAlign: 'center',
         padding: '40px 20px',
       }}
@@ -212,7 +212,7 @@ export const WorkoutSkeleton: FC = () => (
     </div>
 
     {/* Sets Section */}
-    <div style={{ padding: '16px 20px', background: 'var(--bone)' }}>
+    <div style={{ padding: '16px 20px', background: 'var(--fs-bg)' }}>
       <SkeletonBox height={10} width="40%" className="mb-4" />
       {[1, 2, 3, 4].map((i) => (
         <div
@@ -222,7 +222,7 @@ export const WorkoutSkeleton: FC = () => (
             justifyContent: 'space-between',
             alignItems: 'center',
             padding: '12px 0',
-            borderBottom: '1px solid var(--bone-deep)',
+            borderBottom: '1px solid var(--fs-surface-2)',
           }}
         >
           <SkeletonBox height={24} width={40} />
@@ -233,7 +233,7 @@ export const WorkoutSkeleton: FC = () => (
     </div>
 
     {/* Input Section */}
-    <div style={{ padding: '20px', background: 'var(--mustard)' }}>
+    <div style={{ padding: '20px', background: 'var(--fs-accent)' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <SkeletonBox height={56} />
         <SkeletonBox height={56} />
@@ -251,7 +251,7 @@ export const ProgressSkeleton: FC = () => (
   <div
     className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
     dir="rtl"
-    style={{ background: 'var(--bone)' }}
+    style={{ background: 'var(--fs-bg)' }}
   >
     <div style={{ padding: '24px 20px' }}>
       {/* Header */}
@@ -264,7 +264,7 @@ export const ProgressSkeleton: FC = () => (
           <div
             key={i}
             style={{
-              border: '2px solid var(--navy)',
+              border: '2px solid var(--fs-primary)',
               padding: 16,
               textAlign: 'center',
             }}
@@ -276,12 +276,12 @@ export const ProgressSkeleton: FC = () => (
       </div>
 
       {/* Chart Placeholder */}
-      <div style={{ border: '2px solid var(--navy)', padding: 20, marginBottom: 24 }}>
+      <div style={{ border: '2px solid var(--fs-primary)', padding: 20, marginBottom: 24 }}>
         <SkeletonBox height={200} />
       </div>
 
       {/* Recent PRs */}
-      <div style={{ border: '2px solid var(--navy)', padding: 16 }}>
+      <div style={{ border: '2px solid var(--fs-primary)', padding: 16 }}>
         {[1, 2, 3].map((i) => (
           <div
             key={i}
@@ -290,7 +290,7 @@ export const ProgressSkeleton: FC = () => (
               alignItems: 'center',
               gap: 12,
               padding: '12px 0',
-              borderBottom: '1px solid var(--bone-deep)',
+              borderBottom: '1px solid var(--fs-surface-2)',
             }}
           >
             <SkeletonCircle size={40} />
@@ -314,7 +314,7 @@ export const NutritionSkeleton: FC = () => (
   <div
     className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
     dir="rtl"
-    style={{ background: 'var(--bone)' }}
+    style={{ background: 'var(--fs-bg)' }}
   >
     <div style={{ padding: '24px 20px' }}>
       {/* Header */}
@@ -324,7 +324,7 @@ export const NutritionSkeleton: FC = () => (
       {/* Macro Summary */}
       <div
         style={{
-          background: 'var(--navy)',
+          background: 'var(--fs-primary)',
           padding: 20,
           marginBottom: 20,
         }}
@@ -344,7 +344,7 @@ export const NutritionSkeleton: FC = () => (
         <div
           key={i}
           style={{
-            border: '2px solid var(--navy)',
+            border: '2px solid var(--fs-primary)',
             padding: 16,
             marginBottom: 12,
           }}
@@ -368,7 +368,7 @@ export const SettingsSkeleton: FC = () => (
   <div
     className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
     dir="rtl"
-    style={{ background: 'var(--bone)' }}
+    style={{ background: 'var(--fs-bg)' }}
   >
     <div style={{ padding: '24px 20px' }}>
       {/* Header */}
@@ -379,7 +379,7 @@ export const SettingsSkeleton: FC = () => (
       {[1, 2, 3].map((section) => (
         <div key={section} style={{ marginBottom: 24 }}>
           <SkeletonBox height={10} width="20%" className="mb-3" />
-          <div style={{ border: '2px solid var(--navy)' }}>
+          <div style={{ border: '2px solid var(--fs-primary)' }}>
             {[1, 2, 3].map((item) => (
               <div
                 key={item}
@@ -388,7 +388,7 @@ export const SettingsSkeleton: FC = () => (
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '14px 16px',
-                  borderBottom: item < 3 ? '1px solid var(--bone-deep)' : 'none',
+                  borderBottom: item < 3 ? '1px solid var(--fs-surface-2)' : 'none',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -413,7 +413,7 @@ export const TemplatesSkeleton: FC = () => (
   <div
     className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
     dir="rtl"
-    style={{ background: 'var(--bone)' }}
+    style={{ background: 'var(--fs-bg)' }}
   >
     <div style={{ padding: '24px 20px' }}>
       {/* Header */}
@@ -425,7 +425,7 @@ export const TemplatesSkeleton: FC = () => (
         <div
           key={i}
           style={{
-            border: '2px solid var(--navy)',
+            border: '2px solid var(--fs-primary)',
             padding: 16,
             marginBottom: 12,
           }}
@@ -456,7 +456,7 @@ export const HistorySkeleton: FC = () => (
   <div
     className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
     dir="rtl"
-    style={{ background: 'var(--bone)' }}
+    style={{ background: 'var(--fs-bg)' }}
   >
     <div style={{ padding: '24px 20px' }}>
       {/* Header */}
@@ -468,7 +468,7 @@ export const HistorySkeleton: FC = () => (
         <div
           key={i}
           style={{
-            border: '2px solid var(--navy)',
+            border: '2px solid var(--fs-primary)',
             padding: 16,
             marginBottom: 12,
           }}

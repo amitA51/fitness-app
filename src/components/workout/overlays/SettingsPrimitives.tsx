@@ -104,7 +104,7 @@ export const ChipSelector = memo<{
           }}
           className={`px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
             value === opt.value
-              ? 'bg-[var(--cosmos-accent-primary)] text-black'
+              ? 'bg-[var(--fs-accent)] text-black'
               : 'bg-white/10 text-white/70 active:bg-white/20'
           }`}
         >
@@ -133,7 +133,7 @@ export const SliderSetting = memo<{
         <div className="text-[15px] text-white font-medium">{label}</div>
         {description && <div className="text-[13px] text-white/50 mt-0.5">{description}</div>}
       </div>
-      <div className="text-[15px] text-[var(--cosmos-accent-primary)] font-bold tabular-nums">
+      <div className="text-[15px] text-[var(--fs-accent)] font-bold tabular-nums">
         {value}
         {unit}
       </div>
@@ -153,7 +153,7 @@ export const SliderSetting = memo<{
                 [&::-webkit-slider-thumb]:w-6
                 [&::-webkit-slider-thumb]:h-6
                 [&::-webkit-slider-thumb]:rounded-full
-                [&::-webkit-slider-thumb]:bg-[var(--cosmos-accent-primary)]
+                [&::-webkit-slider-thumb]:bg-[var(--fs-accent)]
                 [&::-webkit-slider-thumb]:shadow-md
                 [&::-webkit-slider-thumb]:cursor-pointer"
     />
@@ -297,7 +297,7 @@ export const RestTimeSelector = memo<{ value: number; onChange: (v: number) => v
               }}
               className={`py-3.5 rounded-xl text-[15px] font-semibold transition-all ${
                 isActive
-                  ? 'bg-[var(--cosmos-accent-primary)] text-black'
+                  ? 'bg-[var(--fs-accent)] text-black'
                   : 'bg-white/10 text-white/70 active:bg-white/20'
               }`}
             >

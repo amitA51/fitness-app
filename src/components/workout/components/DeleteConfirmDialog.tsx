@@ -37,8 +37,8 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
         style={{
           width: '100%',
           maxWidth: 360,
-          background: 'var(--bone)',
-          border: '2px solid var(--navy)',
+          background: 'var(--fs-bg)',
+          border: '2px solid var(--fs-primary)',
           padding: 24,
           textAlign: 'center',
         }}
@@ -64,7 +64,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
             fontSize: 20,
-            color: 'var(--navy)',
+            color: 'var(--fs-primary)',
             marginBottom: 8,
           }}
         >
@@ -77,7 +77,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
             fontSize: 16,
-            color: 'var(--ink)',
+            color: 'var(--fs-ink)',
             marginBottom: 4,
           }}
         >
@@ -90,7 +90,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             letterSpacing: '0.12em',
-            color: 'var(--stone)',
+            color: 'var(--fs-muted)',
             textTransform: 'uppercase',
             marginBottom: 20,
           }}
@@ -106,8 +106,8 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
             style={{
               flex: 1,
               padding: '14px 16px',
-              background: 'var(--bone-deep)',
-              border: '2px solid var(--navy)',
+              background: 'var(--fs-surface-2)',
+              border: '2px solid var(--fs-primary)',
               borderRadius: 0,
               cursor: 'pointer',
               fontFamily: 'var(--font-display)',
@@ -115,7 +115,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
               fontSize: 13,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              color: 'var(--navy)',
+              color: 'var(--fs-primary)',
               minHeight: 48,
             }}
           >
