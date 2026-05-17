@@ -17,7 +17,8 @@
       "Bash(echo \"Exit: $?\")",
       "Bash(echo \"---EXIT $?---\")",
       "Bash(echo \"EXIT $?\")",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(xargs wc -l)"
     ]
   }
 }

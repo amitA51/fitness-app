@@ -5,7 +5,15 @@ import type React from 'react';
 // Types
 // ============================================================================
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'glass' | 'danger' | 'pill';
+type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'ghost'
+  | 'glass'
+  | 'danger'
+  | 'pill'
+  | 'card-action'
+  | 'start';
 type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

@@ -86,7 +86,8 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
           justifyContent: 'space-between',
           padding: '12px 16px',
           background: 'var(--fs-surface-2)',
-          border: '2px solid var(--fs-primary)',
+          border: '1px solid var(--fs-steel)',
+          borderRadius: '22px 16px 22px 16px',
         }}
       >
         <div>
@@ -178,13 +179,15 @@ interface StatCardProps {
 const StatCard: React.FC<StatCardProps> = memo(({ label, value, suffix, delay = 0 }) => {
   return (
     <motion.div
+      className="fs-accent-rail"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       style={{
         padding: '16px',
         background: 'var(--fs-surface-2)',
-        border: '2px solid var(--fs-primary)',
+        border: '1px solid var(--fs-steel)',
+        borderRadius: '22px 16px 22px 16px',
         textAlign: 'center',
       }}
     >

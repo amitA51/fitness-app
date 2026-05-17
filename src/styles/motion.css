@@ -392,3 +392,28 @@ html.reduce-motion *::after {
 .page-history .animate-entrance {
   animation: fadeScale 0.3s var(--ease-spring-snappy) both;
 }
+
+/* Premium motion utilities */
+.fade-rise-in {
+  animation: fade-rise 480ms var(--ease-premium) both;
+}
+
+@keyframes fade-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.scale-pop-in {
+  animation: scale-pop 540ms var(--ease-spring-bouncy) both;
+}
+
+@keyframes scale-pop {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-rise-in, .scale-pop-in {
+    animation: none;
+  }
+}

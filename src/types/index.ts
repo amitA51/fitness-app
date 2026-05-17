@@ -18,7 +18,13 @@ export interface WorkoutSet {
   notes: string;
   completedAt: string | null;
   duration?: number; // for timed exercises (e.g., plank)
+  // Intensity techniques (optional — flipped via SET_TECHNIQUE action)
+  isDropSet?: boolean;
+  isFailure?: boolean;
+  isRestPause?: boolean;
 }
+
+export type SetTechnique = 'warmup' | 'dropSet' | 'failure' | 'restPause';
 
 export interface WorkoutExercise {
   id: string;

@@ -262,10 +262,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
       {/* ── NAVY MASTHEAD ── */}
       <div className="relative z-10 flex-shrink-0" style={{ background: 'var(--fs-primary)' }}>
         {/* Chapter strip */}
-        <div
-          className="chapter-break"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
-        >
+        <div className="chapter-break" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <span className="left" style={{ color: 'var(--fs-accent)' }}>
             §01 · אימון
           </span>

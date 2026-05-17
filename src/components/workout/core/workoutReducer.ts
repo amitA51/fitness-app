@@ -241,15 +241,43 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
         // to avoid UX disasters.
       }
 
+      // --- SUPERSET AUTO-ADVANCE ---
+      // If current exercise is part of a superset and not the last in the group,
+      // jump to the next exercise + use short between-exercise rest.
+      // Round rest (full prescribed rest) applies only after the last exercise in the group.
+      const supersetMembership = draft.supersetGroups.find((g) =>
+        g.exercises.includes(exercise.id)
+      );
+      let supersetShortRest: number | null = null;
+      if (supersetMembership) {
+        const orderInGroup = supersetMembership.exercises.indexOf(exercise.id);
+        const isLastInGroup = orderInGroup === supersetMembership.exercises.length - 1;
+        if (!isLastInGroup) {
+          const nextExerciseId = supersetMembership.exercises[orderInGroup + 1];
+          const nextIdx = draft.exercises.findIndex((e) => e.id === nextExerciseId);
+          if (nextIdx !== -1) {
+            draft.currentExerciseIndex = nextIdx;
+            // Short transitional rest between superset exercises (default 15s)
+            supersetShortRest = 15;
+          }
+        } else {
+          // Last exercise of round → use group's restBetweenRounds
+          supersetShortRest = supersetMembership.restBetweenRounds ?? 60;
+        }
+      }
+
       // --- REST TIMER ---
       const shouldStartRest = settings?.autoStartRest ?? true; // Default to true
 
       if (shouldStartRest) {
-        // Calculate Smart Rest - Priority: programExtras > targetRestTime > smartRest > default
+        // Calculate Smart Rest - Priority: superset > programExtras > targetRestTime > smartRest > default
         let restTime = settings?.defaultRestTime || 60;
 
-        // 1. Program-prescribed rest time (highest priority)
-        if (exercise.programExtras?.restTime) {
+        if (supersetShortRest !== null) {
+          restTime = supersetShortRest;
+        }
+        // 1. Program-prescribed rest time
+        else if (exercise.programExtras?.restTime) {
           const parsed = parseRestTimeString(String(exercise.programExtras.restTime));
           if (parsed > 0) restTime = parsed;
         }
@@ -266,14 +294,30 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
           } else {
             restTime = settings?.mediumRestTime || 90;
           }
+
+          // 4. Scale by training goal (only when smart-rest computed the base)
+          const goal = settings?.defaultWorkoutGoal;
+          const factor = goal === 'strength' ? 1.8 : goal === 'endurance' ? 0.5 : 1.0; // hypertrophy/maintenance/general
+          restTime = Math.round(restTime * factor);
+          // Sanity clamp
+          if (restTime < 30) restTime = 30;
+          if (restTime > 600) restTime = 600;
         }
 
-        draft.restTimer = {
-          active: true,
-          endTime: Date.now() + restTime * 1000,
-          totalTime: restTime,
-          timeLeft: restTime,
-        };
+        // Drop-set: skip rest entirely (you go straight into the lighter set)
+        const justCompleted = currentSet;
+        if (justCompleted.isDropSet) {
+          restTime = 0;
+        }
+
+        if (restTime > 0) {
+          draft.restTimer = {
+            active: true,
+            endTime: Date.now() + restTime * 1000,
+            totalTime: restTime,
+            timeLeft: restTime,
+          };
+        }
       }
 
       // Haptic feedback
@@ -349,6 +393,23 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       break;
     }
 
+    case 'SET_TECHNIQUE': {
+      if (!exercise) return;
+      const sets = exercise.sets ?? [];
+      const activeIdx = getActiveSetIndex(sets);
+      if (!sets[activeIdx]) {
+        sets[activeIdx] = createEmptySet(activeIdx + 1, exercise.isTimed);
+      }
+      exercise.sets = sets;
+      const target = sets[activeIdx]!;
+      const { technique, value } = action.payload;
+      if (technique === 'warmup') target.isWarmup = value;
+      else if (technique === 'dropSet') target.isDropSet = value;
+      else if (technique === 'failure') target.isFailure = value;
+      else if (technique === 'restPause') target.isRestPause = value;
+      break;
+    }
+
     case 'EDIT_SPECIFIC_SET': {
       const { exerciseIndex, setIndex, updates } = action.payload;
       const targetExercise = draft.exercises[exerciseIndex];
@@ -403,7 +464,10 @@ const timerReducer = (draft: WorkoutState, action: WorkoutAction): void => {
 
     case 'ADD_REST_TIME': {
       if (draft.restTimer.endTime) {
-        draft.restTimer.endTime += action.payload * 1000;
+        // Clamp so a negative adjustment can't push endTime into the past
+        const next = draft.restTimer.endTime + action.payload * 1000;
+        const floor = Date.now() + 1000;
+        draft.restTimer.endTime = Math.max(next, floor);
       }
       break;
     }
@@ -526,6 +590,14 @@ const uiReducer = (draft: WorkoutState, action: WorkoutAction): void => {
     case 'CLOSE_AI_COACH':
       draft.showAICoach = false;
       break;
+
+    case 'OPEN_PLATE_CALC':
+      draft.showPlateCalc = true;
+      break;
+
+    case 'CLOSE_PLATE_CALC':
+      draft.showPlateCalc = false;
+      break;
   }
 };
 
@@ -613,6 +685,7 @@ const SET_ACTIONS = new Set([
   'DELETE_SET',
   'UPDATE_SET_RPE',
   'UPDATE_SET_NOTES',
+  'SET_TECHNIQUE',
 ]);
 
 const TIMER_ACTIONS = new Set(['SKIP_REST', 'ADD_REST_TIME', 'SET_REST_TIME', 'SYNC_REST_TIMER']);
@@ -633,6 +706,8 @@ const UI_ACTIONS = new Set([
   'CLOSE_EXERCISE_LIBRARY',
   'OPEN_AI_COACH',
   'CLOSE_AI_COACH',
+  'OPEN_PLATE_CALC',
+  'CLOSE_PLATE_CALC',
 ]);
 
 const MODAL_ACTIONS = new Set(['SET_MODAL_STATE']);

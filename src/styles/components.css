@@ -1039,3 +1039,233 @@ textarea {
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 28px),
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 28px);
 }
+
+/* ============================================================================
+   PREMIUM LAYER — $100M motion + glass + mesh
+   ============================================================================ */
+
+/* === Glass surfaces === */
+.glass-surface {
+  background: color-mix(in srgb, var(--fs-surface) 76%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid color-mix(in srgb, var(--fs-surface-2) 64%, transparent);
+  box-shadow: var(--shadow-glass);
+}
+
+.glass-surface-dark {
+  background: color-mix(in srgb, var(--fs-primary) 82%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--fs-surface);
+  box-shadow: var(--shadow-deep);
+}
+
+/* === Ambient mesh gradient backdrops === */
+.ambient-mesh {
+  position: relative;
+  isolation: isolate;
+}
+
+.ambient-mesh::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(at 18% 12%, color-mix(in srgb, var(--fs-accent) 28%, transparent), transparent 42%),
+    radial-gradient(at 82% 18%, color-mix(in srgb, var(--fs-accent-2) 24%, transparent), transparent 46%),
+    radial-gradient(at 60% 92%, color-mix(in srgb, var(--fs-signal) 18%, transparent), transparent 38%);
+  opacity: 0.85;
+  filter: blur(0.5px);
+}
+
+.ambient-mesh-strong::before {
+  opacity: 1;
+}
+
+.ambient-mesh-soft::before {
+  opacity: 0.55;
+}
+
+/* === Film grain noise scrim === */
+.scrim-noise {
+  position: relative;
+}
+.scrim-noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+}
+
+/* === Breathing dot (live state indicator) === */
+.breathing-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fs-accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--fs-accent) 60%, transparent);
+  animation: bd-breath 2.4s var(--ease-premium) infinite;
+}
+
+@keyframes bd-breath {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--fs-accent) 60%, transparent);
+  }
+  50% {
+    transform: scale(1.18);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--fs-accent) 0%, transparent);
+  }
+}
+
+.breathing-dot.signal { background: var(--fs-signal); }
+.breathing-dot.warn { background: var(--fs-warn); }
+
+/* === Kinetic number wrapper (count-up safe + tabular nums) === */
+.kinetic-number {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: baseline;
+  transition: color var(--duration-fast) var(--ease-premium);
+}
+
+.kinetic-number.large {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 14vw, 92px);
+  font-weight: 800;
+  line-height: 0.86;
+  letter-spacing: -0.04em;
+}
+
+/* === Magnetic card (subtle lift + scale on hover) === */
+.magnetic-card {
+  transition:
+    transform var(--duration-fast) var(--ease-premium),
+    box-shadow var(--duration-fast) var(--ease-premium);
+  will-change: transform;
+}
+
+.magnetic-card:hover {
+  transform: translateY(-2px) scale(1.005);
+  box-shadow: var(--shadow-lift);
+}
+
+.magnetic-card:active {
+  transform: translateY(0) scale(0.997);
+  transition-duration: 80ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .magnetic-card,
+  .magnetic-card:hover,
+  .magnetic-card:active {
+    transform: none;
+  }
+}
+
+/* === Premium shimmer (skeleton single source of truth) === */
+.premium-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: var(--fs-surface-2);
+}
+
+.premium-shimmer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 32%,
+    color-mix(in srgb, var(--fs-surface) 60%, transparent) 48%,
+    transparent 64%
+  );
+  transform: translateX(-100%);
+  animation: ps-shimmer 1.6s var(--ease-premium) infinite;
+}
+
+@keyframes ps-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+[dir="rtl"] .premium-shimmer::before {
+  animation-direction: reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .premium-shimmer::before { animation: none; opacity: 0.4; }
+}
+
+/* === Accent glow utility === */
+.accent-glow {
+  box-shadow: var(--shadow-glow-accent);
+}
+.signal-glow {
+  box-shadow: var(--shadow-glow-signal);
+}
+
+/* === Ring progress (SVG-companion classes) === */
+.ring-track {
+  stroke: var(--fs-surface-2);
+}
+
+.ring-progress {
+  stroke: var(--fs-accent);
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--fs-accent) 40%, transparent));
+  transition: stroke-dashoffset var(--duration-premium) var(--ease-premium);
+}
+
+.ring-progress.signal { stroke: var(--fs-signal); }
+.ring-progress.warn { stroke: var(--fs-warn); }
+
+/* === Section spotlight === */
+.section-spotlight {
+  position: relative;
+  isolation: isolate;
+}
+
+.section-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: -10% 10% 60% 10%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--fs-accent) 24%, transparent), transparent 70%);
+  filter: blur(40px);
+  opacity: 0.7;
+}
+
+/* === Premium dark surface (replaces var(--fs-primary) flat dark backgrounds) === */
+.premium-dark-surface {
+  position: relative;
+  overflow: hidden;
+  color: var(--fs-surface);
+  background:
+    radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--fs-accent) 22%, transparent), transparent 38%),
+    radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--fs-accent-2) 26%, transparent), transparent 42%),
+    linear-gradient(135deg, color-mix(in srgb, var(--fs-primary) 96%, #000), color-mix(in srgb, var(--fs-primary) 84%, var(--fs-accent-2)));
+}
+
+.premium-dark-surface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 28px);
+  opacity: 0.5;
+}

@@ -1,6 +1,12 @@
 import type { PersonalRecord } from '../../../services/prService';
 // Workout Module Types - Internal types for the workout feature
-import type { AppSettings, Exercise, WorkoutSession, WorkoutSet } from '../../../types';
+import type {
+  AppSettings,
+  Exercise,
+  SetTechnique,
+  WorkoutSession,
+  WorkoutSet,
+} from '../../../types';
 
 // ============================================================
 // SUPERSET TYPES
@@ -61,6 +67,7 @@ export interface WorkoutState {
   showWaterReminder: boolean;
   showTutorial: boolean;
   showAICoach: boolean;
+  showPlateCalc: boolean;
 
   // === Celebration State ===
   tutorialExercise: string | null;
@@ -107,6 +114,7 @@ export type SetAction =
   | { type: 'UNDO_LAST_SET' }
   | { type: 'UPDATE_SET_NOTES'; payload: string | undefined }
   | { type: 'UPDATE_SET_RPE'; payload: number | undefined }
+  | { type: 'SET_TECHNIQUE'; payload: { technique: SetTechnique; value: boolean } }
   | {
       type: 'EDIT_SPECIFIC_SET';
       payload: {
@@ -141,7 +149,9 @@ export type UIAction =
   | { type: 'OPEN_EXERCISE_LIBRARY' }
   | { type: 'CLOSE_EXERCISE_LIBRARY' }
   | { type: 'OPEN_AI_COACH' }
-  | { type: 'CLOSE_AI_COACH' };
+  | { type: 'CLOSE_AI_COACH' }
+  | { type: 'OPEN_PLATE_CALC' }
+  | { type: 'CLOSE_PLATE_CALC' };
 
 // --- Modal Actions ---
 export type ModalAction =
@@ -263,6 +273,7 @@ export const createInitialState = (
     showWaterReminder: false,
     showTutorial: false,
     showAICoach: false,
+    showPlateCalc: false,
 
     tutorialExercise: null,
     showConfetti: false,

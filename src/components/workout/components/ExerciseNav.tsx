@@ -102,7 +102,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
                   {ex.name}
                 </span>
                 <small style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.72 }}>
-                  {ex.sets.length}× SETS
+                  {ex.sets?.length ?? 0}× SETS
                 </small>
               </button>
             ))}

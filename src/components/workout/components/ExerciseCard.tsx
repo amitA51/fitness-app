@@ -159,7 +159,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                     background: isSelected ? 'rgba(20,41,61,0.15)' : 'var(--fs-surface-2)',
                     color: isSelected ? 'var(--fs-primary)' : 'var(--fs-muted)',
                     border: 'none',
-                    borderRadius: 0,
+                    borderRadius: 999,
                   }}
                 >
                   {exercise.muscleGroup}

@@ -4,7 +4,7 @@
 
 import { Edit, FileText, MoreHorizontal, Plus, RotateCcw, Star } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Exercise, WorkoutSet } from '../../../types';
+import type { Exercise, SetTechnique, WorkoutSet } from '../../../types';
 import type { SupersetGroup } from '../core/workoutTypes';
 import { usePreviousData } from '../hooks/usePreviousData';
 import AlternativesSheet from './AlternativesSheet';
@@ -12,6 +12,7 @@ import NotesBottomSheet from './NotesBottomSheet';
 import RPEPicker from './RPEPicker';
 import SetEditBottomSheet from './SetEditBottomSheet';
 import SetInputCard from './SetInputCard';
+import SetTechniquePills from './SetTechniquePills';
 import SlideToComplete from './SlideToComplete';
 
 // ============================================================
@@ -38,6 +39,8 @@ interface ExerciseDisplayProps {
   showVolumePreview?: boolean;
   supersetGroups?: SupersetGroup[];
   onCreateSuperset?: (exerciseId: string) => void;
+  onToggleTechnique?: (technique: SetTechnique, value: boolean) => void;
+  onOpenPlateCalc?: () => void;
 }
 
 // ============================================================
@@ -196,6 +199,8 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     enableQuickRepsButtons = true,
     supersetGroups = [],
     onCreateSuperset,
+    onToggleTechnique,
+    onOpenPlateCalc,
   }) => {
     const [showSetEditor, setShowSetEditor] = useState(false);
     const [showRPEPicker, setShowRPEPicker] = useState(false);
@@ -374,6 +379,9 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           </div>
         </div>
 
+        {/* ── TECHNIQUE PILLS (warmup / drop / failure / rest-pause) ── */}
+        {onToggleTechnique && <SetTechniquePills set={currentSet} onToggle={onToggleTechnique} />}
+
         {/* ── GRID OF TWO STEPPERS ──  ── */}
         <div
           className="grid grid-cols-2"
@@ -475,6 +483,26 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                         icon: <Plus size={14} strokeWidth={2.5} />,
                         label: 'סופרסט',
                         onClick: () => onCreateSuperset(exercise.id),
+                      } as OverflowItem,
+                    ]
+                  : []),
+                ...(onOpenPlateCalc
+                  ? [
+                      {
+                        icon: (
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: 9,
+                              fontWeight: 800,
+                              letterSpacing: '0.05em',
+                            }}
+                          >
+                            kg
+                          </span>
+                        ),
+                        label: 'מחשבון פלטות',
+                        onClick: onOpenPlateCalc,
                       } as OverflowItem,
                     ]
                   : []),

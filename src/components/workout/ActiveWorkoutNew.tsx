@@ -24,6 +24,7 @@ import InlineRestTimer from './components/InlineRestTimer';
 // Overlays (lazy - loaded on demand)
 const NumpadOverlay = React.lazy(() => import('./overlays/NumpadOverlay'));
 const ConfirmExitOverlay = React.lazy(() => import('./overlays/ConfirmExitOverlay'));
+const PlateCalculatorOverlay = React.lazy(() => import('./overlays/PlateCalculatorOverlay'));
 
 // Hooks
 import { usePersonalRecords } from './hooks/usePersonalRecords';
@@ -389,6 +390,21 @@ export const WorkoutContent: React.FC<{
     },
     [dispatch]
   );
+
+  const handleToggleTechnique = useCallback(
+    (technique: 'warmup' | 'dropSet' | 'failure' | 'restPause', value: boolean) => {
+      dispatch({ type: 'SET_TECHNIQUE', payload: { technique, value } });
+    },
+    [dispatch]
+  );
+
+  const handleOpenPlateCalc = useCallback(() => {
+    dispatch({ type: 'OPEN_PLATE_CALC' });
+  }, [dispatch]);
+
+  const handleClosePlateCalc = useCallback(() => {
+    dispatch({ type: 'CLOSE_PLATE_CALC' });
+  }, [dispatch]);
 
   const handleUpdateNotes = useCallback(
     (notes: string) => {
@@ -791,7 +807,10 @@ export const WorkoutContent: React.FC<{
     return (
       <React.Suspense
         fallback={
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{background: 'var(--fs-bg)'}}>
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{ background: 'var(--fs-bg)' }}
+          >
             <div
               style={{
                 color: 'var(--fs-primary)',
@@ -859,7 +878,9 @@ export const WorkoutContent: React.FC<{
   // If no current exercise OR exercise has no name, show PreWorkoutScreen for initial welcome
   if (!derived.currentExercise || !derived.currentExercise.name?.trim()) {
     return (
-      <React.Suspense fallback={<div className="fixed inset-0" style={{background: 'var(--fs-bg)'}} />}>
+      <React.Suspense
+        fallback={<div className="fixed inset-0" style={{ background: 'var(--fs-bg)' }} />}
+      >
         <PreWorkoutScreen
           oledMode={!!workoutSettings.oledMode}
           onStartWorkout={() => {
@@ -992,14 +1013,13 @@ export const WorkoutContent: React.FC<{
             enableQuickRepsButtons={workoutSettings.enableQuickRepsButtons as boolean}
             supersetGroups={state.supersetGroups}
             onCreateSuperset={handleCreateSuperset}
+            onToggleTechnique={handleToggleTechnique}
+            onOpenPlateCalc={handleOpenPlateCalc}
           />
         </div>
 
         {/* Navigation Footer */}
-        <div
-          className="w-full"
-          style={{ background: 'var(--fs-bg)' }}
-        >
+        <div className="w-full" style={{ background: 'var(--fs-bg)' }}>
           <ExerciseNav
             exercises={state.exercises}
             currentIndex={state.currentExerciseIndex}
@@ -1023,6 +1043,17 @@ export const WorkoutContent: React.FC<{
           onClose={handleCloseNumpad}
         />
       </React.Suspense>
+
+      {/* Plate Calculator */}
+      {state.showPlateCalc && (
+        <React.Suspense fallback={null}>
+          <PlateCalculatorOverlay
+            isOpen={state.showPlateCalc}
+            onClose={handleClosePlateCalc}
+            initialTarget={derived.currentSet?.weight || 60}
+          />
+        </React.Suspense>
+      )}
 
       {/* Confirm Exit */}
       <React.Suspense fallback={null}>
