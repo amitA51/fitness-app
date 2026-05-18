@@ -188,6 +188,7 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
                     key={rpe}
                     whileTap={{ scale: 0.93 }}
                     onClick={() => handleSelect(rpe)}
+                    className={`chip magnetic-card${isActive ? ' accent-glow' : ''}`}
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
@@ -195,9 +196,7 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
                       gap: 2,
                       padding: '14px 4px',
                       background: isActive ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
-                      border: isActive
-                        ? '1.5px solid var(--fs-accent)'
-                        : '1.5px solid transparent',
+                      border: isActive ? '1.5px solid var(--fs-accent)' : '1.5px solid transparent',
                       borderRadius: '14px 10px 14px 10px',
                       cursor: 'pointer',
                       transition: 'all 120ms ease',

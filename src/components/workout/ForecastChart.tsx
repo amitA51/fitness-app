@@ -2,7 +2,7 @@
 // Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type React from 'react';
 import { memo, useMemo, useState } from 'react';
 import {
@@ -11,6 +11,7 @@ import {
   getAllExerciseNames,
 } from '../../services/analyticsService';
 import type { WorkoutSession } from '../../types';
+import { GlowAreaChart, type GlowAreaPoint } from '../charts';
 
 interface ForecastChartProps {
   sessions: WorkoutSession[];
@@ -18,7 +19,6 @@ interface ForecastChartProps {
 
 const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
   const [selectedExercise, setSelectedExercise] = useState<string>('');
-  const shouldReduceMotion = useReducedMotion();
 
   const exerciseNames = useMemo(() => {
     return getAllExerciseNames(sessions);
@@ -36,70 +36,31 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
     return { progression, forecast };
   }, [selectedExercise, sessions]);
 
-  const chartWidth = 300;
-  const chartHeight = 120;
-  const padding = { top: 10, right: 10, bottom: 20, left: 10 };
-
-  const chartPoints = useMemo(() => {
+  const forecastData = useMemo<GlowAreaPoint[]>(() => {
     if (!progressionData || progressionData.progression.length === 0) return [];
-
-    const { progression } = progressionData;
-    const volumes = progression.map((p) => p.volume);
-    const maxVolume = Math.max(...volumes, 1);
-
-    return progression.map((point, i) => ({
-      x:
-        padding.left +
-        (i / Math.max(progression.length - 1, 1)) * (chartWidth - padding.left - padding.right),
-      y:
-        chartHeight -
-        padding.bottom -
-        (point.volume / maxVolume) * (chartHeight - padding.top - padding.bottom),
-      data: point,
+    const points: GlowAreaPoint[] = progressionData.progression.map((p) => ({
+      x: formatShortDate(p.date),
+      y: p.volume,
     }));
-  }, [progressionData, chartWidth, chartHeight]);
+    if (progressionData.forecast && progressionData.forecast.predicted > 0 && points.length > 0) {
+      points.push({ x: 'תחזית', y: progressionData.forecast.predicted });
+    }
+    return points;
+  }, [progressionData]);
 
-  const forecastPoint = useMemo(() => {
-    if (!progressionData || !progressionData.forecast || progressionData.forecast.predicted <= 0)
-      return null;
-    if (chartPoints.length === 0) return null;
-
-    const volumes = progressionData.progression.map((p) => p.volume);
-    const maxVolume = Math.max(...volumes, 1);
-
-    return {
-      x: chartWidth - padding.right,
-      y:
-        chartHeight -
-        padding.bottom -
-        (progressionData.forecast.predicted / maxVolume) *
-          (chartHeight - padding.top - padding.bottom),
-    };
-  }, [progressionData, chartPoints, chartWidth, chartHeight]);
-
-  const linePath = useMemo(() => {
-    if (chartPoints.length < 2) return '';
-    return chartPoints.map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
-  }, [chartPoints]);
-
-  const areaPath = useMemo(() => {
-    if (chartPoints.length < 2) return '';
-    const lastPoint = chartPoints[chartPoints.length - 1];
-    const firstPoint = chartPoints[0];
-    if (!lastPoint || !firstPoint) return '';
-    const bottomY = chartHeight - padding.bottom;
-    return `${linePath} L ${lastPoint.x} ${bottomY} L ${firstPoint.x} ${bottomY} Z`;
-  }, [linePath, chartPoints, chartHeight, padding]);
+  const hasChartData = forecastData.length >= 2;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
+      className="magnetic-card"
       style={{
         background: 'var(--fs-bg)',
         border: '2px solid var(--fs-primary)',
         padding: 20,
+        borderRadius: '22px 16px 22px 16px',
       }}
     >
       <div
@@ -166,111 +127,15 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
       </div>
 
       {/* Chart */}
-      {selectedExercise && progressionData && chartPoints.length > 0 && (
+      {selectedExercise && progressionData && hasChartData && (
         <div style={{ position: 'relative' }}>
-          <svg
-            width={chartWidth}
-            height={chartHeight}
-            style={{ overflow: 'visible' }}
-            role="img"
-            aria-label={`תחזית התקדמות עבור ${selectedExercise}`}
-          >
-            <title>תחזית התקדמות</title>
-            <desc>{`גרף התקדמות נפח לאורך זמן עבור התרגיל ${selectedExercise}, כולל תחזית עתידית`}</desc>
-            {/* Grid lines */}
-            {[0, 0.5, 1].map((level, i) => (
-              <line
-                key={i}
-                x1={padding.left}
-                y1={padding.top + level * (chartHeight - padding.top - padding.bottom)}
-                x2={chartWidth - padding.right}
-                y2={padding.top + level * (chartHeight - padding.top - padding.bottom)}
-                stroke="var(--fs-surface-2)"
-                strokeWidth="1"
-                strokeDasharray="4 4"
-              />
-            ))}
-
-            {/* Area fill */}
-            <motion.path
-              d={areaPath}
-              fill="url(#forecastGradient)"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.2 }}
-              transition={{ duration: 0.5 }}
-            />
-
-            {/* Line */}
-            <motion.path
-              d={linePath}
-              fill="none"
-              stroke="var(--fs-primary)"
-              strokeWidth={3}
-              strokeLinecap="square"
-              strokeLinejoin="miter"
-              initial={shouldReduceMotion ? false : { pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: shouldReduceMotion ? 0 : 1, ease: 'easeOut' }}
-            />
-
-            {/* Data points */}
-            {chartPoints.map((point, i) => (
-              <motion.circle
-                key={i}
-                cx={point.x}
-                cy={point.y}
-                r={5}
-                fill="var(--fs-accent)"
-                stroke="var(--fs-primary)"
-                strokeWidth={2}
-                initial={shouldReduceMotion ? false : { scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={
-                  shouldReduceMotion
-                    ? { duration: 0 }
-                    : { delay: 0.5 + i * 0.1, type: 'spring', stiffness: 200 }
-                }
-              />
-            ))}
-
-            {/* Forecast point */}
-            {forecastPoint && (
-              <motion.g
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-              >
-                <line
-                  x1={chartPoints[chartPoints.length - 1]?.x || 0}
-                  y1={chartPoints[chartPoints.length - 1]?.y || 0}
-                  x2={forecastPoint.x}
-                  y2={forecastPoint.y}
-                  stroke="var(--fs-accent)"
-                  strokeWidth={2}
-                  strokeDasharray="4 4"
-                />
-                <motion.circle
-                  cx={forecastPoint.x}
-                  cy={forecastPoint.y}
-                  r={6}
-                  fill="var(--fs-accent)"
-                  stroke="var(--fs-primary)"
-                  strokeWidth={2}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.9, type: 'spring', stiffness: 200 }}
-                />
-              </motion.g>
-            )}
-
-            {/* Gradients */}
-            <defs>
-              <linearGradient id="forecastGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--fs-accent)" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="var(--fs-accent)" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <GlowAreaChart
+            data={forecastData}
+            accent="var(--fs-accent)"
+            accent2="var(--fs-accent-2)"
+            xAxis
+            ariaLabel={`תחזית התקדמות עבור ${selectedExercise}`}
+          />
 
           {/* Forecast info */}
           {progressionData.forecast && (
@@ -326,7 +191,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
       )}
 
       {/* Empty state */}
-      {selectedExercise && (!progressionData || chartPoints.length === 0) && (
+      {selectedExercise && (!progressionData || !hasChartData) && (
         <div
           style={{
             textAlign: 'center',
@@ -343,6 +208,13 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
     </motion.div>
   );
 };
+
+function formatShortDate(iso: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
+  return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+}
 
 function findExerciseId(sessions: WorkoutSession[], exerciseName: string): string | null {
   for (const session of sessions) {

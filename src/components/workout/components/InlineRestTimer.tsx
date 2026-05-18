@@ -67,11 +67,15 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
       onSkip();
     };
 
+    const isFinalCountdown = timeLeft <= 5 && timeLeft > 0;
+    const isCritical = timeLeft <= 3 && timeLeft > 0;
+
     return (
       <div
         role="status"
         aria-live="polite"
         aria-label="טיימר מנוחה"
+        className="accent-glow"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -93,19 +97,19 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
             style={{ transform: 'rotate(-90deg)' }}
           >
             <circle
+              className="ring-track"
               cx={size / 2}
               cy={size / 2}
               r={radius}
               fill="var(--fs-rubber)"
-              stroke="var(--fs-surface-2)"
               strokeWidth={stroke}
             />
             <circle
+              className={`ring-progress${isCritical ? ' signal' : ''}`}
               cx={size / 2}
               cy={size / 2}
               r={radius}
               fill="none"
-              stroke="var(--fs-accent)"
               strokeWidth={stroke}
               strokeDasharray={circumference}
               strokeDashoffset={offset}
@@ -127,8 +131,17 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                 color: 'var(--fs-ink)',
                 fontVariantNumeric: 'tabular-nums',
                 letterSpacing: '0.02em',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
               }}
             >
+              {isFinalCountdown && (
+                <span
+                  className={`breathing-dot${isCritical ? ' signal' : ''}`}
+                  aria-hidden="true"
+                />
+              )}
               {formatted}
             </div>
             {nextSetHint && (

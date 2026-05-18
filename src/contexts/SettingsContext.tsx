@@ -93,11 +93,24 @@ const mergeSettings = (stored?: Partial<AppSettings>): AppSettings => ({
   },
 });
 
+/**
+ * Detect the OS-level color scheme preference. Used as a default when the
+ * user has not explicitly toggled darkMode yet.
+ */
+const systemPrefersDark = (): boolean => {
+  if (typeof window === 'undefined' || !window.matchMedia) return false;
+  try {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  } catch {
+    return false;
+  }
+};
+
 export const loadStoredSettings = (): AppSettings => {
   try {
     const stored = localStorage.getItem('appSettings');
     if (!stored) {
-      return DEFAULT_SETTINGS;
+      return { ...DEFAULT_SETTINGS, darkMode: systemPrefersDark() };
     }
 
     const parsed = safeJsonParse<Partial<AppSettings>>(stored);
@@ -108,7 +121,7 @@ export const loadStoredSettings = (): AppSettings => {
     // Ignore parse errors
   }
 
-  return DEFAULT_SETTINGS;
+  return { ...DEFAULT_SETTINGS, darkMode: systemPrefersDark() };
 };
 
 const persistSettings = (settings: AppSettings) => {

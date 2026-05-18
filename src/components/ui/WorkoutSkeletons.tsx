@@ -7,24 +7,8 @@ import type { FC } from 'react';
 
 // ========================================
 // Base Skeleton Primitives
+// Premium shimmer surface — single source of truth via .premium-shimmer
 // ========================================
-
-const shimmerStyle = {
-  position: 'relative' as const,
-  overflow: 'hidden' as const,
-  isolation: 'isolate' as const,
-};
-
-const Shimmer: FC<{ className?: string }> = ({ className = '' }) => (
-  <div
-    className={`absolute inset-0 -translate-x-full animate-shimmer ${className}`}
-    style={{
-      animationDuration: '1.8s',
-      background: 'linear-gradient(to right, transparent, var(--fs-surface), transparent)',
-      opacity: 0.9,
-    }}
-  />
-);
 
 const SkeletonBox: FC<{
   width?: string | number;
@@ -33,17 +17,13 @@ const SkeletonBox: FC<{
   borderRadius?: string | number;
 }> = ({ width = '100%', height = 20, className = '', borderRadius = 0 }) => (
   <div
-    className={className}
+    className={`premium-shimmer ${className}`.trim()}
     style={{
-      ...shimmerStyle,
-      backgroundColor: 'var(--fs-surface-2)',
       width: typeof width === 'number' ? `${width}px` : width,
       height: typeof height === 'number' ? `${height}px` : height,
       borderRadius: typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius,
     }}
-  >
-    <Shimmer />
-  </div>
+  />
 );
 
 const SkeletonCircle: FC<{ size?: number; className?: string }> = ({
@@ -51,16 +31,13 @@ const SkeletonCircle: FC<{ size?: number; className?: string }> = ({
   className = '',
 }) => (
   <div
-    className={className}
+    className={`premium-shimmer ${className}`.trim()}
     style={{
-      ...shimmerStyle,
-      backgroundColor: 'var(--fs-surface-2)',
       width: `${size}px`,
       height: `${size}px`,
+      borderRadius: '50%',
     }}
-  >
-    <Shimmer />
-  </div>
+  />
 );
 
 // ========================================

@@ -5,7 +5,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ActivityRings } from '../components/charts';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
+import { ForecastNudge } from '../components/dashboard/ForecastNudge';
 import { RecentPRBanner } from '../components/dashboard/RecentPRBanner';
 import { RecentWorkouts } from '../components/dashboard/RecentWorkouts';
 import { TemplateQuickStart, TemplateStrip } from '../components/dashboard/TemplateQuickStart';
@@ -106,17 +108,18 @@ export default function Dashboard() {
       });
       const prevVolume = prevSessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
 
+      const totalMinutes = Math.round(
+        weekSessions.reduce((sum, s) => sum + (s.duration || 0), 0) / 60
+      );
+
       const avgDurationMin =
-        weekSessions.length > 0
-          ? Math.round(
-              weekSessions.reduce((sum, s) => sum + (s.duration || 0), 0) / weekSessions.length / 60
-            )
-          : 0;
+        weekSessions.length > 0 ? Math.round(totalMinutes / weekSessions.length) : 0;
 
       return {
         workoutsThisWeek: weekSessions.length,
         volume,
         avgDurationMin,
+        totalMinutes,
         volDeltaPct: prevVolume > 0 ? ((volume - prevVolume) / prevVolume) * 100 : 0,
       };
     },
@@ -127,6 +130,17 @@ export default function Dashboard() {
     () => getWeekData(selectedWeekOffset),
     [getWeekData, selectedWeekOffset]
   );
+
+  const hasSessionToday = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const d = now.getDate();
+    return workoutSessions.some((s) => {
+      const sd = new Date(s.startTime);
+      return sd.getFullYear() === y && sd.getMonth() === m && sd.getDate() === d;
+    });
+  }, [workoutSessions]);
 
   const handleNavigate = useCallback((path: string) => navigate(path), [navigate]);
 
@@ -161,6 +175,7 @@ export default function Dashboard() {
   return (
     <div
       dir="rtl"
+      className="ambient-mesh ambient-mesh-soft"
       style={{
         background: 'var(--fs-bg)',
         minHeight: '100dvh',
@@ -188,30 +203,56 @@ export default function Dashboard() {
         }}
       >
         <div
+          className={`glass-surface ${pullDistance > threshold || isRefreshing ? 'accent-glow' : ''}`}
           style={{
-            width: pullDistance > threshold ? 28 : 20,
-            height: pullDistance > threshold ? 28 : 20,
-            border: '2px solid var(--fs-accent)',
-            borderTopColor: 'transparent',
-            borderRadius: '50%',
-            animation: isRefreshing ? 'spin 0.7s linear infinite' : 'none',
+            width: 44,
+            height: 44,
+            borderRadius: 999,
+            display: 'grid',
+            placeItems: 'center',
             opacity: isRefreshing
               ? 1
               : pullDistance > 20
                 ? Math.min(pullDistance / threshold, 1)
                 : 0,
-            transition: 'width 0.2s, height 0.2s, opacity 0.2s',
+            transform: `scale(${isRefreshing ? 1 : Math.min(pullDistance / (threshold * 0.8), 1)})`,
+            transition: 'opacity 0.2s, transform 0.2s',
+            animation: isRefreshing ? 'spin 1.2s linear infinite' : 'none',
           }}
-        />
+        >
+          <svg width={44} height={44} viewBox="0 0 44 44" aria-hidden="true">
+            <circle className="ring-track" cx={22} cy={22} r={18} fill="none" strokeWidth={4} />
+            <circle
+              className="ring-progress"
+              cx={22}
+              cy={22}
+              r={18}
+              fill="none"
+              strokeWidth={4}
+              strokeDasharray={2 * Math.PI * 18}
+              strokeDashoffset={
+                2 *
+                Math.PI *
+                18 *
+                (1 - (isRefreshing ? 1 : Math.min(pullDistance / threshold, 1)))
+              }
+              transform="rotate(-90 22 22)"
+            />
+          </svg>
+        </div>
       </div>
 
-      <DashboardHeader weekNumber={getWeekNumberForOffset(selectedWeekOffset)} />
+      <DashboardHeader
+        weekNumber={getWeekNumberForOffset(selectedWeekOffset)}
+        hasSessionToday={hasSessionToday}
+      />
 
       <main style={{ padding: '20px 20px 28px' }}>
         {/* 1. Primary CTA — "התחל אימון חדש" */}
         <button
           type="button"
           onClick={handleQuickStart}
+          className="accent-glow"
           aria-label={
             lastUsedTemplate ? `התחל מחדש אימון ${lastUsedTemplate.name}` : 'התחל אימון חדש'
           }
@@ -258,7 +299,78 @@ export default function Dashboard() {
           <span>התחל אימון חדש</span>
         </button>
 
-        {/* 2. "המשך מהר" — Quick templates */}
+        {/* 2. Hero bento — weekly activity rings */}
+        <section
+          className="section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in"
+          aria-label="סיכום שבועי"
+          style={{
+            marginTop: 24,
+            padding: '20px 18px 22px',
+            borderRadius: '24px 18px 24px 18px',
+            display: 'grid',
+            gridTemplateColumns: 'auto minmax(0, 1fr)',
+            gap: 18,
+            alignItems: 'center',
+          }}
+        >
+          <ActivityRings
+            size={156}
+            rings={[
+              {
+                value: weekData.workoutsThisWeek,
+                max: 4,
+                label: 'אימונים',
+                variant: 'accent',
+              },
+              {
+                value: weekData.volume,
+                max: Math.max(weekData.volume, 8000),
+                label: 'נפח',
+                variant: 'signal',
+              },
+              {
+                value: weekData.totalMinutes,
+                max: 240,
+                label: 'דקות',
+                variant: 'warn',
+              },
+            ]}
+          />
+          <div style={{ minWidth: 0, display: 'grid', gap: 10 }}>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                fontWeight: 800,
+                color: 'var(--fs-muted)',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+              }}
+            >
+              § WEEKLY · SUMMARY
+            </span>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <BentoRow
+                dot="accent"
+                label="אימונים"
+                value={`${weekData.workoutsThisWeek} / 4`}
+              />
+              <BentoRow
+                dot="signal"
+                label="נפח"
+                value={`${volumeLabel} ק״ג`}
+                sub={volDelta !== '—' ? volDelta : undefined}
+              />
+              <BentoRow
+                dot="warn"
+                label="זמן"
+                value={`${weekData.totalMinutes}′ / 240′`}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* 3. "המשך מהר" — Quick templates */}
         <section style={{ marginTop: 24 }}>
           <SectionTitle text="המשך מהר" />
           <TemplateQuickStart onQuickStart={handleQuickStart} />
@@ -267,6 +379,7 @@ export default function Dashboard() {
 
         {/* 3. Metrics row — 3 cards */}
         <section
+          className="fade-rise-in"
           style={{
             marginTop: 24,
             display: 'grid',
@@ -308,6 +421,9 @@ export default function Dashboard() {
 
         {/* 6. PR highlights (compact) */}
         <RecentPRBanner />
+
+        {/* 7. Forecast nudge — overdue muscle / declining volume */}
+        <ForecastNudge sessions={workoutSessions} />
 
         <div style={{ height: 24 }} />
       </main>
@@ -352,6 +468,69 @@ function SectionTitle({ text }: { text: string }) {
   );
 }
 
+// ── BentoRow — single legend line under hero rings ───────────────────────────
+function BentoRow({
+  dot,
+  label,
+  value,
+  sub,
+}: {
+  dot: 'accent' | 'signal' | 'warn';
+  label: string;
+  value: string;
+  sub?: string;
+}) {
+  const dotColor =
+    dot === 'signal' ? 'var(--fs-signal)' : dot === 'warn' ? 'var(--fs-warn)' : 'var(--fs-accent)';
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        gap: 8,
+        borderBottom: '1px solid var(--fs-surface-2)',
+        paddingBottom: 6,
+      }}
+    >
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 7,
+          color: 'var(--fs-muted)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: '0.04em',
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{ width: 6, height: 6, borderRadius: 999, background: dotColor }}
+        />
+        {label}
+      </span>
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'baseline',
+          gap: 6,
+          color: 'var(--fs-ink)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 13,
+          fontWeight: 800,
+        }}
+      >
+        <span className="kinetic-number">{value}</span>
+        {sub && (
+          <span style={{ color: 'var(--fs-accent)', fontSize: 10 }}>{sub}</span>
+        )}
+      </span>
+    </div>
+  );
+}
+
 // ── MetricCard — FS panel style ──────────────────────────────────────────────
 function MetricCard({
   value,
@@ -364,7 +543,7 @@ function MetricCard({
 }) {
   return (
     <div
-      className="fs-accent-rail"
+      className="magnetic-card fs-accent-rail"
       style={{
         background: 'var(--fs-surface)',
         borderRadius: '22px 16px 22px 16px',
@@ -384,7 +563,7 @@ function MetricCard({
           letterSpacing: '-0.01em',
         }}
       >
-        {value}
+        <span className="kinetic-number">{value}</span>
       </div>
       {sub && (
         <div

@@ -238,7 +238,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
 
   return (
     <motion.div
-      className="fixed inset-0 z-[9999] flex flex-col overflow-y-auto overscroll-contain"
+      className="fixed inset-0 z-[9999] flex flex-col overflow-y-auto overscroll-contain ambient-mesh ambient-mesh-soft"
       style={{
         background: oledMode ? '#0B1A2B' : 'var(--fs-bg)',
       }}
@@ -260,7 +260,10 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
       />
 
       {/* ── NAVY MASTHEAD ── */}
-      <div className="relative z-10 flex-shrink-0" style={{ background: 'var(--fs-primary)' }}>
+      <div
+        className="relative z-10 flex-shrink-0 glass-surface-dark scrim-noise"
+        style={{ background: 'var(--fs-primary)' }}
+      >
         {/* Chapter strip */}
         <div className="chapter-break" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <span className="left" style={{ color: 'var(--fs-accent)' }}>
@@ -305,6 +308,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               }}
             >
               <div
+                className="kinetic-number"
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,
@@ -340,6 +344,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               }}
             >
               <div
+                className="kinetic-number"
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,
@@ -373,6 +378,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
             {/* Streak */}
             <div className="text-center" style={{ padding: '12px 8px' }}>
               <div
+                className="kinetic-number"
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,
@@ -584,7 +590,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
             <button
               type="button"
               onClick={handleStartWorkout}
-              className="start-workout-btn w-full focus-ring"
+              className="start-workout-btn accent-glow w-full focus-ring"
               style={{
                 display: 'flex',
                 alignItems: 'center',

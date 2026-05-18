@@ -115,6 +115,7 @@ const SetInputCard = memo<SetInputCardProps>(
 
     return (
       <div
+        className="magnetic-card scrim-noise"
         style={{
           position: 'relative',
           display: 'flex',
@@ -211,10 +212,11 @@ const SetInputCard = memo<SetInputCardProps>(
             style={{ position: 'relative', display: 'flex', alignItems: 'baseline', minHeight: 56 }}
           >
             <span
+              className="kinetic-number large"
               style={{
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
-                fontSize: 48,
+                fontSize: 46,
                 lineHeight: 1,
                 letterSpacing: '-0.03em',
                 color: isGhostValue
@@ -301,6 +303,7 @@ const SetInputCard = memo<SetInputCardProps>(
               <button
                 type="button"
                 onClick={handleIncrement}
+                className="accent-glow"
                 style={{
                   display: 'flex',
                   alignItems: 'center',

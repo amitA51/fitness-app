@@ -76,6 +76,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
                 key={ex.id}
                 type="button"
                 onClick={() => onChangeExercise(i)}
+                className={`magnetic-card${i === currentIndex ? ' accent-glow' : ''}`}
                 style={{
                   minHeight: 58,
                   padding: 9,
@@ -152,6 +153,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
 
             {/* Center: Exercise name + set progress */}
             <div
+              className="glass-surface"
               style={{
                 flex: 1,
                 display: 'flex',

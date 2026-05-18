@@ -8,6 +8,15 @@ interface ForecastNudgeProps {
 
 const MAJOR_MUSCLES: ReadonlyArray<'Chest' | 'Back' | 'Legs'> = ['Chest', 'Back', 'Legs'];
 
+const MUSCLE_HE: Record<string, string> = {
+  Chest: 'חזה',
+  Back: 'גב',
+  Legs: 'רגליים',
+  Shoulders: 'כתפיים',
+  Arms: 'ידיים',
+  Core: 'בטן',
+};
+
 export function ForecastNudge({ sessions }: ForecastNudgeProps) {
   const nudge = useMemo(() => {
     // Check for overdue major muscle (preferred when both fire)
@@ -18,9 +27,10 @@ export function ForecastNudge({ sessions }: ForecastNudgeProps) {
       .sort((a, b) => b.daysSince - a.daysSince)[0];
 
     if (overdue) {
+      const muscleHe = MUSCLE_HE[overdue.muscle] ?? overdue.muscle;
       return {
-        label: `${overdue.muscle} overdue · ${overdue.daysSince} days`,
-        sub: 'next session ▸',
+        label: `${muscleHe} ממתין · ${overdue.daysSince} ימים`,
+        sub: 'מומלץ לאימון ▸',
       };
     }
 
@@ -33,8 +43,8 @@ export function ForecastNudge({ sessions }: ForecastNudgeProps) {
       const last = points[points.length - 1]?.actual ?? 0;
       const weeklyDropPct = first > 0 ? Math.round(((first - last) / first) * 100) : 0;
       return {
-        label: `Volume slipping · ${weeklyDropPct}%`,
-        sub: `last ${weeksAnalyzed} weeks`,
+        label: `נפח יורד · ${weeklyDropPct}%`,
+        sub: `ב-${weeksAnalyzed} שבועות אחרונים`,
       };
     }
 
@@ -46,11 +56,10 @@ export function ForecastNudge({ sessions }: ForecastNudgeProps) {
   return (
     <div
       role="note"
-      className="fs-accent-rail"
+      className="magnetic-card glass-surface fs-accent-rail scrim-noise fade-rise-in"
       style={{
         margin: '16px 0',
         padding: '10px 14px',
-        background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
         borderRadius: '22px 16px 22px 16px',
         fontFamily: 'var(--font-mono)',

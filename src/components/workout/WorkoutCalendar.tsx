@@ -5,6 +5,7 @@
 import { motion } from 'framer-motion';
 import type React from 'react';
 import { memo, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { WorkoutSession } from '../../types';
 
 interface WorkoutCalendarProps {
@@ -79,6 +80,21 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
     });
     return counts;
   }, [sessions]);
+
+  // First-session-by-date lookup for click-through navigation
+  const firstSessionIdByDay = useMemo(() => {
+    const map: Record<string, string> = {};
+    // Sort by startTime so "first" is the earliest one of the day
+    const sorted = [...sessions].sort((a, b) =>
+      (a.startTime || '').localeCompare(b.startTime || '')
+    );
+    for (const s of sorted) {
+      if (s.date && !map[s.date]) map[s.date] = s.id;
+    }
+    return map;
+  }, [sessions]);
+
+  const navigate = useNavigate();
 
   const maxWorkouts = useMemo(() => {
     return Math.max(1, ...Object.values(workoutCountByDay));
@@ -312,22 +328,36 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
           const isToday = dayData.date === today;
           const isCurrentMonth = dayData.isCurrentMonth;
 
+          const sessionId =
+            dayData.date && count > 0 ? firstSessionIdByDay[dayData.date] : undefined;
+          const navigable = !!sessionId;
+
           return (
             <div
               key={index}
               role="gridcell"
+              tabIndex={navigable ? 0 : -1}
               aria-label={
                 dayData.date
                   ? `${dayData.day} ${HEBREW_MONTHS[month]} ${year}${count > 0 ? `, ${count} אימונים` : ''}`
                   : undefined
               }
               aria-current={isToday ? 'date' : undefined}
+              onClick={() => {
+                if (sessionId) navigate(`/history/${sessionId}`);
+              }}
+              onKeyDown={(e) => {
+                if (sessionId && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  navigate(`/history/${sessionId}`);
+                }
+              }}
               style={{
                 aspectRatio: '1',
                 minHeight: 32,
                 position: 'relative',
                 opacity: isCurrentMonth ? 1 : 0.3,
-                cursor: isCurrentMonth ? 'pointer' : 'default',
+                cursor: navigable ? 'pointer' : isCurrentMonth ? 'default' : 'default',
                 border: isToday ? '2px solid var(--fs-accent)' : '2px solid var(--fs-surface-2)',
                 display: 'flex',
                 alignItems: 'center',

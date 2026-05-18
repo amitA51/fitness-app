@@ -1,3 +1,4 @@
+import { supabase } from '../lib/supabase';
 import { STORES, dbGetAll, dbPut } from './indexedDBCore';
 import { syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
@@ -65,6 +66,20 @@ export async function getWaterByDateRange(
   return all.filter((e) => e.date >= startDate && e.date <= endDate);
 }
 
-async function syncWaterEntry(_userId: string, _entry: WaterEntry): Promise<void> {
-  // Placeholder — water log sync can be added to supabaseSync.ts when the cloud table is created
+async function syncWaterEntry(userId: string, entry: WaterEntry): Promise<void> {
+  if (!supabase) return; // sync disabled when Supabase is not configured
+  const { error } = await supabase.from('water_logs').upsert(
+    {
+      id: entry.id,
+      user_id: userId,
+      date: entry.date,
+      amount_ml: entry.amountMl,
+      created_at: entry.createdAt,
+    },
+    { onConflict: 'id' }
+  );
+  if (error) {
+    // Throw so syncWithRetry can re-queue with backoff
+    throw new Error(`water sync failed: ${error.message}`);
+  }
 }

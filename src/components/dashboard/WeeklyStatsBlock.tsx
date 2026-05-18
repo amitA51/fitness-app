@@ -30,11 +30,11 @@ export function WeeklyStatsBlock({
     return `${sign}${volDeltaPct.toFixed(1)}%`;
   })();
 
+  const goalHit = pct >= 100;
   return (
     <div
-      className="fs-accent-rail"
+      className="magnetic-card glass-surface fs-accent-rail"
       style={{
-        background: 'var(--fs-surface)',
         borderRadius: '22px 16px 22px 16px',
         border: '1px solid var(--fs-surface-2)',
         padding: 20,
@@ -45,6 +45,7 @@ export function WeeklyStatsBlock({
       <button
         type="button"
         onClick={onQuickStart}
+        className="accent-glow"
         aria-label={
           lastUsedTemplate ? `התחל מחדש אימון ${lastUsedTemplate.name}` : 'התחל אימון חדש'
         }
@@ -107,7 +108,7 @@ export function WeeklyStatsBlock({
               color: 'var(--fs-ink)',
             }}
           >
-            {String(workoutsThisWeek).padStart(2, '0')}
+            <span className="kinetic-number">{String(workoutsThisWeek).padStart(2, '0')}</span>
           </div>
           <div
             style={{
@@ -142,7 +143,7 @@ export function WeeklyStatsBlock({
               color: 'var(--fs-ink)',
             }}
           >
-            {volumeFormatted || '—'}
+            <span className="kinetic-number">{volumeFormatted || '—'}</span>
           </div>
           <div
             style={{
@@ -170,7 +171,10 @@ export function WeeklyStatsBlock({
       </div>
 
       {/* Weekly goal progress */}
-      <div className="fs-progress-track" style={{ marginTop: 12 }}>
+      <div
+        className={`fs-progress-track${goalHit ? ' accent-glow' : ''}`}
+        style={{ marginTop: 12 }}
+      >
         <div
           className="fs-progress-fill"
           style={{ width: `${Math.min(Math.max(pct, 0), 100)}%` }}

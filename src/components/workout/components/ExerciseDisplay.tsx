@@ -267,15 +267,13 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
         {/* ── EXERCISE HERO PANEL ── name + set cockpit (asymmetric radius) ── */}
         <div style={{ padding: '12px 14px 0', background: 'var(--fs-bg)' }}>
           <div
+            className="premium-dark-surface ambient-mesh ambient-mesh-strong scrim-noise"
             style={{
               position: 'relative',
               overflow: 'hidden',
               borderRadius: '22px 16px 22px 16px',
               padding: 16,
               color: '#fff',
-              background: `linear-gradient(110deg, transparent 0 60%, rgba(255,255,255,0.12) 60% 62%, transparent 62%),
-                           linear-gradient(135deg, color-mix(in srgb, var(--fs-primary) 92%, #000), color-mix(in srgb, var(--fs-accent-2) 64%, var(--fs-primary))),
-                           var(--fs-primary)`,
             }}
           >
             {/* perforated strip */}
@@ -305,7 +303,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             />
 
             {/* Exercise name header */}
-            <div style={{ position: 'relative', zIndex: 1, minWidth: 0 }}>
+            <div className="fade-rise-in" style={{ position: 'relative', zIndex: 1, minWidth: 0 }}>
               <span
                 style={{
                   fontFamily: 'var(--font-display)',
@@ -324,6 +322,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
 
             {/* set-cockpit inside */}
             <div
+              className="glass-surface"
               style={{
                 position: 'relative',
                 zIndex: 1,
@@ -335,10 +334,10 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                 padding: 10,
                 border: '1px solid rgba(255,255,255,0.16)',
                 borderRadius: '18px 12px 18px 12px',
-                background: 'rgba(255,255,255,0.1)',
               }}
             >
               <div
+                className="accent-glow"
                 style={{
                   direction: 'ltr',
                   display: 'grid',
@@ -373,7 +372,10 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   fontWeight: 900,
                 }}
               >
-                NEXT {currentSet.weight || previousSet?.weight || '—'}
+                NEXT{' '}
+                <span className="kinetic-number">
+                  {currentSet.weight || previousSet?.weight || '—'}
+                </span>
               </div>
             </div>
           </div>

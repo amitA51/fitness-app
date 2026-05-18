@@ -61,8 +61,8 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
 
   return (
     <div
+      className="magnetic-card glass-surface fs-accent-rail"
       style={{
-        background: 'var(--fs-surface)',
         borderRadius: '22px 16px 22px 16px',
         border: '1px solid var(--fs-surface-2)',
         boxShadow: 'var(--shadow-card)',
@@ -71,18 +71,6 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
         overflow: 'hidden',
       }}
     >
-      {/* Accent side bar */}
-      <div
-        style={{
-          position: 'absolute',
-          insetInlineStart: 0,
-          top: 0,
-          bottom: 0,
-          width: 4,
-          background: 'var(--fs-accent)',
-        }}
-      />
-
       {/* Header */}
       <div
         style={{
@@ -92,20 +80,23 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
           marginBottom: 12,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Sparkles size={12} style={{ color: 'var(--fs-signal)' }} />
-          <span
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 8,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: 'var(--fs-muted)',
-            }}
-          >
-            תובנה אוטומטית
-          </span>
-        </div>
+        <span
+          style={{
+            display: 'inline-flex',
+            gap: 6,
+            alignItems: 'center',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: 'var(--fs-muted)',
+          }}
+        >
+          <span className="breathing-dot" aria-hidden />
+          AI INSIGHT
+          <Sparkles size={11} style={{ color: 'var(--fs-signal)', marginInlineStart: 2 }} />
+        </span>
         <button
           type="button"
           onClick={loadInsight}
@@ -173,34 +164,46 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
                 flexShrink: 0,
               }}
             >
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 48 48"
-                style={{ transform: 'rotate(-90deg)' }}
-                role="img"
-                aria-label={`ציון כושר: ${insight.fitnessScore}`}
-              >
-                <circle
-                  cx="24"
-                  cy="24"
-                  r="19"
-                  fill="none"
-                  stroke="var(--fs-surface-2)"
-                  strokeWidth="4"
-                />
-                <circle
-                  cx="24"
-                  cy="24"
-                  r="19"
-                  fill="none"
-                  stroke={scoreColor}
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  strokeDasharray={`${(insight.fitnessScore / 100) * 119.38} 119.38`}
-                  style={{ transition: 'stroke-dasharray 0.8s ease' }}
-                />
-              </svg>
+              {(() => {
+                const circumference = 2 * Math.PI * 44;
+                const pct = Math.max(0, Math.min(100, insight.fitnessScore));
+                const dashOffset = circumference * (1 - pct / 100);
+                const ringClass =
+                  pct >= 75
+                    ? 'ring-progress signal'
+                    : pct < 25
+                      ? 'ring-progress warn'
+                      : 'ring-progress';
+                return (
+                  <svg
+                    width="48"
+                    height="48"
+                    viewBox="0 0 100 100"
+                    role="img"
+                    aria-label={`ציון כושר: ${insight.fitnessScore}`}
+                  >
+                    <circle
+                      className="ring-track"
+                      cx="50"
+                      cy="50"
+                      r="44"
+                      strokeWidth="8"
+                      fill="none"
+                    />
+                    <circle
+                      className={ringClass}
+                      cx="50"
+                      cy="50"
+                      r="44"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={dashOffset}
+                      transform="rotate(-90 50 50)"
+                    />
+                  </svg>
+                );
+              })()}
               <div
                 style={{
                   position: 'absolute',
@@ -214,7 +217,7 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
                   color: scoreColor,
                 }}
               >
-                {insight.fitnessScore}
+                <span className="kinetic-number">{insight.fitnessScore}</span>
               </div>
             </div>
 
@@ -250,9 +253,9 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
 
           {/* Main recommendation */}
           <div
+            className="glass-surface"
             style={{
               padding: '8px 12px',
-              background: 'var(--fs-bg)',
               borderRadius: 14,
               marginBottom: 8,
               fontFamily: 'var(--font-hebrew)',

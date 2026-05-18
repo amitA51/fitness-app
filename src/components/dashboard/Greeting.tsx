@@ -22,7 +22,7 @@ export function Greeting({ weekNumber }: GreetingProps) {
 
   return (
     <header
-      className="masthead"
+      className="masthead fade-rise-in"
       style={{
         position: 'sticky',
         top: 0,
@@ -34,7 +34,8 @@ export function Greeting({ weekNumber }: GreetingProps) {
     >
       <div>
         <div className="kicker" style={MONO_STYLE}>
-          {today} · {todayFull} · שבוע {String(weekNumber).padStart(2, '0')}
+          {today} · {todayFull} · שבוע{' '}
+          <span className="kinetic-number">{String(weekNumber).padStart(2, '0')}</span>
         </div>
         <h1
           style={{

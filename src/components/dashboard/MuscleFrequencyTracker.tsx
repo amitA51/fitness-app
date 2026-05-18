@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import { AnimatedBar, GradientSparkline } from '../charts';
 import type { WorkoutSession } from '../../types';
 
 interface MuscleFrequencyProps {
@@ -70,11 +71,35 @@ export const MuscleFrequencyTracker = memo(function MuscleFrequencyTracker({
     });
   }, [sessions]);
 
+  // 7-day frequency overview for sparkline
+  const last7DaysFrequency = useMemo<number[]>(() => {
+    const now = new Date();
+    const buckets: number[] = new Array(7).fill(0);
+    const startTs = new Date(now);
+    startTs.setHours(0, 0, 0, 0);
+    startTs.setDate(startTs.getDate() - 6);
+    const startMs = startTs.getTime();
+
+    sessions
+      .filter((s) => s.status === 'completed')
+      .forEach((session) => {
+        const dt = new Date(session.startTime).getTime();
+        if (dt < startMs) return;
+        const dayIdx = Math.floor((dt - startMs) / 86400000);
+        if (dayIdx >= 0 && dayIdx < 7) {
+          buckets[dayIdx] = (buckets[dayIdx] ?? 0) + (session.exercises?.length ?? 0);
+        }
+      });
+    return buckets;
+  }, [sessions]);
+
   if (muscleData.length === 0) return null;
+
+  const hasSparklineData = last7DaysFrequency.some((v) => v > 0);
 
   return (
     <div
-      className="fs-accent-rail"
+      className="fs-accent-rail magnetic-card"
       style={{
         background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
@@ -95,6 +120,14 @@ export const MuscleFrequencyTracker = memo(function MuscleFrequencyTracker({
         >
           § MUSCLE BALANCE · 30D
         </span>
+        {hasSparklineData && (
+          <GradientSparkline
+            data={last7DaysFrequency}
+            width={120}
+            height={28}
+            ariaLabel="תדירות אימונים 7 ימים"
+          />
+        )}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {muscleData.slice(0, 7).map((m) => {
@@ -159,34 +192,12 @@ export const MuscleFrequencyTracker = memo(function MuscleFrequencyTracker({
                   </span>
                 </div>
               </div>
-              <div
-                style={{
-                  position: 'relative',
-                  height: 8,
-                  background: 'var(--fs-surface-2)',
-                  border: '1px solid var(--fs-surface-2)',
-                  overflow: 'hidden',
-                }}
-              >
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${pct}%`,
-                    background: isOverdue ? 'var(--fs-warn)' : 'var(--fs-accent)',
-                    transition: 'width 300ms ease',
-                  }}
-                />
-                <div
-                  aria-hidden
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background:
-                      'repeating-linear-gradient(90deg, transparent 0 16px, rgba(19,35,39,0.14) 16px 17px)',
-                    pointerEvents: 'none',
-                  }}
-                />
-              </div>
+              <AnimatedBar
+                value={pct}
+                accent={isOverdue ? 'var(--fs-warn)' : 'var(--fs-accent)'}
+                pulseOnComplete={pct >= 100}
+                ariaLabel={`${label} ${pct}%`}
+              />
             </div>
           );
         })}

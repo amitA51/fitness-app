@@ -35,6 +35,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
+        className="glass-surface scrim-noise"
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -49,6 +50,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="section-spotlight"
           style={{
             width: 96,
             height: 96,
@@ -105,6 +107,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
             onAddExercise();
           }}
           whileTap={{ scale: 0.98 }}
+          className="start-workout-btn accent-glow"
           style={{
             width: '100%',
             minHeight: 56,

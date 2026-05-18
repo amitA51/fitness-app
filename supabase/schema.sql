@@ -399,6 +399,38 @@ CREATE TRIGGER update_user_settings_updated_at
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================
+-- WATER LOGS (added 2026-05-18)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS water_logs (
+    id TEXT PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    date TEXT NOT NULL,
+    amount_ml INTEGER NOT NULL CHECK (amount_ml >= 0),
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS water_logs_user_date_idx ON water_logs (user_id, date);
+
+ALTER TABLE water_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "water_logs_select_own" ON water_logs
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "water_logs_insert_own" ON water_logs
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "water_logs_update_own" ON water_logs
+    FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "water_logs_delete_own" ON water_logs
+    FOR DELETE USING (auth.uid() = user_id);
+
+CREATE TRIGGER update_water_logs_updated_at
+    BEFORE UPDATE ON water_logs
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================
 -- MIGRATION SNIPPET (run on existing deployments)
 -- ============================================================
 -- Run these if you deployed schema.sql before 2026-04-22:

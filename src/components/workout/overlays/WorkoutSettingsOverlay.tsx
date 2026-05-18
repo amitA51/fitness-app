@@ -101,7 +101,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
           dragElastic={{ top: 0, bottom: 0.4 }}
           onDragEnd={handleDragEnd}
           style={{ y }}
-          className="fixed bottom-0 left-0 right-0 flex flex-col rounded-t-3xl overflow-hidden bg-[var(--bg-secondary,#121212)] max-h-[85vh]"
+          className="fixed bottom-0 left-0 right-0 flex flex-col rounded-t-3xl overflow-hidden bg-[var(--bg-secondary,#121212)] max-h-[85vh] glass-surface fade-rise-in"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex justify-center py-3">
@@ -130,7 +130,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="py-2"
+                  className="py-2 magnetic-card glass-surface"
                 >
                   <GoalSelector
                     value={get('defaultWorkoutGoal') || 'general'}
@@ -177,7 +177,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="py-2"
+                  className="py-2 magnetic-card glass-surface"
                 >
                   <ThemeSelector
                     value={get('selectedTheme') || 'deepCosmos'}
@@ -232,7 +232,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="py-2"
+                  className="py-2 magnetic-card glass-surface"
                 >
                   <RestTimeSelector
                     value={get('defaultRestTime') ?? 90}
@@ -377,7 +377,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="py-2"
+                  className="py-2 magnetic-card glass-surface"
                 >
                   <SectionHeader title="צלילים" />
                   <Toggle
@@ -432,7 +432,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="py-2"
+                  className="py-2 magnetic-card glass-surface"
                 >
                   <div className="p-4 rounded-xl bg-white/5 border border-white/10 mb-4">
                     <p className="text-[13px] text-white/60 leading-relaxed">
@@ -467,7 +467,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="py-2"
+                  className="py-2 magnetic-card glass-surface"
                 >
                   <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-white/10 mb-4">
                     <p className="text-[13px] text-white/60 leading-relaxed">
@@ -646,7 +646,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="py-2"
+                  className="py-2 magnetic-card glass-surface"
                 >
                   <ExerciseLibraryTab />
                 </motion.div>
@@ -659,7 +659,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="py-2"
+                  className="py-2 magnetic-card glass-surface"
                 >
                   <PRHistoryTab />
                 </motion.div>
@@ -672,7 +672,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="py-2"
+                  className="py-2 magnetic-card glass-surface"
                 >
                   <AnalyticsDashboard />
                 </motion.div>

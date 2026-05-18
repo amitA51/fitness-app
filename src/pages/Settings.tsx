@@ -202,10 +202,12 @@ interface ToggleProps {
 
 function Toggle({ checked, onChange, label }: ToggleProps) {
   return (
-    <label
-      aria-label={label}
+    <button
+      type="button"
       role="switch"
+      aria-label={label}
       aria-checked={checked}
+      onClick={onChange}
       style={{
         position: 'relative',
         display: 'inline-block',
@@ -213,15 +215,13 @@ function Toggle({ checked, onChange, label }: ToggleProps) {
         height: '32px',
         flexShrink: 0,
         cursor: 'pointer',
+        background: 'transparent',
+        border: 'none',
+        padding: 0,
       }}
     >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
-      />
       <span
+        aria-hidden="true"
         style={{
           position: 'absolute',
           inset: 0,
@@ -232,6 +232,7 @@ function Toggle({ checked, onChange, label }: ToggleProps) {
         }}
       />
       <span
+        aria-hidden="true"
         style={{
           position: 'absolute',
           top: '2px',
@@ -244,7 +245,7 @@ function Toggle({ checked, onChange, label }: ToggleProps) {
           pointerEvents: 'none',
         }}
       />
-    </label>
+    </button>
   );
 }
 

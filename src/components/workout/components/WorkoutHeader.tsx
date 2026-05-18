@@ -36,14 +36,15 @@ const MonoTimer = memo<{
 
   return (
     <div className="flex items-center gap-1.5">
+      <span className="breathing-dot" aria-hidden="true" />
       <span
-        className="tabular-nums"
+        className="tabular-nums kinetic-number"
         style={{
           fontFamily: 'var(--font-mono)',
-          fontSize: 12,
+          fontSize: 18,
           fontWeight: 600,
           letterSpacing: '0.08em',
-          color: 'var(--fs-muted)',
+          color: 'var(--fs-accent)',
         }}
       >
         {formatted}
@@ -189,7 +190,7 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
 
     return (
       <header
-        className="flex items-center justify-between w-full gap-2"
+        className="flex items-center justify-between w-full gap-2 glass-surface-dark scrim-noise"
         style={{
           background: 'var(--fs-surface)',
           padding: '8px 18px 10px',

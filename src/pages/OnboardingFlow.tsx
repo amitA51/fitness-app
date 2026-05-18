@@ -32,6 +32,9 @@ import { memo, useCallback, useState } from 'react';
 // TYPES
 // ============================================================================
 
+export type EquipmentAccess = 'gym' | 'home_full' | 'home_minimal' | 'bodyweight' | '';
+export type UnitSystem = 'metric' | 'imperial';
+
 export interface OnboardingData {
   name: string;
   gender: 'male' | 'female' | 'other' | '';
@@ -48,6 +51,10 @@ export interface OnboardingData {
   includeCardio: boolean;
   trackNutrition: boolean;
   dailyCalorieGoal: number | '';
+  // Added 2026-05-18: equipment access + unit system. Optional for back-compat
+  // with any persisted onboarding_data; readers should default to metric/gym.
+  equipment?: EquipmentAccess;
+  unitSystem?: UnitSystem;
 }
 
 const DEFAULT_ONBOARDING: OnboardingData = {
@@ -66,6 +73,8 @@ const DEFAULT_ONBOARDING: OnboardingData = {
   includeCardio: false,
   trackNutrition: false,
   dailyCalorieGoal: '',
+  equipment: '',
+  unitSystem: 'metric',
 };
 
 export interface OnboardingProps {

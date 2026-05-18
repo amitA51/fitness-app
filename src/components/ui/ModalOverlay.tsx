@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import type React from 'react';
 import { useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -124,6 +124,12 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const prefersReduced = useReducedMotion() ?? false;
+
+  // Premium timing — respect prefers-reduced-motion (durations collapse to 0)
+  const backdropDuration = prefersReduced ? 0 : 0.24;
+  const contentDuration = prefersReduced ? 0 : 0.42;
+  const premiumEase: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
   // Use focus trap for accessibility - trap focus on the content, not the backdrop
   useFocusTrap(contentRef, {
@@ -176,10 +182,13 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
             exit: { opacity: 0 },
           }
         : {
-            initial: { opacity: 0, scale: 0.95, y: 10 },
+            initial: { opacity: 0, scale: 0.96, y: 8 },
             animate: { opacity: 1, scale: 1, y: 0 },
-            exit: { opacity: 0, scale: 0.95, y: 10 },
+            exit: { opacity: 0, scale: 0.96, y: 8 },
           };
+
+  // Modal variant uses the premium glass surface for content
+  const useGlassContent = !isBottomSheet && !isFullscreen && !isNone;
 
   const modalContent = (
     <AnimatePresence>
@@ -189,7 +198,7 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: animationDuration }}
+          transition={{ duration: backdropDuration, ease: 'easeOut' }}
           className={`
                         fixed inset-0
                         ${blurMap[blur]}
@@ -201,8 +210,10 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
             .trim()}
           style={{
             zIndex: zIndexMap[zLevel],
-            // Editorial backdrop — semi-opaque rubber (Fresh Steel)
-            backgroundColor: `rgba(13, 21, 22, ${backdropOpacity / 100})`,
+            // Premium glass backdrop — primary-tinted with universal blur
+            backgroundColor: `color-mix(in srgb, var(--fs-primary) ${backdropOpacity}%, transparent)`,
+            WebkitBackdropFilter: 'blur(8px)',
+            backdropFilter: 'blur(8px)',
           }}
           onClick={handleBackdropClick}
           role="dialog"
@@ -216,10 +227,12 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
             animate={contentAnimation.animate}
             exit={contentAnimation.exit}
             transition={{
-              duration: animationDuration,
-              ease: isBottomSheet ? [0.32, 0.72, 0, 1] : 'easeOut',
+              duration: isBottomSheet ? animationDuration : contentDuration,
+              ease: isBottomSheet ? [0.32, 0.72, 0, 1] : premiumEase,
             }}
-            className={isBottomSheet ? 'w-full max-w-lg' : isFullscreen ? 'w-full h-full' : ''}
+            className={`${useGlassContent ? 'glass-surface' : ''} ${
+              isBottomSheet ? 'w-full max-w-lg' : isFullscreen ? 'w-full h-full' : ''
+            }`.trim()}
             style={
               isBottomSheet
                 ? {

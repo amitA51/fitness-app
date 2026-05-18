@@ -43,13 +43,13 @@ export function OfflineIndicator() {
       <div
         role="status"
         aria-live="polite"
-        className="fixed top-0 inset-x-0 z-50 text-center text-sm font-mono py-1"
+        className="glass-surface-dark scale-pop-in sticky top-0 inset-x-0 z-50 text-center text-sm font-mono py-1 flex items-center justify-center gap-2 w-full"
         style={{
-          background: 'var(--fs-ink)',
           color: 'var(--fs-bg)',
           paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)',
         }}
       >
+        <span className="breathing-dot warn" aria-hidden="true" />
         {queueDepth} פעולות ממתינות לסנכרון
       </div>
     );
@@ -60,13 +60,13 @@ export function OfflineIndicator() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed top-0 inset-x-0 z-50 text-center text-sm font-mono py-2"
+      className="glass-surface-dark scale-pop-in sticky top-0 inset-x-0 z-50 text-center text-sm font-mono py-2 flex items-center justify-center gap-2 w-full"
       style={{
-        background: 'var(--fs-ink)',
         color: 'var(--fs-bg)',
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
       }}
     >
+      <span className="breathing-dot warn" aria-hidden="true" />
       {queueDepth > 0
         ? `לא מחובר · ${queueDepth} פעולות בתור`
         : 'אין חיבור — האפליקציה פועלת במצב לא מקוון'}

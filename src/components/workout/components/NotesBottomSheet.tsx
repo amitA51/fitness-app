@@ -70,6 +70,7 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
+          className="glass-surface"
           style={{
             position: 'fixed',
             bottom: 0,

@@ -29,11 +29,10 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
     <div
       role="status"
       aria-label="שיאים אישיים חדשים"
-      className="fs-accent-rail"
+      className="magnetic-card glass-surface fs-accent-rail signal-glow"
       style={{
         marginTop: 16,
         padding: '12px 16px',
-        background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
         borderRadius: '22px 16px 22px 16px',
         boxShadow: 'var(--shadow-card)',
@@ -49,6 +48,9 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
       >
         <span
           style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
             fontFamily: 'var(--font-mono)',
             fontSize: 9,
             letterSpacing: '0.18em',
@@ -57,7 +59,8 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
             fontWeight: 600,
           }}
         >
-          § שיאים אישיים
+          <span className="breathing-dot signal" aria-hidden />
+          שיאים אישיים
         </span>
         <span
           style={{
@@ -102,7 +105,9 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
                 letterSpacing: '-0.01em',
               }}
             >
-              {pr.weight}×{pr.reps}
+              <span className="kinetic-number">
+                {pr.weight}×{pr.reps}
+              </span>
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',

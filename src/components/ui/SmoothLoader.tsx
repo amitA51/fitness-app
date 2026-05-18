@@ -30,12 +30,17 @@ interface SmoothLoaderProps {
  *     <MyScreenContent />
  *   </SmoothLoader>
  */
+// Premium ease (CSS var(--ease-premium) equivalent) for framer transitions
+const PREMIUM_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+// Premium duration in seconds (mirrors CSS var(--duration-premium) = 480ms)
+const PREMIUM_DURATION_S = 0.48;
+
 export const SmoothLoader: React.FC<SmoothLoaderProps> = ({
   isLoading,
   skeleton,
   children,
   minSkeletonTime = 400,
-  duration = 0.3,
+  duration = PREMIUM_DURATION_S,
   className = '',
 }) => {
   const [showContent, setShowContent] = useState(!isLoading);
@@ -75,11 +80,12 @@ export const SmoothLoader: React.FC<SmoothLoaderProps> = ({
         ) : (
           <motion.div
             key="content"
+            className="fade-rise-in"
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
               duration,
-              ease: [0.22, 1, 0.36, 1],
+              ease: PREMIUM_EASE,
             }}
           >
             {children}
@@ -163,7 +169,10 @@ export const ErrorWithRetry: React.FC<{
       dir="rtl"
     >
       {!compact && (
-        <div className="w-12 h-12 flex items-center justify-center" style={{ backgroundColor: 'color-mix(in srgb, var(--fs-warn) 10%, transparent)' }}>
+        <div
+          className="w-12 h-12 flex items-center justify-center"
+          style={{ backgroundColor: 'color-mix(in srgb, var(--fs-warn) 10%, transparent)' }}
+        >
           <svg
             width="24"
             height="24"
@@ -180,7 +189,12 @@ export const ErrorWithRetry: React.FC<{
         </div>
       )}
 
-      <p className="text-center" style={{ color: 'var(--fs-muted)', fontSize: compact ? '0.875rem' : undefined }}>{message}</p>
+      <p
+        className="text-center"
+        style={{ color: 'var(--fs-muted)', fontSize: compact ? '0.875rem' : undefined }}
+      >
+        {message}
+      </p>
 
       <button
         onClick={onRetry}

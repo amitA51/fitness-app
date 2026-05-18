@@ -101,7 +101,12 @@ export const TemplateQuickStart = memo(function TemplateQuickStart({
         gap: 10,
       }}
     >
-      <FSButton onClick={onQuickStart} variant="primary" ariaLabel="התחל אימון">
+      <FSButton
+        onClick={onQuickStart}
+        variant="primary"
+        ariaLabel="התחל אימון"
+        className="accent-glow"
+      >
         התחל אימון
       </FSButton>
       <FSButton onClick={() => navigate('/templates')} variant="secondary" ariaLabel="תבניות">
@@ -121,6 +126,7 @@ export const TemplateItem = memo(function TemplateItem({ template, onClick }: Te
     <button
       type="button"
       onClick={onClick}
+      className="template-card magnetic-card"
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -134,7 +140,6 @@ export const TemplateItem = memo(function TemplateItem({ template, onClick }: Te
         borderRadius: '22px 16px 22px 16px',
         cursor: 'pointer',
         boxShadow: 'var(--shadow-card)',
-        transition: 'border-color 150ms ease, box-shadow 150ms ease',
       }}
     >
       <span

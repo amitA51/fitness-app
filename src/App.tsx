@@ -1,7 +1,4 @@
-// ============================================================================
-// SPARKOS FITNESS - Root App Component
-// ============================================================================
-
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   Suspense,
   lazy,
@@ -61,7 +58,13 @@ const WorkoutContent = lazy(async () => {
 
 function PageLoader() {
   return (
-    <div className="min-h-screen" role="status" aria-live="polite" aria-label="טוען" style={{ background: 'var(--fs-bg)' }}>
+    <div
+      className="min-h-screen"
+      role="status"
+      aria-live="polite"
+      aria-label="טוען"
+      style={{ background: 'var(--fs-bg)' }}
+    >
       <div style={{ padding: '24px 20px' }}>
         <div
           className="animate-shimmer"
@@ -250,6 +253,7 @@ const MemoizedBottomNav = memo(BottomNav);
 // Separate component to render the main app content
 function AppShell() {
   const location = useLocation();
+  const reduceMotion = useReducedMotion() ?? false;
   const mainRef = useRef<HTMLElement | null>(null);
   const prevPathRef = useRef<string | null>(null);
 
@@ -301,7 +305,10 @@ function AppShell() {
           <a href="#main-content" className="skip-link">
             דלג לתוכן הראשי
           </a>
-          <div className="app-shell min-h-screen flex flex-col" style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}>
+          <div
+            className="app-shell min-h-screen flex flex-col"
+            style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
+          >
             <OfflineIndicator />
             <div className="sr-only" aria-live="polite">
               {pageLabel}
@@ -316,59 +323,125 @@ function AppShell() {
               style={{ contain: 'layout style' }}
             >
               <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route
-                    path="/"
-                    element={
-                      <PageErrorBoundary pageLabel="הדשבורד">
-                        <Dashboard />
-                      </PageErrorBoundary>
-                    }
-                  />
-                  <Route path="/workout" element={<WorkoutPlaceholder />} />
-                  <Route path="/workout/:templateId" element={<WorkoutPlaceholder />} />
-                  <Route
-                    path="/nutrition"
-                    element={
-                      <PageErrorBoundary pageLabel="עמוד התזונה">
-                        <Nutrition />
-                      </PageErrorBoundary>
-                    }
-                  />
-                  <Route
-                    path="/progress"
-                    element={
-                      <PageErrorBoundary pageLabel="עמוד ההתקדמות">
-                        <Progress />
-                      </PageErrorBoundary>
-                    }
-                  />
-                  <Route
-                    path="/templates"
-                    element={
-                      <PageErrorBoundary pageLabel="התבניות">
-                        <Templates />
-                      </PageErrorBoundary>
-                    }
-                  />
-                  <Route
-                    path="/history/:id"
-                    element={
-                      <PageErrorBoundary pageLabel="פרטי האימון">
-                        <WorkoutDetail />
-                      </PageErrorBoundary>
-                    }
-                  />
-                  <Route
-                    path="/settings"
-                    element={
-                      <PageErrorBoundary pageLabel="ההגדרות">
-                        <Settings />
-                      </PageErrorBoundary>
-                    }
-                  />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
+                {reduceMotion ? (
+                  <Routes location={location}>
+                    <Route
+                      path="/"
+                      element={
+                        <PageErrorBoundary pageLabel="הדשבורד">
+                          <Dashboard />
+                        </PageErrorBoundary>
+                      }
+                    />
+                    <Route path="/workout" element={<WorkoutPlaceholder />} />
+                    <Route path="/workout/:templateId" element={<WorkoutPlaceholder />} />
+                    <Route
+                      path="/nutrition"
+                      element={
+                        <PageErrorBoundary pageLabel="עמוד התזונה">
+                          <Nutrition />
+                        </PageErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path="/progress"
+                      element={
+                        <PageErrorBoundary pageLabel="עמוד ההתקדמות">
+                          <Progress />
+                        </PageErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path="/templates"
+                      element={
+                        <PageErrorBoundary pageLabel="התבניות">
+                          <Templates />
+                        </PageErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path="/history/:id"
+                      element={
+                        <PageErrorBoundary pageLabel="פרטי האימון">
+                          <WorkoutDetail />
+                        </PageErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path="/settings"
+                      element={
+                        <PageErrorBoundary pageLabel="ההגדרות">
+                          <Settings />
+                        </PageErrorBoundary>
+                      }
+                    />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                ) : (
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={location.pathname}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <Routes location={location}>
+                        <Route
+                          path="/"
+                          element={
+                            <PageErrorBoundary pageLabel="הדשבורד">
+                              <Dashboard />
+                            </PageErrorBoundary>
+                          }
+                        />
+                        <Route path="/workout" element={<WorkoutPlaceholder />} />
+                        <Route path="/workout/:templateId" element={<WorkoutPlaceholder />} />
+                        <Route
+                          path="/nutrition"
+                          element={
+                            <PageErrorBoundary pageLabel="עמוד התזונה">
+                              <Nutrition />
+                            </PageErrorBoundary>
+                          }
+                        />
+                        <Route
+                          path="/progress"
+                          element={
+                            <PageErrorBoundary pageLabel="עמוד ההתקדמות">
+                              <Progress />
+                            </PageErrorBoundary>
+                          }
+                        />
+                        <Route
+                          path="/templates"
+                          element={
+                            <PageErrorBoundary pageLabel="התבניות">
+                              <Templates />
+                            </PageErrorBoundary>
+                          }
+                        />
+                        <Route
+                          path="/history/:id"
+                          element={
+                            <PageErrorBoundary pageLabel="פרטי האימון">
+                              <WorkoutDetail />
+                            </PageErrorBoundary>
+                          }
+                        />
+                        <Route
+                          path="/settings"
+                          element={
+                            <PageErrorBoundary pageLabel="ההגדרות">
+                              <Settings />
+                            </PageErrorBoundary>
+                          }
+                        />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </motion.div>
+                  </AnimatePresence>
+                )}
               </Suspense>
             </main>
             {!isWorkoutActive && <MemoizedBottomNav />}
@@ -397,7 +470,14 @@ function WorkoutPlaceholder() {
             aria-live="polite"
             aria-label="טוען את מסך האימון"
           >
-            <div className="w-8 h-8 animate-spin" style={{ border: '2px solid var(--fs-primary)', borderTopColor: 'transparent', borderRadius: '50%' }} />
+            <div
+              className="w-8 h-8 animate-spin"
+              style={{
+                border: '2px solid var(--fs-primary)',
+                borderTopColor: 'transparent',
+                borderRadius: '50%',
+              }}
+            />
           </div>
         }
       >

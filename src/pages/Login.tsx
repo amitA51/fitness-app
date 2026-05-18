@@ -787,12 +787,12 @@ function SignInStep({
   const validate = useCallback((): boolean => {
     const newErrors: ValidationErrors = {};
     if (!form.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'אימייל הוא שדה חובה';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      newErrors.email = 'Invalid email address';
+      newErrors.email = 'כתובת אימייל לא תקינה';
     }
     if (!form.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = 'סיסמה היא שדה חובה';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -804,7 +804,7 @@ function SignInStep({
       if (!validate()) return;
 
       if (!isSupabaseConfigured) {
-        setGeneralError('Login disabled — configure Supabase');
+        setGeneralError('כניסה לא זמינה — Supabase לא מוגדר');
         return;
       }
 
@@ -1014,24 +1014,24 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
   const validate = useCallback((): boolean => {
     const newErrors: ValidationErrors = {};
     if (!form.fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
+      newErrors.fullName = 'שם מלא הוא שדה חובה';
     } else if (form.fullName.trim().length < 2) {
-      newErrors.fullName = 'Name must be at least 2 characters';
+      newErrors.fullName = 'שם חייב להכיל לפחות 2 תווים';
     }
     if (!form.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'אימייל הוא שדה חובה';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      newErrors.email = 'Invalid email address';
+      newErrors.email = 'כתובת אימייל לא תקינה';
     }
     if (!form.password) {
-      newErrors.password = 'Password is required';
-    } else if (form.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = 'סיסמה היא שדה חובה';
+    } else if (form.password.length < 8) {
+      newErrors.password = 'סיסמה חייבת להכיל לפחות 8 תווים';
     }
     if (!form.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = 'נא לאמת את הסיסמה';
     } else if (form.password !== form.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = 'הסיסמאות אינן תואמות';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -1344,9 +1344,9 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
   const validate = useCallback((): boolean => {
     const newErrors: ValidationErrors = {};
     if (!form.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'אימייל הוא שדה חובה';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      newErrors.email = 'Invalid email address';
+      newErrors.email = 'כתובת אימייל לא תקינה';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

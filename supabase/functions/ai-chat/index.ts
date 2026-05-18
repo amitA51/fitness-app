@@ -76,6 +76,56 @@ interface ChatRequest {
 }
 
 // ----------------------------------------------------------------------------
+// AUTH — verify Supabase JWT (anon-key not enough; require a real user)
+// ----------------------------------------------------------------------------
+
+interface JwtPayload {
+  sub?: string;
+  role?: string;
+  exp?: number;
+  aud?: string;
+}
+
+function decodeJwtPayload(token: string): JwtPayload | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '=='.slice(0, (4 - (base64.length % 4)) % 4);
+    // @ts-expect-error Deno global
+    const decoded = atob(padded);
+    return JSON.parse(decoded) as JwtPayload;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Structural + claims validation. Signature verification is enforced by
+ * Supabase's platform when verify_jwt = true in functions config. Here we
+ * additionally reject anon role and expired tokens so we never burn the
+ * provider quota for an unauthenticated client.
+ */
+function authorize(req: Request): { error: null } | { error: string } {
+  const header = req.headers.get('authorization') ?? req.headers.get('Authorization') ?? '';
+  if (!header.toLowerCase().startsWith('bearer ')) {
+    return { error: 'missing Authorization bearer token' };
+  }
+  const token = header.slice(7).trim();
+  if (!token) return { error: 'empty bearer token' };
+
+  const payload = decodeJwtPayload(token);
+  if (!payload) return { error: 'malformed JWT' };
+  if (payload.role === 'anon') return { error: 'anonymous calls not allowed' };
+  if (typeof payload.exp === 'number' && payload.exp * 1000 < Date.now()) {
+    return { error: 'token expired' };
+  }
+  if (!payload.sub) return { error: 'token missing sub' };
+
+  return { error: null };
+}
+
+// ----------------------------------------------------------------------------
 // HELPERS
 // ----------------------------------------------------------------------------
 
@@ -124,6 +174,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   if (req.method !== 'POST') {
     return errorResponse(req, 'method_not_allowed', 'Only POST is allowed', 405);
+  }
+
+  // Require an authenticated user (non-anon Supabase JWT). Prevents anyone
+  // with the public anon key from draining the OpenRouter quota.
+  const authResult = authorize(req);
+  if (authResult.error !== null) {
+    return errorResponse(req, 'unauthorized', authResult.error, 401);
+  }
+
+  // Enforce a sane body size cap (defense against giant message arrays).
+  const contentLength = Number(req.headers.get('content-length') ?? '0');
+  const MAX_BODY_BYTES = 64 * 1024; // 64 KB
+  if (contentLength > MAX_BODY_BYTES) {
+    return errorResponse(req, 'payload_too_large', `body > ${MAX_BODY_BYTES} bytes`, 413);
   }
 
   // @ts-expect-error Deno global

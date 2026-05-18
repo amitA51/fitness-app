@@ -147,7 +147,15 @@ const diffSetAgainstPRs = (
   }
 
   const volumePR = existingPRs.find((pr) => pr.type === 'volume');
-  if (!volumePR || volume > (volumePR.maxWeight || 0) * (volumePR.reps || 0)) {
+  // Defensive: legacy rows may have weight or maxWeight zeroed, so take the
+  // larger of (maxWeight*reps) and (weight*reps) as the existing volume.
+  const existingVolume = volumePR
+    ? Math.max(
+        (volumePR.maxWeight || 0) * (volumePR.reps || 0),
+        (volumePR.weight || 0) * (volumePR.reps || 0)
+      )
+    : 0;
+  if (!volumePR || volume > existingVolume) {
     const pr: PersonalRecord = {
       id: `pr-${exerciseId}-volume-${Date.now()}`,
       exerciseId,
@@ -156,6 +164,25 @@ const diffSetAgainstPRs = (
       weight,
       reps,
       type: 'volume',
+      maxWeight: weight,
+      oneRepMax: est1RM,
+    };
+    if (!newPR) newPR = pr;
+  }
+
+  // Reps PR: highest reps at weight ≥ 0.85 × current weight PR
+  // (prevents trivial floods at low load — only "real" rep records register).
+  const repsPR = existingPRs.find((pr) => pr.type === 'reps');
+  const weightThreshold = (weightPR?.weight || 0) * 0.85;
+  if (weight >= weightThreshold && (!repsPR || reps > (repsPR.reps || 0))) {
+    const pr: PersonalRecord = {
+      id: `pr-${exerciseId}-reps-${Date.now()}`,
+      exerciseId,
+      exerciseName,
+      date: new Date().toISOString(),
+      weight,
+      reps,
+      type: 'reps',
       maxWeight: weight,
       oneRepMax: est1RM,
     };

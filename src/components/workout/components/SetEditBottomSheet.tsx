@@ -74,6 +74,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
           exit={{ y: '100%' }}
           transition={SHEET_TRANSITION}
           onClick={(e) => e.stopPropagation()}
+          className="glass-surface"
           style={{
             position: 'fixed',
             bottom: 0,
@@ -412,9 +413,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {isCompleted && (
-                          <CheckCircleIcon
-                            style={{ width: 20, height: 20, color: '#2F8F58' }}
-                          />
+                          <CheckCircleIcon style={{ width: 20, height: 20, color: '#2F8F58' }} />
                         )}
                         <span
                           style={{

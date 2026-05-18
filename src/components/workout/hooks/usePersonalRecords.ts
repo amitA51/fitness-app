@@ -53,36 +53,50 @@ export function usePersonalRecords(
   // Get PR for specific exercise
   const getPRForExercise = useCallback((exerciseName: string) => prMap.get(exerciseName), [prMap]);
 
-  // Check if a set is a new PR
+  // Check if a set is a new PR (weight, volume, or reps — first match wins).
   const checkForNewPR = useCallback(
     (exerciseName: string, set: WorkoutSet): PersonalRecord | null => {
       const weight = set.weight || 0;
       const reps = set.reps || 0;
-      if (checkIsNewPR(exerciseName, weight, reps, prMap).isWeightPR) {
-        const newPR: PersonalRecord = {
-          id: `pr-${exerciseName}-${Date.now()}`,
-          exerciseId: exerciseName,
-          exerciseName,
-          maxWeight: set.weight || 0,
-          maxReps: set.reps || 0,
-          oneRepMax: set.weight && set.reps ? Math.round(set.weight * (1 + set.reps / 30)) : 0,
-          date: set.completedAt || new Date().toISOString(),
-          weight: set.weight || 0,
-          reps: set.reps || 0,
-          type: 'weight',
-        };
+      if (weight <= 0 || reps <= 0) return null;
 
-        // Update local PR map
-        setPRMap((prev) => {
-          const next = new Map(prev);
+      const diff = checkIsNewPR(exerciseName, weight, reps, prMap);
+      const existing = prMap.get(exerciseName);
+      const existingWeight = existing?.weight || 0;
+      const repsThreshold = existingWeight * 0.85;
+      const existingReps = existing?.reps || 0;
+      const isRepsPR = weight >= repsThreshold && reps > existingReps;
+
+      type PRType = 'weight' | 'volume' | 'reps';
+      let prType: PRType | null = null;
+      if (diff.isWeightPR) prType = 'weight';
+      else if (diff.isVolumePR) prType = 'volume';
+      else if (isRepsPR) prType = 'reps';
+      if (!prType) return null;
+
+      const newPR: PersonalRecord = {
+        id: `pr-${exerciseName}-${prType}-${Date.now()}`,
+        exerciseId: exerciseName,
+        exerciseName,
+        maxWeight: weight,
+        maxReps: reps,
+        oneRepMax: Math.round(weight * (1 + reps / 30)),
+        date: set.completedAt || new Date().toISOString(),
+        weight,
+        reps,
+        type: prType,
+      };
+
+      setPRMap((prev) => {
+        const next = new Map(prev);
+        const current = next.get(exerciseName);
+        if (!current || newPR.weight >= (current.weight || 0)) {
           next.set(exerciseName, newPR);
-          return next;
-        });
+        }
+        return next;
+      });
 
-        return newPR;
-      }
-
-      return null;
+      return newPR;
     },
     [prMap]
   );

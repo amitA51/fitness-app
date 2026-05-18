@@ -13,13 +13,18 @@ const NAV_ITEMS = [
 export default function BottomNav() {
   const location = useLocation();
 
+  // Determine active path for keying the pill entrance animation
+  const activePath = NAV_ITEMS.find(({ path }) =>
+    path === '/'
+      ? location.pathname === path
+      : location.pathname === path || location.pathname.startsWith(`${path}/`)
+  )?.path;
+
   return (
     <nav
       aria-label="ניווט ראשי"
-      className="fixed bottom-0 inset-x-0 z-nav safe-area-bottom"
+      className="glass-surface fixed bottom-0 inset-x-0 z-nav safe-area-bottom"
       style={{
-        backgroundColor: 'var(--fs-primary)',
-        borderTop: '1px solid var(--fs-primary)',
         contain: 'layout style paint',
       }}
     >
@@ -31,7 +36,7 @@ export default function BottomNav() {
               : location.pathname === path || location.pathname.startsWith(`${path}/`);
 
           return (
-            <li key={path}>
+            <li key={path} className="flex-1 h-full">
               <Link
                 to={path}
                 aria-current={isActive ? 'page' : undefined}
@@ -60,41 +65,56 @@ export default function BottomNav() {
                     }
                   }
                 }}
-                className="relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-h-[48px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fs-primary)] rounded-sm"
+                className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-h-[48px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fs-primary)] rounded-sm ${
+                  isActive ? '' : 'magnetic-card'
+                }`}
               >
-                <span
-                  className="relative z-10 inline-flex flex-col items-center justify-center gap-0.5"
-                  style={
-                    isActive
-                      ? {
-                          borderRadius: 999,
-                          background: 'var(--fs-primary)',
-                          color: '#fff',
-                          padding: '6px 12px',
-                        }
-                      : undefined
-                  }
-                >
-                  <Icon
-                    size={22}
-                    strokeWidth={isActive ? 2.2 : 1.8}
-                    className="transition-colors"
-                    style={{
-                      color: isActive ? '#fff' : 'rgba(var(--text-on-navy-rgb), 0.65)',
-                    }}
-                    aria-hidden="true"
-                  />
-
+                {isActive ? (
                   <span
-                    className="font-mono text-[10px] font-semibold leading-none uppercase transition-colors"
+                    key={activePath}
+                    className="accent-glow scale-pop-in relative z-10 inline-flex flex-col items-center justify-center gap-0.5"
                     style={{
-                      color: isActive ? '#fff' : 'rgba(var(--text-on-navy-rgb), 0.65)',
-                      letterSpacing: '0.08em',
+                      borderRadius: 999,
+                      background: 'var(--fs-primary)',
+                      color: '#fff',
+                      padding: '6px 12px',
                     }}
                   >
-                    {label}
+                    <Icon
+                      size={22}
+                      strokeWidth={2.2}
+                      className="transition-colors"
+                      style={{ color: '#fff' }}
+                      aria-hidden="true"
+                    />
+                    <span
+                      className="font-mono text-[10px] font-semibold leading-none uppercase transition-colors inline-flex items-center gap-1"
+                      style={{ color: '#fff', letterSpacing: '0.08em' }}
+                    >
+                      <span className="breathing-dot" aria-hidden="true" />
+                      {label}
+                    </span>
                   </span>
-                </span>
+                ) : (
+                  <span className="relative z-10 inline-flex flex-col items-center justify-center gap-0.5">
+                    <Icon
+                      size={22}
+                      strokeWidth={1.8}
+                      className="transition-colors"
+                      style={{ color: 'rgba(var(--text-on-navy-rgb), 0.65)' }}
+                      aria-hidden="true"
+                    />
+                    <span
+                      className="font-mono text-[10px] font-semibold leading-none uppercase transition-colors"
+                      style={{
+                        color: 'rgba(var(--text-on-navy-rgb), 0.65)',
+                        letterSpacing: '0.08em',
+                      }}
+                    >
+                      {label}
+                    </span>
+                  </span>
+                )}
               </Link>
             </li>
           );

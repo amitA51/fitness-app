@@ -16,7 +16,7 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
 
     const uniqueDays = [...new Set(completed)].sort().reverse();
 
-    if (uniqueDays.length === 0) return { current: 0, best: 0 };
+    if (uniqueDays.length === 0) return { current: 0, best: 0, activeToday: false };
 
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -27,7 +27,8 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
     const hasToday = uniqueDays.includes(todayStr);
     const hasYesterday = uniqueDays.includes(yesterdayStr);
 
-    if (!hasToday && !hasYesterday) return { current: 0, best: computeBest(uniqueDays) };
+    if (!hasToday && !hasYesterday)
+      return { current: 0, best: computeBest(uniqueDays), activeToday: false };
 
     let currentStreak = hasToday ? 1 : 0;
     const startFrom = hasToday ? yesterday : new Date(today);
@@ -47,7 +48,11 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
     }
 
     const best = computeBest(uniqueDays);
-    return { current: currentStreak, best: Math.max(best, currentStreak) };
+    return {
+      current: currentStreak,
+      best: Math.max(best, currentStreak),
+      activeToday: hasToday,
+    };
   }, [sessions]);
 
   if (streak.current === 0) return null;
@@ -56,13 +61,12 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
     <div
       role="status"
       aria-label={`רצף אימונים: ${streak.current} ימים`}
-      className="fs-accent-rail"
+      className="magnetic-card glass-surface fs-accent-rail"
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: 8,
         padding: '10px 14px',
-        background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
         borderRadius: '22px 16px 22px 16px',
         color: 'var(--fs-accent)',
@@ -73,12 +77,14 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
       }}
     >
       <span style={{ fontWeight: 600 }}>
-        {streak.current} {streak.current === 1 ? 'יום' : 'ימים'}
+        <span className="kinetic-number">{streak.current}</span>{' '}
+        {streak.current === 1 ? 'יום' : 'ימים'}
       </span>
       <span style={{ color: 'var(--fs-steel)', fontSize: 10 }}>STREAK</span>
+      {streak.activeToday && <span className="breathing-dot" aria-hidden />}
       {streak.best > streak.current && (
         <span style={{ marginRight: 'auto', color: 'var(--fs-muted)', fontSize: 10 }}>
-          BEST: {streak.best}
+          BEST: <span className="kinetic-number">{streak.best}</span>
         </span>
       )}
     </div>

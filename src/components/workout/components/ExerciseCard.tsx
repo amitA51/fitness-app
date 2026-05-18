@@ -68,6 +68,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
       <motion.div
         key={exercise.id}
         onClick={() => onClick?.(exercise)}
+        className="magnetic-card glass-surface"
         style={{
           position: 'relative',
           padding: '14px',

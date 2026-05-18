@@ -296,6 +296,41 @@ export const createWorkoutFromTemplate = async (
   } as Omit<PersonalItem, 'id' | 'createdAt' | 'updatedAt'>;
 };
 
-// Placeholder for settings (should be implemented properly)
-const loadSettings = () => ({ workoutSettings: {} });
-const saveSettings = (_settings: unknown) => {};
+// ==================== SETTINGS HELPERS ====================
+// Real readers/writers for the app-settings localStorage blob. Used by
+// saveThemePreference / getThemePreference above. Tolerates missing or
+// corrupted blobs by returning an empty defaults object.
+
+const APP_SETTINGS_KEY = 'appSettings';
+
+interface PartialAppSettings {
+  workoutSettings?: Record<string, unknown>;
+  [k: string]: unknown;
+}
+
+const loadSettings = (): PartialAppSettings => {
+  try {
+    const raw = localStorage.getItem(APP_SETTINGS_KEY);
+    if (!raw) return { workoutSettings: {} };
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      const obj = parsed as PartialAppSettings;
+      if (!obj.workoutSettings || typeof obj.workoutSettings !== 'object') {
+        obj.workoutSettings = {};
+      }
+      return obj;
+    }
+    return { workoutSettings: {} };
+  } catch (err) {
+    logger.app?.warn?.('loadSettings: failed to parse appSettings, returning defaults', err);
+    return { workoutSettings: {} };
+  }
+};
+
+const saveSettings = (settings: PartialAppSettings): void => {
+  try {
+    localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(settings));
+  } catch (err) {
+    logger.app?.error?.('saveSettings: localStorage.setItem failed', err);
+  }
+};

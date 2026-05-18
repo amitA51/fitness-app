@@ -86,7 +86,7 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
 
         {/* Leading edge glow */}
         <motion.div
-          className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full"
+          className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full accent-glow"
           style={{
             background:
               'radial-gradient(circle, color-mix(in srgb, var(--fs-accent) 80%, transparent) 0%, transparent 70%)',

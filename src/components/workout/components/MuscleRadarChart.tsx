@@ -10,10 +10,10 @@ interface MuscleRadarChartProps {
 }
 
 const MUSCLE_STATUS_COLORS = {
-  strong: 'var(--fs-accent)', // green - well trained
-  stable: '#fbbf24', // yellow - maintaining
-  weak: 'var(--fs-warn)', // red - neglected
-  neutral: 'var(--fs-accent)', // default
+  strong: 'var(--fs-accent)',
+  stable: 'var(--fs-accent-2)',
+  weak: 'var(--fs-warn)',
+  neutral: 'var(--fs-accent)',
 };
 
 /**
@@ -104,7 +104,22 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
   };
 
   return (
-    <div className="relative">
+    <div
+      className="relative magnetic-card glass-surface scrim-noise"
+      style={{ padding: 16, borderRadius: '22px 16px 22px 16px' }}
+    >
+      <div
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--fs-muted)',
+          marginBottom: 8,
+        }}
+      >
+        § MUSCLE RADAR
+      </div>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         {/* Background circle grid */}
         {[0.25, 0.5, 0.75, 1].map((level, i) => (
@@ -114,7 +129,8 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
             cy={centerY}
             r={radius * level}
             fill="none"
-            stroke="rgba(255, 255, 255, 0.05)"
+            stroke="var(--fs-surface-2)"
+            strokeOpacity={0.4}
             strokeDasharray="2 2"
           />
         ))}
@@ -127,7 +143,8 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
             y1={line.y1}
             x2={line.x2}
             y2={line.y2}
-            stroke="rgba(255, 255, 255, 0.1)"
+            stroke="var(--fs-surface-2)"
+            strokeOpacity={0.6}
             strokeWidth={1}
           />
         ))}
@@ -135,8 +152,8 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
         {/* Background polygon (full) */}
         <motion.polygon
           points={backgroundPoints}
-          fill="rgba(139, 92, 246, 0.1)"
-          stroke="rgba(139, 92, 246, 0.2)"
+          fill="color-mix(in srgb, var(--fs-accent) 8%, transparent)"
+          stroke="color-mix(in srgb, var(--fs-accent) 20%, transparent)"
           strokeWidth={1}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -146,13 +163,17 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
         {/* Data polygon */}
         <motion.polygon
           points={polygonPoints}
-          fill="rgba(139, 92, 246, 0.3)"
-          stroke={MUSCLE_STATUS_COLORS.neutral}
+          fill="color-mix(in srgb, var(--fs-accent) 22%, transparent)"
+          stroke="var(--fs-accent)"
           strokeWidth={2}
           strokeLinejoin="round"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
+          style={{
+            filter:
+              'drop-shadow(0 6px 16px color-mix(in srgb, var(--fs-accent) 25%, transparent))',
+          }}
         />
 
         {/* Data points */}
@@ -179,7 +200,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
         })}
 
         {/* Center dot */}
-        <circle cx={centerX} cy={centerY} r={3} fill="rgba(255, 255, 255, 0.3)" />
+        <circle cx={centerX} cy={centerY} r={3} fill="var(--fs-muted)" />
 
         {/* Labels */}
         {displayData.map((muscle, i) => {

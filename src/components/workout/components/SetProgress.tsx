@@ -33,12 +33,15 @@ export const SetProgress = memo<SetProgressProps>(
             bgClass = 'bg-orange-400/30';
           }
 
+          const glowClass = isCompleted && !isWarmup ? 'accent-glow' : '';
+          const popClass = isCompleted ? 'scale-pop-in' : '';
+
           return (
             <div
               key={idx}
               className={`
                             h-2 rounded-full transition-all duration-300 ease-out
-                            ${widthClass} ${bgClass}
+                            ${widthClass} ${bgClass} ${glowClass} ${popClass}
                         `}
             />
           );

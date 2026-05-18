@@ -19,12 +19,8 @@ const PAGE_SIZE = 5;
 function SkeletonRow() {
   return (
     <div
-      className="animate-shimmer"
+      className="premium-shimmer"
       style={{
-        padding: '14px 16px',
-        background:
-          'linear-gradient(90deg, var(--fs-surface-2) 25%, var(--fs-surface) 50%, var(--fs-surface-2) 75%)',
-        backgroundSize: '200% 100%',
         height: 82,
         border: '1px solid var(--fs-surface-2)',
         borderRadius: '22px 16px 22px 16px',
@@ -125,10 +121,9 @@ function WorkoutCard({
 
   return (
     <div
-      className="fs-accent-rail"
+      className="magnetic-card glass-surface fs-accent-rail"
       style={{
         overflow: 'hidden',
-        background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
         borderRadius: '22px 16px 22px 16px',
         boxShadow: 'var(--shadow-card)',
@@ -198,7 +193,8 @@ function WorkoutCard({
               flexShrink: 0,
             }}
           >
-            {exercises.length} תרגילים · {vol} ק״ג · {dur}′
+            {exercises.length} תרגילים · <span className="kinetic-number">{vol}</span> ק״ג ·{' '}
+            <span className="kinetic-number">{dur}</span>′
           </div>
         </div>
       </button>

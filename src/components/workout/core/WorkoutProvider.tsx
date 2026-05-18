@@ -5,6 +5,7 @@ import { useImmerReducer } from 'use-immer';
 import { createWorkoutSet } from '../../../types';
 import type { AppSettings } from '../../../types';
 import { vibratePattern } from '../../../utils/haptics';
+import { logger } from '../../../utils/logger';
 import { safeJsonParse } from '../../../utils/safeJson';
 import {
   WorkoutDerivedProvider,
@@ -27,6 +28,41 @@ import {
 // ============================================================
 
 const STORAGE_KEY = 'active_workout_v3_state';
+
+/**
+ * Stringify-then-store with a single retry that drops transient/UI-only
+ * fields (overlays, celebrations, ghost data) if the first attempt fails.
+ * Returns true on success.
+ */
+const persistState = (state: WorkoutState): boolean => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return true;
+  } catch (err) {
+    // Try a stripped payload — keep only durable fields a user would lose
+    try {
+      const slim = {
+        exercises: state.exercises,
+        currentExerciseIndex: state.currentExerciseIndex,
+        supersetGroups: state.supersetGroups,
+        startTimestamp: state.startTimestamp,
+        totalPausedTime: state.totalPausedTime,
+        lastPauseTimestamp: state.lastPauseTimestamp,
+        isPaused: state.isPaused,
+        restTimer: state.restTimer,
+        appSettings: state.appSettings,
+        // Drop: previousExerciseData (rehydratable), every showXxx overlay flag,
+        //       showConfetti/showPRCelebration/tutorialExercise/pendingHaptic
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
+      logger.workout?.warn?.('Workout state slim-persist succeeded after full failure', err);
+      return true;
+    } catch (err2) {
+      logger.workout?.error?.('Workout state persist failed (full + slim)', err2);
+      return false;
+    }
+  }
+};
 // REST_TIMER_SYNC_INTERVAL removed - useRestTimer hook handles its own timing locally
 // This eliminates unnecessary re-renders every second
 
@@ -114,11 +150,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
     }
 
     persistTimeoutRef.current = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      } catch {
-        // Silently handle storage quota errors
-      }
+      persistState(state);
     }, 500);
 
     return () => {
@@ -135,11 +167,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(stateRef.current));
-        } catch {
-          // Silently handle storage errors
-        }
+        persistState(stateRef.current);
       } else if (document.visibilityState === 'visible') {
         if (stateRef.current.restTimer.active && stateRef.current.restTimer.endTime) {
           dispatch({ type: 'SYNC_REST_TIMER' });

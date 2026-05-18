@@ -10,8 +10,10 @@ export function ChapterBreak({ number, title, subtitle, style }: ChapterBreakPro
     <div
       className="chapter-break"
       style={{
+        position: 'relative',
         display: 'flex',
         justifyContent: 'space-between',
+        alignItems: 'center',
         fontFamily: 'var(--font-mono)',
         fontSize: 10,
         letterSpacing: '0.18em',
@@ -25,7 +27,13 @@ export function ChapterBreak({ number, title, subtitle, style }: ChapterBreakPro
       <span className="left">
         {number} · {title}
       </span>
-      <span className="right">{subtitle}</span>
+      <span
+        className="right"
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+      >
+        <span className="breathing-dot" style={{ opacity: 0.5 }} aria-hidden />
+        {subtitle}
+      </span>
     </div>
   );
 }

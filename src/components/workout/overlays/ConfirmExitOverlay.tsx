@@ -90,7 +90,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.96, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="w-full max-w-sm overflow-hidden"
+          className="w-full max-w-sm overflow-hidden glass-surface accent-glow"
           style={{
             backgroundColor: 'var(--fs-surface)',
             border: '2px solid var(--fs-primary)',
@@ -172,7 +172,10 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   backgroundColor: 'var(--fs-surface)',
                 }}
               >
-                <div className="text-center p-3" style={{ borderRight: '2px solid var(--fs-primary)' }}>
+                <div
+                  className="text-center p-3"
+                  style={{ borderRight: '2px solid var(--fs-primary)' }}
+                >
                   <div
                     style={{
                       fontFamily: 'var(--font-display)',
@@ -197,7 +200,10 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                     סטים
                   </div>
                 </div>
-                <div className="text-center p-3" style={{ borderRight: '2px solid var(--fs-primary)' }}>
+                <div
+                  className="text-center p-3"
+                  style={{ borderRight: '2px solid var(--fs-primary)' }}
+                >
                   <div
                     style={{
                       fontFamily: 'var(--font-display)',
@@ -293,6 +299,9 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   color: isFinishing ? 'var(--fs-accent)' : 'var(--fs-surface)',
                   opacity: isSaving ? 0.7 : 1,
                   cursor: isSaving ? 'not-allowed' : 'pointer',
+                  boxShadow: isFinishing
+                    ? undefined
+                    : '0 0 0 1px color-mix(in srgb, var(--fs-warn) 30%, transparent)',
                 }}
               >
                 {isSaving ? (

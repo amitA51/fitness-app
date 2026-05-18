@@ -925,7 +925,9 @@ export const WorkoutContent: React.FC<{
   // Main workout UI
   return (
     <div
-      className={cn('relative flex flex-col h-dvh font-sans transition-colors duration-500')}
+      className={cn(
+        'relative flex flex-col h-dvh font-sans transition-colors duration-500 ambient-mesh ambient-mesh-soft'
+      )}
       style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
     >
       {/* Progress Bar */}

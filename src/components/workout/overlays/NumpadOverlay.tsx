@@ -163,6 +163,13 @@ const NumpadButton = memo<{
     return String(value);
   };
 
+  const extraClass =
+    variant === 'number' || variant === 'action'
+      ? ' magnetic-card'
+      : variant === 'submit'
+        ? ' accent-glow'
+        : '';
+
   return (
     <motion.button
       whileTap={{ scale: 0.95 }}
@@ -172,7 +179,7 @@ const NumpadButton = memo<{
         handleClick();
       }}
       disabled={disabled}
-      className="relative flex items-center justify-center transition-all duration-150"
+      className={`relative flex items-center justify-center transition-all duration-150${extraClass}`}
       style={{
         ...baseStyle,
         ...variantStyle[variant],
@@ -515,7 +522,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
           transition={
             shouldReduceMotion ? { duration: 0 } : { type: 'spring', damping: 28, stiffness: 350 }
           }
-          className="w-full max-w-md mx-auto pb-safe-bottom overflow-hidden fixed bottom-0 left-0 right-0"
+          className="w-full max-w-md mx-auto pb-safe-bottom overflow-hidden fixed bottom-0 left-0 right-0 glass-surface-dark"
           style={{
             backgroundColor: 'var(--fs-bg)',
             borderTop: '2px solid var(--fs-primary)',
@@ -680,7 +687,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                 }
               }}
               disabled={value === ''}
-              className="btn-primary w-full"
+              className="btn-primary w-full accent-glow"
               style={{
                 opacity: value === '' ? 0.4 : 1,
                 cursor: value === '' ? 'not-allowed' : 'pointer',

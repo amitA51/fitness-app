@@ -323,7 +323,8 @@ const RingProgress = memo<{
   size?: number;
   strokeWidth?: number;
   reducedAnimations?: boolean;
-}>(({ progress, size = 240, strokeWidth = 8, reducedAnimations = false }) => {
+  isCritical?: boolean;
+}>(({ progress, size = 240, strokeWidth = 8, reducedAnimations = false, isCritical = false }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - progress / 100);
@@ -337,19 +338,19 @@ const RingProgress = memo<{
       style={{ transform: 'rotate(-90deg)' }}
     >
       <circle
+        className="ring-track"
         cx={size / 2}
         cy={size / 2}
         r={radius}
         fill="none"
-        stroke="var(--fs-surface-2)"
         strokeWidth={strokeWidth}
       />
       <motion.circle
+        className={`ring-progress${isCritical ? ' signal' : ''}`}
         cx={size / 2}
         cy={size / 2}
         r={radius}
         fill="none"
-        stroke="var(--fs-accent)"
         strokeWidth={strokeWidth}
         strokeLinecap="butt"
         strokeDasharray={circumference}
@@ -403,7 +404,7 @@ const FullTimer = memo<FullTimerProps>(
         animate={ANIMATION.fullTimer.animate}
         exit={ANIMATION.fullTimer.exit}
         transition={animationConfig}
-        className={`fixed inset-0 flex items-center justify-center ${largeText ? 'text-lg' : ''}`}
+        className={`fixed inset-0 flex items-center justify-center premium-dark-surface ambient-mesh scrim-noise ${largeText ? 'text-lg' : ''}`}
         style={{
           zIndex: Z_INDEX.modal,
           /* Solid scrim instead of backdrop-filter blur — blur on a fixed
@@ -470,6 +471,7 @@ const FullTimer = memo<FullTimerProps>(
               progress={progress}
               size={largeText ? 300 : 240}
               reducedAnimations={reducedAnimations}
+              isCritical={isLastFive}
             />
 
             {/* Pulse effect for last 5 seconds — mustard glow */}
@@ -487,8 +489,15 @@ const FullTimer = memo<FullTimerProps>(
 
             {/* Time Display — big display font on bone */}
             <div className="relative flex flex-col items-center">
+              {isLastFive && (
+                <span
+                  className={`breathing-dot${timeLeft <= 3 ? ' signal' : ''} signal-glow`}
+                  aria-hidden="true"
+                  style={{ marginBottom: 6 }}
+                />
+              )}
               <motion.span
-                className={`${largeText ? 'text-6xl sm:text-9xl' : 'text-5xl sm:text-7xl'} tabular-nums`}
+                className={`${largeText ? 'text-6xl sm:text-9xl' : 'text-5xl sm:text-7xl'} tabular-nums kinetic-number large${isLastFive ? ' signal-glow' : ''}`}
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,

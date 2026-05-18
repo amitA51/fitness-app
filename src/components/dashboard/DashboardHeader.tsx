@@ -3,9 +3,13 @@ import { greeting } from '../../utils/dateUtils';
 
 interface DashboardHeaderProps {
   weekNumber: number;
+  hasSessionToday?: boolean;
 }
 
-export const DashboardHeader = memo(function DashboardHeader({ weekNumber }: DashboardHeaderProps) {
+export const DashboardHeader = memo(function DashboardHeader({
+  weekNumber,
+  hasSessionToday = false,
+}: DashboardHeaderProps) {
   const [time, setTime] = useState(() => {
     const now = new Date();
     return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -47,8 +51,8 @@ export const DashboardHeader = memo(function DashboardHeader({ weekNumber }: Das
   // Time-based greeting
   const currentGreeting = greeting();
 
-  // Week label
-  const weekLabel = `שבוע ${String(weekNumber).padStart(2, '0')}`;
+  // Week label (rendered as JSX so we can wrap the numeric portion)
+  const weekNumberPadded = String(weekNumber).padStart(2, '0');
 
   // Safe area padding
   const topPadding = 'max(16px, env(safe-area-inset-top, 16px))';
@@ -57,8 +61,8 @@ export const DashboardHeader = memo(function DashboardHeader({ weekNumber }: Das
 
   return (
     <header
+      className="premium-dark-surface glass-surface-dark"
       style={{
-        background: 'var(--fs-primary)',
         paddingTop: topPadding,
         paddingLeft: sidePadding,
         paddingRight: sidePadding,
@@ -107,22 +111,50 @@ export const DashboardHeader = memo(function DashboardHeader({ weekNumber }: Das
               marginTop: 6,
             }}
           >
-            {todayFull} · {weekLabel}
+            {todayFull} · שבוע <span className="kinetic-number">{weekNumberPadded}</span>
           </div>
         </div>
 
         <div
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontWeight: 500,
-            fontSize: 22,
-            color: 'var(--fs-accent)',
-            letterSpacing: '0.05em',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: 4,
           }}
-          aria-label={`שעון: ${time}`}
-          role="timer"
         >
-          {time}
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 500,
+              fontSize: 22,
+              color: 'var(--fs-accent)',
+              letterSpacing: '0.05em',
+            }}
+            aria-label={`שעון: ${time}`}
+            role="timer"
+          >
+            {time}
+          </div>
+          {hasSessionToday && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+                color: 'var(--fs-signal)',
+              }}
+              aria-label="פעיל היום"
+            >
+              <span className="breathing-dot signal" aria-hidden />
+              LIVE
+            </span>
+          )}
         </div>
       </div>
     </header>

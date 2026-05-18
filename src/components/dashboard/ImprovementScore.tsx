@@ -101,9 +101,8 @@ export const ImprovementScore = memo(function ImprovementScore({
 
   return (
     <div
-      className="fs-accent-rail"
+      className="magnetic-card glass-surface fs-accent-rail section-spotlight"
       style={{
-        background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
         borderRadius: '22px 16px 22px 16px',
         boxShadow: 'var(--shadow-card)',
@@ -135,8 +134,10 @@ export const ImprovementScore = memo(function ImprovementScore({
           letterSpacing: '-0.02em',
         }}
       >
-        {arrow}
-        {Math.abs(score.value)}%
+        <span className="kinetic-number large" style={{ fontSize: 48 }}>
+          {arrow}
+          {Math.abs(score.value)}%
+        </span>
       </div>
 
       <div
@@ -163,8 +164,10 @@ export const ImprovementScore = memo(function ImprovementScore({
               fontWeight: 500,
             }}
           >
-            {score.volChange > 0 ? '+' : ''}
-            {score.volChange}%
+            <span className="kinetic-number">
+              {score.volChange > 0 ? '+' : ''}
+              {score.volChange}%
+            </span>
           </div>
         </div>
         <div>
@@ -187,8 +190,10 @@ export const ImprovementScore = memo(function ImprovementScore({
               fontWeight: 500,
             }}
           >
-            {score.freqChange > 0 ? '+' : ''}
-            {score.freqChange}%
+            <span className="kinetic-number">
+              {score.freqChange > 0 ? '+' : ''}
+              {score.freqChange}%
+            </span>
           </div>
         </div>
         <div>
@@ -211,8 +216,10 @@ export const ImprovementScore = memo(function ImprovementScore({
               fontWeight: 500,
             }}
           >
-            {score.durChange > 0 ? '+' : ''}
-            {score.durChange}%
+            <span className="kinetic-number">
+              {score.durChange > 0 ? '+' : ''}
+              {score.durChange}%
+            </span>
           </div>
         </div>
       </div>

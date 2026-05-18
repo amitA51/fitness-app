@@ -449,9 +449,26 @@ const timerReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       draft.isPaused = !draft.isPaused;
       if (draft.isPaused) {
         draft.lastPauseTimestamp = Date.now();
+        // Freeze rest timer: convert absolute endTime → remaining ms encoded
+        // as a negative endTime (-msRemaining). SYNC_REST_TIMER ignores it
+        // while isPaused; on resume we reconstruct a fresh absolute endTime.
+        if (draft.restTimer.active && draft.restTimer.endTime) {
+          const remainingMs = Math.max(0, draft.restTimer.endTime - Date.now());
+          draft.restTimer.endTime = -remainingMs;
+          draft.restTimer.timeLeft = remainingMs / 1000;
+        }
       } else if (draft.lastPauseTimestamp) {
         draft.totalPausedTime += Date.now() - draft.lastPauseTimestamp;
         draft.lastPauseTimestamp = null;
+        // Thaw rest timer: rebuild absolute endTime from frozen remaining.
+        if (
+          draft.restTimer.active &&
+          draft.restTimer.endTime !== null &&
+          draft.restTimer.endTime <= 0
+        ) {
+          const remainingMs = -draft.restTimer.endTime;
+          draft.restTimer.endTime = Date.now() + remainingMs;
+        }
       }
       break;
     }
@@ -485,6 +502,11 @@ const timerReducer = (draft: WorkoutState, action: WorkoutAction): void => {
     case 'SYNC_REST_TIMER': {
       if (!draft.restTimer) {
         draft.restTimer = { active: false, endTime: null, totalTime: 0, timeLeft: 0 };
+        return;
+      }
+
+      // Frozen (paused) timer: endTime is negative-remaining-ms; do not tick down.
+      if (draft.isPaused || (draft.restTimer.endTime !== null && draft.restTimer.endTime <= 0)) {
         return;
       }
 
