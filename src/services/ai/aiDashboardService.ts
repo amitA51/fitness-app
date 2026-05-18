@@ -370,7 +370,73 @@ function buildDashboardPrompt(data: AIDashboardInput): string {
   return lines.join('\n');
 }
 
+// ----------------------------------------------------------------------------
+// CACHE + RATE LIMIT (cost protection)
+// ----------------------------------------------------------------------------
+
+const CACHE_KEY = 'ai_dashboard_insight_cache';
+const MIN_INTERVAL_MS = 60_000; // 60 s between live calls
+const CACHE_TTL_MS = 30 * 60_000; // 30 min freshness
+
+interface CachedInsight {
+  insight: AIDashboardInsight;
+  fingerprint: string;
+  fetchedAt: number;
+}
+
+function fingerprintInput(data: AIDashboardInput): string {
+  return JSON.stringify({
+    tw: data.totalWorkouts,
+    ww: data.workoutsThisWeek,
+    wv: Math.round(data.weeklyVolume),
+    vt: data.volumeTrend,
+    sd: data.streakDays,
+    rs: data.recoveryScore,
+    ad: data.avgDailyCalories,
+    ap: data.avgDailyProtein,
+    lw: data.latestWeight,
+    et: data.exercisesReadyToIncrease,
+    ed: data.exercisesNeedingDeload,
+  });
+}
+
+function readCache(): CachedInsight | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedInsight;
+    if (!parsed || typeof parsed.fetchedAt !== 'number') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(entry: CachedInsight): void {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(entry));
+  } catch {
+    // quota — fail open
+  }
+}
+
+let lastCallAt = 0;
+
 export async function getAIDashboardInsight(data: AIDashboardInput): Promise<AIDashboardInsight> {
+  const fp = fingerprintInput(data);
+  const now = Date.now();
+  const cached = readCache();
+
+  if (cached && cached.fingerprint === fp && now - cached.fetchedAt < CACHE_TTL_MS) {
+    return cached.insight;
+  }
+
+  if (now - lastCallAt < MIN_INTERVAL_MS) {
+    if (cached) return cached.insight;
+    return generateFallbackInsight(data);
+  }
+
+  lastCallAt = now;
   const provider = getAIProvider();
 
   const messages: ChatMessage[] = [
@@ -405,9 +471,10 @@ FOCUS: [תחום אחד להתמקד בו: כוח / היפרטרופיה / הת�
 
   try {
     const response = await provider.chat(messages);
-    return parseDashboardResponse(response);
+    const insight = parseDashboardResponse(response);
+    writeCache({ insight, fingerprint: fp, fetchedAt: Date.now() });
+    return insight;
   } catch (_error) {
-    // Fallback: rule-based insight
     return generateFallbackInsight(data);
   }
 }

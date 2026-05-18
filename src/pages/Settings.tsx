@@ -140,7 +140,7 @@ function SectionLabel({
 function SettingsCard({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="overflow-hidden"
+      className="overflow-hidden magnetic-card glass-surface fs-accent-rail"
       style={{
         background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
@@ -315,6 +315,7 @@ function SaveButton({ onClick, saved, label, savedLabel = 'נשמר!' }: SaveBut
     <button
       type="button"
       onClick={onClick}
+      className={saved ? 'accent-glow' : undefined}
       style={{
         width: '100%',
         display: 'flex',
@@ -664,13 +665,13 @@ export default function Settings() {
 
   return (
     <div
-      className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
+      className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))] ambient-mesh ambient-mesh-soft"
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
       {/* Masthead */}
       <header
-        className="masthead"
+        className="masthead glass-surface-dark scrim-noise"
         style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}
       >
         <div className="kicker">§07 · SETTINGS · CONFIG</div>
@@ -1455,7 +1456,7 @@ export default function Settings() {
                   {cloudConnected ? <Cloud size={15} /> : <CloudOff size={15} />}
                 </div>
                 <span
-                  className="flex-1"
+                  className="flex-1 flex items-center gap-2"
                   style={{
                     fontFamily: 'var(--font-hebrew)',
                     fontSize: '15px',
@@ -1463,6 +1464,7 @@ export default function Settings() {
                     color: 'var(--fs-ink)',
                   }}
                 >
+                  {cloudConnected && <span className="breathing-dot signal" />}
                   {cloudConnected ? 'מחובר לענן' : 'לא מחובר'}
                 </span>
                 {syncMessage && (

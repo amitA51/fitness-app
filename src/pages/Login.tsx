@@ -548,6 +548,7 @@ interface ChoiceStepProps {
 }
 
 function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
+  const [oauthError, setOauthError] = useState('');
   return (
     <motion.div key="choice" {...slideFromRight} className="flex flex-col gap-6 px-5 py-8">
       {/* Sign In Card */}
@@ -711,9 +712,14 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
         initial="initial"
         animate="animate"
         onClick={async () => {
+          setOauthError('');
           const { error } = await signInWithGoogle();
           if (error) {
-            // Handle error - could use a toast here
+            setOauthError(
+              typeof error === 'object' && error && 'message' in error
+                ? `כניסה עם Google נכשלה: ${(error as { message?: string }).message ?? ''}`
+                : 'כניסה עם Google נכשלה'
+            );
           }
         }}
         className="w-full h-14 flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-[0.98]"
@@ -749,6 +755,25 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
         </svg>
         המשך עם Google
       </motion.button>
+
+      {oauthError && (
+        <div
+          role="alert"
+          dir="rtl"
+          style={{
+            padding: '10px 14px',
+            background: 'rgba(220, 50, 50, 0.08)',
+            border: '1px solid rgba(220, 50, 50, 0.3)',
+            borderRadius: '12px 8px 12px 8px',
+            color: '#dc3232',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 12,
+            textAlign: 'right',
+          }}
+        >
+          {oauthError}
+        </div>
+      )}
     </motion.div>
   );
 }

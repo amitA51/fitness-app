@@ -729,6 +729,22 @@ export const WorkoutContent: React.FC<{
         targetRestTime: ex.targetRestTime,
       }));
 
+      const sessionDurationSec = Math.floor(
+        (Date.now() - state.startTimestamp - state.totalPausedTime) / 1000
+      );
+      const sessionTotalVolume = workoutExercises.reduce(
+        (sum, ex) => sum + ex.sets.reduce((setSum, s) => setSum + s.weight * s.reps, 0),
+        0
+      );
+      // Calorie burn estimate (rough; conservative for resistance training):
+      //   ~0.04 kcal per kg of total volume + ~5 kcal per minute baseline.
+      // Saturate at the sensible upper bound (1500 kcal for one session).
+      const minutes = Math.max(0, sessionDurationSec / 60);
+      const estCalories = Math.min(
+        1500,
+        Math.round(sessionTotalVolume * 0.04 + minutes * 5)
+      );
+
       const session: WorkoutSession = {
         id: `session_${Date.now()}`,
         userId: 'local_user',
@@ -736,16 +752,13 @@ export const WorkoutContent: React.FC<{
         startTime: new Date(state.startTimestamp).toISOString(),
         endTime: new Date().toISOString(),
         date: new Date().toISOString().slice(0, 10),
-        duration: Math.floor((Date.now() - state.startTimestamp - state.totalPausedTime) / 1000),
+        duration: sessionDurationSec,
         status: 'completed',
         templateId: null,
         notes: '',
         rating: null,
-        totalVolume: workoutExercises.reduce(
-          (sum, ex) => sum + ex.sets.reduce((setSum, s) => setSum + s.weight * s.reps, 0),
-          0
-        ),
-        caloriesBurned: null,
+        totalVolume: sessionTotalVolume,
+        caloriesBurned: estCalories > 0 ? estCalories : null,
         goalType: workoutSettings.defaultWorkoutGoal as string,
         exercises: workoutExercises,
         createdAt: new Date().toISOString(),

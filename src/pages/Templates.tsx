@@ -548,7 +548,7 @@ function TemplateCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...springTransition, delay: index * 0.06 }}
-      className="card-outlined"
+      className="card-outlined template-card magnetic-card"
     >
       {/* Eyebrow row */}
       <div className="flex items-center justify-between mb-3">
@@ -879,7 +879,7 @@ export default function Templates() {
   return (
     <>
       <motion.div
-        className="pb-[88px]"
+        className="pb-[88px] ambient-mesh ambient-mesh-soft"
         style={{ background: 'var(--fs-bg)' }}
         dir="rtl"
         variants={containerVariants}
@@ -888,7 +888,7 @@ export default function Templates() {
       >
         {/* Masthead */}
         <header
-          className="masthead sticky top-0 z-20"
+          className="masthead sticky top-0 z-20 glass-surface-dark scrim-noise"
           style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}
         >
           <div className="kicker">§06 · TEMPLATES · {templates.length} ROUTINES</div>
@@ -912,7 +912,7 @@ export default function Templates() {
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowCreateModal(true)}
-              className="btn-primary w-full flex items-center justify-center gap-2"
+              className="btn-primary start-workout-btn accent-glow w-full flex items-center justify-center gap-2"
               aria-label="צור תבנית חדשה"
             >
               <Plus size={18} />+ תבנית חדשה

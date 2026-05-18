@@ -652,15 +652,14 @@ export default function WorkoutDetail() {
 
   return (
     <div
-      className="pb-[max(100px,calc(env(safe-area-inset-bottom, 0px) + 100px))]"
+      className="ambient-mesh ambient-mesh-soft pb-[max(100px,calc(env(safe-area-inset-bottom, 0px) + 100px))]"
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
       {/* Header */}
       <div
-        className="sticky top-0 z-10"
+        className="glass-surface sticky top-0 z-10"
         style={{
-          background: 'var(--fs-bg)',
           borderBottom: '1px solid var(--color-border)',
           paddingTop: 'env(safe-area-inset-top)',
         }}

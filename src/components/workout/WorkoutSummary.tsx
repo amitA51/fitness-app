@@ -289,17 +289,17 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         exit={{ scale: 0.94, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg overflow-hidden flex flex-col"
+        className="w-full max-w-lg overflow-hidden flex flex-col scale-pop-in"
         style={{
           background: 'var(--fs-bg)',
-          border: '2px solid var(--fs-primary)',
-          borderRadius: 0,
-          boxShadow: '0 8px 24px rgba(11,26,43,0.25)',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: '24px 18px 24px 18px',
+          boxShadow: 'var(--shadow-deep)',
           maxHeight: '90dvh',
         }}
       >
-        {/* ── NAVY MASTHEAD ── */}
-        <div style={{ background: 'var(--fs-primary)', flexShrink: 0 }}>
+        {/* ── PREMIUM DARK MASTHEAD ── */}
+        <div className="premium-dark-surface scrim-noise" style={{ flexShrink: 0 }}>
           {/* Chapter strip */}
           <div
             className="chapter-break"
@@ -328,7 +328,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             >
               {prsCount > 0 ? (
                 <>
-                  <span style={{ color: 'var(--fs-accent)' }}>{prsCount}</span>
+                  <span className="kinetic-number" style={{ color: 'var(--fs-accent)' }}>
+                    {prsCount}
+                  </span>
                   <br />
                   <span style={{ fontSize: 24, color: 'rgba(255,255,255,0.7)' }}>
                     שיאים חדשים
@@ -359,36 +361,25 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
 
         {/* ── VIEW TABS ── */}
         <div
-          className="flex"
-          style={{
-            background: 'var(--fs-bg)',
-            borderBottom: '2px solid var(--fs-surface-2)',
-            flexShrink: 0,
-          }}
+          className="tab-row"
+          style={{ margin: '12px 20px 0', flexShrink: 0 }}
+          role="tablist"
         >
           {(['overview', 'details'] as const).map((v) => (
             <button
               key={v}
               type="button"
+              role="tab"
+              aria-selected={view === v}
               onClick={() => setView(v)}
               onPointerDown={(e) => {
                 e.preventDefault();
                 setView(v);
               }}
+              className={`tab${view === v ? ' active' : ''}`}
               style={{
-                flex: 1,
-                padding: '14px 16px',
-                background: view === v ? 'var(--fs-primary)' : 'transparent',
-                color: view === v ? 'var(--fs-accent)' : 'var(--fs-muted)',
-                border: 'none',
-                borderBottom: view === v ? '2px solid var(--fs-accent)' : '2px solid transparent',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                fontWeight: 600,
-                letterSpacing: '0.2em',
+                letterSpacing: '0.18em',
                 textTransform: 'uppercase',
-                transition: 'all 150ms',
               }}
             >
               {v === 'overview' ? 'סקירה' : 'פרטים'}

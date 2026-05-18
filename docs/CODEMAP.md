@@ -350,7 +350,7 @@ Small reusable building blocks. Treat as a mini design system.
 | `AnimatedProgressRing.tsx` | Circular progress |
 | `AuroraBackground.tsx` | Decorative gradient backdrop |
 | `BottomNav.tsx` | App tab bar (hidden during workout) |
-| `Button.tsx` | Primary button |
+| `Button.tsx` | Primary button. Variants: `primary`, `secondary`, `ghost`, `glass`, `danger`, `pill`, `card-action` (white pill for hero CTAs), `start` (accent gradient for start-workout). Sizes: `sm`, `md`, `lg`, `icon` (44x44, 15px radius). |
 | `EmptyState.tsx` | Generic empty state |
 | `Input.tsx` | Text input |
 | `LoadingSpinner.tsx` | Spinner |
@@ -389,7 +389,7 @@ Composed inside `pages/Dashboard.tsx`.
 | `ForecastNudge.tsx` | Forecast nudge |
 | `ChapterBreak.tsx` | Section divider |
 
-Other component groups: `src/components/animations/`, `src/components/fitness/`, `src/components/icons/`, `src/components/nutrition/` — open them only when working on their domain.
+Other component groups: `src/components/animations/`, `src/components/fitness/`, `src/components/icons/`, `src/components/nutrition/`, `src/components/charts/` (premium data-viz: `RingProgress`, `ActivityRings` Apple-Health-style, `GradientSparkline`, `GlowAreaChart`, `AnimatedBar`) — open them only when working on their domain.
 
 ---
 
@@ -463,13 +463,15 @@ Single file, ~500 lines, all shared types:
 - `src/constants/workoutConstants.ts` — REST/SETS/RPE defaults, magic numbers for workout
 - `src/constants/zIndex.ts` — z-index scale
 - `src/constants/index.ts` — barrel
-- `src/styles/tokens.css` — CSS variables (bone, ink, navy, etc.)
+- `src/styles/tokens.css` — CSS variables (Fresh Steel palette, motion easings, premium shadows: `--shadow-glow-accent`, `--shadow-deep`, `--shadow-lift`, `--shadow-glass`; easings: `--ease-premium`, `--ease-spring-bouncy`)
 - `src/styles/typography.css` — font setup
-- `src/styles/global.css` — resets + base
-- `src/styles/components.css` — component-level CSS
-- `src/styles/motion.css` — animation utilities (e.g. `.animate-shimmer`)
+- `src/styles/global.css` — resets + base (`.chip` is now a pill: 999px, currentColor border)
+- `src/styles/components.css` — component-level CSS. Two main blocks:
+  - **FRESH STEEL PRIMITIVES**: `.primary-btn`, `.start-workout-btn`, `.icon-btn`, `.tab-row`/`.tab`, `.field`, `.day-cell` (+`.today`,`.done`), `.stepper-card`/`.stepper-value`/`.step-btn` (+`.plus`)/`.ghost-value`, `.template-card`/`.quick-card`, `.fs-accent-rail` (RTL-aware 4px bar), `.fs-progress-track`/`.fs-progress-fill`, `.fs-brand-icon`, `.fs-grid-texture`
+  - **PREMIUM LAYER ($100M motion + glass + mesh)**: `.glass-surface`, `.glass-surface-dark`, `.ambient-mesh` (+`.strong`,`.soft`), `.scrim-noise`, `.breathing-dot` (+`.signal`,`.warn`), `.kinetic-number` (+`.large`), `.magnetic-card`, `.premium-shimmer`, `.accent-glow`, `.signal-glow`, `.ring-track`/`.ring-progress` (+`.signal`,`.warn`), `.section-spotlight`, `.premium-dark-surface`
+- `src/styles/motion.css` — animation utilities: `.animate-shimmer`, `.fade-rise-in`, `.scale-pop-in`
 
-Token source of truth is shared between `tailwind.config.js` and `styles/tokens.css`. When adding a color token, update both.
+Token source of truth is shared between `tailwind.config.js` and `styles/tokens.css`. When adding a color token, update both. Tailwind exposes the Fresh Steel palette as the `fs.*` color namespace (e.g. `bg-fs-accent`, `text-fs-ink`) plus premium shadow utilities (`shadow-glow-accent`, `shadow-deep`, `shadow-glass`).
 
 ---
 

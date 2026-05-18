@@ -48,6 +48,13 @@ import { getWorkoutSessions } from '../services/dataService';
 import { getAllPRs } from '../services/prService';
 import type { WorkoutSession } from '../types';
 import { safeJsonParse } from '../utils/safeJson';
+import {
+  ActivityRings,
+  GlowAreaChart,
+  GradientSparkline,
+  type ActivityRingData,
+  type GlowAreaPoint,
+} from '../components/charts';
 
 type ProgressTab = 'weight' | 'measurements' | 'recovery' | 'strength';
 
@@ -497,6 +504,68 @@ export default function ProgressPage() {
     return { count, volume, prs: prCount };
   }, [completedSessions, prCount]);
 
+  // Weekly hero rings — past 7 days
+  const heroRings = useMemo<ActivityRingData[]>(() => {
+    const sevenDaysAgoMs = Date.now() - 7 * 86400000;
+    const weekSessions = completedSessions.filter(
+      (s) => new Date(s.startTime).getTime() >= sevenDaysAgoMs
+    );
+    const weekVol = weekSessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
+    const weekTimeMin = Math.round(
+      weekSessions.reduce((sum, s) => sum + (s.duration || 0), 0) / 60
+    );
+    const weekCount = weekSessions.length;
+    return [
+      { value: weekVol, max: Math.max(20000, weekVol), label: 'נפח', variant: 'accent' },
+      { value: weekTimeMin, max: Math.max(240, weekTimeMin), label: 'זמן', variant: 'signal' },
+      { value: weekCount, max: Math.max(5, weekCount), label: 'אימונים', variant: 'warn' },
+    ];
+  }, [completedSessions]);
+
+  const hasHeroData = heroRings.some((r) => r.value > 0);
+
+  // Volume over time — last 14 sessions for glow area chart
+  const volumeData = useMemo<GlowAreaPoint[]>(() => {
+    const ordered = [...completedSessions]
+      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+      .slice(-14);
+    return ordered.map((s) => {
+      const d = new Date(s.startTime);
+      const label = Number.isNaN(d.getTime())
+        ? ''
+        : d.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+      return { x: label, y: s.totalVolume || 0 };
+    });
+  }, [completedSessions]);
+
+  // Per-exercise best-set sparklines — top 4 most-tracked lifts
+  const prSparklines = useMemo(() => {
+    const byExercise = new Map<string, number[]>();
+    for (const session of completedSessions) {
+      for (const ex of session.exercises ?? []) {
+        const name = ex.exerciseName || ex.name;
+        if (!name) continue;
+        let bestSetVolume = 0;
+        for (const set of ex.sets ?? []) {
+          if (!set.isCompleted) continue;
+          const vol = (set.weight || 0) * (set.reps || 0);
+          if (vol > bestSetVolume) bestSetVolume = vol;
+        }
+        if (bestSetVolume === 0) continue;
+        const existing = byExercise.get(name) ?? [];
+        existing.push(bestSetVolume);
+        byExercise.set(name, existing);
+      }
+    }
+    const rows: { name: string; data: number[]; latest: number }[] = [];
+    for (const [name, data] of byExercise) {
+      if (data.length < 2) continue;
+      rows.push({ name, data: data.slice(-12), latest: data[data.length - 1] ?? 0 });
+    }
+    rows.sort((a, b) => b.data.length - a.data.length);
+    return rows.slice(0, 4);
+  }, [completedSessions]);
+
   const handleShowAddWeight = useCallback(() => setShowAddWeight(true), []);
   const handleShowAddMeasurement = useCallback(() => setShowAddMeasurement(true), []);
   const handleShowAddRecovery = useCallback(() => setShowAddRecovery(true), []);
@@ -591,6 +660,186 @@ export default function ProgressPage() {
       <div className="px-5 pt-4">
         <ProgressInsightCard sessions={completedSessions} />
       </div>
+
+      {/* Premium hero — activity rings + glow volume + lift sparklines */}
+      {hasHeroData && (
+        <div className="px-5 pt-4">
+          <section
+            className="section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in"
+            aria-label="סיכום שבועי"
+            style={{
+              padding: '18px',
+              borderRadius: '24px 18px 24px 18px',
+              display: 'grid',
+              gridTemplateColumns: 'auto minmax(0, 1fr)',
+              gap: 16,
+              alignItems: 'center',
+            }}
+          >
+            <ActivityRings size={148} rings={heroRings} />
+            <div style={{ minWidth: 0, display: 'grid', gap: 8 }}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 800,
+                  color: 'var(--fs-muted)',
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                § 7-DAY · CYCLE
+              </span>
+              {heroRings.map((r) => {
+                const pct = r.max > 0 ? Math.min(100, Math.round((r.value / r.max) * 100)) : 0;
+                const dotColor =
+                  r.variant === 'signal'
+                    ? 'var(--fs-signal)'
+                    : r.variant === 'warn'
+                      ? 'var(--fs-warn)'
+                      : 'var(--fs-accent)';
+                return (
+                  <div
+                    key={r.label}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      justifyContent: 'space-between',
+                      gap: 8,
+                      borderBottom: '1px solid var(--fs-surface-2)',
+                      paddingBottom: 5,
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        color: 'var(--fs-muted)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 11,
+                        fontWeight: 800,
+                      }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: 999,
+                          background: dotColor,
+                        }}
+                      />
+                      {r.label}
+                    </span>
+                    <span
+                      className="kinetic-number"
+                      style={{
+                        color: 'var(--fs-ink)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 13,
+                        fontWeight: 800,
+                      }}
+                    >
+                      {pct}%
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* Volume trajectory — glow area chart */}
+      {volumeData.length >= 3 && (
+        <div className="px-5 pt-4">
+          <div
+            className="magnetic-card glass-surface scrim-noise fs-accent-rail"
+            style={{
+              padding: 16,
+              borderRadius: '22px 16px 22px 16px',
+            }}
+          >
+            <div
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                fontWeight: 800,
+                color: 'var(--fs-muted)',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                marginBottom: 10,
+              }}
+            >
+              § VOLUME · TRAJECTORY
+            </div>
+            <GlowAreaChart data={volumeData} height={160} xAxis />
+          </div>
+        </div>
+      )}
+
+      {/* Per-lift sparklines */}
+      {prSparklines.length > 0 && (
+        <div className="px-5 pt-4">
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 800,
+              color: 'var(--fs-muted)',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              marginBottom: 10,
+            }}
+          >
+            § TOP · LIFTS
+          </div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {prSparklines.map((row) => (
+              <div
+                key={row.name}
+                className="magnetic-card glass-surface fs-accent-rail"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1.4fr)',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '10px 14px',
+                  borderRadius: '20px 14px 20px 14px',
+                }}
+              >
+                <span
+                  style={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    color: 'var(--fs-ink)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 14,
+                    fontWeight: 800,
+                  }}
+                >
+                  {row.name}
+                </span>
+                <span
+                  className="kinetic-number"
+                  style={{
+                    direction: 'ltr',
+                    color: 'var(--fs-accent)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 12,
+                    fontWeight: 800,
+                  }}
+                >
+                  {Math.round(row.latest).toLocaleString('en-US')}
+                </span>
+                <GradientSparkline data={row.data} width={160} height={36} live />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Metrics Row */}
       {metrics.count > 0 && (

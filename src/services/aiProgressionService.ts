@@ -92,22 +92,30 @@ export async function getAIWorkoutProgressionPlan(
   exercises: { id: string; name: string; targetReps?: number; targetSets?: number }[],
   sessions: WorkoutSession[]
 ): Promise<ExerciseWithProgression[]> {
+  // Parallel with concurrency cap of 3 — keeps OpenRouter happy while
+  // collapsing a 6-exercise plan from ~10s sequential to ~4s.
+  const CONCURRENCY = 3;
   const results: ExerciseWithProgression[] = [];
 
-  for (const exercise of exercises) {
-    const advice = await getAIProgressionAdvice(
-      exercise.id,
-      exercise.name,
-      sessions,
-      exercise.targetReps || 8,
-      exercise.targetSets || 4
+  for (let i = 0; i < exercises.length; i += CONCURRENCY) {
+    const chunk = exercises.slice(i, i + CONCURRENCY);
+    const chunkResults = await Promise.all(
+      chunk.map(async (exercise) => {
+        const advice = await getAIProgressionAdvice(
+          exercise.id,
+          exercise.name,
+          sessions,
+          exercise.targetReps || 8,
+          exercise.targetSets || 4
+        );
+        return {
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          aiAdvice: advice,
+        } as ExerciseWithProgression;
+      })
     );
-
-    results.push({
-      exerciseId: exercise.id,
-      exerciseName: exercise.name,
-      aiAdvice: advice,
-    });
+    results.push(...chunkResults);
   }
 
   return results;

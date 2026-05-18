@@ -102,6 +102,19 @@ export async function addBodyWeight(
     syncWithRetry(() => syncBodyWeight(user.id, newEntry), `addBodyWeight:${newEntry.id}`);
   }
 
+  // Notify TDEE-aware consumers (Settings / Nutrition) that latest weight has changed.
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('BODY_WEIGHT_UPDATED', {
+          detail: { weight: newEntry.weight, date: newEntry.date },
+        })
+      );
+    }
+  } catch {
+    // CustomEvent not supported — ignore
+  }
+
   return newEntry;
 }
 

@@ -137,14 +137,18 @@ export default function PRHistoryTab() {
                   <div className="text-sm text-white font-mono" style={{ direction: 'ltr' }}>
                     {pr.weight} × {pr.reps}
                   </div>
-                  {(pr.oneRepMax ?? 0) > 0 && (
-                    <div
-                      className="text-[10px] text-white/50 font-mono"
-                      style={{ direction: 'ltr' }}
-                    >
-                      e1RM {Math.round(pr.oneRepMax ?? 0)}
-                    </div>
-                  )}
+                  {(() => {
+                    const oneRM = pr.oneRepMax ?? 0;
+                    if (oneRM <= 0) return null;
+                    return (
+                      <div
+                        className="text-[10px] text-white/50 font-mono"
+                        style={{ direction: 'ltr' }}
+                      >
+                        e1RM {Math.round(oneRM)}
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
