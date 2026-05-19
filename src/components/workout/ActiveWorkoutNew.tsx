@@ -636,6 +636,19 @@ export const WorkoutContent: React.FC<{
     [dispatch]
   );
 
+  // Stable handlers for WorkoutHeader so its memo holds across state ticks.
+  // Without these, inline arrow props broke memo on every parent re-render,
+  // causing WorkoutHeader (and its MonoTimer subtree) to re-render on every
+  // set log, numpad keypress, RPE pick, etc.
+  const handleOpenSettings = useCallback(() => {
+    dispatch({ type: 'TOGGLE_SETTINGS', payload: true });
+  }, [dispatch]);
+
+  const currentExerciseNameForTutorial = derived.currentExercise?.name || '';
+  const handleOpenTutorial = useCallback(() => {
+    dispatch({ type: 'SHOW_TUTORIAL', payload: currentExerciseNameForTutorial });
+  }, [dispatch, currentExerciseNameForTutorial]);
+
   const handleReorderExercises = useCallback(
     (newOrder: Exercise[]) => {
       dispatch({ type: 'REORDER_EXERCISES', payload: newOrder });
@@ -740,10 +753,7 @@ export const WorkoutContent: React.FC<{
       //   ~0.04 kcal per kg of total volume + ~5 kcal per minute baseline.
       // Saturate at the sensible upper bound (1500 kcal for one session).
       const minutes = Math.max(0, sessionDurationSec / 60);
-      const estCalories = Math.min(
-        1500,
-        Math.round(sessionTotalVolume * 0.04 + minutes * 5)
-      );
+      const estCalories = Math.min(1500, Math.round(sessionTotalVolume * 0.04 + minutes * 5));
 
       const session: WorkoutSession = {
         id: `session_${Date.now()}`,
@@ -956,10 +966,8 @@ export const WorkoutContent: React.FC<{
           currentExerciseName={derived.currentExercise.name}
           onFinish={handleFinishRequest}
           onDiscard={handleDiscardRequest}
-          onOpenSettings={() => dispatch({ type: 'TOGGLE_SETTINGS', payload: true })}
-          onOpenTutorial={() =>
-            dispatch({ type: 'SHOW_TUTORIAL', payload: derived.currentExercise?.name || '' })
-          }
+          onOpenSettings={handleOpenSettings}
+          onOpenTutorial={handleOpenTutorial}
         />
 
         {/* Superset Mode Indicator */}

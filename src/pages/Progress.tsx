@@ -22,6 +22,13 @@ import type React from 'react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  type ActivityRingData,
+  ActivityRings,
+  GlowAreaChart,
+  type GlowAreaPoint,
+  GradientSparkline,
+} from '../components/charts';
+import {
   TIGHTNESS_AREAS,
   addBodyMeasurement,
   addBodyWeight,
@@ -48,13 +55,6 @@ import { getWorkoutSessions } from '../services/dataService';
 import { getAllPRs } from '../services/prService';
 import type { WorkoutSession } from '../types';
 import { safeJsonParse } from '../utils/safeJson';
-import {
-  ActivityRings,
-  GlowAreaChart,
-  GradientSparkline,
-  type ActivityRingData,
-  type GlowAreaPoint,
-} from '../components/charts';
 
 type ProgressTab = 'weight' | 'measurements' | 'recovery' | 'strength';
 
@@ -81,7 +81,9 @@ function formatVolume(volume: number): string {
 // Workout History Sub-Component — embedded at bottom of Progress page
 // ============================================================================
 
-function WorkoutHistoryList({ sessions }: { sessions: WorkoutSession[] }) {
+const WorkoutHistoryList = memo(function WorkoutHistoryList({
+  sessions,
+}: { sessions: WorkoutSession[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -337,16 +339,26 @@ function WorkoutHistoryList({ sessions }: { sessions: WorkoutSession[] }) {
       })}
     </div>
   );
-}
+});
 
 // ============================================================================
 // AI Insight Card (embedded, lightweight)
 // ============================================================================
 
-function ProgressInsightCard({ sessions }: { sessions: WorkoutSession[] }) {
-  const completedCount = sessions.filter((s) => s.status === 'completed').length;
-  const totalVolume = sessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
-  const totalPRs = sessions.filter((s) => s.rating && s.rating >= 4).length;
+const ProgressInsightCard = memo(function ProgressInsightCard({
+  sessions,
+}: { sessions: WorkoutSession[] }) {
+  const { completedCount, totalVolume, totalPRs } = useMemo(() => {
+    let cc = 0;
+    let tv = 0;
+    let tp = 0;
+    for (const s of sessions) {
+      if (s.status === 'completed') cc += 1;
+      tv += s.totalVolume || 0;
+      if (s.rating && s.rating >= 4) tp += 1;
+    }
+    return { completedCount: cc, totalVolume: tv, totalPRs: tp };
+  }, [sessions]);
 
   if (completedCount === 0) return null;
 
@@ -405,7 +417,7 @@ function ProgressInsightCard({ sessions }: { sessions: WorkoutSession[] }) {
       </div>
     </div>
   );
-}
+});
 
 export default function ProgressPage() {
   const [activeTab, setActiveTab] = useState<ProgressTab>('weight');
@@ -598,12 +610,16 @@ export default function ProgressPage() {
     [loadData]
   );
 
-  const todayISO = new Date().toISOString().slice(0, 10);
-  const todayLabel = new Date().toLocaleDateString('he-IL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+  const todayISO = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const todayLabel = useMemo(
+    () =>
+      new Date().toLocaleDateString('he-IL', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      }),
+    []
+  );
 
   return (
     <div

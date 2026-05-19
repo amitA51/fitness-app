@@ -171,8 +171,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
           style={{
-            filter:
-              'drop-shadow(0 6px 16px color-mix(in srgb, var(--fs-accent) 25%, transparent))',
+            filter: 'drop-shadow(0 6px 16px color-mix(in srgb, var(--fs-accent) 25%, transparent))',
           }}
         />
 

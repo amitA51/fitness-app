@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { memo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { WorkoutSession } from '../../types';
 import { fmtDate, isToday } from '../../utils/dateUtils';
@@ -100,7 +100,7 @@ function ExerciseDetail({ exercise }: { exercise: WorkoutSession['exercises'][nu
 }
 
 // Single workout card (expandable)
-function WorkoutCard({
+const WorkoutCard = memo(function WorkoutCard({
   session,
   onSelect,
 }: {
@@ -259,7 +259,7 @@ function WorkoutCard({
       )}
     </div>
   );
-}
+});
 
 export const RecentWorkouts = memo(function RecentWorkouts({
   sessions,
@@ -268,12 +268,21 @@ export const RecentWorkouts = memo(function RecentWorkouts({
   const navigate = useNavigate();
   const [showAll, setShowAll] = useState(false);
 
-  const completed = sessions
-    .filter((s) => s.status === 'completed')
-    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+  const completed = useMemo(
+    () =>
+      sessions
+        .filter((s) => s.status === 'completed')
+        .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()),
+    [sessions]
+  );
 
-  const visible = showAll ? completed : completed.slice(0, PAGE_SIZE);
+  const visible = useMemo(
+    () => (showAll ? completed : completed.slice(0, PAGE_SIZE)),
+    [showAll, completed]
+  );
   const hasMore = completed.length > PAGE_SIZE;
+
+  const handleSelect = useCallback((id: string) => navigate(`/history/${id}`), [navigate]);
 
   if (loading && completed.length === 0) {
     return (
@@ -324,7 +333,7 @@ export const RecentWorkouts = memo(function RecentWorkouts({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {visible.map((s) => (
-        <WorkoutCard key={s.id} session={s} onSelect={(id) => navigate(`/history/${id}`)} />
+        <WorkoutCard key={s.id} session={s} onSelect={handleSelect} />
       ))}
 
       {hasMore && !showAll && (

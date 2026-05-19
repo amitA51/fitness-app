@@ -3,7 +3,7 @@
  * Clean home layout: CTA, quick templates, metrics row, weekly calendar.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ActivityRings } from '../components/charts';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
@@ -145,32 +145,63 @@ export default function Dashboard() {
   const handleNavigate = useCallback((path: string) => navigate(path), [navigate]);
 
   // Format helpers
-  const volumeLabel =
-    Math.round(weekData.volume) >= 1000
-      ? Math.round(weekData.volume).toLocaleString('en-US')
-      : String(Math.round(weekData.volume));
+  const volumeLabel = useMemo(
+    () =>
+      Math.round(weekData.volume) >= 1000
+        ? Math.round(weekData.volume).toLocaleString('en-US')
+        : String(Math.round(weekData.volume)),
+    [weekData.volume]
+  );
 
-  const volDelta = (() => {
+  const volDelta = useMemo(() => {
     if (!Number.isFinite(weekData.volDeltaPct) || weekData.volDeltaPct === 0) return '—';
     const sign = weekData.volDeltaPct > 0 ? '+' : '';
     return `${sign}${weekData.volDeltaPct.toFixed(1)}%`;
-  })();
+  }, [weekData.volDeltaPct]);
 
-  const metricCards = [
-    {
-      val: String(weekData.workoutsThisWeek),
-      lbl: 'אימונים השבוע',
-    },
-    {
-      val: volumeLabel || '—',
-      sub: volDelta !== '—' ? volDelta : null,
-      lbl: 'נפח (ק"ג)',
-    },
-    {
-      val: weekData.avgDurationMin > 0 ? `${weekData.avgDurationMin}′` : '—',
-      lbl: 'משך ממוצע',
-    },
-  ];
+  const metricCards = useMemo(
+    () => [
+      {
+        val: String(weekData.workoutsThisWeek),
+        lbl: 'אימונים השבוע',
+      },
+      {
+        val: volumeLabel || '—',
+        sub: volDelta !== '—' ? volDelta : null,
+        lbl: 'נפח (ק"ג)',
+      },
+      {
+        val: weekData.avgDurationMin > 0 ? `${weekData.avgDurationMin}′` : '—',
+        lbl: 'משך ממוצע',
+      },
+    ],
+    [weekData.workoutsThisWeek, weekData.avgDurationMin, volumeLabel, volDelta]
+  );
+
+  // Stabilise rings array so ActivityRings (memo'd) doesn't re-render on parent re-renders.
+  const heroRings = useMemo(
+    () => [
+      {
+        value: weekData.workoutsThisWeek,
+        max: 4,
+        label: 'אימונים',
+        variant: 'accent' as const,
+      },
+      {
+        value: weekData.volume,
+        max: Math.max(weekData.volume, 8000),
+        label: 'נפח',
+        variant: 'signal' as const,
+      },
+      {
+        value: weekData.totalMinutes,
+        max: 240,
+        label: 'דקות',
+        variant: 'warn' as const,
+      },
+    ],
+    [weekData.workoutsThisWeek, weekData.volume, weekData.totalMinutes]
+  );
 
   return (
     <div
@@ -231,10 +262,7 @@ export default function Dashboard() {
               strokeWidth={4}
               strokeDasharray={2 * Math.PI * 18}
               strokeDashoffset={
-                2 *
-                Math.PI *
-                18 *
-                (1 - (isRefreshing ? 1 : Math.min(pullDistance / threshold, 1)))
+                2 * Math.PI * 18 * (1 - (isRefreshing ? 1 : Math.min(pullDistance / threshold, 1)))
               }
               transform="rotate(-90 22 22)"
             />
@@ -313,29 +341,7 @@ export default function Dashboard() {
             alignItems: 'center',
           }}
         >
-          <ActivityRings
-            size={156}
-            rings={[
-              {
-                value: weekData.workoutsThisWeek,
-                max: 4,
-                label: 'אימונים',
-                variant: 'accent',
-              },
-              {
-                value: weekData.volume,
-                max: Math.max(weekData.volume, 8000),
-                label: 'נפח',
-                variant: 'signal',
-              },
-              {
-                value: weekData.totalMinutes,
-                max: 240,
-                label: 'דקות',
-                variant: 'warn',
-              },
-            ]}
-          />
+          <ActivityRings size={156} rings={heroRings} />
           <div style={{ minWidth: 0, display: 'grid', gap: 10 }}>
             <span
               style={{
@@ -350,22 +356,14 @@ export default function Dashboard() {
               § WEEKLY · SUMMARY
             </span>
             <div style={{ display: 'grid', gap: 6 }}>
-              <BentoRow
-                dot="accent"
-                label="אימונים"
-                value={`${weekData.workoutsThisWeek} / 4`}
-              />
+              <BentoRow dot="accent" label="אימונים" value={`${weekData.workoutsThisWeek} / 4`} />
               <BentoRow
                 dot="signal"
                 label="נפח"
                 value={`${volumeLabel} ק״ג`}
                 sub={volDelta !== '—' ? volDelta : undefined}
               />
-              <BentoRow
-                dot="warn"
-                label="זמן"
-                value={`${weekData.totalMinutes}′ / 240′`}
-              />
+              <BentoRow dot="warn" label="זמן" value={`${weekData.totalMinutes}′ / 240′`} />
             </div>
           </div>
         </section>
@@ -469,7 +467,7 @@ function SectionTitle({ text }: { text: string }) {
 }
 
 // ── BentoRow — single legend line under hero rings ───────────────────────────
-function BentoRow({
+const BentoRow = memo(function BentoRow({
   dot,
   label,
   value,
@@ -523,16 +521,14 @@ function BentoRow({
         }}
       >
         <span className="kinetic-number">{value}</span>
-        {sub && (
-          <span style={{ color: 'var(--fs-accent)', fontSize: 10 }}>{sub}</span>
-        )}
+        {sub && <span style={{ color: 'var(--fs-accent)', fontSize: 10 }}>{sub}</span>}
       </span>
     </div>
   );
-}
+});
 
 // ── MetricCard — FS panel style ──────────────────────────────────────────────
-function MetricCard({
+const MetricCard = memo(function MetricCard({
   value,
   label,
   sub,
@@ -592,4 +588,4 @@ function MetricCard({
       </div>
     </div>
   );
-}
+});

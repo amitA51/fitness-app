@@ -332,9 +332,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                     {prsCount}
                   </span>
                   <br />
-                  <span style={{ fontSize: 24, color: 'rgba(255,255,255,0.7)' }}>
-                    שיאים חדשים
-                  </span>
+                  <span style={{ fontSize: 24, color: 'rgba(255,255,255,0.7)' }}>שיאים חדשים</span>
                 </>
               ) : (
                 'אימון הושלם'
@@ -360,11 +358,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         </div>
 
         {/* ── VIEW TABS ── */}
-        <div
-          className="tab-row"
-          style={{ margin: '12px 20px 0', flexShrink: 0 }}
-          role="tablist"
-        >
+        <div className="tab-row" style={{ margin: '12px 20px 0', flexShrink: 0 }} role="tablist">
           {(['overview', 'details'] as const).map((v) => (
             <button
               key={v}
@@ -458,7 +452,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                           fontFamily: 'var(--font-display)',
                           fontWeight: 800,
                           fontSize: 14,
-                          color: prExercises.has(ex.name ?? '') ? 'var(--fs-primary)' : 'var(--fs-ink)',
+                          color: prExercises.has(ex.name ?? '')
+                            ? 'var(--fs-primary)'
+                            : 'var(--fs-ink)',
                           letterSpacing: '-0.01em',
                         }}
                       >
@@ -471,7 +467,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                           fontFamily: 'var(--font-mono)',
                           fontSize: 11,
                           letterSpacing: '0.1em',
-                          color: prExercises.has(ex.name ?? '') ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                          color: prExercises.has(ex.name ?? '')
+                            ? 'var(--fs-primary)'
+                            : 'var(--fs-muted)',
                           textTransform: 'uppercase',
                         }}
                       >
@@ -483,7 +481,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                             fontFamily: 'var(--font-mono)',
                             fontSize: 12,
                             letterSpacing: '0.05em',
-                            color: prExercises.has(ex.name ?? '') ? 'var(--fs-primary)' : 'var(--fs-ink)',
+                            color: prExercises.has(ex.name ?? '')
+                              ? 'var(--fs-primary)'
+                              : 'var(--fs-ink)',
                             fontVariantNumeric: 'tabular-nums',
                           }}
                         >

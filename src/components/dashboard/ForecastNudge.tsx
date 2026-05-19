@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { forecastProgress, getMuscleGroupDaysSince } from '../../services/analyticsService';
 import type { WorkoutSession } from '../../types';
 
@@ -17,7 +17,7 @@ const MUSCLE_HE: Record<string, string> = {
   Core: 'בטן',
 };
 
-export function ForecastNudge({ sessions }: ForecastNudgeProps) {
+export const ForecastNudge = memo(function ForecastNudge({ sessions }: ForecastNudgeProps) {
   const nudge = useMemo(() => {
     // Check for overdue major muscle (preferred when both fire)
     const muscleDays = getMuscleGroupDaysSince(sessions);
@@ -77,4 +77,4 @@ export function ForecastNudge({ sessions }: ForecastNudgeProps) {
       <span style={{ color: 'var(--fs-muted)', fontSize: 10 }}>{nudge.sub}</span>
     </div>
   );
-}
+});

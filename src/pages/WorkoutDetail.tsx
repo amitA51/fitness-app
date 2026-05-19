@@ -8,7 +8,7 @@ import {
   Activity,
   ArrowRight,
   BarChart2,
-  ChevronLeft,
+  ChevronRight,
   Clock,
   Dumbbell,
   Sparkles,
@@ -90,7 +90,13 @@ function getMuscleGroupColor(muscle: string): { bg: string; text: string; border
     Core: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
     Cardio: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
   };
-  return colors[muscle] || { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' };
+  return (
+    colors[muscle] || {
+      bg: 'var(--fs-surface-2)',
+      text: 'var(--fs-ink)',
+      border: 'var(--color-border)',
+    }
+  );
 }
 
 function calculateTotalSets(exercises: WorkoutExercise[]): number {
@@ -135,7 +141,10 @@ function DetailSkeleton() {
         <div className="flex items-center gap-4 mb-8">
           <div className="w-10 h-10 rounded-full" style={{ background: 'var(--fs-surface-2)' }} />
           <div className="flex-1">
-            <div className="h-6 w-40 rounded-lg mb-2" style={{ background: 'var(--fs-surface-2)' }} />
+            <div
+              className="h-6 w-40 rounded-lg mb-2"
+              style={{ background: 'var(--fs-surface-2)' }}
+            />
             <div className="h-4 w-24 rounded" style={{ background: 'var(--fs-surface-2)' }} />
           </div>
         </div>
@@ -143,14 +152,30 @@ function DetailSkeleton() {
         {/* Stats skeleton */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} style={{ background: 'var(--fs-surface)', borderRadius: '22px 16px 22px 16px', padding: 16, height: 96 }} />
+            <div
+              key={i}
+              style={{
+                background: 'var(--fs-surface)',
+                borderRadius: '22px 16px 22px 16px',
+                padding: 16,
+                height: 96,
+              }}
+            />
           ))}
         </div>
 
         {/* Exercise cards skeleton */}
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} style={{ background: 'var(--fs-surface)', borderRadius: '22px 16px 22px 16px', padding: 16, height: 128 }} />
+            <div
+              key={i}
+              style={{
+                background: 'var(--fs-surface)',
+                borderRadius: '22px 16px 22px 16px',
+                padding: 16,
+                height: 128,
+              }}
+            />
           ))}
         </div>
       </div>
@@ -191,13 +216,13 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
       <div
         style={{
           position: 'absolute',
-          left: 0,
+          insetInlineStart: 0,
           top: 0,
           bottom: 0,
           width: 4,
           background: 'var(--fs-accent)',
-          borderTopLeftRadius: '22px',
-          borderBottomLeftRadius: '16px',
+          borderStartStartRadius: '22px',
+          borderEndStartRadius: '16px',
         }}
       />
 
@@ -231,7 +256,9 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
                 {exercise.targetMuscle || exercise.muscleGroup || 'שריר'}
               </span>
               {exercise.tempo && (
-                <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
+                <span
+                  style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}
+                >
                   טמפו: {exercise.tempo}
                 </span>
               )}
@@ -240,7 +267,14 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
 
           {/* Volume badge */}
           <div style={{ background: 'var(--fs-bg)', borderRadius: 8, padding: '4px 10px' }}>
-            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--fs-ink)' }}>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--fs-ink)',
+              }}
+            >
               {formatVolume(totalVolume)} ק"ג
             </span>
           </div>
@@ -263,7 +297,15 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
             <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: muscleColor.text }}>
               הסט הטוב ביותר:
             </span>
-            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--fs-ink)', marginRight: 'auto' }}>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--fs-ink)',
+                marginRight: 'auto',
+              }}
+            >
               {bestSet.weight} ק"ג × {bestSet.reps} חזרות
             </span>
           </div>
@@ -273,7 +315,12 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
         <div className="space-y-2">
           <div
             className="flex items-center"
-            style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)', padding: '0 4px' }}
+            style={{
+              fontSize: 10,
+              fontFamily: 'var(--font-mono)',
+              color: 'var(--fs-muted)',
+              padding: '0 4px',
+            }}
           >
             <span className="flex-1">סט</span>
             <span style={{ width: 64, textAlign: 'center' }}>משקל</span>
@@ -290,10 +337,14 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
               <span className="flex-1" style={{ color: 'var(--fs-muted)' }}>
                 {set.setNumber || setIndex + 1}
               </span>
-              <span style={{ width: 64, textAlign: 'center', color: 'var(--fs-ink)', fontWeight: 500 }}>
+              <span
+                style={{ width: 64, textAlign: 'center', color: 'var(--fs-ink)', fontWeight: 500 }}
+              >
                 {set.weight || 0} ק"ג
               </span>
-              <span style={{ width: 64, textAlign: 'center', color: 'var(--fs-ink)', fontWeight: 500 }}>
+              <span
+                style={{ width: 64, textAlign: 'center', color: 'var(--fs-ink)', fontWeight: 500 }}
+              >
                 {set.reps || 0}
               </span>
               <span style={{ width: 64, textAlign: 'center', color: 'var(--fs-muted)' }}>
@@ -341,13 +392,13 @@ function StatItem({ icon, label, value, subValue, trend }: StatItemProps) {
       <div
         style={{
           position: 'absolute',
-          left: 0,
+          insetInlineStart: 0,
           top: 0,
           bottom: 0,
           width: 3,
           background: 'var(--fs-accent)',
-          borderTopLeftRadius: '22px',
-          borderBottomLeftRadius: '16px',
+          borderStartStartRadius: '22px',
+          borderEndStartRadius: '16px',
         }}
       />
       <div
@@ -380,11 +431,28 @@ function StatItem({ icon, label, value, subValue, trend }: StatItemProps) {
         {trend === 'up' && <TrendingUp size={12} style={{ color: '#2F8F58' }} />}
         {trend === 'down' && <TrendingDown size={12} style={{ color: '#B83228' }} />}
       </p>
-      <p style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)', marginTop: 4, lineHeight: 1 }}>
+      <p
+        style={{
+          fontSize: 9,
+          fontFamily: 'var(--font-mono)',
+          color: 'var(--fs-muted)',
+          marginTop: 4,
+          lineHeight: 1,
+        }}
+      >
         {label}
       </p>
       {subValue && (
-        <p style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)', marginTop: 2 }}>{subValue}</p>
+        <p
+          style={{
+            fontSize: 9,
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--fs-muted)',
+            marginTop: 2,
+          }}
+        >
+          {subValue}
+        </p>
       )}
     </div>
   );
@@ -453,13 +521,13 @@ function MuscleBreakdown({ exercises }: MuscleBreakdownProps) {
       <div
         style={{
           position: 'absolute',
-          left: 0,
+          insetInlineStart: 0,
           top: 0,
           bottom: 0,
           width: 4,
           background: 'var(--fs-accent)',
-          borderTopLeftRadius: '22px',
-          borderBottomLeftRadius: '16px',
+          borderStartStartRadius: '22px',
+          borderEndStartRadius: '16px',
         }}
       />
       <h3
@@ -485,12 +553,25 @@ function MuscleBreakdown({ exercises }: MuscleBreakdownProps) {
           return (
             <div key={muscle}>
               <div className="flex items-center justify-between mb-1">
-                <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--fs-ink)' }}>{muscle}</span>
-                <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
+                <span
+                  style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--fs-ink)' }}
+                >
+                  {muscle}
+                </span>
+                <span
+                  style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}
+                >
                   {stats.sets} סטים | {formatVolume(stats.volume)} ק"ג
                 </span>
               </div>
-              <div style={{ height: 6, background: 'var(--fs-surface-2)', borderRadius: 9999, overflow: 'hidden' }}>
+              <div
+                style={{
+                  height: 6,
+                  background: 'var(--fs-surface-2)',
+                  borderRadius: 9999,
+                  overflow: 'hidden',
+                }}
+              >
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${percentage}%` }}
@@ -604,7 +685,17 @@ export default function WorkoutDetail() {
 
   if (error || !session) {
     return (
-      <div style={{ background: 'var(--fs-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, minHeight: '100vh' }}>
+      <div
+        style={{
+          background: 'var(--fs-bg)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+          minHeight: '100vh',
+        }}
+      >
         <div
           style={{
             width: 80,
@@ -619,10 +710,26 @@ export default function WorkoutDetail() {
         >
           <Dumbbell size={36} style={{ color: 'var(--fs-muted)' }} />
         </div>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22, color: 'var(--fs-ink)', marginBottom: 8 }}>
+        <h2
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 22,
+            color: 'var(--fs-ink)',
+            marginBottom: 8,
+          }}
+        >
           {error || 'האימון לא נמצא'}
         </h2>
-        <p style={{ fontSize: 14, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)', marginBottom: 24, textAlign: 'center' }}>
+        <p
+          style={{
+            fontSize: 14,
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--fs-muted)',
+            marginBottom: 24,
+            textAlign: 'center',
+          }}
+        >
           לא ניתן לטעון את פרטי האימון
         </p>
         <button
@@ -668,9 +775,12 @@ export default function WorkoutDetail() {
           <button
             type="button"
             onClick={() => navigate('/history')}
+            aria-label="חזרה להיסטוריה"
             style={{
               width: 44,
               height: 44,
+              minWidth: 44,
+              minHeight: 44,
               borderRadius: '50%',
               background: 'var(--fs-surface)',
               border: '1px solid var(--color-border)',
@@ -680,10 +790,17 @@ export default function WorkoutDetail() {
               cursor: 'pointer',
             }}
           >
-            <ChevronLeft size={20} style={{ color: 'var(--fs-ink)' }} />
+            <ChevronRight size={20} style={{ color: 'var(--fs-ink)' }} />
           </button>
           <div className="flex-1">
-            <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: 'var(--fs-ink)' }}>
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 18,
+                color: 'var(--fs-ink)',
+              }}
+            >
               פרטי אימון
             </h1>
             <p style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
@@ -693,7 +810,9 @@ export default function WorkoutDetail() {
           {session.rating && (
             <div className="flex items-center gap-1" style={{ color: 'var(--fs-signal)' }}>
               <Star size={16} fill="currentColor" />
-              <span style={{ fontSize: 14, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{session.rating}</span>
+              <span style={{ fontSize: 14, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                {session.rating}
+              </span>
             </div>
           )}
         </div>
@@ -730,11 +849,20 @@ export default function WorkoutDetail() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock size={14} style={{ color: 'var(--fs-accent-2)' }} />
-              <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
+              <span
+                style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}
+              >
                 שעת התחלה
               </span>
             </div>
-            <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--fs-ink)' }}>
+            <span
+              style={{
+                fontSize: 12,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                color: 'var(--fs-ink)',
+              }}
+            >
               {formatTime(session.startTime)}
             </span>
           </div>
@@ -742,11 +870,20 @@ export default function WorkoutDetail() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock size={14} style={{ color: 'var(--fs-accent)' }} />
-              <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
+              <span
+                style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}
+              >
                 שעת סיום
               </span>
             </div>
-            <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--fs-ink)' }}>
+            <span
+              style={{
+                fontSize: 12,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                color: 'var(--fs-ink)',
+              }}
+            >
               {session.endTime ? formatTime(session.endTime) : '—'}
             </span>
           </div>
@@ -795,8 +932,20 @@ export default function WorkoutDetail() {
             }}
           >
             <Target size={14} style={{ color: 'var(--fs-primary)' }} />
-            <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-primary)' }}>סוג אימון:</span>
-            <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--fs-ink)', marginRight: 'auto' }}>
+            <span
+              style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-primary)' }}
+            >
+              סוג אימון:
+            </span>
+            <span
+              style={{
+                fontSize: 12,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                color: 'var(--fs-ink)',
+                marginRight: 'auto',
+              }}
+            >
               {session.goalType === 'strength'
                 ? 'כוח'
                 : session.goalType === 'hypertrophy'
@@ -839,7 +988,9 @@ export default function WorkoutDetail() {
               <BarChart2 size={16} style={{ color: 'var(--fs-accent)' }} />
               תרגילים ({session.exercises.length})
             </h2>
-            <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
+            <span
+              style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}
+            >
               {totalSets} סטים
             </span>
           </div>
@@ -870,13 +1021,13 @@ export default function WorkoutDetail() {
           <div
             style={{
               position: 'absolute',
-              left: 0,
+              insetInlineStart: 0,
               top: 0,
               bottom: 0,
               width: 4,
               background: 'var(--fs-signal)',
-              borderTopLeftRadius: '22px',
-              borderBottomLeftRadius: '16px',
+              borderStartStartRadius: '22px',
+              borderEndStartRadius: '16px',
             }}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
@@ -940,10 +1091,24 @@ export default function WorkoutDetail() {
                 borderBottomLeftRadius: '16px',
               }}
             />
-            <h3 style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)', marginBottom: 8 }}>
+            <h3
+              style={{
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--fs-muted)',
+                marginBottom: 8,
+              }}
+            >
               הערות
             </h3>
-            <p style={{ fontSize: 13, fontFamily: 'var(--font-hebrew)', color: 'var(--fs-ink)', lineHeight: 1.6 }}>
+            <p
+              style={{
+                fontSize: 13,
+                fontFamily: 'var(--font-hebrew)',
+                color: 'var(--fs-ink)',
+                lineHeight: 1.6,
+              }}
+            >
               {session.notes}
             </p>
           </motion.div>

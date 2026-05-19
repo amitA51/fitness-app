@@ -208,7 +208,13 @@ const SessionCard = memo<{
           border: '2px solid var(--fs-primary)',
         }}
       >
-        <div style={{ padding: '12px', textAlign: 'center', borderRight: '2px solid var(--fs-primary)' }}>
+        <div
+          style={{
+            padding: '12px',
+            textAlign: 'center',
+            borderRight: '2px solid var(--fs-primary)',
+          }}
+        >
           <div
             style={{
               fontFamily: 'var(--font-display)',
@@ -233,7 +239,13 @@ const SessionCard = memo<{
             תרגילים
           </div>
         </div>
-        <div style={{ padding: '12px', textAlign: 'center', borderRight: '2px solid var(--fs-primary)' }}>
+        <div
+          style={{
+            padding: '12px',
+            textAlign: 'center',
+            borderRight: '2px solid var(--fs-primary)',
+          }}
+        >
           <div
             style={{
               fontFamily: 'var(--font-display)',
@@ -374,11 +386,12 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      className="ambient-mesh ambient-mesh-soft"
       style={{
         position: 'fixed',
         inset: 0,
         zIndex: 9000,
-        background: 'var(--fs-surface)',
+        background: 'var(--fs-bg)',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -386,8 +399,8 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
     >
       {/* Masthead Header */}
       <header
+        className="premium-dark-surface scrim-noise"
         style={{
-          background: 'var(--fs-primary)',
           color: 'var(--fs-surface)',
           padding: '16px 20px',
           paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',

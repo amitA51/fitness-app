@@ -171,9 +171,10 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.35 }}
+      className="magnetic-card glass-surface scrim-noise fs-accent-rail"
       style={{
-        background: 'var(--fs-surface)',
-        border: '2px solid var(--fs-primary)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
         padding: 20,
       }}
     >

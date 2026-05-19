@@ -475,7 +475,7 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
 
   return (
     <motion.div
-      className="fixed inset-0 z-[11000] bg-black/95 backdrop-blur-xl flex flex-col"
+      className="premium-dark-surface scrim-noise ambient-mesh fixed inset-0 z-[11000] flex flex-col"
       initial={{ opacity: 0, y: '100%' }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: '100%' }}
@@ -486,10 +486,14 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
     >
       {/* Header */}
       <div
-        className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10"
+        className="glass-surface-dark flex-shrink-0 flex items-center justify-between px-4 py-3"
         style={{ paddingTop: 'max(12px, env(safe-area-inset-top, 12px))' }}
       >
-        <h2 id="ai-coach-title" className="text-lg font-bold text-white">
+        <h2
+          id="ai-coach-title"
+          className="text-lg font-bold text-white inline-flex items-center gap-2"
+        >
+          <span className="breathing-dot" aria-hidden="true" />
           מאמן AI
         </h2>
         <button

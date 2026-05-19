@@ -169,17 +169,17 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
               e.preventDefault();
               handleAdd15();
             }}
-            aria-label="הוסף 15 שניות"
+            aria-label="הוסף 15 שניות למנוחה"
             style={{
               minWidth: 44,
-              minHeight: 32,
-              padding: '0 10px',
+              minHeight: 44,
+              padding: '0 12px',
               background: 'var(--fs-surface-2)',
               color: 'var(--fs-ink)',
               border: '1px solid var(--fs-steel)',
               borderRadius: '10px 7px 10px 7px',
               fontFamily: 'var(--font-mono)',
-              fontSize: 10,
+              fontSize: 11,
               letterSpacing: '0.08em',
               fontWeight: 700,
               textTransform: 'uppercase',
@@ -197,14 +197,14 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
             aria-label="דלג על המנוחה"
             style={{
               minWidth: 52,
-              minHeight: 32,
-              padding: '0 10px',
+              minHeight: 44,
+              padding: '0 12px',
               background: 'transparent',
               color: 'var(--fs-accent)',
               border: '1px solid var(--fs-accent)',
               borderRadius: '10px 7px 10px 7px',
               fontFamily: 'var(--font-mono)',
-              fontSize: 10,
+              fontSize: 11,
               letterSpacing: '0.08em',
               fontWeight: 700,
               textTransform: 'uppercase',

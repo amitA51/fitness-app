@@ -358,7 +358,7 @@ const AnnualButton = memo(function AnnualButton({
         type={type}
         onClick={onClick}
         disabled={disabled || loading}
-        className={baseClasses}
+        className={cn(baseClasses, 'start-workout-btn accent-glow')}
         style={{
           background: 'var(--fs-primary)',
           color: 'var(--fs-accent)',
@@ -479,7 +479,7 @@ function Masthead() {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full px-5 pt-8 pb-6 text-center"
+      className="w-full px-5 pt-8 pb-6 text-center premium-dark-surface scrim-noise"
       style={{
         background: 'linear-gradient(135deg, var(--fs-primary) 0%, var(--fs-accent-2) 100%)',
       }}
@@ -509,7 +509,7 @@ function Masthead() {
 
       {/* Tagline */}
       <p
-        className="leading-snug"
+        className="leading-snug fade-rise-in"
         style={{
           fontFamily: '"Bricolage Grotesque", var(--font-display)',
           fontWeight: 600,
@@ -557,7 +557,7 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
         initial="initial"
         animate="animate"
         onClick={onSignIn}
-        className="text-right group"
+        className="text-right group glass-surface scale-pop-in"
         style={{
           cursor: 'pointer',
           background: 'var(--fs-surface)',
@@ -615,7 +615,7 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
         initial="initial"
         animate="animate"
         onClick={onSignUp}
-        className="text-right group"
+        className="text-right group glass-surface scale-pop-in"
         style={{
           cursor: 'pointer',
           background: 'var(--fs-surface)',
@@ -1595,7 +1595,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen min-h-[100dvh] flex flex-col"
+      className="min-h-screen min-h-[100dvh] flex flex-col ambient-mesh ambient-mesh-strong"
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
@@ -1603,6 +1603,25 @@ export default function LoginPage() {
       <a href="#main-content" className="skip-link" style={{ top: '-100%' }}>
         דלג לתוכן
       </a>
+
+      {/* Live signal indicator */}
+      <div
+        className="absolute z-20 flex items-center gap-2"
+        style={{
+          top: 'max(12px, env(safe-area-inset-top, 12px))',
+          insetInlineEnd: '16px',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          color: 'var(--fs-surface)',
+          textTransform: 'uppercase',
+          pointerEvents: 'none',
+        }}
+        aria-hidden="true"
+      >
+        <span className="breathing-dot signal" />
+        SparkOS LIVE
+      </div>
 
       {/* Masthead */}
       <Masthead />

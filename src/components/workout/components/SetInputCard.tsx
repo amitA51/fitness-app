@@ -276,7 +276,8 @@ const SetInputCard = memo<SetInputCardProps>(
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  minHeight: 40,
+                  minHeight: 44,
+                  minWidth: 44,
                   background: 'var(--fs-surface-2)',
                   border: `1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))`,
                   borderRadius: 15,
@@ -308,7 +309,8 @@ const SetInputCard = memo<SetInputCardProps>(
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  minHeight: 40,
+                  minHeight: 44,
+                  minWidth: 44,
                   background: 'var(--fs-accent)',
                   border: `1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))`,
                   borderRadius: 15,
@@ -347,7 +349,7 @@ const SetInputCard = memo<SetInputCardProps>(
                 color: 'var(--fs-muted)',
               }}
             >
-              Step {incrementAmount}
+              קפיצה {incrementAmount}
             </span>
           )}
         </div>

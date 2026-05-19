@@ -5,3 +5,8 @@ dist/
 .env.production
 # Local Netlify folder
 .netlify
+
+# Local Claude settings + scratch
+.claude/settings.local.json
+temp_debug.txt
+everything-claude-code/

@@ -103,7 +103,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
                   {ex.name}
                 </span>
                 <small style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.72 }}>
-                  {ex.sets?.length ?? 0}× SETS
+                  {ex.sets?.length ?? 0} סטים
                 </small>
               </button>
             ))}
@@ -133,8 +133,8 @@ const ExerciseNav = memo<ExerciseNavProps>(
               disabled={!canGoPrev}
               aria-label="תרגיל קודם"
               style={{
-                width: 36,
-                height: 36,
+                width: 44,
+                height: 44,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -144,8 +144,8 @@ const ExerciseNav = memo<ExerciseNavProps>(
                 color: canGoPrev ? 'var(--fs-ink)' : 'var(--fs-muted)',
                 cursor: canGoPrev ? 'pointer' : 'not-allowed',
                 transition: 'all 150ms',
-                minWidth: 36,
-                minHeight: 36,
+                minWidth: 44,
+                minHeight: 44,
               }}
             >
               <ChevronLeftIcon style={{ transform: 'rotate(180deg)' }} />
@@ -232,8 +232,8 @@ const ExerciseNav = memo<ExerciseNavProps>(
               disabled={!canGoNext}
               aria-label="תרגיל הבא"
               style={{
-                width: 36,
-                height: 36,
+                width: 44,
+                height: 44,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -243,8 +243,8 @@ const ExerciseNav = memo<ExerciseNavProps>(
                 color: canGoNext ? 'var(--fs-ink)' : 'var(--fs-muted)',
                 cursor: canGoNext ? 'pointer' : 'not-allowed',
                 transition: 'all 150ms',
-                minWidth: 36,
-                minHeight: 36,
+                minWidth: 44,
+                minHeight: 44,
               }}
             >
               <ChevronLeftIcon />
@@ -262,8 +262,8 @@ const ExerciseNav = memo<ExerciseNavProps>(
               }}
               aria-label="רשימת תרגילים"
               style={{
-                width: 36,
-                height: 36,
+                width: 44,
+                height: 44,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -273,11 +273,11 @@ const ExerciseNav = memo<ExerciseNavProps>(
                 color: 'var(--fs-ink)',
                 cursor: 'pointer',
                 transition: 'all 150ms',
-                minWidth: 36,
-                minHeight: 36,
+                minWidth: 44,
+                minHeight: 44,
               }}
             >
-              <List size={16} strokeWidth={2} />
+              <List size={18} strokeWidth={2} />
             </button>
           </div>
         </div>

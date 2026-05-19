@@ -41,6 +41,7 @@ export const WaterTracker = memo(function WaterTracker() {
     <div
       role="region"
       aria-label="מעקב שתייה"
+      className="magnetic-card glass-surface fs-accent-rail scrim-noise"
       style={{
         margin: '16px 0',
         padding: '14px 16px',
@@ -65,29 +66,26 @@ export const WaterTracker = memo(function WaterTracker() {
             שתייה
           </span>
           <span
+            className="kinetic-number"
+            dir="ltr"
+            aria-label={`${glasses} מתוך ${goalGlasses} כוסות`}
             style={{
               fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              letterSpacing: '0.16em',
-              color: pct >= 100 ? 'var(--fs-accent)' : 'var(--fs-muted)',
-              textTransform: 'uppercase',
+              fontSize: 12,
+              letterSpacing: '0.12em',
+              color: pct >= 100 ? 'var(--fs-accent)' : 'var(--fs-ink)',
+              fontWeight: 600,
             }}
           >
-            {glasses}/{goalGlasses} glasses
+            {glasses}/{goalGlasses}
           </span>
         </div>
-        <div
-          className="mt-2"
-          style={{
-            height: 6,
-            background: 'var(--fs-surface-2)',
-            overflow: 'hidden',
-          }}
-        >
+        <div className="mt-2 fs-progress-track" style={{ height: 6 }}>
           <motion.div
+            className="fs-progress-fill"
             style={{
               height: '100%',
-              background: pct >= 100 ? 'var(--fs-signal)' : 'var(--fs-accent)',
+              background: pct >= 100 ? 'var(--fs-signal)' : undefined,
             }}
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
@@ -95,15 +93,16 @@ export const WaterTracker = memo(function WaterTracker() {
           />
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
         <button
           type="button"
           onClick={handleRemove}
           disabled={totalMl <= 0}
-          aria-label="הסר כוס"
+          aria-label="הסר כוס מים"
+          className="icon-btn"
           style={{
-            width: 32,
-            height: 32,
+            width: 44,
+            height: 44,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -113,15 +112,16 @@ export const WaterTracker = memo(function WaterTracker() {
             opacity: totalMl <= 0 ? 0.4 : 1,
           }}
         >
-          <Minus size={14} style={{ color: 'var(--fs-primary)' }} />
+          <Minus size={16} style={{ color: 'var(--fs-primary)' }} aria-hidden="true" />
         </button>
         <button
           type="button"
           onClick={handleAdd}
-          aria-label="הוסף כוס"
+          aria-label={`הוסף כוס (${glassMl} מ״ל)`}
+          className="icon-btn accent-glow"
           style={{
-            width: 32,
-            height: 32,
+            width: 44,
+            height: 44,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -130,7 +130,7 @@ export const WaterTracker = memo(function WaterTracker() {
             cursor: 'pointer',
           }}
         >
-          <Plus size={14} style={{ color: 'var(--fs-primary)' }} />
+          <Plus size={16} style={{ color: 'var(--fs-primary)' }} aria-hidden="true" />
         </button>
         {/* Quick water buttons: +250ml pill */}
         <button
@@ -140,9 +140,11 @@ export const WaterTracker = memo(function WaterTracker() {
             setTotalMl((prev) => prev + 250);
           }}
           aria-label="הוסף 250 מ״ל"
+          dir="ltr"
           style={{
-            padding: '0 10px',
-            height: 32,
+            padding: '0 12px',
+            minWidth: 44,
+            height: 44,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -151,7 +153,7 @@ export const WaterTracker = memo(function WaterTracker() {
             cursor: 'pointer',
             borderRadius: 0,
             fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
+            fontSize: '11px',
             fontWeight: 600,
             color: 'var(--fs-primary)',
             gap: 3,
@@ -166,9 +168,11 @@ export const WaterTracker = memo(function WaterTracker() {
             setTotalMl((prev) => prev + 500);
           }}
           aria-label="הוסף 500 מ״ל"
+          dir="ltr"
           style={{
-            padding: '0 10px',
-            height: 32,
+            padding: '0 12px',
+            minWidth: 44,
+            height: 44,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -177,7 +181,7 @@ export const WaterTracker = memo(function WaterTracker() {
             cursor: 'pointer',
             borderRadius: 0,
             fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
+            fontSize: '11px',
             fontWeight: 600,
             color: 'var(--fs-primary)',
             gap: 3,

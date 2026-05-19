@@ -1,8 +1,8 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { memo, useMemo } from 'react';
-import { RingProgress } from '../charts';
 import type { WorkoutSession } from '../../types';
 import { DAYS, getWeekEnd, getWeekStart } from '../../utils/dateUtils';
+import { RingProgress } from '../charts';
 
 interface WeeklyGridProps {
   sessions: WorkoutSession[];
@@ -90,8 +90,8 @@ export const WeeklyGrid = memo(function WeeklyGrid({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 32,
-            height: 32,
+            width: 44,
+            height: 44,
             borderRadius: 14,
             border: '1px solid var(--fs-surface-2)',
             background: 'var(--fs-surface)',
@@ -100,7 +100,7 @@ export const WeeklyGrid = memo(function WeeklyGrid({
           }}
           aria-label="שבוע קודם"
         >
-          <ChevronRight size={16} />
+          <ChevronRight size={18} aria-hidden="true" />
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -163,8 +163,8 @@ export const WeeklyGrid = memo(function WeeklyGrid({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 32,
-              height: 32,
+              width: 44,
+              height: 44,
               borderRadius: 14,
               border: '1px solid var(--fs-surface-2)',
               background: 'var(--fs-surface)',
@@ -174,7 +174,7 @@ export const WeeklyGrid = memo(function WeeklyGrid({
             }}
             aria-label="שבוע הבא"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={18} aria-hidden="true" />
           </button>
         </div>
       </div>

@@ -101,7 +101,7 @@ export default function NutritionPage() {
     loadWaterHistory();
   }, [loadData, loadWaterHistory]);
 
-  const handleSaveMeal = async () => {
+  const handleSaveMeal = useCallback(async () => {
     if (selectedFoods.length === 0) return;
     const entry = createQuickMeal(
       selectedMealType,
@@ -125,19 +125,25 @@ export default function NutritionPage() {
     setSelectedFoods([]);
     setSearchQuery('');
     loadData();
-  };
+  }, [selectedFoods, selectedMealType, loadData]);
 
-  const handleDeleteEntry = async (id: string) => {
-    await deleteMealEntry(id);
-    loadData();
-  };
-
-  const handleQuickPreset = async (preset: MealPreset, mealType: MealType) => {
-    const entry = await addFoodFromPreset(preset.id, mealType);
-    if (entry) {
+  const handleDeleteEntry = useCallback(
+    async (id: string) => {
+      await deleteMealEntry(id);
       loadData();
-    }
-  };
+    },
+    [loadData]
+  );
+
+  const handleQuickPreset = useCallback(
+    async (preset: MealPreset, mealType: MealType) => {
+      const entry = await addFoodFromPreset(preset.id, mealType);
+      if (entry) {
+        loadData();
+      }
+    },
+    [loadData]
+  );
 
   const goBack = useCallback(() => {
     const d = new Date(selectedDate);
@@ -159,29 +165,28 @@ export default function NutritionPage() {
     }
   }, [selectedDate]);
 
-  const handleAddFood = (food: FoodItem) => {
-    const existing = selectedFoods.find((f) => f.id === food.id);
-    if (existing) {
-      setSelectedFoods((prev) =>
-        prev.map((f) => (f.id === food.id ? { ...f, servings: f.servings + 1 } : f))
-      );
-    } else {
-      setSelectedFoods((prev) => [...prev, { ...food, servings: 1 }]);
-    }
-  };
+  const handleAddFood = useCallback((food: FoodItem) => {
+    setSelectedFoods((prev) => {
+      const existing = prev.find((f) => f.id === food.id);
+      if (existing) {
+        return prev.map((f) => (f.id === food.id ? { ...f, servings: f.servings + 1 } : f));
+      }
+      return [...prev, { ...food, servings: 1 }];
+    });
+  }, []);
 
-  const handleRemoveFood = (foodId: string) => {
+  const handleRemoveFood = useCallback((foodId: string) => {
     setSelectedFoods((prev) => prev.filter((f) => f.id !== foodId));
-  };
+  }, []);
 
-  const handleServingsChange = (foodId: string, delta: number) => {
+  const handleServingsChange = useCallback((foodId: string, delta: number) => {
     setSelectedFoods((prev) =>
       prev.map((f) => {
         if (f.id !== foodId) return f;
         return { ...f, servings: Math.max(0.5, f.servings + delta) };
       })
     );
-  };
+  }, []);
 
   const filteredFoods = useMemo(() => searchFoods(searchQuery), [searchQuery]);
   const presets = useMemo(() => getMealPresets(), []);
@@ -216,21 +221,28 @@ export default function NutritionPage() {
   const carbsPct = Math.min(Math.round((todayMacros.carbs / macroGoals.carbs) * 100), 100);
   const fatPct = Math.min(Math.round((todayMacros.fat / macroGoals.fat) * 100), 100);
 
-  const TABS: { key: MealTab; label: string; icon: React.ReactNode }[] = [
-    { key: 'log', label: 'יומן', icon: <Clock size={15} /> },
-    { key: 'library', label: 'מזון', icon: <Search size={15} /> },
-    { key: 'presets', label: 'ארוחות', icon: <BookOpen size={15} /> },
-  ];
+  const TABS = useMemo<{ key: MealTab; label: string; icon: React.ReactNode }[]>(
+    () => [
+      { key: 'log', label: 'יומן', icon: <Clock size={15} /> },
+      { key: 'library', label: 'מזון', icon: <Search size={15} /> },
+      { key: 'presets', label: 'ארוחות', icon: <BookOpen size={15} /> },
+    ],
+    []
+  );
 
-  const todayLabel = new Date().toLocaleDateString('he-IL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+  const todayLabel = useMemo(
+    () =>
+      new Date().toLocaleDateString('he-IL', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      }),
+    []
+  );
 
   return (
     <div
-      className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))]"
+      className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))] ambient-mesh ambient-mesh-soft"
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
@@ -269,26 +281,16 @@ export default function NutritionPage() {
       </header>
 
       {/* Block Hero — today's calories */}
-      <div className="block-hero">
+      <div className="block-hero section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in">
         <span className="ribbon">{calPct}% · GOAL</span>
         <div className="label">נצרך היום · CONSUMED TODAY</div>
-        <div className="number">{todayMacros.calories || 0}</div>
+        <div className="number kinetic-number large">{todayMacros.calories || 0}</div>
         <div className="sub">/ {macroGoals.calories} KCAL</div>
         {/* Calorie bar */}
-        <div
-          className="mt-4"
-          style={{
-            height: '6px',
-            background: 'var(--fs-surface-2)',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
+        <div className="mt-4 fs-progress-track" style={{ height: '6px' }}>
           <motion.div
-            style={{
-              height: '100%',
-              background: 'var(--fs-accent)',
-            }}
+            className="fs-progress-fill"
+            style={{ height: '100%' }}
             initial={{ width: 0 }}
             animate={{ width: `${calPct}%` }}
             transition={{ duration: 0.9, ease: 'easeOut' }}
@@ -334,6 +336,7 @@ export default function NutritionPage() {
         ].map((m, i) => (
           <div
             key={m.label}
+            className="glass-surface fs-accent-rail"
             style={{
               background: 'var(--fs-surface)',
               padding: '18px 14px',
@@ -375,16 +378,10 @@ export default function NutritionPage() {
                 G
               </em>
             </div>
-            <div
-              className="mt-2"
-              style={{
-                height: '4px',
-                background: 'var(--fs-surface-2)',
-                overflow: 'hidden',
-              }}
-            >
+            <div className="mt-2 fs-progress-track" style={{ height: '4px' }}>
               <motion.div
-                style={{ height: '100%', background: 'var(--fs-accent)' }}
+                className="fs-progress-fill"
+                style={{ height: '100%' }}
                 initial={{ width: 0 }}
                 animate={{ width: `${m.pct}%` }}
                 transition={{ duration: 0.7, ease: 'easeOut' }}
@@ -415,8 +412,13 @@ export default function NutritionPage() {
       {/* Date Navigator */}
       <div className="px-5 pt-4">
         <div className="flex items-center justify-between mb-4">
-          <button onClick={goBack} className="chip" aria-label="יום קודם">
-            <ChevronRight size={14} />
+          <button
+            onClick={goBack}
+            className="chip"
+            aria-label="יום קודם"
+            style={{ minWidth: 44, minHeight: 44 }}
+          >
+            <ChevronRight size={16} aria-hidden="true" />
           </button>
           <span
             style={{
@@ -438,10 +440,10 @@ export default function NutritionPage() {
             onClick={goForward}
             disabled={isToday}
             className="chip"
-            style={{ opacity: isToday ? 0.4 : 1 }}
+            style={{ minWidth: 44, minHeight: 44, opacity: isToday ? 0.4 : 1 }}
             aria-label="יום הבא"
           >
-            <ChevronLeft size={14} />
+            <ChevronLeft size={16} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -629,7 +631,7 @@ export default function NutritionPage() {
       {/* FAB */}
       <motion.button
         onClick={() => setShowAddMeal(true)}
-        className="fixed bottom-24 z-40 flex items-center justify-center"
+        className="fixed bottom-24 z-40 flex items-center justify-center accent-glow"
         style={{
           width: '56px',
           height: '56px',
@@ -695,7 +697,10 @@ const EmptyMealState = memo(function EmptyMealState({ onAdd }: { onAdd: () => vo
       <p className="eyebrow mb-5" style={{ color: 'var(--fs-muted)' }}>
         START TRACKING
       </p>
-      <button onClick={onAdd} className="btn-primary flex items-center gap-2">
+      <button
+        onClick={onAdd}
+        className="btn-primary start-workout-btn accent-glow flex items-center gap-2"
+      >
         <Plus size={15} />
         הוסף ארוחה
       </button>
@@ -711,6 +716,7 @@ const MealEntryCard = memo(function MealEntryCard({
   const mealLabel = entry.meals.map((m) => MEAL_TYPE_LABELS[m.name]).join(', ');
   return (
     <div
+      className="magnetic-card glass-surface fs-accent-rail"
       style={{
         background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
@@ -790,9 +796,7 @@ const MealEntryCard = memo(function MealEntryCard({
             </span>
           ))}
         {entry.meals.flatMap((m) => m.foods).length > 4 && (
-          <span className="chip">
-            +{entry.meals.flatMap((m) => m.foods).length - 4}
-          </span>
+          <span className="chip">+{entry.meals.flatMap((m) => m.foods).length - 4}</span>
         )}
       </div>
 
@@ -878,6 +882,7 @@ const FoodLibrary = memo(function FoodLibrary({
         {foods.map((food) => (
           <div
             key={food.id}
+            className="magnetic-card glass-surface"
             style={{
               background: 'var(--fs-surface)',
               border: '1px solid var(--fs-surface-2)',
@@ -1030,6 +1035,7 @@ const MealPresetCard = memo(function MealPresetCard({
   );
   return (
     <div
+      className="magnetic-card glass-surface fs-accent-rail"
       style={{
         background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
@@ -1339,9 +1345,9 @@ function AddMealModal({
                       <button
                         onClick={() => onServingsChange(food.id, -0.5)}
                         style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '8px',
+                          width: '44px',
+                          height: '44px',
+                          borderRadius: '10px',
                           backgroundColor: 'var(--fs-surface)',
                           color: 'var(--fs-ink)',
                           border: '1px solid var(--fs-surface-2)',
@@ -1350,9 +1356,9 @@ function AddMealModal({
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: 700,
-                          fontSize: '16px',
+                          fontSize: '18px',
                         }}
-                        aria-label="הפחת מנה"
+                        aria-label="הפחת חצי מנה"
                       >
                         −
                       </button>
@@ -1371,9 +1377,9 @@ function AddMealModal({
                       <button
                         onClick={() => onServingsChange(food.id, 0.5)}
                         style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '8px',
+                          width: '44px',
+                          height: '44px',
+                          borderRadius: '10px',
                           backgroundColor: 'var(--fs-surface)',
                           color: 'var(--fs-ink)',
                           border: '1px solid var(--fs-surface-2)',
@@ -1382,9 +1388,9 @@ function AddMealModal({
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: 700,
-                          fontSize: '16px',
+                          fontSize: '18px',
                         }}
-                        aria-label="הוסף מנה"
+                        aria-label="הוסף חצי מנה"
                       >
                         +
                       </button>
@@ -1562,7 +1568,8 @@ function AddMealModal({
               width: '100%',
               padding: '16px',
               borderRadius: 0,
-              backgroundColor: selectedFoods.length > 0 ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+              backgroundColor:
+                selectedFoods.length > 0 ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
               color: selectedFoods.length > 0 ? 'var(--fs-accent)' : 'var(--fs-muted)',
               fontFamily: 'var(--font-display)',
               fontWeight: 800,

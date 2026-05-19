@@ -109,10 +109,14 @@ const OverflowMenu = memo<{
           e.stopPropagation();
           setOpen((o) => !o);
         }}
-        aria-label="עוד"
+        aria-label="עוד פעולות"
+        aria-haspopup="menu"
+        aria-expanded={open}
         style={{
-          width: 36,
-          height: 36,
+          width: 44,
+          height: 44,
+          minWidth: 44,
+          minHeight: 44,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -123,7 +127,7 @@ const OverflowMenu = memo<{
           cursor: 'pointer',
         }}
       >
-        <MoreHorizontal size={16} strokeWidth={2.25} />
+        <MoreHorizontal size={18} strokeWidth={2.25} />
       </button>
       {open && (
         <div
@@ -151,7 +155,7 @@ const OverflowMenu = memo<{
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
             </svg>,
-            'Tutorial',
+            'מדריך',
             onOpenTutorial
           )}
           {item(<Settings size={14} strokeWidth={2} />, 'הגדרות', onOpenSettings)}
@@ -257,10 +261,12 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
               e.stopPropagation();
               handleDiscard();
             }}
-            aria-label="מחק אימון"
+            aria-label="בטל אימון"
             style={{
-              width: 36,
-              height: 36,
+              width: 44,
+              height: 44,
+              minWidth: 44,
+              minHeight: 44,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -271,7 +277,7 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
               cursor: 'pointer',
             }}
           >
-            <Trash2 size={14} strokeWidth={2.25} />
+            <Trash2 size={16} strokeWidth={2.25} />
           </button>
 
           <OverflowMenu onOpenSettings={onOpenSettings} onOpenTutorial={onOpenTutorial} />
@@ -285,8 +291,10 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
             }}
             aria-label="סיים אימון"
             style={{
-              width: 36,
-              height: 36,
+              width: 44,
+              height: 44,
+              minWidth: 44,
+              minHeight: 44,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -297,7 +305,7 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
               cursor: 'pointer',
             }}
           >
-            <Check size={18} strokeWidth={2.5} />
+            <Check size={20} strokeWidth={2.5} />
           </button>
         </div>
       </header>

@@ -467,7 +467,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         <button
           type="button"
           onClick={onNext}
-          className="w-full flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-3 transition-all active:scale-[0.98] start-workout-btn accent-glow"
           style={{
             background: 'var(--fs-primary)',
             color: 'var(--fs-accent)',
@@ -672,7 +672,9 @@ function GoalsStep({ data, onChange }: GoalsStepProps) {
             type="button"
             whileTap={{ scale: 0.98 }}
             onClick={() => onChange({ primaryGoal: goal.value })}
-            className="w-full p-4 transition-all flex items-center gap-4 text-right"
+            className={`w-full p-4 transition-all flex items-center gap-4 text-right template-card magnetic-card ${
+              data.primaryGoal === goal.value ? 'accent-glow' : ''
+            }`}
             style={{
               background:
                 data.primaryGoal === goal.value ? 'var(--fs-accent)' : 'var(--fs-surface)',
@@ -793,7 +795,9 @@ function ExperienceStep({ data, onChange }: ExperienceStepProps) {
             type="button"
             whileTap={{ scale: 0.98 }}
             onClick={() => onChange({ experienceLevel: level.value })}
-            className="w-full p-4 transition-all flex items-center gap-4 text-right"
+            className={`w-full p-4 transition-all flex items-center gap-4 text-right template-card magnetic-card ${
+              data.experienceLevel === level.value ? 'accent-glow' : ''
+            }`}
             style={{
               background:
                 data.experienceLevel === level.value ? 'var(--fs-accent)' : 'var(--fs-surface)',
@@ -1401,7 +1405,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col"
+      className="fixed inset-0 z-[9999] flex flex-col ambient-mesh ambient-mesh-soft"
       style={{
         background: 'var(--fs-bg)',
         backgroundImage:
@@ -1410,12 +1414,11 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
       }}
       dir="rtl"
     >
-      {/* Progress bar at top */}
+      {/* Progress bar at top — premium track */}
       {currentStep > 0 && currentStep < STEPS.length - 1 && (
-        <div className="w-full h-1" style={{ background: 'var(--fs-surface-2)' }}>
+        <div className="w-full fs-progress-track" style={{ height: '4px' }}>
           <motion.div
-            className="h-full"
-            style={{ background: 'var(--fs-accent)' }}
+            className="h-full fs-progress-fill"
             initial={{ width: 0 }}
             animate={{
               width: `${((currentStep - 1) / (STEPS.length - 2)) * 100}%`,
@@ -1484,7 +1487,9 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
               type="button"
               onClick={goNext}
               disabled={!canProceed()}
-              className="flex-1 flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+              className={`flex-1 flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 ${
+                canProceed() ? 'start-workout-btn accent-glow' : ''
+              }`}
               style={{
                 background: canProceed() ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
                 color: canProceed() ? 'var(--fs-accent)' : 'var(--fs-muted)',

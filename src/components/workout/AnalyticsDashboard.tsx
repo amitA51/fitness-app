@@ -213,6 +213,7 @@ const AnalyticsDashboard: React.FC = () => {
 
   return (
     <div
+      className="ambient-mesh ambient-mesh-soft"
       style={{
         display: 'flex',
         flexDirection: 'column',
