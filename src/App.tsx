@@ -30,6 +30,7 @@ import { PageErrorBoundary } from './errors/PageErrorBoundary';
 import type { OnboardingData } from './pages/OnboardingFlow';
 import { initOfflineSync } from './services/offlineQueue';
 import type { WorkoutExercise } from './types';
+import { trackPageView } from './services/eventTracker';
 import { logger } from './utils/logger';
 import { safeJsonParse } from './utils/safeJson';
 import { cn } from './utils/styles';
@@ -359,6 +360,7 @@ function AppShell() {
     });
 
     prevPathRef.current = location.pathname;
+    trackPageView(location.pathname);
   }, [location.pathname]);
 
   return (

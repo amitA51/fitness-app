@@ -54,7 +54,7 @@ export function showNotification(title: string, body: string, icon?: string): vo
 
   new Notification(title, {
     body,
-    icon: icon || '/favicon.ico',
+    icon: icon || '/pwa-192x192.png',
     dir: 'rtl',
     lang: 'he',
   });

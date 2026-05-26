@@ -16,6 +16,7 @@ import {
   AI_MAX_TOKENS,
   AI_REQUEST_TIMEOUT_MS,
   AI_TEMPERATURE,
+  DEEPSEEK_BASE_URL,
   withPersona,
 } from './config';
 
@@ -241,6 +242,75 @@ async function extractErrorDetails(
   else if (status && status >= 500) code = 'provider_down';
   else if (status && status >= 400) code = 'bad_response';
   return { code, message: e.message ?? 'Request failed', status };
+}
+
+// ----------------------------------------------------------------------------
+// DirectDeepSeekProvider - קריאה ישירה ל-DeepSeek API (OpenAI-compatible)
+// ----------------------------------------------------------------------------
+
+export class DirectDeepSeekProvider implements AIProvider {
+  private apiKey: string;
+  private model: string;
+  private temperature: number;
+  private maxTokens: number;
+  private timeoutMs: number;
+
+  constructor(apiKey: string, opts: Partial<RemoteProviderOptions> = {}) {
+    this.apiKey = apiKey;
+    this.model = opts.model ?? AI_DEFAULT_MODEL;
+    this.temperature = opts.temperature ?? AI_TEMPERATURE;
+    this.maxTokens = opts.maxTokens ?? AI_MAX_TOKENS;
+    this.timeoutMs = opts.timeoutMs ?? AI_REQUEST_TIMEOUT_MS;
+  }
+
+  isAvailable(): boolean {
+    return Boolean(this.apiKey);
+  }
+
+  async chat(messages: ChatMessage[]): Promise<string> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const res = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages: withPersona(messages).map((m) => ({ role: m.role, content: m.content })),
+          temperature: this.temperature,
+          max_tokens: this.maxTokens,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const code: AIErrorCode =
+          res.status === 401 || res.status === 403 ? 'auth_error' :
+          res.status === 429 ? 'rate_limit' :
+          res.status >= 500 ? 'provider_down' : 'bad_response';
+        throw new AIError(code, `DeepSeek API error: ${res.status}`, res.status);
+      }
+
+      const data = await res.json();
+      const content = data?.choices?.[0]?.message?.content;
+      if (typeof content !== 'string') {
+        throw new AIError('bad_response', 'No content in DeepSeek response');
+      }
+      return content;
+    } catch (e) {
+      if (e instanceof AIError) throw e;
+      if ((e as { name?: string })?.name === 'AbortError') {
+        throw new AIError('timeout', `Request exceeded ${this.timeoutMs}ms`);
+      }
+      throw new AIError('network_error', e instanceof Error ? e.message : String(e));
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 }
 
 // ----------------------------------------------------------------------------

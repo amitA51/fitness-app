@@ -6,6 +6,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { initAI } from './services/ai/bootstrap';
+import { requestNotificationPermission, checkMissedWorkouts } from './services/notificationService';
 import { logger } from './utils/logger';
 import './styles/global.css';
 import './styles/tokens.css';
@@ -22,6 +23,13 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 initAI();
+
+requestNotificationPermission().then((granted) => {
+  if (granted) {
+    const lastWorkout = localStorage.getItem('sparkos_last_workout_date');
+    checkMissedWorkouts(lastWorkout);
+  }
+}).catch(() => {});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

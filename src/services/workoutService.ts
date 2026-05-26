@@ -132,6 +132,7 @@ export const replaceWorkoutTemplatesFromCloud = async (
 
 export const saveWorkoutSession = async (session: WorkoutSession): Promise<void> => {
   await dbPut(LS.WORKOUT_SESSIONS, session);
+  localStorage.setItem('sparkos_last_workout_date', session.startTime);
 
   getCurrentUser().then((user) => {
     if (user) {

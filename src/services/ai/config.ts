@@ -29,7 +29,9 @@ export const AI_FUNCTION_NAME = 'ai-chat';
 //   - 'google/gemini-2.0-flash-exp:free' חינם
 //
 // >>> שנה כאן את מודל ברירת המחדל <<<
-export const AI_DEFAULT_MODEL = 'openai/gpt-oss-120b:free';
+export const AI_DEFAULT_MODEL = 'deepseek-v4-flash';
+
+export const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
 
 // ----------------------------------------------------------------------------
 // SECTION 2 · פרמטרים לבקשה
