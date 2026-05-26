@@ -7,7 +7,12 @@
 
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { logger } from '../../utils/logger';
-import { DirectDeepSeekProvider, LocalFallbackProvider, RemoteProvider, setAIProvider } from './core';
+import {
+  DirectDeepSeekProvider,
+  LocalFallbackProvider,
+  RemoteProvider,
+  setAIProvider,
+} from './core';
 
 const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY as string | undefined;
 

@@ -52,8 +52,8 @@ const ExerciseNav = memo<ExerciseNavProps>(
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 8,
-          padding: '10px 14px',
+          gap: 6,
+          padding: '8px 14px',
           background: 'var(--fs-bg)',
           borderTop: '1px solid var(--fs-surface-2)',
         }}
@@ -78,17 +78,17 @@ const ExerciseNav = memo<ExerciseNavProps>(
                 onClick={() => onChangeExercise(i)}
                 className={`magnetic-card${i === currentIndex ? ' accent-glow' : ''}`}
                 style={{
-                  minHeight: 64,
-                  padding: '10px 12px',
-                  border: '2px solid var(--fs-surface-2)',
-                  borderRadius: 16,
+                  minHeight: 48,
+                  padding: '6px 10px',
+                  border: '1.5px solid var(--fs-surface-2)',
+                  borderRadius: '12px 8px 12px 8px',
                   background: i === currentIndex ? 'var(--fs-primary)' : 'var(--fs-surface)',
                   color: i === currentIndex ? '#fff' : 'var(--fs-muted)',
                   fontFamily: 'var(--font-body)',
-                  fontWeight: 900,
+                  fontWeight: 800,
                   display: 'grid',
                   alignContent: 'center',
-                  gap: 3,
+                  gap: 2,
                   cursor: 'pointer',
                 }}
               >
@@ -97,12 +97,12 @@ const ExerciseNav = memo<ExerciseNavProps>(
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
-                    fontSize: 14,
+                    fontSize: 12,
                   }}
                 >
                   {ex.name}
                 </span>
-                <small style={{ fontFamily: 'var(--font-mono)', fontSize: 12, opacity: 0.85 }}>
+                <small style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.7 }}>
                   {ex.sets?.length ?? 0} סטים
                 </small>
               </button>
@@ -150,60 +150,33 @@ const ExerciseNav = memo<ExerciseNavProps>(
               <ChevronLeftIcon style={{ transform: 'rotate(180deg)' }} />
             </button>
 
-            {/* Center: Exercise name + set progress */}
+            {/* Center: Set progress + position */}
             <div
-              className="glass-surface"
               style={{
                 flex: 1,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                minHeight: 58,
-                padding: '0 14px',
+                justifyContent: 'center',
+                minHeight: 44,
+                padding: '0 12px',
                 background: 'var(--fs-primary)',
-                borderRadius: 16,
-                gap: 8,
+                borderRadius: '12px 8px 12px 8px',
+                gap: 12,
               }}
             >
-              <div style={{ minWidth: 0, flex: 1 }}>
+              {totalSets > 0 && (
                 <span
                   style={{
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
-                    fontSize: 20,
-                    color: '#FFFFFF',
-                    lineHeight: 1.2,
-                    display: 'block',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 12,
+                    letterSpacing: '0.08em',
+                    color: 'rgba(255,255,255,0.85)',
+                    fontWeight: 700,
                   }}
                 >
-                  {currentExercise?.name || 'תרגיל'}
+                  סט {completedSets}/{totalSets}
                 </span>
-                {/* Set progress chip */}
-                {totalSets > 0 && (
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 11,
-                      letterSpacing: '0.08em',
-                      color: 'rgba(255,255,255,0.7)',
-                      fontWeight: 600,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      marginTop: 2,
-                      padding: '1px 8px',
-                      background: 'rgba(255,255,255,0.1)',
-                      borderRadius: '8px 6px 8px 6px',
-                    }}
-                  >
-                    סט {completedSets}/{totalSets}
-                  </span>
-                )}
-              </div>
-              {/* Current/Total position */}
+              )}
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',

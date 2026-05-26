@@ -348,7 +348,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,
-                  fontSize: 26,
+                  fontSize: 'clamp(18px, 5.5vw, 24px)',
                   color: '#FFFFFF',
                   display: 'block',
                   overflow: 'hidden',
@@ -366,40 +366,45 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               style={{
                 position: 'relative',
                 zIndex: 1,
-                display: 'grid',
-                gridTemplateColumns: 'auto minmax(0,1fr) auto',
-                gap: 9,
+                display: 'flex',
                 alignItems: 'center',
-                marginTop: 14,
-                padding: 10,
+                justifyContent: 'space-between',
+                marginTop: 12,
+                padding: '8px 12px',
                 border: '1px solid rgba(255,255,255,0.16)',
-                borderRadius: '18px 12px 18px 12px',
+                borderRadius: '14px 10px 14px 10px',
               }}
             >
-              <div
-                className="accent-glow"
-                style={{
-                  direction: 'ltr',
-                  display: 'grid',
-                  width: 58,
-                  height: 58,
-                  placeItems: 'center',
-                  border: '8px solid var(--fs-steel)',
-                  borderRadius: '50%',
-                  background: 'var(--fs-rubber)',
-                  color: 'var(--fs-accent)',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 14,
-                  fontWeight: 900,
-                }}
-              >
-                {completedSetsCount + 1}/{totalSets}
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <b style={{ display: 'block', fontFamily: 'var(--font-display)', fontSize: 14 }}>
-                  {exercise.name || ''}
-                </b>
-                <span style={{ display: 'block', opacity: 0.72, fontSize: 12, fontWeight: 800 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div
+                  className="accent-glow"
+                  style={{
+                    direction: 'ltr',
+                    display: 'grid',
+                    width: 44,
+                    height: 44,
+                    placeItems: 'center',
+                    border: '6px solid var(--fs-steel)',
+                    borderRadius: '50%',
+                    background: 'var(--fs-rubber)',
+                    color: 'var(--fs-accent)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 13,
+                    fontWeight: 900,
+                  }}
+                >
+                  {completedSetsCount + 1}/{totalSets}
+                </div>
+                <span
+                  style={{
+                    opacity: 0.72,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                  }}
+                >
                   סט נוכחי
                 </span>
               </div>
@@ -408,8 +413,8 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   direction: 'ltr',
                   color: 'var(--fs-signal)',
                   fontFamily: 'var(--font-mono)',
-                  fontSize: 12,
-                  fontWeight: 900,
+                  fontSize: 11,
+                  fontWeight: 800,
                 }}
               >
                 NEXT{' '}

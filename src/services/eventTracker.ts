@@ -16,7 +16,9 @@ function getStore(): AnalyticsStore {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw) as AnalyticsStore;
-  } catch { /* empty */ }
+  } catch {
+    /* empty */
+  }
   return { events: [], sessionStart: Date.now(), pageViews: {} };
 }
 

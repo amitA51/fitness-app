@@ -35,21 +35,18 @@ const MonoTimer = memo<{
   const { formatted } = useWorkoutTimer({ startTimestamp, totalPausedTime, isPaused });
 
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="breathing-dot" aria-hidden="true" />
-      <span
-        className="tabular-nums kinetic-number"
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 24,
-          fontWeight: 700,
-          letterSpacing: '0.08em',
-          color: 'var(--fs-accent)',
-        }}
-      >
-        {formatted}
-      </span>
-    </div>
+    <span
+      className="tabular-nums kinetic-number"
+      style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: 24,
+        fontWeight: 700,
+        letterSpacing: '0.08em',
+        color: 'var(--fs-accent)',
+      }}
+    >
+      {formatted}
+    </span>
   );
 });
 

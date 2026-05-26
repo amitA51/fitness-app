@@ -218,7 +218,7 @@ const SetInputCard = memo<SetInputCardProps>(
               style={{
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
-                fontSize: 46,
+                fontSize: 'clamp(32px, 10vw, 42px)',
                 lineHeight: 1,
                 letterSpacing: '-0.03em',
                 color: isGhostValue

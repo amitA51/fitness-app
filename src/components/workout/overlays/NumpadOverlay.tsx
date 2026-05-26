@@ -174,10 +174,6 @@ const NumpadButton = memo<{
     <motion.button
       whileTap={{ scale: 0.95 }}
       onClick={handleClick}
-      onPointerDown={(e) => {
-        e.preventDefault();
-        handleClick();
-      }}
       disabled={disabled}
       className={`relative flex items-center justify-center transition-all duration-150${extraClass}`}
       style={{
@@ -207,11 +203,6 @@ const PresetButton = memo<{
     <motion.button
       whileTap={{ scale: shouldReduceMotion ? 1 : 0.96 }}
       onClick={() => {
-        triggerHaptic();
-        onSelect(value);
-      }}
-      onPointerDown={(e) => {
-        e.preventDefault();
         triggerHaptic();
         onSelect(value);
       }}
@@ -276,11 +267,6 @@ const ValueStepper = memo<{
                 triggerHaptic();
                 onAdjust(-inc);
               }}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                triggerHaptic();
-                onAdjust(-inc);
-              }}
               className="w-11 h-11 flex items-center justify-center transition-all"
               style={{
                 backgroundColor: 'var(--fs-surface)',
@@ -327,11 +313,6 @@ const ValueStepper = memo<{
             key={`inc-${inc}`}
             whileTap={{ scale: shouldReduceMotion ? 1 : 0.92 }}
             onClick={() => {
-              triggerHaptic();
-              onAdjust(inc);
-            }}
-            onPointerDown={(e) => {
-              e.preventDefault();
               triggerHaptic();
               onAdjust(inc);
             }}
@@ -680,12 +661,6 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
             <motion.button
               whileTap={{ scale: shouldReduceMotion ? 1 : 0.98 }}
               onClick={handleSubmit}
-              onPointerDown={(e) => {
-                if (value !== '') {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-              }}
               disabled={value === ''}
               className="btn-primary w-full accent-glow"
               style={{
