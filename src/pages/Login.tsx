@@ -28,6 +28,7 @@ import {
   signInWithGoogle,
   signUp,
 } from '../services/supabaseAuth';
+import { logger } from '../utils/logger';
 import { cn } from '../utils/styles';
 
 // ============================================================================
@@ -389,7 +390,7 @@ const AnnualButton = memo(function AnnualButton({
         className={baseClasses}
         style={{
           background: 'var(--fs-surface)',
-          color: 'var(--fs-primary)',
+          color: 'var(--fs-heading)',
           border: '2px solid var(--fs-primary)',
           borderRadius: '22px 16px 22px 16px',
           fontFamily: 'var(--font-display)',
@@ -417,7 +418,7 @@ const AnnualButton = memo(function AnnualButton({
       className={baseClasses}
       style={{
         background: 'transparent',
-        color: 'var(--fs-primary)',
+        color: 'var(--fs-heading)',
         fontFamily: 'var(--font-display)',
         fontWeight: 800,
         textTransform: 'uppercase',
@@ -479,9 +480,10 @@ function Masthead() {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full px-5 pt-8 pb-6 text-center premium-dark-surface scrim-noise"
+      className="w-full px-5 pt-8 pb-6 text-center"
       style={{
-        background: 'linear-gradient(135deg, var(--fs-primary) 0%, var(--fs-accent-2) 100%)',
+        background: 'var(--fs-bg)',
+        borderBottom: '2px solid var(--fs-accent)',
       }}
     >
       {/* FS Brand Mark */}
@@ -498,7 +500,7 @@ function Masthead() {
               fontFamily: '"Bricolage Grotesque", var(--font-display)',
               fontWeight: 800,
               fontSize: '28px',
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               lineHeight: 1,
             }}
           >
@@ -514,7 +516,7 @@ function Masthead() {
           fontFamily: '"Bricolage Grotesque", var(--font-display)',
           fontWeight: 600,
           fontSize: '22px',
-          color: 'var(--fs-surface)',
+          color: 'var(--fs-ink)',
           letterSpacing: '-0.01em',
         }}
       >
@@ -631,7 +633,7 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
               className="w-12 h-12 flex items-center justify-center"
               style={{ background: 'var(--fs-accent)', borderRadius: 0 }}
             >
-              <User size={20} style={{ color: 'var(--fs-primary)' }} aria-hidden="true" />
+              <User size={20} style={{ color: 'var(--fs-heading)' }} aria-hidden="true" />
             </div>
             <div>
               <h3
@@ -699,7 +701,7 @@ function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
           fontWeight: 800,
           fontSize: '15px',
           textTransform: 'uppercase',
-          color: 'var(--fs-primary)',
+          color: 'var(--fs-heading)',
           cursor: 'pointer',
         }}
       >
@@ -842,11 +844,12 @@ function SignInStep({
 
       if (error) {
         if (error.includes('Invalid login credentials') || error.includes('Invalid credentials')) {
-          setGeneralError('Invalid email or password');
+          setGeneralError('אימייל או סיסמה שגויים');
         } else if (error.includes('Email not confirmed')) {
-          setGeneralError('Please verify your email before signing in');
+          setGeneralError('יש לאמת את כתובת הדוא"ל לפני התחברות');
         } else {
-          setGeneralError(error);
+          logger.auth.warn('Unrecognized sign-in error', error);
+          setGeneralError('אירעה שגיאה בלתי צפויה. נסה שוב.');
         }
         return;
       }
@@ -982,7 +985,7 @@ function SignInStep({
               className="p-4"
               style={{
                 background: 'var(--fs-accent)',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 borderRadius: 0,
               }}
             >
@@ -1083,9 +1086,10 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
 
       if (error) {
         if (error.includes('already registered') || error.includes('already exists')) {
-          setGeneralError('This email is already registered');
+          setGeneralError('כתובת אימייל זו כבר רשומה');
         } else {
-          setGeneralError(error);
+          logger.auth.warn('Unrecognized sign-up error', error);
+          setGeneralError('אירעה שגיאה בלתי צפויה. נסה שוב.');
         }
         return;
       }
@@ -1109,7 +1113,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           className="w-20 h-20 flex items-center justify-center mb-6"
           style={{ background: 'var(--fs-accent)', borderRadius: '22px 16px 22px 16px' }}
         >
-          <MailOpen size={36} style={{ color: 'var(--fs-primary)' }} />
+          <MailOpen size={36} style={{ color: 'var(--fs-heading)' }} />
         </motion.div>
 
         <motion.h2
@@ -1297,7 +1301,7 @@ function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               label="סיסמה"
               value={form.password}
               onChange={(val) => setForm((f) => ({ ...f, password: val }))}
-              placeholder="לפחות 6 תווים"
+              placeholder="לפחות 8 תווים"
               error={errors.password}
             />
           </motion.div>
@@ -1410,7 +1414,7 @@ function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
           className="w-20 h-20 flex items-center justify-center mb-6"
           style={{ background: 'var(--fs-accent)', borderRadius: '22px 16px 22px 16px' }}
         >
-          <Check size={36} style={{ color: 'var(--fs-primary)' }} />
+          <Check size={36} style={{ color: 'var(--fs-heading)' }} />
         </motion.div>
 
         <motion.h2
@@ -1598,6 +1602,7 @@ export default function LoginPage() {
       className="min-h-screen min-h-[100dvh] flex flex-col ambient-mesh ambient-mesh-strong"
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
+      lang="he"
     >
       {/* Skip link */}
       <a href="#main-content" className="skip-link" style={{ top: '-100%' }}>
@@ -1613,7 +1618,7 @@ export default function LoginPage() {
           fontFamily: 'var(--font-mono)',
           fontSize: '10px',
           letterSpacing: '0.22em',
-          color: 'var(--fs-surface)',
+          color: 'var(--fs-ink)',
           textTransform: 'uppercase',
           pointerEvents: 'none',
         }}

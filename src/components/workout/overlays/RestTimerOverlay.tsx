@@ -210,7 +210,7 @@ const MiniTimer = memo<MiniTimerProps>(
                   style={{
                     fontFamily: 'var(--font-display)',
                     fontWeight: 900,
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                     letterSpacing: '-0.02em',
                     lineHeight: 1,
                   }}
@@ -246,7 +246,7 @@ const MiniTimer = memo<MiniTimerProps>(
                 style={{
                   backgroundColor: 'var(--fs-surface)',
                   border: '2px solid var(--fs-primary)',
-                  color: 'var(--fs-primary)',
+                  color: 'var(--fs-heading)',
                   fontFamily: 'var(--font-mono)',
                   fontSize: '11px',
                   fontWeight: 700,
@@ -540,7 +540,7 @@ const FullTimer = memo<FullTimerProps>(
               className="w-14 h-14 flex items-center justify-center uppercase transition-colors"
               style={{
                 backgroundColor: 'var(--fs-surface)',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 border: '2px solid var(--fs-surface)',
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 700,
@@ -565,7 +565,7 @@ const FullTimer = memo<FullTimerProps>(
               className="px-8 h-14 flex items-center gap-2 uppercase transition-opacity active:opacity-80"
               style={{
                 backgroundColor: 'var(--fs-accent)',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: '16px',
@@ -599,7 +599,7 @@ const FullTimer = memo<FullTimerProps>(
               className="w-14 h-14 flex items-center justify-center uppercase transition-colors"
               style={{
                 backgroundColor: 'var(--fs-surface)',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 border: '2px solid var(--fs-surface)',
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 700,
@@ -683,7 +683,7 @@ const FullTimer = memo<FullTimerProps>(
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,
-                  color: 'var(--fs-primary)',
+                  color: 'var(--fs-heading)',
                   letterSpacing: '-0.01em',
                   lineHeight: 1,
                 }}
@@ -695,7 +695,7 @@ const FullTimer = memo<FullTimerProps>(
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: '12px',
-                  color: 'var(--fs-primary)',
+                  color: 'var(--fs-heading)',
                 }}
               >
                 <span className="chip">{nextExercise.sets} סטים</span>

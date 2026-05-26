@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { WorkoutTemplate } from '../../types';
 
@@ -60,12 +60,12 @@ export function FSButton({
     },
     danger: {
       background: 'var(--color-error)',
-      color: '#ffffff',
+      color: 'var(--color-ink-on-dark)',
     },
     glass: {
-      background: 'rgba(255,255,255,0.06)',
+      background: 'var(--fs-overlay-hover)',
       color: 'var(--fs-ink)',
-      border: '1px solid rgba(255,255,255,0.08)',
+      border: '1px solid var(--color-border)',
       backdropFilter: 'blur(20px)',
     },
   };
@@ -92,6 +92,7 @@ export const TemplateQuickStart = memo(function TemplateQuickStart({
   onQuickStart,
 }: TemplateQuickStartProps) {
   const navigate = useNavigate();
+  const handleTemplates = useCallback(() => navigate('/templates'), [navigate]);
 
   return (
     <div
@@ -109,7 +110,7 @@ export const TemplateQuickStart = memo(function TemplateQuickStart({
       >
         התחל אימון
       </FSButton>
-      <FSButton onClick={() => navigate('/templates')} variant="secondary" ariaLabel="תבניות">
+      <FSButton onClick={handleTemplates} variant="secondary" ariaLabel="תבניות">
         תבניות
       </FSButton>
     </div>
@@ -177,10 +178,27 @@ interface TemplateStripProps {
   onNavigate: (path: string) => void;
 }
 
+/** Wrapper that creates a stable onClick for each TemplateItem */
+const TemplateItemWithNav = memo(function TemplateItemWithNav({
+  template,
+  onNavigate,
+}: {
+  template: WorkoutTemplate;
+  onNavigate: (path: string) => void;
+}) {
+  const handleClick = useCallback(
+    () => onNavigate(`/workout/${template.id}`),
+    [onNavigate, template.id]
+  );
+  return <TemplateItem template={template} onClick={handleClick} />;
+});
+
 export const TemplateStrip = memo(function TemplateStrip({
   templates,
   onNavigate,
 }: TemplateStripProps) {
+  const handleShowAll = useCallback(() => onNavigate('/templates'), [onNavigate]);
+
   if (templates.length === 0) return null;
 
   return (
@@ -195,12 +213,12 @@ export const TemplateStrip = memo(function TemplateStrip({
       className="no-scrollbar"
     >
       {templates.slice(0, 5).map((t) => (
-        <TemplateItem key={t.id} template={t} onClick={() => onNavigate(`/workout/${t.id}`)} />
+        <TemplateItemWithNav key={t.id} template={t} onNavigate={onNavigate} />
       ))}
       {templates.length > 5 && (
         <button
           type="button"
-          onClick={() => onNavigate('/templates')}
+          onClick={handleShowAll}
           style={{
             display: 'inline-flex',
             alignItems: 'center',

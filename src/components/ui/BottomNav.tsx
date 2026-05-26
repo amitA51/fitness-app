@@ -1,31 +1,47 @@
-import { Dumbbell, LayoutDashboard, Settings, TrendingUp, UtensilsCrossed } from 'lucide-react';
+import {
+  ClipboardList,
+  Dumbbell,
+  LayoutDashboard,
+  TrendingUp,
+  UtensilsCrossed,
+} from 'lucide-react';
+import { memo, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { prefetchRoute } from '../../utils/routePrefetch';
 
 const NAV_ITEMS = [
   { path: '/', label: 'בית', icon: LayoutDashboard },
   { path: '/workout', label: 'אימון', icon: Dumbbell },
+  { path: '/history', label: 'היסטוריה', icon: ClipboardList },
   { path: '/progress', label: 'התקדמות', icon: TrendingUp },
   { path: '/nutrition', label: 'תזונה', icon: UtensilsCrossed },
-  { path: '/settings', label: 'הגדרות', icon: Settings },
 ] as const;
 
-export default function BottomNav() {
+export default memo(function BottomNav() {
   const location = useLocation();
 
   // Determine active path for keying the pill entrance animation
-  const activePath = NAV_ITEMS.find(({ path }) =>
-    path === '/'
-      ? location.pathname === path
-      : location.pathname === path || location.pathname.startsWith(`${path}/`)
-  )?.path;
+  const activePath = useMemo(
+    () =>
+      NAV_ITEMS.find(({ path }) =>
+        path === '/'
+          ? location.pathname === path
+          : location.pathname === path || location.pathname.startsWith(`${path}/`)
+      )?.path,
+    [location.pathname]
+  );
 
   return (
     <nav
       aria-label="ניווט ראשי"
-      className="glass-surface fixed bottom-0 inset-x-0 z-nav safe-area-bottom"
+      className="fixed bottom-0 inset-x-0 z-nav safe-area-bottom"
       style={{
         contain: 'layout style paint',
+        background: 'var(--nav-bg)',
+        backdropFilter: 'blur(20px) saturate(1.4)',
+        WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+        borderTop: '1px solid var(--nav-border)',
+        boxShadow: 'var(--nav-shadow)',
       }}
     >
       <ul className="flex justify-around items-center h-16 max-w-md mx-auto px-1">
@@ -72,24 +88,26 @@ export default function BottomNav() {
                 {isActive ? (
                   <span
                     key={activePath}
-                    className="accent-glow scale-pop-in relative z-10 inline-flex flex-col items-center justify-center gap-0.5"
+                    className="scale-pop-in relative z-10 inline-flex flex-col items-center justify-center gap-0.5"
                     style={{
                       borderRadius: 999,
-                      background: 'var(--fs-primary)',
-                      color: '#fff',
-                      padding: '6px 12px',
+                      background: 'var(--nav-pill-bg)',
+                      color: 'var(--nav-pill-text)',
+                      padding: '6px 14px',
+                      boxShadow: 'var(--nav-pill-shadow)',
+                      transition: 'background 0.2s ease, box-shadow 0.2s ease',
                     }}
                   >
                     <Icon
-                      size={22}
+                      size={20}
                       strokeWidth={2.2}
                       className="transition-colors"
-                      style={{ color: '#fff' }}
+                      style={{ color: 'var(--nav-pill-text)' }}
                       aria-hidden="true"
                     />
                     <span
                       className="font-mono text-[10px] font-semibold leading-none uppercase transition-colors inline-flex items-center gap-1"
-                      style={{ color: '#fff', letterSpacing: '0.08em' }}
+                      style={{ color: 'var(--nav-pill-text)', letterSpacing: '0.08em' }}
                     >
                       <span className="breathing-dot" aria-hidden="true" />
                       {label}
@@ -98,16 +116,16 @@ export default function BottomNav() {
                 ) : (
                   <span className="relative z-10 inline-flex flex-col items-center justify-center gap-0.5">
                     <Icon
-                      size={22}
-                      strokeWidth={1.8}
+                      size={20}
+                      strokeWidth={1.6}
                       className="transition-colors"
-                      style={{ color: 'rgba(var(--text-on-navy-rgb), 0.65)' }}
+                      style={{ color: 'var(--nav-icon-inactive)' }}
                       aria-hidden="true"
                     />
                     <span
-                      className="font-mono text-[10px] font-semibold leading-none uppercase transition-colors"
+                      className="font-mono text-[10px] font-medium leading-none uppercase transition-colors"
                       style={{
-                        color: 'rgba(var(--text-on-navy-rgb), 0.65)',
+                        color: 'var(--nav-label-inactive)',
                         letterSpacing: '0.08em',
                       }}
                     >
@@ -122,4 +140,4 @@ export default function BottomNav() {
       </ul>
     </nav>
   );
-}
+});

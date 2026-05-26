@@ -179,7 +179,7 @@ export interface ExercisePR {
   id: string;
   exerciseId: string;
   date: string;
-  type: 'weight' | 'reps' | 'volume';
+  type: 'weight' | '1rm' | 'reps' | 'volume';
   value: number;
   reps: number;
   weight: number;
@@ -501,7 +501,7 @@ export interface PersonalRecord {
   date: string;
   weight: number;
   reps: number;
-  type: 'weight' | 'reps' | 'volume';
+  type: 'weight' | '1rm' | 'reps' | 'volume';
   value?: number; // volume = weight × reps (for volume PRs)
   maxWeight?: number; // optional max weight for volume PRs
   maxWeightReps?: number; // reps at max weight

@@ -2,9 +2,9 @@
 // Sharp corners · Navy header · Bone body
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
+import { Trash as TrashIcon } from 'lucide-react';
 import type React from 'react';
 import type { PersonalExercise } from '../../../types';
-import { TrashIcon } from '../../icons';
 
 interface DeleteConfirmDialogProps {
   exercise: PersonalExercise | null;
@@ -64,7 +64,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
             fontSize: 20,
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
             marginBottom: 8,
           }}
         >
@@ -115,7 +115,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
               fontSize: 13,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               minHeight: 48,
             }}
           >

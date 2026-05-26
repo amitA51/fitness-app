@@ -30,6 +30,15 @@ const EXTRA_HEADERS: Record<string, string> = {
 };
 
 const DEFAULT_MODEL = 'openai/gpt-oss-120b:free';
+
+// Allowlist of models that clients are permitted to request. Any model not in
+// this list is silently replaced with DEFAULT_MODEL to prevent a malicious
+// caller from specifying an expensive paid model and burning quota.
+const ALLOWED_MODELS: readonly string[] = [
+  'openai/gpt-oss-120b:free',
+  'google/gemini-2.0-flash-exp:free',
+  'openai/gpt-4o-mini',
+];
 const DEFAULT_TEMPERATURE = 0.7;
 const DEFAULT_MAX_TOKENS = 1024;
 
@@ -106,23 +115,141 @@ function decodeJwtPayload(token: string): JwtPayload | null {
  * additionally reject anon role and expired tokens so we never burn the
  * provider quota for an unauthenticated client.
  */
-function authorize(req: Request): { error: null } | { error: string } {
+function authorize(
+  req: Request
+): { error: null; userId: string } | { error: string; userId: null } {
   const header = req.headers.get('authorization') ?? req.headers.get('Authorization') ?? '';
   if (!header.toLowerCase().startsWith('bearer ')) {
-    return { error: 'missing Authorization bearer token' };
+    return { error: 'missing Authorization bearer token', userId: null };
   }
   const token = header.slice(7).trim();
-  if (!token) return { error: 'empty bearer token' };
+  if (!token) return { error: 'empty bearer token', userId: null };
 
   const payload = decodeJwtPayload(token);
-  if (!payload) return { error: 'malformed JWT' };
-  if (payload.role === 'anon') return { error: 'anonymous calls not allowed' };
+  if (!payload) return { error: 'malformed JWT', userId: null };
+  if (payload.role === 'anon') return { error: 'anonymous calls not allowed', userId: null };
   if (typeof payload.exp === 'number' && payload.exp * 1000 < Date.now()) {
-    return { error: 'token expired' };
+    return { error: 'token expired', userId: null };
   }
-  if (!payload.sub) return { error: 'token missing sub' };
+  if (!payload.sub) return { error: 'token missing sub', userId: null };
 
-  return { error: null };
+  return { error: null, userId: payload.sub };
+}
+
+// ----------------------------------------------------------------------------
+// RATE LIMITING — Deno KV with per-user minute + daily buckets
+// ----------------------------------------------------------------------------
+
+const RATE_LIMIT_PER_MIN = 10;
+const RATE_LIMIT_PER_DAY = 100;
+const MIN_BUCKET_TTL_MS = 120_000; // 2 min — covers 1-min window + clock skew
+const DAY_BUCKET_TTL_MS = 90_000_000; // 25h — covers 24h window + clock skew
+
+interface RateLimitDecision {
+  allowed: boolean;
+  retryAfterSeconds: number;
+  bucket: 'minute' | 'day' | null;
+}
+
+async function checkRateLimit(userId: string): Promise<RateLimitDecision> {
+  // @ts-expect-error Deno namespace not declared in TS lib
+  let kv: Deno.Kv;
+  try {
+    // @ts-expect-error Deno global
+    kv = await Deno.openKv();
+  } catch (e) {
+    // If KV is unavailable on this plan, fail OPEN — log but do not block real
+    // users. Operators should either upgrade or add an ai_rate_limits table
+    // (see project security notes).
+    // @ts-expect-error Deno global
+    console.warn('[ai-chat] Deno.openKv unavailable, skipping rate limit', e);
+    return { allowed: true, retryAfterSeconds: 0, bucket: null };
+  }
+
+  const now = Date.now();
+  const minuteEpoch = Math.floor(now / 60_000);
+  const dayEpoch = Math.floor(now / 86_400_000);
+
+  const minKey = ['rate', userId, 'min', minuteEpoch];
+  const dayKey = ['rate', userId, 'day', dayEpoch];
+
+  // Read current counters.
+  const [minEntry, dayEntry] = await kv.getMany([minKey, dayKey]);
+
+  const minCount = Number((minEntry.value as { value?: bigint } | null)?.value ?? 0n);
+  const dayCount = Number((dayEntry.value as { value?: bigint } | null)?.value ?? 0n);
+
+  if (minCount >= RATE_LIMIT_PER_MIN) {
+    const retryAfterSeconds = Math.max(1, 60 - Math.floor((now % 60_000) / 1000));
+    return { allowed: false, retryAfterSeconds, bucket: 'minute' };
+  }
+
+  if (dayCount >= RATE_LIMIT_PER_DAY) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((86_400_000 - (now % 86_400_000)) / 1000));
+    return { allowed: false, retryAfterSeconds, bucket: 'day' };
+  }
+
+  // Atomic increment of both counters.
+  try {
+    await kv
+      .atomic()
+      // @ts-expect-error Deno.KvU64 sum
+      .sum(minKey, 1n)
+      // @ts-expect-error Deno.KvU64 sum
+      .sum(dayKey, 1n)
+      .commit();
+  } catch {
+    // Fallback: best-effort non-atomic write if sum() unsupported.
+    try {
+      // @ts-expect-error Deno.KvU64 constructor
+      await kv.set(minKey, new Deno.KvU64(BigInt(minCount + 1)), { expireIn: MIN_BUCKET_TTL_MS });
+      // @ts-expect-error Deno.KvU64 constructor
+      await kv.set(dayKey, new Deno.KvU64(BigInt(dayCount + 1)), { expireIn: DAY_BUCKET_TTL_MS });
+    } catch {
+      /* swallow — never block real users on KV outage */
+    }
+  }
+
+  // Best-effort TTL refresh — set expiry only when the bucket is fresh so the
+  // entry self-evicts after the window closes.
+  if (minCount === 0) {
+    try {
+      // @ts-expect-error Deno.KvU64 + expireIn
+      await kv.set(minKey, new Deno.KvU64(BigInt(minCount + 1)), { expireIn: MIN_BUCKET_TTL_MS });
+    } catch {
+      /* sum() already incremented — ignore */
+    }
+  }
+  if (dayCount === 0) {
+    try {
+      // @ts-expect-error Deno.KvU64 + expireIn
+      await kv.set(dayKey, new Deno.KvU64(BigInt(dayCount + 1)), { expireIn: DAY_BUCKET_TTL_MS });
+    } catch {
+      /* sum() already incremented — ignore */
+    }
+  }
+
+  return { allowed: true, retryAfterSeconds: 0, bucket: null };
+}
+
+function rateLimitResponse(req: Request, decision: RateLimitDecision): Response {
+  const minutes = Math.max(1, Math.ceil(decision.retryAfterSeconds / 60));
+  return new Response(
+    JSON.stringify({
+      error: 'rate_limit_exceeded',
+      error_hebrew: `חרגת ממכסת הבקשות, נסה שוב בעוד ${minutes} דקות`,
+      retry_after: decision.retryAfterSeconds,
+      bucket: decision.bucket,
+    }),
+    {
+      status: 429,
+      headers: {
+        ...buildCorsHeaders(req),
+        'Content-Type': 'application/json',
+        'Retry-After': String(decision.retryAfterSeconds),
+      },
+    }
+  );
 }
 
 // ----------------------------------------------------------------------------
@@ -153,6 +280,9 @@ function validateRequest(body: unknown): ChatRequest | string {
       return `invalid role: ${msg.role}`;
     }
     if (typeof msg.content !== 'string') return 'message.content must be a string';
+    if (msg.content.length > 4000) {
+      return `message content exceeds 4000 characters (got ${msg.content.length})`;
+    }
   }
   return {
     messages: b.messages as ChatMessage[],
@@ -181,6 +311,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const authResult = authorize(req);
   if (authResult.error !== null) {
     return errorResponse(req, 'unauthorized', authResult.error, 401);
+  }
+
+  // Per-user rate limiting (Deno KV): caps each user at 10 req/min and
+  // 100 req/day before we ever spend OpenRouter budget on them.
+  const rateDecision = await checkRateLimit(authResult.userId);
+  if (!rateDecision.allowed) {
+    return rateLimitResponse(req, rateDecision);
   }
 
   // Enforce a sane body size cap (defense against giant message arrays).
@@ -213,8 +350,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return errorResponse(req, 'bad_request', parsed, 400);
   }
 
+  // Enforce the model allowlist: use the client-supplied model only when it is
+  // explicitly permitted; fall back to the default for anything else.
+  const model =
+    parsed.model !== undefined && ALLOWED_MODELS.includes(parsed.model)
+      ? parsed.model
+      : DEFAULT_MODEL;
+
   const payload = {
-    model: parsed.model || DEFAULT_MODEL,
+    model,
     messages: parsed.messages,
     temperature: parsed.temperature ?? DEFAULT_TEMPERATURE,
     max_tokens: parsed.maxTokens ?? DEFAULT_MAX_TOKENS,

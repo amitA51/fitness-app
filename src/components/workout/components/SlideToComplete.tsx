@@ -13,10 +13,10 @@ interface SlideToCompleteProps {
   disabled?: boolean;
 }
 
-const THUMB_SIZE = 48;
-const TRACK_HEIGHT = 56;
+const THUMB_SIZE = 60;
+const TRACK_HEIGHT = 68;
 const TRACK_PAD = 4;
-const THRESHOLD = 0.85;
+const THRESHOLD = 0.75;
 
 const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disabled }) => {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -153,8 +153,8 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
         style={{
           fontFamily: 'var(--font-mono)',
           fontWeight: 700,
-          fontSize: 13,
-          letterSpacing: '0.12em',
+          fontSize: 15,
+          letterSpacing: '0.10em',
           textTransform: 'uppercase',
           color: 'var(--fs-accent)',
           opacity: 1 - progress * 0.85,

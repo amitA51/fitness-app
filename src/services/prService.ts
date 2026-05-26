@@ -134,7 +134,7 @@ const diffSetAgainstPRs = (
   const weightPR = existingPRs.find((pr) => pr.type === 'weight');
   if (!weightPR || weight > weightPR.weight) {
     newPR = {
-      id: `pr-${exerciseId}-weight-${Date.now()}`,
+      id: crypto.randomUUID(),
       exerciseId,
       exerciseName,
       date: new Date().toISOString(),
@@ -157,7 +157,7 @@ const diffSetAgainstPRs = (
     : 0;
   if (!volumePR || volume > existingVolume) {
     const pr: PersonalRecord = {
-      id: `pr-${exerciseId}-volume-${Date.now()}`,
+      id: crypto.randomUUID(),
       exerciseId,
       exerciseName,
       date: new Date().toISOString(),
@@ -176,7 +176,7 @@ const diffSetAgainstPRs = (
   const weightThreshold = (weightPR?.weight || 0) * 0.85;
   if (weight >= weightThreshold && (!repsPR || reps > (repsPR.reps || 0))) {
     const pr: PersonalRecord = {
-      id: `pr-${exerciseId}-reps-${Date.now()}`,
+      id: crypto.randomUUID(),
       exerciseId,
       exerciseName,
       date: new Date().toISOString(),
@@ -369,7 +369,7 @@ export const calculatePRsFromHistory = (
           const existing = prMap.get(`${key}-weight`);
           if (!existing || set.weight > existing.weight) {
             prMap.set(`${key}-weight`, {
-              id: `pr-${key}-weight-${Date.now()}`,
+              id: crypto.randomUUID(),
               exerciseId: key,
               exerciseName: exercise.exerciseName || 'Unknown',
               date: session.date || session.startTime,
@@ -386,7 +386,7 @@ export const calculatePRsFromHistory = (
           const existing = prMap.get(`${key}-volume`);
           if (!existing || volume > (existing.value ?? 0)) {
             prMap.set(`${key}-volume`, {
-              id: `pr-${key}-volume-${Date.now()}`,
+              id: crypto.randomUUID(),
               exerciseId: key,
               exerciseName: exercise.exerciseName || 'Unknown',
               date: session.date || session.startTime,

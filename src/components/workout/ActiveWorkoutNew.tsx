@@ -20,6 +20,10 @@ import { WorkoutProvider } from './core/WorkoutProvider';
 import { ExerciseDisplay, ExerciseNav, ProgressBar, WorkoutHeader } from './components';
 // Inline editorial rest strip (small — imported normally)
 import InlineRestTimer from './components/InlineRestTimer';
+// Slide-to-complete CTA pinned to bottom of workout shell (above safe-area)
+import SlideToComplete from './components/SlideToComplete';
+// Aria-live announcer for screen readers (set complete, rest start/end, PRs)
+import WorkoutAriaLive from './components/WorkoutAriaLive';
 
 // Overlays (lazy - loaded on demand)
 const NumpadOverlay = React.lazy(() => import('./overlays/NumpadOverlay'));
@@ -63,7 +67,7 @@ import {
   getWorkoutTemplates,
   saveWorkoutSession,
 } from '../../services/dataService';
-import { getExerciseNames } from '../../services/prService';
+// Exercise names derived from personalExercises loaded below (getExerciseNames removed — was broken)
 import { createWorkoutSet } from '../../types';
 
 import { playSuccess } from '../../utils/audio';
@@ -85,6 +89,9 @@ interface ActiveWorkoutProps {
 
 // Note: ParticleExplosion and EmptyWorkoutState moved to separate files
 // for better code organization and maintainability
+
+// Stable empty array to avoid re-creating [] on every render
+const emptyStringArray: string[] = [];
 
 // ============================================================
 // MAIN WORKOUT CONTENT
@@ -109,7 +116,7 @@ export const WorkoutContent: React.FC<{
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [finishIntent, setFinishIntent] = useState<'finish' | 'cancel'>('finish');
 
-  const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
+  const [nameSuggestions, setNameSuggestions] = useState<string[]>(emptyStringArray);
   const [personalExerciseLibrary, setPersonalExerciseLibrary] = useState<PersonalExercise[]>([]);
   const [showWaterReminder, setShowWaterReminder] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -125,6 +132,11 @@ export const WorkoutContent: React.FC<{
   // Settings
   const workoutSettings: Partial<WorkoutSettings> = state.appSettings?.workoutSettings || {};
 
+  // Extract primitives passed as props so child memo() is not broken by
+  // the workoutSettings object reference changing on every state tick.
+  const enableQuickWeightButtons = !!workoutSettings.enableQuickWeightButtons;
+  const enableQuickRepsButtons = !!workoutSettings.enableQuickRepsButtons;
+
   // PR tracking
   const { getPRForExercise } = usePersonalRecords(state.exercises, state.currentExerciseIndex);
 
@@ -133,6 +145,11 @@ export const WorkoutContent: React.FC<{
   // Settings hooks
   const { keepScreenAwake, announceSetComplete } = useWorkoutSettings();
   const displaySettings = useDisplaySettings();
+
+  // Stabilize display setting primitives so child memo() holds when the
+  // settings object reference changes but values are identical.
+  const showGhostValues = displaySettings.showGhostValues;
+  const showVolumePreview = displaySettings.showVolumePreview;
 
   // Apply accessibility settings (this hook has side effects that apply to document)
   useAccessibilitySettings();
@@ -187,16 +204,15 @@ export const WorkoutContent: React.FC<{
           getWorkoutSessions(100),
           getPersonalExercises().catch(() => []),
         ]);
-        const historyNames = getExerciseNames();
         const libraryNames = Array.from(
-          new Set((personalExercises as PersonalExercise[]).map((ex) => ex.name).filter(Boolean))
+          new Set(
+            (personalExercises as PersonalExercise[])
+              .map((ex) => ex.name)
+              .filter((n): n is string => !!n)
+          )
         );
         setPersonalExerciseLibrary(personalExercises as PersonalExercise[]);
-        setNameSuggestions(
-          Array.from(new Set([...historyNames, ...libraryNames]))
-            .filter((n): n is string => !!n)
-            .sort()
-        );
+        setNameSuggestions(libraryNames.sort());
       } catch {
         // Silently handle name suggestion loading errors
       }
@@ -331,6 +347,14 @@ export const WorkoutContent: React.FC<{
 
     return () => clearInterval(interval);
   }, [workoutSettings.waterReminderEnabled, workoutSettings.waterReminderInterval]);
+
+  // Stable nextSetHint string for InlineRestTimer
+  const nextSetHint = useMemo(() => {
+    if (derived.activeSetIndex >= 0) {
+      return `NEXT · SET ${String(derived.activeSetIndex + 1).padStart(2, '0')}`;
+    }
+    return undefined;
+  }, [derived.activeSetIndex]);
 
   // PR info for current exercise
   const prInfo = useMemo(() => {
@@ -629,9 +653,13 @@ export const WorkoutContent: React.FC<{
     dispatch({ type: 'CLOSE_NUMPAD' });
   }, [dispatch]);
 
-  const handleToggleSettings = useCallback(
-    (show: boolean) => {
-      dispatch({ type: 'TOGGLE_SETTINGS', payload: show });
+  const handleCloseSettings = useCallback(() => {
+    dispatch({ type: 'TOGGLE_SETTINGS', payload: false });
+  }, [dispatch]);
+
+  const handleUpdateSetting = useCallback(
+    (key: string, value: unknown) => {
+      dispatch({ type: 'UPDATE_SETTINGS', payload: { [key]: value } });
     },
     [dispatch]
   );
@@ -679,7 +707,23 @@ export const WorkoutContent: React.FC<{
     dispatch({ type: 'CLOSE_QUICK_FORM' });
   }, [dispatch]);
 
+  const handleCancelFinish = useCallback(() => {
+    setShowFinishConfirm(false);
+    setSaveError(null);
+  }, []);
+
+  const handleCooldownFromFinish = useCallback(() => {
+    setShowFinishConfirm(false);
+    dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'cooldown', isOpen: true } });
+  }, [dispatch]);
+
+  const handleCloseGoalSelector = useCallback(() => {
+    dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'goal', isOpen: false } });
+  }, [dispatch]);
+
   const handleConfirmFinish = useCallback(async () => {
+    // Guard against double-tap while a save is already in-flight
+    if (isSaving) return;
     if (finishIntent === 'cancel') {
       setShowFinishConfirm(false);
       setSaveError(null);
@@ -823,7 +867,7 @@ export const WorkoutContent: React.FC<{
     } finally {
       setIsSaving(false);
     }
-  }, [finishIntent, state, workoutSettings.defaultWorkoutGoal, onExit]);
+  }, [finishIntent, isSaving, state, workoutSettings.defaultWorkoutGoal, onExit, item?.id]);
 
   // If showing summary
   if (showSummary && completedSession) {
@@ -836,7 +880,7 @@ export const WorkoutContent: React.FC<{
           >
             <div
               style={{
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 fontFamily: 'var(--font-mono)',
                 letterSpacing: '0.18em',
                 textTransform: 'uppercase',
@@ -951,70 +995,75 @@ export const WorkoutContent: React.FC<{
       className={cn(
         'relative flex flex-col h-dvh font-sans transition-colors duration-500 ambient-mesh ambient-mesh-soft'
       )}
-      style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
+      style={{
+        background: 'var(--fs-bg)',
+        color: 'var(--fs-ink)',
+        paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+      }}
     >
       {/* Progress Bar */}
       <ProgressBar progress={derived.progressPercent} />
 
+      {/* Screen-reader announcements for workout events */}
+      <WorkoutAriaLive />
+
       {/* Main Content - Fresh Steel Compact Layout */}
-      <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
-        {/* Header */}
-        <WorkoutHeader
-          startTimestamp={state.startTimestamp}
-          totalPausedTime={state.totalPausedTime}
-          isPaused={state.isPaused}
-          currentExerciseName={derived.currentExercise.name}
-          onFinish={handleFinishRequest}
-          onDiscard={handleDiscardRequest}
-          onOpenSettings={handleOpenSettings}
-          onOpenTutorial={handleOpenTutorial}
-        />
-
-        {/* Superset Mode Indicator */}
-        {supersetMode && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '4px 14px',
-              background: 'var(--fs-accent)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: '0.12em',
-              color: '#FFFFFF',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-            }}
-          >
-            <span>SUPERSET · בחר תרגיל שני</span>
-            <span>2 / 2</span>
-          </div>
-        )}
-
-        {/* Inline Rest Timer */}
-        {state.restTimer.active && (
-          <InlineRestTimer
-            active={state.restTimer.active}
-            endTime={state.restTimer.endTime}
-            onSkip={handleSkipRest}
-            onAddTime={handleAddRestTime}
-            nextSetHint={
-              derived.activeSetIndex >= 0
-                ? `NEXT · SET ${String(derived.activeSetIndex + 1).padStart(2, '0')}`
-                : undefined
-            }
+      <div className="relative z-10 flex flex-col flex-1 min-h-0 overflow-hidden">
+        {/* Header (pinned) */}
+        <div className="flex-shrink-0">
+          <WorkoutHeader
+            startTimestamp={state.startTimestamp}
+            totalPausedTime={state.totalPausedTime}
+            isPaused={state.isPaused}
+            onFinish={handleFinishRequest}
+            onDiscard={handleDiscardRequest}
+            onOpenSettings={handleOpenSettings}
+            onOpenTutorial={handleOpenTutorial}
+            isSaving={isSaving}
           />
-        )}
 
-        {/* Exercise Display - fills remaining space */}
+          {/* Superset Mode Indicator */}
+          {supersetMode && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '4px 14px',
+                background: 'var(--fs-accent)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.12em',
+                color: 'var(--fs-heading)',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+              }}
+            >
+              <span>SUPERSET · בחר תרגיל שני</span>
+              <span>2 / 2</span>
+            </div>
+          )}
+
+          {/* Inline Rest Timer */}
+          {state.restTimer.active && (
+            <InlineRestTimer
+              active={state.restTimer.active}
+              endTime={state.restTimer.endTime}
+              onSkip={handleSkipRest}
+              onAddTime={handleAddRestTime}
+              nextSetHint={nextSetHint}
+            />
+          )}
+        </div>
+
+        {/* Scrollable middle: exercise content (slide is lifted out below) */}
         <div
-          className="flex-1 flex items-stretch"
+          className="flex-1 min-h-0 flex items-stretch overflow-y-auto"
           onPointerDown={handleSwipePointerDown}
           onPointerMove={handleSwipePointerMove}
           onPointerUp={handleSwipePointerEnd}
           onPointerCancel={handleSwipePointerEnd}
-          style={{ touchAction: 'pan-y', overflow: 'hidden' }}
+          style={{ touchAction: 'pan-y', overscrollBehavior: 'contain' }}
         >
           <ExerciseDisplay
             exercise={derived.currentExercise}
@@ -1030,24 +1079,40 @@ export const WorkoutContent: React.FC<{
             onUpdateRPE={handleUpdateRPE}
             onUpdateNotes={handleUpdateNotes}
             onUndo={handleUndoSet}
-            showGhostValues={displaySettings.showGhostValues}
-            showVolumePreview={displaySettings.showVolumePreview}
-            enableQuickWeightButtons={workoutSettings.enableQuickWeightButtons as boolean}
-            enableQuickRepsButtons={workoutSettings.enableQuickRepsButtons as boolean}
+            showGhostValues={showGhostValues}
+            showVolumePreview={showVolumePreview}
+            enableQuickWeightButtons={enableQuickWeightButtons}
+            enableQuickRepsButtons={enableQuickRepsButtons}
             supersetGroups={state.supersetGroups}
             onCreateSuperset={handleCreateSuperset}
             onToggleTechnique={handleToggleTechnique}
             onOpenPlateCalc={handleOpenPlateCalc}
+            hideSlideButton
           />
         </div>
 
-        {/* Navigation Footer */}
-        <div className="w-full" style={{ background: 'var(--fs-bg)' }}>
+        {/* Navigation Footer (pinned above slide CTA) */}
+        <div className="w-full flex-shrink-0" style={{ background: 'var(--fs-bg)' }}>
           <ExerciseNav
             exercises={state.exercises}
             currentIndex={state.currentExerciseIndex}
             onChangeExercise={handleChangeExercise}
             onOpenDrawer={handleOpenDrawer}
+          />
+        </div>
+
+        {/* SlideToComplete pinned at very bottom (thumb-zone CTA) */}
+        <div
+          className="w-full flex-shrink-0"
+          style={{
+            background: 'var(--fs-bg)',
+            padding: '0 14px 12px',
+          }}
+        >
+          <SlideToComplete
+            label="החלק לסימון סט כבוצע"
+            onComplete={handleCompleteSet}
+            disabled={false}
           />
         </div>
       </div>
@@ -1085,32 +1150,21 @@ export const WorkoutContent: React.FC<{
           intent={finishIntent}
           workoutStats={workoutStats}
           onConfirm={handleConfirmFinish}
-          onCancel={() => {
-            setShowFinishConfirm(false);
-            setSaveError(null);
-          }}
-          onCooldown={() => {
-            setShowFinishConfirm(false);
-            dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'cooldown', isOpen: true } });
-          }}
+          onCancel={handleCancelFinish}
+          onCooldown={handleCooldownFromFinish}
           isSaving={isSaving}
           saveError={saveError}
         />
       </React.Suspense>
 
       {/* Settings Overlay */}
-      <OverlayErrorBoundary
-        fallbackLabel="שגיאה בהגדרות"
-        onDismiss={() => handleToggleSettings(false)}
-      >
+      <OverlayErrorBoundary fallbackLabel="שגיאה בהגדרות" onDismiss={handleCloseSettings}>
         <React.Suspense fallback={<OverlayLoader />}>
           <WorkoutSettingsOverlay
             isOpen={state.showSettings}
             settings={workoutSettings}
-            onClose={() => handleToggleSettings(false)}
-            onUpdateSetting={(key, value) =>
-              dispatch({ type: 'UPDATE_SETTINGS', payload: { [key]: value } })
-            }
+            onClose={handleCloseSettings}
+            onUpdateSetting={handleUpdateSetting}
           />
         </React.Suspense>
       </OverlayErrorBoundary>
@@ -1153,12 +1207,7 @@ export const WorkoutContent: React.FC<{
       {/* Goal Selector */}
       {state.showGoalSelector && (
         <React.Suspense fallback={null}>
-          <WorkoutGoalSelector
-            onSelect={(goal: WorkoutGoal) => handleGoalSelect(goal)}
-            onClose={() =>
-              dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'goal', isOpen: false } })
-            }
-          />
+          <WorkoutGoalSelector onSelect={handleGoalSelect} onClose={handleCloseGoalSelector} />
         </React.Suspense>
       )}
 
@@ -1244,6 +1293,9 @@ export const WorkoutContent: React.FC<{
 
       {/* Global Toast Notifications */}
       <ToastContainer />
+
+      {/* Saving overlay (blocks interactions + signals progress) */}
+      {isSaving && <OverlayLoader />}
     </div>
   );
 };

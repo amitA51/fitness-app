@@ -102,14 +102,14 @@ class WorkoutErrorBoundary extends Component<Props, State> {
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-            className="w-20 h-20 rounded-full bg-[#FF453A]/20 flex items-center justify-center mb-6"
+            className="w-20 h-20 rounded-full bg-[var(--color-error-fg)]/20 flex items-center justify-center mb-6"
           >
             <svg
               width="40"
               height="40"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#FF453A"
+              stroke="var(--color-error-fg)"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"

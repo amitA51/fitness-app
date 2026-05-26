@@ -22,7 +22,7 @@ export const Badge = memo<BadgeProps>(({ children, variant = 'accent', icon }) =
       case 'accent':
         return {
           bg: 'var(--color-primary-subtle)',
-          color: 'var(--color-primary)',
+          color: 'var(--fs-accent)',
           shadow: '0 0 12px var(--color-primary-glow)',
         };
       case 'secondary':

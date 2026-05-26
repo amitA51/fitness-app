@@ -6,6 +6,46 @@
 import type { Session, User } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { logger } from '../utils/logger';
+import { STORES, dbClear } from './indexedDBCore';
+
+/**
+ * Stores that hold user-scoped data and must be cleared on sign-out
+ * to prevent cross-user leakage on shared devices.
+ */
+const USER_SCOPED_STORES: readonly string[] = [
+  STORES.WORKOUT_SESSIONS,
+  STORES.WORKOUT_TEMPLATES,
+  STORES.PERSONAL_RECORDS,
+  STORES.BODY_MEASUREMENTS,
+  STORES.BODY_WEIGHT,
+  STORES.RECOVERY_LOGS,
+  STORES.NUTRITION_LOGS,
+  STORES.WATER_LOGS,
+  STORES.AI_CONVERSATIONS,
+  STORES.PERSONAL_ITEMS,
+  STORES.PERSONAL_EXERCISES,
+  STORES.USER_SETTINGS,
+  STORES.PENDING_SYNC,
+];
+
+/**
+ * Exact localStorage keys holding user-scoped state. Cleared on sign-out.
+ */
+const USER_SCOPED_LS_KEYS: readonly string[] = [
+  'active_workout_v3_state',
+  'onboarding_data',
+  'user_profile',
+  'supabase_session',
+  'nutrition_goals',
+  'workout_prefs',
+  'last_sync_time',
+  'notification_settings',
+];
+
+/**
+ * Prefixes for dynamic per-feature localStorage keys (e.g. ai_tutorial_<exercise>).
+ */
+const USER_SCOPED_LS_KEY_PREFIXES: readonly string[] = ['ai_tutorial_'];
 
 export type AuthCallback = (session: Session | null) => void;
 export type AuthUserCallback = (user: User | null) => void;
@@ -186,14 +226,79 @@ export const signInWithGoogle = async (): Promise<{ user: User | null; error: st
   return { user: null, error: null }; // OAuth doesn't return user directly
 };
 
-export const signOut = async (): Promise<void> => {
-  if (!isSupabaseConfigured() || !supabase) return;
-
-  const { error } = await supabase.auth.signOut();
-  if (error) {
-    logger.auth.error('Sign out error', error);
+/**
+ * Clear user-scoped local data so the next user on the same device cannot see
+ * the previous user's records. Best-effort: each step is wrapped in try/catch
+ * so a single failure does not prevent the overall sign-out from completing.
+ */
+const clearUserScopedLocalData = async (): Promise<void> => {
+  // 1. IndexedDB stores
+  for (const store of USER_SCOPED_STORES) {
+    try {
+      await dbClear(store);
+    } catch (err) {
+      logger.app.warn(`signOut cleanup: failed to clear IDB store "${store}"`, err);
+    }
   }
-  localStorage.removeItem('supabase_session');
+
+  // 2. Known localStorage keys
+  for (const key of USER_SCOPED_LS_KEYS) {
+    try {
+      localStorage.removeItem(key);
+    } catch (err) {
+      logger.app.warn(`signOut cleanup: failed to remove localStorage key "${key}"`, err);
+    }
+  }
+
+  // 3. Prefixed dynamic localStorage keys (e.g. ai_tutorial_*)
+  try {
+    const matched: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k) continue;
+      if (USER_SCOPED_LS_KEY_PREFIXES.some((prefix) => k.startsWith(prefix))) {
+        matched.push(k);
+      }
+    }
+    for (const k of matched) {
+      try {
+        localStorage.removeItem(k);
+      } catch (err) {
+        logger.app.warn(`signOut cleanup: failed to remove localStorage key "${k}"`, err);
+      }
+    }
+  } catch (err) {
+    logger.app.warn('signOut cleanup: failed to enumerate localStorage', err);
+  }
+};
+
+export const signOut = async (): Promise<void> => {
+  if (!isSupabaseConfigured() || !supabase) {
+    // Even when Supabase is not configured, still clear any local data
+    // so a manual sign-out from offline mode behaves predictably.
+    await clearUserScopedLocalData();
+    return;
+  }
+
+  // Clear local data BEFORE calling Supabase signOut so that if the network
+  // call hangs or fails, the device is already wiped.
+  await clearUserScopedLocalData();
+
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      logger.auth.error('Sign out error', error);
+    }
+  } catch (err) {
+    logger.auth.error('Sign out threw', err);
+  }
+
+  // Final defensive removal in case Supabase re-wrote the session token.
+  try {
+    localStorage.removeItem('supabase_session');
+  } catch (err) {
+    logger.app.warn('signOut: final supabase_session removal failed', err);
+  }
 };
 
 export const resetPassword = async (email: string): Promise<{ error: string | null }> => {
@@ -216,6 +321,19 @@ export const resetPassword = async (email: string): Promise<{ error: string | nu
 export const updatePassword = async (newPassword: string): Promise<{ error: string | null }> => {
   if (!isSupabaseConfigured() || !supabase) {
     return { error: 'Supabase not configured' };
+  }
+
+  // Client-side strength check: minimum 8 characters, at least one letter and
+  // one digit. Supabase enforces its own policy server-side, but failing early
+  // avoids a round-trip and gives users a clear, localised message.
+  if (newPassword.length < 8) {
+    return { error: 'הסיסמה חייבת להכיל לפחות 8 תווים' };
+  }
+  if (!/[a-zA-Z֐-׿]/.test(newPassword)) {
+    return { error: 'הסיסמה חייבת להכיל לפחות אות אחת' };
+  }
+  if (!/[0-9]/.test(newPassword)) {
+    return { error: 'הסיסמה חייבת להכיל לפחות ספרה אחת' };
   }
 
   const { error } = await supabase.auth.updateUser({ password: newPassword });

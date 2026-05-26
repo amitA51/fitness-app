@@ -26,7 +26,7 @@ import {
   User,
   Zap,
 } from 'lucide-react';
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 
 // ============================================================================
 // TYPES
@@ -1173,7 +1173,7 @@ function CompleteStep({ data }: CompleteStepProps) {
         style={{
           background: 'var(--fs-accent)',
           borderRadius: '22px 16px 22px 16px',
-          color: 'var(--fs-primary)',
+          color: 'var(--fs-heading)',
         }}
       >
         <Check size={56} strokeWidth={3} />
@@ -1348,8 +1348,31 @@ function CompleteStep({ data }: CompleteStepProps) {
 // ============================================================================
 
 export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [data, setData] = useState<OnboardingData>(DEFAULT_ONBOARDING);
+  const [currentStep, setCurrentStep] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('onboarding_step');
+      return saved ? Number(saved) || 0 : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const [data, setData] = useState<OnboardingData>(() => {
+    try {
+      const saved = sessionStorage.getItem('onboarding_draft');
+      return saved ? { ...DEFAULT_ONBOARDING, ...JSON.parse(saved) } : DEFAULT_ONBOARDING;
+    } catch {
+      return DEFAULT_ONBOARDING;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('onboarding_step', String(currentStep));
+      sessionStorage.setItem('onboarding_draft', JSON.stringify(data));
+    } catch {
+      /* ignore */
+    }
+  }, [currentStep, data]);
 
   const updateData = useCallback((updates: Partial<OnboardingData>) => {
     setData((prev) => ({ ...prev, ...updates }));

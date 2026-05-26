@@ -95,7 +95,7 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 20,
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 letterSpacing: '-0.01em',
               }}
             >
@@ -240,7 +240,7 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
                 fontSize: 13,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
               }}
             >
               ביטול

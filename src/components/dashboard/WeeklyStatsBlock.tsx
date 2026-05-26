@@ -77,7 +77,7 @@ export function WeeklyStatsBlock({
             height: 36,
             borderRadius: '50%',
             background: 'var(--fs-accent)',
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
             fontFamily: 'var(--font-mono)',
             fontSize: 18,
             fontWeight: 600,

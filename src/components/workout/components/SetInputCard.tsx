@@ -34,18 +34,20 @@ const GhostValue = memo<{ value: number; unit?: string }>(({ value, unit }) => (
   <span
     style={{
       position: 'absolute',
-      top: 10,
-      insetInlineStart: 12,
+      top: 8,
+      insetInlineStart: 10,
       fontFamily: 'var(--font-mono)',
       fontSize: 10,
-      letterSpacing: '0.08em',
-      color: 'color-mix(in srgb, var(--fs-muted) 56%, transparent)',
-      direction: 'ltr',
+      letterSpacing: '0.06em',
+      color: 'color-mix(in srgb, var(--fs-accent) 70%, var(--fs-muted))',
       lineHeight: 1,
-      marginBottom: 2,
+      direction: 'ltr',
+      background: 'color-mix(in srgb, var(--fs-accent) 10%, transparent)',
+      padding: '3px 7px',
+      borderRadius: 6,
     }}
   >
-    prev {value}
+    קודם {value}
     {unit || ''}
   </span>
 ));
@@ -122,7 +124,7 @@ const SetInputCard = memo<SetInputCardProps>(
           flexDirection: 'column',
           background: `
             radial-gradient(circle at 22px 22px, color-mix(in srgb, var(--fs-accent) 17%, transparent), transparent 28px),
-            linear-gradient(135deg, rgba(255, 255, 255, 0.72), transparent 54%),
+            linear-gradient(135deg, var(--fs-surface-shine-strong), transparent 54%),
             var(--fs-surface)
           `,
           border: '1px solid var(--fs-steel)',
@@ -286,7 +288,7 @@ const SetInputCard = memo<SetInputCardProps>(
                   fontSize: 20,
                   color: 'var(--fs-ink)',
                   cursor: 'pointer',
-                  transition: 'all 100ms ease',
+                  transition: 'background-color 100ms ease, transform 100ms ease',
                 }}
                 onPointerDown={(e) => {
                   (e.currentTarget as HTMLElement).style.transform = 'scale(0.95)';
@@ -319,7 +321,7 @@ const SetInputCard = memo<SetInputCardProps>(
                   fontSize: 20,
                   color: '#FFFFFF',
                   cursor: 'pointer',
-                  transition: 'all 100ms ease',
+                  transition: 'background-color 100ms ease, transform 100ms ease',
                 }}
                 onPointerDown={(e) => {
                   (e.currentTarget as HTMLElement).style.transform = 'scale(0.95)';

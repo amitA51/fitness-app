@@ -1,4 +1,4 @@
-// AlternativesSheet - Premium alternative exercises bottom sheet
+// AlternativesSheet - Fresh Steel premium alternative exercises bottom sheet
 // Replaces native alert() with an interactive exercise selection panel
 // Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
 
@@ -33,7 +33,7 @@ const AlternativesSheet = memo<AlternativesSheetProps>(
         onClose={onClose}
         variant="none"
         zLevel="high"
-        backdropOpacity={70}
+        backdropOpacity={60}
         blur="sm"
         trapFocus
         lockScroll
@@ -46,18 +46,20 @@ const AlternativesSheet = memo<AlternativesSheetProps>(
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className="fixed bottom-0 left-0 right-0 bg-[var(--bg-secondary)] rounded-t-3xl border-t border-white/10 pb-safe max-h-[70vh] flex flex-col"
+          className="fixed bottom-0 left-0 right-0 bg-[var(--fs-surface)] rounded-t-3xl border-t border-[var(--color-border)] max-h-[70vh] flex flex-col"
+          style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
           onClick={(e) => e.stopPropagation()}
+          dir="rtl"
         >
-          {/* Handle */}
+          {/* Drag handle */}
           <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-            <div className="w-10 h-1 rounded-full bg-white/20" />
+            <div className="w-10 h-1 rounded-full bg-[var(--fs-steel)]" />
           </div>
 
           {/* Header */}
           <div className="px-6 pb-4 text-center flex-shrink-0">
-            <h3 className="text-xl font-bold text-white mb-1">תרגילים חלופיים</h3>
-            <p className="text-xs text-white/40">במקום {exerciseName}</p>
+            <h3 className="text-xl font-bold text-[var(--fs-ink)] mb-1">תרגילים חלופיים</h3>
+            <p className="text-xs text-[var(--fs-muted)]">במקום {exerciseName}</p>
           </div>
 
           {/* Alternatives List */}
@@ -72,19 +74,20 @@ const AlternativesSheet = memo<AlternativesSheetProps>(
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleSelect(alt)}
                   className="
-                                    w-full flex items-center gap-3 p-4 rounded-2xl
-                                    bg-white/3 border border-white/5
-                                    hover:bg-white/8 hover:border-white/15
-                                    transition-all text-right group
-                                "
+                    w-full min-h-[44px] flex items-center gap-3 p-4 rounded-2xl
+                    bg-[var(--fs-surface-2)] border border-[var(--color-border)]
+                    hover:bg-[var(--fs-plate)] hover:border-[var(--fs-accent)]/40
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fs-surface)]
+                    transition-all text-right group
+                  "
                 >
                   {/* Number */}
-                  <div className="w-8 h-8 rounded-full bg-[var(--success)]/10 border border-[var(--success)]/20 flex items-center justify-center flex-shrink-0 group-hover:bg-[var(--success)]/20 transition-colors">
-                    <span className="text-xs font-bold text-[var(--success)]">{idx + 1}</span>
+                  <div className="w-8 h-8 rounded-full bg-[var(--fs-accent)]/12 border border-[var(--fs-accent)]/30 flex items-center justify-center flex-shrink-0 group-hover:bg-[var(--fs-accent)]/24 transition-colors">
+                    <span className="text-xs font-bold text-[var(--fs-accent-2)]">{idx + 1}</span>
                   </div>
 
                   {/* Name */}
-                  <span className="flex-1 text-sm font-semibold text-white/80 group-hover:text-white transition-colors">
+                  <span className="flex-1 text-sm font-semibold text-[var(--fs-ink)] transition-colors">
                     {alt}
                   </span>
 
@@ -97,7 +100,7 @@ const AlternativesSheet = memo<AlternativesSheetProps>(
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
-                      className="text-white/20 group-hover:text-[var(--success)] transition-colors flex-shrink-0"
+                      className="text-[var(--fs-muted)] group-hover:text-[var(--fs-accent)] transition-colors flex-shrink-0"
                     >
                       <path
                         d="M5 12h14M12 5l7 7-7 7"
@@ -112,10 +115,17 @@ const AlternativesSheet = memo<AlternativesSheetProps>(
           </div>
 
           {/* Close */}
-          <div className="px-6 pb-8 flex-shrink-0">
+          <div className="px-6 pb-4 flex-shrink-0">
             <button
               onClick={onClose}
-              className="w-full py-3.5 rounded-2xl bg-white/5 border border-white/10 text-white/70 font-semibold text-sm"
+              className="
+                w-full min-h-[44px] py-3.5 rounded-2xl
+                bg-[var(--fs-surface-2)] border border-[var(--color-border)]
+                text-[var(--fs-ink)] font-semibold text-sm
+                hover:bg-[var(--fs-plate)]
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fs-surface)]
+                transition-colors
+              "
             >
               סגור
             </button>

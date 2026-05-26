@@ -1258,7 +1258,7 @@ const WeightTab = memo(function WeightTab({
               letterSpacing: '0.18em',
               textTransform: 'uppercase',
               background: 'var(--fs-signal)',
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               padding: '3px 8px',
             }}
           >
@@ -1526,7 +1526,7 @@ const MeasurementsTab = memo(function MeasurementsTab({
           <button
             onClick={onAdd}
             className="chip"
-            style={{ background: 'var(--fs-signal)', color: 'var(--fs-primary)' }}
+            style={{ background: 'var(--fs-signal)', color: 'var(--fs-heading)' }}
           >
             <Plus size={12} />
             עדכן
@@ -1704,7 +1704,7 @@ const RecoveryTab = memo(function RecoveryTab({
           <button
             onClick={onAdd}
             className="chip"
-            style={{ background: 'var(--fs-signal)', color: 'var(--fs-primary)' }}
+            style={{ background: 'var(--fs-signal)', color: 'var(--fs-heading)' }}
           >
             <Plus size={12} />
             עדכן
@@ -1804,9 +1804,9 @@ const RecoveryTab = memo(function RecoveryTab({
                         borderRadius: '9999px',
                         fontSize: 11,
                         fontWeight: 600,
-                        background: 'var(--color-primary-subtle)',
-                        color: 'var(--fs-primary)',
-                        border: '1px solid var(--color-primary-subtle)',
+                        background: 'var(--fs-surface-2)',
+                        color: 'var(--fs-ink)',
+                        border: '1px solid var(--fs-surface-2)',
                       }}
                     >
                       {area}
@@ -1869,7 +1869,7 @@ const RecoveryTab = memo(function RecoveryTab({
           <div className="data-strip">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Moon size={12} style={{ color: 'var(--fs-primary)' }} />
+                <Moon size={12} style={{ color: 'var(--fs-heading)' }} />
                 <span className="eyebrow">SLEEP</span>
               </div>
               <div className="val">
@@ -1880,7 +1880,7 @@ const RecoveryTab = memo(function RecoveryTab({
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Battery size={12} style={{ color: 'var(--fs-primary)' }} />
+                <Battery size={12} style={{ color: 'var(--fs-heading)' }} />
                 <span className="eyebrow">ENERGY</span>
               </div>
               <div className="val">
@@ -2170,6 +2170,113 @@ const StrengthTab = memo(function StrengthTab() {
         <span className="right">כוח</span>
       </div>
 
+      {/* PR Leaderboard */}
+      <div
+        style={{
+          background: 'var(--fs-surface)',
+          borderRadius: '22px 16px 22px 16px',
+          border: '1px solid var(--fs-surface-2)',
+          boxShadow: 'var(--shadow-card)',
+          padding: '16px 20px',
+        }}
+      >
+        <h3
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.15em',
+            color: 'var(--fs-muted)',
+            textTransform: 'uppercase',
+            marginBottom: 12,
+          }}
+        >
+          🏆 לוח שיאים · PR BOARD
+        </h3>
+        <div style={{ display: 'grid', gap: 6 }}>
+          {curves.slice(0, 6).map((curve, i) => (
+            <div
+              key={curve.exerciseName}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 12px',
+                background:
+                  i === 0
+                    ? 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))'
+                    : 'var(--fs-surface-2)',
+                borderRadius: 10,
+                borderInlineStart: i === 0 ? '3px solid var(--fs-accent)' : 'none',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    fontWeight: 800,
+                    color: i === 0 ? 'var(--fs-accent)' : 'var(--fs-muted)',
+                    width: 20,
+                  }}
+                >
+                  #{i + 1}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: 'var(--fs-ink)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {curve.exerciseName.split('|')[0]?.trim() || curve.exerciseName}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexShrink: 0 }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: 18,
+                    color: 'var(--fs-ink)',
+                    direction: 'ltr',
+                  }}
+                >
+                  {curve.latestWeight}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    fontWeight: 700,
+                    color: 'var(--fs-muted)',
+                    letterSpacing: '0.08em',
+                  }}
+                >
+                  KG
+                </span>
+                {curve.change > 0 && (
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9,
+                      fontWeight: 700,
+                      color: 'var(--fs-accent)',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    +{curve.changePct}%
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Exercise selector */}
       <div className="flex gap-2 flex-wrap">
         {curves.slice(0, 8).map((curve) => (
@@ -2340,7 +2447,7 @@ const StrengthTab = memo(function StrengthTab() {
                       })
                       .join(' ') + ` L 300 140 L 0 140 Z`
                   }
-                  fill="rgba(67, 199, 165, 0.08)"
+                  fill="color-mix(in srgb, var(--fs-accent) 10%, transparent)"
                 />
 
                 {/* Line */}

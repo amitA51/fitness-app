@@ -122,9 +122,9 @@ const PAGE_THEMES: Record<PageAccent, PageTheme> = {
   settings: {
     accent: 'settings',
     colors: {
-      primary: '#16292D', // Fresh Steel Dark Primary
-      primaryHover: '#0F1C1F',
-      primaryGlow: 'rgba(22, 41, 45, 0.35)',
+      primary: 'var(--fs-primary)',
+      primaryHover: 'var(--color-primary-hover)',
+      primaryGlow: 'var(--color-primary-glow)',
     },
     mood: 'calm',
   },

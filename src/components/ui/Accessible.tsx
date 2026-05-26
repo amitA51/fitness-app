@@ -59,9 +59,10 @@ export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonPr
   ) => {
     const variantClasses = {
       primary:
-        'bg-[var(--fs-accent)] text-black hover:brightness-110 shadow-[0_0_15px_var(--dynamic-accent-glow)]',
-      secondary: 'bg-white/5 text-white border border-white/10 hover:bg-white/10',
-      ghost: 'bg-transparent text-white hover:bg-white/5',
+        'bg-[var(--fs-accent)] text-[var(--fs-primary)] hover:brightness-110 shadow-[0_0_15px_var(--dynamic-accent-glow)]',
+      secondary:
+        'bg-[var(--fs-overlay-hover)] text-[var(--fs-ink)] border border-[var(--color-border)] hover:bg-[var(--fs-overlay-active)]',
+      ghost: 'bg-transparent text-[var(--fs-ink)] hover:bg-[var(--fs-overlay-hover)]',
       danger: 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20',
     };
 
@@ -201,9 +202,9 @@ export const AccessibleInput = forwardRef<HTMLInputElement, AccessibleInputProps
             aria-describedby={cn(helperText && helperId, error && errorId) || undefined}
             className={cn(
               'w-full px-4 rounded-xl',
-              'bg-white/5 border',
-              error ? 'border-red-500/50' : 'border-white/10',
-              'text-white placeholder:text-[var(--text-tertiary)]',
+              'bg-[var(--fs-overlay-hover)] border',
+              error ? 'border-red-500/50' : 'border-[var(--color-border)]',
+              'text-[var(--fs-ink)] placeholder:text-[var(--text-tertiary)]',
               'focus:outline-none focus:ring-2',
               error ? 'focus:ring-red-500' : 'focus:ring-[var(--fs-accent)]',
               'focus:border-transparent',
@@ -381,21 +382,21 @@ export const AccessibleModal: React.FC<AccessibleModalProps> = ({
             onKeyDown={handleKeyDown}
             className={cn(
               'relative w-full',
-              'bg-[var(--bg-card)] border border-white/10',
+              'bg-[var(--bg-card)] border border-[var(--color-border)]',
               'rounded-2xl shadow-2xl',
               'overflow-hidden',
               sizeClasses[size]
             )}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
-              <h2 id={titleId} className="text-xl font-bold text-white">
+            <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
+              <h2 id={titleId} className="text-xl font-bold text-[var(--fs-ink)]">
                 {title}
               </h2>
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 rounded-lg hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--fs-accent)]"
+                className="p-2 rounded-lg hover:bg-[var(--fs-overlay-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--fs-accent)]"
                 aria-label="סגור"
               >
                 <svg
@@ -448,7 +449,7 @@ export const SkipLink: React.FC<SkipLinkProps> = ({ targetId, children = 'דלג
     className={cn(
       'absolute -top-10 right-4 z-50',
       'focus:top-4',
-      'bg-[var(--fs-accent)] text-black',
+      'bg-[var(--fs-accent)] text-[var(--fs-primary)]',
       'px-4 py-2 rounded-lg font-medium',
       'transition-all duration-200',
       'focus:outline-none focus:ring-2 focus:ring-white'
@@ -663,8 +664,8 @@ export const AccessibleTabs: React.FC<AccessibleTabsProps> = ({
                 tab.disabled && 'opacity-50 cursor-not-allowed'
               )}
               style={{
-                background: isActive ? 'var(--fs-primary)' : 'transparent',
-                color: isActive ? '#fff' : 'var(--fs-muted)',
+                background: isActive ? 'var(--fs-surface)' : 'transparent',
+                color: isActive ? 'var(--fs-ink)' : 'var(--fs-muted)',
                 borderRadius: 12,
                 minHeight: 36,
                 fontFamily: 'var(--font-body)',

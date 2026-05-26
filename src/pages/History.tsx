@@ -1,6 +1,6 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ChevronLeft, Trash2 } from 'lucide-react';
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { ChevronLeft, RotateCcw, Trash2 } from 'lucide-react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WorkoutListSkeleton } from '../components/ui/SkeletonLoader';
 import { useData } from '../contexts/DataContext';
@@ -59,12 +59,24 @@ const countCompletedSets = (session: WorkoutSession): number =>
 interface SessionCardProps {
   session: WorkoutSession;
   onDelete: (id: string) => void;
+  onRepeat?: (session: WorkoutSession) => void;
   index: number;
 }
 
-const SessionCard = memo(function SessionCard({ session, onDelete, index }: SessionCardProps) {
+const SessionCard = memo(function SessionCard({
+  session,
+  onDelete,
+  onRepeat,
+  index,
+}: SessionCardProps) {
   const navigate = useNavigate();
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  useEffect(() => {
+    if (!confirmDelete) return;
+    const timer = setTimeout(() => setConfirmDelete(false), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmDelete]);
 
   const completedSets = countCompletedSets(session);
   const exerciseNames = session.exercises.map((e) => e.exerciseName);
@@ -117,15 +129,33 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
           <span
             className="badge"
             style={{
-              background: session.status === 'completed' ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+              background:
+                session.status === 'completed' ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
               color: session.status === 'completed' ? 'var(--fs-accent)' : 'var(--fs-primary)',
             }}
           >
             {session.status === 'completed' ? 'DONE' : 'WIP'}
           </span>
+          {onRepeat && session.status === 'completed' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRepeat(session);
+              }}
+              className="min-w-[48px] min-h-[48px] flex items-center justify-center transition-colors"
+              style={{
+                padding: '10px',
+                background: 'transparent',
+                color: 'var(--fs-accent)',
+              }}
+              aria-label="חזור על אימון זה"
+            >
+              <RotateCcw size={16} />
+            </button>
+          )}
           <button
             onClick={handleDeleteClick}
-            className="w-9 h-9 min-w-[48px] min-h-[48px] flex items-center justify-center transition-colors"
+            className="min-w-[48px] min-h-[48px] flex items-center justify-center transition-colors"
             style={{
               padding: '10px',
               background: confirmDelete ? 'var(--fs-primary)' : 'transparent',
@@ -133,7 +163,7 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
             }}
             aria-label={confirmDelete ? 'לחץ שוב לאישור' : 'מחק אימון'}
           >
-            <Trash2 size={14} />
+            <Trash2 size={16} />
           </button>
           <ChevronLeft size={15} style={{ color: 'var(--fs-muted)' }} />
         </div>
@@ -169,7 +199,7 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: '12px',
-          color: 'var(--fs-primary)',
+          color: 'var(--fs-heading)',
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
         }}
@@ -206,7 +236,7 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
           }}
@@ -223,9 +253,11 @@ const SessionCard = memo(function SessionCard({ session, onDelete, index }: Sess
 const VirtualizedSessionList = memo(function VirtualizedSessionList({
   sessions,
   onDelete,
+  onRepeat,
 }: {
   sessions: WorkoutSession[];
   onDelete: (id: string) => void;
+  onRepeat?: (session: WorkoutSession) => void;
 }) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -262,7 +294,12 @@ const VirtualizedSessionList = memo(function VirtualizedSessionList({
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
-              <SessionCard session={session} onDelete={onDelete} index={virtualRow.index} />
+              <SessionCard
+                session={session}
+                onDelete={onDelete}
+                onRepeat={onRepeat}
+                index={virtualRow.index}
+              />
             </div>
           );
         })}
@@ -288,6 +325,14 @@ export default function History() {
         (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
       ),
     [unsortedSessions]
+  );
+
+  const handleRepeat = useCallback(
+    (session: WorkoutSession) => {
+      const exerciseIds = session.exercises.map((e) => e.exerciseId || e.id).join(',');
+      navigate(`/workout?repeat=${exerciseIds}`);
+    },
+    [navigate]
   );
 
   const handleDelete = useCallback(
@@ -429,7 +474,11 @@ export default function History() {
           )}
 
           {!loading && sessions.length > 0 && (
-            <VirtualizedSessionList sessions={sessions} onDelete={handleDelete} />
+            <VirtualizedSessionList
+              sessions={sessions}
+              onDelete={handleDelete}
+              onRepeat={handleRepeat}
+            />
           )}
         </div>
       </main>

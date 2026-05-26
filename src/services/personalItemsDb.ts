@@ -10,7 +10,7 @@ export const addPersonalItem = async (
 ): Promise<PersonalItem> => {
   const newItem: PersonalItem = {
     ...item,
-    id: `item-${Date.now()}`,
+    id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   } as PersonalItem;

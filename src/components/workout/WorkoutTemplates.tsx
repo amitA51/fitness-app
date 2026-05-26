@@ -156,7 +156,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 900,
                 fontSize: 28,
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 textTransform: 'uppercase',
                 letterSpacing: '-0.01em',
                 marginTop: 4,
@@ -184,7 +184,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               fontWeight: 600,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               cursor: 'pointer',
             }}
           >
@@ -266,7 +266,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 18,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               textTransform: 'uppercase',
               letterSpacing: '0.02em',
             }}
@@ -277,7 +277,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               opacity: 0.7,
               letterSpacing: '0.05em',
               marginTop: 4,
@@ -306,7 +306,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 14,
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
               }}
@@ -430,7 +430,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                         width: 44,
                         height: 44,
                         background: 'transparent',
-                        border: '2px solid #C42B2B',
+                        border: '2px solid var(--color-delete)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -438,8 +438,8 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                       }}
                     >
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M3 4H11V12H3V4Z" stroke="#C42B2B" strokeWidth="1.5" />
-                        <path d="M5 4V2H9V4" stroke="#C42B2B" strokeWidth="1.5" />
+                        <path d="M3 4H11V12H3V4Z" stroke="var(--color-delete)" strokeWidth="1.5" />
+                        <path d="M5 4V2H9V4" stroke="var(--color-delete)" strokeWidth="1.5" />
                       </svg>
                     </motion.button>
                   </div>
@@ -460,7 +460,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontFamily: 'var(--font-display)',
                           fontWeight: 800,
                           fontSize: 24,
-                          color: 'var(--fs-primary)',
+                          color: 'var(--fs-heading)',
                           letterSpacing: '-0.01em',
                         }}
                       >
@@ -524,7 +524,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                             border: '1px solid var(--fs-primary)',
                             fontFamily: 'var(--font-mono)',
                             fontSize: 10,
-                            color: 'var(--fs-primary)',
+                            color: 'var(--fs-heading)',
                             letterSpacing: '0.05em',
                             textTransform: 'uppercase',
                           }}
@@ -590,7 +590,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 14,
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
               }}
@@ -613,7 +613,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 background: 'var(--fs-accent)',
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
               }}
@@ -675,7 +675,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                         fontFamily: 'var(--font-display)',
                         fontWeight: 800,
                         fontSize: 18,
-                        color: 'var(--fs-primary)',
+                        color: 'var(--fs-heading)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.02em',
                       }}
@@ -713,7 +713,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontFamily: 'var(--font-display)',
                           fontWeight: 800,
                           fontSize: 24,
-                          color: 'var(--fs-primary)',
+                          color: 'var(--fs-heading)',
                           letterSpacing: '-0.01em',
                         }}
                       >
@@ -724,7 +724,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
                           letterSpacing: '0.15em',
-                          color: 'var(--fs-primary)',
+                          color: 'var(--fs-heading)',
                           opacity: 0.7,
                           textTransform: 'uppercase',
                           marginTop: 4,
@@ -746,7 +746,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontFamily: 'var(--font-display)',
                           fontWeight: 800,
                           fontSize: 24,
-                          color: 'var(--fs-primary)',
+                          color: 'var(--fs-heading)',
                           letterSpacing: '-0.01em',
                         }}
                       >
@@ -757,7 +757,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
                           letterSpacing: '0.15em',
-                          color: 'var(--fs-primary)',
+                          color: 'var(--fs-heading)',
                           opacity: 0.7,
                           textTransform: 'uppercase',
                           marginTop: 4,
@@ -794,7 +794,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                             background: 'transparent',
                             fontFamily: 'var(--font-mono)',
                             fontSize: 10,
-                            color: 'var(--fs-primary)',
+                            color: 'var(--fs-heading)',
                             opacity: 0.7,
                           }}
                         >
@@ -912,15 +912,15 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                   height: 64,
                   margin: '0 auto 16px',
                   background: 'rgba(196,43,43,0.1)',
-                  border: '2px solid #C42B2B',
+                  border: '2px solid var(--color-delete)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
                 <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                  <path d="M7 8H21V22H7V8Z" stroke="#C42B2B" strokeWidth="2" />
-                  <path d="M11 8V6H17V8" stroke="#C42B2B" strokeWidth="2" />
+                  <path d="M7 8H21V22H7V8Z" stroke="var(--color-delete)" strokeWidth="2" />
+                  <path d="M11 8V6H17V8" stroke="var(--color-delete)" strokeWidth="2" />
                 </svg>
               </div>
               <h3
@@ -964,7 +964,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                     fontSize: 14,
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                     cursor: 'pointer',
                   }}
                 >

@@ -84,7 +84,7 @@ function ExerciseDetail({ exercise }: { exercise: WorkoutSession['exercises'][nu
           color: 'var(--fs-muted)',
         }}
       >
-        <span style={{ color: 'var(--fs-primary)', fontWeight: 700 }}>
+        <span style={{ color: 'var(--fs-heading)', fontWeight: 700 }}>
           {bestSet.weight > 0 ? `${bestSet.weight}` : ''}
         </span>
         {bestSet.weight > 0 && <span>ק"ג</span>}
@@ -174,7 +174,7 @@ const WorkoutCard = memo(function WorkoutCard({
               fontWeight: 800,
               fontSize: 18,
               lineHeight: 1.1,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               textTransform: 'uppercase',
               letterSpacing: '0.02em',
               flex: 1,
@@ -315,7 +315,7 @@ export const RecentWorkouts = memo(function RecentWorkouts({
             fontWeight: 900,
             fontSize: 28,
             lineHeight: 0.95,
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
             textTransform: 'uppercase',
             letterSpacing: '-0.01em',
             marginBottom: 16,

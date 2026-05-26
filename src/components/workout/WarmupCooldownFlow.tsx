@@ -234,7 +234,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
               fontFamily: 'var(--font-display)',
               fontWeight: 900,
               fontSize: 36,
-              color: 'var(--fs-surface)',
+              color: 'var(--fs-ink)',
               lineHeight: 0.9,
               letterSpacing: '-0.02em',
               direction: 'ltr',
@@ -404,7 +404,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
             minHeight: 52,
           }}
           onPointerDown={(e) => {
-            e.currentTarget.style.background = '#0D1A1C';
+            e.currentTarget.style.background = 'var(--color-primary-hover)';
           }}
           onPointerUp={(e) => {
             e.currentTarget.style.background = 'var(--fs-primary)';
@@ -582,7 +582,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
             fontFamily: 'var(--font-display)',
             fontWeight: 900,
             fontSize: 28,
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
             lineHeight: 1,
             letterSpacing: '-0.02em',
             marginTop: 6,
@@ -771,7 +771,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               minHeight: 52,
             }}
             onPointerDown={(e) => {
-              e.currentTarget.style.background = '#0D1A1C';
+              e.currentTarget.style.background = 'var(--color-primary-hover)';
             }}
             onPointerUp={(e) => {
               e.currentTarget.style.background = 'var(--fs-primary)';

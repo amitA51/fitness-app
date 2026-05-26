@@ -69,7 +69,7 @@ const AnimatedValue = memo<{ value: string; target: 'weight' | 'reps' | null }>(
             fontWeight: 900,
             lineHeight: 0.85,
             letterSpacing: '-0.03em',
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
           }}
           animate={shouldReduceMotion ? {} : { scale: isChanging ? [1, 1.04, 1] : 1 }}
           transition={{ duration: 0.15 }}
@@ -150,10 +150,10 @@ const NumpadButton = memo<{
   };
 
   const variantStyle: Record<string, React.CSSProperties> = {
-    number: { backgroundColor: 'var(--fs-surface)', color: 'var(--fs-primary)' },
-    action: { backgroundColor: 'var(--fs-surface-2)', color: 'var(--fs-primary)' },
+    number: { backgroundColor: 'var(--fs-surface)', color: 'var(--fs-heading)' },
+    action: { backgroundColor: 'var(--fs-surface-2)', color: 'var(--fs-heading)' },
     delete: { backgroundColor: 'var(--fs-surface)', color: 'var(--fs-warn)' },
-    submit: { backgroundColor: 'var(--fs-accent)', color: 'var(--fs-primary)' },
+    submit: { backgroundColor: 'var(--fs-accent)', color: 'var(--fs-heading)' },
   };
 
   const getAriaLabel = (): string => {
@@ -221,7 +221,7 @@ const PresetButton = memo<{
         borderRadius: 999,
         border: '2px solid var(--fs-primary)',
         backgroundColor: isSelected ? 'var(--fs-accent)' : 'var(--fs-surface)',
-        color: 'var(--fs-primary)',
+        color: 'var(--fs-heading)',
         fontFamily: 'var(--font-mono)',
         fontSize: '12px',
         letterSpacing: '0.04em',
@@ -313,7 +313,7 @@ const ValueStepper = memo<{
             fontFamily: 'var(--font-display)',
             fontSize: '18px',
             fontWeight: 800,
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
           }}
         >
           {currentValue}
@@ -339,7 +339,7 @@ const ValueStepper = memo<{
             style={{
               backgroundColor: 'var(--fs-accent)',
               border: '2px solid var(--fs-primary)',
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               fontFamily: 'var(--font-mono)',
               fontSize: '12px',
               fontWeight: 700,
@@ -376,7 +376,7 @@ const GhostValue = memo<{ value: number; label: string; entryX?: number }>(
         <span style={{ fontSize: '10px', color: 'var(--fs-muted)', fontWeight: 600 }}>{label}</span>
         <span
           className="tabular-nums"
-          style={{ fontSize: '13px', color: 'var(--fs-primary)', fontWeight: 700 }}
+          style={{ fontSize: '13px', color: 'var(--fs-heading)', fontWeight: 700 }}
         >
           {value}
         </span>
@@ -507,7 +507,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
         onClose={onClose}
         variant="none"
         zLevel="ultra"
-        backdropOpacity={80}
+        backdropOpacity={50}
         blur="sm"
         trapFocus
         lockScroll

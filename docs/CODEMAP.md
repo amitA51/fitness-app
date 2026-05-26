@@ -335,7 +335,9 @@ Cross-page hooks. (Workout-only hooks live under `components/workout/hooks/`.)
 | `useReducedMotion.ts` | Respect `prefers-reduced-motion` |
 | `useSwipeGesture.tsx` | Swipe gesture detection |
 | `useViewTransition.ts` | View Transitions API wrapper |
-| `fitness/` | Fitness-specific shared hooks |
+| `fitness/useFitnessInsights.ts` | AI fitness insights hook |
+| `fitness/useProgressionRecommendation.ts` | Progression recommendation logic |
+| `fitness/useWorkoutHistoryHub.ts` | Unified workout history access |
 
 ---
 

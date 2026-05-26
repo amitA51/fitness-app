@@ -210,163 +210,173 @@ ALTER TABLE ai_conversations ENABLE ROW LEVEL SECURITY;
 -- RLS Policies - Users can only access their own data
 CREATE POLICY "Users can view their own workout templates"
     ON workout_templates FOR SELECT
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can insert their own workout templates"
     ON workout_templates FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can update their own workout templates"
     ON workout_templates FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id)
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can delete their own workout templates"
     ON workout_templates FOR DELETE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can view their own workout sessions"
     ON workout_sessions FOR SELECT
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can insert their own workout sessions"
     ON workout_sessions FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can update their own workout sessions"
     ON workout_sessions FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id)
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can delete their own workout sessions"
     ON workout_sessions FOR DELETE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can view their own personal exercises"
     ON personal_exercises FOR SELECT
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can insert their own personal exercises"
     ON personal_exercises FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can update their own personal exercises"
     ON personal_exercises FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id)
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can delete their own personal exercises"
     ON personal_exercises FOR DELETE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can view their own body weight"
     ON body_weight FOR SELECT
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can insert their own body weight"
     ON body_weight FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can update their own body weight"
     ON body_weight FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id)
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can delete their own body weight"
     ON body_weight FOR DELETE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can view their own body measurements"
     ON body_measurements FOR SELECT
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can insert their own body measurements"
     ON body_measurements FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can update their own body measurements"
     ON body_measurements FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id)
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can delete their own body measurements"
     ON body_measurements FOR DELETE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can view their own personal records"
     ON personal_records FOR SELECT
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can insert their own personal records"
     ON personal_records FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can update their own personal records"
     ON personal_records FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id)
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can delete their own personal records"
     ON personal_records FOR DELETE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can view their own recovery logs"
     ON recovery_logs FOR SELECT
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can insert their own recovery logs"
     ON recovery_logs FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can update their own recovery logs"
     ON recovery_logs FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id)
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can delete their own recovery logs"
     ON recovery_logs FOR DELETE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can view their own nutrition logs"
     ON nutrition_logs FOR SELECT
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can insert their own nutrition logs"
     ON nutrition_logs FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can update their own nutrition logs"
     ON nutrition_logs FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id)
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can delete their own nutrition logs"
     ON nutrition_logs FOR DELETE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can view their own user settings"
     ON user_settings FOR SELECT
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can insert their own user settings"
     ON user_settings FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can update their own user settings"
     ON user_settings FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id)
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can delete their own user settings"
     ON user_settings FOR DELETE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can view their own AI conversations"
     ON ai_conversations FOR SELECT
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can insert their own AI conversations"
     ON ai_conversations FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can update their own AI conversations"
     ON ai_conversations FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id)
+    WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users can delete their own AI conversations"
     ON ai_conversations FOR DELETE
-    USING (auth.uid() = user_id);
+    USING ((SELECT auth.uid()) = user_id);
 
 -- ============================================================
 -- FUNCTIONS
@@ -415,16 +425,16 @@ CREATE INDEX IF NOT EXISTS water_logs_user_date_idx ON water_logs (user_id, date
 ALTER TABLE water_logs ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "water_logs_select_own" ON water_logs
-    FOR SELECT USING (auth.uid() = user_id);
+    FOR SELECT USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "water_logs_insert_own" ON water_logs
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+    FOR INSERT WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "water_logs_update_own" ON water_logs
-    FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+    FOR UPDATE USING ((SELECT auth.uid()) = user_id) WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "water_logs_delete_own" ON water_logs
-    FOR DELETE USING (auth.uid() = user_id);
+    FOR DELETE USING ((SELECT auth.uid()) = user_id);
 
 CREATE TRIGGER update_water_logs_updated_at
     BEFORE UPDATE ON water_logs

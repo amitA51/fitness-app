@@ -111,7 +111,7 @@ const StatCard = memo<{
         fontFamily: 'var(--font-display)',
         fontWeight: 800,
         fontSize: 32,
-        color: 'var(--fs-primary)',
+        color: 'var(--fs-heading)',
         letterSpacing: '-0.02em',
         lineHeight: 1,
       }}
@@ -188,7 +188,7 @@ const SessionCard = memo<{
           style={{
             padding: '6px 12px',
             background: 'var(--fs-accent)',
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             fontWeight: 600,
@@ -220,7 +220,7 @@ const SessionCard = memo<{
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 24,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               letterSpacing: '-0.01em',
             }}
           >
@@ -324,7 +324,7 @@ const SessionCard = memo<{
           height="16"
           viewBox="0 0 16 16"
           fill="none"
-          style={{ color: 'var(--fs-primary)' }}
+          style={{ color: 'var(--fs-heading)' }}
         >
           <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
         </svg>
@@ -397,16 +397,17 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
         flexDirection: 'column',
       }}
     >
-      {/* Masthead Header */}
+      {/* Header */}
       <header
-        className="premium-dark-surface scrim-noise"
         style={{
-          color: 'var(--fs-surface)',
+          color: 'var(--fs-ink)',
           padding: '16px 20px',
           paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          background: 'var(--fs-bg)',
+          borderBottom: '2px solid var(--fs-accent)',
         }}
       >
         <motion.button
@@ -453,7 +454,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
               fontSize: 20,
               textTransform: 'uppercase',
               letterSpacing: '0.02em',
-              color: 'var(--fs-surface)',
+              color: 'var(--fs-ink)',
               marginTop: 2,
             }}
           >
@@ -530,7 +531,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 900,
                 fontSize: 36,
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 letterSpacing: '-0.02em',
                 lineHeight: 1,
               }}
@@ -542,7 +543,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
                 letterSpacing: '0.18em',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 textTransform: 'uppercase',
                 marginTop: 6,
                 opacity: 0.7,
@@ -558,7 +559,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 900,
                 fontSize: 36,
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 letterSpacing: '-0.02em',
                 lineHeight: 1,
               }}
@@ -570,7 +571,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
                 letterSpacing: '0.18em',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 textTransform: 'uppercase',
                 marginTop: 6,
                 opacity: 0.7,
@@ -586,7 +587,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 900,
                 fontSize: 36,
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 letterSpacing: '-0.02em',
                 lineHeight: 1,
               }}
@@ -598,7 +599,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
                 letterSpacing: '0.18em',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 textTransform: 'uppercase',
                 marginTop: 6,
                 opacity: 0.7,
@@ -738,7 +739,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,
                   fontSize: 28,
-                  color: 'var(--fs-primary)',
+                  color: 'var(--fs-heading)',
                   letterSpacing: '-0.02em',
                   fontVariantNumeric: 'tabular-nums',
                 }}

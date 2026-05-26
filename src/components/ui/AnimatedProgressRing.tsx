@@ -186,7 +186,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(255, 255, 255, 0.1)"
+          stroke="var(--color-border)"
           strokeWidth={strokeWidth}
         />
 
@@ -216,7 +216,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
           key={Math.round(percentage)}
           initial={shouldReduceMotion ? false : { scale: 1.2, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className={`font-bold text-white font-heading tabular-nums ${size < 50 ? 'text-[10px]' : size < 100 ? 'text-xl' : 'text-3xl'}`}
+          className={`font-bold text-[var(--fs-ink)] font-heading tabular-nums ${size < 50 ? 'text-[10px]' : size < 100 ? 'text-xl' : 'text-3xl'}`}
         >
           {Math.round(percentage)}%
         </motion.span>

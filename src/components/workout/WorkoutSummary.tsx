@@ -2,8 +2,9 @@
 // Navy masthead · Bone body · Big Shoulders typography · Sharp corners
 
 import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { getWorkoutSessions } from '../../services/dataService';
+import { getAllWorkoutSessions, getWorkoutSessions } from '../../services/dataService';
 import {
   calculatePRsFromHistory,
   exportWorkoutHistoryCSV,
@@ -11,7 +12,6 @@ import {
 } from '../../services/prService';
 import type { WorkoutSession } from '../../types';
 import { logger } from '../../utils/logger';
-import { CheckCircleIcon } from '../icons';
 import { ModalOverlay } from '../ui/ModalOverlay';
 import { type ComparisonData, StatsGrid } from './components/StatsGrid';
 import { SummaryExerciseList } from './components/SummaryExerciseList';
@@ -117,6 +117,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   const [prsCount, setPrsCount] = useState<number>(0);
   const [prExercises, setPrExercises] = useState<Set<string>>(new Set());
   const [comparison, setComparison] = useState<ComparisonData | null>(null);
+  const [workoutRating, setWorkoutRating] = useState<number | null>(null);
 
   const stats = useMemo(() => computeStats(session), [session]);
 
@@ -210,7 +211,10 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
       }
 
       try {
-        const allSessions = await getWorkoutSessions();
+        // PR comparison must consider the user's full history, not just the
+        // most recent 20 sessions — otherwise long-standing records get
+        // flagged as new PRs again.
+        const allSessions = await getAllWorkoutSessions();
         const currentStartMs = session.startTime ? new Date(session.startTime).getTime() : null;
         const historyBefore = currentStartMs
           ? allSessions.filter((s) => {
@@ -332,7 +336,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                     {prsCount}
                   </span>
                   <br />
-                  <span style={{ fontSize: 24, color: 'rgba(255,255,255,0.7)' }}>שיאים חדשים</span>
+                  <span style={{ fontSize: 24, color: 'rgba(var(--text-on-navy-rgb), 0.7)' }}>
+                    שיאים חדשים
+                  </span>
                 </>
               ) : (
                 'אימון הושלם'
@@ -404,6 +410,86 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   comparison={comparison}
                 />
 
+                {/* Workout Rating */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '14px 16px',
+                    background: 'var(--fs-surface)',
+                    border: '1px solid var(--fs-surface-2)',
+                    borderRadius: '18px 12px 18px 12px',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: '0.14em',
+                      color: 'var(--fs-muted)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    איך היה האימון?
+                  </span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {[
+                      { emoji: '😫', label: 'קשה מאוד', value: 1 },
+                      { emoji: '😓', label: 'קשה', value: 2 },
+                      { emoji: '💪', label: 'טוב', value: 3 },
+                      { emoji: '🔥', label: 'מעולה', value: 4 },
+                      { emoji: '⚡', label: 'אגדי', value: 5 },
+                    ].map((r) => (
+                      <button
+                        key={r.value}
+                        type="button"
+                        onClick={() => setWorkoutRating(r.value)}
+                        aria-label={r.label}
+                        title={r.label}
+                        style={{
+                          width: 48,
+                          height: 48,
+                          display: 'grid',
+                          placeItems: 'center',
+                          fontSize: 22,
+                          background:
+                            workoutRating === r.value ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+                          border:
+                            workoutRating === r.value
+                              ? '2px solid var(--fs-primary)'
+                              : '1px solid var(--fs-steel)',
+                          borderRadius: 12,
+                          cursor: 'pointer',
+                          transition: 'all 150ms ease',
+                          transform: workoutRating === r.value ? 'scale(1.1)' : 'scale(1)',
+                        }}
+                      >
+                        {r.emoji}
+                      </button>
+                    ))}
+                  </div>
+                  {workoutRating && (
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: 'var(--fs-accent)',
+                        letterSpacing: '0.06em',
+                      }}
+                    >
+                      {
+                        ['', 'קשה מאוד', 'קשה', 'אימון טוב!', 'אימון מעולה!', 'אימון אגדי! 🏆'][
+                          workoutRating
+                        ]
+                      }
+                    </span>
+                  )}
+                </div>
+
                 {/* Exercise list */}
                 {stats.exerciseStats.length > 0 && (
                   <SummaryExerciseList
@@ -444,7 +530,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                         <CheckCircleIcon
                           size={16}
                           strokeWidth={2.5}
-                          style={{ color: 'var(--fs-primary)', flexShrink: 0 }}
+                          style={{ color: 'var(--fs-heading)', flexShrink: 0 }}
                         />
                       )}
                       <span
@@ -513,7 +599,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             onClick={onClose}
             onPointerDown={(e) => {
               e.preventDefault();
-              e.currentTarget.style.background = '#0D1A1C';
+              e.currentTarget.style.background = 'var(--color-primary-hover)';
             }}
             style={{
               width: '100%',
@@ -522,7 +608,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               justifyContent: 'center',
               padding: '16px 24px',
               background: 'var(--fs-accent)',
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               border: 'none',
               cursor: 'pointer',
               fontFamily: 'var(--font-display)',
@@ -557,7 +643,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   gap: 6,
                   padding: '12px 16px',
                   background: 'var(--fs-surface-2)',
-                  color: 'var(--fs-primary)',
+                  color: 'var(--fs-heading)',
                   border: '2px solid var(--fs-primary)',
                   cursor: 'pointer',
                   fontFamily: 'var(--font-display)',
@@ -583,7 +669,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 gap: 6,
                 padding: '12px 16px',
                 background: 'var(--fs-surface-2)',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 border: '2px solid var(--fs-primary)',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
@@ -609,7 +695,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   gap: 6,
                   padding: '12px 16px',
                   background: 'var(--fs-surface-2)',
-                  color: 'var(--fs-primary)',
+                  color: 'var(--fs-heading)',
                   border: '2px solid var(--fs-primary)',
                   cursor: 'pointer',
                   fontFamily: 'var(--font-display)',

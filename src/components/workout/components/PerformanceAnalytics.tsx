@@ -148,9 +148,9 @@ const StatCard = memo<StatCardProps>(
         <div
           className={`flex items-center gap-1 mt-1 text-xs ${
             trend === 'up'
-              ? 'text-[#30D158]'
+              ? 'text-[var(--color-success-fg)]'
               : trend === 'down'
-                ? 'text-[#FF453A]'
+                ? 'text-[var(--color-error-fg)]'
                 : 'text-white/40'
           }`}
         >
@@ -222,8 +222,7 @@ const VolumeComparisonBar = memo<{
           <motion.div
             className="h-full rounded-full"
             style={{
-              background:
-                'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
+              background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
             }}
             initial={{ width: 0 }}
             animate={{ width: `${currentPercent}%` }}
@@ -413,7 +412,7 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
           <h3 className="text-sm text-white/60 font-medium">ביצועים בזמן אמת</h3>
           <div className="flex items-center gap-2">
             <motion.div
-              className="w-2 h-2 rounded-full bg-[#30D158]"
+              className="w-2 h-2 rounded-full bg-[var(--color-live)]"
               animate={{ opacity: [1, 0.5, 1] }}
               transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
             />

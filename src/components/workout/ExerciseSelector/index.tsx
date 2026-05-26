@@ -3,6 +3,7 @@
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
 import { AnimatePresence, type PanInfo, motion, useMotionValue, useTransform } from 'framer-motion';
+import { X as CloseIcon, Dumbbell as DumbbellIcon } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import * as dataService from '../../../services/dataService';
@@ -15,7 +16,6 @@ import {
   createWorkoutSet,
 } from '../../../types';
 import { triggerHaptic } from '../../../utils/haptics';
-import { CloseIcon, DumbbellIcon } from '../../icons';
 import { ModalOverlay } from '../../ui/ModalOverlay';
 import ExerciseLibraryTab from '../ExerciseLibraryTab';
 import WorkoutTemplates from '../WorkoutTemplates';
@@ -174,10 +174,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         <div style={{ background: 'var(--fs-primary)' }}>
           {/* Drag Handle */}
           <div className="flex justify-center pt-3 pb-2">
-            <div
-              className="w-10 h-1"
-              style={{ background: 'var(--fs-surface)', opacity: 0.3 }}
-            />
+            <div className="w-10 h-1" style={{ background: 'var(--fs-surface)', opacity: 0.3 }} />
           </div>
 
           {/* Header */}
@@ -190,7 +187,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     fontFamily: 'var(--font-display)',
                     fontWeight: 900,
                     fontSize: 28,
-                    color: 'var(--fs-surface)',
+                    color: 'var(--fs-ink)',
                     letterSpacing: '-0.01em',
                     lineHeight: 0.95,
                     direction: 'ltr',
@@ -205,7 +202,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     letterSpacing: '0.15em',
-                    color: 'var(--fs-surface)',
+                    color: 'var(--fs-ink)',
                     opacity: 0.5,
                     textTransform: 'uppercase',
                   }}
@@ -224,7 +221,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 }}
                 aria-label="סגור"
               >
-                <CloseIcon className="w-5 h-5" style={{ color: 'var(--fs-surface)' }} />
+                <CloseIcon className="w-5 h-5" style={{ color: 'var(--fs-ink)' }} />
               </button>
             </div>
 
@@ -243,10 +240,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
                 style={{
                   background: activeTab === 'exercises' ? 'var(--fs-accent)' : 'transparent',
-                  color:
-                    activeTab === 'exercises'
-                      ? 'var(--fs-primary)'
-                      : 'var(--fs-surface)',
+                  color: activeTab === 'exercises' ? 'var(--fs-primary)' : 'var(--fs-surface)',
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.04em',
                   textTransform: 'uppercase',
@@ -265,10 +259,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
                 style={{
                   background: activeTab === 'templates' ? 'var(--fs-accent)' : 'transparent',
-                  color:
-                    activeTab === 'templates'
-                      ? 'var(--fs-primary)'
-                      : 'var(--fs-surface)',
+                  color: activeTab === 'templates' ? 'var(--fs-primary)' : 'var(--fs-surface)',
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.04em',
                   textTransform: 'uppercase',
@@ -372,7 +363,9 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         </AnimatePresence>
 
         {/* Safe area bottom */}
-        <div style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--fs-surface)' }} />
+        <div
+          style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--fs-surface)' }}
+        />
       </motion.div>
     </ModalOverlay>
   );

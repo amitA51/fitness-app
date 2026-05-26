@@ -199,7 +199,7 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
                       border: isActive ? '1.5px solid var(--fs-accent)' : '1.5px solid transparent',
                       borderRadius: '14px 10px 14px 10px',
                       cursor: 'pointer',
-                      transition: 'all 120ms ease',
+                      transition: 'background-color 120ms ease, border-color 120ms ease, color 120ms ease',
                       fontFamily: 'inherit',
                     }}
                   >
@@ -272,7 +272,7 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
                         fontWeight: 700,
                         color: isActive ? '#FFFFFF' : 'var(--fs-ink)',
                         cursor: 'pointer',
-                        transition: 'all 120ms ease',
+                        transition: 'background-color 120ms ease, border-color 120ms ease, color 120ms ease',
                       }}
                     >
                       {tag.label}

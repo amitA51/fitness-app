@@ -4,7 +4,7 @@
  * Uses DataContext sessions when available to avoid duplicate IndexedDB reads
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { calculateStreak } from '../../services/achievementService';
 import { generateAIWorkoutInsight } from '../../services/aiWorkoutInsightService';
 import {
@@ -73,7 +73,7 @@ export function useFitnessInsights(externalSessions?: WorkoutSession[]): Fitness
 
   const sessions = externalSessions ?? localSessions;
 
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     if (externalSessions) return;
     try {
       setLoading(true);
@@ -86,7 +86,7 @@ export function useFitnessInsights(externalSessions?: WorkoutSession[]): Fitness
     } finally {
       setLoading(false);
     }
-  };
+  }, [externalSessions]);
 
   useEffect(() => {
     if (externalSessions) {
@@ -96,17 +96,14 @@ export function useFitnessInsights(externalSessions?: WorkoutSession[]): Fitness
 
     loadSessions();
 
-    const handleSave = () => loadSessions();
-    const handleCompleted = () => loadSessions();
-
-    window.addEventListener('WORKOUT_SAVED', handleSave);
-    window.addEventListener('WORKOUT_COMPLETED', handleCompleted);
+    window.addEventListener('WORKOUT_SAVED', loadSessions);
+    window.addEventListener('WORKOUT_COMPLETED', loadSessions);
 
     return () => {
-      window.removeEventListener('WORKOUT_SAVED', handleSave);
-      window.removeEventListener('WORKOUT_COMPLETED', handleCompleted);
+      window.removeEventListener('WORKOUT_SAVED', loadSessions);
+      window.removeEventListener('WORKOUT_COMPLETED', loadSessions);
     };
-  }, [externalSessions]);
+  }, [externalSessions, loadSessions]);
 
   const computedData = useMemo(() => {
     if (sessions.length === 0) {
@@ -181,7 +178,7 @@ export function useFitnessInsights(externalSessions?: WorkoutSession[]): Fitness
     }
   }, [computedData.exerciseNames, selectedExercise]);
 
-  const generateInsight = async () => {
+  const generateInsight = useCallback(async () => {
     if (aiInsightLoading) return;
     try {
       setAiInsightLoading(true);
@@ -193,21 +190,36 @@ export function useFitnessInsights(externalSessions?: WorkoutSession[]): Fitness
     } finally {
       setAiInsightLoading(false);
     }
-  };
+  }, [aiInsightLoading, sessions]);
 
-  return {
-    loading: externalSessions ? false : loading,
-    error,
-    ...computedData,
-    workoutSessions: sessions,
-    selectedExerciseProgress,
-    selectedExerciseDelta,
-    aiInsight,
-    aiInsightLoading,
-    refresh: loadSessions,
-    selectExercise: setSelectedExercise,
-    generateAIInsight: generateInsight,
-  };
+  return useMemo(
+    () => ({
+      loading: externalSessions ? false : loading,
+      error,
+      ...computedData,
+      workoutSessions: sessions,
+      selectedExerciseProgress,
+      selectedExerciseDelta,
+      aiInsight,
+      aiInsightLoading,
+      refresh: loadSessions,
+      selectExercise: setSelectedExercise,
+      generateAIInsight: generateInsight,
+    }),
+    [
+      externalSessions,
+      loading,
+      error,
+      computedData,
+      sessions,
+      selectedExerciseProgress,
+      selectedExerciseDelta,
+      aiInsight,
+      aiInsightLoading,
+      loadSessions,
+      generateInsight,
+    ]
+  );
 }
 
 export default useFitnessInsights;

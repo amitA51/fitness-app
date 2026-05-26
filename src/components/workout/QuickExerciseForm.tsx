@@ -2,11 +2,11 @@
 // Sharp corners · Navy border · Bone background
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
+import { X as CloseIcon } from 'lucide-react';
 import React, { useState, memo } from 'react';
 import * as dataService from '../../services/dataService';
 import { type CreatePersonalExerciseInput, type Exercise, createWorkoutSet } from '../../types';
 import { logger } from '../../utils/logger';
-import { CloseIcon } from '../icons';
 
 interface QuickExerciseFormProps {
   onAdd: (exercise: Exercise) => void;
@@ -139,7 +139,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 22,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               letterSpacing: '-0.01em',
             }}
           >
@@ -160,7 +160,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
               cursor: 'pointer',
             }}
           >
-            <CloseIcon style={{ width: 18, height: 18, color: 'var(--fs-primary)' }} />
+            <CloseIcon style={{ width: 18, height: 18, color: 'var(--fs-heading)' }} />
           </button>
         </div>
 
@@ -327,7 +327,9 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
           </div>
         </form>
 
-        <div style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--fs-surface)' }} />
+        <div
+          style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--fs-surface)' }}
+        />
       </div>
     </div>
   );

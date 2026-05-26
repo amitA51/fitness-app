@@ -45,7 +45,7 @@ export function OfflineIndicator() {
         aria-live="polite"
         className="glass-surface-dark scale-pop-in sticky top-0 inset-x-0 z-50 text-center text-sm font-mono py-1 flex items-center justify-center gap-2 w-full"
         style={{
-          color: 'var(--fs-bg)',
+          color: 'var(--fs-ink)',
           paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)',
         }}
       >
@@ -62,7 +62,7 @@ export function OfflineIndicator() {
       aria-live="polite"
       className="glass-surface-dark scale-pop-in sticky top-0 inset-x-0 z-50 text-center text-sm font-mono py-2 flex items-center justify-center gap-2 w-full"
       style={{
-        color: 'var(--fs-bg)',
+        color: 'var(--fs-ink)',
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
       }}
     >

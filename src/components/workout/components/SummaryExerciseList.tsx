@@ -2,9 +2,9 @@
 // Sharp corners, bone-deep cards, navy borders, Big Shoulders typography
 
 import { motion } from 'framer-motion';
+import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import type React from 'react';
 import { memo } from 'react';
-import { CheckCircleIcon } from '../../icons';
 
 export interface ExerciseSummaryItemData {
   name: string | undefined;
@@ -73,7 +73,7 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
             <CheckCircleIcon
               size={16}
               strokeWidth={2.5}
-              style={{ color: 'var(--fs-primary)', flexShrink: 0 }}
+              style={{ color: 'var(--fs-heading)', flexShrink: 0 }}
             />
           )}
           <span

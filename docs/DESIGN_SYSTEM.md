@@ -1,284 +1,327 @@
-# SparkOS Fitness — Design System Architecture
+# SparkOS Fitness — Fresh Steel Design System
 
-## Overview
+## Vision
 
-The app uses a custom **editorial design system** called "Sport Annual" with a navy/mustard/bone palette, zero-radius blocks, uppercase display typography, and a magazine-like layout. It is **not** a standard UI framework (Material, iOS, etc.) — it is entirely bespoke.
+Fresh Steel is a **precision gym OS** — every screen feels like instrumentation on a high-end training machine. Calibration lines, weight-plate motifs, data-rail accents, and sharp asymmetric panels. The aesthetic is unique among fitness apps: not the generic dark-card look of Strong/Hevy, not the clean minimal of Apple Health. It is **equipment as interface**.
+
+## Design Principles
+
+1. **Instrument, not decoration** — every visual element communicates data or supports action. Ambient mesh gradients encode state; accent rails mark active context; plate-ring badges show set progress.
+2. **One clear action per moment** — the CTA hierarchy is strict. During a workout, the set input and slide-to-complete own the screen. Everything else recedes.
+3. **Dark mode is a first-class citizen** — the app should look premium and deliberate in both modes. Surfaces differentiate by luminance steps, not by dropped contrast.
+4. **RTL-native** — Hebrew is the primary language. All layouts use logical properties. Numbers stay LTR. Mixed content is tested.
+5. **60fps always** — only animate `transform` and `opacity`. Use `will-change` sparingly. Respect `prefers-reduced-motion`.
 
 ---
 
-## How It Works — The 5 Layers
+## Architecture — 5 Layers
 
 ```
 Layer 5: React Components (TSX)
-    Uses Tailwind classes + CSS classes + inline styles
-Layer 4: CSS Component Classes (global.css, components.css, motion.css, typography.css)
-    Reusable patterns like .masthead, .block-hero, .card, .btn-primary
+    Tailwind classes + CSS utility classes + inline styles
+Layer 4: Component Classes (components.css, global.css, motion.css, typography.css)
+    .masthead, .glass-surface, .card-interactive, .btn-primary, .slide-complete
 Layer 3: Tailwind Config (tailwind.config.js)
-    Maps CSS variables to Tailwind utilities (bg-navy, text-mustard, font-display)
+    Maps CSS variables to utilities: bg-fs-accent, text-fs-ink, font-display
 Layer 2: CSS Custom Properties (tokens.css)
-    ~120+ variables — single source of truth for all colors, spacing, fonts, etc.
-Layer 1: Browser + Google Fonts
-    Big Shoulders Display (headlines), IBM Plex Sans (body), IBM Plex Mono (labels)
-```
-
-**Data flow example:**
-```
-tokens.css:   --navy: #14293d
-    → tailwind.config.js:  colors: { navy: 'var(--navy)' }
-        → Tailwind generates: .bg-navy { background: var(--navy) }
-            → Component: <div className="bg-navy" />
-            → Or: .btn-primary { background: var(--navy) } in global.css
+    ~140 variables — single source of truth for both light and dark modes
+Layer 1: Google Fonts
+    Bricolage Grotesque (display), IBM Plex Sans (body), IBM Plex Mono (data), Assistant (Hebrew)
 ```
 
 ---
 
-## Design Tokens (tokens.css)
+## Color Palette
 
-The file defines ~120 CSS custom properties organized into groups:
+### Core Tokens
 
-### Colors (Core Identity)
+| Token | Light | Dark | Role |
+|-------|-------|------|------|
+| `--fs-bg` | `#EEF3F1` | `#0C1311` | Canvas background |
+| `--fs-surface` | `#FFFFFF` | `#141D1B` | Card / panel surface |
+| `--fs-surface-2` | `#DBE6E3` | `#1E2B29` | Secondary surface, dividers |
+| `--fs-ink` | `#132327` | `#F1F8F5` | Primary text |
+| `--fs-muted` | `#60706F` | `#8A9E9A` | Secondary text, labels |
+| `--fs-primary` | `#16292D` | `#1E3330` | Masthead backgrounds, navy panels |
+| `--fs-accent` | `#43C7A5` | `#43C7A5` | Anchor color, CTAs, active states |
+| `--fs-accent-2` | `#2C7F91` | `#2C7F91` | Gradient endpoint, secondary accent |
+| `--fs-signal` | `#E2FB70` | `#E2FB70` | PR celebrations, positive deltas |
+| `--fs-warn` | `#E26E3F` | `#E26E3F` | Errors, timer critical state |
+| `--fs-steel` | `#B9C8C6` | `#3D524E` | Borders, plate rings, separators |
+| `--fs-plate` | `#D7E0DE` | `#1E2B29` | Muted background areas |
+| `--fs-rubber` | `#0D1516` | `#07100F` | Deep darks, cockpit fill |
 
-| Token | Light Mode | Dark Mode | Purpose |
-|---|---|---|---|
-| `--bone` | `#F5F1EB` | `#0B1A2B` | Page background (warm off-white) |
-| `--bone-deep` | `#EAE4DA` | `#14293D` | Card surfaces, dividers |
-| `--bone-faint` | `#F9F7F3` | `#1E3A54` | Hover states |
-| `--navy` | `#14293D` | `#F5F1EB` | Primary action color |
-| `--navy-deep` | `#0B1A2B` | `#FFFFFF` | Hover/pressed navy |
-| `--navy-light` | `#1E3A54` | `#EAE4DA` | Lighter variant |
-| `--mustard` | `#E8B82D` | `#E8B82D` | Accent — **anchor color, never flips** |
-| `--mustard-dark` | `#C49A1A` | `#F2C951` | Pressed mustard |
-| `--ink` | `#1A1A1A` | `#F5F1EB` | Primary text |
-| `--stone` | `#7E7D78` | `rgba(245,241,235,0.65)` | Secondary text |
-| `--stone-light` | `#A5A49F` | `rgba(245,241,235,0.42)` | Muted text |
+### Key Dark Mode Rules
 
-**Key insight:** Dark mode works by **inverting bone and navy**. They swap places. Mustard stays mustard in both modes.
+- **`--fs-primary` MUST lighten in dark mode** (`#16292D` -> `#1E3330`) so mastheads and chapter-breaks don't disappear into the background
+- **`--fs-bg` goes deeper** (`#0C1311`) to create enough contrast between bg -> surface -> surface-2
+- **`--fs-muted` brightens** to maintain WCAG AA (4.5:1+) on dark surfaces
+- **Accent colors stay constant** — `--fs-accent` `#43C7A5` never changes. It's the anchor.
+- **Body gradient adapts** — white overlay in light, transparent overlay in dark. Grid lines use `var(--fs-ink)` opacity.
 
-### Semantic Colors
+### Contrast Requirements (WCAG AA)
 
-| Token | Value | Purpose |
-|---|---|---|
-| `--color-primary` | `var(--navy)` | Primary actions |
-| `--color-secondary` | `var(--mustard)` | Accent actions |
-| `--color-success` | `#2D8B4E` | Positive states |
-| `--color-warning` | `#C48A1A` | Warning states |
-| `--color-error` | `#C42B2B` | Error states |
-| `--color-background` | `var(--bone)` | Page background |
-| `--color-surface` | `#FFFFFF` | Card surface |
-| `--color-text` | `var(--ink)` | Primary text |
-
-### Typography
-
-| Token | Value | Purpose |
-|---|---|---|
-| `--font-display` | `'Big Shoulders Display', ...` | Headlines (800/900 weight) |
-| `--font-body` | `'IBM Plex Sans', ...` | Body text |
-| `--font-mono` | `'IBM Plex Mono', ...` | Labels, data, kickers |
-| `--font-hebrew` | `'Assistant', ...` | Hebrew text fallback |
-
-### Layout
-
-| Token | Value | Purpose |
-|---|---|---|
-| `--max-width` | `480px` | Content max width (mobile-first) |
-| `--content-padding` | `20px` | Standard side padding |
-| `--nav-height` | `64px` | Bottom navigation height |
-
-### Per-Page Accent System
-
-`tokens.css` defines `--accent-current` etc. as navy, but the **PageThemeContext overrides these at runtime** with page-specific colors:
-
-| Page | Accent Color | Mood |
-|---|---|---|
-| Dashboard | `#3B82F6` (Blue) | Energetic |
-| Workout | `#8B5CF6` (Purple) | Focused |
-| Nutrition | `#22C55E` (Green) | Calm |
-| History | `#06B6D4` (Cyan) | Calm |
-| Progress | `#F59E0B` (Amber) | Energetic |
-| Templates | `#A855F7` (Purple) | Focused |
-| Settings | `#71717A` (Gray) | Calm |
-
-When you navigate to a page, the context sets `--accent-current`, `--accent-current-hover`, `--accent-current-glow` on the `<html>` element. Components can use `var(--accent-current)` to pick up the page color automatically.
+| Pair | Light | Dark | Target |
+|------|-------|------|--------|
+| ink on bg | 15.8:1 | 16.2:1 | 4.5:1 |
+| ink on surface | 19.1:1 | 14.8:1 | 4.5:1 |
+| muted on surface | 4.8:1 | 4.6:1 | 4.5:1 |
+| accent on primary | 4.2:1 | 4.5:1 | 3:1 (large) |
 
 ---
 
-## Editorial Design Patterns (global.css)
+## Typography
 
-The app uses magazine/newspaper-inspired UI patterns. All defined in `global.css @layer components`:
+| Variable | Font | Weights | Use |
+|----------|------|---------|-----|
+| `--font-display` | Bricolage Grotesque | 600-800 | Page titles, hero numbers, set values, section headers |
+| `--font-body` | IBM Plex Sans | 400-800 | Body text, descriptions, form labels |
+| `--font-mono` | IBM Plex Mono | 500-700 | Data labels, kickers, timer, unit suffixes, badge text |
+| `--font-hebrew` | Assistant | 400-800 | Hebrew text, RTL support |
 
-### 1. Masthead (`.masthead`)
-Full-width navy header block with bone text. Contains:
-- `.kicker` — mustard, mono uppercase, small text (e.g., "MONDAY · WEEK 16")
-- `h1` — Big Shoulders Display 900, large (40-64px), bone color
-```html
-<header class="masthead">
-  <div class="kicker">§01 · NUTRITION · 2024-01-15</div>
-  <h1>תזונה</h1>
-</header>
+### Type Scale
+
+| Name | Size | Weight | Tracking | Use |
+|------|------|--------|----------|-----|
+| Display Hero | 120px | 800 | -0.03em | PR celebration number |
+| Display XL | 88px | 800 | -0.02em | Block hero stat |
+| Display LG | 48px | 800 | -0.02em | Summary headline, workout title |
+| Display | 36px | 800 | -0.02em | Page masthead title |
+| Display SM | 24px | 800 | -0.01em | Card headlines, CTA text |
+| Title | 20px | 800 | 0 | Section headings |
+| Headline | 18px | 700 | 0 | Exercise names |
+| Body LG | 17px | 400-600 | 0 | Primary body copy |
+| Body | 15px | 400-600 | 0 | Standard text |
+| Body SM | 13px | 600 | 0 | Card descriptions |
+| Label | 11px | 700 | 0.08-0.14em | Mono labels, kickers |
+| Caption | 10px | 700 | 0.12-0.22em | Kicker slugs, timestamps |
+
+### Workout Numbers Rule
+
+Weight and reps are the **hero** during an active workout:
+- Font: `var(--font-display)`, weight 800
+- Size: 42-48px (SetInputCard), 56-96px (NumpadOverlay)
+- Color: `var(--fs-ink)` (full contrast)
+- Direction: always `ltr` (numbers don't reverse in RTL)
+- Feature: `font-variant-numeric: tabular-nums` (prevents layout jitter)
+
+---
+
+## Spacing
+
+8pt grid system:
+```
+--space-1: 4px    --space-6: 24px
+--space-2: 8px    --space-8: 32px
+--space-3: 12px   --space-10: 40px
+--space-4: 16px   --space-12: 48px
+--space-5: 20px   --space-16: 64px
 ```
 
-### 2. Chapter Break (`.chapter-break`)
-Horizontal navy strip dividing sections. Contains:
-- `.left` — mustard mono text (e.g., "§02 · RECOMMENDATIONS")
-- `.right` — display font Hebrew text (e.g., "המלצות")
-
-### 3. Block Hero (`.block-hero`)
-Mustard-background hero stat block. Contains:
-- `.ribbon` — absolute-positioned navy badge top-right
-- `.label` — mono uppercase description
-- `.number` — display font 900, huge (120px), the main stat
-- `.sub` — display font 600, secondary info
-
-### 4. Data Strip (`.data-strip`)
-Two-column grid with 2px navy border. Each cell has:
-- `.val` — display font 44px (e.g., "12,450")
-- `.lbl` — mono uppercase (e.g., "KG VOLUME")
-
-### 5. Skill Row (`.skill-row`)
-Progress bar with label and percentage:
-- `.skill-name` — exercise/section name
-- `.skill-pct` — percentage text
-- `.skill-bar` / `.skill-fill` — mustard progress bar
-
-### 6. Workout Patterns (`.aw-*`, `.set-row-annual`)
-Active workout specific patterns with states:
-- `.done` — completed sets, muted
-- `.active` — current set, mustard highlight
-- `.future` — upcoming sets, gray
+Content padding: 20px. Max width: 480px. Nav height: 64px.
 
 ---
 
-## Role of Each CSS File
+## Signature Shape — Asymmetric Radius
 
-| File | Purpose | Key Content |
-|---|---|---|
-| `tokens.css` | **Single source of truth** — all CSS custom properties | ~120 vars: colors, spacing, fonts, radius, shadows, motion, z-index |
-| `global.css` | Base reset + editorial component classes | `.masthead`, `.block-hero`, `.chapter-break`, `.data-strip`, `.skill-row`, `.btn-primary`, `.card`, `.aw-*` patterns |
-| `components.css` | **Parallel component system** (SparkOS design) | `.card` (rounded), `.btn-*` variants, `.badge-*`, `.glass`, `.skeleton`, `.toggle-switch` |
-| `motion.css` | All animations and transitions | 17 keyframe animations, stagger delays, hover effects, reduced motion |
-| `typography.css` | Text scale and heading styles | Display/body/label scales, color utilities, heading classes, RTL support |
+The distinctive Fresh Steel shape:
+```css
+border-radius: 22px 16px 22px 16px;  /* TL TR BR BL */
+```
+Used on: cards, panels, exercise hero, CTA buttons, input cards, template cards.
 
----
+Variation for smaller elements:
+```css
+border-radius: 14px 10px 14px 10px;
+```
 
-## How Hard Is It to Change Things?
-
-### Change the Primary Color (navy → something else)
-**Difficulty: MEDIUM**
-
-1. Change 3 navy tokens in `tokens.css` `:root` AND `html.dark` (6 edits)
-2. Change `--color-primary`, `--color-primary-hover`, `--color-primary-glow` (3 edits)
-3. Update `index.html` `<meta name="theme-color">` (1 edit)
-4. Update `tailwind.config.js` if not using CSS var references
-5. **Find and replace ~15 hardcoded `#14293d` instances** in TSX files that bypass the design system
-6. **Find and replace `var(--navy)` in ~30 CSS class definitions** in global.css and components.css
-
-### Change the Accent Color (mustard → something else)
-**Difficulty: MEDIUM**
-
-1. Change 3 mustard tokens in `tokens.css` (3 edits)
-2. Change `--color-on-mustard` to ensure text contrast (1 edit)
-3. Update `global.css` — mustard referenced in `.kicker`, `.chapter-break .left`, `.block-hero` background, `.skill-fill`, `.tab-item.active`, `.set-row-annual.active`
-4. Update `tailwind.config.js` mustard definitions
-5. Update `PRCelebration.tsx` confetti colors
-6. **Find and replace ~20 hardcoded `#E8B82D` or mustard instances** in TSX files
-
-### Change the Background (bone → something else)
-**Difficulty: EASY — best abstracted**
-
-1. Change `--bone`, `--bone-deep`, `--bone-faint` in `tokens.css` `:root`
-2. Done — almost everything uses `var(--bone)` or `bg-bone`
-
-### Change Fonts
-**Difficulty: EASY**
-
-1. Update Google Fonts `<link>` in `index.html`
-2. Update `--font-display`, `--font-body`, `--font-mono`, `--font-hebrew` in `tokens.css`
-3. Update `fontFamily` in `tailwind.config.js`
-4. Done — fonts are well-abstracted through CSS variables
-
-### Switch to a Completely Different Design Language (Material, iOS)
-**Difficulty: HARD — essentially a rewrite**
-
-You would need to:
-1. Rewrite all 5 CSS files from scratch
-2. Rewrite `tailwind.config.js` entirely
-3. Rewrite every component using editorial classes (`.masthead`, `.chapter-break`, `.block-hero`, `.data-strip`, all `.aw-*` patterns)
-4. Replace the zero-radius editorial style with rounded corners everywhere
-5. Replace Big Shoulders Display with appropriate fonts
-6. Remove all `border-radius: 0` overrides (editorial uses zero radius deliberately)
-7. Rethink the entire layout system (max-width 480px mobile-first)
-
-**Estimated effort: 2-4 weeks for an experienced developer.**
-
-### Add Proper Dark Mode
-**Difficulty: MEDIUM — partially done**
-
-Dark mode tokens already exist in `tokens.css` `html.dark {}` block (~90 lines). What's missing:
-1. **~40 hardcoded hex colors in TSX files** that don't use CSS vars
-2. **~20 hardcoded `rgba(255,255,255,...)` in components.css** (glass effects assume dark background)
-3. **No dark overrides in components.css, motion.css, typography.css** — only tokens.css has them
-4. **PageThemeContext hardcodes `isDark: true`**
-5. **global.css scrollbar uses hardcoded rgba** that doesn't flip
+Pill shapes (chips, badges, slide-to-complete, bottom nav items):
+```css
+border-radius: 999px;
+```
 
 ---
 
-## Architectural Issues
+## Surface System
 
-### 1. Two Conflicting Component Systems
+### Cards
 
-`global.css` (editorial "Sport Annual") and `components.css` (SparkOS) define **the same class names with different styles**:
+| Class | Use | Treatment |
+|-------|-----|-----------|
+| `.glass-surface` | Standard card | `color-mix` translucent bg + backdrop blur + `--shadow-glass` |
+| `.glass-surface-dark` | Dark card (exercise hero) | Primary-tinted glass + deep shadow |
+| `.premium-dark-surface` | Masthead / hero cards | Gradient mesh (accent + accent-2 radials) + grid overlay |
+| `.card-interactive` | Tappable cards | Hover lift + active scale(0.98) |
+| `.magnetic-card` | Hover-aware cards | translateY(-2px) + `--shadow-lift` on hover |
 
-| Class | global.css (Editorial) | components.css (SparkOS) |
-|---|---|---|
-| `.card` | `border-radius: 0`, `background: var(--bone-deep)` | `border-radius: var(--radius-2xl)`, `background: var(--color-surface)` |
-| `.btn-primary` | `border-radius: 0`, `font-family: var(--font-display)`, uppercase | `border-radius: var(--radius-lg)`, `font-family: var(--font-sans)` |
-| `.input` | `border-radius: 0` | `border-radius: var(--radius-md)` |
-| `.badge` | `border-radius: 0`, mono font | `border-radius: var(--radius-full)` |
-| `.glass` | Light-mode rgba | Dark-mode rgba |
+### Glass Effects
 
-Since `components.css` is NOT in `@layer`, it has **higher specificity** and overrides `global.css` for shared classes.
+All glass classes use `color-mix()` with CSS variables so they automatically adapt to dark mode:
+```css
+.glass-surface {
+  background: color-mix(in srgb, var(--fs-surface) 76%, transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+```
 
-### 2. Hardcoded Colors Bypassing the System
+### Accent Rail
 
-~40+ instances of hardcoded hex colors in TSX files:
-- `'#ef4444'`, `'#22c55e'`, `'#3b82f6'`, `'#f97316'` in analytics, workout, and settings components
-- `'#fff'`, `rgba(255,255,255,0.4)` for text on dark surfaces
-- Muscle group colors in charts are all hardcoded
-
-These should use `var(--color-error)`, `var(--color-success)`, etc.
-
-### 3. Excessive Inline Styles
-
-Dashboard and workout components heavily use `style={{...}}` instead of CSS classes or Tailwind utilities. This bypasses the design system, makes dark mode harder, and reduces consistency.
-
-### 4. Dead Legacy Code
-
-- **`--cosmos-*` tokens** (~12 vars): Remnants of a previous theme, now aliased to current vars
-- **`selectedTheme: 'deepCosmos'`** in SettingsContext: Theme picker was removed but the setting remains
-- **Page accent tokens in tokens.css** (`--accent-dashboard: var(--navy)`): All set to navy but PageThemeContext overrides them at runtime — the tokens.css values are dead
-- **Legacy alias tokens** (~20 vars): `--bg-primary`, `--gray-*`, `--surface-base` etc. add noise
-
-### 5. Vision vs Reality Gap
-
-`VISION.md` describes a different design ("Athletic Index") with different fonts (Fraunces, Geist), different colors (Tangerine `#FF5B1F`), and different patterns (passport stamps, perforated edges). This is **entirely unimplemented** — the current codebase is the earlier "Sport Annual" design.
+A 4px `var(--fs-accent)` stripe on the inline-start edge of data panels:
+```css
+.fs-accent-rail::before {
+  content: '';
+  position: absolute;
+  inset: 9px auto 9px 0;
+  width: 4px;
+  background: var(--fs-accent);
+  border-radius: 999px;
+}
+```
 
 ---
 
-## File Reference
+## Ambient Mesh
 
-| What | Where |
-|---|---|
-| Color/spacing/font tokens | `src/styles/tokens.css` |
-| Editorial component classes | `src/styles/global.css` |
-| SparkOS component classes | `src/styles/components.css` |
-| Animation/transition classes | `src/styles/motion.css` |
-| Typography scale classes | `src/styles/typography.css` |
-| Tailwind custom extensions | `tailwind.config.js` |
-| Per-page accent colors | `src/contexts/PageThemeContext.tsx` |
-| Dark mode toggle logic | `src/contexts/SettingsContext.tsx` |
-| Font loading | `index.html` (Google Fonts preload) |
-| Design vision docs | `VISION.md`, `VISION-brutalist.md`, `VISION-field.md` |
+Premium gradient overlay behind content, creating subtle depth:
+```css
+.ambient-mesh::before {
+  background:
+    radial-gradient(at 18% 12%, accent 28%, transparent 42%),
+    radial-gradient(at 82% 18%, accent-2 24%, transparent 46%),
+    radial-gradient(at 60% 92%, signal 18%, transparent 38%);
+}
+```
+Three intensity levels: `.ambient-mesh-soft` (0.55), default (0.85), `.ambient-mesh-strong` (1.0).
 
 ---
 
-*Generated: 2024-04-23*
+## Body Background
+
+Adapted for both modes via CSS variables:
+- **Light**: white overlay + dark grid lines + accent/signal radials
+- **Dark**: no white overlay + very faint grid lines + accent radials at lower opacity
+
+```css
+body {
+  background:
+    linear-gradient(135deg, var(--fs-body-overlay), transparent 44%),
+    repeating-linear-gradient(90deg, var(--fs-grid-line) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(0deg, var(--fs-grid-line) 0 1px, transparent 1px 28px),
+    radial-gradient(circle at 86% 10%, var(--fs-mesh-accent), transparent 34%),
+    radial-gradient(circle at 12% 18%, var(--fs-mesh-signal), transparent 30%),
+    var(--fs-bg);
+}
+```
+
+---
+
+## Motion
+
+### Easings
+| Name | Curve | Use |
+|------|-------|-----|
+| Premium | `cubic-bezier(0.16, 1, 0.3, 1)` | Page transitions, card reveals |
+| Spring Bounce | `cubic-bezier(0.34, 1.56, 0.64, 1)` | Button press, set completion |
+| Spring Soft | `cubic-bezier(0.32, 0.72, 0, 1)` | Subtle movements |
+
+### Durations
+| Name | Duration | Use |
+|------|----------|-----|
+| Instant | 75ms | Button press feedback |
+| Fast | 150ms | Hover states, toggles |
+| Base | 200ms | Standard transitions |
+| Slow | 300ms | Panel open/close |
+| Chapter | 500ms | Page-level transitions |
+| Premium | 480ms | Hero card reveals |
+
+### Key Animations
+- **Set completion**: quick scale-up (1 -> 1.04 -> 1) + accent flash overlay (0.4 -> 0 opacity)
+- **PR celebration**: confetti burst + scale pop + signal glow
+- **Rest timer**: circular progress ring + breathing dot in final 5s + pulse at zero
+- **Card hover**: translateY(-2px) + shadow-lift
+- **Skeleton loading**: shimmer sweep left-to-right
+
+### Reduced Motion
+
+All animations respect `prefers-reduced-motion: reduce`:
+```css
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+
+---
+
+## Component Patterns
+
+### Masthead
+Full-width premium-dark-surface header with accent mesh:
+- Kicker: mono, 10px, 0.22em tracking, accent color, uppercase
+- Title: display font, 900 weight, cream/bg color, 0.9 line-height, uppercase
+
+### Chapter Break
+Horizontal divider strip between sections:
+- Left: mono kicker with section number (e.g., "§02 · WORKOUT")
+- Right: display font Hebrew section name
+
+### SetInputCard
+Asymmetric-radius card for weight/reps input:
+- Ghost value badge (top-start): "קודם 95" in accent tint
+- Hero number: display font 46px, ink color, LTR direction
+- Unit label: mono 9px, accent color, uppercase
+- +/- buttons: grid 2-col, minus=surface-2, plus=accent
+
+### SlideToComplete
+Pill-shaped track with draggable accent thumb:
+- Track: primary bg + repeating grid pattern
+- Thumb: 48px circle, accent bg, direction arrow
+- Label: mono uppercase, accent color, fades on drag
+
+### InlineRestTimer
+Compact bar between exercise and slide-to-complete:
+- Progress ring: 52px SVG with accent stroke
+- Time: display font 28px, switches to warn color at 3s
+- Add buttons: +15s, +30s, +60s row
+- Skip: accent pill button
+
+---
+
+## Dark Mode Implementation
+
+Dark mode is toggled via `html.dark` class (managed by SettingsContext). All theming flows through CSS custom properties in `tokens.css`.
+
+### What Changes
+- Background surfaces darken (3-step: bg -> surface -> surface-2)
+- Text colors lighten (ink, muted, stone)
+- Shadows deepen (more opacity, wider spread)
+- Glass effects use darker mix values
+- Body gradient adapts (no white overlay)
+- `--fs-primary` lightens slightly so mastheads separate from bg
+
+### What Stays
+- Accent colors (`--fs-accent`, `--fs-accent-2`) are constant
+- Signal and warn colors are constant
+- Typography scale is constant
+- Border-radius values are constant
+- Animation timings are constant
+
+---
+
+## File Map
+
+| File | Purpose |
+|------|---------|
+| `src/styles/tokens.css` | All CSS custom properties — colors, spacing, fonts, shadows, motion, z-index. Light + dark mode. |
+| `src/styles/global.css` | Base reset, body background, scrollbar, accessibility, editorial patterns |
+| `src/styles/components.css` | Card, button, badge, glass, skeleton, toggle, progress, nav classes |
+| `src/styles/motion.css` | All @keyframes + animation utility classes |
+| `src/styles/typography.css` | Type scale, heading styles, color utilities |
+| `tailwind.config.js` | Maps CSS vars to Tailwind utilities |
+| `src/contexts/SettingsContext.tsx` | Toggles `html.dark` class based on user preference |
+
+---
+
+*Updated: 2026-05-26*

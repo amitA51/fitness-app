@@ -147,7 +147,7 @@ const RestTimer: React.FC<RestTimerProps> = ({
               fontWeight: 800,
               fontSize: '28px',
               textTransform: 'uppercase',
-              color: 'var(--fs-surface)',
+              color: 'var(--fs-ink)',
               marginBottom: 8,
             }}
           >
@@ -204,7 +204,11 @@ const RestTimer: React.FC<RestTimerProps> = ({
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 700,
                 fontSize: '60px',
-                color: isWarning ? 'var(--fs-warn)' : isComplete ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                color: isWarning
+                  ? 'var(--fs-warn)'
+                  : isComplete
+                    ? 'var(--fs-accent)'
+                    : 'var(--fs-surface)',
                 textShadow: isWarning
                   ? '0 0 30px rgba(226, 110, 63, 0.5)'
                   : '0 0 20px rgba(67, 199, 165, 0.3)',

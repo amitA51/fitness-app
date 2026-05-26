@@ -12,6 +12,7 @@ import { RecentPRBanner } from '../components/dashboard/RecentPRBanner';
 import { RecentWorkouts } from '../components/dashboard/RecentWorkouts';
 import { TemplateQuickStart, TemplateStrip } from '../components/dashboard/TemplateQuickStart';
 import { WeeklyGrid } from '../components/dashboard/WeeklyGrid';
+import { WorkoutStreak } from '../components/dashboard/WorkoutStreak';
 import { useData } from '../contexts/DataContext';
 import { useFitnessInsights } from '../hooks/fitness/useFitnessInsights';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
@@ -72,6 +73,15 @@ export default function Dashboard() {
   const handleQuickStart = useCallback(() => {
     if (lastUsedTemplate) navigate(`/workout/${lastUsedTemplate.id}`);
     else navigate('/workout');
+  }, [lastUsedTemplate, navigate]);
+
+  const handleEmptyWorkout = useCallback(() => {
+    navigate('/workout');
+  }, [navigate]);
+
+  const handleRepeatLast = useCallback(() => {
+    if (!lastUsedTemplate) return;
+    navigate(`/workout/${lastUsedTemplate.id}`);
   }, [lastUsedTemplate, navigate]);
 
   const goToPrevWeek = useCallback(() => {
@@ -270,10 +280,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <DashboardHeader
-        weekNumber={getWeekNumberForOffset(selectedWeekOffset)}
-        hasSessionToday={hasSessionToday}
-      />
+      <DashboardHeader hasSessionToday={hasSessionToday} />
 
       <main style={{ padding: '20px 20px 28px' }}>
         {/* 1. Primary CTA — "התחל אימון חדש" */}
@@ -315,17 +322,88 @@ export default function Dashboard() {
               height: 44,
               borderRadius: '50%',
               background: 'var(--fs-accent)',
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               fontFamily: 'var(--font-mono)',
               fontSize: 20,
               fontWeight: 600,
               flexShrink: 0,
             }}
           >
-            →
+            ←
           </span>
           <span>התחל אימון חדש</span>
         </button>
+
+        {/* Quick actions row */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: lastUsedTemplate ? '1fr 1fr' : '1fr',
+            gap: 10,
+            marginTop: 10,
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleEmptyWorkout}
+            aria-label="התחל אימון ריק"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '12px 16px',
+              minHeight: 48,
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--fs-steel)',
+              borderRadius: '14px 10px 14px 10px',
+              cursor: 'pointer',
+              color: 'var(--fs-ink)',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 700,
+              fontSize: 13,
+              letterSpacing: '0.04em',
+            }}
+          >
+            <span style={{ fontSize: 16 }}>+</span>
+            אימון ריק
+          </button>
+          {lastUsedTemplate && (
+            <button
+              type="button"
+              onClick={handleRepeatLast}
+              aria-label={`חזור על ${lastUsedTemplate.name}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '12px 16px',
+                minHeight: 48,
+                background: 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))',
+                border: '1px solid var(--fs-accent)',
+                borderRadius: '14px 10px 14px 10px',
+                cursor: 'pointer',
+                color: 'var(--fs-accent)',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                fontSize: 13,
+                letterSpacing: '0.04em',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span style={{ fontSize: 14 }}>↺</span>
+              חזור על {lastUsedTemplate.name}
+            </button>
+          )}
+        </div>
+
+        {/* Workout streak */}
+        <div style={{ marginTop: 12 }}>
+          <WorkoutStreak sessions={workoutSessions} />
+        </div>
 
         {/* 2. Hero bento — weekly activity rings */}
         <section
@@ -429,31 +507,14 @@ export default function Dashboard() {
   );
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function getWeekNumberForOffset(offset: number): number {
-  const now = new Date();
-  const start = getWeekStart(now);
-  start.setDate(start.getDate() + offset * 7);
-  const temp = new Date(Date.UTC(start.getFullYear(), start.getMonth(), start.getDate()));
-  const dayNum = (temp.getUTCDay() + 6) % 7; // Monday=0
-  temp.setUTCDate(temp.getUTCDate() - dayNum + 3);
-  const firstThursday = temp.getTime();
-  temp.setUTCMonth(0, 1);
-  if (temp.getUTCDay() !== 4) {
-    temp.setUTCMonth(0, 1 + ((4 - temp.getUTCDay() + 7) % 7));
-  }
-  return 1 + Math.round((firstThursday - temp.getTime()) / 604800000);
-}
-
 // ── SectionTitle ─────────────────────────────────────────────────────────────
-function SectionTitle({ text }: { text: string }) {
+const SectionTitle = memo(function SectionTitle({ text }: { text: string }) {
   return (
     <h2
       style={{
         fontFamily: 'var(--font-mono)',
         fontWeight: 800,
-        fontSize: 11,
+        fontSize: 13,
         lineHeight: 1,
         color: 'var(--fs-muted)',
         marginBottom: 12,
@@ -464,7 +525,7 @@ function SectionTitle({ text }: { text: string }) {
       {text}
     </h2>
   );
-}
+});
 
 // ── BentoRow — single legend line under hero rings ───────────────────────────
 const BentoRow = memo(function BentoRow({

@@ -305,7 +305,7 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'rgba(var(--bone-rgb, 238,243,241), 0.8)',
+                background: 'rgba(var(--bone-rgb), 0.8)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -314,7 +314,7 @@ export function AIInsightCard({ sessions }: AIInsightCardProps) {
             >
               <RefreshCw
                 size={16}
-                style={{ color: 'var(--fs-primary)', animation: 'spin 1s linear infinite' }}
+                style={{ color: 'var(--fs-heading)', animation: 'spin 1s linear infinite' }}
               />
             </div>
           )}

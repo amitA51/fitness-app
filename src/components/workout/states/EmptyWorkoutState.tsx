@@ -78,7 +78,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
             fontFamily: 'var(--font-display)',
             fontWeight: 900,
             fontSize: 28,
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
             textTransform: 'uppercase',
             letterSpacing: '-0.01em',
             marginBottom: 8,
@@ -128,7 +128,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
             transition: 'background 150ms ease',
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = '#0D1A1C';
+            (e.currentTarget as HTMLElement).style.background = 'var(--color-primary-hover)';
           }}
           onMouseLeave={(e) => {
             (e.currentTarget as HTMLElement).style.background = 'var(--fs-primary)';

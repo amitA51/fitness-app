@@ -98,7 +98,7 @@ export const updateWorkoutTemplate = async (
   const template = await dbGet<WorkoutTemplate>(LS.WORKOUT_TEMPLATES, id);
   if (!template) throw new NotFoundError('WorkoutTemplate', id);
 
-  const updatedTemplate = { ...template, ...updates };
+  const updatedTemplate = { ...template, ...updates, id: template.id };
   await dbPut(LS.WORKOUT_TEMPLATES, updatedTemplate);
 
   const user = await getCurrentUser();
@@ -248,6 +248,45 @@ export const getWorkoutSessions = async (limit = 20): Promise<WorkoutSession[]> 
     return sessions
       .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
       .slice(0, limit);
+  }
+};
+
+/**
+ * Get every workout session in storage, sorted by start time descending.
+ *
+ * Use this when correctness over arbitrary depth matters (e.g. PR detection
+ * across full history). Reads via the `startTime` index cursor so memory cost
+ * scales with row count, not with any artificial limit. Falls back to a full
+ * scan + JS sort if the index is missing.
+ */
+export const getAllWorkoutSessions = async (): Promise<WorkoutSession[]> => {
+  try {
+    const db = await initDB();
+    const store = db.transaction(LS.WORKOUT_SESSIONS, 'readonly').objectStore(LS.WORKOUT_SESSIONS);
+
+    if (!store.indexNames.contains('startTime')) {
+      throw new Error('startTime index missing — falling back to full scan');
+    }
+
+    return await new Promise<WorkoutSession[]>((resolve, reject) => {
+      const out: WorkoutSession[] = [];
+      const request = store.index('startTime').openCursor(null, 'prev');
+      request.onerror = () => reject(request.error);
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+        if (!cursor) {
+          resolve(out);
+          return;
+        }
+        out.push(cursor.value as WorkoutSession);
+        cursor.continue();
+      };
+    });
+  } catch {
+    const sessions = await dbGetAll<WorkoutSession>(LS.WORKOUT_SESSIONS);
+    return sessions.sort(
+      (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+    );
   }
 };
 
@@ -466,9 +505,14 @@ export const updatePersonalExercise = async (
 };
 
 /**
- * Delete a personal exercise.
+ * Delete a personal exercise and cascade-delete its associated personal records.
  */
 export const deletePersonalExercise = async (id: string): Promise<void> => {
+  // Cascade: remove all personal records linked to this exercise
+  const allPRs = await dbGetAll<{ id: string; exerciseId: string }>(STORES.PERSONAL_RECORDS);
+  const orphanedPRs = allPRs.filter((pr) => pr.exerciseId === id);
+  await Promise.all(orphanedPRs.map((pr) => dbDelete(STORES.PERSONAL_RECORDS, pr.id)));
+
   const db = await initDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readwrite');
@@ -914,35 +958,45 @@ export const replacePersonalExercisesFromCloud = async (
 };
 
 /**
- * Replace all body measurements with cloud data.
+ * Merge body measurements from cloud into local IndexedDB without dropping
+ * local-only records. Name kept for backwards compatibility; the implementation
+ * is now non-destructive (delegates to mergeGenericRecords defined below).
  */
 export const replaceBodyMeasurementsFromCloud = async (measurements: unknown[]): Promise<void> => {
-  await dbClear(STORES.BODY_MEASUREMENTS);
-  await Promise.all(measurements.map((m) => dbPut(STORES.BODY_MEASUREMENTS, m as object)));
+  await mergeGenericRecords(
+    STORES.BODY_MEASUREMENTS,
+    (measurements as { id?: string; createdAt?: string; updatedAt?: string }[]) ?? []
+  );
 };
 
 /**
- * Replace all personal records with cloud data.
+ * Merge personal records from cloud (non-destructive).
  */
 export const replacePersonalRecordsFromCloud = async (records: unknown[]): Promise<void> => {
-  await dbClear(STORES.PERSONAL_RECORDS);
-  await Promise.all(records.map((r) => dbPut(STORES.PERSONAL_RECORDS, r as object)));
+  await mergeGenericRecords(
+    STORES.PERSONAL_RECORDS,
+    (records as { id?: string; createdAt?: string; updatedAt?: string }[]) ?? []
+  );
 };
 
 /**
- * Replace all recovery logs with cloud data.
+ * Merge recovery logs from cloud (non-destructive).
  */
 export const replaceRecoveryLogsFromCloud = async (logs: unknown[]): Promise<void> => {
-  await dbClear(LS.RECOVERY_LOGS);
-  await Promise.all(logs.map((log) => dbPut(LS.RECOVERY_LOGS, log as object)));
+  await mergeGenericRecords(
+    LS.RECOVERY_LOGS,
+    (logs as { id?: string; createdAt?: string; updatedAt?: string }[]) ?? []
+  );
 };
 
 /**
- * Replace all nutrition logs with cloud data.
+ * Merge nutrition logs from cloud (non-destructive).
  */
 export const replaceNutritionLogsFromCloud = async (logs: unknown[]): Promise<void> => {
-  await dbClear(LS.NUTRITION_LOGS);
-  await Promise.all(logs.map((log) => dbPut(LS.NUTRITION_LOGS, log as object)));
+  await mergeGenericRecords(
+    LS.NUTRITION_LOGS,
+    (logs as { id?: string; createdAt?: string; updatedAt?: string }[]) ?? []
+  );
 };
 
 /**

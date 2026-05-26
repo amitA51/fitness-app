@@ -36,12 +36,13 @@ import {
 } from '../services/nutritionService';
 import type { MealPreset } from '../services/nutritionService';
 import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../types';
+import { safeJsonParse } from '../utils/safeJson';
 
 const MACRO_COLORS = {
-  calories: '#E26E3F', // --fs-warn
-  protein: '#43C7A5', // --fs-accent
-  carbs: '#2C7F91', // --fs-accent-2
-  fat: '#E2FB70', // --fs-signal
+  calories: 'var(--fs-warn)',
+  protein: 'var(--fs-accent)',
+  carbs: 'var(--fs-accent-2)',
+  fat: 'var(--fs-signal)',
 };
 
 type MealTab = 'log' | 'library' | 'presets';
@@ -197,8 +198,8 @@ export default function NutritionPage() {
     const apply = () => {
       try {
         const raw = localStorage.getItem('nutrition_goals');
-        if (!raw) return;
-        const parsed = JSON.parse(raw) as Partial<Record<keyof MacroNutrients, number | ''>>;
+        const parsed = safeJsonParse<Partial<Record<keyof MacroNutrients, number | ''>>>(raw);
+        if (!parsed) return;
         const pick = (v: number | '' | undefined, fallback: number) =>
           typeof v === 'number' && v > 0 ? v : fallback;
         setMacroGoals({
@@ -246,38 +247,45 @@ export default function NutritionPage() {
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
-      {/* Masthead */}
+      {/* Header */}
       <header
-        className="masthead sticky top-0 z-20"
-        style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}
+        style={{
+          paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
+          paddingLeft: 'max(20px, env(safe-area-inset-left, 20px))',
+          paddingRight: 'max(20px, env(safe-area-inset-right, 20px))',
+          paddingBottom: 16,
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          background: 'var(--fs-bg)',
+          borderBottom: '2px solid var(--fs-accent)',
+        }}
       >
-        <div className="kicker">
-          §08 · NUTRITION · {todayMacros.calories || 0}/{macroGoals.calories} KCAL
-        </div>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 13,
+            fontWeight: 500,
+            color: 'var(--fs-muted)',
+            margin: 0,
+            lineHeight: 1.4,
+          }}
+        >
+          {todayLabel} · {todayMacros.calories || 0}/{macroGoals.calories} קל׳
+        </p>
         <h1
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(44px, 12vw, 72px)',
-            lineHeight: 0.9,
-            marginTop: '8px',
             fontWeight: 800,
-            textTransform: 'uppercase',
+            fontSize: 26,
+            lineHeight: 1.15,
+            letterSpacing: '-0.01em',
+            color: 'var(--fs-ink)',
+            margin: '4px 0 0',
           }}
         >
           תזונה
         </h1>
-        <p
-          className="mt-2"
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '11px',
-            letterSpacing: '0.22em',
-            color: 'var(--fs-accent)',
-            textTransform: 'uppercase',
-          }}
-        >
-          {todayLabel}
-        </p>
       </header>
 
       {/* Block Hero — today's calories */}
@@ -636,7 +644,7 @@ export default function NutritionPage() {
           width: '56px',
           height: '56px',
           background: 'var(--fs-accent)',
-          color: 'var(--fs-primary)',
+          color: 'var(--fs-heading)',
           border: '2px solid var(--fs-primary)',
           left: '20px',
           right: 'auto',
@@ -807,7 +815,7 @@ const MealEntryCard = memo(function MealEntryCard({
           fontFamily: 'var(--font-mono)',
           fontSize: '11px',
           letterSpacing: '0.12em',
-          color: 'var(--fs-primary)',
+          color: 'var(--fs-heading)',
           textTransform: 'uppercase',
           paddingInlineStart: '8px',
         }}
@@ -870,7 +878,7 @@ const FoodLibrary = memo(function FoodLibrary({
           }}
           onFocus={(e) => {
             e.target.style.borderColor = 'var(--fs-accent)';
-            e.target.style.boxShadow = '0 0 0 2px rgba(67,199,165,0.2)';
+            e.target.style.boxShadow = '0 0 0 2px rgba(77,220,187,0.2)';
           }}
           onBlur={(e) => {
             e.target.style.borderColor = 'var(--fs-surface-2)';
@@ -1131,7 +1139,7 @@ const MealPresetCard = memo(function MealPresetCard({
                   fontSize: '12px',
                   fontWeight: 600,
                   backgroundColor: 'var(--fs-surface-2)',
-                  color: 'var(--fs-primary)',
+                  color: 'var(--fs-heading)',
                   border: '1px solid var(--fs-surface-2)',
                   cursor: 'pointer',
                 }}
@@ -1292,7 +1300,7 @@ function AddMealModal({
                     fontFamily: 'var(--font-hebrew)',
                     transition: 'all 0.15s ease',
                     ...(selectedMealType === key
-                      ? { backgroundColor: 'var(--fs-accent)', color: 'var(--fs-primary)' }
+                      ? { backgroundColor: 'var(--fs-accent)', color: 'var(--fs-heading)' }
                       : { backgroundColor: 'var(--fs-surface-2)', color: 'var(--fs-muted)' }),
                   }}
                 >
@@ -1498,7 +1506,7 @@ function AddMealModal({
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = 'var(--fs-accent)';
-                e.target.style.boxShadow = '0 0 0 2px rgba(67,199,165,0.2)';
+                e.target.style.boxShadow = '0 0 0 2px rgba(77,220,187,0.2)';
               }}
               onBlur={(e) => {
                 e.target.style.borderColor = 'var(--fs-surface-2)';

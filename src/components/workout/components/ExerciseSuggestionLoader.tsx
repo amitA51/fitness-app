@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from 'react';
 import { getPersonalExercises, getWorkoutSessions } from '../../../services/dataService';
-import { getExerciseNames } from '../../../services/prService';
 import type { PersonalExercise } from '../../../types';
 
 export interface ExerciseSuggestionData {
@@ -27,16 +26,15 @@ export const useExerciseSuggestions = (): UseExerciseSuggestionsReturn => {
           getWorkoutSessions(100),
           getPersonalExercises().catch(() => []),
         ]);
-        const historyNames = getExerciseNames();
         const libraryNames = Array.from(
-          new Set((personalExercises as PersonalExercise[]).map((ex) => ex.name).filter(Boolean))
+          new Set(
+            (personalExercises as PersonalExercise[])
+              .map((ex) => ex.name)
+              .filter((n): n is string => !!n)
+          )
         );
         setPersonalExerciseLibrary(personalExercises as PersonalExercise[]);
-        setNameSuggestions(
-          Array.from(new Set([...historyNames, ...libraryNames]))
-            .filter((n): n is string => !!n)
-            .sort()
-        );
+        setNameSuggestions(libraryNames.sort());
       } catch {
         // Silently handle name suggestion loading errors
       }

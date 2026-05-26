@@ -168,7 +168,7 @@ function SettingsRow({ icon, label, children, divider = true }: SettingsRowProps
         {icon && (
           <div
             className="w-8 h-8 flex items-center justify-center shrink-0"
-            style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-primary)' }}
+            style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
           >
             {icon}
           </div>
@@ -273,7 +273,7 @@ function NumberInput({ value, onChange, min, max, placeholder, unit }: NumberInp
         placeholder={placeholder}
         style={{
           width: '80px',
-          minHeight: '36px',
+          minHeight: '44px',
           padding: '6px 10px',
           textAlign: 'left',
           fontFamily: 'var(--font-mono)',
@@ -333,7 +333,7 @@ function SaveButton({ onClick, saved, label, savedLabel = 'נשמר!' }: SaveBut
         cursor: 'pointer',
         transition: 'all 0.15s ease',
         ...(saved
-          ? { color: 'var(--fs-primary)', background: 'var(--fs-accent)' }
+          ? { color: 'var(--fs-heading)', background: 'var(--fs-accent)' }
           : { color: 'var(--fs-accent)', background: 'var(--fs-primary)' }),
       }}
     >
@@ -369,7 +369,7 @@ function ProfileAvatar({ name }: { name: string }) {
     <div className="flex flex-col items-center py-6" style={{ background: 'var(--fs-primary)' }}>
       <div
         className="w-20 h-20 flex items-center justify-center mb-3"
-        style={{ background: 'var(--fs-accent)', color: 'var(--fs-primary)' }}
+        style={{ background: 'var(--fs-accent)', color: 'var(--fs-heading)' }}
       >
         {initials ? (
           <span
@@ -393,7 +393,7 @@ function ProfileAvatar({ name }: { name: string }) {
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
             fontSize: '22px',
-            color: 'var(--fs-surface)',
+            color: 'var(--fs-ink)',
             textTransform: 'uppercase',
           }}
         >
@@ -624,8 +624,15 @@ export default function Settings() {
   };
 
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      await signOut();
+    } catch (err) {
+      logger.app.warn('handleSignOut: signOut threw', err);
+    }
     setAuthEmail(null);
+    // signOut clears IndexedDB and user-scoped localStorage. Reload so React
+    // contexts re-hydrate from a clean slate and no stale data is shown.
+    window.location.reload();
   };
 
   function handleSaveProfile() {
@@ -669,21 +676,41 @@ export default function Settings() {
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
-      {/* Masthead */}
+      {/* Header */}
       <header
-        className="masthead glass-surface-dark scrim-noise"
-        style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}
+        style={{
+          paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
+          paddingLeft: 'max(20px, env(safe-area-inset-left, 20px))',
+          paddingRight: 'max(20px, env(safe-area-inset-right, 20px))',
+          paddingBottom: 16,
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          background: 'var(--fs-bg)',
+          borderBottom: '2px solid var(--fs-accent)',
+        }}
       >
-        <div className="kicker">§07 · SETTINGS · CONFIG</div>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 13,
+            fontWeight: 500,
+            color: 'var(--fs-muted)',
+            margin: 0,
+            lineHeight: 1.4,
+          }}
+        >
+          התאמות אישיות וסנכרון
+        </p>
         <h1
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(44px, 12vw, 72px)',
-            lineHeight: 0.9,
-            marginTop: '8px',
-            color: 'var(--fs-surface)',
-            textTransform: 'uppercase',
             fontWeight: 800,
+            fontSize: 26,
+            lineHeight: 1.15,
+            letterSpacing: '-0.01em',
+            color: 'var(--fs-ink)',
+            margin: '4px 0 0',
           }}
         >
           הגדרות
@@ -726,7 +753,7 @@ export default function Settings() {
               <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
                 <div
                   className="w-8 h-8 flex items-center justify-center shrink-0"
-                  style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-primary)' }}
+                  style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
                 >
                   <User size={15} />
                 </div>
@@ -749,7 +776,7 @@ export default function Settings() {
                   aria-label="שם"
                   style={{
                     width: '144px',
-                    minHeight: '36px',
+                    minHeight: '44px',
                     padding: '6px 10px',
                     fontSize: '14px',
                     backgroundColor: 'var(--fs-surface)',
@@ -824,7 +851,7 @@ export default function Settings() {
               <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
                 <div
                   className="w-8 h-8 flex items-center justify-center shrink-0"
-                  style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-primary)' }}
+                  style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
                 >
                   <Target size={15} />
                 </div>
@@ -844,7 +871,7 @@ export default function Settings() {
                     style={{
                       fontFamily: 'var(--font-hebrew)',
                       fontSize: '14px',
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                       fontWeight: 600,
                     }}
                   >
@@ -873,7 +900,7 @@ export default function Settings() {
               <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
                 <div
                   className="w-8 h-8 flex items-center justify-center shrink-0"
-                  style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-primary)' }}
+                  style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
                 >
                   <Zap size={15} />
                 </div>
@@ -893,7 +920,7 @@ export default function Settings() {
                     style={{
                       fontFamily: 'var(--font-hebrew)',
                       fontSize: '14px',
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                       fontWeight: 600,
                     }}
                   >
@@ -928,7 +955,7 @@ export default function Settings() {
                     fontFamily: 'var(--font-mono)',
                     fontSize: 12,
                     fontWeight: 700,
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                   }}
                 >
                   KG
@@ -1214,7 +1241,7 @@ export default function Settings() {
               <div className="flex items-center gap-3 mb-3">
                 <div
                   className="w-8 h-8 flex items-center justify-center shrink-0"
-                  style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-primary)' }}
+                  style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
                 >
                   <Dumbbell size={15} />
                 </div>
@@ -1552,7 +1579,7 @@ export default function Settings() {
                     opacity:
                       isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected ? 0.5 : 1,
                     background: 'var(--fs-primary)',
-                    color: 'var(--fs-surface)',
+                    color: 'var(--fs-accent)',
                   }}
                 >
                   <ArrowUpFromLine size={14} />
@@ -1585,7 +1612,7 @@ export default function Settings() {
                       opacity:
                         isSyncingAll || isSyncingUp || isSyncingDown || !cloudConnected ? 0.5 : 1,
                       background: 'var(--fs-primary)',
-                      color: 'var(--fs-surface)',
+                      color: 'var(--fs-accent)',
                     }}
                   >
                     <RefreshCw size={14} />
@@ -1660,7 +1687,7 @@ export default function Settings() {
                   className="w-8 h-8 flex items-center justify-center shrink-0"
                   style={{
                     background: 'var(--fs-surface-2)',
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                     borderRadius: '8px',
                   }}
                 >
@@ -1709,7 +1736,7 @@ export default function Settings() {
                   className="w-8 h-8 flex items-center justify-center shrink-0"
                   style={{
                     background: 'var(--fs-surface-2)',
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                     borderRadius: '8px',
                   }}
                 >
@@ -1756,7 +1783,7 @@ export default function Settings() {
                       fontSize: '12px',
                       fontWeight: 600,
                       background: 'var(--fs-accent)',
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                       border: 'none',
                       cursor: 'pointer',
                       display: 'flex',
@@ -1849,7 +1876,7 @@ export default function Settings() {
                       borderRadius: 0,
                       border: '2px solid var(--fs-warn)',
                       background: 'var(--fs-warn)',
-                      color: 'var(--fs-surface)',
+                      color: 'var(--fs-ink)',
                       fontFamily: 'var(--font-hebrew)',
                       fontSize: '14px',
                       fontWeight: 700,

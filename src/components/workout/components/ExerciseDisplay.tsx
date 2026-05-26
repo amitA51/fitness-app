@@ -3,6 +3,7 @@
 // No hero masthead, no large numbers, no program meta ribbon
 
 import { Edit, FileText, MoreHorizontal, Plus, RotateCcw, Star } from 'lucide-react';
+import type React from 'react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Exercise, SetTechnique, WorkoutSet } from '../../../types';
 import type { SupersetGroup } from '../core/workoutTypes';
@@ -41,6 +42,7 @@ interface ExerciseDisplayProps {
   onCreateSuperset?: (exerciseId: string) => void;
   onToggleTechnique?: (technique: SetTechnique, value: boolean) => void;
   onOpenPlateCalc?: () => void;
+  hideSlideButton?: boolean;
 }
 
 // ============================================================
@@ -58,8 +60,7 @@ interface ChipButtonProps {
 const ChipButton = memo<ChipButtonProps>(({ icon, onClick, active, label, badge }) => (
   <button
     type="button"
-    onPointerDown={(e) => {
-      e.preventDefault();
+    onClick={(e) => {
       e.stopPropagation();
       onClick();
     }}
@@ -72,7 +73,7 @@ const ChipButton = memo<ChipButtonProps>(({ icon, onClick, active, label, badge 
       background: active ? 'var(--fs-accent)' : 'var(--fs-surface)',
       border: '1px solid var(--fs-steel)',
       borderRadius: '12px 8px 12px 8px',
-      color: active ? '#FFFFFF' : 'var(--fs-ink)',
+      color: active ? 'var(--fs-primary)' : 'var(--fs-ink)',
     }}
   >
     {icon}
@@ -138,8 +139,7 @@ const OverflowChipMenu = memo<OverflowChipMenuProps>(({ items }) => {
             <button
               key={it.label}
               type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
+              onClick={(e) => {
                 e.stopPropagation();
                 it.onClick();
                 setOpen(false);
@@ -201,6 +201,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     onCreateSuperset,
     onToggleTechnique,
     onOpenPlateCalc,
+    hideSlideButton = false,
   }) => {
     const [showSetEditor, setShowSetEditor] = useState(false);
     const [showRPEPicker, setShowRPEPicker] = useState(false);
@@ -251,8 +252,47 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
       [currentSet.weight, onUpdateSet]
     );
 
-    // Next exercise name for hint - unused in compact layout
-    // const nextExerciseHint = useMemo(() => { return null; }, []);
+    // Stable memoized items array for OverflowChipMenu — prevents re-render
+    // of the menu (and its children) on every parent state tick.
+    const openNotesSheet = useCallback(() => setShowNotesSheet(true), []);
+    const openSetEditor = useCallback(() => setShowSetEditor(true), []);
+
+    const overflowItems = useMemo(() => {
+      const items: OverflowItem[] = [];
+      if (onUpdateNotes) {
+        items.push({
+          icon: <FileText size={14} strokeWidth={2.25} />,
+          label: 'הערות',
+          onClick: openNotesSheet,
+          dot: !!currentSet.notes,
+        });
+      }
+      if (completedSetsCount > 0 && onEditSet) {
+        items.push({
+          icon: <Edit size={14} strokeWidth={2.25} />,
+          label: 'עריכת סטים',
+          onClick: openSetEditor,
+        });
+      }
+      if (!isInSuperset && onCreateSuperset) {
+        items.push({
+          icon: <Plus size={14} strokeWidth={2.5} />,
+          label: 'סופרסט',
+          onClick: () => onCreateSuperset(exercise.id),
+        });
+      }
+      return items;
+    }, [
+      onUpdateNotes,
+      currentSet.notes,
+      completedSetsCount,
+      onEditSet,
+      isInSuperset,
+      onCreateSuperset,
+      exercise.id,
+      openNotesSheet,
+      openSetEditor,
+    ]);
 
     return (
       <div
@@ -308,7 +348,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,
-                  fontSize: 18,
+                  fontSize: 26,
                   color: '#FFFFFF',
                   display: 'block',
                   overflow: 'hidden',
@@ -341,15 +381,15 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                 style={{
                   direction: 'ltr',
                   display: 'grid',
-                  width: 50,
-                  height: 50,
+                  width: 58,
+                  height: 58,
                   placeItems: 'center',
                   border: '8px solid var(--fs-steel)',
                   borderRadius: '50%',
                   background: 'var(--fs-rubber)',
                   color: 'var(--fs-accent)',
                   fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
+                  fontSize: 14,
                   fontWeight: 900,
                 }}
               >
@@ -418,6 +458,68 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           />
         </div>
 
+        {/* ── PREVIOUS SET COMPARISON ── inline "last time" badge ── */}
+        {previousSet && (previousSet.weight || previousSet.reps) && (
+          <div
+            style={{
+              padding: '0 14px 4px',
+              background: 'var(--fs-bg)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '6px 12px',
+                background: 'color-mix(in srgb, var(--fs-accent) 8%, var(--fs-surface))',
+                border: '1px solid color-mix(in srgb, var(--fs-accent) 20%, transparent)',
+                borderRadius: 10,
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: 'var(--fs-accent)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                אימון קודם:
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: 'var(--fs-ink)',
+                  direction: 'ltr',
+                }}
+              >
+                {previousSet.weight ? `${previousSet.weight}kg` : ''}
+                {previousSet.weight && previousSet.reps ? ' × ' : ''}
+                {previousSet.reps ? `${previousSet.reps}` : ''}
+              </span>
+              {previousSet.rpe && (
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    fontWeight: 700,
+                    color: 'var(--fs-muted)',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  RPE {previousSet.rpe}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ── QUICK ACTIONS ROW ── RPE button + overflow + undo ── */}
         <div
           className="flex justify-between items-center"
@@ -426,13 +528,30 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             background: 'var(--fs-bg)',
           }}
         >
-          {/* Left: RPE compact picker button + overflow */}
+          {/* Left: RPE compact picker button + plate calc + overflow */}
           <div className="flex gap-2">
+            {onOpenPlateCalc && (
+              <ChipButton
+                icon={
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9,
+                      fontWeight: 800,
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    kg
+                  </span>
+                }
+                onClick={onOpenPlateCalc}
+                label="מחשבון פלטות"
+              />
+            )}
             {onUpdateRPE && (
               <button
                 type="button"
-                onPointerDown={(e) => {
-                  e.preventDefault();
+                onClick={(e) => {
                   e.stopPropagation();
                   setShowRPEPicker(true);
                 }}
@@ -447,69 +566,22 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   fontFamily: 'var(--font-mono)',
                   fontSize: 11,
                   fontWeight: 700,
-                  color: currentSet.rpe ? '#FFFFFF' : 'var(--fs-ink)',
+                  color: currentSet.rpe ? 'var(--fs-primary)' : 'var(--fs-ink)',
                   cursor: 'pointer',
-                  transition: 'all 120ms ease',
+                  transition: 'background-color 120ms ease, color 120ms ease',
                   minHeight: 40,
                 }}
               >
-                <Star size={14} strokeWidth={2.25} fill={currentSet.rpe ? '#FFFFFF' : 'none'} />
+                <Star
+                  size={14}
+                  strokeWidth={2.25}
+                  fill={currentSet.rpe ? 'var(--fs-primary)' : 'none'}
+                />
                 RPE {currentSet.rpe || '—'}
               </button>
             )}
 
-            <OverflowChipMenu
-              items={[
-                ...(onUpdateNotes
-                  ? [
-                      {
-                        icon: <FileText size={14} strokeWidth={2.25} />,
-                        label: 'הערות',
-                        onClick: () => setShowNotesSheet(true),
-                        dot: !!currentSet.notes,
-                      } as OverflowItem,
-                    ]
-                  : []),
-                ...(completedSetsCount > 0 && onEditSet
-                  ? [
-                      {
-                        icon: <Edit size={14} strokeWidth={2.25} />,
-                        label: 'עריכת סטים',
-                        onClick: () => setShowSetEditor(true),
-                      } as OverflowItem,
-                    ]
-                  : []),
-                ...(!isInSuperset && onCreateSuperset
-                  ? [
-                      {
-                        icon: <Plus size={14} strokeWidth={2.5} />,
-                        label: 'סופרסט',
-                        onClick: () => onCreateSuperset(exercise.id),
-                      } as OverflowItem,
-                    ]
-                  : []),
-                ...(onOpenPlateCalc
-                  ? [
-                      {
-                        icon: (
-                          <span
-                            style={{
-                              fontFamily: 'var(--font-mono)',
-                              fontSize: 9,
-                              fontWeight: 800,
-                              letterSpacing: '0.05em',
-                            }}
-                          >
-                            kg
-                          </span>
-                        ),
-                        label: 'מחשבון פלטות',
-                        onClick: onOpenPlateCalc,
-                      } as OverflowItem,
-                    ]
-                  : []),
-              ]}
-            />
+            <OverflowChipMenu items={overflowItems} />
           </div>
 
           {/* Right: undo */}
@@ -524,19 +596,21 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           </div>
         </div>
 
-        {/* ── SLIDE TO COMPLETE ── */}
-        <div
-          style={{
-            padding: '0 14px 12px',
-            background: 'var(--fs-bg)',
-          }}
-        >
-          <SlideToComplete
-            label="החלק לסימון סט כבוצע"
-            onComplete={onCompleteSet}
-            disabled={false}
-          />
-        </div>
+        {/* ── SLIDE TO COMPLETE (lifted out when hideSlideButton) ── */}
+        {!hideSlideButton && (
+          <div
+            style={{
+              padding: '0 14px 12px',
+              background: 'var(--fs-bg)',
+            }}
+          >
+            <SlideToComplete
+              label="החלק לסימון סט כבוצע"
+              onComplete={onCompleteSet}
+              disabled={false}
+            />
+          </div>
+        )}
 
         {/* ── BOTTOM SHEETS ── */}
         {onEditSet && (

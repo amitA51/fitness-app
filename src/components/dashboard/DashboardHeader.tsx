@@ -1,162 +1,109 @@
-import { memo, useEffect, useState } from 'react';
+import { Settings } from 'lucide-react';
+import { memo, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { greeting } from '../../utils/dateUtils';
+import { safeJsonParse } from '../../utils/safeJson';
 
 interface DashboardHeaderProps {
-  weekNumber: number;
   hasSessionToday?: boolean;
 }
 
 export const DashboardHeader = memo(function DashboardHeader({
-  weekNumber,
   hasSessionToday = false,
 }: DashboardHeaderProps) {
-  const [time, setTime] = useState(() => {
-    const now = new Date();
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  });
-
-  // Live clock — updates every second
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      setTime(
-        `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-      );
-    };
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Get user name from localStorage
-  const userName = (() => {
+  const userName = useMemo(() => {
     try {
       const profile = localStorage.getItem('user_profile');
-      if (profile) {
-        const parsed = JSON.parse(profile);
-        return parsed.name || parsed.displayName || null;
-      }
+      const parsed = safeJsonParse<{ name?: string; displayName?: string }>(profile);
+      if (parsed) return parsed.name || parsed.displayName || null;
     } catch {
-      // ignore
+      /* ignore */
     }
     return null;
-  })();
+  }, []);
 
-  // Hebrew date
-  const todayFull = new Date().toLocaleDateString('he-IL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+  const todayFull = useMemo(
+    () =>
+      new Date().toLocaleDateString('he-IL', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      }),
+    []
+  );
 
-  // Time-based greeting
-  const currentGreeting = greeting();
-
-  // Week label (rendered as JSX so we can wrap the numeric portion)
-  const weekNumberPadded = String(weekNumber).padStart(2, '0');
-
-  // Safe area padding
-  const topPadding = 'max(16px, env(safe-area-inset-top, 16px))';
-  const sidePadding =
-    'max(20px, env(safe-area-inset-left, 20px)) max(20px, env(safe-area-inset-right, 20px))';
+  const currentGreeting = useMemo(() => greeting(), []);
 
   return (
     <header
-      className="premium-dark-surface glass-surface-dark"
+      className="flex items-start justify-between"
       style={{
-        paddingTop: topPadding,
-        paddingLeft: sidePadding,
-        paddingRight: sidePadding,
+        paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
+        paddingLeft: 'max(20px, env(safe-area-inset-left, 20px))',
+        paddingRight: 'max(20px, env(safe-area-inset-right, 20px))',
         paddingBottom: 16,
         position: 'sticky',
         top: 0,
         zIndex: 20,
-        overflow: 'hidden',
+        background: 'var(--fs-bg)',
+        borderBottom: '2px solid var(--fs-accent)',
       }}
       aria-label="כותרת לוח הבקרה"
     >
-      <div className="fs-grid-texture" aria-hidden />
-      {/* Top row: Greeting + Clock */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'baseline',
-          position: 'relative',
-        }}
-      >
-        <div className="fs-brand-icon" aria-hidden />
-        <div>
-          <h1
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 900,
-              fontSize: 'clamp(28px, 8vw, 44px)',
-              lineHeight: 0.9,
-              letterSpacing: '-0.02em',
-              textTransform: 'uppercase',
-              color: 'var(--fs-bg)',
-              margin: 0,
-            }}
-          >
-            {currentGreeting}
-            {userName ? `, ${userName}` : ''}!
-          </h1>
-          <div
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              color: 'var(--fs-steel)',
-              marginTop: 6,
-            }}
-          >
-            {todayFull} · שבוע <span className="kinetic-number">{weekNumberPadded}</span>
-          </div>
-        </div>
-
-        <div
+      <div className="flex-1 min-w-0">
+        <p
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end',
-            gap: 4,
+            fontFamily: 'var(--font-body)',
+            fontSize: 13,
+            fontWeight: 500,
+            color: 'var(--fs-muted)',
+            margin: 0,
+            lineHeight: 1.4,
           }}
         >
-          <div
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 500,
-              fontSize: 22,
-              color: 'var(--fs-accent)',
-              letterSpacing: '0.05em',
-            }}
-            aria-label={`שעון: ${time}`}
-            role="timer"
-          >
-            {time}
-          </div>
+          {todayFull}
           {hasSessionToday && (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                fontFamily: 'var(--font-mono)',
-                fontSize: 9,
-                fontWeight: 700,
-                letterSpacing: '0.22em',
-                textTransform: 'uppercase',
-                color: 'var(--fs-signal)',
-              }}
-              aria-label="פעיל היום"
-            >
-              <span className="breathing-dot signal" aria-hidden />
-              LIVE
-            </span>
+            <>
+              {' · '}
+              <span
+                style={{
+                  color: 'var(--fs-accent)',
+                  fontWeight: 700,
+                }}
+              >
+                ● פעיל היום
+              </span>
+            </>
           )}
-        </div>
+        </p>
+
+        <h1
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 26,
+            lineHeight: 1.15,
+            letterSpacing: '-0.01em',
+            color: 'var(--fs-ink)',
+            margin: '4px 0 0',
+          }}
+        >
+          {currentGreeting}
+          {userName ? `, ${userName}` : ''}
+        </h1>
       </div>
+      <Link
+        to="/settings"
+        aria-label="הגדרות"
+        className="flex-shrink-0 flex items-center justify-center w-10 h-10 mt-1 transition-colors hover:opacity-80 active:scale-95"
+        style={{
+          background: 'var(--fs-surface)',
+          borderRadius: '12px',
+          border: '1px solid var(--fs-surface-2)',
+        }}
+      >
+        <Settings size={18} style={{ color: 'var(--fs-muted)' }} aria-hidden="true" />
+      </Link>
     </header>
   );
 });

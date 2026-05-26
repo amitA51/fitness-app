@@ -3,9 +3,9 @@
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
 import { motion } from 'framer-motion';
+import { X as CloseIcon } from 'lucide-react';
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { logger } from '../../utils/logger';
-import { CloseIcon } from '../icons';
 
 interface ExerciseTutorialProps {
   isOpen: boolean;
@@ -131,7 +131,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
       style={{
         position: 'fixed',
         inset: 0,
-        background: '#0D1A1C',
+        background: 'var(--fs-bg)',
         zIndex: 11000,
         display: 'flex',
         flexDirection: 'column',
@@ -168,7 +168,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 20,
-              color: 'var(--fs-surface)',
+              color: 'var(--fs-ink)',
               letterSpacing: '-0.01em',
             }}
           >
@@ -191,7 +191,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
           }}
           aria-label="סגור"
         >
-          <CloseIcon style={{ width: 18, height: 18, color: 'var(--fs-surface)' }} />
+          <CloseIcon style={{ width: 18, height: 18, color: 'var(--fs-ink)' }} />
         </button>
       </div>
 
@@ -224,7 +224,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
               style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: 14,
-                color: 'var(--fs-surface)',
+                color: 'var(--fs-ink)',
                 lineHeight: 1.55,
               }}
             >
@@ -297,7 +297,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 22,
-                    color: 'var(--fs-surface)',
+                    color: 'var(--fs-ink)',
                     letterSpacing: '-0.01em',
                   }}
                 >
@@ -330,7 +330,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: 16,
-                  color: 'var(--fs-surface)',
+                  color: 'var(--fs-ink)',
                   lineHeight: 1.6,
                   direction: 'rtl',
                   textAlign: 'right',
@@ -366,7 +366,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                     style={{
                       fontFamily: 'var(--font-body)',
                       fontSize: 14,
-                      color: 'var(--fs-surface)',
+                      color: 'var(--fs-ink)',
                       lineHeight: 1.5,
                     }}
                   >
@@ -413,7 +413,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                   overflowY: 'auto',
                   fontFamily: 'var(--font-body)',
                   fontSize: 14,
-                  color: 'var(--fs-surface)',
+                  color: 'var(--fs-ink)',
                   whiteSpace: 'pre-wrap',
                   lineHeight: 1.6,
                 }}
@@ -465,7 +465,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             flex: 1,
             padding: '14px 16px',
             background: 'var(--fs-accent)',
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
             border: '2px solid var(--fs-accent)',
             borderRadius: 0,
             cursor: 'pointer',
@@ -480,7 +480,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
         </button>
       </div>
 
-      <div style={{ height: 'env(safe-area-inset-bottom, 8px)', background: '#0D1A1C' }} />
+      <div style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--fs-bg)' }} />
     </motion.div>
   );
 };

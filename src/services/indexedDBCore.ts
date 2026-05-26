@@ -7,7 +7,7 @@ import { isSupabaseConfigured } from '../lib/supabase';
 import { logger } from '../utils/logger';
 
 const DB_NAME = 'sparkos-fitness-db';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 // Store names
 export const STORES = {

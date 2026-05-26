@@ -15,12 +15,12 @@ interface WorkoutHeaderProps {
   startTimestamp: number;
   totalPausedTime: number;
   isPaused: boolean;
-  currentExerciseName: string;
   onFinish: () => void;
   onDiscard: () => void;
   onOpenSettings: () => void;
   onOpenTutorial: () => void;
   onOpenAICoach?: () => void;
+  isSaving?: boolean;
 }
 
 // ============================================================
@@ -41,8 +41,8 @@ const MonoTimer = memo<{
         className="tabular-nums kinetic-number"
         style={{
           fontFamily: 'var(--font-mono)',
-          fontSize: 18,
-          fontWeight: 600,
+          fontSize: 24,
+          fontWeight: 700,
           letterSpacing: '0.08em',
           color: 'var(--fs-accent)',
         }}
@@ -62,7 +62,8 @@ MonoTimer.displayName = 'MonoTimer';
 const OverflowMenu = memo<{
   onOpenSettings: () => void;
   onOpenTutorial: () => void;
-}>(({ onOpenSettings, onOpenTutorial }) => {
+  onDiscard: () => void;
+}>(({ onOpenSettings, onOpenTutorial, onDiscard }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -75,11 +76,10 @@ const OverflowMenu = memo<{
     return () => document.removeEventListener('pointerdown', handler);
   }, [open]);
 
-  const item = (icon: React.ReactNode, label: string, handler: () => void) => (
+  const item = (icon: React.ReactNode, label: string, handler: () => void, destructive = false) => (
     <button
       type="button"
-      onPointerDown={(e) => {
-        e.preventDefault();
+      onClick={(e) => {
         e.stopPropagation();
         handler();
         setOpen(false);
@@ -87,7 +87,7 @@ const OverflowMenu = memo<{
       className="w-full flex items-center gap-3 px-4 py-3 active:bg-[var(--fs-surface-2)] transition-colors"
       style={{
         background: 'var(--fs-surface)',
-        color: 'var(--fs-ink)',
+        color: destructive ? 'var(--fs-danger, #C84141)' : 'var(--fs-ink)',
         fontFamily: 'var(--font-mono)',
         fontSize: 11,
         letterSpacing: '0.06em',
@@ -95,7 +95,9 @@ const OverflowMenu = memo<{
         textTransform: 'uppercase',
       }}
     >
-      <span style={{ color: 'var(--fs-accent)' }}>{icon}</span>
+      <span style={{ color: destructive ? 'var(--fs-danger, #C84141)' : 'var(--fs-accent)' }}>
+        {icon}
+      </span>
       {label}
     </button>
   );
@@ -104,8 +106,7 @@ const OverflowMenu = memo<{
     <div ref={ref} className="relative">
       <button
         type="button"
-        onPointerDown={(e) => {
-          e.preventDefault();
+        onClick={(e) => {
           e.stopPropagation();
           setOpen((o) => !o);
         }}
@@ -159,6 +160,7 @@ const OverflowMenu = memo<{
             onOpenTutorial
           )}
           {item(<Settings size={14} strokeWidth={2} />, 'הגדרות', onOpenSettings)}
+          {item(<Trash2 size={14} strokeWidth={2.25} />, 'בטל אימון', onDiscard, true)}
         </div>
       )}
     </div>
@@ -176,16 +178,17 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
     startTimestamp,
     totalPausedTime,
     isPaused,
-    currentExerciseName,
     onFinish,
     onDiscard,
     onOpenSettings,
     onOpenTutorial,
+    isSaving = false,
   }) => {
     const handleFinish = useCallback(() => {
+      if (isSaving) return;
       triggerHaptic('success');
       onFinish();
-    }, [onFinish]);
+    }, [onFinish, isSaving]);
 
     const handleDiscard = useCallback(() => {
       triggerHaptic('light');
@@ -194,55 +197,47 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
 
     return (
       <header
-        className="flex items-center justify-between w-full gap-2 glass-surface-dark scrim-noise"
+        className="flex items-center justify-between w-full gap-2"
         style={{
-          background: 'var(--fs-surface)',
-          padding: '8px 18px 10px',
-          borderBottom: '1px solid var(--fs-surface-2)',
+          background: 'var(--fs-bg)',
+          padding: '12px 18px 12px',
+          borderBottom: '2px solid var(--fs-accent)',
         }}
       >
-        {/* Left: Brand icon + workout name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          {/* FS brand mark */}
+        {/* Left: Brand icon + workout label */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          {/* FS brand mark — compact */}
           <div
             className="fs-brand-icon"
             style={{
-              width: 42,
-              height: 42,
+              width: 32,
+              height: 32,
               borderRadius: '50%',
-              border: '7px solid var(--fs-steel)',
+              border: '4px solid var(--fs-steel)',
               background: `
-                radial-gradient(circle, var(--fs-accent) 0 24%, transparent 25%),
+                radial-gradient(circle, var(--fs-accent) 0 26%, transparent 27%),
                 var(--fs-primary)
               `,
-              display: 'grid',
-              placeItems: 'center',
-              fontFamily: 'var(--font-display)',
-              fontSize: 10,
-              fontWeight: 800,
-              color: '#FFFFFF',
               flexShrink: 0,
             }}
-          >
-            FS
-          </div>
+            aria-hidden
+          />
 
-          {/* Workout name */}
+          {/* Workout label + timer (exercise name lives in hero panel below) */}
           <div style={{ minWidth: 0 }}>
             <span
               style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 14,
-                color: 'var(--fs-ink)',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                fontSize: 10,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: 'var(--fs-muted)',
                 lineHeight: 1.2,
                 display: 'block',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
               }}
             >
-              {currentExerciseName}
+              אימון פעיל
             </span>
             <MonoTimer
               startTimestamp={startTimestamp}
@@ -254,42 +249,21 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
 
         {/* Right: actions */}
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleDiscard();
-            }}
-            aria-label="בטל אימון"
-            style={{
-              width: 44,
-              height: 44,
-              minWidth: 44,
-              minHeight: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '12px 8px 12px 8px',
-              background: 'transparent',
-              border: '1px solid var(--fs-steel)',
-              color: 'var(--fs-muted)',
-              cursor: 'pointer',
-            }}
-          >
-            <Trash2 size={16} strokeWidth={2.25} />
-          </button>
-
-          <OverflowMenu onOpenSettings={onOpenSettings} onOpenTutorial={onOpenTutorial} />
+          <OverflowMenu
+            onOpenSettings={onOpenSettings}
+            onOpenTutorial={onOpenTutorial}
+            onDiscard={handleDiscard}
+          />
 
           <button
             type="button"
-            onPointerDown={(e) => {
-              e.preventDefault();
+            onClick={(e) => {
               e.stopPropagation();
               handleFinish();
             }}
+            disabled={isSaving}
             aria-label="סיים אימון"
+            aria-busy={isSaving}
             style={{
               width: 44,
               height: 44,
@@ -301,8 +275,9 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
               borderRadius: '12px 8px 12px 8px',
               background: 'var(--fs-accent)',
               border: 'none',
-              color: '#FFFFFF',
-              cursor: 'pointer',
+              color: 'var(--fs-heading)',
+              cursor: isSaving ? 'wait' : 'pointer',
+              opacity: isSaving ? 0.6 : 1,
             }}
           >
             <Check size={20} strokeWidth={2.5} />

@@ -2,9 +2,9 @@
 // Primary bg (#16292D) panel with white text · arrow buttons in surface bg · set progress as chips
 
 import { List } from 'lucide-react';
+import { ChevronLeft as ChevronLeftIcon } from 'lucide-react';
 import { memo, useCallback, useEffect } from 'react';
 import type { Exercise } from '../../../types';
-import { ChevronLeftIcon } from '../../icons';
 
 interface ExerciseNavProps {
   exercises: Exercise[];
@@ -78,9 +78,9 @@ const ExerciseNav = memo<ExerciseNavProps>(
                 onClick={() => onChangeExercise(i)}
                 className={`magnetic-card${i === currentIndex ? ' accent-glow' : ''}`}
                 style={{
-                  minHeight: 58,
-                  padding: 9,
-                  border: '1px solid var(--fs-surface-2)',
+                  minHeight: 64,
+                  padding: '10px 12px',
+                  border: '2px solid var(--fs-surface-2)',
                   borderRadius: 16,
                   background: i === currentIndex ? 'var(--fs-primary)' : 'var(--fs-surface)',
                   color: i === currentIndex ? '#fff' : 'var(--fs-muted)',
@@ -97,12 +97,12 @@ const ExerciseNav = memo<ExerciseNavProps>(
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
-                    fontSize: 12,
+                    fontSize: 14,
                   }}
                 >
                   {ex.name}
                 </span>
-                <small style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.72 }}>
+                <small style={{ fontFamily: 'var(--font-mono)', fontSize: 12, opacity: 0.85 }}>
                   {ex.sets?.length ?? 0} סטים
                 </small>
               </button>
@@ -123,9 +123,8 @@ const ExerciseNav = memo<ExerciseNavProps>(
             {/* Prev */}
             <button
               type="button"
-              onPointerDown={(e) => {
+              onClick={(e) => {
                 if (canGoPrev) {
-                  e.preventDefault();
                   e.stopPropagation();
                   handlePrev();
                 }
@@ -143,7 +142,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
                 border: '1px solid var(--fs-steel)',
                 color: canGoPrev ? 'var(--fs-ink)' : 'var(--fs-muted)',
                 cursor: canGoPrev ? 'pointer' : 'not-allowed',
-                transition: 'all 150ms',
+                transition: 'background-color 150ms, color 150ms, border-color 150ms',
                 minWidth: 44,
                 minHeight: 44,
               }}
@@ -171,7 +170,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
                   style={{
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
-                    fontSize: 15,
+                    fontSize: 20,
                     color: '#FFFFFF',
                     lineHeight: 1.2,
                     display: 'block',
@@ -187,9 +186,9 @@ const ExerciseNav = memo<ExerciseNavProps>(
                   <span
                     style={{
                       fontFamily: 'var(--font-mono)',
-                      fontSize: 9,
+                      fontSize: 11,
                       letterSpacing: '0.08em',
-                      color: 'rgba(255,255,255,0.6)',
+                      color: 'rgba(255,255,255,0.7)',
                       fontWeight: 600,
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -222,9 +221,8 @@ const ExerciseNav = memo<ExerciseNavProps>(
             {/* Next */}
             <button
               type="button"
-              onPointerDown={(e) => {
+              onClick={(e) => {
                 if (canGoNext) {
-                  e.preventDefault();
                   e.stopPropagation();
                   handleNext();
                 }
@@ -242,7 +240,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
                 border: '1px solid var(--fs-steel)',
                 color: canGoNext ? 'var(--fs-ink)' : 'var(--fs-muted)',
                 cursor: canGoNext ? 'pointer' : 'not-allowed',
-                transition: 'all 150ms',
+                transition: 'background-color 150ms, color 150ms, border-color 150ms',
                 minWidth: 44,
                 minHeight: 44,
               }}
@@ -255,8 +253,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <button
               type="button"
-              onPointerDown={(e) => {
-                e.preventDefault();
+              onClick={(e) => {
                 e.stopPropagation();
                 onOpenDrawer();
               }}
@@ -272,7 +269,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
                 border: '1px solid var(--fs-steel)',
                 color: 'var(--fs-ink)',
                 cursor: 'pointer',
-                transition: 'all 150ms',
+                transition: 'background-color 150ms, color 150ms, border-color 150ms',
                 minWidth: 44,
                 minHeight: 44,
               }}

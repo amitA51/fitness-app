@@ -104,7 +104,7 @@ const StatCard = memo(
           fontFamily: 'var(--font-display)',
           fontWeight: 900,
           fontSize: 32,
-          color: 'var(--fs-primary)',
+          color: 'var(--fs-heading)',
           letterSpacing: '-0.02em',
           lineHeight: 1,
         }}
@@ -290,7 +290,7 @@ const AnalyticsDashboard: React.FC = () => {
                   fontSize: 14,
                   letterSpacing: '0.06em',
                   textTransform: 'uppercase',
-                  color: 'var(--fs-primary)',
+                  color: 'var(--fs-heading)',
                 }}
               >
                 מגמת נפח שבועית
@@ -507,7 +507,7 @@ const AnalyticsDashboard: React.FC = () => {
                 <span style={{ color: 'var(--fs-muted)' }}>חיזוי לשבוע הבא:</span>
                 <span
                   style={{
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                     fontWeight: 700,
                   }}
                 >
@@ -559,7 +559,7 @@ const AnalyticsDashboard: React.FC = () => {
               fontSize: 14,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               marginBottom: 16,
               display: 'flex',
               alignItems: 'center',
@@ -722,7 +722,7 @@ const AnalyticsDashboard: React.FC = () => {
               fontSize: 14,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               marginBottom: 16,
               display: 'flex',
               alignItems: 'center',
@@ -787,7 +787,7 @@ const AnalyticsDashboard: React.FC = () => {
                     style={{
                       fontFamily: 'var(--font-body)',
                       fontSize: 12,
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                       flex: 1,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -824,7 +824,7 @@ const AnalyticsDashboard: React.FC = () => {
                         fontFamily: 'var(--font-display)',
                         fontWeight: 800,
                         fontSize: 12,
-                        color: 'var(--fs-primary)',
+                        color: 'var(--fs-heading)',
                       }}
                     >
                       {muscle.percentage}%
@@ -871,7 +871,7 @@ const AnalyticsDashboard: React.FC = () => {
               fontSize: 14,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               marginBottom: 16,
               display: 'flex',
               alignItems: 'center',
@@ -942,7 +942,7 @@ const AnalyticsDashboard: React.FC = () => {
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 18,
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                   }}
                 >
                   {muscleGroupData.length}
@@ -977,7 +977,7 @@ const AnalyticsDashboard: React.FC = () => {
                     style={{
                       fontFamily: 'var(--font-body)',
                       fontSize: 12,
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                       flex: 1,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -991,7 +991,7 @@ const AnalyticsDashboard: React.FC = () => {
                       fontFamily: 'var(--font-display)',
                       fontWeight: 800,
                       fontSize: 12,
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                     }}
                   >
                     {group.percentage}%

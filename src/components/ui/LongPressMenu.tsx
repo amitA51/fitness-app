@@ -283,12 +283,12 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
                 style={{
                   left: menuPosition.x,
                   top: menuPosition.y,
-                  background: 'rgba(28, 28, 35, 0.95)',
+                  background: 'color-mix(in srgb, var(--fs-surface) 95%, transparent)',
                   backdropFilter: 'blur(24px)',
                   WebkitBackdropFilter: 'blur(24px)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  border: '1px solid var(--color-border)',
                   boxShadow:
-                    '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset',
+                    '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--fs-surface-shine-subtle) inset',
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -319,10 +319,10 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
                         ${
                           action.isDestructive
                             ? 'text-red-400 hover:bg-red-500/10'
-                            : 'text-white hover:bg-white/10'
+                            : 'text-[var(--fs-ink)] hover:bg-[var(--fs-overlay-hover)]'
                         }
                         ${action.isDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
-                        ${index !== actions.length - 1 ? 'border-b border-white/5' : ''}
+                        ${index !== actions.length - 1 ? 'border-b border-[var(--color-border)]' : ''}
                       `}
                     >
                       <span className="w-5 h-5 flex items-center justify-center opacity-70">

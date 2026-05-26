@@ -1,5 +1,6 @@
 import DOMPurify from 'dompurify';
 import { motion } from 'framer-motion';
+import { X as CloseIcon } from 'lucide-react';
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   type ExerciseChatMessage,
@@ -14,7 +15,6 @@ import { getWorkoutSessions } from '../../services/dataService';
 import { DEFAULT_MACRO_GOALS, getTodayMacros } from '../../services/nutritionService';
 import type { Exercise } from '../../types';
 import { logger } from '../../utils/logger';
-import { CloseIcon } from '../icons';
 
 interface AICoachProps {
   onClose: () => void;
@@ -22,6 +22,16 @@ interface AICoachProps {
 }
 
 type CoachTab = 'chat' | 'suggestions' | 'analysis';
+
+// Hard cap on a single chat input. Defends against runaway prompts and keeps
+// token cost predictable at the AI provider.
+const MAX_INPUT_LENGTH = 1000;
+
+// HTML sanitization allow-list for the markdown-rendered analysis pane.
+// Keeps formatting we actually emit and strips everything else (no attrs,
+// no scripts, no inline event handlers).
+const SANITIZE_ALLOWED_TAGS = ['strong', 'h3', 'h4', 'div', 'span', 'p', 'br', 'ul', 'li'];
+const SANITIZE_ALLOWED_ATTR: string[] = [];
 
 interface ExerciseSuggestion {
   name: string;
@@ -83,7 +93,8 @@ const AICoach: React.FC<AICoachProps> = ({ onClose, currentExercise }) => {
     setError(null);
 
     // Check localStorage cache first
-    const cacheKey = `ai_tutorial_${currentExercise.name.toLowerCase().replace(/\s+/g, '_')}`;
+    const exerciseId = (currentExercise as { id?: string }).id ?? currentExercise.name;
+    const cacheKey = `ai_tutorial_${exerciseId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -124,14 +135,18 @@ const AICoach: React.FC<AICoachProps> = ({ onClose, currentExercise }) => {
   const handleSendMessage = useCallback(async () => {
     if (!inputMessage.trim() || !currentExercise?.name) return;
 
-    const userMessage: ExerciseChatMessage = { role: 'user', content: inputMessage };
+    // Cap the outgoing prompt to MAX_INPUT_LENGTH characters. Display value is
+    // already prevented from exceeding the cap by the input's maxLength.
+    const safeInput = inputMessage.slice(0, MAX_INPUT_LENGTH);
+
+    const userMessage: ExerciseChatMessage = { role: 'user', content: safeInput };
     setMessages((prev) => [...prev, userMessage]);
     setInputMessage('');
     setLoading(true);
     setError(null);
 
     try {
-      const response = await askExerciseQuestion(currentExercise.name, inputMessage, messages);
+      const response = await askExerciseQuestion(currentExercise.name, safeInput, messages);
       const assistantMessage: ExerciseChatMessage = { role: 'assistant', content: response };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (e) {
@@ -341,10 +356,12 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
               <input
                 type="text"
                 value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
+                onChange={(e) => setInputMessage(e.target.value.slice(0, MAX_INPUT_LENGTH))}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="שאל שאלה..."
                 disabled={!currentExercise}
+                maxLength={MAX_INPUT_LENGTH}
+                aria-describedby="ai-coach-input-counter"
                 className="flex-1 h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 outline-none focus:border-[var(--fs-accent)] disabled:opacity-50"
               />
               <button
@@ -354,6 +371,13 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
               >
                 שלח
               </button>
+            </div>
+            <div
+              id="ai-coach-input-counter"
+              className="text-[10px] text-white/40 text-right mt-1"
+              aria-live="polite"
+            >
+              {inputMessage.length} / {MAX_INPUT_LENGTH}
             </div>
           </div>
         );
@@ -433,22 +457,18 @@ ${topMuscles.map(([name, count]) => `- ${name}: ${count} פעמים`).join('\n')
                 <div
                   className="text-sm text-white/90 whitespace-pre-wrap"
                   dangerouslySetInnerHTML={{
-                    // SECURITY: Sanitize HTML to prevent XSS attacks
+                    // SECURITY: Sanitize with a tight allow-list. No attributes
+                    // allowed — class attributes are intentionally stripped.
                     __html: DOMPurify.sanitize(
                       analysis
                         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                        .replace(
-                          /^## (.+)$/gm,
-                          '<h3 class="text-lg font-bold text-white mt-4 mb-2">$1</h3>'
-                        )
-                        .replace(
-                          /^### (.+)$/gm,
-                          '<h4 class="text-base font-semibold text-white/90 mt-3 mb-1">$1</h4>'
-                        )
-                        .replace(
-                          /^- (.+)$/gm,
-                          '<div class="flex items-start gap-2"><span>•</span><span>$1</span></div>'
-                        )
+                        .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+                        .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+                        .replace(/^- (.+)$/gm, '<div><span>•</span><span>$1</span></div>'),
+                      {
+                        ALLOWED_TAGS: SANITIZE_ALLOWED_TAGS,
+                        ALLOWED_ATTR: SANITIZE_ALLOWED_ATTR,
+                      }
                     ),
                   }}
                 />

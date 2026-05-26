@@ -4,18 +4,18 @@
 
 import { AnimatePresence, type PanInfo, Reorder, motion, useDragControls } from 'framer-motion';
 import { Link2 } from 'lucide-react';
+import {
+  Check as CheckCheckIcon,
+  ChevronDown as ChevronDownIcon,
+  ChevronUp as ChevronUpIcon,
+  X as CloseIcon,
+  GripVertical as DragHandleIcon,
+  Edit as EditIcon,
+  Trash as TrashIcon,
+} from 'lucide-react';
 import React, { useState, useCallback, memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import type { Exercise, WorkoutSet } from '../../types';
-import {
-  CheckCheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  CloseIcon,
-  DragHandleIcon,
-  EditIcon,
-  TrashIcon,
-} from '../icons';
 import type { SupersetGroup } from './core/workoutTypes';
 
 interface ExerciseReorderProps {
@@ -217,7 +217,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
             style={{
               width: 48,
               height: 4,
-              background: 'rgba(20,41,61,0.2)',
+              background: 'var(--fs-steel)',
               borderRadius: 2,
             }}
           />
@@ -240,7 +240,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 18,
-                color: 'var(--fs-surface)',
+                color: 'var(--fs-ink)',
                 letterSpacing: '-0.01em',
               }}
             >
@@ -308,7 +308,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                       alignItems: 'center',
                       gap: 6,
                       background: 'rgba(var(--text-on-navy-rgb),0.1)',
-                      color: 'var(--fs-surface)',
+                      color: 'var(--fs-ink)',
                       border: '1px solid rgba(var(--text-on-navy-rgb),0.25)',
                       borderRadius: 0,
                       fontFamily: 'var(--font-mono)',
@@ -328,7 +328,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                   style={{
                     padding: '8px 16px',
                     background: 'var(--fs-accent)',
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                     border: 'none',
                     borderRadius: 0,
                     fontFamily: 'var(--font-display)',
@@ -367,7 +367,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                 cursor: 'pointer',
               }}
             >
-              <CloseIcon style={{ width: 18, height: 18, color: 'var(--fs-surface)' }} />
+              <CloseIcon style={{ width: 18, height: 18, color: 'var(--fs-ink)' }} />
             </button>
           </div>
         </div>
@@ -433,7 +433,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,
                   fontSize: 18,
-                  color: 'var(--fs-primary)',
+                  color: 'var(--fs-heading)',
                 }}
               >
                 אין תרגילים
@@ -578,11 +578,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                 : isActive
                   ? 'var(--fs-accent)'
                   : 'var(--fs-surface)',
-              color: isComplete
-                ? '#2F8F58'
-                : isActive
-                  ? 'var(--fs-primary)'
-                  : 'var(--fs-muted)',
+              color: isComplete ? '#2F8F58' : isActive ? 'var(--fs-primary)' : 'var(--fs-muted)',
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 14,
@@ -683,7 +679,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
                       letterSpacing: '0.14em',
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                       background: 'var(--fs-accent)',
                       padding: '1px 6px',
                       textTransform: 'uppercase',
@@ -958,7 +954,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 16,
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                   }}
                 >
                   −
@@ -982,7 +978,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 16,
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                     outline: 'none',
                     minWidth: 0,
                   }}
@@ -1043,7 +1039,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 16,
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                   }}
                 >
                   −
@@ -1067,7 +1063,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 16,
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                     outline: 'none',
                     minWidth: 0,
                   }}
@@ -1114,7 +1110,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                 fontSize: 12,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
               }}
             >
               ביטול
@@ -1134,7 +1130,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                 fontSize: 12,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
               }}
             >
               שמור
@@ -1161,14 +1157,14 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {isCompleted && (
-            <CheckCheckIcon style={{ width: 16, height: 16, color: '#2F8F58' }} />
+            <CheckCheckIcon style={{ width: 16, height: 16, color: 'var(--color-check)' }} />
           )}
           <span
             style={{
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 13,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
             }}
           >
             סט {setIndex + 1}
@@ -1194,7 +1190,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 15,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
             }}
           >
             {set.weight || 0}
@@ -1215,7 +1211,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 15,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
             }}
           >
             {set.reps || 0}

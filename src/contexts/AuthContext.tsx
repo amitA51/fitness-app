@@ -96,16 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
       logger.auth.info('Auth event', { event });
 
-      // Legacy local cache of the session, preserved for backward compat.
-      try {
-        if (nextSession) {
-          localStorage.setItem('supabase_session', JSON.stringify(nextSession));
-        } else {
-          localStorage.removeItem('supabase_session');
-        }
-      } catch {
-        // ignore storage errors
-      }
+      // Session persistence is handled by the Supabase SDK internally.
+      // We no longer cache the full JWT in localStorage (XSS risk).
+      // Sign-out cleanup of the legacy key is handled in supabaseAuth.ts.
 
       setSession(nextSession ?? null);
       if (nextSession) {

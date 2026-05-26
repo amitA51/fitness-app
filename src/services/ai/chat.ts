@@ -15,6 +15,10 @@ export interface Conversation {
 
 const CURRENT_CONVERSATION_KEY = 'ai_current_conversation';
 
+// Cap the number of historical messages forwarded to the AI provider per turn.
+// Long conversations otherwise inflate token cost without improving answers.
+const MAX_HISTORY_MESSAGES = 20;
+
 function generateId(): string {
   return 'conv-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
 }
@@ -55,6 +59,10 @@ export async function sendMessage(
 ): Promise<{ response: string; conversation: Conversation }> {
   const conversation = await getOrCreateConversation();
 
+  // Trim the slice we forward to the provider. Full history is still
+  // persisted locally; only the prompt sent to the AI is capped.
+  const recentMessages = conversation.messages.slice(-MAX_HISTORY_MESSAGES);
+
   const newMessages: ChatMessage[] = [
     ...conversation.messages,
     { role: 'user', content: userMessage },
@@ -66,7 +74,7 @@ export async function sendMessage(
   if (systemPrompt) {
     chatMessages.push({ role: 'system', content: systemPrompt });
   }
-  chatMessages.push(...newMessages);
+  chatMessages.push(...recentMessages, { role: 'user', content: userMessage });
 
   const response = await provider.chat(chatMessages);
 

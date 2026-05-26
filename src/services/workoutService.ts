@@ -13,6 +13,7 @@ import type {
   WorkoutTemplate,
 } from '../types';
 import { logger } from '../utils/logger';
+import { safeJsonParse } from '../utils/safeJson';
 import { dbClear, dbDelete, dbGet, dbGetAll, dbPut } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import {
@@ -311,14 +312,12 @@ interface PartialAppSettings {
 const loadSettings = (): PartialAppSettings => {
   try {
     const raw = localStorage.getItem(APP_SETTINGS_KEY);
-    if (!raw) return { workoutSettings: {} };
-    const parsed = JSON.parse(raw);
+    const parsed = safeJsonParse<PartialAppSettings>(raw);
     if (parsed && typeof parsed === 'object') {
-      const obj = parsed as PartialAppSettings;
-      if (!obj.workoutSettings || typeof obj.workoutSettings !== 'object') {
-        obj.workoutSettings = {};
+      if (!parsed.workoutSettings || typeof parsed.workoutSettings !== 'object') {
+        return { ...parsed, workoutSettings: {} };
       }
-      return obj;
+      return parsed;
     }
     return { workoutSettings: {} };
   } catch (err) {

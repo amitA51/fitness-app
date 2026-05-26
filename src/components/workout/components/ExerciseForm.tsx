@@ -2,10 +2,10 @@
 // Sharp corners · Bone background · Navy border
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
+import { Plus as AddIcon } from 'lucide-react';
 import type React from 'react';
 import { EXERCISE_CATEGORIES, MUSCLE_GROUPS, WORKOUT } from '../../../constants';
 import type { PersonalExercise } from '../../../types';
-import { AddIcon } from '../../icons';
 
 interface ExerciseFormData {
   name: string;
@@ -254,7 +254,7 @@ export const AddExerciseButton: React.FC<AddExerciseButtonProps> = ({ onClick })
       gap: 8,
       padding: '14px 20px',
       background: 'transparent',
-      border: '2px dashed rgba(20,41,61,0.2)',
+      border: '2px dashed var(--color-border-strong)',
       borderRadius: 0,
       cursor: 'pointer',
       fontFamily: 'var(--font-display)',

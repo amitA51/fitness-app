@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
+import { X as CloseIcon, Dumbbell as DumbbellIcon } from 'lucide-react';
 // ConfirmExitOverlay - Confirmation dialog for finishing/canceling workout
 // Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
 // Sport Annual restyle: navy masthead + bone body, sharp corners, editorial typography
 import { memo, useCallback } from 'react';
 import { triggerHaptic } from '../../../utils/haptics';
-import { CloseIcon, DumbbellIcon } from '../../icons';
 import { ModalOverlay } from '../../ui/ModalOverlay';
 
 // ============================================================
@@ -110,7 +110,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                 width: 48,
                 height: 48,
                 backgroundColor: isFinishing ? 'var(--fs-accent)' : 'var(--fs-warn)',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 borderRadius: 0,
               }}
             >
@@ -140,7 +140,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   fontSize: '22px',
                   fontWeight: 900,
                   letterSpacing: '-0.01em',
-                  color: 'var(--fs-surface)',
+                  color: 'var(--fs-ink)',
                   lineHeight: 0.95,
                 }}
               >
@@ -181,7 +181,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                       fontFamily: 'var(--font-display)',
                       fontSize: '32px',
                       fontWeight: 800,
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                       lineHeight: 0.9,
                       letterSpacing: '-0.02em',
                     }}
@@ -209,7 +209,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                       fontFamily: 'var(--font-display)',
                       fontSize: '32px',
                       fontWeight: 800,
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                       lineHeight: 0.9,
                       letterSpacing: '-0.02em',
                     }}
@@ -234,7 +234,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                       fontFamily: 'var(--font-display)',
                       fontSize: '32px',
                       fontWeight: 800,
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                       lineHeight: 0.9,
                       letterSpacing: '-0.02em',
                     }}

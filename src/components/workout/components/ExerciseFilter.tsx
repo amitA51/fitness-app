@@ -2,11 +2,11 @@
 // Bone background · Navy text · Sharp corners · IBM Plex Mono labels
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
+import { Search as SearchIcon } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { MUSCLE_GROUPS } from '../../../constants';
 import type { PersonalExercise } from '../../../types';
-import { SearchIcon } from '../../icons';
 
 const MUSCLE_LABELS: Record<string, string> = {
   all: 'הכל',
@@ -98,7 +98,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
       {/* Search Input */}
       <div className="relative" style={{ marginBottom: 12 }}>
         <SearchIcon
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5"
+          className="absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5"
           style={{ color: 'var(--fs-muted)' }}
         />
         <input
@@ -124,7 +124,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
             color: 'var(--fs-ink)',
             outline: 'none',
             direction: 'rtl',
-            textAlign: 'right',
+            textAlign: 'start',
           }}
         />
         {searchQuery && (
@@ -133,7 +133,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
               onSearchChange('');
               inputRef.current?.focus();
             }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center cursor-pointer"
+            className="absolute start-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center cursor-pointer"
             style={{
               background: 'var(--fs-surface-2)',
               borderRadius: 0,
@@ -202,7 +202,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                     flexShrink: 0,
                   }}
                 >
-                  <DumbbellIcon className="w-4 h-4" style={{ color: 'var(--fs-primary)' }} />
+                  <DumbbellIcon className="w-4 h-4" style={{ color: 'var(--fs-heading)' }} />
                 </div>
                 <div>
                   <div
@@ -210,7 +210,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                       fontFamily: 'var(--font-display)',
                       fontWeight: 800,
                       fontSize: 14,
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                       textAlign: 'right',
                     }}
                   >
@@ -279,7 +279,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
               style={{
                 padding: '4px 12px',
                 background: 'var(--fs-accent)',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 border: 'none',
                 borderRadius: 0,
                 fontFamily: 'var(--font-display)',
@@ -320,7 +320,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                 padding: '6px 14px',
                 background: isActive ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
                 color: isActive ? 'var(--fs-surface)' : 'var(--fs-muted)',
-                border: isActive ? 'none' : '1px solid rgba(20,41,61,0.15)',
+                border: isActive ? 'none' : '1px solid var(--color-border)',
                 borderRadius: 0,
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,

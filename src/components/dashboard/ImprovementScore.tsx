@@ -74,7 +74,7 @@ export const ImprovementScore = memo(function ImprovementScore({
             fontWeight: 800,
             fontSize: 28,
             lineHeight: 1,
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
             textTransform: 'uppercase',
             letterSpacing: '-0.01em',
           }}
@@ -160,7 +160,7 @@ export const ImprovementScore = memo(function ImprovementScore({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 13,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               fontWeight: 500,
             }}
           >
@@ -186,7 +186,7 @@ export const ImprovementScore = memo(function ImprovementScore({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 13,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               fontWeight: 500,
             }}
           >
@@ -212,7 +212,7 @@ export const ImprovementScore = memo(function ImprovementScore({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 13,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               fontWeight: 500,
             }}
           >

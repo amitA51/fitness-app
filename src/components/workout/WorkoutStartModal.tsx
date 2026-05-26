@@ -136,7 +136,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,
                   fontSize: 24,
-                  color: 'var(--fs-primary)',
+                  color: 'var(--fs-heading)',
                   textTransform: 'uppercase',
                   letterSpacing: '-0.01em',
                   marginTop: 4,
@@ -367,7 +367,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                         fontFamily: 'var(--font-display)',
                         fontWeight: 800,
                         fontSize: 16,
-                        color: 'var(--fs-primary)',
+                        color: 'var(--fs-heading)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.02em',
                       }}
@@ -378,7 +378,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: 11,
-                        color: 'var(--fs-primary)',
+                        color: 'var(--fs-heading)',
                         opacity: 0.7,
                         letterSpacing: '0.05em',
                         marginTop: 4,
@@ -432,7 +432,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                   transition: 'background 150ms ease',
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = '#0D1A1C';
+                  (e.currentTarget as HTMLElement).style.background = 'var(--color-primary-hover)';
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLElement).style.background = 'var(--fs-primary)';
@@ -534,7 +534,7 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                             fontFamily: 'var(--font-display)',
                             fontWeight: 800,
                             fontSize: 13,
-                            color: 'var(--fs-primary)',
+                            color: 'var(--fs-heading)',
                             textTransform: 'uppercase',
                             letterSpacing: '0.02em',
                             display: 'block',

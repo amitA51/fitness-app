@@ -2,9 +2,9 @@
 // Data strips, Big Shoulders typography, navy/bone/mustard
 
 import { motion } from 'framer-motion';
+import { TrendingUp } from 'lucide-react';
 import type React from 'react';
 import { memo, useEffect, useState } from 'react';
-import { TrendingUp } from '../../icons';
 
 export interface ComparisonData {
   prevVolume: number;
@@ -107,7 +107,7 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 18,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               letterSpacing: '-0.01em',
               marginTop: 2,
               fontVariantNumeric: 'tabular-nums',
@@ -208,7 +208,7 @@ const StatCard: React.FC<StatCardProps> = memo(({ label, value, suffix, delay = 
           fontFamily: 'var(--font-display)',
           fontWeight: 900,
           fontSize: 36,
-          color: 'var(--fs-primary)',
+          color: 'var(--fs-heading)',
           letterSpacing: '-0.03em',
           lineHeight: 1,
           fontVariantNumeric: 'tabular-nums',

@@ -3,9 +3,9 @@
 // Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
 
 import { AnimatePresence, type PanInfo, motion, useMotionValue, useTransform } from 'framer-motion';
+import { X as CloseIcon } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 import type { WorkoutSettings } from '../../../types';
-import { CloseIcon } from '../../icons';
 import { ModalOverlay } from '../../ui/ModalOverlay';
 import AnalyticsDashboard from '../AnalyticsDashboard';
 import ExerciseLibraryTab from '../ExerciseLibraryTab';

@@ -4,7 +4,7 @@ import type React from 'react';
 export const AuroraBackground: React.FC = () => {
   return (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-      <div className="absolute inset-0 bg-[var(--bg-primary)]" />
+      <div className="absolute inset-0 bg-[var(--fs-bg)]" />
 
       {/* Ambient Orbs */}
       <motion.div

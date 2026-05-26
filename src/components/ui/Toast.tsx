@@ -42,7 +42,7 @@ const TYPE_CONFIG: Record<StatusMessageType, ToastTypeConfig> = {
   },
   info: {
     Icon: Info,
-    accent: 'var(--fs-primary)',
+    accent: 'var(--fs-accent)',
     eyebrow: 'INFO',
   },
   warning: {
@@ -209,7 +209,7 @@ export const Toast: React.FC<ToastProps> = ({
                       fontFamily: 'var(--font-display)',
                       fontSize: '12px',
                       letterSpacing: '0.08em',
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                       fontWeight: 800,
                       borderRadius: 0,
                     }}

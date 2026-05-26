@@ -34,50 +34,50 @@ const variantStyles: Record<ButtonVariant, string> = {
   // Primary — navy fill, mustard label
   primary: `
     bg-[var(--fs-primary)] text-[var(--fs-accent)]
-    hover:bg-[#0D1A1C]
-    active:bg-[#0D1A1C]
+    hover:bg-[var(--color-primary-hover)]
+    active:bg-[var(--color-primary-hover)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
-  // Secondary — bone fill, navy 2px border, navy label
+  // Secondary — surface fill, border, adaptive text
   secondary: `
-    bg-[var(--fs-surface)] text-[var(--fs-primary)]
-    border-2 border-[var(--fs-primary)]
+    bg-[var(--fs-surface)] text-[var(--fs-heading)]
+    border-2 border-[var(--color-border-strong)]
     hover:bg-[var(--fs-surface-2)]
     active:bg-[var(--fs-surface-2)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
-  // Ghost — transparent with navy text
+  // Ghost — transparent with adaptive text
   ghost: `
-    bg-transparent text-[var(--fs-primary)]
+    bg-transparent text-[var(--fs-heading)]
     hover:bg-[var(--fs-surface-2)]
     active:bg-[var(--fs-surface-2)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
-  // Glass — bone translucent
+  // Glass — surface translucent, adaptive text
   glass: `
-    bg-[var(--fs-surface)]/80 backdrop-blur-md text-[var(--fs-primary)]
+    bg-[var(--fs-surface)]/80 backdrop-blur-md text-[var(--fs-heading)]
     border border-[var(--fs-surface-2)]
     hover:bg-[var(--fs-surface-2)]
     active:bg-[var(--fs-surface-2)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
-  // Danger — error-color fill, bone label
+  // Danger — warn fill, dark text on bright bg
   danger: `
-    bg-[var(--fs-warn)] text-[var(--fs-surface)]
+    bg-[var(--fs-warn)] text-black
     hover:brightness-90
     active:brightness-90
     disabled:opacity-50 disabled:cursor-not-allowed
   `,
 
-  // Pill — compact tag-style, kept sharp-cornered to match editorial aesthetic
+  // Pill — compact tag-style, adaptive text
   pill: `
-    bg-[var(--fs-surface)] text-[var(--fs-primary)]
-    border-2 border-[var(--fs-primary)]
-    hover:bg-[var(--fs-accent)] hover:text-[var(--fs-primary)]
+    bg-[var(--fs-surface)] text-[var(--fs-heading)]
+    border-2 border-[var(--color-border-strong)]
+    hover:bg-[var(--fs-accent)] hover:text-[var(--color-ink-on-accent)]
     active:bg-[var(--fs-accent)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
@@ -150,8 +150,8 @@ export const Button: React.FC<ButtonProps> = ({
               fontWeight: 900,
               borderRadius: 16,
               minHeight: 50,
-              background: '#fff',
-              color: 'var(--fs-primary)',
+              background: 'var(--fs-surface)',
+              color: 'var(--fs-heading)',
             }
           : variant === 'start'
             ? {
@@ -161,7 +161,7 @@ export const Button: React.FC<ButtonProps> = ({
                 minHeight: 58,
                 background:
                   'linear-gradient(135deg, var(--fs-accent), color-mix(in srgb, var(--fs-accent-2) 42%, var(--fs-accent)))',
-                color: '#071412',
+                color: 'var(--color-ink-on-accent)',
               }
             : size === 'icon'
               ? {

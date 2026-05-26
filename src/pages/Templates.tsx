@@ -5,7 +5,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { Clock, Dumbbell, Play, Plus, Star, Trash2, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   createWorkoutTemplate,
@@ -282,7 +282,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                       }}
                     >
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Dumbbell size={14} style={{ color: 'var(--fs-primary)' }} />
+                        <Dumbbell size={14} style={{ color: 'var(--fs-heading)' }} />
                         <span
                           className="truncate"
                           style={{
@@ -300,7 +300,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                             fontFamily: 'var(--font-mono)',
                             fontSize: '11px',
                             letterSpacing: '0.04em',
-                            color: 'var(--fs-primary)',
+                            color: 'var(--fs-heading)',
                           }}
                         >
                           {ex.targetSets}×{ex.targetReps}
@@ -324,7 +324,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                         style={{ background: 'var(--fs-surface-2)' }}
                         aria-label={`הסר ${ex.exerciseName}`}
                       >
-                        <X size={12} style={{ color: 'var(--fs-primary)' }} />
+                        <X size={12} style={{ color: 'var(--fs-heading)' }} />
                       </motion.button>
                     </motion.div>
                   ))}
@@ -339,7 +339,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                 className="w-full py-3 flex items-center justify-center gap-2"
                 style={{
                   border: '1.5px dashed var(--fs-surface-2)',
-                  color: 'var(--fs-primary)',
+                  color: 'var(--fs-heading)',
                   fontFamily: 'var(--font-display)',
                   fontSize: '14px',
                   fontWeight: 800,
@@ -390,7 +390,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                         className="w-7 h-7 rounded-lg flex items-center justify-center"
                         style={{ background: 'var(--fs-surface-2)' }}
                       >
-                        <X size={12} style={{ color: 'var(--fs-primary)' }} />
+                        <X size={12} style={{ color: 'var(--fs-heading)' }} />
                       </motion.button>
                     </div>
                     <input
@@ -455,7 +455,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                           onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                         >
                           <span>{ex.name || 'תרגיל'}</span>
-                          <Plus size={14} style={{ color: 'var(--fs-primary)' }} />
+                          <Plus size={14} style={{ color: 'var(--fs-heading)' }} />
                         </motion.button>
                       ))}
                     </div>
@@ -514,14 +514,14 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
 interface TemplateCardProps {
   template: WorkoutTemplate;
   index: number;
-  onStart: () => void;
-  onToggleFavorite: () => void;
-  onDelete: () => void;
+  onStart: (templateId: string) => void;
+  onToggleFavorite: (template: WorkoutTemplate) => void;
+  onDelete: (id: string) => void;
   isDeleting?: boolean;
   isFavoriting?: boolean;
 }
 
-function TemplateCard({
+const TemplateCard = memo(function TemplateCard({
   template,
   index,
   onStart,
@@ -532,14 +532,19 @@ function TemplateCard({
 }: TemplateCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  useEffect(() => {
+    if (!confirmDelete) return;
+    const timer = setTimeout(() => setConfirmDelete(false), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmDelete]);
+
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isDeleting) return;
     if (confirmDelete) {
-      onDelete();
+      onDelete(template.id);
     } else {
       setConfirmDelete(true);
-      setTimeout(() => setConfirmDelete(false), 3000);
     }
   };
 
@@ -590,7 +595,7 @@ function TemplateCard({
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: '12px',
-          color: 'var(--fs-primary)',
+          color: 'var(--fs-heading)',
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
         }}
@@ -629,7 +634,7 @@ function TemplateCard({
       >
         <motion.button
           whileTap={{ scale: 0.95 }}
-          onClick={onStart}
+          onClick={() => onStart(template.id)}
           className="btn-primary flex items-center justify-center gap-2"
           style={{ flex: 1, minHeight: '44px', padding: '12px 16px' }}
           aria-label="התחל אימון"
@@ -639,7 +644,7 @@ function TemplateCard({
         </motion.button>
         <motion.button
           whileTap={{ scale: isFavoriting ? 1 : 0.95 }}
-          onClick={onToggleFavorite}
+          onClick={() => onToggleFavorite(template)}
           disabled={isFavoriting}
           className="chip"
           style={{
@@ -692,7 +697,7 @@ function TemplateCard({
       </div>
     </motion.div>
   );
-}
+});
 
 // ============================================================================
 // Loading State
@@ -770,7 +775,7 @@ export default function Templates() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [_creatingId, setCreatingId] = useState<string | null>(null);
+  const [, setCreatingId] = useState<string | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [favoritingIds, setFavoritingIds] = useState<Set<string>>(new Set());
 
@@ -834,7 +839,7 @@ export default function Templates() {
     }
   };
 
-  const handleToggleFavorite = async (template: WorkoutTemplate) => {
+  const handleToggleFavorite = useCallback(async (template: WorkoutTemplate) => {
     setFavoritingIds((prev) => new Set(prev).add(template.id));
     try {
       const updated = await updateWorkoutTemplate(template.id, {
@@ -848,9 +853,9 @@ export default function Templates() {
         return next;
       });
     }
-  };
+  }, []);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     setDeletingIds((prev) => new Set(prev).add(id));
     try {
       await deleteWorkoutTemplate(id);
@@ -862,7 +867,14 @@ export default function Templates() {
         return next;
       });
     }
-  };
+  }, []);
+
+  const handleStartTemplate = useCallback(
+    (templateId: string) => {
+      navigate(`/workout/${templateId}`);
+    },
+    [navigate]
+  );
 
   // Loading State
   if (isLoading) {
@@ -886,20 +898,41 @@ export default function Templates() {
         initial="hidden"
         animate="show"
       >
-        {/* Masthead */}
+        {/* Header */}
         <header
-          className="masthead sticky top-0 z-20 glass-surface-dark scrim-noise"
-          style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}
+          style={{
+            paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
+            paddingLeft: 'max(20px, env(safe-area-inset-left, 20px))',
+            paddingRight: 'max(20px, env(safe-area-inset-right, 20px))',
+            paddingBottom: 16,
+            position: 'sticky',
+            top: 0,
+            zIndex: 20,
+            background: 'var(--fs-bg)',
+            borderBottom: '2px solid var(--fs-accent)',
+          }}
         >
-          <div className="kicker">§06 · TEMPLATES · {templates.length} ROUTINES</div>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              fontWeight: 500,
+              color: 'var(--fs-muted)',
+              margin: 0,
+              lineHeight: 1.4,
+            }}
+          >
+            {templates.length} תבניות אימון
+          </p>
           <h1
             style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(44px, 12vw, 72px)',
-              lineHeight: 0.9,
-              marginTop: '8px',
-              textTransform: 'uppercase',
               fontWeight: 800,
+              fontSize: 26,
+              lineHeight: 1.15,
+              letterSpacing: '-0.01em',
+              color: 'var(--fs-ink)',
+              margin: '4px 0 0',
             }}
           >
             תבניות
@@ -973,9 +1006,9 @@ export default function Templates() {
                     key={template.id}
                     template={template}
                     index={index}
-                    onStart={() => navigate(`/workout/${template.id}`)}
-                    onToggleFavorite={() => handleToggleFavorite(template)}
-                    onDelete={() => handleDelete(template.id)}
+                    onStart={handleStartTemplate}
+                    onToggleFavorite={handleToggleFavorite}
+                    onDelete={handleDelete}
                     isDeleting={deletingIds.has(template.id)}
                     isFavoriting={favoritingIds.has(template.id)}
                   />
@@ -1002,9 +1035,9 @@ export default function Templates() {
                     key={template.id}
                     template={template}
                     index={favorites.length + index}
-                    onStart={() => navigate(`/workout/${template.id}`)}
-                    onToggleFavorite={() => handleToggleFavorite(template)}
-                    onDelete={() => handleDelete(template.id)}
+                    onStart={handleStartTemplate}
+                    onToggleFavorite={handleToggleFavorite}
+                    onDelete={handleDelete}
                     isDeleting={deletingIds.has(template.id)}
                     isFavoriting={favoritingIds.has(template.id)}
                   />

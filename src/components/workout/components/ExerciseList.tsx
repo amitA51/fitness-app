@@ -53,7 +53,7 @@ const ExerciseList: React.FC<ExerciseListProps> = memo(
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 18,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               marginBottom: 8,
             }}
           >

@@ -27,11 +27,11 @@ html {
 
 body {
   background-color: var(--color-background);
-  background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0) 44%),
-              repeating-linear-gradient(90deg, rgba(17,24,22,0.045) 0 1px, transparent 1px 28px),
-              repeating-linear-gradient(0deg, rgba(17,24,22,0.035) 0 1px, transparent 1px 28px),
-              radial-gradient(circle at 86% 10%, rgba(67,199,165,0.13), transparent 34%),
-              radial-gradient(circle at 12% 18%, rgba(181,230,59,0.12), transparent 30%),
+  background: linear-gradient(135deg, var(--fs-body-overlay), transparent 44%),
+              repeating-linear-gradient(90deg, var(--fs-grid-line) 0 1px, transparent 1px 28px),
+              repeating-linear-gradient(0deg, var(--fs-grid-line) 0 1px, transparent 1px 28px),
+              radial-gradient(circle at 86% 10%, var(--fs-mesh-accent), transparent 34%),
+              radial-gradient(circle at 12% 18%, var(--fs-mesh-signal), transparent 30%),
               var(--fs-bg);
   color: var(--color-text);
   min-height: 100vh;
@@ -159,7 +159,7 @@ body {
   }
 
   .btn-primary:hover {
-    background-color: #0D1A1C;
+    background-color: #1A1A1A;
   }
 
   .btn-primary:active {
@@ -175,8 +175,8 @@ body {
   /* Button — Secondary (bone) */
   .btn-secondary {
     background-color: var(--fs-surface);
-    color: var(--fs-primary);
-    border: 2px solid var(--fs-primary);
+    color: var(--fs-heading);
+    border: 2px solid var(--fs-heading);
     border-radius: 0;
     padding: 22px 24px;
     font-family: var(--font-display);
@@ -213,11 +213,11 @@ body {
   }
 
   .input::placeholder {
-    color: #93A09E;
+    color: var(--fs-muted);
   }
 
   .input:focus {
-    border-color: var(--fs-primary);
+    border-color: var(--fs-accent);
     box-shadow: 0 0 0 3px var(--color-secondary-glow);
   }
 
@@ -275,7 +275,7 @@ body {
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: var(--font-bold);
-    color: var(--fs-primary);
+    color: var(--fs-heading);
     letter-spacing: 0.04em;
   }
 
@@ -305,11 +305,12 @@ body {
     color: var(--fs-accent);
   }
 
-  /* Masthead — navy block */
+  /* Masthead — dark block */
   .masthead {
     background: var(--fs-primary);
-    color: var(--fs-bg);
+    color: var(--fs-ink);
     padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     /* padding handled inline with calc(max()) for safe-area-inset support */
     /* On notched devices, inline style adds extra top/left padding */
   }
@@ -328,13 +329,13 @@ body {
     line-height: 0.9;
     letter-spacing: -0.02em;
     text-transform: uppercase;
-    color: var(--fs-bg);
+    color: var(--fs-ink);
   }
 
   /* Chapter Break Strip */
   .chapter-break {
     background: var(--fs-primary);
-    color: var(--fs-bg);
+    color: var(--fs-ink);
     padding: 16px 20px;
     display: flex;
     align-items: center;
@@ -355,13 +356,13 @@ body {
     font-size: 20px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--fs-bg);
+    color: var(--fs-ink);
   }
 
   /* Mustard Block — hero stat */
   .block-hero {
     background: var(--fs-accent);
-    color: var(--fs-primary);
+    color: var(--fs-heading);
     padding: 28px 22px;
     position: relative;
   }
@@ -484,7 +485,7 @@ body {
     font-family: var(--font-mono);
     font-size: 14px;
     font-weight: 500;
-    color: var(--fs-primary);
+    color: var(--fs-heading);
   }
 
   .skill-bar {
@@ -515,7 +516,7 @@ body {
     font-weight: 900;
     font-size: 56px;
     line-height: 0.85;
-    color: var(--fs-primary);
+    color: var(--fs-heading);
     letter-spacing: -0.02em;
   }
 
@@ -550,7 +551,7 @@ body {
   /* AW Masthead — top bar with exercise + set counter */
   .aw-masthead {
     background: var(--fs-primary);
-    color: var(--fs-bg);
+    color: var(--fs-ink);
     padding: 12px 20px;
     display: flex;
     justify-content: space-between;
@@ -579,7 +580,7 @@ body {
   /* AW Hero — massive weight number on navy, flexes to fill available space */
   .aw-hero {
     background: var(--fs-primary);
-    color: var(--fs-bg);
+    color: var(--fs-ink);
     text-align: center;
     padding: 20px 20px;
     position: relative;
@@ -598,7 +599,7 @@ body {
     font-size: clamp(80px, 22vmin, 140px);
     line-height: 0.85;
     letter-spacing: -0.04em;
-    color: var(--fs-bg);
+    color: var(--fs-ink);
     font-variant-numeric: tabular-nums;
   }
 
@@ -618,7 +619,7 @@ body {
     font-size: 11px;
     letter-spacing: 0.16em;
     background: var(--fs-accent);
-    color: var(--fs-primary);
+    color: var(--fs-heading);
     padding: 3px 8px;
     text-transform: uppercase;
     font-weight: 500;
@@ -664,7 +665,7 @@ body {
     font-family: var(--font-display);
     font-weight: 800;
     font-size: 24px;
-    color: var(--fs-primary);
+    color: var(--fs-heading);
     line-height: 1;
   }
 
@@ -702,7 +703,7 @@ body {
   .set-row-annual.active .num,
   .set-row-annual.active .val,
   .set-row-annual.active .mark {
-    color: var(--fs-primary);
+    color: var(--fs-heading);
   }
 
   .set-row-annual.active .val {
@@ -741,7 +742,7 @@ body {
   padding: 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-asymmetric, 22px 16px 22px 16px);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.58), transparent 48%), var(--fs-surface);
+  background: linear-gradient(135deg, var(--fs-surface-shine), transparent 48%), var(--fs-surface);
   box-shadow: var(--shadow-card);
 }
 
@@ -821,13 +822,13 @@ body {
   }
 
   .glass {
-    background-color: rgba(245, 241, 235, 0.9);
+    background-color: color-mix(in srgb, var(--fs-surface) 90%, transparent);
     backdrop-filter: blur(20px) saturate(1.8);
     -webkit-backdrop-filter: blur(20px) saturate(1.8);
   }
 
   .text-gradient {
-    background: linear-gradient(135deg, var(--fs-primary), #1C363B);
+    background: linear-gradient(135deg, var(--fs-primary), var(--fs-surface-2));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

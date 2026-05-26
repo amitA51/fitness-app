@@ -47,8 +47,13 @@ function editorExToTemplateEx(ex: PlanEditorExercise): WorkoutTemplateExercise {
     tempo: ex.tempo,
   };
 }
+import {
+  Plus as AddIcon,
+  X as CloseIcon,
+  Dumbbell as DumbbellIcon,
+  Trash as TrashIcon,
+} from 'lucide-react';
 import { logger } from '../../utils/logger';
-import { AddIcon, CloseIcon, DumbbellIcon, TrashIcon } from '../icons';
 import { ModalOverlay } from '../ui/ModalOverlay';
 import ExerciseLibraryTab from './ExerciseLibraryTab';
 
@@ -220,7 +225,13 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
         </div>
 
         <div
-          style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            position: 'relative',
+          }}
         >
           {/* Main Form */}
           <div
@@ -232,7 +243,15 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
               overflow: 'hidden',
             }}
           >
-            <div style={{ padding: 24, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div
+              style={{
+                padding: 24,
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 24,
+              }}
+            >
               {/* Name Input */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label
@@ -270,7 +289,13 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
 
               {/* Exercises List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-end',
+                  }}
+                >
                   <label
                     style={{
                       fontFamily: 'var(--font-mono)',
@@ -321,7 +346,9 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                     }}
                   >
                     <DumbbellIcon className="w-8 h-8" />
-                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>לחץ כאן להוספת תרגילים</span>
+                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+                      לחץ כאן להוספת תרגילים
+                    </span>
                   </div>
                 ) : (
                   <Reorder.Group
@@ -366,10 +393,25 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                             </svg>
                           </div>
                           <div style={{ flex: 1 }}>
-                            <h4 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--fs-ink)', fontSize: '16px' }}>
+                            <h4
+                              style={{
+                                fontFamily: 'var(--font-display)',
+                                fontWeight: 800,
+                                color: 'var(--fs-ink)',
+                                fontSize: '16px',
+                              }}
+                            >
                               {exercise.name}
                             </h4>
-                            <div style={{ display: 'flex', gap: 8, color: 'var(--fs-muted)', fontSize: '12px', marginTop: 4 }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                gap: 8,
+                                color: 'var(--fs-muted)',
+                                fontSize: '12px',
+                                marginTop: 4,
+                              }}
+                            >
                               <span>{(exercise.sets || []).length} סטים</span>
                               <span>•</span>
                               <span>{exercise.muscleGroup || 'כללי'}</span>

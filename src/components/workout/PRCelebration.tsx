@@ -14,7 +14,7 @@ interface PRCelebrationProps {
 }
 
 // Pre-computed confetti particles with deterministic values
-const CONFETTI_COLORS = ['#E8B82D', '#F5F1EB', '#14293D', '#7E7D78', '#EAE4DA', '#0B1A2B'];
+const CONFETTI_COLORS = ['#E8B82D', '#F5F1EB', '#1A1A1A', '#7E7D78', '#EAE4DA', '#0A0A0A'];
 
 const CONFETTI_PARTICLES = Array.from({ length: 20 }, (_, i) => {
   const seed = (i * 1337) % 100;
@@ -106,7 +106,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     letterSpacing: '0.28em',
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                     fontWeight: 600,
                     textTransform: 'uppercase',
                   }}
@@ -118,7 +118,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                     fontFamily: 'var(--font-display)',
                     fontWeight: 900,
                     fontSize: 16,
-                    color: 'var(--fs-primary)',
+                    color: 'var(--fs-heading)',
                     letterSpacing: '-0.01em',
                   }}
                 >
@@ -150,7 +150,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       fontFamily: 'var(--font-display)',
                       fontWeight: 900,
                       fontSize: 32,
-                      color: 'var(--fs-surface)',
+                      color: 'var(--fs-ink)',
                       letterSpacing: '-0.02em',
                       lineHeight: 1,
                       marginTop: 4,
@@ -215,7 +215,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                           fontFamily: 'var(--font-display)',
                           fontWeight: 900,
                           fontSize: 48,
-                          color: 'var(--fs-surface)',
+                          color: 'var(--fs-ink)',
                           letterSpacing: '-0.03em',
                           lineHeight: 1,
                           fontVariantNumeric: 'tabular-nums',
@@ -270,7 +270,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       justifyContent: 'center',
                       padding: '14px 20px',
                       background: 'var(--fs-accent)',
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                       border: 'none',
                       cursor: 'pointer',
                       fontFamily: 'var(--font-display)',

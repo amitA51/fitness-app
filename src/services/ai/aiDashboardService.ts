@@ -7,6 +7,7 @@
 // ============================================================================
 
 import type { WorkoutSession } from '../../types';
+import { safeJsonParse } from '../../utils/safeJson';
 import { type ChatMessage, getAIProvider } from './core';
 
 // ----------------------------------------------------------------------------
@@ -403,8 +404,7 @@ function fingerprintInput(data: AIDashboardInput): string {
 function readCache(): CachedInsight | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as CachedInsight;
+    const parsed = safeJsonParse<CachedInsight>(raw);
     if (!parsed || typeof parsed.fetchedAt !== 'number') return null;
     return parsed;
   } catch {

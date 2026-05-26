@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'SparkOS Fitness',
         short_name: 'SparkOS',
         description: 'SparkOS Fitness - Training journal',
-        theme_color: '#F5F1EB',
-        background_color: '#F5F1EB',
+        theme_color: '#EEF3F1',
+        background_color: '#EEF3F1',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -30,18 +30,14 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/__/, /^chrome-extension:\/\//],
         runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-api-cache',
-              networkTimeoutSeconds: 2,
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
+          // NOTE: Supabase REST responses are intentionally NOT cached by the
+          // service worker. Responses are scoped to the authenticated user and
+          // caching them at the SW layer risks cross-user data leaks on shared
+          // devices. The app is IndexedDB-first, so an offline copy already
+          // lives in the local DB.
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',

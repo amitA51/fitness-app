@@ -27,6 +27,7 @@ export {
 
 export {
   getWorkoutSessions,
+  getAllWorkoutSessions,
   saveWorkoutSession,
   deleteWorkoutSession,
 } from './workoutDb';

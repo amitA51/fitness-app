@@ -203,7 +203,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               fontSize: 14,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
             }}
           >
             לוח אימונים
@@ -247,7 +247,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 14,
-              color: 'var(--fs-primary)',
+              color: 'var(--fs-heading)',
               textTransform: 'uppercase',
               letterSpacing: '0.04em',
               minWidth: 140,
@@ -469,7 +469,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
             fontSize: 14,
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
             textTransform: 'uppercase',
             letterSpacing: '0.04em',
           }}

@@ -323,9 +323,9 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
             }}
           >
             <span className="flex-1">סט</span>
-            <span style={{ width: 64, textAlign: 'center' }}>משקל</span>
-            <span style={{ width: 64, textAlign: 'center' }}>חזרות</span>
-            <span style={{ width: 64, textAlign: 'center' }}>נפח</span>
+            <span style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>משקל</span>
+            <span style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>חזרות</span>
+            <span style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>נפח</span>
           </div>
 
           {completedSets.map((set, setIndex) => (
@@ -338,16 +338,28 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
                 {set.setNumber || setIndex + 1}
               </span>
               <span
-                style={{ width: 64, textAlign: 'center', color: 'var(--fs-ink)', fontWeight: 500 }}
+                style={{
+                  flex: 1,
+                  textAlign: 'center',
+                  minWidth: 0,
+                  color: 'var(--fs-ink)',
+                  fontWeight: 500,
+                }}
               >
                 {set.weight || 0} ק"ג
               </span>
               <span
-                style={{ width: 64, textAlign: 'center', color: 'var(--fs-ink)', fontWeight: 500 }}
+                style={{
+                  flex: 1,
+                  textAlign: 'center',
+                  minWidth: 0,
+                  color: 'var(--fs-ink)',
+                  fontWeight: 500,
+                }}
               >
                 {set.reps || 0}
               </span>
-              <span style={{ width: 64, textAlign: 'center', color: 'var(--fs-muted)' }}>
+              <span style={{ flex: 1, textAlign: 'center', minWidth: 0, color: 'var(--fs-muted)' }}>
                 {((set.weight || 0) * (set.reps || 0)).toLocaleString()}
               </span>
             </div>
@@ -428,8 +440,8 @@ function StatItem({ icon, label, value, subValue, trend }: StatItemProps) {
         }}
       >
         {value}
-        {trend === 'up' && <TrendingUp size={12} style={{ color: '#2F8F58' }} />}
-        {trend === 'down' && <TrendingDown size={12} style={{ color: '#B83228' }} />}
+        {trend === 'up' && <TrendingUp size={12} style={{ color: 'var(--color-success-fg)' }} />}
+        {trend === 'down' && <TrendingDown size={12} style={{ color: 'var(--color-error-fg)' }} />}
       </p>
       <p
         style={{
@@ -493,11 +505,11 @@ function MuscleBreakdown({ exercises }: MuscleBreakdownProps) {
       'var(--fs-accent)',
       'var(--fs-accent-2)',
       'var(--fs-signal)',
-      '#43C7A5',
-      '#2C7F91',
-      '#E2FB70',
-      '#16292D',
-      '#60706F',
+      'var(--fs-accent)',
+      'var(--fs-accent-2)',
+      'var(--fs-signal)',
+      'var(--fs-primary)',
+      'var(--fs-muted)',
     ];
     return colors[index % colors.length] ?? 'var(--fs-muted)';
   };
@@ -768,7 +780,7 @@ export default function WorkoutDetail() {
         className="glass-surface sticky top-0 z-10"
         style={{
           borderBottom: '1px solid var(--color-border)',
-          paddingTop: 'env(safe-area-inset-top)',
+          paddingTop: 'max(0px, env(safe-area-inset-top, 0px))',
         }}
       >
         <div className="flex items-center gap-3 px-4 py-4">
@@ -931,9 +943,9 @@ export default function WorkoutDetail() {
               marginBottom: 24,
             }}
           >
-            <Target size={14} style={{ color: 'var(--fs-primary)' }} />
+            <Target size={14} style={{ color: 'var(--fs-heading)' }} />
             <span
-              style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-primary)' }}
+              style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-heading)' }}
             >
               סוג אימון:
             </span>

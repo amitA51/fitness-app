@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
-import { AnimatedBar, GradientSparkline } from '../charts';
 import type { WorkoutSession } from '../../types';
+import { AnimatedBar, GradientSparkline } from '../charts';
 
 interface MuscleFrequencyProps {
   sessions: WorkoutSession[];
@@ -93,6 +93,11 @@ export const MuscleFrequencyTracker = memo(function MuscleFrequencyTracker({
     return buckets;
   }, [sessions]);
 
+  const maxMuscleDataSessions = useMemo(
+    () => Math.max(...muscleData.map((x) => x.sessions), 1),
+    [muscleData]
+  );
+
   if (muscleData.length === 0) return null;
 
   const hasSparklineData = last7DaysFrequency.some((v) => v > 0);
@@ -132,8 +137,7 @@ export const MuscleFrequencyTracker = memo(function MuscleFrequencyTracker({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {muscleData.slice(0, 7).map((m) => {
           const label = MUSCLE_LABELS[m.muscle] ?? m.muscle;
-          const maxSessions = Math.max(...muscleData.map((x) => x.sessions), 1);
-          const pct = Math.round((m.sessions / maxSessions) * 100);
+          const pct = Math.round((m.sessions / maxMuscleDataSessions) * 100);
           const isOverdue = m.daysSince >= 5;
           const freshnessColor =
             m.daysSince <= 2

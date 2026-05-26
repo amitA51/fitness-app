@@ -161,9 +161,15 @@ export class RemoteProvider implements AIProvider {
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
-      const { data, error } = await supabase!.functions.invoke(AI_FUNCTION_NAME, {
+      const invokePromise = supabase!.functions.invoke(AI_FUNCTION_NAME, {
         body,
       });
+      const abortPromise = new Promise<never>((_, reject) => {
+        controller.signal.addEventListener('abort', () =>
+          reject(new AIError('timeout', `Request timed out after ${this.timeoutMs}ms`))
+        );
+      });
+      const { data, error } = await Promise.race([invokePromise, abortPromise]);
 
       if (error) {
         // supabase-js עוטף שגיאות HTTP ב-FunctionsHttpError; מנסים לחלץ את ה-payload

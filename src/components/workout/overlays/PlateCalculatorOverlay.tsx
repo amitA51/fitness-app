@@ -2,9 +2,9 @@
 // User enters target total weight + bar weight + unit. Output: list of plates per side.
 // No persistence; pure presentational. Hebrew/RTL.
 
+import { X as CloseIcon } from 'lucide-react';
 import type React from 'react';
 import { memo, useCallback, useMemo, useState } from 'react';
-import { CloseIcon } from '../../icons';
 import { ModalOverlay } from '../../ui/ModalOverlay';
 
 interface PlateCalculatorOverlayProps {
@@ -384,7 +384,11 @@ const NumericStepper = memo<NumericStepperProps>(
           type="button"
           onClick={onIncrement}
           aria-label="הגדל"
-          style={{ ...stepperBtn, background: 'var(--fs-accent)', color: '#FFFFFF' }}
+          style={{
+            ...stepperBtn,
+            background: 'var(--fs-accent)',
+            color: 'var(--color-ink-on-accent)',
+          }}
         >
           +
         </button>

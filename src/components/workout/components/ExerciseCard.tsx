@@ -4,10 +4,10 @@
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
 import { AnimatePresence, motion } from 'framer-motion';
+import { Trash as TrashIcon } from 'lucide-react';
 import type React from 'react';
 import { memo } from 'react';
 import type { PersonalExercise } from '../../../types';
-import { TrashIcon } from '../../icons';
 
 const hasHebrew = (text: string) => /[\u0590-\u05FF]/.test(text);
 
@@ -23,7 +23,7 @@ const NAME_PRIMARY_STYLE: React.CSSProperties = {
   fontFamily: 'var(--font-display)',
   fontWeight: 800,
   fontSize: 15,
-  color: 'var(--fs-primary)',
+  color: 'var(--fs-heading)',
   lineHeight: 1.1,
   display: 'block',
 };
@@ -40,7 +40,7 @@ const NAME_SOLO_STYLE: React.CSSProperties = {
   fontFamily: 'var(--font-display)',
   fontWeight: 800,
   fontSize: 15,
-  color: 'var(--fs-primary)',
+  color: 'var(--fs-heading)',
   lineHeight: 1.1,
 };
 
@@ -74,7 +74,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
           padding: '14px',
           background: isSelected
             ? 'var(--fs-accent)'
-            : 'linear-gradient(135deg, rgba(255,255,255,0.58), transparent 48%), var(--fs-surface)',
+            : 'linear-gradient(135deg, var(--fs-surface-shine), transparent 48%), var(--fs-surface)',
           border: '1px solid var(--fs-steel)',
           borderRadius: '22px 16px 22px 16px',
           cursor: 'pointer',
@@ -103,7 +103,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
               width: 24,
               height: 24,
               background: isSelected ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
-              border: `2px solid ${isSelected ? 'var(--fs-primary)' : 'rgba(20,41,61,0.3)'}`,
+              border: `2px solid ${isSelected ? 'var(--fs-primary)' : 'var(--fs-steel)'}`,
               borderRadius: 0,
               display: 'flex',
               alignItems: 'center',
@@ -157,7 +157,9 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                     letterSpacing: '0.18em',
                     textTransform: 'uppercase',
                     padding: '2px 8px',
-                    background: isSelected ? 'rgba(20,41,61,0.15)' : 'var(--fs-surface-2)',
+                    background: isSelected
+                      ? 'color-mix(in srgb, var(--fs-primary) 15%, transparent)'
+                      : 'var(--fs-surface-2)',
                     color: isSelected ? 'var(--fs-primary)' : 'var(--fs-muted)',
                     border: 'none',
                     borderRadius: 999,

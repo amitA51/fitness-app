@@ -83,7 +83,7 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
       <span style={{ color: 'var(--fs-steel)', fontSize: 10 }}>STREAK</span>
       {streak.activeToday && <span className="breathing-dot" aria-hidden />}
       {streak.best > streak.current && (
-        <span style={{ marginRight: 'auto', color: 'var(--fs-muted)', fontSize: 10 }}>
+        <span style={{ marginInlineStart: 'auto', color: 'var(--fs-muted)', fontSize: 10 }}>
           BEST: <span className="kinetic-number">{streak.best}</span>
         </span>
       )}

@@ -230,7 +230,7 @@ const ZoneBar = memo<{ intensity: number }>(({ intensity }) => {
           <motion.div
             key={key}
             className="flex-1 h-2 rounded-full overflow-hidden"
-            style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
+            style={{ backgroundColor: 'var(--color-bar-track)' }}
           >
             <motion.div
               className="h-full rounded-full"

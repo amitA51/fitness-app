@@ -1,6 +1,6 @@
 // usePersonalRecords - Hook for PR tracking and celebration
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getWorkoutSessions } from '../../../services/dataService';
+import { getAllWorkoutSessions } from '../../../services/dataService';
 import {
   type PersonalRecord,
   calculatePRsFromHistory,
@@ -41,7 +41,9 @@ export function usePersonalRecords(
   useEffect(() => {
     const loadPRs = async () => {
       try {
-        const sessions = await getWorkoutSessions();
+        // Pull full history so PRs older than the recent-N window are still
+        // visible — otherwise long-time records get treated as new PRs again.
+        const sessions = await getAllWorkoutSessions();
         setPRMap(calculatePRsFromHistory(sessions));
       } catch {
         // Silently handle PR loading errors

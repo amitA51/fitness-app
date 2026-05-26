@@ -81,7 +81,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                   {/* Chapter number style index */}
                   <span
                     className="text-2xl font-black leading-none"
-                    style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', color: 'var(--fs-primary)' }}
+                    style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', color: 'var(--fs-heading)' }}
                   >
                     {String(index + 1).padStart(2, '0')}
                   </span>
@@ -108,7 +108,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                     </div>
                   </div>
                   {/* Arrow */}
-                  <span className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--fs-primary)' }}>
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--fs-heading)' }}>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                       <path
                         d="M8 4L14 10L8 16"

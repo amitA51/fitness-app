@@ -5,6 +5,7 @@
  */
 
 import { AnimatePresence, type Variants, motion } from 'framer-motion';
+import { Dumbbell as DumbbellIcon } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -17,7 +18,6 @@ import { getWorkoutSessions } from '../../../services/dataService';
 import { getWorkoutTemplates } from '../../../services/workoutDb';
 import type { WorkoutTemplate } from '../../../types';
 import { triggerHaptic } from '../../../utils/haptics';
-import { DumbbellIcon } from '../../icons';
 
 const NOISE_TEXTURE_SVG = `data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E`;
 
@@ -240,7 +240,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
     <motion.div
       className="fixed inset-0 z-[9999] flex flex-col overflow-y-auto overscroll-contain ambient-mesh ambient-mesh-soft"
       style={{
-        background: oledMode ? '#0B1A2B' : 'var(--fs-bg)',
+        background: oledMode ? '#000000' : 'var(--fs-bg)',
       }}
       variants={containerVariants}
       initial="hidden"
@@ -464,7 +464,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                       fontFamily: 'var(--font-display)',
                       fontWeight: 800,
                       fontSize: 22,
-                      color: 'var(--fs-primary)',
+                      color: 'var(--fs-heading)',
                       lineHeight: 1,
                       letterSpacing: '-0.01em',
                     }}
@@ -477,7 +477,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
                       letterSpacing: '0.12em',
-                      color: 'rgba(20,41,61,0.6)',
+                      color: 'color-mix(in srgb, var(--fs-ink) 60%, transparent)',
                       textTransform: 'uppercase',
                     }}
                   >
@@ -553,7 +553,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                         fontFamily: 'var(--font-display)',
                         fontWeight: 800,
                         fontSize: 13,
-                        color: 'var(--fs-primary)',
+                        color: 'var(--fs-heading)',
                         lineHeight: 1.1,
                         letterSpacing: '-0.01em',
                         marginBottom: 4,
@@ -597,7 +597,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 justifyContent: 'center',
                 gap: 12,
                 padding: '20px 24px',
-                color: 'var(--fs-primary)',
+                color: 'var(--fs-heading)',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,

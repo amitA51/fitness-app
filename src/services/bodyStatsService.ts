@@ -1,3 +1,4 @@
+import { ValidationError } from '../errors';
 import { STORES, dbDelete, dbGetAll, dbPut, syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import {
@@ -90,6 +91,10 @@ function generateId(prefix: string): string {
 export async function addBodyWeight(
   entry: Omit<BodyWeightEntry, 'id' | 'createdAt'>
 ): Promise<BodyWeightEntry> {
+  if (entry.weight <= 0 || entry.weight >= 700) {
+    throw new ValidationError('Body weight must be greater than 0 and less than 700 kg.');
+  }
+
   const newEntry: BodyWeightEntry = {
     ...entry,
     id: generateId('bw'),

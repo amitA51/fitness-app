@@ -50,16 +50,15 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
 
     if (!active) return null;
 
-    // SVG progress ring parameters
-    const size = 44;
-    const stroke = 8;
+    const size = 52;
+    const stroke = 7;
     const radius = (size - stroke) / 2;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference * (1 - Math.min(1, Math.max(0, progress / 100)));
 
-    const handleAdd15 = () => {
+    const handleAddTime = (seconds: number) => {
       triggerHaptic('light');
-      onAddTime(15);
+      onAddTime(seconds);
     };
 
     const handleSkip = () => {
@@ -78,116 +77,88 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
         className="accent-glow"
         style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 10,
-          padding: '8px 14px',
-          background: 'var(--fs-surface)',
-          borderBottom: '1px solid var(--fs-surface-2)',
+          flexDirection: 'column',
+          gap: 8,
+          padding: '12px 16px 10px',
+          background:
+            'linear-gradient(180deg, var(--fs-surface) 0%, color-mix(in srgb, var(--fs-accent) 5%, var(--fs-surface)) 100%)',
+          borderBottom: '2px solid var(--fs-accent)',
           flexShrink: 0,
         }}
       >
-        {/* Left: progress ring + countdown */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* SVG progress ring */}
-          <svg
-            width={size}
-            height={size}
-            viewBox={`0 0 ${size} ${size}`}
-            style={{ transform: 'rotate(-90deg)' }}
-          >
-            <circle
-              className="ring-track"
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="var(--fs-rubber)"
-              strokeWidth={stroke}
-            />
-            <circle
-              className={`ring-progress${isCritical ? ' signal' : ''}`}
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              strokeWidth={stroke}
-              strokeDasharray={circumference}
-              strokeDashoffset={offset}
-              strokeLinecap="round"
-              style={{
-                transition: prefersReduced ? 'none' : 'stroke-dashoffset 0.3s linear',
-              }}
-            />
-          </svg>
-
-          {/* Time display */}
-          <div>
-            <div
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 22,
-                lineHeight: 1,
-                color: 'var(--fs-ink)',
-                fontVariantNumeric: 'tabular-nums',
-                letterSpacing: '0.02em',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
+        {/* Top row: ring + time + skip */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <svg
+              width={size}
+              height={size}
+              viewBox={`0 0 ${size} ${size}`}
+              style={{ transform: 'rotate(-90deg)' }}
             >
-              {isFinalCountdown && (
-                <span
-                  className={`breathing-dot${isCritical ? ' signal' : ''}`}
-                  aria-hidden="true"
-                />
-              )}
-              {formatted}
-            </div>
-            {nextSetHint && (
+              <circle
+                className="ring-track"
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                fill="var(--fs-rubber)"
+                strokeWidth={stroke}
+              />
+              <circle
+                className={`ring-progress${isCritical ? ' signal' : ''}`}
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                fill="none"
+                strokeWidth={stroke}
+                strokeDasharray={circumference}
+                strokeDashoffset={offset}
+                strokeLinecap="round"
+                style={{
+                  transition: prefersReduced ? 'none' : 'stroke-dashoffset 0.3s linear',
+                }}
+              />
+            </svg>
+
+            <div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 900,
+                  fontSize: 28,
+                  lineHeight: 1,
+                  color: isCritical ? 'var(--fs-warn)' : 'var(--fs-ink)',
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '-0.01em',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  transition: 'color 0.2s ease',
+                }}
+              >
+                {isFinalCountdown && (
+                  <span
+                    className={`breathing-dot${isCritical ? ' signal' : ''}`}
+                    aria-hidden="true"
+                  />
+                )}
+                {formatted}
+              </div>
               <div
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: 9,
-                  letterSpacing: '0.08em',
-                  color: 'var(--fs-muted)',
+                  fontSize: 10,
+                  letterSpacing: '0.1em',
+                  color: 'var(--fs-accent)',
                   textTransform: 'uppercase',
                   marginTop: 2,
+                  fontWeight: 700,
                 }}
               >
-                {nextSetHint}
+                {nextSetHint || 'מנוחה'}
               </div>
-            )}
+            </div>
           </div>
-        </div>
 
-        {/* Right: actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button
-            type="button"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              handleAdd15();
-            }}
-            aria-label="הוסף 15 שניות למנוחה"
-            style={{
-              minWidth: 44,
-              minHeight: 44,
-              padding: '0 12px',
-              background: 'var(--fs-surface-2)',
-              color: 'var(--fs-ink)',
-              border: '1px solid var(--fs-steel)',
-              borderRadius: '10px 7px 10px 7px',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              letterSpacing: '0.08em',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-            }}
-          >
-            +15s
-          </button>
           <button
             type="button"
             onPointerDown={(e) => {
@@ -196,23 +167,53 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
             }}
             aria-label="דלג על המנוחה"
             style={{
-              minWidth: 52,
+              minWidth: 56,
               minHeight: 44,
-              padding: '0 12px',
-              background: 'transparent',
-              color: 'var(--fs-accent)',
-              border: '1px solid var(--fs-accent)',
-              borderRadius: '10px 7px 10px 7px',
+              padding: '0 14px',
+              background: 'var(--fs-accent)',
+              color: 'var(--fs-heading)',
+              border: 'none',
+              borderRadius: '12px 8px 12px 8px',
               fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              letterSpacing: '0.08em',
-              fontWeight: 700,
+              fontSize: 12,
+              letterSpacing: '0.06em',
+              fontWeight: 800,
               textTransform: 'uppercase',
               cursor: 'pointer',
             }}
           >
             דלג
           </button>
+        </div>
+
+        {/* Bottom row: time add buttons */}
+        <div style={{ display: 'flex', gap: 6 }}>
+          {[15, 30, 60].map((sec) => (
+            <button
+              key={sec}
+              type="button"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                handleAddTime(sec);
+              }}
+              aria-label={`הוסף ${sec} שניות למנוחה`}
+              style={{
+                flex: 1,
+                minHeight: 44,
+                background: 'var(--fs-surface-2)',
+                color: 'var(--fs-ink)',
+                border: '1px solid var(--fs-steel)',
+                borderRadius: 8,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                letterSpacing: '0.04em',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              +{sec}s
+            </button>
+          ))}
         </div>
       </div>
     );

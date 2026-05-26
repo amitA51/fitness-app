@@ -10,11 +10,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 
 const isConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-if (!isConfigured) {
-  console.info(
-    'Supabase not configured - cloud sync disabled. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable.'
-  );
-}
+// Supabase configuration is optional — when missing, the app runs in local-only mode.
 
 export const supabase = isConfigured ? createClient(supabaseUrl!, supabaseAnonKey!) : null;
 

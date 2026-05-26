@@ -116,7 +116,7 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
                   color: 'var(--fs-muted)',
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
-                  marginRight: 4,
+                  marginInlineEnd: 4,
                 }}
               >
                 KG

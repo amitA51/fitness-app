@@ -121,7 +121,10 @@ export const AnimatedProgress: React.FC<{
 
   return (
     <div className={`relative w-full overflow-hidden rounded-full ${className}`}>
-      <div className="w-full rounded-full bg-white/10" style={{ height: `${height}px` }}>
+      <div
+        className="w-full rounded-full"
+        style={{ height: `${height}px`, background: 'var(--color-border)' }}
+      >
         <motion.div
           className={`h-full rounded-full ${barClassName}`}
           initial={{ width: 0 }}
@@ -142,7 +145,7 @@ export const AnimatedProgress: React.FC<{
         <AnimatedNumber
           value={clampedValue}
           format={(v) => `${Math.round(v)}%`}
-          className="absolute right-0 top-1/2 -translate-y-1/2 text-xs font-mono text-white/60"
+          className="absolute right-0 top-1/2 -translate-y-1/2 text-xs font-mono text-[var(--fs-muted)]"
         />
       )}
     </div>

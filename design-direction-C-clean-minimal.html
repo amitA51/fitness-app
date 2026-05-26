@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direction C — Clean Minimal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&family=Assistant:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAFBFA;
+  --surface: #FFFFFF;
+  --surface-2: #F0F2F1;
+  --surface-3: #E4E8E6;
+  --ink: #1A1D1C;
+  --ink-secondary: #3D4543;
+  --muted: #8A918F;
+  --accent: #2DD4A8;
+  --accent-bg: rgba(45, 212, 168, 0.08);
+  --accent-border: rgba(45, 212, 168, 0.2);
+  --signal: #BFEF45;
+  --warn: #F06040;
+  --border: rgba(0, 0, 0, 0.06);
+  --shadow: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+
+  --dark-bg: #0F1514;
+  --dark-surface: #171F1E;
+  --dark-surface-2: #1E2827;
+  --dark-ink: #EDF2F0;
+  --dark-muted: #7A8583;
+  --dark-border: rgba(255,255,255,0.06);
+
+  --font-display: "Inter", "Assistant", system-ui, sans-serif;
+  --font-body: "Inter", "Assistant", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --font-hebrew: "Assistant", system-ui, sans-serif;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #F0F2F1;
+  color: var(--ink);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+.direction-label {
+  text-align: center;
+  padding: 48px 24px 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.direction-label h1 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+  margin-top: 8px;
+}
+.direction-label p {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 8px;
+  max-width: 500px;
+  margin-inline: auto;
+  line-height: 1.6;
+}
+
+.dual-frame {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 0 16px;
+}
+
+.phone-frame {
+  max-width: 420px;
+  width: 100%;
+  min-height: 780px;
+  border-radius: 32px;
+  overflow: hidden;
+  position: relative;
+}
+.phone-light {
+  background: var(--bg);
+  border: 1px solid var(--surface-3);
+  box-shadow: var(--shadow-md);
+}
+.phone-dark {
+  background: var(--dark-bg);
+  border: 1px solid #2A3533;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  color: var(--dark-ink);
+}
+
+.mode-tag {
+  text-align: center;
+  padding: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+
+/* ─── Clean Header ─── */
+.clean-header {
+  padding: 48px 20px 12px;
+}
+.clean-header .greeting {
+  font-size: 14px;
+}
+.clean-header.light .greeting { color: var(--muted); }
+.clean-header.dark .greeting { color: var(--dark-muted); }
+.clean-header h2 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-top: 2px;
+}
+.clean-header.light h2 { color: var(--ink); }
+.clean-header.dark h2 { color: var(--dark-ink); }
+
+/* ─── CTA ─── */
+.cta-clean {
+  margin: 12px 20px;
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  border: none;
+}
+.cta-clean.light {
+  background: var(--accent);
+  box-shadow: 0 4px 16px rgba(45,212,168,0.2);
+}
+.cta-clean.dark {
+  background: var(--accent);
+  box-shadow: 0 4px 16px rgba(45,212,168,0.15);
+}
+.cta-clean span {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  color: #071412;
+}
+.cta-clean .arrow {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.1);
+  display: grid;
+  place-items: center;
+  color: #071412;
+  font-size: 16px;
+}
+
+.quick-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 8px 20px;
+}
+.quick-btn-clean {
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+.quick-btn-clean.light {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink-secondary);
+}
+.quick-btn-clean.dark {
+  background: var(--dark-surface);
+  border: 1px solid var(--dark-border);
+  color: var(--dark-muted);
+}
+.quick-btn-clean.accent-l {
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  color: #1A8F72;
+}
+.quick-btn-clean.accent-d {
+  background: rgba(45,212,168,0.1);
+  border: 1px solid rgba(45,212,168,0.15);
+  color: var(--accent);
+}
+
+/* ─── Cards ─── */
+.card-clean {
+  margin: 12px 20px;
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.card-clean.light {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.card-clean.dark {
+  background: var(--dark-surface);
+  border: 1px solid var(--dark-border);
+}
+
+.section-label {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  margin: 20px 20px 10px;
+}
+.section-label.light { color: var(--ink); }
+.section-label.dark { color: var(--dark-ink); }
+
+/* Stats */
+.stats-row-clean {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+.stat-clean { text-align: center; padding: 12px 8px; border-radius: 12px; }
+.stat-clean.light { background: var(--surface-2); }
+.stat-clean.dark { background: var(--dark-surface-2); }
+.stat-clean .val {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+.stat-clean.light .val { color: var(--ink); }
+.stat-clean.dark .val { color: var(--dark-ink); }
+.stat-clean .lbl { font-size: 11px; margin-top: 2px; }
+.stat-clean.light .lbl { color: var(--muted); }
+.stat-clean.dark .lbl { color: var(--dark-muted); }
+
+/* ─── Exercise Card Clean ─── */
+.exercise-clean {
+  margin: 12px 20px;
+  padding: 16px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.exercise-clean.light {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.exercise-clean.dark {
+  background: var(--dark-surface);
+  border: 1px solid var(--dark-border);
+}
+.exercise-clean .set-num {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+}
+.exercise-clean.light .set-num { background: var(--accent-bg); color: #1A8F72; }
+.exercise-clean.dark .set-num { background: rgba(45,212,168,0.12); color: var(--accent); }
+.exercise-clean .info { flex: 1; }
+.exercise-clean .info .name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+}
+.exercise-clean.light .info .name { color: var(--ink); }
+.exercise-clean.dark .info .name { color: var(--dark-ink); }
+.exercise-clean .info .meta { font-size: 12px; margin-top: 2px; }
+.exercise-clean.light .info .meta { color: var(--muted); }
+.exercise-clean.dark .info .meta { color: var(--dark-muted); }
+
+/* ─── Input Cards Clean ─── */
+.input-grid-clean {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 20px;
+}
+.input-card-clean {
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+}
+.input-card-clean.light {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.input-card-clean.dark {
+  background: var(--dark-surface);
+  border: 1px solid var(--dark-border);
+}
+.input-card-clean .prev {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.input-card-clean.light .prev { color: var(--accent); }
+.input-card-clean.dark .prev { color: var(--accent); }
+.input-card-clean .number {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 40px;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  direction: ltr;
+}
+.input-card-clean.light .number { color: var(--ink); }
+.input-card-clean.dark .number { color: var(--dark-ink); }
+.input-card-clean .unit {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.input-card-clean.light .unit { color: var(--muted); }
+.input-card-clean.dark .unit { color: var(--dark-muted); }
+.input-card-clean .btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 12px;
+}
+.input-card-clean .btns button {
+  min-height: 40px;
+  border-radius: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  cursor: pointer;
+  border: none;
+}
+.input-card-clean.light .btns .minus { background: var(--surface-2); color: var(--ink-secondary); }
+.input-card-clean.light .btns .plus { background: var(--accent); color: #071412; }
+.input-card-clean.dark .btns .minus { background: var(--dark-surface-2); color: var(--dark-ink); }
+.input-card-clean.dark .btns .plus { background: var(--accent); color: #071412; }
+
+/* ─── Slide Clean ─── */
+.slide-clean {
+  margin: 16px 20px;
+  height: 52px;
+  border-radius: 999px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.slide-clean.light { background: var(--surface-2); }
+.slide-clean.dark { background: var(--dark-surface-2); }
+.slide-clean .thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: grid;
+  place-items: center;
+  color: #071412;
+  font-size: 16px;
+  margin-inline-start: 4px;
+  box-shadow: 0 2px 8px rgba(45,212,168,0.25);
+}
+.slide-clean .label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+}
+.slide-clean.light .label { color: var(--muted); }
+.slide-clean.dark .label { color: var(--dark-muted); }
+
+/* ─── Rest Timer Clean ─── */
+.rest-clean {
+  margin: 12px 20px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+}
+.rest-clean.light {
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+}
+.rest-clean.dark {
+  background: rgba(45,212,168,0.06);
+  border: 1px solid rgba(45,212,168,0.12);
+}
+.rest-clean .top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rest-clean .time {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.rest-clean.light .time { color: var(--ink); }
+.rest-clean.dark .time { color: var(--dark-ink); }
+.rest-clean .rest-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.rest-clean .skip {
+  padding: 8px 14px;
+  background: var(--accent);
+  color: #071412;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.rest-clean .add-btns {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.rest-clean .add-btns button {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+.rest-clean.light .add-btns button { background: var(--surface); color: var(--ink-secondary); }
+.rest-clean.dark .add-btns button { background: var(--dark-surface); color: var(--dark-muted); }
+
+/* Bottom nav */
+.bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px 0 24px;
+  display: flex;
+  justify-content: space-around;
+}
+.bottom-nav.light { background: var(--surface); border-top: 1px solid var(--border); }
+.bottom-nav.dark { background: var(--dark-surface); border-top: 1px solid var(--dark-border); }
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.nav-item.light-m { color: var(--muted); }
+.nav-item.dark-m { color: var(--dark-muted); }
+.nav-item.active { color: var(--accent); }
+.nav-item .icon { width: 24px; height: 24px; display: grid; place-items: center; font-size: 14px; border-radius: 8px; }
+.nav-item.active .icon { background: rgba(45,212,168,0.1); }
+</style>
+</head>
+<body>
+
+<div class="direction-label">
+  <div>DIRECTION C</div>
+  <h1>Clean Minimal</h1>
+  <p>עיצוב נקי ונושם — פחות אפקטים, יותר ריווח. טיפוגרפיה ברורה, צבעים שקטים, accent בולט. כמו Apple Health פוגש Notion.</p>
+</div>
+
+<div class="dual-frame">
+
+  <!-- LIGHT -->
+  <div class="phone-frame phone-light">
+    <div class="mode-tag" style="color:var(--muted)">☀️ LIGHT</div>
+
+    <div class="clean-header light">
+      <div class="greeting">בוקר טוב 👋</div>
+      <h2>אמית</h2>
+    </div>
+
+    <div class="cta-clean light">
+      <span>התחל אימון</span>
+      <div class="arrow">←</div>
+    </div>
+
+    <div class="quick-row">
+      <div class="quick-btn-clean light">+ אימון ריק</div>
+      <div class="quick-btn-clean accent-l">↺ Push Day</div>
+    </div>
+
+    <div class="section-label light">סיכום השבוע</div>
+    <div style="margin: 0 20px">
+      <div class="stats-row-clean">
+        <div class="stat-clean light"><div class="val">3</div><div class="lbl">אימונים</div></div>
+        <div class="stat-clean light"><div class="val">12K</div><div class="lbl">נפח (ק"ג)</div></div>
+        <div class="stat-clean light"><div class="val">55′</div><div class="lbl">ממוצע</div></div>
+      </div>
+    </div>
+
+    <div class="section-label light">אימון פעיל</div>
+
+    <div class="exercise-clean light">
+      <div class="set-num">3/4</div>
+      <div class="info">
+        <div class="name">לחיצת חזה שטוח</div>
+        <div class="meta">100 ק״ג × 8 חזרות</div>
+      </div>
+    </div>
+
+    <div class="input-grid-clean">
+      <div class="input-card-clean light">
+        <div class="prev">קודם: 95</div>
+        <div class="number">100</div>
+        <div class="unit">ק"ג</div>
+        <div class="btns"><button class="minus">−</button><button class="plus">+</button></div>
+      </div>
+      <div class="input-card-clean light">
+        <div class="prev">קודם: 8</div>
+        <div class="number">8</div>
+        <div class="unit">חזרות</div>
+        <div class="btns"><button class="minus">−</button><button class="plus">+</button></div>
+      </div>
+    </div>
+
+    <div class="rest-clean light">
+      <div class="top">
+        <div>
+          <div class="time">1:23</div>
+          <div class="rest-label">מנוחה</div>
+        </div>
+        <button class="skip">דלג</button>
+      </div>
+      <div class="add-btns">
+        <button>+15s</button>
+        <button>+30s</button>
+        <button>+60s</button>
+      </div>
+    </div>
+
+    <div class="slide-clean light">
+      <div class="thumb">→</div>
+      <div class="label">החלק לסימון</div>
+    </div>
+
+    <div style="height:80px"></div>
+    <div class="bottom-nav light">
+      <div class="nav-item active"><div class="icon">🏠</div>בית</div>
+      <div class="nav-item light-m"><div class="icon">💪</div>אימון</div>
+      <div class="nav-item light-m"><div class="icon">📊</div>התקדמות</div>
+      <div class="nav-item light-m"><div class="icon">📋</div>היסטוריה</div>
+      <div class="nav-item light-m"><div class="icon">⚙</div>הגדרות</div>
+    </div>
+  </div>
+
+  <!-- DARK -->
+  <div class="phone-frame phone-dark">
+    <div class="mode-tag" style="color:var(--dark-muted)">🌙 DARK</div>
+
+    <div class="clean-header dark">
+      <div class="greeting">בוקר טוב 👋</div>
+      <h2>אמית</h2>
+    </div>
+
+    <div class="cta-clean dark">
+      <span>התחל אימון</span>
+      <div class="arrow">←</div>
+    </div>
+
+    <div class="quick-row">
+      <div class="quick-btn-clean dark">+ אימון ריק</div>
+      <div class="quick-btn-clean accent-d">↺ Push Day</div>
+    </div>
+
+    <div class="section-label dark">סיכום השבוע</div>
+    <div style="margin: 0 20px">
+      <div class="stats-row-clean">
+        <div class="stat-clean dark"><div class="val">3</div><div class="lbl">אימונים</div></div>
+        <div class="stat-clean dark"><div class="val">12K</div><div class="lbl">נפח (ק"ג)</div></div>
+        <div class="stat-clean dark"><div class="val">55′</div><div class="lbl">ממוצע</div></div>
+      </div>
+    </div>
+
+    <div class="section-label dark">אימון פעיל</div>
+
+    <div class="exercise-clean dark">
+      <div class="set-num">3/4</div>
+      <div class="info">
+        <div class="name">לחיצת חזה שטוח</div>
+        <div class="meta">100 ק״ג × 8 חזרות</div>
+      </div>
+    </div>
+
+    <div class="input-grid-clean">
+      <div class="input-card-clean dark">
+        <div class="prev">קודם: 95</div>
+        <div class="number">100</div>
+        <div class="unit">ק"ג</div>
+        <div class="btns"><button class="minus">−</button><button class="plus">+</button></div>
+      </div>
+      <div class="input-card-clean dark">
+        <div class="prev">קודם: 8</div>
+        <div class="number">8</div>
+        <div class="unit">חזרות</div>
+        <div class="btns"><button class="minus">−</button><button class="plus">+</button></div>
+      </div>
+    </div>
+
+    <div class="rest-clean dark">
+      <div class="top">
+        <div>
+          <div class="time">1:23</div>
+          <div class="rest-label">מנוחה</div>
+        </div>
+        <button class="skip">דלג</button>
+      </div>
+      <div class="add-btns">
+        <button>+15s</button>
+        <button>+30s</button>
+        <button>+60s</button>
+      </div>
+    </div>
+
+    <div class="slide-clean dark">
+      <div class="thumb">→</div>
+      <div class="label">החלק לסימון</div>
+    </div>
+
+    <div style="height:80px"></div>
+    <div class="bottom-nav dark">
+      <div class="nav-item active"><div class="icon">🏠</div>בית</div>
+      <div class="nav-item dark-m"><div class="icon">💪</div>אימון</div>
+      <div class="nav-item dark-m"><div class="icon">📊</div>התקדמות</div>
+      <div class="nav-item dark-m"><div class="icon">📋</div>היסטוריה</div>
+      <div class="nav-item dark-m"><div class="icon">⚙</div>הגדרות</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

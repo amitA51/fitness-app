@@ -112,7 +112,7 @@ export const WaterTracker = memo(function WaterTracker() {
             opacity: totalMl <= 0 ? 0.4 : 1,
           }}
         >
-          <Minus size={16} style={{ color: 'var(--fs-primary)' }} aria-hidden="true" />
+          <Minus size={16} style={{ color: 'var(--fs-heading)' }} aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -130,7 +130,7 @@ export const WaterTracker = memo(function WaterTracker() {
             cursor: 'pointer',
           }}
         >
-          <Plus size={16} style={{ color: 'var(--fs-primary)' }} aria-hidden="true" />
+          <Plus size={16} style={{ color: 'var(--fs-heading)' }} aria-hidden="true" />
         </button>
         {/* Quick water buttons: +250ml pill */}
         <button
@@ -155,7 +155,7 @@ export const WaterTracker = memo(function WaterTracker() {
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             fontWeight: 600,
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
             gap: 3,
           }}
         >
@@ -183,7 +183,7 @@ export const WaterTracker = memo(function WaterTracker() {
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             fontWeight: 600,
-            color: 'var(--fs-primary)',
+            color: 'var(--fs-heading)',
             gap: 3,
           }}
         >

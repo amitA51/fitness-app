@@ -2,11 +2,11 @@
 // Clean bone background with no dark gradients
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
+import { Plus as AddIcon } from 'lucide-react';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { WORKOUT } from '../../constants';
 import * as dataService from '../../services/dataService';
 import type { CreatePersonalExerciseInput, PersonalExercise } from '../../types';
-import { AddIcon } from '../icons';
 import { DeleteConfirmDialog } from './components/DeleteConfirmDialog';
 import { ExerciseFilter } from './components/ExerciseFilter';
 import { ExerciseForm } from './components/ExerciseForm';
@@ -208,7 +208,7 @@ const AddExerciseButton: React.FC<AddExerciseButtonProps> = ({ onClick }) => (
       gap: 8,
       padding: '14px 20px',
       background: 'transparent',
-      border: '2px dashed rgba(20,41,61,0.2)',
+      border: '2px dashed var(--color-border-strong)',
       borderRadius: 0,
       cursor: 'pointer',
       fontFamily: 'var(--font-display)',

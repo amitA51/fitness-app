@@ -71,7 +71,7 @@ export const Toggle = memo<{
     </div>
     <div
       className={`relative w-[52px] h-[32px] rounded-full transition-all duration-200 flex-shrink-0 ${
-        value ? 'bg-[#34C759]' : 'bg-white/20'
+        value ? 'bg-[var(--color-toggle-on)]' : 'bg-white/20'
       }`}
     >
       <motion.div
@@ -190,7 +190,7 @@ export const GoalSelector = memo<{ value: string; onChange: (v: string) => void 
               </span>
               {isActive && (
                 <svg
-                  className="absolute end-3 w-5 h-5 text-[#34C759]"
+                  className="absolute end-3 w-5 h-5 text-[var(--color-check)]"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -251,7 +251,7 @@ export const ThemeSelector = memo<{ value: string; onChange: (v: string) => void
               </div>
               {isActive && (
                 <svg
-                  className="absolute top-3 end-3 w-5 h-5 text-[#34C759]"
+                  className="absolute top-3 end-3 w-5 h-5 text-[var(--color-check)]"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >

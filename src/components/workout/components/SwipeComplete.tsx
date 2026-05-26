@@ -9,9 +9,9 @@ import {
   useSpring,
   useTransform,
 } from 'framer-motion';
+import { Check as CheckCheckIcon } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { triggerHaptic } from '../../../utils/haptics';
-import { CheckCheckIcon } from '../../icons';
 
 // ============================================================
 // TYPES
@@ -124,12 +124,17 @@ const SwipeComplete = memo<SwipeCompleteProps>(
     const containerWidth = containerRef.current?.offsetWidth || 300;
     const maxDrag = containerWidth - 76; // Account for handle width
 
+    // RTL awareness — match project convention from SlideToComplete.tsx
+    const isRTL = typeof document !== 'undefined' && document.dir === 'rtl';
+
     // Transforms based on drag position
     const backgroundOpacity = useTransform(x, [0, COMPLETE_THRESHOLD], [0, 0.5]);
     const textOpacity = useTransform(x, [0, 80], [1, 0]);
     const handleScale = useTransform(x, [0, 50, COMPLETE_THRESHOLD], [1, 1.05, 1.1]);
     const handleRotation = useTransform(x, [0, COMPLETE_THRESHOLD], [0, 15]);
-    const progressWidth = useTransform(x, [0, maxDrag], ['0%', '100%']);
+    // Progress as a 0..1 fraction so we can drive scaleX (compositor-friendly)
+    // instead of width (layout + paint on every frame).
+    const progressScale = useTransform(x, [0, maxDrag], [0, 1]);
     const glowIntensity = useTransform(x, [0, COMPLETE_THRESHOLD], [0, 1]);
 
     // Cleanup timeout on unmount
@@ -222,18 +227,24 @@ const SwipeComplete = memo<SwipeCompleteProps>(
         {/* Background Track */}
         <div className="absolute inset-0 bg-[var(--bg-secondary)] border border-white/5 rounded-[24px]" />
 
-        {/* Progress Fill */}
+        {/* Progress Fill — full-width element scaled via transform (compositor-only). */}
+        {/* transformOrigin flips for RTL so the fill grows from the start edge. */}
         <motion.div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#30D158]/20 to-[#30D158]/40 rounded-[24px]"
-          style={{ width: progressWidth }}
+          className="absolute inset-0 bg-gradient-to-r from-[var(--color-success-fg)]/20 to-[var(--color-success-fg)]/40 rounded-[24px]"
+          style={{
+            scaleX: progressScale,
+            transformOrigin: isRTL ? 'right center' : 'left center',
+            willChange: isDragging ? 'transform' : 'auto',
+          }}
         />
 
-        {/* Glow Effect */}
+        {/* Glow Effect — static box-shadow on a sibling overlay; only opacity animates. */}
         <motion.div
           className="absolute inset-0 pointer-events-none rounded-[24px]"
           style={{
             opacity: glowIntensity,
             boxShadow: '0 0 40px rgba(48, 209, 88, 0.3)',
+            willChange: isDragging ? 'opacity' : 'auto',
           }}
         />
 
@@ -243,16 +254,16 @@ const SwipeComplete = memo<SwipeCompleteProps>(
           style={{ opacity: backgroundOpacity }}
         />
 
-        {/* Text */}
-        <div
+        {/* Text — motion.div accepts MotionValue directly, removing the unsafe cast. */}
+        <motion.div
           className="absolute inset-0 flex items-center justify-center pointer-events-none"
-          style={{ opacity: textOpacity as unknown as number }}
+          style={{ opacity: textOpacity }}
         >
           <div className="flex items-center gap-3 font-bold text-sm tracking-wide uppercase overflow-hidden">
             <span className="text-white/80">{label}</span>
             <span className="text-lg text-white/50">→</span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Draggable Handle */}
         <motion.div
