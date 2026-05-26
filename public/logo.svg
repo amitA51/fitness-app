@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0D1B1E"/>
+      <stop offset="100%" style="stop-color:#162A2E"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#34D399"/>
+      <stop offset="100%" style="stop-color:#10B981"/>
+    </linearGradient>
+    <linearGradient id="spark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6EE7B7"/>
+      <stop offset="100%" style="stop-color:#34D399"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <circle cx="256" cy="256" r="256" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="220" fill="none" stroke="url(#accent)" stroke-width="3" opacity="0.25"/>
+
+  <rect x="136" y="244" width="240" height="24" rx="12" fill="url(#accent)" filter="url(#glow)"/>
+  <rect x="108" y="204" width="48" height="104" rx="14" fill="url(#accent)"/>
+  <rect x="92" y="218" width="32" height="76" rx="10" fill="url(#accent)"/>
+  <rect x="356" y="204" width="48" height="104" rx="14" fill="url(#accent)"/>
+  <rect x="388" y="218" width="32" height="76" rx="10" fill="url(#accent)"/>
+
+  <path d="M272 108 L252 168 L280 168 L248 228 L268 178 L244 178 L272 108Z"
+        fill="url(#spark)" filter="url(#glow)" opacity="0.9"/>
+
+  <circle cx="178" cy="160" r="4" fill="#34D399" opacity="0.5"/>
+  <circle cx="340" cy="340" r="5" fill="#34D399" opacity="0.4"/>
+  <circle cx="160" cy="340" r="3" fill="#34D399" opacity="0.3"/>
+  <circle cx="350" cy="170" r="3.5" fill="#34D399" opacity="0.35"/>
+
+  <text x="256" y="380" text-anchor="middle" font-family="Arial Black, Arial, sans-serif"
+        font-weight="900" font-size="52" fill="url(#spark)" letter-spacing="8" opacity="0.85">SPARK</text>
+</svg>
