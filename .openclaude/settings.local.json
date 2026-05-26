@@ -1,6 +1,13 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npm audit:*)",
+      "Bash(npx tsc:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "aidesigner"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

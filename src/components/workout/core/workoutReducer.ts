@@ -161,6 +161,12 @@ const exerciseReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       draft.supersetGroups.push(superset);
       break;
     }
+
+    case 'REMOVE_SUPERSET': {
+      const { exerciseId } = action.payload;
+      draft.supersetGroups = draft.supersetGroups.filter((g) => !g.exercises.includes(exerciseId));
+      break;
+    }
   }
 };
 

@@ -210,7 +210,7 @@ export const checkForNewPR = async (
     await savePR(newPR);
     import('./notificationService')
       .then(({ showPRNotification }) => {
-        showPRNotification(exerciseName, newPR.recordType);
+        showPRNotification(exerciseName, newPR.type);
       })
       .catch(() => {});
   }

@@ -105,7 +105,8 @@ export type ExerciseAction =
         tutorialText?: string;
       };
     }
-  | { type: 'CREATE_SUPERSET'; payload: { exerciseIds: string[]; restBetweenRounds?: number } };
+  | { type: 'CREATE_SUPERSET'; payload: { exerciseIds: string[]; restBetweenRounds?: number } }
+  | { type: 'REMOVE_SUPERSET'; payload: { exerciseId: string } };
 
 // --- Set Actions ---
 export type SetAction =

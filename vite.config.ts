@@ -67,7 +67,14 @@ export default defineConfig({
         ],
       },
     }),
-  ],
+    process.env.VITE_ENABLE_BUNDLE_ANALYZER === 'true' &&
+      visualizer({
+        open: true,
+        filename: 'dist/stats.html',
+        gzipSize: true,
+        brotliSize: true,
+      }),
+  ].filter(Boolean),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

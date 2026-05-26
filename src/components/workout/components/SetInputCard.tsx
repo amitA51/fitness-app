@@ -1,6 +1,6 @@
-// SetInputCard - Fresh Steel Stepper Design
-// border-radius: 24px 16px 24px 16px · gradient bg · accent plus / surface-2 minus
-// Previous values ghosted with color-mix
+// SetInputCard - Fresh Steel v2 Stepper Design
+// Layout: label (top) → value → ghost badge → stepper row → step hint
+// border-radius: 24px 16px 24px 16px · radial gradient bg · accent plus / surface-2 minus
 
 import { AnimatePresence, motion } from 'framer-motion';
 import type React from 'react';
@@ -27,34 +27,6 @@ interface SetInputCardProps {
 }
 
 // ============================================================
-// GHOST VALUE DISPLAY
-// ============================================================
-
-const GhostValue = memo<{ value: number; unit?: string }>(({ value, unit }) => (
-  <span
-    style={{
-      position: 'absolute',
-      top: 8,
-      insetInlineStart: 10,
-      fontFamily: 'var(--font-mono)',
-      fontSize: 10,
-      letterSpacing: '0.06em',
-      color: 'color-mix(in srgb, var(--fs-accent) 70%, var(--fs-muted))',
-      lineHeight: 1,
-      direction: 'ltr',
-      background: 'color-mix(in srgb, var(--fs-accent) 10%, transparent)',
-      padding: '3px 7px',
-      borderRadius: 6,
-    }}
-  >
-    קודם {value}
-    {unit || ''}
-  </span>
-));
-
-GhostValue.displayName = 'GhostValue';
-
-// ============================================================
 // MAIN COMPONENT
 // ============================================================
 
@@ -64,10 +36,8 @@ const SetInputCard = memo<SetInputCardProps>(
     value,
     ghostValue,
     showGhost,
-    icon,
     incrementAmount = 1,
     unit,
-    accentColor,
     onTap,
     onIncrement,
     onDecrement,
@@ -113,25 +83,25 @@ const SetInputCard = memo<SetInputCardProps>(
       [onDecrement]
     );
 
-    const accent = accentColor || 'var(--fs-accent)';
-
     return (
       <div
-        className="magnetic-card scrim-noise"
         style={{
           position: 'relative',
           display: 'flex',
           flexDirection: 'column',
+          alignItems: 'center',
           background: `
-            radial-gradient(circle at 22px 22px, color-mix(in srgb, var(--fs-accent) 17%, transparent), transparent 28px),
+            radial-gradient(circle at 20px 20px, color-mix(in srgb, var(--fs-accent) 12%, transparent), transparent 30px),
             linear-gradient(135deg, var(--fs-surface-shine-strong), transparent 54%),
             var(--fs-surface)
           `,
           border: '1px solid var(--fs-steel)',
           borderRadius: '24px 16px 24px 16px',
+          padding: '16px 12px 12px',
           overflow: 'hidden',
           cursor: 'pointer',
           transition: 'transform 150ms ease',
+          gap: 4,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -145,7 +115,7 @@ const SetInputCard = memo<SetInputCardProps>(
           }
         }}
         onPointerDown={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = 'scale(0.98)';
+          (e.currentTarget as HTMLElement).style.transform = 'scale(0.97)';
         }}
         onPointerUp={(e) => {
           (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
@@ -156,211 +126,173 @@ const SetInputCard = memo<SetInputCardProps>(
         role="button"
         tabIndex={0}
       >
-        {/* Repeating line pattern */}
-        <div
+        {/* 1. Label (top) */}
+        <span
           style={{
-            position: 'absolute',
-            inset: 'auto 11px 68px 11px',
-            height: 1,
-            background: `repeating-linear-gradient(90deg, var(--fs-surface-2) 0 1px, transparent 1px 12px)`,
-            pointerEvents: 'none',
-          }}
-        />
-
-        {/* Header Row - Icon and Ghost */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            padding: '10px 12px 0',
-            position: 'relative',
-            zIndex: 1,
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            textTransform: 'uppercase',
+            letterSpacing: '0.18em',
+            fontWeight: 700,
+            color: 'var(--fs-accent)',
           }}
         >
-          {icon && (
-            <div
+          {label}
+        </span>
+
+        {/* 2. Value */}
+        <div
+          style={{
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'baseline',
+            direction: 'ltr',
+          }}
+        >
+          <span
+            className="kinetic-number"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 'clamp(34px, 10vw, 42px)',
+              lineHeight: 1,
+              color: isGhostValue
+                ? 'color-mix(in srgb, var(--fs-muted) 56%, transparent)'
+                : 'var(--fs-ink)',
+            }}
+          >
+            {displayValue}
+          </span>
+          {unit && (
+            <span
               style={{
-                width: 32,
-                height: 32,
+                marginInlineStart: 3,
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--fs-muted)',
+                fontWeight: 600,
+              }}
+            >
+              {unit}
+            </span>
+          )}
+        </div>
+
+        {/* 3. Ghost badge (when value=0 and previous exists) */}
+        {showGhost && ghostValue && !value && (
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              color: 'color-mix(in srgb, var(--fs-accent) 70%, var(--fs-muted))',
+              background: 'color-mix(in srgb, var(--fs-accent) 10%, transparent)',
+              padding: '2px 7px',
+              borderRadius: 5,
+              direction: 'ltr',
+            }}
+          >
+            קודם {ghostValue}
+          </span>
+        )}
+
+        {/* 4. Stepper row */}
+        {showButtons && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 6,
+              width: '100%',
+              marginTop: 8,
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={handleDecrement}
+              style={{
+                height: 42,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'var(--fs-accent)',
-                borderRadius: '8px 6px 8px 6px',
-              }}
-            >
-              {icon}
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            flex: 1,
-            padding: '0 14px 14px',
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          {/* Ghost previous value */}
-          {showGhost && ghostValue && !value && <GhostValue value={ghostValue} unit={unit} />}
-
-          {/* Value */}
-          <div
-            style={{ position: 'relative', display: 'flex', alignItems: 'baseline', minHeight: 56 }}
-          >
-            <span
-              className="kinetic-number large"
-              style={{
+                borderRadius: 14,
+                background: 'var(--fs-surface-2)',
+                border: `1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))`,
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
-                fontSize: 'clamp(32px, 10vw, 42px)',
-                lineHeight: 1,
-                letterSpacing: '-0.03em',
-                color: isGhostValue
-                  ? 'color-mix(in srgb, var(--fs-muted) 56%, transparent)'
-                  : 'var(--fs-ink)',
-                direction: 'ltr',
+                fontSize: 20,
+                color: 'var(--fs-ink)',
+                cursor: 'pointer',
+                transition: 'transform 100ms ease',
               }}
+              onPointerDown={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = 'scale(0.93)';
+              }}
+              onPointerUp={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+              }}
+              onPointerLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+              }}
+              aria-label="הפחת ערך"
             >
-              {displayValue}
-            </span>
-            {unit && (
-              <span
-                style={{
-                  marginInlineStart: 4,
-                  fontSize: 12,
-                  fontFamily: 'var(--font-mono)',
-                  color: 'var(--fs-muted)',
-                  fontWeight: 600,
-                }}
-              >
-                {unit}
-              </span>
-            )}
+              −
+            </button>
+            <button
+              type="button"
+              onClick={handleIncrement}
+              style={{
+                height: 42,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 14,
+                background: 'var(--fs-accent)',
+                border: `1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))`,
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 20,
+                color: '#FFFFFF',
+                cursor: 'pointer',
+                transition: 'transform 100ms ease',
+              }}
+              onPointerDown={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = 'scale(0.93)';
+              }}
+              onPointerUp={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+              }}
+              onPointerLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+              }}
+              aria-label="הגדל ערך"
+            >
+              +
+            </button>
           </div>
+        )}
 
-          {/* Label */}
+        {/* 5. Step hint (weight card only — shows when incrementAmount > 1) */}
+        {incrementAmount > 1 && (
           <span
             style={{
-              fontSize: 9,
-              textTransform: 'uppercase',
-              letterSpacing: '0.2em',
-              fontWeight: 700,
-              color: accent,
-              fontFamily: 'var(--font-mono)',
               marginTop: 4,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 8,
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: 'var(--fs-muted)',
             }}
           >
-            {label}
+            קפיצה {incrementAmount}
           </span>
+        )}
 
-          {/* Quick Buttons */}
-          {showButtons && (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                width: '100%',
-                marginTop: 10,
-                gap: 7,
-              }}
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={handleDecrement}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: 44,
-                  minWidth: 44,
-                  background: 'var(--fs-surface-2)',
-                  border: `1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))`,
-                  borderRadius: 15,
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
-                  fontSize: 20,
-                  color: 'var(--fs-ink)',
-                  cursor: 'pointer',
-                  transition: 'background-color 100ms ease, transform 100ms ease',
-                }}
-                onPointerDown={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform = 'scale(0.95)';
-                }}
-                onPointerUp={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-                }}
-                onPointerLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-                }}
-                aria-label="הפחת ערך"
-              >
-                −
-              </button>
-              <button
-                type="button"
-                onClick={handleIncrement}
-                className="accent-glow"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: 44,
-                  minWidth: 44,
-                  background: 'var(--fs-accent)',
-                  border: `1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))`,
-                  borderRadius: 15,
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
-                  fontSize: 20,
-                  color: '#FFFFFF',
-                  cursor: 'pointer',
-                  transition: 'background-color 100ms ease, transform 100ms ease',
-                }}
-                onPointerDown={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform = 'scale(0.95)';
-                }}
-                onPointerUp={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-                }}
-                onPointerLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-                }}
-                aria-label="הגדל ערך"
-              >
-                +
-              </button>
-            </div>
-          )}
-
-          {/* Step Hint */}
-          {incrementAmount > 1 && (
-            <span
-              style={{
-                marginTop: 8,
-                fontSize: 8,
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.15em',
-                color: 'var(--fs-muted)',
-              }}
-            >
-              קפיצה {incrementAmount}
-            </span>
-          )}
-        </div>
-
-        {/* Flash Effect */}
+        {/* Flash effect on value change */}
         <AnimatePresence>
           {shouldFlash && (
             <motion.div
-              initial={{ opacity: 0.4 }}
+              initial={{ opacity: 0.15 }}
               animate={{ opacity: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
@@ -368,7 +300,6 @@ const SetInputCard = memo<SetInputCardProps>(
                 position: 'absolute',
                 inset: 0,
                 background: 'var(--fs-accent)',
-                opacity: 0.15,
                 pointerEvents: 'none',
               }}
             />

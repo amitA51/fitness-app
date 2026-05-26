@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Active Workout - Redesign Mockup</title>
+<style>
+  :root {
+    --bg: #0D1B1E;
+    --surface: #162A2E;
+    --surface-2: #1E3A40;
+    --accent: #D4A843;
+    --ink: #E8E0D4;
+    --muted: #7A8B8F;
+    --heading: #F5F0E8;
+    --danger: #C84141;
+    --signal: #43C7A5;
+    --font-display: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+    --font-body: 'Inter', system-ui, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--ink);
+    max-width: 430px;
+    margin: 0 auto;
+    height: 100dvh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .screen {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    position: relative;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar {
+    height: 3px;
+    background: var(--surface-2);
+    flex-shrink: 0;
+  }
+  .progress-bar .fill {
+    height: 100%;
+    width: 35%;
+    background: var(--accent);
+    border-radius: 0 2px 2px 0;
+    transition: width 300ms ease;
+  }
+
+  /* ── HEADER ── minimal: timer center, menu left, finish right ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--surface-2);
+  }
+  .header-timer {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    direction: ltr;
+  }
+  .header-btn {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--surface-2);
+    border-radius: 12px;
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 18px;
+  }
+  .header-btn.finish {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    font-weight: 700;
+  }
+
+  /* ── EXERCISE CONTEXT ── clean exercise name + set indicator ── */
+  .exercise-context {
+    padding: 16px 16px 12px;
+    flex-shrink: 0;
+  }
+  .exercise-name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--heading);
+    margin-bottom: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .set-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .set-dots {
+    display: flex;
+    gap: 6px;
+    direction: ltr;
+  }
+  .set-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1.5px solid var(--muted);
+    transition: all 200ms ease;
+  }
+  .set-dot.done {
+    background: var(--signal);
+    border-color: var(--signal);
+  }
+  .set-dot.current {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(212, 168, 67, 0.4);
+    transform: scale(1.2);
+  }
+  .set-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+
+  /* ── MAIN CONTENT (scrollable) ── */
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ── INPUT CARDS ── two big cards side by side ── */
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .input-card {
+    background: var(--surface);
+    border: 1px solid var(--surface-2);
+    border-radius: 20px;
+    padding: 16px 12px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: transform 150ms ease, border-color 150ms ease;
+    position: relative;
+  }
+  .input-card:active {
+    transform: scale(0.97);
+    border-color: var(--accent);
+  }
+  .input-card .card-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .input-card .card-value {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 40px;
+    color: var(--heading);
+    line-height: 1;
+    direction: ltr;
+  }
+  .input-card .card-unit {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .input-card .card-ghost {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    opacity: 0.6;
+    margin-top: 2px;
+    direction: ltr;
+  }
+  .input-card .stepper-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .stepper-btn {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 20px;
+    cursor: pointer;
+    border: none;
+    transition: transform 100ms ease;
+  }
+  .stepper-btn:active { transform: scale(0.93); }
+  .stepper-btn.minus {
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+  .stepper-btn.plus {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* ── PREVIOUS SET BADGE ── */
+  .prev-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
+    border-radius: 12px;
+  }
+  .prev-badge .prev-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .prev-badge .prev-value {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--ink);
+    direction: ltr;
+  }
+
+  /* ── QUICK ACTIONS ── compact row ── */
+  .quick-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .action-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--surface);
+    border: 1px solid var(--surface-2);
+    border-radius: 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 120ms ease;
+    white-space: nowrap;
+  }
+  .action-chip:active { transform: scale(0.95); border-color: var(--accent); }
+  .action-chip.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+  .action-chip svg { width: 14px; height: 14px; }
+  .action-spacer { flex: 1; }
+
+  /* ── TECHNIQUE PILLS ── */
+  .technique-pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .technique-pill {
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: var(--surface-2);
+    color: var(--muted);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 120ms ease;
+  }
+  .technique-pill.active {
+    background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* ── BOTTOM SECTION (pinned) ── */
+  .bottom-section {
+    flex-shrink: 0;
+    padding: 0 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--surface-2);
+    background: var(--bg);
+  }
+
+  /* ── EXERCISE NAV ── compact tabs + arrows ── */
+  .exercise-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 8px;
+  }
+  .nav-btn {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--surface-2);
+    border-radius: 10px;
+    color: var(--ink);
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 16px;
+    transition: all 120ms ease;
+  }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .nav-btn:active:not(:disabled) { transform: scale(0.93); }
+  .nav-tabs {
+    flex: 1;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--surface-2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 120ms ease;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .nav-tab.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+  .nav-tab .tab-progress {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    opacity: 0.7;
+    display: block;
+    margin-top: 1px;
+  }
+
+  /* ── SLIDE TO COMPLETE ── */
+  .slide-track {
+    position: relative;
+    width: 100%;
+    height: 56px;
+    background: var(--surface);
+    border-radius: 999px;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+    border: 1px solid var(--surface-2);
+  }
+  .slide-track:active { cursor: grabbing; }
+  .slide-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    pointer-events: none;
+    text-transform: uppercase;
+  }
+  .slide-thumb {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 48px;
+    height: 48px;
+    background: var(--accent);
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    pointer-events: none;
+  }
+  .slide-hint {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 14px;
+    display: flex;
+    align-items: center;
+    color: color-mix(in srgb, var(--accent) 40%, transparent);
+    pointer-events: none;
+  }
+
+  /* ── REST TIMER (inline) ── */
+  .rest-timer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--surface-2);
+    flex-shrink: 0;
+  }
+  .rest-timer .rest-time {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--signal);
+    direction: ltr;
+    letter-spacing: 0.05em;
+  }
+  .rest-timer .rest-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .rest-timer .rest-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .rest-timer .rest-btn {
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid var(--surface-2);
+    background: var(--surface-2);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .rest-timer .rest-btn.skip {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+
+  /* ── ANNOTATION ── */
+  .annotation {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    z-index: 100;
+    direction: rtl;
+    line-height: 1.6;
+  }
+  .annotation strong { font-weight: 800; }
+  .annotation.hidden { display: none; }
+
+  /* Toggle between states */
+  .state-toggle {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    gap: 4px;
+    background: rgba(0,0,0,0.8);
+    padding: 4px;
+    border-radius: 10px;
+  }
+  .state-toggle button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    background: transparent;
+    color: var(--muted);
+  }
+  .state-toggle button.active {
+    background: var(--accent);
+    color: var(--bg);
+  }
+</style>
+</head>
+<body>
+
+<div id="annotation" class="annotation">
+  <strong>Workout Redesign Mockup</strong><br>
+  Header minimal + set dots + clean cards + compact nav at bottom
+</div>
+
+<!-- STATE: NORMAL WORKOUT -->
+<div class="screen" id="screen-normal">
+  <div class="progress-bar"><div class="fill" style="width: 35%"></div></div>
+
+  <div class="header">
+    <div class="header-timer">12:34</div>
+    <div style="display: flex; gap: 6px;">
+      <button class="header-btn" title="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      </button>
+      <button class="header-btn finish" title="Finish">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="exercise-context">
+    <div class="exercise-name">Bench Press</div>
+    <div class="set-indicator">
+      <div class="set-dots">
+        <div class="set-dot done"></div>
+        <div class="set-dot done"></div>
+        <div class="set-dot current"></div>
+        <div class="set-dot"></div>
+      </div>
+      <span class="set-label">SET 3 / 4</span>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="input-grid">
+      <div class="input-card">
+        <span class="card-label">WEIGHT</span>
+        <span class="card-value">80</span>
+        <span class="card-unit">kg</span>
+        <span class="card-ghost">prev 77.5</span>
+        <div class="stepper-row">
+          <button class="stepper-btn minus">&minus;</button>
+          <button class="stepper-btn plus">+</button>
+        </div>
+      </div>
+      <div class="input-card">
+        <span class="card-label">REPS</span>
+        <span class="card-value">8</span>
+        <span class="card-unit"></span>
+        <span class="card-ghost">prev 10</span>
+        <div class="stepper-row">
+          <button class="stepper-btn minus">&minus;</button>
+          <button class="stepper-btn plus">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="prev-badge">
+      <span class="prev-label">Last Time:</span>
+      <span class="prev-value">77.5kg &times; 10</span>
+    </div>
+
+    <div class="technique-pills">
+      <button class="technique-pill">WARMUP</button>
+      <button class="technique-pill active">DROP SET</button>
+      <button class="technique-pill">FAILURE</button>
+      <button class="technique-pill">REST-PAUSE</button>
+    </div>
+
+    <div class="quick-actions">
+      <button class="action-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        RPE &mdash;
+      </button>
+      <button class="action-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Notes
+      </button>
+      <button class="action-chip">
+        <span style="font-size: 10px; font-weight: 800;">KG</span>
+        Plates
+      </button>
+      <div class="action-spacer"></div>
+      <button class="action-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        Undo
+      </button>
+    </div>
+  </div>
+
+  <div class="bottom-section">
+    <div class="exercise-nav">
+      <button class="nav-btn" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <div class="nav-tabs">
+        <div class="nav-tab active">Bench Press<span class="tab-progress">2/4</span></div>
+        <div class="nav-tab">Incline DB<span class="tab-progress">0/4</span></div>
+        <div class="nav-tab">Cable Fly<span class="tab-progress">0/3</span></div>
+      </div>
+      <button class="nav-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="nav-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="slide-track">
+      <div class="slide-label">Slide to complete set</div>
+      <div class="slide-thumb">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+      <div class="slide-hint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATE: WITH REST TIMER -->
+<div class="screen" id="screen-rest" style="display:none">
+  <div class="progress-bar"><div class="fill" style="width: 35%"></div></div>
+
+  <div class="header">
+    <div class="header-timer">12:56</div>
+    <div style="display: flex; gap: 6px;">
+      <button class="header-btn" title="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      </button>
+      <button class="header-btn finish" title="Finish">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="rest-timer">
+    <div>
+      <div class="rest-time">1:23</div>
+      <div class="rest-label">Rest Time</div>
+    </div>
+    <div style="text-align: center;">
+      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">NEXT</div>
+      <div style="font-family: var(--font-mono); font-size: 13px; color: var(--ink); font-weight: 700; direction: ltr;">SET 04 &middot; 82.5kg</div>
+    </div>
+    <div class="rest-actions">
+      <button class="rest-btn">+30s</button>
+      <button class="rest-btn skip">Skip</button>
+    </div>
+  </div>
+
+  <div class="exercise-context">
+    <div class="exercise-name">Bench Press</div>
+    <div class="set-indicator">
+      <div class="set-dots">
+        <div class="set-dot done"></div>
+        <div class="set-dot done"></div>
+        <div class="set-dot done"></div>
+        <div class="set-dot current"></div>
+      </div>
+      <span class="set-label">REST &middot; SET 4 NEXT</span>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="input-grid">
+      <div class="input-card">
+        <span class="card-label">WEIGHT</span>
+        <span class="card-value">82.5</span>
+        <span class="card-unit">kg</span>
+        <span class="card-ghost">prev 80</span>
+        <div class="stepper-row">
+          <button class="stepper-btn minus">&minus;</button>
+          <button class="stepper-btn plus">+</button>
+        </div>
+      </div>
+      <div class="input-card">
+        <span class="card-label">REPS</span>
+        <span class="card-value">8</span>
+        <span class="card-unit"></span>
+        <span class="card-ghost">prev 8</span>
+        <div class="stepper-row">
+          <button class="stepper-btn minus">&minus;</button>
+          <button class="stepper-btn plus">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="prev-badge">
+      <span class="prev-label">Last Time:</span>
+      <span class="prev-value">80kg &times; 8 RPE 8</span>
+    </div>
+
+    <div class="quick-actions">
+      <button class="action-chip active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        RPE 8
+      </button>
+      <button class="action-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Notes
+      </button>
+      <div class="action-spacer"></div>
+      <button class="action-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        Undo
+      </button>
+    </div>
+  </div>
+
+  <div class="bottom-section">
+    <div class="exercise-nav">
+      <button class="nav-btn" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <div class="nav-tabs">
+        <div class="nav-tab active">Bench Press<span class="tab-progress">3/4</span></div>
+        <div class="nav-tab">Incline DB<span class="tab-progress">0/4</span></div>
+        <div class="nav-tab">Cable Fly<span class="tab-progress">0/3</span></div>
+      </div>
+      <button class="nav-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="nav-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="slide-track">
+      <div class="slide-label">Slide to complete set</div>
+      <div class="slide-thumb">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+      <div class="slide-hint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- State toggle -->
+<div class="state-toggle">
+  <button class="active" onclick="showState('normal')">Normal</button>
+  <button onclick="showState('rest')">With Rest</button>
+</div>
+
+<script>
+  function showState(state) {
+    document.getElementById('screen-normal').style.display = state === 'normal' ? 'flex' : 'none';
+    document.getElementById('screen-rest').style.display = state === 'rest' ? 'flex' : 'none';
+    document.querySelectorAll('.state-toggle button').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+  }
+  setTimeout(() => { document.getElementById('annotation').classList.add('hidden'); }, 6000);
+</script>
+
+</body>
+</html>

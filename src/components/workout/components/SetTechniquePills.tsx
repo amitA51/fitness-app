@@ -59,7 +59,6 @@ const SetTechniquePills = memo<SetTechniquePillsProps>(({ set, onToggle }) => {
       style={{
         display: 'flex',
         gap: 6,
-        padding: '6px 14px 0',
         overflowX: 'auto',
         scrollbarWidth: 'none',
       }}

@@ -3,6 +3,8 @@
  * Provides structured logging with level support and environment-based output
  */
 
+import * as Sentry from '@sentry/react';
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 interface LogEntry {
@@ -57,12 +59,20 @@ const createLogger = (context: string) => {
         break;
       case 'error':
         console.error(formattedMessage, data ?? '');
+        try {
+          const error = data instanceof Error ? data : new Error(`${context}: ${message}`);
+          Sentry.captureException(error, {
+            level: 'error',
+            extra: {
+              context,
+              message,
+              data: data instanceof Error ? undefined : data,
+            },
+          });
+        } catch {
+          // Sentry not initialized
+        }
         break;
-    }
-
-    // In production, could send to error tracking service
-    if (level === 'error' && typeof window !== 'undefined') {
-      // TODO: Send to error tracking (e.g., Sentry) in production
     }
   };
 

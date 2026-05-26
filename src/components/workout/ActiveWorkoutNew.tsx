@@ -134,8 +134,8 @@ export const WorkoutContent: React.FC<{
 
   // Extract primitives passed as props so child memo() is not broken by
   // the workoutSettings object reference changing on every state tick.
-  const enableQuickWeightButtons = !!workoutSettings.enableQuickWeightButtons;
-  const enableQuickRepsButtons = !!workoutSettings.enableQuickRepsButtons;
+  const enableQuickWeightButtons = workoutSettings.enableQuickWeightButtons ?? true;
+  const enableQuickRepsButtons = workoutSettings.enableQuickRepsButtons ?? true;
 
   // PR tracking
   const { getPRForExercise } = usePersonalRecords(state.exercises, state.currentExerciseIndex);
@@ -239,14 +239,8 @@ export const WorkoutContent: React.FC<{
               name: ex.name || ex.exerciseName || 'Unknown',
               muscleGroup: ex.muscleGroup,
               targetRestTime: ex.targetRestTime || 90,
-              sets:
-                ex.sets && ex.sets.length > 0
-                  ? ex.sets.map((s) =>
-                      createWorkoutSet({ reps: s.reps || 0, weight: s.weight || 0 })
-                    )
-                  : Array(4)
-                      .fill(null)
-                      .map(() => createWorkoutSet({ reps: 0, weight: 0 })),
+              // Always start with a single empty set — user defines sets during the workout
+              sets: [createWorkoutSet({ reps: 0, weight: 0 })],
             };
             dispatch({ type: 'ADD_EXERCISE', payload: exercise });
           }
@@ -519,6 +513,16 @@ export const WorkoutContent: React.FC<{
       }
     },
     [dispatch, supersetMode, supersetFirstExerciseId, workoutSettings.defaultRestTime]
+  );
+
+  const handleRemoveSuperset = useCallback(
+    (exerciseId: string) => {
+      triggerHaptic('medium');
+      dispatch({ type: 'REMOVE_SUPERSET', payload: { exerciseId } });
+      setSupersetMode(false);
+      setSupersetFirstExerciseId(null);
+    },
+    [dispatch]
   );
 
   const handleFinishRequest = useCallback(() => {
@@ -998,7 +1002,6 @@ export const WorkoutContent: React.FC<{
       style={{
         background: 'var(--fs-bg)',
         color: 'var(--fs-ink)',
-        paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
       }}
     >
       {/* Progress Bar */}
@@ -1056,14 +1059,14 @@ export const WorkoutContent: React.FC<{
           )}
         </div>
 
-        {/* Scrollable middle: exercise content (slide is lifted out below) */}
+        {/* Middle: exercise card (pinned) + scrollable content */}
         <div
-          className="flex-1 min-h-0 flex items-stretch overflow-y-auto"
+          className="flex-1 min-h-0 flex items-stretch"
           onPointerDown={handleSwipePointerDown}
           onPointerMove={handleSwipePointerMove}
           onPointerUp={handleSwipePointerEnd}
           onPointerCancel={handleSwipePointerEnd}
-          style={{ touchAction: 'pan-y', overscrollBehavior: 'contain' }}
+          style={{ touchAction: 'pan-y', overscrollBehavior: 'contain', overflow: 'hidden' }}
         >
           <ExerciseDisplay
             exercise={derived.currentExercise}
@@ -1085,35 +1088,105 @@ export const WorkoutContent: React.FC<{
             enableQuickRepsButtons={enableQuickRepsButtons}
             supersetGroups={state.supersetGroups}
             onCreateSuperset={handleCreateSuperset}
+            onRemoveSuperset={handleRemoveSuperset}
             onToggleTechnique={handleToggleTechnique}
             onOpenPlateCalc={handleOpenPlateCalc}
-            hideSlideButton
           />
         </div>
 
-        {/* Navigation Footer (pinned above slide CTA) */}
-        <div className="w-full flex-shrink-0" style={{ background: 'var(--fs-bg)' }}>
+        {/* ── BOTTOM SECTION (spec §6) — pinned, never scrolls ── */}
+        <div
+          className="w-full flex-shrink-0"
+          style={{
+            background: 'var(--fs-bg)',
+            borderTop: '1px solid var(--fs-surface-2)',
+            padding: '0 14px 16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+          }}
+        >
+          {/* 6A: Slide to complete */}
+          <div style={{ paddingTop: 8 }}>
+            <SlideToComplete
+              label="החלק לסימון סט כבוצע"
+              onComplete={handleCompleteSet}
+              disabled={false}
+            />
+          </div>
+
+          {/* 6B: Nav row */}
           <ExerciseNav
             exercises={state.exercises}
             currentIndex={state.currentExerciseIndex}
             onChangeExercise={handleChangeExercise}
             onOpenDrawer={handleOpenDrawer}
+            onAddExercise={() => {
+              if (state.exercises.length === 0) {
+                dispatch({ type: 'OPEN_SELECTOR' });
+              } else {
+                dispatch({ type: 'OPEN_QUICK_FORM' });
+              }
+            }}
           />
-        </div>
 
-        {/* SlideToComplete pinned at very bottom (thumb-zone CTA) */}
-        <div
-          className="w-full flex-shrink-0"
-          style={{
-            background: 'var(--fs-bg)',
-            padding: '0 14px 12px',
-          }}
-        >
-          <SlideToComplete
-            label="החלק לסימון סט כבוצע"
-            onComplete={handleCompleteSet}
-            disabled={false}
-          />
+          {/* 6C: Next up strip */}
+          {state.currentExerciseIndex < state.exercises.length - 1 &&
+            (() => {
+              const nextEx = state.exercises[state.currentExerciseIndex + 1];
+              return (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 12px',
+                    background: 'color-mix(in srgb, var(--fs-accent) 6%, var(--fs-surface))',
+                    border: '1px solid color-mix(in srgb, var(--fs-accent) 14%, transparent)',
+                    borderRadius: 10,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9,
+                      fontWeight: 700,
+                      color: 'var(--fs-accent)',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      flexShrink: 0,
+                    }}
+                  >
+                    הבא:
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: 'var(--fs-ink)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      flex: 1,
+                      direction: 'ltr',
+                    }}
+                  >
+                    {nextEx?.name || '—'}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      color: 'var(--fs-muted)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {nextEx?.sets?.length || 0} sets
+                  </span>
+                </div>
+              );
+            })()}
         </div>
       </div>
 

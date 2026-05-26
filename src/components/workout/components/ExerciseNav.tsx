@@ -1,8 +1,7 @@
-// ExerciseNav - Fresh Steel Compact Design
-// Primary bg (#16292D) panel with white text · arrow buttons in surface bg · set progress as chips
+// ExerciseNav - Fresh Steel v2 Compact Nav Row
+// Prev/Next arrows + center panel (set info · position) + list button + add exercise button
 
-import { List } from 'lucide-react';
-import { ChevronLeft as ChevronLeftIcon } from 'lucide-react';
+import { ChevronLeft as ChevronLeftIcon, List, Plus } from 'lucide-react';
 import { memo, useCallback, useEffect } from 'react';
 import type { Exercise } from '../../../types';
 
@@ -11,10 +10,11 @@ interface ExerciseNavProps {
   currentIndex: number;
   onChangeExercise: (index: number) => void;
   onOpenDrawer: () => void;
+  onAddExercise?: () => void;
 }
 
 const ExerciseNav = memo<ExerciseNavProps>(
-  ({ exercises, currentIndex, onChangeExercise, onOpenDrawer }) => {
+  ({ exercises, currentIndex, onChangeExercise, onOpenDrawer, onAddExercise }) => {
     const canGoPrev = currentIndex > 0;
     const canGoNext = currentIndex < exercises.length - 1;
     const currentExercise = exercises[currentIndex];
@@ -32,9 +32,9 @@ const ExerciseNav = memo<ExerciseNavProps>(
     const handleKeyDown = useCallback(
       (e: KeyboardEvent) => {
         if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-        if (e.key === 'ArrowLeft' && canGoPrev) {
+        if (e.key === 'ArrowRight' && canGoPrev) {
           onChangeExercise(currentIndex - 1);
-        } else if (e.key === 'ArrowRight' && canGoNext) {
+        } else if (e.key === 'ArrowLeft' && canGoNext) {
           onChangeExercise(currentIndex + 1);
         }
       },
@@ -47,211 +47,177 @@ const ExerciseNav = memo<ExerciseNavProps>(
     }, [handleKeyDown]);
 
     return (
-      <nav
-        aria-label="ניווט בין תרגילים"
+      <div
         style={{
           display: 'flex',
-          flexDirection: 'column',
+          alignItems: 'center',
           gap: 6,
-          padding: '8px 14px',
-          background: 'var(--fs-bg)',
-          borderTop: '1px solid var(--fs-surface-2)',
         }}
       >
-        {/* Exercise rail — horizontally scrolling per-exercise tabs */}
-        {exercises.length > 1 && (
-          <div
-            style={{
-              display: 'grid',
-              gridAutoFlow: 'column',
-              gridAutoColumns: 'minmax(98px,1fr)',
-              gap: 8,
-              overflowX: 'auto',
-              paddingBottom: 4,
-              scrollbarWidth: 'none',
-            }}
-          >
-            {exercises.map((ex, i) => (
-              <button
-                key={ex.id}
-                type="button"
-                onClick={() => onChangeExercise(i)}
-                className={`magnetic-card${i === currentIndex ? ' accent-glow' : ''}`}
-                style={{
-                  minHeight: 48,
-                  padding: '6px 10px',
-                  border: '1.5px solid var(--fs-surface-2)',
-                  borderRadius: '12px 8px 12px 8px',
-                  background: i === currentIndex ? 'var(--fs-primary)' : 'var(--fs-surface)',
-                  color: i === currentIndex ? '#fff' : 'var(--fs-muted)',
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: 800,
-                  display: 'grid',
-                  alignContent: 'center',
-                  gap: 2,
-                  cursor: 'pointer',
-                }}
-              >
-                <span
-                  style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    fontSize: 12,
-                  }}
-                >
-                  {ex.name}
-                </span>
-                <small style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.7 }}>
-                  {ex.sets?.length ?? 0} סטים
-                </small>
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div
+        {/* Prev arrow */}
+        <button
+          type="button"
+          onClick={(e) => {
+            if (canGoPrev) {
+              e.stopPropagation();
+              handlePrev();
+            }
+          }}
+          disabled={!canGoPrev}
+          aria-label="תרגיל קודם"
           style={{
+            width: 42,
+            height: 42,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 8,
+            justifyContent: 'center',
+            borderRadius: '12px 8px 12px 8px',
+            background: canGoPrev ? 'var(--fs-surface)' : 'var(--fs-surface-2)',
+            border: '1px solid var(--fs-steel)',
+            color: canGoPrev ? 'var(--fs-ink)' : 'var(--fs-muted)',
+            cursor: canGoPrev ? 'pointer' : 'not-allowed',
+            opacity: canGoPrev ? 1 : 0.3,
+            transition: 'background-color 150ms, color 150ms',
+            flexShrink: 0,
           }}
         >
-          {/* Left: Prev + Center Panel */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1 }}>
-            {/* Prev */}
-            <button
-              type="button"
-              onClick={(e) => {
-                if (canGoPrev) {
-                  e.stopPropagation();
-                  handlePrev();
-                }
-              }}
-              disabled={!canGoPrev}
-              aria-label="תרגיל קודם"
-              style={{
-                width: 44,
-                height: 44,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '12px 8px 12px 8px',
-                background: canGoPrev ? 'var(--fs-surface)' : 'var(--fs-surface-2)',
-                border: '1px solid var(--fs-steel)',
-                color: canGoPrev ? 'var(--fs-ink)' : 'var(--fs-muted)',
-                cursor: canGoPrev ? 'pointer' : 'not-allowed',
-                transition: 'background-color 150ms, color 150ms, border-color 150ms',
-                minWidth: 44,
-                minHeight: 44,
-              }}
-            >
-              <ChevronLeftIcon style={{ transform: 'rotate(180deg)' }} />
-            </button>
+          <ChevronLeftIcon size={16} strokeWidth={2.5} style={{ transform: 'rotate(180deg)' }} />
+        </button>
 
-            {/* Center: Set progress + position */}
-            <div
+        {/* Center panel */}
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: 42,
+            padding: '0 10px',
+            background: 'var(--fs-primary)',
+            borderRadius: '12px 8px 12px 8px',
+            gap: 10,
+          }}
+        >
+          {totalSets > 0 && (
+            <span
               style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: 44,
-                padding: '0 12px',
-                background: 'var(--fs-primary)',
-                borderRadius: '12px 8px 12px 8px',
-                gap: 12,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                letterSpacing: '0.06em',
+                color: 'rgba(255,255,255,0.85)',
+                fontWeight: 700,
               }}
             >
-              {totalSets > 0 && (
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 12,
-                    letterSpacing: '0.08em',
-                    color: 'rgba(255,255,255,0.85)',
-                    fontWeight: 700,
-                  }}
-                >
-                  סט {completedSets}/{totalSets}
-                </span>
-              )}
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: '0.06em',
-                  color: 'rgba(255,255,255,0.5)',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                {currentIndex + 1}/{exercises.length}
-              </span>
-            </div>
-
-            {/* Next */}
-            <button
-              type="button"
-              onClick={(e) => {
-                if (canGoNext) {
-                  e.stopPropagation();
-                  handleNext();
-                }
-              }}
-              disabled={!canGoNext}
-              aria-label="תרגיל הבא"
-              style={{
-                width: 44,
-                height: 44,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '12px 8px 12px 8px',
-                background: canGoNext ? 'var(--fs-surface)' : 'var(--fs-surface-2)',
-                border: '1px solid var(--fs-steel)',
-                color: canGoNext ? 'var(--fs-ink)' : 'var(--fs-muted)',
-                cursor: canGoNext ? 'pointer' : 'not-allowed',
-                transition: 'background-color 150ms, color 150ms, border-color 150ms',
-                minWidth: 44,
-                minHeight: 44,
-              }}
-            >
-              <ChevronLeftIcon />
-            </button>
-          </div>
-
-          {/* Right: List */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenDrawer();
-              }}
-              aria-label="רשימת תרגילים"
-              style={{
-                width: 44,
-                height: 44,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '12px 8px 12px 8px',
-                background: 'var(--fs-surface-2)',
-                border: '1px solid var(--fs-steel)',
-                color: 'var(--fs-ink)',
-                cursor: 'pointer',
-                transition: 'background-color 150ms, color 150ms, border-color 150ms',
-                minWidth: 44,
-                minHeight: 44,
-              }}
-            >
-              <List size={18} strokeWidth={2} />
-            </button>
-          </div>
+              סט {completedSets}/{totalSets}
+            </span>
+          )}
+          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>·</span>
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              color: 'rgba(255,255,255,0.45)',
+              direction: 'ltr',
+            }}
+          >
+            {currentIndex + 1}/{exercises.length}
+          </span>
         </div>
-      </nav>
+
+        {/* Next arrow */}
+        <button
+          type="button"
+          onClick={(e) => {
+            if (canGoNext) {
+              e.stopPropagation();
+              handleNext();
+            }
+          }}
+          disabled={!canGoNext}
+          aria-label="תרגיל הבא"
+          style={{
+            width: 42,
+            height: 42,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '12px 8px 12px 8px',
+            background: canGoNext ? 'var(--fs-surface)' : 'var(--fs-surface-2)',
+            border: '1px solid var(--fs-steel)',
+            color: canGoNext ? 'var(--fs-ink)' : 'var(--fs-muted)',
+            cursor: canGoNext ? 'pointer' : 'not-allowed',
+            opacity: canGoNext ? 1 : 0.3,
+            transition: 'background-color 150ms, color 150ms',
+            flexShrink: 0,
+          }}
+        >
+          <ChevronLeftIcon size={16} strokeWidth={2.5} />
+        </button>
+
+        {/* List button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenDrawer();
+          }}
+          aria-label="רשימת תרגילים"
+          style={{
+            width: 42,
+            height: 42,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '12px 8px 12px 8px',
+            background: 'var(--fs-surface-2)',
+            border: '1px solid var(--fs-steel)',
+            color: 'var(--fs-ink)',
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
+        >
+          <List size={16} strokeWidth={2.5} />
+        </button>
+
+        {/* Add exercise button */}
+        {onAddExercise && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddExercise();
+            }}
+            aria-label="הוסף תרגיל"
+            style={{
+              width: 42,
+              height: 42,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '12px 8px 12px 8px',
+              background: 'var(--fs-accent)',
+              border: '1px solid color-mix(in srgb, var(--fs-primary) 20%, var(--fs-steel))',
+              color: '#FFFFFF',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'transform 100ms ease',
+            }}
+            onPointerDown={(e) => {
+              (e.currentTarget as HTMLElement).style.transform = 'scale(0.93)';
+            }}
+            onPointerUp={(e) => {
+              (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+            }}
+            onPointerLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+            }}
+          >
+            <Plus size={18} strokeWidth={2.5} />
+          </button>
+        )}
+      </div>
     );
   },
   (prev, next) => {

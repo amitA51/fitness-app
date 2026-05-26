@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SparkOS Active Workout - Redesign v2</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ═══════════════════════════════════════════════
+     FRESH STEEL DESIGN TOKENS (from tokens.css)
+     ═══════════════════════════════════════════════ */
+  :root {
+    --fs-bg: #EEF3F1;
+    --fs-surface: #FFFFFF;
+    --fs-surface-2: #DBE6E3;
+    --fs-surface-shine-strong: rgba(255,255,255,0.85);
+    --fs-ink: #132327;
+    --fs-muted: #60706F;
+    --fs-heading: #0B1A2B;
+    --fs-primary: #16292D;
+    --fs-accent: #43C7A5;
+    --fs-accent-2: #2C7F91;
+    --fs-signal: #E2FB70;
+    --fs-warn: #E26E3F;
+    --fs-danger: #B83228;
+    --fs-steel: #B9C8C6;
+    --fs-plate: #D7E0DE;
+    --fs-rubber: #0D1516;
+
+    --font-display: "Bricolage Grotesque", "IBM Plex Sans", Impact, sans-serif;
+    --font-body: "IBM Plex Sans", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+    --radius-asymmetric: 22px 16px 22px 16px;
+    --radius-chip: 12px 8px 12px 8px;
+
+    --shadow-card: 0 1px 3px rgba(19, 32, 24, 0.08);
+    --shadow-elevated: 0 4px 12px rgba(19, 32, 24, 0.12);
+  }
+
+  .dark {
+    --fs-bg: #000000;
+    --fs-surface: #111111;
+    --fs-surface-2: #1A1A1A;
+    --fs-surface-shine-strong: rgba(255,255,255,0.05);
+    --fs-ink: #F0F0F0;
+    --fs-heading: #F0F0F0;
+    --fs-muted: #808080;
+    --fs-primary: #0A0A0A;
+    --fs-accent: #4DDCBB;
+    --fs-accent-2: #38B5C9;
+    --fs-signal: #E2FB70;
+    --fs-warn: #FF8A65;
+    --fs-steel: #2A2A2A;
+    --fs-plate: #1A1A1A;
+    --fs-rubber: #050505;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: var(--font-body);
+    background: #1a1a1a;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    background: var(--fs-bg);
+    border-radius: 40px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.1);
+  }
+
+  .screen {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+  }
+
+  /* ═══════════════════════════════════════════════
+     PROGRESS BAR
+     ═══════════════════════════════════════════════ */
+  .progress-bar {
+    height: 4px;
+    background: var(--fs-surface-2);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-bar .fill {
+    height: 100%;
+    width: 38%;
+    background: linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2));
+    border-radius: 0 2px 2px 0;
+    position: relative;
+  }
+  .progress-bar .fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
+  }
+  @keyframes shimmer { to { background-position: 200% 0; } }
+
+  /* ═══════════════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════════════ */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    flex-shrink: 0;
+    border-bottom: 2px solid var(--fs-accent);
+    background: var(--fs-bg);
+  }
+  .header-start {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .header-brand {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 3px solid var(--fs-steel);
+    background: radial-gradient(circle, var(--fs-accent) 0 26%, transparent 27%), var(--fs-primary);
+    flex-shrink: 0;
+  }
+  .header-info { min-width: 0; }
+  .header-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--fs-muted);
+    line-height: 1.2;
+  }
+  .header-timer {
+    font-family: var(--font-mono);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--fs-accent);
+    letter-spacing: 0.06em;
+    direction: ltr;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: color-mix(in srgb, var(--fs-accent) 10%, var(--fs-surface));
+    padding: 2px 12px 2px 10px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--fs-accent) 20%, transparent);
+    line-height: 1.2;
+  }
+  .header-timer .timer-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--fs-accent);
+    animation: pulse-dot 2s infinite ease-in-out;
+    flex-shrink: 0;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+  .header-end { display: flex; align-items: center; gap: 6px; }
+  .icon-btn {
+    width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--fs-surface-2);
+    border: 1px solid var(--fs-steel);
+    border-radius: var(--radius-chip);
+    color: var(--fs-ink);
+    cursor: pointer;
+  }
+  .icon-btn.finish {
+    background: var(--fs-accent);
+    color: var(--fs-heading);
+    border: none;
+  }
+
+  /* ═══════════════════════════════════════════════
+     EXERCISE CONTEXT — contained card with depth
+     ═══════════════════════════════════════════════ */
+  .exercise-context {
+    padding: 12px 14px 0;
+    flex-shrink: 0;
+    background: var(--fs-bg);
+  }
+  .exercise-card {
+    background: var(--fs-surface);
+    border: 1px solid var(--fs-steel);
+    border-radius: var(--radius-asymmetric);
+    padding: 14px 16px 12px;
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+  }
+  .exercise-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2));
+  }
+  .exercise-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .exercise-name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 21px;
+    color: var(--fs-heading);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+  .exercise-badge {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    background: color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface));
+    border: 1px solid color-mix(in srgb, var(--fs-accent) 25%, transparent);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--fs-accent-2);
+    letter-spacing: 0.04em;
+    direction: ltr;
+  }
+  .set-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .set-dots {
+    display: flex;
+    gap: 5px;
+    direction: ltr;
+  }
+  .set-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--fs-surface-2);
+    border: 1.5px solid var(--fs-steel);
+    transition: all 200ms ease;
+  }
+  .set-dot.done {
+    background: var(--fs-accent);
+    border-color: var(--fs-accent);
+  }
+  .set-dot.current {
+    background: var(--fs-accent-2);
+    border-color: var(--fs-accent-2);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--fs-accent-2) 50%, transparent);
+    transform: scale(1.25);
+  }
+  .set-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fs-muted);
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+
+  /* ═══════════════════════════════════════════════
+     REST TIMER
+     ═══════════════════════════════════════════════ */
+  .rest-timer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: linear-gradient(180deg, var(--fs-surface) 0%, color-mix(in srgb, var(--fs-accent) 5%, var(--fs-surface)) 100%);
+    border-bottom: 2px solid var(--fs-accent);
+    flex-shrink: 0;
+    gap: 12px;
+  }
+  .rest-ring-group {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .rest-time-display {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 26px;
+    color: var(--fs-ink);
+    line-height: 1;
+    direction: ltr;
+  }
+  .rest-sublabel {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--fs-accent);
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .rest-actions { display: flex; gap: 5px; }
+  .rest-btn {
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid var(--fs-steel);
+    background: var(--fs-surface-2);
+    color: var(--fs-ink);
+    cursor: pointer;
+    min-height: 36px;
+  }
+  .rest-btn.skip {
+    background: var(--fs-accent);
+    color: var(--fs-heading);
+    border-color: var(--fs-accent);
+  }
+
+  /* ═══════════════════════════════════════════════
+     MAIN CONTENT
+     ═══════════════════════════════════════════════ */
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .section-gap-sm { height: 8px; flex-shrink: 0; }
+  .section-gap { height: 12px; flex-shrink: 0; }
+  .section-gap-lg { height: 16px; flex-shrink: 0; }
+  .action-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    background: var(--fs-surface);
+    border: 1px solid var(--fs-steel);
+    border-radius: 16px;
+  }
+  .action-group-label {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--fs-muted);
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--fs-surface-2);
+  }
+
+  /* ═══════════════════════════════════════════════
+     TECHNIQUE PILLS
+     ═══════════════════════════════════════════════ */
+  .technique-pills {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .technique-pills::-webkit-scrollbar { display: none; }
+  .t-pill {
+    flex-shrink: 0;
+    padding: 5px 12px;
+    background: var(--fs-surface);
+    border: 1px solid var(--fs-steel);
+    border-radius: var(--radius-chip);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--fs-muted);
+    cursor: pointer;
+    transition: all 120ms ease;
+  }
+  .t-pill.on {
+    background: var(--fs-accent);
+    color: #fff;
+    border-color: var(--fs-accent);
+  }
+
+  /* ═══════════════════════════════════════════════
+     INPUT CARDS
+     ═══════════════════════════════════════════════ */
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .input-card {
+    position: relative;
+    background:
+      radial-gradient(circle at 20px 20px, color-mix(in srgb, var(--fs-accent) 12%, transparent), transparent 30px),
+      linear-gradient(135deg, var(--fs-surface-shine-strong), transparent 54%),
+      var(--fs-surface);
+    border: 1px solid var(--fs-steel);
+    border-radius: 24px 16px 24px 16px;
+    padding: 16px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: transform 150ms ease;
+    overflow: hidden;
+  }
+  .input-card:active { transform: scale(0.97); }
+  .input-card .card-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--fs-accent);
+    font-weight: 700;
+  }
+  .input-card .card-value {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(34px, 10vw, 42px);
+    color: var(--fs-ink);
+    line-height: 1;
+    direction: ltr;
+    display: flex;
+    align-items: baseline;
+  }
+  .input-card .card-unit {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fs-muted);
+    font-weight: 600;
+    margin-inline-start: 3px;
+  }
+  .input-card .card-ghost {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: color-mix(in srgb, var(--fs-accent) 70%, var(--fs-muted));
+    background: color-mix(in srgb, var(--fs-accent) 10%, transparent);
+    padding: 2px 7px;
+    border-radius: 5px;
+    margin-top: 4px;
+    direction: ltr;
+  }
+  .stepper-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .stepper-btn {
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 20px;
+    cursor: pointer;
+    border: 1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel));
+    transition: transform 100ms ease;
+  }
+  .stepper-btn:active { transform: scale(0.93); }
+  .stepper-btn.minus { background: var(--fs-surface-2); color: var(--fs-ink); }
+  .stepper-btn.plus { background: var(--fs-accent); color: #fff; }
+  .step-hint {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--fs-muted);
+    margin-top: 4px;
+  }
+
+  /* ═══════════════════════════════════════════════
+     PREVIOUS SET
+     ═══════════════════════════════════════════════ */
+  .prev-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 7px 14px;
+    background: color-mix(in srgb, var(--fs-accent) 8%, var(--fs-surface));
+    border: 1px solid color-mix(in srgb, var(--fs-accent) 20%, transparent);
+    border-radius: 10px;
+  }
+  .prev-badge .prev-label {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+    color: var(--fs-accent); letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .prev-badge .prev-value {
+    font-family: var(--font-display); font-size: 13px; font-weight: 800;
+    color: var(--fs-ink); direction: ltr;
+  }
+  .prev-badge .prev-rpe {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+    color: var(--fs-muted); letter-spacing: 0.04em;
+  }
+
+  /* ═══════════════════════════════════════════════
+     QUICK ACTIONS
+     ═══════════════════════════════════════════════ */
+  .quick-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 12px;
+    background: var(--fs-surface);
+    border: 1px solid var(--fs-steel);
+    border-radius: var(--radius-chip);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--fs-ink);
+    cursor: pointer;
+    transition: all 120ms ease;
+    white-space: nowrap;
+    min-height: 38px;
+  }
+  .chip:active { transform: scale(0.95); border-color: var(--fs-accent); }
+  .chip.on {
+    background: var(--fs-accent);
+    color: var(--fs-primary);
+    border-color: var(--fs-accent);
+  }
+  .chip svg, .chip .chip-icon { width: 14px; height: 14px; flex-shrink: 0; }
+  .chip-spacer { flex: 1; }
+
+  /* ═══════════════════════════════════════════════
+     BOTTOM SECTION
+     ═══════════════════════════════════════════════ */
+  .bottom-section {
+    flex-shrink: 0;
+    padding: 0 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--fs-bg);
+    border-top: 1px solid var(--fs-surface-2);
+  }
+
+  /* Nav Row */
+  .exercise-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: 4px;
+  }
+  .nav-arrow {
+    width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--fs-surface);
+    border: 1px solid var(--fs-steel);
+    border-radius: var(--radius-chip);
+    color: var(--fs-ink);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 120ms ease;
+  }
+  .nav-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+  .nav-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 10px;
+    background: var(--fs-primary);
+    border-radius: var(--radius-chip);
+    gap: 10px;
+  }
+  .nav-set-info {
+    font-family: var(--font-mono); font-size: 12px;
+    letter-spacing: 0.06em; color: rgba(255,255,255,0.85); font-weight: 700;
+  }
+  .nav-pos {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.06em; color: rgba(255,255,255,0.45); direction: ltr;
+  }
+  .nav-list-btn {
+    width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--fs-surface-2);
+    border: 1px solid var(--fs-steel);
+    border-radius: var(--radius-chip);
+    color: var(--fs-ink);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .nav-divider {
+    color: rgba(255,255,255,0.3);
+    font-size: 14px;
+  }
+
+  /* Next Up — one-line hint of what's coming */
+  .next-up {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: color-mix(in srgb, var(--fs-accent) 6%, var(--fs-surface));
+    border: 1px solid color-mix(in srgb, var(--fs-accent) 14%, transparent);
+    border-radius: 10px;
+  }
+  .next-up-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--fs-accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .next-up-name {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--fs-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    direction: ltr;
+  }
+  .next-up-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fs-muted);
+    flex-shrink: 0;
+  }
+
+  /* ═══════════════════════════════════════════════
+     SLIDE TO COMPLETE
+     ═══════════════════════════════════════════════ */
+  .slide-track {
+    position: relative;
+    width: 100%;
+    height: 62px;
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 14px), var(--fs-primary);
+    border-radius: 999px;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+  }
+  .slide-label {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+    letter-spacing: 0.08em; color: var(--fs-accent);
+    pointer-events: none; text-transform: uppercase; padding: 0 64px;
+  }
+  .slide-thumb {
+    position: absolute; top: 4px; inset-inline-start: 4px;
+    width: 54px; height: 54px;
+    background: var(--fs-accent); border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.12); pointer-events: none;
+  }
+  .slide-hint {
+    position: absolute; top: 0; bottom: 0; inset-inline-end: 14px;
+    display: flex; align-items: center;
+    color: color-mix(in srgb, var(--fs-accent) 40%, transparent); pointer-events: none;
+  }
+
+  /* ═══════════════════════════════════════════════
+     SIDE CONTROLS
+     ═══════════════════════════════════════════════ */
+  .controls-bar {
+    position: fixed; top: 16px; right: 430px;
+    display: flex; flex-direction: column; gap: 8px; z-index: 200;
+  }
+  .ctrl-group {
+    background: #222; border-radius: 10px; padding: 8px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .ctrl-group .ctrl-title {
+    font-family: var(--font-mono); font-size: 9px; color: #888;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0 4px 4px; border-bottom: 1px solid #333; margin-bottom: 2px; direction: ltr;
+  }
+  .ctrl-btn {
+    padding: 6px 12px; border: none; border-radius: 6px;
+    font-size: 11px; font-weight: 600; cursor: pointer;
+    font-family: var(--font-body); background: #333; color: #aaa;
+    text-align: start; direction: ltr;
+  }
+  .ctrl-btn.active { background: var(--fs-accent); color: #000; }
+</style>
+</head>
+<body>
+
+<!-- Side Controls -->
+<div class="controls-bar">
+  <div class="ctrl-group">
+    <div class="ctrl-title">State</div>
+    <button class="ctrl-btn active" onclick="showState('normal')">Normal</button>
+    <button class="ctrl-btn" onclick="showState('rest')">Rest Timer</button>
+  </div>
+  <div class="ctrl-group">
+    <div class="ctrl-title">Theme</div>
+    <button class="ctrl-btn active" onclick="toggleTheme('light')">Light</button>
+    <button class="ctrl-btn" onclick="toggleTheme('dark')">Dark</button>
+  </div>
+</div>
+
+<!-- Phone Frame -->
+<div class="phone-frame" id="phone">
+
+<!-- ═══ NORMAL STATE ═══ -->
+<div class="screen" id="screen-normal">
+  <div class="progress-bar"><div class="fill" style="width:38%"></div></div>
+
+  <div class="header">
+    <div class="header-start">
+      <div class="header-brand" aria-hidden="true"></div>
+      <div class="header-info">
+        <div class="header-label">אימון פעיל</div>
+        <div class="header-timer"><span class="timer-dot"></span>12:34</div>
+      </div>
+    </div>
+    <div class="header-end">
+      <button class="icon-btn" title="עוד פעולות">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      </button>
+      <button class="icon-btn finish" title="סיים אימון">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="exercise-context">
+    <div class="exercise-card">
+      <div class="exercise-name-row">
+        <div class="exercise-name">Bench Press</div>
+        <div class="exercise-badge">PR: 95kg</div>
+      </div>
+      <div class="set-indicator">
+        <div class="set-dots">
+          <div class="set-dot done"></div>
+          <div class="set-dot done"></div>
+          <div class="set-dot current"></div>
+          <div class="set-dot"></div>
+        </div>
+        <span class="set-label" dir="ltr">SET 3 / 4</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="technique-pills">
+      <button class="t-pill">חימום</button>
+      <button class="t-pill on">דרופ</button>
+      <button class="t-pill">כשל</button>
+      <button class="t-pill">מנוחה-קצרה</button>
+    </div>
+
+    <div class="section-gap"></div>
+
+    <div class="input-grid">
+      <div class="input-card">
+        <span class="card-label">משקל</span>
+        <span class="card-value">80<span class="card-unit">kg</span></span>
+        <span class="card-ghost">קודם 77.5</span>
+        <div class="stepper-row">
+          <button class="stepper-btn minus">&minus;</button>
+          <button class="stepper-btn plus">+</button>
+        </div>
+        <span class="step-hint">קפיצה 2.5</span>
+      </div>
+      <div class="input-card">
+        <span class="card-label">חזרות</span>
+        <span class="card-value">8</span>
+        <span class="card-ghost">קודם 10</span>
+        <div class="stepper-row">
+          <button class="stepper-btn minus">&minus;</button>
+          <button class="stepper-btn plus">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-gap-sm"></div>
+
+    <div class="prev-badge">
+      <span class="prev-label">אימון קודם:</span>
+      <span class="prev-value">77.5kg &times; 10</span>
+      <span class="prev-rpe">RPE 7</span>
+    </div>
+
+    <div class="section-gap"></div>
+
+    <div class="action-group">
+      <div class="action-group-label">כלים</div>
+      <div class="quick-actions">
+        <button class="chip">
+          <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>RPE —</span>
+        </button>
+        <button class="chip">
+          <span class="chip-icon" style="font-size:9px;font-weight:800;font-family:var(--font-mono)">KG</span>
+          <span>פלטות</span>
+        </button>
+        <button class="chip">
+          <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>הערות</span>
+        </button>
+        <div class="chip-spacer"></div>
+        <button class="chip" title="בטל סט אחרון">
+          <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        </button>
+      </div>
+      <div class="quick-actions">
+        <button class="chip">
+          <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <span>עריכת סטים</span>
+        </button>
+        <button class="chip">
+          <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>סופרסט</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-section">
+    <div class="slide-track">
+      <div class="slide-label">החלק לסימון סט כבוצע</div>
+      <div class="slide-thumb">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="slide-hint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+    </div>
+    <div class="exercise-nav">
+      <button class="nav-arrow" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <div class="nav-center">
+        <span class="nav-set-info">סט 2/4</span>
+        <span class="nav-divider">&middot;</span>
+        <span class="nav-pos">1/4</span>
+      </div>
+      <button class="nav-arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="nav-list-btn" title="רשימת תרגילים">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="next-up">
+      <span class="next-up-label">הבא:</span>
+      <span class="next-up-name">Incline DB Press</span>
+      <span class="next-up-meta">4 sets</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ REST TIMER STATE ═══ -->
+<div class="screen" id="screen-rest" style="display:none">
+  <div class="progress-bar"><div class="fill" style="width:45%"></div></div>
+
+  <div class="header">
+    <div class="header-start">
+      <div class="header-brand" aria-hidden="true"></div>
+      <div class="header-info">
+        <div class="header-label">אימון פעיל</div>
+        <div class="header-timer"><span class="timer-dot"></span>13:02</div>
+      </div>
+    </div>
+    <div class="header-end">
+      <button class="icon-btn" title="עוד פעולות">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      </button>
+      <button class="icon-btn finish" title="סיים אימון">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="rest-timer-bar">
+    <div class="rest-ring-group">
+      <svg width="48" height="48" viewBox="0 0 48 48" style="transform:rotate(-90deg)">
+        <circle cx="24" cy="24" r="20" fill="var(--fs-rubber)" stroke="var(--fs-steel)" stroke-width="6"/>
+        <circle cx="24" cy="24" r="20" fill="none" stroke="var(--fs-accent)" stroke-width="6"
+          stroke-dasharray="125.66" stroke-dashoffset="40" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="rest-time-display">1:23</div>
+        <div class="rest-sublabel">NEXT &middot; SET 04</div>
+      </div>
+    </div>
+    <div class="rest-actions">
+      <button class="rest-btn">+15s</button>
+      <button class="rest-btn">+30s</button>
+      <button class="rest-btn skip">דלג</button>
+    </div>
+  </div>
+
+  <div class="exercise-context">
+    <div class="exercise-card">
+      <div class="exercise-name-row">
+        <div class="exercise-name">Bench Press</div>
+        <div class="exercise-badge">PR: 95kg</div>
+      </div>
+      <div class="set-indicator">
+        <div class="set-dots">
+          <div class="set-dot done"></div>
+          <div class="set-dot done"></div>
+          <div class="set-dot done"></div>
+          <div class="set-dot current"></div>
+        </div>
+        <span class="set-label" dir="ltr">REST &middot; SET 4 NEXT</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="technique-pills">
+      <button class="t-pill">חימום</button>
+      <button class="t-pill">דרופ</button>
+      <button class="t-pill">כשל</button>
+      <button class="t-pill">מנוחה-קצרה</button>
+    </div>
+
+    <div class="section-gap"></div>
+
+    <div class="input-grid">
+      <div class="input-card">
+        <span class="card-label">משקל</span>
+        <span class="card-value">82.5<span class="card-unit">kg</span></span>
+        <span class="card-ghost">קודם 80</span>
+        <div class="stepper-row">
+          <button class="stepper-btn minus">&minus;</button>
+          <button class="stepper-btn plus">+</button>
+        </div>
+        <span class="step-hint">קפיצה 2.5</span>
+      </div>
+      <div class="input-card">
+        <span class="card-label">חזרות</span>
+        <span class="card-value">8</span>
+        <span class="card-ghost">קודם 8</span>
+        <div class="stepper-row">
+          <button class="stepper-btn minus">&minus;</button>
+          <button class="stepper-btn plus">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-gap-sm"></div>
+
+    <div class="prev-badge">
+      <span class="prev-label">אימון קודם:</span>
+      <span class="prev-value">80kg &times; 8</span>
+      <span class="prev-rpe">RPE 8</span>
+    </div>
+
+    <div class="section-gap"></div>
+
+    <div class="action-group">
+      <div class="action-group-label">כלים</div>
+      <div class="quick-actions">
+        <button class="chip on">
+          <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>RPE 8</span>
+        </button>
+        <button class="chip">
+          <span class="chip-icon" style="font-size:9px;font-weight:800;font-family:var(--font-mono)">KG</span>
+          <span>פלטות</span>
+        </button>
+        <button class="chip">
+          <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>הערות</span>
+        </button>
+        <div class="chip-spacer"></div>
+        <button class="chip" title="בטל סט אחרון">
+          <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        </button>
+      </div>
+      <div class="quick-actions">
+        <button class="chip">
+          <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <span>עריכת סטים</span>
+        </button>
+        <button class="chip">
+          <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>סופרסט</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-section">
+    <div class="slide-track">
+      <div class="slide-label">החלק לסימון סט כבוצע</div>
+      <div class="slide-thumb">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="slide-hint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+    </div>
+    <div class="exercise-nav">
+      <button class="nav-arrow" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <div class="nav-center">
+        <span class="nav-set-info">סט 3/4</span>
+        <span class="nav-divider">&middot;</span>
+        <span class="nav-pos">1/4</span>
+      </div>
+      <button class="nav-arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="nav-list-btn" title="רשימת תרגילים">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="next-up">
+      <span class="next-up-label">הבא:</span>
+      <span class="next-up-name">Incline DB Press</span>
+      <span class="next-up-meta">4 sets</span>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function showState(s) {
+  document.getElementById('screen-normal').style.display = s === 'normal' ? 'flex' : 'none';
+  document.getElementById('screen-rest').style.display = s === 'rest' ? 'flex' : 'none';
+  document.querySelectorAll('.controls-bar .ctrl-group:first-child .ctrl-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+function toggleTheme(t) {
+  document.getElementById('phone').classList.toggle('dark', t === 'dark');
+  document.querySelectorAll('.controls-bar .ctrl-group:last-child .ctrl-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

@@ -35,18 +35,43 @@ const MonoTimer = memo<{
   const { formatted } = useWorkoutTimer({ startTimestamp, totalPausedTime, isPaused });
 
   return (
-    <span
-      className="tabular-nums kinetic-number"
+    <div
       style={{
-        fontFamily: 'var(--font-mono)',
-        fontSize: 24,
-        fontWeight: 700,
-        letterSpacing: '0.08em',
-        color: 'var(--fs-accent)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        background: 'color-mix(in srgb, var(--fs-accent) 10%, var(--fs-surface))',
+        padding: '2px 12px 2px 10px',
+        borderRadius: 10,
+        border: '1px solid color-mix(in srgb, var(--fs-accent) 20%, transparent)',
+        direction: 'ltr',
+        lineHeight: 1.2,
       }}
     >
-      {formatted}
-    </span>
+      <span
+        aria-hidden
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          background: 'var(--fs-accent)',
+          animation: 'pulse-dot 2s infinite ease-in-out',
+          flexShrink: 0,
+        }}
+      />
+      <span
+        className="tabular-nums kinetic-number"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 26,
+          fontWeight: 700,
+          letterSpacing: '0.06em',
+          color: 'var(--fs-accent)',
+        }}
+      >
+        {formatted}
+      </span>
+    </div>
   );
 });
 
@@ -111,10 +136,10 @@ const OverflowMenu = memo<{
         aria-haspopup="menu"
         aria-expanded={open}
         style={{
-          width: 44,
-          height: 44,
-          minWidth: 44,
-          minHeight: 44,
+          width: 42,
+          height: 42,
+          minWidth: 42,
+          minHeight: 42,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -197,7 +222,7 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
         className="flex items-center justify-between w-full gap-2"
         style={{
           background: 'var(--fs-bg)',
-          padding: '12px 18px 12px',
+          padding: '12px 16px',
           borderBottom: '2px solid var(--fs-accent)',
         }}
       >
@@ -207,10 +232,10 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
           <div
             className="fs-brand-icon"
             style={{
-              width: 32,
-              height: 32,
+              width: 30,
+              height: 30,
               borderRadius: '50%',
-              border: '4px solid var(--fs-steel)',
+              border: '3px solid var(--fs-steel)',
               background: `
                 radial-gradient(circle, var(--fs-accent) 0 26%, transparent 27%),
                 var(--fs-primary)
@@ -226,8 +251,8 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 700,
-                fontSize: 10,
-                letterSpacing: '0.18em',
+                fontSize: 9,
+                letterSpacing: '0.16em',
                 textTransform: 'uppercase',
                 color: 'var(--fs-muted)',
                 lineHeight: 1.2,
@@ -262,10 +287,10 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
             aria-label="סיים אימון"
             aria-busy={isSaving}
             style={{
-              width: 44,
-              height: 44,
-              minWidth: 44,
-              minHeight: 44,
+              width: 42,
+              height: 42,
+              minWidth: 42,
+              minHeight: 42,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -277,7 +302,7 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
               opacity: isSaving ? 0.6 : 1,
             }}
           >
-            <Check size={20} strokeWidth={2.5} />
+            <Check size={18} strokeWidth={3} />
           </button>
         </div>
       </header>
