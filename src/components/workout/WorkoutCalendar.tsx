@@ -7,25 +7,11 @@ import type React from 'react';
 import { memo, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { WorkoutSession } from '../../types';
+import { HEBREW_MONTHS } from '../../utils/dateUtils';
 
 interface WorkoutCalendarProps {
   sessions: WorkoutSession[];
 }
-
-const HEBREW_MONTHS = [
-  'ינואר',
-  'פברואר',
-  'מרץ',
-  'אפריל',
-  'מאי',
-  'יוני',
-  'יולי',
-  'אוגוסט',
-  'ספטמבר',
-  'אוקטובר',
-  'נובמבר',
-  'דצמבר',
-];
 
 const HEBREW_DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 
@@ -345,12 +331,12 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               }
               aria-current={isToday ? 'date' : undefined}
               onClick={() => {
-                if (sessionId) navigate(`/history/${sessionId}`);
+                if (sessionId) navigate(`/detail/${sessionId}`);
               }}
               onKeyDown={(e) => {
                 if (sessionId && (e.key === 'Enter' || e.key === ' ')) {
                   e.preventDefault();
-                  navigate(`/history/${sessionId}`);
+                  navigate(`/detail/${sessionId}`);
                 }
               }}
               style={{

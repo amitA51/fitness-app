@@ -8,6 +8,7 @@ import {
   Copy,
   Download,
   Dumbbell,
+  FileJson,
   Moon,
   RefreshCw,
   Save,
@@ -1703,6 +1704,82 @@ export default function Settings() {
                   }}
                 >
                   ייצוא היסטוריית אימונים (CSV)
+                </span>
+              </button>
+              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
+            </div>
+
+            <div className="flex flex-col">
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const { dbGetAll, STORES } = await import('../services/indexedDBCore');
+                    const [sessions, templates, personalExercises, personalRecords] =
+                      await Promise.all([
+                        dbGetAll(STORES.WORKOUT_SESSIONS),
+                        dbGetAll(STORES.WORKOUT_TEMPLATES),
+                        dbGetAll(STORES.PERSONAL_EXERCISES),
+                        dbGetAll(STORES.PERSONAL_RECORDS),
+                      ]);
+                    const backup = {
+                      version: '1.0.0',
+                      exportDate: new Date().toISOString(),
+                      data: { sessions, templates, personalExercises, personalRecords },
+                      settings: {
+                        userProfile: localStorage.getItem('user_profile'),
+                        workoutPrefs: localStorage.getItem('workout_prefs'),
+                        nutritionGoals: localStorage.getItem('nutrition_goals'),
+                      },
+                    };
+                    const blob = new Blob([JSON.stringify(backup, null, 2)], {
+                      type: 'application/json',
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `sparkos-backup-${new Date().toISOString().slice(0, 10)}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  } catch (e) {
+                    logger.app.error('Backup export failed', e);
+                  }
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '14px 16px',
+                  minHeight: '52px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'right',
+                }}
+              >
+                <div
+                  className="w-8 h-8 flex items-center justify-center shrink-0"
+                  style={{
+                    background: 'var(--fs-surface-2)',
+                    color: 'var(--fs-heading)',
+                    borderRadius: '8px',
+                  }}
+                >
+                  <FileJson size={15} />
+                </div>
+                <span
+                  className="flex-1 text-right"
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    color: 'var(--fs-ink)',
+                  }}
+                >
+                  גיבוי מלא (JSON)
                 </span>
               </button>
               <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />

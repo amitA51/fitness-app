@@ -58,3 +58,60 @@ export const MONO_STYLE: React.CSSProperties = {
   textTransform: 'uppercase',
   letterSpacing: '0.22em',
 };
+
+export const HEBREW_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'] as const;
+export const HEBREW_MONTHS = [
+  'ינואר',
+  'פברואר',
+  'מרץ',
+  'אפריל',
+  'מאי',
+  'יוני',
+  'יולי',
+  'אוגוסט',
+  'ספטמבר',
+  'אוקטובר',
+  'נובמבר',
+  'דצמבר',
+] as const;
+
+export function formatHebrewDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const day = HEBREW_DAYS[date.getDay()];
+  const month = HEBREW_MONTHS[date.getMonth()];
+  return `יום ${day}, ${date.getDate()} ${month}`;
+}
+
+export function formatHebrewTime(isoString: string): string {
+  return new Date(isoString).toLocaleTimeString('he-IL', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export function formatDuration(seconds: number): string {
+  if (seconds < 3600) return `${Math.round(seconds / 60)} דקות`;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  return m > 0 ? `${h} שעה ו-${m} דקות` : `${h} שעות`;
+}
+
+export function formatDurationCompact(seconds: number): string {
+  if (seconds < 3600) return `${Math.round(seconds / 60)}min`;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`;
+}
+
+export function formatVolume(volume: number): string {
+  if (volume >= 1000) return `${(volume / 1000).toFixed(1)}k`;
+  return volume.toLocaleString();
+}
+
+export function formatDateISO(dateStr: string): string {
+  const date = new Date(dateStr);
+  const y = String(date.getFullYear()).slice(2);
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${d}.${m}.${y}`;
+}

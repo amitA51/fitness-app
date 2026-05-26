@@ -3,6 +3,7 @@
 // ============================================================================
 
 import type { PersonalRecord, WorkoutSession } from '../types';
+import { HEBREW_DAYS } from '../utils/dateUtils';
 
 // ============================================================================
 // Exported Interfaces (original)
@@ -77,8 +78,6 @@ export interface ExerciseProgressData {
 // ============================================================================
 // Helpers
 // ============================================================================
-
-const HEBREW_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
 function getISOWeek(date: Date): string {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));

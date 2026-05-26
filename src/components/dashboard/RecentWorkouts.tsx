@@ -282,7 +282,7 @@ export const RecentWorkouts = memo(function RecentWorkouts({
   );
   const hasMore = completed.length > PAGE_SIZE;
 
-  const handleSelect = useCallback((id: string) => navigate(`/history/${id}`), [navigate]);
+  const handleSelect = useCallback((id: string) => navigate(`/detail/${id}`), [navigate]);
 
   if (loading && completed.length === 0) {
     return (

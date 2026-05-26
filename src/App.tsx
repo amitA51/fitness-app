@@ -39,7 +39,6 @@ import { cn } from './utils/styles';
 // ============================================================================
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-const History = lazy(() => import('./pages/History'));
 const Login = lazy(() => import('./pages/Login'));
 const Nutrition = lazy(() => import('./pages/Nutrition'));
 const OnboardingFlow = lazy(() => import('./pages/OnboardingFlow'));
@@ -122,7 +121,7 @@ const PATH_ACCENT_MAP: Array<[RegExp, PageAccent]> = [
   [/^\/nutrition/, 'nutrition'],
   [/^\/progress/, 'progress'],
   [/^\/templates/, 'templates'],
-  [/^\/history/, 'history'],
+  [/^\/detail/, 'history'],
   [/^\/settings/, 'settings'],
 ];
 
@@ -132,7 +131,7 @@ const PATH_LABEL_MAP: Array<[RegExp, string]> = [
   [/^\/nutrition/, 'תזונה'],
   [/^\/progress/, 'התקדמות'],
   [/^\/templates/, 'תבניות'],
-  [/^\/history/, 'היסטוריה'],
+  [/^\/detail/, 'פרטי אימון'],
   [/^\/settings/, 'הגדרות'],
 ];
 
@@ -291,15 +290,7 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
         }
       />
       <Route
-        path="/history"
-        element={
-          <PageErrorBoundary pageLabel="היסטוריית אימונים">
-            <History />
-          </PageErrorBoundary>
-        }
-      />
-      <Route
-        path="/history/:id"
+        path="/detail/:id"
         element={
           <PageErrorBoundary pageLabel="פרטי האימון">
             <WorkoutDetail />

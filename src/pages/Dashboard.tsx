@@ -188,6 +188,53 @@ export default function Dashboard() {
     [weekData.workoutsThisWeek, weekData.avgDurationMin, volumeLabel, volDelta]
   );
 
+  // 4-week consistency data
+  const consistencyData = useMemo(() => {
+    const completed = workoutSessions.filter((s) => s.status === 'completed');
+    const now = new Date();
+    const weekCounts: number[] = [0, 0, 0, 0]; // [3 weeks ago, 2 weeks ago, last week, this week]
+
+    for (const s of completed) {
+      const sessionDate = new Date(s.startTime);
+      const diffMs = now.getTime() - sessionDate.getTime();
+      const diffWeeks = Math.floor(diffMs / (7 * 86400000));
+      const idx = 3 - diffWeeks;
+      if (idx >= 0 && idx < 4) {
+        weekCounts[idx] = (weekCounts[idx] ?? 0) + 1;
+      }
+    }
+
+    const weeksActive = weekCounts.filter((c) => c > 0).length;
+    const totalSessions = weekCounts.reduce((a, b) => a + b, 0);
+    const consistencyPct = Math.round((weeksActive / 4) * 100);
+
+    return { weeksActive, totalSessions, consistencyPct, weekCounts };
+  }, [workoutSessions]);
+
+  // Weekly muscle group distribution — top 5 muscles by completed sets this week
+  const weeklyMuscleData = useMemo(() => {
+    const now = new Date();
+    const weekStart = getWeekStart(now);
+    const completed = workoutSessions.filter((s) => {
+      if (s.status !== 'completed') return false;
+      return new Date(s.startTime) >= weekStart;
+    });
+
+    const muscleMap = new Map<string, number>();
+    for (const s of completed) {
+      for (const ex of s.exercises) {
+        const muscle = ex.targetMuscle || ex.muscleGroup || 'אחר';
+        const sets = ex.sets.filter((set) => set.isCompleted).length;
+        muscleMap.set(muscle, (muscleMap.get(muscle) || 0) + sets);
+      }
+    }
+
+    return [...muscleMap.entries()]
+      .map(([muscle, sets]) => ({ muscle, sets }))
+      .sort((a, b) => b.sets - a.sets)
+      .slice(0, 5);
+  }, [workoutSessions]);
+
   // Stabilise rings array so ActivityRings (memo'd) doesn't re-render on parent re-renders.
   const heroRings = useMemo(
     () => [
@@ -488,6 +535,215 @@ export default function Dashboard() {
             />
           </div>
         </section>
+
+        {/* 4b. Workout Consistency Score */}
+        {consistencyData.totalSessions > 0 && (
+          <section style={{ marginTop: 24 }}>
+            <SectionTitle text="עקביות אימונים" />
+            <div
+              className="magnetic-card glass-surface fs-accent-rail"
+              style={{
+                background: 'var(--fs-surface)',
+                borderRadius: '22px 16px 22px 16px',
+                border: '1px solid var(--fs-surface-2)',
+                padding: '16px 18px',
+                boxShadow: 'var(--shadow-card)',
+              }}
+            >
+              {/* Top row: consistency percentage + label */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 12,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    fontWeight: 800,
+                    color: 'var(--fs-muted)',
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  § 4-WEEK · CONSISTENCY
+                </span>
+                <span
+                  className="kinetic-number"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 20,
+                    fontWeight: 800,
+                    color:
+                      consistencyData.consistencyPct >= 75
+                        ? 'var(--fs-accent)'
+                        : consistencyData.consistencyPct >= 50
+                          ? 'var(--fs-signal)'
+                          : 'var(--fs-warn)',
+                  }}
+                >
+                  {consistencyData.consistencyPct}%
+                </span>
+              </div>
+
+              {/* 4-week bar visualization */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                {consistencyData.weekCounts.map((count, i) => (
+                  <div key={i} style={{ textAlign: 'center' }}>
+                    <div
+                      style={{
+                        height: 40,
+                        background: count > 0 ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+                        borderRadius: 6,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: count > 0 ? 1 : 0.3,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 14,
+                          fontWeight: 800,
+                          color: count > 0 ? '#071412' : 'var(--fs-muted)',
+                        }}
+                      >
+                        {count}
+                      </span>
+                    </div>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 9,
+                        color: 'var(--fs-muted)',
+                        marginTop: 4,
+                        display: 'block',
+                      }}
+                    >
+                      {i === 3 ? 'השבוע' : i === 2 ? 'שבוע שעבר' : `לפני ${3 - i} שבועות`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bottom row: total sessions label */}
+              <div
+                style={{
+                  marginTop: 12,
+                  borderTop: '1px solid var(--fs-surface-2)',
+                  paddingTop: 10,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    color: 'var(--fs-muted)',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  סה"כ אימונים (4 שבועות)
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 12,
+                    fontWeight: 800,
+                    color: 'var(--fs-ink)',
+                  }}
+                >
+                  {consistencyData.totalSessions}
+                </span>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* 4c. Weekly Muscle Group Distribution */}
+        {weeklyMuscleData.length > 0 && (
+          <section style={{ marginTop: 24 }}>
+            <SectionTitle text="שרירים השבוע" />
+            <div
+              className="magnetic-card glass-surface fs-accent-rail"
+              style={{
+                background: 'var(--fs-surface)',
+                borderRadius: '22px 16px 22px 16px',
+                border: '1px solid var(--fs-surface-2)',
+                padding: '16px 18px',
+                boxShadow: 'var(--shadow-card)',
+              }}
+            >
+              <div style={{ display: 'grid', gap: 8 }}>
+                {weeklyMuscleData.map((item, i) => {
+                  const maxSets = weeklyMuscleData[0]?.sets || 1;
+                  const pct = Math.round((item.sets / maxSets) * 100);
+                  return (
+                    <div key={item.muscle}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: 4,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-body)',
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: 'var(--fs-ink)',
+                          }}
+                        >
+                          {item.muscle}
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: 11,
+                            fontWeight: 800,
+                            color: 'var(--fs-muted)',
+                          }}
+                        >
+                          {item.sets} סטים
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          height: 6,
+                          background: 'var(--fs-surface-2)',
+                          borderRadius: 999,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <div
+                          style={{
+                            height: '100%',
+                            width: `${pct}%`,
+                            borderRadius: 999,
+                            background:
+                              i === 0
+                                ? 'var(--fs-accent)'
+                                : i === 1
+                                  ? 'var(--fs-accent-2)'
+                                  : 'var(--fs-signal)',
+                            transition: 'width 0.5s ease',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* 5. Recent workouts */}
         <section style={{ marginTop: 24 }}>

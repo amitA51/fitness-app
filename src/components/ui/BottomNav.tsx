@@ -1,10 +1,4 @@
-import {
-  ClipboardList,
-  Dumbbell,
-  LayoutDashboard,
-  TrendingUp,
-  UtensilsCrossed,
-} from 'lucide-react';
+import { Dumbbell, LayoutDashboard, TrendingUp, UtensilsCrossed } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { prefetchRoute } from '../../utils/routePrefetch';
@@ -12,7 +6,6 @@ import { prefetchRoute } from '../../utils/routePrefetch';
 const NAV_ITEMS = [
   { path: '/', label: 'בית', icon: LayoutDashboard },
   { path: '/workout', label: 'אימון', icon: Dumbbell },
-  { path: '/history', label: 'היסטוריה', icon: ClipboardList },
   { path: '/progress', label: 'התקדמות', icon: TrendingUp },
   { path: '/nutrition', label: 'תזונה', icon: UtensilsCrossed },
 ] as const;

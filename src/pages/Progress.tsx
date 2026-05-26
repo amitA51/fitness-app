@@ -54,6 +54,7 @@ import type {
 import { getWorkoutSessions } from '../services/dataService';
 import { getAllPRs } from '../services/prService';
 import type { WorkoutSession } from '../types';
+import { formatDuration, formatVolume } from '../utils/dateUtils';
 import { safeJsonParse } from '../utils/safeJson';
 
 type ProgressTab = 'weight' | 'measurements' | 'recovery' | 'strength';
@@ -64,18 +65,6 @@ const TABS: { key: ProgressTab; label: string; icon: React.ReactNode }[] = [
   { key: 'recovery', label: 'ריקאברי', icon: <Heart size={15} /> },
   { key: 'strength', label: 'כוח', icon: <Dumbbell size={15} /> },
 ];
-
-function formatDuration(seconds: number): string {
-  if (seconds < 3600) return `${Math.round(seconds / 60)} דקות`;
-  const h = Math.floor(seconds / 3600);
-  const m = Math.round((seconds % 3600) / 60);
-  return m > 0 ? `${h} שעה ו-${m} דקות` : `${h} שעות`;
-}
-
-function formatVolume(volume: number): string {
-  if (volume >= 1000) return `${(volume / 1000).toFixed(1)}k`;
-  return volume.toLocaleString();
-}
 
 // ============================================================================
 // Workout History Sub-Component — embedded at bottom of Progress page
@@ -312,7 +301,7 @@ const WorkoutHistoryList = memo(function WorkoutHistoryList({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/history/${session.id}`);
+                    navigate(`/detail/${session.id}`);
                   }}
                   style={{
                     display: 'block',

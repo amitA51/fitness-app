@@ -4,7 +4,7 @@
  */
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { Clock, Dumbbell, Play, Plus, Star, Trash2, X } from 'lucide-react';
+import { Clock, Copy, Dumbbell, Play, Plus, Star, Trash2, X } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -90,6 +90,18 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
       ),
     [allExercises, exerciseSearch]
   );
+
+  const estimatedMinutes = useMemo(() => {
+    if (exercises.length === 0) return 0;
+    const totalSets = exercises.reduce((sum, ex) => sum + ex.targetSets, 0);
+    const avgSetTime = 45; // seconds per set (including execution)
+    const totalRestTime = exercises.reduce(
+      (sum, ex) => sum + (ex.targetSets - 1) * ex.restSeconds,
+      0
+    );
+    const transitionTime = exercises.length * 60; // 1 min between exercises
+    return Math.round((totalSets * avgSetTime + totalRestTime + transitionTime) / 60);
+  }, [exercises]);
 
   const handleAddExercise = (exercise: PersonalExercise) => {
     const exName = exercise.name || 'תרגיל';
@@ -464,6 +476,41 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
               )}
             </AnimatePresence>
 
+            {exercises.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 16px',
+                  background: 'var(--fs-surface-2)',
+                  borderRadius: 0,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '11px',
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: 'var(--fs-muted)',
+                  }}
+                >
+                  זמן משוער
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: '18px',
+                    color: 'var(--fs-accent)',
+                  }}
+                >
+                  ~{estimatedMinutes} דק׳
+                </span>
+              </div>
+            )}
+
             <motion.button
               type="submit"
               disabled={isSubmitting}
@@ -516,6 +563,7 @@ interface TemplateCardProps {
   index: number;
   onStart: (templateId: string) => void;
   onToggleFavorite: (template: WorkoutTemplate) => void;
+  onDuplicate: (template: WorkoutTemplate) => void;
   onDelete: (id: string) => void;
   isDeleting?: boolean;
   isFavoriting?: boolean;
@@ -526,6 +574,7 @@ const TemplateCard = memo(function TemplateCard({
   index,
   onStart,
   onToggleFavorite,
+  onDuplicate,
   onDelete,
   isDeleting,
   isFavoriting,
@@ -670,6 +719,19 @@ const TemplateCard = memo(function TemplateCard({
           )}
         </motion.button>
         <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => onDuplicate(template)}
+          className="chip"
+          style={{
+            background: 'var(--fs-surface)',
+            minHeight: '44px',
+            padding: '0 14px',
+          }}
+          aria-label="שכפל תבנית"
+        >
+          <Copy size={14} />
+        </motion.button>
+        <motion.button
           whileTap={{ scale: isDeleting ? 1 : 0.95 }}
           onClick={handleDeleteClick}
           onBlur={() => setConfirmDelete(false)}
@@ -775,7 +837,6 @@ export default function Templates() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [, setCreatingId] = useState<string | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [favoritingIds, setFavoritingIds] = useState<Set<string>>(new Set());
 
@@ -809,34 +870,29 @@ export default function Templates() {
   }, [templates]);
 
   const handleCreate = async (name: string, templateExercises: TemplateExerciseInput[] = []) => {
-    setCreatingId('temp');
-    try {
-      const exercises: WorkoutTemplateExercise[] = templateExercises.map((ex, i) => ({
-        id: crypto.randomUUID(),
-        exerciseId: '',
-        exerciseName: ex.exerciseName,
-        targetMuscle: '',
-        targetSets: ex.targetSets,
-        targetReps: ex.targetReps,
-        targetWeight: null,
-        restSeconds: ex.restSeconds,
-        order: i,
-        notes: '',
-      }));
-      const newTemplate = await createWorkoutTemplate({
-        name,
-        description: '',
-        exercises,
-        updatedAt: new Date().toISOString(),
-        lastUsed: null,
-        timesUsed: 0,
-        isFavorite: false,
-      });
-      setShowCreateModal(false);
-      navigate(`/workout/${newTemplate.id}`);
-    } finally {
-      setCreatingId(null);
-    }
+    const exercises: WorkoutTemplateExercise[] = templateExercises.map((ex, i) => ({
+      id: crypto.randomUUID(),
+      exerciseId: '',
+      exerciseName: ex.exerciseName,
+      targetMuscle: '',
+      targetSets: ex.targetSets,
+      targetReps: ex.targetReps,
+      targetWeight: null,
+      restSeconds: ex.restSeconds,
+      order: i,
+      notes: '',
+    }));
+    const newTemplate = await createWorkoutTemplate({
+      name,
+      description: '',
+      exercises,
+      updatedAt: new Date().toISOString(),
+      lastUsed: null,
+      timesUsed: 0,
+      isFavorite: false,
+    });
+    setShowCreateModal(false);
+    navigate(`/workout/${newTemplate.id}`);
   };
 
   const handleToggleFavorite = useCallback(async (template: WorkoutTemplate) => {
@@ -867,6 +923,31 @@ export default function Templates() {
         return next;
       });
     }
+  }, []);
+
+  const handleDuplicate = useCallback(async (template: WorkoutTemplate) => {
+    const exercises: WorkoutTemplateExercise[] = template.exercises.map((ex, i) => ({
+      id: crypto.randomUUID(),
+      exerciseId: ex.exerciseId,
+      exerciseName: ex.exerciseName,
+      targetMuscle: ex.targetMuscle,
+      targetSets: ex.targetSets,
+      targetReps: ex.targetReps,
+      targetWeight: ex.targetWeight,
+      restSeconds: ex.restSeconds,
+      order: i,
+      notes: ex.notes,
+    }));
+    await createWorkoutTemplate({
+      name: `העתק של ${template.name}`,
+      description: '',
+      exercises,
+      updatedAt: new Date().toISOString(),
+      lastUsed: null,
+      timesUsed: 0,
+      isFavorite: false,
+    });
+    await loadTemplates();
   }, []);
 
   const handleStartTemplate = useCallback(
@@ -1008,6 +1089,7 @@ export default function Templates() {
                     index={index}
                     onStart={handleStartTemplate}
                     onToggleFavorite={handleToggleFavorite}
+                    onDuplicate={handleDuplicate}
                     onDelete={handleDelete}
                     isDeleting={deletingIds.has(template.id)}
                     isFavoriting={favoritingIds.has(template.id)}
@@ -1037,6 +1119,7 @@ export default function Templates() {
                     index={favorites.length + index}
                     onStart={handleStartTemplate}
                     onToggleFavorite={handleToggleFavorite}
+                    onDuplicate={handleDuplicate}
                     onDelete={handleDelete}
                     isDeleting={deletingIds.has(template.id)}
                     isFavoriting={favoritingIds.has(template.id)}

@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Clock,
   Dumbbell,
+  Share2,
   Sparkles,
   Star,
   Target,
@@ -18,11 +19,17 @@ import {
   TrendingUp,
   Trophy,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { WorkoutComparison } from '../components/fitness/WorkoutComparison';
 import { getWorkoutSession, getWorkoutSessions } from '../services/workoutDb';
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../types';
+import {
+  formatDuration,
+  formatHebrewDate,
+  formatHebrewTime,
+  formatVolume,
+} from '../utils/dateUtils';
 import { logger } from '../utils/logger';
 
 // ============================================================================
@@ -33,71 +40,11 @@ import { logger } from '../utils/logger';
 // HELPERS
 // ============================================================================
 
-const HEBREW_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-const HEBREW_MONTHS = [
-  'ינואר',
-  'פברואר',
-  'מרץ',
-  'אפריל',
-  'מאי',
-  'יוני',
-  'יולי',
-  'אוגוסט',
-  'ספטמבר',
-  'אוקטובר',
-  'נובמבר',
-  'דצמבר',
-];
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const day = HEBREW_DAYS[date.getDay()];
-  const month = HEBREW_MONTHS[date.getMonth()];
-  return `יום ${day}, ${date.getDate()} ${month}`;
-}
-
-function formatTime(isoString: string): string {
-  return new Date(isoString).toLocaleTimeString('he-IL', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-function formatDuration(seconds: number): string {
-  if (seconds < 3600) {
-    return `${Math.round(seconds / 60)} דקות`;
-  }
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.round((seconds % 3600) / 60);
-  return minutes > 0 ? `${hours} שעה ו-${minutes} דקות` : `${hours} שעות`;
-}
-
-function formatVolume(volume: number): string {
-  if (volume >= 1000) {
-    return `${(volume / 1000).toFixed(1)}k`;
-  }
-  return volume.toLocaleString();
-}
-
-function getMuscleGroupColor(muscle: string): { bg: string; text: string; border: string } {
-  const colors: Record<string, { bg: string; text: string; border: string }> = {
-    Chest: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
-    Back: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
-    Shoulders: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
-    Legs: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
-    Triceps: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
-    Biceps: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
-    Core: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
-    Cardio: { bg: 'var(--fs-surface-2)', text: 'var(--fs-ink)', border: 'var(--color-border)' },
-  };
-  return (
-    colors[muscle] || {
-      bg: 'var(--fs-surface-2)',
-      text: 'var(--fs-ink)',
-      border: 'var(--color-border)',
-    }
-  );
-}
+const MUSCLE_COLOR = {
+  bg: 'var(--fs-surface-2)',
+  text: 'var(--fs-ink)',
+  border: 'var(--color-border)',
+};
 
 function calculateTotalSets(exercises: WorkoutExercise[]): number {
   return exercises.reduce((total, ex) => total + ex.sets.filter((s) => s.isCompleted).length, 0);
@@ -193,7 +140,6 @@ interface ExerciseCardProps {
 }
 
 function ExerciseCard({ exercise, index }: ExerciseCardProps) {
-  const muscleColor = getMuscleGroupColor(exercise.targetMuscle || exercise.muscleGroup || 'Other');
   const completedSets = exercise.sets.filter((s) => s.isCompleted);
   const bestSet = getBestSet(exercise.sets);
   const totalVolume = completedSets.reduce((sum, s) => sum + (s.weight || 0) * (s.reps || 0), 0);
@@ -249,8 +195,8 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
                   fontFamily: 'var(--font-mono)',
                   padding: '2px 8px',
                   borderRadius: 9999,
-                  background: muscleColor.bg,
-                  color: muscleColor.text,
+                  background: MUSCLE_COLOR.bg,
+                  color: MUSCLE_COLOR.text,
                 }}
               >
                 {exercise.targetMuscle || exercise.muscleGroup || 'שריר'}
@@ -289,12 +235,14 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
               gap: 8,
               padding: '8px 12px',
               borderRadius: 12,
-              background: muscleColor.bg,
+              background: MUSCLE_COLOR.bg,
               marginBottom: 12,
             }}
           >
-            <Trophy size={14} style={{ color: muscleColor.text }} />
-            <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: muscleColor.text }}>
+            <Trophy size={14} style={{ color: MUSCLE_COLOR.text }} />
+            <span
+              style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: MUSCLE_COLOR.text }}
+            >
               הסט הטוב ביותר:
             </span>
             <span
@@ -691,6 +639,45 @@ export default function WorkoutDetail() {
     loadSession();
   }, [id]);
 
+  const handleShare = useCallback(async () => {
+    if (!session) return;
+
+    const date = formatHebrewDate(session.date || session.startTime);
+    const duration = formatDuration(session.duration);
+    const volume = formatVolume(session.totalVolume);
+    const totalSets = calculateTotalSets(session.exercises);
+    const totalReps = calculateTotalReps(session.exercises);
+
+    const exerciseLines = session.exercises
+      .map((ex) => {
+        const completedSets = ex.sets.filter((s) => s.isCompleted).length;
+        return `• ${ex.name} - ${completedSets} סטים`;
+      })
+      .join('\n');
+
+    const text = [
+      `🏋️ סיכום אימון - ${date}`,
+      `⏱️ משך: ${duration}`,
+      `💪 נפח כולל: ${volume} ק"ג`,
+      `📊 סטים: ${totalSets} | חזרות: ${totalReps}`,
+      '',
+      'תרגילים:',
+      exerciseLines,
+    ].join('\n');
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ text });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name !== 'AbortError') {
+        logger.workout.error('Error sharing workout', err);
+      }
+    }
+  }, [session]);
+
   if (loading) {
     return <DetailSkeleton />;
   }
@@ -746,7 +733,7 @@ export default function WorkoutDetail() {
         </p>
         <button
           type="button"
-          onClick={() => navigate('/history')}
+          onClick={() => navigate('/')}
           style={{
             minHeight: 48,
             padding: '12px 24px',
@@ -760,7 +747,7 @@ export default function WorkoutDetail() {
             cursor: 'pointer',
           }}
         >
-          חזרה להיסטוריה
+          חזרה לבית
         </button>
       </div>
     );
@@ -786,8 +773,8 @@ export default function WorkoutDetail() {
         <div className="flex items-center gap-3 px-4 py-4">
           <button
             type="button"
-            onClick={() => navigate('/history')}
-            aria-label="חזרה להיסטוריה"
+            onClick={() => navigate('/')}
+            aria-label="חזרה לבית"
             style={{
               width: 44,
               height: 44,
@@ -816,7 +803,7 @@ export default function WorkoutDetail() {
               פרטי אימון
             </h1>
             <p style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
-              {formatDate(session.date || session.startTime)}
+              {formatHebrewDate(session.date || session.startTime)}
             </p>
           </div>
           {session.rating && (
@@ -875,7 +862,7 @@ export default function WorkoutDetail() {
                 color: 'var(--fs-ink)',
               }}
             >
-              {formatTime(session.startTime)}
+              {formatHebrewTime(session.startTime)}
             </span>
           </div>
           <div style={{ height: 1, background: 'var(--color-separator)', margin: '8px 0' }} />
@@ -896,7 +883,7 @@ export default function WorkoutDetail() {
                 color: 'var(--fs-ink)',
               }}
             >
-              {session.endTime ? formatTime(session.endTime) : '—'}
+              {session.endTime ? formatHebrewTime(session.endTime) : '—'}
             </span>
           </div>
         </motion.div>
@@ -1135,7 +1122,7 @@ export default function WorkoutDetail() {
         >
           <button
             type="button"
-            onClick={() => navigate('/history')}
+            onClick={() => navigate('/')}
             style={{
               flex: 1,
               minHeight: 48,
@@ -1155,7 +1142,31 @@ export default function WorkoutDetail() {
             }}
           >
             <ArrowRight size={14} />
-            חזרה להיסטוריה
+            חזרה לבית
+          </button>
+          <button
+            type="button"
+            onClick={handleShare}
+            style={{
+              flex: 1,
+              minHeight: 48,
+              padding: '12px 24px',
+              background: 'linear-gradient(135deg, var(--fs-accent), var(--fs-accent-2))',
+              border: 'none',
+              borderRadius: '22px 16px 22px 16px',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
+              fontSize: 13,
+              color: '#071412',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              cursor: 'pointer',
+            }}
+          >
+            <Share2 size={14} />
+            שתף אימון
           </button>
         </motion.div>
       </div>
