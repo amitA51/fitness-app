@@ -16,6 +16,7 @@ import {
   AI_MAX_TOKENS,
   AI_REQUEST_TIMEOUT_MS,
   AI_TEMPERATURE,
+  AI_TOP_P,
   DEEPSEEK_BASE_URL,
   withPersona,
 } from './config';
@@ -283,20 +284,27 @@ export class DirectDeepSeekProvider implements AIProvider {
           messages: withPersona(messages).map((m) => ({ role: m.role, content: m.content })),
           temperature: this.temperature,
           max_tokens: this.maxTokens,
+          top_p: AI_TOP_P,
+          thinking: { type: 'enabled' },
         }),
         signal: controller.signal,
       });
 
       if (!res.ok) {
         const code: AIErrorCode =
-          res.status === 401 || res.status === 403 ? 'auth_error' :
-          res.status === 429 ? 'rate_limit' :
-          res.status >= 500 ? 'provider_down' : 'bad_response';
+          res.status === 401 || res.status === 403
+            ? 'auth_error'
+            : res.status === 429
+              ? 'rate_limit'
+              : res.status >= 500
+                ? 'provider_down'
+                : 'bad_response';
         throw new AIError(code, `DeepSeek API error: ${res.status}`, res.status);
       }
 
       const data = await res.json();
-      const content = data?.choices?.[0]?.message?.content;
+      const msg = data?.choices?.[0]?.message;
+      const content = msg?.content ?? msg?.reasoning_content;
       if (typeof content !== 'string') {
         throw new AIError('bad_response', 'No content in DeepSeek response');
       }

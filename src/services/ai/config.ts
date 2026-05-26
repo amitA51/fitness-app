@@ -37,9 +37,10 @@ export const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
 // SECTION 2 · פרמטרים לבקשה
 // ----------------------------------------------------------------------------
 
-export const AI_REQUEST_TIMEOUT_MS = 30_000;
-export const AI_MAX_TOKENS = 1024;
+export const AI_REQUEST_TIMEOUT_MS = 45_000;
+export const AI_MAX_TOKENS = 2048;
 export const AI_TEMPERATURE = 0.7;
+export const AI_TOP_P = 0.95;
 
 // ----------------------------------------------------------------------------
 // SECTION 3 · ה-Persona של הסוכן
