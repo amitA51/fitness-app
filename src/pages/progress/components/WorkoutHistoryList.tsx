@@ -1,0 +1,267 @@
+import { motion } from 'framer-motion';
+import { ChevronDown, ChevronUp, Clock, Dumbbell } from 'lucide-react';
+import { memo, useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import type { WorkoutSession } from '../../../types';
+import { formatDuration, formatVolume } from '../../../utils/dateUtils';
+import { setVolume } from '../../../utils/workoutMath';
+
+export const WorkoutHistoryList = memo(function WorkoutHistoryList({
+  sessions,
+}: { sessions: WorkoutSession[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  }, []);
+
+  if (sessions.length === 0) {
+    return (
+      <div
+        style={{
+          background: 'var(--fs-surface)',
+          borderRadius: '22px 16px 22px 16px',
+          padding: '20px',
+          textAlign: 'center',
+          border: '1px solid var(--fs-surface-2)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <Dumbbell size={24} style={{ color: 'var(--fs-muted)', marginBottom: 8 }} />
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 14,
+            color: 'var(--fs-muted)',
+          }}
+        >
+          עדיין אין אימונים
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {sessions.map((session) => {
+        const isExpanded = expandedId === session.id;
+        const completedSets = session.exercises.reduce(
+          (sum, ex) => sum + ex.sets.filter((s) => s.isCompleted).length,
+          0
+        );
+        const topExercises = session.exercises.slice(0, 4);
+        const dateStr = new Date(session.date || session.startTime).toLocaleDateString('he-IL', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+        });
+
+        return (
+          <motion.div
+            key={session.id}
+            layout
+            style={{
+              background: 'var(--fs-surface)',
+              borderRadius: '22px 16px 22px 16px',
+              border: '1px solid var(--fs-surface-2)',
+              boxShadow: 'var(--shadow-card)',
+              overflow: 'hidden',
+              position: 'relative',
+            }}
+          >
+            {/* Accent side bar */}
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 4,
+                background: 'var(--fs-accent)',
+                borderTopLeftRadius: '22px',
+                borderBottomLeftRadius: '16px',
+              }}
+            />
+
+            <div
+              onClick={() => toggleExpand(session.id)}
+              style={{
+                padding: '14px 16px 14px 20px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: 16,
+                    color: 'var(--fs-ink)',
+                    letterSpacing: '0.02em',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {session.exercises[0]?.exerciseName || 'אימון'}
+                </div>
+                <div
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    color: 'var(--fs-muted)',
+                    letterSpacing: '0.05em',
+                    marginTop: 2,
+                  }}
+                >
+                  {dateStr}
+                </div>
+              </div>
+
+              {/* Stats chips */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    color: 'var(--fs-muted)',
+                  }}
+                >
+                  <Clock size={10} style={{ verticalAlign: 'middle', marginLeft: 2 }} />
+                  {formatDuration(session.duration)}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    color: 'var(--fs-muted)',
+                  }}
+                >
+                  {completedSets} סטים
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    color: 'var(--fs-accent)',
+                  }}
+                >
+                  {formatVolume(session.totalVolume)} ק"ג
+                </span>
+                {isExpanded ? (
+                  <ChevronUp size={14} style={{ color: 'var(--fs-muted)' }} />
+                ) : (
+                  <ChevronDown size={14} style={{ color: 'var(--fs-muted)' }} />
+                )}
+              </div>
+            </div>
+
+            {/* Expanded exercises */}
+            {isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                style={{
+                  borderTop: '1px solid var(--fs-surface-2)',
+                  padding: '10px 16px 14px 20px',
+                }}
+              >
+                {topExercises.map((ex, i) => {
+                  const bestSet = ex.sets
+                    .filter((s) => s.isCompleted)
+                    .reduce(
+                      (best, s) => {
+                        const vol = setVolume(s);
+                        return vol > best.volume
+                          ? { weight: s.weight || 0, reps: s.reps || 0, volume: vol }
+                          : best;
+                      },
+                      { weight: 0, reps: 0, volume: 0 }
+                    );
+                  return (
+                    <div
+                      key={ex.id || i}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '6px 0',
+                        borderBottom:
+                          i < topExercises.length - 1 ? '1px solid var(--fs-surface-2)' : 'none',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-body)',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: 'var(--fs-ink)',
+                        }}
+                      >
+                        {ex.exerciseName || ex.name}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 11,
+                          color: 'var(--fs-muted)',
+                        }}
+                      >
+                        {bestSet.weight > 0
+                          ? `${bestSet.weight}ק"ג × ${bestSet.reps}`
+                          : `${ex.sets.filter((s) => s.isCompleted).length} סטים`}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                {session.exercises.length > 4 && (
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      color: 'var(--fs-muted)',
+                      textAlign: 'center',
+                      padding: '6px 0',
+                    }}
+                  >
+                    +{session.exercises.length - 4} תרגילים נוספים
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/detail/${session.id}`);
+                  }}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    marginTop: 8,
+                    padding: '8px',
+                    background: 'var(--fs-bg)',
+                    border: '1px solid var(--fs-surface-2)',
+                    borderRadius: 8,
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    letterSpacing: '0.05em',
+                    color: 'var(--fs-accent-2)',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                  }}
+                >
+                  לפרטים מלאים →
+                </button>
+              </motion.div>
+            )}
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+});
