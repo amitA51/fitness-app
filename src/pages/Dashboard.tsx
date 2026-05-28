@@ -16,6 +16,7 @@ import { WorkoutStreak } from '../components/dashboard/WorkoutStreak';
 import { useData } from '../contexts/DataContext';
 import { useFitnessInsights } from '../hooks/fitness/useFitnessInsights';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { onWorkoutSaved } from '../services/dataEvents';
 import { getWorkoutTemplates } from '../services/workoutDb';
 import type { WorkoutTemplate } from '../types';
 import { getWeekStart } from '../utils/dateUtils';
@@ -51,8 +52,7 @@ export default function Dashboard() {
       }
     }
     load();
-    window.addEventListener('WORKOUT_SAVED', load);
-    return () => window.removeEventListener('WORKOUT_SAVED', load);
+    return onWorkoutSaved(load);
   }, []);
 
   const sortedTemplates = useMemo(() => {

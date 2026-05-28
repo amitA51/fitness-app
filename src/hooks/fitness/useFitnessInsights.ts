@@ -18,6 +18,7 @@ import {
   getMuscleGroupDaysSince,
   getWeekOverWeekProgress,
 } from '../../services/analyticsService';
+import { onWorkoutSaved } from '../../services/dataEvents';
 import { getWorkoutSessions } from '../../services/dataService';
 import { type PersonalRecord, calculatePRsFromHistory } from '../../services/prService';
 import type { WorkoutSession } from '../../types';
@@ -96,11 +97,11 @@ export function useFitnessInsights(externalSessions?: WorkoutSession[]): Fitness
 
     loadSessions();
 
-    window.addEventListener('WORKOUT_SAVED', loadSessions);
+    const unsubscribeWorkoutSaved = onWorkoutSaved(loadSessions);
     window.addEventListener('WORKOUT_COMPLETED', loadSessions);
 
     return () => {
-      window.removeEventListener('WORKOUT_SAVED', loadSessions);
+      unsubscribeWorkoutSaved();
       window.removeEventListener('WORKOUT_COMPLETED', loadSessions);
     };
   }, [externalSessions, loadSessions]);

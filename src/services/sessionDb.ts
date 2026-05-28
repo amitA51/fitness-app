@@ -7,6 +7,7 @@
 import { LOCAL_STORAGE_KEYS as LS } from '../constants';
 import { ValidationError } from '../errors';
 import type { WorkoutSession } from '../types';
+import { emitWorkoutSaved } from './dataEvents';
 import { STORES, dbClear, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudWorkoutSession, syncWorkoutSession } from './supabaseSync';
@@ -26,7 +27,7 @@ export const saveWorkoutSession = async (session: WorkoutSession): Promise<void>
   }
 
   // Trigger UI Refresh
-  window.dispatchEvent(new Event('WORKOUT_SAVED'));
+  emitWorkoutSaved();
 };
 
 /**
@@ -159,7 +160,7 @@ export const deleteWorkoutSession = async (sessionId: string): Promise<void> => 
   }
 
   // Trigger UI Refresh
-  window.dispatchEvent(new Event('WORKOUT_SAVED'));
+  emitWorkoutSaved();
 };
 
 /**
