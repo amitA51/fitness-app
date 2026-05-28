@@ -1,0 +1,254 @@
+/**
+ * Personal Exercise Database Service
+ *
+ * CRUD operations for personal exercises (with built-in seeding), plus cloud
+ * merge/replace helpers.
+ */
+
+import { LOCAL_STORAGE_KEYS as LS } from '../constants';
+import { getBUILT_IN_EXERCISES } from '../data/builtInExercises';
+import { NotFoundError } from '../errors';
+import type { CreatePersonalExerciseInput, PersonalExercise } from '../types';
+import { STORES, dbClear, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
+import { mergeGenericRecords } from './cloudMerge';
+import { getCurrentUser } from './supabaseAuth';
+import { deleteCloudPersonalExercise, syncPersonalExercise } from './supabaseSync';
+
+/**
+ * Get all personal exercises, sorted by last used.
+ * Seeds built-in exercises if library is empty.
+ */
+export const getPersonalExercises = async (): Promise<PersonalExercise[]> => {
+  let exercises = await dbGetAll<PersonalExercise>(LS.PERSONAL_EXERCISES);
+
+  // Check for missing built-in exercises and seed them if needed
+  const now = new Date().toISOString();
+  const builtIn = getBUILT_IN_EXERCISES(now);
+  const existingNames = new Set(exercises.map((e) => e.name));
+  const missingBuiltIns = builtIn.filter((b) => !existingNames.has(b.name));
+
+  if (missingBuiltIns.length > 0) {
+    const newExercises = missingBuiltIns.map((ex) => ({
+      ...ex,
+      id: crypto.randomUUID(),
+      createdAt: now,
+    })) as PersonalExercise[];
+
+    await Promise.all(newExercises.map((ex) => dbPut(LS.PERSONAL_EXERCISES, ex)));
+    exercises = [...exercises, ...newExercises];
+  }
+
+  // Sort by last used, then by use count, then by name
+  exercises.sort((a, b) => {
+    if (a.lastUsed && b.lastUsed) {
+      return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime();
+    }
+    if (a.lastUsed) return -1;
+    if (b.lastUsed) return 1;
+    if (a.useCount && b.useCount) return b.useCount - a.useCount;
+    return (a.name ?? '').localeCompare(b.name ?? '');
+  });
+
+  return exercises;
+};
+
+/**
+ * Get a single personal exercise by ID.
+ */
+export const getPersonalExercise = async (id: string): Promise<PersonalExercise | undefined> => {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readonly');
+    const store = tx.objectStore(LS.PERSONAL_EXERCISES);
+    const request = store.get(id);
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+};
+
+/**
+ * Create a new personal exercise.
+ */
+export const createPersonalExercise = async (
+  exercise: CreatePersonalExerciseInput
+): Promise<PersonalExercise> => {
+  const newExercise = {
+    ...exercise,
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    useCount: 0,
+  } as PersonalExercise;
+
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readwrite');
+    const store = tx.objectStore(LS.PERSONAL_EXERCISES);
+    const request = store.add(newExercise);
+
+    request.onsuccess = () => {
+      getCurrentUser().then((user) => {
+        if (user) {
+          syncWithRetry(
+            () => syncPersonalExercise(user.id, { ...newExercise, name: newExercise.name ?? '' }),
+            `createPersonalExercise:${newExercise.id}`
+          );
+        }
+      });
+      resolve(newExercise);
+    };
+    request.onerror = () => reject(request.error);
+  });
+};
+
+/**
+ * Update an existing personal exercise.
+ */
+export const updatePersonalExercise = async (
+  id: string,
+  updates: Partial<PersonalExercise>
+): Promise<void> => {
+  const existing = await getPersonalExercise(id);
+  if (!existing) throw new NotFoundError('PersonalExercise', id);
+
+  const updated = { ...existing, ...updates, id };
+
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readwrite');
+    const store = tx.objectStore(LS.PERSONAL_EXERCISES);
+    const request = store.put(updated);
+
+    request.onsuccess = () => {
+      getCurrentUser().then((user) => {
+        if (user) {
+          syncWithRetry(
+            () => syncPersonalExercise(user.id, { ...updated, name: updated.name ?? '' }),
+            `updatePersonalExercise:${id}`
+          );
+        }
+      });
+      resolve();
+    };
+    request.onerror = () => reject(request.error);
+  });
+};
+
+/**
+ * Delete a personal exercise and cascade-delete its associated personal records.
+ */
+export const deletePersonalExercise = async (id: string): Promise<void> => {
+  // Cascade: remove all personal records linked to this exercise
+  const allPRs = await dbGetAll<{ id: string; exerciseId: string }>(STORES.PERSONAL_RECORDS);
+  const orphanedPRs = allPRs.filter((pr) => pr.exerciseId === id);
+  await Promise.all(orphanedPRs.map((pr) => dbDelete(STORES.PERSONAL_RECORDS, pr.id)));
+
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readwrite');
+    const store = tx.objectStore(LS.PERSONAL_EXERCISES);
+    const request = store.delete(id);
+
+    request.onsuccess = () => {
+      getCurrentUser().then((user) => {
+        if (user) {
+          syncWithRetry(
+            () => deleteCloudPersonalExercise(user.id, id),
+            `deletePersonalExercise:${id}`
+          );
+        }
+      });
+      resolve();
+    };
+    request.onerror = () => reject(request.error);
+  });
+};
+
+/**
+ * Increment use count and update last used timestamp.
+ */
+export const incrementExerciseUse = async (id: string): Promise<void> => {
+  const exercise = await getPersonalExercise(id);
+  if (!exercise) return;
+
+  await updatePersonalExercise(id, {
+    useCount: (exercise.useCount || 0) + 1,
+    lastUsed: new Date().toISOString(),
+  });
+};
+
+/**
+ * Toggle favorite status for an exercise.
+ */
+export const toggleExerciseFavorite = async (id: string): Promise<boolean> => {
+  const exercise = await getPersonalExercise(id);
+  if (!exercise) return false;
+
+  const newFavoriteStatus = !exercise.isFavorite;
+  await updatePersonalExercise(id, {
+    isFavorite: newFavoriteStatus,
+  });
+  return newFavoriteStatus;
+};
+
+/**
+ * Remove duplicate exercises based on name (case-insensitive).
+ * Keeps the one with the highest useCount or usage data.
+ */
+export const removeDuplicateExercises = async (): Promise<number> => {
+  const exercises = await getPersonalExercises();
+  const uniqueMap = new Map<string, PersonalExercise[]>();
+
+  // Group by normalized name
+  exercises.forEach((ex) => {
+    const key = (ex.name ?? '').trim().toLowerCase();
+    const list = uniqueMap.get(key) || [];
+    list.push(ex);
+    uniqueMap.set(key, list);
+  });
+
+  let removedCount = 0;
+  const db = await initDB();
+
+  for (const [_key, group] of uniqueMap.entries()) {
+    if (group.length > 1) {
+      // Sort to find the "best" one to keep
+      // Criteria: Built-in preference? usage count? detailed metadata?
+      // Let's prefer the one with highest useCount, then most recent lastUsed.
+      group.sort((a, b) => {
+        const scoreA = (a.useCount || 0) * 100 + (a.lastUsed ? new Date(a.lastUsed).getTime() : 0);
+        const scoreB = (b.useCount || 0) * 100 + (b.lastUsed ? new Date(b.lastUsed).getTime() : 0);
+        return scoreB - scoreA;
+      });
+
+      const [_keep, ...remove] = group;
+
+      // Delete the rest
+      await Promise.all(
+        remove.map((ex) => {
+          const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readwrite');
+          const store = tx.objectStore(LS.PERSONAL_EXERCISES);
+          return store.delete(ex.id);
+        })
+      );
+
+      removedCount += remove.length;
+    }
+  }
+
+  return removedCount;
+};
+
+/**
+ * Replace all personal exercises with cloud data.
+ */
+export const replacePersonalExercisesFromCloud = async (
+  exercises: PersonalExercise[]
+): Promise<void> => {
+  await dbClear(LS.PERSONAL_EXERCISES);
+  await Promise.all(exercises.map((ex) => dbPut(LS.PERSONAL_EXERCISES, ex)));
+};
+
+export const mergePersonalExercisesFromCloud = (
+  exercises: { id: string; createdAt?: string; updatedAt?: string }[]
+) => mergeGenericRecords(STORES.PERSONAL_EXERCISES, exercises);
