@@ -656,10 +656,10 @@ export default function WorkoutDetail() {
       .join('\n');
 
     const text = [
-      `🏋️ סיכום אימון - ${date}`,
-      `⏱️ משך: ${duration}`,
-      `💪 נפח כולל: ${volume} ק"ג`,
-      `📊 סטים: ${totalSets} | חזרות: ${totalReps}`,
+      `סיכום אימון - ${date}`,
+      `משך: ${duration}`,
+      `נפח כולל: ${volume} ק"ג`,
+      `סטים: ${totalSets} | חזרות: ${totalReps}`,
       '',
       'תרגילים:',
       exerciseLines,

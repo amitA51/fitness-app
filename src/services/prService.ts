@@ -429,39 +429,6 @@ export const isNewPR = (
   };
 };
 
-// Export workout history to CSV
-export const exportWorkoutHistoryCSV = (sessions: WorkoutSession[]): void => {
-  const headers = ['Date', 'Exercise', 'Sets', 'Reps', 'Weight', 'Volume'];
-  const rows: string[][] = [];
-
-  sessions.forEach((session) => {
-    session.exercises?.forEach((exercise) => {
-      exercise.sets?.forEach((set) => {
-        if (set.isWarmup) return;
-        rows.push([
-          session.date || session.startTime,
-          exercise.exerciseName || 'Unknown',
-          '1',
-          set.reps.toString(),
-          set.weight.toString(),
-          (set.weight * set.reps).toString(),
-        ]);
-      });
-    });
-  });
-
-  const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `workout-history-${new Date().toISOString().split('T')[0] ?? ''}.csv`;
-  a.click();
-
-  URL.revokeObjectURL(url);
-};
-
 // Get display text for a PR
 export function getPRDisplayText(pr: PersonalRecord): string {
   const vol = pr.value ?? pr.weight * pr.reps;

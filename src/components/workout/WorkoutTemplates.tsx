@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import * as dataService from '../../services/dataService';
 import type { WorkoutTemplate } from '../../types';
 import { logger } from '../../utils/logger';
+import { CustomDumbbellIcon } from '../icons/CustomDumbbellIcon';
 import PlanEditorModal from './PlanEditorModal';
 import { showToast } from './components/ui/Toast';
 
@@ -13,10 +14,6 @@ interface WorkoutTemplatesProps {
   userTemplates?: WorkoutTemplate[];
   builtinTemplates?: WorkoutTemplate[];
 }
-
-// Get icon for built-in templates (legacy glyph slot — the editorial system
-// uses Lucide icons for new surfaces; this returns a short text marker).
-const getBuiltinTemplateIcon = (_templateName: string): string => '§';
 
 const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
   onStartWorkout,
@@ -170,10 +167,6 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
         <div className="flex gap-2">
           <motion.button
             onClick={handleCleanup}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              handleCleanup();
-            }}
             disabled={isCleaning}
             style={{
               padding: '10px 16px',
@@ -194,10 +187,6 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
           {onClose && !isEmbedded && (
             <motion.button
               onClick={onClose}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                onClose();
-              }}
               whileTap={{ scale: 0.98 }}
               style={{
                 padding: '10px 20px',
@@ -221,10 +210,6 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
       {/* Create New Button - Editorial Style */}
       <motion.button
         onClick={handleCreateNew}
-        onPointerDown={(e) => {
-          e.preventDefault();
-          handleCreateNew();
-        }}
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
         style={{
@@ -332,10 +317,6 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() => onStartWorkout(template)}
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  onStartWorkout(template);
-                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -388,11 +369,6 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                   <div style={{ display: 'flex', gap: 8 }}>
                     <motion.button
                       onClick={(e) => handleEdit(template, e)}
-                      onPointerDown={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        handleEdit(template, e as unknown as React.MouseEvent);
-                      }}
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       aria-label={`ערוך תבנית ${template.name}`}
@@ -418,11 +394,6 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                     </motion.button>
                     <motion.button
                       onClick={(e) => handleDelete(template, e)}
-                      onPointerDown={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        handleDelete(template, e as unknown as React.MouseEvent);
-                      }}
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       aria-label={`מחק תבנית ${template.name}`}
@@ -629,10 +600,6 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() => onStartWorkout(template)}
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  onStartWorkout(template);
-                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -691,10 +658,9 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: 24,
                     }}
                   >
-                    {getBuiltinTemplateIcon(template.name)}
+                    <CustomDumbbellIcon className="w-6 h-6" style={{ color: 'var(--fs-accent)' }} />
                   </div>
                 </div>
 
@@ -949,10 +915,6 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               <div style={{ display: 'flex', gap: 12 }}>
                 <motion.button
                   onClick={cancelDelete}
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    cancelDelete();
-                  }}
                   whileTap={{ scale: 0.98 }}
                   style={{
                     flex: 1,
@@ -972,10 +934,6 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 </motion.button>
                 <motion.button
                   onClick={confirmDelete}
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    confirmDelete();
-                  }}
                   whileTap={{ scale: 0.98 }}
                   style={{
                     flex: 1,

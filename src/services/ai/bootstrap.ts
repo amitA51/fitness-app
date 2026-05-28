@@ -3,18 +3,15 @@
 // ----------------------------------------------------------------------------
 // אם Supabase מוגדר -> מפעיל את RemoteProvider (הולך דרך Edge Function).
 // אחרת -> LocalFallbackProvider (תשובות מקומיות).
+//
+// SECURITY: API keys are NEVER stored in the client bundle.
+// All AI requests go through the Supabase Edge Function which holds the key
+// in Supabase Secrets.
 // ============================================================================
 
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { logger } from '../../utils/logger';
-import {
-  DirectDeepSeekProvider,
-  LocalFallbackProvider,
-  RemoteProvider,
-  setAIProvider,
-} from './core';
-
-const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY as string | undefined;
+import { LocalFallbackProvider, RemoteProvider, setAIProvider } from './core';
 
 let initialized = false;
 
@@ -22,10 +19,7 @@ export function initAI(): void {
   if (initialized) return;
   initialized = true;
 
-  if (DEEPSEEK_API_KEY) {
-    setAIProvider(new DirectDeepSeekProvider(DEEPSEEK_API_KEY));
-    logger.ai.info('AI initialized · DirectDeepSeekProvider');
-  } else if (isSupabaseConfigured()) {
+  if (isSupabaseConfigured()) {
     setAIProvider(new RemoteProvider());
     logger.ai.info('AI initialized · RemoteProvider (Supabase Edge Function)');
   } else {

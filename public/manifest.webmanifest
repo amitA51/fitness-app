@@ -2,29 +2,16 @@
   "name": "SparkOS Fitness",
   "short_name": "SparkOS",
   "description": "SparkOS Fitness - Training journal",
-  "theme_color": "#F5F1EB",
-  "background_color": "#F5F1EB",
+  "theme_color": "#F2F4EC",
+  "background_color": "#F2F4EC",
   "display": "standalone",
   "orientation": "portrait",
   "start_url": "/",
   "dir": "rtl",
   "lang": "he",
   "icons": [
-    {
-      "src": "/pwa-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/pwa-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "/pwa-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "/pwa-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

@@ -5,15 +5,25 @@
 
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
-import type {
-  BodyWeightEntry as CanonicalBodyWeightEntry,
-  PersonalExercise as CanonicalPersonalExercise,
-  WorkoutSession as CanonicalWorkoutSession,
-  WorkoutTemplate as CanonicalWorkoutTemplate,
-} from '../types';
 import { logger } from '../utils/logger';
 import { STORES } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
+import {
+  type AIConversation,
+  type BodyMeasurement,
+  type BodyWeightEntry,
+  type NutritionLog,
+  type PersonalExercise,
+  type PersonalRecord,
+  type RecoveryLog,
+  type UserSetting,
+  type WorkoutSession,
+  type WorkoutTemplate,
+  toCanonicalBodyWeight,
+  toCanonicalPersonalExercise,
+  toCanonicalSession,
+  toCanonicalTemplate,
+} from './supabaseSyncMappers';
 import {
   mergeAIConversationsFromCloud,
   mergeBodyMeasurementsFromCloud,
@@ -27,194 +37,7 @@ import {
   mergeWorkoutTemplatesFromCloud,
 } from './workoutDb';
 
-// ==================== TYPE DEFINITIONS ====================
-
-// These interfaces describe the shape of records flowing through the sync
-// layer. They are intentionally a superset — all fields beyond the canonical
-// DB columns are optional so callers can pass richer domain objects from
-// src/types without a cast, and mappers can safely ignore the extras.
-//
-// Option B (see Supabase sync handoff): rather than importing the canonical
-// types wholesale (which require non-null fields we don't always fetch from
-// the DB), we keep file-local interfaces that are structurally compatible
-// with the canonical ones by marking the extra fields optional.
-interface WorkoutTemplate {
-  id: string;
-  user_id?: string;
-  name: string;
-  description?: string;
-  exercises: unknown[];
-  createdAt?: string;
-  updatedAt?: string;
-  // Canonical fields (optional here — present on domain objects from ../types)
-  lastUsed?: string | null;
-  timesUsed?: number;
-  isFavorite?: boolean;
-  muscleGroups?: string[];
-  isBuiltin?: boolean;
-}
-
-interface WorkoutSession {
-  id: string;
-  user_id?: string;
-  title?: string;
-  date?: string;
-  startTime: string;
-  endTime?: string | null;
-  duration?: number;
-  exercises: unknown[];
-  totalVolume?: number;
-  notes?: string;
-  createdAt?: string;
-  // Canonical fields (optional here)
-  updatedAt?: string;
-  status?: 'active' | 'completed' | 'cancelled';
-  templateId?: string | null;
-  rating?: number | null;
-  caloriesBurned?: number | null;
-  userId?: string;
-  workoutItemId?: string;
-  goalType?: string;
-  lastUsed?: string | null;
-  timesUsed?: number;
-  isFavorite?: boolean;
-  muscleGroups?: string[];
-  isBuiltin?: boolean;
-}
-
-interface PersonalExercise {
-  id: string;
-  user_id?: string;
-  name: string;
-  muscleGroup?: string;
-  category?: string;
-  tempo?: string;
-  defaultRestTime?: number;
-  defaultSets?: number;
-  notes?: string;
-  tutorialText?: string;
-  isFavorite?: boolean;
-  useCount?: number;
-  lastUsed?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  // Canonical fields (optional — see ../types PersonalExercise/Exercise)
-  userId?: string;
-  targetMuscle?: string;
-  secondaryMuscles?: string[];
-  equipment?: string;
-  instructions?: string;
-  videoUrl?: string | null;
-  imageUrl?: string | null;
-  isCustom?: boolean;
-  isTimed?: boolean;
-  targetRestTime?: number;
-  lastWeight?: number | null;
-  lastReps?: number | null;
-}
-
-interface BodyWeightEntry {
-  id: string;
-  user_id?: string;
-  weight: number;
-  date: string;
-  createdAt?: string;
-  // Canonical field (optional)
-  notes?: string;
-}
-
-interface BodyMeasurement {
-  id: string;
-  user_id?: string;
-  date: string;
-  measurements: {
-    chest?: number;
-    waist?: number;
-    hips?: number;
-    biceps?: number;
-    thighs?: number;
-    [key: string]: number | undefined;
-  };
-  notes?: string;
-  createdAt?: string;
-}
-
-interface PersonalRecord {
-  id: string;
-  user_id?: string;
-  exerciseId: string;
-  exerciseName: string;
-  weight: number;
-  reps: number;
-  date: string;
-  recordType: 'weight' | '1rm' | 'volume' | 'reps';
-  createdAt?: string;
-}
-
-interface RecoveryLog {
-  id: string;
-  user_id?: string;
-  date: string;
-  sleepHours?: number;
-  sleepQuality?: number;
-  sorenessLevel?: number;
-  energyLevel?: number;
-  stressLevel?: number;
-  tightAreas?: string[];
-  overallScore?: number;
-  sessionId?: string;
-  notes?: string;
-  createdAt?: string;
-}
-
-interface NutritionMeal {
-  id: string;
-  name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  time?: string;
-}
-
-interface NutritionLog {
-  id: string;
-  user_id?: string;
-  date: string;
-  calories?: number;
-  protein?: number;
-  carbs?: number;
-  fat?: number;
-  meals: NutritionMeal[];
-  notes?: string;
-  createdAt?: string;
-}
-
-interface UserSetting {
-  id?: string;
-  user_id?: string;
-  key: string;
-  value: unknown;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface AIMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-}
-
-interface AIConversation {
-  id: string;
-  user_id?: string;
-  title?: string;
-  messages: AIMessage[];
-  context?: Record<string, unknown>;
-  createdAt?: string;
-  updatedAt?: string;
-}
+// Row interfaces and row->canonical mappers live in ./supabaseSyncMappers.
 
 // ==================== SYNC HELPERS ====================
 
@@ -305,7 +128,8 @@ export const syncWorkoutSession = async (
     exercises: session.exercises,
     total_volume: session.totalVolume || 0,
     notes: session.notes || null,
-    created_at: new Date().toISOString(),
+    created_at: session.startTime,
+    updated_at: new Date().toISOString(),
   });
 
   if (error) {
@@ -446,7 +270,7 @@ export const syncBodyWeight = async (userId: string, entry: BodyWeightEntry): Pr
     user_id: userId,
     weight: entry.weight,
     date: entry.date,
-    created_at: new Date().toISOString(),
+    created_at: entry.createdAt ?? new Date().toISOString(),
   });
 
   if (error) {
@@ -1031,18 +855,9 @@ export const syncAllData = async (): Promise<SyncResult> => {
   try {
     const { dbGetAll } = await import('./indexedDBCore');
 
-    const [
-      localTemplates,
-      localSessions,
-      localExercises,
-      localBodyWeight,
-      localBodyMeasurements,
-      localPersonalRecords,
-      localRecoveryLogs,
-      localNutritionLogs,
-      localUserSettings,
-      localAIConversations,
-    ] = await Promise.all([
+    // Read each local store independently: one failed read must not abort the
+    // entire push. Failed reads default to an empty array (nothing to push).
+    const readResults = await Promise.allSettled([
       dbGetAll<WorkoutTemplate>(STORES.WORKOUT_TEMPLATES),
       dbGetAll<WorkoutSession>(STORES.WORKOUT_SESSIONS),
       dbGetAll<PersonalExercise>(STORES.PERSONAL_EXERCISES),
@@ -1054,6 +869,25 @@ export const syncAllData = async (): Promise<SyncResult> => {
       dbGetAll<UserSetting>(STORES.USER_SETTINGS),
       dbGetAll<AIConversation>(STORES.AI_CONVERSATIONS),
     ]);
+    const readFailed = readResults.filter((r) => r.status === 'rejected');
+    if (readFailed.length) {
+      logger.sync.error(
+        `${readFailed.length} local store reads failed during push`,
+        readFailed.map((f) => (f as PromiseRejectedResult).reason)
+      );
+    }
+    const unwrapRead = <T>(r: PromiseSettledResult<unknown> | undefined): T[] =>
+      r && r.status === 'fulfilled' ? (r.value as T[]) : [];
+    const localTemplates = unwrapRead<WorkoutTemplate>(readResults[0]);
+    const localSessions = unwrapRead<WorkoutSession>(readResults[1]);
+    const localExercises = unwrapRead<PersonalExercise>(readResults[2]);
+    const localBodyWeight = unwrapRead<BodyWeightEntry>(readResults[3]);
+    const localBodyMeasurements = unwrapRead<BodyMeasurement>(readResults[4]);
+    const localPersonalRecords = unwrapRead<PersonalRecord>(readResults[5]);
+    const localRecoveryLogs = unwrapRead<RecoveryLog>(readResults[6]);
+    const localNutritionLogs = unwrapRead<NutritionLog>(readResults[7]);
+    const localUserSettings = unwrapRead<UserSetting>(readResults[8]);
+    const localAIConversations = unwrapRead<AIConversation>(readResults[9]);
 
     const counts: FullSyncCounts = {
       templates: 0,
@@ -1150,7 +984,14 @@ export const syncAllData = async (): Promise<SyncResult> => {
       );
     }
 
-    await Promise.all(syncPromises);
+    const pushResults = await Promise.allSettled(syncPromises);
+    const pushFailed = pushResults.filter((r) => r.status === 'rejected');
+    if (pushFailed.length) {
+      logger.sync.error(
+        `${pushFailed.length} push operations failed`,
+        pushFailed.map((f) => (f as PromiseRejectedResult).reason)
+      );
+    }
 
     const totalSynced = Object.values(counts).reduce((sum, count) => sum + count, 0);
 
@@ -1166,55 +1007,6 @@ export const syncAllData = async (): Promise<SyncResult> => {
     return { success: false, error: String(error) };
   }
 };
-
-// Mappers that fill in required canonical-type fields with safe defaults when
-// pulling from Supabase. Columns we don't persist server-side (e.g. lastUsed
-// on templates, status on sessions) get reasonable defaults so the result
-// satisfies the canonical types in ../types without an unsafe cast.
-const toCanonicalTemplate = (t: WorkoutTemplate): CanonicalWorkoutTemplate => ({
-  id: t.id,
-  name: t.name,
-  description: t.description ?? '',
-  exercises: (t.exercises ?? []) as CanonicalWorkoutTemplate['exercises'],
-  createdAt: t.createdAt ?? new Date().toISOString(),
-  updatedAt: t.updatedAt ?? t.createdAt ?? new Date().toISOString(),
-  lastUsed: t.lastUsed ?? null,
-  timesUsed: t.timesUsed ?? 0,
-  isFavorite: t.isFavorite ?? false,
-  ...(t.muscleGroups !== undefined && { muscleGroups: t.muscleGroups }),
-  ...(t.isBuiltin !== undefined && { isBuiltin: t.isBuiltin }),
-});
-
-const toCanonicalSession = (s: WorkoutSession): CanonicalWorkoutSession => ({
-  id: s.id,
-  date: s.date ?? (s.startTime ? s.startTime.slice(0, 10) : new Date().toISOString().slice(0, 10)),
-  startTime: s.startTime,
-  endTime: s.endTime ?? null,
-  exercises: (s.exercises ?? []) as CanonicalWorkoutSession['exercises'],
-  duration: s.duration ?? 0,
-  status: s.status ?? (s.endTime ? 'completed' : 'active'),
-  templateId: s.templateId ?? null,
-  notes: s.notes ?? '',
-  rating: s.rating ?? null,
-  totalVolume: s.totalVolume ?? 0,
-  caloriesBurned: s.caloriesBurned ?? null,
-  createdAt: s.createdAt ?? s.startTime ?? new Date().toISOString(),
-  updatedAt: s.updatedAt ?? s.createdAt ?? s.startTime ?? new Date().toISOString(),
-});
-
-const toCanonicalPersonalExercise = (e: PersonalExercise): CanonicalPersonalExercise => ({
-  ...e,
-  id: e.id,
-  name: e.name,
-});
-
-const toCanonicalBodyWeight = (b: BodyWeightEntry): CanonicalBodyWeightEntry => ({
-  id: b.id,
-  date: b.date,
-  weight: b.weight,
-  notes: b.notes,
-  createdAt: b.createdAt ?? new Date().toISOString(),
-});
 
 export const pullAllData = async (): Promise<SyncResult> => {
   const userId = await getUserId();
@@ -1247,7 +1039,9 @@ export const pullAllData = async (): Promise<SyncResult> => {
       fetchAIConversations(userId),
     ]);
 
-    await Promise.all([
+    // Merge each store independently: one failed merge must not discard the
+    // others (they have already been fetched from the cloud).
+    const mergeResults = await Promise.allSettled([
       mergeWorkoutTemplatesFromCloud(templates.map(toCanonicalTemplate)),
       mergeWorkoutSessionsFromCloud(sessions.map(toCanonicalSession)),
       mergePersonalExercisesFromCloud(exercises.map(toCanonicalPersonalExercise)),
@@ -1259,6 +1053,13 @@ export const pullAllData = async (): Promise<SyncResult> => {
       mergeUserSettingsFromCloud(userSettings),
       mergeAIConversationsFromCloud(aiConversations),
     ]);
+    const mergeFailed = mergeResults.filter((r) => r.status === 'rejected');
+    if (mergeFailed.length) {
+      logger.sync.error(
+        `${mergeFailed.length} merge operations failed during pull`,
+        mergeFailed.map((f) => (f as PromiseRejectedResult).reason)
+      );
+    }
 
     const counts = {
       templates: templates.length,

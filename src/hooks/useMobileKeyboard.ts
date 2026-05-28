@@ -3,7 +3,7 @@
 // Handles mobile keyboard visibility and input focus
 // ============================================================================
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface UseMobileKeyboardOptions {
   onFocus?: () => void;
@@ -140,7 +140,7 @@ export function useInputFocus<T extends HTMLInputElement | HTMLTextAreaElement =
 ) {
   const { autoFocus = false, selectAll = false, delay = 0 } = options;
 
-  const inputRef = { current: null as T | null };
+  const inputRef = useRef<T | null>(null);
 
   useEffect(() => {
     if (autoFocus && inputRef.current) {

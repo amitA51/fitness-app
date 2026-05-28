@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import type React from 'react';
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -16,7 +16,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     { label, error, helper, success, icon, iconPosition = 'left', className = '', id, ...props },
     ref
   ) => {
-    const inputId = id || props.name || Math.random().toString(36).substring(2, 11);
+    const reactId = useId();
+    const inputId = id || props.name || reactId;
 
     // Determine border color by state
     const stateBorder = error

@@ -153,11 +153,6 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                     e.stopPropagation();
                     onOpenHistory();
                   }}
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onOpenHistory();
-                  }}
                   style={{
                     width: 44,
                     height: 44,
@@ -184,11 +179,6 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
               <button
                 type="button"
                 onClick={(e) => {
-                  e.stopPropagation();
-                  onClose();
-                }}
-                onPointerDown={(e) => {
-                  e.preventDefault();
                   e.stopPropagation();
                   onClose();
                 }}
@@ -230,11 +220,6 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                 triggerHaptic('selection');
                 setActiveTab('templates');
               }}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                triggerHaptic('selection');
-                setActiveTab('templates');
-              }}
               style={{
                 flex: 1,
                 padding: '10px 16px',
@@ -255,11 +240,6 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
             <button
               type="button"
               onClick={() => {
-                triggerHaptic('selection');
-                setActiveTab('quick');
-              }}
-              onPointerDown={(e) => {
-                e.preventDefault();
                 triggerHaptic('selection');
                 setActiveTab('quick');
               }}
@@ -319,11 +299,6 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   onClick={() => {
-                    triggerHaptic('medium');
-                    onRepeatLastWorkout(lastSession);
-                  }}
-                  onPointerDown={(e) => {
-                    e.preventDefault();
                     triggerHaptic('medium');
                     onRepeatLastWorkout(lastSession);
                   }}
@@ -409,12 +384,6 @@ const WorkoutStartModal: React.FC<WorkoutStartModalProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 type="button"
                 onClick={(e) => {
-                  e.stopPropagation();
-                  triggerHaptic('medium');
-                  onStartEmpty();
-                }}
-                onPointerDown={(e) => {
-                  e.preventDefault();
                   e.stopPropagation();
                   triggerHaptic('medium');
                   onStartEmpty();

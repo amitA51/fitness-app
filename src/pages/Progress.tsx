@@ -2179,7 +2179,7 @@ const StrengthTab = memo(function StrengthTab() {
             marginBottom: 12,
           }}
         >
-          🏆 לוח שיאים · PR BOARD
+          לוח שיאים · PR BOARD
         </h3>
         <div style={{ display: 'grid', gap: 6 }}>
           {curves.slice(0, 6).map((curve, i) => (

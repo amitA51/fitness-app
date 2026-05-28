@@ -35,7 +35,8 @@ CREATE TABLE workout_sessions (
     exercises JSONB DEFAULT '[]',
     total_volume DECIMAL(10, 2) DEFAULT 0,
     notes TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX idx_workout_sessions_user_id ON workout_sessions(user_id);
@@ -394,6 +395,10 @@ $$ LANGUAGE plpgsql;
 -- Triggers for updated_at
 CREATE TRIGGER update_workout_templates_updated_at
     BEFORE UPDATE ON workout_templates
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_workout_sessions_updated_at
+    BEFORE UPDATE ON workout_sessions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_personal_exercises_updated_at

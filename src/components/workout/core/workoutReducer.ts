@@ -1,6 +1,7 @@
 import type { WorkoutSet } from '../../../types';
 // Workout Reducer - Sliced reducer pattern for better maintainability
 import type { SupersetGroup, WorkoutAction, WorkoutState } from './workoutTypes';
+import type { WorkoutSettings } from '../../../types';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -38,6 +39,57 @@ const parseRestTimeString = (str: string): number => {
   if (!isNaN(num)) return Math.round(num);
 
   return 0;
+};
+
+/**
+ * Calculate smart rest time based on priority: superset > programExtras > targetRestTime > smartRest > default
+ */
+const calculateRestTime = (
+  settings: WorkoutSettings | undefined,
+  exercise: {
+    muscleGroup?: string;
+    targetRestTime?: number;
+    programExtras?: { restTime?: unknown };
+  },
+  supersetShortRest: number | null,
+  isDropSet: boolean
+): number => {
+  if (isDropSet) return 0;
+
+  let restTime = (settings?.defaultRestTime as number) ?? 60;
+
+  if (supersetShortRest !== null) {
+    restTime = supersetShortRest;
+  }
+  // 1. Program-prescribed rest time
+  else if (exercise.programExtras?.restTime) {
+    const parsed = parseRestTimeString(String(exercise.programExtras.restTime));
+    if (parsed > 0) restTime = parsed;
+  }
+  // 2. Exercise-specific target rest
+  else if (exercise.targetRestTime) {
+    restTime = exercise.targetRestTime;
+  }
+  // 3. Smart Rest Logic based on muscle group
+  else if (settings?.smartRestEnabled) {
+    if (exercise.muscleGroup === 'Legs' || exercise.muscleGroup === 'Back') {
+      restTime = (settings?.longRestTime as number) ?? 180;
+    } else if (exercise.muscleGroup === 'Arms' || exercise.muscleGroup === 'Shoulders') {
+      restTime = (settings?.shortRestTime as number) ?? 60;
+    } else {
+      restTime = (settings?.mediumRestTime as number) ?? 90;
+    }
+
+    // 4. Scale by training goal (only when smart-rest computed the base)
+    const goal = settings?.defaultWorkoutGoal;
+    const factor = goal === 'strength' ? 1.8 : goal === 'endurance' ? 0.5 : 1.0; // hypertrophy/maintenance/general
+    restTime = Math.round(restTime * factor);
+    // Sanity clamp
+    if (restTime < 30) restTime = 30;
+    if (restTime > 600) restTime = 600;
+  }
+
+  return restTime;
 };
 
 const createNextSet = (
@@ -276,45 +328,12 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       const shouldStartRest = settings?.autoStartRest ?? true; // Default to true
 
       if (shouldStartRest) {
-        // Calculate Smart Rest - Priority: superset > programExtras > targetRestTime > smartRest > default
-        let restTime = settings?.defaultRestTime || 60;
-
-        if (supersetShortRest !== null) {
-          restTime = supersetShortRest;
-        }
-        // 1. Program-prescribed rest time
-        else if (exercise.programExtras?.restTime) {
-          const parsed = parseRestTimeString(String(exercise.programExtras.restTime));
-          if (parsed > 0) restTime = parsed;
-        }
-        // 2. Exercise-specific target rest
-        else if (exercise.targetRestTime) {
-          restTime = exercise.targetRestTime;
-        }
-        // 3. Smart Rest Logic based on muscle group
-        else if (settings?.smartRestEnabled) {
-          if (exercise.muscleGroup === 'Legs' || exercise.muscleGroup === 'Back') {
-            restTime = settings?.longRestTime || 180;
-          } else if (exercise.muscleGroup === 'Arms' || exercise.muscleGroup === 'Shoulders') {
-            restTime = settings?.shortRestTime || 60;
-          } else {
-            restTime = settings?.mediumRestTime || 90;
-          }
-
-          // 4. Scale by training goal (only when smart-rest computed the base)
-          const goal = settings?.defaultWorkoutGoal;
-          const factor = goal === 'strength' ? 1.8 : goal === 'endurance' ? 0.5 : 1.0; // hypertrophy/maintenance/general
-          restTime = Math.round(restTime * factor);
-          // Sanity clamp
-          if (restTime < 30) restTime = 30;
-          if (restTime > 600) restTime = 600;
-        }
-
-        // Drop-set: skip rest entirely (you go straight into the lighter set)
-        const justCompleted = currentSet;
-        if (justCompleted.isDropSet) {
-          restTime = 0;
-        }
+        const restTime = calculateRestTime(
+          settings,
+          exercise,
+          supersetShortRest,
+          currentSet.isDropSet ?? false
+        );
 
         if (restTime > 0) {
           draft.restTimer = {
@@ -703,6 +722,8 @@ const EXERCISE_ACTIONS = new Set([
   'RENAME_EXERCISE',
   'UPDATE_EXERCISE_META',
   'SET_EXERCISES',
+  'CREATE_SUPERSET',
+  'REMOVE_SUPERSET',
 ]);
 
 const SET_ACTIONS = new Set([
@@ -716,7 +737,13 @@ const SET_ACTIONS = new Set([
   'SET_TECHNIQUE',
 ]);
 
-const TIMER_ACTIONS = new Set(['SKIP_REST', 'ADD_REST_TIME', 'SET_REST_TIME', 'SYNC_REST_TIMER']);
+const TIMER_ACTIONS = new Set([
+  'SKIP_REST',
+  'ADD_REST_TIME',
+  'SET_REST_TIME',
+  'SYNC_REST_TIMER',
+  'TOGGLE_PAUSE',
+]);
 
 const UI_ACTIONS = new Set([
   'TOGGLE_DRAWER',
@@ -738,7 +765,13 @@ const UI_ACTIONS = new Set([
   'CLOSE_PLATE_CALC',
 ]);
 
-const MODAL_ACTIONS = new Set(['SET_MODAL_STATE']);
+const MODAL_ACTIONS = new Set([
+  'SET_MODAL_STATE',
+  'SHOW_TUTORIAL',
+  'SHOW_PR_CELEBRATION',
+  'HIDE_PR_CELEBRATION',
+  'HIDE_CONFETTI',
+]);
 
 const DATA_ACTIONS = new Set(['UPDATE_SETTINGS', 'SET_PREVIOUS_DATA', 'CLEAR_PENDING_HAPTIC']);
 

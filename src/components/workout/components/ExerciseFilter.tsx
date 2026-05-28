@@ -7,6 +7,7 @@ import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { MUSCLE_GROUPS } from '../../../constants';
 import type { PersonalExercise } from '../../../types';
+import { CustomDumbbellIcon as DumbbellIcon } from '../../icons/CustomDumbbellIcon';
 
 const MUSCLE_LABELS: Record<string, string> = {
   all: 'הכל',
@@ -341,27 +342,6 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
     </div>
   );
 };
-
-// Inline DumbbellIcon to avoid circular import
-const DumbbellIcon = ({
-  className,
-  style,
-}: { className?: string; style?: React.CSSProperties }) => (
-  <svg
-    className={className}
-    style={style}
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M19 11a7.5 7.5 0 01-3.5 13M19 11h-5m5 0a7.5 7.5 0 00-7.5-7.5m7.5 7.5V5.5a2.5 2.5 0 00-5 0V11m-9.5 7h4.5m-4.5 0a7.5 7.5 0 017-5.5m0 0H9m2.5 0V5.5a2.5 2.5 0 00-5 0V11m2.5 0h-2.5m2.5 0a7.5 7.5 0 017 5.5"
-    />
-  </svg>
-);
 
 export { ExerciseFilter };
 export default ExerciseFilter;

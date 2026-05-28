@@ -1,5 +1,6 @@
 // Personal items database using IndexedDB
 import type { PersonalItem } from '../types';
+import { generateId } from '../utils/id';
 import { STORES, dbDelete, dbGetAll, dbPut, initDB } from './indexedDBCore';
 
 // Ensure DB is initialized
@@ -10,7 +11,7 @@ export const addPersonalItem = async (
 ): Promise<PersonalItem> => {
   const newItem: PersonalItem = {
     ...item,
-    id: crypto.randomUUID(),
+    id: generateId('item'),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   } as PersonalItem;

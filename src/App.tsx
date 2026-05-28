@@ -30,7 +30,7 @@ import { PageErrorBoundary } from './errors/PageErrorBoundary';
 import type { OnboardingData } from './pages/OnboardingFlow';
 import { trackPageView } from './services/eventTracker';
 import { initOfflineSync } from './services/offlineQueue';
-import type { WorkoutExercise } from './types';
+import type { PersonalItem } from './types';
 import { logger } from './utils/logger';
 import { safeJsonParse } from './utils/safeJson';
 import { cn } from './utils/styles';
@@ -102,14 +102,11 @@ function PageLoader() {
 }
 
 // Placeholder item for WorkoutProvider
-const placeholderItem: {
-  id: string;
-  title: string;
-  exercises: WorkoutExercise[];
-} = {
+const placeholderItem: PersonalItem = {
   id: 'temp-workout',
   title: 'אימון חדש',
   exercises: [],
+  createdAt: '',
 };
 
 // ============================================================================
@@ -264,8 +261,22 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
           </PageErrorBoundary>
         }
       />
-      <Route path="/workout" element={<WorkoutPlaceholder />} />
-      <Route path="/workout/:templateId" element={<WorkoutPlaceholder />} />
+      <Route
+        path="/workout"
+        element={
+          <PageErrorBoundary pageLabel="אימון">
+            <WorkoutPlaceholder />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/workout/:templateId"
+        element={
+          <PageErrorBoundary pageLabel="אימון">
+            <WorkoutPlaceholder />
+          </PageErrorBoundary>
+        }
+      />
       <Route
         path="/nutrition"
         element={

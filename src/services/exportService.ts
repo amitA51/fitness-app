@@ -1,4 +1,6 @@
 import type { BodyWeightEntry, MealEntry, WorkoutSession } from '../types';
+import { todayStr } from '../utils/dateUtils';
+import { exerciseVolume, setVolume } from '../utils/workoutMath';
 import { STORES, dbGetAll } from './indexedDBCore';
 
 // CSV Export
@@ -17,7 +19,7 @@ export function exportWorkoutHistoryCSV(sessions: WorkoutSession[]): void {
           set.setNumber.toString(),
           set.reps.toString(),
           set.weight.toString(),
-          (set.weight * set.reps).toString(),
+          setVolume(set).toString(),
           set.rpe?.toString() || '',
           set.notes || '',
         ]);
@@ -98,9 +100,7 @@ export async function generateWeeklyReport(): Promise<string> {
       });
       const exercises = (s.exercises || [])
         .map((e) => {
-          const vol = e.sets
-            .filter((set) => !set.isWarmup)
-            .reduce((sum, set) => sum + set.weight * set.reps, 0);
+          const vol = exerciseVolume(e);
           return `  • ${e.exerciseName}: ${vol.toLocaleString()} ק"ג`;
         })
         .join('\n');
@@ -124,10 +124,6 @@ ${exerciseDetails || 'אין אימונים השבוע'}`;
 }
 
 // Helper functions
-function todayStr(): string {
-  return new Date().toISOString().split('T')[0] ?? '';
-}
-
 function downloadCSV(headers: string[], rows: string[][], filename: string): void {
   const bom = '\uFEFF'; // BOM for Hebrew support in Excel
   const csv =

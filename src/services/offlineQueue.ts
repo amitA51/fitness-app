@@ -193,6 +193,16 @@ async function clearQueue(): Promise<void> {
 
 // ── Sync logic ─────────────────────────────────────────────────────────────
 
+// Lazy-load supabaseSync once and cache the resolved module, rather than
+// calling import() for every queued mutation processed.
+let supabaseSyncModulePromise: Promise<typeof import('./supabaseSync')> | null = null;
+const loadSupabaseSync = (): Promise<typeof import('./supabaseSync')> => {
+  if (!supabaseSyncModulePromise) {
+    supabaseSyncModulePromise = import('./supabaseSync');
+  }
+  return supabaseSyncModulePromise;
+};
+
 async function getSyncFn(type: MutationType, payload: unknown, userId: string) {
   const {
     syncWorkoutTemplate,
@@ -214,7 +224,7 @@ async function getSyncFn(type: MutationType, payload: unknown, userId: string) {
     syncUserSetting,
     syncAIConversation,
     deleteCloudAIConversation,
-  } = await import('./supabaseSync');
+  } = await loadSupabaseSync();
 
   switch (type) {
     case 'template:create':

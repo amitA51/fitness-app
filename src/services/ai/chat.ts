@@ -2,6 +2,7 @@
 // AI Chat - Chat management with history
 // ============================================================================
 
+import { generateId } from '../../utils/id';
 import { STORES, dbDelete, dbGet, dbGetAll, dbPut } from '../indexedDBCore';
 import { type ChatMessage, getAIProvider } from './core';
 
@@ -19,13 +20,9 @@ const CURRENT_CONVERSATION_KEY = 'ai_current_conversation';
 // Long conversations otherwise inflate token cost without improving answers.
 const MAX_HISTORY_MESSAGES = 20;
 
-function generateId(): string {
-  return 'conv-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-}
-
 export async function createConversation(title = 'שיחה חדשה'): Promise<Conversation> {
   const conversation: Conversation = {
-    id: generateId(),
+    id: generateId('conv', 5),
     title,
     messages: [],
     createdAt: new Date().toISOString(),

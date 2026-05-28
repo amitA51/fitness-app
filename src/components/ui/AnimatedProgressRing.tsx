@@ -234,9 +234,16 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
               exit={{ scale: 0, y: 10 }}
               className="absolute -bottom-2"
             >
-              <span className="text-2xl" aria-label="הושלם">
-                §
-              </span>
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-label="הושלם" role="img">
+                <path
+                  d="M5 13l4 4L19 7"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </motion.div>
           )}
         </AnimatePresence>

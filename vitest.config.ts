@@ -1,6 +1,6 @@
-import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
 import path from 'node:path';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [react()],
@@ -25,6 +25,14 @@ export default defineConfig({
         '**/*.config.{ts,js}',
         '**/*.d.ts',
       ],
+      // Regression floor only — set just below current coverage (~6.6% lines).
+      // Ratchet these UP as tests are added; the long-term target is 80%.
+      thresholds: {
+        statements: 6,
+        branches: 40,
+        functions: 18,
+        lines: 6,
+      },
     },
   },
 });

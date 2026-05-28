@@ -51,6 +51,21 @@ export const todayHe = () =>
 
 export const pad2 = (n: number) => String(Math.max(0, Math.floor(n))).padStart(2, '0');
 
+/**
+ * Returns today's date as a `YYYY-MM-DD` string in the user's LOCAL timezone.
+ *
+ * NOTE: This deliberately uses local date components instead of
+ * `new Date().toISOString().split('T')[0]` (UTC). For users ahead of UTC
+ * (e.g. Israel, UTC+2/+3), the UTC approach mis-keys early-morning entries
+ * (local 00:00–03:00) to the previous calendar day. Local date matches what
+ * the user actually means by "today" and keeps date-keyed logs (water,
+ * nutrition, body weight) on the correct day.
+ */
+export const todayStr = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+};
+
 export const DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'] as const;
 
 export const MONO_STYLE: React.CSSProperties = {

@@ -3,7 +3,8 @@
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
 import { X as CloseIcon } from 'lucide-react';
-import React, { useState, memo } from 'react';
+import type React from 'react';
+import { memo, useState } from 'react';
 import * as dataService from '../../services/dataService';
 import { type CreatePersonalExerciseInput, type Exercise, createWorkoutSet } from '../../types';
 import { logger } from '../../utils/logger';
@@ -337,4 +338,5 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
 
 QuickExerciseForm.displayName = 'QuickExerciseForm';
 
-export default React.memo(QuickExerciseForm);
+// Already wrapped in memo() at its definition above — export directly.
+export default QuickExerciseForm;

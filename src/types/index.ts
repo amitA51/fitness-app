@@ -318,40 +318,51 @@ export interface ThemeColors {
 // ADDITIONAL MISSING TYPES
 // ============================================================================
 
+// Personal workout item — composed of Exercise + metadata
 export interface PersonalItem {
+  // Core ID fields
   id: string;
+  createdAt: string;
+  updatedAt?: string;
+
+  // Workout metadata
   title?: string;
-  exercises?: Exercise[];
   workoutDuration?: number;
   isActiveWorkout?: boolean;
-  workoutStartTime?: string;
   workoutTemplateId?: string;
-  content?: string;
   type?: string;
   name?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  // PersonalExercise-derived fields surfaced at this level
+
+  // Exercise-derived fields (mirrored from Exercise for workout context)
   targetMuscle?: string;
   muscleGroup?: string;
-  category?: string;
   equipment?: string;
   instructions?: string;
   videoUrl?: string | null;
   imageUrl?: string | null;
   isCustom?: boolean;
   isTimed?: boolean;
-  userId?: string;
-  lastWeight?: number | null;
-  lastReps?: number | null;
+  notes?: string;
+  category?: string;
+  tempo?: string;
   defaultRestTime?: number;
   defaultSets?: number;
-  tempo?: string;
   tutorialText?: string;
-  isFavorite?: boolean;
+
+  // Exercise content
+  exercises?: Exercise[];
+
+  // Personal tracking fields
+  userId?: string;
   useCount?: number;
   lastUsed?: string;
-  notes?: string;
+  isFavorite?: boolean;
+
+  // Workout-specific fields
+  workoutStartTime?: string;
+
+  // Optional content
+  content?: string;
   isBuiltin?: boolean;
 }
 
@@ -516,17 +527,10 @@ export type Screen =
   | 'templates'
   | 'settings'
   | 'today'
-  | 'feed'
   | 'calendar'
-  | 'assistant'
   | 'library'
   | 'fitness'
-  | 'search'
-  | 'passwords'
   | 'add'
-  | 'investments'
-  | 'views'
   | 'login'
   | 'signup'
-  | 'logos'
   | 'insights';

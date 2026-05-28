@@ -316,7 +316,7 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'עיבוי הגב, רחב גבי וטרפזים אמצעיים.',
     tutorialText: 'פסק על המוט, משוך משקל לחזה, כווץ גב.',
-    secondaryMuscles: ['Biceps', 'Traps', 'Traps'],
+    secondaryMuscles: ['Biceps', 'Traps'],
     equipment: 'barbell',
   },
   {
@@ -328,7 +328,7 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     defaultSets: 4,
     notes: 'פיתוח גב כולל.',
     tutorialText: 'הטה קדימה, משוך מוט לחזה תחתון, כווץ רחב גבי.',
-    secondaryMuscles: ['Biceps', 'Traps', 'Traps'],
+    secondaryMuscles: ['Biceps', 'Traps'],
     equipment: 'barbell',
   },
   {

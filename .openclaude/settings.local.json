@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npm run:*)",
       "Bash(npm audit:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(grep -c import.*from.*workoutService C:/Users/amit0/desktop/fitness-app/src/**/*.tsx C:/Users/amit0/desktop/fitness-app/src/**/*.ts)",
+      "Bash(grep -r from.*workoutService C:/Users/amit0/desktop/fitness-app/src/ --include=*.ts --include=*.tsx -l)",
+      "Bash(grep -v \"^$\")"
     ]
   },
   "enableAllProjectMcpServers": true,

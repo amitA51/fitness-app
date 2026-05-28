@@ -83,30 +83,35 @@ export function useWorkout() {
  */
 export function useCurrentExercise() {
   const state = useWorkoutState();
-  const exercise = state.exercises[state.currentExerciseIndex];
+  const { exercises, currentExerciseIndex } = state;
 
-  if (!exercise || !exercise.sets) return null;
+  return useMemo(() => {
+    const exercise = exercises[currentExerciseIndex];
+    if (!exercise || !exercise.sets) return null;
 
-  const activeSetIndex = exercise.sets.findIndex((s) => !s.completedAt);
-  const displaySetIndex = activeSetIndex === -1 ? exercise.sets.length : activeSetIndex;
-  const currentSet: WorkoutSet =
-    exercise.sets[displaySetIndex] || createWorkoutSet({ reps: 0, weight: 0 });
+    const activeSetIndex = exercise.sets.findIndex((s) => !s.completedAt);
+    const displaySetIndex = activeSetIndex === -1 ? exercise.sets.length : activeSetIndex;
+    const currentSet: WorkoutSet =
+      exercise.sets[displaySetIndex] || createWorkoutSet({ reps: 0, weight: 0 });
 
-  return {
-    exercise,
-    activeSetIndex: displaySetIndex,
-    currentSet,
-    totalSets: exercise.sets.length,
-    completedSets: exercise.sets.filter((s) => s.completedAt).length,
-  };
+    return {
+      exercise,
+      activeSetIndex: displaySetIndex,
+      currentSet,
+      totalSets: exercise.sets.length,
+      completedSets: exercise.sets.filter((s) => s.completedAt).length,
+    };
+  }, [exercises, currentExerciseIndex]);
 }
 
 /**
- * Get workout settings
+ * Get workout settings. Memoized so the empty-object fallback keeps a stable
+ * reference and doesn't trigger consumer re-renders on unrelated state changes.
  */
 export function useWorkoutSettings() {
   const state = useWorkoutState();
-  return state.appSettings?.workoutSettings || {};
+  const workoutSettings = state.appSettings?.workoutSettings;
+  return useMemo(() => workoutSettings || {}, [workoutSettings]);
 }
 
 /**

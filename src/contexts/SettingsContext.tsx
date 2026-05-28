@@ -1,6 +1,14 @@
 // Settings Context - Provides app-wide settings access
 import type React from 'react';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { AppSettings, WorkoutSettings } from '../types';
 import { setHapticsEnabled } from '../utils/haptics';
 import { safeJsonParse } from '../utils/safeJson';
@@ -135,27 +143,35 @@ const persistSettings = (settings: AppSettings) => {
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<AppSettings>(() => loadStoredSettings());
 
+  // Keep state updaters pure (no side effects): React Strict Mode runs updaters
+  // twice, which would double-write to localStorage. Persistence is handled by
+  // the effect below instead.
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
-    setSettings((prev) => {
-      const next = mergeSettings({ ...prev, ...updates });
-      persistSettings(next);
-      return next;
-    });
+    setSettings((prev) => mergeSettings({ ...prev, ...updates }));
   }, []);
 
   const updateWorkoutSettings = useCallback((updates: Partial<WorkoutSettings>) => {
-    setSettings((prev) => {
-      const next = mergeSettings({
+    setSettings((prev) =>
+      mergeSettings({
         ...prev,
         workoutSettings: {
           ...prev.workoutSettings,
           ...updates,
         },
-      });
-      persistSettings(next);
-      return next;
-    });
+      })
+    );
   }, []);
+
+  // Persist whenever settings change, but skip the initial render so we don't
+  // immediately rewrite the values we just loaded from storage.
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (!hydratedRef.current) {
+      hydratedRef.current = true;
+      return;
+    }
+    persistSettings(settings);
+  }, [settings]);
 
   useEffect(() => {
     document.documentElement.classList.toggle(

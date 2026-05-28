@@ -7,7 +7,10 @@
 // ============================================================================
 
 import type { WorkoutSession } from '../../types';
+import { todayStr } from '../../utils/dateUtils';
 import { safeJsonParse } from '../../utils/safeJson';
+import { calculateStreak } from '../achievementService';
+import { WEAK_MUSCLE_THRESHOLD } from './constants';
 import { type ChatMessage, getAIProvider } from './core';
 
 // ----------------------------------------------------------------------------
@@ -125,23 +128,11 @@ export async function collectDashboardData(sessions: WorkoutSession[]): Promise<
   const volumes = Array.from(muscleVolumes.values());
   const avgVol = volumes.length > 0 ? volumes.reduce((a, b) => a + b, 0) / volumes.length : 0;
   const weakMuscles = Array.from(muscleVolumes.entries())
-    .filter(([, v]) => v < avgVol * 0.7)
+    .filter(([, v]) => v < avgVol * WEAK_MUSCLE_THRESHOLD)
     .map(([m]) => m);
 
-  // Streak
-  const uniqueDates = [...new Set(completed.map((s) => s.date))].filter(Boolean).sort().reverse();
-  let streakDays = 0;
-  if (uniqueDates.length > 0) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    for (let i = 0; i < uniqueDates.length; i++) {
-      const d = new Date(uniqueDates[i]!);
-      const expected = new Date(today);
-      expected.setDate(today.getDate() - i);
-      if (d.toDateString() === expected.toDateString()) streakDays++;
-      else break;
-    }
-  }
+  // Streak (shared canonical calculation — local-date keyed, see achievementService)
+  const streakDays = calculateStreak(completed).currentStreak;
 
   // Avg duration
   const recent30 = completed.filter(
@@ -246,8 +237,7 @@ export async function collectDashboardData(sessions: WorkoutSession[]): Promise<
   try {
     const { getBodyWeightsByDateRange, calculateWeightTrend } = await import('../bodyStatsService');
     const weekAgoStr = oneWeekAgo.toISOString().split('T')[0] || '';
-    const todayStr = new Date().toISOString().split('T')[0] || '';
-    const weights = await getBodyWeightsByDateRange(weekAgoStr, todayStr);
+    const weights = await getBodyWeightsByDateRange(weekAgoStr, todayStr());
     if (weights.length > 0) {
       const trend = calculateWeightTrend(weights);
       latestWeight = weights[weights.length - 1]?.weight ?? null;
@@ -266,8 +256,7 @@ export async function collectDashboardData(sessions: WorkoutSession[]): Promise<
     const { getWaterByDateRange, getWaterGoal } = await import('../waterService');
     waterGoalMl = getWaterGoal();
     const weekAgoStr = oneWeekAgo.toISOString().split('T')[0] || '';
-    const todayStr = new Date().toISOString().split('T')[0] || '';
-    const waterEntries = await getWaterByDateRange(weekAgoStr, todayStr);
+    const waterEntries = await getWaterByDateRange(weekAgoStr, todayStr());
     const waterByDay = new Map<string, number>();
     waterEntries.forEach((e) => waterByDay.set(e.date, (waterByDay.get(e.date) || 0) + e.amountMl));
     const waterDays = Array.from(waterByDay.values());
@@ -444,15 +433,8 @@ export async function getAIDashboardInsight(data: AIDashboardInput): Promise<AID
       role: 'system',
       content: `אתה מאמן כושר AI שמנתח את כל הנתונים של המתאמן ונותן תובנות מדויקות.
 
-עליך להחזיר תשובה בפורמט הבא בדיוק (בעברית):
-
-SCORE: [מספר בין 0-100]
-LABEL: [מילה אחת: מתחיל / בינוני / מתקדם / מקצוען]
-RECOMMENDATION: [1-2 משפטים עם ההמלצה הכי חשובה לאימון הבא]
-TIP: [טיפ קצר אחד]
-TIP: [טיפ קצר נוסף]
-TIP: [טיפ קצר נוסף]
-FOCUS: [תחום אחד להתמקד בו: כוח / היפרטרופיה / התאוששות / תזונה / עקביות / טכניקה / גמישות]
+החזר את התשובה כ-JSON תקין בלבד (בלי טקסט נוסף, בלי סימוני קוד) במבנה הבא:
+{"score": number (0-100), "label": "מתחיל|בינוני|מתקדם|מקצוען", "recommendation": "1-2 משפטים", "tips": ["טיפ", "טיפ", "טיפ"], "focus": "כוח|היפרטרופיה|התאוששות|תזונה|עקביות|טכניקה|גמישות"}
 
 כללים:
 - תן ציון כושר ריאלי (לא מחמיא, לא מקטר)
@@ -461,7 +443,7 @@ FOCUS: [תחום אחד להתמקד בו: כוח / היפרטרופיה / הת�
 - אם יש פער בין שרירים חלשים לחזקים - התייחס לזה
 - אם ההתאוששות נמוכה - זה צריך להיות הפוקוס
 - אם התזונה לא מספיקה - תזכיר
-- ענה רק בפורמט המבוקש, בלי טקסט נוסף`,
+- ענה רק ב-JSON, בלי טקסט נוסף`,
     },
     {
       role: 'user',
@@ -483,7 +465,43 @@ FOCUS: [תחום אחד להתמקד בו: כוח / היפרטרופיה / הת�
 // RESPONSE PARSING
 // ----------------------------------------------------------------------------
 
+interface ParsedDashboardJson {
+  score?: number;
+  label?: string;
+  recommendation?: string;
+  tips?: string[];
+  focus?: string;
+}
+
+function extractJsonBlock(text: string): string {
+  const withoutFences = text.replace(/```(?:json)?/gi, '').trim();
+  const first = withoutFences.indexOf('{');
+  const last = withoutFences.lastIndexOf('}');
+  if (first === -1 || last === -1 || last < first) return withoutFences;
+  return withoutFences.slice(first, last + 1);
+}
+
 function parseDashboardResponse(response: string): AIDashboardInsight {
+  // Prefer structured JSON; fall back to the legacy KEY: value line parser.
+  const parsed = safeJsonParse<ParsedDashboardJson>(extractJsonBlock(response));
+  if (parsed && typeof parsed === 'object' && (parsed.score != null || parsed.recommendation)) {
+    const jsonScore = typeof parsed.score === 'number' ? parsed.score : Number(parsed.score);
+    const jsonTips = Array.isArray(parsed.tips)
+      ? parsed.tips.filter((t): t is string => typeof t === 'string').slice(0, 3)
+      : [];
+    return {
+      fitnessScore: Math.max(0, Math.min(100, Number.isNaN(jsonScore) ? 50 : jsonScore)),
+      fitnessLabel: parsed.label?.trim() || 'בינוני',
+      mainRecommendation: parsed.recommendation?.trim() || 'המשך להתאמן בעקביות.',
+      tips: jsonTips.length > 0 ? jsonTips : ['שמור על עקביות באימונים'],
+      focusArea: parsed.focus?.trim() || 'עקביות',
+    };
+  }
+
+  return parseDashboardResponseLines(response);
+}
+
+function parseDashboardResponseLines(response: string): AIDashboardInsight {
   const getLine = (prefix: string): string | null => {
     const match = response.match(new RegExp(`${prefix}\\s*:?\\s*(.+)`, 'i'));
     return match?.[1]?.trim() || null;

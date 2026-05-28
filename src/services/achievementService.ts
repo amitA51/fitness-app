@@ -42,7 +42,7 @@ export const calculateStreak = (sessions: WorkoutSession[]): StreakInfo => {
 
   const workoutDates = sortedSessions.map((s) => {
     const d = new Date(s.startTime);
-    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
   const uniqueDates = [...new Set(workoutDates)].sort().reverse();
 

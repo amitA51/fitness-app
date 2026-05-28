@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { todayStr } from '../utils/dateUtils';
+import { generateId } from '../utils/id';
 import { STORES, dbGetAll, dbPut } from './indexedDBCore';
 import { syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
@@ -13,14 +15,6 @@ export interface WaterEntry {
 const WATER_GOAL_ML = 2500;
 const GLASS_ML = 250;
 
-function todayStr(): string {
-  return new Date().toISOString().split('T')[0] ?? '';
-}
-
-function generateId(): string {
-  return `water-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
-
 export function getWaterGoal(): number {
   return WATER_GOAL_ML;
 }
@@ -31,7 +25,7 @@ export function getGlassSize(): number {
 
 export async function addWaterEntry(amountMl: number): Promise<WaterEntry> {
   const entry: WaterEntry = {
-    id: generateId(),
+    id: generateId('water', 5),
     date: todayStr(),
     amountMl,
     createdAt: new Date().toISOString(),

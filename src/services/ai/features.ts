@@ -4,6 +4,7 @@
 
 import type { WorkoutSession } from '../../types';
 import type { MacroNutrients } from '../../types';
+import { exerciseVolume, sessionVolume } from '../../utils/workoutMath';
 import type { RecoveryLog } from '../bodyStatsService';
 import { buildContext, buildSystemPrompt } from './contextBuilder';
 import { type ChatMessage, getAIProvider } from './core';
@@ -21,7 +22,11 @@ export async function getWorkoutAdvice(
     { role: 'user', content: 'תן לי עצה לאימון הבא שלי על בסיס הנתונים שלי' },
   ];
 
-  return provider.chat(messages);
+  try {
+    return await provider.chat(messages);
+  } catch {
+    return 'לא הצלחתי להפיק עצה כרגע. בדוק את החיבור לאינטרנט ונסה שוב בעוד רגע.';
+  }
 }
 
 export async function suggestWeight(
@@ -31,26 +36,31 @@ export async function suggestWeight(
 ): Promise<string> {
   const provider = getAIProvider();
 
+  // The professional-coach persona is injected globally by the provider
+  // (withPersona in ai/config.ts), so we only supply the task-specific
+  // instruction here to avoid sending two persona blocks to the model.
   let contextMsg = `אני רוצה לדעת איזה משקל להשתמש ב-${exerciseName} ל-${targetReps} חזרות.`;
   if (previousBest) {
     contextMsg += ` בפעם האחרונה עשיתי ${previousBest.weight}ק"ג ל-${previousBest.reps} חזרות.`;
   }
+  contextMsg += ' תן המלצת משקל ספציפית.';
 
-  const messages: ChatMessage[] = [
-    {
-      role: 'system',
-      content: 'אתה מאמן כושר מקצועי. ענה בעברית בקצרה ובמעשיות. תן המלצת משקל ספציפית.',
-    },
-    { role: 'user', content: contextMsg },
-  ];
+  const messages: ChatMessage[] = [{ role: 'user', content: contextMsg }];
 
-  return provider.chat(messages);
+  try {
+    return await provider.chat(messages);
+  } catch {
+    return 'לא הצלחתי להמליץ על משקל כרגע. נסה שוב בעוד רגע.';
+  }
 }
 
+/**
+ * Rule-based exercise suggestions — no AI/network call. Returns up to 3
+ * exercises for the muscle group that the user is not already doing.
+ */
 export async function suggestExercises(
   muscleGroup: string,
-  currentExercises: string[] = [],
-  _weakMuscles: string[] = []
+  currentExercises: string[] = []
 ): Promise<string[]> {
   // Rule-based fallback for exercise suggestions
   const exerciseDatabase: Record<string, string[]> = {
@@ -69,11 +79,13 @@ export async function suggestExercises(
   return notAlreadyDoing.slice(0, 3);
 }
 
+/**
+ * Rule-based workout summary — no AI/network call. Formats volume, sets and
+ * duration from the session data.
+ */
 export async function generateWorkoutSummary(session: WorkoutSession): Promise<string> {
   const exercises = session.exercises || [];
-  const totalVolume = exercises.reduce((sum, ex) => {
-    return sum + ex.sets.reduce((s, set) => s + (set.isWarmup ? 0 : set.weight * set.reps), 0);
-  }, 0);
+  const totalVolume = sessionVolume(session);
 
   const completedSets = exercises.reduce(
     (sum, ex) => sum + ex.sets.filter((s) => s.isCompleted && !s.isWarmup).length,
@@ -89,9 +101,7 @@ export async function generateWorkoutSummary(session: WorkoutSession): Promise<s
 
   const exerciseSummary = exercises
     .map((ex) => {
-      const vol = ex.sets
-        .filter((s) => !s.isWarmup)
-        .reduce((s, set) => s + set.weight * set.reps, 0);
+      const vol = exerciseVolume(ex);
       return `${ex.exerciseName}: ${vol.toLocaleString()} ק"ג נפח`;
     })
     .join('\n');
@@ -106,6 +116,10 @@ export async function generateWorkoutSummary(session: WorkoutSession): Promise<s
 ${exerciseSummary}`;
 }
 
+/**
+ * Rule-based form tips — no AI/network call. Looks up tips by exercise name
+ * with a generic fallback.
+ */
 export async function getFormTips(exerciseName: string): Promise<string[]> {
   const tipsDatabase: Record<string, string[]> = {
     סקווט: ['שמור על הגב ישר', 'הברכיים לא עוברות את קצות האצבעות', 'רד עד שהירך מקבילה לרצפה'],

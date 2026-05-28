@@ -8,6 +8,8 @@ import {
   Zap,
 } from 'lucide-react';
 import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../types';
+import { todayStr } from '../utils/dateUtils';
+import { generateId } from '../utils/id';
 import { STORES, dbDelete, dbGetAll, dbPut, syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudNutritionLog, syncNutritionLog } from './supabaseSync';
@@ -556,10 +558,6 @@ export interface MealPreset {
   meals: { foodId: string; servings: number }[];
 }
 
-function generateId(): string {
-  return `meal-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
 function calcMacroTotals(foods: FoodItem[]): MacroNutrients {
   return foods.reduce<MacroNutrients>(
     (acc, f) => ({
@@ -571,10 +569,6 @@ function calcMacroTotals(foods: FoodItem[]): MacroNutrients {
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
   );
-}
-
-function todayStr(): string {
-  return new Date().toISOString().split('T')[0] ?? '';
 }
 
 export function getFoodLibrary(): FoodItem[] {
@@ -610,7 +604,7 @@ export async function addFoodFromPreset(
 
   const totalMacros = calcMacroTotals(foods);
   const mealEntry: MealEntry = {
-    id: generateId(),
+    id: generateId('meal'),
     date: todayStr(),
     name: preset.name,
     meals: [
@@ -664,7 +658,7 @@ export async function addFoodFromPreset(
 export async function addMealEntry(entry: Omit<MealEntry, 'id' | 'createdAt'>): Promise<MealEntry> {
   const newEntry: MealEntry = {
     ...entry,
-    id: generateId(),
+    id: generateId('meal'),
     createdAt: new Date().toISOString(),
   };
   await dbPut(STORES.NUTRITION_LOGS, newEntry);
@@ -836,7 +830,7 @@ export async function getWeeklyNutritionSummary(): Promise<DailyNutritionSummary
 export function createQuickMeal(mealType: MealType, foods: FoodItem[]): MealEntry {
   const totalMacros = calcMacroTotals(foods);
   return {
-    id: generateId(),
+    id: generateId('meal'),
     date: todayStr(),
     name: `${MEAL_TYPE_LABELS[mealType]}`,
     meals: [

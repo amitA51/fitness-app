@@ -5,11 +5,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { getAllWorkoutSessions, getWorkoutSessions } from '../../services/dataService';
-import {
-  calculatePRsFromHistory,
-  exportWorkoutHistoryCSV,
-  isNewPR,
-} from '../../services/prService';
+import { exportWorkoutHistoryCSV } from '../../services/exportService';
+import { calculatePRsFromHistory, isNewPR } from '../../services/prService';
 import type { WorkoutSession } from '../../types';
 import { logger } from '../../utils/logger';
 import { ModalOverlay } from '../ui/ModalOverlay';
@@ -250,11 +247,14 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
       }
     };
 
-    computePRs();
+    // Only compute PRs (which fetches the full workout history) when the
+    // summary is actually visible — avoids an expensive full-history scan on
+    // every session change while the summary is closed.
+    if (isOpen) computePRs();
     return () => {
       cancelled = true;
     };
-  }, [session]);
+  }, [isOpen, session]);
 
   const handleExportCSV = useCallback(() => {
     exportWorkoutHistoryCSV([session as WorkoutSession]);
@@ -437,11 +437,11 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   </span>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {[
-                      { emoji: '😫', label: 'קשה מאוד', value: 1 },
-                      { emoji: '😓', label: 'קשה', value: 2 },
-                      { emoji: '💪', label: 'טוב', value: 3 },
-                      { emoji: '🔥', label: 'מעולה', value: 4 },
-                      { emoji: '⚡', label: 'אגדי', value: 5 },
+                      { label: 'קשה מאוד', value: 1 },
+                      { label: 'קשה', value: 2 },
+                      { label: 'טוב', value: 3 },
+                      { label: 'מעולה', value: 4 },
+                      { label: 'אגדי', value: 5 },
                     ].map((r) => (
                       <button
                         key={r.value}
@@ -467,7 +467,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                           transform: workoutRating === r.value ? 'scale(1.1)' : 'scale(1)',
                         }}
                       >
-                        {r.emoji}
+                        {r.value}
                       </button>
                     ))}
                   </div>
@@ -482,7 +482,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                       }}
                     >
                       {
-                        ['', 'קשה מאוד', 'קשה', 'אימון טוב!', 'אימון מעולה!', 'אימון אגדי! 🏆'][
+                        ['', 'קשה מאוד', 'קשה', 'אימון טוב!', 'אימון מעולה!', 'אימון אגדי!'][
                           workoutRating
                         ]
                       }

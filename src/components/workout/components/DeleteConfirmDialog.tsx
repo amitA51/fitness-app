@@ -5,6 +5,7 @@
 import { Trash as TrashIcon } from 'lucide-react';
 import type React from 'react';
 import type { PersonalExercise } from '../../../types';
+import { ModalOverlay } from '../../ui/ModalOverlay';
 
 interface DeleteConfirmDialogProps {
   exercise: PersonalExercise | null;
@@ -17,21 +18,13 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   onConfirm,
   onCancel,
 }) => {
-  if (!exercise) return null;
-
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(11,26,43,0.6)',
-        backdropFilter: 'blur(8px)',
-        zIndex: 13000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-      }}
+    <ModalOverlay
+      isOpen={!!exercise}
+      onClose={onCancel}
+      variant="none"
+      zLevel="ultra"
+      ariaLabel="אישור מחיקת תרגיל"
     >
       <div
         style={{
@@ -81,7 +74,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
             marginBottom: 4,
           }}
         >
-          {exercise.name}
+          {exercise?.name ?? ''}
         </p>
 
         {/* Description */}
@@ -144,6 +137,6 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };

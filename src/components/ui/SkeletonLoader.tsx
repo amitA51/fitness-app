@@ -727,17 +727,11 @@ export const screenSkeletonMap: Record<Screen, React.FC> = {
   workout: HomeScreenSkeleton,
   history: FeedScreenSkeleton,
   templates: LibraryScreenSkeleton,
-  feed: FeedScreenSkeleton,
   calendar: CalendarScreenSkeleton,
   settings: SettingsScreenSkeleton,
-  assistant: AssistantScreenSkeleton,
   library: LibraryScreenSkeleton,
   fitness: LibraryScreenSkeleton,
-  search: FeedScreenSkeleton,
-  passwords: PasswordManagerScreenSkeleton,
   add: AddScreenSkeleton,
-  investments: LibraryScreenSkeleton,
-  views: LibraryScreenSkeleton,
   login: () => (
     <div className="h-[80vh] flex items-center justify-center">
       <SkeletonCircle size={64} />
@@ -748,7 +742,6 @@ export const screenSkeletonMap: Record<Screen, React.FC> = {
       <SkeletonCircle size={64} />
     </div>
   ),
-  logos: HomeScreenSkeleton,
   insights: LibraryScreenSkeleton,
 };
 

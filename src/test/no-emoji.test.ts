@@ -11,7 +11,7 @@ function walk(dir: string, acc: string[] = []): string[] {
     const p = join(dir, name);
     const s = statSync(p);
     if (s.isDirectory()) walk(p, acc);
-    else if (/\.(ts|tsx)$/.test(name) && !/\.test\.ts$/.test(name)) acc.push(p);
+    else if (/\.(ts|tsx)$/.test(name) && !/\.test\.tsx?$/.test(name)) acc.push(p);
   }
   return acc;
 }

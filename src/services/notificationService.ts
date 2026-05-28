@@ -49,15 +49,32 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return result === 'granted';
 }
 
-export function showNotification(title: string, body: string, icon?: string): void {
+export async function showNotification(title: string, body: string, icon?: string): Promise<void> {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
-  new Notification(title, {
+  const options: NotificationOptions = {
     body,
     icon: icon || '/pwa-192x192.png',
     dir: 'rtl',
     lang: 'he',
-  });
+  };
+
+  // Prefer the service-worker path: `new Notification()` is deprecated and
+  // throws on iOS / many mobile browsers. Fall back to the constructor only
+  // when no service worker is registered (e.g. desktop without a SW).
+  try {
+    const registration = await navigator.serviceWorker?.getRegistration();
+    if (registration) {
+      await registration.showNotification(title, options);
+      return;
+    }
+  } catch {
+    // Fall through to the constructor fallback below.
+  }
+
+  if ('Notification' in window) {
+    new Notification(title, options);
+  }
 }
 
 export function showWorkoutReminder(): void {

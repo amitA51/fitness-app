@@ -1,4 +1,5 @@
 import { ValidationError } from '../errors';
+import { generateId } from '../utils/id';
 import { STORES, dbDelete, dbGetAll, dbPut, syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import {
@@ -82,10 +83,6 @@ export interface WeightTrend {
   direction: 'עלייה' | 'ירידה' | 'יציב';
   weeklyAvg: number;
   dataPoints: number;
-}
-
-function generateId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
 export async function addBodyWeight(

@@ -25,5 +25,9 @@ export async function generateAIWorkoutInsight(sessions: WorkoutSession[]): Prom
     },
   ];
 
-  return provider.chat(messages);
+  try {
+    return await provider.chat(messages);
+  } catch {
+    return 'לא הצלחתי להפיק תובנה כרגע. בדוק את החיבור לאינטרנט ונסה שוב בעוד רגע.';
+  }
 }

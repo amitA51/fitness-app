@@ -3,12 +3,14 @@
 // ============================================================================
 
 import type { MacroNutrients, WorkoutSession } from '../../types';
+import { calculateStreak } from '../achievementService';
 import type { RecoveryLog } from '../bodyStatsService';
 import {
   type MuscleRecoveryState,
   type TrainingLoadRecommendation,
   calculateTrainingLoad,
 } from '../trainingLoadService';
+import { WEAK_MUSCLE_THRESHOLD } from './constants';
 
 export interface AIContext {
   recentWorkouts: WorkoutSession[];
@@ -88,7 +90,7 @@ export function buildContext(
   const volumes = Object.values(muscleVolumes);
   const avgVolume = volumes.length > 0 ? volumes.reduce((a, b) => a + b, 0) / volumes.length : 0;
   const weakMuscles = Object.entries(muscleVolumes)
-    .filter(([, v]) => v < avgVolume * 0.8)
+    .filter(([, v]) => v < avgVolume * WEAK_MUSCLE_THRESHOLD)
     .map(([m]) => m);
 
   // Nutrition compliance
@@ -101,22 +103,8 @@ export function buildContext(
     nutritionCompliance = pct;
   }
 
-  // Streak
-  const uniqueDates = [...new Set(sessions.map((s) => s.date))].sort().reverse();
-  let streakDays = 0;
-  if (uniqueDates.length > 0) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    for (let i = 0; i < uniqueDates.length; i++) {
-      const dateStr = uniqueDates[i];
-      if (!dateStr) break;
-      const d = new Date(dateStr);
-      const expected = new Date(today);
-      expected.setDate(today.getDate() - i);
-      if (d.toDateString() === expected.toDateString()) streakDays++;
-      else break;
-    }
-  }
+  // Streak (shared canonical calculation — local-date keyed, see achievementService)
+  const streakDays = calculateStreak(sessions).currentStreak;
 
   return {
     recentWorkouts: recentSessions,

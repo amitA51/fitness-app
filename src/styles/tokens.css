@@ -276,18 +276,10 @@ html.large-text {
 
 /* ============================================================================
    7. Z-INDEX SCALE
-   ============================================================================ */
-
-:root {
-  --z-base: 0;
-  --z-sticky: 20;
-  --z-nav: 40;
-  --z-dropdown: 60;
-  --z-overlay: 80;
-  --z-modal: 90;
-  --z-toast: 100;
-  --z-tooltip: 110;
-}
+   ============================================================================
+   The z-index scale lives in src/constants/zIndex.ts (the single source of
+   truth used at runtime). The former --z-* CSS tokens had zero usages and were
+   removed to avoid a second, drifting definition. */
 
 /* ============================================================================
    8. LAYOUT TOKENS

@@ -14,13 +14,13 @@ import {
   useState,
 } from 'react';
 import { getWorkoutSessions } from '../services/dataService';
+import { getWorkoutTemplates } from '../services/workoutDb';
 import {
   createPersonalExercise,
   deletePersonalExercise,
   getPersonalExercises,
   updatePersonalExercise,
 } from '../services/workoutDb';
-import { getWorkoutTemplates } from '../services/workoutService';
 import type { Exercise, PersonalItem, WorkoutSession, WorkoutTemplate } from '../types';
 import { logger } from '../utils/logger';
 
@@ -65,7 +65,7 @@ function mapExerciseToPersonalItem(ex: Exercise): PersonalItem {
     isCustom: ex.isCustom,
     isTimed: ex.isTimed,
     notes: ex.notes,
-    createdAt: ex.createdAt,
+    createdAt: ex.createdAt ?? new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     isActiveWorkout: false,
   };

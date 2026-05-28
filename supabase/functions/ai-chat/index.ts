@@ -38,6 +38,7 @@ const ALLOWED_MODELS: readonly string[] = [
   'openai/gpt-oss-120b:free',
   'google/gemini-2.0-flash-exp:free',
   'openai/gpt-4o-mini',
+  'deepseek-v4-flash',
 ];
 const DEFAULT_TEMPERATURE = 0.7;
 const DEFAULT_MAX_TOKENS = 1024;

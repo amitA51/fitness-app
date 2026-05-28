@@ -5,6 +5,7 @@
 
 import type { WorkoutSession } from '../types';
 import { logger } from '../utils/logger';
+import { safeJsonParse } from '../utils/safeJson';
 import { buildContext } from './ai/contextBuilder';
 import { type ChatMessage, getAIProvider } from './ai/core';
 import {
@@ -64,10 +65,13 @@ export async function getAIProgressionAdvice(
   const messages: ChatMessage[] = [
     {
       role: 'system',
-      content: `אתה מאמן כושר מקצועי עם ניסיון של 15 שנה. 
+      content: `אתה מאמן כושר מקצועי עם ניסיון של 15 שנה.
 אתה מתמחה בתכנון אימונים, התקדמות במשקלות, והבנת סימני עייפות.
 תמיד תן עצות בעברית, מעשיות ובטוחות.
-שים לב לסימני overtraining ופציעות.`,
+שים לב לסימני overtraining ופציעות.
+
+החזר את התשובה כ-JSON תקין בלבד (בלי טקסט נוסף, בלי סימוני קוד) במבנה הבא:
+{"suggestedWeight": number, "reasoning": "string", "warnings": ["string"], "tips": ["string"]}`,
     },
     {
       role: 'user',
@@ -202,7 +206,60 @@ ${ctx.history
 // RESPONSE PARSING
 // ============================================================================
 
+interface ParsedProgressionJson {
+  suggestedWeight?: number;
+  reasoning?: string;
+  warnings?: string[];
+  tips?: string[];
+}
+
+/**
+ * Strip optional markdown code fences (```json ... ```) some models wrap JSON
+ * in, then return the raw JSON substring (first `{` to last `}`).
+ */
+function extractJsonBlock(text: string): string {
+  const withoutFences = text.replace(/```(?:json)?/gi, '').trim();
+  const first = withoutFences.indexOf('{');
+  const last = withoutFences.lastIndexOf('}');
+  if (first === -1 || last === -1 || last < first) return withoutFences;
+  return withoutFences.slice(first, last + 1);
+}
+
 function parseAIResponse(
+  response: string,
+  baseRec: ExerciseProgressionData
+): AIProgressionResponse {
+  // Prefer structured JSON (the model is instructed to return it). Fall back to
+  // the legacy free-text regex parsing if the JSON is missing or malformed.
+  const parsed = safeJsonParse<ParsedProgressionJson>(extractJsonBlock(response));
+  if (parsed && typeof parsed === 'object') {
+    const jsonWeight =
+      typeof parsed.suggestedWeight === 'number' && Number.isFinite(parsed.suggestedWeight)
+        ? parsed.suggestedWeight
+        : baseRec.suggestedWeight;
+    return {
+      recommendation: getRecommendationLabel(baseRec.recommendation),
+      reasoning:
+        typeof parsed.reasoning === 'string' && parsed.reasoning.trim()
+          ? parsed.reasoning.trim()
+          : response,
+      suggestedWeight: jsonWeight,
+      suggestedReps: baseRec.lastSession
+        ? Math.round(baseRec.lastSession.reps / baseRec.lastSession.setsCompleted)
+        : 8,
+      warnings: Array.isArray(parsed.warnings)
+        ? parsed.warnings.filter((w): w is string => typeof w === 'string').slice(0, 3)
+        : [],
+      tips: Array.isArray(parsed.tips)
+        ? parsed.tips.filter((t): t is string => typeof t === 'string').slice(0, 2)
+        : [],
+    };
+  }
+
+  return parseAIResponseRegex(response, baseRec);
+}
+
+function parseAIResponseRegex(
   response: string,
   baseRec: ExerciseProgressionData
 ): AIProgressionResponse {

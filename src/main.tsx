@@ -2,14 +2,14 @@
 // SPARKOS FITNESS - Main Entry Point
 // ============================================================================
 
+import * as Sentry from '@sentry/react';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import * as Sentry from '@sentry/react';
 import App from './App';
 import { RootErrorBoundary } from './errors/RootErrorBoundary';
-import { initWebVitals } from './services/webVitals';
 import { initAI } from './services/ai/bootstrap';
 import { checkMissedWorkouts, requestNotificationPermission } from './services/notificationService';
+import { initWebVitals } from './services/webVitals';
 import { logger } from './utils/logger';
 import './styles/global.css';
 import './styles/tokens.css';
@@ -18,7 +18,7 @@ import './styles/typography.css';
 import './styles/components.css';
 
 // Initialize Sentry error tracking
-const sentryDsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
+const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 if (sentryDsn) {
   Sentry.init({
     dsn: sentryDsn,
@@ -43,22 +43,15 @@ if (import.meta.env.DEV) {
 // Initialize web vitals monitoring
 initWebVitals();
 
+// Local logging only. Sentry.init installs its own global error /
+// unhandledrejection handlers, so we must NOT call Sentry.captureException here
+// or every uncaught error would be reported twice.
 window.addEventListener('error', (event) => {
   logger.app.error('Global error', event.error);
-  try {
-    Sentry.captureException(event.error);
-  } catch {
-    // Sentry not initialized
-  }
 });
 
 window.addEventListener('unhandledrejection', (event) => {
   logger.app.error('Unhandled promise rejection', event.reason);
-  try {
-    Sentry.captureException(event.reason);
-  } catch {
-    // Sentry not initialized
-  }
 });
 
 initAI();
@@ -70,7 +63,9 @@ requestNotificationPermission()
       checkMissedWorkouts(lastWorkout);
     }
   })
-  .catch(() => {});
+  .catch((err) => {
+    logger.app.warn('Notification permission / missed-workout check failed', err);
+  });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

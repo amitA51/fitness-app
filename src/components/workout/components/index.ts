@@ -19,3 +19,25 @@ export { ExerciseForm, AddExerciseButton } from './ExerciseForm';
 export { ExerciseCard } from './ExerciseCard';
 export { ExerciseList } from './ExerciseList';
 export { DeleteConfirmDialog } from './DeleteConfirmDialog';
+
+// Bottom sheets & overlays
+export { default as AlternativesSheet } from './AlternativesSheet';
+export { default as NotesBottomSheet } from './NotesBottomSheet';
+export { default as RPEPicker } from './RPEPicker';
+export { default as SlideToComplete } from './SlideToComplete';
+export { default as InlineRestTimer } from './InlineRestTimer';
+export { default as SetTechniquePills } from './SetTechniquePills';
+
+// Stats & charts
+export { SetProgress } from './SetProgress';
+export { StatsGrid } from './StatsGrid';
+export { SummaryExerciseList } from './SummaryExerciseList';
+export { PRHighlights } from './PRHighlights';
+export { default as MuscleRadarChart } from './MuscleRadarChart';
+export { default as TrendLineOverlay } from './TrendLineOverlay';
+
+// Handlers & hooks
+export { WaterReminderHandler } from './WaterReminderHandler';
+export { default as WorkoutAriaLive } from './WorkoutAriaLive';
+export { default as useWorkoutFinish } from './WorkoutActions';
+export { default as useExerciseSuggestions } from './ExerciseSuggestionLoader';
