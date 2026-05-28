@@ -31,6 +31,7 @@ import {
   formatVolume,
 } from '../utils/dateUtils';
 import { logger } from '../utils/logger';
+import { setVolume } from '../utils/workoutMath';
 
 // ============================================================================
 // TYPES
@@ -64,15 +65,15 @@ function getBestSet(sets: WorkoutSet[]): { weight: number; reps: number; volume:
   if (completed.length === 0) return null;
 
   const best = completed.reduce((prev, curr) => {
-    const prevVol = (prev.weight || 0) * (prev.reps || 0);
-    const currVol = (curr.weight || 0) * (curr.reps || 0);
+    const prevVol = setVolume(prev);
+    const currVol = setVolume(curr);
     return currVol > prevVol ? curr : prev;
   });
 
   return {
     weight: best.weight || 0,
     reps: best.reps || 0,
-    volume: (best.weight || 0) * (best.reps || 0),
+    volume: setVolume(best),
   };
 }
 
@@ -142,7 +143,7 @@ interface ExerciseCardProps {
 function ExerciseCard({ exercise, index }: ExerciseCardProps) {
   const completedSets = exercise.sets.filter((s) => s.isCompleted);
   const bestSet = getBestSet(exercise.sets);
-  const totalVolume = completedSets.reduce((sum, s) => sum + (s.weight || 0) * (s.reps || 0), 0);
+  const totalVolume = completedSets.reduce((sum, s) => sum + setVolume(s), 0);
 
   return (
     <motion.div
@@ -308,7 +309,7 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
                 {set.reps || 0}
               </span>
               <span style={{ flex: 1, textAlign: 'center', minWidth: 0, color: 'var(--fs-muted)' }}>
-                {((set.weight || 0) * (set.reps || 0)).toLocaleString()}
+                {setVolume(set).toLocaleString()}
               </span>
             </div>
           ))}
@@ -431,9 +432,7 @@ function MuscleBreakdown({ exercises }: MuscleBreakdownProps) {
     (acc, ex) => {
       const muscle = ex.targetMuscle || ex.muscleGroup || 'Other';
       const sets = ex.sets.filter((s) => s.isCompleted).length;
-      const volume = ex.sets
-        .filter((s) => s.isCompleted)
-        .reduce((sum, s) => sum + (s.weight || 0) * (s.reps || 0), 0);
+      const volume = ex.sets.filter((s) => s.isCompleted).reduce((sum, s) => sum + setVolume(s), 0);
 
       if (!acc[muscle]) {
         acc[muscle] = { sets: 0, volume: 0 };

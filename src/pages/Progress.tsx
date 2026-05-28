@@ -56,6 +56,7 @@ import { getAllPRs } from '../services/prService';
 import type { WorkoutSession } from '../types';
 import { formatDuration, formatVolume } from '../utils/dateUtils';
 import { safeJsonParse } from '../utils/safeJson';
+import { setVolume } from '../utils/workoutMath';
 
 type ProgressTab = 'weight' | 'measurements' | 'recovery' | 'strength';
 
@@ -239,7 +240,7 @@ const WorkoutHistoryList = memo(function WorkoutHistoryList({
                     .filter((s) => s.isCompleted)
                     .reduce(
                       (best, s) => {
-                        const vol = (s.weight || 0) * (s.reps || 0);
+                        const vol = setVolume(s);
                         return vol > best.volume
                           ? { weight: s.weight || 0, reps: s.reps || 0, volume: vol }
                           : best;
@@ -549,7 +550,7 @@ export default function ProgressPage() {
         let bestSetVolume = 0;
         for (const set of ex.sets ?? []) {
           if (!set.isCompleted) continue;
-          const vol = (set.weight || 0) * (set.reps || 0);
+          const vol = setVolume(set);
           if (vol > bestSetVolume) bestSetVolume = vol;
         }
         if (bestSetVolume === 0) continue;
@@ -2005,7 +2006,7 @@ const StrengthTab = memo(function StrengthTab() {
             let bestVolume = 0;
             for (const set of exercise.sets || []) {
               if (!set.isCompleted) continue;
-              const vol = (set.weight || 0) * (set.reps || 0);
+              const vol = setVolume(set);
               if (vol > bestVolume) {
                 bestVolume = vol;
                 bestWeight = set.weight || 0;

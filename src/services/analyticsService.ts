@@ -4,6 +4,7 @@
 
 import type { PersonalRecord, WorkoutSession } from '../types';
 import { HEBREW_DAYS } from '../utils/dateUtils';
+import { setVolume } from '../utils/workoutMath';
 
 // ============================================================================
 // Exported Interfaces (original)
@@ -119,8 +120,8 @@ function computeSessionVolume(session: WorkoutSession): number {
   let total = 0;
   for (const exercise of session.exercises) {
     for (const set of exercise.sets) {
-      if (set.isCompleted && !set.isWarmup) {
-        total += set.reps * set.weight;
+      if (set.isCompleted) {
+        total += setVolume(set);
       }
     }
   }
@@ -139,7 +140,7 @@ function computeSessionStats(session: WorkoutSession): {
   for (const exercise of session.exercises) {
     for (const set of exercise.sets) {
       if (set.isCompleted && !set.isWarmup) {
-        volume += set.reps * set.weight;
+        volume += setVolume(set);
         sets += 1;
         reps += set.reps;
       }
@@ -171,7 +172,7 @@ function findPersonalRecords(sessions: WorkoutSession[]): PersonalRecord[] {
       for (const set of exercise.sets) {
         if (!set.isCompleted || set.isWarmup) continue;
 
-        const volume = set.reps * set.weight;
+        const volume = setVolume(set);
         const existing = byExercise.get(`${exercise.exerciseId}-weight`);
 
         // Weight PR (for same or more reps)
@@ -240,7 +241,7 @@ export const getAnalyticsSummary = async (
       const muscle = getMuscleKey(exercise);
       for (const set of exercise.sets) {
         if (set.isCompleted && !set.isWarmup) {
-          muscleVolumes.set(muscle, (muscleVolumes.get(muscle) || 0) + set.reps * set.weight);
+          muscleVolumes.set(muscle, (muscleVolumes.get(muscle) || 0) + setVolume(set));
         }
       }
     }
@@ -331,7 +332,7 @@ export const calculateMuscleGroupDistribution = (sessions: WorkoutSession[]): Mu
       const muscle = getMuscleKey(exercise);
       for (const set of exercise.sets) {
         if (set.isCompleted && !set.isWarmup) {
-          muscleVolumes.set(muscle, (muscleVolumes.get(muscle) || 0) + set.reps * set.weight);
+          muscleVolumes.set(muscle, (muscleVolumes.get(muscle) || 0) + setVolume(set));
         }
       }
     }
@@ -420,7 +421,7 @@ export const calculateWeeklyVolumes = (
         let exerciseVolume = 0;
         for (const set of exercise.sets) {
           if (set.isCompleted && !set.isWarmup) {
-            const setVol = set.reps * set.weight;
+            const setVol = setVolume(set);
             exerciseVolume += setVol;
             byMuscle[muscle] = (byMuscle[muscle] || 0) + setVol;
           }
@@ -482,7 +483,7 @@ export const calculateMuscleBalance = (
         const muscle = getMuscleKey(exercise);
         for (const set of exercise.sets) {
           if (set.isCompleted && !set.isWarmup) {
-            map.set(muscle, (map.get(muscle) || 0) + set.reps * set.weight);
+            map.set(muscle, (map.get(muscle) || 0) + setVolume(set));
           }
         }
       }
@@ -563,7 +564,7 @@ export const forecastProgress = (
         if (exercise.exerciseId === exerciseId) {
           for (const set of exercise.sets) {
             if (set.isCompleted && !set.isWarmup) {
-              exerciseVol += set.reps * set.weight;
+              exerciseVol += setVolume(set);
             }
           }
         }
@@ -645,7 +646,7 @@ export const getExerciseProgress = (
 
       for (const set of exercise.sets) {
         if (set.isCompleted && !set.isWarmup) {
-          volume += set.reps * set.weight;
+          volume += setVolume(set);
           if (set.weight > maxWeight) maxWeight = set.weight;
           if (set.reps > maxReps) maxReps = set.reps;
         }
@@ -782,8 +783,8 @@ export const getWeekOverWeekProgress = (sessions: WorkoutSession[]): ProgressDel
     for (const session of list) {
       for (const exercise of session.exercises) {
         const vol = exercise.sets
-          .filter((s) => s.isCompleted && !s.isWarmup)
-          .reduce((sum, s) => sum + s.weight * s.reps, 0);
+          .filter((s) => s.isCompleted)
+          .reduce((sum, s) => sum + setVolume(s), 0);
         const existing = map.get(exercise.exerciseId);
         map.set(exercise.exerciseId, {
           name: exercise.exerciseName,
@@ -846,8 +847,8 @@ export const calculateStrengthProgression = (
         }
         const est1RM = maxWeight * (1 + maxReps / 30);
         const volume = exercise.sets
-          .filter((s) => s.isCompleted && !s.isWarmup)
-          .reduce((sum, s) => sum + s.weight * s.reps, 0);
+          .filter((s) => s.isCompleted)
+          .reduce((sum, s) => sum + setVolume(s), 0);
         points.push({ date: session.date, estimated1RM: Math.round(est1RM * 10) / 10, volume });
       }
       return points;

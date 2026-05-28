@@ -4,6 +4,7 @@
 // ============================================================================
 
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../types';
+import { setVolume } from '../utils/workoutMath';
 
 // ============================================================================
 // TYPES
@@ -108,9 +109,7 @@ function getTotalReps(exercise: WorkoutExercise): number {
  * Calculate volume for an exercise
  */
 function calculateExerciseVolume(exercise: WorkoutExercise): number {
-  return exercise.sets
-    .filter((s) => s.isCompleted && !s.isWarmup)
-    .reduce((acc, s) => acc + s.weight * s.reps, 0);
+  return exercise.sets.filter((s) => s.isCompleted).reduce((acc, s) => acc + setVolume(s), 0);
 }
 
 /**

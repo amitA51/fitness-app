@@ -7,6 +7,7 @@ import type { AppSettings } from '../../../types';
 import { vibratePattern } from '../../../utils/haptics';
 import { logger } from '../../../utils/logger';
 import { safeJsonParse } from '../../../utils/safeJson';
+import { setVolume } from '../../../utils/workoutMath';
 import {
   WorkoutDerivedProvider,
   WorkoutDispatchProvider,
@@ -321,7 +322,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
         totalSets++;
         if (set.completedAt) {
           completedSetsCount++;
-          totalVolume += (set.weight || 0) * (set.reps || 0);
+          totalVolume += setVolume(set);
         }
       });
     });

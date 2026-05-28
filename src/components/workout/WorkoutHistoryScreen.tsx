@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import React, { useState, useMemo, memo } from 'react';
 import type { WorkoutSession } from '../../types';
+import { setVolume } from '../../utils/workoutMath';
 import { useWorkoutHistory } from './hooks/useWorkoutHistory';
 
 // ============================================================
@@ -52,7 +53,7 @@ const calculateSessionVolume = (session: WorkoutSession): number => {
   session.exercises.forEach((exercise) => {
     exercise.sets.forEach((set) => {
       if (set.completedAt && set.weight && set.reps) {
-        volume += set.weight * set.reps;
+        volume += setVolume(set);
       }
     });
   });

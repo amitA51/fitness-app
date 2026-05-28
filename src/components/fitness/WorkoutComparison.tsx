@@ -2,6 +2,7 @@ import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import type React from 'react';
 import { memo, useMemo } from 'react';
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../../types';
+import { setVolume } from '../../utils/workoutMath';
 
 export interface WorkoutComparisonProps {
   current: WorkoutSession;
@@ -63,7 +64,7 @@ const isEffectiveSet = (s: WorkoutSet): boolean => s.isCompleted && !s.isWarmup;
 const sessionVolume = (session: WorkoutSession): number => {
   let total = 0;
   for (const ex of session.exercises) {
-    for (const s of ex.sets) if (isEffectiveSet(s)) total += s.weight * s.reps;
+    for (const s of ex.sets) if (isEffectiveSet(s)) total += setVolume(s);
   }
   return total;
 };
@@ -86,7 +87,7 @@ const bestSet = (ex: WorkoutExercise): BestSet | null => {
   let best: BestSet | null = null;
   for (const s of ex.sets) {
     if (!isEffectiveSet(s)) continue;
-    const volume = s.weight * s.reps;
+    const volume = setVolume(s);
     if (!best || volume > best.volume) best = { weight: s.weight, reps: s.reps, volume };
   }
   return best;

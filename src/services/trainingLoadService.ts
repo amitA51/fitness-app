@@ -1,4 +1,5 @@
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../types';
+import { setVolume } from '../utils/workoutMath';
 import { type RecoveryLog, calculateRecoveryScore } from './bodyStatsService';
 
 export type TrainingLoadRecommendation = 'push' | 'maintain' | 'deload' | 'rest';
@@ -67,9 +68,7 @@ const getMuscle = (exercise: WorkoutExercise): string =>
 const isCompletedWorkingSet = (set: WorkoutSet): boolean => set.isCompleted && !set.isWarmup;
 
 function getExerciseVolume(exercise: WorkoutExercise): number {
-  return exercise.sets
-    .filter(isCompletedWorkingSet)
-    .reduce((sum, set) => sum + set.weight * set.reps, 0);
+  return exercise.sets.filter(isCompletedWorkingSet).reduce((sum, set) => sum + setVolume(set), 0);
 }
 
 function getSessionVolume(session: WorkoutSession): number {

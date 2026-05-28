@@ -4,6 +4,7 @@
 
 import type { PersonalRecord, WorkoutSession } from '../types';
 import { safeJsonParseOr } from '../utils/safeJson';
+import { setVolume } from '../utils/workoutMath';
 import { STORES, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudPersonalRecord, syncPersonalRecord } from './supabaseSync';
@@ -367,7 +368,7 @@ export const calculatePRsFromHistory = (
         if (!set.completedAt || set.isWarmup) return;
 
         const key = exercise.exerciseId || exercise.id;
-        const volume = set.weight * set.reps;
+        const volume = setVolume(set);
 
         // Check weight PR
         if (set.weight > 0) {

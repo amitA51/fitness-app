@@ -3,6 +3,7 @@
 // ============================================================================
 
 import type { MacroNutrients, WorkoutSession } from '../../types';
+import { exerciseVolume } from '../../utils/workoutMath';
 import { calculateStreak } from '../achievementService';
 import type { RecoveryLog } from '../bodyStatsService';
 import {
@@ -81,7 +82,7 @@ export function buildContext(
     s.exercises.forEach((e) => {
       const muscle = e.muscleGroup || e.targetMuscle;
       if (muscle) {
-        const vol = e.sets.reduce((sum, set) => sum + set.weight * set.reps, 0);
+        const vol = exerciseVolume(e);
         muscleVolumes[muscle] = (muscleVolumes[muscle] || 0) + vol;
       }
     })

@@ -38,6 +38,7 @@ import {
   useWorkoutSettings,
 } from './hooks/useWorkoutSettings';
 import { formatTime } from './hooks/useWorkoutTimer';
+import { setVolume } from '../../utils/workoutMath';
 
 import OverlayLoader from './components/ui/OverlayLoader';
 import { ToastContainer } from './components/ui/Toast';
@@ -794,7 +795,7 @@ export const WorkoutContent: React.FC<{
         (Date.now() - state.startTimestamp - state.totalPausedTime) / 1000
       );
       const sessionTotalVolume = workoutExercises.reduce(
-        (sum, ex) => sum + ex.sets.reduce((setSum, s) => setSum + s.weight * s.reps, 0),
+        (sum, ex) => sum + ex.sets.reduce((setSum, s) => setSum + setVolume(s), 0),
         0
       );
       // Calorie burn estimate (rough; conservative for resistance training):

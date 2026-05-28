@@ -8,6 +8,7 @@ import { memo, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { WorkoutSession } from '../../types';
 import { fmtDate, isToday } from '../../utils/dateUtils';
+import { setVolume } from '../../utils/workoutMath';
 
 interface RecentWorkoutsProps {
   sessions: WorkoutSession[];
@@ -38,12 +39,12 @@ function ExerciseDetail({ exercise }: { exercise: WorkoutSession['exercises'][nu
   if (workingSets.length === 0) return null;
 
   const bestSet = workingSets.reduce((best, set) => {
-    const vol = set.weight * set.reps;
-    const bestVol = best.weight * best.reps;
+    const vol = setVolume(set);
+    const bestVol = setVolume(best);
     return vol > bestVol ? set : best;
   }, workingSets[0]!);
 
-  const totalVol = workingSets.reduce((s, set) => s + set.weight * set.reps, 0);
+  const totalVol = workingSets.reduce((s, set) => s + setVolume(set), 0);
   const name = exercise.exerciseName || exercise.name || 'תרגיל';
 
   const volLabel =

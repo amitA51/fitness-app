@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 // PerformanceAnalytics - Real-time workout performance tracking
 // Live stats, volume tracking, and workout insights
 import { memo, useMemo } from 'react';
+import { setVolume } from '../../../utils/workoutMath';
 
 // ============================================================
 // TYPES
@@ -92,7 +93,7 @@ const calculateAllStats = (exercises: ExerciseData[]): ExerciseStats => {
       if (set.completed) {
         completedSets++;
         exerciseCompletedSets++;
-        volume += set.weight * set.reps;
+        volume += setVolume(set);
 
         if (set.rpe !== undefined) {
           rpes.push(set.rpe);
@@ -268,7 +269,7 @@ const ExerciseProgressRow = memo<{ exercise: ExerciseData; index: number }>(
     const progress = completedSets / exercise.targetSets;
     const volume = exercise.sets
       .filter((s) => s.completed)
-      .reduce((total, s) => total + s.weight * s.reps, 0);
+      .reduce((total, s) => total + setVolume(s), 0);
 
     return (
       <motion.div

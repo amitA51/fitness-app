@@ -3,6 +3,7 @@ import { getWorkoutSessions } from '../../../services/dataService';
 import { getCurrentUser } from '../../../services/supabaseAuth';
 import type { WorkoutSession } from '../../../types';
 import { logger } from '../../../utils/logger';
+import { setVolume } from '../../../utils/workoutMath';
 
 export interface WorkoutHistoryStats {
   totalWorkouts: number;
@@ -36,7 +37,7 @@ const calculateStats = (sessions: WorkoutSession[]): WorkoutHistoryStats => {
     session.exercises.forEach((exercise) => {
       exercise.sets.forEach((set) => {
         if (set.completedAt && set.weight && set.reps) {
-          totalVolume += set.weight * set.reps;
+          totalVolume += setVolume(set);
         }
       });
     });

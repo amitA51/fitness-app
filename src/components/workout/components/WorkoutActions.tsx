@@ -8,6 +8,7 @@ import { createWorkoutTemplate, saveWorkoutSession } from '../../../services/dat
 import type { PersonalItem, WorkoutExercise, WorkoutSession } from '../../../types';
 import { triggerHaptic } from '../../../utils/haptics';
 import { safeJsonParse } from '../../../utils/safeJson';
+import { setVolume } from '../../../utils/workoutMath';
 import { useWorkoutDerived, useWorkoutDispatch, useWorkoutState } from '../core/WorkoutContext';
 import { formatTime } from '../hooks/useWorkoutTimer';
 
@@ -149,7 +150,7 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
           notes: '',
           rating: null,
           totalVolume: workoutExercises.reduce(
-            (sum, ex) => sum + ex.sets.reduce((setSum, s) => setSum + s.weight * s.reps, 0),
+            (sum, ex) => sum + ex.sets.reduce((setSum, s) => setSum + setVolume(s), 0),
             0
           ),
           caloriesBurned: null,

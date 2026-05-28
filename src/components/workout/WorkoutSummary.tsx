@@ -9,6 +9,7 @@ import { exportWorkoutHistoryCSV } from '../../services/exportService';
 import { calculatePRsFromHistory, isNewPR } from '../../services/prService';
 import type { WorkoutSession } from '../../types';
 import { logger } from '../../utils/logger';
+import { setVolume } from '../../utils/workoutMath';
 import { ModalOverlay } from '../ui/ModalOverlay';
 import { type ComparisonData, StatsGrid } from './components/StatsGrid';
 import { SummaryExerciseList } from './components/SummaryExerciseList';
@@ -47,7 +48,7 @@ const computeStats = (session: Partial<WorkoutSession>): ComputedStats => {
       sum +
       workingSets(ex).reduce(
         (setSum, set) =>
-          set.completedAt && set.weight && set.reps ? setSum + set.weight * set.reps : setSum,
+          set.completedAt && set.weight && set.reps ? setSum + setVolume(set) : setSum,
         0
       ),
     0
@@ -81,13 +82,13 @@ const computeStats = (session: Partial<WorkoutSession>): ComputedStats => {
     .map((ex) => {
       const completedSets = workingSets(ex).filter((s) => s.completedAt);
       const volume = completedSets.reduce(
-        (sum, s) => (s.weight && s.reps ? sum + s.weight * s.reps : sum),
+        (sum, s) => (s.weight && s.reps ? sum + setVolume(s) : sum),
         0
       );
       const bestSet = completedSets.reduce<{ weight: number; reps: number } | undefined>(
         (best, s) => {
           if (!s.weight || !s.reps) return best;
-          const current = s.weight * s.reps;
+          const current = setVolume(s);
           const bestVolume = best ? best.weight * best.reps : 0;
           return current > bestVolume ? { weight: s.weight, reps: s.reps } : best;
         },
@@ -147,7 +148,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         const prevEx = prevSession.exercises || [];
         const prevWorkingSets = prevEx.flatMap((ex) => (ex.sets || []).filter((s) => !s.isWarmup));
         const prevVolume = prevWorkingSets.reduce(
-          (sum, s) => (s.completedAt ? sum + (s.weight || 0) * (s.reps || 0) : sum),
+          (sum, s) => (s.completedAt ? sum + setVolume(s) : sum),
           0
         );
         const prevDuration =
@@ -166,7 +167,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           (ex.sets || []).filter((s) => !s.isWarmup)
         );
         const currentVolume = currentWorkingSets.reduce(
-          (sum, s) => (s.completedAt ? sum + (s.weight || 0) * (s.reps || 0) : sum),
+          (sum, s) => (s.completedAt ? sum + setVolume(s) : sum),
           0
         );
         const currentDuration =
