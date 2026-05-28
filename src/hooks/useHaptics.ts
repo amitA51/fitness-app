@@ -1,40 +1,31 @@
 /**
  * Enhanced Haptic Feedback Hook
- * Provides rich tactile feedback across different devices and platforms
+ *
+ * Thin React wrapper over `utils/haptics`, which is the SINGLE source of truth
+ * for the canonical pattern vocabulary, intensity scaling, iOS handling, the
+ * actual `navigator.vibrate` calls, and enable-flag gating (synced from the
+ * Settings haptics toggle via setHapticsEnabled). This hook only adapts that
+ * util surface to React and reads the live settings flag; it owns no vibration
+ * logic of its own.
  */
 
 import { useCallback, useMemo } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
-import { logger } from '../utils/logger';
+import {
+  type HapticEffect,
+  type HapticIntensity,
+  isIOSDevice,
+  stopHaptic as stopHapticUtil,
+  triggerHapticEffect,
+  triggerHapticIntensity,
+} from '../utils/haptics';
 
-// Haptic intensity levels with corresponding vibration patterns
-export type HapticIntensity = 'light' | 'medium' | 'heavy';
+// Re-exported from the util (canonical definitions) so existing type imports
+// from this module keep working unchanged.
+export type { HapticEffect, HapticIntensity };
 
-// Haptic effect types for different interactions
-export type HapticEffect =
-  | 'tap' // Simple tap feedback
-  | 'success' // Task completion, positive action
-  | 'error' // Error or failed action
-  | 'warning' // Warning or caution
-  | 'selection' // Item selection change
-  | 'impact' // Physical collision feel
-  | 'notification' // Incoming notification
-  | 'swipe' // Swipe gesture feedback
-  | 'longPress'; // Long press recognition
-
-// Vibration patterns for each effect (in milliseconds)
-// Format: [vibrate, pause, vibrate, pause, ...]
-const VIBRATION_PATTERNS: Record<HapticEffect, number[]> = {
-  tap: [10], // Quiet Luxury: Softer tap
-  success: [15, 60, 15], // Quiet Luxury: Gentler double pulse
-  error: [50, 50, 50, 50, 50], // Slightly softer triple pulse
-  warning: [35, 120, 35], // Gentler double with longer pause
-  selection: [6], // Very light
-  impact: [25], // Quieter single
-  notification: [15, 100, 15, 100, 25], // Attention-grabbing but refined
-  swipe: [4, 15, 4], // Very light sliding feel
-  longPress: [40], // Confirmation
-};
+const supportsVibration = (): boolean =>
+  typeof window !== 'undefined' && 'navigator' in window && 'vibrate' in window.navigator;
 
 // Quiet Luxury: Additional refined haptic patterns for premium interactions
 export const LUXURY_HAPTIC_PATTERNS = {
@@ -76,118 +67,55 @@ export const HABIT_HAPTIC_PATTERNS = {
   cueReminder: [6, 100, 6],
 } as const;
 
-// Intensity multipliers for vibration duration
-const INTENSITY_MULTIPLIERS: Record<HapticIntensity, number> = {
-  light: 0.6,
-  medium: 1.0,
-  heavy: 1.5,
-};
-
 /**
- * Check if the device supports vibration
- */
-const supportsVibration = (): boolean => {
-  return typeof window !== 'undefined' && 'navigator' in window && 'vibrate' in window.navigator;
-};
-
-/**
- * Check if running on iOS (different haptic system)
- */
-const isIOS = (): boolean => {
-  return typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
-};
-
-/**
- * Enhanced haptic feedback hook with multiple effect types and platform support
+ * Enhanced haptic feedback hook with multiple effect types and platform support.
+ * Every method delegates to `utils/haptics`; the hook adds no vibration logic.
  */
 export const useHaptics = () => {
   const { settings } = useSettings();
   const hapticFeedback = settings.workoutSettings?.hapticsEnabled ?? settings.soundEnabled;
 
-  // Check device capabilities once
+  // Device capabilities, computed once. The actual gating + vibration lives in
+  // utils/haptics; these are exposed for callers that branch on support.
   const capabilities = useMemo(
     () => ({
       supportsVibration: supportsVibration(),
-      isIOS: isIOS(),
+      isIOS: isIOSDevice(),
     }),
     []
   );
 
   /**
-   * Apply intensity multiplier to a vibration pattern
-   */
-  const applyIntensity = useCallback((pattern: number[], intensity: HapticIntensity): number[] => {
-    const multiplier = INTENSITY_MULTIPLIERS[intensity];
-    return pattern.map((duration, index) => {
-      // Only modify vibration durations (even indices), not pauses (odd indices)
-      if (index % 2 === 0) {
-        return Math.round(duration * multiplier);
-      }
-      return duration;
-    });
-  }, []);
-
-  /**
-   * Trigger a simple haptic with intensity
+   * Trigger a simple haptic with intensity.
    */
   const triggerHaptic = useCallback(
     (intensity: HapticIntensity = 'light') => {
-      if (!hapticFeedback || !capabilities.supportsVibration) return;
-
-      const duration = intensity === 'light' ? 15 : intensity === 'medium' ? 30 : 50;
-
-      try {
-        window.navigator.vibrate(duration);
-      } catch (e) {
-        logger.ui.warn('Vibration failed', e);
-      }
+      if (!hapticFeedback) return;
+      triggerHapticIntensity(intensity);
     },
-    [hapticFeedback, capabilities.supportsVibration]
+    [hapticFeedback]
   );
 
   /**
-   * Trigger a specific haptic effect
+   * Trigger a specific haptic effect (looks up the canonical pattern in the util).
    */
   const triggerEffect = useCallback(
     (effect: HapticEffect, intensity: HapticIntensity = 'medium') => {
       if (!hapticFeedback) return;
-
-      // For iOS, we can only do simple vibrations via AudioContext workaround
-      // The Taptic Engine requires native code, so we fall back to simple patterns
-      if (capabilities.isIOS) {
-        // iOS Safari doesn't support vibration API, so we skip silently
-        return;
-      }
-
-      if (!capabilities.supportsVibration) return;
-
-      const pattern = VIBRATION_PATTERNS[effect];
-      const adjustedPattern = applyIntensity(pattern, intensity);
-
-      try {
-        window.navigator.vibrate(adjustedPattern);
-      } catch (e) {
-        logger.ui.warn('Haptic effect failed', e);
-      }
+      triggerHapticEffect(effect, intensity);
     },
-    [hapticFeedback, capabilities, applyIntensity]
+    [hapticFeedback]
   );
 
   /**
-   * Stop any ongoing vibration
+   * Stop any ongoing vibration.
    */
   const stopHaptic = useCallback(() => {
-    if (capabilities.supportsVibration) {
-      try {
-        window.navigator.vibrate(0);
-      } catch (e) {
-        // Ignore errors when stopping
-      }
-    }
-  }, [capabilities.supportsVibration]);
+    stopHapticUtil();
+  }, []);
 
   /**
-   * Convenience methods for common effects
+   * Convenience methods for common effects.
    */
   const hapticSuccess = useCallback(() => triggerEffect('success', 'medium'), [triggerEffect]);
   const hapticError = useCallback(() => triggerEffect('error', 'heavy'), [triggerEffect]);
