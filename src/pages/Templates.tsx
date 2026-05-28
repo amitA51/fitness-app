@@ -75,7 +75,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
   const [exercises, setExercises] = useState<TemplateExerciseInput[]>([]);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [exerciseSearch, setExerciseSearch] = useState('');
-  const [allExercises, setAllExercises] = useState<any[]>([]);
+  const [allExercises, setAllExercises] = useState<PersonalExercise[]>([]);
 
   useEffect(() => {
     if (showExercisePicker) {
