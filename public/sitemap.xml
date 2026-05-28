@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sitemap intentionally empty: no production domain is configured yet.
+  When the real domain is known, add a <url> entry with the live <loc>
+  and a current <lastmod>, and re-add the `Sitemap:` line to robots.txt.
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://your-site.netlify.app/</loc>
-    <lastmod>2024-01-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
 </urlset>
