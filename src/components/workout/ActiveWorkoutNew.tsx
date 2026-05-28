@@ -43,7 +43,7 @@ import OverlayLoader from './components/ui/OverlayLoader';
 import { ToastContainer } from './components/ui/Toast';
 import OverlayErrorBoundary from './core/OverlayErrorBoundary';
 // Extracted components
-import { PreWorkoutScreen } from './states';
+import PreWorkoutScreen from './states/PreWorkoutScreen';
 
 // Existing components we preserve - WaterReminderToast kept static (small and frequently shown)
 import WaterReminderToast from './WaterReminderToast';
