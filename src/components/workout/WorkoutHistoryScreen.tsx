@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import React, { useState, useMemo, memo } from 'react';
 import type { WorkoutSession } from '../../types';
-import { setVolume } from '../../utils/workoutMath';
+import { computeSessionStats } from '../../utils/workoutMath';
 import { useWorkoutHistory } from './hooks/useWorkoutHistory';
 
 // ============================================================
@@ -46,18 +46,6 @@ const formatDate = (dateString: string): string => {
     day: 'numeric',
     month: 'short',
   });
-};
-
-const calculateSessionVolume = (session: WorkoutSession): number => {
-  let volume = 0;
-  session.exercises.forEach((exercise) => {
-    exercise.sets.forEach((set) => {
-      if (set.completedAt && set.weight && set.reps) {
-        volume += setVolume(set);
-      }
-    });
-  });
-  return volume;
 };
 
 const getMainMuscleGroup = (session: WorkoutSession): string => {
@@ -129,12 +117,11 @@ const SessionCard = memo<{
   session: WorkoutSession;
   onClick: () => void;
 }>(({ session, onClick }) => {
-  const volume = useMemo(() => calculateSessionVolume(session), [session]);
-  const mainMuscle = useMemo(() => getMainMuscleGroup(session), [session]);
-  const completedSets = session.exercises.reduce(
-    (sum, ex) => sum + ex.sets.filter((s) => s.completedAt).length,
-    0
+  const { totalVolume: volume, completedSets } = useMemo(
+    () => computeSessionStats(session),
+    [session]
   );
+  const mainMuscle = useMemo(() => getMainMuscleGroup(session), [session]);
 
   return (
     <motion.div

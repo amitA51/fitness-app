@@ -9,7 +9,7 @@ import { exportWorkoutHistoryCSV } from '../../services/exportService';
 import { calculatePRsFromHistory, isNewPR } from '../../services/prService';
 import type { WorkoutSession } from '../../types';
 import { logger } from '../../utils/logger';
-import { setVolume } from '../../utils/workoutMath';
+import { computeSessionStats, setVolume } from '../../utils/workoutMath';
 import { ModalOverlay } from '../ui/ModalOverlay';
 import { type ComparisonData, StatsGrid } from './components/StatsGrid';
 import { SummaryExerciseList } from './components/SummaryExerciseList';
@@ -40,33 +40,11 @@ interface ComputedStats {
 }
 
 const computeStats = (session: Partial<WorkoutSession>): ComputedStats => {
-  const exercises = session.exercises || [];
-  const workingSets = (ex: (typeof exercises)[0]) => (ex.sets || []).filter((s) => !s.isWarmup);
-
-  const totalVolume = exercises.reduce(
-    (sum, ex) =>
-      sum +
-      workingSets(ex).reduce(
-        (setSum, set) =>
-          set.completedAt && set.weight && set.reps ? setSum + setVolume(set) : setSum,
-        0
-      ),
-    0
-  );
-
-  const totalSets = exercises.reduce(
-    (sum, ex) => sum + workingSets(ex).filter((s) => s.completedAt).length,
-    0
-  );
-
-  const totalReps = exercises.reduce(
-    (sum, ex) =>
-      sum +
-      workingSets(ex).reduce(
-        (setSum, set) => (set.completedAt && set.reps ? setSum + set.reps : setSum),
-        0
-      ),
-    0
+  // Warmup sets are excluded and volume/reps require completed sets — see
+  // computeSessionStats options for the exact rules.
+  const { totalVolume, totalSets, totalReps, exerciseCount, exerciseStats } = computeSessionStats(
+    session,
+    { excludeWarmup: true }
   );
 
   const duration =
@@ -75,28 +53,6 @@ const computeStats = (session: Partial<WorkoutSession>): ComputedStats => {
           (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000 / 60
         )
       : 0;
-
-  const exerciseCount = exercises.filter((ex) => workingSets(ex).some((s) => s.completedAt)).length;
-
-  const exerciseStats = exercises
-    .map((ex) => {
-      const completedSets = workingSets(ex).filter((s) => s.completedAt);
-      const volume = completedSets.reduce(
-        (sum, s) => (s.weight && s.reps ? sum + setVolume(s) : sum),
-        0
-      );
-      const bestSet = completedSets.reduce<{ weight: number; reps: number } | undefined>(
-        (best, s) => {
-          if (!s.weight || !s.reps) return best;
-          const current = setVolume(s);
-          const bestVolume = best ? best.weight * best.reps : 0;
-          return current > bestVolume ? { weight: s.weight, reps: s.reps } : best;
-        },
-        undefined
-      );
-      return { name: ex.name, setsCompleted: completedSets.length, totalVolume: volume, bestSet };
-    })
-    .filter((e) => e.setsCompleted > 0);
 
   return { totalVolume, totalSets, totalReps, duration, exerciseCount, exerciseStats };
 };

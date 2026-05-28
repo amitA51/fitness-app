@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 // PerformanceAnalytics - Real-time workout performance tracking
 // Live stats, volume tracking, and workout insights
 import { memo, useMemo } from 'react';
-import { setVolume } from '../../../utils/workoutMath';
+import { computeSessionStats, setVolume } from '../../../utils/workoutMath';
 
 // ============================================================
 // TYPES
@@ -78,36 +78,23 @@ interface ExerciseStats {
 }
 
 const calculateAllStats = (exercises: ExerciseData[]): ExerciseStats => {
-  let volume = 0;
-  let completedSets = 0;
-  let totalSets = 0;
-  let completedExercises = 0;
-  const rpes: number[] = [];
+  // Live in-workout shape: completion is the `completed` boolean, totalSets is
+  // the sum of planned targetSets, and there is no warmup/weight gating.
+  const {
+    totalVolume: volume,
+    completedSets,
+    totalSets,
+    avgRPE,
+  } = computeSessionStats(
+    { exercises },
+    { excludeWarmup: false, requireWeightAndReps: false, totalSetsMode: 'target' }
+  );
 
-  // Single pass through all exercises and sets
-  for (const exercise of exercises) {
-    totalSets += exercise.targetSets;
-    let exerciseCompletedSets = 0;
-
-    for (const set of exercise.sets) {
-      if (set.completed) {
-        completedSets++;
-        exerciseCompletedSets++;
-        volume += setVolume(set);
-
-        if (set.rpe !== undefined) {
-          rpes.push(set.rpe);
-        }
-      }
-    }
-
-    // Check if exercise is fully completed
-    if (exerciseCompletedSets === exercise.targetSets) {
-      completedExercises++;
-    }
-  }
-
-  const avgRPE = rpes.length > 0 ? rpes.reduce((a, b) => a + b, 0) / rpes.length : null;
+  // "Fully completed" exercises (completed sets === targetSets) is a live-only
+  // notion the shared stats fn does not model, so it stays inline.
+  const completedExercises = exercises.filter(
+    (exercise) => exercise.sets.filter((s) => s.completed).length === exercise.targetSets
+  ).length;
 
   return { volume, completedSets, totalSets, avgRPE, completedExercises };
 };
