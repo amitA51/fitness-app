@@ -65,12 +65,7 @@ export {
 } from './components';
 
 // Overlays - Already using named exports
-export {
-  RestTimerOverlay,
-  NumpadOverlay,
-  ConfirmExitOverlay,
-  WorkoutSettingsOverlay,
-} from './overlays';
+export { NumpadOverlay, ConfirmExitOverlay, WorkoutSettingsOverlay } from './overlays';
 
 // Types (from main types.ts)
 export type {
