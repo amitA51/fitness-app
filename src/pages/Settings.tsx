@@ -11,13 +11,19 @@ import {
   FileJson,
   Moon,
   RefreshCw,
-  Save,
   Share2,
   Target,
   User,
   Zap,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { ProfileAvatar } from '../components/ui/ProfileAvatar';
+import { SettingsCard } from '../components/ui/SettingsCard';
+import { NumberInput } from '../components/ui/SettingsNumberInput';
+import { SettingsRow } from '../components/ui/SettingsRow';
+import { SaveButton } from '../components/ui/SettingsSaveButton';
+import { SectionLabel } from '../components/ui/SettingsSectionLabel';
+import { SettingsToggle } from '../components/ui/SettingsToggle';
 import { useSettings } from '../contexts/SettingsContext';
 import { isSupabaseConfigured } from '../lib/supabase';
 import {
@@ -108,304 +114,6 @@ function loadFromStorage<T>(key: string, fallback: T): T {
 
 function saveToStorage<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value));
-}
-
-// ============================================================================
-// SUBCOMPONENTS
-// ============================================================================
-
-/** Editorial chapter-break section header */
-function SectionLabel({
-  children,
-  num,
-  titleEn,
-}: {
-  children: React.ReactNode;
-  num?: string;
-  titleEn?: string;
-}) {
-  if (num) {
-    return (
-      <div className="chapter-break mb-3" style={{ marginInline: 'calc(-1 * 1rem)' }}>
-        <span className="left">
-          §{num} · {titleEn}
-        </span>
-        <span className="right">{children}</span>
-      </div>
-    );
-  }
-  return <p className="section-title mb-3 px-1">{children}</p>;
-}
-
-/** Editorial settings card wrapper */
-function SettingsCard({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="overflow-hidden magnetic-card glass-surface fs-accent-rail"
-      style={{
-        background: 'var(--fs-surface)',
-        border: '1px solid var(--fs-surface-2)',
-        borderRadius: '22px 16px 22px 16px',
-        boxShadow: 'var(--shadow-card)',
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-/** A single row inside a settings card */
-interface SettingsRowProps {
-  icon?: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-  divider?: boolean;
-}
-
-function SettingsRow({ icon, label, children, divider = true }: SettingsRowProps) {
-  return (
-    <div className="flex flex-col">
-      <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
-        {icon && (
-          <div
-            className="w-8 h-8 flex items-center justify-center shrink-0"
-            style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
-          >
-            {icon}
-          </div>
-        )}
-        <span
-          className="flex-1"
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: '15px',
-            fontWeight: 500,
-            color: 'var(--fs-ink)',
-          }}
-        >
-          {label}
-        </span>
-        <div className="shrink-0">{children}</div>
-      </div>
-      {divider && (
-        <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
-      )}
-    </div>
-  );
-}
-
-/** iOS-style toggle switch — fully CSS, no inline styles */
-interface ToggleProps {
-  checked: boolean;
-  onChange: () => void;
-  label: string;
-}
-
-function Toggle({ checked, onChange, label }: ToggleProps) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-label={label}
-      aria-checked={checked}
-      onClick={onChange}
-      style={{
-        position: 'relative',
-        display: 'inline-block',
-        width: '52px',
-        height: '32px',
-        flexShrink: 0,
-        cursor: 'pointer',
-        background: 'transparent',
-        border: 'none',
-        padding: 0,
-      }}
-    >
-      <span
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: checked ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
-          border: '2px solid var(--fs-primary)',
-          borderRadius: 0,
-          transition: 'background 150ms ease',
-        }}
-      />
-      <span
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          top: '2px',
-          left: checked ? '24px' : '2px',
-          width: '24px',
-          height: '24px',
-          background: checked ? 'var(--fs-surface)' : 'var(--fs-primary)',
-          borderRadius: '50%',
-          transition: 'left 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-          pointerEvents: 'none',
-        }}
-      />
-    </button>
-  );
-}
-
-/** Inline number input, right-aligned, #2C2C2E bg */
-interface NumberInputProps {
-  value: number | '';
-  onChange: (val: number | '') => void;
-  min?: number;
-  max?: number;
-  placeholder?: string;
-  unit?: string;
-}
-
-function NumberInput({ value, onChange, min, max, placeholder, unit }: NumberInputProps) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <input
-        type="number"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
-        placeholder={placeholder}
-        style={{
-          width: '80px',
-          minHeight: '44px',
-          padding: '6px 10px',
-          textAlign: 'left',
-          fontFamily: 'var(--font-mono)',
-          fontSize: '14px',
-          backgroundColor: 'var(--fs-surface)',
-          border: '1px solid var(--fs-surface-2)',
-          borderRadius: 0,
-          color: 'var(--fs-ink)',
-          outline: 'none',
-        }}
-      />
-      {unit && (
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '11px',
-            letterSpacing: '0.18em',
-            color: 'var(--fs-muted)',
-            textTransform: 'uppercase',
-          }}
-        >
-          {unit}
-        </span>
-      )}
-    </div>
-  );
-}
-
-/** Full-width save button */
-interface SaveButtonProps {
-  onClick: () => void;
-  saved: boolean;
-  label: string;
-  savedLabel?: string;
-}
-
-function SaveButton({ onClick, saved, label, savedLabel = 'נשמר!' }: SaveButtonProps) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={saved ? 'accent-glow' : undefined}
-      style={{
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '8px',
-        minHeight: '44px',
-        padding: '12px',
-        borderRadius: 0,
-        fontFamily: 'var(--font-display)',
-        fontSize: '14px',
-        fontWeight: 800,
-        textTransform: 'uppercase',
-        border: saved ? 'none' : '1px solid var(--fs-surface-2)',
-        cursor: 'pointer',
-        transition: 'all 0.15s ease',
-        ...(saved
-          ? { color: 'var(--fs-heading)', background: 'var(--fs-accent)' }
-          : { color: 'var(--fs-accent)', background: 'var(--fs-primary)' }),
-      }}
-    >
-      {saved ? (
-        <>
-          <Check size={17} />
-          {savedLabel}
-        </>
-      ) : (
-        <>
-          <Save size={17} />
-          {label}
-        </>
-      )}
-    </button>
-  );
-}
-
-// ============================================================================
-// AVATAR — initials circle at top of profile section
-// ============================================================================
-
-function ProfileAvatar({ name }: { name: string }) {
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-
-  return (
-    <div className="flex flex-col items-center py-6" style={{ background: 'var(--fs-primary)' }}>
-      <div
-        className="w-20 h-20 flex items-center justify-center mb-3"
-        style={{ background: 'var(--fs-accent)', color: 'var(--fs-heading)' }}
-      >
-        {initials ? (
-          <span
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 900,
-              fontSize: '32px',
-              lineHeight: 1,
-              letterSpacing: '-0.02em',
-            }}
-          >
-            {initials}
-          </span>
-        ) : (
-          <User size={32} />
-        )}
-      </div>
-      {name.trim() && (
-        <p
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            fontSize: '22px',
-            color: 'var(--fs-ink)',
-            textTransform: 'uppercase',
-          }}
-        >
-          {name.trim()}
-        </p>
-      )}
-      <p className="eyebrow mt-1" style={{ color: 'var(--fs-accent)' }}>
-        § PERSONAL PROFILE
-      </p>
-    </div>
-  );
 }
 
 // ============================================================================
@@ -1291,7 +999,7 @@ export default function Settings() {
               label="התחלה אוטומטית של טיימר"
               divider={true}
             >
-              <Toggle
+              <SettingsToggle
                 checked={workoutPrefs.autoStartRest}
                 onChange={() =>
                   setWorkoutPrefs({ ...workoutPrefs, autoStartRest: !workoutPrefs.autoStartRest })
@@ -1306,7 +1014,7 @@ export default function Settings() {
               label="רטט (Haptic Feedback)"
               divider={true}
             >
-              <Toggle
+              <SettingsToggle
                 checked={workoutPrefs.hapticsEnabled}
                 onChange={() =>
                   setWorkoutPrefs({ ...workoutPrefs, hapticsEnabled: !workoutPrefs.hapticsEnabled })
@@ -1320,7 +1028,7 @@ export default function Settings() {
               label="הפחתת אנימציות"
               divider={true}
             >
-              <Toggle
+              <SettingsToggle
                 checked={workoutPrefs.reducedAnimations}
                 onChange={() =>
                   setWorkoutPrefs({
@@ -1337,7 +1045,7 @@ export default function Settings() {
               label="טקסט גדול"
               divider={true}
             >
-              <Toggle
+              <SettingsToggle
                 checked={workoutPrefs.largeText}
                 onChange={() =>
                   setWorkoutPrefs({ ...workoutPrefs, largeText: !workoutPrefs.largeText })
@@ -1351,7 +1059,7 @@ export default function Settings() {
               label="ניגודיות גבוהה"
               divider={false}
             >
-              <Toggle
+              <SettingsToggle
                 checked={workoutPrefs.highContrast}
                 onChange={() =>
                   setWorkoutPrefs({ ...workoutPrefs, highContrast: !workoutPrefs.highContrast })
@@ -1377,7 +1085,7 @@ export default function Settings() {
           </SectionLabel>
           <SettingsCard>
             <SettingsRow icon={<Bell size={15} />} label="תזכורת אימון" divider={true}>
-              <Toggle
+              <SettingsToggle
                 checked={notificationSettings.workoutReminderEnabled}
                 onChange={() => toggleNotification('workoutReminderEnabled')}
                 label="תזכורת אימון"
@@ -1385,7 +1093,7 @@ export default function Settings() {
             </SettingsRow>
 
             <SettingsRow icon={<Bell size={15} />} label="תזכורת תזונה" divider={true}>
-              <Toggle
+              <SettingsToggle
                 checked={notificationSettings.nutritionReminderEnabled}
                 onChange={() => toggleNotification('nutritionReminderEnabled')}
                 label="תזכורת תזונה"
@@ -1393,7 +1101,7 @@ export default function Settings() {
             </SettingsRow>
 
             <SettingsRow icon={<Bell size={15} />} label="התראת שיא אישי (PR)" divider={false}>
-              <Toggle
+              <SettingsToggle
                 checked={notificationSettings.prNotificationEnabled}
                 onChange={() => toggleNotification('prNotificationEnabled')}
                 label="התראת PR"
@@ -1423,7 +1131,7 @@ export default function Settings() {
               }
               label="מצב כהה"
             >
-              <Toggle
+              <SettingsToggle
                 checked={settings.darkMode}
                 onChange={() => updateSettings({ darkMode: !settings.darkMode })}
                 label="מצב כהה"
