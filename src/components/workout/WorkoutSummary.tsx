@@ -4,7 +4,11 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { getAllWorkoutSessions, getWorkoutSessions } from '../../services/dataService';
+import {
+  getAllWorkoutSessions,
+  getWorkoutSessions,
+  saveWorkoutSession,
+} from '../../services/dataService';
 import { exportWorkoutHistoryCSV } from '../../services/exportService';
 import { calculatePRsFromHistory, isNewPR } from '../../services/prService';
 import type { WorkoutSession } from '../../types';
@@ -216,6 +220,15 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   const handleExportCSV = useCallback(() => {
     exportWorkoutHistoryCSV([session as WorkoutSession]);
   }, [session]);
+
+  // Persist rating when user selects one
+  useEffect(() => {
+    if (!workoutRating || !session.id) return;
+    const updated = { ...session, rating: workoutRating } as WorkoutSession;
+    saveWorkoutSession(updated).catch((err) => {
+      logger.workout.warn('Failed to save workout rating', err);
+    });
+  }, [workoutRating, session]);
 
   const handleShare = useCallback(async () => {
     if (navigator.share) {

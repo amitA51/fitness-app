@@ -2,17 +2,19 @@
 // MY COACH — trainee view: assignments inbox, coaches, consent management
 // ============================================================================
 
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { showToast } from '../components/workout/components/ui/Toast';
 import { useAuth } from '../contexts/AuthContext';
+import { syncTemplatesFromCloud } from '../hooks/useCloudTemplateReflection';
 import {
   acceptInvite,
   disconnectCoach,
   listMyAssignments,
   listMyCoaches,
+  submitCheckIn,
   subscribeToAssignments,
 } from '../services/coach';
 import type { Assignment } from '../types/coach';
@@ -40,12 +42,27 @@ export default function MyCoach() {
   } = useAsyncData(() => listMyAssignments(), []);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
+  const [startingId, setStartingId] = useState<string | null>(null);
 
   // Live inbox: reflect coach actions (program/note/announcement) the moment they land.
   useEffect(() => {
     if (!user?.id) return;
     return subscribeToAssignments(user.id, reloadAssignments);
   }, [user?.id, reloadAssignments]);
+
+  // Start a coach-assigned program: ensure the referenced template is synced
+  // into the local-first store, then enter the existing ActiveWorkout flow.
+  const startProgram = async (a: Assignment) => {
+    if (!a.templateId) return;
+    setStartingId(a.id);
+    try {
+      await syncTemplatesFromCloud();
+      navigate(`/workout/${a.templateId}`);
+    } catch {
+      setStartingId(null);
+      showToast('לא ניתן להתחיל את האימון', 'error');
+    }
+  };
 
   const connect = async () => {
     if (!code.trim()) return;
@@ -139,6 +156,8 @@ export default function MyCoach() {
         )}
       </Section>
 
+      <CheckInForm />
+
       <Section title="נשלח אליי">
         {aLoading ? (
           <EmptyHint>טוען…</EmptyHint>
@@ -152,10 +171,108 @@ export default function MyCoach() {
               meta={`${KIND_LABEL[a.kind]} · ${formatDate(a.createdAt)}${
                 typeof a.payload.text === 'string' ? ` · ${a.payload.text}` : ''
               }${typeof a.payload.calories === 'number' ? ` · ${a.payload.calories} קל'` : ''}`}
+              trailing={
+                a.kind === 'program' && a.templateId ? (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={<Play size={14} />}
+                    isLoading={startingId === a.id}
+                    onClick={() => startProgram(a)}
+                  >
+                    התחל אימון
+                  </Button>
+                ) : undefined
+              }
             />
           ))
         )}
       </Section>
     </CoachPage>
+  );
+}
+
+function CheckInForm() {
+  const [weight, setWeight] = useState('');
+  const [mood, setMood] = useState<number | null>(null);
+  const [notes, setNotes] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const inputStyle = {
+    background: 'var(--fs-surface)',
+    border: '1px solid var(--fs-surface-2)',
+    color: 'var(--fs-ink)',
+    fontFamily: 'var(--font-body)',
+    fontSize: 14,
+  };
+
+  const submit = async () => {
+    setBusy(true);
+    const { error } = await submitCheckIn({
+      weight: weight ? Number(weight) : null,
+      mood,
+      notes,
+    });
+    setBusy(false);
+    if (error) {
+      showToast('שמירת הצ׳ק-אין נכשלה', 'error');
+      return;
+    }
+    setWeight('');
+    setMood(null);
+    setNotes('');
+    showToast('הצ׳ק-אין נשמר', 'success');
+  };
+
+  return (
+    <Section title="צ׳ק-אין שבועי">
+      <div className="flex gap-2 mb-2">
+        <input
+          type="number"
+          inputMode="decimal"
+          value={weight}
+          onChange={(e) => setWeight(e.target.value)}
+          placeholder='משקל (ק"ג)'
+          aria-label="משקל"
+          className="flex-1 px-3 py-2"
+          style={inputStyle}
+        />
+        <div className="flex gap-1" role="group" aria-label="מצב רוח">
+          {[1, 2, 3, 4, 5].map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMood(m)}
+              aria-label={`מצב רוח ${m}`}
+              aria-pressed={mood === m}
+              style={{
+                width: 34,
+                minHeight: 44,
+                background: mood === m ? 'var(--fs-primary)' : 'var(--fs-surface)',
+                color: mood === m ? 'var(--fs-accent)' : 'var(--fs-muted)',
+                border: '1px solid var(--fs-surface-2)',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      </div>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        rows={2}
+        placeholder="איך עבר השבוע?"
+        aria-label="הערות צ׳ק-אין"
+        className="w-full mb-2 px-3 py-2"
+        style={{ ...inputStyle, resize: 'none' }}
+      />
+      <Button variant="primary" fullWidth isLoading={busy} onClick={submit}>
+        שמור צ׳ק-אין
+      </Button>
+    </Section>
   );
 }

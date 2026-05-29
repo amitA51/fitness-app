@@ -69,10 +69,11 @@ type Action =
   | { type: 'SET_ITEMS'; payload: RoutineItem[] }
   | { type: 'TOGGLE_SELECTION'; id: string }
   | { type: 'START_ROUTINE' }
-  | { type: 'NEXT_EXERCISE'; onComplete: () => void }
+  | { type: 'NEXT_EXERCISE' }
   | { type: 'PREV_EXERCISE' }
   | { type: 'TOGGLE_PAUSE' }
-  | { type: 'TICK' };
+  | { type: 'TICK' }
+  | { type: 'ROUTINE_COMPLETED' };
 
 const reducer = (state: State, action: Action): State => {
   const activeItems = state.items.filter((i) => i.selected);
@@ -117,12 +118,12 @@ const reducer = (state: State, action: Action): State => {
           endTimestamp: Date.now() + nextItem.duration * 1000,
           pausedRemaining: 0,
         };
-      } else {
-        if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
-        action.onComplete();
-        return state;
       }
+      return { ...state, step: 'selection' as const, currentIndex: -1 };
     }
+
+    case 'ROUTINE_COMPLETED':
+      return state;
 
     case 'PREV_EXERCISE': {
       if (state.currentIndex > 0) {
@@ -148,15 +149,14 @@ const reducer = (state: State, action: Action): State => {
           isPaused: false,
           endTimestamp: Date.now() + state.pausedRemaining * 1000,
         };
-      } else {
-        const remaining = Math.max(0, Math.ceil((state.endTimestamp - Date.now()) / 1000));
-        return {
-          ...state,
-          isPaused: true,
-          pausedRemaining: remaining,
-          timeLeft: remaining,
-        };
       }
+      const remaining = Math.max(0, Math.ceil((state.endTimestamp - Date.now()) / 1000));
+      return {
+        ...state,
+        isPaused: true,
+        pausedRemaining: remaining,
+        timeLeft: remaining,
+      };
     }
 
     case 'TICK': {
@@ -597,7 +597,15 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
       <div
         className="flex-1 flex items-center justify-center"
         style={{ background: 'var(--fs-surface)', minHeight: 0 }}
+        role="button"
+        tabIndex={0}
         onClick={onTogglePause}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onTogglePause();
+          }
+        }}
       >
         <div
           style={{
@@ -874,8 +882,16 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
   }, [activeItems.length, onSkip]);
 
   const nextExercise = useCallback(() => {
-    dispatch({ type: 'NEXT_EXERCISE', onComplete });
-  }, [onComplete]);
+    dispatch({ type: 'NEXT_EXERCISE' });
+  }, []);
+
+  // Handle routine completion as a side effect (not inside reducer)
+  useEffect(() => {
+    if (state.step === 'selection' && state.currentIndex === -1) {
+      if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+      onComplete();
+    }
+  }, [state.step, state.currentIndex, onComplete]);
 
   const prevExercise = useCallback(() => {
     dispatch({ type: 'PREV_EXERCISE' });

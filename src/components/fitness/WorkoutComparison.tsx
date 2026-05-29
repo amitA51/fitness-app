@@ -264,7 +264,7 @@ const WorkoutComparisonInner: React.FC<WorkoutComparisonProps> = ({
       {exerciseComparisons.length > 0 && (
         <div className="card p-3">
           <h4 className="text-xs font-semibold text-[var(--color-text)] mb-1">השוואה לפי תרגיל</h4>
-          <ul role="list" className="divide-y divide-[var(--color-separator)]">
+          <ul className="divide-y divide-[var(--color-separator)]">
             {exerciseComparisons.map((row) => {
               const curVol = row.curBest?.volume ?? 0;
               const prevVol = row.prevBest?.volume ?? 0;

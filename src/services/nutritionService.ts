@@ -583,7 +583,7 @@ export function searchFoods(query: string): FoodItem[] {
   const q = query.toLowerCase().trim();
   if (!q) return FOOD_LIBRARY;
   return FOOD_LIBRARY.filter(
-    (f) => f.name.includes(q) || (f.brand && f.brand.toLowerCase().includes(q))
+    (f) => f.name.toLowerCase().includes(q) || f.brand?.toLowerCase().includes(q)
   );
 }
 
@@ -609,7 +609,7 @@ export async function addFoodFromPreset(
     name: preset.name,
     meals: [
       {
-        id: `m-${Date.now()}`,
+        id: generateId('meal'),
         name: mealType,
         foods,
         time: new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }),
@@ -624,31 +624,35 @@ export async function addFoodFromPreset(
   await dbPut(STORES.NUTRITION_LOGS, mealEntry);
 
   void (async () => {
-    const user = await getCurrentUser();
-    if (user) {
-      syncWithRetry(
-        () =>
-          syncNutritionLog(user.id, {
-            id: mealEntry.id,
-            date: mealEntry.date,
-            calories: Math.round(mealEntry.totalMacros.calories),
-            protein: Math.round(mealEntry.totalMacros.protein),
-            carbs: Math.round(mealEntry.totalMacros.carbs),
-            fat: Math.round(mealEntry.totalMacros.fat),
-            meals: mealEntry.meals.map((m) => ({
-              id: m.id,
-              name: m.name,
-              calories: Math.round(m.totalMacros.calories),
-              protein: Math.round(m.totalMacros.protein),
-              carbs: Math.round(m.totalMacros.carbs),
-              fat: Math.round(m.totalMacros.fat),
-              time: m.time,
-            })),
-            notes: mealEntry.notes,
-            createdAt: mealEntry.createdAt,
-          }),
-        `addMealEntryFromPreset:${mealEntry.id}`
-      );
+    try {
+      const user = await getCurrentUser();
+      if (user) {
+        syncWithRetry(
+          () =>
+            syncNutritionLog(user.id, {
+              id: mealEntry.id,
+              date: mealEntry.date,
+              calories: Math.round(mealEntry.totalMacros.calories),
+              protein: Math.round(mealEntry.totalMacros.protein),
+              carbs: Math.round(mealEntry.totalMacros.carbs),
+              fat: Math.round(mealEntry.totalMacros.fat),
+              meals: mealEntry.meals.map((m) => ({
+                id: m.id,
+                name: m.name,
+                calories: Math.round(m.totalMacros.calories),
+                protein: Math.round(m.totalMacros.protein),
+                carbs: Math.round(m.totalMacros.carbs),
+                fat: Math.round(m.totalMacros.fat),
+                time: m.time,
+              })),
+              notes: mealEntry.notes,
+              createdAt: mealEntry.createdAt,
+            }),
+          `addMealEntryFromPreset:${mealEntry.id}`
+        );
+      }
+    } catch {
+      // Best-effort sync — failure is handled by the retry queue
     }
   })();
 
@@ -835,7 +839,7 @@ export function createQuickMeal(mealType: MealType, foods: FoodItem[]): MealEntr
     name: `${MEAL_TYPE_LABELS[mealType]}`,
     meals: [
       {
-        id: `m-${Date.now()}`,
+        id: generateId('meal'),
         name: mealType,
         foods,
         time: new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }),

@@ -139,6 +139,7 @@ export type UIAction =
   | { type: 'OPEN_NUMPAD'; payload: 'weight' | 'reps' }
   | { type: 'CLOSE_NUMPAD' }
   | { type: 'NUMPAD_INPUT'; payload: string }
+  | { type: 'SET_NUMPAD_VALUE'; payload: string }
   | { type: 'NUMPAD_DELETE' }
   | { type: 'NUMPAD_SUBMIT' }
   | { type: 'TOGGLE_DRAWER'; payload: boolean }
@@ -241,8 +242,8 @@ export const HAPTIC_PATTERNS = {
 // ============================================================
 
 export const createInitialState = (
-  exercises: Exercise[] = [],
-  workoutDuration = 0,
+  exercises: Exercise[],
+  workoutDuration: number,
   appSettings: AppSettings
 ): WorkoutState => {
   const now = Date.now();

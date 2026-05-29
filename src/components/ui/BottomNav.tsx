@@ -2,6 +2,7 @@ import { Dumbbell, LayoutDashboard, TrendingUp, UserCog, UtensilsCrossed } from 
 import { memo, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCoach } from '../../contexts/CoachContext';
+import { useUnreadMessages } from '../../hooks/useUnreadMessages';
 import { prefetchRoute } from '../../utils/routePrefetch';
 
 const BASE_NAV_ITEMS = [
@@ -14,6 +15,7 @@ const BASE_NAV_ITEMS = [
 export default memo(function BottomNav() {
   const location = useLocation();
   const { isCoach } = useCoach();
+  const unread = useUnreadMessages();
 
   // Context-aware coaching tab: coaches reach their hub; everyone else reaches
   // the trainee "My Coach" screen (connect to a coach, view assignments).
@@ -58,12 +60,14 @@ export default memo(function BottomNav() {
               ? location.pathname === path
               : location.pathname === path || location.pathname.startsWith(`${path}/`);
 
+          const showBadge = (path === '/coach' || path === '/my-coach') && unread > 0;
+
           return (
             <li key={path} className="flex-1 h-full">
               <Link
                 to={path}
                 aria-current={isActive ? 'page' : undefined}
-                aria-label={label}
+                aria-label={showBadge ? `${label} (${unread} הודעות שלא נקראו)` : label}
                 onTouchStart={() => prefetchRoute(path)}
                 onMouseEnter={() => prefetchRoute(path)}
                 onClick={(e) => {
@@ -92,6 +96,31 @@ export default memo(function BottomNav() {
                   isActive ? '' : 'magnetic-card'
                 }`}
               >
+                {showBadge && (
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      left: '50%',
+                      transform: 'translateX(6px)',
+                      zIndex: 20,
+                      minWidth: 16,
+                      height: 16,
+                      padding: '0 4px',
+                      borderRadius: 999,
+                      background: 'var(--fs-accent)',
+                      color: 'var(--fs-primary)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9,
+                      fontWeight: 700,
+                      lineHeight: '16px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {unread > 9 ? '9+' : unread}
+                  </span>
+                )}
                 {isActive ? (
                   <span
                     key={activePath}

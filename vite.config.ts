@@ -1,5 +1,6 @@
-import path from 'path';
+import path from 'node:path';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 

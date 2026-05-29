@@ -70,14 +70,20 @@ export const WorkoutHistoryList = memo(function WorkoutHistoryList({
               position: 'relative',
             }}
           >
-            <div
+            <button
+              type="button"
               onClick={() => toggleExpand(session.id)}
+              aria-expanded={expandedId === session.id}
               style={{
                 padding: '14px 16px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
+                width: '100%',
+                background: 'transparent',
+                border: 'none',
+                textAlign: 'start',
               }}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -142,7 +148,7 @@ export const WorkoutHistoryList = memo(function WorkoutHistoryList({
                   <ChevronDown size={14} style={{ color: 'var(--fs-muted)' }} />
                 )}
               </div>
-            </div>
+            </button>
 
             {/* Expanded exercises */}
             {isExpanded && (

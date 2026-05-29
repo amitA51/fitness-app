@@ -5,8 +5,10 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { Clock, Copy, Dumbbell, Play, Plus, Star, Trash2, X } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCloudTemplateReflection } from '../hooks/useCloudTemplateReflection';
+import { onTemplatesChanged } from '../services/dataEvents';
 import {
   createWorkoutTemplate,
   deleteWorkoutTemplate,
@@ -32,7 +34,7 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  show: { ...springTransition, opacity: 1, y: 0 },
+  show: { opacity: 1, y: 0, transition: springTransition },
 };
 
 // ============================================================================
@@ -70,6 +72,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const templateNameId = useId();
 
   // Exercise builder state
   const [exercises, setExercises] = useState<TemplateExerciseInput[]>([]);
@@ -207,6 +210,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
             {/* Name Input */}
             <div>
               <label
+                htmlFor={templateNameId}
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: '12px',
@@ -219,6 +223,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                 שם התבנית
               </label>
               <input
+                id={templateNameId}
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -254,7 +259,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
 
             {/* Exercise Builder Section */}
             <div>
-              <label
+              <span
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: '12px',
@@ -276,7 +281,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                 >
                   {exercises.length > 0 ? `${exercises.length} EXERCISES` : 'OPTIONAL'}
                 </span>
-              </label>
+              </span>
 
               {/* Added exercise chips */}
               {exercises.length > 0 && (
@@ -462,10 +467,12 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                             borderRadius: 0,
                             cursor: 'pointer',
                           }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.background = 'var(--fs-surface-2)')
-                          }
-                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'var(--fs-surface-2)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                          }}
                         >
                           <span>{ex.name || 'תרגיל'}</span>
                           <Plus size={14} style={{ color: 'var(--fs-heading)' }} />
@@ -834,6 +841,8 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 
 export default function Templates() {
   const navigate = useNavigate();
+  // Reflect coach edits to the trainee's plan into the local-first store.
+  useCloudTemplateReflection();
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -843,6 +852,7 @@ export default function Templates() {
 
   useEffect(() => {
     loadTemplates();
+    return onTemplatesChanged(loadTemplates);
   }, []);
 
   async function loadTemplates() {
@@ -939,7 +949,7 @@ export default function Templates() {
       order: i,
       notes: ex.notes,
     }));
-    await createWorkoutTemplate({
+    const newTemplate = await createWorkoutTemplate({
       name: `העתק של ${template.name}`,
       description: '',
       exercises,
@@ -948,7 +958,7 @@ export default function Templates() {
       timesUsed: 0,
       isFavorite: false,
     });
-    await loadTemplates();
+    setTemplates((prev) => [...prev, newTemplate]);
   }, []);
 
   const handleStartTemplate = useCallback(

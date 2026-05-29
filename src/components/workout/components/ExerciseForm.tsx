@@ -4,6 +4,7 @@
 
 import { Plus as AddIcon } from 'lucide-react';
 import type React from 'react';
+import { useId } from 'react';
 import { EXERCISE_CATEGORIES, MUSCLE_GROUPS, WORKOUT } from '../../../constants';
 import type { PersonalExercise } from '../../../types';
 
@@ -39,6 +40,12 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
   onSubmit,
   onCancel,
 }) => {
+  const nameId = useId();
+  const muscleGroupId = useId();
+  const categoryId = useId();
+  const setsId = useId();
+  const restTimeId = useId();
+  const tempoId = useId();
   const updateField = <K extends keyof ExerciseFormData>(field: K, value: ExerciseFormData[K]) => {
     onChange({ ...formData, [field]: value });
   };
@@ -122,8 +129,11 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
 
       {/* Name */}
       <div>
-        <label style={labelStyle}>שם התרגיל</label>
+        <label htmlFor={nameId} style={labelStyle}>
+          שם התרגיל
+        </label>
         <input
+          id={nameId}
           type="text"
           value={formData.name}
           onChange={(e) => updateField('name', e.target.value)}
@@ -137,8 +147,11 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
       {/* Muscle Group + Category */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <div>
-          <label style={labelStyle}>שריר ראשי</label>
+          <label htmlFor={muscleGroupId} style={labelStyle}>
+            שריר ראשי
+          </label>
           <select
+            id={muscleGroupId}
             value={formData.muscleGroup}
             onChange={(e) => updateField('muscleGroup', e.target.value)}
             style={{ ...inputStyle, appearance: 'none' }}
@@ -152,8 +165,11 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
           </select>
         </div>
         <div>
-          <label style={labelStyle}>קטגוריה</label>
+          <label htmlFor={categoryId} style={labelStyle}>
+            קטגוריה
+          </label>
           <select
+            id={categoryId}
             value={formData.category}
             onChange={(e) =>
               updateField('category', (e.target.value as PersonalExercise['category']) ?? '')
@@ -173,8 +189,11 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
       {/* Sets + Rest + Tempo */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
         <div>
-          <label style={labelStyle}>סטים</label>
+          <label htmlFor={setsId} style={labelStyle}>
+            סטים
+          </label>
           <input
+            id={setsId}
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
@@ -186,8 +205,11 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
           />
         </div>
         <div>
-          <label style={labelStyle}>מנוחה (שניות)</label>
+          <label htmlFor={restTimeId} style={labelStyle}>
+            מנוחה (שניות)
+          </label>
           <input
+            id={restTimeId}
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
@@ -202,8 +224,11 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
           />
         </div>
         <div>
-          <label style={labelStyle}>טמפו</label>
+          <label htmlFor={tempoId} style={labelStyle}>
+            טמפו
+          </label>
           <input
+            id={tempoId}
             type="text"
             value={formData.tempo}
             onChange={(e) => updateField('tempo', e.target.value)}

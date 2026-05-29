@@ -30,6 +30,7 @@ interface UseVoiceCountdownReturn {
   announceReady: () => void;
   announceExercise: (name: string) => void;
   stop: () => void;
+  resetAnnounced: () => void;
   isSupported: boolean;
   isSpeaking: boolean;
   settings: VoiceSettings;
@@ -254,10 +255,16 @@ export function useVoiceCountdown(options: UseVoiceCountdownOptions = {}): UseVo
     [settings, speak]
   );
 
-  // Reset announced seconds (call when timer restarts)
+  // Reset announced seconds when a new timer starts (called externally)
+  const resetAnnounced = useCallback(() => {
+    announcedSecondsRef.current.clear();
+  }, []);
+
+  // Cancel speech on unmount
   useEffect(() => {
     return () => {
       announcedSecondsRef.current.clear();
+      synthRef.current?.cancel();
     };
   }, []);
 
@@ -272,6 +279,7 @@ export function useVoiceCountdown(options: UseVoiceCountdownOptions = {}): UseVo
     announceReady,
     announceExercise,
     stop,
+    resetAnnounced,
     isSupported,
     isSpeaking,
     settings,

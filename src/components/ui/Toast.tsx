@@ -69,6 +69,15 @@ export const Toast: React.FC<ToastProps> = ({
   // unmounting — the parent only controls `isVisible`.
   const [isMounted, setIsMounted] = useState<boolean>(isVisible);
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const componentMounted = useRef(true);
+
+  // Track component lifecycle
+  useEffect(() => {
+    componentMounted.current = true;
+    return () => {
+      componentMounted.current = false;
+    };
+  }, []);
 
   // Kick off auto-dismiss whenever the toast becomes visible
   useEffect(() => {
@@ -96,7 +105,7 @@ export const Toast: React.FC<ToastProps> = ({
   }
 
   function handleExitComplete() {
-    if (!isMounted) {
+    if (!isMounted && componentMounted.current) {
       onDismiss();
     }
   }

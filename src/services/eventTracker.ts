@@ -1,3 +1,5 @@
+import { safeJsonParse } from '../utils/safeJson';
+
 const STORAGE_KEY = 'sparkos_analytics';
 
 interface AnalyticsEvent {
@@ -12,14 +14,12 @@ interface AnalyticsStore {
   pageViews: Record<string, number>;
 }
 
+const DEFAULT_STORE: AnalyticsStore = { events: [], sessionStart: Date.now(), pageViews: {} };
+
 function getStore(): AnalyticsStore {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as AnalyticsStore;
-  } catch {
-    /* empty */
-  }
-  return { events: [], sessionStart: Date.now(), pageViews: {} };
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return { ...DEFAULT_STORE, sessionStart: Date.now() };
+  return safeJsonParse<AnalyticsStore>(raw) ?? { ...DEFAULT_STORE, sessionStart: Date.now() };
 }
 
 function save(store: AnalyticsStore): void {

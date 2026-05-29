@@ -19,6 +19,7 @@ import {
 import type React from 'react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { WaterTracker } from '../components/nutrition/WaterTracker';
+import { listMyAssignments } from '../services/coach';
 import {
   DEFAULT_MACRO_GOALS,
   MEAL_TYPE_ICONS,
@@ -59,6 +60,7 @@ export default function NutritionPage() {
   // built-in defaults. Settings stores `number | ''`; an empty string means
   // "use default for this macro".
   const [macroGoals, setMacroGoals] = useState<MacroNutrients>(DEFAULT_MACRO_GOALS);
+  const [coachTarget, setCoachTarget] = useState(false);
   const [activeTab, setActiveTab] = useState<MealTab>('log');
   const [showAddMeal, setShowAddMeal] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('lunch');
@@ -214,7 +216,38 @@ export default function NutritionPage() {
     };
     apply();
     window.addEventListener('storage', apply);
-    return () => window.removeEventListener('storage', apply);
+    window.addEventListener('settings-updated', apply);
+    return () => {
+      window.removeEventListener('storage', apply);
+      window.removeEventListener('settings-updated', apply);
+    };
+  }, []);
+
+  // Override goals with coach-assigned nutrition target (if any).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const assignments = await listMyAssignments();
+        const target = assignments.find((a) => a.kind === 'nutrition_target');
+        if (cancelled || !target) return;
+        const p = target.payload;
+        const cal = typeof p.calories === 'number' ? p.calories : 0;
+        if (!cal) return;
+        setMacroGoals((prev) => ({
+          calories: cal,
+          protein: typeof p.protein === 'number' ? p.protein : prev.protein,
+          carbs: typeof p.carbs === 'number' ? p.carbs : prev.carbs,
+          fat: typeof p.fat === 'number' ? p.fat : prev.fat,
+        }));
+        setCoachTarget(true);
+      } catch {
+        /* degrade silently for offline/guest */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const calPct = Math.min(Math.round((todayMacros.calories / macroGoals.calories) * 100), 100);
@@ -294,6 +327,11 @@ export default function NutritionPage() {
         <div className="label">נצרך היום</div>
         <div className="number kinetic-number large">{todayMacros.calories || 0}</div>
         <div className="sub">/ {macroGoals.calories} KCAL</div>
+        {coachTarget && (
+          <span className="chip mt-2" style={{ fontSize: '11px', color: 'var(--fs-accent)' }}>
+            יעד מהמאמן
+          </span>
+        )}
         {/* Calorie bar */}
         <div className="mt-4 fs-progress-track" style={{ height: '6px' }}>
           <motion.div

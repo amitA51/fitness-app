@@ -142,10 +142,14 @@ function getExerciseHistory(
   exerciseId: string,
   limit = 10
 ): SessionSnapshot[] {
+  // Sort descending (newest first) so the limit takes the most recent sessions
+  const sorted = [...sessions]
+    .filter((s) => s.status === 'completed')
+    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+
   const history: SessionSnapshot[] = [];
 
-  for (const session of sessions) {
-    if (session.status !== 'completed') continue;
+  for (const session of sorted) {
     const snapshot = getExerciseSnapshot(session, exerciseId);
     if (snapshot && snapshot.weight > 0) {
       history.push(snapshot);
@@ -485,9 +489,10 @@ export function buildAIProgressionContext(data: ExerciseProgressionData): AIProg
   return {
     exerciseName: data.exerciseName,
     currentWeight: data.currentWeight,
-    targetReps: data.lastSession
-      ? Math.round(data.lastSession.reps / data.lastSession.setsCompleted)
-      : 8,
+    targetReps:
+      data.lastSession && data.lastSession.setsCompleted > 0
+        ? Math.round(data.lastSession.reps / data.lastSession.setsCompleted)
+        : 8,
     targetSets: data.lastSession?.setsTarget || 4,
     history: data.history,
     recommendation: data.recommendation,

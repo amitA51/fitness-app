@@ -5,7 +5,7 @@
 // so the workout UI is never blocked by suggestion loading.
 import { useEffect, useState } from 'react';
 
-import { getPersonalExercises, getWorkoutSessions } from '../../../services/dataService';
+import { getPersonalExercises } from '../../../services/dataService';
 import type { PersonalExercise } from '../../../types';
 
 interface UseExerciseSuggestionsReturn {
@@ -30,10 +30,7 @@ export function useExerciseSuggestions(): UseExerciseSuggestionsReturn {
   useEffect(() => {
     const loadNames = async () => {
       try {
-        const [_sessions, personalExercises] = await Promise.all([
-          getWorkoutSessions(100),
-          getPersonalExercises().catch(() => []),
-        ]);
+        const personalExercises = await getPersonalExercises().catch(() => []);
         const libraryNames = Array.from(
           new Set(
             (personalExercises as PersonalExercise[])

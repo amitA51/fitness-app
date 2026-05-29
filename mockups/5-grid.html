@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05 · GRID</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --bg: #F4F5F7;
+  --paper: #FFFFFF;
+  --ink: #0E1116;
+  --ink-2: #565E6B;
+  --ink-3: #9AA1AD;
+  --line: #E4E7EC;
+  --line-2: #D4D8DF;
+  --cobalt: #0B5FFF;
+  --cobalt-d: #0A4ED1;
+  --amber: #F59E0B;
+  --sans: 'Hanken Grotesk', 'Rubik', sans-serif;
+  --he: 'Rubik', sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink);
+  max-width: 412px; margin: 0 auto; min-height: 100vh;
+  position: relative; overflow-x: hidden;
+}
+.svg-icon { width: 22px; height: 22px; display: block; }
+.fade { opacity: 0; transform: translateY(10px); animation: fade .6s cubic-bezier(.2,.7,.3,1) forwards; }
+@keyframes fade { to { opacity: 1; transform: none; } }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* topbar */
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 18px 18px 14px; }
+.brand { display: flex; align-items: center; gap: 11px; }
+.brand .mk { width: 32px; height: 32px; background: var(--ink); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.brand .nm { font-weight: 800; font-size: 17px; letter-spacing: -.01em; }
+.brand .nm em { font-style: normal; color: var(--cobalt); }
+.idx-no { font-family: var(--mono); font-size: 11px; color: var(--ink-3); letter-spacing: .06em; }
+
+.page { padding: 6px 14px 120px; }
+
+/* bento grid */
+.bento { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px; position: relative; }
+.tile .label { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.tile .num { font-family: var(--mono); font-size: 9px; color: var(--ink-3); position: absolute; top: 14px; left: 14px; }
+
+/* hero tile spans 2 */
+.tile.hero { grid-column: 1 / -1; padding: 20px; }
+.hero-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.hero-val { font-weight: 800; font-size: 46px; letter-spacing: -.03em; line-height: 1; margin: 14px 0 0; font-variant-numeric: tabular-nums; }
+.hero-val small { font-size: 16px; color: var(--ink-3); font-weight: 600; }
+.delta { font-family: var(--mono); font-size: 12px; font-weight: 600; color: #067A4E; background: #E4F7EE; border: 1px solid #BCE9D2; padding: 5px 9px; border-radius: 8px; }
+.bars { display: flex; align-items: flex-end; gap: 6px; height: 44px; margin-top: 16px; }
+.bars i { flex: 1; background: var(--line-2); border-radius: 3px 3px 0 0; }
+.bars i.on { background: var(--cobalt); }
+.bars i.today { background: var(--amber); }
+
+/* small stat tile */
+.tile.stat .big { font-weight: 800; font-size: 34px; letter-spacing: -.03em; margin-top: 22px; font-variant-numeric: tabular-nums; }
+.tile.stat .cap { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.tile .corner-ic { position: absolute; top: 14px; left: 14px; color: var(--cobalt); }
+
+/* next tile full */
+.tile.next { grid-column: 1 / -1; background: var(--ink); border-color: var(--ink); color: #fff; padding: 20px; }
+.tile.next .label { color: rgba(255,255,255,.55); }
+.tile.next .num { color: rgba(255,255,255,.4); }
+.next-title { font-weight: 800; font-size: 24px; letter-spacing: -.02em; margin: 12px 0 4px; }
+.next-meta { font-family: var(--mono); font-size: 11.5px; color: rgba(255,255,255,.6); margin-bottom: 18px; letter-spacing: .04em; }
+.next-btn { width: 100%; background: var(--cobalt); color: #fff; border: none; cursor: pointer; font-family: var(--sans); font-weight: 700; font-size: 15px; padding: 15px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 9px; }
+
+/* list */
+.list-head { display: flex; justify-content: space-between; align-items: center; margin: 24px 6px 12px; }
+.list-head h3 { font-size: 15px; font-weight: 700; }
+.list-head a { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--cobalt); text-transform: uppercase; }
+.list { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.li { display: grid; grid-template-columns: 30px 1fr auto; gap: 12px; align-items: center; padding: 15px 16px; border-bottom: 1px solid var(--line); }
+.li:last-child { border-bottom: none; }
+.li-no { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+.li-name { font-size: 14.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.li-meta { font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin-top: 3px; letter-spacing: .03em; }
+.li-vol { text-align: left; }
+.li-vol b { font-family: var(--mono); font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; }
+.li-vol span { font-family: var(--mono); font-size: 9.5px; color: var(--ink-3); display: block; text-transform: uppercase; }
+.pr { font-family: var(--mono); font-size: 9px; font-weight: 600; color: var(--cobalt); border: 1px solid var(--cobalt); padding: 1px 5px; border-radius: 4px; letter-spacing: .04em; }
+
+.sep { text-align: center; padding: 24px; font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-3); }
+
+/* active */
+.aw-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; background: var(--paper); border-bottom: 1px solid var(--line); }
+.aw-t { display: flex; align-items: center; gap: 12px; }
+.aw-t b { font-family: var(--mono); font-weight: 600; font-size: 24px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.aw-t span { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); display: block; }
+.aw-t .live { width: 8px; height: 8px; border-radius: 50%; background: var(--cobalt); }
+.aw-end { font-weight: 700; font-size: 13px; color: #fff; background: var(--ink); border: none; padding: 10px 16px; border-radius: 10px; }
+
+.aw-prog { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 14px 18px 0; }
+.aw-prog i { height: 4px; border-radius: 2px; background: var(--line-2); }
+.aw-prog i.on { background: var(--cobalt); }
+
+.ex { margin: 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.ex-head { display: flex; justify-content: space-between; align-items: center; padding: 18px; border-bottom: 1px solid var(--line); }
+.ex-head h4 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+.ex-head h4 small { display: block; font-size: 12px; color: var(--ink-2); font-weight: 500; }
+.ex-pos { font-family: var(--mono); font-size: 12px; color: var(--cobalt); background: #EAF1FF; padding: 6px 10px; border-radius: 8px; }
+.sh { display: grid; grid-template-columns: 34px 1fr 1fr 46px; gap: 10px; padding: 12px 18px; background: var(--bg); border-bottom: 1px solid var(--line); }
+.sh span { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); text-align: center; }
+.sr { display: grid; grid-template-columns: 34px 1fr 1fr 46px; gap: 10px; align-items: center; padding: 8px 18px; border-bottom: 1px solid var(--line); }
+.sn { font-family: var(--mono); font-size: 13px; color: var(--ink-3); text-align: center; }
+.cell { background: var(--paper); border: 1px solid var(--line-2); border-radius: 10px; padding: 12px 0; text-align: center; font-family: var(--mono); font-weight: 600; font-size: 16px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.cell.live { border-color: var(--cobalt); box-shadow: 0 0 0 3px rgba(11,95,255,.12); color: var(--cobalt); }
+.cell.ghost { color: var(--ink-3); }
+.tick { width: 36px; height: 36px; border-radius: 9px; margin: 0 auto; border: 1px solid var(--line-2); display: flex; align-items: center; justify-content: center; color: var(--ink-3); }
+.tick.on { background: var(--cobalt); border-color: var(--cobalt); color: #fff; }
+.addset { margin: 14px 18px; width: calc(100% - 36px); background: var(--paper); border: 1px dashed var(--line-2); color: var(--ink-2); font-family: var(--mono); font-size: 12px; padding: 13px; border-radius: 10px; cursor: pointer; text-transform: uppercase; letter-spacing: .06em; }
+
+.nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 412px; display: flex; justify-content: space-around; padding: 12px 14px 26px; background: var(--paper); border-top: 1px solid var(--line); }
+.nav-i { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--ink-3); flex: 1; }
+.nav-i span { font-size: 10px; font-weight: 500; }
+.nav-i.on { color: var(--cobalt); }
+</style>
+</head>
+<body>
+
+<!-- DASHBOARD -->
+<header class="topbar">
+  <div class="brand">
+    <div class="mk"><svg class="svg-icon" style="width:18px;height:18px;color:#fff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg></div>
+    <div class="nm">GRID<em>.</em></div>
+  </div>
+  <div class="idx-no">№ 142 — 29.05.26</div>
+</header>
+
+<main class="page">
+  <div class="bento">
+    <section class="tile hero fade">
+      <span class="num">01</span>
+      <div class="hero-top" style="padding-right:24px">
+        <span class="label">נפח שבועי / KG</span>
+        <span class="delta">+4.2%</span>
+      </div>
+      <div class="hero-val">12,400<small> ק"ג</small></div>
+      <div class="bars">
+        <i class="on" style="height:55%"></i>
+        <i class="on" style="height:78%"></i>
+        <i style="height:28%"></i>
+        <i class="on" style="height:62%"></i>
+        <i class="on" style="height:92%"></i>
+        <i class="today" style="height:44%"></i>
+        <i style="height:18%"></i>
+      </div>
+    </section>
+
+    <section class="tile stat fade" style="animation-delay:.06s">
+      <span class="num">02</span>
+      <div class="corner-ic"><svg class="svg-icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c0 3.5 4 4.5 4 8a4 4 0 0 1-8 0c0-2 1-3.2 2-4.2.2 1.3 1 2.2 2 2.2 0-2-1-4-0-6Z"/></svg></div>
+      <div class="big">18</div>
+      <div class="cap">רצף ימים</div>
+    </section>
+
+    <section class="tile stat fade" style="animation-delay:.1s">
+      <span class="num">03</span>
+      <div class="corner-ic"><svg class="svg-icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0zM6 4H3v2a3 3 0 0 0 3 3M18 4h3v2a3 3 0 0 1-3 3"/></svg></div>
+      <div class="big">3</div>
+      <div class="cap">שיאים החודש</div>
+    </section>
+
+    <section class="tile next fade" style="animation-delay:.14s">
+      <span class="num">04</span>
+      <span class="label">האימון הבא</span>
+      <div class="next-title">Push · יום דחיפה</div>
+      <div class="next-meta">6 תרגילים · 18 סטים · ~50 דק׳</div>
+      <button class="next-btn">
+        <svg class="svg-icon" style="width:16px;height:16px" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5Z"/></svg>
+        התחל אימון
+      </button>
+    </section>
+  </div>
+
+  <div class="list-head fade" style="animation-delay:.2s"><h3>היסטוריה</h3><a>VIEW ALL</a></div>
+  <div class="list fade" style="animation-delay:.22s">
+    <div class="li">
+      <div class="li-no">05</div>
+      <div><div class="li-name">Pull · יום משיכה</div><div class="li-meta">אתמול · 52:10</div></div>
+      <div class="li-vol"><b>8,240</b><span>kg</span></div>
+    </div>
+    <div class="li">
+      <div class="li-no">06</div>
+      <div><div class="li-name">Push · יום דחיפה <span class="pr">PR</span></div><div class="li-meta">27.05 · 48:30</div></div>
+      <div class="li-vol"><b>9,100</b><span>kg</span></div>
+    </div>
+    <div class="li">
+      <div class="li-no">07</div>
+      <div><div class="li-name">Legs · יום רגליים</div><div class="li-meta">26.05 · 55:00</div></div>
+      <div class="li-vol"><b>11,500</b><span>kg</span></div>
+    </div>
+  </div>
+</main>
+
+<!-- ACTIVE -->
+<div class="sep">— מסך אימון פעיל —</div>
+
+<header class="aw-head">
+  <div class="aw-t"><span class="live"></span><div><span>זמן פעיל</span><b>23:45</b></div></div>
+  <button class="aw-end">סיום</button>
+</header>
+<div class="aw-prog"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+
+<section class="ex">
+  <div class="ex-head">
+    <h4>Bench Press<small>לחיצת חזה · חזה</small></h4>
+    <div class="ex-pos">02 / 06</div>
+  </div>
+  <div class="sh"><span>סט</span><span>משקל</span><span>חזרות</span><span></span></div>
+  <div class="sr"><div class="sn">01</div><div class="cell">80</div><div class="cell">10</div><div class="tick on"><svg class="svg-icon" style="width:17px;height:17px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
+  <div class="sr"><div class="sn">02</div><div class="cell">85</div><div class="cell">8</div><div class="tick on"><svg class="svg-icon" style="width:17px;height:17px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
+  <div class="sr"><div class="sn">03</div><div class="cell live">90</div><div class="cell ghost">—</div><div class="tick"></div></div>
+  <div class="sr" style="border-bottom:none"><div class="sn">04</div><div class="cell ghost">90</div><div class="cell ghost">—</div><div class="tick"></div></div>
+</section>
+<button class="addset">+ הוסף סט</button>
+
+<nav class="nav">
+  <div class="nav-i on"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>בית</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>התקדמות</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>תבניות</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg><span>מאמן</span></div>
+</nav>
+
+</body>
+</html>

@@ -1,82 +1,145 @@
-// ============================================================================
-// JOIN — accept a coach invite with explicit consent
-// ============================================================================
-
-import { ShieldCheck } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { showToast } from '../components/workout/components/ui/Toast';
+import { useAuth } from '../contexts/AuthContext';
 import { acceptInvite } from '../services/coach';
-import { CoachPage, Section } from './coach/_shared';
+
+const STORAGE_KEY = 'pending_invite_code';
+
+function getCode(urlCode: string) {
+  if (urlCode) return urlCode;
+  try {
+    return localStorage.getItem(STORAGE_KEY)?.trim().toUpperCase() || '';
+  } catch {
+    return '';
+  }
+}
 
 export default function JoinPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [code, setCode] = useState(params.get('code')?.toUpperCase() ?? '');
+  const { status } = useAuth();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const didRun = useRef(false);
 
-  const accept = async () => {
-    if (!code.trim()) return;
-    setBusy(true);
-    const res = await acceptInvite(code);
-    setBusy(false);
-    if (res.ok) {
-      showToast('התחברת למאמן', 'success');
-      navigate('/my-coach', { replace: true });
-    } else {
-      showToast(
-        res.error === 'seat_limit' ? 'למאמן אין מקום פנוי' : 'קוד לא תקין או שפג תוקפו',
-        'error'
-      );
+  const code = getCode(params.get('code')?.trim().toUpperCase() || '');
+
+  // Unauthenticated: stash code and show login prompt
+  useEffect(() => {
+    if (status === 'unauthenticated' && code) {
+      try {
+        localStorage.setItem(STORAGE_KEY, code);
+      } catch {
+        /* */
+      }
     }
-  };
+  }, [status, code]);
 
-  return (
-    <CoachPage title="חיבור למאמן" subtitle="Join" onBack={() => navigate('/')}>
-      <Section>
-        <div
-          className="flex items-start gap-3 px-4 py-4 mb-4"
-          style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}
-        >
-          <ShieldCheck
-            size={22}
-            style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
-            aria-hidden="true"
-          />
-          <p
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 14,
-              color: 'var(--fs-ink)',
-              lineHeight: 1.6,
-              margin: 0,
-            }}
-          >
-            בהתחברות למאמן אתה מאשר לו <strong>לצפות ולערוך</strong> את נתוני האימון והתזונה שלך.
-            תוכל לנתק את החיבור בכל רגע ממסך "המאמן שלי", והגישה של המאמן תיחסם מיידית.
-          </p>
-        </div>
+  // Authenticated (or guest with user): auto-accept
+  useEffect(() => {
+    if ((status === 'authenticated' || status === 'guest') && code && !didRun.current) {
+      didRun.current = true;
+      setBusy(true);
+      acceptInvite(code).then((res) => {
+        setBusy(false);
+        if (res.ok) {
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch {
+            /* */
+          }
+          showToast('התחברת למאמן', 'success');
+          navigate('/my-coach', { replace: true });
+        } else {
+          setError(res.error === 'seat_limit' ? 'למאמן אין מקום פנוי' : 'קוד לא תקין');
+        }
+      });
+    }
+  }, [status, code, navigate]);
 
-        <input
-          value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
-          placeholder="קוד הזמנה"
-          dir="ltr"
-          className="w-full mb-3 px-3 py-3 text-center"
+  // Loading state
+  if (status === 'loading' || busy) {
+    return (
+      <div className="flex items-center justify-center min-h-screen" dir="rtl">
+        <p
           style={{
-            background: 'var(--fs-surface)',
-            border: '1px solid var(--fs-surface-2)',
-            color: 'var(--fs-ink)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 20,
-            letterSpacing: '0.2em',
+            color: 'var(--fs-ink-muted)',
+            fontFamily: 'var(--font-body)',
           }}
-        />
-        <Button variant="primary" fullWidth isLoading={busy} onClick={accept}>
-          אני מאשר/ת ומתחבר/ת
+        >
+          טוען...
+        </p>
+      </div>
+    );
+  }
+
+  // Unauthenticated: prompt to login
+  if (status === 'unauthenticated') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6" dir="rtl">
+        <h1
+          style={{
+            fontFamily: 'var(--font-heading)',
+            fontSize: 22,
+            color: 'var(--fs-ink)',
+          }}
+        >
+          הוזמנת להתחבר למאמן
+        </h1>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 15,
+            color: 'var(--fs-ink-muted)',
+            textAlign: 'center',
+          }}
+        >
+          כדי לקבל את ההזמנה, יש להירשם או להתחבר קודם.
+        </p>
+        <Button variant="primary" onClick={() => navigate('/')}>
+          הרשמה / התחברות
         </Button>
-      </Section>
-    </CoachPage>
+      </div>
+    );
+  }
+
+  // Error state (authenticated but invite failed)
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6" dir="rtl">
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 16,
+            color: 'var(--fs-danger, #e53e3e)',
+          }}
+        >
+          {error}
+        </p>
+        <Button variant="ghost" onClick={() => navigate('/')}>
+          חזרה
+        </Button>
+      </div>
+    );
+  }
+
+  // No code at all
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6" dir="rtl">
+      <p
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 16,
+          color: 'var(--fs-ink-muted)',
+        }}
+      >
+        לא נמצא קוד הזמנה
+      </p>
+      <Button variant="ghost" onClick={() => navigate('/')}>
+        חזרה
+      </Button>
+    </div>
   );
 }

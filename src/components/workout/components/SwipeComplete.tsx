@@ -10,7 +10,7 @@ import {
   useTransform,
 } from 'framer-motion';
 import { Check as CheckCheckIcon } from 'lucide-react';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { type KeyboardEvent, memo, useCallback, useEffect, useRef, useState } from 'react';
 import { triggerHaptic } from '../../../utils/haptics';
 
 // ============================================================
@@ -118,14 +118,25 @@ const SwipeComplete = memo<SwipeCompleteProps>(
     const [showUndo, setShowUndo] = useState(false);
     const [showParticles, setShowParticles] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const [maxDrag, setMaxDrag] = useState(224); // sensible default (300 - 76)
 
     const undoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const containerWidth = containerRef.current?.offsetWidth || 300;
-    const maxDrag = containerWidth - 76; // Account for handle width
 
     // RTL awareness — match project convention from SlideToComplete.tsx
     const isRTL = typeof document !== 'undefined' && document.dir === 'rtl';
+
+    // Compute maxDrag from container width in effect + resize listener
+    useEffect(() => {
+      const updateWidth = () => {
+        if (containerRef.current) {
+          setMaxDrag(containerRef.current.offsetWidth - 76);
+        }
+      };
+      updateWidth();
+      window.addEventListener('resize', updateWidth);
+      return () => window.removeEventListener('resize', updateWidth);
+    }, []);
 
     // Transforms based on drag position
     const backgroundOpacity = useTransform(x, [0, COMPLETE_THRESHOLD], [0, 0.5]);
@@ -216,6 +227,18 @@ const SwipeComplete = memo<SwipeCompleteProps>(
       onUndo?.();
     }, [onUndo]);
 
+    // Keyboard activation (Enter/Space)
+    const handleKeyDown = useCallback(
+      (e: KeyboardEvent) => {
+        if (disabled || isCompleting) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onComplete();
+        }
+      },
+      [disabled, isCompleting, onComplete]
+    );
+
     return (
       <div
         ref={containerRef}
@@ -223,6 +246,10 @@ const SwipeComplete = memo<SwipeCompleteProps>(
                 relative w-full h-[76px] rounded-[24px] overflow-hidden
                 ${disabled ? 'opacity-50' : ''}
             `}
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        aria-label={label}
+        onKeyDown={handleKeyDown}
       >
         {/* Background Track */}
         <div className="absolute inset-0 bg-[var(--bg-secondary)] border border-white/5 rounded-[24px]" />

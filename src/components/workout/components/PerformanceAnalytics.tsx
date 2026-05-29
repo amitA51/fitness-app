@@ -196,7 +196,7 @@ const VolumeComparisonBar = memo<{
   previous: number;
   target?: number;
 }>(({ current, previous, target }) => {
-  const maxValue = Math.max(current, previous, target || 0) * 1.2;
+  const maxValue = Math.max(current, previous, target || 0, 1) * 1.2;
   const currentPercent = (current / maxValue) * 100;
   const previousPercent = (previous / maxValue) * 100;
   const targetPercent = target ? (target / maxValue) * 100 : null;
@@ -306,26 +306,20 @@ ExerciseProgressRow.displayName = 'ExerciseProgressRow';
  * - Average RPE tracking
  */
 const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
-  ({
-    exercises,
-    startTime,
-    currentTime = new Date(),
-    previousWorkout,
-    compact = false,
-    className = '',
-  }) => {
+  ({ exercises, startTime, currentTime, previousWorkout, compact = false, className = '' }) => {
     // Calculate current stats - uses combined single-pass calculation
     const stats = useMemo(() => {
       // Single pass through all exercises for all metrics
       const { volume, completedSets, totalSets, avgRPE, completedExercises } =
         calculateAllStats(exercises);
-      const duration = currentTime.getTime() - startTime.getTime();
+      const now = currentTime ?? new Date();
+      const duration = now.getTime() - startTime.getTime();
 
       // Calculate trends compared to previous workout
       let volumeTrend: 'up' | 'down' | 'neutral' = 'neutral';
       let volumeTrendValue = '';
 
-      if (previousWorkout) {
+      if (previousWorkout && previousWorkout.totalVolume > 0) {
         const volumeDiff = volume - previousWorkout.totalVolume;
         const volumePercent = Math.abs(
           Math.round((volumeDiff / previousWorkout.totalVolume) * 100)

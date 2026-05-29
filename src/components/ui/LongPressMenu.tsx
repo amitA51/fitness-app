@@ -275,11 +275,13 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
 
               {/* Menu */}
               <motion.div
+                className="fixed z-50 min-w-[180px] rounded-2xl overflow-hidden"
                 initial={{ opacity: 0, scale: 0.85, y: -10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: -5 }}
                 transition={SPRING_BOUNCY}
-                className="fixed z-50 min-w-[180px] rounded-2xl overflow-hidden"
+                role="menu"
+                aria-label="תפריט פעולות"
                 style={{
                   left: menuPosition.x,
                   top: menuPosition.y,
@@ -314,6 +316,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
                       }}
                       onClick={() => handleAction(action)}
                       disabled={action.isDisabled}
+                      role="menuitem"
                       className={`
                         w-full flex items-center gap-3 px-4 py-3 text-right transition-colors
                         ${

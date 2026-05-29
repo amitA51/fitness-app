@@ -50,6 +50,7 @@ export const SliderInput = memo(function SliderInput({
         onChange={(e) => onChange(Number.parseFloat(e.target.value))}
         className="w-full h-2 appearance-none cursor-pointer"
         style={{ accentColor: color, borderRadius: 0 }}
+        aria-label={label}
       />
       {labels && (
         <div

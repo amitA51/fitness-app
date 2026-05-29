@@ -253,13 +253,12 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             {/* Row 2: Set dots + label */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ display: 'flex', gap: 5, direction: 'ltr' }}>
-                {Array.from({ length: totalSets }, (_, i) => {
-                  const isCompleted = i < completedSetsCount;
-                  const isCurrent = i === completedSetsCount && i < totalSets;
+                {(exercise.sets || []).map((set, i) => {
+                  const isCompleted = !!set.completedAt;
+                  const isCurrent = !isCompleted && i === completedSetsCount;
                   return (
                     <div
-                      // biome-ignore lint/suspicious/noArrayIndexKey: positional set-status dots derived from a count, never reordered
-                      key={i}
+                      key={set.id || i}
                       style={{
                         width: 10,
                         height: 10,
@@ -489,7 +488,10 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             </div>
 
             {/* Row 2: Secondary actions */}
-            {(completedSetsCount > 0 || onCreateSuperset) && (
+            {(completedSetsCount > 0 ||
+              onCreateSuperset ||
+              (exercise.programExtras?.alternatives &&
+                exercise.programExtras.alternatives.length > 0)) && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 {completedSetsCount > 0 && onEditSet && (
                   <ActionChip
@@ -499,6 +501,15 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                     ariaLabel="עריכת סטים שהושלמו"
                   />
                 )}
+                {exercise.programExtras?.alternatives &&
+                  exercise.programExtras.alternatives.length > 0 && (
+                    <ActionChip
+                      icon={<RotateCcw size={14} strokeWidth={2.5} />}
+                      label="חלופות"
+                      onClick={() => setShowAlternatives(true)}
+                      ariaLabel="תרגילים חלופיים"
+                    />
+                  )}
                 {isInSuperset && onRemoveSuperset ? (
                   <ActionChip
                     icon={<Unlink size={14} strokeWidth={2.5} />}

@@ -3,11 +3,17 @@
 // ============================================================================
 
 import { MessageSquare, UserPlus, Users } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { useCoach } from '../../contexts/CoachContext';
-import { getSeatUsage, listClients } from '../../services/coach';
+import {
+  clientStatusMeta,
+  getClientAnalytics,
+  getSeatUsage,
+  listClients,
+} from '../../services/coach';
+import type { CoachClient } from '../../types/coach';
 import { CoachPage, EmptyHint, ListRow, Section, formatDate, useAsyncData } from './_shared';
 
 export default function CoachHome() {
@@ -62,10 +68,45 @@ export default function CoachHome() {
   return <Roster />;
 }
 
+type SortMode = 'name' | 'activity';
+
 function Roster() {
   const navigate = useNavigate();
   const { data: clients, loading } = useAsyncData(() => listClients('active'), []);
   const { data: seats } = useAsyncData(() => getSeatUsage(), { used: 0, limit: 0, full: false });
+
+  const [search, setSearch] = useState('');
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortMode>('name');
+
+  const allTags = useMemo(
+    () => [...new Set(clients.flatMap((c) => c.tags ?? []))].sort(),
+    [clients]
+  );
+
+  const filtered = useMemo(() => {
+    let list = clients;
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter((c) => (c.clientProfile?.displayName ?? '').toLowerCase().includes(q));
+    }
+    if (activeTag) {
+      list = list.filter((c) => c.tags?.includes(activeTag));
+    }
+    const sorted = [...list];
+    if (sort === 'name') {
+      sorted.sort((a, b) =>
+        (a.clientProfile?.displayName ?? '').localeCompare(b.clientProfile?.displayName ?? '', 'he')
+      );
+    } else {
+      sorted.sort(
+        (a, b) =>
+          new Date(b.consentAt ?? b.createdAt ?? 0).getTime() -
+          new Date(a.consentAt ?? a.createdAt ?? 0).getTime()
+      );
+    }
+    return sorted;
+  }, [clients, search, activeTag, sort]);
 
   return (
     <CoachPage
@@ -110,22 +151,148 @@ function Roster() {
       </Section>
 
       <Section title="מתאמנים פעילים">
+        {/* Search */}
+        <input
+          type="text"
+          dir="rtl"
+          placeholder="חיפוש לפי שם…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            marginBottom: 8,
+            fontFamily: 'var(--font-body)',
+            fontSize: 14,
+            color: 'var(--fs-ink)',
+            background: 'var(--fs-surface)',
+            border: '1px solid var(--fs-surface-2)',
+            borderRadius: 4,
+            outline: 'none',
+          }}
+        />
+
+        {/* Tag filter chips */}
+        {allTags.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                style={{
+                  padding: '3px 10px',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  borderRadius: 999,
+                  border: '1px solid var(--fs-surface-2)',
+                  background: activeTag === tag ? 'var(--fs-primary)' : 'var(--fs-surface)',
+                  color: activeTag === tag ? 'var(--fs-accent)' : 'var(--fs-ink)',
+                  cursor: 'pointer',
+                }}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Sort toggle */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <button
+            type="button"
+            onClick={() => setSort('name')}
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              fontWeight: sort === 'name' ? 700 : 400,
+              color: sort === 'name' ? 'var(--fs-heading)' : 'var(--fs-muted)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            שם
+          </button>
+          <button
+            type="button"
+            onClick={() => setSort('activity')}
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              fontWeight: sort === 'activity' ? 700 : 400,
+              color: sort === 'activity' ? 'var(--fs-heading)' : 'var(--fs-muted)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            פעילות אחרונה
+          </button>
+        </div>
+
+        {/* Client list */}
         {loading ? (
           <EmptyHint>טוען…</EmptyHint>
         ) : clients.length === 0 ? (
           <EmptyHint>עדיין אין מתאמנים מחוברים. הזמן מתאמן דרך כפתור ההזמנה למעלה.</EmptyHint>
+        ) : filtered.length === 0 ? (
+          <EmptyHint>אין מתאמנים תואמים</EmptyHint>
         ) : (
-          clients.map((c) => (
-            <ListRow
+          filtered.map((c) => (
+            <RosterRow
               key={c.id}
-              label={c.clientProfile?.displayName ?? 'מתאמן'}
-              meta={`מחובר מאז ${formatDate(c.consentAt ?? c.createdAt)}`}
-              onClick={() => navigate(`/coach/clients/${c.clientId}`)}
+              client={c}
+              onOpen={() => navigate(`/coach/clients/${c.clientId}`)}
             />
           ))
         )}
       </Section>
     </CoachPage>
+  );
+}
+
+function RosterRow({ client, onOpen }: { client: CoachClient; onOpen: () => void }) {
+  const { data: analytics } = useAsyncData(() => getClientAnalytics(client.clientId), null);
+  const meta = analytics
+    ? analytics.lastActivity
+      ? `פעילות אחרונה ${formatDate(analytics.lastActivity)}`
+      : 'אין פעילות עדיין'
+    : `מחובר מאז ${formatDate(client.consentAt ?? client.createdAt)}`;
+
+  return (
+    <ListRow
+      label={client.clientProfile?.displayName ?? 'מתאמן'}
+      meta={meta}
+      onClick={onOpen}
+      trailing={analytics ? <StatusChip {...clientStatusMeta(analytics.level)} /> : undefined}
+    />
+  );
+}
+
+function StatusChip({ label, color }: { label: string; color: string }) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        fontFamily: 'var(--font-mono)',
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '0.06em',
+        color,
+      }}
+    >
+      <span
+        style={{ width: 7, height: 7, borderRadius: 999, background: color }}
+        aria-hidden="true"
+      />
+      {label}
+    </span>
   );
 }
 

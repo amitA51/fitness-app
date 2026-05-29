@@ -385,7 +385,9 @@ export const SkeletonCalendarGrid: React.FC = () => (
             style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}
           >
             <SkeletonBox height={16} width={20} className="mb-1" />
-            {Math.random() > 0.7 && <SkeletonBox height={8} width="80%" borderRadius="sm" />}
+            {(weekIndex + dayIndex) % 3 === 0 && (
+              <SkeletonBox height={8} width="80%" borderRadius="sm" />
+            )}
           </div>
         ))}
       </div>

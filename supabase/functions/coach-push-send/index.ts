@@ -68,6 +68,10 @@ Deno.serve(async (req: Request) => {
   }
   const targetUserId = String(payload.targetUserId ?? '');
   const title = String(payload.title ?? '').slice(0, 120);
+  const bodyText = String(payload.body ?? '').slice(0, 300);
+  // Only allow same-origin relative paths or absolute https URLs as the click target.
+  let url = String(payload.url ?? '/');
+  if (!url.startsWith('/') && !url.startsWith('https://')) url = '/';
   if (!targetUserId || !title) return json({ ok: false, error: 'invalid' }, 400, req);
 
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
@@ -90,7 +94,7 @@ Deno.serve(async (req: Request) => {
   if (!subs || subs.length === 0) return json({ ok: true, sent: 0 }, 200, req);
 
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
-  const body = JSON.stringify({ title, body: payload.body ?? '', url: payload.url ?? '/' });
+  const body = JSON.stringify({ title, body: bodyText, url });
 
   let sent = 0;
   await Promise.all(

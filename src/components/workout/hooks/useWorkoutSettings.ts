@@ -406,6 +406,13 @@ export function useAccessibilitySettings() {
     } else {
       document.documentElement.classList.remove('high-contrast');
     }
+
+    // Cleanup on unmount
+    return () => {
+      document.documentElement.classList.remove('reduce-motion');
+      document.documentElement.classList.remove('high-contrast');
+      document.documentElement.style.removeProperty('--font-scale');
+    };
   }, [get]);
 
   return {

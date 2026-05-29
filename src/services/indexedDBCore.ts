@@ -65,9 +65,18 @@ export const initDB = (): Promise<IDBDatabase> => {
       reject(request.error);
     };
 
+    request.onblocked = () => {
+      dbOpenPromise = null;
+      reject(new Error('initDB blocked: close other tabs using this database'));
+    };
+
     request.onsuccess = () => {
       dbInstance = request.result;
       dbOpenPromise = null;
+      dbInstance.onversionchange = () => {
+        dbInstance?.close();
+        dbInstance = null;
+      };
       dbInstance.onclose = () => {
         dbInstance = null;
       };
@@ -243,10 +252,11 @@ export const dbPut = <T extends object>(storeName: string, item: T): Promise<voi
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readwrite');
       const store = tx.objectStore(storeName);
-      const request = store.put(item);
+      store.put(item);
 
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
     });
   });
 };
@@ -257,10 +267,11 @@ export const dbDelete = (storeName: string, key: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readwrite');
       const store = tx.objectStore(storeName);
-      const request = store.delete(key);
+      store.delete(key);
 
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
     });
   });
 };
@@ -271,10 +282,11 @@ export const dbClear = (storeName: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readwrite');
       const store = tx.objectStore(storeName);
-      const request = store.clear();
+      store.clear();
 
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
     });
   });
 };

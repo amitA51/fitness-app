@@ -29,7 +29,7 @@ const TrendLineOverlay: React.FC<TrendLineOverlayProps> = ({
 }) => {
   // Calculate trend line points using linear regression
   const trendPoints = useMemo(() => {
-    if (data.length < 2) return [];
+    if (data.length < 2 || maxVolume === 0) return [];
 
     const volumes = data.map((w) => w.totalVolume);
     const n = volumes.length;
@@ -54,7 +54,7 @@ const TrendLineOverlay: React.FC<TrendLineOverlayProps> = ({
 
   // Calculate forecast point
   const forecastPoint = useMemo(() => {
-    if (!forecast || forecast.predicted <= 0 || data.length < 2) return null;
+    if (!forecast || forecast.predicted <= 0 || data.length < 2 || maxVolume === 0) return null;
 
     const lastBarX = 10 + (data.length - 1) * (barWidth + barGap) + barWidth;
     const forecastX = lastBarX + barWidth + barGap;

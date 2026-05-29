@@ -35,7 +35,11 @@ export function getNotificationConfig(): NotificationConfig {
 export function saveNotificationConfig(config: Partial<NotificationConfig>): NotificationConfig {
   const current = getNotificationConfig();
   const updated = { ...current, ...config };
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(updated));
+  try {
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(updated));
+  } catch {
+    // Quota exceeded or privacy mode — config won't persist but app continues
+  }
   return updated;
 }
 
@@ -78,19 +82,22 @@ export async function showNotification(title: string, body: string, icon?: strin
 }
 
 export function showWorkoutReminder(): void {
-  showNotification('זמן לאימון', 'האימון המתוכנן ממתין.');
+  void showNotification('זמן לאימון', 'האימון המתוכנן ממתין.').catch(() => {});
 }
 
 export function showMissedWorkoutAlert(daysSince: number): void {
-  showNotification('לא התאמנת מזמן', `עברו ${daysSince} ימים מהאימון האחרון.`);
+  void showNotification('לא התאמנת מזמן', `עברו ${daysSince} ימים מהאימון האחרון.`).catch(() => {});
 }
 
 export function showPRNotification(exerciseName: string, type: string): void {
-  showNotification('שיא אישי חדש', `${exerciseName} · שיא ${type === 'weight' ? 'משקל' : 'נפח'}`);
+  void showNotification(
+    'שיא אישי חדש',
+    `${exerciseName} · שיא ${type === 'weight' ? 'משקל' : 'נפח'}`
+  ).catch(() => {});
 }
 
 export function showNutritionReminder(): void {
-  showNotification('תזכורת תזונה', 'רשום את הארוחה.');
+  void showNotification('תזכורת תזונה', 'רשום את הארוחה.').catch(() => {});
 }
 
 export function checkMissedWorkouts(lastWorkoutDate: string | null): void {

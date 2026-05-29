@@ -15,6 +15,7 @@ interface NumpadOverlayProps {
   target: 'weight' | 'reps' | null;
   value: string;
   onInput: (digit: string) => void;
+  onSetValue: (value: string) => void;
   onDelete: () => void;
   onSubmit: () => void;
   onClose: () => void;
@@ -391,6 +392,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
     target,
     value,
     onInput,
+    onSetValue,
     onDelete,
     onSubmit,
     onClose,
@@ -425,10 +427,10 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
     // Handle preset selection
     const handlePresetSelect = useCallback(
       (preset: number) => {
-        // Clear and set new value
-        onInput(String(preset));
+        // Replace value entirely (not append)
+        onSetValue(String(preset));
       },
-      [onInput]
+      [onSetValue]
     );
 
     // Handle stepper adjustment
@@ -440,9 +442,9 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
           target === 'weight'
             ? newValue.toFixed(newValue % 1 === 0 ? 0 : 2)
             : String(Math.round(newValue));
-        onInput(formatted);
+        onSetValue(formatted);
       },
-      [numericValue, target, onInput]
+      [numericValue, target, onSetValue]
     );
 
     const handleInput = useCallback(
@@ -566,7 +568,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
             <div className="tab-row">
               <motion.button
                 onClick={() => setMode('numpad')}
-                className={'tab' + (mode === 'numpad' ? ' active' : '')}
+                className={`tab${mode === 'numpad' ? ' active' : ''}`}
                 whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
                 aria-label="מקלדת מספרים"
               >
@@ -574,7 +576,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
               </motion.button>
               <motion.button
                 onClick={() => setMode('stepper')}
-                className={'tab' + (mode === 'stepper' ? ' active' : '')}
+                className={`tab${mode === 'stepper' ? ' active' : ''}`}
                 whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
                 aria-label="כפתורי עלייה וירידה"
               >

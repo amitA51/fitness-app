@@ -61,7 +61,7 @@ export const syncWorkoutTemplate = async (
     description: template.description || null,
     exercises: template.exercises,
     created_at: template.createdAt || new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    updated_at: template.updatedAt || new Date().toISOString(),
   });
 
   if (error) {
@@ -129,7 +129,7 @@ export const syncWorkoutSession = async (
     total_volume: session.totalVolume || 0,
     notes: session.notes || null,
     created_at: session.startTime,
-    updated_at: new Date().toISOString(),
+    updated_at: session.updatedAt || session.startTime || new Date().toISOString(),
   });
 
   if (error) {
@@ -204,7 +204,7 @@ export const syncPersonalExercise = async (
     use_count: exercise.useCount || 0,
     last_used: exercise.lastUsed || null,
     created_at: exercise.createdAt || new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    updated_at: exercise.updatedAt || exercise.createdAt || new Date().toISOString(),
   });
 
   if (error) {
@@ -580,14 +580,17 @@ export const deleteCloudNutritionLog = async (userId: string, id: string): Promi
 export const syncUserSetting = async (userId: string, setting: UserSetting): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
-  const { error } = await supabase.from('user_settings').upsert({
-    id: setting.id || crypto.randomUUID(),
-    user_id: userId,
-    key: setting.key,
-    value: setting.value,
-    created_at: setting.createdAt || new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
+  const { error } = await supabase.from('user_settings').upsert(
+    {
+      id: setting.id || `${userId}:${setting.key}`,
+      user_id: userId,
+      key: setting.key,
+      value: setting.value,
+      created_at: setting.createdAt || new Date().toISOString(),
+      updated_at: setting.updatedAt || new Date().toISOString(),
+    },
+    { onConflict: 'user_id,key' }
+  );
 
   if (error) {
     logger.sync.error('Error syncing user setting', error);
@@ -644,7 +647,7 @@ export const syncAIConversation = async (
     messages: conversation.messages,
     context: conversation.context || {},
     created_at: conversation.createdAt || new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    updated_at: conversation.updatedAt || conversation.createdAt || new Date().toISOString(),
   });
 
   if (error) {
@@ -998,9 +1001,10 @@ export const syncAllData = async (): Promise<SyncResult> => {
     logger.sync.info('Pushed all data to cloud', { userId, counts });
 
     return {
-      success: true,
+      success: pushFailed.length === 0,
       syncedItems: totalSynced,
       counts,
+      ...(pushFailed.length > 0 && { error: `${pushFailed.length} push operations failed` }),
     };
   } catch (error) {
     logger.sync.error('Error syncing all data', error);
@@ -1012,6 +1016,10 @@ export const pullAllData = async (): Promise<SyncResult> => {
   const userId = await getUserId();
   if (!userId) {
     return { success: false, error: 'Not authenticated' };
+  }
+
+  if (!isSupabaseConfigured() || !supabase) {
+    return { success: false, error: 'Supabase not configured' };
   }
 
   try {
@@ -1082,9 +1090,10 @@ export const pullAllData = async (): Promise<SyncResult> => {
     });
 
     return {
-      success: true,
+      success: mergeFailed.length === 0,
       syncedItems: totalItems,
       counts,
+      ...(mergeFailed.length > 0 && { error: `${mergeFailed.length} merge operations failed` }),
     };
   } catch (error) {
     logger.sync.error('Error pulling all data', error);

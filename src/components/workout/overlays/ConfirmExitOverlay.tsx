@@ -259,6 +259,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
             {/* Error Message */}
             {saveError && (
               <div
+                role="alert"
                 className="p-3 mb-4"
                 style={{
                   backgroundColor: 'var(--color-warning-muted)',

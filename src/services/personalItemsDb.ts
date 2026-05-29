@@ -1,10 +1,7 @@
 // Personal items database using IndexedDB
 import type { PersonalItem } from '../types';
 import { generateId } from '../utils/id';
-import { STORES, dbDelete, dbGetAll, dbPut, initDB } from './indexedDBCore';
-
-// Ensure DB is initialized
-initDB();
+import { STORES, dbDelete, dbGet, dbGetAll, dbPut } from './indexedDBCore';
 
 export const addPersonalItem = async (
   item: Omit<PersonalItem, 'id' | 'createdAt' | 'updatedAt'>
@@ -29,11 +26,7 @@ export const updatePersonalItem = async (
   id: string,
   updates: Partial<PersonalItem>
 ): Promise<void> => {
-  const items = await dbGetAll<PersonalItem>(STORES.PERSONAL_ITEMS);
-  const index = items.findIndex((i) => i.id === id);
-  if (index === -1) return;
-
-  const existing = items[index];
+  const existing = await dbGet<PersonalItem>(STORES.PERSONAL_ITEMS, id);
   if (!existing) return;
 
   const updatedItem: PersonalItem = {

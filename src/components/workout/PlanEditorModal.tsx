@@ -2,7 +2,7 @@ import { AnimatePresence, Reorder, motion } from 'framer-motion';
 // PlanEditorModal - Modal for creating and editing workout plans
 // Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
 import type React from 'react';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { PersonalExercise, WorkoutTemplate, WorkoutTemplateExercise } from '../../types';
 
 // In-flight editor shape — minimal subset used only within this modal
@@ -28,7 +28,7 @@ function templateExToEditorEx(ex: WorkoutTemplateExercise): PlanEditorExercise {
   };
 }
 
-function editorExToTemplateEx(ex: PlanEditorExercise): WorkoutTemplateExercise {
+function editorExToTemplateEx(ex: PlanEditorExercise, index: number): WorkoutTemplateExercise {
   return {
     id: ex.id,
     exerciseId: ex.id,
@@ -41,7 +41,7 @@ function editorExToTemplateEx(ex: PlanEditorExercise): WorkoutTemplateExercise {
     targetWeight: null,
     restSeconds: ex.targetRestTime ?? 90,
     targetRestTime: ex.targetRestTime,
-    order: 0,
+    order: index,
     notes: ex.notes ?? '',
     sets: ex.sets,
     tempo: ex.tempo,
@@ -93,15 +93,16 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
   );
   const [showLibrary, setShowLibrary] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const planNameId = useId();
 
   const handleAddExercise = (personalExercise: PersonalExercise) => {
     const newExercise: PlanEditorExercise = {
       id: `ex-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       name: personalExercise.name ?? '',
-      sets: Array<{ reps: number; weight: number }>(personalExercise.defaultSets || 3).fill({
+      sets: Array.from({ length: personalExercise.defaultSets || 3 }, () => ({
         reps: 10,
         weight: 0,
-      }),
+      })),
       muscleGroup: personalExercise.muscleGroup,
       targetRestTime: personalExercise.defaultRestTime || 90,
       tempo: personalExercise.tempo,
@@ -123,7 +124,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
     try {
       await onSave({
         name,
-        exercises: exercises.map(editorExToTemplateEx),
+        exercises: exercises.map((ex, idx) => editorExToTemplateEx(ex, idx)),
         muscleGroups: Array.from(
           new Set(exercises.map((e) => e.muscleGroup).filter(Boolean) as string[])
         ),
@@ -263,6 +264,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
               {/* Name Input */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label
+                  htmlFor={planNameId}
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: '10px',
@@ -275,6 +277,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   שם התוכנית
                 </label>
                 <input
+                  id={planNameId}
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -304,7 +307,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                     alignItems: 'flex-end',
                   }}
                 >
-                  <label
+                  <span
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '10px',
@@ -315,7 +318,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                     }}
                   >
                     תרגילים ({exercises.length})
-                  </label>
+                  </span>
                   <button
                     type="button"
                     onClick={() => setShowLibrary(true)}
@@ -341,6 +344,14 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                 {exercises.length === 0 ? (
                   <div
                     onClick={() => setShowLibrary(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setShowLibrary(true);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
                     style={{
                       height: 160,
                       borderRadius: 0,

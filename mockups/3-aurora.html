@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 · AURORA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&family=Assistant:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --indigo: #5468FF;
+  --cyan: #16C8C8;
+  --pink: #FF6FB5;
+  --ink: #14142B;
+  --ink-2: #5B5B79;
+  --ink-3: #9C9CB5;
+  --glass: rgba(255,255,255,.62);
+  --glass-2: rgba(255,255,255,.78);
+  --glass-brd: rgba(255,255,255,.85);
+  --shadow: 0 14px 40px -12px rgba(45,50,120,.28);
+  --font: 'Onest', 'Assistant', sans-serif;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  max-width: 412px; margin: 0 auto; min-height: 100vh;
+  position: relative; overflow-x: hidden;
+  background: #EAECFB;
+}
+/* aurora mesh */
+.aurora { position: fixed; inset: 0; max-width: 412px; left: 50%; transform: translateX(-50%); z-index: 0; overflow: hidden; }
+.blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .7; }
+.blob.a { width: 320px; height: 320px; background: var(--indigo); top: -80px; right: -60px; }
+.blob.b { width: 280px; height: 280px; background: var(--cyan); top: 180px; left: -90px; opacity: .55; }
+.blob.c { width: 300px; height: 300px; background: var(--pink); bottom: -60px; right: -40px; opacity: .45; }
+.grain { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: .04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+.wrap { position: relative; z-index: 2; }
+.svg-icon { width: 22px; height: 22px; display: block; }
+.fade { opacity: 0; transform: translateY(12px); animation: fade .7s cubic-bezier(.2,.7,.3,1) forwards; }
+@keyframes fade { to { opacity: 1; transform: none; } }
+
+/* Header */
+.head { display: flex; justify-content: space-between; align-items: center; padding: 22px 22px 8px; }
+.head-hi { font-size: 13px; color: var(--ink-2); }
+.head-name { font-size: 21px; font-weight: 700; letter-spacing: -.02em; margin-top: 2px; }
+.avatar {
+  width: 44px; height: 44px; border-radius: 15px;
+  background: linear-gradient(135deg, var(--indigo), var(--pink));
+  box-shadow: var(--shadow); border: 2px solid rgba(255,255,255,.7);
+}
+
+.page { padding: 12px 18px 120px; }
+
+/* Hero glass */
+.hero {
+  background: var(--glass); backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid var(--glass-brd); border-radius: 28px;
+  padding: 24px; box-shadow: var(--shadow);
+}
+.hero-label { font-size: 13px; color: var(--ink-2); font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.hero-label .pill { font-size: 11px; font-weight: 700; color: #0E8F6F; background: rgba(22,200,150,.16); padding: 4px 9px; border-radius: 20px; margin-right: auto; }
+.hero-value { font-size: 50px; font-weight: 800; letter-spacing: -.03em; line-height: 1; margin: 14px 0 4px;
+  background: linear-gradient(120deg, var(--indigo), var(--cyan)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero-value small { font-size: 17px; -webkit-text-fill-color: var(--ink-3); }
+.hero-bar { height: 10px; border-radius: 6px; background: rgba(255,255,255,.6); margin-top: 18px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(45,50,120,.12); }
+.hero-bar i { display: block; height: 100%; width: 67%; border-radius: 6px; background: linear-gradient(90deg, var(--indigo), var(--cyan)); }
+.hero-foot { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-2); margin-top: 8px; }
+
+/* glass stats */
+.stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 14px; }
+.gstat {
+  background: var(--glass); backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--glass-brd); border-radius: 20px; padding: 16px 10px;
+  text-align: center; box-shadow: var(--shadow);
+}
+.gstat .ic { width: 34px; height: 34px; border-radius: 11px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; color: #fff; }
+.gstat:nth-child(1) .ic { background: linear-gradient(135deg, var(--indigo), #7B6BFF); }
+.gstat:nth-child(2) .ic { background: linear-gradient(135deg, var(--cyan), #1FB6A6); }
+.gstat:nth-child(3) .ic { background: linear-gradient(135deg, var(--pink), #FF8A6B); }
+.gstat b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+.gstat span { display: block; font-size: 10.5px; color: var(--ink-2); margin-top: 2px; }
+
+/* Next workout glass */
+.next {
+  margin-top: 14px; border-radius: 26px; padding: 22px; position: relative; overflow: hidden;
+  background: linear-gradient(135deg, rgba(84,104,255,.92), rgba(22,200,200,.88));
+  box-shadow: 0 18px 44px -12px rgba(84,104,255,.55); color: #fff;
+}
+.next::after { content:''; position: absolute; top: -40px; left: -40px; width: 160px; height: 160px; background: rgba(255,255,255,.18); border-radius: 50%; }
+.next-tag { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; opacity: .85; position: relative; }
+.next-title { font-size: 24px; font-weight: 700; letter-spacing: -.01em; margin: 7px 0 4px; position: relative; }
+.next-meta { font-size: 12.5px; opacity: .9; display: flex; gap: 16px; margin-bottom: 18px; position: relative; }
+.next-meta span { display: flex; align-items: center; gap: 6px; }
+.next-meta .svg-icon { width: 15px; height: 15px; }
+.next-btn {
+  position: relative; width: 100%; border: none; cursor: pointer;
+  background: rgba(255,255,255,.96); color: var(--indigo);
+  font-family: var(--font); font-size: 15px; font-weight: 700;
+  padding: 15px; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 9px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.12);
+}
+
+/* section */
+.sec { display: flex; justify-content: space-between; align-items: center; margin: 26px 6px 12px; }
+.sec h3 { font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.sec a { font-size: 12.5px; color: var(--indigo); font-weight: 600; }
+
+.row {
+  display: flex; align-items: center; gap: 14px; padding: 14px;
+  background: var(--glass-2); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-brd); border-radius: 20px; margin-bottom: 11px; box-shadow: var(--shadow);
+}
+.row-ic { width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; background: linear-gradient(135deg, var(--indigo), var(--cyan)); }
+.row-main { flex: 1; min-width: 0; }
+.row-name { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.row-meta { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.row-vol b { font-size: 15px; font-weight: 700; }
+.row-vol span { font-size: 11px; color: var(--ink-3); }
+.pr { font-size: 10px; font-weight: 700; color: #fff; background: linear-gradient(135deg, var(--pink), #FF8A6B); padding: 2px 8px; border-radius: 8px; }
+
+/* sep */
+.sep { text-align: center; padding: 24px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+
+/* active workout */
+.aw-head {
+  display: flex; justify-content: space-between; align-items: center; margin: 8px 18px;
+  padding: 16px 20px; border-radius: 22px;
+  background: var(--glass-2); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--glass-brd); box-shadow: var(--shadow);
+}
+.aw-t { display: flex; align-items: center; gap: 12px; }
+.aw-t .ring { width: 38px; height: 38px; }
+.aw-t b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+.aw-t span { font-size: 10px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .1em; display: block; }
+.aw-end { background: linear-gradient(135deg, var(--indigo), #6B5BFF); color: #fff; border: none; padding: 11px 18px; border-radius: 14px; font-family: var(--font); font-weight: 600; font-size: 14px; box-shadow: 0 6px 16px rgba(84,104,255,.4); }
+
+.ex {
+  margin: 14px 18px;
+  background: var(--glass-2); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--glass-brd); border-radius: 24px; padding: 20px; box-shadow: var(--shadow);
+}
+.ex-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.ex-top h4 { font-size: 18px; font-weight: 700; }
+.ex-top h4 small { display:block; font-size: 12px; color: var(--ink-2); font-weight: 500; }
+.ex-pos { font-size: 12px; color: var(--indigo); font-weight: 700; background: rgba(84,104,255,.12); padding: 6px 11px; border-radius: 12px; }
+.srow { display: grid; grid-template-columns: 32px 1fr 1fr 46px; gap: 10px; align-items: center; padding: 6px 0; }
+.shead span { font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; text-align: center; display: block; font-weight: 600; }
+.sn { font-size: 14px; font-weight: 700; color: var(--ink-3); text-align: center; }
+.cell {
+  background: rgba(255,255,255,.7); border: 1.5px solid rgba(255,255,255,.9); border-radius: 14px;
+  padding: 12px 0; text-align: center; font-size: 16px; font-weight: 700; color: var(--ink);
+  box-shadow: inset 0 1px 2px rgba(45,50,120,.06);
+}
+.cell.live { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(84,104,255,.16); color: var(--indigo); }
+.cell.ghost { color: var(--ink-3); }
+.tick { width: 38px; height: 38px; border-radius: 13px; margin: 0 auto; display: flex; align-items: center; justify-content: center; border: 1.5px solid rgba(255,255,255,.9); background: rgba(255,255,255,.5); color: var(--ink-3); }
+.tick.on { background: linear-gradient(135deg, var(--cyan), #14B8A6); border-color: transparent; color: #fff; box-shadow: 0 6px 14px rgba(22,200,200,.4); }
+.addset { margin-top: 6px; width: 100%; background: rgba(255,255,255,.4); border: 1.5px dashed rgba(84,104,255,.4); color: var(--indigo); font-family: var(--font); font-weight: 600; font-size: 13px; padding: 13px; border-radius: 14px; cursor: pointer; }
+
+/* nav */
+.nav {
+  position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+  width: calc(100% - 36px); max-width: 376px;
+  display: flex; justify-content: space-around; padding: 12px 8px;
+  background: var(--glass-2); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--glass-brd); border-radius: 24px; box-shadow: var(--shadow);
+}
+.nav-i { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--ink-3); flex: 1; }
+.nav-i span { font-size: 10px; font-weight: 500; }
+.nav-i.on { color: var(--indigo); }
+.nav-i.on .svg-icon { filter: drop-shadow(0 3px 6px rgba(84,104,255,.4)); }
+</style>
+</head>
+<body>
+
+<div class="aurora"><div class="blob a"></div><div class="blob b"></div><div class="blob c"></div></div>
+<div class="grain"></div>
+
+<div class="wrap">
+
+<!-- DASHBOARD -->
+<header class="head">
+  <div>
+    <div class="head-hi">בוקר טוב</div>
+    <div class="head-name">עמית גישונים</div>
+  </div>
+  <div class="avatar"></div>
+</header>
+
+<main class="page">
+  <section class="hero fade">
+    <div class="hero-label">נפח השבוע <span class="pill">▲ 4.2%</span></div>
+    <div class="hero-value">12,400<small> ק"ג</small></div>
+    <div class="hero-bar"><i></i></div>
+    <div class="hero-foot"><span>יעד שבועי 18,500 ק"ג</span><span>67%</span></div>
+  </section>
+
+  <div class="stats">
+    <div class="gstat fade" style="animation-delay:.06s">
+      <div class="ic"><svg class="svg-icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg></div>
+      <b>4</b><span>אימונים</span>
+    </div>
+    <div class="gstat fade" style="animation-delay:.1s">
+      <div class="ic"><svg class="svg-icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c0 3.5 4 4.5 4 8a4 4 0 0 1-8 0c0-2 1-3.2 2-4.2.2 1.3 1 2.2 2 2.2 0-2-1-4-0-6Z"/></svg></div>
+      <b>18</b><span>רצף</span>
+    </div>
+    <div class="gstat fade" style="animation-delay:.14s">
+      <div class="ic"><svg class="svg-icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0zM6 4H3v2a3 3 0 0 0 3 3M18 4h3v2a3 3 0 0 1-3 3"/></svg></div>
+      <b>3</b><span>שיאים</span>
+    </div>
+  </div>
+
+  <section class="next fade" style="animation-delay:.18s">
+    <div class="next-tag">האימון הבא</div>
+    <div class="next-title">Push · יום דחיפה</div>
+    <div class="next-meta">
+      <span><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg> 6 תרגילים</span>
+      <span><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> ~50 דקות</span>
+    </div>
+    <button class="next-btn">
+      <svg class="svg-icon" style="width:17px;height:17px" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5Z"/></svg>
+      התחל אימון
+    </button>
+  </section>
+
+  <div class="sec fade" style="animation-delay:.22s"><h3>אימונים אחרונים</h3><a>הכל →</a></div>
+
+  <div class="row fade" style="animation-delay:.24s">
+    <div class="row-ic"><svg class="svg-icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg></div>
+    <div class="row-main"><div class="row-name">Pull · יום משיכה</div><div class="row-meta">אתמול · 52 דקות</div></div>
+    <div class="row-vol"><b>8,240</b> <span>ק"ג</span></div>
+  </div>
+  <div class="row fade" style="animation-delay:.28s">
+    <div class="row-ic"><svg class="svg-icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg></div>
+    <div class="row-main"><div class="row-name">Push · יום דחיפה <span class="pr">שיא</span></div><div class="row-meta">27.05 · 48 דקות</div></div>
+    <div class="row-vol"><b>9,100</b> <span>ק"ג</span></div>
+  </div>
+  <div class="row fade" style="animation-delay:.32s">
+    <div class="row-ic"><svg class="svg-icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg></div>
+    <div class="row-main"><div class="row-name">Legs · יום רגליים</div><div class="row-meta">26.05 · 55 דקות</div></div>
+    <div class="row-vol"><b>11,500</b> <span>ק"ג</span></div>
+  </div>
+</main>
+
+<!-- ACTIVE -->
+<div class="sep">— מסך אימון פעיל —</div>
+
+<header class="aw-head">
+  <div class="aw-t">
+    <svg class="ring" viewBox="0 0 38 38"><circle cx="19" cy="19" r="16" fill="none" stroke="rgba(84,104,255,.18)" stroke-width="4"/><circle cx="19" cy="19" r="16" fill="none" stroke="#5468FF" stroke-width="4" stroke-linecap="round" stroke-dasharray="100" stroke-dashoffset="66" transform="rotate(-90 19 19)"/></svg>
+    <div><span>זמן פעיל</span><b>23:45</b></div>
+  </div>
+  <button class="aw-end">סיום</button>
+</header>
+
+<section class="ex">
+  <div class="ex-top">
+    <h4>Bench Press<small>לחיצת חזה · חזה</small></h4>
+    <div class="ex-pos">2 / 6</div>
+  </div>
+  <div class="srow shead"><span>סט</span><span>משקל</span><span>חזרות</span><span></span></div>
+  <div class="srow"><div class="sn">1</div><div class="cell">80</div><div class="cell">10</div><div class="tick on"><svg class="svg-icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
+  <div class="srow"><div class="sn">2</div><div class="cell">85</div><div class="cell">8</div><div class="tick on"><svg class="svg-icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
+  <div class="srow"><div class="sn">3</div><div class="cell live">90</div><div class="cell ghost">—</div><div class="tick"></div></div>
+  <div class="srow"><div class="sn">4</div><div class="cell ghost">90</div><div class="cell ghost">—</div><div class="tick"></div></div>
+  <button class="addset">+ הוסף סט</button>
+</section>
+
+<nav class="nav">
+  <div class="nav-i on"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>בית</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>התקדמות</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>תבניות</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg><span>מאמן</span></div>
+</nav>
+
+</div>
+</body>
+</html>

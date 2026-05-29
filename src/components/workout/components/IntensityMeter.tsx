@@ -1,7 +1,7 @@
 import { motion, useSpring, useTransform } from 'framer-motion';
 // IntensityMeter - Real-time workout intensity visualization
 // Apple Fitness+ inspired intensity zones with animated gauge
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useId, useState } from 'react';
 
 // ============================================================
 // TYPES
@@ -105,8 +105,8 @@ const getZoneProgress = (intensity: number, zone: IntensityZone): number => {
 // ============================================================
 
 /** Animated arc gauge */
-const ArcGauge = memo<{ intensity: number; size: number; strokeWidth: number }>(
-  ({ intensity, size, strokeWidth }) => {
+const ArcGauge = memo<{ intensity: number; size: number; strokeWidth: number; instanceId: string }>(
+  ({ intensity, size, strokeWidth, instanceId }) => {
     const springIntensity = useSpring(intensity, { stiffness: 100, damping: 20 });
     const zone = getZoneFromIntensity(intensity);
     const zoneData = ZONES[zone];
@@ -162,7 +162,7 @@ const ArcGauge = memo<{ intensity: number; size: number; strokeWidth: number }>(
         <motion.path
           d={`M ${strokeWidth / 2} ${size / 2} A ${radius} ${radius} 0 0 1 ${size - strokeWidth / 2} ${size / 2}`}
           fill="none"
-          stroke={`url(#intensity-gradient-${zone})`}
+          stroke={`url(#intensity-gradient-${instanceId}-${zone})`}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -190,7 +190,7 @@ const ArcGauge = memo<{ intensity: number; size: number; strokeWidth: number }>(
           {Object.entries(ZONES).map(([key, data]) => (
             <linearGradient
               key={key}
-              id={`intensity-gradient-${key}`}
+              id={`intensity-gradient-${instanceId}-${key}`}
               x1="0%"
               y1="0%"
               x2="100%"
@@ -260,8 +260,8 @@ ZoneBar.displayName = 'ZoneBar';
 
 /** Volume progress bar */
 const VolumeBar = memo<{ current: number; target: number }>(({ current, target }) => {
-  const percentage = Math.min((current / target) * 100, 100);
-  const isComplete = current >= target;
+  const percentage = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+  const isComplete = target > 0 && current >= target;
 
   return (
     <div className="w-full">
@@ -340,6 +340,7 @@ const IntensityMeter = memo<IntensityMeterProps>(
   }) => {
     const zone = getZoneFromIntensity(intensity);
     const zoneData = ZONES[zone];
+    const instanceId = useId();
 
     // Animate intensity changes
     const [displayIntensity, setDisplayIntensity] = useState(0);
@@ -402,7 +403,12 @@ const IntensityMeter = memo<IntensityMeterProps>(
 
         {/* Arc Gauge */}
         <div className="flex justify-center mb-4 relative">
-          <ArcGauge intensity={displayIntensity} size={200} strokeWidth={16} />
+          <ArcGauge
+            intensity={displayIntensity}
+            size={200}
+            strokeWidth={16}
+            instanceId={instanceId}
+          />
 
           {/* Center value */}
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">

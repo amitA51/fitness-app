@@ -130,6 +130,10 @@ function openQueueDB(): Promise<IDBDatabase> {
     request.onsuccess = () => {
       queueDbInstance = request.result;
       queueDbOpenPromise = null;
+      queueDbInstance.onversionchange = () => {
+        queueDbInstance?.close();
+        queueDbInstance = null;
+      };
       queueDbInstance.onclose = () => {
         queueDbInstance = null;
       };
@@ -152,7 +156,8 @@ async function getAllMutations(): Promise<QueuedMutation[]> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
     const store = tx.objectStore(STORE_NAME);
-    const req = store.getAll();
+    const index = store.index('timestamp');
+    const req = index.getAll();
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
@@ -356,11 +361,24 @@ export async function queueMutation(type: MutationType, payload: unknown): Promi
   }
 }
 
+// ── Queue processing guard ──────────────────────────────────────────────────
+let isProcessing = false;
+
 /**
  * Process all queued mutations
  * Call on app start and when coming back online
  */
 export async function processQueue(): Promise<{ success: number; failed: number }> {
+  if (isProcessing) return { success: 0, failed: 0 };
+  isProcessing = true;
+  try {
+    return await processQueueInternal();
+  } finally {
+    isProcessing = false;
+  }
+}
+
+async function processQueueInternal(): Promise<{ success: number; failed: number }> {
   const { getCurrentUser } = await import('./supabaseAuth');
   const user = await getCurrentUser();
   if (!user?.id) {
@@ -464,23 +482,14 @@ export async function clearMutationQueue(): Promise<void> {
 
 // ── Online/offline detection ────────────────────────────────────────────────
 
-let isProcessing = false;
-
 function setupOnlineListener() {
   if (typeof window === 'undefined') return;
 
   window.addEventListener('online', async () => {
     logger.sync.info('Network back online, processing queue');
-    if (!isProcessing) {
-      isProcessing = true;
-      try {
-        const result = await processQueue();
-        if (result.success > 0 || result.failed > 0) {
-          logger.sync.info('Queue processing complete', result);
-        }
-      } finally {
-        isProcessing = false;
-      }
+    const result = await processQueue();
+    if (result.success > 0 || result.failed > 0) {
+      logger.sync.info('Queue processing complete', result);
     }
   });
 

@@ -1,6 +1,6 @@
+import * as Sentry from '@sentry/react';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import * as Sentry from '@sentry/react';
 import { logger } from '../utils/logger';
 
 interface Props {

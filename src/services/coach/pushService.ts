@@ -78,3 +78,24 @@ export const unsubscribeFromPush = async (): Promise<void> => {
     logger.app.warn('unsubscribeFromPush failed', err);
   }
 };
+
+/**
+ * Invoke the `coach-push-send` edge function to deliver a Web Push to a target
+ * user (an active client, or self). Best-effort: never throws, so it can't
+ * break the action that triggered it, and no-ops until the function is deployed.
+ */
+export const sendCoachPush = async (
+  targetUserId: string,
+  title: string,
+  body?: string,
+  url?: string
+): Promise<void> => {
+  if (!isSupabaseConfigured() || !supabase || !targetUserId || !title) return;
+  try {
+    await supabase.functions.invoke('coach-push-send', {
+      body: { targetUserId, title, body: body ?? '', url: url ?? '/' },
+    });
+  } catch (err) {
+    logger.app.warn('sendCoachPush failed', err);
+  }
+};

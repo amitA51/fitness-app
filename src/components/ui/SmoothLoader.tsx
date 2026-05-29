@@ -54,9 +54,8 @@ export const SmoothLoader: React.FC<SmoothLoaderProps> = ({
       if (remaining > 0) {
         const timer = setTimeout(() => setShowContent(true), remaining);
         return () => clearTimeout(timer);
-      } else {
-        setShowContent(true);
       }
+      setShowContent(true);
     } else {
       setShowContent(false);
       mountTimeRef.current = Date.now();

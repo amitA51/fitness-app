@@ -164,9 +164,11 @@ function getPageLabel(path: string): string {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppRouter />
-    </AuthProvider>
+    <SettingsProvider>
+      <AuthProvider>
+        <AppRouter />
+      </AuthProvider>
+    </SettingsProvider>
   );
 }
 
@@ -477,52 +479,50 @@ function AppShell() {
   }, []);
 
   return (
-    <SettingsProvider>
-      <DataProvider>
-        <CoachProvider>
-          <PageThemeProvider page={pageAccent}>
-            <a href="#main-content" className="skip-link">
-              דלג לתוכן הראשי
-            </a>
-            <div
-              className="app-shell min-h-screen flex flex-col"
-              style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
-            >
-              <OfflineIndicator />
-              <div className="sr-only" aria-live="polite">
-                {pageLabel}
-              </div>
-              <main
-                ref={mainRef}
-                id="main-content"
-                className={cn('flex-1 overflow-y-auto', !isWorkoutActive && 'pb-24')}
-                tabIndex={-1}
-                style={{ contain: 'layout style' }}
-              >
-                <Suspense fallback={<PageLoader />}>
-                  {reduceMotion ? (
-                    <AppRoutes location={location} />
-                  ) : (
-                    <AnimatePresence mode="wait" initial={false}>
-                      <motion.div
-                        key={location.pathname}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                      >
-                        <AppRoutes location={location} />
-                      </motion.div>
-                    </AnimatePresence>
-                  )}
-                </Suspense>
-              </main>
-              {!isWorkoutActive && <MemoizedBottomNav />}
+    <DataProvider>
+      <CoachProvider>
+        <PageThemeProvider page={pageAccent}>
+          <a href="#main-content" className="skip-link">
+            דלג לתוכן הראשי
+          </a>
+          <div
+            className="app-shell min-h-screen flex flex-col"
+            style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
+          >
+            <OfflineIndicator />
+            <div className="sr-only" aria-live="polite">
+              {pageLabel}
             </div>
-          </PageThemeProvider>
-        </CoachProvider>
-      </DataProvider>
-    </SettingsProvider>
+            <main
+              ref={mainRef}
+              id="main-content"
+              className={cn('flex-1 overflow-y-auto', !isWorkoutActive && 'pb-24')}
+              tabIndex={-1}
+              style={{ contain: 'layout style' }}
+            >
+              <Suspense fallback={<PageLoader />}>
+                {reduceMotion ? (
+                  <AppRoutes location={location} />
+                ) : (
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={location.pathname}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <AppRoutes location={location} />
+                    </motion.div>
+                  </AnimatePresence>
+                )}
+              </Suspense>
+            </main>
+            {!isWorkoutActive && <MemoizedBottomNav />}
+          </div>
+        </PageThemeProvider>
+      </CoachProvider>
+    </DataProvider>
   );
 }
 

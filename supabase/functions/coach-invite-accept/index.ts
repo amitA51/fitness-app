@@ -55,15 +55,48 @@ Deno.serve(async (req: Request) => {
   const caller = userData?.user;
   if (!caller) return json({ ok: false, error: 'unauthenticated' }, 401, req);
 
+  const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  // Rate-limit accept attempts (brute-forcing invite codes), per-user and
+  // per-IP. Fails OPEN if the ledger is unavailable (e.g. migration not yet
+  // applied) — invite validity, consent and seat checks remain authoritative.
+  const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
+  try {
+    await admin.from('rate_limit_events').insert([
+      { bucket: 'invite_accept_user', subject: caller.id },
+      { bucket: 'invite_accept_ip', subject: ip },
+    ]);
+    const since = new Date(Date.now() - 60_000).toISOString();
+    const [{ count: userHits }, { count: ipHits }] = await Promise.all([
+      admin
+        .from('rate_limit_events')
+        .select('id', { count: 'exact', head: true })
+        .eq('bucket', 'invite_accept_user')
+        .eq('subject', caller.id)
+        .gte('created_at', since),
+      admin
+        .from('rate_limit_events')
+        .select('id', { count: 'exact', head: true })
+        .eq('bucket', 'invite_accept_ip')
+        .eq('subject', ip)
+        .gte('created_at', since),
+    ]);
+    if ((userHits ?? 0) > 8 || (ipHits ?? 0) > 20) {
+      return json({ ok: false, error: 'rate_limited' }, 429, req);
+    }
+  } catch (_e) {
+    // ledger unavailable — fail open
+  }
+
   let code = '';
   try {
-    code = String((await req.json()).code ?? '').trim().toUpperCase();
+    code = String((await req.json()).code ?? '')
+      .trim()
+      .toUpperCase();
   } catch {
     return json({ ok: false, error: 'invalid' }, 400, req);
   }
-  if (!code) return json({ ok: false, error: 'invalid' }, 400, req);
-
-  const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+  if (!code || code.length > 64) return json({ ok: false, error: 'invalid' }, 400, req);
 
   // Look up the invite.
   const { data: invite } = await admin

@@ -34,6 +34,14 @@ export interface AIContext {
 }
 
 export function buildSystemPrompt(context: AIContext): string {
+  // Sanitize user-derived strings before embedding in prompt
+  const sanitize = (s: string) =>
+    s
+      .replace(/[\r\n\t]/g, ' ')
+      .replace(/[^\p{L}\p{N}\p{Zs}\-_'"()]/gu, '')
+      .slice(0, 60)
+      .trim();
+
   // ה-persona הגלובלי מוזרק אוטומטית ב-RemoteProvider (ראה ai/config.ts::withPersona).
   // כאן רק מוסיפים את ההקשר הדינמי של המשתמש.
   return `נתוני המתאמן (התייחס אליהם בתשובה):
@@ -46,8 +54,8 @@ export function buildSystemPrompt(context: AIContext): string {
 - ציון מוכנות מתמטי: ${context.readinessScore}/100 (${context.readinessLabel})
 - מגבלת אימון מרכזית: ${context.primaryConstraint}
 - המלצת עומס מתמטית: ${context.trainingLoadRecommendation}
-- שרירים שעבד: ${context.muscleCoverage.join(', ') || 'אין'}
-- שרירים חלשים: ${context.weakMuscles.join(', ') || 'אין'}
+- שרירים שעבד: ${context.muscleCoverage.map(sanitize).join(', ') || 'אין'}
+- שרירים חלשים: ${context.weakMuscles.map(sanitize).join(', ') || 'אין'}
 - ציון התאוששות: ${context.recoveryScore ?? 'לא ידוע'}
 - עמידה בתזונה: ${context.nutritionCompliance !== null ? `${context.nutritionCompliance}%` : 'לא ידוע'}
 - רצף אימונים: ${context.streakDays} ימים

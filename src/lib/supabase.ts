@@ -12,7 +12,14 @@ const isConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 // Supabase configuration is optional — when missing, the app runs in local-only mode.
 
-export const supabase = isConfigured ? createClient(supabaseUrl!, supabaseAnonKey!) : null;
+export const supabase = isConfigured
+  ? createClient(supabaseUrl!, supabaseAnonKey!, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    })
+  : null;
 
 export const isSupabaseConfigured = (): boolean => isConfigured;
 

@@ -9,6 +9,7 @@ import type { Assignment, AssignmentKind } from '../../types/coach';
 import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
 import { requireClient, toAssignment } from './mappers';
+import { sendCoachPush } from './pushService';
 
 export interface NewAssignment {
   kind: AssignmentKind;
@@ -42,6 +43,10 @@ export const createAssignment = async (input: NewAssignment): Promise<Assignment
     .select('*')
     .single();
   if (error) throw error;
+  // Best-effort push so a direct assignment reaches the client with the app closed.
+  if (input.clientId) {
+    void sendCoachPush(input.clientId, input.title || 'עדכון חדש מהמאמן', undefined, '/my-coach');
+  }
   return toAssignment(data);
 };
 

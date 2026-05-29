@@ -22,19 +22,27 @@ export const WaterTracker = memo(function WaterTracker() {
     loadTotal();
   }, [loadTotal]);
 
-  const pct = Math.min(Math.round((totalMl / goalMl) * 100), 100);
-  const glasses = Math.round(totalMl / glassMl);
-  const goalGlasses = Math.round(goalMl / glassMl);
+  const pct = goalMl > 0 ? Math.min(Math.round((totalMl / goalMl) * 100), 100) : 0;
+  const glasses = glassMl > 0 ? Math.round(totalMl / glassMl) : 0;
+  const goalGlasses = glassMl > 0 ? Math.round(goalMl / glassMl) : 0;
 
   const handleAdd = useCallback(async () => {
-    await addWaterEntry(glassMl);
     setTotalMl((prev) => prev + glassMl);
+    try {
+      await addWaterEntry(glassMl);
+    } catch {
+      setTotalMl((prev) => Math.max(0, prev - glassMl));
+    }
   }, [glassMl]);
 
   const handleRemove = useCallback(async () => {
     if (totalMl <= 0) return;
-    await addWaterEntry(-glassMl);
     setTotalMl((prev) => Math.max(0, prev - glassMl));
+    try {
+      await addWaterEntry(-glassMl);
+    } catch {
+      setTotalMl((prev) => prev + glassMl);
+    }
   }, [glassMl, totalMl]);
 
   return (

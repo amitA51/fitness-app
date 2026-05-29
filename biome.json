@@ -9,7 +9,8 @@
       "recommended": true,
       "correctness": {
         "noUnusedVariables": "warn",
-        "noUnusedImports": "warn"
+        "noUnusedImports": "warn",
+        "useExhaustiveDependencies": "warn"
       },
       "style": {
         "noNonNullAssertion": "off",
@@ -22,6 +23,10 @@
       },
       "suspicious": {
         "noExplicitAny": "warn"
+      },
+      "a11y": {
+        "noAutofocus": "off",
+        "useSemanticElements": "off"
       }
     }
   },

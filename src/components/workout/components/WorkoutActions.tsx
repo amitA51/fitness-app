@@ -45,6 +45,113 @@ export interface UseWorkoutFinishReturn {
   SummaryOverlay: React.FC<{ onExit: () => void }>;
 }
 
+// Stable overlay components defined outside the hook to avoid new identity each render
+const FinishOverlayComponent: React.FC<{
+  onExit: () => void;
+  showFinishConfirm: boolean;
+  finishIntent: 'finish' | 'cancel';
+  workoutStats: WorkoutStats;
+  handleConfirmFinish: (item: PersonalItem) => Promise<unknown>;
+  handleCancelConfirm: () => void;
+  onCooldown: () => void;
+  isSaving: boolean;
+  saveError: string | null;
+}> = ({
+  onExit,
+  showFinishConfirm,
+  finishIntent,
+  workoutStats,
+  handleConfirmFinish,
+  handleCancelConfirm,
+  onCooldown,
+  isSaving,
+  saveError,
+}) => (
+  <Suspense fallback={null}>
+    <ConfirmExitOverlay
+      isOpen={showFinishConfirm}
+      intent={finishIntent}
+      workoutStats={workoutStats}
+      onConfirm={async () => {
+        const result = await handleConfirmFinish({} as PersonalItem);
+        if (result === 'cancel') {
+          onExit();
+        }
+      }}
+      onCancel={handleCancelConfirm}
+      onCooldown={onCooldown}
+      isSaving={isSaving}
+      saveError={saveError}
+    />
+  </Suspense>
+);
+
+const SummaryOverlayComponent: React.FC<{
+  onExit: () => void;
+  completedSession: WorkoutSession | null;
+}> = ({ onExit, completedSession }) => {
+  if (!completedSession) return null;
+
+  return (
+    <Suspense
+      fallback={
+        <div className="fixed inset-0 z-[9999] bg-[var(--fs-bg)] flex items-center justify-center">
+          <div className="text-white">תוצאות האימון...</div>
+        </div>
+      }
+    >
+      <WorkoutSummary
+        isOpen={true}
+        session={completedSession}
+        onClose={() => {
+          try {
+            localStorage.removeItem('active_workout_v3_state');
+          } catch {
+            /* ignore */
+          }
+          onExit();
+        }}
+        onSaveAsTemplate={async () => {
+          const defaultName = completedSession.exercises?.[0]?.name || 'My Workout';
+          await createWorkoutTemplate({
+            name: defaultName,
+            description: '',
+            exercises: (completedSession.exercises || []).map((ex, idx) => ({
+              id: ex.id || `ex_${idx}`,
+              exerciseId: ex.exerciseId || ex.id || `exercise_${idx}`,
+              exerciseName: ex.exerciseName || ex.name || 'Unknown',
+              targetMuscle: ex.muscleGroup || ex.targetMuscle || 'Other',
+              targetSets: ex.sets?.length || 4,
+              targetReps: 10,
+              targetWeight: null,
+              restSeconds: ex.targetRestTime || ex.restSeconds || 90,
+              order: idx,
+              notes: '',
+              name: ex.name,
+              muscleGroup: ex.muscleGroup,
+              targetRestTime: ex.targetRestTime,
+              tempo: ex.tempo,
+              sets: ex.sets?.map((s) => ({ reps: s.reps, weight: s.weight })),
+            })),
+            muscleGroups: Array.from(
+              new Set(
+                (completedSession.exercises || [])
+                  .map((e) => e.muscleGroup)
+                  .filter(Boolean) as string[]
+              )
+            ),
+            isBuiltin: false,
+            updatedAt: new Date().toISOString(),
+            lastUsed: null,
+            timesUsed: 0,
+            isFavorite: false,
+          });
+        }}
+      />
+    </Suspense>
+  );
+};
+
 export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
   const state = useWorkoutState();
   const dispatch = useWorkoutDispatch();
@@ -90,19 +197,19 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
         setShowFinishConfirm(false);
         setSaveError(null);
 
-        const saved = localStorage.getItem('active_workout_v3_state');
-        if (saved) {
-          try {
+        try {
+          const saved = localStorage.getItem('active_workout_v3_state');
+          if (saved) {
             const parsed = safeJsonParse<Record<string, unknown>>(saved);
             if (parsed) {
               parsed._completed = true;
               localStorage.setItem('active_workout_v3_state', JSON.stringify(parsed));
             }
-          } catch {
-            // If parsing fails, just remove it
           }
+          localStorage.removeItem('active_workout_v3_state');
+        } catch {
+          // Storage may be full or unavailable — continue
         }
-        localStorage.removeItem('active_workout_v3_state');
         return 'cancel';
       }
 
@@ -170,21 +277,21 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
           if (!wasSaved) {
             throw new Error('Session verification failed - session not found in database');
           }
-        } catch (verifyError) {
+        } catch {
           // Session may still be saved - continue without verification
         }
 
-        const saved = localStorage.getItem('active_workout_v3_state');
-        if (saved) {
-          try {
+        try {
+          const saved = localStorage.getItem('active_workout_v3_state');
+          if (saved) {
             const parsed = safeJsonParse<Record<string, unknown>>(saved);
             if (parsed) {
               parsed._completed = true;
               localStorage.setItem('active_workout_v3_state', JSON.stringify(parsed));
             }
-          } catch {
-            // If parsing fails, continue anyway
           }
+        } catch {
+          // Storage may be full or unavailable — continue
         }
 
         setCompletedSession(session);
@@ -205,89 +312,46 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
     setSaveError(null);
   }, []);
 
-  // Confirm Exit Overlay Component
-  const FinishOverlay: React.FC<{ onExit: () => void }> = ({ onExit }) => (
-    <Suspense fallback={null}>
-      <ConfirmExitOverlay
-        isOpen={showFinishConfirm}
-        intent={finishIntent}
-        workoutStats={workoutStats}
-        onConfirm={async () => {
-          const result = await handleConfirmFinish({} as PersonalItem);
-          if (result === 'cancel') {
-            onExit();
-          }
-        }}
-        onCancel={handleCancelConfirm}
-        onCooldown={() => {
-          setShowFinishConfirm(false);
-          dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'cooldown', isOpen: true } });
-        }}
-        isSaving={isSaving}
-        saveError={saveError}
-      />
-    </Suspense>
+  // Stable component references using useMemo to avoid remount
+  const FinishOverlay: React.FC<{ onExit: () => void }> = useMemo(
+    () =>
+      function FinishOverlayWrapper({ onExit }: { onExit: () => void }) {
+        return (
+          <FinishOverlayComponent
+            onExit={onExit}
+            showFinishConfirm={showFinishConfirm}
+            finishIntent={finishIntent}
+            workoutStats={workoutStats}
+            handleConfirmFinish={handleConfirmFinish}
+            handleCancelConfirm={handleCancelConfirm}
+            onCooldown={() => {
+              handleCancelConfirm();
+              dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'cooldown', isOpen: true } });
+            }}
+            isSaving={isSaving}
+            saveError={saveError}
+          />
+        );
+      },
+    [
+      showFinishConfirm,
+      finishIntent,
+      workoutStats,
+      handleConfirmFinish,
+      handleCancelConfirm,
+      dispatch,
+      isSaving,
+      saveError,
+    ]
   );
 
-  // Summary Overlay Component
-  const SummaryOverlay: React.FC<{ onExit: () => void }> = ({ onExit }) => {
-    if (!completedSession) return null;
-
-    return (
-      <Suspense
-        fallback={
-          <div className="fixed inset-0 z-[9999] bg-[var(--fs-bg)] flex items-center justify-center">
-            <div className="text-white">תוצאות האימון...</div>
-          </div>
-        }
-      >
-        <WorkoutSummary
-          isOpen={true}
-          session={completedSession}
-          onClose={() => {
-            localStorage.removeItem('active_workout_v3_state');
-            onExit();
-          }}
-          onSaveAsTemplate={async () => {
-            const defaultName = completedSession.exercises?.[0]?.name || 'My Workout';
-            await createWorkoutTemplate({
-              name: defaultName,
-              description: '',
-              exercises: (completedSession.exercises || []).map((ex, idx) => ({
-                id: ex.id || `ex_${idx}`,
-                exerciseId: ex.exerciseId || ex.id || `exercise_${idx}`,
-                exerciseName: ex.exerciseName || ex.name || 'Unknown',
-                targetMuscle: ex.muscleGroup || ex.targetMuscle || 'Other',
-                targetSets: ex.sets?.length || 4,
-                targetReps: 10,
-                targetWeight: null,
-                restSeconds: ex.targetRestTime || ex.restSeconds || 90,
-                order: idx,
-                notes: '',
-                name: ex.name,
-                muscleGroup: ex.muscleGroup,
-                targetRestTime: ex.targetRestTime,
-                tempo: ex.tempo,
-                sets: ex.sets?.map((s) => ({ reps: s.reps, weight: s.weight })),
-              })),
-              muscleGroups: Array.from(
-                new Set(
-                  (completedSession.exercises || [])
-                    .map((e) => e.muscleGroup)
-                    .filter(Boolean) as string[]
-                )
-              ),
-              isBuiltin: false,
-              updatedAt: new Date().toISOString(),
-              lastUsed: null,
-              timesUsed: 0,
-              isFavorite: false,
-            });
-          }}
-        />
-      </Suspense>
-    );
-  };
+  const SummaryOverlay: React.FC<{ onExit: () => void }> = useMemo(
+    () =>
+      function SummaryOverlayWrapper({ onExit }: { onExit: () => void }) {
+        return <SummaryOverlayComponent onExit={onExit} completedSession={completedSession} />;
+      },
+    [completedSession]
+  );
 
   return {
     state: {

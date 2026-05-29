@@ -357,8 +357,10 @@ export const Button: React.FC<ButtonProps> = ({
               : { fontFamily: 'var(--font-display)', borderRadius: 0 }),
         ...style,
       }}
-      // biome-ignore lint/suspicious/noExplicitAny: framer-motion button prop type conflicts with native button events
-      {...(props as any)}
+      {...(props as Omit<
+        React.ButtonHTMLAttributes<HTMLButtonElement>,
+        keyof import('framer-motion').MotionProps
+      >)}
     >
       {isLoading ? (
         // Navy/mustard spinner — sharp edges via border-current

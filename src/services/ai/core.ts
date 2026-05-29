@@ -159,6 +159,11 @@ export class RemoteProvider implements AIProvider {
   }
 
   private async invokeOnce(body: Record<string, unknown>): Promise<string> {
+    // NOTE: supabase-js functions.invoke() does not accept an AbortSignal.
+    // The AbortController here only races a timeout rejection against the
+    // invoke promise — the underlying HTTP request remains in-flight until
+    // the edge function completes or the connection drops. This is a known
+    // limitation; passing the signal will require a custom fetch wrapper.
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 

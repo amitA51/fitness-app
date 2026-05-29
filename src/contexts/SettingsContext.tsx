@@ -147,7 +147,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // twice, which would double-write to localStorage. Persistence is handled by
   // the effect below instead.
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
-    setSettings((prev) => mergeSettings({ ...prev, ...updates }));
+    setSettings((prev) => ({
+      ...prev,
+      ...updates,
+      workoutSettings: {
+        ...prev.workoutSettings,
+        ...(updates.workoutSettings ?? {}),
+      },
+    }));
   }, []);
 
   const updateWorkoutSettings = useCallback((updates: Partial<WorkoutSettings>) => {

@@ -26,7 +26,7 @@ import {
   User,
   Zap,
 } from 'lucide-react';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useId, useState } from 'react';
 
 // ============================================================================
 // TYPES
@@ -124,10 +124,19 @@ const MobileInput = memo(function MobileInput({
   inputMode,
   step,
 }: MobileInputProps) {
+  const [rawValue, setRawValue] = useState(value === '' ? '' : String(value));
+  const inputId = useId();
+
+  // Sync external value changes (e.g. parent reset)
+  useEffect(() => {
+    setRawValue(value === '' ? '' : String(value));
+  }, [value]);
+
   return (
     <div className="w-full">
       {label && (
         <label
+          htmlFor={inputId}
           className="block mb-2 px-1"
           style={{
             fontFamily: 'var(--font-mono)',
@@ -142,17 +151,26 @@ const MobileInput = memo(function MobileInput({
       )}
       <div className="relative">
         <input
+          id={inputId}
           type={type}
           inputMode={inputMode ?? (type === 'number' ? 'numeric' : 'text')}
           pattern={
             type === 'number' && (inputMode ?? 'numeric') === 'numeric' ? '[0-9]*' : undefined
           }
           step={step}
-          value={value}
+          value={type === 'number' ? rawValue : value}
           onChange={(e) => {
-            const val =
-              type === 'number' ? (e.target.value ? Number(e.target.value) : '') : e.target.value;
-            onChange(val);
+            if (type === 'number') {
+              setRawValue(e.target.value);
+            } else {
+              onChange(e.target.value);
+            }
+          }}
+          onBlur={() => {
+            if (type === 'number') {
+              const parsed = rawValue === '' ? '' : Number(rawValue);
+              onChange(parsed === '' || Number.isNaN(parsed as number) ? '' : parsed);
+            }
           }}
           placeholder={placeholder}
           min={min}
@@ -171,7 +189,7 @@ const MobileInput = memo(function MobileInput({
             e.currentTarget.style.borderColor = 'var(--fs-accent)';
             e.currentTarget.style.boxShadow = '0 0 0 3px rgba(67, 199, 165, 0.2)';
           }}
-          onBlur={(e) => {
+          onBlurCapture={(e) => {
             e.currentTarget.style.borderColor = 'var(--fs-surface-2)';
             e.currentTarget.style.boxShadow = 'none';
           }}
@@ -523,7 +541,7 @@ function ProfileStep({ data, onChange }: ProfileStepProps) {
 
         {/* Gender */}
         <div>
-          <label
+          <span
             className="block mb-3 px-1"
             style={{
               fontFamily: 'var(--font-mono)',
@@ -534,7 +552,7 @@ function ProfileStep({ data, onChange }: ProfileStepProps) {
             }}
           >
             מגדר
-          </label>
+          </span>
           <div className="flex gap-3">
             {(
               [
@@ -870,7 +888,7 @@ function ExperienceStep({ data, onChange }: ExperienceStepProps) {
 
         {/* Workout Days Selection */}
         <div className="mt-6">
-          <label
+          <span
             className="block mb-4 px-1"
             style={{
               fontFamily: 'var(--font-mono)',
@@ -881,7 +899,7 @@ function ExperienceStep({ data, onChange }: ExperienceStepProps) {
             }}
           >
             ימי אימון בשבוע
-          </label>
+          </span>
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory">
             {[1, 2, 3, 4, 5, 6, 7].map((day) => (
               <button
@@ -959,6 +977,7 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
         >
           <div className="flex items-center justify-between mb-3">
             <label
+              htmlFor="onboarding-duration"
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
@@ -981,6 +1000,7 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
             </span>
           </div>
           <input
+            id="onboarding-duration"
             type="range"
             min={30}
             max={120}
@@ -1014,7 +1034,7 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
 
         {/* Preferred Time */}
         <div>
-          <label
+          <span
             className="block mb-3 px-1"
             style={{
               fontFamily: 'var(--font-mono)',
@@ -1025,7 +1045,7 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
             }}
           >
             שעת אימון מועדפת
-          </label>
+          </span>
           <div className="flex gap-3">
             {(
               [
@@ -1063,7 +1083,7 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
         {/* Rest Between Sets - FS Stepper Style */}
         <div>
           <div className="flex items-center justify-between mb-3 px-1">
-            <label
+            <span
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
@@ -1073,7 +1093,7 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
               }}
             >
               מנוחה בין סטים
-            </label>
+            </span>
             <span
               style={{
                 fontFamily: '"Bricolage Grotesque", var(--font-display)',

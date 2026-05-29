@@ -1042,7 +1042,7 @@ export default function WorkoutDetail() {
                     ? `שיפור של ${formatVolume(session.totalVolume - previousSession.totalVolume)} ק"ג!`
                     : 'נסה להוסיף סט או להעלות משקל בפעם הבאה.'
                 }`
-              : `המשך לעקוב אחר ההתקדמות שלך לאורך זמן.`}
+              : 'המשך לעקוב אחר ההתקדמות שלך לאורך זמן.'}
           </p>
         </motion.div>
 

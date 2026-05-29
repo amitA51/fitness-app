@@ -29,7 +29,7 @@ export const RecoveryTab = memo(function RecoveryTab({
       setHistory(logs);
     };
     load();
-  }, []);
+  }, [todayRecovery]);
 
   const scoreColor = recoveryScore?.color ?? 'var(--fs-muted)';
   const scorePct = recoveryScore ? recoveryScore.score : 0;
@@ -169,7 +169,7 @@ export const RecoveryTab = memo(function RecoveryTab({
               </div>
             </div>
 
-            {todayRecovery && todayRecovery.tightAreas && todayRecovery.tightAreas.length > 0 && (
+            {todayRecovery?.tightAreas && todayRecovery.tightAreas.length > 0 && (
               <div className="pt-4" style={{ borderTop: '1px solid var(--fs-surface-2)' }}>
                 <p className="text-[11px]" style={{ color: 'var(--fs-muted)', marginBottom: 8 }}>
                   אזורים תפוסים

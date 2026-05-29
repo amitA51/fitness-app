@@ -26,6 +26,9 @@ export const AddWeightModal = memo(function AddWeightModal({
         className="w-full max-w-lg p-6"
         style={{ background: 'var(--fs-surface)', borderTop: '1px solid var(--fs-surface-2)' }}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="עדכון משקל"
       >
         <div className="flex justify-center mb-4">
           <div
@@ -53,8 +56,8 @@ export const AddWeightModal = memo(function AddWeightModal({
             type="button"
             onClick={onClose}
             style={{
-              width: '32px',
-              height: '32px',
+              width: '44px',
+              height: '44px',
               background: 'var(--fs-surface-2)',
               border: 'none',
               borderRadius: 0,
@@ -64,6 +67,7 @@ export const AddWeightModal = memo(function AddWeightModal({
               color: 'var(--fs-muted)',
               cursor: 'pointer',
             }}
+            aria-label="סגור"
           >
             <X size={17} />
           </button>
@@ -120,10 +124,13 @@ export const AddWeightModal = memo(function AddWeightModal({
           />
           <motion.button
             onClick={async () => {
-              if (!weight) return;
+              if (!weight || saving) return;
               setSaving(true);
-              await onSave(Number.parseFloat(weight), notes);
-              setSaving(false);
+              try {
+                await onSave(Number.parseFloat(weight), notes);
+              } finally {
+                setSaving(false);
+              }
             }}
             disabled={!weight || saving}
             style={{

@@ -169,7 +169,8 @@ export function useFitnessInsights(externalSessions?: WorkoutSession[]): Fitness
 
   const selectedExerciseDelta = useMemo(() => {
     if (!selectedExercise || sessions.length === 0) return null;
-    return getWeekOverWeekProgress(sessions);
+    const allDeltas = getWeekOverWeekProgress(sessions);
+    return allDeltas.filter((d) => d.exerciseName === selectedExercise);
   }, [sessions, selectedExercise]);
 
   useEffect(() => {

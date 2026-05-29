@@ -8,6 +8,7 @@ import type { Message } from '../../types/coach';
 import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
 import { requireClient, toMessage } from './mappers';
+import { sendCoachPush } from './pushService';
 
 export const getThread = async (coachId: string, clientId: string): Promise<Message[]> => {
   const supabase = requireClient();
@@ -41,6 +42,13 @@ export const sendMessage = async (
     sender_id: user.id,
     body: trimmed,
   });
+  if (!error) {
+    // Notify the other party with the app closed; deep-link to their thread view.
+    const senderIsCoach = user.id === coachId;
+    const recipient = senderIsCoach ? clientId : coachId;
+    const url = senderIsCoach ? `/my-coach/messages/${coachId}` : `/coach/messages/${clientId}`;
+    void sendCoachPush(recipient, 'הודעה חדשה', trimmed.slice(0, 140), url);
+  }
   return { error: error?.message ?? null };
 };
 

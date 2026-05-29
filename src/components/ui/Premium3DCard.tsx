@@ -1,6 +1,6 @@
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import type React from 'react';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 interface Premium3DCardProps {
   children: React.ReactNode;
@@ -37,33 +37,43 @@ export const Premium3DCard: React.FC<Premium3DCardProps> = ({
   const scale = useSpring(isHovered ? 1.05 : 1, { stiffness: 400, damping: 30 });
   const lift = useSpring(isHovered ? -10 : 0, { stiffness: 400, damping: 30 });
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!ref.current) return;
+  // Reactive glare position derived from motion values
+  const glareBackground = useTransform(
+    [mouseX, mouseY],
+    ([latestX, latestY]: number[]) =>
+      `radial-gradient(circle at ${50 + (latestX as number) * 100}% ${50 + (latestY as number) * 100}%, ${glareColor}, transparent 80%)`
+  );
 
-    const rect = ref.current.getBoundingClientRect();
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!ref.current) return;
 
-    // Calculate normalized position (-0.5 to 0.5)
-    const width = rect.width;
-    const height = rect.height;
-    const mouseXPos = e.clientX - rect.left;
-    const mouseYPos = e.clientY - rect.top;
+      const rect = ref.current.getBoundingClientRect();
 
-    const xPct = mouseXPos / width - 0.5;
-    const yPct = mouseYPos / height - 0.5;
+      // Calculate normalized position (-0.5 to 0.5)
+      const width = rect.width;
+      const height = rect.height;
+      const mouseXPos = e.clientX - rect.left;
+      const mouseYPos = e.clientY - rect.top;
 
-    x.set(xPct);
-    y.set(yPct);
-  };
+      const xPct = mouseXPos / width - 0.5;
+      const yPct = mouseYPos / height - 0.5;
 
-  const handleMouseLeave = () => {
+      x.set(xPct);
+      y.set(yPct);
+    },
+    [x, y]
+  );
+
+  const handleMouseLeave = useCallback(() => {
     setIsHovered(false);
     x.set(0);
     y.set(0);
-  };
+  }, [x, y]);
 
-  const handleMouseEnter = () => {
+  const handleMouseEnter = useCallback(() => {
     setIsHovered(true);
-  };
+  }, []);
 
   return (
     <motion.div
@@ -113,11 +123,7 @@ export const Premium3DCard: React.FC<Premium3DCardProps> = ({
           className="absolute inset-0 pointer-events-none"
           style={{
             borderRadius: 'var(--radius-asymmetric, 22px 16px 22px 16px)',
-            background: `radial-gradient(
-                            circle at ${50 + x.get() * 100}% ${50 + y.get() * 100}%,
-                            ${glareColor},
-                            transparent 80%
-                        )`,
+            background: glareBackground,
             transform: 'translateZ(1px)', // Sit slightly above background
             opacity: isHovered ? 1 : 0,
             transition: 'opacity 0.2s ease-out',

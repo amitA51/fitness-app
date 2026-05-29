@@ -54,7 +54,12 @@ const round = (value: number, decimals = 0): number => {
   return Math.round(value * factor) / factor;
 };
 
-const getDateKey = (date: Date): string => date.toISOString().split('T')[0] ?? '';
+const getDateKey = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
 
 const daysBetween = (latest: Date, earlierDateKey: string): number => {
   const latestMidnight = new Date(getDateKey(latest));
@@ -72,10 +77,11 @@ function getExerciseVolume(exercise: WorkoutExercise): number {
 }
 
 function getSessionVolume(session: WorkoutSession): number {
-  if (session.totalVolume > 0) {
-    return session.totalVolume;
-  }
-
+  // Prefer computing from working sets for consistent warmup exclusion.
+  // Fall back to the persisted session.totalVolume when no set data is
+  // populated (summary/legacy sessions) so volume isn't under-counted to 0.
+  const hasSetData = session.exercises.some((exercise) => exercise.sets.length > 0);
+  if (!hasSetData) return session.totalVolume ?? 0;
   return session.exercises.reduce((sum, exercise) => sum + getExerciseVolume(exercise), 0);
 }
 
@@ -272,7 +278,7 @@ export function calculateTrainingLoad(
       : null;
   const rpeFactor = averageRPE !== null ? averageRPE / 10 : 0.7;
   const acuteLoad = weeklyVolume * rpeFactor;
-  const acuteChronicRatio = chronicLoad > 0 ? acuteLoad / chronicLoad : acuteLoad > 0 ? 1.5 : 0;
+  const acuteChronicRatio = chronicLoad > 0 ? acuteLoad / chronicLoad : acuteLoad > 0 ? 1.0 : 0;
 
   const recoveryScore = latestRecoveryScore(recoveryLogs);
   const recoveryPenalty = recoveryScore !== null ? (100 - recoveryScore) * 0.45 : 8;

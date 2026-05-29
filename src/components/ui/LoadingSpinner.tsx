@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import React from 'react';
+import React, { useId } from 'react';
 
 type SpinnerVariant = 'default' | 'dots' | 'pulse' | 'orbit' | 'gradient' | 'wave';
 type SpinnerSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -155,7 +155,12 @@ const OrbitSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
 };
 
 // Premium gradient rotating ring with glow
-const GradientSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
+const GradientSpinner: React.FC<{ size: SpinnerSize; instanceId?: string }> = ({
+  size,
+  instanceId,
+}) => {
+  const fallbackId = useId();
+  const gradientId = `gradient-spinner-${instanceId || fallbackId}`;
   const sizeValue =
     size === 'xs' ? 16 : size === 'sm' ? 20 : size === 'md' ? 32 : size === 'lg' ? 48 : 64;
   const strokeWidth = size === 'xs' || size === 'sm' ? 2 : 3;
@@ -197,7 +202,7 @@ const GradientSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
         }}
       >
         <defs>
-          <linearGradient id="gradient-spinner" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="var(--fs-primary)" />
             <stop offset="100%" stopColor="var(--fs-accent)" />
           </linearGradient>
@@ -206,7 +211,7 @@ const GradientSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
           cx={sizeValue / 2}
           cy={sizeValue / 2}
           r={radius}
-          stroke="url(#gradient-spinner)"
+          stroke={`url(#${gradientId})`}
           strokeWidth={strokeWidth}
           fill="none"
           strokeLinecap="round"

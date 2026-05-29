@@ -26,7 +26,6 @@ html {
 }
 
 body {
-  background-color: var(--color-background);
   background: linear-gradient(135deg, var(--fs-body-overlay), transparent 44%),
     repeating-linear-gradient(90deg, var(--fs-grid-line) 0 1px, transparent 1px 28px),
     repeating-linear-gradient(0deg, var(--fs-grid-line) 0 1px, transparent 1px 28px),

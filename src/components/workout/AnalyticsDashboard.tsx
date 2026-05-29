@@ -147,29 +147,40 @@ const AnalyticsDashboard: React.FC = () => {
   const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
+    let cancelled = false;
     const loadAnalytics = async () => {
-      const workoutSessions = await getWorkoutSessions();
+      try {
+        const workoutSessions = await getWorkoutSessions();
+        if (cancelled) return;
 
-      const volume = calculateVolumeHistory(workoutSessions);
-      const avg = getAverageVolume(workoutSessions);
-      const streak = calculateStreak(workoutSessions);
-      const muscleGroups = calculateMuscleGroupDistribution(workoutSessions);
+        const volume = calculateVolumeHistory(workoutSessions);
+        const avg = getAverageVolume(workoutSessions);
+        const streak = calculateStreak(workoutSessions);
+        const muscleGroups = calculateMuscleGroupDistribution(workoutSessions);
 
-      const weekly = calculateWeeklyVolumes(workoutSessions, 12);
-      const balance = calculateMuscleBalance(workoutSessions, 12);
-      const forecast = forecastProgress(workoutSessions);
+        const weekly = calculateWeeklyVolumes(workoutSessions, 12);
+        const balance = calculateMuscleBalance(workoutSessions, 12);
+        const forecast = forecastProgress(workoutSessions);
 
-      setSessions(workoutSessions);
-      setVolumeData(volume);
-      setMuscleGroupData(muscleGroups);
-      setAvgVolume(avg);
-      setStreakInfo(streak);
-      setWeeklyVolumes(weekly);
-      setMuscleBalanceData(balance);
-      setForecastData(forecast);
-      setLoading(false);
+        if (cancelled) return;
+        setSessions(workoutSessions);
+        setVolumeData(volume);
+        setMuscleGroupData(muscleGroups);
+        setAvgVolume(avg);
+        setStreakInfo(streak);
+        setWeeklyVolumes(weekly);
+        setMuscleBalanceData(balance);
+        setForecastData(forecast);
+      } catch {
+        // Silently handle — dashboard shows empty state
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
     loadAnalytics();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const recentVolume = useMemo(() => volumeData.slice(-10), [volumeData]);

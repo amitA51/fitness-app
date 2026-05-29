@@ -6,6 +6,8 @@
 // other trainee-owned tables. No-ops gracefully when Supabase is unconfigured.
 
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
+import type { Message } from '../../types/coach';
+import { toMessage } from './mappers';
 
 type Unsubscribe = () => void;
 
@@ -35,9 +37,33 @@ export function subscribeToUserTable(
 }
 
 /**
- * Subscribe to assignments addressed to a trainee (direct) so the inbox updates
- * the moment a coach sends a program/note/announcement.
+ * Subscribe to a single coach<->client message thread. Fires `onMessage` with
+ * each newly inserted message so an open thread can append it live. Filters on
+ * `client_id` (a single realtime filter) and scopes to the coach in-callback.
  */
+export function subscribeToThread(
+  coachId: string,
+  clientId: string,
+  onMessage: (message: Message) => void
+): Unsubscribe {
+  if (!isSupabaseConfigured() || !supabase || !coachId || !clientId) return () => {};
+
+  const channel = supabase
+    .channel(`rt:messages:${coachId}:${clientId}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'messages', filter: `client_id=eq.${clientId}` },
+      (payload) => {
+        const row = payload.new as Record<string, unknown>;
+        if (row.coach_id === coachId) onMessage(toMessage(row));
+      }
+    )
+    .subscribe();
+
+  return () => {
+    void supabase?.removeChannel(channel);
+  };
+}
 export function subscribeToAssignments(clientId: string, onChange: () => void): Unsubscribe {
   if (!isSupabaseConfigured() || !supabase || !clientId) return () => {};
 

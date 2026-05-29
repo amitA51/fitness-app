@@ -35,7 +35,7 @@ const AnimatedCounter: React.FC<AnimatedCounterProps> = memo(
       const timer = setInterval(() => {
         step++;
         const progress = step / steps;
-        const eased = 1 - Math.pow(1 - progress, 3);
+        const eased = 1 - (1 - progress) ** 3;
         if (step >= steps) {
           setDisplayValue(value);
           clearInterval(timer);

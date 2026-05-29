@@ -3,7 +3,7 @@
  */
 
 import { AlertCircle } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useId } from 'react';
 import { cn } from '../../utils/styles';
 
 interface AnnualInputProps {
@@ -33,9 +33,11 @@ export const AnnualInput = memo(function AnnualInput({
   autoComplete,
   autoFocus,
 }: AnnualInputProps) {
+  const inputId = useId();
   return (
     <div className="w-full">
       <label
+        htmlFor={inputId}
         className="block mb-2"
         style={{
           fontFamily: 'var(--font-mono)',
@@ -57,6 +59,7 @@ export const AnnualInput = memo(function AnnualInput({
           </div>
         )}
         <input
+          id={inputId}
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}

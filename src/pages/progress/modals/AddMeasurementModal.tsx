@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
-import { memo, useMemo, useState } from 'react';
+import { memo, useId, useMemo, useState } from 'react';
 import type { BodyMeasurement } from '../../../services/bodyStatsService';
 
 export const AddMeasurementModal = memo(function AddMeasurementModal({
@@ -18,6 +18,8 @@ export const AddMeasurementModal = memo(function AddMeasurementModal({
   const [arms, setArms] = useState(latest?.arms?.toString() || '');
   const [thighs, setThighs] = useState(latest?.thighs?.toString() || '');
   const [neck, setNeck] = useState(latest?.neck?.toString() || '');
+  const [saving, setSaving] = useState(false);
+  const baseId = useId();
 
   const fields = useMemo(
     () => [
@@ -47,6 +49,9 @@ export const AddMeasurementModal = memo(function AddMeasurementModal({
         className="w-full max-w-lg p-6 max-h-[82vh] overflow-y-auto"
         style={{ background: 'var(--fs-surface)', borderTop: '1px solid var(--fs-surface-2)' }}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="עדכון מידות"
       >
         <div className="flex justify-center mb-4">
           <div
@@ -74,8 +79,8 @@ export const AddMeasurementModal = memo(function AddMeasurementModal({
             type="button"
             onClick={onClose}
             style={{
-              width: '32px',
-              height: '32px',
+              width: '44px',
+              height: '44px',
               background: 'var(--fs-surface-2)',
               border: 'none',
               borderRadius: 0,
@@ -85,6 +90,7 @@ export const AddMeasurementModal = memo(function AddMeasurementModal({
               color: 'var(--fs-muted)',
               cursor: 'pointer',
             }}
+            aria-label="סגור"
           >
             <X size={17} />
           </button>
@@ -93,6 +99,7 @@ export const AddMeasurementModal = memo(function AddMeasurementModal({
           {fields.map((f) => (
             <div key={f.label}>
               <label
+                htmlFor={`${baseId}-${f.label}`}
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: '11px',
@@ -105,6 +112,7 @@ export const AddMeasurementModal = memo(function AddMeasurementModal({
                 {f.label} (ס״מ)
               </label>
               <input
+                id={`${baseId}-${f.label}`}
                 type="number"
                 value={f.value}
                 onChange={(e) => f.setter(e.target.value)}
@@ -129,32 +137,40 @@ export const AddMeasurementModal = memo(function AddMeasurementModal({
         </div>
         <motion.button
           onClick={async () => {
-            await onSave({
-              date: new Date().toISOString().slice(0, 10),
-              chest: chest ? Number.parseFloat(chest) : undefined,
-              waist: waist ? Number.parseFloat(waist) : undefined,
-              hips: hips ? Number.parseFloat(hips) : undefined,
-              arms: arms ? Number.parseFloat(arms) : undefined,
-              thighs: thighs ? Number.parseFloat(thighs) : undefined,
-              neck: neck ? Number.parseFloat(neck) : undefined,
-              notes: '',
-            });
+            if (saving) return;
+            setSaving(true);
+            try {
+              await onSave({
+                date: new Date().toISOString().slice(0, 10),
+                chest: chest ? Number.parseFloat(chest) : undefined,
+                waist: waist ? Number.parseFloat(waist) : undefined,
+                hips: hips ? Number.parseFloat(hips) : undefined,
+                arms: arms ? Number.parseFloat(arms) : undefined,
+                thighs: thighs ? Number.parseFloat(thighs) : undefined,
+                neck: neck ? Number.parseFloat(neck) : undefined,
+                notes: '',
+              });
+            } finally {
+              setSaving(false);
+            }
           }}
+          disabled={saving}
           style={{
             width: '100%',
             padding: '16px',
             borderRadius: 0,
-            background: 'var(--fs-primary)',
-            color: 'var(--fs-accent)',
+            background: saving ? 'var(--fs-surface-2)' : 'var(--fs-primary)',
+            color: saving ? 'var(--fs-muted)' : 'var(--fs-accent)',
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
             fontSize: '16px',
             textTransform: 'uppercase',
             border: 'none',
-            cursor: 'pointer',
+            cursor: saving ? 'not-allowed' : 'pointer',
+            opacity: saving ? 0.4 : 1,
             marginTop: '20px',
           }}
-          whileTap={{ scale: 0.98 }}
+          whileTap={{ scale: saving ? 1 : 0.98 }}
         >
           שמור מידות
         </motion.button>

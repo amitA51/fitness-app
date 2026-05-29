@@ -2,6 +2,15 @@ import type { WorkoutSession } from '../types';
 import { buildContext, buildSystemPrompt } from './ai/contextBuilder';
 import { type ChatMessage, getAIProvider } from './ai/core';
 
+/** Sanitize user-derived text before embedding in prompts. */
+function sanitizeForPrompt(input: string, maxLength = 60): string {
+  return input
+    .replace(/[\r\n\t]/g, ' ')
+    .replace(/[^\p{L}\p{N}\p{Zs}\-_'"()]/gu, '')
+    .slice(0, maxLength)
+    .trim();
+}
+
 export async function generateAIWorkoutInsight(sessions: WorkoutSession[]): Promise<string> {
   if (sessions.length === 0) {
     return 'אין עדיין נתוני אימון. התחל להתאמן כדי לקבל תובנות מותאמות אישית!';
@@ -20,7 +29,7 @@ export async function generateAIWorkoutInsight(sessions: WorkoutSession[]): Prom
 - שינוי נפח שבועי: ${context.volumeChangePercent}%
 - ציון מוכנות מתמטי: ${context.readinessScore}/100
 - מגבלה מרכזית: ${context.primaryConstraint}
-- שרירים חלשים: ${context.weakMuscles.join(', ') || 'אין'}
+- שרירים חלשים: ${context.weakMuscles.map(sanitizeForPrompt).join(', ') || 'אין'}
 - רצף: ${context.streakDays} ימים`,
     },
   ];

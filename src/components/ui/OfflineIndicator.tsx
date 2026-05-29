@@ -16,7 +16,11 @@ export function OfflineIndicator() {
     };
   }, []);
 
+  const shouldPoll = isOffline || queueDepth > 0;
+
   useEffect(() => {
+    if (!shouldPoll) return;
+
     let active = true;
 
     const poll = async () => {
@@ -34,7 +38,7 @@ export function OfflineIndicator() {
       active = false;
       clearInterval(id);
     };
-  }, []);
+  }, [shouldPoll]);
 
   if (!isOffline && queueDepth === 0) return null;
 

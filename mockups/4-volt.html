@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 · VOLT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Archivo+Narrow:wght@600;700&family=Heebo:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --bg: #121315;
+  --bg-2: #0C0D0E;
+  --surface: #1B1D20;
+  --surface-2: #232529;
+  --border: #2C2F34;
+  --text: #F4F5F3;
+  --text-2: #9DA1A4;
+  --text-3: #61656A;
+  --volt: #D4FF3D;
+  --volt-d: #B8E61F;
+  --font: 'Archivo', 'Heebo', sans-serif;
+  --cond: 'Archivo Narrow', 'Heebo', sans-serif;
+  --he: 'Heebo', sans-serif;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  max-width: 412px; margin: 0 auto; min-height: 100vh;
+  position: relative; overflow-x: hidden;
+}
+.svg-icon { width: 22px; height: 22px; display: block; }
+.fade { opacity: 0; transform: translateY(10px); animation: fade .6s cubic-bezier(.2,.7,.3,1) forwards; }
+@keyframes fade { to { opacity: 1; transform: none; } }
+.up { font-family: var(--font); font-weight: 900; font-style: italic; letter-spacing: -.01em; text-transform: uppercase; }
+
+/* topbar */
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand .mk { width: 34px; height: 34px; background: var(--volt); border-radius: 9px; display: flex; align-items: center; justify-content: center; transform: skewX(-6deg); }
+.brand .nm { font-family: var(--font); font-weight: 900; font-style: italic; font-size: 20px; letter-spacing: .02em; text-transform: uppercase; }
+.icon-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); color: var(--text-2); display: flex; align-items: center; justify-content: center; }
+
+.page { padding: 8px 20px 120px; }
+
+/* hero */
+.hero { position: relative; padding: 8px 0 18px; }
+.hero-eyebrow { font-family: var(--cond); font-weight: 700; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--text-2); display: flex; align-items: center; gap: 8px; }
+.hero-eyebrow .tick-up { color: var(--volt); }
+.hero-num { font-family: var(--font); font-weight: 900; font-style: italic; font-size: 100px; line-height: .82; letter-spacing: -.045em; margin: 8px 0 0; }
+.hero-num span { color: var(--volt); }
+.hero-base { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.hero-base .u { font-family: var(--cond); font-weight: 700; font-size: 16px; letter-spacing: .18em; text-transform: uppercase; color: var(--text-2); }
+.hero-base .d { font-family: var(--font); font-weight: 800; font-size: 13px; color: var(--bg); background: var(--volt); padding: 3px 9px; border-radius: 6px; transform: skewX(-6deg); }
+
+/* meter */
+.meter { margin-top: 16px; height: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; position: relative; }
+.meter i { display: block; height: 100%; width: 67%; background: repeating-linear-gradient(-45deg, var(--volt), var(--volt) 6px, var(--volt-d) 6px, var(--volt-d) 12px); }
+.meter-l { display: flex; justify-content: space-between; margin-top: 7px; font-family: var(--cond); font-weight: 600; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
+
+/* stat strip */
+.strip { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2px; margin-top: 18px; background: var(--border); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.cell-s { background: var(--surface); padding: 16px 12px; text-align: center; }
+.cell-s b { font-family: var(--font); font-weight: 900; font-style: italic; font-size: 30px; letter-spacing: -.03em; display: block; }
+.cell-s span { font-family: var(--cond); font-weight: 600; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-2); margin-top: 3px; display: block; }
+
+/* next */
+.next { margin-top: 18px; background: var(--volt); border-radius: 18px; padding: 20px; position: relative; overflow: hidden; color: var(--bg-2); }
+.next::after { content: ''; position: absolute; right: -30px; bottom: -40px; width: 150px; height: 150px; border: 14px solid rgba(0,0,0,.07); border-radius: 50%; }
+.next-tag { font-family: var(--cond); font-weight: 700; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; opacity: .7; }
+.next-title { font-family: var(--font); font-weight: 900; font-style: italic; font-size: 32px; letter-spacing: -.02em; text-transform: uppercase; margin: 4px 0 2px; }
+.next-sub { font-family: var(--he); font-weight: 500; font-size: 13px; opacity: .8; margin-bottom: 16px; }
+.next-btn { position: relative; width: 100%; background: var(--bg-2); color: var(--volt); border: none; cursor: pointer; font-family: var(--font); font-weight: 800; font-style: italic; font-size: 15px; text-transform: uppercase; letter-spacing: .04em; padding: 16px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+/* section */
+.sec { display: flex; justify-content: space-between; align-items: center; margin: 26px 2px 14px; }
+.sec h3 { font-family: var(--font); font-weight: 900; font-style: italic; font-size: 18px; text-transform: uppercase; letter-spacing: -.01em; }
+.sec a { font-family: var(--cond); font-weight: 700; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-2); }
+
+.row { display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; position: relative; }
+.row-n { font-family: var(--font); font-weight: 900; font-style: italic; font-size: 18px; color: var(--text-3); width: 26px; }
+.row-main { flex: 1; min-width: 0; }
+.row-name { font-family: var(--font); font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+.row-meta { font-family: var(--cond); font-weight: 600; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); margin-top: 3px; }
+.row-vol { text-align: left; }
+.row-vol b { font-family: var(--font); font-weight: 900; font-style: italic; font-size: 17px; }
+.row-vol span { font-family: var(--cond); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); display: block; }
+.pr { font-family: var(--font); font-weight: 800; font-size: 10px; font-style: italic; color: var(--bg); background: var(--volt); padding: 2px 7px; border-radius: 5px; transform: skewX(-6deg); }
+
+.sep { text-align: center; padding: 24px; font-family: var(--cond); font-weight: 700; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--text-3); }
+
+/* active */
+.aw-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.aw-t { display: flex; align-items: center; gap: 12px; }
+.aw-t .bar { width: 5px; height: 38px; background: var(--volt); border-radius: 3px; }
+.aw-t b { font-family: var(--font); font-weight: 900; font-style: italic; font-size: 28px; letter-spacing: -.02em; }
+.aw-t span { font-family: var(--cond); font-weight: 600; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-2); display: block; }
+.aw-end { font-family: var(--font); font-weight: 800; font-style: italic; font-size: 13px; text-transform: uppercase; color: var(--bg); background: var(--volt); border: none; padding: 11px 16px; border-radius: 10px; }
+
+.prog { display: flex; gap: 4px; padding: 14px 20px 0; }
+.prog i { flex: 1; height: 5px; border-radius: 2px; background: var(--surface-2); }
+.prog i.on { background: var(--volt); }
+
+.ex { margin: 14px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.ex-head { display: flex; justify-content: space-between; align-items: center; padding: 18px; border-bottom: 1px solid var(--border); }
+.ex-head h4 { font-family: var(--font); font-weight: 900; font-style: italic; font-size: 22px; text-transform: uppercase; letter-spacing: -.02em; }
+.ex-head h4 small { font-family: var(--he); font-weight: 500; font-style: normal; font-size: 12px; color: var(--text-2); display: block; text-transform: none; letter-spacing: 0; }
+.ex-pos { font-family: var(--font); font-weight: 900; font-style: italic; font-size: 14px; color: var(--volt); }
+.set-grid { padding: 6px 14px 10px; }
+.sh { display: grid; grid-template-columns: 34px 1fr 1fr 46px; gap: 10px; padding: 10px 6px; }
+.sh span { font-family: var(--cond); font-weight: 700; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); text-align: center; }
+.sr { display: grid; grid-template-columns: 34px 1fr 1fr 46px; gap: 10px; align-items: center; padding: 6px; }
+.sn { font-family: var(--font); font-weight: 900; font-style: italic; font-size: 16px; color: var(--text-3); text-align: center; }
+.cell { background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px; padding: 13px 0; text-align: center; font-family: var(--font); font-weight: 800; font-size: 17px; color: var(--text); }
+.cell.live { border-color: var(--volt); color: var(--volt); box-shadow: 0 0 0 3px rgba(212,255,61,.14); }
+.cell.ghost { color: var(--text-3); font-weight: 600; }
+.tick { width: 38px; height: 38px; border-radius: 10px; margin: 0 auto; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--text-3); }
+.tick.on { background: var(--volt); border-color: var(--volt); color: var(--bg-2); }
+.addset { margin: 4px 6px 12px; width: calc(100% - 12px); background: transparent; border: 1px dashed var(--border); color: var(--text-2); font-family: var(--cond); font-weight: 700; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; padding: 13px; border-radius: 10px; cursor: pointer; }
+
+.nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 412px; display: flex; justify-content: space-around; padding: 12px 14px 26px; background: var(--bg-2); border-top: 1px solid var(--border); }
+.nav-i { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--text-3); flex: 1; }
+.nav-i span { font-family: var(--cond); font-weight: 600; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.nav-i.on { color: var(--text); }
+.nav-i.on .svg-icon { color: var(--volt); }
+</style>
+</head>
+<body>
+
+<!-- DASHBOARD -->
+<header class="topbar">
+  <div class="brand">
+    <div class="mk"><svg class="svg-icon" style="width:20px;height:20px;color:#121315" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg></div>
+    <div class="nm">VOLT</div>
+  </div>
+  <button class="icon-btn"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .3 1.9M4.6 10.5a1.7 1.7 0 0 0-.3-1.9M12 3v2M12 19v2M5 5l1.4 1.4M17.6 17.6 19 19M3 12h2M19 12h2M5 19l1.4-1.4M17.6 6.4 19 5"/></svg></button>
+</header>
+
+<main class="page">
+  <section class="hero fade">
+    <div class="hero-eyebrow">נפח שבועי <span class="tick-up">▲ +4.2%</span></div>
+    <div class="hero-num">12.4<span>K</span></div>
+    <div class="hero-base"><span class="u">קילוגרם</span><span class="d">שיא עונה</span></div>
+    <div class="meter"><i></i></div>
+    <div class="meter-l"><span>יעד 18.5K</span><span>67%</span></div>
+  </section>
+
+  <div class="strip fade" style="animation-delay:.08s">
+    <div class="cell-s"><b>04</b><span>אימונים</span></div>
+    <div class="cell-s"><b>18</b><span>רצף ימים</span></div>
+    <div class="cell-s"><b>03</b><span>שיאים</span></div>
+  </div>
+
+  <section class="next fade" style="animation-delay:.14s">
+    <div class="next-tag">// האימון הבא</div>
+    <div class="next-title">Push Day</div>
+    <div class="next-sub">יום דחיפה · 6 תרגילים · כ-50 דקות</div>
+    <button class="next-btn">
+      <svg class="svg-icon" style="width:16px;height:16px" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5Z"/></svg>
+      התחל אימון
+    </button>
+  </section>
+
+  <div class="sec fade" style="animation-delay:.2s"><h3>היסטוריה</h3><a>הצג הכל →</a></div>
+
+  <div class="row fade" style="animation-delay:.22s">
+    <div class="row-n">01</div>
+    <div class="row-main"><div class="row-name">Pull Day</div><div class="row-meta">אתמול · 52:10</div></div>
+    <div class="row-vol"><b>8,240</b><span>ק"ג</span></div>
+  </div>
+  <div class="row fade" style="animation-delay:.26s">
+    <div class="row-n">02</div>
+    <div class="row-main"><div class="row-name">Push Day <span class="pr">PR</span></div><div class="row-meta">27.05 · 48:30</div></div>
+    <div class="row-vol"><b>9,100</b><span>ק"ג</span></div>
+  </div>
+  <div class="row fade" style="animation-delay:.3s">
+    <div class="row-n">03</div>
+    <div class="row-main"><div class="row-name">Leg Day</div><div class="row-meta">26.05 · 55:00</div></div>
+    <div class="row-vol"><b>11,500</b><span>ק"ג</span></div>
+  </div>
+</main>
+
+<!-- ACTIVE -->
+<div class="sep">// מסך אימון פעיל</div>
+
+<header class="aw-head">
+  <div class="aw-t"><div class="bar"></div><div><span>זמן פעיל</span><b>23:45</b></div></div>
+  <button class="aw-end">סיום</button>
+</header>
+<div class="prog"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+
+<section class="ex">
+  <div class="ex-head">
+    <h4>Bench Press<small>לחיצת חזה</small></h4>
+    <div class="ex-pos">02/06</div>
+  </div>
+  <div class="set-grid">
+    <div class="sh"><span>סט</span><span>משקל</span><span>חזרות</span><span></span></div>
+    <div class="sr"><div class="sn">1</div><div class="cell">80</div><div class="cell">10</div><div class="tick on"><svg class="svg-icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
+    <div class="sr"><div class="sn">2</div><div class="cell">85</div><div class="cell">8</div><div class="tick on"><svg class="svg-icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
+    <div class="sr"><div class="sn">3</div><div class="cell live">90</div><div class="cell ghost">—</div><div class="tick"></div></div>
+    <div class="sr"><div class="sn">4</div><div class="cell ghost">90</div><div class="cell ghost">—</div><div class="tick"></div></div>
+  </div>
+  <button class="addset">+ הוסף סט</button>
+</section>
+
+<nav class="nav">
+  <div class="nav-i on"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>בית</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>התקדמות</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>תבניות</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg><span>מאמן</span></div>
+</nav>
+
+</body>
+</html>

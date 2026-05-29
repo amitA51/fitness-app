@@ -1,6 +1,5 @@
 import { supabase } from '../lib/supabase';
 import { todayStr } from '../utils/dateUtils';
-import { generateId } from '../utils/id';
 import { STORES, dbGetAll, dbPut } from './indexedDBCore';
 import { syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
@@ -25,7 +24,7 @@ export function getGlassSize(): number {
 
 export async function addWaterEntry(amountMl: number): Promise<WaterEntry> {
   const entry: WaterEntry = {
-    id: generateId('water', 5),
+    id: crypto.randomUUID(),
     date: todayStr(),
     amountMl,
     createdAt: new Date().toISOString(),

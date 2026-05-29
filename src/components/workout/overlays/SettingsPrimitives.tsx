@@ -57,6 +57,8 @@ export const Toggle = memo<{
 }>(({ label, description, value, onChange }) => (
   <button
     type="button"
+    role="switch"
+    aria-checked={value}
     onClick={() => {
       triggerSettingsHaptic();
       onChange(!value);
@@ -98,6 +100,7 @@ export const ChipSelector = memo<{
         <button
           key={opt.value}
           type="button"
+          aria-pressed={value === opt.value}
           onClick={() => {
             triggerSettingsHaptic();
             onChange(opt.value);
@@ -126,29 +129,34 @@ export const SliderSetting = memo<{
   step?: number;
   unit?: string;
   onChange: (v: number) => void;
-}>(({ label, description, value, min, max, step = 1, unit = '', onChange }) => (
-  <div className="py-4">
-    <div className="flex justify-between items-center mb-3">
-      <div className="text-start">
-        <div className="text-[15px] text-white font-medium">{label}</div>
-        {description && <div className="text-[13px] text-white/50 mt-0.5">{description}</div>}
+}>(({ label, description, value, min, max, step = 1, unit = '', onChange }) => {
+  const sliderId = `slider-${label.replace(/\s+/g, '-')}`;
+  return (
+    <div className="py-4">
+      <div className="flex justify-between items-center mb-3">
+        <div className="text-start">
+          <div id={sliderId} className="text-[15px] text-white font-medium">
+            {label}
+          </div>
+          {description && <div className="text-[13px] text-white/50 mt-0.5">{description}</div>}
+        </div>
+        <div className="text-[15px] text-[var(--fs-accent)] font-bold tabular-nums">
+          {value}
+          {unit}
+        </div>
       </div>
-      <div className="text-[15px] text-[var(--fs-accent)] font-bold tabular-nums">
-        {value}
-        {unit}
-      </div>
-    </div>
-    <input
-      type="range"
-      min={min}
-      max={max}
-      step={step}
-      value={value}
-      onChange={(e) => {
-        triggerSettingsHaptic();
-        onChange(Number(e.target.value));
-      }}
-      className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        aria-labelledby={sliderId}
+        onChange={(e) => {
+          triggerSettingsHaptic();
+          onChange(Number(e.target.value));
+        }}
+        className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer
                 [&::-webkit-slider-thumb]:appearance-none
                 [&::-webkit-slider-thumb]:w-6
                 [&::-webkit-slider-thumb]:h-6
@@ -156,9 +164,10 @@ export const SliderSetting = memo<{
                 [&::-webkit-slider-thumb]:bg-[var(--fs-accent)]
                 [&::-webkit-slider-thumb]:shadow-md
                 [&::-webkit-slider-thumb]:cursor-pointer"
-    />
-  </div>
-));
+      />
+    </div>
+  );
+});
 SliderSetting.displayName = 'SliderSetting';
 
 /** Goal Selector */
@@ -173,6 +182,7 @@ export const GoalSelector = memo<{ value: string; onChange: (v: string) => void 
             <button
               key={goal.id}
               type="button"
+              aria-pressed={isActive}
               onClick={() => {
                 triggerSettingsHaptic();
                 onChange(goal.id);

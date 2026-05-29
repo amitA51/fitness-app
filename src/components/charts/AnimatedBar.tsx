@@ -72,6 +72,7 @@ export const AnimatedBar = memo(function AnimatedBar({
         className={trackClassName}
         style={{ height, position: 'relative', overflow: 'hidden' }}
         role="progressbar"
+        tabIndex={0}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(safeValue)}

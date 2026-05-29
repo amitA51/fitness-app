@@ -6,9 +6,11 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
   const [recentPRs, setRecentPRs] = useState<PersonalRecord[]>([]);
 
   useEffect(() => {
+    let mounted = true;
     async function load() {
       try {
         const all = await getAllPRs();
+        if (!mounted) return;
         const now = Date.now();
         const sevenDaysAgo = now - 7 * 86400000;
         const recent = all
@@ -17,10 +19,13 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
           .slice(0, 3);
         setRecentPRs(recent);
       } catch {
-        setRecentPRs([]);
+        if (mounted) setRecentPRs([]);
       }
     }
     load();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   if (recentPRs.length === 0) return null;

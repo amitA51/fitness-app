@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 · AXIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+:root, :root[data-theme="dark"] {
+  --bg: #0A0C10;
+  --bg-grad: radial-gradient(130% 80% at 80% -10%, #16213A 0%, transparent 50%), radial-gradient(120% 70% at 0% 0%, #1A1530 0%, transparent 45%), #0A0C10;
+  --surface: #11151C;
+  --surface-2: #161B24;
+  --raised: #1B212C;
+  --border: #20262F;
+  --border-2: #2A323E;
+  --text: #EEF1F5;
+  --text-2: #98A2B0;
+  --text-3: #5A6472;
+  --accent: #5B8CFF;
+  --accent-2: #8B7BFF;
+  --accent-soft: rgba(91,140,255,.14);
+  --good: #34D399;
+  --gold: #F5B544;
+  --sh-card: 0 1px 0 rgba(255,255,255,.04) inset, 0 2px 6px rgba(0,0,0,.4), 0 16px 40px -16px rgba(0,0,0,.7);
+  --sh-raise: 0 1px 0 rgba(255,255,255,.05) inset, 0 8px 24px -8px rgba(0,0,0,.6);
+  --grain-op: .03;
+}
+:root[data-theme="light"] {
+  --bg: #EEF0F4;
+  --bg-grad: radial-gradient(130% 80% at 85% -10%, #E0E7FF 0%, transparent 50%), radial-gradient(120% 70% at 0% 0%, #EDE9FE 0%, transparent 45%), #EEF0F4;
+  --surface: #FFFFFF;
+  --surface-2: #F7F8FB;
+  --raised: #FFFFFF;
+  --border: #E5E8EE;
+  --border-2: #D9DEE6;
+  --text: #0E1320;
+  --text-2: #5A6472;
+  --text-3: #9AA3B2;
+  --accent: #3B5BDB;
+  --accent-2: #6D4BD6;
+  --accent-soft: rgba(59,91,219,.1);
+  --good: #0CA678;
+  --gold: #E08A00;
+  --sh-card: 0 1px 2px rgba(16,24,40,.04), 0 12px 30px -12px rgba(16,24,40,.16);
+  --sh-raise: 0 8px 24px -10px rgba(16,24,40,.18);
+  --grain-op: 0;
+}
+
+body {
+  font-family: 'Hanken Grotesk', 'Rubik', sans-serif;
+  background: var(--bg-grad); background-attachment: fixed;
+  color: var(--text);
+  max-width: 412px; margin: 0 auto; min-height: 100vh;
+  position: relative; overflow-x: hidden;
+  transition: background .4s, color .3s;
+}
+body::before { content:''; position: fixed; inset: 0; max-width: 412px; left: 50%; transform: translateX(-50%); z-index: 0; pointer-events: none; opacity: var(--grain-op);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.wrap { position: relative; z-index: 1; }
+.svg-icon { width: 22px; height: 22px; display: block; }
+.mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+.fade { opacity: 0; transform: translateY(12px); animation: fade .65s cubic-bezier(.2,.7,.3,1) forwards; }
+@keyframes fade { to { opacity: 1; transform: none; } }
+
+/* topbar */
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px 12px; }
+.brand { display: flex; align-items: center; gap: 11px; }
+.brand .mk { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(140deg, var(--accent), var(--accent-2)); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px -4px var(--accent-soft), inset 0 1px 0 rgba(255,255,255,.3); }
+.brand .nm { font-weight: 800; font-size: 18px; letter-spacing: -.01em; }
+.tb-actions { display: flex; gap: 10px; }
+.icon-btn { width: 40px; height: 40px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text-2); display: flex; align-items: center; justify-content: center; box-shadow: var(--sh-raise); cursor: pointer; }
+.icon-btn:active { transform: scale(.94); }
+.moon { display: block; } .sun { display: none; }
+[data-theme="light"] .moon { display: none; } [data-theme="light"] .sun { display: block; }
+
+.page { padding: 10px 16px 124px; }
+.kicker { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); margin: 8px 4px 14px; display:flex; align-items:center; gap:8px; }
+.kicker::before { content:''; width:6px; height:6px; border-radius:2px; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+
+/* HERO with ring */
+.hero { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 22px; box-shadow: var(--sh-card); display: flex; gap: 18px; align-items: center; }
+.ring-wrap { position: relative; width: 128px; height: 128px; flex-shrink: 0; }
+.ring-wrap svg { transform: rotate(-90deg); }
+.ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ring-center b { font-size: 28px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+.ring-center b small { font-size: 13px; color: var(--text-3); font-weight: 600; }
+.ring-center span { font-family:'IBM Plex Mono',monospace; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); margin-top: 3px; }
+.hero-side { flex: 1; }
+.hero-side .lab { font-size: 12.5px; color: var(--text-2); }
+.hero-side .big { font-size: 30px; font-weight: 800; letter-spacing: -.03em; margin: 4px 0 2px; }
+.hero-side .big small { font-size: 14px; color: var(--text-3); font-weight: 600; }
+.chip-good { display: inline-flex; align-items: center; gap: 5px; font-family:'IBM Plex Mono',monospace; font-size: 11px; font-weight: 600; color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); padding: 4px 9px; border-radius: 8px; margin-top: 8px; }
+
+/* micro stats row */
+.mstats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 12px; }
+.mstat { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; box-shadow: var(--sh-card); }
+.mstat .t { display: flex; align-items: center; gap: 6px; color: var(--text-3); }
+.mstat .t .svg-icon { width: 15px; height: 15px; }
+.mstat .t span { font-size: 10.5px; color: var(--text-2); }
+.mstat b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; display: block; margin-top: 8px; }
+.mstat b i { font-style: normal; font-size: 12px; color: var(--text-3); font-weight: 600; }
+
+/* heatmap card */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 18px; box-shadow: var(--sh-card); margin-top: 12px; }
+.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.card-head h3 { font-size: 14.5px; font-weight: 700; }
+.card-head .meta { font-family:'IBM Plex Mono',monospace; font-size: 11px; color: var(--text-3); }
+.heat { display: flex; justify-content: space-between; gap: 7px; }
+.heat .day { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.heat .cell { width: 100%; aspect-ratio: 1; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); }
+.heat .cell.l1 { background: color-mix(in srgb, var(--accent) 28%, transparent); border-color: transparent; }
+.heat .cell.l2 { background: color-mix(in srgb, var(--accent) 55%, transparent); border-color: transparent; }
+.heat .cell.l3 { background: var(--accent); border-color: transparent; box-shadow: 0 4px 12px -2px var(--accent-soft); }
+.heat .cell.today { outline: 2px solid var(--gold); outline-offset: 2px; }
+.heat .dl { font-family:'IBM Plex Mono',monospace; font-size: 10px; color: var(--text-3); }
+
+/* muscle balance */
+.bars { display: flex; flex-direction: column; gap: 12px; }
+.bar-row { display: grid; grid-template-columns: 64px 1fr 38px; gap: 10px; align-items: center; }
+.bar-row .bl { font-size: 12px; color: var(--text-2); }
+.bar-track { height: 8px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.bar-val { font-family:'IBM Plex Mono',monospace; font-size: 11px; color: var(--text-2); text-align: left; }
+
+/* next session */
+.next { margin-top: 12px; border-radius: 22px; padding: 20px; position: relative; overflow: hidden;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--accent) 22%, var(--surface)) 0%, var(--surface) 60%);
+  border: 1px solid var(--border-2); box-shadow: var(--sh-card); }
+.next::after { content:''; position: absolute; top: -50px; left: -30px; width: 180px; height: 180px; background: radial-gradient(circle, var(--accent-soft), transparent 65%); }
+.next-tag { font-family:'IBM Plex Mono',monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); position: relative; }
+.next-title { font-size: 23px; font-weight: 800; letter-spacing: -.02em; margin: 7px 0 12px; position: relative; }
+.chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 18px; position: relative; }
+.chip { font-size: 11.5px; color: var(--text-2); background: var(--surface-2); border: 1px solid var(--border); padding: 6px 11px; border-radius: 9px; }
+.btn { position: relative; width: 100%; border: none; cursor: pointer; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; font-family: inherit; font-size: 15px; font-weight: 700; padding: 16px; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 9px; box-shadow: 0 10px 28px -8px var(--accent-soft), inset 0 1px 0 rgba(255,255,255,.25); }
+.btn:active { transform: scale(.98); }
+
+/* list */
+.row { display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 10px; box-shadow: var(--sh-card); }
+.row-ic { width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0; background: var(--surface-2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--accent); }
+.row-main { flex: 1; min-width: 0; }
+.row-name { font-size: 14.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.row-meta { font-family:'IBM Plex Mono',monospace; font-size: 11px; color: var(--text-3); margin-top: 3px; }
+.row-vol b { font-family:'IBM Plex Mono',monospace; font-size: 14px; font-weight: 600; }
+.row-vol span { font-size: 10px; color: var(--text-3); display: block; text-align: left; }
+.pr { font-family:'IBM Plex Mono',monospace; font-size: 9px; font-weight: 600; color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); padding: 1px 6px; border-radius: 5px; }
+
+.sep { text-align: center; padding: 26px; font-family:'IBM Plex Mono',monospace; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--text-3); }
+
+/* active */
+.aw-head { display: flex; justify-content: space-between; align-items: center; margin: 8px 16px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--sh-card); }
+.aw-t { display: flex; align-items: center; gap: 14px; }
+.aw-ring { width: 44px; height: 44px; position: relative; }
+.aw-ring svg { transform: rotate(-90deg); }
+.aw-ring span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family:'IBM Plex Mono',monospace; font-size: 10px; color: var(--accent); }
+.aw-t b { font-family:'IBM Plex Mono',monospace; font-size: 23px; font-weight: 600; letter-spacing: -.02em; }
+.aw-t small { font-family:'IBM Plex Mono',monospace; font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); display: block; }
+.aw-end { font-weight: 700; font-size: 13px; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; padding: 11px 17px; border-radius: 12px; box-shadow: var(--sh-raise); }
+
+.ex { margin: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--sh-card); overflow: hidden; }
+.ex-head { padding: 18px; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); }
+.ex-head h4 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+.ex-head h4 small { display: block; font-size: 12px; color: var(--text-2); font-weight: 500; margin-top: 2px; }
+.ex-prev { text-align: left; }
+.ex-prev .pv { font-family:'IBM Plex Mono',monospace; font-size: 11px; color: var(--text-3); }
+.ex-prev .tg { font-family:'IBM Plex Mono',monospace; font-size: 12px; color: var(--accent); background: var(--accent-soft); padding: 4px 8px; border-radius: 7px; margin-top: 5px; display: inline-block; }
+.ex-tally { display: flex; justify-content: space-between; padding: 12px 18px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+.ex-tally div { text-align: center; }
+.ex-tally .v { font-family:'IBM Plex Mono',monospace; font-size: 15px; font-weight: 600; }
+.ex-tally .k { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+.set-grid { padding: 8px 14px 6px; }
+.sh, .sr { display: grid; grid-template-columns: 30px 1fr 1fr 52px 44px; gap: 8px; align-items: center; }
+.sh { padding: 8px 6px; }
+.sh span { font-family:'IBM Plex Mono',monospace; font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); text-align: center; }
+.sr { padding: 5px 6px; }
+.sn { font-family:'IBM Plex Mono',monospace; font-size: 12px; color: var(--text-3); text-align: center; }
+.cell { background: var(--bg); border: 1px solid var(--border-2); border-radius: 11px; padding: 12px 0; text-align: center; font-family:'IBM Plex Mono',monospace; font-size: 15px; font-weight: 600; color: var(--text); }
+.cell.live { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); color: var(--accent); }
+.cell.ghost { color: var(--text-3); }
+.rpe { font-family:'IBM Plex Mono',monospace; font-size: 12px; color: var(--text-2); text-align: center; }
+.tick { width: 38px; height: 38px; border-radius: 11px; margin: 0 auto; border: 1px solid var(--border-2); display: flex; align-items: center; justify-content: center; color: var(--text-3); }
+.tick.on { background: var(--good); border-color: var(--good); color: #052e22; }
+.rest-pill { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 6px 14px 14px; padding: 11px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); font-family:'IBM Plex Mono',monospace; font-size: 12px; font-weight: 600; }
+
+.nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 412px; display: flex; justify-content: space-around; padding: 12px 14px 26px; background: color-mix(in srgb, var(--bg) 80%, transparent); backdrop-filter: blur(18px); border-top: 1px solid var(--border); }
+.nav-i { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--text-3); flex: 1; }
+.nav-i span { font-size: 10px; }
+.nav-i.on { color: var(--text); }
+.nav-i.on .svg-icon { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- DASHBOARD -->
+<header class="topbar">
+  <div class="brand">
+    <div class="mk"><svg class="svg-icon" style="width:19px;height:19px;color:#fff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg></div>
+    <div class="nm">AXIS</div>
+  </div>
+  <div class="tb-actions">
+    <button class="icon-btn" data-toggle-theme aria-label="החלף ערכת נושא">
+      <svg class="svg-icon moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      <svg class="svg-icon sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></svg>
+    </button>
+    <button class="icon-btn" aria-label="פרופיל"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg></button>
+  </div>
+</header>
+
+<main class="page">
+  <div class="kicker fade">יום שישי · 29.05.2026</div>
+
+  <section class="hero fade" style="animation-delay:.04s">
+    <div class="ring-wrap">
+      <svg width="128" height="128" viewBox="0 0 128 128">
+        <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5B8CFF"/><stop offset="1" stop-color="#8B7BFF"/></linearGradient></defs>
+        <circle cx="64" cy="64" r="54" fill="none" stroke="var(--surface-2)" stroke-width="12"/>
+        <circle cx="64" cy="64" r="54" fill="none" stroke="url(#rg)" stroke-width="12" stroke-linecap="round" stroke-dasharray="339" stroke-dashoffset="112"/>
+      </svg>
+      <div class="ring-center"><b>67<small>%</small></b><span>יעד שבועי</span></div>
+    </div>
+    <div class="hero-side">
+      <div class="lab">נפח מצטבר השבוע</div>
+      <div class="big">12,400<small> ק"ג</small></div>
+      <div class="chip-good"><svg class="svg-icon" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M21 7v5M21 7h-5"/></svg> +4.2% מהשבוע שעבר</div>
+    </div>
+  </section>
+
+  <div class="mstats fade" style="animation-delay:.08s">
+    <div class="mstat"><div class="t"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg><span>אימונים</span></div><b>4<i>/5</i></b></div>
+    <div class="mstat"><div class="t"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c0 3.5 4 4.5 4 8a4 4 0 0 1-8 0c0-2 1-3.2 2-4.2.2 1.3 1 2.2 2 2.2 0-2-1-4-0-6Z"/></svg><span>רצף</span></div><b>18<i> ימים</i></b></div>
+    <div class="mstat"><div class="t"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0zM6 4H3v2a3 3 0 0 0 3 3M18 4h3v2a3 3 0 0 1-3 3"/></svg><span>שיאים</span></div><b>3</b></div>
+  </div>
+
+  <section class="card fade" style="animation-delay:.12s">
+    <div class="card-head"><h3>פעילות השבוע</h3><span class="meta">7 ימים</span></div>
+    <div class="heat">
+      <div class="day"><div class="cell l2"></div><div class="dl">א</div></div>
+      <div class="day"><div class="cell l3"></div><div class="dl">ב</div></div>
+      <div class="day"><div class="cell"></div><div class="dl">ג</div></div>
+      <div class="day"><div class="cell l2"></div><div class="dl">ד</div></div>
+      <div class="day"><div class="cell l3"></div><div class="dl">ה</div></div>
+      <div class="day"><div class="cell l1 today"></div><div class="dl">ו</div></div>
+      <div class="day"><div class="cell"></div><div class="dl">ש</div></div>
+    </div>
+  </section>
+
+  <section class="card fade" style="animation-delay:.16s">
+    <div class="card-head"><h3>איזון קבוצות שריר</h3><span class="meta">30 יום</span></div>
+    <div class="bars">
+      <div class="bar-row"><span class="bl">חזה</span><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><span class="bar-val">82%</span></div>
+      <div class="bar-row"><span class="bl">גב</span><div class="bar-track"><div class="bar-fill" style="width:74%"></div></div><span class="bar-val">74%</span></div>
+      <div class="bar-row"><span class="bl">רגליים</span><div class="bar-track"><div class="bar-fill" style="width:58%"></div></div><span class="bar-val">58%</span></div>
+      <div class="bar-row"><span class="bl">כתפיים</span><div class="bar-track"><div class="bar-fill" style="width:45%"></div></div><span class="bar-val">45%</span></div>
+    </div>
+  </section>
+
+  <section class="next fade" style="animation-delay:.2s">
+    <div class="next-tag">האימון הבא</div>
+    <div class="next-title">Push · יום דחיפה</div>
+    <div class="chips"><span class="chip">לחיצת חזה</span><span class="chip">כתף צבאי</span><span class="chip">מקבילים</span><span class="chip">+3</span></div>
+    <button class="btn"><svg class="svg-icon" style="width:17px;height:17px" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5Z"/></svg> התחל אימון</button>
+  </section>
+
+  <div class="kicker fade" style="animation-delay:.24s">היסטוריה</div>
+  <div class="row fade" style="animation-delay:.26s">
+    <div class="row-ic"><svg class="svg-icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg></div>
+    <div class="row-main"><div class="row-name">Pull · יום משיכה</div><div class="row-meta">אתמול · 52:10 · 14 סטים</div></div>
+    <div class="row-vol"><b>8,240</b><span>ק"ג</span></div>
+  </div>
+  <div class="row fade" style="animation-delay:.3s">
+    <div class="row-ic"><svg class="svg-icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg></div>
+    <div class="row-main"><div class="row-name">Push · יום דחיפה <span class="pr">PR</span></div><div class="row-meta">27.05 · 48:30 · 16 סטים</div></div>
+    <div class="row-vol"><b>9,100</b><span>ק"ג</span></div>
+  </div>
+</main>
+
+<!-- ACTIVE -->
+<div class="sep">— מסך אימון פעיל —</div>
+
+<header class="aw-head">
+  <div class="aw-t">
+    <div class="aw-ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="var(--surface-2)" stroke-width="4"/><circle cx="22" cy="22" r="18" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="38"/></svg><span>2/6</span></div>
+    <div><small>זמן פעיל</small><b>23:45</b></div>
+  </div>
+  <button class="aw-end">סיום</button>
+</header>
+
+<section class="ex">
+  <div class="ex-head">
+    <h4>Bench Press<small>לחיצת חזה · חזה</small></h4>
+    <div class="ex-prev"><div class="pv">קודם: 87.5×8</div><span class="tg">יעד 90×8</span></div>
+  </div>
+  <div class="ex-tally">
+    <div><div class="v">2/4</div><div class="k">סטים</div></div>
+    <div><div class="v">1,490</div><div class="k">נפח ק"ג</div></div>
+    <div><div class="v">8.5</div><div class="k">RPE ממוצע</div></div>
+  </div>
+  <div class="set-grid">
+    <div class="sh"><span>סט</span><span>משקל</span><span>חזרות</span><span>RPE</span><span></span></div>
+    <div class="sr"><div class="sn">01</div><div class="cell">80</div><div class="cell">10</div><div class="rpe">7</div><div class="tick on"><svg class="svg-icon" style="width:17px;height:17px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
+    <div class="sr"><div class="sn">02</div><div class="cell">85</div><div class="cell">8</div><div class="rpe">8</div><div class="tick on"><svg class="svg-icon" style="width:17px;height:17px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
+    <div class="sr"><div class="sn">03</div><div class="cell live">90</div><div class="cell ghost">—</div><div class="rpe">—</div><div class="tick"></div></div>
+    <div class="sr"><div class="sn">04</div><div class="cell ghost">90</div><div class="cell ghost">—</div><div class="rpe">—</div><div class="tick"></div></div>
+  </div>
+  <div class="rest-pill"><svg class="svg-icon" style="width:15px;height:15px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> מנוחה · 01:24 נותרו</div>
+</section>
+
+<nav class="nav">
+  <div class="nav-i on"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>בית</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>התקדמות</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>תבניות</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg><span>מאמן</span></div>
+</nav>
+
+</div>
+<script>
+document.querySelectorAll('[data-toggle-theme]').forEach(b=>b.addEventListener('click',()=>{
+  const r=document.documentElement; r.dataset.theme = r.dataset.theme==='light'?'dark':'light';
+}));
+</script>
+</body>
+</html>

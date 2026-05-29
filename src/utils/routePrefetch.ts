@@ -19,6 +19,6 @@ export function prefetchRoute(path: string) {
   const loader = routePrefetchMap[key];
   if (loader && !prefetchedRoutes.has(key)) {
     prefetchedRoutes.add(key);
-    loader();
+    loader().catch(() => {});
   }
 }

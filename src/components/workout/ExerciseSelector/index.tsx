@@ -5,9 +5,8 @@
 import { AnimatePresence, type PanInfo, motion, useMotionValue, useTransform } from 'framer-motion';
 import { X as CloseIcon, Dumbbell as DumbbellIcon } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import * as dataService from '../../../services/dataService';
-import { getWorkoutTemplates } from '../../../services/dataService';
 import {
   type Exercise,
   type PersonalExercise,
@@ -40,32 +39,12 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   onCreateNew: _onCreateNew,
   goal: _goal,
 }) => {
-  const [_userTemplates, setUserTemplates] = useState<WorkoutTemplate[]>([]);
-  const [_builtinTemplates, setBuiltinTemplates] = useState<WorkoutTemplate[]>([]);
   const [activeTab, setActiveTab] = useState<'exercises' | 'templates'>('exercises');
   const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
   const [pendingExercises, setPendingExercises] = useState<PersonalExercise[]>([]);
 
   const y = useMotionValue(0);
   const sheetScale = useTransform(y, [0, 300], [1, 0.95]);
-
-  useEffect(() => {
-    if (isOpen) {
-      loadData();
-    }
-  }, [isOpen]);
-
-  const loadData = async () => {
-    try {
-      const allTemplates = await getWorkoutTemplates();
-      const userT = allTemplates.filter((t) => !t.isBuiltin);
-      const builtinT = allTemplates.filter((t) => t.isBuiltin);
-      setUserTemplates(userT);
-      setBuiltinTemplates(builtinT);
-    } catch {
-      // silently handle
-    }
-  };
 
   const handleSelect = useCallback((personalExercise: PersonalExercise) => {
     if (!personalExercise.name?.trim()) return;

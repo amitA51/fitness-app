@@ -6,7 +6,7 @@ import { Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { getThread, markThreadRead, sendMessage } from '../../services/coach';
+import { getThread, markThreadRead, sendMessage, subscribeToThread } from '../../services/coach';
 import type { Message } from '../../types/coach';
 import { CoachPage, EmptyHint } from './_shared';
 
@@ -26,12 +26,24 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
     const thread = await getThread(coachId, clientId);
     setMessages(thread);
     setLoading(false);
-    void markThreadRead(coachId, clientId);
+    await markThreadRead(coachId, clientId);
+    window.dispatchEvent(new Event('coach:unread-refresh'));
   };
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-load only when the thread participants change
   useEffect(() => {
     if (coachId && clientId) void load();
+  }, [coachId, clientId]);
+
+  // Live-append messages as they arrive; mark them read since the thread is open.
+  useEffect(() => {
+    if (!coachId || !clientId) return;
+    return subscribeToThread(coachId, clientId, (m) => {
+      setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+      void markThreadRead(coachId, clientId).then(() =>
+        window.dispatchEvent(new Event('coach:unread-refresh'))
+      );
+    });
   }, [coachId, clientId]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to bottom whenever messages change

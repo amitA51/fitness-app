@@ -220,20 +220,23 @@ export const INPUT_MODES = {
 } as const;
 
 /**
- * Prevent zoom on double-tap for inputs
+ * Prevent zoom on double-tap for inputs.
+ * Returns a cleanup function that removes the listener.
  */
-export function preventInputZoom() {
+export function preventInputZoom(): () => void {
   let lastTouchEnd = 0;
 
-  document.addEventListener(
-    'touchend',
-    (e) => {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 300) {
-        e.preventDefault();
-      }
-      lastTouchEnd = now;
-    },
-    false
-  );
+  const handler = (e: TouchEvent) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+      e.preventDefault();
+    }
+    lastTouchEnd = now;
+  };
+
+  document.addEventListener('touchend', handler, false);
+
+  return () => {
+    document.removeEventListener('touchend', handler, false);
+  };
 }

@@ -114,13 +114,33 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
     const appSettings = loadAppSettings();
 
     if (savedState) {
+      // Calculate wall-time elapsed while app was closed and add to totalPausedTime
+      const lastTimestamp = savedState.lastPauseTimestamp || Date.now();
+      const closedAppElapsed = Math.max(0, Date.now() - lastTimestamp);
+
       return {
         ...createInitialState([], 0, appSettings),
         ...savedState,
         appSettings,
         isPaused: true,
         lastPauseTimestamp: Date.now(),
+        totalPausedTime: (savedState.totalPausedTime || 0) + closedAppElapsed,
         pendingHaptic: null,
+        // Sanitize transient UI/celebration flags
+        showConfetti: false,
+        showPRCelebration: null,
+        showSettings: false,
+        showExerciseSelector: false,
+        showQuickForm: false,
+        showExerciseLibrary: false,
+        showAICoach: false,
+        showPlateCalc: false,
+        showGoalSelector: false,
+        showWarmup: false,
+        showCooldown: false,
+        showWaterReminder: false,
+        showTutorial: false,
+        tutorialExercise: null,
       };
     }
 

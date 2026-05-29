@@ -3,7 +3,7 @@
  */
 
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { memo, useState } from 'react';
+import { memo, useId, useState } from 'react';
 import { cn } from '../../utils/styles';
 
 interface AnnualPasswordInputProps {
@@ -14,6 +14,7 @@ interface AnnualPasswordInputProps {
   error?: string;
   disabled?: boolean;
   autoFocus?: boolean;
+  autoComplete?: 'current-password' | 'new-password';
 }
 
 export const AnnualPasswordInput = memo(function AnnualPasswordInput({
@@ -24,12 +25,15 @@ export const AnnualPasswordInput = memo(function AnnualPasswordInput({
   error,
   disabled,
   autoFocus,
+  autoComplete = 'current-password',
 }: AnnualPasswordInputProps) {
   const [show, setShow] = useState(false);
+  const inputId = useId();
 
   return (
     <div className="w-full">
       <label
+        htmlFor={inputId}
         className="block mb-2"
         style={{
           fontFamily: 'var(--font-mono)',
@@ -43,13 +47,14 @@ export const AnnualPasswordInput = memo(function AnnualPasswordInput({
       </label>
       <div className="relative">
         <input
+          id={inputId}
           type={show ? 'text' : 'password'}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
+          autoComplete={autoComplete}
           autoFocus={autoFocus}
-          autoComplete={label === 'Password' ? 'current-password' : 'new-password'}
           className={cn(
             'w-full h-14 transition-all duration-200 pr-12',
             'text-base',

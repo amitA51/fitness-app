@@ -25,7 +25,6 @@ export const Badge = memo<BadgeProps>(({ children, variant = 'accent', icon }) =
           color: 'var(--fs-accent)',
           shadow: '0 0 12px var(--color-primary-glow)',
         };
-      case 'secondary':
       default:
         return {
           bg: 'rgba(255, 255, 255, 0.08)',

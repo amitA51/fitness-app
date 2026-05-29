@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>בחירת עיצוב — Fitness App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --bg:#0A0B0D; --card:#121317; --border:#23252B; --ink:#F2F3F5; --ink2:#909AA6; --ink3:#5A5F68; --accent:#5B8CFF; --gold:#E8A33D; }
+body { font-family:'Hanken Grotesk',sans-serif; background:var(--bg); color:var(--ink); padding:40px 20px 80px; }
+.head { max-width:820px; margin:0 auto 36px; text-align:center; }
+.head .kick { font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); margin-bottom:14px; }
+.head h1 { font-size:30px; font-weight:800; letter-spacing:-.02em; margin-bottom:12px; }
+.head p { color:var(--ink2); font-size:15px; line-height:1.65; }
+
+.band { max-width:2200px; margin:0 auto; }
+.band-h { display:flex; align-items:center; gap:14px; margin:42px 6px 22px; }
+.band-h .n { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink3); white-space:nowrap; }
+.band-h h2 { font-size:20px; font-weight:800; letter-spacing:-.01em; white-space:nowrap; }
+.band-h .tag { font-size:12px; font-weight:600; color:#0E1320; background:var(--gold); padding:4px 10px; border-radius:20px; white-space:nowrap; }
+.band-h .ln { flex:1; height:1px; background:var(--border); }
+
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(400px,1fr)); gap:26px; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:22px; overflow:hidden; display:flex; flex-direction:column; }
+.card.feat { border-color:#3A3320; box-shadow:0 0 0 1px rgba(232,163,61,.12), 0 24px 60px -24px rgba(0,0,0,.8); }
+.card-h { padding:20px 22px; border-bottom:1px solid var(--border); }
+.card-h .top { display:flex; align-items:center; gap:11px; margin-bottom:9px; }
+.badge { font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:500; width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; background:var(--accent); color:#fff; }
+.card.feat .badge { background:var(--gold); color:#1a1208; }
+.card-h h3 { font-size:19px; font-weight:800; letter-spacing:-.01em; }
+.card-h .mood { font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink3); letter-spacing:.06em; text-transform:uppercase; margin-right:auto; }
+.card-h p { color:var(--ink2); font-size:13px; line-height:1.55; }
+.tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+.tag2 { font-size:10.5px; font-family:'IBM Plex Mono',monospace; background:#1C1E24; color:#AEB4BE; padding:4px 9px; border-radius:7px; border:1px solid var(--border); }
+.tag2.dl { color:var(--gold); border-color:rgba(232,163,61,.3); }
+.frame { background:#000; display:flex; justify-content:center; padding:20px; flex:1; }
+iframe { width:412px; height:740px; border:none; border-radius:24px; background:#fff; box-shadow:0 20px 60px rgba(0,0,0,.6); }
+.open { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; background:#fff; color:#000; font-weight:700; text-decoration:none; font-size:14px; }
+.open:hover { background:var(--accent); color:#fff; }
+.card.feat .open:hover { background:var(--gold); color:#1a1208; }
+.note { max-width:820px; margin:36px auto 0; padding:20px 24px; background:var(--card); border:1px solid var(--border); border-radius:16px; color:var(--ink2); font-size:13.5px; line-height:1.7; }
+.note b { color:var(--ink); }
+@media (max-width:860px){ .grid{grid-template-columns:1fr;} iframe{width:100%;max-width:412px;} }
+</style>
+</head>
+<body>
+
+<div class="head">
+  <div class="kick">8 Directions · בחר כיוון</div>
+  <h1>בחירת שפת עיצוב</h1>
+  <p>למעלה: 3 עיצובים עשירים עם עומק וטוגל <b>Dark / Light</b> (לחץ על אייקון השמש/ירח בכל מסך). למטה: 5 כיוונים מינימליסטיים. כל כרטיס מציג בית + אימון פעיל — גלול בתוך המסגרת, או פתח במסך מלא בטלפון.</p>
+</div>
+
+<!-- PREMIUM -->
+<div class="band">
+  <div class="band-h"><span class="tag">מומלץ</span><h2>סדרת עומק — Dark + Light</h2><span class="n">06–08</span><div class="ln"></div></div>
+  <div class="grid">
+
+    <div class="card feat">
+      <div class="card-h">
+        <div class="top"><span class="badge">06</span><h3>AXIS</h3><span class="mood">Analytics · Toggle</span></div>
+        <p>אנליטי-פרימיום. טבעת התקדמות עם גרדיאנט, heatmap שבועי, פילוח קבוצות שריר, צללים שכבתיים. אימון פעיל עשיר עם RPE, נפח מצטבר וטיימר מנוחה.</p>
+        <div class="tags"><span class="tag2 dl">Dark + Light</span><span class="tag2">Hanken + Plex Mono</span><span class="tag2">אינדיגו</span></div>
+      </div>
+      <div class="frame"><iframe src="6-axis.html"></iframe></div>
+      <a class="open" href="6-axis.html" target="_blank">פתח במסך מלא →</a>
+    </div>
+
+    <div class="card feat">
+      <div class="card-h">
+        <div class="top"><span class="badge">07</span><h3>EMBER</h3><span class="mood">Warm · Toggle</span></div>
+        <p>פרימיום חם בסגנון "מועדון חברים". זהב/ענבר, פונט Bricolage בעל אופי, רקע אספרסו כהה או קרם חם. עומק עשיר, גרעין עדין, ויז'ואל יוקרתי.</p>
+        <div class="tags"><span class="tag2 dl">Dark + Light</span><span class="tag2">Bricolage</span><span class="tag2">זהב</span></div>
+      </div>
+      <div class="frame"><iframe src="7-ember.html"></iframe></div>
+      <a class="open" href="7-ember.html" target="_blank">פתח במסך מלא →</a>
+    </div>
+
+    <div class="card feat">
+      <div class="card-h">
+        <div class="top"><span class="badge">08</span><h3>PULSE</h3><span class="mood">Sport-Tech · Toggle</span></div>
+        <p>ספורט-טק עם זוהר. גרדיאנט ציאן-סגול, טבעת זוהרת, גרף עמודות, מסגרת גרדיאנט. אנרגטי ומדויק, עם עומק ושכבות. נראה כמו מכשיר ביצועים.</p>
+        <div class="tags"><span class="tag2 dl">Dark + Light</span><span class="tag2">Familjen Grotesk</span><span class="tag2">ציאן-סגול</span></div>
+      </div>
+      <div class="frame"><iframe src="8-pulse.html"></iframe></div>
+      <a class="open" href="8-pulse.html" target="_blank">פתח במסך מלא →</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- MINIMAL -->
+<div class="band">
+  <div class="band-h"><h2>סדרה מינימליסטית</h2><span class="n">01–05</span><div class="ln"></div></div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-h">
+        <div class="top"><span class="badge">01</span><h3>OBSIDIAN</h3><span class="mood">Dark · Tech</span></div>
+        <p>דארק-מוד מוקפד ברמת Linear. ניגודיות עדינה, מספרים מונוספייס, גבולות דקיקים.</p>
+        <div class="tags"><span class="tag2">Sora + JetBrains</span><span class="tag2">סגול+טורקיז</span></div>
+      </div>
+      <div class="frame"><iframe src="1-obsidian.html"></iframe></div>
+      <a class="open" href="1-obsidian.html" target="_blank">פתח במסך מלא →</a>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="top"><span class="badge">02</span><h3>ATELIER</h3><span class="mood">Light · Editorial</span></div>
+        <p>יוקרה עריכותית — פונט סריף, רקע נייר, סימני הדפסה. כמו קטלוג גלריה מודפס.</p>
+        <div class="tags"><span class="tag2">Fraunces</span><span class="tag2">נייר+סיינה</span></div>
+      </div>
+      <div class="frame"><iframe src="2-atelier.html"></iframe></div>
+      <a class="open" href="2-atelier.html" target="_blank">פתח במסך מלא →</a>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="top"><span class="badge">03</span><h3>AURORA</h3><span class="mood">Light · Glass</span></div>
+        <p>גלאסמורפיזם מעל רקע aurora מטושטש. כרטיסי זכוכית, גרדיאנט אינדיגו-ציאן.</p>
+        <div class="tags"><span class="tag2">Onest</span><span class="tag2">זכוכית</span></div>
+      </div>
+      <div class="frame"><iframe src="3-aurora.html"></iframe></div>
+      <a class="open" href="3-aurora.html" target="_blank">פתח במסך מלא →</a>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="top"><span class="badge">04</span><h3>VOLT</h3><span class="mood">Dark · Athletic</span></div>
+        <p>מותג ספורט נועז — טיפוגרפיה קונדנסט, פחם + ירוק חומצי. אנרגיית ביצועים.</p>
+        <div class="tags"><span class="tag2">Archivo Black</span><span class="tag2">Volt</span></div>
+      </div>
+      <div class="frame"><iframe src="4-volt.html"></iframe></div>
+      <a class="open" href="4-volt.html" target="_blank">פתח במסך מלא →</a>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="top"><span class="badge">05</span><h3>GRID</h3><span class="mood">Light · Swiss</span></div>
+        <p>בנטו-גריד שוויצרי מובנה. אריחים עם מספור, תוויות מונוספייס, אקסנט קובלט.</p>
+        <div class="tags"><span class="tag2">Hanken + Plex</span><span class="tag2">קובלט</span></div>
+      </div>
+      <div class="frame"><iframe src="5-grid.html"></iframe></div>
+      <a class="open" href="5-grid.html" target="_blank">פתח במסך מלא →</a>
+    </div>
+
+  </div>
+</div>
+
+<div class="note">
+  <b>איך בוחרים:</b> התמקד קודם ב-3 העליונים (06–08) — הם העשירים והמלאים, עם Dark+Light. אפשר לבחור אחד, או לשלב: "AXIS אבל בצבעים של PULSE", "EMBER בלי הגרעין", וכו'. אחרי הבחירה אבנה design system מלא (טוקנים, טיפוגרפיה, רכיבים, מצבים) ונתחיל ליישם על האפליקציה.
+</div>
+
+</body>
+</html>

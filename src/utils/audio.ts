@@ -2,14 +2,32 @@
 // SPARKOS FITNESS - Audio Utilities
 // ============================================================================
 
+import { logger } from './logger';
+
+// Single lazy module-level AudioContext — reused across all beeps.
+let _audioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  if (_audioCtx) {
+    if (_audioCtx.state === 'suspended') {
+      _audioCtx.resume().catch(() => {});
+    }
+    return _audioCtx;
+  }
+  const AudioContextClass =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextClass) return null;
+  _audioCtx = new AudioContextClass();
+  return _audioCtx;
+}
+
 // Play a beep sound
 export const playBeep = (frequency = 800, duration = 200): void => {
   try {
-    const AudioContextClass =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const audioContext = new AudioContextClass();
+    const audioContext = getAudioContext();
+    if (!audioContext) return;
+
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
@@ -25,7 +43,7 @@ export const playBeep = (frequency = 800, duration = 200): void => {
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + duration / 1000);
   } catch (e) {
-    // Audio not supported
+    logger.app.warn('Audio playback failed', e);
   }
 };
 

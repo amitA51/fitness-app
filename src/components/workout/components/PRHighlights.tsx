@@ -14,8 +14,6 @@ interface ConfettiProps {
 }
 
 export const Confetti: React.FC<ConfettiProps> = memo(({ show }) => {
-  if (!show) return null;
-
   const particles = useMemo(
     () =>
       Array.from({ length: 50 }).map((_, i) => ({
@@ -30,6 +28,8 @@ export const Confetti: React.FC<ConfettiProps> = memo(({ show }) => {
       })),
     []
   );
+
+  if (!show) return null;
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">

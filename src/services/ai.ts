@@ -49,10 +49,20 @@ export interface AIExerciseTip {
 import { type ChatMessage, getAIProvider } from './ai/core';
 import { getFormTips } from './ai/features';
 
+/** Sanitize user-provided text before embedding in prompts. */
+function sanitizeForPrompt(input: string, maxLength = 100): string {
+  return input
+    .replace(/[\r\n\t]/g, ' ')
+    .replace(/[^\p{L}\p{N}\p{Zs}\-_'"()]/gu, '')
+    .slice(0, maxLength)
+    .trim();
+}
+
 export async function getExerciseTutorial(exerciseName: string): Promise<string | null> {
   const tips = await getFormTips(exerciseName);
   if (tips.length === 0) return null;
-  return `**${exerciseName}**\n\n${tips.map((t) => '• ' + t).join('\n')}`;
+  const safeName = sanitizeForPrompt(exerciseName);
+  return `**${safeName}**\n\n${tips.map((t) => `• ${t}`).join('\n')}`;
 }
 
 export async function askExerciseQuestion(
@@ -61,12 +71,15 @@ export async function askExerciseQuestion(
   history?: ExerciseChatMessage[]
 ): Promise<string> {
   const provider = getAIProvider();
+  const safeName = sanitizeForPrompt(exerciseName);
+  // Cap history to avoid unbounded token cost
+  const cappedHistory = (history ?? []).slice(-20);
   const messages: ChatMessage[] = [
     {
       role: 'system',
-      content: `תתייחס לשאלה שמתייחסת לתרגיל: ${exerciseName}. ענה קצר ומעשי.`,
+      content: `תתייחס לשאלה שמתייחסת לתרגיל: ${safeName}. ענה קצר ומעשי.`,
     },
-    ...(history ?? []),
+    ...cappedHistory,
     { role: 'user', content: question },
   ];
   return provider.chat(messages);

@@ -124,11 +124,28 @@ ${exerciseDetails || 'אין אימונים השבוע'}`;
 }
 
 // Helper functions
+
+/** Escape a CSV cell per RFC 4180: double internal quotes, wrap in quotes,
+ *  and neutralize formula-injection characters (=, +, -, @, tab, CR). */
+function escapeCSVCell(cell: string): string {
+  let safe = cell;
+  // Neutralize formula injection: prefix with a single-quote if the cell
+  // starts with a character that spreadsheet apps interpret as a formula.
+  if (/^[=+\-@\t\r]/.test(safe)) {
+    safe = `'${safe}`;
+  }
+  // RFC 4180: double any embedded quotes, then wrap in quotes.
+  return `"${safe.replace(/"/g, '""')}"`;
+}
+
 function downloadCSV(headers: string[], rows: string[][], filename: string): void {
   const bom = '\uFEFF'; // BOM for Hebrew support in Excel
   const csv =
     bom +
-    [headers.join(','), ...rows.map((row) => row.map((cell) => `"${cell}"`).join(','))].join('\n');
+    [
+      headers.map(escapeCSVCell).join(','),
+      ...rows.map((row) => row.map(escapeCSVCell).join(',')),
+    ].join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
 
@@ -151,7 +168,8 @@ export async function shareReport(reportText: string): Promise<boolean> {
       text: reportText,
     });
     return true;
-  } catch {
+  } catch (err) {
+    console.debug('shareReport failed:', err);
     return false;
   }
 }
@@ -160,7 +178,8 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
     return true;
-  } catch {
+  } catch (err) {
+    console.debug('copyToClipboard failed:', err);
     return false;
   }
 }

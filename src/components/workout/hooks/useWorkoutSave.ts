@@ -112,7 +112,9 @@ export function useWorkoutSave({
         exerciseId: ex.id || `exercise_${index}`,
         exerciseName: ex.name || 'Unknown Exercise',
         targetMuscle: ex.muscleGroup || ex.targetMuscle || 'Other',
-        sets: (ex.sets ?? []).filter((s) => s.completedAt),
+        sets: (ex.sets ?? [])
+          .filter((s) => s.completedAt)
+          .map((s) => ({ ...s, isCompleted: !!s.completedAt })),
         notes: '',
         restSeconds: ex.defaultRestTime || ex.targetRestTime || 90,
         isCompleted: true,
@@ -159,23 +161,16 @@ export function useWorkoutSave({
 
       await saveWorkoutSession(session);
 
-      // Verify session was saved by reading it back
-      let wasSaved = true;
+      // Best-effort verification — log but don't fail the save
       try {
         const { getWorkoutSessions } = await import('../../../services/dataService');
         const savedSessions = await getWorkoutSessions(1);
-        wasSaved = savedSessions.some((s) => s.id === session.id);
-        if (!wasSaved) {
-          throw new Error('Session verification failed - not found in database');
+        const verified = savedSessions.some((s) => s.id === session.id);
+        if (!verified) {
+          logger.workout?.warn?.('Workout save verification could not confirm — proceeding anyway');
         }
       } catch (verifyError) {
-        logger.workout?.error?.('Workout save verification failed', verifyError);
-        wasSaved = false;
-      }
-
-      if (!wasSaved) {
-        setSaveError('שמירת האימון נכשלה. הנתונים נשמרו מקומית — נסה שוב כשהחיבור יציב.');
-        return;
+        logger.workout?.warn?.('Workout save verification read failed (non-fatal)', verifyError);
       }
 
       // Mark workout as completed in localStorage to prevent restore loop

@@ -43,8 +43,7 @@ export function useSwipeNavigation({
   const handleSwipePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement | null;
     if (
-      target &&
-      target.closest(
+      target?.closest(
         'button, input, textarea, select, [role="button"], [role="slider"], [data-no-swipe]'
       )
     ) {

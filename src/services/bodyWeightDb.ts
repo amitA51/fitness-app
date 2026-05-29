@@ -7,8 +7,8 @@
 import { LOCAL_STORAGE_KEYS as LS } from '../constants';
 import { ValidationError } from '../errors';
 import type { BodyWeightEntry } from '../types';
-import { STORES, dbClear, dbDelete, dbGetAll, dbPut, syncWithRetry } from './indexedDBCore';
 import { mergeGenericRecords } from './cloudMerge';
+import { STORES, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudBodyWeight, syncBodyWeight } from './supabaseSync';
 
@@ -50,8 +50,18 @@ export const reAddBodyWeight = (entry: BodyWeightEntry): Promise<void> =>
  * Replace all body weight entries with cloud data.
  */
 export const replaceBodyWeightFromCloud = async (entries: BodyWeightEntry[]): Promise<void> => {
-  await dbClear(LS.BODY_WEIGHT);
-  await Promise.all(entries.map((entry) => dbPut(LS.BODY_WEIGHT, entry)));
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LS.BODY_WEIGHT, 'readwrite');
+    const store = tx.objectStore(LS.BODY_WEIGHT);
+    store.clear();
+    for (const entry of entries) {
+      store.put(entry);
+    }
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
+  });
 };
 
 /**

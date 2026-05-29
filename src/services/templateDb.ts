@@ -8,7 +8,7 @@ import { LOCAL_STORAGE_KEYS as LS } from '../constants';
 import { NotFoundError, ValidationError } from '../errors';
 import type { Exercise, PersonalItem, WorkoutTemplate } from '../types';
 import { createWorkoutSet } from '../types';
-import { STORES, dbClear, dbDelete, dbGet, dbGetAll, dbPut, syncWithRetry } from './indexedDBCore';
+import { STORES, dbDelete, dbGet, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
 import { addPersonalItem } from './personalItemsDb';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudWorkoutTemplate, syncWorkoutTemplate } from './supabaseSync';
@@ -43,6 +43,7 @@ export const createWorkoutTemplate = async (
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
     ...templateData,
+    updatedAt: new Date().toISOString(),
   };
 
   await dbPut(LS.WORKOUT_TEMPLATES, newTemplate);
@@ -69,7 +70,12 @@ export const updateWorkoutTemplate = async (
   const template = await dbGet<WorkoutTemplate>(LS.WORKOUT_TEMPLATES, id);
   if (!template) throw new NotFoundError('WorkoutTemplate', id);
 
-  const updatedTemplate = { ...template, ...updates, id: template.id };
+  const updatedTemplate = {
+    ...template,
+    ...updates,
+    id: template.id,
+    updatedAt: new Date().toISOString(),
+  };
   await dbPut(LS.WORKOUT_TEMPLATES, updatedTemplate);
 
   const user = await getCurrentUser();
@@ -139,8 +145,18 @@ export const reAddWorkoutTemplate = (template: WorkoutTemplate): Promise<void> =
 export const replaceWorkoutTemplatesFromCloud = async (
   templates: WorkoutTemplate[]
 ): Promise<void> => {
-  await dbClear(LS.WORKOUT_TEMPLATES);
-  await Promise.all(templates.map((template) => dbPut(LS.WORKOUT_TEMPLATES, template)));
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LS.WORKOUT_TEMPLATES, 'readwrite');
+    const store = tx.objectStore(LS.WORKOUT_TEMPLATES);
+    store.clear();
+    for (const template of templates) {
+      store.put(template);
+    }
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
+  });
 };
 
 /**

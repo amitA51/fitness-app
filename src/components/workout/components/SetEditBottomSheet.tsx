@@ -4,7 +4,7 @@
 
 import { motion } from 'framer-motion';
 import { CheckCircle as CheckCircleIcon, X as CloseIcon } from 'lucide-react';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useId, useMemo, useState } from 'react';
 import type { WorkoutSet } from '../../../types';
 import { ModalOverlay } from '../../ui/ModalOverlay';
 
@@ -28,6 +28,8 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
     const [editingSetIndex, setEditingSetIndex] = useState<number | null>(null);
     const [tempWeight, setTempWeight] = useState<number>(0);
     const [tempReps, setTempReps] = useState<number>(0);
+    const weightId = useId();
+    const repsId = useId();
 
     const handleStartEdit = useCallback(
       (index: number) => {
@@ -207,6 +209,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                         {/* Weight */}
                         <div>
                           <label
+                            htmlFor={weightId}
                             style={{
                               display: 'block',
                               fontFamily: 'var(--font-mono)',
@@ -240,6 +243,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                               −
                             </button>
                             <input
+                              id={weightId}
                               type="number"
                               inputMode="decimal"
                               step="0.25"
@@ -285,6 +289,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                         {/* Reps */}
                         <div>
                           <label
+                            htmlFor={repsId}
                             style={{
                               display: 'block',
                               fontFamily: 'var(--font-mono)',
@@ -318,6 +323,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                               −
                             </button>
                             <input
+                              id={repsId}
                               type="number"
                               inputMode="numeric"
                               value={tempReps}
@@ -414,7 +420,15 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                         cursor: 'pointer',
                         direction: 'rtl',
                       }}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => handleStartEdit(index)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleStartEdit(index);
+                        }
+                      }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {isCompleted && (

@@ -20,10 +20,13 @@ export const MeasurementsTab = memo(function MeasurementsTab({
   measurements: BodyMeasurement[];
   onAdd: () => void;
 }) {
-  const prev = useMemo(
-    () => (measurements.length > 1 ? measurements[measurements.length - 2] : null),
-    [measurements]
-  );
+  const prev = useMemo(() => {
+    if (measurements.length <= 1) return null;
+    const sorted = [...measurements].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    return sorted[sorted.length - 2] ?? null;
+  }, [measurements]);
 
   return (
     <div className="space-y-4">

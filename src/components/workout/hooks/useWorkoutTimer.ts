@@ -2,8 +2,7 @@
 // This is CRITICAL for fixing the button responsiveness issue
 
 import { useEffect, useRef, useState } from 'react';
-import { playDing, playHeartbeat, speak } from '../../../utils/audio';
-import { triggerHaptic } from '../../../utils/haptics';
+import { playDing } from '../../../utils/audio';
 
 /**
  * Format seconds to time string (MM:SS or H:MM:SS)
@@ -42,26 +41,13 @@ export function useWorkoutTimer({
     return Math.max(0, Math.floor((Date.now() - startTimestamp - totalPausedTime) / 1000));
   });
 
-  const pauseStartRef = useRef<number | null>(null);
-  const extraPausedRef = useRef<number>(0);
-
   useEffect(() => {
-    // Track pause time locally
-    if (isPaused) {
-      pauseStartRef.current = Date.now();
-      return;
-    }
+    if (isPaused) return;
 
-    // Calculate extra paused time since last update
-    if (pauseStartRef.current) {
-      extraPausedRef.current += Date.now() - pauseStartRef.current;
-      pauseStartRef.current = null;
-    }
-
-    // Calculate elapsed (uses local pause tracking too)
+    // Calculate elapsed using only the reducer's totalPausedTime (no local tracking)
     const calculateElapsed = () => {
       const now = Date.now();
-      const elapsed = now - startTimestamp - totalPausedTime - extraPausedRef.current;
+      const elapsed = now - startTimestamp - totalPausedTime;
       return Math.max(0, Math.floor(elapsed / 1000));
     };
 
@@ -98,6 +84,7 @@ export function useRestTimer(
   const totalTimeRef = useRef<number>(0);
   const soundPlayedRef = useRef<boolean>(false);
   const lastTickRef = useRef<number>(0);
+  const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!active || !endTime) {
@@ -117,33 +104,25 @@ export function useRestTimer(
     const interval = setInterval(() => {
       const now = Date.now();
       const left = Math.max(0, (endTime - now) / 1000);
-      const currentTick = Math.ceil(left);
 
       setTimeLeft(left);
 
-      // Heartbeat Logic (Last 5 seconds)
-      if (currentTick <= 5 && currentTick > 0 && currentTick !== lastTickRef.current) {
-        lastTickRef.current = currentTick;
-        playHeartbeat();
-        if (navigator.vibrate) {
-          // "Lub-dub" vibration pattern
-          navigator.vibrate([30, 50, 30]);
-        }
-      }
-
-      // Trigger Audio/Haptic when reaching 0
+      // Trigger when reaching 0 — only play ding (settings-aware feedback
+      // is handled by useWorkoutSettings.playRestEndSound via the reducer's
+      // REST_END haptic signal)
       if (left <= 0 && !soundPlayedRef.current) {
         soundPlayedRef.current = true;
-        triggerHaptic('heavy');
         playDing();
-
-        // Speak after a short delay to let the ding resonate
-        // Using improved text
-        setTimeout(() => speak("Rest time complete. Let's crush it."), 800);
       }
-    }, 100); // Update more frequently for smooth countdown
+    }, 100);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (speakTimeoutRef.current) {
+        clearTimeout(speakTimeoutRef.current);
+        speakTimeoutRef.current = null;
+      }
+    };
   }, [endTime, active]);
 
   const progress =

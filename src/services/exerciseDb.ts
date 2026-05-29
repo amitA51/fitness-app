@@ -9,8 +9,16 @@ import { LOCAL_STORAGE_KEYS as LS } from '../constants';
 import { getBUILT_IN_EXERCISES } from '../data/builtInExercises';
 import { NotFoundError } from '../errors';
 import type { CreatePersonalExerciseInput, PersonalExercise } from '../types';
-import { STORES, dbClear, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
 import { mergeGenericRecords } from './cloudMerge';
+import {
+  STORES,
+  dbDelete,
+  dbGetAll,
+  dbGetByIndex,
+  dbPut,
+  initDB,
+  syncWithRetry,
+} from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudPersonalExercise, syncPersonalExercise } from './supabaseSync';
 
@@ -139,8 +147,11 @@ export const updatePersonalExercise = async (
  */
 export const deletePersonalExercise = async (id: string): Promise<void> => {
   // Cascade: remove all personal records linked to this exercise
-  const allPRs = await dbGetAll<{ id: string; exerciseId: string }>(STORES.PERSONAL_RECORDS);
-  const orphanedPRs = allPRs.filter((pr) => pr.exerciseId === id);
+  const orphanedPRs = await dbGetByIndex<{ id: string; exerciseId: string }>(
+    STORES.PERSONAL_RECORDS,
+    'exerciseId',
+    id
+  );
   await Promise.all(orphanedPRs.map((pr) => dbDelete(STORES.PERSONAL_RECORDS, pr.id)));
 
   const db = await initDB();
@@ -223,14 +234,17 @@ export const removeDuplicateExercises = async (): Promise<number> => {
 
       const [_keep, ...remove] = group;
 
-      // Delete the rest
-      await Promise.all(
-        remove.map((ex) => {
-          const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readwrite');
-          const store = tx.objectStore(LS.PERSONAL_EXERCISES);
-          return store.delete(ex.id);
-        })
-      );
+      // Delete the rest in a single transaction
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readwrite');
+        const store = tx.objectStore(LS.PERSONAL_EXERCISES);
+        for (const ex of remove) {
+          store.delete(ex.id);
+        }
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
+      });
 
       removedCount += remove.length;
     }
@@ -245,8 +259,18 @@ export const removeDuplicateExercises = async (): Promise<number> => {
 export const replacePersonalExercisesFromCloud = async (
   exercises: PersonalExercise[]
 ): Promise<void> => {
-  await dbClear(LS.PERSONAL_EXERCISES);
-  await Promise.all(exercises.map((ex) => dbPut(LS.PERSONAL_EXERCISES, ex)));
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readwrite');
+    const store = tx.objectStore(LS.PERSONAL_EXERCISES);
+    store.clear();
+    for (const ex of exercises) {
+      store.put(ex);
+    }
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
+  });
 };
 
 export const mergePersonalExercisesFromCloud = (

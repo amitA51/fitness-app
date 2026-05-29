@@ -120,11 +120,6 @@ const handleExpiredSession = async (err: unknown): Promise<void> => {
   } catch (signOutErr) {
     logger.auth.error('signOut after expired session failed', signOutErr);
   }
-  try {
-    localStorage.removeItem('supabase_session');
-  } catch {
-    // ignore storage errors
-  }
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('auth:session-expired'));
   }
@@ -133,6 +128,21 @@ const handleExpiredSession = async (err: unknown): Promise<void> => {
 export const getCurrentUser = async (): Promise<User | null> => {
   if (!isSupabaseConfigured() || !supabase) return null;
 
+  // Use getSession() (reads from local storage, no network round-trip) for the
+  // hot path. Only fall back to getUser() when the session is missing.
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError && isSessionExpiredError(sessionError)) {
+    await handleExpiredSession(sessionError);
+    return null;
+  }
+
+  if (session?.user) return session.user;
+
+  // No cached session — attempt a network call as last resort.
   const {
     data: { user },
     error,
@@ -291,13 +301,6 @@ export const signOut = async (): Promise<void> => {
     }
   } catch (err) {
     logger.auth.error('Sign out threw', err);
-  }
-
-  // Final defensive removal in case Supabase re-wrote the session token.
-  try {
-    localStorage.removeItem('supabase_session');
-  } catch (err) {
-    logger.app.warn('signOut: final supabase_session removal failed', err);
   }
 };
 

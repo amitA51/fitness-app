@@ -16,6 +16,7 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
   const [stressLevel, setStressLevel] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [tightAreas, setTightAreas] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
 
   return (
     <motion.div
@@ -33,6 +34,9 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
         className="w-full max-w-lg p-6 max-h-[88vh] overflow-y-auto"
         style={{ background: 'var(--fs-surface)', borderTop: '1px solid var(--fs-surface-2)' }}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="דיווח ריקאברי"
       >
         <div className="flex justify-center mb-4">
           <div
@@ -60,8 +64,8 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
             type="button"
             onClick={onClose}
             style={{
-              width: '32px',
-              height: '32px',
+              width: '44px',
+              height: '44px',
               background: 'var(--fs-surface-2)',
               border: 'none',
               borderRadius: 0,
@@ -71,6 +75,7 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
               color: 'var(--fs-muted)',
               cursor: 'pointer',
             }}
+            aria-label="סגור"
           >
             <X size={17} />
           </button>
@@ -132,7 +137,7 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
           />
 
           <div>
-            <label
+            <span
               style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: '14px',
@@ -143,7 +148,7 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
               }}
             >
               אזורים תפוסים
-            </label>
+            </span>
             <div className="flex flex-wrap gap-2">
               {TIGHTNESS_AREAS.map((area) => (
                 <button
@@ -196,31 +201,39 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
 
           <motion.button
             onClick={async () => {
-              await onSave({
-                date: new Date().toISOString().slice(0, 10),
-                sleepHours,
-                sleepQuality,
-                sorenessLevel,
-                energyLevel,
-                stressLevel,
-                tightAreas,
-                notes,
-              });
+              if (saving) return;
+              setSaving(true);
+              try {
+                await onSave({
+                  date: new Date().toISOString().slice(0, 10),
+                  sleepHours,
+                  sleepQuality,
+                  sorenessLevel,
+                  energyLevel,
+                  stressLevel,
+                  tightAreas,
+                  notes,
+                });
+              } finally {
+                setSaving(false);
+              }
             }}
+            disabled={saving}
             style={{
               width: '100%',
               padding: '16px',
               borderRadius: 0,
-              background: 'var(--fs-primary)',
-              color: 'var(--fs-accent)',
+              background: saving ? 'var(--fs-surface-2)' : 'var(--fs-primary)',
+              color: saving ? 'var(--fs-muted)' : 'var(--fs-accent)',
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: '16px',
               textTransform: 'uppercase',
               border: 'none',
-              cursor: 'pointer',
+              cursor: saving ? 'not-allowed' : 'pointer',
+              opacity: saving ? 0.4 : 1,
             }}
-            whileTap={{ scale: 0.98 }}
+            whileTap={{ scale: saving ? 1 : 0.98 }}
           >
             שמור
           </motion.button>

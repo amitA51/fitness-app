@@ -13,7 +13,7 @@ import {
   Edit as EditIcon,
   Trash as TrashIcon,
 } from 'lucide-react';
-import React, { useState, useCallback, memo, useMemo } from 'react';
+import React, { useState, useCallback, memo, useMemo, useId } from 'react';
 import { createPortal } from 'react-dom';
 import type { Exercise, WorkoutSet } from '../../types';
 import type { SupersetGroup } from './core/workoutTypes';
@@ -88,7 +88,14 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
   React.useEffect(() => {
     setItems((currentItems) => {
       const exercisesMap = new Map(exercises.map((e) => [e.id, e]));
-      return currentItems.map((item) => exercisesMap.get(item.id)).filter(Boolean) as Exercise[];
+      // Preserve current order for exercises that still exist
+      const kept = currentItems
+        .map((item) => exercisesMap.get(item.id))
+        .filter((e): e is Exercise => e != null);
+      const keptIds = new Set(kept.map((e) => e.id));
+      // Append any newly added exercises that aren't in the local list yet
+      const added = exercises.filter((e) => !keptIds.has(e.id));
+      return [...kept, ...added];
     });
   }, [exercises]);
 
@@ -120,9 +127,16 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
       e.preventDefault();
       e.stopPropagation();
       if (deleteConfirm === index) {
+        const exerciseToDelete = items[index];
         const newItems = items.filter((_, i) => i !== index);
         setItems(newItems);
-        onDeleteExercise?.(index);
+        // Use the original index in the parent's exercises array, not the local reordered index
+        if (exerciseToDelete) {
+          const originalIdx = exercises.findIndex((ex) => ex.id === exerciseToDelete.id);
+          if (originalIdx !== -1) {
+            onDeleteExercise?.(originalIdx);
+          }
+        }
         setDeleteConfirm(null);
         if (expandedExercise === index) setExpandedExercise(null);
         else if (expandedExercise !== null && expandedExercise > index)
@@ -132,7 +146,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
         setTimeout(() => setDeleteConfirm(null), 3000);
       }
     },
-    [deleteConfirm, items, onDeleteExercise, expandedExercise]
+    [deleteConfirm, items, exercises, onDeleteExercise, expandedExercise]
   );
 
   const toggleExpand = useCallback((index: number, e: React.MouseEvent) => {
@@ -852,6 +866,8 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
     const [tempWeight, setTempWeight] = useState(set.weight || 0);
     const [tempReps, setTempReps] = useState(set.reps || 0);
     const [deleteConfirm, setDeleteConfirm] = useState(false);
+    const weightId = useId();
+    const repsId = useId();
 
     const isCompleted = !!set.completedAt;
 
@@ -890,6 +906,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
 
     if (isEditing) {
       return (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: onClick only calls e.stopPropagation(); not an interactive control
         <div
           style={{
             background: 'var(--fs-surface-2)',
@@ -916,6 +933,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div>
               <label
+                htmlFor={weightId}
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
@@ -952,6 +970,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                   −
                 </button>
                 <input
+                  id={weightId}
                   type="number"
                   inputMode="decimal"
                   value={tempWeight}
@@ -1001,6 +1020,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
             </div>
             <div>
               <label
+                htmlFor={repsId}
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
@@ -1037,6 +1057,7 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
                   −
                 </button>
                 <input
+                  id={repsId}
                   type="number"
                   inputMode="numeric"
                   value={tempReps}
@@ -1145,7 +1166,15 @@ const SetEditRow: React.FC<SetEditRowProps> = memo(
           cursor: 'pointer',
           direction: 'rtl',
         }}
+        role="button"
+        tabIndex={0}
         onClick={handleStartEdit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleStartEdit(e as unknown as React.MouseEvent);
+          }
+        }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {isCompleted && (

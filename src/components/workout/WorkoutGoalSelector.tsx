@@ -24,6 +24,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
   }, [onClose]);
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: modal backdrop dismiss; keyboard users use Close button or Escape
     <div
       className="fixed inset-0 z-[100] bg-[rgba(11,26,43,0.6)] backdrop-blur-[8px] flex items-center justify-center p-4"
       role="dialog"

@@ -216,7 +216,10 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
           {!isSelectionMode && onDelete && (
             <button
               type="button"
-              onClick={(e) => onDelete(exercise, e)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(exercise, e);
+              }}
               style={{
                 padding: 8,
                 minWidth: 44,

@@ -33,8 +33,9 @@ export const WeeklyGrid = memo(function WeeklyGrid({
     const daysArray = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(targetWeekStart);
       d.setDate(d.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
-      const today = new Date().toISOString().split('T')[0];
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       return {
         letter: DAYS[d.getDay()],
         active: done.has(dateStr),

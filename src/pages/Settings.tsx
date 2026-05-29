@@ -389,6 +389,7 @@ export default function Settings() {
 
   function handleSaveNutrition() {
     saveToStorage('nutrition_goals', nutrition);
+    window.dispatchEvent(new CustomEvent('settings-updated'));
     setNutritionSaved(true);
     setTimeout(() => setNutritionSaved(false), 2000);
   }

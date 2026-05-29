@@ -1,12 +1,32 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+
+# Environment
 .env
 .env.local
 .env.production
-# Local Netlify folder
+
+# Netlify
 .netlify
 
-# Local Claude settings + scratch
-.claude/settings.local.json
+# Generated / build artifacts
+coverage/
+tsconfig.tsbuildinfo
+*.log
 temp_debug.txt
 everything-claude-code/
+
+# AI assistant tools, skills & scratch
+.kiro/
+.cursor/
+.claude/
+.agents/
+.factory/
+.commandcode/
+.openclaude/
+.codegraph/
+plugins/
+skills-lock.json

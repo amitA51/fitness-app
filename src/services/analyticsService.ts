@@ -80,6 +80,12 @@ export interface ExerciseProgressData {
 // Helpers
 // ============================================================================
 
+/** Absolute slope threshold (kg/week) for classifying volume trend direction. */
+const FORECAST_SLOPE_THRESHOLD = 10;
+
+/** Ratio threshold for muscle-balance trend detection (5% change). */
+const MUSCLE_BALANCE_TREND_THRESHOLD = 0.05;
+
 function getISOWeek(date: Date): string {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -108,8 +114,8 @@ function linearRegression(points: { x: number; y: number }[]): {
   const intercept = (sumY - slope * sumX) / n;
 
   const yMean = sumY / n;
-  const ssRes = points.reduce((s, p) => s + Math.pow(p.y - (slope * p.x + intercept), 2), 0);
-  const ssTot = points.reduce((s, p) => s + Math.pow(p.y - yMean, 2), 0);
+  const ssRes = points.reduce((s, p) => s + (p.y - (slope * p.x + intercept)) ** 2, 0);
+  const ssTot = points.reduce((s, p) => s + (p.y - yMean) ** 2, 0);
   const rSquared = ssTot === 0 ? 0 : 1 - ssRes / ssTot;
 
   return { slope, intercept, rSquared };
@@ -468,7 +474,9 @@ export const calculateMuscleBalance = (
   weeks?: number
 ): MuscleBalanceData[] => {
   const filtered = filterByWeeks(sessions, weeks);
-  const completedSessions = filtered.filter((s) => s.status === 'completed');
+  const completedSessions = filtered
+    .filter((s) => s.status === 'completed')
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   // Split into current and previous halves for trend comparison
   const midpoint = Math.floor(completedSessions.length / 2);
@@ -518,9 +526,9 @@ export const calculateMuscleBalance = (
       trend = 'up';
     } else {
       const changeRatio = (current - previous) / previous;
-      if (changeRatio > 0.05) {
+      if (changeRatio > MUSCLE_BALANCE_TREND_THRESHOLD) {
         trend = 'up';
-      } else if (changeRatio < -0.05) {
+      } else if (changeRatio < -MUSCLE_BALANCE_TREND_THRESHOLD) {
         trend = 'down';
       } else {
         trend = 'stable';
@@ -604,9 +612,9 @@ export const forecastProgress = (
   const predicted = Math.round(slope * nextX + intercept);
 
   let trend: 'increasing' | 'decreasing' | 'stable';
-  if (slope > 10) {
+  if (slope > FORECAST_SLOPE_THRESHOLD) {
     trend = 'increasing';
-  } else if (slope < -10) {
+  } else if (slope < -FORECAST_SLOPE_THRESHOLD) {
     trend = 'decreasing';
   } else {
     trend = 'stable';

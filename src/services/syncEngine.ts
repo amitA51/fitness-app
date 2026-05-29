@@ -9,7 +9,7 @@
 
 import { isSupabaseConfigured } from '../lib/supabase';
 import { logger } from '../utils/logger';
-import { STORES, dbDelete, dbGetAll, dbPut } from './indexedDBCore';
+import { STORES, dbDelete, dbGet, dbGetAll, dbPut } from './indexedDBCore';
 
 export interface SyncResult {
   success: boolean;
@@ -22,12 +22,22 @@ export interface SyncResult {
 interface PendingSyncEntry {
   tag: string;
   operation: string;
+  payload?: { table: string; record: Record<string, unknown> };
   createdAt: string;
   retryCount: number;
   lastError?: string;
 }
 
+const MAX_BACKOFF_MS = 30_000;
+
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Exponential backoff with jitter and a cap. */
+const backoffDelay = (attempt: number): number => {
+  const base = Math.min(1000 * 2 ** attempt, MAX_BACKOFF_MS);
+  const jitter = Math.random() * base * 0.3;
+  return base + jitter;
+};
 
 const tryExecuteSync = async (
   syncFn: () => Promise<void>,
@@ -38,12 +48,12 @@ const tryExecuteSync = async (
       await syncFn();
       return { success: true };
     } catch (err) {
-      const delay = 1000 * 2 ** attempt;
       const isLastAttempt = attempt === maxRetries - 1;
 
       if (!isLastAttempt) {
+        const delay = backoffDelay(attempt);
         logger.sync.warn(
-          `Sync attempt ${attempt + 1}/${maxRetries} failed, retrying in ${delay}ms`,
+          `Sync attempt ${attempt + 1}/${maxRetries} failed, retrying in ${Math.round(delay)}ms`,
           err
         );
         await sleep(delay);
@@ -56,17 +66,25 @@ const tryExecuteSync = async (
   return { success: false, error: 'Unexpected sync failure' };
 };
 
-const queuePendingSync = async (tag: string, operation: string, error?: string): Promise<void> => {
+const queuePendingSync = async (
+  tag: string,
+  operation: string,
+  error?: string,
+  payload?: { table: string; record: Record<string, unknown> }
+): Promise<void> => {
   try {
+    const existing = await dbGet<PendingSyncEntry>(STORES.PENDING_SYNC, tag);
+    const retryCount = existing ? existing.retryCount + 1 : 0;
     const entry: PendingSyncEntry = {
       tag,
       operation,
-      createdAt: new Date().toISOString(),
-      retryCount: 0,
+      payload: payload ?? existing?.payload,
+      createdAt: existing?.createdAt ?? new Date().toISOString(),
+      retryCount,
       lastError: error,
     };
     await dbPut(STORES.PENDING_SYNC, entry);
-    logger.sync.info(`Queued pending sync: ${tag}`);
+    logger.sync.info(`Queued pending sync: ${tag} (retry #${retryCount})`);
   } catch (err) {
     logger.sync.error(`Failed to queue pending sync "${tag}"`, err);
   }
@@ -93,19 +111,14 @@ const clearPendingSync = async (tag: string): Promise<void> => {
  * @param syncFn  Async function that performs one cloud sync operation.
  * @param tag     Unique identifier for this sync item (used for queue dedup).
  * @param maxRetries  Number of attempts before queueing (default 3).
+ * @param payload  Optional table+record snapshot to persist for offline recovery.
  */
 export const syncWithRetry = (
   syncFn: () => Promise<void>,
   tag: string,
-  maxRetries = 3
+  maxRetries = 3,
+  payload?: { table: string; record: Record<string, unknown> }
 ): Promise<boolean> => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    return Promise.resolve(false);
-  }
-
   if (!isSupabaseConfigured()) {
     return Promise.resolve(false);
   }
@@ -113,7 +126,7 @@ export const syncWithRetry = (
   return tryExecuteSync(syncFn, maxRetries)
     .then(async (result) => {
       if (!result.success) {
-        await queuePendingSync(tag, tag, result.error);
+        await queuePendingSync(tag, tag, result.error, payload);
         return false;
       }
       await clearPendingSync(tag);
@@ -121,7 +134,7 @@ export const syncWithRetry = (
     })
     .catch((err) => {
       logger.sync.error(`Unexpected error in syncWithRetry for "${tag}"`, err);
-      queuePendingSync(tag, tag, String(err)).catch(() => {});
+      queuePendingSync(tag, tag, String(err), payload).catch(() => {});
       return false;
     });
 };
@@ -132,12 +145,16 @@ export const syncWithRetry = (
  * Re-queues any that fail again, up to `maxRetries` times before discarding.
  *
  * @param syncFn  Async function that re-executes the pending operation.
- * @param maxRetries  Total retry cap per entry (default 3). When the stored
+ *                Receives the tag and the persisted payload (if available).
+ * @param maxRetries  Total retry cap per entry (default 5). When the stored
  *                    `retryCount` hits this limit the entry is dropped.
  */
 export const syncPendingToServer = async (
-  syncFn: (tag: string) => Promise<void>,
-  maxRetries = 3
+  syncFn: (
+    tag: string,
+    payload?: { table: string; record: Record<string, unknown> }
+  ) => Promise<void>,
+  maxRetries = 5
 ): Promise<SyncResult> => {
   if (!isSupabaseConfigured()) {
     return { success: true, synced: 0, pending: 0, skipped: true };
@@ -152,7 +169,7 @@ export const syncPendingToServer = async (
     await Promise.all(
       pendingEntries.map(async (entry) => {
         try {
-          await syncFn(entry.tag);
+          await syncFn(entry.tag, entry.payload);
           await clearPendingSync(entry.tag);
           synced++;
           logger.sync.info(`Pending sync resolved: ${entry.tag}`);

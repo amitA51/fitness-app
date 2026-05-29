@@ -37,7 +37,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
   const labelRadius = size * 0.48;
 
   const numPoints = displayData.length;
-  const angleStep = (2 * Math.PI) / numPoints;
+  const angleStep = numPoints > 0 ? (2 * Math.PI) / numPoints : 0;
 
   // Calculate polygon points
   const getPoint = (index: number, value: number): { x: number; y: number } => {
@@ -220,7 +220,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
               animate={{ opacity: hoveredIndex === i ? 1 : 0.8 }}
               transition={{ delay: 0.4 + i * 0.05 }}
             >
-              {muscle.muscle.length > 6 ? muscle.muscle.slice(0, 5) + '…' : muscle.muscle}
+              {muscle.muscle.length > 6 ? `${muscle.muscle.slice(0, 5)}…` : muscle.muscle}
             </motion.text>
           );
         })}

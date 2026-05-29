@@ -110,7 +110,8 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     : 'transform 280ms cubic-bezier(0.16, 1, 0.3, 1), width 280ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease';
 
   // Pattern fill for track background
-  const patternFill = `repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 14px)`;
+  const patternFill =
+    'repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 14px)';
 
   return (
     <div

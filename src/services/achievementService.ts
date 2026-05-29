@@ -49,23 +49,61 @@ export const calculateStreak = (sessions: WorkoutSession[]): StreakInfo => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  // Determine the anchor date: if the most recent workout was today, start
+  // counting from today; otherwise start from yesterday (an active streak
+  // shouldn't read 0 just because the user hasn't trained yet today).
+  let anchor = new Date(today);
+  if (uniqueDates.length > 0) {
+    const [y, m, d] = (uniqueDates[0] as string).split('-').map(Number) as [number, number, number];
+    const latestLocal = new Date(y, m - 1, d);
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (latestLocal.getTime() === yesterday.getTime()) {
+      anchor = yesterday;
+    }
+  }
+
   for (let i = 0; i < uniqueDates.length; i++) {
     const dateStr = uniqueDates[i];
     if (!dateStr) continue;
-    const date = new Date(dateStr);
-    const expectedDate = new Date(today);
-    expectedDate.setDate(today.getDate() - i);
+    // Parse as local date (YYYY-MM-DD) to avoid UTC midnight shift
+    const [y, m, d] = dateStr.split('-').map(Number) as [number, number, number];
+    const date = new Date(y, m - 1, d);
+    const expectedDate = new Date(anchor);
+    expectedDate.setDate(anchor.getDate() - i);
 
-    if (date.toDateString() === expectedDate.toDateString()) {
+    if (date.getTime() === expectedDate.getTime()) {
       tempStreak++;
-      if (i === 0) currentStreak = tempStreak;
+      currentStreak = tempStreak;
     } else {
       longestStreak = Math.max(longestStreak, tempStreak);
-      tempStreak = 1;
+      tempStreak = 0;
+      break;
     }
   }
 
   longestStreak = Math.max(longestStreak, tempStreak, currentStreak);
+
+  // Compute longest streak across all date sequences (not just the current one)
+  if (uniqueDates.length > 1) {
+    let streak = 1;
+    for (let i = 1; i < uniqueDates.length; i++) {
+      const prev = uniqueDates[i - 1] as string;
+      const curr = uniqueDates[i] as string;
+      const [py, pm, pd] = prev.split('-').map(Number) as [number, number, number];
+      const [cy, cm, cd] = curr.split('-').map(Number) as [number, number, number];
+      const prevDate = new Date(py, pm - 1, pd);
+      const currDate = new Date(cy, cm - 1, cd);
+      const diffDays = (prevDate.getTime() - currDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays === 1) {
+        streak++;
+      } else {
+        longestStreak = Math.max(longestStreak, streak);
+        streak = 1;
+      }
+    }
+    longestStreak = Math.max(longestStreak, streak);
+  }
 
   return {
     currentStreak,

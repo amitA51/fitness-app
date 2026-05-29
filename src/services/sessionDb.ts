@@ -8,7 +8,7 @@ import { LOCAL_STORAGE_KEYS as LS } from '../constants';
 import { ValidationError } from '../errors';
 import type { WorkoutSession } from '../types';
 import { emitWorkoutSaved } from './dataEvents';
-import { STORES, dbClear, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudWorkoutSession, syncWorkoutSession } from './supabaseSync';
 
@@ -140,8 +140,18 @@ export const reAddWorkoutSession = (session: WorkoutSession): Promise<void> =>
 export const replaceWorkoutSessionsFromCloud = async (
   sessions: WorkoutSession[]
 ): Promise<void> => {
-  await dbClear(LS.WORKOUT_SESSIONS);
-  await Promise.all(sessions.map((session) => dbPut(LS.WORKOUT_SESSIONS, session)));
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LS.WORKOUT_SESSIONS, 'readwrite');
+    const store = tx.objectStore(LS.WORKOUT_SESSIONS);
+    store.clear();
+    for (const session of sessions) {
+      store.put(session);
+    }
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
+  });
 };
 
 /**

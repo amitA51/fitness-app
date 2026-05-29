@@ -1,6 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 
 interface AnimatedProgressRingProps {
   percentage: number;
@@ -70,6 +70,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
   useEffect(() => {
     if (percentage >= 100 && prevPercentage < 100 && showConfetti && !shouldReduceMotion) {
       setShowCelebration(true);
+      setPrevPercentage(percentage);
       const timer = setTimeout(() => setShowCelebration(false), 2000);
       return () => clearTimeout(timer);
     }
@@ -109,7 +110,9 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
     return { start: '#6B7280', end: '#9CA3AF' };
   }, [percentage]);
 
-  const gradientId = `progress-gradient-${size}`;
+  const reactId = useId();
+  const gradientId = `progress-gradient-${reactId}`;
+  const glowFilterId = `progress-glow-${reactId}`;
 
   return (
     <div
@@ -118,6 +121,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
       }`}
       style={{ width: size, height: size }}
       role="progressbar"
+      tabIndex={0}
       aria-valuenow={Math.round(percentage)}
       aria-valuemin={0}
       aria-valuemax={100}
@@ -171,7 +175,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
           </linearGradient>
 
           {/* Glow filter */}
-          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <filter id={glowFilterId} x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="3" result="coloredBlur" />
             <feMerge>
               <feMergeNode in="coloredBlur" />
@@ -206,7 +210,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
             duration: shouldReduceMotion ? 0 : 1,
             ease: [0.22, 1, 0.36, 1],
           }}
-          filter="url(#glow)"
+          filter={`url(#${glowFilterId})`}
         />
       </svg>
 

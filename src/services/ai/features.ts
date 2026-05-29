@@ -9,6 +9,18 @@ import type { RecoveryLog } from '../bodyStatsService';
 import { buildContext, buildSystemPrompt } from './contextBuilder';
 import { type ChatMessage, getAIProvider } from './core';
 
+/**
+ * Sanitize user-provided text before embedding in prompts to mitigate
+ * prompt-injection. Strips control characters and trims to a safe length.
+ */
+function sanitizeForPrompt(input: string, maxLength = 100): string {
+  return input
+    .replace(/[\r\n\t]/g, ' ')
+    .replace(/[^\p{L}\p{N}\p{Zs}\-_'"()]/gu, '')
+    .slice(0, maxLength)
+    .trim();
+}
+
 export async function getWorkoutAdvice(
   sessions: WorkoutSession[],
   recoveryLogs?: RecoveryLog[],
@@ -39,7 +51,8 @@ export async function suggestWeight(
   // The professional-coach persona is injected globally by the provider
   // (withPersona in ai/config.ts), so we only supply the task-specific
   // instruction here to avoid sending two persona blocks to the model.
-  let contextMsg = `אני רוצה לדעת איזה משקל להשתמש ב-${exerciseName} ל-${targetReps} חזרות.`;
+  const safeName = sanitizeForPrompt(exerciseName);
+  let contextMsg = `אני רוצה לדעת איזה משקל להשתמש ב-${safeName} ל-${targetReps} חזרות.`;
   if (previousBest) {
     contextMsg += ` בפעם האחרונה עשיתי ${previousBest.weight}ק"ג ל-${previousBest.reps} חזרות.`;
   }
@@ -121,6 +134,7 @@ ${exerciseSummary}`;
  * with a generic fallback.
  */
 export async function getFormTips(exerciseName: string): Promise<string[]> {
+  const safeName = sanitizeForPrompt(exerciseName);
   const tipsDatabase: Record<string, string[]> = {
     סקווט: ['שמור על הגב ישר', 'הברכיים לא עוברות את קצות האצבעות', 'רד עד שהירך מקבילה לרצפה'],
     'לחיצת חזה': ['הורד את המוט עד שנוגע בחזה', 'שמור על השכמות מכווצות', 'רגליים יציבות על הרצפה'],
@@ -130,7 +144,7 @@ export async function getFormTips(exerciseName: string): Promise<string[]> {
   };
 
   for (const [key, tips] of Object.entries(tipsDatabase)) {
-    if (exerciseName.includes(key) || key.includes(exerciseName)) {
+    if (safeName.includes(key) || key.includes(safeName)) {
       return tips;
     }
   }

@@ -331,7 +331,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   color: 'rgba(255,255,255,0.5)',
                 }}
               >
-                סטים
+                תרגילים
               </div>
             </div>
 

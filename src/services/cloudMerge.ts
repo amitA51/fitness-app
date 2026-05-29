@@ -7,11 +7,10 @@
  * logs, nutrition logs, user settings, AI conversations).
  */
 
-import { LOCAL_STORAGE_KEYS as LS } from '../constants';
-import { STORES, dbClear, dbGetAll, dbPut } from './indexedDBCore';
+import { STORES, dbGetAll, dbPut } from './indexedDBCore';
 
 // ==================== REPLACE FROM CLOUD (for pullAllData) ====================
-// These functions clear local IndexedDB and replace with cloud data
+// These functions merge cloud data into local IndexedDB non-destructively.
 
 /**
  * Merge body measurements from cloud into local IndexedDB without dropping
@@ -40,7 +39,7 @@ export const replacePersonalRecordsFromCloud = async (records: unknown[]): Promi
  */
 export const replaceRecoveryLogsFromCloud = async (logs: unknown[]): Promise<void> => {
   await mergeGenericRecords(
-    LS.RECOVERY_LOGS,
+    STORES.RECOVERY_LOGS,
     (logs as { id?: string; createdAt?: string; updatedAt?: string }[]) ?? []
   );
 };
@@ -50,57 +49,92 @@ export const replaceRecoveryLogsFromCloud = async (logs: unknown[]): Promise<voi
  */
 export const replaceNutritionLogsFromCloud = async (logs: unknown[]): Promise<void> => {
   await mergeGenericRecords(
-    LS.NUTRITION_LOGS,
+    STORES.NUTRITION_LOGS,
     (logs as { id?: string; createdAt?: string; updatedAt?: string }[]) ?? []
   );
 };
 
 /**
- * Replace all user settings with cloud data.
+ * Merge user settings from cloud (non-destructive).
+ * USER_SETTINGS store uses keyPath 'key', not 'id'.
  */
 export const replaceUserSettingsFromCloud = async (settings: unknown[]): Promise<void> => {
-  await dbClear(LS.USER_SETTINGS);
-  await Promise.all(settings.map((s) => dbPut(LS.USER_SETTINGS, s as object)));
+  await mergeGenericRecords(
+    STORES.USER_SETTINGS,
+    (settings as { id?: string; key?: string; createdAt?: string; updatedAt?: string }[]) ?? [],
+    'key'
+  );
 };
 
 /**
- * Replace all AI conversations with cloud data.
+ * Merge AI conversations from cloud (non-destructive).
  */
 export const replaceAIConversationsFromCloud = async (conversations: unknown[]): Promise<void> => {
-  await dbClear(STORES.AI_CONVERSATIONS);
-  await Promise.all(conversations.map((c) => dbPut(STORES.AI_CONVERSATIONS, c as object)));
+  await mergeGenericRecords(
+    STORES.AI_CONVERSATIONS,
+    (conversations as { id?: string; createdAt?: string; updatedAt?: string }[]) ?? []
+  );
 };
 
 // ==================== MERGE FROM CLOUD (non-destructive) ====================
 
+interface TimestampedRecord {
+  id?: string;
+  key?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Parse a date string to epoch ms, returning 0 for invalid/missing values. */
+const safeTimestamp = (value: string | undefined | null): number => {
+  if (!value) return 0;
+  const t = new Date(value).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
+
 /**
  * Generic merge for simple timestamped records.
+ * @param keyField  The field used as the IDB keyPath (default 'id', 'key' for USER_SETTINGS).
  */
-export async function mergeGenericRecords<
-  T extends { id?: string; createdAt?: string; updatedAt?: string },
->(storeName: string, cloudRecords: T[]): Promise<{ added: number; updated: number; kept: number }> {
+export async function mergeGenericRecords<T extends TimestampedRecord>(
+  storeName: string,
+  cloudRecords: T[],
+  keyField: 'id' | 'key' = 'id'
+): Promise<{ added: number; updated: number; kept: number }> {
   const localRecords = await dbGetAll<T>(storeName);
-  const localMap = new Map(localRecords.map((r) => [String(r.id ?? ''), r]));
+  const localMap = new Map(
+    localRecords.map((r) => [String((keyField === 'key' ? r.key : r.id) ?? ''), r])
+  );
 
   let added = 0;
   let updated = 0;
   let kept = 0;
 
+  const writes: T[] = [];
+
   for (const cloud of cloudRecords) {
-    const local = localMap.get(String(cloud.id ?? ''));
+    const cloudKey = String((keyField === 'key' ? cloud.key : cloud.id) ?? '');
+    if (!cloudKey) continue; // skip records without a usable key
+    const local = localMap.get(cloudKey);
     if (!local) {
-      await dbPut(storeName, cloud);
+      writes.push(cloud);
       added++;
     } else {
-      const localTime = new Date(local.updatedAt || local.createdAt || '').getTime();
-      const cloudTime = new Date(cloud.updatedAt || cloud.createdAt || '').getTime();
+      const localTime = safeTimestamp(local.updatedAt) || safeTimestamp(local.createdAt);
+      const cloudTime = safeTimestamp(cloud.updatedAt) || safeTimestamp(cloud.createdAt);
+      // Cloud wins on strictly newer; on tie or both-zero, keep local (no-op).
       if (cloudTime > localTime) {
-        await dbPut(storeName, cloud);
+        writes.push(cloud);
         updated++;
       } else {
         kept++;
       }
     }
+  }
+
+  // Batch writes via Promise.all for better performance
+  if (writes.length > 0) {
+    await Promise.all(writes.map((record) => dbPut(storeName, record)));
   }
 
   return { added, updated, kept };
@@ -119,8 +153,8 @@ export const mergeNutritionLogsFromCloud = (
   logs: { id: string; createdAt?: string; updatedAt?: string }[]
 ) => mergeGenericRecords(STORES.NUTRITION_LOGS, logs);
 export const mergeUserSettingsFromCloud = (
-  settings: { id?: string; createdAt?: string; updatedAt?: string }[]
-) => mergeGenericRecords(STORES.USER_SETTINGS, settings);
+  settings: { id?: string; key?: string; createdAt?: string; updatedAt?: string }[]
+) => mergeGenericRecords(STORES.USER_SETTINGS, settings, 'key');
 export const mergeAIConversationsFromCloud = (
   conversations: { id: string; createdAt?: string; updatedAt?: string }[]
 ) => mergeGenericRecords(STORES.AI_CONVERSATIONS, conversations);

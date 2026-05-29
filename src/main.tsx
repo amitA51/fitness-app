@@ -8,7 +8,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { RootErrorBoundary } from './errors/RootErrorBoundary';
 import { initAI } from './services/ai/bootstrap';
-import { checkMissedWorkouts, requestNotificationPermission } from './services/notificationService';
+import { checkMissedWorkouts } from './services/notificationService';
 import { initWebVitals } from './services/webVitals';
 import { logger } from './utils/logger';
 import './styles/global.css';
@@ -56,16 +56,13 @@ window.addEventListener('unhandledrejection', (event) => {
 
 initAI();
 
-requestNotificationPermission()
-  .then((granted) => {
-    if (granted) {
-      const lastWorkout = localStorage.getItem('sparkos_last_workout_date');
-      checkMissedWorkouts(lastWorkout);
-    }
-  })
-  .catch((err) => {
-    logger.app.warn('Notification permission / missed-workout check failed', err);
-  });
+// Notification permission is now requested from Settings when the user
+// explicitly enables reminders (better UX, higher grant rates).
+// On load we only check missed workouts if permission was already granted.
+if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+  const lastWorkout = localStorage.getItem('sparkos_last_workout_date');
+  checkMissedWorkouts(lastWorkout);
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

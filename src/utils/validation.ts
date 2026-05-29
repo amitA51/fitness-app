@@ -23,10 +23,10 @@ export interface WorkoutInputLimits {
 }
 
 export const WORKOUT_LIMITS: Readonly<WorkoutInputLimits> = {
-  weight: { min: 0, max: 999 },
-  reps: { min: 0, max: 999 },
+  weight: { min: 0, max: 1000 },
+  reps: { min: 0, max: 100 },
   rpe: { min: 1, max: 10 },
-  sets: { min: 1, max: 30 },
+  sets: { min: 1, max: 20 },
   restSeconds: { min: 0, max: 600 },
 };
 

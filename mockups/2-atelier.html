@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 · ATELIER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&family=Frank+Ruhl+Libre:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --paper: #F3EEE4;
+  --paper-2: #EDE6D8;
+  --card: #FBF8F1;
+  --ink: #201C16;
+  --ink-2: #6E6357;
+  --ink-3: #A89B89;
+  --rule: #DDD4C4;
+  --sienna: #BC4B2A;
+  --sienna-d: #9E3D20;
+  --olive: #5E6B4F;
+  --serif: 'Fraunces', 'Frank Ruhl Libre', serif;
+  --serif-he: 'Frank Ruhl Libre', serif;
+  --sans: 'Hanken Grotesk', sans-serif;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  max-width: 412px; margin: 0 auto; min-height: 100vh;
+  position: relative; overflow-x: hidden;
+}
+.svg-icon { width: 22px; height: 22px; display: block; }
+.fade { opacity: 0; transform: translateY(10px); animation: fade .7s cubic-bezier(.2,.7,.3,1) forwards; }
+@keyframes fade { to { opacity: 1; transform: none; } }
+
+/* Masthead */
+.mast {
+  padding: 26px 24px 16px;
+  border-bottom: 1.5px solid var(--ink);
+}
+.mast-top { display: flex; justify-content: space-between; align-items: center; }
+.mast-name { font-family: var(--serif); font-weight: 600; font-size: 26px; letter-spacing: -.01em; }
+.mast-no { font-family: var(--sans); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-2); }
+.mast-rule { display: flex; justify-content: space-between; margin-top: 10px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+.icon-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1.5px solid var(--ink); background: transparent; color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.page { padding: 0 0 120px; }
+
+/* Hero — editorial number */
+.hero { padding: 30px 24px 26px; border-bottom: 1px solid var(--rule); position: relative; }
+.kicker { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--sienna); font-weight: 600; margin-bottom: 14px; }
+.hero-num {
+  font-family: var(--serif); font-weight: 500; font-size: 92px; line-height: .82;
+  letter-spacing: -.04em; font-variant-numeric: lining-nums;
+}
+.hero-num sup { font-size: 22px; vertical-align: top; color: var(--ink-3); font-weight: 400; }
+.hero-cap { display: flex; align-items: baseline; gap: 10px; margin-top: 16px; }
+.hero-cap em { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 19px; color: var(--sienna); }
+.hero-cap span { font-size: 13px; color: var(--ink-2); }
+.corner { position: absolute; width: 14px; height: 14px; border-color: var(--ink-3); }
+.corner.tr { top: 14px; left: 14px; border-top: 1.5px solid; border-left: 1.5px solid; }
+.corner.bl { bottom: 14px; right: 14px; border-bottom: 1.5px solid; border-right: 1.5px solid; }
+
+/* specs strip */
+.specs { display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid var(--rule); }
+.spec { padding: 18px 16px; border-left: 1px solid var(--rule); text-align: center; }
+.spec:first-child { border-left: none; }
+.spec b { font-family: var(--serif); font-weight: 600; font-size: 30px; display: block; letter-spacing: -.02em; }
+.spec span { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); margin-top: 4px; display: block; }
+
+/* Feature / next session */
+.feature { padding: 26px 24px; border-bottom: 1px solid var(--rule); }
+.feature-tag { font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--ink-2); margin-bottom: 6px; }
+.feature-title { font-family: var(--serif-he); font-weight: 700; font-size: 40px; line-height: .95; letter-spacing: -.01em; margin-bottom: 14px; }
+.feature-meta { display: flex; gap: 18px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 22px; }
+.feature-meta span { display: flex; align-items: center; gap: 7px; }
+.feature-meta .svg-icon { width: 16px; height: 16px; color: var(--sienna); }
+.btn {
+  display: inline-flex; align-items: center; gap: 12px; cursor: pointer;
+  background: var(--ink); color: var(--paper); border: none;
+  font-family: var(--sans); font-weight: 600; font-size: 14px; letter-spacing: .02em;
+  padding: 15px 26px; border-radius: 2px;
+}
+.btn .arrow { width: 30px; height: 1px; background: var(--paper); position: relative; }
+.btn .arrow::before { content:''; position: absolute; right: 0; top: -3px; width: 7px; height: 7px; border-bottom: 1px solid var(--paper); border-right: 1px solid var(--paper); transform: rotate(45deg); }
+
+/* Index list */
+.idx-head { display: flex; justify-content: space-between; align-items: baseline; padding: 22px 24px 10px; }
+.idx-head h3 { font-family: var(--serif); font-weight: 600; font-size: 20px; }
+.idx-head a { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--sienna); }
+.entry {
+  display: grid; grid-template-columns: 28px 1fr auto; gap: 14px; align-items: baseline;
+  padding: 16px 24px; border-bottom: 1px solid var(--rule);
+}
+.entry-no { font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--ink-3); }
+.entry-name { font-family: var(--serif-he); font-weight: 700; font-size: 19px; letter-spacing: -.01em; }
+.entry-name .star { color: var(--sienna); font-family: var(--serif); }
+.entry-date { font-size: 11.5px; color: var(--ink-2); margin-top: 3px; letter-spacing: .04em; }
+.entry-vol { font-family: var(--serif); font-weight: 600; font-size: 20px; text-align: left; letter-spacing: -.02em; }
+.entry-vol span { display: block; font-family: var(--sans); font-size: 10px; color: var(--ink-3); letter-spacing: .08em; text-transform: uppercase; }
+
+/* Screen sep */
+.sep { text-align: center; padding: 26px; font-family: var(--serif); font-style: italic; font-size: 14px; color: var(--ink-3); }
+.sep::before, .sep::after { content:'—'; margin: 0 10px; }
+
+/* Active workout */
+.aw-mast {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 22px 24px; border-bottom: 1.5px solid var(--ink);
+}
+.aw-time { font-family: var(--serif); font-weight: 500; font-size: 34px; letter-spacing: -.02em; }
+.aw-time span { font-family: var(--sans); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-2); display: block; margin-bottom: 2px; }
+.aw-end { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; border: 1.5px solid var(--ink); padding: 11px 16px; border-radius: 2px; background: transparent; }
+
+.ex { border-bottom: 1px solid var(--rule); }
+.ex-head { display: flex; justify-content: space-between; align-items: baseline; padding: 24px 24px 8px; }
+.ex-name { font-family: var(--serif); font-weight: 600; font-size: 30px; letter-spacing: -.02em; }
+.ex-name em { font-family: var(--serif-he); font-style: normal; display:block; font-size: 15px; color: var(--ink-2); font-weight: 500; margin-top: 2px; }
+.ex-pos { font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--ink-3); }
+
+.set-tbl { width: 100%; border-collapse: collapse; }
+.set-tbl thead th {
+  font-family: var(--sans); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-2); font-weight: 600; padding: 12px 24px; text-align: right;
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+}
+.set-tbl td { padding: 16px 24px; border-bottom: 1px solid var(--rule); font-family: var(--serif); font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.set-tbl td.no { font-style: italic; font-size: 16px; color: var(--ink-3); }
+.set-tbl td.unit { font-size: 13px; color: var(--ink-3); font-family: var(--sans); }
+.done { color: var(--olive); }
+.live { color: var(--sienna); border-bottom: 2px solid var(--sienna); padding-bottom: 2px; }
+.pending td { color: var(--ink-3); }
+.check-c { color: var(--olive); }
+.add-row { padding: 16px 24px; }
+.add-row button {
+  width: 100%; background: transparent; border: 1px dashed var(--ink-3); color: var(--ink-2);
+  font-family: var(--sans); font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+  padding: 14px; border-radius: 2px; cursor: pointer;
+}
+
+/* Nav */
+.nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 412px;
+  display: flex; justify-content: space-around; padding: 14px 14px 26px;
+  background: var(--paper); border-top: 1.5px solid var(--ink);
+}
+.nav-i { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--ink-3); flex: 1; }
+.nav-i span { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+.nav-i.on { color: var(--ink); }
+.nav-i.on .svg-icon { color: var(--sienna); }
+</style>
+</head>
+<body>
+
+<!-- DASHBOARD -->
+<header class="mast">
+  <div class="mast-top">
+    <div class="mast-name">Atelier</div>
+    <button class="icon-btn">
+      <svg class="svg-icon" style="width:19px;height:19px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>
+    </button>
+  </div>
+  <div class="mast-rule"><span>יומן אימונים</span><span>גליון 142 · ת״א</span></div>
+</header>
+
+<main class="page">
+  <section class="hero fade">
+    <span class="corner tr"></span><span class="corner bl"></span>
+    <div class="kicker">נפח שבועי</div>
+    <div class="hero-num">12.4<sup>K</sup></div>
+    <div class="hero-cap"><em>+4.2%</em><span>קילוגרם · מול השבוע שעבר</span></div>
+  </section>
+
+  <div class="specs fade" style="animation-delay:.08s">
+    <div class="spec"><b>04</b><span>אימונים</span></div>
+    <div class="spec"><b>18</b><span>רצף ימים</span></div>
+    <div class="spec"><b>03</b><span>שיאים</span></div>
+  </div>
+
+  <section class="feature fade" style="animation-delay:.14s">
+    <div class="feature-tag">The next session —</div>
+    <div class="feature-title">יום דחיפה</div>
+    <div class="feature-meta">
+      <span><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg> 6 תרגילים</span>
+      <span><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> כ-50 דקות</span>
+    </div>
+    <button class="btn">התחל אימון <span class="arrow"></span></button>
+  </section>
+
+  <div class="idx-head fade" style="animation-delay:.2s">
+    <h3>Index</h3>
+    <a>הצג הכל</a>
+  </div>
+
+  <div class="entry fade" style="animation-delay:.24s">
+    <div class="entry-no">01</div>
+    <div><div class="entry-name">יום משיכה</div><div class="entry-date">אתמול · 28.05 · 52 דקות</div></div>
+    <div class="entry-vol">8,240<span>ק"ג</span></div>
+  </div>
+  <div class="entry fade" style="animation-delay:.28s">
+    <div class="entry-no">02</div>
+    <div><div class="entry-name"><span class="star">✦</span> יום דחיפה</div><div class="entry-date">27.05 · 48 דקות · שיא אישי</div></div>
+    <div class="entry-vol">9,100<span>ק"ג</span></div>
+  </div>
+  <div class="entry fade" style="animation-delay:.32s">
+    <div class="entry-no">03</div>
+    <div><div class="entry-name">יום רגליים</div><div class="entry-date">26.05 · 55 דקות</div></div>
+    <div class="entry-vol">11,500<span>ק"ג</span></div>
+  </div>
+</main>
+
+<!-- ACTIVE WORKOUT -->
+<div class="sep">מסך אימון פעיל</div>
+
+<header class="aw-mast">
+  <div class="aw-time"><span>זמן פעיל</span>23:45</div>
+  <button class="aw-end">סיום</button>
+</header>
+
+<section class="ex">
+  <div class="ex-head">
+    <div class="ex-name">Bench Press<em>לחיצת חזה</em></div>
+    <div class="ex-pos">02 / 06</div>
+  </div>
+  <table class="set-tbl">
+    <thead><tr><th style="width:46px">סט</th><th>משקל</th><th>חזרות</th><th style="width:50px"></th></tr></thead>
+    <tbody>
+      <tr><td class="no">01</td><td class="done">80 <span class="unit" style="font-size:13px">ק"ג</span></td><td class="done">10</td><td class="check-c"><svg class="svg-icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></td></tr>
+      <tr><td class="no">02</td><td class="done">85</td><td class="done">8</td><td class="check-c"><svg class="svg-icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></td></tr>
+      <tr class="pending"><td class="no">03</td><td><span class="live">90</span></td><td>—</td><td><svg class="svg-icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/></svg></td></tr>
+      <tr class="pending"><td class="no">04</td><td>90</td><td>—</td><td><svg class="svg-icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/></svg></td></tr>
+    </tbody>
+  </table>
+  <div class="add-row"><button>+ הוסף סט</button></div>
+</section>
+
+<nav class="nav">
+  <div class="nav-i on"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>בית</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>התקדמות</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>תבניות</span></div>
+  <div class="nav-i"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg><span>מאמן</span></div>
+</nav>
+
+</body>
+</html>

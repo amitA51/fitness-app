@@ -83,10 +83,10 @@ export function getMacroGoalsForGoal(
       calories = tdeeResult.maintain;
   }
 
-  return {
-    calories,
-    protein: tdeeResult.protein,
-    carbs: tdeeResult.carbs,
-    fat: tdeeResult.fat,
-  };
+  // Recompute macros from goal-adjusted calories (30% protein, 40% carbs, 30% fat)
+  const protein = Math.round((calories * 0.3) / 4);
+  const carbs = Math.round((calories * 0.4) / 4);
+  const fat = Math.round((calories * 0.3) / 9);
+
+  return { calories, protein, carbs, fat };
 }

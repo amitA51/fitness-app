@@ -289,12 +289,13 @@ export const AccessibleModal: React.FC<AccessibleModalProps> = ({
     if (isOpen) {
       previousActiveElement.current = document.activeElement as HTMLElement;
       // Focus the modal after animation
-      setTimeout(() => {
+      const timerId = setTimeout(() => {
         modalRef.current?.focus();
       }, DURATION.normal * 1000);
-    } else {
-      previousActiveElement.current?.focus();
+      return () => clearTimeout(timerId);
     }
+    previousActiveElement.current?.focus();
+    return undefined;
   }, [isOpen]);
 
   // Handle Escape key
@@ -691,7 +692,6 @@ export const AccessibleTabs: React.FC<AccessibleTabsProps> = ({
           id={`panel-${tab.id}`}
           aria-labelledby={`tab-${tab.id}`}
           hidden={activeTab !== tab.id}
-          tabIndex={0}
           className="mt-4 focus:outline-none"
         >
           {activeTab === tab.id && activeContent}

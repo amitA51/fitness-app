@@ -338,7 +338,7 @@ export async function getRecoveryLogsByDateRange(
 }
 
 export async function getTodayRecoveryLog(now = new Date()): Promise<RecoveryLog | null> {
-  const today = now.toISOString().split('T')[0] ?? '';
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const all = await dbGetAll<RecoveryLog>(STORES.RECOVERY_LOGS);
   return (
     all
@@ -427,10 +427,9 @@ export async function getWeeklyRecoveryAverage(): Promise<{
   const today = new Date();
   const weekAgo = new Date(today);
   weekAgo.setDate(weekAgo.getDate() - 7);
-  const logs = await getRecoveryLogsByDateRange(
-    weekAgo.toISOString().split('T')[0] ?? '',
-    today.toISOString().split('T')[0] ?? ''
-  );
+  const formatLocal = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const logs = await getRecoveryLogsByDateRange(formatLocal(weekAgo), formatLocal(today));
 
   if (logs.length === 0)
     return { avgSleep: 0, avgEnergy: 0, avgSoreness: 0, avgStress: 0, avgScore: 0 };

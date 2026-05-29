@@ -460,15 +460,13 @@ export const StrengthTab = memo(function StrengthTab() {
 
                 {/* Area fill */}
                 <path
-                  d={
-                    activeCurve.data
-                      .map((point, i) => {
-                        const x = (i / Math.max(activeCurve.data.length - 1, 1)) * 300;
-                        const y = 140 - ((point.value - minValue) / range) * 110 - 10;
-                        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-                      })
-                      .join(' ') + ` L 300 140 L 0 140 Z`
-                  }
+                  d={`${activeCurve.data
+                    .map((point, i) => {
+                      const x = (i / Math.max(activeCurve.data.length - 1, 1)) * 300;
+                      const y = 140 - ((point.value - minValue) / range) * 110 - 10;
+                      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                    })
+                    .join(' ')} L 300 140 L 0 140 Z`}
                   fill="color-mix(in srgb, var(--fs-accent) 10%, transparent)"
                 />
 

@@ -69,7 +69,7 @@ export default function LoginPage() {
       lang="he"
     >
       {/* Skip link */}
-      <a href="#main-content" className="skip-link" style={{ top: '-100%' }}>
+      <a href="#main-content" className="skip-link">
         דלג לתוכן
       </a>
 

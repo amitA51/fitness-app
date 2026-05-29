@@ -26,3 +26,24 @@ export const onWorkoutSaved = (handler: () => void): (() => void) => {
   window.addEventListener(WORKOUT_SAVED, handler);
   return () => window.removeEventListener(WORKOUT_SAVED, handler);
 };
+
+const TEMPLATES_CHANGED = 'TEMPLATES_CHANGED';
+
+/**
+ * Notify the UI that workout templates changed — e.g. a coach edited the
+ * trainee's plan and it was merged from the cloud into the local store.
+ */
+export const emitTemplatesChanged = (): void => {
+  window.dispatchEvent(new Event(TEMPLATES_CHANGED));
+};
+
+/**
+ * Subscribe to workout-template change notifications.
+ *
+ * @param handler  Called whenever workout templates change.
+ * @returns A cleanup function that removes the listener.
+ */
+export const onTemplatesChanged = (handler: () => void): (() => void) => {
+  window.addEventListener(TEMPLATES_CHANGED, handler);
+  return () => window.removeEventListener(TEMPLATES_CHANGED, handler);
+};

@@ -199,7 +199,7 @@ export const WorkoutContent: React.FC<{
       try {
         const templates = await getWorkoutTemplates();
         const template = templates.find((t) => t.id === initialTemplateId);
-        if (template && template.exercises && template.exercises.length > 0) {
+        if (template?.exercises && template.exercises.length > 0) {
           triggerHaptic('success');
           for (const ex of template.exercises) {
             const exercise: Exercise = {
@@ -524,6 +524,13 @@ export const WorkoutContent: React.FC<{
   const handleNumpadInput = useCallback(
     (digit: string) => {
       dispatch({ type: 'NUMPAD_INPUT', payload: digit });
+    },
+    [dispatch]
+  );
+
+  const handleNumpadSetValue = useCallback(
+    (value: string) => {
+      dispatch({ type: 'SET_NUMPAD_VALUE', payload: value });
     },
     [dispatch]
   );
@@ -934,6 +941,7 @@ export const WorkoutContent: React.FC<{
           target={state.numpad.target}
           value={state.numpad.value}
           onInput={handleNumpadInput}
+          onSetValue={handleNumpadSetValue}
           onDelete={handleNumpadDelete}
           onSubmit={handleNumpadSubmit}
           onClose={handleCloseNumpad}

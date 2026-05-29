@@ -4,7 +4,7 @@
 
 import { X as CloseIcon } from 'lucide-react';
 import type React from 'react';
-import { memo, useState } from 'react';
+import { memo, useId, useState } from 'react';
 import * as dataService from '../../services/dataService';
 import { type CreatePersonalExerciseInput, type Exercise, createWorkoutSet } from '../../types';
 import { logger } from '../../utils/logger';
@@ -23,6 +23,10 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
     saveToLibrary: true,
   });
   const [nameError, setNameError] = useState<string | null>(null);
+  const nameId = useId();
+  const muscleGroupId = useId();
+  const restTimeId = useId();
+  const setsId = useId();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,6 +104,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
   };
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: modal backdrop dismiss; keyboard users use Close button or Escape
     <div
       style={{
         position: 'fixed',
@@ -169,8 +174,11 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* Name */}
           <div>
-            <label style={labelStyle}>שם התרגיל *</label>
+            <label htmlFor={nameId} style={labelStyle}>
+              שם התרגיל *
+            </label>
             <input
+              id={nameId}
               type="text"
               value={formData.name}
               onChange={(e) => {
@@ -201,8 +209,11 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
 
           {/* Muscle Group */}
           <div>
-            <label style={labelStyle}>קבוצת שרירים</label>
+            <label htmlFor={muscleGroupId} style={labelStyle}>
+              קבוצת שרירים
+            </label>
             <select
+              id={muscleGroupId}
               value={formData.muscleGroup}
               onChange={(e) => setFormData({ ...formData, muscleGroup: e.target.value })}
               style={{ ...inputStyle, appearance: 'none' }}
@@ -219,8 +230,11 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
           {/* Sets + Rest */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label style={labelStyle}>מנוחה (שניות)</label>
+              <label htmlFor={restTimeId} style={labelStyle}>
+                מנוחה (שניות)
+              </label>
               <input
+                id={restTimeId}
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -235,8 +249,11 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
               />
             </div>
             <div>
-              <label style={labelStyle}>מספר סטים</label>
+              <label htmlFor={setsId} style={labelStyle}>
+                מספר סטים
+              </label>
               <input
+                id={setsId}
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"

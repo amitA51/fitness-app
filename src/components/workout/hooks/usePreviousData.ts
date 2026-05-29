@@ -36,11 +36,11 @@ const SESSIONS_CACHE_TTL = 60000; // 1 minute for sessions list
 const EXERCISE_CACHE_TTL = 300000; // 5 minutes for individual exercise data
 
 /**
- * Sort sessions by most recent first (mutates array for performance)
+ * Sort sessions by most recent first (returns a new sorted array)
  * Only called once when caching sessions
  */
 const sortSessionsByRecent = (sessions: WorkoutSession[]): WorkoutSession[] => {
-  return sessions.sort((a, b) => {
+  return [...sessions].sort((a, b) => {
     const tb = new Date((b.endTime ?? b.startTime) || 0).getTime();
     const ta = new Date((a.endTime ?? a.startTime) || 0).getTime();
     return tb - ta;

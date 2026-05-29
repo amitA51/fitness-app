@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 · OBSIDIAN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Heebo:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --bg: #08080B;
+  --bg-2: #0D0D11;
+  --surface: #121217;
+  --surface-2: #16161C;
+  --border: #1F1F27;
+  --border-2: #2A2A34;
+  --text: #ECECF1;
+  --text-2: #9A9AA8;
+  --text-3: #5A5A68;
+  --violet: #7C5CFF;
+  --violet-2: #9B82FF;
+  --teal: #2DD4BF;
+  --font: 'Sora', 'Heebo', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  font-family: var(--font);
+  background:
+    radial-gradient(120% 60% at 50% -10%, #15131F 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+  max-width: 412px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+.svg-icon { width: 22px; height: 22px; display: block; }
+.fade { opacity: 0; transform: translateY(8px); animation: fade .6s cubic-bezier(.2,.7,.3,1) forwards; }
+@keyframes fade { to { opacity: 1; transform: none; } }
+
+/* Top bar */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px 14px;
+  background: linear-gradient(180deg, rgba(8,8,11,.92), rgba(8,8,11,.7));
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  width: 30px; height: 30px; border-radius: 9px;
+  background: linear-gradient(140deg, var(--violet), #4B3BAA);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(124,92,255,.35), inset 0 1px 0 rgba(255,255,255,.25);
+}
+.brand-name { font-size: 15px; font-weight: 700; letter-spacing: .02em; }
+.brand-name b { font-weight: 800; }
+.icon-btn {
+  width: 38px; height: 38px; border-radius: 11px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Page */
+.page { padding: 20px 20px 120px; }
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--text-3); margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.eyebrow::before { content:''; width: 6px; height: 6px; border-radius: 2px; background: var(--teal); box-shadow: 0 0 10px var(--teal); }
+
+/* Hero metric */
+.hero {
+  background:
+    radial-gradient(90% 120% at 100% 0%, rgba(124,92,255,.14), transparent 60%),
+    var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+}
+.hero-row { display: flex; justify-content: space-between; align-items: flex-start; }
+.hero-label { font-size: 13px; color: var(--text-2); font-weight: 400; }
+.hero-chip {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  color: var(--teal);
+  background: rgba(45,212,191,.1);
+  border: 1px solid rgba(45,212,191,.22);
+  padding: 5px 9px; border-radius: 8px;
+}
+.hero-value {
+  font-family: var(--mono); font-weight: 700;
+  font-size: 56px; letter-spacing: -.03em; line-height: 1;
+  margin: 14px 0 2px;
+  font-variant-numeric: tabular-nums;
+}
+.hero-value small { font-size: 18px; color: var(--text-3); font-weight: 400; }
+.hero-sub { font-size: 12.5px; color: var(--text-2); }
+
+/* sparkline */
+.spark { margin-top: 18px; height: 48px; width: 100%; display:block; }
+
+/* stat grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 16px;
+}
+.stat-top { display: flex; align-items: center; gap: 8px; color: var(--text-3); }
+.stat-top .svg-icon { width: 16px; height: 16px; }
+.stat-top span { font-size: 11.5px; color: var(--text-2); }
+.stat-val { font-family: var(--mono); font-size: 26px; font-weight: 700; margin-top: 10px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat-val i { font-style: normal; font-size: 13px; color: var(--text-3); }
+
+/* Next session card */
+.next {
+  margin-top: 12px;
+  background: linear-gradient(135deg, #161422 0%, var(--surface) 70%);
+  border: 1px solid var(--border-2);
+  border-radius: 20px; padding: 20px;
+  position: relative; overflow: hidden;
+}
+.next::after {
+  content:''; position:absolute; inset: -1px -1px auto auto;
+  width: 140px; height: 140px;
+  background: radial-gradient(circle at 80% 20%, rgba(124,92,255,.25), transparent 60%);
+  pointer-events: none;
+}
+.next-tag { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--violet-2); }
+.next-title { font-size: 24px; font-weight: 700; letter-spacing: -.01em; margin: 8px 0 4px; }
+.next-meta { font-size: 12.5px; color: var(--text-2); display: flex; gap: 14px; margin-bottom: 18px; }
+.next-meta span { display: flex; align-items: center; gap: 6px; }
+.next-meta .svg-icon { width: 15px; height: 15px; color: var(--text-3); }
+.btn-primary {
+  width: 100%; border: none; cursor: pointer;
+  background: linear-gradient(135deg, var(--violet), #5B45CC);
+  color: #fff; font-family: var(--font); font-size: 15px; font-weight: 600;
+  padding: 15px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow: 0 8px 24px rgba(124,92,255,.32), inset 0 1px 0 rgba(255,255,255,.2);
+}
+
+/* Section header */
+.sec-head { display: flex; align-items: center; justify-content: space-between; margin: 28px 4px 14px; }
+.sec-head h3 { font-size: 15px; font-weight: 600; }
+.sec-head a { font-size: 12.5px; color: var(--text-2); font-family: var(--mono); }
+
+/* History rows */
+.row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px; border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.row-ic {
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+  background: var(--surface-2); border: 1px solid var(--border-2);
+  display: flex; align-items: center; justify-content: center; color: var(--violet-2);
+}
+.row-main { flex: 1; min-width: 0; }
+.row-name { font-size: 14.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.row-meta { font-family: var(--mono); font-size: 11.5px; color: var(--text-3); margin-top: 3px; }
+.row-vol { text-align: left; }
+.row-vol b { font-family: var(--mono); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.row-vol span { display:block; font-size: 10px; color: var(--text-3); font-family: var(--mono); }
+.pr {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 700; letter-spacing: .08em;
+  color: var(--teal); border: 1px solid rgba(45,212,191,.3);
+  padding: 2px 6px; border-radius: 6px;
+}
+
+/* divider between screens */
+.screens-sep {
+  margin: 8px 20px; padding: 28px 0 18px; border-top: 1px dashed var(--border-2);
+  text-align: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--text-3);
+}
+
+/* Active workout */
+.aw-head {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(180deg, rgba(8,8,11,.95), rgba(8,8,11,.7));
+  backdrop-filter: blur(14px); border-bottom: 1px solid var(--border);
+}
+.aw-timer { display: flex; align-items: center; gap: 10px; }
+.aw-timer .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 10px var(--teal); animation: pulse 1.8s infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+.aw-timer b { font-family: var(--mono); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.aw-timer span { font-family: var(--mono); font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: .1em; display:block; }
+.aw-end {
+  font-family: var(--mono); font-size: 12px; color: var(--text-2);
+  border: 1px solid var(--border-2); background: var(--surface);
+  padding: 9px 14px; border-radius: 11px;
+}
+
+.aw-progress { display: flex; gap: 5px; padding: 16px 20px 4px; }
+.aw-progress i { flex: 1; height: 4px; border-radius: 2px; background: var(--border-2); }
+.aw-progress i.on { background: var(--violet); box-shadow: 0 0 8px rgba(124,92,255,.5); }
+
+.ex {
+  margin: 14px 20px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden;
+}
+.ex-head { display: flex; align-items: center; justify-content: space-between; padding: 18px; }
+.ex-head h4 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+.ex-head .muscle { font-family: var(--mono); font-size: 11px; color: var(--text-3); margin-top: 4px; text-transform: uppercase; letter-spacing: .08em; }
+.ex-target {
+  font-family: var(--mono); font-size: 11px; color: var(--violet-2);
+  background: rgba(124,92,255,.1); border: 1px solid rgba(124,92,255,.22);
+  padding: 6px 10px; border-radius: 9px;
+}
+.set-grid { padding: 0 12px 8px; }
+.set-th, .set-tr {
+  display: grid; grid-template-columns: 36px 1fr 1fr 46px; gap: 10px; align-items: center;
+}
+.set-th { padding: 8px 6px; }
+.set-th span { font-family: var(--mono); font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; text-align: center; }
+.set-th span:first-child { text-align: right; }
+.set-tr { padding: 6px; }
+.set-n { font-family: var(--mono); font-size: 13px; color: var(--text-3); text-align: center; }
+.cell {
+  background: var(--bg-2); border: 1px solid var(--border-2); border-radius: 11px;
+  padding: 12px 0; text-align: center;
+  font-family: var(--mono); font-size: 16px; font-weight: 500; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.cell.active { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(124,92,255,.16); color: var(--violet-2); }
+.cell.ghost { color: var(--text-3); }
+.tick {
+  width: 38px; height: 38px; border-radius: 11px; margin: 0 auto;
+  border: 1px solid var(--border-2); display: flex; align-items: center; justify-content: center;
+  color: var(--text-3);
+}
+.tick.done { background: var(--teal); border-color: var(--teal); color: #06201C; }
+.set-add {
+  margin: 4px 6px 14px; width: calc(100% - 12px);
+  background: transparent; border: 1px dashed var(--border-2); color: var(--text-2);
+  font-family: var(--mono); font-size: 12px; padding: 12px; border-radius: 11px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+
+/* Bottom nav */
+.nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 412px;
+  display: flex; justify-content: space-around; padding: 12px 14px 26px;
+  background: linear-gradient(180deg, rgba(8,8,11,.6), rgba(8,8,11,.96));
+  backdrop-filter: blur(16px); border-top: 1px solid var(--border);
+}
+.nav-i { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--text-3); flex: 1; }
+.nav-i span { font-size: 10px; }
+.nav-i.on { color: var(--text); }
+.nav-i.on .svg-icon { color: var(--violet-2); filter: drop-shadow(0 0 6px rgba(124,92,255,.5)); }
+</style>
+</head>
+<body>
+
+<!-- ============ DASHBOARD ============ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg class="svg-icon" style="width:18px;height:18px;color:#fff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg>
+    </div>
+    <div class="brand-name">OBSIDIAN<b></b></div>
+  </div>
+  <button class="icon-btn">
+    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 3 7.4l-.1-.1A2 2 0 1 1 5.7 4.5l.1.1a1.7 1.7 0 0 0 1.9.3H8a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V10a1.7 1.7 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</header>
+
+<main class="page">
+  <div class="eyebrow fade">יום שישי · 29.05.2026</div>
+
+  <section class="hero fade" style="animation-delay:.05s">
+    <div class="hero-row">
+      <div class="hero-label">נפח שבועי מצטבר</div>
+      <div class="hero-chip">▲ 4.2%</div>
+    </div>
+    <div class="hero-value">12,400<small> ק"ג</small></div>
+    <div class="hero-sub">4 מתוך 5 אימונים · יעד שבועי 67%</div>
+    <svg class="spark" viewBox="0 0 320 48" preserveAspectRatio="none" fill="none">
+      <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7C5CFF" stop-opacity=".35"/><stop offset="1" stop-color="#7C5CFF" stop-opacity="0"/></linearGradient></defs>
+      <path d="M0 38 L40 32 L80 36 L120 22 L160 26 L200 14 L240 18 L280 8 L320 12" stroke="#7C5CFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M0 38 L40 32 L80 36 L120 22 L160 26 L200 14 L240 18 L280 8 L320 12 L320 48 L0 48 Z" fill="url(#g1)"/>
+      <circle cx="280" cy="8" r="3.5" fill="#2DD4BF"/>
+    </svg>
+  </section>
+
+  <div class="grid-2 fade" style="animation-delay:.1s">
+    <div class="stat">
+      <div class="stat-top"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1.5 3.5 4 4.5 4 8a4 4 0 0 1-8 0c0-2 1-3.2 2-4.2.2 1.3 1 2.2 2 2.2 0-2-1-4-0-6Z"/></svg><span>רצף נוכחי</span></div>
+      <div class="stat-val">18<i> ימים</i></div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0zM6 4H3v2a3 3 0 0 0 3 3M18 4h3v2a3 3 0 0 1-3 3"/></svg><span>שיאים החודש</span></div>
+      <div class="stat-val">3<i> חדשים</i></div>
+    </div>
+  </div>
+
+  <section class="next fade" style="animation-delay:.15s">
+    <div class="next-tag">האימון הבא</div>
+    <div class="next-title">Push · יום דחיפה</div>
+    <div class="next-meta">
+      <span><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg> 6 תרגילים</span>
+      <span><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> ~50 דקות</span>
+    </div>
+    <button class="btn-primary">
+      <svg class="svg-icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5Z"/></svg>
+      התחל אימון
+    </button>
+  </section>
+
+  <div class="sec-head fade" style="animation-delay:.2s">
+    <h3>היסטוריה</h3>
+    <a>הצג הכל →</a>
+  </div>
+
+  <div class="row fade" style="animation-delay:.22s">
+    <div class="row-ic"><svg class="svg-icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg></div>
+    <div class="row-main">
+      <div class="row-name">Pull · יום משיכה</div>
+      <div class="row-meta">אתמול · 52:10</div>
+    </div>
+    <div class="row-vol"><b>8,240</b><span>ק"ג</span></div>
+  </div>
+
+  <div class="row fade" style="animation-delay:.26s">
+    <div class="row-ic"><svg class="svg-icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg></div>
+    <div class="row-main">
+      <div class="row-name">Push · יום דחיפה <span class="pr">PR</span></div>
+      <div class="row-meta">27.05 · 48:30</div>
+    </div>
+    <div class="row-vol"><b>9,100</b><span>ק"ג</span></div>
+  </div>
+
+  <div class="row fade" style="animation-delay:.3s">
+    <div class="row-ic"><svg class="svg-icon" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M6.5 12h11M3.5 9v6M20.5 9v6"/></svg></div>
+    <div class="row-main">
+      <div class="row-name">Legs · יום רגליים</div>
+      <div class="row-meta">26.05 · 55:00</div>
+    </div>
+    <div class="row-vol"><b>11,500</b><span>ק"ג</span></div>
+  </div>
+</main>
+
+<!-- ============ ACTIVE WORKOUT ============ -->
+<div class="screens-sep">מסך אימון פעיל</div>
+
+<header class="aw-head">
+  <div class="aw-timer">
+    <div class="dot"></div>
+    <div><span>זמן פעיל</span><b>23:45</b></div>
+  </div>
+  <button class="aw-end">סיום</button>
+</header>
+
+<div class="aw-progress">
+  <i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i>
+</div>
+
+<div class="ex">
+  <div class="ex-head">
+    <div>
+      <h4>Bench Press</h4>
+      <div class="muscle">חזה · 02 / 06</div>
+    </div>
+    <div class="ex-target">יעד 90×8</div>
+  </div>
+  <div class="set-grid">
+    <div class="set-th"><span>סט</span><span>משקל</span><span>חזרות</span><span></span></div>
+    <div class="set-tr">
+      <div class="set-n">01</div>
+      <div class="cell">80</div>
+      <div class="cell">10</div>
+      <div class="tick done"><svg class="svg-icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+    </div>
+    <div class="set-tr">
+      <div class="set-n">02</div>
+      <div class="cell">85</div>
+      <div class="cell">8</div>
+      <div class="tick done"><svg class="svg-icon" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+    </div>
+    <div class="set-tr">
+      <div class="set-n">03</div>
+      <div class="cell active">90</div>
+      <div class="cell ghost">—</div>
+      <div class="tick"></div>
+    </div>
+    <div class="set-tr">
+      <div class="set-n">04</div>
+      <div class="cell ghost">90</div>
+      <div class="cell ghost">—</div>
+      <div class="tick"></div>
+    </div>
+  </div>
+  <button class="set-add">
+    <svg class="svg-icon" style="width:15px;height:15px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    הוסף סט
+  </button>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="nav">
+  <div class="nav-i on">
+    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+    <span>בית</span>
+  </div>
+  <div class="nav-i">
+    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    <span>התקדמות</span>
+  </div>
+  <div class="nav-i">
+    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
+    <span>תבניות</span>
+  </div>
+  <div class="nav-i">
+    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>מאמן</span>
+  </div>
+</nav>
+
+</body>
+</html>

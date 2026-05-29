@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PersonalRecord } from '../types';
+import { vibratePattern } from '../utils/haptics';
 
 interface CelebrationOptions {
   onCelebrate?: () => void;
@@ -31,10 +32,8 @@ export const useCelebration = (options: CelebrationOptions = {}): CelebrationRes
 
   const celebrate = useCallback(
     (_type: 'pr' | 'milestone' | 'streak' = 'pr') => {
-      // Trigger haptic feedback
-      if ('vibrate' in navigator) {
-        navigator.vibrate([100, 50, 100, 50, 200]);
-      }
+      // Trigger haptic feedback through gated utility
+      vibratePattern([100, 50, 100, 50, 200]);
 
       // Call optional callback
       onCelebrate?.();
@@ -44,6 +43,8 @@ export const useCelebration = (options: CelebrationOptions = {}): CelebrationRes
 
   const triggerConfetti = useCallback(() => {
     setShowCelebration(true);
+    // Clear any existing timer to prevent orphaned callbacks
+    if (timerRef.current) clearTimeout(timerRef.current);
     // Auto-hide after 4 seconds
     timerRef.current = setTimeout(() => setShowCelebration(false), 4000);
   }, []);
