@@ -122,9 +122,9 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
       </div>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
         {/* Background circle grid */}
-        {[0.25, 0.5, 0.75, 1].map((level, i) => (
+        {[0.25, 0.5, 0.75, 1].map((level) => (
           <circle
-            key={i}
+            key={level}
             cx={centerX}
             cy={centerY}
             r={radius * level}
@@ -138,6 +138,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
         {/* Axis lines */}
         {axisLines.map((line, i) => (
           <line
+            // biome-ignore lint/suspicious/noArrayIndexKey: positional radar axis geometry, fixed count, never reordered
             key={i}
             x1={line.x1}
             y1={line.y1}

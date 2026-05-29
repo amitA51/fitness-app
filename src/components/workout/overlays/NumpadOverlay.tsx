@@ -610,9 +610,11 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
               >
                 <div className="flex flex-col items-center gap-2">
                   {keys.map((row, rowIndex) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: fixed numpad layout, static rows, never reordered
                     <div key={rowIndex} className="flex gap-2">
                       {row.map((key, keyIndex) => (
                         <NumpadButton
+                          // biome-ignore lint/suspicious/noArrayIndexKey: fixed numpad layout, static keys (may include null), never reordered
                           key={`${rowIndex}-${keyIndex}`}
                           value={key}
                           onPress={() => {

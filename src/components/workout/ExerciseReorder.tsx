@@ -774,7 +774,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                 {exercise.sets && exercise.sets.length > 0 ? (
                   exercise.sets.map((set, setIndex) => (
                     <SetEditRow
-                      key={`set-${originalIndex}-${setIndex}`}
+                      key={set.id}
                       set={set}
                       setIndex={setIndex}
                       exerciseIndex={originalIndex}

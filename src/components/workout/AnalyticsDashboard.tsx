@@ -378,7 +378,7 @@ const AnalyticsDashboard: React.FC = () => {
                 const isHovered = hoveredTrendPoint === i;
 
                 return (
-                  <g key={i}>
+                  <g key={week.weekLabel}>
                     <motion.rect
                       x={barX}
                       y={170 - height}
@@ -613,7 +613,7 @@ const AnalyticsDashboard: React.FC = () => {
               const isHovered = hoveredBar === i;
               return (
                 <motion.div
-                  key={i}
+                  key={point.date}
                   initial={{ height: 0 }}
                   animate={{ height: `${height}%` }}
                   transition={{

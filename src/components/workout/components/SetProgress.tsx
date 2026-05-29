@@ -38,6 +38,7 @@ export const SetProgress = memo<SetProgressProps>(
 
           return (
             <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: positional set-progress bars derived from a count, never reordered
               key={idx}
               className={`
                             h-2 rounded-full transition-all duration-300 ease-out

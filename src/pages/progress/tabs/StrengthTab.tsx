@@ -494,7 +494,7 @@ export const StrengthTab = memo(function StrengthTab() {
                   const y = 140 - ((point.value - minValue) / range) * 110 - 10;
                   const isLast = i === activeCurve.data.length - 1;
                   return (
-                    <g key={i}>
+                    <g key={point.date}>
                       <circle
                         cx={x}
                         cy={y}

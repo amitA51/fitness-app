@@ -283,6 +283,7 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
                 <div className="flex flex-col gap-2 mb-3">
                   {exercises.map((ex, i) => (
                     <motion.div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: TemplateExerciseInput has no id (adding one would change persisted shape); chips are stateless display-only, list is append/remove without reorder
                       key={i}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -663,8 +664,8 @@ const TemplateCard = memo(function TemplateCard({
       {/* Exercise name chips */}
       {template.exercises.length > 0 && (
         <div className="flex gap-2 flex-wrap mb-4">
-          {template.exercises.slice(0, 3).map((ex, i) => (
-            <span key={i} className="chip">
+          {template.exercises.slice(0, 3).map((ex) => (
+            <span key={ex.id} className="chip">
               {ex.exerciseName || 'תרגיל'}
             </span>
           ))}

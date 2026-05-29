@@ -258,6 +258,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   const isCurrent = i === completedSetsCount && i < totalSets;
                   return (
                     <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: positional set-status dots derived from a count, never reordered
                       key={i}
                       style={{
                         width: 10,

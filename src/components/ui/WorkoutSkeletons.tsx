@@ -141,6 +141,7 @@ export const DashboardSkeleton: FC = () => (
             }}
           >
             {Array.from({ length: 7 }).map((_, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
               <div key={i} style={{ textAlign: 'center' }}>
                 <SkeletonCircle size={32} className="mx-auto" />
               </div>

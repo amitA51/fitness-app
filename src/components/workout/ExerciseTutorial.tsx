@@ -239,6 +239,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
         <div style={{ display: 'flex', gap: 4 }}>
           {currentExerciseSteps.map((_, index) => (
             <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: static step progress bars, fixed list, never reordered
               key={index}
               style={{
                 flex: 1,

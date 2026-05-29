@@ -803,8 +803,8 @@ const MealEntryCard = memo(function MealEntryCard({
         {entry.meals
           .flatMap((m) => m.foods)
           .slice(0, 4)
-          .map((f, i) => (
-            <span key={i} className="chip">
+          .map((f) => (
+            <span key={f.id} className="chip">
               {f.name} ×{f.servings}
             </span>
           ))}
@@ -1108,11 +1108,11 @@ const MealPresetCard = memo(function MealPresetCard({
         </span>
       </div>
       <div className="flex flex-wrap gap-1.5 mb-3" style={{ paddingInlineStart: '8px' }}>
-        {preset.meals.map((m, i) => {
+        {preset.meals.map((m) => {
           const f = getFoodLibrary().find((fd) => fd.id === m.foodId);
           return f ? (
             <span
-              key={i}
+              key={m.foodId}
               style={{
                 padding: '2px 8px',
                 borderRadius: '6px',

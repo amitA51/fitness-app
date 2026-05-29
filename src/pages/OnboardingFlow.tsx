@@ -278,6 +278,7 @@ function ProgressDots({ currentStep, totalSteps }: ProgressDotsProps) {
     <div className="flex items-center justify-center gap-2 py-4">
       {Array.from({ length: totalSteps }).map((_, i) => (
         <motion.div
+          // biome-ignore lint/suspicious/noArrayIndexKey: positional step progress dots derived from a count, never reordered
           key={i}
           layoutId={`progress-dot-${i}`}
           className="h-1.5 rounded-full"
@@ -431,8 +432,8 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
             { icon: <Target size={22} />, label: 'יעדים' },
             { icon: <TrendingUp size={22} />, label: 'מעקב' },
             { icon: <Award size={22} />, label: 'שיאים' },
-          ].map((item, i) => (
-            <div key={i} className="flex flex-col items-center gap-3">
+          ].map((item) => (
+            <div key={item.label} className="flex flex-col items-center gap-3">
               <div
                 className="w-14 h-14 flex items-center justify-center"
                 style={{

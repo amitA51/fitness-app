@@ -66,6 +66,7 @@ export const SkeletonText: React.FC<{ lines?: number; className?: string }> = ({
 }) => (
   <div className={`space-y-2 ${className}`}>
     {Array.from({ length: lines }).map((_, i) => (
+      // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
       <SkeletonBox key={i} height={16} width={i === lines - 1 ? '80%' : '100%'} />
     ))}
   </div>
@@ -102,6 +103,7 @@ export const SkeletonCard: React.FC = () => (
 export const SkeletonList: React.FC<{ count?: number }> = ({ count = 4 }) => (
   <div className="space-y-4">
     {Array.from({ length: count }).map((_, i) => (
+      // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
       <SkeletonCard key={i} />
     ))}
   </div>
@@ -114,6 +116,7 @@ export const SkeletonGrid: React.FC<{ count?: number; columns?: number }> = ({
   <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
     {Array.from({ length: count }).map((_, i) => (
       <div
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
         key={i}
         style={{
           background: 'var(--fs-surface)',
@@ -172,6 +175,7 @@ export const SkeletonHabitItem: React.FC = () => (
       <SkeletonBox height={18} width="50%" />
       <div className="flex gap-1">
         {Array.from({ length: 7 }).map((_, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
           <SkeletonBox key={i} height={20} width={20} borderRadius="sm" />
         ))}
       </div>
@@ -213,6 +217,7 @@ export const SkeletonGratitudeWidget: React.FC = () => (
     <SkeletonBox height={20} width={150} />
     <div className="space-y-3">
       {Array.from({ length: 3 }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
         <div key={i} className="flex items-center gap-3">
           <SkeletonCircle size={24} />
           <SkeletonBox height={40} width="100%" borderRadius="lg" />
@@ -261,6 +266,7 @@ export const HomeScreenSkeleton: React.FC = () => (
         <SkeletonBox height={24} width={120} />
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
             <SkeletonTaskItem key={i} />
           ))}
         </div>
@@ -280,6 +286,7 @@ export const HomeScreenSkeleton: React.FC = () => (
         <SkeletonBox height={24} width={100} />
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
             <SkeletonHabitItem key={i} />
           ))}
         </div>
@@ -345,6 +352,7 @@ export const FeedScreenSkeleton: React.FC = () => (
     {/* Feed cards skeleton */}
     <div className="px-4 space-y-4">
       {Array.from({ length: 5 }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
         <SkeletonFeedCard key={i} />
       ))}
     </div>
@@ -361,14 +369,17 @@ export const SkeletonCalendarGrid: React.FC = () => (
     {/* Day names header */}
     <div className="grid grid-cols-7 gap-1">
       {Array.from({ length: 7 }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
         <SkeletonBox key={i} height={24} className="mx-auto" width="80%" />
       ))}
     </div>
     {/* Calendar days */}
     {Array.from({ length: 5 }).map((_, weekIndex) => (
+      // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
       <div key={weekIndex} className="grid grid-cols-7 gap-1">
         {Array.from({ length: 7 }).map((_, dayIndex) => (
           <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
             key={dayIndex}
             className="premium-shimmer aspect-square p-1"
             style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}
@@ -421,6 +432,7 @@ export const CalendarScreenSkeleton: React.FC = () => (
       <SkeletonBox height={24} width={100} />
       {Array.from({ length: 3 }).map((_, i) => (
         <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
           key={i}
           className="flex items-center gap-3 p-3"
           style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}
@@ -453,6 +465,7 @@ export const SkeletonSettingsSection: React.FC<{ itemCount?: number }> = ({ item
     <SkeletonBox height={20} width={100} className="mb-3" />
     {Array.from({ length: itemCount }).map((_, i) => (
       <div
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
         key={i}
         className="flex items-center justify-between py-3 last:border-0"
         style={{ borderBottom: i < itemCount - 1 ? '1px solid var(--fs-surface-2)' : 'none' }}
@@ -596,6 +609,7 @@ export const LibraryScreenSkeleton: React.FC = () => (
       {/* Category tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {Array.from({ length: 5 }).map((_, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
           <SkeletonBox key={i} height={36} width={80} borderRadius="full" />
         ))}
       </div>
@@ -604,6 +618,7 @@ export const LibraryScreenSkeleton: React.FC = () => (
     {/* Library items skeleton */}
     <div className="px-4 space-y-3">
       {Array.from({ length: 6 }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
         <SkeletonLibraryItem key={i} />
       ))}
     </div>
@@ -651,6 +666,7 @@ export const PasswordManagerScreenSkeleton: React.FC = () => (
     {/* Password items skeleton */}
     <div className="px-4 space-y-3">
       {Array.from({ length: 8 }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
         <SkeletonPasswordItem key={i} />
       ))}
     </div>
@@ -674,6 +690,7 @@ export const AddScreenSkeleton: React.FC = () => (
       <div className="grid grid-cols-3 gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
             key={i}
             style={{
               background: 'var(--fs-surface)',
@@ -709,6 +726,7 @@ export function WorkoutListSkeleton({ count = 3 }: { count?: number }) {
   return (
     <div className="space-y-3 p-4">
       {Array.from({ length: count }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders, fixed count, never reordered
         <div key={i} className="premium-shimmer h-20" />
       ))}
     </div>

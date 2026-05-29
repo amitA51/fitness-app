@@ -592,6 +592,7 @@ export default function Dashboard() {
               {/* 4-week bar visualization */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                 {consistencyData.weekCounts.map((count, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: positional 4-week bars, fixed-length array, never reordered
                   <div key={i} style={{ textAlign: 'center' }}>
                     <div
                       style={{

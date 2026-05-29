@@ -286,9 +286,9 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
           marginBottom: 8,
         }}
       >
-        {HEBREW_DAYS.map((day, i) => (
+        {HEBREW_DAYS.map((day) => (
           <div
-            key={i}
+            key={day}
             style={{
               textAlign: 'center',
               fontFamily: 'var(--font-mono)',
@@ -323,6 +323,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
 
           return (
             <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: fixed 42-cell month grid, padding cells have no date, never reordered
               key={index}
               role="gridcell"
               tabIndex={navigable ? 0 : -1}
