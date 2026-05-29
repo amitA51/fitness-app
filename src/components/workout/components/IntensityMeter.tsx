@@ -121,6 +121,7 @@ const ArcGauge = memo<{ intensity: number; size: number; strokeWidth: number }>(
         height={size / 2 + strokeWidth}
         className="overflow-visible"
         style={{ transform: 'rotate(180deg)' }}
+        aria-hidden="true"
       >
         {/* Background arc */}
         <path

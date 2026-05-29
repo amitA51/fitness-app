@@ -99,6 +99,7 @@ const AlternativesSheet = memo<AlternativesSheetProps>(
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
+                      aria-hidden="true"
                       strokeWidth="2"
                       className="text-[var(--fs-muted)] group-hover:text-[var(--fs-accent)] transition-colors flex-shrink-0"
                     >

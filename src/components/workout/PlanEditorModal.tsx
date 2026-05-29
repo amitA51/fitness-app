@@ -58,7 +58,13 @@ import { ModalOverlay } from '../ui/ModalOverlay';
 import ExerciseLibraryTab from './ExerciseLibraryTab';
 
 const SaveIcon = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <svg
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    aria-hidden="true"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -386,6 +392,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
+                              aria-hidden="true"
                             >
                               <path
                                 strokeLinecap="round"

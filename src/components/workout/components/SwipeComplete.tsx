@@ -88,7 +88,7 @@ SuccessParticles.displayName = 'SuccessParticles';
 // ============================================================
 
 const AnimatedCheckmark = memo<{ isComplete: boolean }>(({ isComplete }) => (
-  <motion.svg viewBox="0 0 24 24" className="w-7 h-7" initial={false}>
+  <motion.svg viewBox="0 0 24 24" className="w-7 h-7" initial={false} aria-hidden="true">
     <motion.path
       d="M5 13l4 4L19 7"
       fill="none"
@@ -380,6 +380,7 @@ const SwipeComplete = memo<SwipeCompleteProps>(
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
+                aria-hidden="true"
               >
                 <path d="M3 7v6h6" />
                 <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
@@ -400,7 +401,7 @@ const SwipeComplete = memo<SwipeCompleteProps>(
         {/* Drag Hint (pulses when idle) */}
         {!isDragging && !isCompleting && !showUndo && (
           <div className="absolute left-[70px] top-1/2 -translate-y-1/2 pointer-events-none opacity-60">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
                 d="M5 12h14M12 5l7 7-7 7"
                 stroke="white"

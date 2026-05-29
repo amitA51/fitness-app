@@ -33,7 +33,14 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-md overflow-hidden" style={{ background: 'var(--fs-surface)', border: '2px solid var(--fs-primary)', boxShadow: '0 4px 12px rgba(22,41,45,0.3)' }}>
+      <div
+        className="w-full max-w-md overflow-hidden"
+        style={{
+          background: 'var(--fs-surface)',
+          border: '2px solid var(--fs-primary)',
+          boxShadow: '0 4px 12px rgba(22,41,45,0.3)',
+        }}
+      >
         {/* Masthead */}
         <div className="masthead">
           <div className="flex items-start justify-between gap-4">
@@ -51,7 +58,10 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
 
         {/* Content */}
         <div className="p-5">
-          <p className="text-sm mb-5" style={{ fontFamily: 'var(--font-body)', color: 'var(--fs-muted)' }}>
+          <p
+            className="text-sm mb-5"
+            style={{ fontFamily: 'var(--font-body)', color: 'var(--fs-muted)' }}
+          >
             הבחירה תתאים את הזרימה ותעזור לך לעקוב אחר ההתקדמות.
           </p>
 
@@ -81,7 +91,11 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                   {/* Chapter number style index */}
                   <span
                     className="text-2xl font-black leading-none"
-                    style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', color: 'var(--fs-heading)' }}
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      letterSpacing: '-0.02em',
+                      color: 'var(--fs-heading)',
+                    }}
                   >
                     {String(index + 1).padStart(2, '0')}
                   </span>
@@ -108,8 +122,11 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                     </div>
                   </div>
                   {/* Arrow */}
-                  <span className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--fs-heading)' }}>
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <span
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ color: 'var(--fs-heading)' }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                       <path
                         d="M8 4L14 10L8 16"
                         stroke="currentColor"

@@ -173,6 +173,7 @@ const OverflowMenu = memo<{
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
+              aria-hidden="true"
               strokeWidth={2}
             >
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />

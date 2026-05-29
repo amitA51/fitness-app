@@ -120,7 +120,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
       >
         § MUSCLE RADAR
       </div>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
         {/* Background circle grid */}
         {[0.25, 0.5, 0.75, 1].map((level, i) => (
           <circle

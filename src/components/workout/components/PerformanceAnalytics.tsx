@@ -161,7 +161,7 @@ const MiniProgress = memo<{ progress: number; size?: number; color?: string }>(
     const offset = circumference * (1 - Math.min(progress, 1));
 
     return (
-      <svg width={size} height={size} className="transform -rotate-90">
+      <svg width={size} height={size} className="transform -rotate-90" aria-hidden="true">
         <circle
           cx={size / 2}
           cy={size / 2}

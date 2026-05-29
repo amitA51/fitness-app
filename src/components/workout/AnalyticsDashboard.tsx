@@ -901,6 +901,7 @@ const AnalyticsDashboard: React.FC = () => {
               <svg
                 viewBox="0 0 100 100"
                 style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}
+                aria-hidden="true"
               >
                 {(() => {
                   let cumulativePercentage = 0;

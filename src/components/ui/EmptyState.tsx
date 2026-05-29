@@ -47,7 +47,7 @@ const FS = {
 
 // Static SVG Illustrations - No Framer Motion for better performance
 const TasksIllustration: React.FC = () => (
-  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full">
+  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full" aria-hidden="true">
     <defs>
       <linearGradient id="tasksGradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor={FS.accent} />
@@ -80,7 +80,7 @@ const TasksIllustration: React.FC = () => (
 );
 
 const HabitsIllustration: React.FC = () => (
-  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full">
+  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full" aria-hidden="true">
     <defs>
       <linearGradient id="habitsGradient" x1="0%" y1="100%" x2="100%" y2="0%">
         <stop offset="0%" stopColor={FS.accent} />
@@ -110,7 +110,7 @@ const HabitsIllustration: React.FC = () => (
 );
 
 const FeedIllustration: React.FC = () => (
-  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full">
+  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full" aria-hidden="true">
     <defs>
       <linearGradient id="feedGradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor={FS.signal} />
@@ -152,7 +152,7 @@ const FeedIllustration: React.FC = () => (
 );
 
 const SearchIllustration: React.FC = () => (
-  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full">
+  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full" aria-hidden="true">
     <defs>
       <linearGradient id="searchGradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor={FS.primary} />
@@ -175,7 +175,7 @@ const SearchIllustration: React.FC = () => (
 );
 
 const CalendarIllustration: React.FC = () => (
-  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full">
+  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full" aria-hidden="true">
     <defs>
       <linearGradient id="calendarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor={FS.accent} />
@@ -228,7 +228,7 @@ const CalendarIllustration: React.FC = () => (
 );
 
 const NotesIllustration: React.FC = () => (
-  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full">
+  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full" aria-hidden="true">
     <defs>
       <linearGradient id="notesGradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor={FS.accent} />
@@ -268,7 +268,7 @@ const NotesIllustration: React.FC = () => (
 );
 
 const WorkoutIllustration: React.FC = () => (
-  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full">
+  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full" aria-hidden="true">
     <defs>
       <linearGradient id="workoutGradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor={FS.warn} />
@@ -301,7 +301,7 @@ const WorkoutIllustration: React.FC = () => (
 );
 
 const SuccessIllustration: React.FC = () => (
-  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full">
+  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full" aria-hidden="true">
     <defs>
       <linearGradient id="successGradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor={FS.accent} />
@@ -340,7 +340,7 @@ const SuccessIllustration: React.FC = () => (
 );
 
 const ErrorIllustration: React.FC = () => (
-  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full">
+  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full" aria-hidden="true">
     <defs>
       <linearGradient id="errorGradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor={FS.warn} />
@@ -368,7 +368,7 @@ const ErrorIllustration: React.FC = () => (
 );
 
 const GenericIllustration: React.FC = () => (
-  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full">
+  <svg viewBox="0 0 200 200" fill="none" className="w-full h-full" aria-hidden="true">
     <defs>
       <linearGradient id="genericGradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor={FS.primary} />

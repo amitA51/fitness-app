@@ -236,7 +236,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
             flexShrink: 0,
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <path
               d="M10 4V16M4 10H16"
               stroke="var(--fs-accent)"
@@ -383,7 +383,13 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                         justifyContent: 'center',
                       }}
                     >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 14 14"
+                        fill="none"
+                        aria-hidden="true"
+                      >
                         <path
                           d="M10 2L12 4L4 12H2V10L10 2Z"
                           stroke="var(--fs-primary)"
@@ -408,7 +414,13 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                         justifyContent: 'center',
                       }}
                     >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 14 14"
+                        fill="none"
+                        aria-hidden="true"
+                      >
                         <path d="M3 4H11V12H3V4Z" stroke="var(--color-delete)" strokeWidth="1.5" />
                         <path d="M5 4V2H9V4" stroke="var(--color-delete)" strokeWidth="1.5" />
                       </svg>
@@ -884,7 +896,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                   justifyContent: 'center',
                 }}
               >
-                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
                   <path d="M7 8H21V22H7V8Z" stroke="var(--color-delete)" strokeWidth="2" />
                   <path d="M11 8V6H17V8" stroke="var(--color-delete)" strokeWidth="2" />
                 </svg>

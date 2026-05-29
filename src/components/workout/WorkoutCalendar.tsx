@@ -265,7 +265,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               (e.currentTarget as HTMLElement).style.background = 'transparent';
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path
                 d="M6 4L10 8L6 12"
                 stroke="var(--fs-primary)"

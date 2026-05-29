@@ -193,6 +193,7 @@ export const GoalSelector = memo<{ value: string; onChange: (v: string) => void 
                   className="absolute end-3 w-5 h-5 text-[var(--color-check)]"
                   fill="currentColor"
                   viewBox="0 0 20 20"
+                  aria-hidden="true"
                 >
                   <path
                     fillRule="evenodd"
@@ -254,6 +255,7 @@ export const ThemeSelector = memo<{ value: string; onChange: (v: string) => void
                   className="absolute top-3 end-3 w-5 h-5 text-[var(--color-check)]"
                   fill="currentColor"
                   viewBox="0 0 20 20"
+                  aria-hidden="true"
                 >
                   <path
                     fillRule="evenodd"

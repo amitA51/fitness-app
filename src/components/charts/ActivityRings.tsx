@@ -55,7 +55,7 @@ export const ActivityRings = memo(function ActivityRings({
         .map((r) => `${r.label} ${Math.round(clampPct(r.value, r.max))}%`)
         .join(', ')}
     >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
         {rings.map((ring, i) => {
           const radius = (size - strokeWidth) / 2 - i * ringStep;
           if (radius <= 0) return null;

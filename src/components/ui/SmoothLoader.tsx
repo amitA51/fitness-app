@@ -181,6 +181,7 @@ export const ErrorWithRetry: React.FC<{
             stroke="currentColor"
             strokeWidth="2"
             style={{ color: 'var(--fs-warn)' }}
+            aria-hidden="true"
           >
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
@@ -224,6 +225,7 @@ export const ErrorWithRetry: React.FC<{
           stroke="currentColor"
           strokeWidth="2.5"
           style={{ color: 'var(--fs-accent)' }}
+          aria-hidden="true"
         >
           <polyline points="23 4 23 10 17 10" />
           <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />

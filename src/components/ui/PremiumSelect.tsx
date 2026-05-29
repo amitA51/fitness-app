@@ -93,6 +93,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
               stroke="currentColor"
               className="w-4 h-4"
               style={{ color: 'var(--fs-heading)' }}
+              aria-hidden="true"
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
             </svg>

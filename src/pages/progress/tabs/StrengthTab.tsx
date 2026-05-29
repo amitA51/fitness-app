@@ -439,7 +439,12 @@ export const StrengthTab = memo(function StrengthTab() {
 
             {/* SVG Line Chart */}
             <div className="relative" style={{ height: '160px' }}>
-              <svg viewBox="0 0 300 140" className="w-full h-full" preserveAspectRatio="none">
+              <svg
+                viewBox="0 0 300 140"
+                className="w-full h-full"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
                 {/* Grid lines */}
                 {[0, 0.25, 0.5, 0.75, 1].map((pct) => (
                   <line

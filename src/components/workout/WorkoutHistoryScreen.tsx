@@ -301,7 +301,7 @@ const SessionCard = memo<{
             letterSpacing: '0.05em',
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
             <path d="M7 4V7L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" />
           </svg>
@@ -313,6 +313,7 @@ const SessionCard = memo<{
           viewBox="0 0 16 16"
           fill="none"
           style={{ color: 'var(--fs-heading)' }}
+          aria-hidden="true"
         >
           <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
         </svg>
@@ -413,7 +414,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
             color: 'var(--fs-accent)',
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
             <path
               d="M11 4L6 9L11 14"
               stroke="currentColor"
@@ -474,7 +475,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
               ease: 'linear',
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
               <path
                 d="M15 9A6 6 0 1 1 9 3"
                 stroke="currentColor"
@@ -673,6 +674,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
                 viewBox="0 0 32 32"
                 fill="none"
                 style={{ color: 'var(--fs-muted)' }}
+                aria-hidden="true"
               >
                 <path
                   d="M16 4L20 12L28 13L22 19L24 28L16 24L8 28L10 19L4 13L12 12L16 4Z"
