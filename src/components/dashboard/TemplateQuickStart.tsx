@@ -1,88 +1,7 @@
 import { memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { WorkoutTemplate } from '../../types';
-
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'glass';
-
-interface ButtonProps {
-  children: React.ReactNode;
-  onClick: () => void;
-  variant?: ButtonVariant;
-  className?: string;
-  ariaLabel?: string;
-  disabled?: boolean;
-  style?: React.CSSProperties;
-}
-
-export function FSButton({
-  children,
-  onClick,
-  variant = 'primary',
-  className,
-  ariaLabel,
-  disabled = false,
-  style,
-}: ButtonProps) {
-  const baseStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderRadius: 12,
-    padding: '12px 24px',
-    minHeight: 44,
-    fontFamily: 'var(--font-sans)',
-    fontSize: 15,
-    fontWeight: 600,
-    letterSpacing: '0.01em',
-    border: 'none',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    transition: 'filter 150ms ease, transform 150ms ease, box-shadow 150ms ease',
-    userSelect: 'none',
-    ...style,
-  };
-
-  const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
-    primary: {
-      background: 'linear-gradient(135deg, var(--fs-accent), var(--fs-accent-2))',
-      color: '#071412',
-      borderRadius: '22px 16px 22px 16px',
-      boxShadow: 'var(--shadow-button)',
-    },
-    secondary: {
-      background: 'transparent',
-      color: 'var(--fs-ink)',
-      border: '1px solid var(--fs-primary)',
-    },
-    ghost: {
-      background: 'transparent',
-      color: 'var(--fs-ink)',
-    },
-    danger: {
-      background: 'var(--color-error)',
-      color: 'var(--color-ink-on-dark)',
-    },
-    glass: {
-      background: 'var(--fs-overlay-hover)',
-      color: 'var(--fs-ink)',
-      border: '1px solid var(--color-border)',
-      backdropFilter: 'blur(20px)',
-    },
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={className}
-      aria-label={ariaLabel}
-      style={{ ...baseStyle, ...variantStyles[variant] }}
-    >
-      {children}
-    </button>
-  );
-}
+import { Button } from '../ui/Button';
 
 interface TemplateQuickStartProps {
   onQuickStart: () => void;
@@ -102,17 +21,18 @@ export const TemplateQuickStart = memo(function TemplateQuickStart({
         gap: 10,
       }}
     >
-      <FSButton
+      <Button
+        type="button"
         onClick={onQuickStart}
-        variant="primary"
-        ariaLabel="התחל אימון"
+        variant="fs-primary"
+        aria-label="התחל אימון"
         className="accent-glow"
       >
         התחל אימון
-      </FSButton>
-      <FSButton onClick={handleTemplates} variant="secondary" ariaLabel="תבניות">
+      </Button>
+      <Button type="button" onClick={handleTemplates} variant="fs-secondary" aria-label="תבניות">
         תבניות
-      </FSButton>
+      </Button>
     </div>
   );
 });

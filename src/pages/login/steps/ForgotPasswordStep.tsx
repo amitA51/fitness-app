@@ -8,7 +8,7 @@ import { useCallback, useState } from 'react';
 import { AnnualInput } from '../../../components/ui/AnnualInput';
 import { resetPassword } from '../../../services/supabaseAuth';
 import { pageVariants, slideFromLeft, staggerContainer, staggerItem } from '../animations';
-import { AnnualButton } from '../components/AnnualButton';
+import { Button } from '../../../components/ui/Button';
 import { GhostLink } from '../components/GhostLink';
 import type { ForgotPasswordFormData, ValidationErrors } from '../types';
 
@@ -108,9 +108,9 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
           transition={{ delay: 0.5 }}
           className="mt-8"
         >
-          <AnnualButton variant="secondary" onClick={onBack} fullWidth={false}>
+          <Button variant="editorial-secondary" type="button" onClick={onBack} fullWidth={false}>
             חזרה להתחברות
-          </AnnualButton>
+          </Button>
         </motion.div>
       </motion.div>
     );
@@ -198,9 +198,15 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
         </motion.div>
 
         <div className="px-5 pb-8">
-          <AnnualButton type="submit" loading={loading} disabled={loading}>
+          <Button
+            variant="editorial"
+            type="submit"
+            isLoading={loading}
+            disabled={loading}
+            fullWidth
+          >
             שלח קישור איפוס
-          </AnnualButton>
+          </Button>
         </div>
       </form>
     </motion.div>

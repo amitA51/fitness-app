@@ -10,7 +10,7 @@ import { AnnualPasswordInput } from '../../../components/ui/AnnualPasswordInput'
 import { signIn } from '../../../services/supabaseAuth';
 import { logger } from '../../../utils/logger';
 import { slideFromRight, staggerContainer, staggerItem } from '../animations';
-import { AnnualButton } from '../components/AnnualButton';
+import { Button } from '../../../components/ui/Button';
 import { GhostLink } from '../components/GhostLink';
 import type { SignInFormData, ValidationErrors } from '../types';
 
@@ -237,9 +237,15 @@ export function SignInStep({
 
         {/* Submit button */}
         <div className="px-5 pb-8">
-          <AnnualButton type="submit" loading={loading} disabled={loading}>
+          <Button
+            variant="editorial"
+            type="submit"
+            isLoading={loading}
+            disabled={loading}
+            fullWidth
+          >
             התחברות
-          </AnnualButton>
+          </Button>
         </div>
       </form>
     </motion.div>

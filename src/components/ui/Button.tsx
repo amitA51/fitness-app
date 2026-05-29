@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import type React from 'react';
 
 // ============================================================================
@@ -13,7 +14,17 @@ type ButtonVariant =
   | 'danger'
   | 'pill'
   | 'card-action'
-  | 'start';
+  | 'start'
+  // Editorial — Login "Annual" buttons (asymmetric radius, display font)
+  | 'editorial'
+  | 'editorial-secondary'
+  | 'editorial-ghost'
+  // FS — Dashboard quick-start buttons (rounded, sans font)
+  | 'fs-primary'
+  | 'fs-secondary'
+  | 'fs-ghost'
+  | 'fs-danger'
+  | 'fs-glass';
 type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -95,7 +106,128 @@ const variantStyles: Record<ButtonVariant, string> = {
     active:brightness-95
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
+
+  // Editorial variants are rendered through renderEditorial (see below); the
+  // entries here only exist to keep the Record exhaustive and are never read.
+  editorial: '',
+  'editorial-secondary': '',
+  'editorial-ghost': '',
+
+  // FS variants are rendered through renderFs (see below); same note as above.
+  'fs-primary': '',
+  'fs-secondary': '',
+  'fs-ghost': '',
+  'fs-danger': '',
+  'fs-glass': '',
 };
+
+// ============================================================================
+// Editorial Variants — Login "Annual" buttons
+// Exact port of the former AnnualButton: asymmetric radius, display font,
+// uppercase, weight 800, tracking 0.04em, h-52px, gap-3, active:scale-0.98.
+// The primary sub-variant additionally carries the .start-workout-btn (decor
+// dashes) and .accent-glow (glow shadow) classes; inline styles override the
+// class's background/color/radius so the rendered result matches AnnualButton.
+// ============================================================================
+
+type EditorialVariant = 'editorial' | 'editorial-secondary' | 'editorial-ghost';
+
+const EDITORIAL_BASE =
+  'h-[52px] px-6 text-base font-bold tracking-[0.04em] transition-all duration-150 ' +
+  'focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 ' +
+  'active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 ' +
+  'inline-flex items-center justify-center gap-3 cursor-pointer';
+
+const EDITORIAL_SHARED_STYLE: React.CSSProperties = {
+  fontFamily: 'var(--font-display)',
+  fontWeight: 800,
+  textTransform: 'uppercase',
+};
+
+const editorialStyles: Record<EditorialVariant, React.CSSProperties> = {
+  editorial: {
+    ...EDITORIAL_SHARED_STYLE,
+    background: 'var(--fs-primary)',
+    color: 'var(--fs-accent)',
+    borderRadius: '22px 16px 22px 16px',
+  },
+  'editorial-secondary': {
+    ...EDITORIAL_SHARED_STYLE,
+    background: 'var(--fs-surface)',
+    color: 'var(--fs-heading)',
+    border: '2px solid var(--fs-primary)',
+    borderRadius: '22px 16px 22px 16px',
+  },
+  'editorial-ghost': {
+    ...EDITORIAL_SHARED_STYLE,
+    background: 'transparent',
+    color: 'var(--fs-heading)',
+  },
+};
+
+// ============================================================================
+// FS Variants — Dashboard quick-start buttons
+// Exact port of the former FSButton: rounded 12px (primary overrides to the
+// asymmetric radius), sans font, weight 600, 15px, letter-spacing 0.01em,
+// padding 12px 24px, min-height 44px, filter/transform/box-shadow transition.
+// ============================================================================
+
+type FsVariant = 'fs-primary' | 'fs-secondary' | 'fs-ghost' | 'fs-danger' | 'fs-glass';
+
+const FS_BASE_STYLE: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 8,
+  borderRadius: 12,
+  padding: '12px 24px',
+  minHeight: 44,
+  fontFamily: 'var(--font-sans)',
+  fontSize: 15,
+  fontWeight: 600,
+  letterSpacing: '0.01em',
+  border: 'none',
+  transition: 'filter 150ms ease, transform 150ms ease, box-shadow 150ms ease',
+  userSelect: 'none',
+};
+
+const fsStyles: Record<FsVariant, React.CSSProperties> = {
+  'fs-primary': {
+    background: 'linear-gradient(135deg, var(--fs-accent), var(--fs-accent-2))',
+    color: '#071412',
+    borderRadius: '22px 16px 22px 16px',
+    boxShadow: 'var(--shadow-button)',
+  },
+  'fs-secondary': {
+    background: 'transparent',
+    color: 'var(--fs-ink)',
+    border: '1px solid var(--fs-primary)',
+  },
+  'fs-ghost': {
+    background: 'transparent',
+    color: 'var(--fs-ink)',
+  },
+  'fs-danger': {
+    background: 'var(--color-error)',
+    color: 'var(--color-ink-on-dark)',
+  },
+  'fs-glass': {
+    background: 'var(--fs-overlay-hover)',
+    color: 'var(--fs-ink)',
+    border: '1px solid var(--color-border)',
+    backdropFilter: 'blur(20px)',
+  },
+};
+
+const isEditorialVariant = (v: ButtonVariant): v is EditorialVariant =>
+  v === 'editorial' || v === 'editorial-secondary' || v === 'editorial-ghost';
+
+const isFsVariant = (v: ButtonVariant): v is FsVariant =>
+  v === 'fs-primary' ||
+  v === 'fs-secondary' ||
+  v === 'fs-ghost' ||
+  v === 'fs-danger' ||
+  v === 'fs-glass';
 
 // ============================================================================
 // Size Styles — sharp corners, 44px+ touch target
@@ -122,8 +254,57 @@ export const Button: React.FC<ButtonProps> = ({
   fullWidth = false,
   className = '',
   disabled,
+  style,
   ...props
 }) => {
+  // --- Editorial family (former AnnualButton) ---------------------------------
+  if (isEditorialVariant(variant)) {
+    const decorClass = variant === 'editorial' ? 'start-workout-btn accent-glow' : '';
+    return (
+      <button
+        disabled={disabled || isLoading}
+        className={`${EDITORIAL_BASE} ${decorClass} ${fullWidth ? 'w-full' : ''} ${className}`}
+        style={{ ...editorialStyles[variant], ...style }}
+        {...props}
+      >
+        {isLoading ? (
+          <Loader2
+            size={18}
+            className="animate-spin"
+            style={{ animation: 'spin 1s linear infinite' }}
+          />
+        ) : null}
+        {children}
+      </button>
+    );
+  }
+
+  // --- FS family (former FSButton) -------------------------------------------
+  if (isFsVariant(variant)) {
+    return (
+      <button
+        disabled={disabled || isLoading}
+        className={className}
+        style={{
+          ...FS_BASE_STYLE,
+          cursor: disabled || isLoading ? 'not-allowed' : 'pointer',
+          ...fsStyles[variant],
+          ...style,
+        }}
+        {...props}
+      >
+        {isLoading ? (
+          <Loader2
+            size={18}
+            className="animate-spin"
+            style={{ animation: 'spin 1s linear infinite' }}
+          />
+        ) : null}
+        {children}
+      </button>
+    );
+  }
+
   return (
     <motion.button
       disabled={disabled || isLoading}
@@ -143,8 +324,8 @@ export const Button: React.FC<ButtonProps> = ({
         ${fullWidth ? 'w-full' : ''}
         ${className}
       `}
-      style={
-        variant === 'card-action'
+      style={{
+        ...(variant === 'card-action'
           ? {
               fontFamily: 'var(--font-body)',
               fontWeight: 900,
@@ -173,8 +354,9 @@ export const Button: React.FC<ButtonProps> = ({
                   color: 'var(--fs-ink)',
                   border: '1px solid var(--fs-surface-2)',
                 }
-              : { fontFamily: 'var(--font-display)', borderRadius: 0 }
-      }
+              : { fontFamily: 'var(--font-display)', borderRadius: 0 }),
+        ...style,
+      }}
       // biome-ignore lint/suspicious/noExplicitAny: framer-motion button prop type conflicts with native button events
       {...(props as any)}
     >

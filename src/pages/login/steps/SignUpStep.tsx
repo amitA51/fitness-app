@@ -10,7 +10,7 @@ import { AnnualPasswordInput } from '../../../components/ui/AnnualPasswordInput'
 import { signUp } from '../../../services/supabaseAuth';
 import { logger } from '../../../utils/logger';
 import { pageVariants, slideFromRight, staggerContainer, staggerItem } from '../animations';
-import { AnnualButton } from '../components/AnnualButton';
+import { Button } from '../../../components/ui/Button';
 import { GhostLink } from '../components/GhostLink';
 import type { SignUpFormData, ValidationErrors } from '../types';
 
@@ -178,9 +178,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           transition={{ delay: 0.5 }}
           className="mt-8"
         >
-          <AnnualButton variant="secondary" onClick={onBack} fullWidth={false}>
+          <Button variant="editorial-secondary" type="button" onClick={onBack} fullWidth={false}>
             חזרה להתחברות
-          </AnnualButton>
+          </Button>
         </motion.div>
       </motion.div>
     );
@@ -341,9 +341,15 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
 
         {/* Submit button */}
         <div className="px-5 pb-8">
-          <AnnualButton type="submit" loading={loading} disabled={loading}>
+          <Button
+            variant="editorial"
+            type="submit"
+            isLoading={loading}
+            disabled={loading}
+            fullWidth
+          >
             צור חשבון
-          </AnnualButton>
+          </Button>
         </div>
       </form>
     </motion.div>
