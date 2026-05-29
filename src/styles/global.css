@@ -864,20 +864,15 @@ body {
    ANIMATIONS (Keyframes)
    ============================================================================ */
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% center;
-  }
-  100% {
-    background-position: 200% center;
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/*
+ * @keyframes shimmer and @keyframes spin removed here (consolidation F1).
+ * They were duplicated in motion.css, which is imported after global.css in
+ * main.tsx, so motion.css's definitions already won document-wide. The single
+ * source of truth for shimmer/spin now lives in motion.css. (Visually identical:
+ * shimmer's only difference was background-position center vs 0, irrelevant under
+ * the background-size 200% 100% used by consumers, and motion.css was already
+ * the winning copy.)
+ */
 
 @keyframes pulse {
   0%,
