@@ -2,15 +2,7 @@
 // This replaces the old 1295-line monolithic ActiveWorkout.tsx
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import type {
-  Exercise,
-  PersonalExercise,
-  PersonalItem,
-  WorkoutExercise,
-  WorkoutGoal,
-  WorkoutSession,
-  WorkoutSettings,
-} from '../../types';
+import type { Exercise, PersonalItem, WorkoutGoal, WorkoutSettings } from '../../types';
 
 import { useWorkoutDerived, useWorkoutDispatch, useWorkoutState } from './core/WorkoutContext';
 // Core
@@ -31,14 +23,17 @@ const ConfirmExitOverlay = React.lazy(() => import('./overlays/ConfirmExitOverla
 const PlateCalculatorOverlay = React.lazy(() => import('./overlays/PlateCalculatorOverlay'));
 
 // Hooks
+import { useExerciseSuggestions } from './hooks/useExerciseSuggestions';
 import { usePersonalRecords } from './hooks/usePersonalRecords';
+import { useSupersetMode } from './hooks/useSupersetMode';
+import { useSwipeNavigation } from './hooks/useSwipeNavigation';
+import { useWorkoutSave } from './hooks/useWorkoutSave';
 import {
   useAccessibilitySettings,
   useDisplaySettings,
   useWorkoutSettings,
 } from './hooks/useWorkoutSettings';
 import { formatTime } from './hooks/useWorkoutTimer';
-import { setVolume } from '../../utils/workoutMath';
 
 import OverlayLoader from './components/ui/OverlayLoader';
 import { ToastContainer } from './components/ui/Toast';
@@ -61,21 +56,13 @@ const WorkoutGoalSelector = React.lazy(() => import('./WorkoutGoalSelector'));
 const ExerciseReorder = React.lazy(() => import('./ExerciseReorder'));
 
 // Services
-import {
-  createWorkoutTemplate,
-  getPersonalExercises,
-  getWorkoutSessions,
-  getWorkoutTemplates,
-  saveWorkoutSession,
-} from '../../services/dataService';
+import { createWorkoutTemplate, getWorkoutTemplates } from '../../services/dataService';
 // Exercise names derived from personalExercises loaded below (getExerciseNames removed — was broken)
 import { createWorkoutSet } from '../../types';
 
 import { playSuccess } from '../../utils/audio';
 // CSS
 import { triggerHaptic } from '../../utils/haptics';
-import { logger } from '../../utils/logger';
-import { safeJsonParse } from '../../utils/safeJson';
 import { cn } from '../../utils/styles';
 
 // ============================================================
@@ -90,9 +77,6 @@ interface ActiveWorkoutProps {
 
 // Note: ParticleExplosion and EmptyWorkoutState moved to separate files
 // for better code organization and maintainability
-
-// Stable empty array to avoid re-creating [] on every render
-const emptyStringArray: string[] = [];
 
 // ============================================================
 // MAIN WORKOUT CONTENT
@@ -112,20 +96,10 @@ export const WorkoutContent: React.FC<{
   const [preWorkoutScreenShown, setPreWorkoutScreenShown] = useState(false);
 
   // Local state
-  const [showSummary, setShowSummary] = useState(false);
-  const [completedSession, setCompletedSession] = useState<WorkoutSession | null>(null);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [finishIntent, setFinishIntent] = useState<'finish' | 'cancel'>('finish');
 
-  const [nameSuggestions, setNameSuggestions] = useState<string[]>(emptyStringArray);
-  const [personalExerciseLibrary, setPersonalExerciseLibrary] = useState<PersonalExercise[]>([]);
   const [showWaterReminder, setShowWaterReminder] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-
-  // Superset mode - when user clicks "create superset" button
-  const [supersetMode, setSupersetMode] = useState(false);
-  const [supersetFirstExerciseId, setSupersetFirstExerciseId] = useState<string | null>(null);
 
   // Track last announced set count to avoid re-announcing on re-renders
   const lastAnnouncedSetsRef = useRef(0);
@@ -137,6 +111,26 @@ export const WorkoutContent: React.FC<{
   // the workoutSettings object reference changing on every state tick.
   const enableQuickWeightButtons = workoutSettings.enableQuickWeightButtons ?? true;
   const enableQuickRepsButtons = workoutSettings.enableQuickRepsButtons ?? true;
+
+  // Save/finish flow (summary state + confirm-finish handler) lives in a hook.
+  const { showSummary, completedSession, isSaving, saveError, setSaveError, handleConfirmFinish } =
+    useWorkoutSave({
+      state,
+      workoutSettings,
+      finishIntent,
+      setShowFinishConfirm,
+      item,
+      onExit,
+    });
+
+  // Superset selection state machine + its create/remove handlers.
+  const { supersetMode, handleCreateSuperset, handleRemoveSuperset } = useSupersetMode({
+    dispatch,
+    defaultRestTime: workoutSettings.defaultRestTime,
+  });
+
+  // Exercise name suggestions + personal exercise library (loaded once on mount).
+  const { nameSuggestions, personalExerciseLibrary } = useExerciseSuggestions();
 
   // PR tracking
   const { getPRForExercise } = usePersonalRecords(state.exercises, state.currentExerciseIndex);
@@ -196,30 +190,6 @@ export const WorkoutContent: React.FC<{
     state.currentExerciseIndex,
     announceSetComplete,
   ]);
-
-  // Load exercise suggestions
-  useEffect(() => {
-    const loadNames = async () => {
-      try {
-        const [_sessions, personalExercises] = await Promise.all([
-          getWorkoutSessions(100),
-          getPersonalExercises().catch(() => []),
-        ]);
-        const libraryNames = Array.from(
-          new Set(
-            (personalExercises as PersonalExercise[])
-              .map((ex) => ex.name)
-              .filter((n): n is string => !!n)
-          )
-        );
-        setPersonalExerciseLibrary(personalExercises as PersonalExercise[]);
-        setNameSuggestions(libraryNames.sort());
-      } catch {
-        // Silently handle name suggestion loading errors
-      }
-    };
-    loadNames();
-  }, []);
 
   // Load initial template if provided (from PreWorkoutScreen quick-start)
   useEffect(() => {
@@ -491,41 +461,6 @@ export const WorkoutContent: React.FC<{
     [dispatch, state.currentExerciseIndex, personalExerciseLibrary]
   );
 
-  // Superset handling
-  const handleCreateSuperset = useCallback(
-    (exerciseId: string) => {
-      if (!supersetMode) {
-        // Enter superset mode - select first exercise
-        triggerHaptic('medium');
-        setSupersetMode(true);
-        setSupersetFirstExerciseId(exerciseId);
-      } else if (supersetFirstExerciseId && supersetFirstExerciseId !== exerciseId) {
-        // Create superset with two exercises
-        triggerHaptic('success');
-        dispatch({
-          type: 'CREATE_SUPERSET',
-          payload: {
-            exerciseIds: [supersetFirstExerciseId, exerciseId],
-            restBetweenRounds: workoutSettings.defaultRestTime || 60,
-          },
-        });
-        setSupersetMode(false);
-        setSupersetFirstExerciseId(null);
-      }
-    },
-    [dispatch, supersetMode, supersetFirstExerciseId, workoutSettings.defaultRestTime]
-  );
-
-  const handleRemoveSuperset = useCallback(
-    (exerciseId: string) => {
-      triggerHaptic('medium');
-      dispatch({ type: 'REMOVE_SUPERSET', payload: { exerciseId } });
-      setSupersetMode(false);
-      setSupersetFirstExerciseId(null);
-    },
-    [dispatch]
-  );
-
   const handleFinishRequest = useCallback(() => {
     // Go straight to confirmation - cooldown is optional via button in overlay
     triggerHaptic('light');
@@ -548,66 +483,13 @@ export const WorkoutContent: React.FC<{
     [dispatch]
   );
 
-  // Horizontal swipe navigation between exercises.
-  // Pointer-based, RTL-aware, ignores gestures originating in interactive targets.
-  const swipeStartRef = useRef<{ x: number; y: number; t: number; id: number } | null>(null);
-
-  const handleSwipePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement | null;
-    if (
-      target &&
-      target.closest(
-        'button, input, textarea, select, [role="button"], [role="slider"], [data-no-swipe]'
-      )
-    ) {
-      swipeStartRef.current = null;
-      return;
-    }
-    swipeStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      t: Date.now(),
-      id: e.pointerId,
-    };
-  }, []);
-
-  const handleSwipePointerMove = useCallback((_e: React.PointerEvent<HTMLDivElement>) => {
-    // No-op — we decide on pointerup. Tracking here would require canceling scroll.
-  }, []);
-
-  const handleSwipePointerEnd = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      const start = swipeStartRef.current;
-      swipeStartRef.current = null;
-      if (!start || start.id !== e.pointerId) return;
-
-      const dx = e.clientX - start.x;
-      const dy = e.clientY - start.y;
-      const duration = Date.now() - start.t;
-
-      const MIN_DX = 70;
-      const MAX_DY = 40;
-      const MAX_DURATION = 400;
-
-      if (Math.abs(dx) < MIN_DX) return;
-      if (Math.abs(dy) > MAX_DY) return;
-      if (duration > MAX_DURATION) return;
-
-      const total = state.exercises.length;
-      if (total <= 1) return;
-
-      const isRTL = typeof document !== 'undefined' && document.dir === 'rtl';
-      // In RTL: positive dx (swipe right) → previous exercise. LTR is inverse.
-      const direction = dx > 0 ? (isRTL ? -1 : 1) : isRTL ? 1 : -1;
-      const nextIndex = state.currentExerciseIndex + direction;
-
-      if (nextIndex < 0 || nextIndex >= total) return;
-
-      triggerHaptic('light');
-      handleChangeExercise(nextIndex);
-    },
-    [handleChangeExercise, state.currentExerciseIndex, state.exercises.length]
-  );
+  // Horizontal swipe navigation between exercises (pointer-based, RTL-aware).
+  const { handleSwipePointerDown, handleSwipePointerMove, handleSwipePointerEnd } =
+    useSwipeNavigation({
+      currentExerciseIndex: state.currentExerciseIndex,
+      exercisesLength: state.exercises.length,
+      onChangeExercise: handleChangeExercise,
+    });
 
   const handleOpenDrawer = useCallback(() => {
     dispatch({ type: 'TOGGLE_DRAWER', payload: true });
@@ -725,154 +607,6 @@ export const WorkoutContent: React.FC<{
   const handleCloseGoalSelector = useCallback(() => {
     dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'goal', isOpen: false } });
   }, [dispatch]);
-
-  const handleConfirmFinish = useCallback(async () => {
-    // Guard against double-tap while a save is already in-flight
-    if (isSaving) return;
-    if (finishIntent === 'cancel') {
-      setShowFinishConfirm(false);
-      setSaveError(null);
-
-      // Mark as completed in localStorage to prevent restore
-      const saved = localStorage.getItem('active_workout_v3_state');
-      if (saved) {
-        try {
-          const parsed = safeJsonParse<Record<string, unknown>>(saved);
-          if (parsed) {
-            parsed._completed = true;
-            localStorage.setItem('active_workout_v3_state', JSON.stringify(parsed));
-          }
-        } catch {
-          // If parsing fails, just remove it
-        }
-      }
-      localStorage.removeItem('active_workout_v3_state');
-
-      // Call onExit - the overlay will handle removing the item
-      onExit();
-      return;
-    }
-
-    // Validate: Check if there's anything to save BEFORE closing overlay
-    const completedExercises = state.exercises.filter((ex) =>
-      (ex.sets ?? []).some((s) => s.completedAt)
-    );
-
-    if (completedExercises.length === 0) {
-      // No completed sets - show message to user instead of silently exiting
-      // Keep overlay open and show error
-      setSaveError('לא הושלמו סטים באימון זה. השלם לפחות סט אחד כדי לשמור את האימון.');
-      return;
-    }
-
-    // Now we can close the overlay and proceed
-    triggerHaptic('success');
-    setShowFinishConfirm(false);
-    setSaveError(null);
-
-    setIsSaving(true);
-
-    try {
-      // Transform Exercise[] to WorkoutExercise[] for saving
-      const workoutExercises: WorkoutExercise[] = completedExercises.map((ex, index) => ({
-        id: ex.id || `ex_${index}`,
-        exerciseId: ex.id || `exercise_${index}`,
-        exerciseName: ex.name || 'Unknown Exercise',
-        targetMuscle: ex.muscleGroup || ex.targetMuscle || 'Other',
-        sets: (ex.sets ?? []).filter((s) => s.completedAt),
-        notes: '',
-        restSeconds: ex.defaultRestTime || ex.targetRestTime || 90,
-        isCompleted: true,
-        order: index,
-        // Additional fields for display
-        name: ex.name,
-        muscleGroup: ex.muscleGroup,
-        tempo: ex.tempo,
-        targetRestTime: ex.targetRestTime,
-      }));
-
-      const sessionDurationSec = Math.floor(
-        (Date.now() - state.startTimestamp - state.totalPausedTime) / 1000
-      );
-      const sessionTotalVolume = workoutExercises.reduce(
-        (sum, ex) => sum + ex.sets.reduce((setSum, s) => setSum + setVolume(s), 0),
-        0
-      );
-      // Calorie burn estimate (rough; conservative for resistance training):
-      //   ~0.04 kcal per kg of total volume + ~5 kcal per minute baseline.
-      // Saturate at the sensible upper bound (1500 kcal for one session).
-      const minutes = Math.max(0, sessionDurationSec / 60);
-      const estCalories = Math.min(1500, Math.round(sessionTotalVolume * 0.04 + minutes * 5));
-
-      const session: WorkoutSession = {
-        id: `session_${Date.now()}`,
-        userId: 'local_user',
-        workoutItemId: item?.id || `workout_${Date.now()}`,
-        startTime: new Date(state.startTimestamp).toISOString(),
-        endTime: new Date().toISOString(),
-        date: new Date().toISOString().slice(0, 10),
-        duration: sessionDurationSec,
-        status: 'completed',
-        templateId: null,
-        notes: '',
-        rating: null,
-        totalVolume: sessionTotalVolume,
-        caloriesBurned: estCalories > 0 ? estCalories : null,
-        goalType: workoutSettings.defaultWorkoutGoal as string,
-        exercises: workoutExercises,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      await saveWorkoutSession(session);
-
-      // Verify session was saved by reading it back
-      let wasSaved = true;
-      try {
-        const { getWorkoutSessions } = await import('../../services/dataService');
-        const savedSessions = await getWorkoutSessions(1);
-        wasSaved = savedSessions.some((s) => s.id === session.id);
-        if (!wasSaved) {
-          throw new Error('Session verification failed - not found in database');
-        }
-      } catch (verifyError) {
-        logger.workout?.error?.('Workout save verification failed', verifyError);
-        wasSaved = false;
-      }
-
-      if (!wasSaved) {
-        setSaveError('שמירת האימון נכשלה. הנתונים נשמרו מקומית — נסה שוב כשהחיבור יציב.');
-        return;
-      }
-
-      // Mark workout as completed in localStorage to prevent restore loop
-      // This is a safety measure in case the summary doesn't close properly
-      const saved = localStorage.getItem('active_workout_v3_state');
-      if (saved) {
-        try {
-          const parsed = safeJsonParse<Record<string, unknown>>(saved);
-          if (parsed) {
-            parsed._completed = true;
-            localStorage.setItem('active_workout_v3_state', JSON.stringify(parsed));
-          }
-        } catch {
-          // If parsing fails, continue anyway
-        }
-      }
-
-      // Don't delete yet! Wait until summary is closed.
-      // keeping the item active allows this component to stay mounted so Summary can be shown.
-
-      setCompletedSession(session);
-      setShowSummary(true);
-    } catch (e) {
-      // Show user-friendly error message via UI instead of console
-      const errorMessage = e instanceof Error ? e.message : 'שגיאה לא ידועה';
-      setSaveError(`שגיאה בשמירת האימון: ${errorMessage}`);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [finishIntent, isSaving, state, workoutSettings.defaultWorkoutGoal, onExit, item?.id]);
 
   // If showing summary
   if (showSummary && completedSession) {
