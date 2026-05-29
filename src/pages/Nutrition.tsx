@@ -290,8 +290,8 @@ export default function NutritionPage() {
 
       {/* Block Hero — today's calories */}
       <div className="block-hero section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in">
-        <span className="ribbon">{calPct}% · GOAL</span>
-        <div className="label">נצרך היום · CONSUMED TODAY</div>
+        <span className="ribbon">{calPct}% מהיעד</span>
+        <div className="label">נצרך היום</div>
         <div className="number kinetic-number large">{todayMacros.calories || 0}</div>
         <div className="sub">/ {macroGoals.calories} KCAL</div>
         {/* Calorie bar */}
@@ -344,7 +344,7 @@ export default function NutritionPage() {
         ].map((m, i) => (
           <div
             key={m.label}
-            className="glass-surface fs-accent-rail"
+            className="glass-surface"
             style={{
               background: 'var(--fs-surface)',
               padding: '18px 14px',
@@ -583,7 +583,8 @@ export default function NutritionPage() {
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="section-title flex items-center gap-2">
-                <Droplets size={14} />§ HYDRATION HISTORY · היסטוריית מים
+                <Droplets size={14} />
+                היסטוריית מים
               </h3>
             </div>
             <div
@@ -632,7 +633,7 @@ export default function NutritionPage() {
             </div>
             <div className="flex items-center justify-center gap-4 mt-3">
               <span className="eyebrow" style={{ color: 'var(--fs-muted)', fontSize: '10px' }}>
-                GLASSES (250ML) · GOAL: 2500ML
+                כוסות · 250 מ״ל · יעד 2500 מ״ל
               </span>
             </div>
           </div>
@@ -705,8 +706,17 @@ const EmptyMealState = memo(function EmptyMealState({ onAdd }: { onAdd: () => vo
       >
         עדיין לא תיעדת ארוחות
       </h3>
-      <p className="eyebrow mb-5" style={{ color: 'var(--fs-muted)' }}>
-        START TRACKING
+      <p
+        className="mb-5"
+        style={{
+          color: 'var(--fs-muted)',
+          fontFamily: 'var(--font-body)',
+          fontSize: '13px',
+          lineHeight: 1.5,
+          maxWidth: '28ch',
+        }}
+      >
+        הוסיפו את הארוחה הראשונה של היום כדי לעקוב אחר הקלוריות והמאקרו
       </p>
       <button
         type="button"
@@ -728,7 +738,7 @@ const MealEntryCard = memo(function MealEntryCard({
   const mealLabel = entry.meals.map((m) => MEAL_TYPE_LABELS[m.name]).join(', ');
   return (
     <div
-      className="magnetic-card glass-surface fs-accent-rail"
+      className="magnetic-card glass-surface"
       style={{
         background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
@@ -739,20 +749,9 @@ const MealEntryCard = memo(function MealEntryCard({
         boxShadow: 'var(--shadow-card)',
       }}
     >
-      {/* Accent side bar */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: '4px',
-          background: 'var(--fs-accent)',
-        }}
-      />
-      <div className="flex items-start justify-between mb-2" style={{ paddingInlineStart: '8px' }}>
+      <div className="flex items-start justify-between mb-2">
         <span className="eyebrow" style={{ color: 'var(--fs-accent)' }}>
-          § {mealLabel}
+          {mealLabel}
         </span>
         <button
           type="button"
@@ -773,7 +772,6 @@ const MealEntryCard = memo(function MealEntryCard({
           lineHeight: 1,
           color: 'var(--fs-ink)',
           marginBottom: '6px',
-          paddingInlineStart: '8px',
           textTransform: 'uppercase',
         }}
       >
@@ -781,7 +779,7 @@ const MealEntryCard = memo(function MealEntryCard({
       </h4>
 
       {/* Calories — big display */}
-      <div className="flex items-baseline gap-2 mb-3" style={{ paddingInlineStart: '8px' }}>
+      <div className="flex items-baseline gap-2 mb-3">
         <span
           style={{
             fontFamily: 'var(--font-display)',
@@ -799,7 +797,7 @@ const MealEntryCard = memo(function MealEntryCard({
         </span>
       </div>
 
-      <div className="flex gap-2 flex-wrap mb-3" style={{ paddingInlineStart: '8px' }}>
+      <div className="flex gap-2 flex-wrap mb-3">
         {entry.meals
           .flatMap((m) => m.foods)
           .slice(0, 4)
@@ -822,7 +820,6 @@ const MealEntryCard = memo(function MealEntryCard({
           letterSpacing: '0.12em',
           color: 'var(--fs-heading)',
           textTransform: 'uppercase',
-          paddingInlineStart: '8px',
         }}
       >
         <span className="flex items-center gap-1">
@@ -1050,7 +1047,7 @@ const MealPresetCard = memo(function MealPresetCard({
   );
   return (
     <div
-      className="magnetic-card glass-surface fs-accent-rail"
+      className="magnetic-card glass-surface"
       style={{
         background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
@@ -1061,18 +1058,7 @@ const MealPresetCard = memo(function MealPresetCard({
         boxShadow: 'var(--shadow-card)',
       }}
     >
-      {/* Accent side bar */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: '4px',
-          background: 'var(--fs-accent)',
-        }}
-      />
-      <div className="flex items-start justify-between mb-3" style={{ paddingInlineStart: '8px' }}>
+      <div className="flex items-start justify-between mb-3">
         <div>
           <h4
             style={{
@@ -1107,7 +1093,7 @@ const MealPresetCard = memo(function MealPresetCard({
           {totalCal} קל׳
         </span>
       </div>
-      <div className="flex flex-wrap gap-1.5 mb-3" style={{ paddingInlineStart: '8px' }}>
+      <div className="flex flex-wrap gap-1.5 mb-3">
         {preset.meals.map((m) => {
           const f = getFoodLibrary().find((fd) => fd.id === m.foodId);
           return f ? (
@@ -1127,7 +1113,7 @@ const MealPresetCard = memo(function MealPresetCard({
         })}
       </div>
       {showMealSelect ? (
-        <div className="flex gap-2 flex-wrap" style={{ paddingInlineStart: '8px' }}>
+        <div className="flex gap-2 flex-wrap">
           {Object.entries(MEAL_TYPE_LABELS).map(([key, label]) => {
             const Icon = MEAL_TYPE_ICONS[key as MealType];
             return (

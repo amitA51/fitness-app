@@ -70,24 +70,10 @@ export const WorkoutHistoryList = memo(function WorkoutHistoryList({
               position: 'relative',
             }}
           >
-            {/* Accent side bar */}
-            <div
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 4,
-                background: 'var(--fs-accent)',
-                borderTopLeftRadius: '22px',
-                borderBottomLeftRadius: '16px',
-              }}
-            />
-
             <div
               onClick={() => toggleExpand(session.id)}
               style={{
-                padding: '14px 16px 14px 20px',
+                padding: '14px 16px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',

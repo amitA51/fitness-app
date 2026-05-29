@@ -32,6 +32,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/__/, /^chrome-extension:\/\//],
+        // Custom Web Push handler (push + notificationclick) for coach reminders.
+        importScripts: ['push-sw.js'],
         runtimeCaching: [
           // NOTE: Supabase REST responses are intentionally NOT cached by the
           // service worker. Responses are scoped to the authenticated user and

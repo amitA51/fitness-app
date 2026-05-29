@@ -124,11 +124,11 @@ export const Toast: React.FC<ToastProps> = ({
           transition={{ duration: 0.48, ease: [0.16, 1, 0.3, 1] }}
           style={{ x: '-50%' }}
         >
-          {/* Glass surface card with deep shadow + accent left border */}
+          {/* Glass surface card with deep shadow + full accent border */}
           <div
             className="glass-surface relative overflow-hidden"
             style={{
-              borderLeft: `3px solid ${accent}`,
+              border: `1px solid ${accent}`,
               borderRadius: 0,
               boxShadow: 'var(--shadow-deep)',
             }}

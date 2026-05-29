@@ -49,8 +49,7 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
         className="flex items-start gap-3 px-4 py-3"
         style={{
           backgroundColor: 'var(--fs-bg)',
-          border: '1px solid var(--fs-surface-2)',
-          borderLeft: `3px solid ${style.accent}`,
+          border: `1px solid ${style.accent}`,
           borderRadius: 0,
           boxShadow: '0 8px 24px rgba(11,26,43,0.12)',
         }}

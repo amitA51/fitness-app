@@ -28,11 +28,10 @@ html {
 body {
   background-color: var(--color-background);
   background: linear-gradient(135deg, var(--fs-body-overlay), transparent 44%),
-              repeating-linear-gradient(90deg, var(--fs-grid-line) 0 1px, transparent 1px 28px),
-              repeating-linear-gradient(0deg, var(--fs-grid-line) 0 1px, transparent 1px 28px),
-              radial-gradient(circle at 86% 10%, var(--fs-mesh-accent), transparent 34%),
-              radial-gradient(circle at 12% 18%, var(--fs-mesh-signal), transparent 30%),
-              var(--fs-bg);
+    repeating-linear-gradient(90deg, var(--fs-grid-line) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(0deg, var(--fs-grid-line) 0 1px, transparent 1px 28px),
+    radial-gradient(circle at 86% 10%, var(--fs-mesh-accent), transparent 34%),
+    radial-gradient(circle at 12% 18%, var(--fs-mesh-signal), transparent 30%), var(--fs-bg);
   color: var(--color-text);
   min-height: 100vh;
   min-height: 100dvh;
@@ -159,7 +158,7 @@ body {
   }
 
   .btn-primary:hover {
-    background-color: #1A1A1A;
+    background-color: #1a1a1a;
   }
 
   .btn-primary:active {
@@ -981,13 +980,25 @@ main > * {
   }
 
   @keyframes vt-fade-out {
-    from { opacity: 1; transform: translateX(0); }
-    to { opacity: 0; transform: translateX(-6px); }
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-6px);
+    }
   }
 
   @keyframes vt-fade-in {
-    from { opacity: 0; transform: translateX(6px); }
-    to { opacity: 1; transform: translateX(0); }
+    from {
+      opacity: 0;
+      transform: translateX(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 
   /* RTL support */
@@ -1000,13 +1011,25 @@ main > * {
   }
 
   @keyframes vt-fade-out-rtl {
-    from { opacity: 1; transform: translateX(0); }
-    to { opacity: 0; transform: translateX(6px); }
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(6px);
+    }
   }
 
   @keyframes vt-fade-in-rtl {
-    from { opacity: 0; transform: translateX(-6px); }
-    to { opacity: 1; transform: translateX(0); }
+    from {
+      opacity: 0;
+      transform: translateX(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 
   /* Shared element transitions */

@@ -611,11 +611,20 @@ textarea {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-asymmetric, 22px 16px 22px 16px);
   color: #fff;
-  background:
-    radial-gradient(circle at calc(100% - 38px) 28px, transparent 0 10px, var(--fs-steel) 11px 19px, transparent 20px 34px, color-mix(in srgb, var(--fs-accent) 38%, transparent) 35px 36px, transparent 37px),
+  background: radial-gradient(
+      circle at calc(100% - 38px) 28px,
+      transparent 0 10px,
+      var(--fs-steel) 11px 19px,
+      transparent 20px 34px,
+      color-mix(in srgb, var(--fs-accent) 38%, transparent) 35px 36px,
+      transparent 37px
+    ),
     linear-gradient(110deg, transparent 0 60%, rgba(255, 255, 255, 0.12) 60% 62%, transparent 62%),
-    linear-gradient(135deg, color-mix(in srgb, var(--fs-primary) 92%, #000), color-mix(in srgb, var(--fs-accent-2) 64%, var(--fs-primary))),
-    var(--fs-primary);
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--fs-primary) 92%, #000),
+      color-mix(in srgb, var(--fs-accent-2) 64%, var(--fs-primary))
+    ), var(--fs-primary);
   box-shadow: var(--shadow-card);
 }
 
@@ -625,9 +634,11 @@ textarea {
   inset: auto 16px 12px 16px;
   height: 7px;
   border-radius: 999px;
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.62) 0 1px, transparent 1px 13px),
-    rgba(255, 255, 255, 0.12);
+  background: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.62) 0 1px,
+      transparent 1px 13px
+    ), rgba(255, 255, 255, 0.12);
 }
 
 .hero-card::after {
@@ -636,9 +647,11 @@ textarea {
   inset: 0 auto 0 0;
   width: 44px;
   opacity: 0.72;
-  background:
-    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0 1px, transparent 1px 11px),
-    linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  background: repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.24) 0 1px,
+      transparent 1px 11px
+    ), linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.12), transparent);
   clip-path: polygon(44% 0, 100% 0, 56% 100%, 0 100%);
 }
 
@@ -668,9 +681,7 @@ textarea {
   place-items: center;
   border: 10px solid var(--fs-steel);
   border-radius: 50%;
-  background:
-    radial-gradient(circle, var(--fs-accent) 0 16%, transparent 17%),
-    var(--fs-rubber);
+  background: radial-gradient(circle, var(--fs-accent) 0 16%, transparent 17%), var(--fs-rubber);
   color: #fff;
   font-family: var(--font-mono);
   font-size: 11px;
@@ -686,14 +697,22 @@ textarea {
   display: block;
   height: 8px;
   border-radius: 999px;
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.68) 0 1px, transparent 1px 12px),
-    rgba(255, 255, 255, 0.14);
+  background: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.68) 0 1px,
+      transparent 1px 12px
+    ), rgba(255, 255, 255, 0.14);
 }
 
-.loadout-bars span:nth-child(1) { width: 88%; }
-.loadout-bars span:nth-child(2) { width: 64%; }
-.loadout-bars span:nth-child(3) { width: 76%; }
+.loadout-bars span:nth-child(1) {
+  width: 88%;
+}
+.loadout-bars span:nth-child(2) {
+  width: 64%;
+}
+.loadout-bars span:nth-child(3) {
+  width: 76%;
+}
 
 /* Fresh Steel Buttons */
 .btn-primary-fs {
@@ -750,9 +769,11 @@ textarea {
   margin-top: 0;
   border: 0;
   border-radius: 16px;
-  background:
-    linear-gradient(135deg, var(--fs-accent), color-mix(in srgb, var(--fs-accent-2) 42%, var(--fs-accent))),
-    var(--fs-accent);
+  background: linear-gradient(
+      135deg,
+      var(--fs-accent),
+      color-mix(in srgb, var(--fs-accent-2) 42%, var(--fs-accent))
+    ), var(--fs-accent);
   color: #071412;
   font-family: var(--font-body);
   font-weight: 900;
@@ -768,9 +789,7 @@ textarea {
   height: 1px;
   background: currentColor;
   opacity: 0.35;
-  box-shadow:
-    -18px 9px 0 currentColor,
-    -36px 18px 0 currentColor;
+  box-shadow: -18px 9px 0 currentColor, -36px 18px 0 currentColor;
   pointer-events: none;
 }
 
@@ -879,10 +898,11 @@ textarea {
   padding: 12px;
   border: 1px solid var(--fs-surface-2);
   border-radius: 24px 16px 24px 16px;
-  background:
-    radial-gradient(circle at 22px 22px, color-mix(in srgb, var(--fs-accent) 17%, transparent), transparent 28px),
-    linear-gradient(135deg, var(--fs-surface-shine-strong), transparent 54%),
-    var(--fs-surface);
+  background: radial-gradient(
+      circle at 22px 22px,
+      color-mix(in srgb, var(--fs-accent) 17%, transparent),
+      transparent 28px
+    ), linear-gradient(135deg, var(--fs-surface-shine-strong), transparent 54%), var(--fs-surface);
 }
 
 .stepper-card::after {
@@ -891,8 +911,7 @@ textarea {
   inset: auto 11px 68px 11px;
   height: 5px;
   border-radius: 999px;
-  background:
-    repeating-linear-gradient(90deg, var(--fs-surface-2) 0 1px, transparent 1px 12px),
+  background: repeating-linear-gradient(90deg, var(--fs-surface-2) 0 1px, transparent 1px 12px),
     var(--fs-surface-2);
 }
 
@@ -960,9 +979,7 @@ textarea {
   padding: 11px;
   border: 1px solid var(--fs-surface-2);
   border-radius: 20px 14px 20px 14px;
-  background:
-    linear-gradient(135deg, var(--fs-surface-shine), transparent 50%),
-    var(--fs-surface);
+  background: linear-gradient(135deg, var(--fs-surface-shine), transparent 50%), var(--fs-surface);
 }
 
 .template-card.active,
@@ -971,26 +988,14 @@ textarea {
   box-shadow: inset 0 0 0 1px var(--fs-accent);
 }
 
-/* 4px accent rail — apply via class on .panel/.metric-card/.list-row */
+/* Card containment helper (formerly a 4px side-stripe rail).
+   The colored side-stripe was removed app-wide: side-stripe borders read as a
+   generic "callout" tell and the accent is carried by eyebrows, numbers, and
+   progress fills instead. Class kept (position/overflow) so existing layouts
+   that rely on it for containment are unaffected. */
 .fs-accent-rail {
   position: relative;
   overflow: hidden;
-}
-
-.fs-accent-rail::before {
-  content: "";
-  position: absolute;
-  inset: 9px auto 9px 0;
-  width: 4px;
-  border-radius: 999px;
-  background: var(--fs-accent);
-  opacity: 0.85;
-  pointer-events: none;
-}
-
-/* RTL flip — when document is RTL the rail sits on visual start (right) */
-[dir="rtl"] .fs-accent-rail::before {
-  inset: 9px 0 9px auto;
 }
 
 /* Standard FS progress track + fill (gradient accent → accent-2) */
@@ -999,9 +1004,11 @@ textarea {
   height: 10px;
   border: 1px solid var(--fs-surface-2);
   border-radius: 999px;
-  background:
-    repeating-linear-gradient(90deg, transparent 0 16px, color-mix(in srgb, var(--fs-primary) 14%, transparent) 16px 17px),
-    var(--fs-surface-2);
+  background: repeating-linear-gradient(
+      90deg,
+      transparent 0 16px,
+      color-mix(in srgb, var(--fs-primary) 14%, transparent) 16px 17px
+    ), var(--fs-surface-2);
 }
 
 .fs-progress-fill {
@@ -1020,9 +1027,7 @@ textarea {
   place-items: center;
   border: 7px solid var(--fs-steel);
   border-radius: 50%;
-  background:
-    radial-gradient(circle, var(--fs-accent) 0 18%, transparent 19%),
-    var(--fs-primary);
+  background: radial-gradient(circle, var(--fs-accent) 0 18%, transparent 19%), var(--fs-primary);
   color: #fff;
   font-family: var(--font-display);
   font-size: 14px;
@@ -1035,9 +1040,11 @@ textarea {
   inset: 0;
   pointer-events: none;
   opacity: 0.45;
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 28px),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 28px);
+  background: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.045) 0 1px,
+      transparent 1px 28px
+    ), repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 28px);
 }
 
 /* ============================================================================
@@ -1074,10 +1081,21 @@ textarea {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(at 18% 12%, color-mix(in srgb, var(--fs-accent) 28%, transparent), transparent 42%),
-    radial-gradient(at 82% 18%, color-mix(in srgb, var(--fs-accent-2) 24%, transparent), transparent 46%),
-    radial-gradient(at 60% 92%, color-mix(in srgb, var(--fs-signal) 18%, transparent), transparent 38%);
+  background: radial-gradient(
+      at 18% 12%,
+      color-mix(in srgb, var(--fs-accent) 28%, transparent),
+      transparent 42%
+    ),
+    radial-gradient(
+      at 82% 18%,
+      color-mix(in srgb, var(--fs-accent-2) 24%, transparent),
+      transparent 46%
+    ),
+    radial-gradient(
+      at 60% 92%,
+      color-mix(in srgb, var(--fs-signal) 18%, transparent),
+      transparent 38%
+    );
   opacity: 0.85;
   filter: blur(0.5px);
 }
@@ -1118,7 +1136,8 @@ textarea {
 }
 
 @keyframes bd-breath {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--fs-accent) 60%, transparent);
   }
@@ -1128,8 +1147,12 @@ textarea {
   }
 }
 
-.breathing-dot.signal { background: var(--fs-signal); }
-.breathing-dot.warn { background: var(--fs-warn); }
+.breathing-dot.signal {
+  background: var(--fs-signal);
+}
+.breathing-dot.warn {
+  background: var(--fs-warn);
+}
 
 /* === Kinetic number wrapper (count-up safe + tabular nums) === */
 .kinetic-number {
@@ -1151,9 +1174,8 @@ textarea {
 
 /* === Magnetic card (subtle lift + scale on hover) === */
 .magnetic-card {
-  transition:
-    transform var(--duration-fast) var(--ease-premium),
-    box-shadow var(--duration-fast) var(--ease-premium);
+  transition: transform var(--duration-fast) var(--ease-premium), box-shadow var(--duration-fast)
+    var(--ease-premium);
   will-change: transform;
 }
 
@@ -1197,7 +1219,9 @@ textarea {
 }
 
 @keyframes ps-shimmer {
-  100% { transform: translateX(100%); }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 [dir="rtl"] .premium-shimmer::before {
@@ -1205,7 +1229,10 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .premium-shimmer::before { animation: none; opacity: 0.4; }
+  .premium-shimmer::before {
+    animation: none;
+    opacity: 0.4;
+  }
 }
 
 /* === Accent glow utility === */
@@ -1228,8 +1255,12 @@ textarea {
   transition: stroke-dashoffset var(--duration-premium) var(--ease-premium);
 }
 
-.ring-progress.signal { stroke: var(--fs-signal); }
-.ring-progress.warn { stroke: var(--fs-warn); }
+.ring-progress.signal {
+  stroke: var(--fs-signal);
+}
+.ring-progress.warn {
+  stroke: var(--fs-warn);
+}
 
 /* === Section spotlight === */
 .section-spotlight {
@@ -1243,7 +1274,11 @@ textarea {
   inset: -10% 10% 60% 10%;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--fs-accent) 24%, transparent), transparent 70%);
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--fs-accent) 24%, transparent),
+    transparent 70%
+  );
   filter: blur(40px);
   opacity: 0.7;
 }
@@ -1253,10 +1288,21 @@ textarea {
   position: relative;
   overflow: hidden;
   color: var(--fs-ink);
-  background:
-    radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--fs-accent) 22%, transparent), transparent 38%),
-    radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--fs-accent-2) 26%, transparent), transparent 42%),
-    linear-gradient(135deg, color-mix(in srgb, var(--fs-primary) 96%, #000), color-mix(in srgb, var(--fs-primary) 84%, var(--fs-accent-2)));
+  background: radial-gradient(
+      circle at 18% 12%,
+      color-mix(in srgb, var(--fs-accent) 22%, transparent),
+      transparent 38%
+    ),
+    radial-gradient(
+      circle at 86% 18%,
+      color-mix(in srgb, var(--fs-accent-2) 26%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--fs-primary) 96%, #000),
+      color-mix(in srgb, var(--fs-primary) 84%, var(--fs-accent-2))
+    );
 }
 
 .premium-dark-surface::after {
@@ -1264,8 +1310,10 @@ textarea {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 28px),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 28px);
+  background: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.045) 0 1px,
+      transparent 1px 28px
+    ), repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 28px);
   opacity: 0.5;
 }

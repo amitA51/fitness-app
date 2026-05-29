@@ -14,9 +14,12 @@ import {
   Share2,
   Target,
   User,
+  UserCog,
+  Users,
   Zap,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ProfileAvatar } from '../components/ui/ProfileAvatar';
 import { SettingsCard } from '../components/ui/SettingsCard';
 import { NumberInput } from '../components/ui/SettingsNumberInput';
@@ -24,8 +27,10 @@ import { SettingsRow } from '../components/ui/SettingsRow';
 import { SaveButton } from '../components/ui/SettingsSaveButton';
 import { SectionLabel } from '../components/ui/SettingsSectionLabel';
 import { SettingsToggle } from '../components/ui/SettingsToggle';
+import { useCoach } from '../contexts/CoachContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { getMyProfile, updateMyProfile } from '../services/coach/profileService';
 import {
   copyToClipboard,
   exportWorkoutHistoryCSV,
@@ -122,6 +127,8 @@ function saveToStorage<T>(key: string, value: T): void {
 
 export default function Settings() {
   const { settings, updateSettings, updateWorkoutSettings } = useSettings();
+  const navigate = useNavigate();
+  const { isCoach, enable } = useCoach();
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [nutrition, setNutrition] = useState<NutritionGoals>(DEFAULT_NUTRITION);
   const [workoutPrefs, setWorkoutPrefs] = useState<WorkoutPrefs>(DEFAULT_WORKOUT_PREFS);
@@ -137,6 +144,11 @@ export default function Settings() {
   });
   const [weeklyReport, setWeeklyReport] = useState<string | null>(null);
   const [copiedReport, setCopiedReport] = useState(false);
+
+  // Coaching
+  const [coachName, setCoachName] = useState('');
+  const [coachNameSaved, setCoachNameSaved] = useState(false);
+  const [enablingCoach, setEnablingCoach] = useState(false);
 
   // Account / Auth state
   const [authEmail, setAuthEmail] = useState<string | null>(null);
@@ -319,6 +331,13 @@ export default function Settings() {
     });
   }, []);
 
+  // Load coach display name (online; degrades to empty offline)
+  useEffect(() => {
+    void getMyProfile().then((p) => {
+      if (p?.displayName) setCoachName(p.displayName);
+    });
+  }, []);
+
   const handleDeleteAllData = async () => {
     const allStores = Object.values(STORES);
     for (const store of allStores) {
@@ -342,6 +361,24 @@ export default function Settings() {
     // signOut clears IndexedDB and user-scoped localStorage. Reload so React
     // contexts re-hydrate from a clean slate and no stale data is shown.
     window.location.reload();
+  };
+
+  const handleSaveCoachName = async () => {
+    await updateMyProfile({ displayName: coachName.trim() || null });
+    setCoachNameSaved(true);
+    setTimeout(() => setCoachNameSaved(false), 2000);
+  };
+
+  const handleEnableCoach = async () => {
+    if (isCoach || enablingCoach) return;
+    setEnablingCoach(true);
+    try {
+      await enable();
+    } catch (err) {
+      logger.app.warn('enable coach mode failed', err);
+    } finally {
+      setEnablingCoach(false);
+    }
   };
 
   function handleSaveProfile() {
@@ -796,6 +833,112 @@ export default function Settings() {
               </div>
             )}
           </SettingsCard>
+        </div>
+
+        {/* ── COACHING SECTION ────────────────────────────────────────────── */}
+        <div className="mb-7">
+          <SectionLabel num="01c" titleEn="COACHING · COACH">
+            מאמן
+          </SectionLabel>
+          <SettingsCard>
+            {/* Display name */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
+                <div
+                  className="w-8 h-8 flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
+                >
+                  <User size={15} />
+                </div>
+                <span
+                  className="flex-1"
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    color: 'var(--fs-ink)',
+                  }}
+                >
+                  שם תצוגה
+                </span>
+                <input
+                  type="text"
+                  value={coachName}
+                  onChange={(e) => setCoachName(e.target.value)}
+                  placeholder="שם לתצוגה..."
+                  aria-label="שם תצוגה"
+                  style={{
+                    width: '144px',
+                    minHeight: '44px',
+                    padding: '6px 10px',
+                    fontSize: '14px',
+                    backgroundColor: 'var(--fs-surface)',
+                    border: '1px solid var(--fs-surface-2)',
+                    borderRadius: 0,
+                    color: 'var(--fs-ink)',
+                    fontFamily: 'var(--font-hebrew)',
+                    outline: 'none',
+                    textAlign: 'left',
+                  }}
+                />
+              </div>
+              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
+            </div>
+
+            {/* Coach mode toggle */}
+            <SettingsRow icon={<UserCog size={15} />} label="מצב מאמן" divider={true}>
+              <SettingsToggle checked={isCoach} onChange={handleEnableCoach} label="מצב מאמן" />
+            </SettingsRow>
+
+            {/* Navigation to coach + trainee hubs */}
+            {(
+              [
+                { label: 'מרכז המאמן', icon: <UserCog size={15} />, to: '/coach' },
+                { label: 'המאמן שלי', icon: <Users size={15} />, to: '/my-coach' },
+              ] as const
+            ).map((row, i, arr) => (
+              <div className="flex flex-col" key={row.to}>
+                <button
+                  type="button"
+                  onClick={() => navigate(row.to)}
+                  className="flex items-center gap-3 px-4 py-3.5 min-h-[52px] w-full text-right"
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
+                >
+                  <div
+                    className="w-8 h-8 flex items-center justify-center shrink-0"
+                    style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
+                  >
+                    {row.icon}
+                  </div>
+                  <span
+                    className="flex-1"
+                    style={{
+                      fontFamily: 'var(--font-hebrew)',
+                      fontSize: '15px',
+                      fontWeight: 500,
+                      color: 'var(--fs-ink)',
+                    }}
+                  >
+                    {row.label}
+                  </span>
+                  <ChevronLeft size={16} style={{ color: 'var(--fs-muted)' }} />
+                </button>
+                {i < arr.length - 1 && (
+                  <div
+                    style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }}
+                  />
+                )}
+              </div>
+            ))}
+          </SettingsCard>
+
+          <div className="mt-3">
+            <SaveButton
+              onClick={handleSaveCoachName}
+              saved={coachNameSaved}
+              label="שמור שם תצוגה"
+            />
+          </div>
         </div>
 
         {/* ── NUTRITION SECTION ───────────────────────────────────────────── */}

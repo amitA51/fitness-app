@@ -1,9 +1,10 @@
-import { Dumbbell, LayoutDashboard, TrendingUp, UtensilsCrossed } from 'lucide-react';
+import { Dumbbell, LayoutDashboard, TrendingUp, UserCog, UtensilsCrossed } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useCoach } from '../../contexts/CoachContext';
 import { prefetchRoute } from '../../utils/routePrefetch';
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { path: '/', label: 'בית', icon: LayoutDashboard },
   { path: '/workout', label: 'אימון', icon: Dumbbell },
   { path: '/progress', label: 'התקדמות', icon: TrendingUp },
@@ -12,6 +13,19 @@ const NAV_ITEMS = [
 
 export default memo(function BottomNav() {
   const location = useLocation();
+  const { isCoach } = useCoach();
+
+  // Context-aware coaching tab: coaches reach their hub; everyone else reaches
+  // the trainee "My Coach" screen (connect to a coach, view assignments).
+  const NAV_ITEMS = useMemo(
+    () => [
+      ...BASE_NAV_ITEMS,
+      isCoach
+        ? { path: '/coach', label: 'מאמן', icon: UserCog }
+        : { path: '/my-coach', label: 'מאמן', icon: UserCog },
+    ],
+    [isCoach]
+  );
 
   // Determine active path for keying the pill entrance animation
   const activePath = useMemo(
@@ -21,7 +35,7 @@ export default memo(function BottomNav() {
           ? location.pathname === path
           : location.pathname === path || location.pathname.startsWith(`${path}/`)
       )?.path,
-    [location.pathname]
+    [location.pathname, NAV_ITEMS]
   );
 
   return (

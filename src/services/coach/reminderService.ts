@@ -1,0 +1,123 @@
+// ============================================================================
+// COACH PLATFORM — Reminder service
+// ============================================================================
+// Coach schedules reminders; the trainee's client materializes due ones into
+// the existing local notification system on app open / while active. Reaching
+// a trainee when the app is CLOSED requires Web Push (see pushService + the
+// coach-push-send edge function).
+
+import type { Reminder, ReminderSchedule } from '../../types/coach';
+import { logger } from '../../utils/logger';
+import { showNotification } from '../notificationService';
+import { getCurrentUser } from '../supabaseAuth';
+import { requireClient, toReminder } from './mappers';
+
+export interface NewReminder {
+  title: string;
+  body?: string;
+  schedule: ReminderSchedule;
+  clientId?: string;
+  groupId?: string;
+}
+
+export const createReminder = async (input: NewReminder): Promise<Reminder> => {
+  const supabase = requireClient();
+  const user = await getCurrentUser();
+  if (!user) throw new Error('unauthenticated');
+  if (!input.clientId && !input.groupId) throw new Error('reminder_needs_target');
+  const { data, error } = await supabase
+    .from('reminders')
+    .insert({
+      coach_id: user.id,
+      client_id: input.clientId ?? null,
+      group_id: input.groupId ?? null,
+      title: input.title.trim(),
+      body: input.body?.trim() || null,
+      schedule: input.schedule,
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return toReminder(data);
+};
+
+export const listCoachReminders = async (clientId?: string): Promise<Reminder[]> => {
+  const supabase = requireClient();
+  const user = await getCurrentUser();
+  if (!user) return [];
+  let query = supabase.from('reminders').select('*').eq('coach_id', user.id);
+  if (clientId) query = query.eq('client_id', clientId);
+  const { data, error } = await query.order('created_at', { ascending: false });
+  if (error) {
+    logger.db.error('listCoachReminders failed', error);
+    return [];
+  }
+  return (data ?? []).map(toReminder);
+};
+
+export const deleteReminder = async (id: string): Promise<{ error: string | null }> => {
+  const supabase = requireClient();
+  const { error } = await supabase.from('reminders').delete().eq('id', id);
+  return { error: error?.message ?? null };
+};
+
+export const listMyReminders = async (): Promise<Reminder[]> => {
+  const supabase = requireClient();
+  const { data, error } = await supabase
+    .from('reminders')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) {
+    logger.db.error('listMyReminders failed', error);
+    return [];
+  }
+  return (data ?? []).map(toReminder);
+};
+
+const FIRED_KEY = 'coach_reminders_fired';
+
+/** Is `reminder` due within the current minute for `now`? */
+export const isReminderDue = (reminder: Reminder, now: Date): boolean => {
+  const { time, days, date } = reminder.schedule ?? {};
+  if (!time) return false;
+  const [h, m] = time.split(':').map(Number);
+  if (now.getHours() !== h || now.getMinutes() !== m) return false;
+  if (date && date !== now.toISOString().slice(0, 10)) return false;
+  if (days && days.length > 0 && !days.includes(now.getDay())) return false;
+  return true;
+};
+
+/**
+ * Fire due reminders as local notifications, de-duplicated per reminder+minute
+ * so re-renders within the same minute don't double-notify.
+ */
+export const materializeDueReminders = async (now: Date = new Date()): Promise<number> => {
+  let reminders: Reminder[];
+  try {
+    reminders = await listMyReminders();
+  } catch {
+    return 0; // offline — nothing to do
+  }
+  const stamp = `${now.toISOString().slice(0, 16)}`; // minute precision
+  let fired: Record<string, string> = {};
+  try {
+    fired = JSON.parse(localStorage.getItem(FIRED_KEY) ?? '{}');
+  } catch {
+    fired = {};
+  }
+
+  let count = 0;
+  for (const r of reminders) {
+    if (!isReminderDue(r, now)) continue;
+    if (fired[r.id] === stamp) continue;
+    await showNotification(r.title, r.body ?? '');
+    fired[r.id] = stamp;
+    count++;
+  }
+  try {
+    localStorage.setItem(FIRED_KEY, JSON.stringify(fired));
+  } catch {
+    // ignore storage errors
+  }
+  return count;
+};

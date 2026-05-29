@@ -7,10 +7,10 @@ import { AlertCircle, ArrowLeft, Mail, MailOpen, User } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { AnnualInput } from '../../../components/ui/AnnualInput';
 import { AnnualPasswordInput } from '../../../components/ui/AnnualPasswordInput';
+import { Button } from '../../../components/ui/Button';
 import { signUp } from '../../../services/supabaseAuth';
 import { logger } from '../../../utils/logger';
 import { pageVariants, slideFromRight, staggerContainer, staggerItem } from '../animations';
-import { Button } from '../../../components/ui/Button';
 import { GhostLink } from '../components/GhostLink';
 import type { SignUpFormData, ValidationErrors } from '../types';
 
@@ -317,7 +317,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               className="p-4 flex items-start gap-3"
               style={{
                 background: 'rgba(226, 110, 63, 0.12)',
-                borderLeft: '3px solid var(--fs-warn)',
+                border: '1px solid var(--fs-warn)',
                 borderRadius: 0,
               }}
             >

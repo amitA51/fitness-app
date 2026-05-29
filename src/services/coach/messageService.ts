@@ -1,0 +1,77 @@
+// ============================================================================
+// COACH PLATFORM — Message service (async threads)
+// ============================================================================
+// One thread per coach<->client pair. RLS restricts rows to the two parties;
+// either side may send (sender_id = self) and mark received messages read.
+
+import type { Message } from '../../types/coach';
+import { logger } from '../../utils/logger';
+import { getCurrentUser } from '../supabaseAuth';
+import { requireClient, toMessage } from './mappers';
+
+export const getThread = async (coachId: string, clientId: string): Promise<Message[]> => {
+  const supabase = requireClient();
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('coach_id', coachId)
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: true });
+  if (error) {
+    logger.db.error('getThread failed', error);
+    return [];
+  }
+  return (data ?? []).map(toMessage);
+};
+
+export const sendMessage = async (
+  coachId: string,
+  clientId: string,
+  body: string
+): Promise<{ error: string | null }> => {
+  const supabase = requireClient();
+  const user = await getCurrentUser();
+  if (!user) return { error: 'unauthenticated' };
+  const trimmed = body.trim();
+  if (!trimmed) return { error: 'empty' };
+
+  const { error } = await supabase.from('messages').insert({
+    coach_id: coachId,
+    client_id: clientId,
+    sender_id: user.id,
+    body: trimmed,
+  });
+  return { error: error?.message ?? null };
+};
+
+/** Mark all messages in a thread that were NOT sent by me as read. */
+export const markThreadRead = async (coachId: string, clientId: string): Promise<void> => {
+  const supabase = requireClient();
+  const user = await getCurrentUser();
+  if (!user) return;
+  const { error } = await supabase
+    .from('messages')
+    .update({ read_at: new Date().toISOString() })
+    .eq('coach_id', coachId)
+    .eq('client_id', clientId)
+    .neq('sender_id', user.id)
+    .is('read_at', null);
+  if (error) logger.db.error('markThreadRead failed', error);
+};
+
+/** Count of unread messages addressed to the current user across all threads. */
+export const getUnreadCount = async (): Promise<number> => {
+  const supabase = requireClient();
+  const user = await getCurrentUser();
+  if (!user) return 0;
+  const { count, error } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .neq('sender_id', user.id)
+    .is('read_at', null);
+  if (error) {
+    logger.db.error('getUnreadCount failed', error);
+    return 0;
+  }
+  return count ?? 0;
+};

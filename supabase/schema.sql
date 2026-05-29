@@ -460,3 +460,12 @@ CREATE TRIGGER update_water_logs_updated_at
 --   ADD COLUMN IF NOT EXISTS tight_areas JSONB DEFAULT '[]',
 --   ADD COLUMN IF NOT EXISTS overall_score INTEGER CHECK (overall_score >= 0 AND overall_score <= 100),
 --   ADD COLUMN IF NOT EXISTS session_id TEXT;
+
+-- ============================================================
+-- COACH PLATFORM (added 2026-05-29)
+-- See migrations/20260529000000_coach_platform.sql for the authoritative
+-- definition (helpers, tables, RLS, triggers, seat enforcement, audit
+-- columns, and cross-user coach access policies). The migration is
+-- idempotent (IF NOT EXISTS / CREATE OR REPLACE / DROP POLICY IF EXISTS)
+-- and may be run directly on an existing deployment.
+-- ============================================================

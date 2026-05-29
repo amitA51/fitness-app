@@ -32,20 +32,6 @@ export const ProgressInsightCard = memo(function ProgressInsightCard({
         overflow: 'hidden',
       }}
     >
-      {/* Accent side bar */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 4,
-          background: 'var(--fs-accent)',
-          borderTopLeftRadius: '22px',
-          borderBottomLeftRadius: '16px',
-        }}
-      />
-
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
         <Sparkles size={14} style={{ color: 'var(--fs-signal)' }} />
         <span

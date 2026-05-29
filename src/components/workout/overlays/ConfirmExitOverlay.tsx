@@ -261,8 +261,8 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
               <div
                 className="p-3 mb-4"
                 style={{
-                  backgroundColor: 'var(--fs-surface-2)',
-                  borderLeft: '3px solid var(--fs-warn)',
+                  backgroundColor: 'var(--color-warning-muted)',
+                  border: '1px solid var(--fs-warn)',
                   borderRadius: 0,
                 }}
               >

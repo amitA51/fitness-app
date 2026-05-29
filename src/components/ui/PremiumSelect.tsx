@@ -132,7 +132,6 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                     letterSpacing: '0.04em',
                     color: isSelected ? 'var(--fs-primary)' : 'var(--fs-ink)',
                     backgroundColor: isSelected ? 'var(--fs-surface-2)' : 'transparent',
-                    borderLeft: isSelected ? '3px solid var(--fs-accent)' : '3px solid transparent',
                     fontWeight: isSelected ? 600 : 400,
                     borderRadius: 0,
                   }}

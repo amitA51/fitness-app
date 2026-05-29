@@ -23,6 +23,7 @@ import BottomNav from './components/ui/BottomNav';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import { WorkoutProvider } from './components/workout/core';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { CoachProvider } from './contexts/CoachContext';
 import { DataProvider } from './contexts/DataContext';
 import { type PageAccent, PageThemeProvider } from './contexts/PageThemeContext';
 import { SettingsProvider } from './contexts/SettingsContext';
@@ -47,6 +48,16 @@ const Progress = lazy(() => import('./pages/Progress'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Templates = lazy(() => import('./pages/Templates'));
 const WorkoutDetail = lazy(() => import('./pages/WorkoutDetail'));
+
+// Coach platform pages
+const CoachHome = lazy(() => import('./pages/coach/CoachHome'));
+const CoachInvites = lazy(() => import('./pages/coach/CoachInvites'));
+const CoachGroups = lazy(() => import('./pages/coach/CoachGroups'));
+const CoachMessages = lazy(() => import('./pages/coach/CoachMessages'));
+const MessageThread = lazy(() => import('./pages/coach/MessageThread'));
+const ClientDetail = lazy(() => import('./pages/coach/ClientDetail'));
+const MyCoach = lazy(() => import('./pages/MyCoach'));
+const JoinPage = lazy(() => import('./pages/JoinPage'));
 
 const WorkoutContent = lazy(async () => {
   const mod = await import('./components/workout/ActiveWorkoutNew');
@@ -317,6 +328,78 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
           </PageErrorBoundary>
         }
       />
+      <Route
+        path="/coach"
+        element={
+          <PageErrorBoundary pageLabel="מאמן">
+            <CoachHome />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/coach/invites"
+        element={
+          <PageErrorBoundary pageLabel="הזמנות">
+            <CoachInvites />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/coach/groups"
+        element={
+          <PageErrorBoundary pageLabel="קבוצות">
+            <CoachGroups />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/coach/messages"
+        element={
+          <PageErrorBoundary pageLabel="הודעות">
+            <CoachMessages />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/coach/messages/:otherId"
+        element={
+          <PageErrorBoundary pageLabel="שיחה">
+            <MessageThread viewer="coach" />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/coach/clients/:id"
+        element={
+          <PageErrorBoundary pageLabel="מתאמן">
+            <ClientDetail />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/my-coach"
+        element={
+          <PageErrorBoundary pageLabel="המאמן שלי">
+            <MyCoach />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/my-coach/messages/:otherId"
+        element={
+          <PageErrorBoundary pageLabel="שיחה">
+            <MessageThread viewer="trainee" />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/join"
+        element={
+          <PageErrorBoundary pageLabel="חיבור למאמן">
+            <JoinPage />
+          </PageErrorBoundary>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -374,49 +457,70 @@ function AppShell() {
     trackPageView(location.pathname);
   }, [location.pathname]);
 
+  // Surface any coach-set reminders that are due, as local notifications, while
+  // the app is open. (Delivery when the app is closed is handled by Web Push.)
+  useEffect(() => {
+    let active = true;
+    const run = () => {
+      import('./services/coach/reminderService')
+        .then(({ materializeDueReminders }) => {
+          if (active) void materializeDueReminders();
+        })
+        .catch(() => {});
+    };
+    run();
+    const interval = window.setInterval(run, 60_000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, []);
+
   return (
     <SettingsProvider>
       <DataProvider>
-        <PageThemeProvider page={pageAccent}>
-          <a href="#main-content" className="skip-link">
-            דלג לתוכן הראשי
-          </a>
-          <div
-            className="app-shell min-h-screen flex flex-col"
-            style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
-          >
-            <OfflineIndicator />
-            <div className="sr-only" aria-live="polite">
-              {pageLabel}
-            </div>
-            <main
-              ref={mainRef}
-              id="main-content"
-              className={cn('flex-1 overflow-y-auto', !isWorkoutActive && 'pb-24')}
-              tabIndex={-1}
-              style={{ contain: 'layout style' }}
+        <CoachProvider>
+          <PageThemeProvider page={pageAccent}>
+            <a href="#main-content" className="skip-link">
+              דלג לתוכן הראשי
+            </a>
+            <div
+              className="app-shell min-h-screen flex flex-col"
+              style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
             >
-              <Suspense fallback={<PageLoader />}>
-                {reduceMotion ? (
-                  <AppRoutes location={location} />
-                ) : (
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.div
-                      key={location.pathname}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                    >
-                      <AppRoutes location={location} />
-                    </motion.div>
-                  </AnimatePresence>
-                )}
-              </Suspense>
-            </main>
-            {!isWorkoutActive && <MemoizedBottomNav />}
-          </div>
-        </PageThemeProvider>
+              <OfflineIndicator />
+              <div className="sr-only" aria-live="polite">
+                {pageLabel}
+              </div>
+              <main
+                ref={mainRef}
+                id="main-content"
+                className={cn('flex-1 overflow-y-auto', !isWorkoutActive && 'pb-24')}
+                tabIndex={-1}
+                style={{ contain: 'layout style' }}
+              >
+                <Suspense fallback={<PageLoader />}>
+                  {reduceMotion ? (
+                    <AppRoutes location={location} />
+                  ) : (
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.div
+                        key={location.pathname}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                      >
+                        <AppRoutes location={location} />
+                      </motion.div>
+                    </AnimatePresence>
+                  )}
+                </Suspense>
+              </main>
+              {!isWorkoutActive && <MemoizedBottomNav />}
+            </div>
+          </PageThemeProvider>
+        </CoachProvider>
       </DataProvider>
     </SettingsProvider>
   );

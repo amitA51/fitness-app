@@ -159,22 +159,8 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
         position: 'relative',
       }}
     >
-      {/* Accent side bar */}
-      <div
-        style={{
-          position: 'absolute',
-          insetInlineStart: 0,
-          top: 0,
-          bottom: 0,
-          width: 4,
-          background: 'var(--fs-accent)',
-          borderStartStartRadius: '22px',
-          borderEndStartRadius: '16px',
-        }}
-      />
-
       {/* Exercise Header */}
-      <div style={{ padding: '14px 16px 14px 20px' }}>
+      <div style={{ padding: '14px 16px' }}>
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
             <h3

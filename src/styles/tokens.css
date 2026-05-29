@@ -11,33 +11,33 @@
 
 :root {
   /* Fresh Steel Core Palette */
-  --fs-bg: #EEF3F1;
-  --fs-surface: #FFFFFF;
-  --fs-surface-2: #DBE6E3;
+  --fs-bg: #eef3f1;
+  --fs-surface: #ffffff;
+  --fs-surface-2: #dbe6e3;
   --fs-ink: #132327;
-  --fs-muted: #60706F;
-  --fs-primary: #16292D;
-  --fs-accent: #43C7A5;
-  --fs-accent-2: #2C7F91;
-  --fs-signal: #E2FB70;
-  --fs-warn: #E26E3F;
-  --fs-steel: #B9C8C6;
-  --fs-plate: #D7E0DE;
-  --fs-rubber: #0D1516;
+  --fs-muted: #60706f;
+  --fs-primary: #16292d;
+  --fs-accent: #43c7a5;
+  --fs-accent-2: #2c7f91;
+  --fs-signal: #e2fb70;
+  --fs-warn: #e26e3f;
+  --fs-steel: #b9c8c6;
+  --fs-plate: #d7e0de;
+  --fs-rubber: #0d1516;
 
   /* Legacy Compat: map old variable names to Fresh Steel values */
   --bone: var(--fs-bg);
   --bone-deep: var(--fs-surface-2);
-  --bone-faint: #F6FAF8;
+  --bone-faint: #f6faf8;
   --navy: var(--fs-primary);
-  --navy-deep: #0D1A1C;
-  --navy-light: #1C363B;
+  --navy-deep: #0d1a1c;
+  --navy-light: #1c363b;
   --mustard: var(--fs-signal);
-  --mustard-dark: #C9E045;
-  --mustard-deep: #D8ED5C;
+  --mustard-dark: #c9e045;
+  --mustard-deep: #d8ed5c;
   --ink: var(--fs-ink);
   --stone: var(--fs-muted);
-  --stone-light: #93A09E;
+  --stone-light: #93a09e;
 
   --color-on-mustard: var(--fs-primary);
 
@@ -53,26 +53,26 @@
   --color-primary-subtle: rgba(22, 41, 45, 0.08);
 
   --color-secondary: var(--fs-accent);
-  --color-secondary-hover: #35B392;
+  --color-secondary-hover: #35b392;
   --color-secondary-glow: rgba(67, 199, 165, 0.3);
   --color-secondary-subtle: rgba(67, 199, 165, 0.16);
 
   --color-accent: var(--fs-accent);
 
-  --color-success: #2F8F58;
-  --color-success-fg: #2F8F58;
+  --color-success: #2f8f58;
+  --color-success-fg: #2f8f58;
   --color-success-muted: rgba(47, 143, 88, 0.12);
   --color-warning: var(--fs-warn);
   --color-warning-muted: rgba(226, 110, 63, 0.12);
-  --color-error: #B83228;
-  --color-error-fg: #B83228;
+  --color-error: #b83228;
+  --color-error-fg: #b83228;
   --color-error-muted: rgba(184, 50, 40, 0.12);
-  --color-check: #2F8F58;
-  --color-delete: #B83228;
-  --color-live: #2F8F58;
-  --color-toggle-on: #34C759;
+  --color-check: #2f8f58;
+  --color-delete: #b83228;
+  --color-live: #2f8f58;
+  --color-toggle-on: #34c759;
   --fs-heading: var(--fs-primary);
-  --color-ink-on-dark: #FFFFFF;
+  --color-ink-on-dark: #ffffff;
   --color-ink-on-accent: #071412;
   --color-drag-handle: rgba(19, 35, 39, 0.2);
   --color-bar-track: rgba(255, 255, 255, 0.1);
@@ -81,7 +81,7 @@
   --color-surface: var(--fs-surface);
   --color-surface-elevated: var(--fs-surface-2);
   --color-surface-input: var(--fs-surface);
-  --color-surface-hover: #F0F5F3;
+  --color-surface-hover: #f0f5f3;
 
   --color-text: var(--fs-ink);
   --color-text-secondary: var(--fs-muted);
@@ -122,7 +122,7 @@
   --nav-icon-inactive: rgba(19, 35, 39, 0.45);
   --nav-label-inactive: rgba(19, 35, 39, 0.5);
   --nav-pill-bg: var(--fs-primary);
-  --nav-pill-text: #FFFFFF;
+  --nav-pill-text: #ffffff;
   --nav-pill-shadow: 0 2px 8px rgba(22, 41, 45, 0.25);
 
   /* Premium motion */
@@ -133,8 +133,10 @@
   --duration-spring: 540ms;
 
   /* Premium shadows */
-  --shadow-glow-accent: 0 0 0 1px color-mix(in srgb, var(--fs-accent) 35%, transparent), 0 8px 28px color-mix(in srgb, var(--fs-accent) 28%, transparent);
-  --shadow-glow-signal: 0 0 0 1px color-mix(in srgb, var(--fs-signal) 35%, transparent), 0 8px 32px color-mix(in srgb, var(--fs-signal) 32%, transparent);
+  --shadow-glow-accent: 0 0 0 1px color-mix(in srgb, var(--fs-accent) 35%, transparent), 0 8px 28px
+    color-mix(in srgb, var(--fs-accent) 28%, transparent);
+  --shadow-glow-signal: 0 0 0 1px color-mix(in srgb, var(--fs-signal) 35%, transparent), 0 8px 32px
+    color-mix(in srgb, var(--fs-signal) 32%, transparent);
   --shadow-deep: 0 24px 60px -20px rgba(13, 21, 22, 0.35), 0 8px 24px -8px rgba(13, 21, 22, 0.2);
   --shadow-lift: 0 18px 40px -16px rgba(13, 21, 22, 0.28);
   --shadow-glass: 0 12px 36px -12px rgba(13, 21, 22, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.32);
@@ -311,33 +313,33 @@ html.dark {
      ============================================================ */
   --fs-bg: #000000;
   --fs-surface: #111111;
-  --fs-surface-2: #1A1A1A;
-  --fs-ink: #F0F0F0;
+  --fs-surface-2: #1a1a1a;
+  --fs-ink: #f0f0f0;
   --fs-muted: #808080;
-  --fs-primary: #0A0A0A;
-  --fs-accent: #4DDCBB;
-  --fs-accent-2: #38B5C9;
-  --fs-signal: #E2FB70;
-  --fs-warn: #FF8A65;
-  --fs-steel: #2A2A2A;
-  --fs-plate: #1A1A1A;
+  --fs-primary: #0a0a0a;
+  --fs-accent: #4ddcbb;
+  --fs-accent-2: #38b5c9;
+  --fs-signal: #e2fb70;
+  --fs-warn: #ff8a65;
+  --fs-steel: #2a2a2a;
+  --fs-plate: #1a1a1a;
   --fs-rubber: #050505;
 
   /* Legacy mapping */
   --bone: var(--fs-bg);
   --bone-deep: var(--fs-surface-2);
-  --bone-faint: #0D0D0D;
+  --bone-faint: #0d0d0d;
   --navy: var(--fs-primary);
   --navy-deep: #050505;
   --navy-light: #222222;
   --mustard: var(--fs-signal);
-  --mustard-dark: #C9E045;
-  --mustard-deep: #D8ED5C;
+  --mustard-dark: #c9e045;
+  --mustard-deep: #d8ed5c;
   --ink: var(--fs-ink);
   --stone: var(--fs-muted);
   --stone-light: #999999;
 
-  --color-on-mustard: #0A0A0A;
+  --color-on-mustard: #0a0a0a;
 
   --text-on-navy-rgb: 240, 240, 240;
   --ink-rgb: 240, 240, 240;
@@ -351,7 +353,7 @@ html.dark {
   --color-primary-subtle: rgba(77, 220, 187, 0.06);
 
   --color-secondary: var(--fs-accent);
-  --color-secondary-hover: #3FC9A8;
+  --color-secondary-hover: #3fc9a8;
   --color-secondary-glow: rgba(77, 220, 187, 0.3);
   --color-secondary-subtle: rgba(77, 220, 187, 0.14);
 
@@ -360,7 +362,7 @@ html.dark {
   --color-background: var(--fs-bg);
   --color-surface: var(--fs-surface);
   --color-surface-elevated: var(--fs-surface-2);
-  --color-surface-input: #0A0A0A;
+  --color-surface-input: #0a0a0a;
   --color-surface-hover: #222222;
 
   --color-text: var(--fs-ink);
@@ -369,22 +371,22 @@ html.dark {
 
   --color-border: rgba(255, 255, 255, 0.06);
   --color-border-strong: rgba(255, 255, 255, 0.14);
-  --color-separator: #1A1A1A;
+  --color-separator: #1a1a1a;
 
-  --color-success: #34D98C;
-  --color-success-fg: #34D98C;
+  --color-success: #34d98c;
+  --color-success-fg: #34d98c;
   --color-success-muted: rgba(52, 217, 140, 0.14);
   --color-warning: var(--fs-warn);
   --color-warning-muted: rgba(255, 138, 101, 0.14);
-  --color-error: #FF5449;
-  --color-error-fg: #FF5449;
+  --color-error: #ff5449;
+  --color-error-fg: #ff5449;
   --color-error-muted: rgba(255, 84, 73, 0.14);
-  --color-check: #34D98C;
-  --color-delete: #FF5449;
-  --color-live: #34D98C;
-  --color-toggle-on: #34D98C;
+  --color-check: #34d98c;
+  --color-delete: #ff5449;
+  --color-live: #34d98c;
+  --color-toggle-on: #34d98c;
   --fs-heading: var(--fs-ink);
-  --color-ink-on-dark: #F0F0F0;
+  --color-ink-on-dark: #f0f0f0;
   --color-ink-on-accent: #071412;
   --color-drag-handle: rgba(255, 255, 255, 0.2);
   --color-bar-track: rgba(255, 255, 255, 0.08);
@@ -393,7 +395,7 @@ html.dark {
   --fs-surface-shine: rgba(255, 255, 255, 0.03);
   --fs-surface-shine-strong: rgba(255, 255, 255, 0.05);
   --fs-surface-shine-subtle: rgba(255, 255, 255, 0.02);
-  --fs-toggle-knob: #FFFFFF;
+  --fs-toggle-knob: #ffffff;
   --fs-focus-ring: rgba(77, 220, 187, 0.35);
   --fs-overlay-hover: rgba(255, 255, 255, 0.04);
   --fs-overlay-active: rgba(255, 255, 255, 0.07);

@@ -535,15 +535,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                 : isActive
                   ? 'var(--fs-surface)'
                   : 'var(--fs-surface-2)',
-            border: `2px solid ${selectMode && isSelected ? 'var(--fs-accent)' : isActive ? 'var(--fs-accent)' : 'var(--fs-primary)'}`,
-            borderLeft:
-              selectMode && isSelected
-                ? '4px solid var(--fs-accent)'
-                : isActive
-                  ? '4px solid var(--fs-accent)'
-                  : inSuperset
-                    ? '4px solid var(--fs-accent)'
-                    : '2px solid var(--fs-primary)',
+            border: `2px solid ${(selectMode && isSelected) || isActive || inSuperset ? 'var(--fs-accent)' : 'var(--fs-primary)'}`,
           }}
         >
           {/* Drag Handle */}

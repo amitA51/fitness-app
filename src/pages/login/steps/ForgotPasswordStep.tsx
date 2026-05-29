@@ -6,9 +6,9 @@ import { motion } from 'framer-motion';
 import { AlertCircle, ArrowLeft, Check, Mail } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { AnnualInput } from '../../../components/ui/AnnualInput';
+import { Button } from '../../../components/ui/Button';
 import { resetPassword } from '../../../services/supabaseAuth';
 import { pageVariants, slideFromLeft, staggerContainer, staggerItem } from '../animations';
-import { Button } from '../../../components/ui/Button';
 import { GhostLink } from '../components/GhostLink';
 import type { ForgotPasswordFormData, ValidationErrors } from '../types';
 
@@ -179,7 +179,7 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
               className="p-4 flex items-start gap-3"
               style={{
                 background: 'rgba(226, 110, 63, 0.12)',
-                borderLeft: '3px solid var(--fs-warn)',
+                border: '1px solid var(--fs-warn)',
                 borderRadius: 0,
               }}
             >
