@@ -115,6 +115,7 @@ export const ProgressionRecommendation: React.FC<ProgressionRecommendationProps>
       {/* Quick Action Button */}
       {onWeightChange && data.recommendation === 'INCREASE_WEIGHT' && (
         <button
+          type="button"
           onClick={() => onWeightChange(data.suggestedWeight)}
           className="w-full mt-3 py-2 px-4 bg-green-600 hover:bg-green-500 text-white rounded-lg font-medium transition-colors"
         >

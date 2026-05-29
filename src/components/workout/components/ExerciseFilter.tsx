@@ -130,6 +130,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
         />
         {searchQuery && (
           <button
+            type="button"
             onClick={() => {
               onSearchChange('');
               inputRef.current?.focus();
@@ -175,6 +176,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
         >
           {suggestions.map((exercise, index) => (
             <button
+              type="button"
               key={exercise.id}
               onClick={() => handleSuggestionClick(exercise)}
               style={{
@@ -275,6 +277,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
           </span>
           {favorites.map((ex) => (
             <button
+              type="button"
               key={ex.id}
               onClick={() => handleSuggestionClick(ex)}
               style={{
@@ -315,6 +318,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
           const isActive = selectedMuscleGroup === group;
           return (
             <button
+              type="button"
               key={group}
               onClick={() => onMuscleGroupChange(group)}
               style={{

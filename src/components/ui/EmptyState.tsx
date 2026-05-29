@@ -476,6 +476,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       <div className="flex flex-col sm:flex-row items-center gap-3">
         {action && (
           <button
+            type="button"
             onClick={action.onClick}
             style={{
               display: 'flex',
@@ -501,6 +502,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
 
         {secondaryAction && (
           <button
+            type="button"
             onClick={secondaryAction.onClick}
             style={{
               fontFamily: 'var(--font-body)',

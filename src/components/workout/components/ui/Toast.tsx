@@ -81,6 +81,7 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
           </div>
         </div>
         <button
+          type="button"
           onClick={() => onDismiss(toast.id)}
           className="transition-colors text-xs font-bold uppercase"
           style={{

@@ -198,6 +198,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
+            type="button"
             onClick={goToPrevMonth}
             style={{
               width: 36,
@@ -244,6 +245,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
           </span>
 
           <button
+            type="button"
             onClick={goToNextMonth}
             style={{
               width: 36,

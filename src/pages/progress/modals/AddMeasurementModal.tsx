@@ -71,6 +71,7 @@ export const AddMeasurementModal = memo(function AddMeasurementModal({
             עדכון מידות
           </h2>
           <button
+            type="button"
             onClick={onClose}
             style={{
               width: '32px',

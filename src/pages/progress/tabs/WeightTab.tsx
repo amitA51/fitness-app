@@ -144,7 +144,7 @@ export const WeightTab = memo(function WeightTab({
             >
               עדיין לא תיעדת משקל
             </p>
-            <button onClick={onAdd} className="btn-primary">
+            <button type="button" onClick={onAdd} className="btn-primary">
               הוסף משקל
             </button>
           </div>
@@ -250,6 +250,7 @@ export const WeightTab = memo(function WeightTab({
       {/* Add weight button */}
       {latestWeight && (
         <button
+          type="button"
           onClick={onAdd}
           className="btn-primary w-full flex items-center justify-center gap-2"
         >

@@ -297,6 +297,7 @@ export const StrengthTab = memo(function StrengthTab() {
       <div className="flex gap-2 flex-wrap">
         {curves.slice(0, 8).map((curve) => (
           <button
+            type="button"
             key={curve.exerciseName}
             onClick={() => setSelectedExercise(curve.exerciseName)}
             className="chip"

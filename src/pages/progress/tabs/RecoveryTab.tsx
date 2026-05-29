@@ -80,6 +80,7 @@ export const RecoveryTab = memo(function RecoveryTab({
             § TODAY · ציון ריקאברי
           </h2>
           <button
+            type="button"
             onClick={onAdd}
             className="chip"
             style={{ background: 'var(--fs-signal)', color: 'var(--fs-heading)' }}
@@ -200,7 +201,7 @@ export const RecoveryTab = memo(function RecoveryTab({
             <p style={{ fontSize: 13, color: 'var(--fs-muted)' }}>
               עדיין לא דיווחת על ההתאוששות שלך
             </p>
-            <button onClick={onAdd} className="btn-primary">
+            <button type="button" onClick={onAdd} className="btn-primary">
               התחל דיווח
             </button>
           </div>

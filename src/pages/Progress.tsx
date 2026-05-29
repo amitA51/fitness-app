@@ -655,6 +655,7 @@ export default function ProgressPage() {
         >
           {TABS.map((tab, idx) => (
             <button
+              type="button"
               key={tab.key}
               role="tab"
               id={`progress-tab-${tab.key}`}

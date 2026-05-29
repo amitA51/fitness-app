@@ -421,6 +421,7 @@ export default function NutritionPage() {
       <div className="px-5 pt-4">
         <div className="flex items-center justify-between mb-4">
           <button
+            type="button"
             onClick={goBack}
             className="chip"
             aria-label="יום קודם"
@@ -445,6 +446,7 @@ export default function NutritionPage() {
                 })}
           </span>
           <button
+            type="button"
             onClick={goForward}
             disabled={isToday}
             className="chip"
@@ -466,6 +468,7 @@ export default function NutritionPage() {
         >
           {TABS.map((tab, idx) => (
             <button
+              type="button"
               key={tab.key}
               role="tab"
               id={`nutrition-tab-${tab.key}`}
@@ -706,6 +709,7 @@ const EmptyMealState = memo(function EmptyMealState({ onAdd }: { onAdd: () => vo
         START TRACKING
       </p>
       <button
+        type="button"
         onClick={onAdd}
         className="btn-primary start-workout-btn accent-glow flex items-center gap-2"
       >
@@ -751,6 +755,7 @@ const MealEntryCard = memo(function MealEntryCard({
           § {mealLabel}
         </span>
         <button
+          type="button"
           onClick={() => onDelete(entry.id)}
           className="w-12 h-12 flex items-center justify-center transition-colors"
           style={{ color: 'var(--fs-muted)' }}
@@ -900,6 +905,7 @@ const FoodLibrary = memo(function FoodLibrary({
             }}
           >
             <button
+              type="button"
               onClick={() => setExpanded(expanded === food.id ? null : food.id)}
               className="w-full flex items-center justify-between p-3 text-start"
             >
@@ -994,6 +1000,7 @@ const FoodLibrary = memo(function FoodLibrary({
                       ))}
                     </div>
                     <button
+                      type="button"
                       onClick={() => onAddFood(food)}
                       style={{
                         width: '100%',
@@ -1125,6 +1132,7 @@ const MealPresetCard = memo(function MealPresetCard({
             const Icon = MEAL_TYPE_ICONS[key as MealType];
             return (
               <button
+                type="button"
                 key={key}
                 onClick={() => {
                   onSelect(key as MealType);
@@ -1152,6 +1160,7 @@ const MealPresetCard = memo(function MealPresetCard({
         </div>
       ) : (
         <button
+          type="button"
           onClick={() => setShowMealSelect(true)}
           style={{
             width: '100%',
@@ -1265,6 +1274,7 @@ function AddMealModal({
               הוסף ארוחה
             </h2>
             <button
+              type="button"
               onClick={onClose}
               className="w-12 h-12 flex items-center justify-center"
               style={{
@@ -1284,6 +1294,7 @@ function AddMealModal({
               const Icon = MEAL_TYPE_ICONS[key as MealType];
               return (
                 <button
+                  type="button"
                   key={key}
                   onClick={() => onMealTypeChange(key as MealType)}
                   style={{
@@ -1351,6 +1362,7 @@ function AddMealModal({
                     </span>
                     <div className="flex items-center gap-2 mt-1.5">
                       <button
+                        type="button"
                         onClick={() => onServingsChange(food.id, -0.5)}
                         style={{
                           width: '44px',
@@ -1383,6 +1395,7 @@ function AddMealModal({
                         {food.servings}
                       </span>
                       <button
+                        type="button"
                         onClick={() => onServingsChange(food.id, 0.5)}
                         style={{
                           width: '44px',
@@ -1416,6 +1429,7 @@ function AddMealModal({
                       {calcFoodMacros(food).calories} קל׳
                     </span>
                     <button
+                      type="button"
                       onClick={() => onRemoveFood(food.id)}
                       style={{
                         display: 'block',
@@ -1518,6 +1532,7 @@ function AddMealModal({
           <div className="space-y-1.5 max-h-56 overflow-y-auto">
             {foods.slice(0, 20).map((food) => (
               <button
+                type="button"
                 key={food.id}
                 onClick={() => onAddFood(food)}
                 style={{

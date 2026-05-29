@@ -175,6 +175,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
           }}
         >
           <button
+            type="button"
             onClick={onClose}
             style={{
               padding: 8,
@@ -199,6 +200,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
             {initialPlan ? 'עריכת תוכנית' : 'תוכנית חדשה'}
           </h2>
           <button
+            type="button"
             onClick={handleSave}
             disabled={isSaving || !name.trim()}
             style={{
@@ -309,6 +311,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                     תרגילים ({exercises.length})
                   </label>
                   <button
+                    type="button"
                     onClick={() => setShowLibrary(true)}
                     style={{
                       fontFamily: 'var(--font-display)',
@@ -418,6 +421,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                             </div>
                           </div>
                           <button
+                            type="button"
                             onClick={(e) => handleRemoveExercise(exercise.id, e)}
                             style={{
                               padding: 8,
@@ -479,6 +483,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                     בחר תרגיל להוספה
                   </h3>
                   <button
+                    type="button"
                     onClick={() => setShowLibrary(false)}
                     style={{
                       fontFamily: 'var(--font-mono)',

@@ -70,6 +70,7 @@ export const MeasurementsTab = memo(function MeasurementsTab({
             § LATEST UPDATE · עדכון אחרון
           </h2>
           <button
+            type="button"
             onClick={onAdd}
             className="chip"
             style={{ background: 'var(--fs-signal)', color: 'var(--fs-heading)' }}
@@ -151,7 +152,7 @@ export const MeasurementsTab = memo(function MeasurementsTab({
             >
               עדיין לא תיעדת מידות
             </p>
-            <button onClick={onAdd} className="btn-primary">
+            <button type="button" onClick={onAdd} className="btn-primary">
               הוסף מידות ראשונות
             </button>
           </div>
@@ -160,6 +161,7 @@ export const MeasurementsTab = memo(function MeasurementsTab({
 
       {latestMeasurement && (
         <button
+          type="button"
           onClick={onAdd}
           className="btn-primary w-full flex items-center justify-center gap-2"
         >

@@ -57,6 +57,7 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
             דיווח ריקאברי
           </h2>
           <button
+            type="button"
             onClick={onClose}
             style={{
               width: '32px',
@@ -146,6 +147,7 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
             <div className="flex flex-wrap gap-2">
               {TIGHTNESS_AREAS.map((area) => (
                 <button
+                  type="button"
                   key={area}
                   onClick={() =>
                     setTightAreas((prev) =>

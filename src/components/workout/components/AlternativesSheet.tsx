@@ -117,6 +117,7 @@ const AlternativesSheet = memo<AlternativesSheetProps>(
           {/* Close */}
           <div className="px-6 pb-4 flex-shrink-0">
             <button
+              type="button"
               onClick={onClose}
               className="
                 w-full min-h-[44px] py-3.5 rounded-2xl

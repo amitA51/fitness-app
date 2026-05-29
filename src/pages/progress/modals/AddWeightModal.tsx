@@ -50,6 +50,7 @@ export const AddWeightModal = memo(function AddWeightModal({
             עדכון משקל
           </h2>
           <button
+            type="button"
             onClick={onClose}
             style={{
               width: '32px',

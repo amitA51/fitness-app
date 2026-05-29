@@ -140,6 +140,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
 
         {/* Cancel button */}
         <button
+          type="button"
           onClick={onCancel}
           style={{
             minHeight: 44,

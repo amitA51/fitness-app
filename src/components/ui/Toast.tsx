@@ -200,6 +200,7 @@ export const Toast: React.FC<ToastProps> = ({
               <div className="flex items-center gap-2 shrink-0 ml-1">
                 {onUndo && (
                   <button
+                    type="button"
                     onClick={() => {
                       onUndo();
                       triggerExit();
@@ -219,6 +220,7 @@ export const Toast: React.FC<ToastProps> = ({
                 )}
 
                 <button
+                  type="button"
                   onClick={triggerExit}
                   aria-label="סגור הודעה"
                   className="flex items-center justify-center transition-colors duration-150"
