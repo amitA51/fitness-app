@@ -462,11 +462,18 @@ export const WorkoutContent: React.FC<{
   );
 
   const handleFinishRequest = useCallback(() => {
-    // Go straight to confirmation - cooldown is optional via button in overlay
+    // Honor cooldownPreference: 'always' shows cooldown flow first, then
+    // finish confirm. 'ask'/'never' goes straight to confirmation (the
+    // confirm overlay still exposes a manual Cooldown button for 'ask').
     triggerHaptic('light');
     setFinishIntent('finish');
+    const pref = workoutSettings.cooldownPreference || 'ask';
+    if (pref === 'always') {
+      dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'cooldown', isOpen: true } });
+      return;
+    }
     setShowFinishConfirm(true);
-  }, []);
+  }, [dispatch, workoutSettings.cooldownPreference]);
 
   const handleDiscardRequest = useCallback(() => {
     // Show confirmation dialog with cancel intent
@@ -864,11 +871,7 @@ export const WorkoutContent: React.FC<{
             onChangeExercise={handleChangeExercise}
             onOpenDrawer={handleOpenDrawer}
             onAddExercise={() => {
-              if (state.exercises.length === 0) {
-                dispatch({ type: 'OPEN_SELECTOR' });
-              } else {
-                dispatch({ type: 'OPEN_QUICK_FORM' });
-              }
+              dispatch({ type: 'OPEN_SELECTOR' });
             }}
           />
 

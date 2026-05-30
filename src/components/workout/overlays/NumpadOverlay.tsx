@@ -64,6 +64,7 @@ const AnimatedValue = memo<{ value: string; target: 'weight' | 'reps' | null }>(
       <div className="relative overflow-hidden">
         <motion.div
           className="tabular-nums"
+          dir="ltr"
           style={{
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(56px, 18vw, 96px)',
@@ -254,7 +255,7 @@ const ValueStepper = memo<{
 }>(({ currentValue, increments, onAdjust }) => {
   const shouldReduceMotion = useReducedMotion();
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" dir="ltr">
       {/* Decrease buttons */}
       <div className="flex gap-1">
         {increments
@@ -587,7 +588,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
 
           {/* Quick Presets */}
           <div className="px-6 mb-4">
-            <div className="flex gap-2 justify-center flex-wrap">
+            <div className="flex gap-2 justify-center flex-wrap" dir="ltr">
               {presets.map((preset) => (
                 <PresetButton
                   key={preset}
@@ -610,7 +611,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                 exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: numpadExitX }}
                 className="px-6 pb-4"
               >
-                <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col items-center gap-2" dir="ltr">
                   {keys.map((row, rowIndex) => (
                     // biome-ignore lint/suspicious/noArrayIndexKey: fixed numpad layout, static rows, never reordered
                     <div key={rowIndex} className="flex gap-2">

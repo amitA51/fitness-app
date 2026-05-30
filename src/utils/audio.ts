@@ -7,6 +7,22 @@ import { logger } from './logger';
 // Single lazy module-level AudioContext — reused across all beeps.
 let _audioCtx: AudioContext | null = null;
 
+// Module-level sound toggle (mirrors the haptics pattern). When disabled,
+// every audio function in this file is a no-op. Synced from SettingsContext
+// based on workoutSettings.soundEnabled.
+let _soundEnabled = true;
+
+/**
+ * Set the global "audio enabled" flag. Call this from a settings sync
+ * effect to gate all audio output without touching every call site.
+ */
+export const setSoundEnabled = (enabled: boolean): void => {
+  _soundEnabled = enabled;
+};
+
+/** Read-only accessor for diagnostics/tests. */
+export const isSoundEnabled = (): boolean => _soundEnabled;
+
 function getAudioContext(): AudioContext | null {
   if (_audioCtx) {
     if (_audioCtx.state === 'suspended') {
@@ -24,6 +40,7 @@ function getAudioContext(): AudioContext | null {
 
 // Play a beep sound
 export const playBeep = (frequency = 800, duration = 200): void => {
+  if (!_soundEnabled) return;
   try {
     const audioContext = getAudioContext();
     if (!audioContext) return;
@@ -67,6 +84,7 @@ export const playWorkoutCompleteSound = (): void => {
 
 // Voice countdown
 export const speakCountdown = (number: number): void => {
+  if (!_soundEnabled) return;
   if ('speechSynthesis' in window) {
     const utterance = new SpeechSynthesisUtterance(number.toString());
     utterance.lang = 'he-IL';
@@ -88,6 +106,7 @@ export const playDing = (): void => {
 
 // Speak text (for voice feedback)
 export const speak = (text: string, lang = 'he-IL'): void => {
+  if (!_soundEnabled) return;
   if ('speechSynthesis' in window) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;

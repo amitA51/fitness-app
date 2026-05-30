@@ -23,11 +23,18 @@ import webpush from 'https://esm.sh/web-push@3.6.7';
 // @ts-expect-error Deno global
 const env = (k: string): string => (Deno.env.get(k) ?? '') as string;
 
+const DEFAULT_ORIGINS = [
+  'https://fitness-app-amit.netlify.app',
+  'http://localhost:5173',
+  'http://localhost:4173',
+];
+
 function corsHeaders(req: Request): Record<string, string> {
-  const allowed = env('ALLOWED_ORIGIN').split(',').map((s) => s.trim()).filter(Boolean);
+  const raw = env('ALLOWED_ORIGIN');
+  const allowed = (raw ? raw.split(',') : DEFAULT_ORIGINS).map((s) => s.trim()).filter(Boolean);
   const origin = req.headers.get('origin') ?? '';
   return {
-    'Access-Control-Allow-Origin': allowed.length > 0 && allowed.includes(origin) ? origin : 'null',
+    'Access-Control-Allow-Origin': allowed.includes(origin) ? origin : 'null',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     Vary: 'Origin',

@@ -1,10 +1,9 @@
-// Settings UI Primitives - Extracted from WorkoutSettingsOverlay
-// Reusable components: Toggle, ChipSelector, SliderSetting, GoalSelector,
-// ThemeSelector, RestTimeSelector, Divider, SectionHeader, TabBar
+// Settings UI Primitives — Fresh Steel design system
+// All visuals use var(--fs-*) tokens (no `bg-white/10` etc.) so the overlay
+// matches the rest of the active workout shell, NumpadOverlay, ConfirmExit etc.
 
 import { motion } from 'framer-motion';
 import { memo } from 'react';
-import { WORKOUT_THEMES } from '../themes';
 
 // ============================================================
 // HAPTIC
@@ -12,7 +11,7 @@ import { WORKOUT_THEMES } from '../themes';
 
 export const triggerSettingsHaptic = () => {
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate(10);
+    navigator.vibrate(8);
   }
 };
 
@@ -22,33 +21,42 @@ export const triggerSettingsHaptic = () => {
 
 export const SETTINGS_TABS = [
   { id: 'general' as const, label: 'כללי' },
-  { id: 'display' as const, label: 'תצוגה' },
-  { id: 'timers' as const, label: 'טיימרים' },
+  { id: 'rest' as const, label: 'מנוחה' },
   { id: 'audio' as const, label: 'שמע' },
+  { id: 'flow' as const, label: 'אימון' },
   { id: 'advanced' as const, label: 'מתקדם' },
-  { id: 'accessibility' as const, label: 'נגישות' },
-  { id: 'library' as const, label: 'ספריה' },
-  { id: 'records' as const, label: 'שיאים' },
-  { id: 'analytics' as const, label: 'נתונים' },
 ] as const;
 
 export type SettingsTab = (typeof SETTINGS_TABS)[number]['id'];
 
 export const GOALS = [
-  { id: 'strength', label: 'כוח', color: '#ef4444' },
-  { id: 'hypertrophy', label: 'נפח', color: '#f97316' },
-  { id: 'endurance', label: 'סיבולת', color: '#22c55e' },
-  { id: 'flexibility', label: 'גמישות', color: '#06b6d4' },
-  { id: 'general', label: 'כללי', color: '#8b5cf6' },
+  { id: 'strength', label: 'כוח' },
+  { id: 'hypertrophy', label: 'נפח' },
+  { id: 'endurance', label: 'סיבולת' },
+  { id: 'flexibility', label: 'גמישות' },
+  { id: 'general', label: 'כללי' },
 ];
 
 export const REST_TIME_OPTIONS = [30, 60, 90, 120, 180, 240];
 
 // ============================================================
+// SHARED INLINE STYLES
+// ============================================================
+
+const labelStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-mono)',
+  fontSize: 10,
+  letterSpacing: '0.18em',
+  textTransform: 'uppercase',
+  color: 'var(--fs-muted)',
+  fontWeight: 700,
+};
+
+// ============================================================
 // PRIMITIVES
 // ============================================================
 
-/** Clean Toggle Switch */
+/** Toggle row — Fresh Steel surfaces, no opacity-based whites */
 export const Toggle = memo<{
   label: string;
   description?: string;
@@ -63,22 +71,63 @@ export const Toggle = memo<{
       triggerSettingsHaptic();
       onChange(!value);
     }}
-    className="w-full flex items-center justify-between py-4 px-1 active:opacity-70 transition-opacity"
+    className="w-full flex items-center justify-between text-start"
+    style={{
+      padding: '14px 4px',
+      background: 'transparent',
+      border: 'none',
+      cursor: 'pointer',
+    }}
   >
-    <div className="flex-1 text-start pe-4">
-      <div className="text-[15px] text-white font-medium">{label}</div>
+    <div className="flex-1 pe-4">
+      <div
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 15,
+          fontWeight: 600,
+          color: 'var(--fs-ink)',
+          lineHeight: 1.2,
+        }}
+      >
+        {label}
+      </div>
       {description && (
-        <div className="text-[13px] text-white/50 mt-0.5 leading-snug">{description}</div>
+        <div
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 12,
+            color: 'var(--fs-muted)',
+            marginTop: 4,
+            lineHeight: 1.35,
+          }}
+        >
+          {description}
+        </div>
       )}
     </div>
     <div
-      className={`relative w-[52px] h-[32px] rounded-full transition-all duration-200 flex-shrink-0 ${
-        value ? 'bg-[var(--color-toggle-on)]' : 'bg-white/20'
-      }`}
+      style={{
+        position: 'relative',
+        width: 50,
+        height: 30,
+        borderRadius: 999,
+        backgroundColor: value ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+        border: '1px solid var(--fs-steel)',
+        flexShrink: 0,
+        transition: 'background-color 200ms ease',
+      }}
     >
       <motion.div
-        className="absolute top-[2px] w-[28px] h-[28px] rounded-full bg-white shadow-md"
-        animate={{ left: value ? '22px' : '2px' }}
+        style={{
+          position: 'absolute',
+          top: 2,
+          width: 24,
+          height: 24,
+          borderRadius: 999,
+          backgroundColor: 'var(--fs-surface)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+        }}
+        animate={{ left: value ? 23 : 2 }}
         transition={{ type: 'spring', stiffness: 500, damping: 35 }}
       />
     </div>
@@ -86,40 +135,52 @@ export const Toggle = memo<{
 ));
 Toggle.displayName = 'Toggle';
 
-/** Chip Selector */
+/** Chip / Segmented Selector — accent for active, surface for inactive */
 export const ChipSelector = memo<{
   label: string;
   options: { value: string; label: string }[];
   value: string;
   onChange: (v: string) => void;
 }>(({ label, options, value, onChange }) => (
-  <div className="py-3">
-    <div className="text-[13px] text-white/50 mb-3 font-medium">{label}</div>
+  <div style={{ padding: '10px 0' }}>
+    <div style={{ ...labelStyle, marginBottom: 10 }}>{label}</div>
     <div className="flex gap-2 flex-wrap">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          aria-pressed={value === opt.value}
-          onClick={() => {
-            triggerSettingsHaptic();
-            onChange(opt.value);
-          }}
-          className={`px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
-            value === opt.value
-              ? 'bg-[var(--fs-accent)] text-black'
-              : 'bg-white/10 text-white/70 active:bg-white/20'
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
+      {options.map((opt) => {
+        const active = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            aria-pressed={active}
+            onClick={() => {
+              triggerSettingsHaptic();
+              onChange(opt.value);
+            }}
+            style={{
+              padding: '8px 14px',
+              borderRadius: 0,
+              border: '1.5px solid var(--fs-primary)',
+              background: active ? 'var(--fs-accent)' : 'var(--fs-surface)',
+              color: 'var(--fs-heading)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              letterSpacing: '0.06em',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              transition: 'background-color 150ms ease',
+            }}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
     </div>
   </div>
 ));
 ChipSelector.displayName = 'ChipSelector';
 
-/** Slider with value display */
+/** Slider with editorial value display */
 export const SliderSetting = memo<{
   label: string;
   description?: string;
@@ -132,17 +193,46 @@ export const SliderSetting = memo<{
 }>(({ label, description, value, min, max, step = 1, unit = '', onChange }) => {
   const sliderId = `slider-${label.replace(/\s+/g, '-')}`;
   return (
-    <div className="py-4">
-      <div className="flex justify-between items-center mb-3">
+    <div style={{ padding: '14px 0' }}>
+      <div className="flex justify-between items-end mb-3">
         <div className="text-start">
-          <div id={sliderId} className="text-[15px] text-white font-medium">
+          <div
+            id={sliderId}
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 15,
+              fontWeight: 600,
+              color: 'var(--fs-ink)',
+            }}
+          >
             {label}
           </div>
-          {description && <div className="text-[13px] text-white/50 mt-0.5">{description}</div>}
+          {description && (
+            <div
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 12,
+                color: 'var(--fs-muted)',
+                marginTop: 2,
+              }}
+            >
+              {description}
+            </div>
+          )}
         </div>
-        <div className="text-[15px] text-[var(--fs-accent)] font-bold tabular-nums">
+        <div
+          className="tabular-nums"
+          dir="ltr"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 18,
+            fontWeight: 800,
+            color: 'var(--fs-heading)',
+            letterSpacing: '-0.01em',
+          }}
+        >
           {value}
-          {unit}
+          <span style={{ ...labelStyle, fontSize: 10, marginInlineStart: 4 }}>{unit.trim()}</span>
         </div>
       </div>
       <input
@@ -156,62 +246,55 @@ export const SliderSetting = memo<{
           triggerSettingsHaptic();
           onChange(Number(e.target.value));
         }}
-        className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer
-                [&::-webkit-slider-thumb]:appearance-none
-                [&::-webkit-slider-thumb]:w-6
-                [&::-webkit-slider-thumb]:h-6
-                [&::-webkit-slider-thumb]:rounded-full
-                [&::-webkit-slider-thumb]:bg-[var(--fs-accent)]
-                [&::-webkit-slider-thumb]:shadow-md
-                [&::-webkit-slider-thumb]:cursor-pointer"
+        className="w-full"
+        style={{
+          height: 6,
+          background: 'var(--fs-surface-2)',
+          borderRadius: 999,
+          appearance: 'none',
+          cursor: 'pointer',
+          accentColor: 'var(--fs-accent)',
+        }}
       />
     </div>
   );
 });
 SliderSetting.displayName = 'SliderSetting';
 
-/** Goal Selector */
+/** Goal Selector — 2-col editorial grid */
 export const GoalSelector = memo<{ value: string; onChange: (v: string) => void }>(
   ({ value, onChange }) => (
-    <div className="py-3">
-      <div className="text-[13px] text-white/50 mb-3 font-medium">מטרת האימון</div>
+    <div style={{ padding: '10px 0' }}>
+      <div style={{ ...labelStyle, marginBottom: 10 }}>מטרת האימון</div>
       <div className="grid grid-cols-2 gap-2">
         {GOALS.map((goal) => {
-          const isActive = value === goal.id;
+          const active = value === goal.id;
           return (
             <button
               key={goal.id}
               type="button"
-              aria-pressed={isActive}
+              aria-pressed={active}
               onClick={() => {
                 triggerSettingsHaptic();
                 onChange(goal.id);
               }}
-              className={`relative flex items-center gap-3 p-4 rounded-2xl transition-all border-2 ${
-                isActive ? 'bg-white/15' : 'bg-white/5 active:bg-white/10 border-transparent'
-              }`}
-              style={{ borderColor: isActive ? goal.color : 'transparent' }}
+              style={{
+                padding: '14px 16px',
+                borderRadius: 0,
+                background: active ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                border: `1.5px solid ${active ? 'var(--fs-primary)' : 'var(--fs-steel)'}`,
+                fontFamily: 'var(--font-display)',
+                fontSize: 14,
+                fontWeight: 800,
+                color: 'var(--fs-heading)',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                textAlign: 'start',
+                cursor: 'pointer',
+                transition: 'background-color 150ms ease',
+              }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: goal.color }} />
-              <span
-                className={`text-[15px] font-medium ${isActive ? 'text-white' : 'text-white/70'}`}
-              >
-                {goal.label}
-              </span>
-              {isActive && (
-                <svg
-                  className="absolute end-3 w-5 h-5 text-[var(--color-check)]"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
+              {goal.label}
             </button>
           );
         })}
@@ -221,76 +304,14 @@ export const GoalSelector = memo<{ value: string; onChange: (v: string) => void 
 );
 GoalSelector.displayName = 'GoalSelector';
 
-/** Theme Selector */
-export const ThemeSelector = memo<{ value: string; onChange: (v: string) => void }>(
-  ({ value, onChange }) => (
-    <div className="py-3">
-      <div className="text-[13px] text-white/50 mb-3 font-medium">ערכת נושא</div>
-      <div className="grid grid-cols-2 gap-3">
-        {Object.values(WORKOUT_THEMES).map((theme) => {
-          const isActive = value === theme.id;
-          return (
-            <button
-              key={theme.id}
-              type="button"
-              onClick={() => {
-                triggerSettingsHaptic();
-                onChange(theme.id);
-              }}
-              className={`relative p-4 rounded-2xl transition-all text-start ${
-                isActive ? 'bg-white/15 ring-2 ring-[#34C759]' : 'bg-white/5 active:bg-white/10'
-              }`}
-            >
-              <div className="flex gap-1.5 mb-3">
-                <div
-                  className="w-5 h-5 rounded-full"
-                  style={{ backgroundColor: theme.colors.primary }}
-                />
-                <div
-                  className="w-5 h-5 rounded-full"
-                  style={{ backgroundColor: theme.colors.secondary }}
-                />
-                <div
-                  className="w-5 h-5 rounded-full"
-                  style={{ backgroundColor: theme.colors.accent }}
-                />
-              </div>
-              <div
-                className={`text-[14px] font-medium ${isActive ? 'text-white' : 'text-white/70'}`}
-              >
-                {theme.name}
-              </div>
-              {isActive && (
-                <svg
-                  className="absolute top-3 end-3 w-5 h-5 text-[var(--color-check)]"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  )
-);
-ThemeSelector.displayName = 'ThemeSelector';
-
 /** Rest Time Selector */
 export const RestTimeSelector = memo<{ value: number; onChange: (v: number) => void }>(
   ({ value, onChange }) => (
-    <div className="py-3">
-      <div className="text-[13px] text-white/50 mb-3 font-medium">זמן מנוחה ברירת מחדל</div>
-      <div className="grid grid-cols-3 gap-2">
+    <div style={{ padding: '10px 0' }}>
+      <div style={{ ...labelStyle, marginBottom: 10 }}>זמן מנוחה ברירת מחדל</div>
+      <div className="grid grid-cols-3 gap-2" dir="ltr">
         {REST_TIME_OPTIONS.map((time) => {
-          const isActive = value === time;
+          const active = value === time;
           const mins = Math.floor(time / 60);
           const secs = time % 60;
           const label =
@@ -307,11 +328,18 @@ export const RestTimeSelector = memo<{ value: number; onChange: (v: number) => v
                 triggerSettingsHaptic();
                 onChange(time);
               }}
-              className={`py-3.5 rounded-xl text-[15px] font-semibold transition-all ${
-                isActive
-                  ? 'bg-[var(--fs-accent)] text-black'
-                  : 'bg-white/10 text-white/70 active:bg-white/20'
-              }`}
+              style={{
+                padding: '14px 0',
+                borderRadius: 0,
+                background: active ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                border: `1.5px solid ${active ? 'var(--fs-primary)' : 'var(--fs-steel)'}`,
+                color: 'var(--fs-heading)',
+                fontFamily: 'var(--font-display)',
+                fontSize: 16,
+                fontWeight: 800,
+                cursor: 'pointer',
+                transition: 'background-color 150ms ease',
+              }}
             >
               {label}
             </button>
@@ -324,38 +352,69 @@ export const RestTimeSelector = memo<{ value: number; onChange: (v: number) => v
 RestTimeSelector.displayName = 'RestTimeSelector';
 
 /** Section Divider */
-export const Divider = () => <div className="h-px bg-white/10 my-2" />;
+export const Divider = () => (
+  <div
+    style={{
+      height: 1,
+      background: 'var(--fs-surface-2)',
+      width: '100%',
+      margin: '6px 0',
+    }}
+  />
+);
 
-/** Section Header */
+/** Section Header — mono uppercase kicker */
 export const SectionHeader = memo<{ title: string }>(({ title }) => (
-  <div className="text-[12px] text-white/40 uppercase tracking-wider font-semibold pt-4 pb-2">
+  <div
+    style={{
+      ...labelStyle,
+      paddingTop: 18,
+      paddingBottom: 8,
+    }}
+  >
     {title}
   </div>
 ));
 SectionHeader.displayName = 'SectionHeader';
 
-/** Tab Bar */
+/** Tab Bar — uses Fresh Steel surfaces */
 export const TabBar = memo<{
   tabs: readonly { id: string; label: string }[];
   activeTab: string;
   onTabChange: (t: SettingsTab) => void;
 }>(({ tabs, activeTab, onTabChange }) => (
   <div className="flex gap-1 px-4 pb-3 overflow-x-auto hide-scrollbar">
-    {tabs.map((tab) => (
-      <button
-        key={tab.id}
-        type="button"
-        onClick={() => {
-          triggerSettingsHaptic();
-          onTabChange(tab.id as SettingsTab);
-        }}
-        className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all whitespace-nowrap ${
-          activeTab === tab.id ? 'bg-white/15 text-white' : 'text-white/50 active:text-white/70'
-        }`}
-      >
-        {tab.label}
-      </button>
-    ))}
+    {tabs.map((tab) => {
+      const active = activeTab === tab.id;
+      return (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => {
+            triggerSettingsHaptic();
+            onTabChange(tab.id as SettingsTab);
+          }}
+          style={{
+            flexShrink: 0,
+            padding: '10px 16px',
+            borderRadius: 0,
+            background: active ? 'var(--fs-primary)' : 'var(--fs-surface)',
+            color: active ? 'var(--fs-accent)' : 'var(--fs-muted)',
+            border: `1px solid ${active ? 'var(--fs-primary)' : 'var(--fs-steel)'}`,
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+            cursor: 'pointer',
+            transition: 'background-color 150ms ease, color 150ms ease',
+          }}
+        >
+          {tab.label}
+        </button>
+      );
+    })}
   </div>
 ));
 TabBar.displayName = 'TabBar';

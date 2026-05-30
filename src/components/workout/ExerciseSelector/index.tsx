@@ -36,7 +36,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   isOpen,
   onSelect,
   onClose,
-  onCreateNew: _onCreateNew,
+  onCreateNew,
   goal: _goal,
 }) => {
   const [activeTab, setActiveTab] = useState<'exercises' | 'templates'>('exercises');
@@ -311,12 +311,35 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               initial={{ opacity: 1 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="px-5 py-4"
+              className="px-5 py-4 flex flex-col gap-2"
               style={{
                 background: 'var(--fs-surface)',
                 borderTop: '1px solid var(--fs-surface-2)',
               }}
             >
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  onCreateNew();
+                }}
+                className="w-full cursor-pointer"
+                style={{
+                  background: 'var(--fs-accent)',
+                  color: 'var(--fs-heading)',
+                  border: 'none',
+                  borderRadius: 0,
+                  padding: '14px 24px',
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  minHeight: 48,
+                }}
+              >
+                + צור תרגיל חדש
+              </button>
               <button
                 type="button"
                 onClick={onClose}
@@ -326,13 +349,13 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   color: 'var(--fs-muted)',
                   border: '2px solid var(--fs-surface-2)',
                   borderRadius: 0,
-                  padding: '14px 24px',
+                  padding: '12px 24px',
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,
                   fontSize: 13,
                   letterSpacing: '0.08em',
                   textTransform: 'uppercase',
-                  minHeight: 48,
+                  minHeight: 44,
                 }}
               >
                 חזרה לאימון

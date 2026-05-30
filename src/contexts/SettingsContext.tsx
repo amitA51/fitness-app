@@ -10,6 +10,7 @@ import {
   useState,
 } from 'react';
 import type { AppSettings, WorkoutSettings } from '../types';
+import { setSoundEnabled } from '../utils/audio';
 import { setHapticsEnabled } from '../utils/haptics';
 import { safeJsonParse } from '../utils/safeJson';
 
@@ -202,6 +203,11 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     setHapticsEnabled(settings.workoutSettings.hapticsEnabled);
   }, [settings.workoutSettings.hapticsEnabled]);
+
+  // Sync sound toggle to the shared utils/audio module so all beeps/dings respect it.
+  useEffect(() => {
+    setSoundEnabled(settings.workoutSettings.soundEnabled);
+  }, [settings.workoutSettings.soundEnabled]);
 
   const value = useMemo(
     () => ({

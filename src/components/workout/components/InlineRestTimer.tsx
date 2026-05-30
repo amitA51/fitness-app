@@ -1,8 +1,8 @@
 // InlineRestTimer - Fresh Steel compact rest timer
 // Accent progress ring · surface-2 bg · compact layout
 
-import { memo, useEffect, useRef, useState } from 'react';
-import { triggerHaptic, vibratePattern } from '../../../utils/haptics';
+import { memo, useEffect, useState } from 'react';
+import { triggerHaptic } from '../../../utils/haptics';
 import { useRestTimer } from '../hooks/useWorkoutTimer';
 
 interface InlineRestTimerProps {
@@ -34,19 +34,6 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
   ({ active, endTime, onSkip, onAddTime, nextSetHint }) => {
     const { formatted, progress, timeLeft } = useRestTimer(endTime, active);
     const prefersReduced = usePrefersReducedMotion();
-    const zeroFiredRef = useRef(false);
-
-    // Fire an end-of-timer buzz once when the countdown hits zero.
-    useEffect(() => {
-      if (!active) {
-        zeroFiredRef.current = false;
-        return;
-      }
-      if (timeLeft <= 0 && !zeroFiredRef.current) {
-        zeroFiredRef.current = true;
-        vibratePattern([200, 100, 200]);
-      }
-    }, [active, timeLeft]);
 
     if (!active) return null;
 

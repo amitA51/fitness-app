@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useImmerReducer } from 'use-immer';
 import { createWorkoutSet } from '../../../types';
 import type { AppSettings } from '../../../types';
+import { setSoundEnabled } from '../../../utils/audio';
 import { vibratePattern } from '../../../utils/haptics';
 import { logger } from '../../../utils/logger';
 import { safeJsonParse } from '../../../utils/safeJson';
@@ -241,20 +242,48 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   // ============================================================
 
   // ============================================================
-  // HAPTIC FEEDBACK
+  // HAPTIC + SOUND FEEDBACK (rest end / set complete)
   // ============================================================
+  // Reads workoutSettings to gate vibration AND sound based on:
+  //   - hapticsEnabled (already gated at the reducer level too)
+  //   - restTimerVibrate (only for REST_END)
+  //   - soundEnabled + restTimerSound (only for REST_END)
 
   useEffect(() => {
     if (!state.pendingHaptic) return;
 
-    const pattern =
-      state.pendingHaptic === 'SET_COMPLETE'
-        ? HAPTIC_PATTERNS.SET_COMPLETE
-        : HAPTIC_PATTERNS.REST_END;
+    const ws = state.appSettings?.workoutSettings;
 
-    vibratePattern([...pattern]);
+    if (state.pendingHaptic === 'SET_COMPLETE') {
+      vibratePattern([...HAPTIC_PATTERNS.SET_COMPLETE]);
+    } else if (state.pendingHaptic === 'REST_END') {
+      // Vibration honors restTimerVibrate (default true)
+      if (ws?.restTimerVibrate !== false) {
+        vibratePattern([...HAPTIC_PATTERNS.REST_END]);
+      }
+      // Sound honors restTimerSound + soundEnabled (default true). Done lazily
+      // to avoid pulling audio into the WorkoutProvider import graph at the top.
+      if (ws?.restTimerSound !== false && ws?.soundEnabled !== false) {
+        // Lazy import so this stays out of the main provider chunk
+        import('../../../utils/audio').then((m) => m.playRestEndSound()).catch(() => {});
+      }
+    }
+
     dispatch({ type: 'CLEAR_PENDING_HAPTIC' });
-  }, [state.pendingHaptic, dispatch]);
+  }, [state.pendingHaptic, state.appSettings?.workoutSettings, dispatch]);
+
+  // ============================================================
+  // SOUND ENABLED — keep utils/audio gate in sync with workout settings
+  // ============================================================
+  // The SettingsContext already syncs soundEnabled to utils/audio, but during
+  // an active workout the canonical store is state.appSettings, so we also
+  // sync from here in case the user changes the value via the workout overlay.
+  useEffect(() => {
+    const enabled = state.appSettings?.workoutSettings?.soundEnabled;
+    if (typeof enabled === 'boolean') {
+      setSoundEnabled(enabled);
+    }
+  }, [state.appSettings?.workoutSettings?.soundEnabled]);
 
   // ============================================================
   // SETTINGS PERSISTENCE
