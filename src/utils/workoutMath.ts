@@ -22,8 +22,15 @@ interface VolumeSession {
  * Volume contributed by a single set. Warmup sets contribute 0; missing
  * weight/reps are treated as 0.
  */
-export const setVolume = (set: VolumeSet): number =>
-  set.isWarmup ? 0 : (set.weight || 0) * (set.reps || 0);
+export const setVolume = (set: VolumeSet): number => {
+  if (set.isWarmup) return 0;
+  const w = set.weight;
+  const r = set.reps;
+  // Guard against negative / NaN / Infinity so bad input can't poison totals.
+  const weight = typeof w === 'number' && Number.isFinite(w) && w > 0 ? w : 0;
+  const reps = typeof r === 'number' && Number.isFinite(r) && r > 0 ? r : 0;
+  return weight * reps;
+};
 
 /** Total working-set volume across an exercise's sets. */
 export const exerciseVolume = (exercise: VolumeExercise): number =>
@@ -32,6 +39,31 @@ export const exerciseVolume = (exercise: VolumeExercise): number =>
 /** Total working-set volume across all exercises in a session. */
 export const sessionVolume = (session: VolumeSession): number =>
   (session.exercises || []).reduce((sum, ex) => sum + exerciseVolume(ex), 0);
+
+/** A persisted set shape that carries the boolean completion flag. */
+interface CompletableSet extends VolumeSet {
+  isCompleted?: boolean;
+}
+
+/**
+ * Volume of an exercise's COMPLETED working sets. Single source of truth for
+ * the `sets.filter(isCompleted).sum(setVolume)` pattern duplicated across the
+ * analytics/progression/training-load services. Warmups contribute 0 (via
+ * setVolume), so an explicit `!isWarmup` filter is unnecessary.
+ */
+export const completedSetsVolume = (sets: CompletableSet[] | undefined): number =>
+  (sets || []).reduce((sum, set) => sum + (set.isCompleted ? setVolume(set) : 0), 0);
+
+/**
+ * Estimated 1-rep max (Epley), rounded to 0.1. Returns 0 for non-positive
+ * input and the exact weight for a single rep. Single source of truth so PR
+ * storage and display never disagree.
+ */
+export const oneRepMax = (weight: number, reps: number): number => {
+  if (!(weight > 0) || !(reps > 0)) return 0;
+  if (reps === 1) return weight;
+  return Math.round(weight * (1 + reps / 30) * 10) / 10;
+};
 
 // ============================================================================
 // Per-session stats (shared by WorkoutSummary / WorkoutHistoryScreen /

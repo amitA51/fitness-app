@@ -16,6 +16,14 @@ interface UsePersonalRecordsReturn {
 }
 
 /**
+ * Resolves the stable exercise identifier used by calculatePRsFromHistory.
+ * That function keys on `exercise.exerciseId || exercise.id` (WorkoutExercise).
+ * The hook receives Exercise[] which has `id` (required) and optional `exerciseId`.
+ * We mirror the same resolution order so map lookups match history keys.
+ */
+const resolveExerciseKey = (exercise: Exercise): string => exercise.exerciseId || exercise.id;
+
+/**
  * Hook for Personal Records tracking
  * Loads historical PRs and detects new ones during workout
  */
@@ -41,8 +49,6 @@ export function usePersonalRecords(
   useEffect(() => {
     const loadPRs = async () => {
       try {
-        // Pull full history so PRs older than the recent-N window are still
-        // visible — otherwise long-time records get treated as new PRs again.
         const sessions = await getAllWorkoutSessions();
         setPRMap(calculatePRsFromHistory(sessions));
       } catch {
@@ -52,8 +58,19 @@ export function usePersonalRecords(
     loadPRs();
   }, []);
 
-  // Get PR for specific exercise
-  const getPRForExercise = useCallback((exerciseName: string) => prMap.get(exerciseName), [prMap]);
+  // Get PR for specific exercise — callers pass exerciseName for display,
+  // but we need the composite key. Look up weight PR by default.
+  const getPRForExercise = useCallback(
+    (exerciseName: string): PersonalRecord | undefined => {
+      // Find the exercise object to resolve its stable id
+      const exercise = exercises.find((e) => (e.name ?? e.exerciseName) === exerciseName);
+      if (!exercise) return undefined;
+      const key = resolveExerciseKey(exercise);
+      // Return weight PR as the primary record (matches prior behavior)
+      return prMap.get(`${key}-weight`) ?? prMap.get(`${key}-volume`);
+    },
+    [prMap, exercises]
+  );
 
   // Check if a set is a new PR (weight, volume, or reps — first match wins).
   const checkForNewPR = useCallback(
@@ -62,11 +79,19 @@ export function usePersonalRecords(
       const reps = set.reps || 0;
       if (weight <= 0 || reps <= 0) return null;
 
-      const diff = checkIsNewPR(exerciseName, weight, reps, prMap);
-      const existing = prMap.get(exerciseName);
-      const existingWeight = existing?.weight || 0;
+      // Resolve the stable id that matches calculatePRsFromHistory keys
+      const exercise = exercises.find((e) => (e.name ?? e.exerciseName) === exerciseName);
+      if (!exercise) return null;
+      const exerciseId = resolveExerciseKey(exercise);
+
+      // isNewPR expects keys like `${exerciseId}-weight` / `${exerciseId}-volume`
+      const diff = checkIsNewPR(exerciseId, weight, reps, prMap);
+
+      // Reps PR threshold: weight >= 85% of current weight PR
+      const existingWeightPR = prMap.get(`${exerciseId}-weight`);
+      const existingWeight = existingWeightPR?.weight || 0;
       const repsThreshold = existingWeight * 0.85;
-      const existingReps = existing?.reps || 0;
+      const existingReps = existingWeightPR?.reps || 0;
       const isRepsPR = weight >= repsThreshold && reps > existingReps;
 
       type PRType = 'weight' | 'volume' | 'reps';
@@ -77,8 +102,8 @@ export function usePersonalRecords(
       if (!prType) return null;
 
       const newPR: PersonalRecord = {
-        id: `pr-${exerciseName}-${prType}-${Date.now()}`,
-        exerciseId: exerciseName,
+        id: `pr-${exerciseId}-${prType}-${Date.now()}`,
+        exerciseId,
         exerciseName,
         maxWeight: weight,
         maxReps: reps,
@@ -87,20 +112,20 @@ export function usePersonalRecords(
         weight,
         reps,
         type: prType,
+        value: prType === 'volume' ? weight * reps : undefined,
       };
 
+      // Update prMap using the correct composite keys
       setPRMap((prev) => {
         const next = new Map(prev);
-        const current = next.get(exerciseName);
-        if (!current || newPR.weight >= (current.weight || 0)) {
-          next.set(exerciseName, newPR);
-        }
+        const mapKey = `${exerciseId}-${prType}`;
+        next.set(mapKey, newPR);
         return next;
       });
 
       return newPR;
     },
-    [prMap]
+    [prMap, exercises]
   );
 
   // Auto-detect PRs when sets are completed
@@ -132,8 +157,9 @@ export function usePersonalRecords(
         lastSetKey,
       };
 
-      // Check for new PR
-      const newPR = checkForNewPR(currentExercise.name ?? '', lastSet);
+      // Use exerciseName for the checkForNewPR call (it resolves the id internally)
+      const name = currentExercise.name ?? currentExercise.exerciseName ?? '';
+      const newPR = checkForNewPR(name, lastSet);
       if (newPR) {
         dispatch({ type: 'SHOW_PR_CELEBRATION', payload: newPR });
       }

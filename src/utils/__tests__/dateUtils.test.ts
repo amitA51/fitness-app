@@ -1,0 +1,143 @@
+import { describe, expect, it } from 'vitest';
+import {
+  fmtDate,
+  formatDateISO,
+  formatDuration,
+  formatDurationCompact,
+  formatHebrewDate,
+  formatHebrewTime,
+  formatVolume,
+  getWeekNumber,
+  getWeekStart,
+  todayStr,
+} from '../dateUtils';
+
+describe('formatDuration', () => {
+  it('uses the singular form for exactly one hour', () => {
+    expect(formatDuration(3600)).toBe('שעה');
+  });
+
+  it('uses the plural form for multiple whole hours', () => {
+    expect(formatDuration(7200)).toBe('2 שעות');
+  });
+
+  it('includes minutes when present', () => {
+    expect(formatDuration(5400)).toBe('1 שעה ו-30 דקות');
+  });
+
+  it('shows minutes for sub-hour durations', () => {
+    expect(formatDuration(1800)).toBe('30 דקות');
+  });
+});
+
+describe('fmtDate', () => {
+  it('returns an empty string for an invalid date instead of "Invalid Date"', () => {
+    expect(fmtDate('not-a-date')).toBe('');
+  });
+});
+
+describe('formatHebrewDate', () => {
+  it('returns empty string for invalid input', () => {
+    expect(formatHebrewDate('garbage')).toBe('');
+  });
+
+  it('formats a valid date in Hebrew', () => {
+    // 2024-03-15 is a Friday
+    expect(formatHebrewDate('2024-03-15')).toBe('יום שישי, 15 מרץ');
+  });
+});
+
+describe('formatHebrewTime', () => {
+  it('returns empty string for invalid input', () => {
+    expect(formatHebrewTime('not-a-time')).toBe('');
+  });
+
+  it('formats a valid ISO string to HH:MM', () => {
+    const result = formatHebrewTime('2024-03-15T14:30:00Z');
+    // Should contain hour and minute digits separated by colon
+    expect(result).toMatch(/\d{2}:\d{2}/);
+  });
+});
+
+describe('formatDateISO', () => {
+  it('returns empty string for invalid input', () => {
+    expect(formatDateISO('xyz')).toBe('');
+  });
+
+  it('formats a valid date as DD.MM.YY', () => {
+    expect(formatDateISO('2024-03-05')).toBe('05.03.24');
+  });
+
+  it('formats another valid date correctly', () => {
+    expect(formatDateISO('2025-12-31')).toBe('31.12.25');
+  });
+});
+
+describe('getWeekStart', () => {
+  it('returns Monday for a Sunday input', () => {
+    // 2024-03-17 is a Sunday
+    const result = getWeekStart(new Date(2024, 2, 17));
+    // Sunday getDay()=0 triggers the -6 branch -> Monday March 11
+    expect(result.getDay()).toBe(1); // Monday
+    expect(result.getDate()).toBe(11);
+  });
+
+  it('returns Monday for a midweek (Wednesday) input', () => {
+    // 2024-03-13 is a Wednesday
+    const result = getWeekStart(new Date(2024, 2, 13));
+    expect(result.getDay()).toBe(1); // Monday
+    expect(result.getDate()).toBe(11);
+  });
+});
+
+describe('getWeekNumber', () => {
+  it('handles Dec 31 that falls in ISO week 1 of next year', () => {
+    // 2024-12-31 is a Tuesday -> ISO week 1 of 2025
+    expect(getWeekNumber(new Date(2024, 11, 31))).toBe(1);
+  });
+
+  it('returns 1 for Jan 1 2024 (Monday)', () => {
+    expect(getWeekNumber(new Date(2024, 0, 1))).toBe(1);
+  });
+});
+
+describe('todayStr', () => {
+  it('returns a YYYY-MM-DD formatted string matching today', () => {
+    const result = todayStr();
+    expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    const now = new Date();
+    const expected = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    expect(result).toBe(expected);
+  });
+});
+
+describe('formatVolume', () => {
+  it('returns k notation for values >= 1000', () => {
+    expect(formatVolume(1000)).toBe('1.0k');
+    expect(formatVolume(2500)).toBe('2.5k');
+    expect(formatVolume(10000)).toBe('10.0k');
+  });
+
+  it('returns locale string for values < 1000', () => {
+    const result = formatVolume(500);
+    // toLocaleString may vary, but should represent 500
+    expect(result).toContain('500');
+  });
+});
+
+describe('formatDurationCompact', () => {
+  it('returns minutes for sub-hour durations', () => {
+    expect(formatDurationCompact(1800)).toBe('30min');
+    expect(formatDurationCompact(300)).toBe('5min');
+  });
+
+  it('returns hours only when no remaining minutes', () => {
+    expect(formatDurationCompact(3600)).toBe('1h');
+    expect(formatDurationCompact(7200)).toBe('2h');
+  });
+
+  it('returns hours and zero-padded minutes', () => {
+    expect(formatDurationCompact(5400)).toBe('1h30');
+    expect(formatDurationCompact(3900)).toBe('1h05');
+  });
+});

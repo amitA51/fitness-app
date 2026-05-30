@@ -24,7 +24,9 @@ export const getWeekNumber = (d: Date) => {
 };
 
 export const fmtDate = (d: string) => {
-  const diff = Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+  const t = new Date(d).getTime();
+  if (Number.isNaN(t)) return '';
+  const diff = Math.floor((Date.now() - t) / 86400000);
   if (diff === 0) return 'היום';
   if (diff === 1) return 'אתמול';
   if (diff < 7) return `לפני ${diff} ימים`;
@@ -92,13 +94,16 @@ export const HEBREW_MONTHS = [
 
 export function formatHebrewDate(dateStr: string): string {
   const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return '';
   const day = HEBREW_DAYS[date.getDay()];
   const month = HEBREW_MONTHS[date.getMonth()];
   return `יום ${day}, ${date.getDate()} ${month}`;
 }
 
 export function formatHebrewTime(isoString: string): string {
-  return new Date(isoString).toLocaleTimeString('he-IL', {
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString('he-IL', {
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -108,7 +113,8 @@ export function formatDuration(seconds: number): string {
   if (seconds < 3600) return `${Math.round(seconds / 60)} דקות`;
   const h = Math.floor(seconds / 3600);
   const m = Math.round((seconds % 3600) / 60);
-  return m > 0 ? `${h} שעה ו-${m} דקות` : `${h} שעות`;
+  if (m > 0) return `${h} שעה ו-${m} דקות`;
+  return h === 1 ? 'שעה' : `${h} שעות`;
 }
 
 export function formatDurationCompact(seconds: number): string {
@@ -125,6 +131,7 @@ export function formatVolume(volume: number): string {
 
 export function formatDateISO(dateStr: string): string {
   const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return '';
   const y = String(date.getFullYear()).slice(2);
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');

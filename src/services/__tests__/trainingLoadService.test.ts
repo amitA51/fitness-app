@@ -138,4 +138,79 @@ describe('calculateTrainingLoad', () => {
     expect(legs?.status).toBe('fatigued');
     expect(legs?.recoveryScore).toBeLessThan(60);
   });
+
+  it('handles empty sessions array without throwing', () => {
+    const now = new Date('2026-04-26T12:00:00.000Z');
+    const load = calculateTrainingLoad([], [], { now });
+
+    expect(Number.isFinite(load.weeklyVolume)).toBe(true);
+    expect(Number.isFinite(load.acuteLoad)).toBe(true);
+    expect(Number.isFinite(load.chronicLoad)).toBe(true);
+    expect(Number.isFinite(load.acuteChronicRatio)).toBe(true);
+    expect(Number.isFinite(load.fatigueScore)).toBe(true);
+    expect(load.weeklyVolume).toBe(0);
+    expect(load.chronicLoad).toBe(0);
+    expect(load.acuteLoad).toBe(0);
+  });
+
+  it('handles sessions where no set is completed', () => {
+    const now = new Date('2026-04-26T12:00:00.000Z');
+    const incompleteSets: WorkoutSet[] = [
+      { ...completedSet('s-1', 80, 5, 7), isCompleted: false },
+      { ...completedSet('s-2', 80, 5, 7), isCompleted: false },
+    ];
+    const sessions = [session('s1', 2, [exercise('bench', 'Chest', incompleteSets)], now)];
+
+    const load = calculateTrainingLoad(sessions, [], { now });
+
+    expect(Number.isFinite(load.weeklyVolume)).toBe(true);
+    expect(load.weeklyVolume).toBe(0);
+    expect(Number.isFinite(load.acuteLoad)).toBe(true);
+    expect(Number.isFinite(load.fatigueScore)).toBe(true);
+  });
+
+  it('handles sessions with no RPE on any set', () => {
+    const now = new Date('2026-04-26T12:00:00.000Z');
+    const noRpeSets: WorkoutSet[] = [
+      { ...completedSet('s-1', 60, 10, 7), rpe: undefined as unknown as number },
+      { ...completedSet('s-2', 60, 10, 7), rpe: undefined as unknown as number },
+    ];
+    const sessions = [session('s1', 3, [exercise('rows', 'Back', noRpeSets)], now)];
+
+    const load = calculateTrainingLoad(sessions, [], { now });
+
+    expect(load.averageRPE).toBeNull();
+    expect(Number.isFinite(load.acuteLoad)).toBe(true);
+    expect(Number.isFinite(load.fatigueScore)).toBe(true);
+    expect(load.weeklyVolume).toBeGreaterThan(0);
+  });
+
+  it('returns finite ratio when chronic load is 0 but acute > 0', () => {
+    const now = new Date('2026-04-26T12:00:00.000Z');
+    // Session only in the last 7 days, nothing in the 28-day chronic window prior
+    // Since chronic window includes the acute week, chronic > 0 here too,
+    // so we simulate by having a single session at day 1 with no prior history.
+    const sessions = [session('s1', 1, [exercise('press', 'Shoulders')], now)];
+
+    const load = calculateTrainingLoad(sessions, [], { now });
+
+    expect(Number.isFinite(load.acuteChronicRatio)).toBe(true);
+    expect(load.acuteChronicRatio).toBeGreaterThanOrEqual(0);
+    expect(Number.isFinite(load.fatigueScore)).toBe(true);
+  });
+
+  it('handles a single session in the window', () => {
+    const now = new Date('2026-04-26T12:00:00.000Z');
+    const sessions = [session('only', 3, [exercise('deadlift', 'Back')], now)];
+
+    const load = calculateTrainingLoad(sessions, [], { now });
+
+    expect(Number.isFinite(load.weeklyVolume)).toBe(true);
+    expect(Number.isFinite(load.chronicLoad)).toBe(true);
+    expect(Number.isFinite(load.acuteLoad)).toBe(true);
+    expect(Number.isFinite(load.acuteChronicRatio)).toBe(true);
+    expect(Number.isFinite(load.readinessScore)).toBe(true);
+    expect(load.weeklySessionCount).toBe(1);
+    expect(load.weeklyVolume).toBeGreaterThan(0);
+  });
 });

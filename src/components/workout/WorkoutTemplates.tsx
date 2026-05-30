@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { Star } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import * as dataService from '../../services/dataService';
 import type { WorkoutTemplate } from '../../types';
@@ -601,7 +602,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 textTransform: 'uppercase',
               }}
             >
-              ★
+              <Star size={10} aria-hidden="true" />
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

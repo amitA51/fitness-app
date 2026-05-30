@@ -4,7 +4,7 @@
 // ============================================================================
 
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../types';
-import { setVolume } from '../utils/workoutMath';
+import { completedSetsVolume } from '../utils/workoutMath';
 
 // ============================================================================
 // TYPES
@@ -109,13 +109,16 @@ function getTotalReps(exercise: WorkoutExercise): number {
  * Calculate volume for an exercise
  */
 function calculateExerciseVolume(exercise: WorkoutExercise): number {
-  return exercise.sets.filter((s) => s.isCompleted).reduce((acc, s) => acc + setVolume(s), 0);
+  return completedSetsVolume(exercise.sets);
 }
 
 /**
  * Get snapshot from a session for a specific exercise
  */
-function getExerciseSnapshot(session: WorkoutSession, exerciseId: string): SessionSnapshot | null {
+export function getExerciseSnapshot(
+  session: WorkoutSession,
+  exerciseId: string
+): SessionSnapshot | null {
   const exercise = session.exercises.find((e) => e.exerciseId === exerciseId);
   if (!exercise) return null;
 
@@ -130,7 +133,8 @@ function getExerciseSnapshot(session: WorkoutSession, exerciseId: string): Sessi
     rpe: calculateAverageRPE(exercise.sets),
     setsCompleted: completedSets.length,
     setsTarget: targetSets,
-    wasCompleted: exercise.isCompleted || completedSets.length >= targetSets * 0.7,
+    wasCompleted:
+      targetSets > 0 ? exercise.isCompleted || completedSets.length >= targetSets * 0.7 : false,
   };
 }
 
@@ -172,12 +176,16 @@ function calculateConsistency(history: SessionSnapshot[]): number {
 /**
  * Calculate RPE trend (is the workout getting harder or easier)
  */
-function calculateRPEDelta(history: SessionSnapshot[]): number | null {
+export function calculateRPEDelta(history: SessionSnapshot[]): number | null {
   const rpes = history.map((s) => s.rpe).filter((r): r is number => r !== null);
   if (rpes.length < 2) return null;
 
-  const recent = rpes.slice(-3);
-  const older = rpes.slice(0, Math.max(1, rpes.length - 3));
+  // Split into two non-overlapping halves (older vs recent). Using slice(-3)
+  // for "recent" plus slice(0, len-3) overlapped index 0 into both halves for
+  // 2-3 data points, understating the trend.
+  const midpoint = Math.floor(rpes.length / 2);
+  const older = rpes.slice(0, midpoint);
+  const recent = rpes.slice(midpoint);
 
   const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
   const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
@@ -493,11 +501,11 @@ export function buildAIProgressionContext(data: ExerciseProgressionData): AIProg
       data.lastSession && data.lastSession.setsCompleted > 0
         ? Math.round(data.lastSession.reps / data.lastSession.setsCompleted)
         : 8,
-    targetSets: data.lastSession?.setsTarget || 4,
+    targetSets: data.lastSession?.setsTarget ?? 4,
     history: data.history,
     recommendation: data.recommendation,
     reasons: data.reasons,
-    averageRPE: data.lastSession?.rpe || null,
+    averageRPE: data.lastSession?.rpe ?? null,
     recentRPEs: data.history
       .slice(-3)
       .map((s) => s.rpe)

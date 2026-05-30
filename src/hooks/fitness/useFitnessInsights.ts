@@ -5,24 +5,20 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { calculateStreak } from '../../services/achievementService';
 import { generateAIWorkoutInsight } from '../../services/aiWorkoutInsightService';
-import {
-  type LastWorkoutSummary,
-  type MuscleGroupLastTrained,
-  type ProgressDelta,
-  type StrengthProgressPoint,
-  calculateStrengthProgression,
-  getAllExerciseNames,
-  getLastWorkoutSummary,
-  getMuscleGroupDaysSince,
-  getWeekOverWeekProgress,
+import type {
+  LastWorkoutSummary,
+  MuscleGroupLastTrained,
+  ProgressDelta,
+  StrengthProgressPoint,
 } from '../../services/analyticsService';
+import { calculateStrengthProgression } from '../../services/analyticsService';
 import { onWorkoutSaved } from '../../services/dataEvents';
 import { getWorkoutSessions } from '../../services/dataService';
-import { type PersonalRecord, calculatePRsFromHistory } from '../../services/prService';
+import type { PersonalRecord } from '../../services/prService';
 import type { WorkoutSession } from '../../types';
 import { logger } from '../../utils/logger';
+import { aggregateInsights } from './insightsAggregator';
 
 // ============================================================
 // TYPES - For UI agent to use
@@ -106,72 +102,36 @@ export function useFitnessInsights(externalSessions?: WorkoutSession[]): Fitness
     };
   }, [externalSessions, loadSessions]);
 
-  const computedData = useMemo(() => {
-    if (sessions.length === 0) {
-      return {
-        currentStreak: 0,
-        longestStreak: 0,
-        totalWorkouts: 0,
-        workoutsThisMonth: 0,
-        workoutsThisWeek: 0,
-        lastWorkout: null,
-        muscleGroups: [],
-        neglectedMuscles: [],
-        allPRs: [],
-        recentPRs: [],
-        exerciseNames: [],
-      };
-    }
+  // Single aggregation pass over sessions - memoized on sessions only
+  const aggregated = useMemo(() => aggregateInsights(sessions), [sessions]);
 
-    const streakInfo = calculateStreak(sessions);
-    const completedSessions = sessions.filter((s) => s.endTime);
-    const now = new Date();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-    const workoutsThisWeek = completedSessions.filter(
-      (s) => new Date(s.startTime) >= weekAgo
-    ).length;
-
-    const workoutsThisMonth = completedSessions.filter(
-      (s) => new Date(s.startTime) >= monthAgo
-    ).length;
-
-    const lastWorkout = getLastWorkoutSummary(sessions);
-    const muscleGroups = getMuscleGroupDaysSince(sessions);
-    const neglectedMuscles = muscleGroups.filter((mg) => mg.daysSince >= 7).map((mg) => mg.muscle);
-
-    const prMap = calculatePRsFromHistory(sessions);
-    const allPRs = Array.from(prMap.values());
-    const recentPRs = allPRs.filter((pr) => new Date(pr.date) >= weekAgo);
-
-    const exerciseNames = getAllExerciseNames(sessions);
-
-    return {
-      currentStreak: streakInfo.currentStreak,
-      longestStreak: streakInfo.longestStreak,
-      totalWorkouts: completedSessions.length,
-      workoutsThisMonth,
-      workoutsThisWeek,
-      lastWorkout,
-      muscleGroups,
-      neglectedMuscles,
-      allPRs,
-      recentPRs,
-      exerciseNames,
-    };
-  }, [sessions]);
+  const computedData = useMemo(
+    () => ({
+      currentStreak: aggregated.currentStreak,
+      longestStreak: aggregated.longestStreak,
+      totalWorkouts: aggregated.totalWorkouts,
+      workoutsThisMonth: aggregated.workoutsThisMonth,
+      workoutsThisWeek: aggregated.workoutsThisWeek,
+      lastWorkout: aggregated.lastWorkout,
+      muscleGroups: aggregated.muscleGroups as MuscleGroupLastTrained[],
+      neglectedMuscles: aggregated.neglectedMuscles as string[],
+      allPRs: aggregated.allPRs as PersonalRecord[],
+      recentPRs: aggregated.recentPRs as PersonalRecord[],
+      exerciseNames: aggregated.exerciseNames as string[],
+    }),
+    [aggregated]
+  );
 
   const selectedExerciseProgress = useMemo(() => {
     if (!selectedExercise || sessions.length === 0) return [];
     return calculateStrengthProgression(sessions, selectedExercise);
   }, [sessions, selectedExercise]);
 
+  // Cheap lookup into pre-computed map - no re-scan when selection changes
   const selectedExerciseDelta = useMemo(() => {
     if (!selectedExercise || sessions.length === 0) return null;
-    const allDeltas = getWeekOverWeekProgress(sessions);
-    return allDeltas.filter((d) => d.exerciseName === selectedExercise);
-  }, [sessions, selectedExercise]);
+    return (aggregated.weekOverWeekMap.get(selectedExercise) as ProgressDelta[]) ?? null;
+  }, [aggregated.weekOverWeekMap, selectedExercise, sessions.length]);
 
   useEffect(() => {
     if (!selectedExercise && computedData.exerciseNames.length > 0) {

@@ -4,7 +4,7 @@
 
 import type { PersonalRecord, WorkoutSession } from '../types';
 import { safeJsonParseOr } from '../utils/safeJson';
-import { setVolume } from '../utils/workoutMath';
+import { oneRepMax, setVolume } from '../utils/workoutMath';
 import { STORES, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudPersonalRecord, syncPersonalRecord } from './supabaseSync';
@@ -124,12 +124,14 @@ const diffSetAgainstPRs = (
   exerciseName: string,
   weight: number,
   reps: number,
-  existingPRs: PersonalRecord[]
+  existingPRs: PersonalRecord[],
+  date?: string
 ): { newPR: PersonalRecord | null; nextPRs: PersonalRecord[] } => {
   if (weight <= 0 || reps <= 0) return { newPR: null, nextPRs: existingPRs };
 
+  const prDate = date ?? new Date().toISOString();
   const volume = weight * reps;
-  const est1RM = weight * (1 + reps / 30); // Epley formula
+  const est1RM = calculateEst1RM(weight, reps); // canonical: handles reps===1 + rounding
   let newPR: PersonalRecord | null = null;
 
   const weightPR = existingPRs.find((pr) => pr.type === 'weight');
@@ -138,7 +140,7 @@ const diffSetAgainstPRs = (
       id: crypto.randomUUID(),
       exerciseId,
       exerciseName,
-      date: new Date().toISOString(),
+      date: prDate,
       weight,
       reps,
       type: 'weight',
@@ -161,7 +163,7 @@ const diffSetAgainstPRs = (
       id: crypto.randomUUID(),
       exerciseId,
       exerciseName,
-      date: new Date().toISOString(),
+      date: prDate,
       weight,
       reps,
       type: 'volume',
@@ -180,7 +182,7 @@ const diffSetAgainstPRs = (
       id: crypto.randomUUID(),
       exerciseId,
       exerciseName,
-      date: new Date().toISOString(),
+      date: prDate,
       weight,
       reps,
       type: 'reps',
@@ -278,12 +280,8 @@ export const createBatchedPRChecker = async (exerciseIds: string[]): Promise<Bat
 // PR Utility Functions
 // ============================================================================
 
-// Calculate estimated 1RM using Epley formula
-export const calculateEst1RM = (weight: number, reps: number): number => {
-  if (reps <= 0 || weight <= 0) return 0;
-  if (reps === 1) return weight;
-  return Math.round(weight * (1 + reps / 30) * 10) / 10;
-};
+// Calculate estimated 1RM using Epley formula — delegates to shared oneRepMax.
+export const calculateEst1RM = (weight: number, reps: number): number => oneRepMax(weight, reps);
 
 // Get PR history for an exercise (sorted by date)
 export const getPRHistory = async (exerciseId: string): Promise<PersonalRecord[]> => {
@@ -301,7 +299,7 @@ export const getBestPRs = async (
     volume:
       prs
         .filter((p) => p.type === 'volume')
-        .sort((a, b) => b.weight * b.reps - a.weight * a.reps)[0] || null,
+        .sort((a, b) => (b.value ?? b.weight * b.reps) - (a.value ?? a.weight * a.reps))[0] || null,
   };
 };
 

@@ -4,7 +4,8 @@
 
 import type { PersonalRecord, WorkoutSession } from '../types';
 import { HEBREW_DAYS } from '../utils/dateUtils';
-import { setVolume } from '../utils/workoutMath';
+import { completedSetsVolume, setVolume } from '../utils/workoutMath';
+import { getWorkoutSessions } from './workoutDb';
 
 // ============================================================================
 // Exported Interfaces (original)
@@ -116,7 +117,7 @@ function linearRegression(points: { x: number; y: number }[]): {
   const yMean = sumY / n;
   const ssRes = points.reduce((s, p) => s + (p.y - (slope * p.x + intercept)) ** 2, 0);
   const ssTot = points.reduce((s, p) => s + (p.y - yMean) ** 2, 0);
-  const rSquared = ssTot === 0 ? 0 : 1 - ssRes / ssTot;
+  const rSquared = ssTot === 0 ? 0 : Math.max(0, 1 - ssRes / ssTot);
 
   return { slope, intercept, rSquared };
 }
@@ -125,11 +126,7 @@ function linearRegression(points: { x: number; y: number }[]): {
 function computeSessionVolume(session: WorkoutSession): number {
   let total = 0;
   for (const exercise of session.exercises) {
-    for (const set of exercise.sets) {
-      if (set.isCompleted) {
-        total += setVolume(set);
-      }
-    }
+    total += completedSetsVolume(exercise.sets);
   }
   return total;
 }
@@ -224,7 +221,6 @@ export const getAnalyticsSummary = async (
   endDate: string
 ): Promise<AnalyticsSummary> => {
   // Fetch sessions from storage
-  const { getWorkoutSessions } = await import('./workoutDb');
   let sessions: WorkoutSession[];
   try {
     const all = await getWorkoutSessions(1000);
@@ -362,7 +358,6 @@ export const getProgressData = async (
   exerciseId: string,
   weeks = 12
 ): Promise<{ date: string; value: number }[]> => {
-  const { getWorkoutSessions } = await import('./workoutDb');
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - weeks * 7);
   const startDate = cutoff.toISOString().slice(0, 10);
@@ -397,8 +392,12 @@ export const calculateWeeklyVolumes = (
   const weekGroupMap = new Map<string, WorkoutSession[]>();
   for (const session of completedSessions) {
     const weekKey = getISOWeek(new Date(session.date));
-    const group = weekGroupMap.get(weekKey) || [];
-    weekGroupMap.set(weekKey, [...group, session]);
+    const group = weekGroupMap.get(weekKey);
+    if (group) {
+      group.push(session);
+    } else {
+      weekGroupMap.set(weekKey, [session]);
+    }
   }
 
   // Sort weeks chronologically
@@ -502,6 +501,9 @@ export const calculateMuscleBalance = (
   const currentVolumes = computeMuscleVolumes(currentSessions);
   const previousVolumes = computeMuscleVolumes(previousSessions);
 
+  const currentCount = currentSessions.length || 1;
+  const previousCount = previousSessions.length || 1;
+
   const totalCurrentVolume = Array.from(currentVolumes.values()).reduce((s, v) => s + v, 0);
   const averageVolume =
     totalCurrentVolume > 0 && currentVolumes.size > 0
@@ -519,13 +521,17 @@ export const calculateMuscleBalance = (
     const percentage =
       totalCurrentVolume > 0 ? Math.round((current / totalCurrentVolume) * 100) : 0;
 
+    // Normalize by session count for fair trend comparison
+    const currentAvg = current / currentCount;
+    const previousAvg = previous / previousCount;
+
     let trend: 'up' | 'down' | 'stable';
-    if (previous === 0 && current === 0) {
+    if (previousAvg === 0 && currentAvg === 0) {
       trend = 'stable';
-    } else if (previous === 0) {
+    } else if (previousAvg === 0) {
       trend = 'up';
     } else {
-      const changeRatio = (current - previous) / previous;
+      const changeRatio = (currentAvg - previousAvg) / previousAvg;
       if (changeRatio > MUSCLE_BALANCE_TREND_THRESHOLD) {
         trend = 'up';
       } else if (changeRatio < -MUSCLE_BALANCE_TREND_THRESHOLD) {
@@ -607,9 +613,9 @@ export const forecastProgress = (
   const points = dataPoints.map((dp, index) => ({ x: index, y: dp.actual }));
   const { slope, intercept, rSquared } = linearRegression(points);
 
-  // Predict next week
+  // Predict next week (volume/1RM cannot be negative, so clamp to 0)
   const nextX = dataPoints.length;
-  const predicted = Math.round(slope * nextX + intercept);
+  const predicted = Math.max(0, Math.round(slope * nextX + intercept));
 
   let trend: 'increasing' | 'decreasing' | 'stable';
   if (slope > FORECAST_SLOPE_THRESHOLD) {
@@ -728,10 +734,9 @@ export interface StrengthProgressPoint {
 export const getLastWorkoutSummary = (sessions: WorkoutSession[]): LastWorkoutSummary | null => {
   const completed = sessions.filter((s) => s.status === 'completed');
   if (completed.length === 0) return null;
-  const last = completed.sort(
-    (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-  )[0];
-  if (!last) return null;
+  const last = completed.reduce((latest, s) =>
+    new Date(s.startTime).getTime() > new Date(latest.startTime).getTime() ? s : latest
+  );
   const muscles = new Set<string>();
   last.exercises.forEach((e) => {
     const m = e.muscleGroup || e.targetMuscle;
@@ -790,9 +795,7 @@ export const getWeekOverWeekProgress = (sessions: WorkoutSession[]): ProgressDel
     const map = new Map<string, { name: string; volume: number }>();
     for (const session of list) {
       for (const exercise of session.exercises) {
-        const vol = exercise.sets
-          .filter((s) => s.isCompleted)
-          .reduce((sum, s) => sum + setVolume(s), 0);
+        const vol = completedSetsVolume(exercise.sets);
         const existing = map.get(exercise.exerciseId);
         map.set(exercise.exerciseId, {
           name: exercise.exerciseName,
@@ -845,19 +848,19 @@ export const calculateStrengthProgression = (
     .reduce<StrengthProgressPoint[]>((points, session) => {
       for (const exercise of session.exercises) {
         if (exercise.exerciseId !== exerciseId) continue;
-        let maxWeight = 0;
-        let maxReps = 0;
+        // Epley 1RM must use weight and reps from the SAME set, so evaluate
+        // it per-set and keep the best; taking max(weight) and max(reps)
+        // independently across sets inflates the estimate.
+        let best1RM = 0;
         for (const set of exercise.sets) {
           if (set.isCompleted && !set.isWarmup) {
-            if (set.weight > maxWeight) maxWeight = set.weight;
-            if (set.reps > maxReps) maxReps = set.reps;
+            const est = set.weight * (1 + set.reps / 30);
+            if (est > best1RM) best1RM = est;
           }
         }
-        const est1RM = maxWeight * (1 + maxReps / 30);
-        const volume = exercise.sets
-          .filter((s) => s.isCompleted)
-          .reduce((sum, s) => sum + setVolume(s), 0);
-        points.push({ date: session.date, estimated1RM: Math.round(est1RM * 10) / 10, volume });
+        const volume = completedSetsVolume(exercise.sets);
+        if (best1RM === 0 && volume === 0) continue;
+        points.push({ date: session.date, estimated1RM: Math.round(best1RM * 10) / 10, volume });
       }
       return points;
     }, [])

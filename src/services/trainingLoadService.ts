@@ -1,5 +1,5 @@
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../types';
-import { setVolume } from '../utils/workoutMath';
+import { completedSetsVolume } from '../utils/workoutMath';
 import { type RecoveryLog, calculateRecoveryScore } from './bodyStatsService';
 
 export type TrainingLoadRecommendation = 'push' | 'maintain' | 'deload' | 'rest';
@@ -73,7 +73,7 @@ const getMuscle = (exercise: WorkoutExercise): string =>
 const isCompletedWorkingSet = (set: WorkoutSet): boolean => set.isCompleted && !set.isWarmup;
 
 function getExerciseVolume(exercise: WorkoutExercise): number {
-  return exercise.sets.filter(isCompletedWorkingSet).reduce((sum, set) => sum + setVolume(set), 0);
+  return completedSetsVolume(exercise.sets.filter(isCompletedWorkingSet));
 }
 
 function getSessionVolume(session: WorkoutSession): number {
@@ -81,7 +81,10 @@ function getSessionVolume(session: WorkoutSession): number {
   // Fall back to the persisted session.totalVolume when no set data is
   // populated (summary/legacy sessions) so volume isn't under-counted to 0.
   const hasSetData = session.exercises.some((exercise) => exercise.sets.length > 0);
-  if (!hasSetData) return session.totalVolume ?? 0;
+  if (!hasSetData) {
+    const fallback = session.totalVolume ?? 0;
+    return Number.isFinite(fallback) ? fallback : 0;
+  }
   return session.exercises.reduce((sum, exercise) => sum + getExerciseVolume(exercise), 0);
 }
 

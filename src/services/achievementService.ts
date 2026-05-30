@@ -13,7 +13,7 @@ export interface StreakInfo {
   workoutsThisWeek: number;
 }
 
-export const calculateStreak = (sessions: WorkoutSession[]): StreakInfo => {
+export const calculateStreak = (sessions: WorkoutSession[], now: Date = new Date()): StreakInfo => {
   if (sessions.length === 0) {
     return {
       currentStreak: 0,
@@ -29,7 +29,6 @@ export const calculateStreak = (sessions: WorkoutSession[]): StreakInfo => {
 
   const lastWorkoutDate = sortedSessions[0]?.startTime ?? null;
 
-  const now = new Date();
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate() - now.getDay());
   weekStart.setHours(0, 0, 0, 0);
@@ -46,7 +45,7 @@ export const calculateStreak = (sessions: WorkoutSession[]): StreakInfo => {
   });
   const uniqueDates = [...new Set(workoutDates)].sort().reverse();
 
-  const today = new Date();
+  const today = new Date(now);
   today.setHours(0, 0, 0, 0);
 
   // Determine the anchor date: if the most recent workout was today, start

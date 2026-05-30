@@ -38,6 +38,18 @@ export function calculateBMR(
   age: number,
   gender: 'male' | 'female' | 'other'
 ): number {
+  // Mifflin-St Jeor is only defined for positive weight/height/age; guard so
+  // bad input can't produce a negative/NaN BMR that propagates into macros.
+  if (
+    !Number.isFinite(weightKg) ||
+    !Number.isFinite(heightCm) ||
+    !Number.isFinite(age) ||
+    weightKg <= 0 ||
+    heightCm <= 0 ||
+    age <= 0
+  ) {
+    return 0;
+  }
   const s = gender === 'female' ? -161 : 5;
   return Math.round(10 * weightKg + 6.25 * heightCm - 5 * age + s);
 }
@@ -50,6 +62,9 @@ export function calculateTDEE(
   activityLevel: string
 ): TDEEResult {
   const bmr = calculateBMR(weightKg, heightCm, age, gender);
+  if (bmr <= 0) {
+    return { bmr: 0, tdee: 0, cut: 0, maintain: 0, bulk: 0, protein: 0, carbs: 0, fat: 0 };
+  }
   const multiplier = ACTIVITY_MAP[activityLevel] ?? 1.55;
   const tdee = Math.round(bmr * multiplier);
 
@@ -57,10 +72,12 @@ export function calculateTDEE(
   const maintain = tdee;
   const bulk = tdee + 300;
 
-  // Macro split: 30% protein, 40% carbs, 30% fat (general fitness)
+  // Macro split: 30% protein, 40% carbs, 30% fat (general fitness).
+  // Fat is derived from the remaining calories so protein*4 + carbs*4 + fat*9
+  // sums back to the calorie target instead of drifting from independent rounding.
   const protein = Math.round((tdee * 0.3) / 4);
   const carbs = Math.round((tdee * 0.4) / 4);
-  const fat = Math.round((tdee * 0.3) / 9);
+  const fat = Math.round((tdee - protein * 4 - carbs * 4) / 9);
 
   return { bmr, tdee, cut, maintain, bulk, protein, carbs, fat };
 }
@@ -83,10 +100,11 @@ export function getMacroGoalsForGoal(
       calories = tdeeResult.maintain;
   }
 
-  // Recompute macros from goal-adjusted calories (30% protein, 40% carbs, 30% fat)
+  // Recompute macros from goal-adjusted calories (30% protein, 40% carbs, 30% fat).
+  // Fat absorbs rounding so the macros sum back to the calorie target.
   const protein = Math.round((calories * 0.3) / 4);
   const carbs = Math.round((calories * 0.4) / 4);
-  const fat = Math.round((calories * 0.3) / 9);
+  const fat = Math.round((calories - protein * 4 - carbs * 4) / 9);
 
   return { calories, protein, carbs, fat };
 }

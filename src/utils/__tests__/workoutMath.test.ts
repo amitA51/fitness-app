@@ -12,6 +12,13 @@ describe('setVolume / exerciseVolume / sessionVolume', () => {
     expect(setVolume({ weight: 100 })).toBe(0);
   });
 
+  test('negative, NaN and Infinity inputs are clamped to zero', () => {
+    expect(setVolume({ weight: -100, reps: 5 })).toBe(0);
+    expect(setVolume({ weight: 100, reps: -5 })).toBe(0);
+    expect(setVolume({ weight: Number.NaN, reps: 5 })).toBe(0);
+    expect(setVolume({ weight: Number.POSITIVE_INFINITY, reps: 5 })).toBe(0);
+  });
+
   test('exercise and session volume sum working sets', () => {
     const ex = {
       sets: [

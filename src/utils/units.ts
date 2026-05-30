@@ -8,18 +8,22 @@ const CM_TO_INCHES = 0.393701;
 const INCHES_TO_CM = 1 / CM_TO_INCHES;
 
 export function kgToLbs(kg: number): number {
+  if (!Number.isFinite(kg)) return 0;
   return Math.round(kg * KG_TO_LBS * 10) / 10;
 }
 
 export function lbsToKg(lbs: number): number {
+  if (!Number.isFinite(lbs)) return 0;
   return Math.round(lbs * LBS_TO_KG * 10) / 10;
 }
 
 export function cmToInches(cm: number): number {
+  if (!Number.isFinite(cm)) return 0;
   return Math.round(cm * CM_TO_INCHES * 10) / 10;
 }
 
 export function inchesToCm(inches: number): number {
+  if (!Number.isFinite(inches)) return 0;
   return Math.round(inches * INCHES_TO_CM * 10) / 10;
 }
 

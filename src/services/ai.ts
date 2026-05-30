@@ -50,7 +50,7 @@ import { type ChatMessage, getAIProvider } from './ai/core';
 import { getFormTips } from './ai/features';
 
 /** Sanitize user-provided text before embedding in prompts. */
-function sanitizeForPrompt(input: string, maxLength = 100): string {
+export function sanitizeForPrompt(input: string, maxLength = 100): string {
   return input
     .replace(/[\r\n\t]/g, ' ')
     .replace(/[^\p{L}\p{N}\p{Zs}\-_'"()]/gu, '')
@@ -72,6 +72,7 @@ export async function askExerciseQuestion(
 ): Promise<string> {
   const provider = getAIProvider();
   const safeName = sanitizeForPrompt(exerciseName);
+  const safeQuestion = sanitizeForPrompt(question, 500);
   // Cap history to avoid unbounded token cost
   const cappedHistory = (history ?? []).slice(-20);
   const messages: ChatMessage[] = [
@@ -80,7 +81,7 @@ export async function askExerciseQuestion(
       content: `תתייחס לשאלה שמתייחסת לתרגיל: ${safeName}. ענה קצר ומעשי.`,
     },
     ...cappedHistory,
-    { role: 'user', content: question },
+    { role: 'user', content: safeQuestion },
   ];
   return provider.chat(messages);
 }

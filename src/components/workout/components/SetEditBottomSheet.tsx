@@ -3,7 +3,7 @@
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
 import { motion } from 'framer-motion';
-import { CheckCircle as CheckCircleIcon, X as CloseIcon } from 'lucide-react';
+import { CheckCircle as CheckCircleIcon, Pencil, X as CloseIcon } from 'lucide-react';
 import { memo, useCallback, useId, useMemo, useState } from 'react';
 import type { WorkoutSet } from '../../../types';
 import { ModalOverlay } from '../../ui/ModalOverlay';
@@ -522,7 +522,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                               color: 'var(--fs-muted)',
                             }}
                           >
-                            ✎
+                            <Pencil size={12} aria-hidden="true" />
                           </span>
                         </div>
                       </div>
