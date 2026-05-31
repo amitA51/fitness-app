@@ -91,7 +91,9 @@ Deno.serve(async (req: Request) => {
       return json({ ok: false, error: 'rate_limited' }, 429, req);
     }
   } catch (_e) {
-    // ledger unavailable — fail open
+    // Rate-limit infrastructure unavailable — fail CLOSED (S-9 security hardening).
+    console.error('[coach-invite-accept] rate-limit check failed, rejecting request:', _e);
+    return json({ ok: false, error: 'rate_limited' }, 503, req);
   }
 
   let code = '';

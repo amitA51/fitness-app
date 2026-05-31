@@ -10,7 +10,7 @@
 import type { BodyWeightEntry, WorkoutSession, WorkoutTemplate } from '../../types';
 import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
-import type { BodyMeasurement, NutritionLog, PersonalRecord } from '../supabaseSyncMappers';
+import type { BodyMeasurement, NutritionLog, PersonalRecordRow } from '../supabaseSyncMappers';
 import {
   toCanonicalBodyWeight,
   toCanonicalSession,
@@ -27,7 +27,9 @@ export const getClientSessions = async (
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('workout_sessions')
-    .select('*')
+    .select(
+      'id, title, date, start_time, end_time, duration, exercises, total_volume, notes, created_at, updated_at'
+    )
     .eq('user_id', clientId)
     .order('start_time', { ascending: false })
     .limit(limit);
@@ -56,9 +58,10 @@ export const getClientTemplates = async (clientId: string): Promise<WorkoutTempl
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('workout_templates')
-    .select('*')
+    .select('id, name, description, exercises, created_at, updated_at')
     .eq('user_id', clientId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(200);
   if (error) {
     logger.db.error('getClientTemplates failed', error);
     return [];
@@ -79,9 +82,10 @@ export const getClientBodyWeight = async (clientId: string): Promise<BodyWeightE
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('body_weight')
-    .select('*')
+    .select('id, weight, date, notes, created_at, updated_at')
     .eq('user_id', clientId)
-    .order('date', { ascending: false });
+    .order('date', { ascending: false })
+    .limit(500);
   if (error) {
     logger.db.error('getClientBodyWeight failed', error);
     return [];
@@ -97,13 +101,14 @@ export const getClientBodyWeight = async (clientId: string): Promise<BodyWeightE
   );
 };
 
-export const getClientPRs = async (clientId: string): Promise<PersonalRecord[]> => {
+export const getClientPRs = async (clientId: string): Promise<PersonalRecordRow[]> => {
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('personal_records')
-    .select('*')
+    .select('id, exercise_id, exercise_name, weight, reps, date, record_type, created_at')
     .eq('user_id', clientId)
-    .order('date', { ascending: false });
+    .order('date', { ascending: false })
+    .limit(500);
   if (error) {
     logger.db.error('getClientPRs failed', error);
     return [];
@@ -124,7 +129,7 @@ export const getClientNutrition = async (clientId: string, limit = 60): Promise<
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('nutrition_logs')
-    .select('*')
+    .select('id, date, calories, protein, carbs, fat, meals, notes, created_at')
     .eq('user_id', clientId)
     .order('date', { ascending: false })
     .limit(limit);
@@ -149,9 +154,10 @@ export const getClientMeasurements = async (clientId: string): Promise<BodyMeasu
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('body_measurements')
-    .select('*')
+    .select('id, date, measurements, notes, created_at')
     .eq('user_id', clientId)
-    .order('date', { ascending: false });
+    .order('date', { ascending: false })
+    .limit(500);
   if (error) {
     logger.db.error('getClientMeasurements failed', error);
     return [];

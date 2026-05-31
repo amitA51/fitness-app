@@ -10,7 +10,7 @@ import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useHaptics } from '../../hooks/useHaptics';
-import { SPRING_BOUNCY } from '../animations/presets';
+import { MOTION_CURVES } from '../animations/presets';
 
 export interface MenuAction {
   id: string;
@@ -247,6 +247,22 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
       <div
         ref={elementRef}
         className={`${className} ${isPressed ? 'scale-[0.98]' : ''} transition-transform duration-150`}
+        role="button"
+        aria-haspopup="menu"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (!enabled) return;
+          if (
+            e.key === 'Enter' ||
+            e.key === ' ' ||
+            e.key === 'ContextMenu' ||
+            (e.shiftKey && e.key === 'F10')
+          ) {
+            e.preventDefault();
+            const rect = elementRef.current?.getBoundingClientRect();
+            if (rect) openMenu(rect.left + rect.width / 2, rect.top + rect.height / 2);
+          }
+        }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -279,7 +295,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
                 initial={{ opacity: 0, scale: 0.85, y: -10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: -5 }}
-                transition={SPRING_BOUNCY}
+                transition={MOTION_CURVES.settle}
                 role="menu"
                 aria-label="תפריט פעולות"
                 style={{

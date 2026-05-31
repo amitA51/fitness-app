@@ -12,6 +12,7 @@ interface UsePullToRefreshOptions {
 export const usePullToRefresh = ({ onRefresh, threshold = 80 }: UsePullToRefreshOptions) => {
   const isPullingRef = useRef(false);
   const startYRef = useRef(0);
+  const pullDistanceRef = useRef(0);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -26,15 +27,17 @@ export const usePullToRefresh = ({ onRefresh, threshold = 80 }: UsePullToRefresh
     if (!isPullingRef.current) return;
     const currentY = e.touches[0]?.clientY ?? 0;
     const distance = currentY - startYRef.current;
-    // Track only downward pulls for visual feedback; upward scrolls clear it.
-    setPullDistance(distance > 0 ? distance : 0);
+    const clamped = distance > 0 ? distance : 0;
+    pullDistanceRef.current = clamped;
+    setPullDistance(clamped);
   }, []);
 
   const handleTouchEnd = useCallback(async () => {
     if (!isPullingRef.current) return;
     isPullingRef.current = false;
 
-    const distance = pullDistance;
+    const distance = pullDistanceRef.current;
+    pullDistanceRef.current = 0;
     setPullDistance(0);
 
     if (distance > threshold && !isRefreshing) {
@@ -45,7 +48,7 @@ export const usePullToRefresh = ({ onRefresh, threshold = 80 }: UsePullToRefresh
         setIsRefreshing(false);
       }
     }
-  }, [onRefresh, threshold, pullDistance, isRefreshing]);
+  }, [onRefresh, threshold, isRefreshing]);
 
   return {
     isPulling: pullDistance > 0,

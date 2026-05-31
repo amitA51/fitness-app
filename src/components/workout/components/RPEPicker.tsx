@@ -4,6 +4,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 interface RPEPickerProps {
   isOpen: boolean;
@@ -34,6 +35,8 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
   const [selected, setSelected] = useState<number | null>(currentValue ?? null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(popoverRef, { isOpen, onClose, closeOnEscape: true, lockScroll: true });
 
   // Sync selected when currentValue changes or picker opens
   useEffect(() => {
@@ -89,6 +92,9 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
             justifyContent: 'center',
           }}
           onClick={handleBackdropClick}
+          role="dialog"
+          aria-modal="true"
+          aria-label="בחירת RPE"
         >
           <motion.div
             ref={popoverRef}
@@ -176,6 +182,20 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
 
             {/* RPE Numbers */}
             <div
+              role="radiogroup"
+              aria-label="ערך RPE"
+              onKeyDown={(e) => {
+                const idx = RPE_VALUES.indexOf(selected ?? RPE_VALUES[0]!);
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  const next = RPE_VALUES[Math.min(idx + 1, RPE_VALUES.length - 1)]!;
+                  handleSelect(next);
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  const prev = RPE_VALUES[Math.max(idx - 1, 0)]!;
+                  handleSelect(prev);
+                }
+              }}
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(5, 1fr)',
@@ -190,6 +210,9 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
                     key={rpe}
                     whileTap={{ scale: 0.93 }}
                     onClick={() => handleSelect(rpe)}
+                    role="radio"
+                    aria-checked={isActive}
+                    tabIndex={isActive || (selected === null && rpe === RPE_VALUES[0]) ? 0 : -1}
                     className={`chip magnetic-card${isActive ? ' accent-glow' : ''}`}
                     style={{
                       display: 'flex',

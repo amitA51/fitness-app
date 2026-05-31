@@ -93,8 +93,8 @@ export function aggregateInsights(
   // Week-over-week boundaries
   const thisWeekStart = new Date(nowMs - 7 * 24 * 60 * 60 * 1000);
   const lastWeekStart = new Date(nowMs - 14 * 24 * 60 * 60 * 1000);
-  const thisWeekStartStr = thisWeekStart.toISOString().split('T')[0] ?? '';
-  const lastWeekStartStr = lastWeekStart.toISOString().split('T')[0] ?? '';
+  const thisWeekStartStr = `${thisWeekStart.getFullYear()}-${String(thisWeekStart.getMonth() + 1).padStart(2, '0')}-${String(thisWeekStart.getDate()).padStart(2, '0')}`;
+  const lastWeekStartStr = `${lastWeekStart.getFullYear()}-${String(lastWeekStart.getMonth() + 1).padStart(2, '0')}-${String(lastWeekStart.getDate()).padStart(2, '0')}`;
 
   // Accumulators
   const exerciseNameSet = new Set<string>();
@@ -229,7 +229,7 @@ export function aggregateInsights(
   }
 
   // --- POST-PASS: muscle groups days-since ---
-  const todayStr = now.toISOString().split('T')[0] ?? '';
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const todayMs = new Date(todayStr).getTime();
   const muscleGroups: MuscleGroupLastTrained[] = Array.from(muscleLastDate.entries()).map(
     ([muscle, date]) => ({

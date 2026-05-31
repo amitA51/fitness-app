@@ -1,7 +1,8 @@
 import { supabase } from '../lib/supabase';
+import { isSupabaseConfigured } from '../lib/supabase';
 import { todayStr } from '../utils/dateUtils';
 import { STORES, dbGetAll, dbPut } from './indexedDBCore';
-import { syncWithRetry } from './indexedDBCore';
+import { queueMutation } from './offlineQueue';
 import { getCurrentUser } from './supabaseAuth';
 
 export interface WaterEntry {
@@ -33,7 +34,11 @@ export async function addWaterEntry(amountMl: number): Promise<WaterEntry> {
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(() => syncWaterEntry(user.id, entry), `addWaterEntry:${entry.id}`);
+    try {
+      await syncWaterEntryToCloud(user.id, entry);
+    } catch {
+      await queueMutation('water:create', entry);
+    }
   }
 
   return entry;
@@ -59,8 +64,8 @@ export async function getWaterByDateRange(
   return all.filter((e) => e.date >= startDate && e.date <= endDate);
 }
 
-async function syncWaterEntry(userId: string, entry: WaterEntry): Promise<void> {
-  if (!supabase) return; // sync disabled when Supabase is not configured
+export async function syncWaterEntryToCloud(userId: string, entry: WaterEntry): Promise<void> {
+  if (!isSupabaseConfigured() || !supabase) return;
   const { error } = await supabase.from('water_logs').upsert(
     {
       id: entry.id,
@@ -72,7 +77,40 @@ async function syncWaterEntry(userId: string, entry: WaterEntry): Promise<void> 
     { onConflict: 'id' }
   );
   if (error) {
-    // Throw so syncWithRetry can re-queue with backoff
     throw new Error(`water sync failed: ${error.message}`);
+  }
+}
+
+export async function deleteCloudWaterEntry(userId: string, id: string): Promise<void> {
+  if (!isSupabaseConfigured() || !supabase) return;
+  const { error } = await supabase.from('water_logs').delete().eq('id', id).eq('user_id', userId);
+  if (error) {
+    throw new Error(`water delete failed: ${error.message}`);
+  }
+}
+
+export async function fetchWaterLogs(userId: string): Promise<WaterEntry[]> {
+  if (!isSupabaseConfigured() || !supabase) return [];
+  const { data, error } = await supabase
+    .from('water_logs')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return (data || []).map((row) => ({
+    id: row.id,
+    date: row.date,
+    amountMl: row.amount_ml,
+    createdAt: row.created_at,
+  }));
+}
+
+export async function mergeWaterLogsFromCloud(cloudEntries: WaterEntry[]): Promise<void> {
+  const local = await dbGetAll<WaterEntry>(STORES.WATER_LOGS);
+  const localMap = new Map(local.map((e) => [e.id, e]));
+  for (const cloud of cloudEntries) {
+    if (!localMap.has(cloud.id)) {
+      await dbPut(STORES.WATER_LOGS, cloud);
+    }
   }
 }

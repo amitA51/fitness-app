@@ -184,6 +184,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
           <button
             type="button"
             onClick={onClose}
+            className="focus-ring"
             style={{
               padding: 8,
               borderRadius: 0,
@@ -191,6 +192,11 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
               cursor: 'pointer',
               background: 'none',
               border: 'none',
+              minWidth: 44,
+              minHeight: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             <CloseIcon className="w-6 h-6" />
@@ -210,6 +216,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
             type="button"
             onClick={handleSave}
             disabled={isSaving || !name.trim()}
+            className="focus-ring"
             style={{
               padding: 8,
               borderRadius: 0,
@@ -226,6 +233,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
               fontSize: '14px',
               paddingLeft: 16,
               paddingRight: 16,
+              minHeight: 44,
             }}
           >
             <span className="hidden sm:inline">{isSaving ? 'שומר...' : 'שמור'}</span>
@@ -282,6 +290,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="לדוגמה: יום חזה מפלצתי"
+                  className="focus-ring"
                   style={{
                     width: '100%',
                     background: 'transparent',
@@ -289,10 +298,10 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                     fontSize: '30px',
                     fontWeight: 800,
                     color: 'var(--fs-ink)',
-                    outline: 'none',
                     border: 'none',
                     borderBottom: '1px solid var(--fs-surface-2)',
                     padding: '8px 0',
+                    minHeight: 48,
                   }}
                   autoFocus={!initialPlan}
                 />

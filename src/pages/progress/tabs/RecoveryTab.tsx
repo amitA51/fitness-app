@@ -38,8 +38,18 @@ export const RecoveryTab = memo(function RecoveryTab({
     <div className="space-y-4">
       {/* Chapter break */}
       <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-        <span className="left">§03 · RECOVERY</span>
-        <span className="right">ריקאברי</span>
+        <span className="left" />
+        <span
+          className="right"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: 16,
+            color: 'var(--fs-ink)',
+          }}
+        >
+          ריקאברי
+        </span>
       </div>
 
       {/* Recovery score */}
@@ -77,7 +87,7 @@ export const RecoveryTab = memo(function RecoveryTab({
               textTransform: 'uppercase',
             }}
           >
-            § TODAY · ציון ריקאברי
+            ציון ריקאברי
           </h2>
           <button
             type="button"
@@ -243,7 +253,8 @@ export const RecoveryTab = memo(function RecoveryTab({
               textTransform: 'uppercase',
             }}
           >
-            <Activity size={14} />§ WEEKLY AVG · ממוצע שבועי
+            <Activity size={14} />
+            ממוצע שבועי
           </h3>
           <div className="data-strip">
             <div>
@@ -307,7 +318,7 @@ export const RecoveryTab = memo(function RecoveryTab({
               textTransform: 'uppercase',
             }}
           >
-            § HISTORY · היסטוריית ריקאברי
+            היסטוריית ריקאברי
           </h3>
           <div className="space-y-1">
             {history

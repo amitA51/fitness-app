@@ -3,14 +3,8 @@
  * Low-level CRUD operations for the fitness app
  */
 
-// Cloud-sync orchestration lives in ./syncEngine (engine -> core dependency).
-// These re-exports keep existing `import { syncWithRetry, syncPendingToServer }
-// from './indexedDBCore'` call sites working without core depending on cloud config.
-export { syncWithRetry } from './syncEngine';
-export type { SyncResult } from './syncEngine';
-
 const DB_NAME = 'sparkos-fitness-db';
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 
 // Store names
 export const STORES = {
@@ -171,6 +165,13 @@ export const initDB = (): Promise<IDBDatabase> => {
       if (upgradeTx && db.objectStoreNames.contains(STORES.WORKOUT_SESSIONS)) {
         const workoutStore = upgradeTx.objectStore(STORES.WORKOUT_SESSIONS);
         createIndexIfMissing(workoutStore, 'startTime', 'startTime');
+      }
+
+      // ── v8 indexes: date index on nutrition_logs ──────────────────────
+      // DA-11: Enables range queries by date instead of full-table scans.
+      if (upgradeTx && db.objectStoreNames.contains(STORES.NUTRITION_LOGS)) {
+        const nutritionStore = upgradeTx.objectStore(STORES.NUTRITION_LOGS);
+        createIndexIfMissing(nutritionStore, 'date', 'date');
       }
     };
   });

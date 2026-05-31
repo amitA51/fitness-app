@@ -242,7 +242,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
                 textTransform: 'uppercase',
               }}
             >
-              §01 · פרופיל
+              פרופיל
             </span>
             <div className="flex-1" style={{ height: '1px', background: 'var(--fs-surface-2)' }} />
           </motion.div>
@@ -265,6 +265,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
             <AnnualInput
               label={'דוא"ל'}
               type="email"
+              inputMode="email"
               value={form.email}
               onChange={(val) => setForm((f) => ({ ...f, email: val }))}
               placeholder="your@email.com"
@@ -285,7 +286,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
                 textTransform: 'uppercase',
               }}
             >
-              §02 · אבטחה
+              אבטחה
             </span>
             <div className="flex-1" style={{ height: '1px', background: 'var(--fs-surface-2)' }} />
           </motion.div>
@@ -297,6 +298,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               onChange={(val) => setForm((f) => ({ ...f, password: val }))}
               placeholder="לפחות 8 תווים"
               error={errors.password}
+              autoComplete="new-password"
             />
           </motion.div>
 
@@ -307,6 +309,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               onChange={(val) => setForm((f) => ({ ...f, confirmPassword: val }))}
               placeholder="הזן שוב את הסיסמה"
               error={errors.confirmPassword}
+              autoComplete="new-password"
             />
           </motion.div>
 
@@ -314,22 +317,23 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           {generalError && (
             <motion.div
               variants={staggerItem}
+              role="alert"
               className="p-4 flex items-start gap-3"
               style={{
-                background: 'rgba(226, 110, 63, 0.12)',
-                border: '1px solid var(--fs-warn)',
+                background: 'var(--color-error-muted)',
+                border: '1px solid var(--color-error)',
                 borderRadius: 0,
               }}
             >
               <AlertCircle
                 size={16}
-                style={{ color: 'var(--fs-warn)', flexShrink: 0, marginTop: '2px' }}
+                style={{ color: 'var(--color-error)', flexShrink: 0, marginTop: '2px' }}
               />
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: '14px',
-                  color: 'var(--fs-warn)',
+                  color: 'var(--color-error)',
                   lineHeight: 1.4,
                 }}
               >

@@ -26,7 +26,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: modal backdrop dismiss; keyboard users use Close button or Escape
     <div
-      className="fixed inset-0 z-[100] bg-[rgba(11,26,43,0.6)] backdrop-blur-[8px] flex items-center justify-center p-4"
+      className="fixed inset-0 z-overlay bg-[rgba(11,26,43,0.6)] backdrop-blur-[8px] flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="goal-selector-title"
@@ -46,7 +46,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
         <div className="masthead">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <span className="kicker">§01 · בחר מטרה</span>
+              <span className="kicker">בחר מטרה</span>
               <h2
                 id="goal-selector-title"
                 className="mt-2 text-3xl font-black uppercase tracking-tight leading-none"

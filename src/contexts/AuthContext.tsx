@@ -110,6 +110,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setIsGuest(false);
         setStatus('authenticated');
+
+        // DA-13: Auto-pull cloud data on sign-in so new/returning devices
+        // see their data without a manual pull.
+        if (event === 'SIGNED_IN') {
+          import('../services/supabaseSync').then((m) => {
+            m.pullAllData().catch(() => {
+              // best-effort — offline is fine
+            });
+          });
+        }
       } else {
         setStatus(isGuestRef.current ? 'guest' : 'unauthenticated');
       }
@@ -131,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsGuest(false);
       setStatus('unauthenticated');
       // Fire the toast via the global singleton (no-op when ToastContainer is unmounted)
-      import('../components/workout/components/ui/Toast')
+      import('../components/ui/GlobalToast')
         .then(({ showToast }) => {
           showToast('החיבור פג. התחבר מחדש.', 'error');
         })

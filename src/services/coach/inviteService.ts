@@ -11,12 +11,17 @@ import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
 import { requireClient, toInvite } from './mappers';
 
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 30 chars, no ambiguous
+const REJECT_THRESHOLD = 240; // 30 * 8 = 240; reject bytes >= 240 to eliminate modulo bias
 const generateCode = (len = 8): string => {
-  const bytes = new Uint8Array(len);
-  crypto.getRandomValues(bytes);
   let out = '';
-  for (let i = 0; i < len; i++) out += ALPHABET[bytes[i]! % ALPHABET.length];
+  while (out.length < len) {
+    const bytes = new Uint8Array(len - out.length);
+    crypto.getRandomValues(bytes);
+    for (let i = 0; i < bytes.length && out.length < len; i++) {
+      if (bytes[i]! < REJECT_THRESHOLD) out += ALPHABET[bytes[i]! % ALPHABET.length];
+    }
+  }
   return out;
 };
 

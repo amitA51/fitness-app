@@ -1,8 +1,8 @@
 import type { PersonalRecord } from '../../../services/prService';
 // Workout Module Types - Internal types for the workout feature
 import type {
+  ActiveExercise,
   AppSettings,
-  Exercise,
   SetTechnique,
   WorkoutSession,
   WorkoutSet,
@@ -37,7 +37,7 @@ export interface NumpadState {
 
 export interface WorkoutState {
   // === Core Data ===
-  exercises: Exercise[];
+  exercises: ActiveExercise[];
   currentExerciseIndex: number;
 
   // === Superset Groups ===
@@ -90,9 +90,9 @@ export interface WorkoutState {
 
 // --- Exercise Actions ---
 export type ExerciseAction =
-  | { type: 'ADD_EXERCISE'; payload: Exercise }
+  | { type: 'ADD_EXERCISE'; payload: ActiveExercise }
   | { type: 'REMOVE_EXERCISE'; payload: number }
-  | { type: 'REORDER_EXERCISES'; payload: Exercise[] }
+  | { type: 'REORDER_EXERCISES'; payload: ActiveExercise[] }
   | { type: 'CHANGE_EXERCISE'; payload: number }
   | { type: 'RENAME_EXERCISE'; payload: { index: number; name: string } }
   | {
@@ -165,7 +165,7 @@ export type ModalAction =
 
 // --- Settings & Data Actions ---
 export type DataAction =
-  | { type: 'SET_EXERCISES'; payload: Exercise[] }
+  | { type: 'SET_EXERCISES'; payload: ActiveExercise[] }
   | { type: 'UPDATE_SETTINGS'; payload: Partial<AppSettings['workoutSettings']> }
   | { type: 'SET_PREVIOUS_DATA'; payload: WorkoutSet[] | null }
   | { type: 'CLEAR_PENDING_HAPTIC' };
@@ -192,7 +192,7 @@ export interface WorkoutContextValue {
 }
 
 export interface WorkoutDerivedValue {
-  currentExercise: Exercise | undefined;
+  currentExercise: ActiveExercise | undefined;
   activeSetIndex: number;
   currentSet: WorkoutSet;
   completedSetsCount: number;
@@ -209,7 +209,7 @@ export interface WorkoutProviderProps {
   item: {
     id: string;
     title?: string;
-    exercises?: Exercise[];
+    exercises?: ActiveExercise[];
     workoutDuration?: number;
   };
   onUpdate: (id: string, updates: Record<string, unknown>) => void;
@@ -242,7 +242,7 @@ export const HAPTIC_PATTERNS = {
 // ============================================================
 
 export const createInitialState = (
-  exercises: Exercise[],
+  exercises: ActiveExercise[],
   workoutDuration: number,
   appSettings: AppSettings
 ): WorkoutState => {

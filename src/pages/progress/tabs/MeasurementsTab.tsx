@@ -32,8 +32,18 @@ export const MeasurementsTab = memo(function MeasurementsTab({
     <div className="space-y-4">
       {/* Chapter break */}
       <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-        <span className="left">§02 · MEASUREMENTS</span>
-        <span className="right">מידות</span>
+        <span className="left" />
+        <span
+          className="right"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: 16,
+            color: 'var(--fs-ink)',
+          }}
+        >
+          מידות
+        </span>
       </div>
 
       <div
@@ -70,7 +80,7 @@ export const MeasurementsTab = memo(function MeasurementsTab({
               textTransform: 'uppercase',
             }}
           >
-            § LATEST UPDATE · עדכון אחרון
+            עדכון אחרון
           </h2>
           <button
             type="button"

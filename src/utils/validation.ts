@@ -3,6 +3,8 @@
  * No external deps — keeps the bundle lean.
  */
 
+import { WORKOUT } from '../constants/workoutConstants';
+
 export function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
   const n = typeof value === 'string' ? Number.parseFloat(value) : Number(value);
   if (!Number.isFinite(n)) return fallback;
@@ -23,11 +25,11 @@ export interface WorkoutInputLimits {
 }
 
 export const WORKOUT_LIMITS: Readonly<WorkoutInputLimits> = {
-  weight: { min: 0, max: 1000 },
-  reps: { min: 0, max: 100 },
-  rpe: { min: 1, max: 10 },
-  sets: { min: 1, max: 20 },
-  restSeconds: { min: 0, max: 600 },
+  weight: { min: 0, max: WORKOUT.MAX_WEIGHT },
+  reps: { min: 0, max: WORKOUT.MAX_REPS },
+  rpe: { min: 1, max: WORKOUT.RPE_SCALE_MAX },
+  sets: { min: 1, max: WORKOUT.MAX_SETS },
+  restSeconds: { min: 0, max: WORKOUT.MAX_REST_TIME },
 };
 
 export function validateWeight(v: unknown): number {

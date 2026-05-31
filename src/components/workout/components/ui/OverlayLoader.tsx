@@ -11,7 +11,7 @@ const DOT_TRANSITION = {
 };
 
 const OverlayLoader = memo(() => (
-  <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center">
+  <div className="fixed inset-0 z-overlay bg-black/80 backdrop-blur-sm flex items-center justify-center">
     <div className="flex items-center gap-2">
       {[0, 1, 2].map((i) => (
         <motion.div

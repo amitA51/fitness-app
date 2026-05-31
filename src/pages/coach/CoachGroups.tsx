@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '../../components/ui/Button';
-import { showToast } from '../../components/workout/components/ui/Toast';
+import { showToast } from '../../components/ui/GlobalToast';
 import {
   createAssignment,
   createGroup,

@@ -6,7 +6,7 @@ import { MessageSquare, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
-import { showToast } from '../components/workout/components/ui/Toast';
+import { showToast } from '../components/ui/GlobalToast';
 import { useAuth } from '../contexts/AuthContext';
 import { syncTemplatesFromCloud } from '../hooks/useCloudTemplateReflection';
 import {
@@ -118,11 +118,12 @@ export default function MyCoach() {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    aria-label="הודעה"
+                    aria-label="שלח הודעה למאמן"
                     onClick={() => navigate(`/my-coach/messages/${c.coachId}`)}
+                    className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-accent)]"
                     style={{
-                      width: 32,
-                      height: 32,
+                      width: 44,
+                      height: 44,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -134,6 +135,7 @@ export default function MyCoach() {
                   </button>
                   <button
                     type="button"
+                    className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-accent)]"
                     onClick={async () => {
                       await disconnectCoach(c.id);
                       reload();
@@ -145,6 +147,7 @@ export default function MyCoach() {
                       color: 'var(--fs-muted)',
                       background: 'transparent',
                       padding: '0 8px',
+                      minHeight: 44,
                     }}
                   >
                     נתק

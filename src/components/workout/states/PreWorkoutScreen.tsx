@@ -238,7 +238,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
 
   return (
     <motion.div
-      className="fixed inset-0 z-[9999] flex flex-col overflow-y-auto overscroll-contain ambient-mesh ambient-mesh-soft"
+      className="fixed inset-0 z-overlay flex flex-col overflow-y-auto overscroll-contain ambient-mesh ambient-mesh-soft"
       style={{
         background: oledMode ? '#000000' : 'var(--fs-bg)',
       }}
@@ -267,7 +267,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
         {/* Chapter strip */}
         <div className="chapter-break" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <span className="left" style={{ color: 'var(--fs-accent)' }}>
-            §01 · אימון
+            אימון
           </span>
           <span className="right">
             {day} · {todayFull}
@@ -501,7 +501,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   textTransform: 'uppercase',
                 }}
               >
-                §02 · התבניות שלך
+                התבניות שלך
               </div>
 
               <div

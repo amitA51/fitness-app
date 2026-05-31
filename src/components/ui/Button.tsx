@@ -6,31 +6,32 @@ import type React from 'react';
 // Types
 // ============================================================================
 
-type ButtonVariant =
-  | 'primary'
-  | 'secondary'
-  | 'ghost'
-  | 'glass'
-  | 'danger'
-  | 'pill'
+/** Core variants — use these for new code */
+type CoreVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'glass' | 'pill';
+
+/** @deprecated Legacy aliases — mapped internally to core + shape */
+type LegacyVariant =
   | 'card-action'
   | 'start'
-  // Editorial — Login "Annual" buttons (asymmetric radius, display font)
   | 'editorial'
   | 'editorial-secondary'
   | 'editorial-ghost'
-  // FS — Dashboard quick-start buttons (rounded, sans font)
   | 'fs-primary'
   | 'fs-secondary'
   | 'fs-ghost'
   | 'fs-danger'
   | 'fs-glass';
+
+type ButtonVariant = CoreVariant | LegacyVariant;
 type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
+type ButtonShape = 'sharp' | 'rounded' | 'asymmetric';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children?: React.ReactNode;
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** Shape override: sharp (0 radius), rounded (12px), asymmetric (22/16/22/16) */
+  shape?: ButtonShape;
   icon?: React.ReactNode;
   arrowIcon?: boolean;
   isLoading?: boolean;
@@ -42,9 +43,9 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 // ============================================================================
 
 const variantStyles: Record<ButtonVariant, string> = {
-  // Primary — navy fill, mustard label
+  // Primary — uses dedicated button tokens for dark/light visibility
   primary: `
-    bg-[var(--fs-primary)] text-[var(--fs-accent)]
+    bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)]
     hover:bg-[var(--color-primary-hover)]
     active:bg-[var(--color-primary-hover)]
     disabled:opacity-40 disabled:cursor-not-allowed
@@ -248,6 +249,7 @@ export const Button: React.FC<ButtonProps> = ({
   children,
   variant = 'primary',
   size = 'md',
+  shape,
   icon,
   arrowIcon = false,
   isLoading = false,

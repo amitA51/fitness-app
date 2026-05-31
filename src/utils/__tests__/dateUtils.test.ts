@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   fmtDate,
   formatDateISO,
@@ -9,6 +9,7 @@ import {
   formatVolume,
   getWeekNumber,
   getWeekStart,
+  toLocalDateStr,
   todayStr,
 } from '../dateUtils';
 
@@ -139,5 +140,42 @@ describe('formatDurationCompact', () => {
   it('returns hours and zero-padded minutes', () => {
     expect(formatDurationCompact(5400)).toBe('1h30');
     expect(formatDurationCompact(3900)).toBe('1h05');
+  });
+});
+
+describe('toLocalDateStr', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns YYYY-MM-DD in local timezone', () => {
+    const date = new Date(2026, 4, 31); // May 31, 2026 local
+    expect(toLocalDateStr(date)).toBe('2026-05-31');
+  });
+
+  it('returns correct local date at 01:30 Israel time (UTC+3) — would be previous day in UTC', () => {
+    // Simulate 2026-06-01 01:30 local (Israel UTC+3) = 2026-05-31 22:30 UTC
+    // toLocalDateStr should return 2026-06-01 (local), not 2026-05-31 (UTC)
+    vi.setSystemTime(new Date('2026-05-31T22:30:00Z'));
+    const now = new Date();
+    const result = toLocalDateStr(now);
+    // The local date depends on the test runner's timezone, but the function
+    // must use local components, not UTC. Verify it matches local getDate().
+    const expected = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    expect(result).toBe(expected);
+  });
+
+  it('pads single-digit months and days', () => {
+    const date = new Date(2026, 0, 5); // Jan 5
+    expect(toLocalDateStr(date)).toBe('2026-01-05');
+  });
+
+  it('todayStr matches toLocalDateStr(new Date())', () => {
+    vi.setSystemTime(new Date(2026, 11, 31, 23, 59, 59));
+    expect(todayStr()).toBe(toLocalDateStr(new Date()));
   });
 });

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
-import { memo, useState } from 'react';
+import { memo, useRef, useState } from 'react';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import { TIGHTNESS_AREAS } from '../../../services/bodyStatsService';
 import type { RecoveryLog } from '../../../services/bodyStatsService';
 import { SliderInput } from '../components/SliderInput';
@@ -17,6 +18,9 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
   const [tightAreas, setTightAreas] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(contentRef, { isOpen: true, onClose, closeOnEscape: true, lockScroll: true });
 
   return (
     <motion.div
@@ -27,6 +31,7 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
       onClick={onClose}
     >
       <motion.div
+        ref={contentRef}
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
@@ -186,6 +191,7 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="הערות (אופציונלי)"
+            aria-label="הערות"
             style={{
               width: '100%',
               background: 'var(--fs-surface-2)',

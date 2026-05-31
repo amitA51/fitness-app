@@ -1,6 +1,6 @@
 import { ValidationError } from '../errors';
 import { generateId } from '../utils/id';
-import { STORES, dbDelete, dbGetAll, dbPut, syncWithRetry } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbPut } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import {
   deleteCloudBodyWeight,
@@ -9,6 +9,7 @@ import {
   syncBodyWeight,
   syncRecoveryLog,
 } from './supabaseSync';
+import { syncWithRetry } from './syncEngine';
 
 const BODY_MEASUREMENTS_STORE = 'body_measurements';
 

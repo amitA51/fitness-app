@@ -115,8 +115,9 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-controls={listboxId}
+        aria-activedescendant={isOpen && value ? `${listboxId}-${value}` : undefined}
         aria-labelledby={label ? labelId : undefined}
-        className="w-full flex items-center justify-between px-4 text-left transition-colors duration-150"
+        className="w-full flex items-center justify-between px-4 text-start transition-colors duration-150"
         style={{
           minHeight: 48,
           backgroundColor: 'var(--fs-surface)',
@@ -184,9 +185,11 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                     onChange(option.value);
                     setIsOpen(false);
                   }}
+                  id={`${listboxId}-${option.value}`}
                   role="option"
                   aria-selected={isSelected}
-                  className="relative w-full cursor-pointer select-none py-2.5 pl-4 pr-9 text-left transition-colors duration-150"
+                  tabIndex={-1}
+                  className="relative w-full cursor-pointer select-none py-2.5 ps-4 pe-9 text-start transition-colors duration-150"
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: '13px',
@@ -204,7 +207,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
 
                   {isSelected && (
                     <span
-                      className="absolute inset-y-0 right-0 flex items-center pr-3"
+                      className="absolute inset-y-0 end-0 flex items-center pe-3"
                       style={{ color: 'var(--fs-accent)' }}
                     >
                       <svg

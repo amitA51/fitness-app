@@ -4,20 +4,20 @@
  * CRUD operations for workout sessions, plus cloud merge/replace helpers.
  */
 
-import { LOCAL_STORAGE_KEYS as LS } from '../constants';
 import { ValidationError } from '../errors';
 import type { WorkoutSession } from '../types';
 import { safeTimestamp } from './cloudMerge';
 import { emitWorkoutSaved } from './dataEvents';
-import { STORES, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudWorkoutSession, syncWorkoutSession } from './supabaseSync';
+import { syncWithRetry } from './syncEngine';
 
 /**
  * Save a workout session.
  */
 export const saveWorkoutSession = async (session: WorkoutSession): Promise<void> => {
-  await dbPut(LS.WORKOUT_SESSIONS, session);
+  await dbPut(STORES.WORKOUT_SESSIONS, session);
 
   const user = await getCurrentUser();
   if (user) {
@@ -41,8 +41,8 @@ export const getWorkoutSession = async (id: string): Promise<WorkoutSession | nu
   try {
     const db = await initDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(LS.WORKOUT_SESSIONS, 'readonly');
-      const store = tx.objectStore(LS.WORKOUT_SESSIONS);
+      const tx = db.transaction(STORES.WORKOUT_SESSIONS, 'readonly');
+      const store = tx.objectStore(STORES.WORKOUT_SESSIONS);
       const request = store.get(id);
       request.onsuccess = () => resolve(request.result || null);
       request.onerror = () => reject(request.error);
@@ -64,7 +64,9 @@ export const getWorkoutSession = async (id: string): Promise<WorkoutSession | nu
 export const getWorkoutSessions = async (limit = 20): Promise<WorkoutSession[]> => {
   try {
     const db = await initDB();
-    const store = db.transaction(LS.WORKOUT_SESSIONS, 'readonly').objectStore(LS.WORKOUT_SESSIONS);
+    const store = db
+      .transaction(STORES.WORKOUT_SESSIONS, 'readonly')
+      .objectStore(STORES.WORKOUT_SESSIONS);
 
     if (!store.indexNames.contains('startTime')) {
       throw new Error('startTime index missing — falling back to full scan');
@@ -85,7 +87,7 @@ export const getWorkoutSessions = async (limit = 20): Promise<WorkoutSession[]> 
       };
     });
   } catch {
-    const sessions = await dbGetAll<WorkoutSession>(LS.WORKOUT_SESSIONS);
+    const sessions = await dbGetAll<WorkoutSession>(STORES.WORKOUT_SESSIONS);
     return sessions
       .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
       .slice(0, limit);
@@ -103,7 +105,9 @@ export const getWorkoutSessions = async (limit = 20): Promise<WorkoutSession[]> 
 export const getAllWorkoutSessions = async (): Promise<WorkoutSession[]> => {
   try {
     const db = await initDB();
-    const store = db.transaction(LS.WORKOUT_SESSIONS, 'readonly').objectStore(LS.WORKOUT_SESSIONS);
+    const store = db
+      .transaction(STORES.WORKOUT_SESSIONS, 'readonly')
+      .objectStore(STORES.WORKOUT_SESSIONS);
 
     if (!store.indexNames.contains('startTime')) {
       throw new Error('startTime index missing — falling back to full scan');
@@ -124,7 +128,7 @@ export const getAllWorkoutSessions = async (): Promise<WorkoutSession[]> => {
       };
     });
   } catch {
-    const sessions = await dbGetAll<WorkoutSession>(LS.WORKOUT_SESSIONS);
+    const sessions = await dbGetAll<WorkoutSession>(STORES.WORKOUT_SESSIONS);
     return sessions.sort(
       (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
     );
@@ -135,7 +139,7 @@ export const getAllWorkoutSessions = async (): Promise<WorkoutSession[]> => {
  * Re-add workout session from cloud (no cloud sync trigger).
  */
 export const reAddWorkoutSession = (session: WorkoutSession): Promise<void> =>
-  dbPut(LS.WORKOUT_SESSIONS, session);
+  dbPut(STORES.WORKOUT_SESSIONS, session);
 
 /**
  * Replace all workout sessions with cloud data.
@@ -145,8 +149,8 @@ export const replaceWorkoutSessionsFromCloud = async (
 ): Promise<void> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(LS.WORKOUT_SESSIONS, 'readwrite');
-    const store = tx.objectStore(LS.WORKOUT_SESSIONS);
+    const tx = db.transaction(STORES.WORKOUT_SESSIONS, 'readwrite');
+    const store = tx.objectStore(STORES.WORKOUT_SESSIONS);
     store.clear();
     for (const session of sessions) {
       store.put(session);
@@ -162,7 +166,7 @@ export const replaceWorkoutSessionsFromCloud = async (
  */
 export const deleteWorkoutSession = async (sessionId: string): Promise<void> => {
   if (!sessionId) throw new ValidationError('Session ID is required for deletion.');
-  await dbDelete(LS.WORKOUT_SESSIONS, sessionId);
+  await dbDelete(STORES.WORKOUT_SESSIONS, sessionId);
 
   const user = await getCurrentUser();
   if (user) {

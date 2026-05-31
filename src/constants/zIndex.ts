@@ -1,20 +1,17 @@
 // ============================================================================
-// SPARKOS FITNESS - zIndex Constants
+// Z-Index Constants — single source of truth (mirrors tailwind.config.js)
 // ============================================================================
 
 export const zIndex = {
   base: 0,
-  dropdown: 100,
-  sticky: 200,
-  fixed: 300,
-  modalBackdrop: 400,
+  sticky: 100,
+  nav: 200,
+  dropdown: 300,
+  overlay: 1000,
   modal: 1100,
-  popover: 1200,
-  tooltip: 1300,
-  toast: 1400,
-  overlay: 1500,
-  alert: 10000,
-  splash: 19999,
+  toast: 1500,
+  errorBoundary: 1600,
+  splash: 2000,
 } as const;
 
 // Re-export as Z_INDEX for compatibility

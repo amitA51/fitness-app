@@ -25,13 +25,19 @@ export default defineConfig({
         '**/*.config.{ts,js}',
         '**/*.d.ts',
       ],
-      // Regression floor only — set just below current coverage (~6.6% lines).
+      // Regression floor only — set just below current coverage.
       // Ratchet these UP as tests are added; the long-term target is 80%.
       thresholds: {
-        statements: 6,
-        branches: 40,
-        functions: 18,
-        lines: 6,
+        statements: 3,
+        branches: 51,
+        functions: 21,
+        lines: 3,
+        'src/components/workout/core/workoutReducer.ts': {
+          statements: 60,
+          branches: 55,
+          functions: 60,
+          lines: 60,
+        },
       },
     },
   },

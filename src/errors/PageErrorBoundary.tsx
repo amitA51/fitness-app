@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { logger } from '../utils/logger';
@@ -25,6 +26,19 @@ export class PageErrorBoundary extends Component<PageErrorBoundaryProps, PageErr
       message: error.message,
       stack: info.componentStack,
     });
+
+    try {
+      Sentry.captureException(error, {
+        contexts: {
+          react: {
+            componentStack: info.componentStack,
+          },
+        },
+        tags: { page: this.props.pageLabel },
+      });
+    } catch {
+      // Sentry not initialized
+    }
   }
 
   handleReset = () => {

@@ -151,7 +151,7 @@ export const SummaryExerciseList: React.FC<SummaryExerciseListProps> = memo(
             marginBottom: 4,
           }}
         >
-          §02 · התרגילים
+          התרגילים
         </div>
         {displayExercises.map((ex, i) => (
           <ExerciseSummaryItem

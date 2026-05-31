@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../../types';
 import { completedSetsVolume } from '../../utils/workoutMath';
 import {
@@ -53,6 +53,15 @@ const mkSession = (id: string, date: string, sets: WorkoutSet[]): WorkoutSession
     updatedAt: `${date}T11:00:00.000Z`,
   };
 };
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-05-15T12:00:00Z'));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('calculateStrengthProgression', () => {
   it('estimates 1RM per set, not from a mismatched max-weight / max-reps pair', () => {
@@ -271,7 +280,7 @@ describe('calculateVolumeHistory - week bucketing (timezone fix)', () => {
 
 describe('getMuscleGroupDaysSince - local today (timezone fix)', () => {
   it('returns 0 daysSince for a session dated today', () => {
-    // Use the actual local today string to create a session
+    // Use the faked system time (2026-05-15T12:00:00Z)
     const now = new Date();
     const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const sessions: WorkoutSession[] = [mkSession('s1', todayLocal, [set('a', 80, 5)])];

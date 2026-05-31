@@ -22,7 +22,7 @@ import { getWorkoutSessions } from '../services/dataService';
 import type { WorkoutSession } from '../types';
 import { logger } from '../utils/logger';
 
-const RECENT_SESSIONS_LIMIT = 100;
+const RECENT_SESSIONS_LIMIT = 20;
 
 interface DataContextValue {
   sessions: WorkoutSession[];

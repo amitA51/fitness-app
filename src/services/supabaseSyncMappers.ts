@@ -101,6 +101,7 @@ export interface BodyWeightEntry {
   weight: number;
   date: string;
   createdAt?: string;
+  updatedAt?: string;
   // Canonical field (optional)
   notes?: string;
 }
@@ -119,9 +120,11 @@ export interface BodyMeasurement {
   };
   notes?: string;
   createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface PersonalRecord {
+/** Supabase row shape for personal_records table */
+export interface PersonalRecordRow {
   id: string;
   user_id?: string;
   exerciseId: string;
@@ -131,6 +134,7 @@ export interface PersonalRecord {
   date: string;
   recordType: 'weight' | '1rm' | 'volume' | 'reps';
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface RecoveryLog {
@@ -147,6 +151,7 @@ export interface RecoveryLog {
   sessionId?: string;
   notes?: string;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface NutritionMeal {
@@ -170,6 +175,7 @@ export interface NutritionLog {
   meals: NutritionMeal[];
   notes?: string;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UserSetting {

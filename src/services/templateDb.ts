@@ -4,21 +4,21 @@
  * CRUD operations for workout templates, plus cloud merge/replace helpers.
  */
 
-import { LOCAL_STORAGE_KEYS as LS } from '../constants';
 import { NotFoundError, ValidationError } from '../errors';
 import type { Exercise, PersonalItem, WorkoutTemplate } from '../types';
 import { createWorkoutSet } from '../types';
 import { safeTimestamp } from './cloudMerge';
-import { STORES, dbDelete, dbGet, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
+import { STORES, dbDelete, dbGet, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { addPersonalItem } from './personalItemsDb';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudWorkoutTemplate, syncWorkoutTemplate } from './supabaseSync';
+import { syncWithRetry } from './syncEngine';
 
 /**
  * Gets all workout templates.
  */
 export const getWorkoutTemplates = async (): Promise<WorkoutTemplate[]> => {
-  const templates = await dbGetAll<WorkoutTemplate>(LS.WORKOUT_TEMPLATES);
+  const templates = await dbGetAll<WorkoutTemplate>(STORES.WORKOUT_TEMPLATES);
   return templates || [];
 };
 
@@ -27,7 +27,7 @@ export const getWorkoutTemplates = async (): Promise<WorkoutTemplate[]> => {
  */
 export const getWorkoutTemplate = (id: string): Promise<WorkoutTemplate | null> => {
   if (!id) throw new ValidationError('Template ID is required.');
-  return dbGet<WorkoutTemplate>(LS.WORKOUT_TEMPLATES, id).then((res) => res || null);
+  return dbGet<WorkoutTemplate>(STORES.WORKOUT_TEMPLATES, id).then((res) => res || null);
 };
 
 /**
@@ -47,7 +47,7 @@ export const createWorkoutTemplate = async (
     updatedAt: new Date().toISOString(),
   };
 
-  await dbPut(LS.WORKOUT_TEMPLATES, newTemplate);
+  await dbPut(STORES.WORKOUT_TEMPLATES, newTemplate);
 
   const user = await getCurrentUser();
   if (user) {
@@ -70,7 +70,7 @@ export const updateWorkoutTemplate = async (
   id: string,
   updates: Partial<WorkoutTemplate>
 ): Promise<WorkoutTemplate> => {
-  const template = await dbGet<WorkoutTemplate>(LS.WORKOUT_TEMPLATES, id);
+  const template = await dbGet<WorkoutTemplate>(STORES.WORKOUT_TEMPLATES, id);
   if (!template) throw new NotFoundError('WorkoutTemplate', id);
 
   const updatedTemplate = {
@@ -79,7 +79,7 @@ export const updateWorkoutTemplate = async (
     id: template.id,
     updatedAt: new Date().toISOString(),
   };
-  await dbPut(LS.WORKOUT_TEMPLATES, updatedTemplate);
+  await dbPut(STORES.WORKOUT_TEMPLATES, updatedTemplate);
 
   const user = await getCurrentUser();
   if (user) {
@@ -99,7 +99,7 @@ export const updateWorkoutTemplate = async (
  */
 export const deleteWorkoutTemplate = async (id: string): Promise<void> => {
   if (!id) throw new ValidationError('Template ID is required for deletion.');
-  await dbDelete(LS.WORKOUT_TEMPLATES, id);
+  await dbDelete(STORES.WORKOUT_TEMPLATES, id);
 
   const user = await getCurrentUser();
   if (user) {
@@ -145,7 +145,7 @@ export const loadWorkoutFromTemplate = async (templateId: string): Promise<Perso
  * Re-add workout template from cloud (no cloud sync trigger).
  */
 export const reAddWorkoutTemplate = (template: WorkoutTemplate): Promise<void> =>
-  dbPut(LS.WORKOUT_TEMPLATES, template);
+  dbPut(STORES.WORKOUT_TEMPLATES, template);
 
 /**
  * Replace all workout templates with cloud data.
@@ -155,8 +155,8 @@ export const replaceWorkoutTemplatesFromCloud = async (
 ): Promise<void> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(LS.WORKOUT_TEMPLATES, 'readwrite');
-    const store = tx.objectStore(LS.WORKOUT_TEMPLATES);
+    const tx = db.transaction(STORES.WORKOUT_TEMPLATES, 'readwrite');
+    const store = tx.objectStore(STORES.WORKOUT_TEMPLATES);
     store.clear();
     for (const template of templates) {
       store.put(template);

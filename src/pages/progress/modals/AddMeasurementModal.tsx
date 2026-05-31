@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
-import { memo, useId, useMemo, useState } from 'react';
+import { memo, useId, useMemo, useRef, useState } from 'react';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import type { BodyMeasurement } from '../../../services/bodyStatsService';
 
 export const AddMeasurementModal = memo(function AddMeasurementModal({
@@ -20,6 +21,9 @@ export const AddMeasurementModal = memo(function AddMeasurementModal({
   const [neck, setNeck] = useState(latest?.neck?.toString() || '');
   const [saving, setSaving] = useState(false);
   const baseId = useId();
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(contentRef, { isOpen: true, onClose, closeOnEscape: true, lockScroll: true });
 
   const fields = useMemo(
     () => [
@@ -42,6 +46,7 @@ export const AddMeasurementModal = memo(function AddMeasurementModal({
       onClick={onClose}
     >
       <motion.div
+        ref={contentRef}
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}

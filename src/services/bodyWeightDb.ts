@@ -1,53 +1,56 @@
 /**
  * Body Weight Database Service
  *
- * CRUD operations for body-weight entries, plus cloud merge/replace helpers.
+ * Thin compatibility layer — delegates CRUD to bodyStatsService (canonical),
+ * retains cloud merge/replace helpers used by supabaseSync.
  */
 
-import { LOCAL_STORAGE_KEYS as LS } from '../constants';
-import { ValidationError } from '../errors';
 import type { BodyWeightEntry } from '../types';
+import {
+  addBodyWeight,
+  deleteBodyWeight as deleteBodyWeightCanonical,
+  getBodyWeightsByDateRange,
+  getLatestWeight,
+} from './bodyStatsService';
 import { mergeGenericRecords } from './cloudMerge';
-import { STORES, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
-import { getCurrentUser } from './supabaseAuth';
-import { deleteCloudBodyWeight, syncBodyWeight } from './supabaseSync';
+import { STORES, dbPut, initDB } from './indexedDBCore';
 
 /**
- * Save a body weight entry.
+ * Save a body weight entry (delegates to bodyStatsService.addBodyWeight).
  */
 export const saveBodyWeight = async (entry: BodyWeightEntry): Promise<void> => {
-  await dbPut(LS.BODY_WEIGHT, entry);
-
-  const user = await getCurrentUser();
-  if (user) {
-    syncWithRetry(() => syncBodyWeight(user.id, entry), `saveBodyWeight:${entry.id}`, 3, {
-      type: 'bodyweight:create',
-      payload: entry,
-    });
-  }
+  await addBodyWeight({ date: entry.date, weight: entry.weight, notes: entry.notes });
 };
 
 /**
  * Get body weight history, sorted by date (newest first).
  */
 export const getBodyWeightHistory = async (): Promise<BodyWeightEntry[]> => {
-  const entries = await dbGetAll<BodyWeightEntry>(LS.BODY_WEIGHT);
-  return entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const entries = await getBodyWeightsByDateRange('0000-01-01', '9999-12-31');
+  return entries
+    .map((e) => ({
+      id: e.id,
+      date: e.date,
+      weight: e.weight,
+      notes: e.notes,
+      createdAt: e.createdAt,
+    }))
+    .sort((a, b) => b.date.localeCompare(a.date));
 };
 
 /**
  * Get the latest body weight.
  */
 export const getLatestBodyWeight = async (): Promise<number | null> => {
-  const history = await getBodyWeightHistory();
-  return history.length > 0 && history[0] ? history[0].weight : null;
+  const entry = await getLatestWeight();
+  return entry?.weight ?? null;
 };
 
 /**
  * Re-add body weight entry from cloud (no cloud sync trigger).
  */
 export const reAddBodyWeight = (entry: BodyWeightEntry): Promise<void> =>
-  dbPut(LS.BODY_WEIGHT, entry);
+  dbPut(STORES.BODY_WEIGHT, entry);
 
 /**
  * Replace all body weight entries with cloud data.
@@ -55,8 +58,8 @@ export const reAddBodyWeight = (entry: BodyWeightEntry): Promise<void> =>
 export const replaceBodyWeightFromCloud = async (entries: BodyWeightEntry[]): Promise<void> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(LS.BODY_WEIGHT, 'readwrite');
-    const store = tx.objectStore(LS.BODY_WEIGHT);
+    const tx = db.transaction(STORES.BODY_WEIGHT, 'readwrite');
+    const store = tx.objectStore(STORES.BODY_WEIGHT);
     store.clear();
     for (const entry of entries) {
       store.put(entry);
@@ -71,16 +74,7 @@ export const replaceBodyWeightFromCloud = async (entries: BodyWeightEntry[]): Pr
  * Delete a body weight entry by ID.
  */
 export const deleteBodyWeight = async (id: string): Promise<void> => {
-  if (!id) throw new ValidationError('Body weight ID is required for deletion.');
-  await dbDelete(LS.BODY_WEIGHT, id);
-
-  const user = await getCurrentUser();
-  if (user) {
-    syncWithRetry(() => deleteCloudBodyWeight(user.id, id), `deleteBodyWeight:${id}`, 3, {
-      type: 'bodyweight:delete',
-      payload: id,
-    });
-  }
+  await deleteBodyWeightCanonical(id);
 };
 
 export const mergeBodyWeightFromCloud = (

@@ -329,7 +329,7 @@ export default function Dashboard() {
 
       <DashboardHeader hasSessionToday={hasSessionToday} />
 
-      <main style={{ padding: '20px 20px 28px' }}>
+      <main style={{ padding: '20px 20px 32px' }}>
         {/* 1. Primary CTA — "התחל אימון חדש" */}
         <button
           type="button"
@@ -459,8 +459,8 @@ export default function Dashboard() {
             aria-label="סיכום שבועי"
             style={{
               marginTop: 20,
-              padding: '20px 18px 22px',
-              borderRadius: '24px 18px 24px 18px',
+              padding: '20px 20px 24px',
+              borderRadius: '24px 16px 24px 16px',
               display: 'grid',
               gridTemplateColumns: 'auto minmax(0, 1fr)',
               gap: 18,
@@ -471,15 +471,13 @@ export default function Dashboard() {
             <div style={{ minWidth: 0, display: 'grid', gap: 10 }}>
               <span
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  fontWeight: 800,
-                  color: 'var(--fs-muted)',
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: 'var(--fs-ink)',
                 }}
               >
-                § WEEKLY · SUMMARY
+                סיכום שבועי
               </span>
               <div style={{ display: 'grid', gap: 6 }}>
                 <BentoRow dot="accent" label="אימונים" value={`${weekData.workoutsThisWeek} / 4`} />
@@ -502,14 +500,17 @@ export default function Dashboard() {
           <TemplateStrip templates={sortedTemplates} onNavigate={handleNavigate} />
         </section>
 
-        {/* 3. Metrics row — 3 cards */}
+        {/* 3. Metrics row — single surface, 3 columns */}
         <section
           className="fade-rise-in"
           style={{
             marginTop: 24,
             display: 'grid',
             gridTemplateColumns: '1fr 1fr 1fr',
-            gap: 10,
+            background: 'var(--fs-surface)',
+            borderRadius: 16,
+            border: '1px solid var(--fs-surface-2)',
+            boxShadow: 'var(--elevation-1)',
           }}
         >
           {metricCards.map((m) => (
@@ -563,15 +564,13 @@ export default function Dashboard() {
               >
                 <span
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    fontWeight: 800,
-                    color: 'var(--fs-muted)',
-                    letterSpacing: '0.18em',
-                    textTransform: 'uppercase',
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: 'var(--fs-ink)',
                   }}
                 >
-                  § 4-WEEK · CONSISTENCY
+                  עקביות 4 שבועות
                 </span>
                 <span
                   className="kinetic-number"
@@ -771,14 +770,12 @@ const SectionTitle = memo(function SectionTitle({ text }: { text: string }) {
   return (
     <h2
       style={{
-        fontFamily: 'var(--font-mono)',
-        fontWeight: 800,
-        fontSize: 13,
-        lineHeight: 1,
-        color: 'var(--fs-muted)',
+        fontFamily: 'var(--font-display)',
+        fontWeight: 700,
+        fontSize: 16,
+        lineHeight: 1.2,
+        color: 'var(--fs-ink)',
         marginBottom: 12,
-        letterSpacing: '0.12em',
-        textTransform: 'uppercase',
       }}
     >
       {text}
@@ -850,7 +847,7 @@ const BentoRow = memo(function BentoRow({
   );
 });
 
-// ── MetricCard — FS panel style ──────────────────────────────────────────────
+// ── MetricCard — flush stat, no card wrapper (breaks card soup) ───────────────
 const MetricCard = memo(function MetricCard({
   value,
   label,
@@ -862,24 +859,20 @@ const MetricCard = memo(function MetricCard({
 }) {
   return (
     <div
-      className="magnetic-card fs-accent-rail"
       style={{
-        background: 'var(--fs-surface)',
-        borderRadius: '22px 16px 22px 16px',
-        border: '1px solid var(--fs-surface-2)',
-        padding: '14px 12px',
-        boxShadow: 'var(--shadow-card)',
+        padding: '14px 8px',
         textAlign: 'center',
+        borderInlineEnd: '1px solid var(--fs-surface-2)',
       }}
     >
       <div
         style={{
-          fontFamily: 'var(--font-mono)',
-          fontWeight: 600,
-          fontSize: 22,
+          fontFamily: 'var(--font-display)',
+          fontWeight: 700,
+          fontSize: 24,
           lineHeight: 1,
           color: 'var(--fs-ink)',
-          letterSpacing: '-0.01em',
+          letterSpacing: '-0.02em',
           fontVariantNumeric: 'tabular-nums',
         }}
       >
@@ -889,10 +882,9 @@ const MetricCard = memo(function MetricCard({
         <div
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: 9,
+            fontSize: 10,
             color: 'var(--fs-accent)',
             marginTop: 2,
-            letterSpacing: '0.04em',
           }}
         >
           {sub}
@@ -900,12 +892,10 @@ const MetricCard = memo(function MetricCard({
       )}
       <div
         style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 9,
+          fontFamily: 'var(--font-body)',
+          fontSize: 11,
           color: 'var(--fs-muted)',
           marginTop: sub ? 0 : 4,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
         }}
       >
         {label}

@@ -95,7 +95,7 @@ const SummaryOverlayComponent: React.FC<{
   return (
     <Suspense
       fallback={
-        <div className="fixed inset-0 z-[9999] bg-[var(--fs-bg)] flex items-center justify-center">
+        <div className="fixed inset-0 z-overlay bg-[var(--fs-bg)] flex items-center justify-center">
           <div className="text-white">תוצאות האימון...</div>
         </div>
       }

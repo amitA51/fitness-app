@@ -34,6 +34,8 @@ if (sentryDsn) {
     },
   });
   logger.app.info('Sentry initialized');
+} else if (import.meta.env.PROD) {
+  logger.app.warn('Sentry NOT initialized — error reporting disabled in production');
 }
 
 // Initialize accessibility checker in development

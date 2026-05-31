@@ -7,7 +7,7 @@
  * renders the step components from ./login/steps.
  */
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -131,13 +131,7 @@ export default function LoginPage() {
       </main>
 
       {/* Footer */}
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="px-5 py-6 text-center"
-        style={{ background: 'var(--fs-primary)' }}
-      >
+      <footer className="px-5 py-6 text-center" style={{ background: 'var(--fs-primary)' }}>
         <p
           style={{
             fontFamily: 'var(--font-mono)',
@@ -149,7 +143,7 @@ export default function LoginPage() {
         >
           SPARKOS · Training Log · 2026
         </p>
-      </motion.footer>
+      </footer>
     </div>
   );
 }

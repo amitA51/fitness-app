@@ -33,7 +33,7 @@ import type {
 import { getWorkoutSessions } from '../services/dataService';
 import { getAllPRs } from '../services/prService';
 import type { WorkoutSession } from '../types';
-import { formatVolume } from '../utils/dateUtils';
+import { formatVolume, toLocalDateStr, todayStr } from '../utils/dateUtils';
 import { safeJsonParse } from '../utils/safeJson';
 import { setVolume } from '../utils/workoutMath';
 import { ProgressInsightCard } from './progress/components/ProgressInsightCard';
@@ -89,8 +89,8 @@ export default function ProgressPage() {
   });
 
   const loadData = useCallback(async () => {
-    const today = new Date().toISOString().slice(0, 10);
-    const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+    const today = todayStr();
+    const monthAgo = toLocalDateStr(new Date(Date.now() - 30 * 86400000));
 
     // Parallel data loading for better performance
     const [weights, latest, meas, latestMeas, rec, weekly, loadedSessions] = await Promise.all([
@@ -223,7 +223,7 @@ export default function ProgressPage() {
 
   const handleSaveWeight = useCallback(
     async (weight: number, notes: string) => {
-      await addBodyWeight({ date: new Date().toISOString().slice(0, 10), weight, notes });
+      await addBodyWeight({ date: todayStr(), weight, notes });
       setShowAddWeight(false);
       loadData();
     },
@@ -246,7 +246,7 @@ export default function ProgressPage() {
     [loadData]
   );
 
-  const todayISO = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const todayISO = useMemo(() => todayStr(), []);
   const todayLabel = useMemo(
     () =>
       new Date().toLocaleDateString('he-IL', {
@@ -274,13 +274,12 @@ export default function ProgressPage() {
         <div
           className="kicker"
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 9,
-            letterSpacing: '0.22em',
+            fontFamily: 'var(--font-body)',
+            fontSize: 12,
             color: 'var(--fs-muted)',
           }}
         >
-          §05 · PROGRESS · {todayISO}
+          {todayISO}
         </div>
         <h1
           style={{
@@ -332,15 +331,13 @@ export default function ProgressPage() {
             <div style={{ minWidth: 0, display: 'grid', gap: 8 }}>
               <span
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  fontWeight: 800,
-                  color: 'var(--fs-muted)',
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: 'var(--fs-ink)',
                 }}
               >
-                § 7-DAY · CYCLE
+                מחזור 7 ימים
               </span>
               {heroRings.map((r) => {
                 const pct = r.max > 0 ? Math.min(100, Math.round((r.value / r.max) * 100)) : 0;
@@ -415,16 +412,14 @@ export default function ProgressPage() {
           >
             <div
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                fontWeight: 800,
-                color: 'var(--fs-muted)',
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                fontFamily: 'var(--font-display)',
+                fontSize: 14,
+                fontWeight: 700,
+                color: 'var(--fs-ink)',
                 marginBottom: 10,
               }}
             >
-              § VOLUME · TRAJECTORY
+              מגמת נפח
             </div>
             <GlowAreaChart data={volumeData} height={160} xAxis />
           </div>
@@ -436,16 +431,14 @@ export default function ProgressPage() {
         <div className="px-5 pt-4">
           <div
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              fontWeight: 800,
-              color: 'var(--fs-muted)',
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
+              fontFamily: 'var(--font-display)',
+              fontSize: 14,
+              fontWeight: 700,
+              color: 'var(--fs-ink)',
               marginBottom: 10,
             }}
           >
-            § TOP · LIFTS
+            הרמות מובילות
           </div>
           <div style={{ display: 'grid', gap: 8 }}>
             {prSparklines.map((row) => (

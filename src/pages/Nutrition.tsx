@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   Beef,
   BookOpen,
@@ -37,6 +37,7 @@ import {
 } from '../services/nutritionService';
 import type { MealPreset } from '../services/nutritionService';
 import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../types';
+import { toLocalDateStr, todayStr } from '../utils/dateUtils';
 import { safeJsonParse } from '../utils/safeJson';
 
 const MACRO_COLORS = {
@@ -49,6 +50,7 @@ const MACRO_COLORS = {
 type MealTab = 'log' | 'library' | 'presets';
 
 export default function NutritionPage() {
+  const shouldReduceMotion = useReducedMotion();
   const [todayEntries, setTodayEntries] = useState<MealEntry[]>([]);
   const [todayMacros, setTodayMacros] = useState<MacroNutrients>({
     calories: 0,
@@ -66,14 +68,12 @@ export default function NutritionPage() {
   const [selectedMealType, setSelectedMealType] = useState<MealType>('lunch');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFoods, setSelectedFoods] = useState<(FoodItem & { servings: number })[]>([]);
-  const [selectedDate, setSelectedDate] = useState(
-    () => new Date().toISOString().split('T')[0] ?? ''
-  );
+  const [selectedDate, setSelectedDate] = useState(() => todayStr());
   const [isToday, setIsToday] = useState(true);
   const [waterHistory, setWaterHistory] = useState<{ date: string; total: number }[]>([]);
 
   const loadData = useCallback(async () => {
-    const dateToUse = isToday ? (new Date().toISOString().split('T')[0] ?? '') : selectedDate;
+    const dateToUse = isToday ? todayStr() : selectedDate;
     const entries = await getMealEntriesByDate(dateToUse);
     setTodayEntries(entries);
     const macros = await getDailyMacros(dateToUse);
@@ -87,7 +87,7 @@ export default function NutritionPage() {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      dates.push(d.toISOString().split('T')[0] ?? '');
+      dates.push(toLocalDateStr(d));
     }
     const startDate = dates[0] ?? '';
     const endDate = dates[dates.length - 1] ?? '';
@@ -151,15 +151,15 @@ export default function NutritionPage() {
   const goBack = useCallback(() => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() - 1);
-    setSelectedDate(d.toISOString().split('T')[0] ?? '');
+    setSelectedDate(toLocalDateStr(d));
     setIsToday(false);
   }, [selectedDate]);
 
   const goForward = useCallback(() => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + 1);
-    const today = new Date().toISOString().split('T')[0] ?? '';
-    const newDate = d.toISOString().split('T')[0] ?? '';
+    const today = todayStr();
+    const newDate = toLocalDateStr(d);
     if (newDate >= today) {
       setSelectedDate(today);
       setIsToday(true);
@@ -329,8 +329,8 @@ export default function NutritionPage() {
       <header
         style={{
           paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
-          paddingLeft: 'max(20px, env(safe-area-inset-left, 20px))',
-          paddingRight: 'max(20px, env(safe-area-inset-right, 20px))',
+          paddingInlineStart: 'max(20px, env(safe-area-inset-left, 20px))',
+          paddingInlineEnd: 'max(20px, env(safe-area-inset-right, 20px))',
           paddingBottom: 16,
           position: 'sticky',
           top: 0,
@@ -370,7 +370,9 @@ export default function NutritionPage() {
       <div className="block-hero section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in">
         <span className="ribbon">{calPct}% מהיעד</span>
         <div className="label">נצרך היום</div>
-        <div className="number kinetic-number large">{todayMacros.calories || 0}</div>
+        <div className="number kinetic-number large" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {todayMacros.calories || 0}
+        </div>
         <div className="sub">/ {macroGoals.calories} KCAL</div>
         {coachTarget && (
           <span className="chip mt-2" style={{ fontSize: '11px', color: 'var(--fs-accent)' }}>
@@ -381,10 +383,10 @@ export default function NutritionPage() {
         <div className="mt-4 fs-progress-track" style={{ height: '6px' }}>
           <motion.div
             className="fs-progress-fill"
-            style={{ height: '100%' }}
-            initial={{ width: 0 }}
-            animate={{ width: `${calPct}%` }}
-            transition={{ duration: 0.9, ease: 'easeOut' }}
+            style={{ height: '100%', transformOrigin: 'left center' }}
+            initial={shouldReduceMotion ? false : { scaleX: 0 }}
+            animate={{ scaleX: calPct / 100 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.9, ease: 'easeOut' }}
           />
         </div>
       </div>
@@ -430,6 +432,7 @@ export default function NutritionPage() {
                 lineHeight: 0.9,
                 color: 'var(--fs-ink)',
                 letterSpacing: '-0.02em',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               {m.cur}
@@ -447,10 +450,10 @@ export default function NutritionPage() {
             <div className="mt-2 fs-progress-track" style={{ height: '4px' }}>
               <motion.div
                 className="fs-progress-fill"
-                style={{ height: '100%' }}
-                initial={{ width: 0 }}
-                animate={{ width: `${m.pct}%` }}
-                transition={{ duration: 0.7, ease: 'easeOut' }}
+                style={{ height: '100%', transformOrigin: 'left center' }}
+                initial={shouldReduceMotion ? false : { scaleX: 0 }}
+                animate={{ scaleX: m.pct / 100 }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.7, ease: 'easeOut' }}
               />
             </div>
             <div
@@ -469,11 +472,18 @@ export default function NutritionPage() {
 
       <WaterTracker />
 
-      {/* Chapter break + tabs */}
-      <div className="chapter-break mt-5">
-        <span className="left">§01 · MEALS</span>
-        <span className="right">ארוחות</span>
-      </div>
+      {/* Section heading */}
+      <h2
+        className="mt-5 px-5"
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontWeight: 700,
+          fontSize: 18,
+          color: 'var(--fs-ink)',
+        }}
+      >
+        ארוחות
+      </h2>
 
       {/* Date Navigator */}
       <div className="px-5 pt-4">
@@ -671,9 +681,11 @@ export default function NutritionPage() {
                         backgroundColor: isLast ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
                         border: isLast ? '2px solid var(--fs-primary)' : 'none',
                         minHeight: 4,
+                        height: `${heightPct}%`,
+                        transformOrigin: 'bottom center',
                       }}
-                      initial={{ height: 0 }}
-                      animate={{ height: `${heightPct}%` }}
+                      initial={{ scaleY: 0 }}
+                      animate={{ scaleY: 1 }}
                       transition={{ delay: i * 0.06, duration: 0.5, ease: 'easeOut' }}
                     />
                     <span
@@ -708,11 +720,10 @@ export default function NutritionPage() {
           background: 'var(--fs-accent)',
           color: 'var(--fs-heading)',
           border: '2px solid var(--fs-primary)',
-          left: '20px',
-          right: 'auto',
+          insetInlineEnd: '20px',
         }}
-        whileTap={{ scale: 0.92 }}
-        whileHover={{ scale: 1.06 }}
+        whileTap={shouldReduceMotion ? undefined : { scale: 0.92 }}
+        whileHover={shouldReduceMotion ? undefined : { scale: 1.06 }}
         aria-label="הוסף ארוחה"
       >
         <Plus size={24} strokeWidth={2.5} />
@@ -843,6 +854,7 @@ const MealEntryCard = memo(function MealEntryCard({
             lineHeight: 0.9,
             color: 'var(--fs-ink)',
             letterSpacing: '-0.02em',
+            fontVariantNumeric: 'tabular-nums',
           }}
         >
           {entry.totalMacros.calories}
@@ -875,6 +887,7 @@ const MealEntryCard = memo(function MealEntryCard({
           letterSpacing: '0.12em',
           color: 'var(--fs-heading)',
           textTransform: 'uppercase',
+          fontVariantNumeric: 'tabular-nums',
         }}
       >
         <span className="flex items-center gap-1">
@@ -916,7 +929,7 @@ const FoodLibrary = memo(function FoodLibrary({
       <div className="relative mb-4">
         <Search
           size={16}
-          className="absolute top-1/2 -translate-y-1/2 right-4"
+          className="absolute top-1/2 -translate-y-1/2 end-4"
           style={{ color: 'var(--fs-muted)' }}
         />
         <input
@@ -924,7 +937,7 @@ const FoodLibrary = memo(function FoodLibrary({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="חפש מזון..."
-          className="w-full py-3 pr-11 pl-5 text-sm outline-none"
+          className="w-full py-3 pe-11 ps-5 text-sm"
           style={{
             backgroundColor: 'var(--fs-surface)',
             border: '1px solid var(--fs-surface-2)',
@@ -932,14 +945,6 @@ const FoodLibrary = memo(function FoodLibrary({
             color: 'var(--fs-ink)',
             fontFamily: 'var(--font-body)',
             minHeight: '48px',
-          }}
-          onFocus={(e) => {
-            e.target.style.borderColor = 'var(--fs-accent)';
-            e.target.style.boxShadow = '0 0 0 2px rgba(77,220,187,0.2)';
-          }}
-          onBlur={(e) => {
-            e.target.style.borderColor = 'var(--fs-surface-2)';
-            e.target.style.boxShadow = 'none';
           }}
         />
       </div>
@@ -1431,6 +1436,7 @@ const AddMealModal = memo(function AddMealModal({
                           width: '32px',
                           textAlign: 'center',
                           fontWeight: 500,
+                          fontVariantNumeric: 'tabular-nums',
                         }}
                       >
                         {food.servings}
@@ -1556,16 +1562,7 @@ const AddMealModal = memo(function AddMealModal({
                 color: 'var(--fs-ink)',
                 fontFamily: 'var(--font-hebrew)',
                 fontSize: '14px',
-                outline: 'none',
                 minHeight: '48px',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = 'var(--fs-accent)';
-                e.target.style.boxShadow = '0 0 0 2px rgba(77,220,187,0.2)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = 'var(--fs-surface-2)';
-                e.target.style.boxShadow = 'none';
               }}
             />
           </div>

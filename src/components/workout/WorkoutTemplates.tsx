@@ -1,12 +1,13 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Star } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import * as dataService from '../../services/dataService';
 import type { WorkoutTemplate } from '../../types';
 import { logger } from '../../utils/logger';
 import { CustomDumbbellIcon } from '../icons/CustomDumbbellIcon';
+import { showToast } from '../ui/GlobalToast';
 import PlanEditorModal from './PlanEditorModal';
-import { showToast } from './components/ui/Toast';
 
 interface WorkoutTemplatesProps {
   onStartWorkout: (template: WorkoutTemplate) => void;
@@ -29,6 +30,14 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
   const [templateToDelete, setTemplateToDelete] = useState<WorkoutTemplate | null>(null);
   const [isCleaning, setIsCleaning] = useState(false);
+  const deleteDialogRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(deleteDialogRef, {
+    isOpen: !!templateToDelete,
+    onClose: () => setTemplateToDelete(null),
+    closeOnEscape: true,
+    lockScroll: true,
+  });
 
   useEffect(() => {
     loadTemplates();
@@ -147,7 +156,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 textTransform: 'uppercase',
               }}
             >
-              §01 · תבניות
+              תבניות
             </span>
             <h2
               style={{
@@ -169,8 +178,10 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
           <motion.button
             onClick={handleCleanup}
             disabled={isCleaning}
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
             style={{
               padding: '10px 16px',
+              minHeight: 44,
               background: 'transparent',
               border: '2px solid var(--fs-primary)',
               fontFamily: 'var(--font-mono)',
@@ -329,6 +340,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 aria-label={`תבנית: ${template.name}`}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
                 style={{
                   background: 'var(--fs-surface)',
                   border: '2px solid var(--fs-primary)',
@@ -446,6 +458,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontSize: 24,
                           color: 'var(--fs-heading)',
                           letterSpacing: '-0.01em',
+                          fontVariantNumeric: 'tabular-nums',
                         }}
                       >
                         {template.exercises.length}
@@ -477,6 +490,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontSize: 24,
                           color: 'var(--fs-accent)',
                           letterSpacing: '-0.01em',
+                          fontVariantNumeric: 'tabular-nums',
                         }}
                       >
                         {estimateDuration(template)}
@@ -624,6 +638,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                 aria-label={`תבנית: ${template.name}`}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
                 style={{
                   background: 'var(--fs-accent)',
                   border: '2px solid var(--fs-primary)',
@@ -694,6 +709,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontSize: 24,
                           color: 'var(--fs-heading)',
                           letterSpacing: '-0.01em',
+                          fontVariantNumeric: 'tabular-nums',
                         }}
                       >
                         {template.exercises.length}
@@ -727,6 +743,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
                           fontSize: 24,
                           color: 'var(--fs-heading)',
                           letterSpacing: '-0.01em',
+                          fontVariantNumeric: 'tabular-nums',
                         }}
                       >
                         {estimateDuration(template)}
@@ -821,7 +838,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
               color: 'var(--fs-accent)',
             }}
           >
-            §
+            ·
           </div>
           <div
             style={{
@@ -872,6 +889,7 @@ const WorkoutTemplates: React.FC<WorkoutTemplatesProps> = ({
             }}
           >
             <motion.div
+              ref={deleteDialogRef}
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}

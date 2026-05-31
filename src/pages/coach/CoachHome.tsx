@@ -6,6 +6,7 @@ import { MessageSquare, UserPlus, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { useCoach } from '../../contexts/CoachContext';
 import {
   clientStatusMeta,
@@ -24,7 +25,7 @@ export default function CoachHome() {
   if (coachLoading) {
     return (
       <CoachPage title="מאמן" subtitle="Coaching">
-        {null}
+        <LoadingSpinner />
       </CoachPage>
     );
   }
@@ -118,10 +119,10 @@ function Roster() {
           type="button"
           aria-label="הזמן מתאמן"
           onClick={() => navigate('/coach/invites')}
-          className="shrink-0 flex items-center justify-center"
+          className="shrink-0 flex items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-accent)]"
           style={{
-            width: 36,
-            height: 36,
+            width: 44,
+            height: 44,
             background: 'var(--fs-primary)',
             color: 'var(--fs-accent)',
           }}
@@ -236,7 +237,7 @@ function Roster() {
 
         {/* Client list */}
         {loading ? (
-          <EmptyHint>טוען…</EmptyHint>
+          <LoadingSpinner />
         ) : clients.length === 0 ? (
           <EmptyHint>עדיין אין מתאמנים מחוברים. הזמן מתאמן דרך כפתור ההזמנה למעלה.</EmptyHint>
         ) : filtered.length === 0 ? (

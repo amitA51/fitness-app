@@ -1,4 +1,4 @@
-import { motion, useSpring, useTransform } from 'framer-motion';
+import { motion, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 // IntensityMeter - Real-time workout intensity visualization
 // Apple Fitness+ inspired intensity zones with animated gauge
 import { memo, useEffect, useId, useState } from 'react';
@@ -235,17 +235,18 @@ const ZoneBar = memo<{ intensity: number }>(({ intensity }) => {
           >
             <motion.div
               className="h-full rounded-full"
-              initial={{ width: 0 }}
+              initial={{ scaleX: 0 }}
               animate={{
-                width: isPassed
-                  ? '100%'
+                scaleX: isPassed
+                  ? 1
                   : isActive
-                    ? `${getZoneProgress(intensity, key as IntensityZone) * 100}%`
-                    : '0%',
+                    ? getZoneProgress(intensity, key as IntensityZone)
+                    : 0,
               }}
               style={{
                 background: data.gradient,
                 boxShadow: isActive ? `0 0 12px ${data.color}` : 'none',
+                transformOrigin: 'left center',
               }}
               transition={{ type: 'spring', stiffness: 200, damping: 25 }}
             />
@@ -274,13 +275,14 @@ const VolumeBar = memo<{ current: number; target: number }>(({ current, target }
       <div className="h-2 bg-white/10 rounded-full overflow-hidden">
         <motion.div
           className="h-full rounded-full"
-          initial={{ width: 0 }}
-          animate={{ width: `${percentage}%` }}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: percentage / 100 }}
           style={{
             background: isComplete
               ? 'linear-gradient(90deg, #30D158, #34C759)'
               : 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
             boxShadow: isComplete ? '0 0 12px #30D158' : undefined,
+            transformOrigin: 'left center',
           }}
           transition={{ type: 'spring', stiffness: 100, damping: 20 }}
         />
@@ -292,23 +294,30 @@ const VolumeBar = memo<{ current: number; target: number }>(({ current, target }
 VolumeBar.displayName = 'VolumeBar';
 
 /** Pulsing indicator dot */
-const PulsingDot = memo<{ color: string; isActive: boolean }>(({ color, isActive }) => (
-  <motion.div
-    className="relative w-3 h-3"
-    animate={isActive ? { scale: [1, 1.2, 1] } : { scale: 1 }}
-    transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }}
-  >
-    <div className="absolute inset-0 rounded-full" style={{ backgroundColor: color }} />
-    {isActive && (
-      <motion.div
-        className="absolute inset-0 rounded-full"
-        style={{ backgroundColor: color }}
-        animate={{ scale: [1, 2], opacity: [0.5, 0] }}
-        transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, ease: 'easeOut' }}
-      />
-    )}
-  </motion.div>
-));
+const PulsingDot = memo<{ color: string; isActive: boolean }>(({ color, isActive }) => {
+  const shouldReduce = useReducedMotion();
+  return (
+    <motion.div
+      className="relative w-3 h-3"
+      animate={isActive && !shouldReduce ? { scale: [1, 1.2, 1] } : { scale: 1 }}
+      transition={
+        shouldReduce
+          ? { duration: 0 }
+          : { duration: 1, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }
+      }
+    >
+      <div className="absolute inset-0 rounded-full" style={{ backgroundColor: color }} />
+      {isActive && !shouldReduce && (
+        <motion.div
+          className="absolute inset-0 rounded-full"
+          style={{ backgroundColor: color }}
+          animate={{ scale: [1, 2], opacity: [0.5, 0] }}
+          transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, ease: 'easeOut' }}
+        />
+      )}
+    </motion.div>
+  );
+});
 
 PulsingDot.displayName = 'PulsingDot';
 

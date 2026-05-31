@@ -18,6 +18,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const reactId = useId();
     const inputId = id || props.name || reactId;
+    const errorId = `${inputId}-error`;
+    const helperId = `${inputId}-helper`;
 
     // Determine border color by state
     const stateBorder = error
@@ -25,6 +27,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       : success
         ? '2px solid var(--fs-accent)'
         : '1px solid var(--fs-surface-2)';
+
+    const describedBy =
+      [error ? errorId : undefined, helper && !error ? helperId : undefined]
+        .filter(Boolean)
+        .join(' ') || undefined;
 
     return (
       <div className={`flex flex-col gap-2 ${className}`}>
@@ -50,6 +57,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             id={inputId}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={describedBy}
             className={`
               input
               ${icon && iconPosition === 'left' ? 'ps-11' : ''}
@@ -61,6 +70,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               fontFamily: 'var(--font-body)',
               minHeight: 48,
               fontSize: 16,
+              textAlign: 'start',
             }}
             {...props}
           />
@@ -83,6 +93,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {/* Error Message — mono */}
         {error && (
           <motion.span
+            id={errorId}
+            role="alert"
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
@@ -102,6 +114,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {/* Helper Text — mono, stone */}
         {helper && !error && (
           <span
+            id={helperId}
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '10px',

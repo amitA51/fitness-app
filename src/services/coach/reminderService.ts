@@ -45,7 +45,10 @@ export const listCoachReminders = async (clientId?: string): Promise<Reminder[]>
   const supabase = requireClient();
   const user = await getCurrentUser();
   if (!user) return [];
-  let query = supabase.from('reminders').select('*').eq('coach_id', user.id);
+  let query = supabase
+    .from('reminders')
+    .select('id, coach_id, client_id, group_id, title, body, schedule, created_at')
+    .eq('coach_id', user.id);
   if (clientId) query = query.eq('client_id', clientId);
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) {
@@ -65,7 +68,7 @@ export const listMyReminders = async (): Promise<Reminder[]> => {
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('reminders')
-    .select('*')
+    .select('id, coach_id, client_id, group_id, title, body, schedule, created_at')
     .order('created_at', { ascending: false });
   if (error) {
     logger.db.error('listMyReminders failed', error);

@@ -625,8 +625,8 @@ const AnalyticsDashboard: React.FC = () => {
               return (
                 <motion.div
                   key={point.date}
-                  initial={{ height: 0 }}
-                  animate={{ height: `${height}%` }}
+                  initial={{ scaleY: 0 }}
+                  animate={{ scaleY: 1 }}
                   transition={{
                     delay: 0.3 + i * 0.05,
                     type: 'spring',
@@ -638,9 +638,11 @@ const AnalyticsDashboard: React.FC = () => {
                   style={{
                     flex: 1,
                     minWidth: 12,
+                    height: `${height}%`,
+                    transformOrigin: 'bottom center',
                     background: isHovered ? 'var(--fs-primary)' : 'var(--fs-accent)',
                     cursor: 'pointer',
-                    transition: 'all 150ms',
+                    transition: 'background-color 150ms',
                     position: 'relative',
                   }}
                 >

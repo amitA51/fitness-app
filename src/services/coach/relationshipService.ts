@@ -25,7 +25,7 @@ export const getMyCoachProfile = async (): Promise<CoachProfile | null> => {
   if (!user) return null;
   const { data, error } = await supabase
     .from('coach_profiles')
-    .select('*')
+    .select('id, business_name, bio, specialties, created_at')
     .eq('id', user.id)
     .maybeSingle();
   if (error) {
@@ -70,7 +70,7 @@ export const getMySubscription = async (): Promise<CoachSubscription | null> => 
   if (!user) return null;
   const { data, error } = await supabase
     .from('coach_subscriptions')
-    .select('*')
+    .select('coach_id, plan, seat_limit, status, created_at')
     .eq('coach_id', user.id)
     .maybeSingle();
   if (error) {

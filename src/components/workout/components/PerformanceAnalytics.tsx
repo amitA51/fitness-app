@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 // PerformanceAnalytics - Real-time workout performance tracking
 // Live stats, volume tracking, and workout insights
 import { memo, useMemo } from 'react';
@@ -208,12 +208,13 @@ const VolumeComparisonBar = memo<{
         <span className="text-xs text-white/50 w-16">היום</span>
         <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden relative">
           <motion.div
-            className="h-full rounded-full"
+            className="h-full w-full rounded-full"
             style={{
               background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
+              transformOrigin: 'left center',
             }}
-            initial={{ width: 0 }}
-            animate={{ width: `${currentPercent}%` }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: currentPercent / 100 }}
             transition={{ type: 'spring', stiffness: 100, damping: 20 }}
           />
           {targetPercent && (
@@ -233,9 +234,10 @@ const VolumeComparisonBar = memo<{
         <span className="text-xs text-white/40 w-16">קודם</span>
         <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">
           <motion.div
-            className="h-full rounded-full bg-white/30"
-            initial={{ width: 0 }}
-            animate={{ width: `${previousPercent}%` }}
+            className="h-full w-full rounded-full bg-white/30"
+            style={{ transformOrigin: 'left center' }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: previousPercent / 100 }}
             transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.1 }}
           />
         </div>
@@ -307,6 +309,7 @@ ExerciseProgressRow.displayName = 'ExerciseProgressRow';
  */
 const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
   ({ exercises, startTime, currentTime, previousWorkout, compact = false, className = '' }) => {
+    const shouldReduce = useReducedMotion();
     // Calculate current stats - uses combined single-pass calculation
     const stats = useMemo(() => {
       // Single pass through all exercises for all metrics
@@ -395,8 +398,10 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
           <div className="flex items-center gap-2">
             <motion.div
               className="w-2 h-2 rounded-full bg-[var(--color-live)]"
-              animate={{ opacity: [1, 0.5, 1] }}
-              transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
+              animate={shouldReduce ? { opacity: 1 } : { opacity: [1, 0.5, 1] }}
+              transition={
+                shouldReduce ? { duration: 0 } : { duration: 1.5, repeat: Number.POSITIVE_INFINITY }
+              }
             />
             <span className="text-xs text-white/40">LIVE</span>
           </div>
@@ -456,15 +461,16 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
           </div>
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <motion.div
-              className="h-full rounded-full"
+              className="h-full w-full rounded-full"
               style={{
                 background:
                   stats.progress >= 1
                     ? 'linear-gradient(90deg, #30D158, #34C759)'
                     : 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
+                transformOrigin: 'left center',
               }}
-              initial={{ width: 0 }}
-              animate={{ width: `${stats.progress * 100}%` }}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: Math.min(stats.progress, 1) }}
               transition={{ type: 'spring', stiffness: 100, damping: 20 }}
             />
           </div>

@@ -261,7 +261,11 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         initial={{ scale: 0.94, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.94, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        transition={
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            ? { duration: 0 }
+            : { type: 'spring', stiffness: 300, damping: 30 }
+        }
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg overflow-hidden flex flex-col scale-pop-in"
         style={{
@@ -280,7 +284,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
           >
             <span className="left" style={{ color: 'var(--fs-accent)' }}>
-              §99 · סיכום
+              סיכום
             </span>
             <span className="right">{dateLabel}</span>
           </div>
@@ -302,7 +306,15 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             >
               {prsCount > 0 ? (
                 <>
-                  <span className="kinetic-number" style={{ color: 'var(--fs-accent)' }}>
+                  <span
+                    className="kinetic-number"
+                    style={{
+                      color: 'var(--fs-accent)',
+                      fontVariantNumeric: 'tabular-nums',
+                      fontSize: 56,
+                      fontWeight: 900,
+                    }}
+                  >
                     {prsCount}
                   </span>
                   <br />
@@ -324,6 +336,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 color: 'rgba(255,255,255,0.4)',
                 textTransform: 'uppercase',
                 marginTop: 8,
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               {stats.exerciseCount} תרגילים · {stats.totalSets} סטים ·{' '}
@@ -567,6 +580,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           <button
             type="button"
             onClick={onClose}
+            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fs-accent)]"
             onPointerDown={(e) => {
               e.preventDefault();
               e.currentTarget.style.background = 'var(--color-primary-hover)';
@@ -605,6 +619,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               <button
                 type="button"
                 onClick={handleShare}
+                className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fs-accent)]"
                 style={{
                   flex: 1,
                   display: 'flex',

@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion';
 import {
   Suspense,
   lazy,
@@ -20,6 +20,7 @@ import {
   useParams,
 } from 'react-router-dom';
 import BottomNav from './components/ui/BottomNav';
+import { ToastContainer } from './components/ui/GlobalToast';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import { WorkoutProvider } from './components/workout/core';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -30,7 +31,7 @@ import { SettingsProvider } from './contexts/SettingsContext';
 import { PageErrorBoundary } from './errors/PageErrorBoundary';
 import type { OnboardingData } from './pages/OnboardingFlow';
 import { trackPageView } from './services/eventTracker';
-import { initOfflineSync } from './services/offlineQueue';
+
 import type { PersonalItem } from './types';
 import { logger } from './utils/logger';
 import { safeJsonParse } from './utils/safeJson';
@@ -164,11 +165,13 @@ function getPageLabel(path: string): string {
 
 function App() {
   return (
-    <SettingsProvider>
-      <AuthProvider>
-        <AppRouter />
-      </AuthProvider>
-    </SettingsProvider>
+    <MotionConfig reducedMotion="user">
+      <SettingsProvider>
+        <AuthProvider>
+          <AppRouter />
+        </AuthProvider>
+      </SettingsProvider>
+    </MotionConfig>
   );
 }
 
@@ -181,10 +184,6 @@ function AppRouter() {
   const [onboardingDone, setOnboardingDone] = useState<boolean>(
     () => localStorage.getItem('onboarding_completed') === 'true'
   );
-
-  useEffect(() => {
-    initOfflineSync();
-  }, []);
 
   // When the user becomes authenticated or enters guest mode, hydrate profile
   // defaults from any previously saved onboarding data. Mirrors the old
@@ -490,6 +489,7 @@ function AppShell() {
             style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
           >
             <OfflineIndicator />
+            <ToastContainer />
             <div className="sr-only" aria-live="polite">
               {pageLabel}
             </div>
@@ -510,13 +510,13 @@ function AppShell() {
                 {reduceMotion ? (
                   <AppRoutes location={location} />
                 ) : (
-                  <AnimatePresence mode="wait" initial={false}>
+                  <AnimatePresence mode="sync" initial={false}>
                     <motion.div
                       key={location.pathname}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15, ease: 'easeOut' }}
                     >
                       <AppRoutes location={location} />
                     </motion.div>

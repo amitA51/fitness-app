@@ -5,18 +5,18 @@ import type React from 'react';
 // Premium shimmer surface — single source of truth via .premium-shimmer
 // ========================================
 
-// Sport Annual — sharp corners by default; legacy radius keys map to 0
+// Radii match the actual content shapes for seamless loading transitions
 const RADIUS_MAP: Record<string, string> = {
-  full: '0',
-  lg: '0',
-  xl: '0',
-  md: '0',
-  sm: '0',
+  full: '9999px',
+  lg: '12px',
+  xl: '16px',
+  md: '8px',
+  sm: '4px',
 };
 
 const getRadiusStyle = (radius?: string): string => {
-  if (!radius) return '0';
-  return RADIUS_MAP[radius] || '0';
+  if (!radius) return '8px';
+  return RADIUS_MAP[radius] || radius;
 };
 
 interface SkeletonProps {

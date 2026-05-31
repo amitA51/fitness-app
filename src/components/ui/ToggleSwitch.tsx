@@ -2,6 +2,9 @@ import { motion } from 'framer-motion';
 import React, { useId, useCallback } from 'react';
 import { triggerHaptic } from '../../utils/haptics';
 
+const prefersReducedMotion =
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 interface ToggleSwitchProps {
   /** Whether the switch is on */
   checked: boolean;
@@ -53,6 +56,10 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
 
   const config = sizeConfig[size];
   const travel = config.trackW - config.knob - config.padding * 2;
+  // Framer's `x` is a physical translate (ignores `dir`), but the knob is
+  // anchored with `insetInlineStart`, so in RTL it must travel the other way.
+  const isRTL = typeof document !== 'undefined' && document.dir === 'rtl';
+  const knobTravel = isRTL ? -travel : travel;
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,7 +97,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           role="switch"
           aria-checked={checked}
           aria-label={label}
-          className="sr-only"
+          className="sr-only peer"
           checked={checked}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
@@ -99,7 +106,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
 
         {/* Track — sharp rect, 1px navy border */}
         <motion.div
-          className="block focus-within:ring-2 focus-within:ring-[var(--fs-accent)]"
+          className="block peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--fs-accent)] peer-focus-visible:ring-offset-2"
           style={{
             width: config.trackW,
             height: config.trackH,
@@ -109,7 +116,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           animate={{
             backgroundColor: checked ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
           }}
-          transition={{ duration: 0.2 }}
+          transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
         />
 
         {/* Knob — navy sharp square */}
@@ -117,19 +124,16 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           className="absolute"
           style={{
             top: config.padding,
+            insetInlineStart: config.padding,
             width: config.knob,
             height: config.knob,
             backgroundColor: 'var(--fs-primary)',
             borderRadius: config.knob / 2,
           }}
-          animate={{
-            left: checked ? travel + config.padding : config.padding,
-          }}
-          transition={{
-            type: 'spring',
-            stiffness: 500,
-            damping: 30,
-          }}
+          animate={{ x: checked ? knobTravel : 0 }}
+          transition={
+            prefersReducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 30 }
+          }
           whileTap={{ scale: 0.9 }}
         />
       </div>

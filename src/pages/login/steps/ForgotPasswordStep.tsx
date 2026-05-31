@@ -163,6 +163,7 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
             <AnnualInput
               label={'דוא"ל'}
               type="email"
+              inputMode="email"
               value={form.email}
               onChange={(val) => setForm((f) => ({ ...f, email: val }))}
               placeholder="your@email.com"
@@ -176,19 +177,20 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
           {errors.general && (
             <motion.div
               variants={staggerItem}
+              role="alert"
               className="p-4 flex items-start gap-3"
               style={{
-                background: 'rgba(226, 110, 63, 0.12)',
-                border: '1px solid var(--fs-warn)',
+                background: 'var(--color-error-muted)',
+                border: '1px solid var(--color-error)',
                 borderRadius: 0,
               }}
             >
-              <AlertCircle size={16} style={{ color: 'var(--fs-warn)', flexShrink: 0 }} />
+              <AlertCircle size={16} style={{ color: 'var(--color-error)', flexShrink: 0 }} />
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: '14px',
-                  color: 'var(--fs-warn)',
+                  color: 'var(--color-error)',
                 }}
               >
                 {errors.general}

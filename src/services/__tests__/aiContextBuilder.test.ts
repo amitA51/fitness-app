@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkoutSession } from '../../types';
 import { oneRepMax } from '../../utils/workoutMath';
 import { buildContext, buildSystemPrompt } from '../ai/contextBuilder';
@@ -10,6 +10,15 @@ const dateDaysAgo = (daysAgo: number): string => {
   date.setDate(date.getDate() - daysAgo);
   return date.toISOString().split('T')[0] ?? '';
 };
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-05-15T12:00:00Z'));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 const session = (id: string, daysAgo: number, totalVolume: number): WorkoutSession => {
   const date = dateDaysAgo(daysAgo);

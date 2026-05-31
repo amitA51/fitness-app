@@ -254,7 +254,7 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
             style={{
               padding: '16px',
               background: 'var(--fs-primary)',
-              borderLeft: '2px solid var(--fs-primary)',
+              borderInlineStart: '2px solid var(--fs-primary)',
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',

@@ -294,15 +294,13 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   }
                 }}
                 disabled={isSaving}
-                className="btn-primary flex items-center justify-center gap-2"
+                className="btn-primary focus-ring flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: isFinishing ? 'var(--fs-primary)' : 'var(--fs-warn)',
+                  backgroundColor: isFinishing ? 'var(--fs-primary)' : 'var(--color-error)',
                   color: isFinishing ? 'var(--fs-accent)' : 'var(--fs-surface)',
                   opacity: isSaving ? 0.7 : 1,
                   cursor: isSaving ? 'not-allowed' : 'pointer',
-                  boxShadow: isFinishing
-                    ? undefined
-                    : '0 0 0 1px color-mix(in srgb, var(--fs-warn) 30%, transparent)',
+                  minHeight: 44,
                 }}
               >
                 {isSaving ? (
@@ -340,7 +338,8 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                     e.stopPropagation();
                     handleCooldown();
                   }}
-                  className="btn-secondary"
+                  className="btn-secondary focus-ring"
+                  style={{ minHeight: 44 }}
                 >
                   צינון מודרך לפני סיום
                 </motion.button>
@@ -354,7 +353,8 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                     e.stopPropagation();
                     onSaveAsTemplate();
                   }}
-                  className="btn-secondary"
+                  className="btn-secondary focus-ring"
+                  style={{ minHeight: 44 }}
                 >
                   שמור כתבנית
                 </motion.button>
@@ -367,7 +367,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   e.stopPropagation();
                   handleCancel();
                 }}
-                className="uppercase transition-colors"
+                className="focus-ring uppercase transition-colors"
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontSize: '14px',

@@ -11,7 +11,7 @@
  * - Smooth animations with reduced-motion support
  */
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import {
   Award,
   Calendar,
@@ -236,7 +236,7 @@ const MobileToggle = memo(function MobileToggle({
         borderRadius: '22px 16px 22px 16px',
       }}
     >
-      <div className="text-right flex-1 ml-4">
+      <div className="text-right flex-1 ms-4">
         <p
           style={{
             fontFamily: 'var(--font-body)',
@@ -299,9 +299,9 @@ function ProgressDots({ currentStep, totalSteps }: ProgressDotsProps) {
           // biome-ignore lint/suspicious/noArrayIndexKey: positional step progress dots derived from a count, never reordered
           key={i}
           layoutId={`progress-dot-${i}`}
-          className="h-1.5 rounded-full"
+          className="h-2 rounded-full"
           style={{
-            width: i === currentStep ? '24px' : '8px',
+            width: i === currentStep ? '24px' : '10px',
             backgroundColor: i <= currentStep ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
           }}
           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
@@ -486,7 +486,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         <button
           type="button"
           onClick={onNext}
-          className="w-full flex items-center justify-center gap-3 transition-all active:scale-[0.98] start-workout-btn accent-glow"
+          className="w-full flex items-center justify-center gap-3 transition-all active:scale-[0.98] start-workout-btn accent-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
           style={{
             background: 'var(--fs-primary)',
             color: 'var(--fs-accent)',
@@ -994,6 +994,7 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
                 fontWeight: 800,
                 fontSize: '24px',
                 color: 'var(--fs-accent)',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               {data.workoutDuration} דק׳
@@ -1100,6 +1101,7 @@ function PreferencesStep({ data, onChange }: PreferencesStepProps) {
                 fontWeight: 800,
                 fontSize: '24px',
                 color: 'var(--fs-accent)',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               {data.restBetweenSets} שנ׳
@@ -1314,6 +1316,7 @@ function CompleteStep({ data }: CompleteStepProps) {
                 fontWeight: 700,
                 fontSize: '16px',
                 color: 'var(--fs-ink)',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               {data.preferredWorkoutDays} ימים בשבוע
@@ -1353,6 +1356,7 @@ function CompleteStep({ data }: CompleteStepProps) {
                 fontWeight: 700,
                 fontSize: '16px',
                 color: 'var(--fs-ink)',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               {data.workoutDuration} דקות
@@ -1448,110 +1452,112 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex flex-col ambient-mesh ambient-mesh-soft"
-      style={{
-        background: 'var(--fs-bg)',
-        backgroundImage:
-          'linear-gradient(rgba(19,35,39,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(19,35,39,0.03) 1px, transparent 1px)',
-        backgroundSize: '24px 24px',
-      }}
-      dir="rtl"
-    >
-      {/* Progress bar at top — premium track */}
-      {currentStep > 0 && currentStep < STEPS.length - 1 && (
-        <div className="w-full fs-progress-track" style={{ height: '4px' }}>
-          <motion.div
-            className="h-full fs-progress-fill"
-            initial={{ width: 0 }}
-            animate={{
-              width: `${((currentStep - 1) / (STEPS.length - 2)) * 100}%`,
-            }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-          />
-        </div>
-      )}
+    <MotionConfig reducedMotion="user">
+      <div
+        className="fixed inset-0 z-overlay flex flex-col ambient-mesh ambient-mesh-soft"
+        style={{
+          background: 'var(--fs-bg)',
+          backgroundImage:
+            'linear-gradient(rgba(19,35,39,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(19,35,39,0.03) 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+        dir="rtl"
+      >
+        {/* Progress bar at top — premium track */}
+        {currentStep > 0 && currentStep < STEPS.length - 1 && (
+          <div className="w-full fs-progress-track" style={{ height: '4px' }}>
+            <motion.div
+              className="h-full fs-progress-fill"
+              initial={{ width: 0 }}
+              animate={{
+                width: `${((currentStep - 1) / (STEPS.length - 2)) * 100}%`,
+              }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+            />
+          </div>
+        )}
 
-      {/* Skip Button - safe area aware */}
-      {currentStep > 0 && currentStep < STEPS.length - 1 && (
-        <div className="absolute top-0 left-0 right-0 p-4 z-10 pt-[calc(1rem+env(safe-area-inset-top))]">
-          <button
-            type="button"
-            onClick={onSkip}
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '12px',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: 'var(--fs-muted)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              minHeight: '44px',
-              minWidth: '44px',
-            }}
-          >
-            דלג
-          </button>
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="flex-1 overflow-hidden pt-8">
-        <AnimatePresence mode="sync">{renderStep()}</AnimatePresence>
-      </div>
-
-      {/* Compact dots at bottom */}
-      {currentStep > 0 && currentStep < STEPS.length - 1 && (
-        <ProgressDots currentStep={currentStep - 1} totalSteps={STEPS.length - 2} />
-      )}
-
-      {/* Navigation - thumb zone optimized */}
-      {currentStep > 0 && (
-        <div
-          className="px-4 pb-4 pt-2"
-          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
-        >
-          <div className="flex gap-3">
-            {currentStep < STEPS.length - 1 && (
-              <button
-                type="button"
-                onClick={goBack}
-                className="w-16 h-16 flex items-center justify-center active:scale-95 transition-transform"
-                style={{
-                  background: 'var(--fs-surface)',
-                  border: '1px solid var(--fs-surface-2)',
-                  borderRadius: '22px 16px 22px 16px',
-                }}
-              >
-                <ChevronLeft size={28} style={{ color: 'var(--fs-ink)' }} />
-              </button>
-            )}
+        {/* Skip Button - safe area aware */}
+        {currentStep > 0 && currentStep < STEPS.length - 1 && (
+          <div className="absolute top-0 left-0 right-0 p-4 z-10 pt-[calc(1rem+env(safe-area-inset-top))]">
             <button
               type="button"
-              onClick={goNext}
-              disabled={!canProceed()}
-              className={`flex-1 flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 ${
-                canProceed() ? 'start-workout-btn accent-glow' : ''
-              }`}
+              onClick={onSkip}
               style={{
-                background: canProceed() ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
-                color: canProceed() ? 'var(--fs-accent)' : 'var(--fs-muted)',
-                borderRadius: '22px 16px 22px 16px',
-                minHeight: '56px',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontFamily: 'var(--font-mono)',
+                fontSize: '12px',
+                letterSpacing: '0.12em',
                 textTransform: 'uppercase',
+                color: 'var(--fs-muted)',
+                background: 'none',
                 border: 'none',
+                cursor: 'pointer',
+                minHeight: '44px',
+                minWidth: '44px',
               }}
             >
-              {currentStep === STEPS.length - 2 ? 'סיום' : 'הבא'}
-              <ChevronRight size={24} />
+              דלג
             </button>
           </div>
+        )}
+
+        {/* Content */}
+        <div className="flex-1 overflow-hidden pt-8">
+          <AnimatePresence mode="sync">{renderStep()}</AnimatePresence>
         </div>
-      )}
-    </div>
+
+        {/* Compact dots at bottom */}
+        {currentStep > 0 && currentStep < STEPS.length - 1 && (
+          <ProgressDots currentStep={currentStep - 1} totalSteps={STEPS.length - 2} />
+        )}
+
+        {/* Navigation - thumb zone optimized */}
+        {currentStep > 0 && (
+          <div
+            className="px-4 pb-4 pt-2"
+            style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+          >
+            <div className="flex gap-3">
+              {currentStep < STEPS.length - 1 && (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="w-16 h-16 flex items-center justify-center active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
+                  style={{
+                    background: 'var(--fs-surface)',
+                    border: '1px solid var(--fs-surface-2)',
+                    borderRadius: '22px 16px 22px 16px',
+                  }}
+                >
+                  <ChevronLeft size={28} style={{ color: 'var(--fs-ink)' }} />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={!canProceed()}
+                className={`flex-1 flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] ${
+                  canProceed() ? 'start-workout-btn accent-glow' : ''
+                }`}
+                style={{
+                  background: canProceed() ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+                  color: canProceed() ? 'var(--fs-accent)' : 'var(--fs-muted)',
+                  borderRadius: '22px 16px 22px 16px',
+                  minHeight: '56px',
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  border: 'none',
+                }}
+              >
+                {currentStep === STEPS.length - 2 ? 'סיום' : 'הבא'}
+                <ChevronRight size={24} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </MotionConfig>
   );
 }
 

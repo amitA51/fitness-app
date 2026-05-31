@@ -56,10 +56,10 @@ export const AnnualPasswordInput = memo(function AnnualPasswordInput({
           autoComplete={autoComplete}
           autoFocus={autoFocus}
           className={cn(
-            'w-full h-14 transition-all duration-200 pr-12',
+            'w-full h-14 transition-all duration-200 pe-12',
             'text-base',
             'placeholder:opacity-60',
-            'focus:outline-none',
+            'focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--fs-focus-ring)]',
             disabled ? 'opacity-50 cursor-not-allowed' : ''
           )}
           style={{
@@ -68,25 +68,13 @@ export const AnnualPasswordInput = memo(function AnnualPasswordInput({
             borderRadius: '22px 16px 22px 16px',
             fontFamily: 'var(--font-body)',
             color: 'var(--fs-ink)',
-            paddingLeft: '16px',
-          }}
-          onFocus={(e) => {
-            if (!error) {
-              e.currentTarget.style.borderColor = 'var(--fs-accent)';
-              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(67, 199, 165, 0.2)';
-            }
-          }}
-          onBlur={(e) => {
-            if (!error) {
-              e.currentTarget.style.borderColor = 'var(--fs-surface-2)';
-              e.currentTarget.style.boxShadow = 'none';
-            }
+            paddingInlineStart: '16px',
           }}
         />
         <button
           type="button"
           onClick={() => setShow(!show)}
-          className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+          className="absolute start-4 top-1/2 -translate-y-1/2 transition-colors"
           style={{ color: 'var(--fs-muted)' }}
           aria-label={show ? 'הסתר סיסמה' : 'הצג סיסמה'}
         >

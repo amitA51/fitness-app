@@ -190,9 +190,11 @@ function CreateModal({ onClose, onCreate }: CreateModalProps) {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onClose}
+              aria-label="סגור"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
               style={{
-                width: '36px',
-                height: '36px',
+                width: '44px',
+                height: '44px',
                 background: 'var(--fs-surface-2)',
                 border: 'none',
                 borderRadius: 0,
@@ -655,6 +657,7 @@ const TemplateCard = memo(function TemplateCard({
           color: 'var(--fs-heading)',
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
+          fontVariantNumeric: 'tabular-nums',
         }}
       >
         <span className="flex items-center gap-1.5">
@@ -692,7 +695,7 @@ const TemplateCard = memo(function TemplateCard({
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => onStart(template.id)}
-          className="btn-primary flex items-center justify-center gap-2"
+          className="btn-primary flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
           style={{ flex: 1, minHeight: '44px', padding: '12px 16px' }}
           aria-label="התחל אימון"
         >
@@ -760,7 +763,7 @@ const TemplateCard = memo(function TemplateCard({
           ) : (
             <>
               <Trash2 size={14} />
-              {confirmDelete && <span className="mr-1">?</span>}
+              {confirmDelete && <span className="me-1">?</span>}
             </>
           )}
         </motion.button>
@@ -1089,8 +1092,18 @@ export default function Templates() {
           {favorites.length > 0 && (
             <motion.div variants={itemVariants} className="mb-6">
               <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-                <span className="left">§01 · FAVORITES</span>
-                <span className="right">מועדפים</span>
+                <span className="left" />
+                <span
+                  className="right"
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 700,
+                    fontSize: 16,
+                    color: 'var(--fs-ink)',
+                  }}
+                >
+                  מועדפים
+                </span>
               </div>
               <div className="flex flex-col gap-4 mt-4">
                 {favorites.map((template, index) => (
@@ -1118,8 +1131,18 @@ export default function Templates() {
                   className="chapter-break"
                   style={{ marginInline: 'calc(-1 * var(--space-5))' }}
                 >
-                  <span className="left">§02 · ALL ROUTINES</span>
-                  <span className="right">כל התבניות</span>
+                  <span className="left" />
+                  <span
+                    className="right"
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 700,
+                      fontSize: 16,
+                      color: 'var(--fs-ink)',
+                    }}
+                  >
+                    כל התבניות
+                  </span>
                 </div>
               )}
               <div className="flex flex-col gap-4 mt-4">

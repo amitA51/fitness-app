@@ -121,7 +121,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
           marginBottom: 8,
         }}
       >
-        § MUSCLE RADAR
+        מפת שרירים
       </div>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
         {/* Background circle grid */}

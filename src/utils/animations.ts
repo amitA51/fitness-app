@@ -12,7 +12,8 @@ export const ANIMATIONS = {
     easeIn: 'cubic-bezier(0.4, 0, 1, 1)',
     easeOut: 'cubic-bezier(0, 0, 0.2, 1)',
     easeInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
-    spring: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+    /** @deprecated Use --ease-premium / MOTION_CURVES.reveal instead */
+    spring: 'cubic-bezier(0.16, 1, 0.3, 1)',
   },
 } as const;
 

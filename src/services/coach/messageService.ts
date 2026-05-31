@@ -68,16 +68,34 @@ export const markThreadRead = async (coachId: string, clientId: string): Promise
   if (error) logger.db.error('markThreadRead failed', error);
 };
 
-/** Count of unread messages addressed to the current user across all threads. */
+/** Count of unread messages addressed to the current user across active relationships only. */
 export const getUnreadCount = async (): Promise<number> => {
   const supabase = requireClient();
   const user = await getCurrentUser();
   if (!user) return 0;
+
+  // Fetch active relationship pairs for this user
+  const { data: activeLinks, error: linksError } = await supabase
+    .from('coach_clients')
+    .select('coach_id, client_id')
+    .or(`coach_id.eq.${user.id},client_id.eq.${user.id}`)
+    .eq('status', 'active');
+  if (linksError || !activeLinks?.length) return 0;
+
+  // Build an OR filter for each active thread
+  const threadFilters = activeLinks
+    .map(
+      (l: { coach_id: string; client_id: string }) =>
+        `and(coach_id.eq.${l.coach_id},client_id.eq.${l.client_id})`
+    )
+    .join(',');
+
   const { count, error } = await supabase
     .from('messages')
     .select('id', { count: 'exact', head: true })
     .neq('sender_id', user.id)
-    .is('read_at', null);
+    .is('read_at', null)
+    .or(threadFilters);
   if (error) {
     logger.db.error('getUnreadCount failed', error);
     return 0;

@@ -1051,22 +1051,28 @@ textarea {
    PREMIUM LAYER — $100M motion + glass + mesh
    ============================================================================ */
 
-/* === Glass surfaces === */
+/* === Surfaces — opaque with elevation (glass reserved for nav only) === */
 .glass-surface {
+  background: var(--fs-surface);
+  border: 1px solid var(--fs-surface-2);
+  box-shadow: var(--elevation-1), var(--edge-highlight);
+}
+
+.glass-surface-dark {
+  background: var(--fs-surface);
+  border: 1px solid var(--color-border);
+  color: var(--fs-ink);
+  box-shadow: var(--elevation-2), var(--edge-highlight);
+}
+
+/* True glass — use ONLY on nav and max 1 floating element per screen */
+.glass-nav {
   background: color-mix(in srgb, var(--fs-surface) 76%, transparent);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   backdrop-filter: blur(18px) saturate(140%);
   border: 1px solid color-mix(in srgb, var(--fs-surface-2) 64%, transparent);
   box-shadow: var(--shadow-glass);
-}
-
-.glass-surface-dark {
-  background: color-mix(in srgb, var(--fs-primary) 82%, transparent);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
-  backdrop-filter: blur(22px) saturate(160%);
-  border: 1px solid var(--fs-border-on-dark);
-  color: var(--fs-ink);
-  box-shadow: var(--shadow-deep);
+  will-change: transform;
 }
 
 /* === Ambient mesh gradient backdrops === */

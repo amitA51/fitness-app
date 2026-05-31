@@ -15,7 +15,7 @@
   --fs-surface: #ffffff;
   --fs-surface-2: #dbe6e3;
   --fs-ink: #132327;
-  --fs-muted: #60706f;
+  --fs-muted: #4d5c5a;
   --fs-primary: #16292d;
   --fs-accent: #43c7a5;
   --fs-accent-2: #2c7f91;
@@ -37,9 +37,13 @@
   --mustard-deep: #d8ed5c;
   --ink: var(--fs-ink);
   --stone: var(--fs-muted);
-  --stone-light: #93a09e;
+  --stone-light: #5f6e6c;
 
   --color-on-mustard: var(--fs-primary);
+
+  /* Button-specific tokens */
+  --btn-primary-bg: var(--fs-primary);
+  --btn-primary-text: var(--fs-accent);
 
   --text-on-navy-rgb: 238, 243, 241;
   --ink-rgb: 19, 35, 39;
@@ -115,6 +119,21 @@
   --line-strong: rgba(17, 24, 22, 0.2);
   --shadow: 0 24px 80px rgba(17, 24, 22, 0.13);
 
+  /* Label tokens */
+  --label-secondary: #7e7d78;
+  --label-tertiary: #a5a49f;
+
+  /* Gray scale */
+  --gray-100: #f5f1eb;
+  --gray-200: #eae4da;
+  --gray-300: #a5a49f;
+  --gray-400: #7e7d78;
+  --gray-500: #5a5955;
+  --gray-600: #3f3f46;
+  --gray-700: #27272a;
+  --gray-800: #1a1a1a;
+  --gray-900: #132018;
+
   /* ── Bottom Nav tokens (light) ── */
   --nav-bg: rgba(255, 255, 255, 0.82);
   --nav-border: rgba(19, 35, 39, 0.08);
@@ -161,7 +180,7 @@
 
 :root {
   --font-display: "Bricolage Grotesque", "Assistant", Impact, sans-serif;
-  --font-body: "IBM Plex Sans", "Assistant", system-ui, sans-serif;
+  --font-body: "Assistant", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --font-hebrew: "Assistant", system-ui, sans-serif;
 
@@ -242,13 +261,32 @@ html.large-text {
 }
 
 /* ============================================================================
-   5. SHADOW TOKENS
+   5. SHADOW TOKENS — 3-level elevation system
    ============================================================================ */
 
 :root {
-  --shadow-card: 0 1px 3px rgba(19, 32, 24, 0.08);
-  --shadow-elevated: 0 4px 12px rgba(19, 32, 24, 0.12);
-  --shadow-navy: 0 8px 24px rgba(9, 17, 13, 0.25);
+  /* Level 0: flush (inline with page) */
+  --elevation-0: none;
+  --surface-0: var(--fs-bg);
+
+  /* Level 1: card (raised from page) */
+  --elevation-1: 0 1px 3px rgba(19, 32, 24, 0.08);
+  --surface-1: var(--fs-surface);
+
+  /* Level 2: elevated (floating panels, popovers) */
+  --elevation-2: 0 4px 12px rgba(19, 32, 24, 0.12);
+  --surface-2: var(--fs-surface);
+
+  /* Level 3: modal (highest layer) */
+  --elevation-3: 0 8px 24px rgba(9, 17, 13, 0.25);
+  --surface-3: var(--fs-surface);
+
+  /* Top-edge highlight for depth cue */
+  --edge-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+
+  --shadow-card: var(--elevation-1);
+  --shadow-elevated: var(--elevation-2);
+  --shadow-navy: var(--elevation-3);
   --shadow-button: 0 2px 8px rgba(19, 32, 24, 0.15);
   --shadow-button-hover: 0 4px 16px rgba(19, 32, 24, 0.2);
   --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.4);
@@ -259,12 +297,12 @@ html.large-text {
    ============================================================================ */
 
 :root {
-  --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.55, 0.06, 0.68, 0.19);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring-bounce: var(--ease-spring);
-  --ease-spring-smooth: var(--ease-out);
+  --ease-spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring-smooth: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring-snappy: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-spring-soft: cubic-bezier(0.32, 0.72, 0, 1);
 
@@ -340,6 +378,10 @@ html.dark {
   --stone-light: #999999;
 
   --color-on-mustard: #0a0a0a;
+
+  /* Button-specific tokens */
+  --btn-primary-bg: var(--fs-accent);
+  --btn-primary-text: #071412;
 
   --text-on-navy-rgb: 240, 240, 240;
   --ink-rgb: 240, 240, 240;
@@ -422,13 +464,38 @@ html.dark {
   --surface-input: var(--fs-surface);
   --gray-200: var(--fs-surface-2);
 
+  /* Label tokens (dark) */
+  --label-secondary: #a0a0a0;
+  --label-tertiary: #707070;
+
+  /* Gray scale (dark) */
+  --gray-100: #1a1a1a;
+  --gray-200: #222222;
+  --gray-300: #333333;
+  --gray-400: #555555;
+  --gray-500: #777777;
+  --gray-600: #999999;
+  --gray-700: #bbbbbb;
+  --gray-800: #dddddd;
+  --gray-900: #f0f0f0;
+
   /* Body background — clean black, no mesh/grid noise */
   --fs-body-overlay: transparent;
   --fs-grid-line: rgba(255, 255, 255, 0.012);
   --fs-mesh-accent: rgba(77, 220, 187, 0.025);
   --fs-mesh-signal: rgba(56, 181, 201, 0.015);
 
-  /* Shadows — minimal on true black (surface steps do the depth work) */
+  /* Shadows — surface steps + top-edge highlight for depth in dark mode */
+  --elevation-0: none;
+  --surface-0: #000000;
+  --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --surface-1: #111111;
+  --elevation-2: 0 4px 20px rgba(0, 0, 0, 0.6);
+  --surface-2: #1a1a1a;
+  --elevation-3: 0 8px 32px rgba(0, 0, 0, 0.7);
+  --surface-3: #222222;
+  --edge-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5);
   --shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.6);
   --shadow-navy: 0 8px 32px rgba(0, 0, 0, 0.7);

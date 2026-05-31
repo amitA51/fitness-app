@@ -68,3 +68,19 @@ describe('offlineQueue processQueue replay', () => {
     expect(await getQueueDepth()).toBe(0);
   });
 });
+
+describe('offlineQueue MAX_RETRIES exhaustion', () => {
+  it('drops mutation after 5 retriable failures (MAX_RETRIES)', async () => {
+    const err = new TypeError('failed to fetch');
+    mockSyncWorkoutSession.mockRejectedValue(err);
+    await queueMutation('session:update', { id: 's2', duration: 30 });
+
+    // Each processQueue call increments retryCount by 1.
+    // MAX_RETRIES = 5, so after 5 calls the mutation is dropped.
+    for (let i = 0; i < 5; i++) {
+      await processQueue();
+    }
+
+    expect(await getQueueDepth()).toBe(0);
+  });
+});

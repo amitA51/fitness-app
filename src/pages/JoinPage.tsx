@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
-import { showToast } from '../components/workout/components/ui/Toast';
+import { showToast } from '../components/ui/GlobalToast';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
 import { acceptInvite } from '../services/coach';
 
@@ -63,14 +64,7 @@ export default function JoinPage() {
   if (status === 'loading' || busy) {
     return (
       <div className="flex items-center justify-center min-h-screen" dir="rtl">
-        <p
-          style={{
-            color: 'var(--fs-ink-muted)',
-            fontFamily: 'var(--font-body)',
-          }}
-        >
-          טוען...
-        </p>
+        <LoadingSpinner />
       </div>
     );
   }

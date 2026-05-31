@@ -23,7 +23,7 @@ const WaterReminderToast: React.FC<WaterReminderToastProps> = ({ isVisible, onDi
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.8 }}
           onClick={onDismiss}
-          className="fixed bottom-[100px] left-1/2 -translate-x-1/2 bg-cyan-500/20 border border-[var(--fs-accent)] backdrop-blur-md px-6 py-3 rounded-full flex items-center gap-3 z-[9000] shadow-[0_4px_20px_rgba(6,182,212,0.3)] cursor-pointer hover:bg-cyan-500/30 transition-colors"
+          className="fixed bottom-[100px] left-1/2 -translate-x-1/2 bg-cyan-500/20 border border-[var(--fs-accent)] backdrop-blur-md px-6 py-3 rounded-full flex items-center gap-3 z-toast shadow-[0_4px_20px_rgba(6,182,212,0.3)] cursor-pointer hover:bg-cyan-500/30 transition-colors"
         >
           <div>
             <div className="font-bold text-white text-sm">תזכורת מים</div>

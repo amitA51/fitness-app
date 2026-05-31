@@ -6,7 +6,7 @@ const ROOT = join(__dirname, '..');
 const EMOJI_RE = /\p{Extended_Pictographic}/u;
 
 function walk(dir: string, acc: string[] = []): string[] {
-  for (const name of readdirSync(dir)) {
+  for (const name of readdirSync(dir).sort()) {
     if (name === 'test' || name === '__tests__' || name.startsWith('.')) continue;
     const p = join(dir, name);
     const s = statSync(p);

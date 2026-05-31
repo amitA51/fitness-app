@@ -96,7 +96,7 @@ export const StrengthTab = memo(function StrengthTab() {
     return (
       <div className="space-y-4">
         <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-          <span className="left">§04 · STRENGTH</span>
+          <span className="left" />
           <span className="right">כוח</span>
         </div>
         <div
@@ -130,7 +130,7 @@ export const StrengthTab = memo(function StrengthTab() {
     return (
       <div className="space-y-4">
         <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-          <span className="left">§04 · STRENGTH</span>
+          <span className="left" />
           <span className="right">כוח</span>
         </div>
         <div
@@ -180,7 +180,7 @@ export const StrengthTab = memo(function StrengthTab() {
     <div className="space-y-4">
       {/* Chapter break */}
       <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-        <span className="left">§04 · STRENGTH</span>
+        <span className="left" />
         <span className="right">כוח</span>
       </div>
 
@@ -421,7 +421,8 @@ export const StrengthTab = memo(function StrengthTab() {
                   textTransform: 'uppercase',
                 }}
               >
-                <BarChart3 size={14} />§ STRENGTH CURVE
+                <BarChart3 size={14} />
+                עקומת כוח
               </h3>
               <span
                 style={{
@@ -589,7 +590,7 @@ export const StrengthTab = memo(function StrengthTab() {
                 textTransform: 'uppercase',
               }}
             >
-              § HISTORY · היסטוריית משקל
+              היסטוריית משקל
             </h3>
             <div className="space-y-1">
               {activeCurve.data

@@ -164,9 +164,23 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   // ============================================================
 
   const persistTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPersistedRef = useRef<string>('');
 
   useEffect(() => {
-    // Debounced persistence
+    // Only persist when meaningful workout data changes (exercises, index, supersets, pause state)
+    // Skip overlay toggles, celebrations, and timer ticks
+    const meaningful = JSON.stringify({
+      exercises: state.exercises,
+      currentExerciseIndex: state.currentExerciseIndex,
+      supersetGroups: state.supersetGroups,
+      startTimestamp: state.startTimestamp,
+      totalPausedTime: state.totalPausedTime,
+      isPaused: state.isPaused,
+      restTimer: state.restTimer,
+    });
+    if (meaningful === lastPersistedRef.current) return;
+    lastPersistedRef.current = meaningful;
+
     if (persistTimeoutRef.current) {
       clearTimeout(persistTimeoutRef.current);
     }

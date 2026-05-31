@@ -308,7 +308,7 @@ export const RecentWorkouts = memo(function RecentWorkouts({
         }}
       >
         <div className="eyebrow" style={{ marginBottom: 12 }}>
-          § no sessions yet
+          אין אימונים עדיין
         </div>
         <p
           style={{

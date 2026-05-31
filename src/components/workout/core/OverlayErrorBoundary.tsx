@@ -40,7 +40,7 @@ class OverlayErrorBoundary extends Component<Props, State> {
   render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="fixed inset-0 bg-black/90 z-[12000] flex items-center justify-center p-6">
+        <div className="fixed inset-0 bg-black/90 z-error-boundary flex items-center justify-center p-6">
           <div className="bg-[var(--bg-card)] rounded-2xl p-6 max-w-sm w-full text-center border border-white/10">
             <div className="text-3xl mb-3" aria-hidden="true">
               !

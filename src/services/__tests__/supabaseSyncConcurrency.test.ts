@@ -30,6 +30,7 @@ vi.mock('../indexedDBCore', () => ({
     NUTRITION_LOGS: 'nutrition_logs',
     USER_SETTINGS: 'user_settings',
     AI_CONVERSATIONS: 'ai_conversations',
+    WATER_LOGS: 'water_logs',
   },
   dbGetAll: () => dbGetAllSpy(),
 }));
@@ -49,8 +50,8 @@ describe('syncAllData concurrency guard', () => {
     expect(r1.success).toBe(true);
     expect(r2.success).toBe(true);
 
-    // dbGetAll is called 10 times per real invocation (one per store).
-    // If the guard works, it should be called exactly 10 times total, not 20.
-    expect(dbGetAllSpy).toHaveBeenCalledTimes(10);
+    // dbGetAll is called 11 times per real invocation (one per store).
+    // If the guard works, it should be called exactly 11 times total, not 22.
+    expect(dbGetAllSpy).toHaveBeenCalledTimes(11);
   });
 });

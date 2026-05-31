@@ -7,7 +7,7 @@
  * logs, nutrition logs, user settings, AI conversations).
  */
 
-import { STORES, dbGetAll, dbPut } from './indexedDBCore';
+import { STORES, dbGetAll, initDB } from './indexedDBCore';
 
 // ==================== REPLACE FROM CLOUD (for pullAllData) ====================
 // These functions merge cloud data into local IndexedDB non-destructively.
@@ -132,9 +132,19 @@ export async function mergeGenericRecords<T extends TimestampedRecord>(
     }
   }
 
-  // Batch writes via Promise.all for better performance
+  // DA-10: Atomic transaction — all writes succeed or none do
   if (writes.length > 0) {
-    await Promise.all(writes.map((record) => dbPut(storeName, record)));
+    const db = await initDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      for (const record of writes) {
+        store.put(record);
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error('Merge transaction aborted'));
+    });
   }
 
   return { added, updated, kept };

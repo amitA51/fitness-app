@@ -149,7 +149,11 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08, duration: 0.3 }}
+      transition={
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? { duration: 0 }
+          : { delay: index * 0.08, duration: 0.3 }
+      }
       style={{
         background: 'var(--fs-surface)',
         borderRadius: '22px 16px 22px 16px',
@@ -238,7 +242,7 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
                 fontWeight: 700,
                 fontFamily: 'var(--font-mono)',
                 color: 'var(--fs-ink)',
-                marginRight: 'auto',
+                marginInlineEnd: 'auto',
               }}
             >
               {bestSet.weight} ק"ג × {bestSet.reps} חזרות
@@ -267,7 +271,11 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
             <div
               key={set.id || setIndex}
               className="flex items-center"
-              style={{ fontSize: 12, fontFamily: 'var(--font-mono)' }}
+              style={{
+                fontSize: 12,
+                fontFamily: 'var(--font-mono)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
             >
               <span className="flex-1" style={{ color: 'var(--fs-muted)' }}>
                 {set.setNumber || setIndex + 1}
@@ -369,6 +377,7 @@ function StatItem({ icon, label, value, subValue, trend }: StatItemProps) {
           fontFamily: 'var(--font-mono)',
           color: 'var(--fs-ink)',
           lineHeight: 1,
+          fontVariantNumeric: 'tabular-nums',
           display: 'flex',
           alignItems: 'center',
           gap: 4,
@@ -520,7 +529,11 @@ function MuscleBreakdown({ exercises }: MuscleBreakdownProps) {
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${percentage}%` }}
-                  transition={{ delay: 0.3 + index * 0.05, duration: 0.5 }}
+                  transition={
+                    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                      ? { duration: 0 }
+                      : { delay: 0.3 + index * 0.05, duration: 0.5 }
+                  }
                   style={{ height: '100%', borderRadius: 9999, backgroundColor: getColor(index) }}
                 />
               </div>
@@ -927,7 +940,7 @@ export default function WorkoutDetail() {
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 600,
                 color: 'var(--fs-ink)',
-                marginRight: 'auto',
+                marginInlineEnd: 'auto',
               }}
             >
               {session.goalType === 'strength'
@@ -1108,6 +1121,7 @@ export default function WorkoutDetail() {
           <button
             type="button"
             onClick={() => navigate('/')}
+            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fs-accent)]"
             style={{
               flex: 1,
               minHeight: 48,
@@ -1132,6 +1146,8 @@ export default function WorkoutDetail() {
           <button
             type="button"
             onClick={handleShare}
+            aria-label="שתף אימון"
+            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fs-accent)]"
             style={{
               flex: 1,
               minHeight: 48,

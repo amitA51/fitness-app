@@ -18,6 +18,7 @@ interface AnnualInputProps {
   disabled?: boolean;
   autoComplete?: string;
   autoFocus?: boolean;
+  inputMode?: 'none' | 'text' | 'decimal' | 'numeric' | 'tel' | 'search' | 'email' | 'url';
 }
 
 export const AnnualInput = memo(function AnnualInput({
@@ -32,6 +33,7 @@ export const AnnualInput = memo(function AnnualInput({
   disabled,
   autoComplete,
   autoFocus,
+  inputMode,
 }: AnnualInputProps) {
   const inputId = useId();
   return (
@@ -67,13 +69,14 @@ export const AnnualInput = memo(function AnnualInput({
           disabled={disabled}
           autoComplete={autoComplete}
           autoFocus={autoFocus}
+          inputMode={inputMode}
           className={cn(
             'w-full h-14 transition-all duration-200',
             'text-base',
             'placeholder:opacity-60',
             'focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--fs-focus-ring)]',
-            icon ? 'pl-12 pr-4' : 'px-4',
-            suffix ? 'pr-12' : '',
+            icon ? 'ps-12 pe-4' : 'px-4',
+            suffix ? 'pe-12' : '',
             disabled ? 'opacity-50 cursor-not-allowed' : ''
           )}
           style={{
@@ -84,7 +87,7 @@ export const AnnualInput = memo(function AnnualInput({
             color: 'var(--fs-ink)',
           }}
         />
-        {suffix && <div className="absolute right-4 top-1/2 -translate-y-1/2">{suffix}</div>}
+        {suffix && <div className="absolute end-4 top-1/2 -translate-y-1/2">{suffix}</div>}
       </div>
       {error && (
         <p

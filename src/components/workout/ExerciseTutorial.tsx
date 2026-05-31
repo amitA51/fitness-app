@@ -4,7 +4,8 @@
 
 import { motion } from 'framer-motion';
 import { X as CloseIcon } from 'lucide-react';
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { logger } from '../../utils/logger';
 
 interface ExerciseTutorialProps {
@@ -30,6 +31,9 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   const [showContent, setShowContent] = useState(false);
   const [tutorialContent, setTutorialContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(containerRef, { isOpen, onClose, closeOnEscape: true, lockScroll: true });
 
   const tutorialSteps: TutorialStep[] = useMemo(
     () => [
@@ -121,6 +125,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
 
   return (
     <motion.div
+      ref={containerRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -160,7 +165,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
               textTransform: 'uppercase',
             }}
           >
-            § {activeStep + 1}
+            שלב {activeStep + 1}
           </div>
           <h2
             id="tutorial-title"

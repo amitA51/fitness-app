@@ -27,8 +27,18 @@ export const WeightTab = memo(function WeightTab({
     <div className="space-y-4">
       {/* Chapter break */}
       <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-        <span className="left">§01 · WEIGHT</span>
-        <span className="right">משקל</span>
+        <span className="left" />
+        <span
+          className="right"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: 16,
+            color: 'var(--fs-ink)',
+          }}
+        >
+          משקל
+        </span>
       </div>
 
       {/* Hero stat block */}
@@ -203,7 +213,8 @@ export const WeightTab = memo(function WeightTab({
                 textTransform: 'uppercase',
               }}
             >
-              <BarChart3 size={14} />§ 7-DAY TREND
+              <BarChart3 size={14} />
+              מגמת 7 ימים
             </h3>
           </div>
           <div className="h-28 flex items-end gap-2">
@@ -226,9 +237,11 @@ export const WeightTab = memo(function WeightTab({
                     style={{
                       backgroundColor: isLast ? 'var(--fs-signal)' : 'var(--fs-surface-2)',
                       border: isLast ? '2px solid var(--fs-primary)' : 'none',
+                      height: `${heightPct}%`,
+                      transformOrigin: 'bottom center',
                     }}
-                    initial={{ height: 0 }}
-                    animate={{ height: `${heightPct}%` }}
+                    initial={{ scaleY: 0 }}
+                    animate={{ scaleY: 1 }}
                     transition={{ delay: i * 0.06, duration: 0.5, ease: 'easeOut' }}
                   />
                   <span

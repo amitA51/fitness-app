@@ -8,6 +8,7 @@ import { useCallback, useRef, useState } from 'react';
 
 import { saveWorkoutSession } from '../../../services/dataService';
 import type {
+  ActiveExercise,
   PersonalItem,
   WorkoutExercise,
   WorkoutSession,
@@ -108,25 +109,27 @@ export function useWorkoutSave({
     isSavingRef.current = true;
 
     try {
-      // Transform Exercise[] to WorkoutExercise[] for saving
-      const workoutExercises: WorkoutExercise[] = completedExercises.map((ex, index) => ({
-        id: ex.id || `ex_${index}`,
-        exerciseId: ex.id || `exercise_${index}`,
-        exerciseName: ex.name || 'Unknown Exercise',
-        targetMuscle: ex.muscleGroup || ex.targetMuscle || 'Other',
-        sets: (ex.sets ?? [])
-          .filter((s) => s.completedAt)
-          .map((s) => ({ ...s, isCompleted: !!s.completedAt })),
-        notes: '',
-        restSeconds: ex.defaultRestTime || ex.targetRestTime || 90,
-        isCompleted: true,
-        order: index,
-        // Additional fields for display
-        name: ex.name,
-        muscleGroup: ex.muscleGroup,
-        tempo: ex.tempo,
-        targetRestTime: ex.targetRestTime,
-      }));
+      // Transform ActiveExercise[] to WorkoutExercise[] for saving
+      const workoutExercises: WorkoutExercise[] = completedExercises.map(
+        (ex: ActiveExercise, index: number) => ({
+          id: ex.id || `ex_${index}`,
+          exerciseId: ex.id || `exercise_${index}`,
+          exerciseName: ex.name || 'Unknown Exercise',
+          targetMuscle: ex.muscleGroup || ex.targetMuscle || 'Other',
+          sets: (ex.sets ?? [])
+            .filter((s) => s.completedAt)
+            .map((s) => ({ ...s, isCompleted: !!s.completedAt })),
+          notes: '',
+          restSeconds: ex.defaultRestTime || ex.targetRestTime || 90,
+          isCompleted: true,
+          order: index,
+          // Additional fields for display
+          name: ex.name,
+          muscleGroup: ex.muscleGroup,
+          tempo: ex.tempo,
+          targetRestTime: ex.targetRestTime,
+        })
+      );
 
       const sessionDurationSec = Math.floor(
         (Date.now() - state.startTimestamp - state.totalPausedTime) / 1000

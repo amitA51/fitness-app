@@ -37,4 +37,17 @@ export const SPRING_PRESETS = {
   bouncy: { type: 'spring', stiffness: 400, damping: 10 },
 } as const;
 
+/**
+ * Semantic motion curves — single source of truth.
+ * - settle: feedback, menus, toggles (critically-damped)
+ * - reveal: page/list transitions (expo ease-out)
+ * - playful: celebrations only (underdamped bounce)
+ */
+export const MOTION_CURVES = {
+  settle: { type: 'spring' as const, stiffness: 300, damping: 28 },
+  reveal: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as const },
+  playful: { type: 'spring' as const, stiffness: 400, damping: 12 },
+} as const;
+
+/** @deprecated Use MOTION_CURVES.playful for celebrations or MOTION_CURVES.settle for menus */
 export const SPRING_BOUNCY = { type: 'spring' as const, stiffness: 400, damping: 10 };

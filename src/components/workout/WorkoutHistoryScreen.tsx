@@ -434,7 +434,7 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
               textTransform: 'uppercase',
             }}
           >
-            §01 · היסטוריה
+            היסטוריה
           </span>
           <h1
             style={{
@@ -749,15 +749,30 @@ const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({
                 {group.label}
               </span>
             </div>
-            <div className="space-y-3">
+            <motion.div
+              className="space-y-3"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: { staggerChildren: group.sessions.length > 6 ? 0.03 : 0.05 },
+                },
+              }}
+            >
               {group.sessions.map((session) => (
-                <SessionCard
+                <motion.div
                   key={session.id}
-                  session={session}
-                  onClick={() => onSelectSession?.(session)}
-                />
+                  variants={{
+                    hidden: { opacity: 0, y: 12 },
+                    visible: { opacity: 1, y: 0 },
+                  }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <SessionCard session={session} onClick={() => onSelectSession?.(session)} />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         ))}
       </div>

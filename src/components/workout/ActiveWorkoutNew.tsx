@@ -36,7 +36,6 @@ import {
 import { formatTime } from './hooks/useWorkoutTimer';
 
 import OverlayLoader from './components/ui/OverlayLoader';
-import { ToastContainer } from './components/ui/Toast';
 import OverlayErrorBoundary from './core/OverlayErrorBoundary';
 // Extracted components
 import PreWorkoutScreen from './states/PreWorkoutScreen';
@@ -113,8 +112,11 @@ export const WorkoutContent: React.FC<{
     []
   );
 
-  // Settings
-  const workoutSettings: Partial<WorkoutSettings> = state.appSettings?.workoutSettings || {};
+  // Settings — memoized to keep stable reference for memo'd children
+  const workoutSettings: Partial<WorkoutSettings> = useMemo(
+    () => state.appSettings?.workoutSettings || {},
+    [state.appSettings?.workoutSettings]
+  );
 
   // Extract primitives passed as props so child memo() is not broken by
   // the workoutSettings object reference changing on every state tick.
@@ -651,7 +653,7 @@ export const WorkoutContent: React.FC<{
       <React.Suspense
         fallback={
           <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            className="fixed inset-0 z-overlay flex items-center justify-center"
             style={{ background: 'var(--fs-bg)' }}
           >
             <div
@@ -1136,9 +1138,6 @@ export const WorkoutContent: React.FC<{
         isVisible={showWaterReminder}
         onDismiss={() => setShowWaterReminder(false)}
       />
-
-      {/* Global Toast Notifications */}
-      <ToastContainer />
 
       {/* Saving overlay (blocks interactions + signals progress) */}
       {isSaving && <OverlayLoader />}

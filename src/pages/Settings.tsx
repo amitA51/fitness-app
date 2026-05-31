@@ -224,9 +224,9 @@ export default function Settings() {
   // Load pending sync count when sync completes
   const loadPendingCount = useCallback(async () => {
     try {
-      const { dbGetAll: getAll } = await import('../services/indexedDBCore');
-      const pending = await getAll(STORES.PENDING_SYNC);
-      setPendingSyncCount(pending.length);
+      const { getQueueDepth } = await import('../services/offlineQueue');
+      const count = await getQueueDepth();
+      setPendingSyncCount(count);
     } catch {
       // Ignore errors
     }
@@ -1115,7 +1115,7 @@ export default function Settings() {
                   זמן מנוחה ברירת מחדל
                 </span>
               </div>
-              <div className="flex flex-wrap gap-2 pr-11">
+              <div className="flex flex-wrap gap-2 pe-11">
                 {REST_TIME_OPTIONS.map((opt) => (
                   <button
                     type="button"
@@ -1327,7 +1327,7 @@ export default function Settings() {
         {/* ── CLOUD SYNC SECTION ─────────────────────────────────────────── */}
         {isSupabaseConfigured() && (
           <div className="mb-7">
-            <p className="section-title mb-3 px-1">§ CLOUD SYNC · סנכרון ענן</p>
+            <p className="section-title mb-3 px-1">סנכרון ענן</p>
             <SettingsCard>
               {/* Connection Status Row */}
               <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
@@ -1515,7 +1515,7 @@ export default function Settings() {
 
         {/* ── EXPORT & SHARE SECTION ────────────────────────────────────────── */}
         <div className="mb-7">
-          <p className="section-title mb-3 px-1">§ EXPORT · ייצוא ושיתוף</p>
+          <p className="section-title mb-3 px-1">ייצוא ושיתוף</p>
           <SettingsCard>
             <div className="flex flex-col">
               <button
@@ -1761,7 +1761,7 @@ export default function Settings() {
         {/* ── DANGER ZONE ─────────────────────────────────────────────────── */}
         <div className="mb-7">
           <p className="section-title mb-3 px-1" style={{ color: 'var(--fs-warn)' }}>
-            § DANGER · אזור מסוכן
+            אזור מסוכן
           </p>
           <SettingsCard>
             <div className="px-4 py-4">

@@ -14,11 +14,11 @@ interface ModalOverlayProps {
   onClose?: () => void;
   children: React.ReactNode;
   /**
-   * Z-index level (all levels are above navigation bar):
-   * - 'default' = z-[1000] (standard modals)
-   * - 'high' = z-[1000] (same as default, for compatibility)
-   * - 'ultra' = z-[1100] (alerts)
-   * - 'extreme' = z-[2000] (system-level)
+   * Z-index level:
+   * - 'default' = modal (1100)
+   * - 'high' = modal (1100, compatibility alias)
+   * - 'ultra' = modal (1100)
+   * - 'extreme' = splash (2000, system-level)
    */
   zLevel?: ZLevel;
   /** Backdrop opacity percentage: 50, 60, 70, 80, 90, 95 */
@@ -64,7 +64,7 @@ interface ModalOverlayProps {
 const zIndexMap: Record<ZLevel, number> = {
   default: Z_INDEX.modal,
   high: Z_INDEX.modal,
-  ultra: Z_INDEX.alert,
+  ultra: Z_INDEX.modal,
   extreme: Z_INDEX.splash,
 };
 

@@ -32,7 +32,9 @@ export type MutationType =
   | 'setting:update'
   | 'ai:create'
   | 'ai:update'
-  | 'ai:delete';
+  | 'ai:delete'
+  | 'water:create'
+  | 'water:delete';
 
 interface QueuedMutation {
   id: string;
@@ -278,6 +280,19 @@ async function getSyncFn(type: MutationType, payload: unknown, userId: string) {
       return () => syncAIConversation(userId, payload as Parameters<typeof syncAIConversation>[1]);
     case 'ai:delete':
       return () => deleteCloudAIConversation(userId, payload as string);
+    case 'water:create':
+      return async () => {
+        const { syncWaterEntryToCloud } = await import('./waterService');
+        await syncWaterEntryToCloud(
+          userId,
+          payload as { id: string; date: string; amountMl: number; createdAt: string }
+        );
+      };
+    case 'water:delete':
+      return async () => {
+        const { deleteCloudWaterEntry } = await import('./waterService');
+        await deleteCloudWaterEntry(userId, payload as string);
+      };
     default:
       return null;
   }
@@ -527,4 +542,15 @@ export function initOfflineSync() {
       logger.sync.info('Processed queued mutations on startup', result);
     }
   });
+
+  // DA-9: Periodic retry every 90s when online and queue has items
+  setInterval(async () => {
+    if (!navigator.onLine) return;
+    const depth = await getQueueDepth();
+    if (depth === 0) return;
+    const result = await processQueue();
+    if (result.success > 0 || result.failed > 0) {
+      logger.sync.info('Periodic queue retry', result);
+    }
+  }, 90_000);
 }

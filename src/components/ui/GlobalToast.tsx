@@ -1,6 +1,6 @@
-// Toast — Inline notification replacing native alert()
+// GlobalToast — Imperative toast notification system
 // Features: Auto-dismiss, slide-in animation, success/error/info variants
-// Sport Annual restyle: sharp-cornered bone cards + mustard/navy/error left-border
+// ARIA: role + aria-live per A-10 accessibility requirements
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useCallback, useEffect, useState } from 'react';
@@ -47,6 +47,9 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
         exit={{ opacity: 0, y: -20, scale: 0.98 }}
         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         className="flex items-start gap-3 px-4 py-3"
+        role={toast.variant === 'error' ? 'alert' : 'status'}
+        aria-live={toast.variant === 'error' ? 'assertive' : 'polite'}
+        aria-atomic="true"
         style={{
           backgroundColor: 'var(--fs-bg)',
           border: `1px solid ${style.accent}`,
@@ -99,7 +102,7 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
 
 ToastItem.displayName = 'ToastItem';
 
-/** Mount once at the top of your workout tree */
+/** Mount once at the top of your app tree (App.tsx) */
 export const ToastContainer = memo(() => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -115,7 +118,7 @@ export const ToastContainer = memo(() => {
   }, []);
 
   return (
-    <div className="fixed top-4 inset-x-4 z-[15000] flex flex-col items-center gap-2 pointer-events-none">
+    <div className="fixed top-4 inset-x-4 z-toast flex flex-col items-center gap-2 pointer-events-none">
       <AnimatePresence>
         {toasts.map((t) => (
           <div key={t.id} className="pointer-events-auto w-full max-w-sm">

@@ -6,7 +6,8 @@ import { MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
-import { showToast } from '../../components/workout/components/ui/Toast';
+import { showToast } from '../../components/ui/GlobalToast';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import {
   addCoachNote,
   clientStatusMeta,
@@ -47,12 +48,12 @@ export default function ClientDetail() {
       actions={
         <button
           type="button"
-          aria-label="הודעה"
+          aria-label="שלח הודעה למתאמן"
           onClick={() => navigate(`/coach/messages/${id}`)}
-          className="shrink-0 flex items-center justify-center"
+          className="shrink-0 flex items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-accent)]"
           style={{
-            width: 36,
-            height: 36,
+            width: 44,
+            height: 44,
             background: 'var(--fs-primary)',
             color: 'var(--fs-accent)',
           }}
@@ -108,7 +109,7 @@ export default function ClientDetail() {
 
       <Section title="אימונים אחרונים">
         {loading ? (
-          <EmptyHint>טוען…</EmptyHint>
+          <LoadingSpinner />
         ) : sessions.length === 0 ? (
           <EmptyHint>אין אימונים מתועדים.</EmptyHint>
         ) : (
@@ -255,6 +256,7 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
           fontFamily: 'var(--font-body)',
           fontSize: 20,
           fontWeight: 700,
+          fontVariantNumeric: 'tabular-nums',
           color: color ?? 'var(--fs-heading)',
         }}
       >

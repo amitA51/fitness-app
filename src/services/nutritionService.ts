@@ -8,11 +8,12 @@ import {
   Zap,
 } from 'lucide-react';
 import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../types';
-import { todayStr } from '../utils/dateUtils';
+import { toLocalDateStr, todayStr } from '../utils/dateUtils';
 import { generateId } from '../utils/id';
-import { STORES, dbDelete, dbGetAll, dbPut, syncWithRetry } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbGetByRange, dbPut } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudNutritionLog, syncNutritionLog } from './supabaseSync';
+import { syncWithRetry } from './syncEngine';
 
 export const DEFAULT_MACRO_GOALS: MacroNutrients = {
   calories: 2500,
@@ -804,10 +805,15 @@ export async function getWeeklyNutritionSummary(): Promise<DailyNutritionSummary
   for (let i = 6; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    dates.push(date.toISOString().split('T')[0] ?? '');
+    dates.push(toLocalDateStr(date));
   }
 
-  const allEntries = await dbGetAll<MealEntry>(STORES.NUTRITION_LOGS);
+  const allEntries = await dbGetByRange<MealEntry>(
+    STORES.NUTRITION_LOGS,
+    'date',
+    dates[0] ?? '',
+    dates[dates.length - 1] ?? ''
+  );
   const entriesByDate = new Map<string, MealEntry[]>();
   for (const entry of allEntries) {
     const existing = entriesByDate.get(entry.date) ?? [];

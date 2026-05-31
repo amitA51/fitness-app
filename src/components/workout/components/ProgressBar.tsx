@@ -1,7 +1,7 @@
 // ProgressBar - Ultra Premium Top Progress Indicator with Glow Effects
 // Features: Gradient animation, particle trail, milestone markers
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { memo } from 'react';
 
 // ============================================================
@@ -42,6 +42,7 @@ ProgressParticle.displayName = 'ProgressParticle';
 // ============================================================
 
 const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }) => {
+  const shouldReduce = useReducedMotion();
   // Clamp progress between 0-100
   const clampedProgress = Math.min(100, Math.max(0, progress));
 
@@ -50,7 +51,7 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
 
   return (
     <div
-      className="absolute top-0 left-0 right-0 h-1.5 z-[100]"
+      className="absolute top-0 left-0 right-0 h-1.5 z-sticky"
       style={{ background: 'var(--fs-surface-2)' }}
     >
       {/* Background Track */}
@@ -58,49 +59,56 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
 
       {/* Progress Fill */}
       <motion.div
-        className="absolute top-0 left-0 h-full shadow-[0_0_15px_var(--fs-accent)]"
-        style={{ background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))' }}
-        initial={{ width: 0 }}
-        animate={{ width: `${clampedProgress}%` }}
+        className="absolute top-0 left-0 h-full w-full shadow-[0_0_15px_var(--fs-accent)]"
+        style={{
+          background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
+          transformOrigin: 'left center',
+        }}
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: clampedProgress / 100 }}
         transition={{
           duration: 0.5,
-          ease: [0.34, 1.56, 0.64, 1], // Bounce easing
+          ease: [0.16, 1, 0.3, 1],
         }}
       >
         {/* Shimmer effect */}
-        <motion.div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
-            backgroundSize: '200% 100%',
-          }}
-          animate={{
-            backgroundPosition: ['0% 0%', '200% 0%'],
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: 'linear',
-          }}
-        />
+        {!shouldReduce && (
+          <motion.div
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+              backgroundSize: '200% 100%',
+            }}
+            animate={{
+              backgroundPosition: ['0% 0%', '200% 0%'],
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: 'linear',
+            }}
+          />
+        )}
 
         {/* Leading edge glow */}
-        <motion.div
-          className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full accent-glow"
-          style={{
-            background:
-              'radial-gradient(circle, color-mix(in srgb, var(--fs-accent) 80%, transparent) 0%, transparent 70%)',
-          }}
-          animate={{
-            scale: [0.8, 1.2, 0.8],
-            opacity: [0.6, 1, 0.6],
-          }}
-          transition={{
-            duration: 1,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: 'easeInOut',
-          }}
-        />
+        {!shouldReduce && (
+          <motion.div
+            className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full accent-glow"
+            style={{
+              background:
+                'radial-gradient(circle, color-mix(in srgb, var(--fs-accent) 80%, transparent) 0%, transparent 70%)',
+            }}
+            animate={{
+              scale: [0.8, 1.2, 0.8],
+              opacity: [0.6, 1, 0.6],
+            }}
+            transition={{
+              duration: 1,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: 'easeInOut',
+            }}
+          />
+        )}
       </motion.div>
 
       {/* Milestone Markers */}

@@ -13,11 +13,14 @@ export function SettingsToggle({ checked, onChange, label }: SettingsToggleProps
       aria-label={label}
       aria-checked={checked}
       onClick={onChange}
+      className="focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:outline-none"
       style={{
         position: 'relative',
         display: 'inline-block',
         width: '52px',
         height: '32px',
+        minHeight: '44px',
+        minWidth: '44px',
         flexShrink: 0,
         cursor: 'pointer',
         background: 'transparent',
@@ -41,15 +44,16 @@ export function SettingsToggle({ checked, onChange, label }: SettingsToggleProps
         style={{
           position: 'absolute',
           top: '2px',
-          left: checked ? '24px' : '2px',
+          insetInlineStart: checked ? '24px' : '2px',
           width: '24px',
           height: '24px',
           background: checked ? 'var(--fs-surface)' : 'var(--fs-primary)',
           borderRadius: '50%',
-          transition: 'left 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          transition: 'inset-inline-start 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           pointerEvents: 'none',
         }}
       />
+      <style>{`@media (prefers-reduced-motion: reduce) { button[role="switch"] span { transition: none !important; } }`}</style>
     </button>
   );
 }

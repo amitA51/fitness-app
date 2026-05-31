@@ -177,7 +177,7 @@ export const AccessibleInput = forwardRef<HTMLInputElement, AccessibleInputProps
         >
           {label}
           {required && (
-            <span className="text-[var(--color-error)] mr-1" aria-hidden="true">
+            <span className="text-[var(--color-error)] me-1" aria-hidden="true">
               *
             </span>
           )}
@@ -213,8 +213,8 @@ export const AccessibleInput = forwardRef<HTMLInputElement, AccessibleInputProps
               'focus-visible:border-transparent',
               'transition-all duration-200',
               'disabled:opacity-50 disabled:cursor-not-allowed',
-              leftAddon ? 'pr-10' : '',
-              rightAddon ? 'pl-10' : '',
+              leftAddon ? 'pe-10' : '',
+              rightAddon ? 'ps-10' : '',
               sizeClasses[size],
               className
             )}

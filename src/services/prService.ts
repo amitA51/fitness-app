@@ -5,9 +5,10 @@
 import type { PersonalRecord, WorkoutSession } from '../types';
 import { safeJsonParseOr } from '../utils/safeJson';
 import { oneRepMax, setVolume } from '../utils/workoutMath';
-import { STORES, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudPersonalRecord, syncPersonalRecord } from './supabaseSync';
+import { syncWithRetry } from './syncEngine';
 
 export type { PersonalRecord };
 

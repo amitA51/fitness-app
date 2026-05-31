@@ -55,7 +55,12 @@ export const listCoachAssignments = async (clientId?: string): Promise<Assignmen
   const supabase = requireClient();
   const user = await getCurrentUser();
   if (!user) return [];
-  let query = supabase.from('assignments').select('*').eq('coach_id', user.id);
+  let query = supabase
+    .from('assignments')
+    .select(
+      'id, coach_id, client_id, group_id, kind, title, payload, template_id, schedule, status, created_at, updated_at'
+    )
+    .eq('coach_id', user.id);
   if (clientId) query = query.eq('client_id', clientId);
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) {
@@ -70,7 +75,9 @@ export const listMyAssignments = async (): Promise<Assignment[]> => {
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('assignments')
-    .select('*')
+    .select(
+      'id, coach_id, client_id, group_id, kind, title, payload, template_id, schedule, status, created_at, updated_at'
+    )
     .eq('status', 'active')
     .order('created_at', { ascending: false });
   if (error) {

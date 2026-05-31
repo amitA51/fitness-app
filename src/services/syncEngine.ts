@@ -8,6 +8,7 @@
 
 import { isSupabaseConfigured } from '../lib/supabase';
 import { logger } from '../utils/logger';
+import { reportError } from './errorReporter';
 
 export interface SyncResult {
   success: boolean;
@@ -80,6 +81,11 @@ export const syncWithRetry = (
   return tryExecuteSync(syncFn, maxRetries)
     .then(async (result) => {
       if (!result.success) {
+        reportError(new Error(result.error ?? 'Sync failed'), {
+          service: 'syncEngine',
+          action: tag,
+          syncState: 'offline',
+        });
         if (queue) {
           const { queueMutation } = await import('./offlineQueue');
           await queueMutation(queue.type, queue.payload);

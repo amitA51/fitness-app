@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { type Metric, onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals';
 
 type MetricHandler = (metric: Metric) => void;
@@ -15,6 +16,14 @@ const logMetric: MetricHandler = (metric) => {
       `%c[Web Vitals] ${metric.name}: ${metric.value.toFixed(2)} (${metric.rating})`,
       `color: ${color}; font-weight: bold;`
     );
+  } else {
+    // Production: send to Sentry as a breadcrumb + measurement on a transaction
+    Sentry.addBreadcrumb({
+      category: 'web-vitals',
+      message: `${metric.name}: ${metric.value.toFixed(2)} (${metric.rating})`,
+      level: metric.rating === 'good' ? 'info' : 'warning',
+      data: { name: metric.name, value: metric.value, rating: metric.rating },
+    });
   }
 };
 

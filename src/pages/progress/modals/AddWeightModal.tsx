@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
-import { memo, useState } from 'react';
+import { memo, useRef, useState } from 'react';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 export const AddWeightModal = memo(function AddWeightModal({
   onSave,
@@ -9,6 +10,9 @@ export const AddWeightModal = memo(function AddWeightModal({
   const [weight, setWeight] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(contentRef, { isOpen: true, onClose, closeOnEscape: true, lockScroll: true });
 
   return (
     <motion.div
@@ -19,6 +23,7 @@ export const AddWeightModal = memo(function AddWeightModal({
       onClick={onClose}
     >
       <motion.div
+        ref={contentRef}
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
@@ -79,6 +84,7 @@ export const AddWeightModal = memo(function AddWeightModal({
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="0.0"
+              aria-label="משקל בק״ג"
               style={{
                 width: '144px',
                 textAlign: 'center',
@@ -110,6 +116,7 @@ export const AddWeightModal = memo(function AddWeightModal({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="הערות (אופציונלי)"
+            aria-label="הערות"
             style={{
               width: '100%',
               background: 'var(--fs-surface-2)',

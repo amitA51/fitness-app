@@ -5,6 +5,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import React, { useEffect, useRef, useCallback, useReducer, useMemo } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { logger } from '../../utils/logger';
 import { safeJsonParseOr } from '../../utils/safeJson';
 
@@ -221,7 +222,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
           style={{ borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)' }}
         >
           <span className="left" style={{ color: 'var(--fs-accent)' }}>
-            §01 · {title}
+            {title}
           </span>
           <span className="right">{activeItems.length} תרגילים</span>
         </div>
@@ -813,6 +814,9 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
   });
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flowRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(flowRef, { isOpen: true, onClose: onSkip, closeOnEscape: true, lockScroll: true });
 
   const storageKey = type === 'warmup' ? WARMUP_STORAGE_KEY : COOLDOWN_STORAGE_KEY;
   const defaultItems = type === 'warmup' ? DEFAULT_WARMUP : DEFAULT_COOLDOWN;
@@ -908,11 +912,15 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
 
   return (
     <motion.div
-      className="fixed inset-0 z-[11000] flex flex-col"
+      ref={flowRef}
+      className="fixed inset-0 z-modal flex flex-col"
       style={{ background: 'var(--fs-surface)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={type === 'warmup' ? 'חימום' : 'צינון'}
     >
       {/* Safe area top */}
       <div

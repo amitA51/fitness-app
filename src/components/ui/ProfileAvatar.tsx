@@ -45,7 +45,7 @@ export function ProfileAvatar({ name }: { name: string }) {
         </p>
       )}
       <p className="eyebrow mt-1" style={{ color: 'var(--fs-accent)' }}>
-        § PERSONAL PROFILE
+        פרופיל אישי
       </p>
     </div>
   );

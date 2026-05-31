@@ -2,8 +2,6 @@
 // SPARKOS FITNESS - Errors Index
 // ============================================================================
 
-import { logger } from '../utils/logger';
-
 export { PageErrorBoundary } from './PageErrorBoundary';
 
 export class AppError extends Error {
@@ -45,10 +43,6 @@ export class SyncError extends AppError {
     this.name = 'SyncError';
   }
 }
-
-export const handleError = (error: unknown, context: string): void => {
-  logger.app.error(context, error);
-};
 
 export const isAppError = (error: unknown): error is AppError => {
   return error instanceof AppError;

@@ -5,29 +5,21 @@
  * merge/replace helpers.
  */
 
-import { LOCAL_STORAGE_KEYS as LS } from '../constants';
 import { getBUILT_IN_EXERCISES } from '../data/builtInExercises';
 import { NotFoundError } from '../errors';
 import type { CreatePersonalExerciseInput, PersonalExercise } from '../types';
 import { mergeGenericRecords } from './cloudMerge';
-import {
-  STORES,
-  dbDelete,
-  dbGetAll,
-  dbGetByIndex,
-  dbPut,
-  initDB,
-  syncWithRetry,
-} from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbGetByIndex, dbPut, initDB } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudPersonalExercise, syncPersonalExercise } from './supabaseSync';
+import { syncWithRetry } from './syncEngine';
 
 /**
  * Get all personal exercises, sorted by last used.
  * Seeds built-in exercises if library is empty.
  */
 export const getPersonalExercises = async (): Promise<PersonalExercise[]> => {
-  let exercises = await dbGetAll<PersonalExercise>(LS.PERSONAL_EXERCISES);
+  let exercises = await dbGetAll<PersonalExercise>(STORES.PERSONAL_EXERCISES);
 
   // Check for missing built-in exercises and seed them if needed
   const now = new Date().toISOString();
@@ -42,7 +34,7 @@ export const getPersonalExercises = async (): Promise<PersonalExercise[]> => {
       createdAt: now,
     })) as PersonalExercise[];
 
-    await Promise.all(newExercises.map((ex) => dbPut(LS.PERSONAL_EXERCISES, ex)));
+    await Promise.all(newExercises.map((ex) => dbPut(STORES.PERSONAL_EXERCISES, ex)));
     exercises = [...exercises, ...newExercises];
   }
 
@@ -66,8 +58,8 @@ export const getPersonalExercises = async (): Promise<PersonalExercise[]> => {
 export const getPersonalExercise = async (id: string): Promise<PersonalExercise | undefined> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readonly');
-    const store = tx.objectStore(LS.PERSONAL_EXERCISES);
+    const tx = db.transaction(STORES.PERSONAL_EXERCISES, 'readonly');
+    const store = tx.objectStore(STORES.PERSONAL_EXERCISES);
     const request = store.get(id);
 
     request.onsuccess = () => resolve(request.result);
@@ -90,8 +82,8 @@ export const createPersonalExercise = async (
 
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readwrite');
-    const store = tx.objectStore(LS.PERSONAL_EXERCISES);
+    const tx = db.transaction(STORES.PERSONAL_EXERCISES, 'readwrite');
+    const store = tx.objectStore(STORES.PERSONAL_EXERCISES);
     const request = store.add(newExercise);
 
     request.onsuccess = () => {
@@ -125,8 +117,8 @@ export const updatePersonalExercise = async (
 
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readwrite');
-    const store = tx.objectStore(LS.PERSONAL_EXERCISES);
+    const tx = db.transaction(STORES.PERSONAL_EXERCISES, 'readwrite');
+    const store = tx.objectStore(STORES.PERSONAL_EXERCISES);
     const request = store.put(updated);
 
     request.onsuccess = () => {
@@ -160,8 +152,8 @@ export const deletePersonalExercise = async (id: string): Promise<void> => {
 
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readwrite');
-    const store = tx.objectStore(LS.PERSONAL_EXERCISES);
+    const tx = db.transaction(STORES.PERSONAL_EXERCISES, 'readwrite');
+    const store = tx.objectStore(STORES.PERSONAL_EXERCISES);
     const request = store.delete(id);
 
     request.onsuccess = () => {
@@ -242,8 +234,8 @@ export const removeDuplicateExercises = async (): Promise<number> => {
 
       // Delete the rest in a single transaction
       await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readwrite');
-        const store = tx.objectStore(LS.PERSONAL_EXERCISES);
+        const tx = db.transaction(STORES.PERSONAL_EXERCISES, 'readwrite');
+        const store = tx.objectStore(STORES.PERSONAL_EXERCISES);
         for (const ex of remove) {
           store.delete(ex.id);
         }
@@ -267,8 +259,8 @@ export const replacePersonalExercisesFromCloud = async (
 ): Promise<void> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(LS.PERSONAL_EXERCISES, 'readwrite');
-    const store = tx.objectStore(LS.PERSONAL_EXERCISES);
+    const tx = db.transaction(STORES.PERSONAL_EXERCISES, 'readwrite');
+    const store = tx.objectStore(STORES.PERSONAL_EXERCISES);
     store.clear();
     for (const ex of exercises) {
       store.put(ex);

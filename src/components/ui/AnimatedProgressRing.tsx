@@ -12,13 +12,13 @@ interface AnimatedProgressRingProps {
 }
 
 // Confetti particle component
-const ConfettiParticle: React.FC<{ delay: number; color: string | undefined }> = ({
-  delay,
-  color,
-}) => {
-  const randomX = (Math.random() - 0.5) * 100;
-  const randomRotation = Math.random() * 720;
-
+const ConfettiParticle: React.FC<{
+  delay: number;
+  color: string | undefined;
+  x: number;
+  rotation: number;
+  yOffset: number;
+}> = ({ delay, color, x, rotation, yOffset }) => {
   return (
     <motion.div
       className="absolute w-2 h-2 rounded-sm"
@@ -35,10 +35,10 @@ const ConfettiParticle: React.FC<{ delay: number; color: string | undefined }> =
         opacity: 1,
       }}
       animate={{
-        x: randomX,
-        y: -80 - Math.random() * 40,
+        x,
+        y: -80 - yOffset,
         scale: [0, 1, 0],
-        rotate: randomRotation,
+        rotate: rotation,
         opacity: [1, 1, 0],
       }}
       transition={{
@@ -92,10 +92,15 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
   );
 
   const confettiParticles = useMemo(() => {
+    // Deterministic pseudo-random using index-based seed
+    const seed = (i: number) => Math.sin(i * 9301 + 49297) * 0.5 + 0.5;
     return Array.from({ length: 20 }).map((_, i) => ({
       id: i,
       color: confettiColors[i % confettiColors.length],
       delay: i * 0.03,
+      x: (seed(i) - 0.5) * 100,
+      rotation: seed(i + 20) * 720,
+      yOffset: seed(i + 40) * 40,
     }));
   }, [confettiColors]);
 
@@ -132,7 +137,14 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
         {showCelebration && (
           <div className="absolute inset-0 pointer-events-none overflow-visible">
             {confettiParticles.map((particle) => (
-              <ConfettiParticle key={particle.id} delay={particle.delay} color={particle.color} />
+              <ConfettiParticle
+                key={particle.id}
+                delay={particle.delay}
+                color={particle.color}
+                x={particle.x}
+                rotation={particle.rotation}
+                yOffset={particle.yOffset}
+              />
             ))}
           </div>
         )}

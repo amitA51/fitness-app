@@ -119,6 +119,58 @@ export interface ProgramExtras {
   [key: string]: unknown;
 }
 
+// ----------------------------------------------------------------------------
+// AR-1: Decomposed Exercise types (catalog / active-runtime / template)
+// ----------------------------------------------------------------------------
+
+/** Identity + catalog metadata for an exercise definition. */
+export interface ExerciseCatalogEntry {
+  id: string;
+  name?: string;
+  targetMuscle?: string;
+  secondaryMuscles?: string[];
+  equipment?: string;
+  instructions?: string;
+  videoUrl?: string | null;
+  imageUrl?: string | null;
+  isCustom?: boolean;
+  isTimed?: boolean; // e.g., plank - uses duration instead of reps
+  createdAt?: string;
+}
+
+/** Runtime state of an exercise during an active workout session. */
+export interface ActiveExercise extends ExerciseCatalogEntry {
+  sets?: WorkoutSet[];
+  muscleGroup?: string;
+  tempo?: string;
+  defaultRestTime?: number;
+  targetRestTime?: number;
+  tutorialText?: string;
+  programExtras?: ProgramExtras;
+  isCompleted?: boolean;
+  order?: number;
+  notes?: string;
+  // Legacy compat fields used by save path
+  exerciseId?: string;
+  exerciseName?: string;
+}
+
+/** Exercise shape used in template authoring (target prescriptions). */
+export interface TemplateExercise extends ExerciseCatalogEntry {
+  targetSets?: number;
+  targetReps?: number;
+  targetWeight?: number;
+  restSeconds?: number;
+  order?: number;
+  notes?: string;
+}
+
+/**
+ * Backward-compatible god-object alias.
+ * Existing call sites can keep importing `Exercise` without changes.
+ * New code should prefer `ActiveExercise` or `TemplateExercise`.
+ * @deprecated Prefer ActiveExercise, TemplateExercise, or ExerciseCatalogEntry.
+ */
 export interface Exercise {
   id: string;
   name?: string;

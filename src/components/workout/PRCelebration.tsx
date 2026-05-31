@@ -3,9 +3,10 @@
 // Celebrates new personal records with editorial style
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import type { PersonalRecord } from '../../services/prService';
-import { showToast } from './components/ui/Toast';
+import { showToast } from '../ui/GlobalToast';
 
 interface PRCelebrationProps {
   isVisible: boolean;
@@ -39,6 +40,14 @@ const CONFETTI_PARTICLES = Array.from({ length: 20 }, (_, i) => {
 const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss }) => {
   const shouldReduceMotion = useReducedMotion();
   const isRTL = document.dir === 'rtl';
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(contentRef, {
+    isOpen: isVisible,
+    onClose: onDismiss,
+    closeOnEscape: true,
+    lockScroll: true,
+  });
 
   const handleShare = useCallback(
     async (e: React.MouseEvent) => {
@@ -68,7 +77,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none"
+          className="fixed inset-0 z-overlay flex items-center justify-center"
           onClick={onDismiss}
           role="dialog"
           aria-modal="true"
@@ -79,7 +88,8 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
             animate={shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1, y: 0 }}
             exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.9, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 280, damping: 24 }}
-            className="pointer-events-auto w-full max-w-sm mx-4"
+            className="w-full max-w-sm mx-4"
+            ref={contentRef}
             onClick={(e) => e.stopPropagation()}
           >
             <div
@@ -122,7 +132,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                     letterSpacing: '-0.01em',
                   }}
                 >
-                  §NEW
+                  שיא חדש!
                 </span>
               </div>
 

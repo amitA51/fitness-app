@@ -69,10 +69,11 @@ export const TemplateItem = memo(function TemplateItem({ template, onClick }: Te
           fontSize: 9,
           color: 'var(--fs-accent)',
           letterSpacing: '0.2em',
-          marginLeft: 4,
+          marginInlineStart: 4,
         }}
+        aria-hidden="true"
       >
-        §
+        ·
       </span>
       <span
         style={{

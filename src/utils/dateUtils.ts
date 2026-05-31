@@ -68,6 +68,14 @@ export const todayStr = (): string => {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 };
 
+/**
+ * Returns a `YYYY-MM-DD` string for the given Date in the user's LOCAL timezone.
+ * Use this instead of `date.toISOString().split('T')[0]` or `.slice(0,10)` which
+ * produce UTC dates and mis-key entries for users ahead of UTC (e.g. Israel 00:00–03:00).
+ */
+export const toLocalDateStr = (date: Date): string =>
+  `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+
 export const DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'] as const;
 
 export const MONO_STYLE: React.CSSProperties = {

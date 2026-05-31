@@ -121,13 +121,14 @@ export const Toggle = memo<{
         style={{
           position: 'absolute',
           top: 2,
+          left: 2,
           width: 24,
           height: 24,
           borderRadius: 999,
           backgroundColor: 'var(--fs-surface)',
           boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
         }}
-        animate={{ left: value ? 23 : 2 }}
+        animate={{ x: value ? 21 : 0 }}
         transition={{ type: 'spring', stiffness: 500, damping: 35 }}
       />
     </div>

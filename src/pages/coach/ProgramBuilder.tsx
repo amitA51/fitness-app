@@ -1,7 +1,7 @@
 import { Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '../../components/ui/Button';
-import { showToast } from '../../components/workout/components/ui/Toast';
+import { showToast } from '../../components/ui/GlobalToast';
 import { createAssignment, upsertClientTemplate } from '../../services/coach';
 import type { WorkoutTemplate, WorkoutTemplateExercise } from '../../types';
 

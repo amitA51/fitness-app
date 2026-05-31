@@ -27,6 +27,8 @@ export interface UseSwipeGestureOptions {
   onSwipeEnd?: () => void;
   enabled?: boolean;
   direction?: 'horizontal' | 'vertical' | 'both';
+  /** Flip left/right semantics in RTL layouts (default: true) */
+  rtlAware?: boolean;
 }
 
 const DEFAULT_THRESHOLD = 60;
@@ -44,7 +46,10 @@ export function useSwipeGesture(options: UseSwipeGestureOptions = {}) {
     onSwipeEnd,
     enabled = true,
     direction = 'horizontal',
+    rtlAware = true,
   } = options;
+
+  const isRTL = rtlAware && typeof document !== 'undefined' && document.dir === 'rtl';
 
   const [state, setState] = useState<SwipeState>({
     direction: null,
@@ -147,11 +152,11 @@ export function useSwipeGesture(options: UseSwipeGestureOptions = {}) {
 
       if (horizontalSwipe || verticalSwipe) {
         if (absX > absY) {
-          // Horizontal swipe
+          // Horizontal swipe — flip meaning in RTL
           if (deltaX > 0) {
-            onSwipeRight?.();
+            (isRTL ? onSwipeLeft : onSwipeRight)?.();
           } else {
-            onSwipeLeft?.();
+            (isRTL ? onSwipeRight : onSwipeLeft)?.();
           }
         } else {
           // Vertical swipe
@@ -174,7 +179,7 @@ export function useSwipeGesture(options: UseSwipeGestureOptions = {}) {
 
       onSwipeEnd?.();
     },
-    [enabled, threshold, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown, onSwipeEnd]
+    [enabled, threshold, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown, onSwipeEnd, isRTL]
   );
 
   const handlers = {
@@ -221,6 +226,11 @@ export function SwipeableItem({
   className = '',
   style,
 }: SwipeableItemProps) {
+  const isRTL = typeof document !== 'undefined' && document.dir === 'rtl';
+  // In RTL, swap the action sides visually
+  const startAction = isRTL ? rightAction : leftAction;
+  const endAction = isRTL ? leftAction : rightAction;
+
   const { direction, distance, progress, handlers } = useSwipeGesture({
     threshold,
     onSwipeLeft,
@@ -249,49 +259,53 @@ export function SwipeableItem({
       data-swipe={direction}
       {...handlers}
     >
-      {/* Left action (revealed on swipe left) */}
-      {leftAction && (
+      {/* Start action (revealed on swipe toward start) */}
+      {startAction && (
         <div
           className="swipeable-actions swipeable-actions-left"
           style={{
             position: 'absolute',
-            left: 0,
+            left: isRTL ? undefined : 0,
+            right: isRTL ? 0 : undefined,
             top: 0,
             bottom: 0,
             width: actionWidth,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'flex-start',
-            paddingLeft: 12,
+            justifyContent: isRTL ? 'flex-end' : 'flex-start',
+            paddingLeft: isRTL ? undefined : 12,
+            paddingRight: isRTL ? 12 : undefined,
             opacity: direction === 'left' ? Math.min(progress * 2, 1) : 0,
             transform: `translateX(${-actionWidth + (direction === 'left' ? distance : 0)}px)`,
             transition: direction === null ? 'opacity 200ms ease' : 'none',
           }}
         >
-          {leftAction}
+          {startAction}
         </div>
       )}
 
-      {/* Right action (revealed on swipe right) */}
-      {rightAction && (
+      {/* End action (revealed on swipe toward end) */}
+      {endAction && (
         <div
           className="swipeable-actions swipeable-actions-right"
           style={{
             position: 'absolute',
-            right: 0,
+            right: isRTL ? undefined : 0,
+            left: isRTL ? 0 : undefined,
             top: 0,
             bottom: 0,
             width: actionWidth,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'flex-end',
-            paddingRight: 12,
+            justifyContent: isRTL ? 'flex-start' : 'flex-end',
+            paddingRight: isRTL ? undefined : 12,
+            paddingLeft: isRTL ? 12 : undefined,
             opacity: direction === 'right' ? Math.min(progress * 2, 1) : 0,
             transform: `translateX(${actionWidth - (direction === 'right' ? distance : 0)}px)`,
             transition: direction === null ? 'opacity 200ms ease' : 'none',
           }}
         >
-          {rightAction}
+          {endAction}
         </div>
       )}
 
