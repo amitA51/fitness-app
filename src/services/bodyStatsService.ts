@@ -2,13 +2,7 @@ import { ValidationError } from '../errors';
 import { generateId } from '../utils/id';
 import { STORES, dbDelete, dbGetAll, dbPut } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
-import {
-  deleteCloudBodyWeight,
-  deleteCloudRecoveryLog,
-  syncBodyMeasurement,
-  syncBodyWeight,
-  syncRecoveryLog,
-} from './supabaseSync';
+import { syncBodyMeasurement, syncBodyWeight, syncRecoveryLog } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
 
 const BODY_MEASUREMENTS_STORE = 'body_measurements';
@@ -141,10 +135,13 @@ export async function deleteBodyWeight(id: string): Promise<void> {
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(() => deleteCloudBodyWeight(user.id, id), `deleteBodyWeight:${id}`, 3, {
-      type: 'bodyweight:delete',
-      payload: id,
-    });
+    const now = new Date().toISOString();
+    syncWithRetry(
+      () => syncBodyWeight(user.id, { id, weight: 0, date: '', deletedAt: now, updatedAt: now }),
+      `deleteBodyWeight:${id}`,
+      3,
+      { type: 'bodyweight:delete', payload: id }
+    );
   }
 }
 
@@ -297,7 +294,11 @@ export async function addRecoveryLog(
       `addRecoveryLog:${newEntry.id}`
     );
     duplicateLogs.forEach((log) => {
-      syncWithRetry(() => deleteCloudRecoveryLog(user.id, log.id), `deleteRecoveryLog:${log.id}`);
+      const now = new Date().toISOString();
+      syncWithRetry(
+        () => syncRecoveryLog(user.id, { id: log.id, date: '', deletedAt: now, updatedAt: now }),
+        `deleteRecoveryLog:${log.id}`
+      );
     });
   }
 
@@ -335,7 +336,11 @@ export async function deleteRecoveryLog(id: string): Promise<void> {
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(() => deleteCloudRecoveryLog(user.id, id), `deleteRecoveryLog:${id}`);
+    const now = new Date().toISOString();
+    syncWithRetry(
+      () => syncRecoveryLog(user.id, { id, date: '', deletedAt: now, updatedAt: now }),
+      `deleteRecoveryLog:${id}`
+    );
   }
 }
 

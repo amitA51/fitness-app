@@ -11,7 +11,7 @@ import type { CreatePersonalExerciseInput, PersonalExercise } from '../types';
 import { mergeGenericRecords } from './cloudMerge';
 import { STORES, dbDelete, dbGetAll, dbGetByIndex, dbPut, initDB } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
-import { deleteCloudPersonalExercise, syncPersonalExercise } from './supabaseSync';
+import { syncPersonalExercise } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
 
 /**
@@ -140,8 +140,11 @@ export const updatePersonalExercise = async (
 
 /**
  * Delete a personal exercise and cascade-delete its associated personal records.
+ * Uses soft-delete (sets deletedAt) for cloud sync propagation, then removes locally.
  */
 export const deletePersonalExercise = async (id: string): Promise<void> => {
+  const now = new Date().toISOString();
+
   // Cascade: remove all personal records linked to this exercise
   const orphanedPRs = await dbGetByIndex<{ id: string; exerciseId: string }>(
     STORES.PERSONAL_RECORDS,
@@ -150,26 +153,19 @@ export const deletePersonalExercise = async (id: string): Promise<void> => {
   );
   await Promise.all(orphanedPRs.map((pr) => dbDelete(STORES.PERSONAL_RECORDS, pr.id)));
 
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORES.PERSONAL_EXERCISES, 'readwrite');
-    const store = tx.objectStore(STORES.PERSONAL_EXERCISES);
-    const request = store.delete(id);
+  // Hard-delete locally
+  await dbDelete(STORES.PERSONAL_EXERCISES, id);
 
-    request.onsuccess = () => {
-      getCurrentUser().then((user) => {
-        if (user) {
-          syncWithRetry(
-            () => deleteCloudPersonalExercise(user.id, id),
-            `deletePersonalExercise:${id}`,
-            3,
-            { type: 'exercise:delete', payload: id }
-          );
-        }
-      });
-      resolve();
-    };
-    request.onerror = () => reject(request.error);
+  // Soft-delete in cloud (set deleted_at so other devices pick up the tombstone)
+  getCurrentUser().then((user) => {
+    if (user) {
+      syncWithRetry(
+        () => syncPersonalExercise(user.id, { id, name: '', deletedAt: now, updatedAt: now }),
+        `deletePersonalExercise:${id}`,
+        3,
+        { type: 'exercise:delete', payload: id }
+      );
+    }
   });
 };
 

@@ -1,0 +1,259 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { listMyAssignments } from '../../../services/coach';
+import {
+  DEFAULT_MACRO_GOALS,
+  addFoodFromPreset,
+  addMealEntry,
+  calcFoodMacros,
+  createQuickMeal,
+  deleteMealEntry,
+  getDailyMacros,
+  getMealEntriesByDate,
+  getMealPresets,
+  searchFoods,
+} from '../../../services/nutritionService';
+import type { MealPreset } from '../../../services/nutritionService';
+import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../../../types';
+import { toLocalDateStr, todayStr } from '../../../utils/dateUtils';
+import { safeJsonParse } from '../../../utils/safeJson';
+
+export function useNutritionData() {
+  const [todayEntries, setTodayEntries] = useState<MealEntry[]>([]);
+  const [todayMacros, setTodayMacros] = useState<MacroNutrients>({
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+  });
+  const [macroGoals, setMacroGoals] = useState<MacroNutrients>(DEFAULT_MACRO_GOALS);
+  const [coachTarget, setCoachTarget] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(() => todayStr());
+  const [isToday, setIsToday] = useState(true);
+  const [waterHistory, setWaterHistory] = useState<{ date: string; total: number }[]>([]);
+  const [showAddMeal, setShowAddMeal] = useState(false);
+  const [selectedMealType, setSelectedMealType] = useState<MealType>('lunch');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFoods, setSelectedFoods] = useState<(FoodItem & { servings: number })[]>([]);
+  const [activeTab, setActiveTab] = useState<'log' | 'library' | 'presets'>('log');
+
+  const loadData = useCallback(async () => {
+    const dateToUse = isToday ? todayStr() : selectedDate;
+    const entries = await getMealEntriesByDate(dateToUse);
+    setTodayEntries(entries);
+    const macros = await getDailyMacros(dateToUse);
+    setTodayMacros(macros);
+  }, [selectedDate, isToday]);
+
+  const loadWaterHistory = useCallback(async () => {
+    const { getWaterByDateRange } = await import('../../../services/waterService');
+    const today = new Date();
+    const dates: string[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      dates.push(toLocalDateStr(d));
+    }
+    const startDate = dates[0] ?? '';
+    const endDate = dates[dates.length - 1] ?? '';
+    const entries = await getWaterByDateRange(startDate, endDate);
+    const byDate = new Map<string, number>();
+    for (const e of entries) {
+      byDate.set(e.date, (byDate.get(e.date) ?? 0) + e.amountMl);
+    }
+    setWaterHistory(dates.map((d) => ({ date: d, total: byDate.get(d) ?? 0 })));
+  }, []);
+
+  useEffect(() => {
+    loadData();
+    loadWaterHistory();
+  }, [loadData, loadWaterHistory]);
+
+  const handleSaveMeal = useCallback(async () => {
+    if (selectedFoods.length === 0) return;
+    const entry = createQuickMeal(
+      selectedMealType,
+      selectedFoods.map((f) => ({ ...f, servings: f.servings }))
+    );
+    const totalMacros = selectedFoods.reduce(
+      (acc, f) => {
+        const m = calcFoodMacros(f);
+        return {
+          calories: acc.calories + m.calories,
+          protein: acc.protein + m.protein,
+          carbs: acc.carbs + m.carbs,
+          fat: acc.fat + m.fat,
+        };
+      },
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+    const fullEntry: MealEntry = { ...entry, totalMacros };
+    await addMealEntry(fullEntry);
+    setShowAddMeal(false);
+    setSelectedFoods([]);
+    setSearchQuery('');
+    loadData();
+  }, [selectedFoods, selectedMealType, loadData]);
+
+  const handleDeleteEntry = useCallback(
+    async (id: string) => {
+      await deleteMealEntry(id);
+      loadData();
+    },
+    [loadData]
+  );
+
+  const handleQuickPreset = useCallback(
+    async (preset: MealPreset, mealType: MealType) => {
+      const entry = await addFoodFromPreset(preset.id, mealType);
+      if (entry) {
+        loadData();
+      }
+    },
+    [loadData]
+  );
+
+  const goBack = useCallback(() => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(toLocalDateStr(d));
+    setIsToday(false);
+  }, [selectedDate]);
+
+  const goForward = useCallback(() => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    const today = todayStr();
+    const newDate = toLocalDateStr(d);
+    if (newDate >= today) {
+      setSelectedDate(today);
+      setIsToday(true);
+    } else {
+      setSelectedDate(newDate);
+    }
+  }, [selectedDate]);
+
+  const handleAddFood = useCallback((food: FoodItem) => {
+    setSelectedFoods((prev) => {
+      const existing = prev.find((f) => f.id === food.id);
+      if (existing) {
+        return prev.map((f) => (f.id === food.id ? { ...f, servings: f.servings + 1 } : f));
+      }
+      return [...prev, { ...food, servings: 1 }];
+    });
+  }, []);
+
+  const handleRemoveFood = useCallback((foodId: string) => {
+    setSelectedFoods((prev) => prev.filter((f) => f.id !== foodId));
+  }, []);
+
+  const handleServingsChange = useCallback((foodId: string, delta: number) => {
+    setSelectedFoods((prev) =>
+      prev.map((f) => {
+        if (f.id !== foodId) return f;
+        return { ...f, servings: Math.max(0.5, f.servings + delta) };
+      })
+    );
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setShowAddMeal(false);
+    setSelectedFoods([]);
+  }, []);
+
+  // Read the user's saved macro goals from Settings
+  useEffect(() => {
+    const apply = () => {
+      try {
+        const raw = localStorage.getItem('nutrition_goals');
+        const parsed = safeJsonParse<Partial<Record<keyof MacroNutrients, number | ''>>>(raw);
+        if (!parsed) return;
+        const pick = (v: number | '' | undefined, fallback: number) =>
+          typeof v === 'number' && v > 0 ? v : fallback;
+        setMacroGoals({
+          calories: pick(parsed.calories, DEFAULT_MACRO_GOALS.calories),
+          protein: pick(parsed.protein, DEFAULT_MACRO_GOALS.protein),
+          carbs: pick(parsed.carbs, DEFAULT_MACRO_GOALS.carbs),
+          fat: pick(parsed.fat, DEFAULT_MACRO_GOALS.fat),
+        });
+      } catch {
+        /* ignore corrupt JSON */
+      }
+    };
+    apply();
+    window.addEventListener('storage', apply);
+    window.addEventListener('settings-updated', apply);
+    return () => {
+      window.removeEventListener('storage', apply);
+      window.removeEventListener('settings-updated', apply);
+    };
+  }, []);
+
+  // Override goals with coach-assigned nutrition target (if any).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const assignments = await listMyAssignments();
+        const target = assignments.find((a) => a.kind === 'nutrition_target');
+        if (cancelled || !target) return;
+        const p = target.payload;
+        const cal = typeof p.calories === 'number' ? p.calories : 0;
+        if (!cal) return;
+        setMacroGoals((prev) => ({
+          calories: cal,
+          protein: typeof p.protein === 'number' ? p.protein : prev.protein,
+          carbs: typeof p.carbs === 'number' ? p.carbs : prev.carbs,
+          fat: typeof p.fat === 'number' ? p.fat : prev.fat,
+        }));
+        setCoachTarget(true);
+      } catch {
+        /* degrade silently for offline/guest */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filteredFoods = useMemo(() => searchFoods(searchQuery), [searchQuery]);
+  const presets = useMemo(() => getMealPresets(), []);
+
+  const calPct = Math.min(Math.round((todayMacros.calories / macroGoals.calories) * 100), 100);
+  const proteinPct = Math.min(Math.round((todayMacros.protein / macroGoals.protein) * 100), 100);
+  const carbsPct = Math.min(Math.round((todayMacros.carbs / macroGoals.carbs) * 100), 100);
+  const fatPct = Math.min(Math.round((todayMacros.fat / macroGoals.fat) * 100), 100);
+
+  return {
+    todayEntries,
+    todayMacros,
+    macroGoals,
+    coachTarget,
+    selectedDate,
+    isToday,
+    waterHistory,
+    showAddMeal,
+    setShowAddMeal,
+    selectedMealType,
+    setSelectedMealType,
+    searchQuery,
+    setSearchQuery,
+    selectedFoods,
+    activeTab,
+    setActiveTab,
+    filteredFoods,
+    presets,
+    calPct,
+    proteinPct,
+    carbsPct,
+    fatPct,
+    handleSaveMeal,
+    handleDeleteEntry,
+    handleQuickPreset,
+    goBack,
+    goForward,
+    handleAddFood,
+    handleRemoveFood,
+    handleServingsChange,
+    handleCloseModal,
+  };
+}

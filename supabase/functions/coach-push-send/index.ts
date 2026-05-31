@@ -23,11 +23,11 @@ import webpush from 'https://esm.sh/web-push@3.6.7';
 // @ts-expect-error Deno global
 const env = (k: string): string => (Deno.env.get(k) ?? '') as string;
 
-const DEFAULT_ORIGINS = [
-  'https://fitness-app-amit.netlify.app',
-  'http://localhost:5173',
-  'http://localhost:4173',
-];
+// SECURITY: do NOT hardcode the production origin as a default. If
+// ALLOWED_ORIGIN is unset we fall back to localhost-only (dev) so a
+// misconfigured deploy fails CLOSED for browsers (cross-origin requests get
+// 'null'), consistent with ai-chat. Set ALLOWED_ORIGIN in prod secrets.
+const DEFAULT_ORIGINS = ['http://localhost:5173', 'http://localhost:4173'];
 
 function corsHeaders(req: Request): Record<string, string> {
   const raw = env('ALLOWED_ORIGIN');

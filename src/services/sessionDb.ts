@@ -10,8 +10,16 @@ import { safeTimestamp } from './cloudMerge';
 import { emitWorkoutSaved } from './dataEvents';
 import { STORES, dbDelete, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
-import { deleteCloudWorkoutSession, syncWorkoutSession } from './supabaseSync';
+import { syncWorkoutSession } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
+
+/**
+ * True when a record carries a soft-delete tombstone (deletedAt set).
+ * `WorkoutSession` does not declare `deletedAt` in its canonical type, but the
+ * cloud mappers attach it at runtime, so we narrow structurally here.
+ */
+const isTombstoned = (record: unknown): boolean =>
+  Boolean((record as { deletedAt?: string | null }).deletedAt);
 
 /**
  * Save a workout session.
@@ -82,13 +90,18 @@ export const getWorkoutSessions = async (limit = 20): Promise<WorkoutSession[]> 
           resolve(out);
           return;
         }
-        out.push(cursor.value as WorkoutSession);
+        const session = cursor.value as WorkoutSession;
+        // Skip tombstoned rows so they don't consume the limit budget.
+        if (!isTombstoned(session)) {
+          out.push(session);
+        }
         cursor.continue();
       };
     });
   } catch {
     const sessions = await dbGetAll<WorkoutSession>(STORES.WORKOUT_SESSIONS);
     return sessions
+      .filter((s) => !isTombstoned(s))
       .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
       .slice(0, limit);
   }
@@ -123,15 +136,19 @@ export const getAllWorkoutSessions = async (): Promise<WorkoutSession[]> => {
           resolve(out);
           return;
         }
-        out.push(cursor.value as WorkoutSession);
+        const session = cursor.value as WorkoutSession;
+        // Exclude tombstoned rows: analytics/PR scans must not see deleted sessions.
+        if (!isTombstoned(session)) {
+          out.push(session);
+        }
         cursor.continue();
       };
     });
   } catch {
     const sessions = await dbGetAll<WorkoutSession>(STORES.WORKOUT_SESSIONS);
-    return sessions.sort(
-      (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-    );
+    return sessions
+      .filter((s) => !isTombstoned(s))
+      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
   }
 };
 
@@ -166,12 +183,20 @@ export const replaceWorkoutSessionsFromCloud = async (
  */
 export const deleteWorkoutSession = async (sessionId: string): Promise<void> => {
   if (!sessionId) throw new ValidationError('Session ID is required for deletion.');
+  const now = new Date().toISOString();
   await dbDelete(STORES.WORKOUT_SESSIONS, sessionId);
 
   const user = await getCurrentUser();
   if (user) {
     syncWithRetry(
-      () => deleteCloudWorkoutSession(user.id, sessionId),
+      () =>
+        syncWorkoutSession(user.id, {
+          id: sessionId,
+          startTime: '',
+          exercises: [],
+          deletedAt: now,
+          updatedAt: now,
+        }),
       `deleteWorkoutSession:${sessionId}`,
       3,
       { type: 'session:delete', payload: sessionId }
@@ -184,20 +209,39 @@ export const deleteWorkoutSession = async (sessionId: string): Promise<void> => 
 
 /**
  * Merge workout sessions from cloud.
+ *
+ * Tombstone-aware (mirrors mergeGenericRecords in cloudMerge.ts): a cloud row
+ * whose `deletedAt` is set removes the local row and is skipped; otherwise
+ * last-writer-wins by `updatedAt` (falling back to `createdAt`). All writes and
+ * deletes are applied in a single readwrite IndexedDB transaction so the merge
+ * is atomic — it fully succeeds or leaves local data untouched.
  */
 export const mergeWorkoutSessionsFromCloud = async (
   cloudSessions: WorkoutSession[]
-): Promise<{ added: number; updated: number; kept: number }> => {
+): Promise<{ added: number; updated: number; kept: number; deleted: number }> => {
   const localSessions = await dbGetAll<WorkoutSession>(STORES.WORKOUT_SESSIONS);
   const localMap = new Map(localSessions.map((s) => [s.id, s]));
 
   let added = 0;
   let updated = 0;
   let kept = 0;
+  let deleted = 0;
 
   const writes: WorkoutSession[] = [];
+  const deletes: string[] = [];
 
   for (const cloud of cloudSessions) {
+    if (!cloud.id) continue; // skip records without a usable key
+
+    // If cloud row is tombstoned, remove it locally and skip.
+    if (isTombstoned(cloud)) {
+      if (localMap.has(cloud.id)) {
+        deletes.push(cloud.id);
+        deleted++;
+      }
+      continue;
+    }
+
     const local = localMap.get(cloud.id);
     if (!local) {
       writes.push(cloud);
@@ -214,9 +258,23 @@ export const mergeWorkoutSessionsFromCloud = async (
     }
   }
 
-  if (writes.length > 0) {
-    await Promise.all(writes.map((s) => dbPut(STORES.WORKOUT_SESSIONS, s)));
+  // Atomic transaction — all writes and deletes succeed or none do.
+  if (writes.length > 0 || deletes.length > 0) {
+    const db = await initDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORES.WORKOUT_SESSIONS, 'readwrite');
+      const store = tx.objectStore(STORES.WORKOUT_SESSIONS);
+      for (const session of writes) {
+        store.put(session);
+      }
+      for (const id of deletes) {
+        store.delete(id);
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error('Merge transaction aborted'));
+    });
   }
 
-  return { added, updated, kept };
+  return { added, updated, kept, deleted };
 };

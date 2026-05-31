@@ -11,15 +11,23 @@ import { safeTimestamp } from './cloudMerge';
 import { STORES, dbDelete, dbGet, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { addPersonalItem } from './personalItemsDb';
 import { getCurrentUser } from './supabaseAuth';
-import { deleteCloudWorkoutTemplate, syncWorkoutTemplate } from './supabaseSync';
+import { syncWorkoutTemplate } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
 
 /**
- * Gets all workout templates.
+ * True when a template carries a soft-delete tombstone (deletedAt set).
+ * `WorkoutTemplate` does not declare `deletedAt` in its canonical type, but the
+ * cloud mappers attach it at runtime, so we narrow structurally here.
+ */
+const isTombstoned = (record: unknown): boolean =>
+  Boolean((record as { deletedAt?: string | null }).deletedAt);
+
+/**
+ * Gets all workout templates (excludes soft-deleted tombstones).
  */
 export const getWorkoutTemplates = async (): Promise<WorkoutTemplate[]> => {
   const templates = await dbGetAll<WorkoutTemplate>(STORES.WORKOUT_TEMPLATES);
-  return templates || [];
+  return (templates || []).filter((t) => !isTombstoned(t));
 };
 
 /**
@@ -95,18 +103,28 @@ export const updateWorkoutTemplate = async (
 };
 
 /**
- * Deletes a workout template.
+ * Deletes a workout template (soft-delete for cloud propagation).
  */
 export const deleteWorkoutTemplate = async (id: string): Promise<void> => {
   if (!id) throw new ValidationError('Template ID is required for deletion.');
+  const now = new Date().toISOString();
   await dbDelete(STORES.WORKOUT_TEMPLATES, id);
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(() => deleteCloudWorkoutTemplate(user.id, id), `deleteWorkoutTemplate:${id}`, 3, {
-      type: 'template:delete',
-      payload: id,
-    });
+    syncWithRetry(
+      () =>
+        syncWorkoutTemplate(user.id, {
+          id,
+          name: '',
+          exercises: [],
+          deletedAt: now,
+          updatedAt: now,
+        }),
+      `deleteWorkoutTemplate:${id}`,
+      3,
+      { type: 'template:delete', payload: id }
+    );
   }
 };
 
@@ -170,20 +188,39 @@ export const replaceWorkoutTemplatesFromCloud = async (
 /**
  * Merge workout templates from cloud - keeps the most recent version of each record.
  * Unlike replace, this preserves local-only records and resolves conflicts by updatedAt timestamp.
+ *
+ * Tombstone-aware (mirrors mergeGenericRecords in cloudMerge.ts): a cloud row
+ * whose `deletedAt` is set removes the local row and is skipped; otherwise
+ * last-writer-wins by `updatedAt` (falling back to `createdAt`). All writes and
+ * deletes are applied in a single readwrite IndexedDB transaction so the merge
+ * is atomic — it fully succeeds or leaves local data untouched.
  */
 export const mergeWorkoutTemplatesFromCloud = async (
   cloudTemplates: WorkoutTemplate[]
-): Promise<{ added: number; updated: number; kept: number }> => {
+): Promise<{ added: number; updated: number; kept: number; deleted: number }> => {
   const localTemplates = await dbGetAll<WorkoutTemplate>(STORES.WORKOUT_TEMPLATES);
   const localMap = new Map(localTemplates.map((t) => [t.id, t]));
 
   let added = 0;
   let updated = 0;
   let kept = 0;
+  let deleted = 0;
 
   const writes: WorkoutTemplate[] = [];
+  const deletes: string[] = [];
 
   for (const cloud of cloudTemplates) {
+    if (!cloud.id) continue; // skip records without a usable key
+
+    // If cloud row is tombstoned, remove it locally and skip.
+    if (isTombstoned(cloud)) {
+      if (localMap.has(cloud.id)) {
+        deletes.push(cloud.id);
+        deleted++;
+      }
+      continue;
+    }
+
     const local = localMap.get(cloud.id);
     if (!local) {
       writes.push(cloud);
@@ -200,9 +237,23 @@ export const mergeWorkoutTemplatesFromCloud = async (
     }
   }
 
-  if (writes.length > 0) {
-    await Promise.all(writes.map((t) => dbPut(STORES.WORKOUT_TEMPLATES, t)));
+  // Atomic transaction — all writes and deletes succeed or none do.
+  if (writes.length > 0 || deletes.length > 0) {
+    const db = await initDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORES.WORKOUT_TEMPLATES, 'readwrite');
+      const store = tx.objectStore(STORES.WORKOUT_TEMPLATES);
+      for (const template of writes) {
+        store.put(template);
+      }
+      for (const id of deletes) {
+        store.delete(id);
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error('Merge transaction aborted'));
+    });
   }
 
-  return { added, updated, kept };
+  return { added, updated, kept, deleted };
 };

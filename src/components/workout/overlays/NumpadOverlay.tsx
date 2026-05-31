@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 // Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { triggerHaptic } from '../../../utils/haptics';
+import { LiveRegion } from '../../ui/Accessible';
 import { ModalOverlay } from '../../ui/ModalOverlay';
 
 // ============================================================
@@ -107,7 +108,7 @@ const AnimatedValue = memo<{ value: string; target: 'weight' | 'reps' | null }>(
             letterSpacing: '0.2em',
             color: 'var(--fs-muted)',
           }}
-          initial={{ opacity: 0 }}
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
           animate={{ opacity: 1 }}
         >
           {target === 'weight' ? 'ק״ג' : 'x'}
@@ -122,16 +123,21 @@ AnimatedValue.displayName = 'AnimatedValue';
 /** Sport Annual numpad key — sharp bone square with navy text */
 const NumpadButton = memo<{
   value: string | number | null;
-  onPress: () => void;
+  onInput: (digit: string) => void;
+  onDelete: () => void;
   variant?: 'number' | 'action' | 'delete' | 'submit';
   disabled?: boolean;
   label?: string;
-}>(({ value, onPress, variant = 'number', disabled = false, label }) => {
+}>(({ value, onInput, onDelete, variant = 'number', disabled = false, label }) => {
   const handleClick = useCallback(() => {
-    if (disabled) return;
+    if (disabled || value === null) return;
     triggerHaptic();
-    onPress();
-  }, [onPress, disabled]);
+    if (value === '⌫') {
+      onDelete();
+    } else {
+      onInput(String(value));
+    }
+  }, [value, onInput, onDelete, disabled]);
 
   if (value === null) {
     return <div className="w-20 h-20" />;
@@ -404,7 +410,11 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
   }) => {
     const [mode, setMode] = useState<'numpad' | 'stepper'>('numpad');
     const shouldReduceMotion = useReducedMotion();
-    const isRTL = document.dir === 'rtl';
+    // Read document direction reactively rather than during render (SSR-safe, updates if dir flips)
+    const [isRTL, setIsRTL] = useState(false);
+    useEffect(() => {
+      setIsRTL(document.dir === 'rtl');
+    }, []);
 
     // RTL-aware animation values
     const numpadEntryX = shouldReduceMotion ? 0 : isRTL ? 20 : -20;
@@ -467,23 +477,32 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
     }, [onSubmit]);
 
     // Number pad keys - weight allows decimal, reps doesn't
-    const keys: (number | string | null)[][] =
-      target === 'weight'
-        ? [
-            [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 9],
-            ['.', 0, '⌫'],
-          ]
-        : [
-            [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 9],
-            [null, 0, '⌫'],
-          ];
+    const keys: (number | string | null)[][] = useMemo(
+      () =>
+        target === 'weight'
+          ? [
+              [1, 2, 3],
+              [4, 5, 6],
+              [7, 8, 9],
+              ['.', 0, '⌫'],
+            ]
+          : [
+              [1, 2, 3],
+              [4, 5, 6],
+              [7, 8, 9],
+              [null, 0, '⌫'],
+            ],
+      [target]
+    );
 
     const label = target === 'weight' ? 'משקל' : 'חזרות';
     const labelEn = target === 'weight' ? 'WEIGHT' : 'REPS';
+
+    // Announce the current value + unit to screen readers on change
+    const announcement = useMemo(() => {
+      const unit = target === 'weight' ? 'ק״ג' : 'חזרות';
+      return `${value || '0'} ${unit}`;
+    }, [value, target]);
 
     return (
       <ModalOverlay
@@ -506,12 +525,13 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
           transition={
             shouldReduceMotion ? { duration: 0 } : { type: 'spring', damping: 28, stiffness: 350 }
           }
-          className="w-full max-w-md mx-auto pb-safe-bottom overflow-hidden fixed bottom-0 left-0 right-0 glass-surface-dark"
+          className="w-full max-w-md mx-auto overflow-hidden fixed bottom-0 left-0 right-0 glass-surface-dark"
           style={{
             backgroundColor: 'var(--fs-bg)',
             borderTop: '2px solid var(--fs-primary)',
             borderRadius: '24px 24px 0 0',
             boxShadow: '0 -12px 32px rgba(11,26,43,0.2)',
+            paddingBottom: 'env(safe-area-inset-bottom, 24px)',
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -527,7 +547,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                   color: 'rgba(255,255,255,0.55)',
                   fontWeight: 600,
                 }}
-                initial={{ opacity: 0, y: -10 }}
+                initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
                 {exerciseName}
@@ -553,6 +573,9 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
               <AnimatedValue value={value} target={target} />
             </div>
 
+            {/* Screen-reader announcement of the current value + unit */}
+            <LiveRegion message={announcement} politeness="polite" />
+
             {/* Ghost values row */}
             <div className="flex justify-center gap-2 flex-wrap">
               {previousValue !== undefined && (
@@ -572,6 +595,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                 className={`tab${mode === 'numpad' ? ' active' : ''}`}
                 whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
                 aria-label="מקלדת מספרים"
+                aria-pressed={mode === 'numpad'}
               >
                 מקלדת
               </motion.button>
@@ -580,6 +604,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                 className={`tab${mode === 'stepper' ? ' active' : ''}`}
                 whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
                 aria-label="כפתורי עלייה וירידה"
+                aria-pressed={mode === 'stepper'}
               >
                 כפתורי +/-
               </motion.button>
@@ -620,13 +645,8 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                           // biome-ignore lint/suspicious/noArrayIndexKey: fixed numpad layout, static keys (may include null), never reordered
                           key={`${rowIndex}-${keyIndex}`}
                           value={key}
-                          onPress={() => {
-                            if (key === '⌫') {
-                              handleDelete();
-                            } else if (key !== null) {
-                              handleInput(String(key));
-                            }
-                          }}
+                          onInput={handleInput}
+                          onDelete={handleDelete}
                           variant={key === '⌫' ? 'delete' : 'number'}
                         />
                       ))}
@@ -679,10 +699,6 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
             </motion.button>
           </div>
         </motion.div>
-
-        <style>{`
-                .pb-safe-bottom { padding-bottom: env(safe-area-inset-bottom, 24px); }
-            `}</style>
       </ModalOverlay>
     );
   }

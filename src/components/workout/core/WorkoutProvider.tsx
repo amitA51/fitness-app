@@ -2,9 +2,10 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useImmerReducer } from 'use-immer';
+import { webPlatform } from '../../../platform/web';
+import type { PlatformAdapter } from '../../../platform/web';
 import { createWorkoutSet } from '../../../types';
 import type { AppSettings } from '../../../types';
-import { setSoundEnabled } from '../../../utils/audio';
 import { vibratePattern } from '../../../utils/haptics';
 import { logger } from '../../../utils/logger';
 import { safeJsonParse } from '../../../utils/safeJson';
@@ -14,7 +15,7 @@ import {
   WorkoutDispatchProvider,
   WorkoutStateProvider,
 } from './WorkoutContext';
-import { workoutReducer } from './workoutReducer';
+import { resolveActiveSet, workoutReducer } from './workoutReducer';
 import {
   HAPTIC_PATTERNS,
   type WorkoutDerivedValue,
@@ -31,6 +32,8 @@ import {
 
 const STORAGE_KEY = 'active_workout_v3_state';
 
+const platform: PlatformAdapter = webPlatform;
+
 /**
  * Stringify-then-store with a single retry that drops transient/UI-only
  * fields (overlays, celebrations, ghost data) if the first attempt fails.
@@ -38,7 +41,7 @@ const STORAGE_KEY = 'active_workout_v3_state';
  */
 const persistState = (state: WorkoutState): boolean => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    platform.setItem(STORAGE_KEY, JSON.stringify(state));
     return true;
   } catch (err) {
     // Try a stripped payload — keep only durable fields a user would lose
@@ -53,10 +56,8 @@ const persistState = (state: WorkoutState): boolean => {
         isPaused: state.isPaused,
         restTimer: state.restTimer,
         appSettings: state.appSettings,
-        // Drop: previousExerciseData (rehydratable), every showXxx overlay flag,
-        //       showConfetti/showPRCelebration/tutorialExercise/pendingHaptic
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
+      platform.setItem(STORAGE_KEY, JSON.stringify(slim));
       logger.workout?.warn?.('Workout state slim-persist succeeded after full failure', err);
       return true;
     } catch (err2) {
@@ -74,7 +75,7 @@ const persistState = (state: WorkoutState): boolean => {
 
 const loadAppSettings = (): AppSettings => {
   try {
-    const stored = localStorage.getItem('appSettings');
+    const stored = platform.getItem('appSettings');
     if (!stored) return {} as AppSettings;
     const parsed = safeJsonParse<AppSettings>(stored);
     return parsed && typeof parsed === 'object' ? parsed : ({} as AppSettings);
@@ -91,14 +92,12 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   // Load saved state or create new
   const loadState = useCallback((): WorkoutState | null => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = platform.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = safeJsonParse<WorkoutState & { _completed?: boolean }>(saved);
         if (!parsed) return null;
-        // Don't restore if workout was marked as completed
-        // This prevents the loop issue where completed workouts keep reopening
         if (parsed._completed) {
-          localStorage.removeItem(STORAGE_KEY);
+          platform.removeItem(STORAGE_KEY);
           return null;
         }
         return parsed;
@@ -210,32 +209,23 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   // ============================================================
 
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
+    const removeVisibility = platform.onVisibilityChange((hidden) => {
+      if (hidden) {
         persistState(stateRef.current);
-      } else if (document.visibilityState === 'visible') {
+      } else {
         if (stateRef.current.restTimer.active && stateRef.current.restTimer.endTime) {
           dispatch({ type: 'SYNC_REST_TIMER' });
         }
       }
-    };
+    });
 
-    const handleBeforeUnload = () => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateRef.current));
-      } catch {
-        // Silently handle storage errors
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('pagehide', handleBeforeUnload);
+    const removeUnload = platform.onBeforeUnload(() => {
+      persistState(stateRef.current);
+    });
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('pagehide', handleBeforeUnload);
+      removeVisibility();
+      removeUnload();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch]); // stateRef used instead of state to prevent handler recreation
@@ -246,11 +236,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateRef.current));
-      } catch {
-        // Silently handle storage errors
-      }
+      persistState(stateRef.current);
     }, 30000);
 
     return () => clearInterval(intervalId);
@@ -287,8 +273,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
       // Sound honors restTimerSound + soundEnabled (default true). Done lazily
       // to avoid pulling audio into the WorkoutProvider import graph at the top.
       if (ws?.restTimerSound !== false && ws?.soundEnabled !== false) {
-        // Lazy import so this stays out of the main provider chunk
-        import('../../../utils/audio').then((m) => m.playRestEndSound()).catch(() => {});
+        platform.playRestEndSound();
       }
     }
 
@@ -304,7 +289,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   useEffect(() => {
     const enabled = state.appSettings?.workoutSettings?.soundEnabled;
     if (typeof enabled === 'boolean') {
-      setSoundEnabled(enabled);
+      platform.setSoundEnabled(enabled);
     }
   }, [state.appSettings?.workoutSettings?.soundEnabled]);
 
@@ -315,7 +300,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   useEffect(() => {
     if (!state.appSettings?.workoutSettings) return;
     try {
-      const existingSettings = localStorage.getItem('appSettings');
+      const existingSettings = platform.getItem('appSettings');
       const parsed: AppSettings = existingSettings
         ? (safeJsonParse<AppSettings>(existingSettings) ?? ({} as AppSettings))
         : ({} as AppSettings);
@@ -326,7 +311,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
           ...state.appSettings.workoutSettings,
         },
       };
-      localStorage.setItem('appSettings', JSON.stringify(updated));
+      platform.setItem('appSettings', JSON.stringify(updated));
     } catch {
       // Silently handle settings persistence errors
     }
@@ -339,22 +324,16 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   useEffect(() => {
     if (!state.appSettings?.workoutSettings?.keepAwake) return;
 
-    let wakeLock: WakeLockSentinel | null = null;
+    let wakeLockHandle: { release: () => void } | null = null;
 
     const requestWakeLock = async () => {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen');
-        }
-      } catch {
-        // Silently handle wake lock errors
-      }
+      wakeLockHandle = await platform.requestWakeLock();
     };
 
     requestWakeLock();
 
     return () => {
-      wakeLock?.release();
+      wakeLockHandle?.release();
     };
   }, [state.appSettings?.workoutSettings?.keepAwake]);
 
@@ -377,9 +356,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
       };
     }
 
-    const activeSetIndex = currentExercise.sets?.findIndex((s) => !s.completedAt) ?? -1;
-    const displaySetIndex =
-      activeSetIndex === -1 ? (currentExercise.sets?.length ?? 0) : activeSetIndex;
+    const { activeSetIndex: displaySetIndex } = resolveActiveSet(currentExercise.sets);
     const currentSet =
       currentExercise.sets?.[displaySetIndex] || createWorkoutSet({ reps: 0, weight: 0 });
 

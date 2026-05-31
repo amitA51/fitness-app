@@ -24,13 +24,19 @@ export const getWeekNumber = (d: Date) => {
 };
 
 export const fmtDate = (d: string) => {
-  const t = new Date(d).getTime();
-  if (Number.isNaN(t)) return '';
-  const diff = Math.floor((Date.now() - t) / 86400000);
-  if (diff === 0) return 'היום';
+  const parsed = new Date(d);
+  if (Number.isNaN(parsed.getTime())) return '';
+  if (isToday(d)) return 'היום';
+  // Compare on calendar days normalized to local midnight, not raw 24h windows,
+  // so a late-evening "yesterday" entry isn't mislabelled and future dates
+  // (negative diffs) fall through to an absolute date instead of "לפני -N ימים".
+  const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+  const diff = Math.round(
+    (startOfDay(new Date()).getTime() - startOfDay(parsed).getTime()) / 86400000
+  );
   if (diff === 1) return 'אתמול';
-  if (diff < 7) return `לפני ${diff} ימים`;
-  return new Date(d).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
+  if (diff > 1 && diff < 7) return `לפני ${diff} ימים`;
+  return parsed.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
 };
 
 export const isToday = (d: string) => {

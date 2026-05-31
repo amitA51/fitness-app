@@ -19,6 +19,8 @@ import type {
   WorkoutSession as CanonicalWorkoutSession,
   WorkoutTemplate as CanonicalWorkoutTemplate,
 } from '../types';
+import { toLocalDateStr } from '../utils/dateUtils';
+import { logger } from '../utils/logger';
 
 export interface WorkoutTemplate {
   id: string;
@@ -28,6 +30,7 @@ export interface WorkoutTemplate {
   exercises: unknown[];
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string | null;
   // Canonical fields (optional here — present on domain objects from ../types)
   lastUsed?: string | null;
   timesUsed?: number;
@@ -50,6 +53,7 @@ export interface WorkoutSession {
   createdAt?: string;
   // Canonical fields (optional here)
   updatedAt?: string;
+  deletedAt?: string | null;
   status?: 'active' | 'completed' | 'cancelled';
   templateId?: string | null;
   rating?: number | null;
@@ -80,6 +84,7 @@ export interface PersonalExercise {
   lastUsed?: string;
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string | null;
   // Canonical fields (optional — see ../types PersonalExercise/Exercise)
   userId?: string;
   targetMuscle?: string;
@@ -102,6 +107,7 @@ export interface BodyWeightEntry {
   date: string;
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string | null;
   // Canonical field (optional)
   notes?: string;
 }
@@ -121,6 +127,7 @@ export interface BodyMeasurement {
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string | null;
 }
 
 /** Supabase row shape for personal_records table */
@@ -135,6 +142,7 @@ export interface PersonalRecordRow {
   recordType: 'weight' | '1rm' | 'volume' | 'reps';
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string | null;
 }
 
 export interface RecoveryLog {
@@ -152,6 +160,7 @@ export interface RecoveryLog {
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string | null;
 }
 
 export interface NutritionMeal {
@@ -176,6 +185,7 @@ export interface NutritionLog {
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string | null;
 }
 
 export interface UserSetting {
@@ -210,11 +220,75 @@ export interface AIConversation {
 // status on sessions) get reasonable defaults so the result satisfies the
 // canonical types in ../types without an unsafe cast.
 
+// ---------------------------------------------------------------------------
+// Runtime guards for the Supabase boundary.
+// zod is not a dependency, so these small hand-rolled checks stand in for a
+// schema: they verify `exercises` is an array and each `sets` entry carries the
+// expected primitive fields, coercing bad values to a safe shape rather than
+// blindly casting unknown[] from the DB into the canonical types.
+// ---------------------------------------------------------------------------
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** Coerce a value to a finite number, falling back to `fallback` otherwise. */
+const toFiniteNumber = (value: unknown, fallback = 0): number =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+/** Sanitize a single set: keep known fields, coerce numerics, drop garbage. */
+const sanitizeSet = (raw: unknown): Record<string, unknown> => {
+  if (!isPlainObject(raw)) return { weight: 0, reps: 0 };
+  return {
+    ...raw,
+    weight: toFiniteNumber(raw.weight, 0),
+    reps: toFiniteNumber(raw.reps, 0),
+  };
+};
+
+/**
+ * Validate and sanitize the `exercises[].sets[]` structure coming from the DB.
+ * Non-array input falls back to `[]`; non-object exercises are dropped; each
+ * exercise's `sets` is normalized to an array of well-formed set objects.
+ * Malformed input is reported via logger.warn (never silently swallowed).
+ */
+const sanitizeExercises = (raw: unknown, context: string): Record<string, unknown>[] => {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw)) {
+    logger.sync.warn(`${context}: exercises is not an array, defaulting to []`, {
+      received: typeof raw,
+    });
+    return [];
+  }
+  return raw.reduce<Record<string, unknown>[]>((acc, entry) => {
+    if (!isPlainObject(entry)) {
+      logger.sync.warn(`${context}: dropping non-object exercise entry`, { entry });
+      return acc;
+    }
+    const rawSets = entry.sets;
+    let sets: Record<string, unknown>[];
+    if (rawSets === undefined || rawSets === null) {
+      sets = [];
+    } else if (Array.isArray(rawSets)) {
+      sets = rawSets.map(sanitizeSet);
+    } else {
+      logger.sync.warn(`${context}: exercise.sets is not an array, defaulting to []`, {
+        received: typeof rawSets,
+      });
+      sets = [];
+    }
+    acc.push({ ...entry, sets });
+    return acc;
+  }, []);
+};
+
 export const toCanonicalTemplate = (t: WorkoutTemplate): CanonicalWorkoutTemplate => ({
   id: t.id,
   name: t.name,
   description: t.description ?? '',
-  exercises: (t.exercises ?? []) as CanonicalWorkoutTemplate['exercises'],
+  exercises: sanitizeExercises(
+    t.exercises,
+    'toCanonicalTemplate'
+  ) as unknown as CanonicalWorkoutTemplate['exercises'],
   createdAt: t.createdAt ?? new Date().toISOString(),
   updatedAt: t.updatedAt ?? t.createdAt ?? new Date().toISOString(),
   lastUsed: t.lastUsed ?? null,
@@ -222,14 +296,18 @@ export const toCanonicalTemplate = (t: WorkoutTemplate): CanonicalWorkoutTemplat
   isFavorite: t.isFavorite ?? false,
   ...(t.muscleGroups !== undefined && { muscleGroups: t.muscleGroups }),
   ...(t.isBuiltin !== undefined && { isBuiltin: t.isBuiltin }),
+  ...(t.deletedAt !== undefined && { deletedAt: t.deletedAt }),
 });
 
 export const toCanonicalSession = (s: WorkoutSession): CanonicalWorkoutSession => ({
   id: s.id,
-  date: s.date ?? (s.startTime ? s.startTime.slice(0, 10) : new Date().toISOString().slice(0, 10)),
+  date: s.date ?? (s.startTime ? s.startTime.slice(0, 10) : toLocalDateStr(new Date())),
   startTime: s.startTime,
   endTime: s.endTime ?? null,
-  exercises: (s.exercises ?? []) as CanonicalWorkoutSession['exercises'],
+  exercises: sanitizeExercises(
+    s.exercises,
+    'toCanonicalSession'
+  ) as unknown as CanonicalWorkoutSession['exercises'],
   duration: s.duration ?? 0,
   status: s.status ?? (s.endTime ? 'completed' : 'active'),
   templateId: s.templateId ?? null,
@@ -239,12 +317,14 @@ export const toCanonicalSession = (s: WorkoutSession): CanonicalWorkoutSession =
   caloriesBurned: s.caloriesBurned ?? null,
   createdAt: s.createdAt ?? s.startTime ?? new Date().toISOString(),
   updatedAt: s.updatedAt ?? s.createdAt ?? s.startTime ?? new Date().toISOString(),
+  ...(s.deletedAt !== undefined && { deletedAt: s.deletedAt }),
 });
 
 export const toCanonicalPersonalExercise = (e: PersonalExercise): CanonicalPersonalExercise => ({
   ...e,
   id: e.id,
   name: e.name,
+  ...(e.deletedAt !== undefined && { deletedAt: e.deletedAt }),
 });
 
 export const toCanonicalBodyWeight = (b: BodyWeightEntry): CanonicalBodyWeightEntry => ({
@@ -253,4 +333,5 @@ export const toCanonicalBodyWeight = (b: BodyWeightEntry): CanonicalBodyWeightEn
   weight: b.weight,
   notes: b.notes,
   createdAt: b.createdAt ?? new Date().toISOString(),
+  ...(b.deletedAt !== undefined && { deletedAt: b.deletedAt }),
 });

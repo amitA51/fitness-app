@@ -3,7 +3,7 @@
  * Shows all exercises, sets, reps, weights, and overall stats
  */
 
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   Activity,
   ArrowRight,
@@ -138,9 +138,10 @@ function DetailSkeleton() {
 interface ExerciseCardProps {
   exercise: WorkoutExercise;
   index: number;
+  reduceMotion: boolean;
 }
 
-function ExerciseCard({ exercise, index }: ExerciseCardProps) {
+function ExerciseCard({ exercise, index, reduceMotion }: ExerciseCardProps) {
   const completedSets = exercise.sets.filter((s) => s.isCompleted);
   const bestSet = getBestSet(exercise.sets);
   const totalVolume = completedSets.reduce((sum, s) => sum + setVolume(s), 0);
@@ -149,11 +150,7 @@ function ExerciseCard({ exercise, index }: ExerciseCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches
-          ? { duration: 0 }
-          : { delay: index * 0.08, duration: 0.3 }
-      }
+      transition={reduceMotion ? { duration: 0 } : { delay: index * 0.08, duration: 0.3 }}
       style={{
         background: 'var(--fs-surface)',
         borderRadius: '22px 16px 22px 16px',
@@ -420,9 +417,10 @@ function StatItem({ icon, label, value, subValue, trend }: StatItemProps) {
 
 interface MuscleBreakdownProps {
   exercises: WorkoutExercise[];
+  reduceMotion: boolean;
 }
 
-function MuscleBreakdown({ exercises }: MuscleBreakdownProps) {
+function MuscleBreakdown({ exercises, reduceMotion }: MuscleBreakdownProps) {
   const muscleStats = exercises.reduce(
     (acc, ex) => {
       const muscle = ex.targetMuscle || ex.muscleGroup || 'Other';
@@ -530,9 +528,7 @@ function MuscleBreakdown({ exercises }: MuscleBreakdownProps) {
                   initial={{ width: 0 }}
                   animate={{ width: `${percentage}%` }}
                   transition={
-                    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                      ? { duration: 0 }
-                      : { delay: 0.3 + index * 0.05, duration: 0.5 }
+                    reduceMotion ? { duration: 0 } : { delay: 0.3 + index * 0.05, duration: 0.5 }
                   }
                   style={{ height: '100%', borderRadius: 9999, backgroundColor: getColor(index) }}
                 />
@@ -546,55 +542,34 @@ function MuscleBreakdown({ exercises }: MuscleBreakdownProps) {
 }
 
 // ============================================================================
-// PREVIOUS SESSION LOADER (prefers same-template, falls back to nearest prior)
+// PREVIOUS SESSION DERIVATION (prefers same-template, falls back to nearest prior)
 // ============================================================================
 
-function usePreviousSession(current: WorkoutSession | null): WorkoutSession | null {
-  const [previous, setPrevious] = useState<WorkoutSession | null>(null);
-
-  useEffect(() => {
-    if (!current) {
-      setPrevious(null);
-      return;
-    }
-    let cancelled = false;
-    async function load() {
-      try {
-        const sessions = await getWorkoutSessions(30);
-        if (!current) return;
-        const currentStart = new Date(current.startTime).getTime();
-        const priorSameTemplate = current.templateId
-          ? sessions
-              .filter(
-                (s) =>
-                  s.id !== current.id &&
-                  s.templateId === current.templateId &&
-                  s.status === 'completed' &&
-                  new Date(s.startTime).getTime() < currentStart
-              )
-              .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0]
-          : undefined;
-        const fallback = sessions
-          .filter(
-            (s) =>
-              s.id !== current.id &&
-              s.status === 'completed' &&
-              new Date(s.startTime).getTime() < currentStart
-          )
-          .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0];
-        if (!cancelled) setPrevious(priorSameTemplate ?? fallback ?? null);
-      } catch (e) {
-        logger.workout.error('Error loading previous session', e);
-        if (!cancelled) setPrevious(null);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [current]);
-
-  return previous;
+function derivePreviousSession(
+  current: WorkoutSession,
+  sessions: WorkoutSession[]
+): WorkoutSession | null {
+  const currentStart = new Date(current.startTime).getTime();
+  const priorSameTemplate = current.templateId
+    ? sessions
+        .filter(
+          (s) =>
+            s.id !== current.id &&
+            s.templateId === current.templateId &&
+            s.status === 'completed' &&
+            new Date(s.startTime).getTime() < currentStart
+        )
+        .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0]
+    : undefined;
+  const fallback = sessions
+    .filter(
+      (s) =>
+        s.id !== current.id &&
+        s.status === 'completed' &&
+        new Date(s.startTime).getTime() < currentStart
+    )
+    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0];
+  return priorSameTemplate ?? fallback ?? null;
 }
 
 // ============================================================================
@@ -604,37 +579,53 @@ function usePreviousSession(current: WorkoutSession | null): WorkoutSession | nu
 export default function WorkoutDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion() ?? false;
 
   const [session, setSession] = useState<WorkoutSession | null>(null);
+  const [previousSession, setPreviousSession] = useState<WorkoutSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const previousSession = usePreviousSession(session);
 
   useEffect(() => {
-    async function loadSession() {
-      if (!id) {
-        setError('מזהה אימון לא נמצא');
-        setLoading(false);
-        return;
-      }
+    if (!id) {
+      setError('מזהה אימון לא נמצא');
+      setLoading(false);
+      return;
+    }
+    const sessionId = id;
+    let cancelled = false;
 
+    async function loadSession() {
       try {
         setLoading(true);
-        const data = await getWorkoutSession(id);
+        // Load the session and recent history in parallel to avoid a waterfall;
+        // the previous session is derived from the same fetch.
+        const [data, recentSessions] = await Promise.all([
+          getWorkoutSession(sessionId),
+          getWorkoutSessions(30),
+        ]);
+        if (cancelled) return;
         if (!data) {
+          setSession(null);
+          setPreviousSession(null);
           setError('האימון לא נמצא');
         } else {
           setSession(data);
+          setPreviousSession(derivePreviousSession(data, recentSessions));
         }
       } catch (err) {
+        if (cancelled) return;
         setError('שגיאה בטעינת האימון');
         logger.workout.error('Error loading workout session', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     loadSession();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const handleShare = useCallback(async () => {
@@ -955,7 +946,7 @@ export default function WorkoutDetail() {
         )}
 
         {/* Muscle Breakdown */}
-        <MuscleBreakdown exercises={session.exercises} />
+        <MuscleBreakdown exercises={session.exercises} reduceMotion={reduceMotion} />
 
         {/* Comparison with Previous */}
         <div className="mb-6">
@@ -994,7 +985,12 @@ export default function WorkoutDetail() {
 
           <div className="space-y-3">
             {session.exercises.map((exercise, index) => (
-              <ExerciseCard key={exercise.id || index} exercise={exercise} index={index} />
+              <ExerciseCard
+                key={exercise.id || index}
+                exercise={exercise}
+                index={index}
+                reduceMotion={reduceMotion}
+              />
             ))}
           </div>
         </div>

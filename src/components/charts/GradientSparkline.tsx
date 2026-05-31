@@ -1,3 +1,4 @@
+import { useReducedMotion } from 'framer-motion';
 import { memo, useId, useMemo } from 'react';
 
 interface GradientSparklineProps {
@@ -81,8 +82,7 @@ export const GradientSparkline = memo(function GradientSparkline({
   }, [linePath, points, height]);
 
   const endPoint = points[points.length - 1];
-  const prefersReduced =
-    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const prefersReduced = useReducedMotion();
 
   if (data.length === 0) {
     return (

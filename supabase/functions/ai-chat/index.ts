@@ -115,6 +115,16 @@ function decodeJwtPayload(token: string): JwtPayload | null {
  * Supabase's platform when verify_jwt = true in functions config. Here we
  * additionally reject anon role and expired tokens so we never burn the
  * provider quota for an unauthenticated client.
+ *
+ * !!! SECURITY — CRITICAL DEPENDENCY !!!
+ * decodeJwtPayload() ONLY base64-decodes the payload; it does NOT verify the
+ * JWT signature. This function therefore TRUSTS that the platform already
+ * rejected tokens with an invalid signature. That guarantee holds ONLY while
+ * `verify_jwt = true` in supabase/functions/ai-chat/config.toml. If that flag
+ * is ever flipped to false, a forged/unsigned token with a fabricated `sub`
+ * and a non-anon `role` would pass authorize() and reach the paid provider.
+ * Do NOT set verify_jwt = false without first adding real signature
+ * verification here (see deferred: explicit JWKS signature check).
  */
 function authorize(
   req: Request
@@ -159,12 +169,14 @@ async function checkRateLimit(userId: string): Promise<RateLimitDecision> {
     // @ts-expect-error Deno global
     kv = await Deno.openKv();
   } catch (e) {
-    // If KV is unavailable on this plan, fail OPEN — log but do not block real
-    // users. Operators should either upgrade or add an ai_rate_limits table
-    // (see project security notes).
+    // FAIL CLOSED: if KV is unavailable we cannot enforce the quota, so we must
+    // NOT let the request through (failing open would let anyone with the anon
+    // key drain the OpenRouter budget). Block and surface a 503 — consistent
+    // with coach-invite-accept's rate-limit hardening. Operators should enable
+    // Deno KV on their plan or add an ai_rate_limits table.
     // @ts-expect-error Deno global
-    console.warn('[ai-chat] Deno.openKv unavailable, skipping rate limit', e);
-    return { allowed: true, retryAfterSeconds: 0, bucket: null };
+    console.error('[ai-chat] Deno.openKv unavailable, rejecting request (fail-closed)', e);
+    return { allowed: false, retryAfterSeconds: 60, bucket: null };
   }
 
   const now = Date.now();
@@ -206,8 +218,15 @@ async function checkRateLimit(userId: string): Promise<RateLimitDecision> {
       await kv.set(minKey, new Deno.KvU64(BigInt(minCount + 1)), { expireIn: MIN_BUCKET_TTL_MS });
       // @ts-expect-error Deno.KvU64 constructor
       await kv.set(dayKey, new Deno.KvU64(BigInt(dayCount + 1)), { expireIn: DAY_BUCKET_TTL_MS });
-    } catch {
-      /* swallow — never block real users on KV outage */
+    } catch (inner) {
+      // KV open succeeded but BOTH the atomic and fallback writes failed. Reads
+      // already enforced the limit for this request, so we proceed — but log so
+      // the outage is visible (never silently swallow).
+      // @ts-expect-error Deno global
+      console.warn(
+        '[ai-chat] rate-limit counter write failed (read-side limit still applied)',
+        inner
+      );
     }
   }
 
@@ -318,6 +337,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // 100 req/day before we ever spend OpenRouter budget on them.
   const rateDecision = await checkRateLimit(authResult.userId);
   if (!rateDecision.allowed) {
+    // bucket === null means the limiter itself is unavailable (KV down). Fail
+    // CLOSED with 503 rather than 429 so we never serve traffic we can't meter.
+    if (rateDecision.bucket === null) {
+      return errorResponse(
+        req,
+        'rate_limiter_unavailable',
+        'Rate limiter temporarily unavailable, please retry shortly',
+        503
+      );
+    }
     return rateLimitResponse(req, rateDecision);
   }
 

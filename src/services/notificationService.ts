@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { safeJsonParse } from '../utils/safeJson';
 
 export interface NotificationConfig {
@@ -82,22 +83,30 @@ export async function showNotification(title: string, body: string, icon?: strin
 }
 
 export function showWorkoutReminder(): void {
-  void showNotification('זמן לאימון', 'האימון המתוכנן ממתין.').catch(() => {});
+  void showNotification('זמן לאימון', 'האימון המתוכנן ממתין.').catch((err) => {
+    logger.app.warn('Failed to show workout reminder notification', err);
+  });
 }
 
 export function showMissedWorkoutAlert(daysSince: number): void {
-  void showNotification('לא התאמנת מזמן', `עברו ${daysSince} ימים מהאימון האחרון.`).catch(() => {});
+  void showNotification('לא התאמנת מזמן', `עברו ${daysSince} ימים מהאימון האחרון.`).catch((err) => {
+    logger.app.warn('Failed to show missed-workout notification', err);
+  });
 }
 
 export function showPRNotification(exerciseName: string, type: string): void {
   void showNotification(
     'שיא אישי חדש',
     `${exerciseName} · שיא ${type === 'weight' ? 'משקל' : 'נפח'}`
-  ).catch(() => {});
+  ).catch((err) => {
+    logger.app.warn('Failed to show PR notification', err);
+  });
 }
 
 export function showNutritionReminder(): void {
-  void showNotification('תזכורת תזונה', 'רשום את הארוחה.').catch(() => {});
+  void showNotification('תזכורת תזונה', 'רשום את הארוחה.').catch((err) => {
+    logger.app.warn('Failed to show nutrition reminder notification', err);
+  });
 }
 
 export function checkMissedWorkouts(lastWorkoutDate: string | null): void {

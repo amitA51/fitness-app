@@ -55,6 +55,13 @@ export default function Dashboard() {
     return onWorkoutSaved(load);
   }, []);
 
+  // Single source of completed sessions — all derived calcs feed from this so
+  // we don't re-filter the same array in several memos.
+  const completedSessions = useMemo(
+    () => workoutSessions.filter((s) => s.status === 'completed'),
+    [workoutSessions]
+  );
+
   const sortedTemplates = useMemo(() => {
     return [...templates.filter((t) => t.isFavorite), ...templates.filter((t) => !t.isFavorite)];
   }, [templates]);
@@ -102,7 +109,7 @@ export default function Dashboard() {
       const targetWeekEnd = new Date(targetWeekStart);
       targetWeekEnd.setDate(targetWeekEnd.getDate() + 7);
 
-      const completed = workoutSessions.filter((s) => s.status === 'completed');
+      const completed = completedSessions;
 
       const weekSessions = completed.filter((s) => {
         const d = new Date(s.startTime);
@@ -133,7 +140,7 @@ export default function Dashboard() {
         volDeltaPct: prevVolume > 0 ? ((volume - prevVolume) / prevVolume) * 100 : 0,
       };
     },
-    [workoutSessions]
+    [completedSessions]
   );
 
   const weekData = useMemo(
@@ -190,7 +197,7 @@ export default function Dashboard() {
 
   // 4-week consistency data
   const consistencyData = useMemo(() => {
-    const completed = workoutSessions.filter((s) => s.status === 'completed');
+    const completed = completedSessions;
     const now = new Date();
     const weekCounts: number[] = [0, 0, 0, 0]; // [3 weeks ago, 2 weeks ago, last week, this week]
 
@@ -209,16 +216,13 @@ export default function Dashboard() {
     const consistencyPct = Math.round((weeksActive / 4) * 100);
 
     return { weeksActive, totalSessions, consistencyPct, weekCounts };
-  }, [workoutSessions]);
+  }, [completedSessions]);
 
   // Weekly muscle group distribution — top 5 muscles by completed sets this week
   const weeklyMuscleData = useMemo(() => {
     const now = new Date();
     const weekStart = getWeekStart(now);
-    const completed = workoutSessions.filter((s) => {
-      if (s.status !== 'completed') return false;
-      return new Date(s.startTime) >= weekStart;
-    });
+    const completed = completedSessions.filter((s) => new Date(s.startTime) >= weekStart);
 
     const muscleMap = new Map<string, number>();
     for (const s of completed) {
@@ -233,7 +237,7 @@ export default function Dashboard() {
       .map(([muscle, sets]) => ({ muscle, sets }))
       .sort((a, b) => b.sets - a.sets)
       .slice(0, 5);
-  }, [workoutSessions]);
+  }, [completedSessions]);
 
   // Stabilise rings array so ActivityRings (memo'd) doesn't re-render on parent re-renders.
   const heroRings = useMemo(

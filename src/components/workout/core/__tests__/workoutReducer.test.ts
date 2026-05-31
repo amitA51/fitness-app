@@ -154,14 +154,16 @@ describe('workoutReducer', () => {
       expect(next.pendingHaptic).toBe('SET_COMPLETE');
     });
 
-    it('sets showConfetti when prCelebrationIntensity is full', () => {
+    it('does NOT set showConfetti on set completion even when intensity is full', () => {
+      // Confetti is gated on an actual PR (SHOW_PR_CELEBRATION), not mere set
+      // completion. See the SHOW_PR_CELEBRATION suite for the PR-gated behavior.
       const state = createInitialState(
         [mkExercise()],
         0,
         mkSettings({ prCelebrationIntensity: 'full' })
       );
       const next = apply(state, { type: 'COMPLETE_SET' });
-      expect(next.showConfetti).toBe(true);
+      expect(next.showConfetti).toBe(false);
     });
 
     it('does not add next set if completing a non-last set', () => {
@@ -505,6 +507,315 @@ describe('workoutReducer', () => {
       const next = apply(state, { type: 'COMPLETE_SET' });
       expect(next.exercises[0]!.sets![1]!.duration).toBe(30);
       expect(next.exercises[0]!.sets![1]!.reps).toBe(0);
+    });
+  });
+
+  // ============================================================
+  // EDIT_SPECIFIC_SET
+  // ============================================================
+  describe('EDIT_SPECIFIC_SET', () => {
+    it('updates weight and reps of a specific set on the targeted exercise', () => {
+      // Arrange
+      const next = apply(baseState, {
+        type: 'EDIT_SPECIFIC_SET',
+        payload: { exerciseIndex: 0, setIndex: 0, updates: { weight: 100, reps: 12 } },
+      });
+
+      // Assert
+      expect(next.exercises[0]!.sets![0]!.weight).toBe(100);
+      expect(next.exercises[0]!.sets![0]!.reps).toBe(12);
+    });
+
+    it('edits a set on another exercise even when currentExerciseIndex is invalid', () => {
+      // Arrange — two exercises, currentExerciseIndex points nowhere valid
+      const exercises: Exercise[] = [
+        mkExercise({ id: 'ex-1', name: 'Bench' }),
+        mkExercise({ id: 'ex-2', name: 'Row' }),
+      ];
+      const state = createInitialState(exercises, 0, mkSettings());
+      state.currentExerciseIndex = 99; // invalid — no active exercise
+
+      // Act — edit set on exercise index 1 via payload
+      const next = apply(state, {
+        type: 'EDIT_SPECIFIC_SET',
+        payload: { exerciseIndex: 1, setIndex: 0, updates: { weight: 50 } },
+      });
+
+      // Assert — the targeted set was updated despite invalid current index
+      expect(next.exercises[1]!.sets![0]!.weight).toBe(50);
+    });
+
+    it('is a no-op when the target exercise does not exist', () => {
+      const next = apply(baseState, {
+        type: 'EDIT_SPECIFIC_SET',
+        payload: { exerciseIndex: 5, setIndex: 0, updates: { weight: 100 } },
+      });
+      expect(next.exercises[0]!.sets![0]!.weight).toBe(80);
+    });
+
+    it('is a no-op when the target set does not exist', () => {
+      const next = apply(baseState, {
+        type: 'EDIT_SPECIFIC_SET',
+        payload: { exerciseIndex: 0, setIndex: 9, updates: { weight: 100 } },
+      });
+      expect(next.exercises[0]!.sets![0]!.weight).toBe(80);
+    });
+
+    it('only updates provided fields, leaving others untouched', () => {
+      const next = apply(baseState, {
+        type: 'EDIT_SPECIFIC_SET',
+        payload: { exerciseIndex: 0, setIndex: 0, updates: { reps: 5 } },
+      });
+      expect(next.exercises[0]!.sets![0]!.reps).toBe(5);
+      expect(next.exercises[0]!.sets![0]!.weight).toBe(80); // unchanged
+    });
+  });
+
+  // ============================================================
+  // DELETE_SET
+  // ============================================================
+  describe('DELETE_SET', () => {
+    it('removes the targeted set when more than one set exists', () => {
+      // Arrange — exercise with two sets
+      const ex = mkExercise();
+      ex.sets = [
+        {
+          id: 's1',
+          setNumber: 1,
+          reps: 10,
+          weight: 80,
+          rpe: null,
+          isWarmup: false,
+          isCompleted: false,
+          notes: '',
+          completedAt: null,
+        },
+        {
+          id: 's2',
+          setNumber: 2,
+          reps: 8,
+          weight: 85,
+          rpe: null,
+          isWarmup: false,
+          isCompleted: false,
+          notes: '',
+          completedAt: null,
+        },
+      ];
+      const state = createInitialState([ex], 0, mkSettings());
+
+      // Act
+      const next = apply(state, {
+        type: 'DELETE_SET',
+        payload: { exerciseIndex: 0, setIndex: 0 },
+      });
+
+      // Assert — only the second set remains
+      expect(next.exercises[0]!.sets!).toHaveLength(1);
+      expect(next.exercises[0]!.sets![0]!.id).toBe('s2');
+    });
+
+    it('deletes a set on another exercise even when currentExerciseIndex is invalid', () => {
+      const ex2 = mkExercise({ id: 'ex-2', name: 'Row' });
+      ex2.sets = [
+        { ...ex2.sets![0]!, id: 'r1', setNumber: 1 },
+        { ...ex2.sets![0]!, id: 'r2', setNumber: 2 },
+      ];
+      const exercises: Exercise[] = [mkExercise({ id: 'ex-1', name: 'Bench' }), ex2];
+      const state = createInitialState(exercises, 0, mkSettings());
+      state.currentExerciseIndex = -1; // invalid — no active exercise
+
+      const next = apply(state, {
+        type: 'DELETE_SET',
+        payload: { exerciseIndex: 1, setIndex: 0 },
+      });
+
+      expect(next.exercises[1]!.sets!).toHaveLength(1);
+      expect(next.exercises[1]!.sets![0]!.id).toBe('r2');
+    });
+
+    it('does not delete the last remaining set', () => {
+      const next = apply(baseState, {
+        type: 'DELETE_SET',
+        payload: { exerciseIndex: 0, setIndex: 0 },
+      });
+      expect(next.exercises[0]!.sets!).toHaveLength(1);
+    });
+
+    it('is a no-op when the target exercise does not exist', () => {
+      const next = apply(baseState, {
+        type: 'DELETE_SET',
+        payload: { exerciseIndex: 5, setIndex: 0 },
+      });
+      expect(next.exercises[0]!.sets!).toHaveLength(1);
+    });
+  });
+
+  // ============================================================
+  // ADD_REST_TIME
+  // ============================================================
+  describe('ADD_REST_TIME', () => {
+    it('extends an active timer by adjusting the absolute endTime', () => {
+      // Arrange — active rest timer ending 60s from now
+      const state = structuredClone(baseState);
+      state.restTimer = {
+        active: true,
+        endTime: Date.now() + 60000,
+        totalTime: 60,
+        timeLeft: 60,
+      };
+
+      // Act — add 30 seconds
+      const next = apply(state, { type: 'ADD_REST_TIME', payload: 30 });
+
+      // Assert — endTime pushed out by 30s
+      expect(next.restTimer.endTime).toBe(state.restTimer.endTime! + 30000);
+    });
+
+    it('clamps a shrunk active timer to at least 1s in the future', () => {
+      const state = structuredClone(baseState);
+      state.restTimer = {
+        active: true,
+        endTime: Date.now() + 2000,
+        totalTime: 2,
+        timeLeft: 2,
+      };
+      // Subtract 30s — would go into the past, must clamp to now+1000
+      const next = apply(state, { type: 'ADD_REST_TIME', payload: -30 });
+      expect(next.restTimer.endTime).toBe(Date.now() + 1000);
+    });
+
+    it('extends a frozen (paused) timer by adjusting the negative remaining', () => {
+      // Arrange — paused timer: endTime encodes -remainingMs (50s left)
+      const state = structuredClone(baseState);
+      state.restTimer = {
+        active: true,
+        endTime: -50000,
+        totalTime: 60,
+        timeLeft: 50,
+      };
+
+      // Act — add 30 seconds
+      const next = apply(state, { type: 'ADD_REST_TIME', payload: 30 });
+
+      // Assert — magnitude grows to 80s, kept negative, timeLeft synced
+      expect(next.restTimer.endTime).toBe(-80000);
+      expect(next.restTimer.timeLeft).toBe(80);
+    });
+
+    it('is a no-op when there is no active endTime', () => {
+      const state = structuredClone(baseState); // endTime null by default
+      const next = apply(state, { type: 'ADD_REST_TIME', payload: 30 });
+      expect(next.restTimer.endTime).toBeNull();
+    });
+  });
+
+  // ============================================================
+  // SYNC_REST_TIMER — rest-timer-end branch
+  // ============================================================
+  describe('SYNC_REST_TIMER', () => {
+    it('clears active and sets pendingHaptic=REST_END when the timer has elapsed', () => {
+      // Arrange — active timer whose endTime is already in the past
+      const state = createInitialState([mkExercise()], 0, mkSettings({ hapticsEnabled: true }));
+      state.restTimer = {
+        active: true,
+        endTime: Date.now() - 1000, // elapsed
+        totalTime: 60,
+        timeLeft: 1,
+      };
+
+      // Act
+      const next = apply(state, { type: 'SYNC_REST_TIMER' });
+
+      // Assert — timer cleared and REST_END haptic queued
+      expect(next.restTimer.active).toBe(false);
+      expect(next.restTimer.endTime).toBeNull();
+      expect(next.restTimer.timeLeft).toBe(0);
+      expect(next.pendingHaptic).toBe('REST_END');
+    });
+
+    it('does not set pendingHaptic when haptics are disabled', () => {
+      const state = createInitialState([mkExercise()], 0, mkSettings({ hapticsEnabled: false }));
+      state.restTimer = {
+        active: true,
+        endTime: Date.now() - 1000,
+        totalTime: 60,
+        timeLeft: 1,
+      };
+      const next = apply(state, { type: 'SYNC_REST_TIMER' });
+      expect(next.restTimer.active).toBe(false);
+      expect(next.pendingHaptic).toBeNull();
+    });
+
+    it('updates timeLeft without ending when the timer is still running', () => {
+      const state = createInitialState([mkExercise()], 0, mkSettings({ hapticsEnabled: true }));
+      state.restTimer = {
+        active: true,
+        endTime: Date.now() + 30000,
+        totalTime: 60,
+        timeLeft: 60,
+      };
+      const next = apply(state, { type: 'SYNC_REST_TIMER' });
+      expect(next.restTimer.active).toBe(true);
+      expect(next.restTimer.timeLeft).toBe(30);
+      expect(next.pendingHaptic).toBeNull();
+    });
+
+    it('does not tick down a frozen (paused) timer', () => {
+      const state = createInitialState([mkExercise()], 0, mkSettings({ hapticsEnabled: true }));
+      state.isPaused = true;
+      state.restTimer = {
+        active: true,
+        endTime: -40000, // frozen 40s remaining
+        totalTime: 60,
+        timeLeft: 40,
+      };
+      const next = apply(state, { type: 'SYNC_REST_TIMER' });
+      expect(next.restTimer.active).toBe(true);
+      expect(next.restTimer.endTime).toBe(-40000);
+      expect(next.pendingHaptic).toBeNull();
+    });
+  });
+
+  // ============================================================
+  // SHOW_PR_CELEBRATION — confetti gated on an actual PR
+  // ============================================================
+  describe('SHOW_PR_CELEBRATION', () => {
+    it('shows confetti on a real PR when intensity is full', () => {
+      const state = createInitialState(
+        [mkExercise()],
+        0,
+        mkSettings({ prCelebrationIntensity: 'full' })
+      );
+      // biome-ignore lint/suspicious/noExplicitAny: minimal PR payload for test
+      const pr = { exerciseName: 'Bench Press', type: 'weight', value: 100 } as any;
+      const next = apply(state, { type: 'SHOW_PR_CELEBRATION', payload: pr });
+      expect(next.showPRCelebration).toEqual(pr);
+      expect(next.showConfetti).toBe(true);
+    });
+
+    it('does not show confetti on a PR when intensity is subtle', () => {
+      const state = createInitialState(
+        [mkExercise()],
+        0,
+        mkSettings({ prCelebrationIntensity: 'subtle' })
+      );
+      // biome-ignore lint/suspicious/noExplicitAny: minimal PR payload for test
+      const pr = { exerciseName: 'Bench Press', type: 'weight', value: 100 } as any;
+      const next = apply(state, { type: 'SHOW_PR_CELEBRATION', payload: pr });
+      expect(next.showPRCelebration).toEqual(pr);
+      expect(next.showConfetti).toBe(false);
+    });
+
+    it('COMPLETE_SET alone does not trigger confetti (no PR)', () => {
+      // Regression: confetti must NOT fire on every completed set, even at full intensity
+      const state = createInitialState(
+        [mkExercise()],
+        0,
+        mkSettings({ prCelebrationIntensity: 'full' })
+      );
+      const next = apply(state, { type: 'COMPLETE_SET' });
+      expect(next.showConfetti).toBe(false);
     });
   });
 });

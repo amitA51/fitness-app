@@ -430,26 +430,22 @@ function AppShell() {
       }
     }
 
-    const key = `scroll:${location.pathname}`;
-    let restored = false;
+    // Resolve the restore target up front (sessionStorage reads only, no layout
+    // reads): a stored finite value restores that position, otherwise top.
+    let targetY = 0;
     try {
-      const raw = sessionStorage.getItem(key);
+      const raw = sessionStorage.getItem(`scroll:${location.pathname}`);
       if (raw) {
         const y = Number(raw);
-        if (Number.isFinite(y)) {
-          requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'auto' }));
-          restored = true;
-        }
+        if (Number.isFinite(y)) targetY = y;
       }
     } catch (error) {
       logger.app.warn('Failed to restore scroll position', error);
     }
 
-    if (!restored) {
-      requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
-    }
-
+    // Single rAF: scroll + focus together after the new route paints.
     requestAnimationFrame(() => {
+      window.scrollTo({ top: targetY, behavior: 'auto' });
       const el = mainRef.current ?? (document.getElementById('main-content') as HTMLElement | null);
       el?.focus({ preventScroll: true });
     });
@@ -460,8 +456,12 @@ function AppShell() {
 
   // Surface any coach-set reminders that are due, as local notifications, while
   // the app is open. (Delivery when the app is closed is handled by Web Push.)
+  // The 60s poll is paused while the tab is hidden and resumed on focus, so we
+  // don't run timers/IndexedDB work in the background.
   useEffect(() => {
     let active = true;
+    let interval: number | null = null;
+
     const run = () => {
       import('./services/coach/reminderService')
         .then(({ materializeDueReminders }) => {
@@ -469,11 +469,31 @@ function AppShell() {
         })
         .catch(() => {});
     };
-    run();
-    const interval = window.setInterval(run, 60_000);
+
+    const start = () => {
+      if (interval !== null) return;
+      run();
+      interval = window.setInterval(run, 60_000);
+    };
+
+    const stop = () => {
+      if (interval === null) return;
+      window.clearInterval(interval);
+      interval = null;
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+
+    if (!document.hidden) start();
+    document.addEventListener('visibilitychange', handleVisibility);
+
     return () => {
       active = false;
-      window.clearInterval(interval);
+      stop();
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []);
 

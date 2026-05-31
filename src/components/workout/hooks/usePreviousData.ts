@@ -91,9 +91,11 @@ export function usePreviousData(exerciseName: string | undefined): UsePreviousDa
       ) {
         sessions = sessionsCache.data;
       } else {
-        sessions = await getWorkoutSessions();
-        // Sort once when caching, not on every access
-        sortSessionsByRecent(sessions);
+        const fetched = await getWorkoutSessions();
+        // Sort once when caching, not on every access. sortSessionsByRecent
+        // returns a NEW sorted array — use that result (the original `fetched`
+        // is unsorted), otherwise `find` below would scan in fetch order.
+        sessions = sortSessionsByRecent(fetched);
         sessionsCache = { data: sessions, timestamp: Date.now(), sorted: true };
       }
 

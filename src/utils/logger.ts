@@ -22,30 +22,27 @@ const LOG_LEVELS = {
   error: 3,
 } as const satisfies Record<LogLevel, number>;
 
-const currentLevel = (): LogLevel => {
-  if (typeof window !== 'undefined') {
-    const env = (window as { __DEV__?: boolean }).__DEV__;
-    if (env === false || env === undefined) return 'warn';
-    if (env === true) return 'debug';
-  }
-  return 'warn';
-};
+// Vite injects import.meta.env.DEV (true in dev/test, false in prod builds).
+// The rest of the app keys off this flag, so the logger must too — the old
+// window.__DEV__ lookup was never populated, leaving debug/info silenced.
+const isDev = import.meta.env.DEV;
+
+const currentLevel = (): LogLevel => (isDev ? 'debug' : 'warn');
 
 const shouldLog = (level: LogLevel): boolean => {
   return LOG_LEVELS[level] >= LOG_LEVELS[currentLevel()];
 };
 
-const formatMessage = (context: string, message: string, data?: unknown): string => {
+const formatMessage = (context: string, message: string): string => {
   const timestamp = new Date().toISOString();
-  const prefix = `[${timestamp}] [${context}]`;
-  return data ? `${prefix} ${message}` : `${prefix} ${message}`;
+  return `[${timestamp}] [${context}] ${message}`;
 };
 
 const createLogger = (context: string) => {
   const log = (level: LogLevel, message: string, data?: unknown) => {
     if (!shouldLog(level)) return;
 
-    const formattedMessage = formatMessage(context, message, data);
+    const formattedMessage = formatMessage(context, message);
 
     switch (level) {
       case 'debug':
@@ -58,7 +55,11 @@ const createLogger = (context: string) => {
         console.warn(formattedMessage, data ?? '');
         break;
       case 'error':
-        console.error(formattedMessage, data ?? '');
+        // In production, route errors to Sentry only — keep the console clean.
+        // In dev there is no Sentry, so surface the error on the console instead.
+        if (isDev) {
+          console.error(formattedMessage, data ?? '');
+        }
         try {
           const error = data instanceof Error ? data : new Error(`${context}: ${message}`);
           Sentry.captureException(error, {

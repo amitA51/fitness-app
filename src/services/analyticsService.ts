@@ -4,7 +4,11 @@
 
 import type { PersonalRecord, WorkoutSession } from '../types';
 import { HEBREW_DAYS, pad2, todayStr } from '../utils/dateUtils';
-import { completedSetsVolume, setVolume } from '../utils/workoutMath';
+import {
+  completedSetsVolume,
+  computeSessionStats as computeSessionStatsSSOT,
+  setVolume,
+} from '../utils/workoutMath';
 import { getWorkoutSessions } from './workoutDb';
 
 // ============================================================================
@@ -147,19 +151,13 @@ function computeSessionStats(session: WorkoutSession): {
   sets: number;
   reps: number;
 } {
-  let volume = 0;
-  let sets = 0;
-  let reps = 0;
-  for (const exercise of session.exercises) {
-    for (const set of exercise.sets) {
-      if (set.isCompleted && !set.isWarmup) {
-        volume += setVolume(set);
-        sets += 1;
-        reps += set.reps;
-      }
-    }
-  }
-  return { volume, sets, reps };
+  // Delegate to the workoutMath single source of truth so the volume/sets/reps
+  // formula (and its warmup-exclusion + completion rules) lives in one place.
+  const stats = computeSessionStatsSSOT(session, {
+    excludeWarmup: true,
+    requireWeightAndReps: true,
+  });
+  return { volume: stats.totalVolume, sets: stats.completedSets, reps: stats.totalReps };
 }
 
 /** Get the muscle key for an exercise: prefer muscleGroup, fallback to targetMuscle. */

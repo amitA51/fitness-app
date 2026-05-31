@@ -26,7 +26,9 @@ describe('DA-1: fetchWorkoutSessions updatedAt mapping', () => {
           select: () => ({
             eq: () => ({
               order: () => ({
-                limit: async () => ({ data: mockData, error: null }),
+                // Pagination uses .range(from, to); a short page (< page size)
+                // ends the loop after one request.
+                range: async () => ({ data: mockData, error: null }),
               }),
             }),
           }),

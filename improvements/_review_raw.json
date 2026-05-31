@@ -1,0 +1,811 @@
+[
+  {
+    "domain": "מנוע מצב האימון (workout state engine) וה-hooks של הכושר — workoutReducer, WorkoutProvider/Context, useWorkoutSettings, useWorkoutTimer, hooks/fitness",
+    "summary": "המנוע בנוי על useImmerReducer עם reducer מחולק לפרוסות (exercise/set/timer/ui/modal/data) וניתוב לפי Set של סוגי-action — שימוש ב-immer תקין (מוטציה של draft והחזרת void, ללא return+mutate). עם זאת מצאתי כמה באגים אמיתיים בלוגיקת ה-set: שומר-הסף בראש setReducer חוסם פעולות שמכוונות לתרגיל אחר (EDIT_SPECIFIC_SET/DELETE_SET) כשהתרגיל הנוכחי לא קיים; ה-REST_END עם כיבוד ההגדרות (רטט/צליל) לא נורה כלל כשהטיימר מסתיים בחזית כי SYNC_REST_TIMER נשלח רק בחזרה מרקע, כך ש-restTimer.active נשאר תקוע true; קונפטי נדלק בכל השלמת סט (לא רק על שיא); וקיים name-collision מסוכן של useWorkoutSettings המיוצא משני מודולים שונים עם התנהגות שונה. בנוסף יש חורי-טיפוס (as number / as string / appSettings cast), כפילות מקור-אמת לחישוב activeSetIndex/currentSet בין Provider ל-Context, וכיסוי בדיקות חלקי שמשאיר את רוב באגי-ה-set לא מזוהים. ה-aggregator והבנאי תקינים ברובם.",
+    "findings": [
+      {
+        "title": "שומר-הסף ב-setReducer חוסם EDIT_SPECIFIC_SET ו-DELETE_SET לפי התרגיל הנוכחי במקום לפי ה-payload",
+        "severity": "high",
+        "category": "bug",
+        "files": [
+          "src/components/workout/core/workoutReducer.ts:229-231",
+          "src/components/workout/core/workoutReducer.ts:440-465"
+        ],
+        "problem": "בראש setReducer יש `const exercise = draft.exercises[draft.currentExerciseIndex]; if (!exercise && action.type !== 'SET_EXERCISES') return;`. הפעולות EDIT_SPECIFIC_SET ו-DELETE_SET לא משתמשות כלל בתרגיל הנוכחי — הן מקבלות exerciseIndex משלהן ב-payload (שורות 441,454). אך אם currentExerciseIndex לא תקין (למשל אחרי REMOVE_EXERCISE שמשאיר רשימה ריקה, או index מחוץ לתחום), הסף מחזיר return מוקדם ולעולם לא מגיע ל-case שלהן — כך שאי אפשר לערוך/למחוק סט של תרגיל אחר. בנוסף החריג ל-'SET_EXERCISES' בסף הזה הוא מת: SET_EXERCISES מנותב ל-exerciseReducer (EXERCISE_ACTIONS שורה 739) ואין לו case ב-setReducer בכלל.",
+        "recommendation": "להוציא את EDIT_SPECIFIC_SET ו-DELETE_SET אל מחוץ לתלות בתרגיל הנוכחי — לבדוק תקינות לפי action.payload.exerciseIndex בתוך ה-case עצמו, ולמקם את ה-guard של `!exercise` רק על ה-cases שבאמת קוראים את התרגיל הפעיל (UPDATE_SET/COMPLETE_SET/וכו'). להסיר את החריג המת של SET_EXERCISES מהסף.",
+        "effort": "S"
+      },
+      {
+        "title": "סיום טיימר מנוחה בחזית לא מפעיל REST_END המכבד הגדרות; restTimer.active נשאר תקוע true",
+        "severity": "high",
+        "category": "bug",
+        "files": [
+          "src/components/workout/core/workoutReducer.ts:536-560",
+          "src/components/workout/hooks/useWorkoutTimer.ts:104-117",
+          "src/components/workout/core/WorkoutProvider.tsx:211-231",
+          "src/components/workout/core/WorkoutProvider.tsx:261-281"
+        ],
+        "problem": "הספירה לאחור של המנוחה רצה מקומית ב-useRestTimer כל 100ms (useWorkoutTimer.ts:104) ולא שולחת dispatch. רק SYNC_REST_TIMER מאפס את restTimer.active ומדליק pendingHaptic='REST_END' (workoutReducer.ts:551-556), אך הוא נשלח רק ב-onVisibilityChange בחזרה מרקע (WorkoutProvider.tsx:216-218). כתוצאה, כשהטיימר מסתיים בזמן שהאפליקציה בחזית: (1) draft.restTimer.active נשאר true במצב הגלובלי (state מתפרסט) למרות שהזמן נגמר; (2) ה-effect שמכבד restTimerVibrate/restTimerSound/soundEnabled (WorkoutProvider.tsx:268-278) לא מופעל כלל — מתנגן רק playDing() הגולמי (useWorkoutTimer.ts:114) שאינו מכבד את ההגדרות. כל הלוגיקה ב-WorkoutProvider שתלויה ב-pendingHaptic='REST_END' היא דד-קוד בתרחיש החזית.",
+        "recommendation": "כש-useRestTimer מזהה left<=0 לשלוח dispatch({type:'SYNC_REST_TIMER'}) (או action ייעודי REST_TIMER_ENDED) כדי לכבות את active ולהדליק את pendingHaptic, במקום להסתמך רק על visibilitychange. כך ההגדרות (רטט/צליל) ייכבדו והמצב הגלובלי לא יישאר תקוע.",
+        "effort": "M"
+      },
+      {
+        "title": "קונפטי נדלק בכל השלמת סט כשעוצמת חגיגה 'full' — לא רק על שיא אישי",
+        "severity": "medium",
+        "category": "bug",
+        "files": [
+          "src/components/workout/core/workoutReducer.ts:356-359"
+        ],
+        "problem": "ב-COMPLETE_SET: `const intensity = draft.appSettings?.workoutSettings?.prCelebrationIntensity; if (intensity === 'full') { draft.showConfetti = true; }`. השם prCelebrationIntensity וההקשר מרמזים שזו חגיגת שיא (PR), אך אין כאן שום בדיקת PR — הקונפטי נדלק על כל סט שמושלם כשהמשתמש בחר 'full' (וזה ברירת המחדל ב-DEFAULT_WORKOUT_SETTINGS שורה 88). זו תקלת UX של קונפטי על כל סט.",
+        "recommendation": "לגזור את הדלקת הקונפטי מזיהוי שיא בפועל (כפי שנעשה במקום אחר עם showPRCelebration) ולא מעצם השלמת הסט, או לתעד שזה מכוון. כרגע ההתנהגות סותרת את שם ההגדרה.",
+        "effort": "S"
+      },
+      {
+        "title": "התנגשות שמות: שני hooks שונים בשם useWorkoutSettings מיוצאים משני קבצים",
+        "severity": "high",
+        "category": "maintainability",
+        "files": [
+          "src/components/workout/core/WorkoutContext.tsx:111-115",
+          "src/components/workout/hooks/useWorkoutSettings.ts:145-315"
+        ],
+        "problem": "מיוצאים שני hooks שונים לחלוטין באותו שם useWorkoutSettings: זה שב-WorkoutContext.tsx:111 מחזיר אובייקט גולמי `workoutSettings || {}` בלי מיזוג ברירות מחדל; וזה שב-useWorkoutSettings.ts:145 מחזיר API עשיר (settings/get/updateSetting/triggerHaptic/announce...) עם מיזוג DEFAULT_WORKOUT_SETTINGS. ייבוא שגוי מאחד במקום השני יחזיר ערכי הגדרה שונים (חסרי ברירות מחדל) בלי שגיאת קומפילציה, מה שמוביל להתנהגות שקטה ושגויה (למשל get('autoStartRest') מול גישה ישירה שמחזירה undefined).",
+        "recommendation": "לשנות שם לאחד מהם (למשל useWorkoutSettingsRaw / useWorkoutSettingsSelector ב-Context, או הסרה אם מיותר) כדי למנוע גישה דו-משמעית. לוודא שכל הצרכנים מייבאים את הגרסה הנכונה.",
+        "effort": "S"
+      },
+      {
+        "title": "כפילות מקור-אמת לחישוב activeSetIndex/currentSet בין WorkoutProvider לבין useCurrentExercise",
+        "severity": "medium",
+        "category": "architecture",
+        "files": [
+          "src/components/workout/core/WorkoutProvider.tsx:344-392",
+          "src/components/workout/core/WorkoutContext.tsx:84-105",
+          "src/components/workout/core/workoutReducer.ts:138-141"
+        ],
+        "problem": "לוגיקת 'מצא את הסט הפעיל' (findIndex(s => !s.completedAt), נפילה ל-length, fallback ל-createWorkoutSet) משוכפלת בשלושה מקומות: getActiveSetIndex ב-reducer (שורה 138), derived ב-Provider (שורות 359-363), ו-useCurrentExercise ב-Context (שורות 92-95). הם דומים אך לא זהים (ה-reducer מחזיר sets.length, ה-derived/selector בונים currentSet עם createWorkoutSet). כל שינוי בכלל 'הסט הפעיל' חייב להתעדכן בשלושה מקומות — סיכון לדריפט.",
+        "recommendation": "לחלץ פונקציה אחת משותפת (למשל resolveActiveSet(sets)) ולהשתמש בה גם ב-reducer וגם ב-Provider וגם ב-selector של ה-Context.",
+        "effort": "M"
+      },
+      {
+        "title": "סט אוטומטי נוסף לתרגיל הנוכחי גם כשמדלגים ממנו במעבר superset",
+        "severity": "medium",
+        "category": "bug",
+        "files": [
+          "src/components/workout/core/workoutReducer.ts:275-285",
+          "src/components/workout/core/workoutReducer.ts:304-327"
+        ],
+        "problem": "ב-COMPLETE_SET, בלוק ה-AUTO ADD NEXT SET (שורות 275-285) רץ לפני לוגיקת ה-superset (שורות 308-327). כך, כשמשלימים סט בתרגיל שאינו האחרון בקבוצת superset, נוסף סט אוטומטי (autoGenerated, אולי עם משקל מוגדל מ-progressive overload) לתרגיל שממנו אנחנו מיד עוזבים (currentExerciseIndex משתנה בשורה 318). התוצאה: כל סבב בסופרסט מצמיח לתרגיל סט-יתום נוסף, ועלול לנפח אותו עם משקלים מוגדלים שלא בוצעו.",
+        "recommendation": "להתנות את הוספת הסט האוטומטי במצב שאינו מעבר-superset, או להזיז את חישוב חברות ה-superset לפני בלוק הוספת הסט ולדלג על ההוספה כשעוברים לתרגיל הבא בקבוצה.",
+        "effort": "M"
+      },
+      {
+        "title": "מסלול ה-fallback ב-workoutReducer מריץ את כל הפרוסות עבור action לא ממופה",
+        "severity": "low",
+        "category": "bug",
+        "files": [
+          "src/components/workout/core/workoutReducer.ts:798-842"
+        ],
+        "problem": "אם actionType לא נמצא באף Set, ה-fallback (שורות 834-841) מריץ את כל ששת ה-reducers ברצף. כיום זה לא מזיק (כל switch ללא default), אך הוא שביר: אם בעתיד יתווסף case שמטפל באותו type בשתי פרוסות, הוא יורץ פעמיים על אותו draft. בנוסף ה-routing מבוסס על Set של מחרוזות שאינו מסונכרן אוטומטית עם איחוד הטיפוסים WorkoutAction — type חדש שיתווסף ל-workoutTypes.ts ולא ל-Set המתאים ייפול בשקט ל-fallback.",
+        "recommendation": "להחליף את ה-fallback ב-no-op מפורש (או אזהרת dev), ולבסס את הניתוב על מיפוי יחיד נגזר-טיפוס (Record<WorkoutAction['type'], slice>) כדי שהקומפיילר יאכוף שכל type ממופה.",
+        "effort": "M"
+      },
+      {
+        "title": "חורי-טיפוס: cast-ים של as number / as string / appSettings ב-reducer ובבנאי",
+        "severity": "medium",
+        "category": "type-safety",
+        "files": [
+          "src/components/workout/core/workoutReducer.ts:59",
+          "src/components/workout/core/workoutReducer.ts:76-78",
+          "src/components/workout/core/workoutReducer.ts:706-713",
+          "src/services/workoutSessionBuilder.ts:81"
+        ],
+        "problem": "calculateRestTime משתמש ב-`(settings?.defaultRestTime as number) ?? 60` (שורה 59) ובדומה ל-longRestTime/shortRestTime/mediumRestTime (76-78) — ה-cast ל-number מסתיר ש-WorkoutSettings.defaultRestTime הוא number חובה (types/index.ts:462) אבל כאן settings הוא Partial, וה-cast מנטרל את הבדיקה במקום לטפל ב-undefined כראוי. ב-dataReducer (706-708) `draft.appSettings = {} as typeof draft.appSettings` יוצר אובייקט ריק בטיפוס מלא — חור טיפוס. ב-workoutSessionBuilder.ts:81 `goalType: goalType as string` כש-goalType אופציונלי, כך ש-session.goalType עלול להיות undefined מוסווה כ-string.",
+        "recommendation": "להחליף cast-ים בגישה בטוחה (ערכי ברירת מחדל מפורשים מתוך DEFAULT_WORKOUT_SETTINGS), ולתת ל-goalType טיפוס `string | undefined` במקום cast. ב-appSettings להשתמש ב-Partial או באתחול מלא במקום cast ל-typeof.",
+        "effort": "M"
+      },
+      {
+        "title": "כיסוי בדיקות חלקי — רוב פעולות ה-set וענפי הטיימר אינם נבדקים",
+        "severity": "medium",
+        "category": "testing",
+        "files": [
+          "src/components/workout/core/__tests__/workoutReducer.test.ts:56-510",
+          "src/components/workout/core/workoutReducer.ts:234-465",
+          "src/components/workout/core/workoutReducer.ts:509-560"
+        ],
+        "problem": "מערך הבדיקות מכסה COMPLETE_SET, UNDO_LAST_SET, TOGGLE_PAUSE, NUMPAD_SUBMIT וסופרסט — אך לא נבדקים כלל: UPDATE_SET, SET_TECHNIQUE (4 ענפי technique), EDIT_SPECIFIC_SET ו-DELETE_SET (כולל ה-guard 'לא למחוק סט אחרון' שורה 461 ובאג ה-guard שתואר ב-finding הראשון), UPDATE_SET_NOTES/RPE, ADD_REST_TIME בענף הקפוא (511-515) וב-floor (519-520), SET_REST_TIME, וענף הסיום הטבעי של SYNC_REST_TIMER עם pendingHaptic='REST_END' (551-556). מכיוון שבאג ה-guard של EDIT_SPECIFIC_SET וה-REST_END בחזית אינם מכוסים, הם נשארים בלתי-מזוהים.",
+        "recommendation": "להוסיף בדיקות ל-EDIT_SPECIFIC_SET/DELETE_SET (כולל מצב currentExerciseIndex לא תקין), ל-ADD_REST_TIME בשני הענפים, ולענף ה-left<=0 של SYNC_REST_TIMER שמוודא ש-active מתאפס ו-pendingHaptic נדלק.",
+        "effort": "M"
+      },
+      {
+        "title": "מטמון sessionsCache ב-usePreviousData שומר מערך לא ממוין בדגל sorted=true",
+        "severity": "medium",
+        "category": "bug",
+        "files": [
+          "src/components/workout/hooks/usePreviousData.ts:94-104",
+          "src/components/workout/hooks/usePreviousData.ts:42-48"
+        ],
+        "problem": "sortSessionsByRecent מחזירה מערך חדש ממוין (שורה 43 `return [...sessions].sort`), אך בקריאה `sortSessionsByRecent(sessions)` (שורה 96) הערך המוחזר מושלך — ואז `sessions` המקורי (הלא-ממוין) נשמר במטמון עם `sorted: true` (שורה 97). התגובה (שורה 104) מסתמכת על find של 'הסשן האחרון עם התרגיל' בהנחה שהמערך ממוין מהחדש לישן (ההערה בשורה 102 'Sessions are already sorted'), אך הוא לא ממוין — כך שערכי ה-ghost עלולים להגיע מסשן ישן ולא מהאחרון.",
+        "recommendation": "להשתמש בערך המוחזר: `sessions = sortSessionsByRecent(await getWorkoutSessions())` ואז לשמור אותו במטמון, או למיין in-place. כך הדגל sorted יתאים למצב בפועל.",
+        "effort": "S"
+      }
+    ]
+  },
+  {
+    "domain": "שכבת השירותים — סנכרון Supabase, מיזוג ענן/מקומי, תור אופליין, AI/coach",
+    "summary": "שכבת הסנכרון בנויה היטב במקומות רבים: מפתח anon בלבד דרך env (אין service-role בצד לקוח), upsert לפי id (אידמפוטנטי), backoff עם jitter, re-entrancy guards ל-syncAll/pullAll, ומיזוג גנרי אטומי שמטפל ב-tombstones. אבל יש פער עקרוני וחמור: המיזוגים הייעודיים של אימונים ותבניות (mergeWorkoutSessionsFromCloud / mergeWorkoutTemplatesFromCloud) לא מטפלים ב-deletedAt בכלל, בעוד המיזוג הגנרי כן — כך שמחיקה של אימון/תבנית \"מתחייה\" אחרי pull, גם על אותו מכשיר. בנוסף: מחיקות מים אף פעם לא מתפשטות ב-pull, שיחות AI ממוזגות כ-LWW על כל מערך ההודעות (אובדן הודעות), כל ה-fetch-ים מחזירים [] בשגיאה ומדווחים הצלחה (pull חלקי שקט), ומגבלת 500 שורות ללא pagination חותכת היסטוריה ישנה בשקט. כל בקרת הגישה נשענת על RLS בשרת — הסינון client-side לפי user_id אינו גבול אבטחה.",
+    "findings": [
+      {
+        "title": "מחיקת אימון/תבנית מתחייה אחרי pull — המיזוגים הייעודיים מתעלמים מ-deletedAt",
+        "severity": "critical",
+        "category": "bug",
+        "files": [
+          "src/services/sessionDb.ts:196-230",
+          "src/services/templateDb.ts:184-218",
+          "src/services/cloudMerge.ts:122-146",
+          "src/services/supabaseSyncMappers.ts:251",
+          "src/services/supabaseSync.ts:1256-1257"
+        ],
+        "problem": "המיזוג הגנרי mergeGenericRecords מטפל ב-tombstone: אם cloud.deletedAt קיים הוא מוחק את הרשומה המקומית (cloudMerge.ts:123-129). אבל mergeWorkoutSessionsFromCloud (sessionDb.ts:208-223) ו-mergeWorkoutTemplatesFromCloud (templateDb.ts:196-211) הם מיזוגים ייעודיים שכלל לא בודקים deletedAt — הם רק משווים updatedAt ועושים dbPut. fetchWorkoutSessions שולף את deleted_at וממפה ל-deletedAt (supabaseSync.ts:151,174), ו-toCanonicalSession משמר אותו (supabaseSyncMappers.ts:251). כך שכשמוחקים אימון במכשיר (deleteWorkoutSession כותב tombstone לענן), ה-pull הבא מביא רשומה עם deletedAt + updatedAt חדש, התנאי cloudTime>localTime מתקיים, והרשומה נכתבת חזרה ל-IndexedDB עם deletedAt — אבל לא נמחקת. מאחר ש-getWorkoutSessions/getAllWorkoutSessions/getWorkoutTemplates לא מסננים deletedAt, האימון/התבנית שנמחקו חוזרים להופיע. זה קורה גם על אותו מכשיר (delete מקומי ואז pull) וגם בין מכשירים.",
+        "recommendation": "להוסיף טיפול ב-tombstone בשני המיזוגים הייעודיים בדיוק כמו ב-mergeGenericRecords: אם cloud.deletedAt קיים — למחוק את הרשומה המקומית (dbDelete) ולדלג, אחרת להמשיך ב-LWW. לחלופין לנתב את שני הסוגים דרך mergeGenericRecords. בנוסף, ליישר קו ולוודא שכל קריאות הקריאה מסננות רשומות עם deletedAt.",
+        "effort": "S"
+      },
+      {
+        "title": "מחיקות מים לא מתפשטות, ועדכוני מים נאבדים — mergeWaterLogsFromCloud רק מוסיף",
+        "severity": "high",
+        "category": "bug",
+        "files": [
+          "src/services/waterService.ts:108-116",
+          "src/services/waterService.ts:84-90",
+          "src/services/supabaseSync.ts:1266"
+        ],
+        "problem": "mergeWaterLogsFromCloud כותב רק רשומות שלא קיימות מקומית (if (!localMap.has(cloud.id))) — אין עדכון ואין מחיקה. מצד שני deleteCloudWaterEntry עושה מחיקה קשה בענן (DELETE, ללא tombstone). לכן מחיקת מים במכשיר A מוחקת את השורה בענן, אבל ב-pull במכשיר B הרשומה עדיין קיימת מקומית והמיזוג רק מוסיף — כך שהמחיקה לעולם לא מתפשטת והרשומה נשארת לנצח במכשיר B. גם עדכון כמות נשאר תקוע על הערך הישן.",
+        "recommendation": "להמיר את מחיקת המים ל-soft-delete (עמודת deleted_at) ולהשתמש ב-mergeGenericRecords, או לבצע reconciliation שמסיר מקומית רשומות מים שכבר אינן בענן. לכל הפחות להוסיף ענף עדכון לפי created_at/updated_at.",
+        "effort": "M"
+      },
+      {
+        "title": "מיזוג שיחות AI כ-LWW על כל מערך ההודעות — אובדן הודעות בעריכה מקבילה",
+        "severity": "high",
+        "category": "bug",
+        "files": [
+          "src/services/cloudMerge.ts:184-186",
+          "src/services/cloudMerge.ts:136-145",
+          "src/services/supabaseSync.ts:694-702"
+        ],
+        "problem": "mergeAIConversationsFromCloud משתמש ב-mergeGenericRecords שמיישם LWW לפי updatedAt על כל הרשומה. שדה messages הוא מערך שלם, ו-syncAIConversation כותב את כל המערך ב-upsert. אם המשתמש מוסיף הודעות בשני מכשירים (או אופליין בשניהם), הסנכרון האחרון דורס לחלוטין את מערך ההודעות של השני — ההודעות שנכתבו במכשיר ה'מפסיד' נאבדות לצמיתות. אין מיזוג ברמת ההודעה.",
+        "recommendation": "למזג שיחות AI ברמת ההודעות: לאחד הודעות לפי message.id/timestamp במקום להחליף את כל המערך. אם נדרש LWW, לפחות לתעד את הסיכון או לעבור למודל append-only של הודעות בטבלה נפרדת.",
+        "effort": "M"
+      },
+      {
+        "title": "כל ה-fetch מחזירים [] בשגיאה — pull חלקי מדווח כהצלחה ומסתיר נפילות רשת",
+        "severity": "high",
+        "category": "bug",
+        "files": [
+          "src/services/supabaseSync.ts:84-87",
+          "src/services/supabaseSync.ts:157-160",
+          "src/services/supabaseSync.ts:1239-1251",
+          "src/services/waterService.ts:99"
+        ],
+        "problem": "כל פונקציות ה-fetch (fetchWorkoutTemplates/Sessions/PersonalExercises וכו') מחזירות [] כשיש error במקום לזרוק. ב-pullAllDataImpl כל ה-fetch רצים ב-Promise.all (supabaseSync.ts:1239), כך ש-fetch שנכשל מחמת רשת/הרשאה מחזיר [] ולא דוחה את ה-Promise. התוצאה: המיזוג רואה 'ענן ריק' לאותו store, ה-counts מדווחים 0, ו-pull מסומן success:true למרות שלא נמשך כלום. המיזוגים אמנם non-destructive (אין מחיקה מקומית), אבל המשתמש/UI מקבל אינדיקציית הצלחה שגויה ולא מתבצע retry. waterService.fetchWaterLogs (שורה 99) זהה.",
+        "recommendation": "להבחין בין 'אין נתונים' ל'שגיאת fetch': לזרוק/להחזיר תוצאת error מובחנת מה-fetch, ולגרום ל-pullAllDataImpl לסמן success:false ולתזמן retry כשחלק מה-fetch נכשלו. לכל הפחות לכלול את כשלי ה-fetch ב-SyncResult.error.",
+        "effort": "M"
+      },
+      {
+        "title": "מגבלת 500 שורות ללא pagination — חיתוך שקט של היסטוריה, tombstones אוכלים את התקציב",
+        "severity": "high",
+        "category": "bug",
+        "files": [
+          "src/services/supabaseSync.ts:82",
+          "src/services/supabaseSync.ts:155",
+          "src/services/supabaseSync.ts:236",
+          "src/services/supabaseSync.ts:306",
+          "src/services/supabaseSync.ts:367",
+          "src/services/supabaseSync.ts:438",
+          "src/services/supabaseSync.ts:513",
+          "src/services/supabaseSync.ts:589"
+        ],
+        "problem": "כל ה-fetch מגבילים ל-.limit(500) (sessions ordered by start_time desc, body_weight/nutrition/recovery by date desc) ללא pagination. למשתמש ותיק עם מעל 500 אימונים/רשומות תזונה, ה-pull מביא רק את ה-500 האחרונים וההיסטוריה הישנה לעולם לא נמשכת — חלון אובדן נתונים בעת שחזור מכשיר חדש. מאחר שגם רשומות tombstoned (deleted_at) נספרות בתוך ה-500 (אין סינון בשאילתה), tombstones מצטברים ומקצרים עוד יותר את כמות הרשומות החיות שנמשכות.",
+        "recommendation": "להוסיף pagination אמיתי (range/keyset) ולמשוך עד שמיצינו את כל הרשומות, או לפחות להעלות/להסיר את התקרה עבור שחזור מלא. לסנן deleted_at בשאילתות ה-fetch (או למחוק tombstones ישנים בשרת) כדי שלא יבזבזו את תקציב ה-limit.",
+        "effort": "M"
+      },
+      {
+        "title": "סדר עיבוד התור לא דטרמיניסטי כשחותמות הזמן זהות — מחיקה עלולה לעקוף יצירה",
+        "severity": "medium",
+        "category": "bug",
+        "files": [
+          "src/services/offlineQueue.ts:156-166",
+          "src/services/offlineQueue.ts:346-393",
+          "src/services/offlineQueue.ts:433-454"
+        ],
+        "problem": "getAllMutations קורא דרך index('timestamp') (offlineQueue.ts:161), והחותמת היא Date.now() (שורה 359). שתי מוטציות שנכנסו לתור באותה מילישנייה (למשל create+delete מהירים, או פעולות bulk אופליין) מקבלות timestamp זהה, וסדרן באינדקס בין מפתחות שווים נקבע לפי ה-primary key שהוא crypto.randomUUID() — כלומר סדר אקראי. כך עלול delete להתעבד לפני create של אותה רשומה, או update לפני create, בניגוד לסדר שבו המשתמש ביצע אותן. ה-dedup לפי type::id לא מגן כי create ו-delete הם types שונים.",
+        "recommendation": "להוסיף שדה sequence מונוטוני (מונה גלובלי עולה) ולמיין את התור לפיו במקום להישען על timestamp במילישניות, או לשלב timestamp+seq במפתח האינדקס כדי להבטיח FIFO יציב.",
+        "effort": "M"
+      },
+      {
+        "title": "כתיבת מיזוג לא-אטומית באימונים/תבניות — Promise.all של dbPut נפרדים",
+        "severity": "medium",
+        "category": "bug",
+        "files": [
+          "src/services/sessionDb.ts:225-227",
+          "src/services/templateDb.ts:213-215",
+          "src/services/cloudMerge.ts:148-164"
+        ],
+        "problem": "המיזוג הגנרי מבצע את כל ה-writes וה-deletes בטרנזקציית IndexedDB אחת אטומית (cloudMerge.ts:149-163). לעומתו mergeWorkoutSessionsFromCloud ו-mergeWorkoutTemplatesFromCloud מבצעים Promise.all(writes.map(dbPut)) — כל dbPut פותח טרנזקציה נפרדת. אם חלק מהכתיבות נכשל (למשל QuotaExceeded באמצע), נשארת מצב חלקי לא עקבי, וה-Promise.all דוחה אך חלק מהרשומות כבר נכתבו. זה גם פחות יעיל מבחינת מספר טרנזקציות.",
+        "recommendation": "לאחד את הכתיבות לטרנזקציה אחת readwrite (כמו ב-mergeGenericRecords) כדי להבטיח all-or-nothing ולשפר ביצועים.",
+        "effort": "S"
+      },
+      {
+        "title": "כל בקרת הגישה נשענת על RLS בשרת — סינון client-side לפי user_id אינו גבול אבטחה",
+        "severity": "medium",
+        "category": "security",
+        "files": [
+          "src/lib/supabase.ts:15-22",
+          "src/services/supabaseSync.ts:80",
+          "src/services/supabaseSync.ts:107",
+          "src/services/supabaseSync.ts:153"
+        ],
+        "problem": "הלקוח משתמש במפתח anon (טוב — אין service-role), אך כל השאילתות מסתמכות על .eq('user_id', userId) שמגיע מ-getCurrentUser בצד לקוח. סינון זה אינו מנגנון אבטחה — אם RLS אינו מופעל על הטבלאות ב-Supabase, כל משתמש מאומת יכול לשנות את ה-filter ולקרוא/לכתוב נתונים של משתמשים אחרים. הקוד מניח RLS אך אין אכיפה או בדיקה בצד לקוח, וגם המחיקות (.eq('id').eq('user_id')) מסתמכות על אותה הנחה.",
+        "recommendation": "לוודא ש-RLS מופעל ונאכף על כל הטבלאות בשרת (לא ניתן לאמת מהקוד הזה — דורש בדיקת מדיניות ה-DB). לתעד במפורש שהסינון לפי user_id הוא אופטימיזציה ולא גבול אבטחה, ולהוסיף בדיקת RLS אוטומטית ל-CI אם אפשר.",
+        "effort": "M"
+      },
+      {
+        "title": "מחיקת user_settings לא מתפשטת — אין tombstone ו-upsert לא כותב deleted_at",
+        "severity": "low",
+        "category": "bug",
+        "files": [
+          "src/services/supabaseSync.ts:628-647",
+          "src/services/supabaseSync.ts:671-684",
+          "src/services/cloudMerge.ts:181-183"
+        ],
+        "problem": "syncUserSetting עושה upsert ללא שדה deleted_at, ו-deleteCloudUserSetting עושה מחיקה קשה. מאחר ש-mergeUserSettingsFromCloud משתמש ב-LWW גנרי שמתפשט מחיקה רק דרך deletedAt, מחיקת הגדרה במכשיר אחד לא מתפשטת ל-pull במכשיר אחר (הרשומה פשוט נעלמת מהענן, וה-merge רק מוסיף/מעדכן). הגדרה שנמחקה תישאר במכשירים אחרים.",
+        "recommendation": "להחליט אם מחיקת הגדרות צריכה להתפשט; אם כן — להוסיף soft-delete גם כאן. אחרת לתעד שזו התנהגות מכוונת.",
+        "effort": "S"
+      },
+      {
+        "title": "התראות PR/תזכורות עם .catch(()=>{}) — בליעת שגיאות שקטה",
+        "severity": "low",
+        "category": "maintainability",
+        "files": [
+          "src/services/prService.ts:230-235",
+          "src/services/notificationService.ts:85",
+          "src/services/notificationService.ts:89",
+          "src/services/notificationService.ts:96",
+          "src/services/notificationService.ts:100"
+        ],
+        "problem": "checkForNewPR עוטף את טעינת notificationService ב-.catch(() => {}) ריק (prService.ts:234), וב-notificationService כל קריאות showNotification נעטפות ב-.catch(() => {}) ריקות. במקרה של התראות זה סביר (best-effort), אך הבליעה המוחלטת מסתירה גם שגיאות טעינת מודול/תכנות אמיתיות ומקשה על דיבאג. מנוגד לכלל הפרויקט 'never silently swallow errors'.",
+        "recommendation": "לפחות ללוג ב-logger.warn בתוך ה-catch במקום בלוק ריק, כדי לשמר את אופי ה-best-effort אך לא להסתיר תקלות.",
+        "effort": "S"
+      },
+      {
+        "title": "מיזוג non-destructive מסתיר tombstones שנכתבו מקומית — getAllWorkoutSessions לא מסנן deletedAt",
+        "severity": "medium",
+        "category": "bug",
+        "files": [
+          "src/services/sessionDb.ts:64-95",
+          "src/services/sessionDb.ts:105-136",
+          "src/services/templateDb.ts:20-23",
+          "src/services/prService.ts"
+        ],
+        "problem": "אף אחת מקריאות הקריאה (getWorkoutSessions, getAllWorkoutSessions, getWorkoutTemplates) לא מסננת deletedAt. בשילוב עם באג ה-tombstone (#1), כל רשומה עם deletedAt שנכתבה חזרה למקומי הופכת לגלויה לחלוטין ב-UI ובחישובים (למשל getAllWorkoutSessions משמש לזיהוי PR על כל ההיסטוריה — prService). המשמעות: אימון מחוק מזהם חישובי volume/PR/analytics, לא רק את התצוגה.",
+        "recommendation": "לסנן רשומות עם deletedAt בכל קריאות הקריאה הציבוריות (או להבטיח שהן באמת נמחקות פיזית במיזוג, כפי שמתוקן ב-#1). חשוב במיוחד למסלולי analytics/PR שסורקים את כל ההיסטוריה.",
+        "effort": "S"
+      }
+    ]
+  },
+  {
+    "domain": "Shared UI / Design System, Animations, Charts, Accessibility",
+    "summary": "מערכת העיצוב סובלת מפער מבני חמור: כל קובץ Accessible.tsx (705 שורות של רכיבים \"production-ready accessible\" עם ARIA, ניהול פוקוס ו-focus-trap) הוא קוד מת — אף סימבול ממנו (AccessibleButton/Input/Modal/Tabs, SkipLink, LiveRegion, FocusTrap, VisuallyHidden) לא מיובא בשום מקום מחוץ לקובץ עצמו. במקום זאת האפליקציה משתמשת ב-Button.tsx, Input.tsx ו-ModalOverlay.tsx מקבילים, כך שכל עבודת הנגישות שהושקעה ב-Accessible.tsx עוקפת בפועל. ברמת המוטיון יש טיפול טוב ב-prefers-reduced-motion (גם ב-CSS וגם דרך useReducedMotion ברוב רכיבי framer-motion), אך קיימים פערי נגישות נקודתיים: ה-NumpadOverlay לא מכריז על הערך לקוראי מסך ולא מסמן אילו מצב/טאב פעיל, מסכי ה-Skeleton כלל לא מכריזים מצב טעינה (אין role=\"status\"/aria-busy), ויש memoization שבור שמייצר רינדורים מיותרים בלוח המקשים. הצ'ארטים (GlowAreaChart, GradientSparkline, ActivityRings) מתויגים סבירות עם role=\"img\"+aria-label. בנוסף קיימת כפילות מערכות פרימיטיבים והרדקודינג של צבעי ניאון מחוץ למערכת הטוקנים.",
+    "findings": [
+      {
+        "title": "כל Accessible.tsx הוא קוד מת — הרכיבים הנגישים לא בשימוש באפליקציה",
+        "severity": "high",
+        "category": "dead-code",
+        "files": [
+          "src/components/ui/Accessible.tsx:44",
+          "src/components/ui/Accessible.tsx:140",
+          "src/components/ui/Accessible.tsx:275",
+          "src/components/ui/Accessible.tsx:450",
+          "src/components/ui/Accessible.tsx:494",
+          "src/components/ui/Accessible.tsx:581"
+        ],
+        "problem": "חיפוש ייבוא על כל ה-tsx (`from '...Accessible'` וכן `ui/Accessible`) לא מחזיר אף תוצאה מחוץ ל-Accessible.tsx עצמו. כל הסימבולים המיוצאים — AccessibleButton, AccessibleInput, AccessibleModal, AccessibleTabs, SkipLink, LiveRegion, FocusTrap, VisuallyHidden — מוגדרים אך לא נצרכים. ההתאמות שראיתי ב-grep הראשוני (WorkoutTemplates, PRCelebration, RPEPicker וכו') הן שימוש ב-hook ‏useFocusTrap (התאמה לטקסט 'FocusTrap'), לא ברכיבי Accessible.tsx. כלומר 705 שורות של ARIA, ניהול פוקוס, focus-trap והכרזות חיות יושבות ללא שימוש, בעוד האפליקציה מסתמכת על Button.tsx/Input.tsx/ModalOverlay.tsx שלא בהכרח מספקים את אותה רמת נגישות.",
+        "recommendation": "להחליט בין שתי דרכים: או לאמץ את פרימיטיבי Accessible.tsx כמקור-אמת יחיד ולמגר את הכפילות (Button.tsx/Input.tsx), או למחוק את Accessible.tsx ולוודא שהרכיבים בפועל סופגים את תכונות הנגישות שלו (label/aria-describedby ל-input, SkipLink ב-layout, LiveRegion להכרזות). מצב הביניים הנוכחי הוא החמור מכולם — נטל תחזוקה ללא תועלת נגישות.",
+        "effort": "M"
+      },
+      {
+        "title": "NumpadOverlay: הערך לא מוכרז לקוראי מסך וה-toggle בין מצבים חסר aria-pressed",
+        "severity": "high",
+        "category": "accessibility",
+        "files": [
+          "src/components/workout/overlays/NumpadOverlay.tsx:63",
+          "src/components/workout/overlays/NumpadOverlay.tsx:551",
+          "src/components/workout/overlays/NumpadOverlay.tsx:570",
+          "src/components/workout/overlays/NumpadOverlay.tsx:578"
+        ],
+        "problem": "תצוגת הערך הראשית (AnimatedValue) היא motion.div ויזואלי בלבד ללא aria-live — לחיצה על מקש משנה את הערך אך קורא מסך לא מקבל הכרזה על המספר העדכני, כך שמשתמש עיוור מקליד 'בעיוורון'. בנוסף, כפתורי ה-toggle 'מקלדת'/'כפתורי +/-' (שורות 570-585) הם button עם aria-label בלבד; המצב הפעיל מסומן רק ויזואלית דרך class 'active' ללא aria-pressed/aria-selected, כך שאין דרך נגישה לדעת איזה מצב נבחר.",
+        "recommendation": "להוסיף אזור aria-live=\"polite\" (למשל LiveRegion הקיים) שמכריז את הערך הנוכחי + היחידה בכל שינוי, ולהוסיף aria-pressed={mode === 'numpad'} / aria-pressed={mode === 'stepper'} לשני כפתורי ה-toggle (או role=tablist/tab עם aria-selected).",
+        "effort": "S"
+      },
+      {
+        "title": "מסכי Skeleton לא מכריזים מצב טעינה — אין role=status/aria-busy",
+        "severity": "medium",
+        "category": "accessibility",
+        "files": [
+          "src/components/ui/SkeletonLoader.tsx:231",
+          "src/components/ui/SkeletonLoader.tsx:333",
+          "src/components/ui/SkeletonLoader.tsx:744"
+        ],
+        "problem": "אף אחד מ-skeleton-ים (HomeScreenSkeleton, FeedScreenSkeleton, screenSkeletonMap וכו') לא כולל role=\"status\"/aria-busy/aria-live — חיפוש על role=\"status\"|aria-busy|aria-live בקבצי הטעינה החזיר תוצאות רק ב-LoadingSpinner.tsx. כשמסך נטען ומוצג skeleton במקום התוכן, קורא מסך לא מקבל שום הכרזה ('טוען'), אלא רואה DOM ריק/דקורטיבי. ה-shimmer הוא ויזואלי בלבד (animate-pulse / premium-shimmer).",
+        "recommendation": "לעטוף כל skeleton מסך מלא ב-container עם role=\"status\" aria-busy=\"true\" aria-label=\"טוען\", או להוסיף VisuallyHidden/LiveRegion עם הודעת טעינה. לוודא שכשהתוכן נטען aria-busy עובר ל-false.",
+        "effort": "S"
+      },
+      {
+        "title": "memoization שבור ב-NumpadButton — closure חדש בכל רינדור מבטל את memo",
+        "severity": "medium",
+        "category": "performance",
+        "files": [
+          "src/components/workout/overlays/NumpadOverlay.tsx:619",
+          "src/components/workout/overlays/NumpadOverlay.tsx:623",
+          "src/components/workout/overlays/NumpadOverlay.tsx:123"
+        ],
+        "problem": "NumpadButton עטוף ב-memo (שורה 123), אך בלוח המקשים מועבר אליו onPress כ-arrow inline חדש בכל רינדור (שורות 623-629), כך שה-prop משתנה זהותית בכל פעם וה-memo מתבטל — כל 12 הכפתורים מתרנדרים מחדש בכל שינוי ערך/state בקומפוננטה האב. גם מערך keys (שורה 470) נבנה מחדש בכל רינדור. במצב הקלדה מהירה עם haptics זה רינדור מיותר חוזר.",
+        "recommendation": "להעביר ל-NumpadButton את ה-key הגולמי ואת handlers יציבים (handleInput/handleDelete שכבר עטופים ב-useCallback) ולתת לכפתור להחליט פנימית לפי value, או לעטוף את onPress ב-useCallback פר-מפתח. להוציא את keys ל-useMemo התלוי ב-target.",
+        "effort": "S"
+      },
+      {
+        "title": "כפילות מערכות פרימיטיבים — Accessible* מול Button/Input/ModalOverlay",
+        "severity": "medium",
+        "category": "architecture",
+        "files": [
+          "src/components/ui/Accessible.tsx:44",
+          "src/components/ui/Button.tsx:29",
+          "src/components/ui/Input.tsx",
+          "src/components/ui/ModalOverlay.tsx:103",
+          "src/components/ui/AnnualInput.tsx",
+          "src/components/ui/PremiumSelect.tsx"
+        ],
+        "problem": "קיימות שתי מערכות מקבילות לאותם פרימיטיבים: Accessible.tsx מגדיר AccessibleButton/Input/Modal/Tabs בעוד בפועל בשימוש Button.tsx (13KB, כולל variants 'legacy' מסומנים @deprecated), Input.tsx, ModalOverlay.tsx, ובנוסף AnnualInput, AnnualPasswordInput, SettingsNumberInput, PremiumSelect. אין מקור-אמת יחיד לכפתור/קלט, מה שמוביל לדריפט בנגישות ובסגנון (focus-ring, min-height 44px, ARIA) בין הרכיבים.",
+        "recommendation": "לאחד למערכת אחת: לקבוע Button.tsx/Input.tsx כמקור-אמת ולהזרים אליהם את תכונות הנגישות מ-Accessible.tsx (קישור label↔input, aria-describedby לשגיאות, aria-busy בטעינה), ולסמן/למחוק את הכפילים. variants ה-@deprecated ב-Button.tsx צריכים תאריך הסרה.",
+        "effort": "M"
+      },
+      {
+        "title": "AnimatedProgressRing: צבעי ניאון מהורדקדים מחוץ למערכת הטוקנים + progressbar עם tabIndex=0",
+        "severity": "medium",
+        "category": "accessibility",
+        "files": [
+          "src/components/ui/AnimatedProgressRing.tsx:83",
+          "src/components/ui/AnimatedProgressRing.tsx:110",
+          "src/components/ui/AnimatedProgressRing.tsx:129"
+        ],
+        "problem": "confettiColors ו-gradientColors משתמשים בערכי hex קשיחים ('#00F0FF','#7B61FF','#FF006E','#10B981' וכו') שאינם מהטוקנים (var(--fs-accent) וכו') — צבעים אלה לא מסתנכרנים עם פלטת Fresh Steel ולא מגיבים לטים בהיר/כהה, בניגוד לכל שאר רכיבי ה-UI. בנוסף role=\"progressbar\" עם tabIndex={0} (שורה 129) הופך כל טבעת לעצירת-טאב מקלדת אף שאין שום אינטראקציה — בדאשבורד עם כמה טבעות זה מזריק עצירות טאב מיותרות.",
+        "recommendation": "להחליף את ה-hex הקשיחים בטוקני --fs-* (או לפחות במשתני CSS ייעודיים לגרדיאנט) כדי לשמור עקביות תמה; להסיר tabIndex={0} מה-progressbar אלא אם יש כוונה מפורשת שיהיה focusable, ובמקרה כזה להוסיף aria-describedby עם תיאור.",
+        "effort": "S"
+      },
+      {
+        "title": "קריאות לא-ריאקטיביות ל-document.dir ול-matchMedia בזמן render",
+        "severity": "low",
+        "category": "bug",
+        "files": [
+          "src/components/workout/overlays/NumpadOverlay.tsx:407",
+          "src/components/charts/GradientSparkline.tsx:84"
+        ],
+        "problem": "ב-NumpadOverlay isRTL מחושב כ-`document.dir === 'rtl'` ישירות בגוף הרינדור (שורה 407), וב-GradientSparkline prefersReduced נקרא כ-`window.matchMedia(...).matches` בגוף הרינדור (שורה 84). שתי הקריאות הן side-effect/DOM-read ב-render שאינו ריאקטיבי — אם כיוון השפה או העדפת התנועה משתנים בזמן ריצה, הרכיב לא יתעדכן, ובסביבת render ללא DOM (SSR/בדיקות) הן עלולות לזרוק.",
+        "recommendation": "להחליף ב-hook ריאקטיבי: useReducedMotion של framer-motion (כבר בשימוש במקומות אחרים) במקום matchMedia ידני, וקריאת dir דרך state/hook (או prop) במקום document.dir ב-render.",
+        "effort": "S"
+      },
+      {
+        "title": "EmptyState: הזרקת <style> לכל מופע + דגל אנימציה תמיד-דלוק",
+        "severity": "low",
+        "category": "maintainability",
+        "files": [
+          "src/components/ui/EmptyState.tsx:453",
+          "src/components/ui/EmptyState.tsx:549",
+          "src/components/animations/presets.ts:31"
+        ],
+        "problem": "כל מופע של EmptyState מזריק תגית <style> עם אותם keyframes (שורות 549-568) — N מופעים = N בלוקי style כפולים ב-DOM. בנוסף enableAnimations מבוסס על ANIMATION_CONFIG.enableAnimations שהוא קבוע `true` ב-presets.ts (שורה 31), כך שאי אפשר לכבות אנימציות דרך קונפיג; הכיבוי היחיד הוא ה-@media reduced-motion המוטמע. אותו דפוס הזרקת <style> מקומי קיים גם ב-NumpadOverlay (שורה 683).",
+        "recommendation": "להעביר את ה-keyframes ל-CSS גלובלי (motion.css/components.css) במקום הזרקה per-instance, ולהסיר את הדגל enableAnimations הקבוע או להפכו לבר-שליטה אמיתי דרך context/prop.",
+        "effort": "S"
+      },
+      {
+        "title": "אלמנטי fade/opacity ב-Numpad לא מכבדים prefers-reduced-motion",
+        "severity": "low",
+        "category": "accessibility",
+        "files": [
+          "src/components/workout/overlays/NumpadOverlay.tsx:102",
+          "src/components/workout/overlays/NumpadOverlay.tsx:521"
+        ],
+        "problem": "רוב התנועות ב-NumpadOverlay מגודרות נכון ב-shouldReduceMotion, אך כמה motion elements פועלים תמיד ללא בדיקה: סיומת היחידה (motion.span, initial/animate opacity, שורות 102-114) וכותרת ה-masthead עם שם התרגיל (motion.div, initial={{opacity:0,y:-10}}, שורות 521-534). אלו fade/slide קלים אך לא נכבים תחת העדפת תנועה מופחתת (ברמת framer-motion; ה-@media CSS לא חל על אנימציות JS של framer).",
+        "recommendation": "לגדר גם את שני האלמנטים הללו ב-shouldReduceMotion (initial=false / transition duration 0) לעקביות עם שאר הרכיב.",
+        "effort": "S"
+      }
+    ]
+  },
+  {
+    "domain": "דפים, ניתוב, קומפוזיציה וביצועי ריצה (React + Vite)",
+    "summary": "הניתוב והפיצול-לפי-מסלול (code-splitting) בנויים נכון: כל הדפים ב-App.tsx עטופים ב-lazy/Suspense עם PageErrorBoundary, ויש שחזור-גלילה ומעקב-מסך מסודר. הבעיה החמורה ביותר היא בווירטואליזציה: שני רכיבי רשימה (WorkoutHistoryList, ExerciseList) משתמשים ב-useVirtualizer עם getScrollElement שמטפס למעלה אל ה-<main> הגולל, אבל בלי scrollMargin שמפצה על ה-offset של הרשימה בתוך הדף — מה שגורם לחישוב פריטים-נראים שגוי כשהרשימה ממוקמת עמוק בעמוד (כמו ב-Progress). בנוסף יש קריאות window.matchMedia בתוך render לכל כרטיס ב-WorkoutDetail, חזרתיות של filter(status==='completed') במספר useMemo בנפרד ב-Dashboard, waterfall של שתי קריאות IndexedDB עוקבות ב-WorkoutDetail, וחישובים אנליטיים כבדים סינכרוניים על ה-main thread ב-AnalyticsDashboard מעל מערך לא-חסום. אין כאן רכיב-ענק חסר-פיצול, אבל WorkoutDetail.tsx (1176 שורות) ו-AnalyticsDashboard.tsx (1023) הם מונוליטים שמערבבים תצוגה, חישוב ואנימציה.",
+    "findings": [
+      {
+        "title": "ווירטואליזציה ללא scrollMargin — פריטים נעלמים/שגויים ברשימות עמוקות בדף",
+        "severity": "high",
+        "category": "bug",
+        "files": [
+          "src/pages/progress/components/WorkoutHistoryList.tsx:88-102",
+          "src/components/workout/components/ExerciseList.tsx:95-110",
+          "src/App.tsx:496-508"
+        ],
+        "problem": "שני הרכיבים מגדירים getScrollElement שמטפס במעלה ה-DOM ומחזיר את אלמנט הגלילה הקרוב (ה-<main> ב-App.tsx:499 עם overflow-y:auto). אבל useVirtualizer לא מקבל את האפשרות scrollMargin, ולכן הוא מניח שהרשימה מתחילה ב-scrollTop=0 של אלמנט הגלילה. ב-Progress.tsx הרשימה (WorkoutHistoryList ב-Progress.tsx:808) ממוקמת עמוק מתחת ל-header, hero rings, גרף נפח, ספארקליינים, שורת מטריקות וטאבים — כלומר ה-offset שלה ב-main גדול בהרבה מ-0. כתוצאה מכך החישוב של getVirtualItems() לא תואם את מצב הגלילה האמיתי: בזמן גלילה מוצגים פריטים לא-נכונים, או חלל ריק, או שהפריטים הראשונים נחתכים. זו תקלת-ווירטואליזציה ממשית (לא תיאורטית) שמופיעה דווקא כשעוברים את הסף (20 סשנים / 15 תרגילים).",
+        "recommendation": "להעביר ל-useVirtualizer את scrollMargin עם ה-offset של parentRef ביחס לאלמנט הגלילה (לדוגמה למדוד את parentRef.current.offsetTop יחסית לאלמנט שמוחזר מ-getScrollElement, ולעדכן אותו ב-useLayoutEffect/בעת resize), ולהוסיף start={virtualRow.start - virtualizer.options.scrollMargin} או להשתמש בדפוס הרשמי של scrollMargin מ-@tanstack/react-virtual. לחלופין לתת לרשימה אלמנט גלילה עצמאי משלה (overflow:auto + max-height) במקום להישען על ה-<main> הגלובלי.",
+        "effort": "M"
+      },
+      {
+        "title": "ווירטואליזציה ללא measureElement — פריטי גובה-משתנה ממופים לפי הערכה קבועה ונחפפים",
+        "severity": "medium",
+        "category": "bug",
+        "files": [
+          "src/pages/progress/components/WorkoutHistoryList.tsx:99-135",
+          "src/components/workout/components/ExerciseList.tsx:107-145"
+        ],
+        "problem": "ב-WorkoutHistoryList ה-estimateSize מחזיר 220 לפריט מורחב ו-64 לפריט מכווץ, אבל אין ref ל-measureElement על כל שורה, ולכן הגובה האמיתי של פריט מורחב (שתלוי במספר התרגילים, עד 4 שורות + כפתורים) לא נמדד. הפריטים ממוקמים absolute עם transform: translateY(virtualRow.start) (שורות 117-125), כך שאם הגובה האמיתי שונה מההערכה — הפריט הבא מתחיל במקום הלא-נכון ונוצרת חפיפה או רווח. אותו דבר ב-ExerciseList עם ESTIMATED_CARD_HEIGHT=96 קבוע לכל כרטיס. הגובה ב-estimateSize אמנם תלוי ב-expandedId אבל זו עדיין הערכה, לא מדידה.",
+        "recommendation": "להוסיף ref={virtualizer.measureElement} ו-data-index={virtualRow.index} לאלמנט-העטיפה של כל שורה, כדי ש-react-virtual ימדוד גבהים אמיתיים אחרי רינדור (במיוחד לפריט המורחב). זה גם מייתר את ההיגיון של estimateSize תלוי-expandedId.",
+        "effort": "S"
+      },
+      {
+        "title": "קריאת window.matchMedia בתוך render לכל כרטיס תרגיל ולכל בר שריר ב-WorkoutDetail",
+        "severity": "medium",
+        "category": "performance",
+        "files": [
+          "src/pages/WorkoutDetail.tsx:152-156",
+          "src/pages/WorkoutDetail.tsx:532-536"
+        ],
+        "problem": "ב-ExerciseCard ה-transition מחושב על ידי window.matchMedia('(prefers-reduced-motion: reduce)').matches בתוך גוף ה-render — כלומר נוצר object של MediaQueryList ונקראת התאמה בכל רינדור ולכל כרטיס תרגיל בנפרד (session.exercises.map ב-WorkoutDetail.tsx:996). אותו דפוס חוזר ב-MuscleBreakdown עבור כל בר נפח (slice(0,6) ב-532-536). בדף עם הרבה תרגילים זה מבצע עשרות קריאות matchMedia סינכרוניות בכל render, במקום לקרוא פעם אחת. הקובץ כבר מייבא framer-motion שיש בו useReducedMotion שמתוכנן בדיוק לזה.",
+        "recommendation": "לקרוא ל-useReducedMotion() פעם אחת ברכיב WorkoutDetail (כפי שכבר נעשה ב-AnalyticsDashboard.tsx:147) ולהעביר את הערך כ-prop ל-ExerciseCard ו-MuscleBreakdown, או לחשב const reduce = useReducedMotion() פעם אחת בכל רכיב-בן ולהשתמש בו לכל הפריטים.",
+        "effort": "S"
+      },
+      {
+        "title": "Waterfall: שתי קריאות IndexedDB עוקבות בטעינת WorkoutDetail (סשן נוכחי ואז קודם)",
+        "severity": "medium",
+        "category": "performance",
+        "files": [
+          "src/pages/WorkoutDetail.tsx:604-638",
+          "src/pages/WorkoutDetail.tsx:552-598"
+        ],
+        "problem": "ה-useEffect הראשי קורא getWorkoutSession(id) ומעדכן session. רק אחרי ש-session מתעדכן, ה-hook usePreviousSession (שתלוי ב-current) רץ וקורא getWorkoutSessions(30) ומסנן ידנית כדי למצוא סשן קודם. זה waterfall: הקריאה השנייה מחכה לסיום הראשונה ולמחזור-רינדור נוסף, למרות ששתיהן ניגשות לאותו מאגר IndexedDB ויכלו לרוץ במקביל. בנוסף getWorkoutSessions(30) מושך 30 סשנים מלאים רק כדי לבחור אחד, ומסנן/ממיין פעמיים (priorSameTemplate ואז fallback) בכל טעינה.",
+        "recommendation": "לטעון את שני המקורות במקביל (Promise.all של getWorkoutSession(id) ו-getWorkoutSessions(30)) באותו useEffect, ולגזור את הסשן הקודם מתוך התוצאה. לחלופין להוסיף שאילתת DB ייעודית שמחזירה את הסשן-הקודם-לפי-templateId ישירות, במקום למשוך 30 ולסנן ב-JS.",
+        "effort": "M"
+      },
+      {
+        "title": "Dashboard: סינון חוזר של completed-sessions בארבעה useMemo נפרדים",
+        "severity": "medium",
+        "category": "performance",
+        "files": [
+          "src/pages/Dashboard.tsx:105",
+          "src/pages/Dashboard.tsx:193",
+          "src/pages/Dashboard.tsx:218",
+          "src/pages/Dashboard.tsx:149-153"
+        ],
+        "problem": "workoutSessions.filter(s => s.status === 'completed') מחושב מחדש בנפרד ב-getWeekData (Dashboard.tsx:105), ב-consistencyData (193), ב-weeklyMuscleData (218), ובמקביל hasSessionToday (149) סורק את כל workoutSessions. כל אחד מהם מבצע מעבר מלא על המערך, ולכן אותו סינון בסיסי רץ 3-4 פעמים בכל שינוי של workoutSessions. בנוסף getWeekData הוא useCallback שתלוי ב-workoutSessions ומשמש בתוך weekData useMemo — שינוי קל גורם לרֵיצֶ'יין שלם.",
+        "recommendation": "לחשב const completedSessions = useMemo(() => workoutSessions.filter(s => s.status === 'completed'), [workoutSessions]) פעם אחת בראש הרכיב ולהעביר אותו לכל החישובים הנגזרים (getWeekData, consistencyData, weeklyMuscleData). זה מבטל 2-3 מעברים מיותרים על המערך בכל רינדור.",
+        "effort": "S"
+      },
+      {
+        "title": "AnalyticsDashboard: שבעה חישובים אנליטיים כבדים סינכרוניים על main-thread מעל מערך סשנים לא-חסום",
+        "severity": "medium",
+        "category": "performance",
+        "files": [
+          "src/components/workout/AnalyticsDashboard.tsx:149-184",
+          "src/components/workout/AnalyticsDashboard.tsx:153"
+        ],
+        "problem": "ב-useEffect הטעינה קוראת getWorkoutSessions() ללא limit (שורה 153) ואז מריצה ברצף סינכרוני calculateVolumeHistory, getAverageVolume, calculateStreak, calculateMuscleGroupDistribution, calculateWeeklyVolumes(.,12), calculateMuscleBalance(.,12) ו-forecastProgress — כולם על כל הסשנים, על ה-main thread, בבת אחת. ככל שההיסטוריה גדלה זה חוסם את ה-thread ומעכב את ה-paint הראשון של המסך (הרכיב מציג ספינר עד שכל השבעה מסתיימים). הרכיב גם ממופה ב-React.memo (1023) אבל זה לא עוזר לעלות הטעינה הראשונית.",
+        "recommendation": "להגביל את getWorkoutSessions למספר סביר (כפי ש-Progress.tsx:103 מעביר 50), או לפצל את החישובים: לחשב קודם את מה שצריך ל-above-the-fold (StatCards) ולדחות את שאר הגרפים, או להעביר את החישובים הכבדים ל-Web Worker. לכל הפחות לחסום את כמות הסשנים הנמשכת.",
+        "effort": "M"
+      },
+      {
+        "title": "WorkoutDetail.tsx ו-AnalyticsDashboard.tsx — מונוליטים שמערבבים תצוגה, חישוב ואנימציה",
+        "severity": "low",
+        "category": "maintainability",
+        "files": [
+          "src/pages/WorkoutDetail.tsx:604-1176",
+          "src/components/workout/AnalyticsDashboard.tsx:130-1019"
+        ],
+        "problem": "WorkoutDetail.tsx הוא 1176 שורות עם 4 תתי-רכיבים פנימיים (ExerciseCard, StatItem, MuscleBreakdown, DetailSkeleton) ולוגיקת share/חישוב באותו קובץ. AnalyticsDashboard.tsx הוא 1023 שורות שמכיל שני גרפי-נפח שונים (חדש מ-270, legacy מ-555), שני גרפי-שרירים (radar מ-720, legacy pie מ-869) ו-SVG inline ארוך — הכל ברכיב אחד שמרונדר תמיד גם אם רק חצי מהענפים פעיל. שני הקבצים חורגים מהמדיניות של 800 שורות שמוגדרת ב-.claude/rules. אין כאן באג ריצה אבל ה-render-tree גדול ומקשה על memoization ממוקדת.",
+        "recommendation": "לחלץ את ExerciseCard/MuscleBreakdown/StatItem ל-קבצים נפרדים ב-WorkoutDetail, ולפצל את AnalyticsDashboard לרכיבי-משנה (VolumeChart, MuscleBalanceCard, LegacyDistribution) כך שכל אחד יהיה memo עצמאי וייטען רק כשהענף שלו פעיל.",
+        "effort": "L"
+      },
+      {
+        "title": "AppShell: setInterval כל 60 שניות שמייבא דינמית ומריץ materializeDueReminders ללא backoff",
+        "severity": "low",
+        "category": "performance",
+        "files": [
+          "src/App.tsx:463-478"
+        ],
+        "problem": "ב-AppShell יש useEffect שמרים window.setInterval של 60_000ms, וכל טיק קורא ל-import('./services/coach/reminderService') ואז materializeDueReminders(). ה-import עצמו ממוטמן (cache), אבל הטיימר רץ כל הזמן שהאפליקציה פתוחה ללא תלות בנראות הטאב (document.hidden), כלומר גם כשהמשתמש לא נמצא באפליקציה. עבור PWA זה מתעורר מיותר כל דקה ומריץ עבודה (קריאות DB) גם ברקע.",
+        "recommendation": "להשהות את הטיימר כש-document.hidden=true (להאזין ל-visibilitychange ולעצור/לחדש), או להחליף ב-requestIdleCallback מותנה-נראות. כך מונעים עבודה תקופתית כשהמסך לא פעיל.",
+        "effort": "S"
+      },
+      {
+        "title": "AppShell: useLayoutEffect שמבצע קריאת window.scrollY ושלושה rAF בכל ניווט",
+        "severity": "low",
+        "category": "performance",
+        "files": [
+          "src/App.tsx:424-459"
+        ],
+        "problem": "בכל שינוי pathname רץ useLayoutEffect שכותב ל-sessionStorage את window.scrollY של הדף הקודם (קריאת layout סינכרונית), קורא מ-sessionStorage, ואז מתזמן עד שלושה requestAnimationFrame נפרדים (scrollTo קודם, scrollTo ל-0, ו-focus). הקריאה ל-window.scrollY ב-useLayoutEffect היא read שמכריח reflow לפני ה-paint, וריבוי ה-rAF מפזר את הגלילה/פוקוס על מספר פריימים — מה שעלול לגרום להבהוב/קפיצת-גלילה קצרה במעבר בין דפים.",
+        "recommendation": "לאחד את פעולות ה-scrollTo ל-rAF יחיד (אי אפשר לגלול גם לשחזור וגם ל-0 — רק אחד מהם רלוונטי, וזה כבר מטופל ב-flag restored), ולשקול לקרוא את window.scrollY ב-useEffect הקודם (cleanup) במקום בתחילת ה-layout effect כדי להימנע מ-forced reflow לפני paint.",
+        "effort": "S"
+      },
+      {
+        "title": "Progress: prSparklines/volumeData נגזרים מחדש בכל שינוי, חלקם מ-sessions לא-מסונן וחלקם מ-completedSessions",
+        "severity": "low",
+        "category": "performance",
+        "files": [
+          "src/pages/Progress.tsx:114",
+          "src/pages/Progress.tsx:128-131",
+          "src/pages/Progress.tsx:190-215"
+        ],
+        "problem": "setSessions ב-loadData כבר מסנן status==='completed' (Progress.tsx:114), ואז completedSessions עושה filter(status==='completed') שוב על אותו מערך כבר-מסונן (128-131) — סינון כפול מיותר. prSparklines (190-215) בונה Map עם לולאה כפולה (sessions × exercises × sets) בכל שינוי של completedSessions; זה לא ממומש כבעיה כבדה כרגע אבל הוא O(n·m·k) על main-thread יחד עם heroRings/volumeData שכולם תלויים באותו completedSessions ומחושבים מחדש יחד.",
+        "recommendation": "להסיר את הסינון הכפול (או ב-loadData או ב-completedSessions, לא בשניהם), ולוודא ש-completedSessions הוא המקור היחיד לכל ה-useMemo הנגזרים. אם prSparklines יקר בפועל על היסטוריות גדולות — לחשב אותו פעם אחת יחד עם volumeData/heroRings במעבר אחד על המערך.",
+        "effort": "S"
+      }
+    ]
+  },
+  {
+    "domain": "data, type system, utils, lib, errors, constants — correctness foundation",
+    "summary": "שכבת הנתונים והטיפוסים בנויה בצורה סבירה: ה-utils המתמטיים (workoutMath, tdee, plateCalculator, units) מוקשחים היטב מול NaN/Infinity/קלט שלילי ומגובים בבדיקות שבודקות התנהגות אמיתית ולא snapshots. עם זאת יש כמה חורים אמיתיים בבסיס: אין שום ולידציה בזמן ריצה בגבול Supabase (zod נעדר לחלוטין — 0 שימושים), והממפים יוצקים `unknown[]` ישירות לטיפוסי הדומיין עם as-cast. ה-logger שבור פונקציונלית כי הוא קורא `window.__DEV__` שלעולם לא מוגדר, כך שרמות debug/info אף פעם לא נרשמות. יש כפילות של `computeSessionStats` בין ה-util ל-analyticsService למרות שה-util מצהיר על עצמו כ\"מקור אמת יחיד\". פונקציות המרת היחידות הימפריאליות (displayWeight/toStorageWeight) הן exports מתים — מערכת kg/lb לא מחווטת. בנוסף יש drift בין קבועים לטיפוסים (PR_TYPES חסר '1rm', איחודי טיפוסים כפולים) וטיפוס-על Exercise deprecated שעדיין משמש בסיס. fmtDate מחשב \"היום/אתמול\" לפי חלונות 24 שעות במקום ימים קלנדריים.",
+    "findings": [
+      {
+        "title": "אין ולידציה בזמן ריצה בגבול Supabase — zod נעדר, casts לא בטוחים של unknown[] לטיפוסי הדומיין",
+        "severity": "high",
+        "category": "type-safety",
+        "files": [
+          "src/services/supabaseSyncMappers.ts:225",
+          "src/services/supabaseSyncMappers.ts:241",
+          "src/services/supabaseSyncMappers.ts:254"
+        ],
+        "problem": "חיפוש על כל src מחזיר 0 שימושים ב-zod/schema validation כלשהי, למרות שכללי הקוד של הפרויקט עצמם מחייבים zod בגבולות המערכת. הממפים מ-Supabase ל-canonical types פשוט יוצקים מערך לא־ידוע לטיפוס הדומיין: `exercises: (s.exercises ?? []) as CanonicalWorkoutSession['exercises']` (toCanonicalSession, שורה 241) ו-`(t.exercises ?? []) as CanonicalWorkoutTemplate['exercises']` (שורה 225). `toCanonicalPersonalExercise` עושה `...e` ספרד + cast ללא בדיקה (254). המשמעות: אם שורת ה-DB מכילה JSON פגום (sets ללא reps/weight, שדות null, מבנה ישן ממיגרציה), הוא זורם ישירות לתוך WorkoutSession.exercises ומשם ל-setVolume/computeSessionStats ללא שום שכבת הגנה. ה-utils עצמם מוקשחים, אבל מבנה לא תקין (למשל exercises שאינו מערך, או set שהוא null) ישבור ב-runtime.",
+        "recommendation": "להגדיר סכמות zod ל-WorkoutSession/WorkoutTemplate/PersonalExercise (לפחות למבנה exercises[].sets[]) ולהריץ `schema.safeParse` בתוך הממפים toCanonical*, עם נפילה לערך תקין + לוג כשהפרסור נכשל, במקום as-cast. זה גם מבטל את ההערה בראש הקובץ שמצדיקה את ה-casts ב\"superset interfaces\".",
+        "effort": "M"
+      },
+      {
+        "title": "ה-logger שבור: הגייט קורא window.__DEV__ שלעולם לא מוגדר — debug/info אף פעם לא נרשמים",
+        "severity": "medium",
+        "category": "bug",
+        "files": [
+          "src/utils/logger.ts:27",
+          "src/utils/logger.ts:25",
+          "src/main.tsx:42"
+        ],
+        "problem": "currentLevel() קורא `(window as { __DEV__?: boolean }).__DEV__` (שורה 27), אבל חיפוש על כל הקוד מראה ש-`__DEV__` נקרא רק כאן ולעולם לא נכתב. שאר הקוד משתמש ב-`import.meta.env.DEV` (main.tsx:42, webVitals.ts:7), ש-Vite מחליף בזמן build ולא מזריק כ-property על window. לכן `env` תמיד undefined, הענף `if (env === false || env === undefined) return 'warn'` תמיד מנצח, ו-currentLevel תמיד מחזיר 'warn'. תוצאה: `logger.debug`/`logger.info` לעולם לא נרשמים — גם בפיתוח — מה שמרוקן מתוכן את כל הקריאות ל-debug/info במערכת. בנוסף warn+error כן רצים ל-console גם בפרודקשן (אין גייט פרודקשן אמיתי). bonus: formatMessage שורה 41 מחזיר את אותו ביטוי בשני ענפי הטרנרי — הפרמטר data לא בשימוש שם (dead branch).",
+        "recommendation": "להחליף את הקריאה ל-`import.meta.env.DEV` (או import.meta.env.MODE) במקום `window.__DEV__`, ולתקן/להסיר את הטרנרי המת ב-formatMessage. כדאי גם לוודא שב-prod רק error נשלח ל-Sentry ולא נכתב ל-console.",
+        "effort": "S"
+      },
+      {
+        "title": "כפילות computeSessionStats: analyticsService מחזיק מימוש משלו למרות ש-workoutMath מצהיר על SSOT",
+        "severity": "medium",
+        "category": "maintainability",
+        "files": [
+          "src/services/analyticsService.ts:145",
+          "src/utils/workoutMath.ts:158"
+        ],
+        "problem": "workoutMath.ts מצהיר במפורש (שורות 68-72) שהוא 'single source of truth' ל'כמה סטים, כמה נפח, כמה זמן' כדי שהמסכים 'לא יוכלו להיסחף'. אבל analyticsService.ts:145 מגדיר פונקציה מקומית בשם זהה `computeSessionStats` עם לוגיקה משלה (`if (set.isCompleted && !set.isWarmup) { volume += setVolume(set); sets++; reps += set.reps }`) שאינה מפעילה את גייט ה-weight+reps של ה-util המשותף ואינה משתמשת ב-isSetCompleted (שמטפל גם ב-completedAt וגם ב-completed). זו בדיוק הסחיפה שה-util בא למנוע — שתי הגדרות עם אותו שם והתנהגות שונה במקצת.",
+        "recommendation": "להחליף את הפונקציה המקומית ב-analyticsService בקריאה ל-`computeSessionStats` מ-workoutMath עם האופציות המתאימות (excludeWarmup:true, requireWeightAndReps), או לכל הפחות לתעד למה היא חייבת להיות נפרדת. כרגע יש סיכון אמיתי שתיקון נוסחה במקום אחד לא יגיע לשני.",
+        "effort": "S"
+      },
+      {
+        "title": "fmtDate מחשב 'היום/אתמול' לפי חלונות 24 שעות במקום ימים קלנדריים + תוויות שליליות לתאריך עתידי",
+        "severity": "medium",
+        "category": "bug",
+        "files": [
+          "src/utils/dateUtils.ts:29",
+          "src/utils/dateUtils.ts:32"
+        ],
+        "problem": "`diff = Math.floor((Date.now() - t) / 86400000)` מחשב הפרש במילישניות חלקי יממה — לא הפרש ימים קלנדריים. אימון שנעשה אתמול ב-23:00, בבוקר למחרת ב-01:00 (פחות מ-24 שעות) ייתן diff=0 ויוצג 'היום' למרות שזה אתמול. הפוך: אימון אתמול ב-08:00 שנצפה היום ב-09:00 (25 שעות) ייתן diff=1 ='אתמול' — לא עקבי. בנוסף, לתאריך עתידי t>Date.now() ה-diff שלילי, הענף `diff === 0`/`=== 1` לא נתפסים, אבל `diff < 7` כן מתקיים (כל מספר שלילי < 7) ומוחזר `לפני -1 ימים`. זה בניגוד ל-isToday (שורה 36) שכן משווה getFullYear/getMonth/getDate נכון.",
+        "recommendation": "לחשב את ההפרש על בסיס תאריכים מנורמלים לחצות מקומי (להשתמש ב-toLocalDateStr/getDate כמו ב-isToday) ולהגן על diff שלילי (תאריך עתידי) בענף נפרד. כדאי לבסס את fmtDate על אותה לוגיקה מקומית שכבר קיימת ב-todayStr/toLocalDateStr.",
+        "effort": "S"
+      },
+      {
+        "title": "פונקציות המרת המשקל הימפריאלי הן exports מתים — מערכת kg/lb לא מחווטת",
+        "severity": "medium",
+        "category": "dead-code",
+        "files": [
+          "src/utils/units.ts:30",
+          "src/utils/units.ts:45",
+          "src/utils/units.ts:49",
+          "src/types/index.ts:559"
+        ],
+        "problem": "חיפוש call-sites ל-`displayWeight(`, `toDisplayWeight(`, `toStorageWeight(` מחזיר אך ורק את ההגדרות ב-units.ts — אף קורא בקוד. רק kgToLbs/lbsToKg/cmToInches נבדקים בטסטים. במקביל AppSettings מגדיר `unitSystem: 'metric' | 'imperial'` (types/index.ts:559), כלומר ה-UI אמור לתמוך בימפריאלי אבל פונקציות ההמרה תצוגה/אחסון שאמורות לחבר את זה אינן בשימוש בשום מקום. המשמעות המעשית: או שמצב imperial לא באמת עובד (משקלים נשמרים/מוצגים תמיד ב-kg), או שיש המרות ידניות מפוזרות שעוקפות את ה-util. זה חור אמיתי בטיפול ביחידות, לא רק dead code.",
+        "recommendation": "לאתר היכן unitSyst=imperial אמור להשפיע (קלט/תצוגת משקל), ולחווט שם את toDisplayWeight/toStorageWeight; אם ההחלטה היא metric-only — להסיר את הפונקציות ואת unitSystem מ-AppSettings כדי שלא ייווצר מצג שווא של תמיכה.",
+        "effort": "M"
+      },
+      {
+        "title": "Drift בין קבועים לטיפוסים: PR_TYPES חסר '1rm', ואיחודי טיפוסים כפולים (WarmupPreference/WarmupMode, MEAL_TYPES)",
+        "severity": "medium",
+        "category": "maintainability",
+        "files": [
+          "src/constants/workoutConstants.ts:67",
+          "src/types/index.ts:236",
+          "src/types/index.ts:434",
+          "src/types/index.ts:461",
+          "src/types/index.ts:268"
+        ],
+        "problem": "PR_TYPES (workoutConstants.ts:67) מגדיר WEIGHT/REPS/VOLUME בלבד, אבל איחוד הטיפוס PR (types/index.ts:236 וגם 569) ושורת ה-DB (supabaseSyncMappers.ts:140) כוללים גם '1rm', וה-UI ב-PRHistoryTab משתמש ב-'1rm' — כך ש-PR_TYPES לא יכול לשמש כמקור אמת. בנוסף: `WarmupPreference` ו-`WarmupMode` (שורות 434-435) הם איחודים זהים מילה במילה — כפילות; `WorkoutSettings.warmupPreference` (465) ו-`defaultWorkoutGoal` (461) מגדירים inline את אותם איחודים של WarmupPreference/WorkoutGoal במקום לייבא אותם; ו-MEAL_TYPES (52) משכפל את איחוד MealType (268). כל אלה מקורות אמת כפולים שייסחפו זה מזה.",
+        "recommendation": "להוסיף ONE_RM ל-PR_TYPES (או לגזור את האיחוד מהקבוע ב-`as const`), למזג WarmupMode אל WarmupPreference, ולהחליף את האיחודים ה-inline ב-WorkoutSettings בשימוש חוזר ב-WorkoutGoal/WarmupPreference. עדיף לגזור את הטיפוסים מהקבועים (typeof X[keyof typeof X]) כדי שלא יהיו שני מקורות.",
+        "effort": "S"
+      },
+      {
+        "title": "טיפוס-העל Exercise (deprecated) עדיין הבסיס של PersonalExercise — הכול אופציונלי, אין discriminated union",
+        "severity": "medium",
+        "category": "type-safety",
+        "files": [
+          "src/types/index.ts:174",
+          "src/types/index.ts:207",
+          "src/types/index.ts:407"
+        ],
+        "problem": "Exercise מסומן @deprecated (שורה 172) לטובת ActiveExercise/TemplateExercise/ExerciseCatalogEntry, אבל PersonalExercise עדיין `extends Exercise` (207) ו-PersonalItem.exercises עדיין `Exercise[]` (407). Exercise הוא god-object שבו כמעט כל שדה אופציונלי (id חובה, השאר ?) וגם מערבב שדות runtime (sets, isCompleted) עם שדות template (targetSets, targetReps) עם שדות catalog. אין discriminator שמבדיל בין 'תרגיל בקטלוג' ל'תרגיל פעיל בסשן' ל'תרגיל בתבנית', כך ש-TypeScript לא יכול לאכוף שב-context של סשן באמת קיימים sets, וב-context של תבנית קיימים targetSets. זה מאפשר גישה לשדות undefined בלי שגיאת קומפילציה.",
+        "recommendation": "להשלים את המעבר: להחליף `PersonalExercise extends Exercise` ב-`extends ExerciseCatalogEntry`, ולהחליף שימושים ב-Exercise בטיפוס המדויק (ActiveExercise/TemplateExercise) לפי ההקשר. אם אי אפשר עדיין — לפחות להוסיף שדה דיסקרימינטור (kind) כדי לאפשר narrowing.",
+        "effort": "M"
+      },
+      {
+        "title": "toCanonicalSession משתמש ב-toISOString().slice(0,10) — בדיוק ה-anti-pattern ש-dateUtils מזהיר מפניו",
+        "severity": "low",
+        "category": "bug",
+        "files": [
+          "src/services/supabaseSyncMappers.ts:238",
+          "src/utils/dateUtils.ts:72"
+        ],
+        "problem": "ה-fallback ל-date בשורה 238 הוא `new Date().toISOString().slice(0, 10)` וגם `s.startTime.slice(0, 10)`. dateUtils.ts:72-77 מתעד במפורש שאסור להשתמש ב-`toISOString().slice(0,10)`/`.slice(0,10)` כי הוא מחזיר תאריך UTC וממפה לא נכון רשומות בשעות 00:00-03:00 למשתמשים מזרחית ל-UTC (ישראל). כאן בדיוק נעשה זה — אז סשן שנוצר אחרי חצות מקומי בלי שדה date מפורש עלול להישמר עם תאריך של היום הקודם.",
+        "recommendation": "להשתמש ב-toLocalDateStr(new Date()) / toLocalDateStr(new Date(s.startTime)) מ-dateUtils במקום slice(0,10), כדי לשמור על אותו כלל תאריך מקומי שכל שאר הקוד מקפיד עליו.",
+        "effort": "S"
+      },
+      {
+        "title": "מחלקות השגיאה לא משחזרות את prototype chain — instanceof עלול להישבר ב-downlevel",
+        "severity": "low",
+        "category": "type-safety",
+        "files": [
+          "src/errors/index.ts:7",
+          "src/errors/index.ts:47"
+        ],
+        "problem": "AppError ו-יורשותיה (ValidationError/NotFoundError/StorageError/SyncError) מרחיבות Error בלי לקרוא ל-`Object.setPrototypeOf(this, new.target.prototype)` בקונסטרקטור. כש-TypeScript מקמפל ל-target נמוך מ-ES2015 (extends Error מובנה), שרשרת הפרוטוטייפ נשברת ו-`error instanceof AppError` עלול להחזיר false — מה ש-`isAppError` (שורה 47) מסתמך עליו ישירות. ב-Vite/esbuild היעד בדרך כלל מודרני אז זה כנראה לא נשבר בפועל, אבל זה תלוי בהגדרת ה-target ולא מוגן מפורשות.",
+        "recommendation": "להוסיף `Object.setPrototypeOf(this, new.target.prototype)` (או שורת prototype מפורשת) בקונסטרקטור AppError, או לוודא ש-tsconfig.target הוא ES2015+. זה מבטל תלות שקטה בהגדרת ה-build.",
+        "effort": "S"
+      },
+      {
+        "title": "createWorkoutSet עם fallback id מבוסס Math.random — סיכון התנגשות מזהים",
+        "severity": "low",
+        "category": "bug",
+        "files": [
+          "src/types/index.ts:441",
+          "src/utils/id.ts:11"
+        ],
+        "problem": "createWorkoutSet משתמש ב-`crypto.randomUUID?.() || Math.random().toString(36).slice(2)` (שורה 441). הנפילה ל-Math.random מייצרת מזהה ללא חותמת זמן ועם אנטרופיה נמוכה — בניגוד ל-generateId ב-id.ts שלפחות משלב Date.now(). בסביבות ללא crypto.randomUUID (WebView ישן/הקשר לא-secure) שני סטים שנוצרים ברצף עלולים לקבל מזהה זהה, מה שישבור פעולות reducer שמזהות סט לפי id (עריכה/מחיקה/השלמה).",
+        "recommendation": "לאחד על util מזהים אחד (generateId) שמשלב prefix+timestamp+random גם כ-fallback, או להבטיח polyfill ל-crypto.randomUUID. לכל הפחות להוסיף את Date.now() ל-fallback.",
+        "effort": "S"
+      }
+    ]
+  },
+  {
+    "domain": "build/config, security posture, env handling, Supabase backend, test infrastructure",
+    "summary": "הפרויקט מציג עמדת אבטחה בסיסית טובה יחסית: tsconfig במצב strict מלא (כולל noUncheckedIndexedAccess), CSP מוקשח ב-netlify.toml ללא unsafe-inline ב-script-src, RLS מופעל על כל הטבלאות עם מדיניות per-user, פונקציות Edge עם verify_jwt=true, rate-limiting, ו-allowlist למודלים. ה-service worker מוגדר נכון (registerType: 'prompt', ו-Supabase REST לא נשמר ב-cache מתוך מודעות לדליפת מידע בין משתמשים). עם זאת קיימים ליקויים ממשיים: מפתח DeepSeek אמיתי בתחילית VITE_ בקובץ .env.local (latent client leak), ספי כיסוי בדיקות שהם תיאטרון (3% statements/lines) בסתירה לדרישת 80% של הפרויקט עצמו, drop_console שמסיר גם console.error בפרודקשן, חוקי biome קריטיים מוגדרים כ-warn בלבד (לא חוסמים), טריגר LWW שמאפשר ללקוח לזייף updated_at עתידי כדי לנצח כל merge כולל דריסת עריכות מאמן, ו-rate-limit שנכשל פתוח (fail-open) בנפילת Deno KV. הקבצים temp_debug.txt ו-test-run-output.log קיימים בדיסק אך מוגנים נכון ב-.gitignore.",
+    "findings": [
+      {
+        "title": "מפתח DeepSeek אמיתי בתחילית VITE_ — דליפה פוטנציאלית ל-bundle של הלקוח",
+        "severity": "high",
+        "category": "security",
+        "files": [
+          "C:/Users/amit0/Desktop/fitness-app/.env.local:16",
+          "C:/Users/amit0/Desktop/fitness-app/src/services/ai/core.ts:257",
+          "C:/Users/amit0/Desktop/fitness-app/src/services/ai/core.ts:281"
+        ],
+        "problem": "הקובץ .env.local מכיל מפתח ספק AI אמיתי בשם VITE_DEEPSEEK_API_KEY (ערך מסוג sk-...) לצד VITE_SUPABASE_ANON_KEY (JWT אמיתי). הקובץ אומנם מוגן ב-.gitignore ולא נמצא ב-git, אבל התחילית VITE_ אומרת ש-Vite יטמיע כל ערך כזה ישירות ל-bundle הציבורי של הדפדפן. בקוד כבר קיימת המחלקה DirectDeepSeekProvider (core.ts:257) שמקבלת apiKey ושולחת אותו ישירות מהדפדפן ל-https://api.deepseek.com (core.ts:281-285). כרגע bootstrap.ts מאתחל רק RemoteProvider/LocalFallbackProvider ולא את DirectDeepSeekProvider, ולכן המפתח לא נמצא ב-dist הנוכחי — אבל זו דליפה latent: שורת import.meta.env.VITE_DEEPSEEK_API_KEY אחת תחשוף מפתח ספק בתשלום בכל JS ציבורי. הערת .env.example שורה 25 עצמה מסבירה שמפתח AI 'לא יושב כאן כי זה קובץ לקוח' — וה-.env.local סותר את ההנחיה הזו.",
+        "recommendation": "להחליף (rotate) את מפתח ה-DeepSeek שכבר נחשף בקובץ. להסיר את התחילית VITE_ מהמפתח כך שלא ניתן יהיה להטמיעו ב-bundle. לנתב את DeepSeek דרך Edge Function בדיוק כמו OPENROUTER_API_KEY (ai-chat/index.ts) ולהחזיק את המפתח ב-Supabase Secrets בלבד. לשקול הסרת DirectDeepSeekProvider מהקוד אם אינו בשימוש.",
+        "effort": "M"
+      },
+      {
+        "title": "ספי כיסוי בדיקות הם תיאטרון — 3% statements/lines בסתירה לדרישת 80% של הפרויקט",
+        "severity": "high",
+        "category": "testing",
+        "files": [
+          "C:/Users/amit0/Desktop/fitness-app/vitest.config.ts:30",
+          "C:/Users/amit0/Desktop/fitness-app/.claude/rules/common/testing.md"
+        ],
+        "problem": "ספי הכיסוי ב-vitest.config.ts קובעים statements: 3 ו-lines: 3 (שורות 31, 34) לכל הקוד-בייס. branches: 50 ו-functions: 20 גבוהים יותר אך עדיין נמוכים. רק קובץ אחד (workoutReducer.ts) קיבל סף אמיתי של 60%. המשמעות היא ש-CI יעבור גם אם 97% מהשורות אינן מכוסות. זה סותר ישירות את testing.md של הפרויקט עצמו שדורש מינימום 80% כיסוי. למרות שקיימים כ-37 קבצי בדיקה, ה-floor המוגדר לא מספק שום הגנת רגרסיה אמיתית מעבר ל-reducer בודד.",
+        "recommendation": "להעלות בהדרגה את ספי statements/lines הגלובליים לרמה שמשקפת את הכיסוי בפועל (להריץ test:coverage ולקבוע סף מעט מתחת לתוצאה), ולהמשיך לחדד כלפי מעלה לכיוון 80%. להוסיף ספים ספציפיים לקבצי שירות קריטיים (syncEngine, cloudMerge, achievementService).",
+        "effort": "M"
+      },
+      {
+        "title": "drop_console מסיר גם console.error בפרודקשן — איבוד דיאגנוסטיקה",
+        "severity": "medium",
+        "category": "maintainability",
+        "files": [
+          "C:/Users/amit0/Desktop/fitness-app/vite.config.ts:96",
+          "C:/Users/amit0/Desktop/fitness-app/src/main.tsx:59"
+        ],
+        "problem": "terserOptions.compress.drop_console: true (vite.config.ts:95-98) מסיר את כל קריאות console.* בפרודקשן — כולל console.error ו-console.warn, לא רק console.debug/log. ב-main.tsx:59-65 מותקנים handlers גלובליים ל-error ו-unhandledrejection שמדווחים דרך logger.app.error; אם ה-logger נשען בסופו של דבר על console, כל הדיווח המקומי בפרודקשן נעלם. נשארת רק Sentry, אך Sentry מאותחל רק אם VITE_SENTRY_DSN מוגדר (main.tsx:23), ובברירת המחדל ב-.env.example הוא ריק — כלומר בפרודקשן ללא DSN אין כלל נראות לשגיאות.",
+        "recommendation": "לצמצם את drop_console כך שישמר console.error/console.warn (למשל pure_funcs: ['console.log','console.debug','console.info'] ללא drop_console גורף), או לוודא ש-logger כותב ליעד עמיד שאינו console. לוודא שב-CI/פרודקשן VITE_SENTRY_DSN אכן מוגדר.",
+        "effort": "S"
+      },
+      {
+        "title": "חוקי biome קריטיים מוגדרים כ-warn בלבד ולא חוסמים את הבדיקה",
+        "severity": "medium",
+        "category": "type-safety",
+        "files": [
+          "C:/Users/amit0/Desktop/fitness-app/biome.json:13",
+          "C:/Users/amit0/Desktop/fitness-app/biome.json:25",
+          "C:/Users/amit0/Desktop/fitness-app/biome.json:11"
+        ],
+        "problem": "ב-biome.json חוקים שתופסים באגים אמיתיים מוגדרים כ-'warn': useExhaustiveDependencies (שורה 13 — תלויות חסרות ב-useEffect, מקור קלאסי לבאגים ב-React), noExplicitAny (שורה 25), noUnusedVariables ו-noUnusedImports (שורות 11-12). ב-biome 1.x אזהרות אינן מחזירות exit code שגוי כברירת מחדל, כך ש-'npm run lint:check' (biome check) עובר גם כאשר קיימות עשרות אזהרות. בנוסף noNonNullAssertion כבוי לגמרי (שורה 16) — ומופעל בפועל ב-main.tsx:81 (getElementById('root')!), דפוס שעלול לקרוס בשקט.",
+        "recommendation": "להעלות לפחות את useExhaustiveDependencies ו-noExplicitAny לרמת 'error' כדי שיחסמו את ה-CI, או להריץ את biome עם דגל שמכשיל על אזהרות. לשקול הפעלת noNonNullAssertion והחלפת ה-! ב-main.tsx בבדיקה מפורשת.",
+        "effort": "S"
+      },
+      {
+        "title": "טריגר LWW מאפשר ללקוח לזייף updated_at עתידי ולדרוס עריכות מאמן",
+        "severity": "medium",
+        "category": "security",
+        "files": [
+          "C:/Users/amit0/Desktop/fitness-app/supabase/migrations/20260531120000_data_sync_correctness.sql:3",
+          "C:/Users/amit0/Desktop/fitness-app/supabase/migrations/20260531150000_harden_function_search_path.sql:3"
+        ],
+        "problem": "הטריגר update_updated_at_column משמר את ה-updated_at שהלקוח שלח כל עוד הוא חדש או שווה ל-OLD (IF NEW.updated_at IS NULL OR NEW.updated_at <= OLD.updated_at THEN NEW.updated_at = NOW()). זו לוגיקת last-write-wins למיזוג רב-מכשירי, אבל היא סומכת על ערך שמגיע מהלקוח. לקוח זדוני יכול לשלוח updated_at רחוק בעתיד (למשל שנת 9999) ובכך לנצח כל merge עתידי — כולל דריסת עריכות שמאמן ביצע על נתוני המתאמן דרך מדיניות coach_update_* (coach_platform.sql:449-450). אין clamp לערך מול NOW() בצד השרת.",
+        "recommendation": "להגביל (clamp) את updated_at שמגיע מהלקוח כך שלא יעלה על NOW() בתוספת סטיית שעון קטנה (למשל NEW.updated_at = LEAST(NEW.updated_at, now() + interval '5 minutes')), ולדחות ערכים עתידיים חריגים.",
+        "effort": "S"
+      },
+      {
+        "title": "ai-chat: rate-limit נכשל פתוח (fail-open) בנפילת Deno KV",
+        "severity": "medium",
+        "category": "security",
+        "files": [
+          "C:/Users/amit0/Desktop/fitness-app/supabase/functions/ai-chat/index.ts:161",
+          "C:/Users/amit0/Desktop/fitness-app/supabase/functions/ai-chat/index.ts:202"
+        ],
+        "problem": "ב-checkRateLimit, אם Deno.openKv נכשל הפונקציה מחזירה { allowed: true } ומדלגת לחלוטין על הגבלת הקצב (index.ts:161-167). כלומר בכל מצב שבו KV לא זמין (תוכנית ללא KV, תקלה זמנית) כל משתמש מאומת יכול לשלוח בקשות ללא הגבלה ולנצל את מכסת OpenRouter בתשלום. גם נתיב ה-fallback הלא-אטומי (שורות 202-211) בולע שגיאות בשקט. זאת בניגוד ל-coach-invite-accept שתוקן ל-fail-closed (coach-invite-accept/index.ts:94-96).",
+        "recommendation": "להחליט על מדיניות עקבית: או fail-closed (לדחות עם 503 כשאין KV, כמו ב-invite-accept), או להוסיף fallback מבוסס טבלת ai_rate_limits ב-Postgres כדי שתמיד תהיה הגבלה. לכל הפחות להגביל את ה-fail-open לסביבת dev בלבד.",
+        "effort": "M"
+      },
+      {
+        "title": "מאמן שהקשר עמו הסתיים שומר גישת קריאה לכל היסטוריית ההודעות לצמיתות",
+        "severity": "low",
+        "category": "security",
+        "files": [
+          "C:/Users/amit0/Desktop/fitness-app/supabase/migrations/20260529000000_coach_platform.sql:352",
+          "C:/Users/amit0/Desktop/fitness-app/supabase/migrations/20260531130000_security_rls_hardening.sql:81"
+        ],
+        "problem": "מדיניות messages_select_party מתירה SELECT לכל צד (coach_id או client_id) ללא תלות בסטטוס הקשר (coach_platform.sql:352-353). בניגוד ל-INSERT/UPDATE שהוקשחו לדרוש קשר 'active' (security_rls_hardening.sql:22-48), ה-SELECT נשאר פתוח במכוון (מתועד בשורות 81-83). המשמעות: מאמן שהמתאמן ניתק ממנו (status='ended') ממשיך לקרוא את כל שיחות העבר לנצח. זו החלטת UX מודעת אך היא טומנת חשיפת פרטיות שלא ניתנת לביטול ע\"י המתאמן.",
+        "recommendation": "לשקול לאפשר למתאמן הגבלת קריאה לאחר ניתוק (למשל לאפשר SELECT רק כאשר הקשר active או paused), או לכל הפחות לחשוף למתאמן בממשק שהמאמן שומר גישה להיסטוריה. אם זו דרישה עסקית מכוונת — לתעד אותה במדיניות הפרטיות מול המשתמש.",
+        "effort": "S"
+      },
+      {
+        "title": "ai-chat מאמת JWT רק מבנית — הסתמכות על verify_jwt ברמת הפלטפורמה",
+        "severity": "low",
+        "category": "security",
+        "files": [
+          "C:/Users/amit0/Desktop/fitness-app/supabase/functions/ai-chat/index.ts:99",
+          "C:/Users/amit0/Desktop/fitness-app/supabase/functions/ai-chat/config.toml:2"
+        ],
+        "problem": "decodeJwtPayload (index.ts:99-111) רק מפענח base64 ללא אימות חתימה, ו-authorize (שורות 119-138) בודק role!='anon' ו-exp בלבד. אימות החתימה מסתמך כולו על verify_jwt=true בתצורת הפלטפורמה (config.toml:2). זה תקין כל עוד הדגל נשאר true, אבל אם מישהו ישנה אותו ל-false, הפונקציה תקבל כל JWT מזויף עם sub ו-role לא-anon. זו תלות שברירית שאינה מתועדת בקוד עצמו.",
+        "recommendation": "להוסיף הערת אזהרה מפורשת ליד authorize שמסבירה שהבטיחות תלויה ב-verify_jwt=true, או לאמת את החתימה בצד הפונקציה (קריאה ל-supabase.auth.getUser עם ה-token, כפי שנעשה ב-coach-invite-accept).",
+        "effort": "S"
+      },
+      {
+        "title": "ALLOWED_ORIGIN לא מוגדר -> origins דיפולטיביים מוטמעים בקוד הפונקציות",
+        "severity": "low",
+        "category": "maintainability",
+        "files": [
+          "C:/Users/amit0/Desktop/fitness-app/supabase/functions/coach-invite-accept/index.ts:22",
+          "C:/Users/amit0/Desktop/fitness-app/supabase/functions/coach-push-send/index.ts:26"
+        ],
+        "problem": "בשתי פונקציות ה-coach, אם משתנה הסביבה ALLOWED_ORIGIN ריק נופלים לרשימת DEFAULT_ORIGINS מוטמעת בקוד שכוללת את https://fitness-app-amit.netlify.app ו-localhost (invite-accept:22-26, push-send:26-30). זה שונה מ-ai-chat שמחזיר 'null' (חוסם) כשאין רשימה (ai-chat:59). חוסר עקביות: שכחה להגדיר ALLOWED_ORIGIN בסביבה חדשה תפתח CORS ל-domain ספציפי + localhost במקום לחסום.",
+        "recommendation": "ליישר את כל שלוש הפונקציות להתנהגות אחת — עדיף fail-closed (החזרת 'null' כשאין ALLOWED_ORIGIN מוגדר) כמו ב-ai-chat, ולהסיר את ה-origins המוטמעים בקוד או לפחות להחזיק רק את localhost לפיתוח.",
+        "effort": "S"
+      },
+      {
+        "title": "DirectDeepSeekProvider — קוד מת שמזמין דליפת מפתח",
+        "severity": "low",
+        "category": "dead-code",
+        "files": [
+          "C:/Users/amit0/Desktop/fitness-app/src/services/ai/core.ts:257",
+          "C:/Users/amit0/Desktop/fitness-app/src/services/ai/bootstrap.ts:18"
+        ],
+        "problem": "המחלקה DirectDeepSeekProvider מיוצאת ב-core.ts:257 ושולחת מפתח API ישירות מהדפדפן (core.ts:281-296, כולל thinking:{type:'enabled'}), אך bootstrap.ts:18-29 לעולם לא יוצר אותה — רק RemoteProvider או LocalFallbackProvider. חיפוש בכל src לא מצא שום instantiation. זהו קוד מת שכל ייעודו לקרוא ל-API מצד הלקוח עם מפתח, מה שמתחבר ישירות לממצא ה-VITE_DEEPSEEK_API_KEY ומהווה נתיב מובנה לדליפה.",
+        "recommendation": "להסיר את DirectDeepSeekProvider אם אין צורך בקריאה ישירה מהלקוח, או — אם DeepSeek אמור להחליף את OpenRouter — לנתב אותו דרך Edge Function קיים כך שהמפתח לעולם לא יגיע ללקוח. שמירת קוד שמיועד לשלוח מפתח מהדפדפן מנוגדת להערת bootstrap.ts:7.",
+        "effort": "S"
+      }
+    ]
+  }
+]

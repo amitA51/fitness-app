@@ -3,6 +3,7 @@
 // ============================================================================
 
 import type { PersonalRecord, WorkoutSession } from '../types';
+import { logger } from '../utils/logger';
 import { safeJsonParseOr } from '../utils/safeJson';
 import { oneRepMax, setVolume } from '../utils/workoutMath';
 import { STORES, dbDelete, dbGetAll, dbPut, initDB } from './indexedDBCore';
@@ -231,7 +232,11 @@ export const checkForNewPR = async (
       .then(({ showPRNotification }) => {
         showPRNotification(exerciseName, pr.type);
       })
-      .catch(() => {});
+      .catch((err) => {
+        // Best-effort notification: a failure here must not break PR saving,
+        // but we log it rather than swallow it silently.
+        logger.workout.warn('Failed to show PR notification', err);
+      });
   }
   return newPR;
 };

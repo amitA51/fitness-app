@@ -92,10 +92,12 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,
+        // Strip only noisy dev-log calls; KEEP console.error / console.warn in
+        // production so real failures remain observable. (drop_console: true
+        // would have removed console.error too.)
         drop_debugger: true,
         passes: 2,
-        pure_funcs: ['console.debug'],
+        pure_funcs: ['console.log', 'console.debug', 'console.info'],
       },
       format: {
         comments: false,

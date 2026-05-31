@@ -432,13 +432,21 @@ export interface BodyWeightEntry {
 // Workout goals (type alias)
 export type WorkoutGoal = 'strength' | 'hypertrophy' | 'endurance' | 'maintenance' | 'general';
 export type WarmupPreference = 'required' | 'skip' | 'optional' | 'ask' | 'always' | 'never';
-export type WarmupMode = 'required' | 'skip' | 'optional' | 'ask' | 'always' | 'never';
+/**
+ * @deprecated Use {@link WarmupPreference}. Kept as a backward-compat alias so
+ * existing importers keep working; the two had identical members.
+ */
+export type WarmupMode = WarmupPreference;
 
 // Helper to create a properly typed WorkoutSet
 export const createWorkoutSet = (
   overrides: Partial<WorkoutSet> & { reps: number; weight: number }
 ): WorkoutSet => ({
-  id: crypto.randomUUID?.() || Math.random().toString(36).slice(2),
+  id:
+    crypto.randomUUID?.() ||
+    // Fallback: include Date.now() so two sets created in the same tick can't
+    // collide on Math.random() alone (cf. utils/id.ts generateId).
+    `set-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   setNumber: 0,
   rpe: null,
   isWarmup: false,
@@ -458,11 +466,11 @@ export interface WorkoutSettings {
   selectedTheme: WorkoutTheme;
 
   // Workout defaults
-  defaultWorkoutGoal: 'strength' | 'hypertrophy' | 'endurance' | 'maintenance' | 'general';
+  defaultWorkoutGoal: WorkoutGoal;
   defaultRestTime: number;
   defaultSets: number;
   autoStartRest: boolean;
-  warmupPreference: 'skip' | 'optional' | 'required' | 'ask' | 'always' | 'never';
+  warmupPreference: WarmupPreference;
   cooldownPreference: 'always' | 'ask' | 'never';
   enableWarmup?: boolean;
   enableCooldown?: boolean;

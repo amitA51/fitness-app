@@ -8,6 +8,11 @@ export class AppError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'AppError';
+    // Restore the prototype chain. When targeting ES5/ES2015 down-level,
+    // `extends Error` resets the prototype to Error, breaking `instanceof`
+    // (and therefore isAppError) for subclasses. `new.target` points at the
+    // most-derived class so each subclass instance gets the right prototype.
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 }
 

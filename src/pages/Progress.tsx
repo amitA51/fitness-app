@@ -111,7 +111,9 @@ export default function ProgressPage() {
     setTodayRecovery(rec);
     if (rec) setRecoveryScore(getLegacyRecoveryScore(rec));
     setWeeklyRecovery(weekly);
-    setSessions(loadedSessions.filter((s) => s.status === 'completed'));
+    // Store raw sessions; the completedSessions memo is the single point that
+    // filters by status, feeding every derived metric below.
+    setSessions(loadedSessions);
   }, []);
 
   useEffect(() => {

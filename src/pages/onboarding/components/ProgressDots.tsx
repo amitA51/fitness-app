@@ -1,0 +1,75 @@
+import { motion } from 'framer-motion';
+import type React from 'react';
+
+export interface ProgressDotsProps {
+  currentStep: number;
+  totalSteps: number;
+}
+
+export function ProgressDots({ currentStep, totalSteps }: ProgressDotsProps) {
+  return (
+    <div className="flex items-center justify-center gap-2 py-4">
+      {Array.from({ length: totalSteps }).map((_, i) => (
+        <motion.div
+          // biome-ignore lint/suspicious/noArrayIndexKey: positional step progress dots derived from a count, never reordered
+          key={i}
+          layoutId={`progress-dot-${i}`}
+          className="h-2 rounded-full"
+          style={{
+            width: i === currentStep ? '24px' : '10px',
+            backgroundColor: i <= currentStep ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+          }}
+          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+export interface StepHeaderProps {
+  title: string;
+  subtitle: string;
+  icon?: React.ReactNode;
+}
+
+export function StepHeader({ title, subtitle, icon }: StepHeaderProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      className="text-center mb-6 px-2"
+    >
+      {icon && (
+        <motion.div
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          className="w-14 h-14 flex items-center justify-center mx-auto mb-4"
+          style={{
+            background: 'var(--fs-primary)',
+            color: 'var(--fs-accent)',
+            borderRadius: '22px 16px 22px 16px',
+          }}
+        >
+          {icon}
+        </motion.div>
+      )}
+      <h2
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontWeight: 800,
+          fontSize: '26px',
+          color: 'var(--fs-ink)',
+          textTransform: 'uppercase',
+          letterSpacing: '-0.02em',
+          marginBottom: '8px',
+        }}
+      >
+        {title}
+      </h2>
+      <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--fs-muted)' }}>
+        {subtitle}
+      </p>
+    </motion.div>
+  );
+}

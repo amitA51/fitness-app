@@ -2,6 +2,7 @@
 import type React from 'react';
 import { createContext, useContext, useMemo } from 'react';
 import { type WorkoutSet, createWorkoutSet } from '../../../types';
+import { resolveActiveSet } from './setHelpers';
 import type { WorkoutAction, WorkoutDerivedValue, WorkoutState } from './workoutTypes';
 
 // ============================================================
@@ -89,8 +90,7 @@ export function useCurrentExercise() {
     const exercise = exercises[currentExerciseIndex];
     if (!exercise || !exercise.sets) return null;
 
-    const activeSetIndex = exercise.sets.findIndex((s) => !s.completedAt);
-    const displaySetIndex = activeSetIndex === -1 ? exercise.sets.length : activeSetIndex;
+    const { activeSetIndex: displaySetIndex } = resolveActiveSet(exercise.sets);
     const currentSet: WorkoutSet =
       exercise.sets[displaySetIndex] || createWorkoutSet({ reps: 0, weight: 0 });
 
@@ -105,14 +105,27 @@ export function useCurrentExercise() {
 }
 
 /**
- * Get workout settings. Memoized so the empty-object fallback keeps a stable
- * reference and doesn't trigger consumer re-renders on unrelated state changes.
+ * Get the RAW workout settings object from state (or an empty object fallback).
+ * Memoized so the empty-object fallback keeps a stable reference and doesn't
+ * trigger consumer re-renders on unrelated state changes.
+ *
+ * NOTE: renamed from `useWorkoutSettings` to disambiguate from the rich
+ * settings API in `hooks/useWorkoutSettings.ts` (which merges DEFAULT_WORKOUT_SETTINGS
+ * and exposes get/updateSetting/action helpers). A backward-compat alias
+ * `useWorkoutSettings` is re-exported below.
  */
-export function useWorkoutSettings() {
+export function useWorkoutSettingsRaw() {
   const state = useWorkoutState();
   const workoutSettings = state.appSettings?.workoutSettings;
   return useMemo(() => workoutSettings || {}, [workoutSettings]);
 }
+
+/**
+ * @deprecated Use `useWorkoutSettingsRaw` (this context selector) or the rich
+ * `useWorkoutSettings` from `../hooks/useWorkoutSettings`. Kept as a
+ * non-breaking alias for existing importers of `./WorkoutContext`.
+ */
+export const useWorkoutSettings = useWorkoutSettingsRaw;
 
 /**
  * Get rest timer state

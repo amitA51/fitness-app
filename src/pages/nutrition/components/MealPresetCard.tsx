@@ -1,0 +1,156 @@
+import { Sparkles } from 'lucide-react';
+import { memo, useMemo, useState } from 'react';
+import {
+  MEAL_TYPE_ICONS,
+  MEAL_TYPE_LABELS,
+  getFoodLibrary,
+} from '../../../services/nutritionService';
+import type { MealPreset } from '../../../services/nutritionService';
+import type { MealType } from '../../../types';
+
+interface MealPresetCardProps {
+  preset: MealPreset;
+  onSelect: (m: MealType) => void;
+}
+
+export const MealPresetCard = memo(function MealPresetCard({
+  preset,
+  onSelect,
+}: MealPresetCardProps) {
+  const [showMealSelect, setShowMealSelect] = useState(false);
+  const totalCal = useMemo(
+    () =>
+      preset.meals.reduce((s, m) => {
+        const f = getFoodLibrary().find((fd) => fd.id === m.foodId);
+        return s + (f ? f.calories * m.servings : 0);
+      }, 0),
+    [preset.meals]
+  );
+  return (
+    <div
+      className="magnetic-card glass-surface"
+      style={{
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
+        padding: '20px',
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: 'var(--shadow-card)',
+      }}
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <h4
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '14px',
+              color: 'var(--fs-ink)',
+              textTransform: 'uppercase',
+            }}
+          >
+            {preset.name}
+          </h4>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              color: 'var(--fs-muted)',
+              marginTop: '2px',
+            }}
+          >
+            {preset.description}
+          </p>
+        </div>
+        <span
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: '14px',
+            color: 'var(--fs-warn)',
+          }}
+        >
+          {totalCal} קל׳
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {preset.meals.map((m) => {
+          const f = getFoodLibrary().find((fd) => fd.id === m.foodId);
+          return f ? (
+            <span
+              key={m.foodId}
+              style={{
+                padding: '2px 8px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                color: 'var(--fs-muted)',
+                backgroundColor: 'var(--fs-surface-2)',
+              }}
+            >
+              {f.name} ×{m.servings}
+            </span>
+          ) : null;
+        })}
+      </div>
+      {showMealSelect ? (
+        <div className="flex gap-2 flex-wrap">
+          {Object.entries(MEAL_TYPE_LABELS).map(([key, label]) => {
+            const Icon = MEAL_TYPE_ICONS[key as MealType];
+            return (
+              <button
+                type="button"
+                key={key}
+                onClick={() => {
+                  onSelect(key as MealType);
+                  setShowMealSelect(false);
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  backgroundColor: 'var(--fs-surface-2)',
+                  color: 'var(--fs-heading)',
+                  border: '1px solid var(--fs-surface-2)',
+                  cursor: 'pointer',
+                }}
+              >
+                <Icon size={13} />
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowMealSelect(true)}
+          style={{
+            width: '100%',
+            padding: '10px',
+            borderRadius: 0,
+            backgroundColor: 'var(--fs-primary)',
+            color: 'var(--fs-accent)',
+            fontFamily: 'var(--font-display)',
+            fontSize: '13px',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '4px',
+          }}
+        >
+          <Sparkles size={13} />
+          הוסף מהיר
+        </button>
+      )}
+    </div>
+  );
+});

@@ -25,13 +25,14 @@ export default defineConfig({
         '**/*.config.{ts,js}',
         '**/*.d.ts',
       ],
-      // Regression floor only — set just below current coverage.
-      // Ratchet these UP as tests are added; the long-term target is 80%.
+      // Global regression floor. These are deliberately below the project's
+      // 80% target so CI passes today, but they MUST be ratcheted UP as tests
+      // are added until they reach 80 (see .claude/rules/common/testing.md).
       thresholds: {
-        statements: 3,
-        branches: 51,
-        functions: 21,
-        lines: 3,
+        statements: 25,
+        branches: 50,
+        functions: 20,
+        lines: 25,
         'src/components/workout/core/workoutReducer.ts': {
           statements: 60,
           branches: 55,

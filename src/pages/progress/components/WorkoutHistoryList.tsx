@@ -1,7 +1,7 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp, Clock, Dumbbell } from 'lucide-react';
-import { memo, useCallback, useRef, useState } from 'react';
+import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { WorkoutSession } from '../../../types';
 import { formatDuration, formatVolume } from '../../../utils/dateUtils';
@@ -84,21 +84,45 @@ const VirtualizedHistoryList = memo(function VirtualizedHistoryList({
   navigate: ReturnType<typeof useNavigate>;
 }) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const [scrollMargin, setScrollMargin] = useState(0);
+
+  // Resolve the nearest scrollable ancestor (the app's scrolling <main>).
+  const getScrollElement = useCallback((): HTMLElement | null => {
+    let el: HTMLElement | null = parentRef.current?.parentElement ?? null;
+    while (el) {
+      const style = window.getComputedStyle(el);
+      if (/(auto|scroll)/.test(style.overflowY)) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }, []);
+
+  // The list sits far below the hero/charts inside the shared scroll container,
+  // so the virtualizer must be told how far down it starts. Measure the offset
+  // of parentRef relative to the scroll element's content top and keep it fresh.
+  useLayoutEffect(() => {
+    const measure = () => {
+      const parent = parentRef.current;
+      const scrollEl = getScrollElement();
+      if (!parent || !scrollEl) return;
+      const offset =
+        parent.getBoundingClientRect().top -
+        scrollEl.getBoundingClientRect().top +
+        scrollEl.scrollTop;
+      setScrollMargin(offset);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [getScrollElement]);
 
   const virtualizer = useVirtualizer({
     count: sessions.length,
-    getScrollElement: () => {
-      let el: HTMLElement | null = parentRef.current?.parentElement ?? null;
-      while (el) {
-        const style = window.getComputedStyle(el);
-        if (/(auto|scroll)/.test(style.overflowY)) return el;
-        el = el.parentElement;
-      }
-      return null;
-    },
+    getScrollElement,
     estimateSize: (i) => (sessions[i]?.id === expandedId ? 220 : ESTIMATED_ITEM_HEIGHT),
     overscan: 5,
     gap: 10,
+    scrollMargin,
   });
 
   return (
@@ -116,12 +140,14 @@ const VirtualizedHistoryList = memo(function VirtualizedHistoryList({
           return (
             <div
               key={session.id}
+              data-index={virtualRow.index}
+              ref={virtualizer.measureElement}
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 width: '100%',
-                transform: `translateY(${virtualRow.start}px)`,
+                transform: `translateY(${virtualRow.start - scrollMargin}px)`,
               }}
             >
               <SessionCard

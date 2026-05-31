@@ -1,5 +1,8 @@
 import type { WorkoutSet } from '../../../types';
 import type { WorkoutSettings } from '../../../types';
+import { logger } from '../../../utils/logger';
+import { DEFAULT_WORKOUT_SETTINGS } from '../hooks/useWorkoutSettings';
+import { resolveActiveSet } from './setHelpers';
 // Workout Reducer - Sliced reducer pattern for better maintainability
 import type { SupersetGroup, WorkoutAction, WorkoutState } from './workoutTypes';
 
@@ -56,7 +59,7 @@ const calculateRestTime = (
 ): number => {
   if (isDropSet) return 0;
 
-  let restTime = (settings?.defaultRestTime as number) ?? 60;
+  let restTime = settings?.defaultRestTime ?? DEFAULT_WORKOUT_SETTINGS.defaultRestTime;
 
   if (supersetShortRest !== null) {
     restTime = supersetShortRest;
@@ -73,11 +76,11 @@ const calculateRestTime = (
   // 3. Smart Rest Logic based on muscle group
   else if (settings?.smartRestEnabled) {
     if (exercise.muscleGroup === 'Legs' || exercise.muscleGroup === 'Back') {
-      restTime = (settings?.longRestTime as number) ?? 180;
+      restTime = settings?.longRestTime ?? DEFAULT_WORKOUT_SETTINGS.longRestTime;
     } else if (exercise.muscleGroup === 'Arms' || exercise.muscleGroup === 'Shoulders') {
-      restTime = (settings?.shortRestTime as number) ?? 60;
+      restTime = settings?.shortRestTime ?? DEFAULT_WORKOUT_SETTINGS.shortRestTime;
     } else {
-      restTime = (settings?.mediumRestTime as number) ?? 90;
+      restTime = settings?.mediumRestTime ?? DEFAULT_WORKOUT_SETTINGS.mediumRestTime;
     }
 
     // 4. Scale by training goal (only when smart-rest computed the base)
@@ -135,10 +138,14 @@ const createEmptySet = (setNumber: number, isTimed = false): WorkoutSet => {
   return base;
 };
 
-const getActiveSetIndex = (sets: WorkoutSet[]): number => {
-  const idx = sets.findIndex((s) => !s.completedAt);
-  return idx === -1 ? sets.length : idx;
-};
+/**
+ * Re-export the shared, dependency-free active-set helper so existing importers
+ * of `./workoutReducer` keep working while the implementation lives in one place
+ * (see setHelpers.ts). The binding is imported at the top of this module.
+ */
+export { resolveActiveSet };
+
+const getActiveSetIndex = (sets: WorkoutSet[]): number => resolveActiveSet(sets).activeSetIndex;
 
 // ============================================================
 // EXERCISE SLICE
@@ -228,7 +235,9 @@ const exerciseReducer = (draft: WorkoutState, action: WorkoutAction): void => {
 
 const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
   const exercise = draft.exercises[draft.currentExerciseIndex];
-  if (!exercise && action.type !== 'SET_EXERCISES') return;
+  // No blanket early return: EDIT_SPECIFIC_SET/DELETE_SET target an exercise by
+  // action.payload.exerciseIndex and must work even when currentExerciseIndex is
+  // invalid. Cases that read the active exercise guard with `if (!exercise) return;`.
 
   switch (action.type) {
     case 'UPDATE_SET': {
@@ -263,6 +272,36 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       currentSet.completedAt = new Date().toISOString();
       currentSet.isCompleted = true;
 
+      // --- SUPERSET MEMBERSHIP / TRANSITION (computed BEFORE auto-add) ---
+      // If current exercise is part of a superset and not the last in the group,
+      // we will jump to the next exercise + use a short between-exercise rest.
+      // Round rest (full prescribed rest) applies only after the last exercise.
+      // Detect a transition up front so we can skip auto-adding a trailing set
+      // to the exercise we're leaving (otherwise it leaks an empty set there).
+      const supersetMembership = draft.supersetGroups.find((g) =>
+        g.exercises.includes(exercise.id)
+      );
+      let supersetShortRest: number | null = null;
+      let isSupersetTransition = false;
+      let nextSupersetIdx = -1;
+      if (supersetMembership) {
+        const orderInGroup = supersetMembership.exercises.indexOf(exercise.id);
+        const isLastInGroup = orderInGroup === supersetMembership.exercises.length - 1;
+        if (!isLastInGroup) {
+          const nextExerciseId = supersetMembership.exercises[orderInGroup + 1];
+          const nextIdx = draft.exercises.findIndex((e) => e.id === nextExerciseId);
+          if (nextIdx !== -1) {
+            isSupersetTransition = true;
+            nextSupersetIdx = nextIdx;
+            // Short transitional rest between superset exercises (default 15s)
+            supersetShortRest = 15;
+          }
+        } else {
+          // Last exercise of round → use group's restBetweenRounds
+          supersetShortRest = supersetMembership.restBetweenRounds ?? 60;
+        }
+      }
+
       // --- AUTO INCREMENT WEIGHT (Progressive Overload) ---
       // If this is the last set and auto-increment is on
       const settings = draft.appSettings?.workoutSettings;
@@ -272,7 +311,9 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       // --- AUTO ADD NEXT SET ---
       // Logic: Only add next set if we haven't reached a target set count (not implemented yet)
       // OR if the user just completed the last existing set.
-      if (activeIdx === sets.length - 1) {
+      // Skip when transitioning to the next exercise in a superset group — the
+      // active exercise is changing, so a trailing set here would just leak.
+      if (activeIdx === sets.length - 1 && !isSupersetTransition) {
         const nextSet = createNextSet(currentSet, sets.length + 1, exercise.isTimed);
         nextSet.autoGenerated = true;
 
@@ -301,29 +342,9 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
         // to avoid UX disasters.
       }
 
-      // --- SUPERSET AUTO-ADVANCE ---
-      // If current exercise is part of a superset and not the last in the group,
-      // jump to the next exercise + use short between-exercise rest.
-      // Round rest (full prescribed rest) applies only after the last exercise in the group.
-      const supersetMembership = draft.supersetGroups.find((g) =>
-        g.exercises.includes(exercise.id)
-      );
-      let supersetShortRest: number | null = null;
-      if (supersetMembership) {
-        const orderInGroup = supersetMembership.exercises.indexOf(exercise.id);
-        const isLastInGroup = orderInGroup === supersetMembership.exercises.length - 1;
-        if (!isLastInGroup) {
-          const nextExerciseId = supersetMembership.exercises[orderInGroup + 1];
-          const nextIdx = draft.exercises.findIndex((e) => e.id === nextExerciseId);
-          if (nextIdx !== -1) {
-            draft.currentExerciseIndex = nextIdx;
-            // Short transitional rest between superset exercises (default 15s)
-            supersetShortRest = 15;
-          }
-        } else {
-          // Last exercise of round → use group's restBetweenRounds
-          supersetShortRest = supersetMembership.restBetweenRounds ?? 60;
-        }
+      // --- SUPERSET AUTO-ADVANCE (apply the transition computed above) ---
+      if (isSupersetTransition) {
+        draft.currentExerciseIndex = nextSupersetIdx;
       }
 
       // --- REST TIMER ---
@@ -352,11 +373,9 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
         draft.pendingHaptic = 'SET_COMPLETE';
       }
 
-      // Confetti
-      const intensity = draft.appSettings?.workoutSettings?.prCelebrationIntensity;
-      if (intensity === 'full') {
-        draft.showConfetti = true;
-      }
+      // Confetti is NOT fired here. Mere set completion is not a PR; confetti is
+      // gated on an actual PR via the SHOW_PR_CELEBRATION handler (honoring
+      // prCelebrationIntensity), which is dispatched only when a record is set.
       break;
     }
 
@@ -685,6 +704,11 @@ const modalReducer = (draft: WorkoutState, action: WorkoutAction): void => {
 
     case 'SHOW_PR_CELEBRATION':
       draft.showPRCelebration = action.payload;
+      // Confetti is gated on an ACTUAL PR (this action), honoring the user's
+      // celebration intensity. 'full' → confetti; 'subtle'/'off' → card only.
+      if (draft.appSettings?.workoutSettings?.prCelebrationIntensity === 'full') {
+        draft.showConfetti = true;
+      }
       break;
 
     case 'HIDE_PR_CELEBRATION':
@@ -707,10 +731,14 @@ const dataReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       if (!draft.appSettings) {
         draft.appSettings = {} as typeof draft.appSettings;
       }
+      // Base on DEFAULT_WORKOUT_SETTINGS so the merged result is a complete
+      // WorkoutSettings (no cast needed). Existing values win over defaults,
+      // and the incoming partial payload wins over both.
       draft.appSettings.workoutSettings = {
+        ...DEFAULT_WORKOUT_SETTINGS,
         ...(draft.appSettings.workoutSettings || {}),
         ...action.payload,
-      } as typeof draft.appSettings.workoutSettings;
+      };
       break;
 
     case 'SET_PREVIOUS_DATA':
@@ -831,14 +859,12 @@ export const workoutReducer = (draft: WorkoutState, action: WorkoutAction): void
     return;
   }
 
-  // Fallback: run through all reducers for unknown action types
-  // This ensures new actions still work even if not categorized
-  exerciseReducer(draft, action);
-  setReducer(draft, action);
-  timerReducer(draft, action);
-  uiReducer(draft, action);
-  modalReducer(draft, action);
-  dataReducer(draft, action);
+  // No matching slice: explicit no-op. Previously this re-ran EVERY slice for
+  // an unmapped action, which risked unintended state changes (and masked
+  // typos). All known actions are routed above; anything else is ignored.
+  if (import.meta.env.DEV) {
+    logger.workout?.warn?.(`workoutReducer: unhandled action type "${actionType}"`);
+  }
 };
 
 export default workoutReducer;

@@ -229,7 +229,12 @@ export const SkeletonGratitudeWidget: React.FC = () => (
 
 /** Full HomeScreen skeleton for initial load */
 export const HomeScreenSkeleton: React.FC = () => (
-  <div className="screen-shell space-y-8 pb-32 animate-pulse">
+  <div
+    className="screen-shell space-y-8 pb-32 animate-pulse"
+    role="status"
+    aria-busy="true"
+    aria-label="טוען את מסך הבית"
+  >
     {/* Header skeleton */}
     <div className="px-4 pt-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -331,7 +336,12 @@ export const SkeletonFeedCard: React.FC = () => (
 
 /** Full FeedScreen skeleton for initial load */
 export const FeedScreenSkeleton: React.FC = () => (
-  <div className="screen-shell space-y-4 pb-32 animate-pulse">
+  <div
+    className="screen-shell space-y-4 pb-32 animate-pulse"
+    role="status"
+    aria-busy="true"
+    aria-label="טוען היסטוריה"
+  >
     {/* Header skeleton */}
     <div className="px-4 pt-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -397,7 +407,12 @@ export const SkeletonCalendarGrid: React.FC = () => (
 
 /** Full CalendarScreen skeleton for initial load */
 export const CalendarScreenSkeleton: React.FC = () => (
-  <div className="screen-shell space-y-4 pb-32 animate-pulse">
+  <div
+    className="screen-shell space-y-4 pb-32 animate-pulse"
+    role="status"
+    aria-busy="true"
+    aria-label="טוען לוח שנה"
+  >
     {/* Header skeleton */}
     <div className="px-4 pt-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -484,7 +499,12 @@ export const SkeletonSettingsSection: React.FC<{ itemCount?: number }> = ({ item
 
 /** Full SettingsScreen skeleton for initial load */
 export const SettingsScreenSkeleton: React.FC = () => (
-  <div className="screen-shell space-y-6 pb-32 animate-pulse">
+  <div
+    className="screen-shell space-y-6 pb-32 animate-pulse"
+    role="status"
+    aria-busy="true"
+    aria-label="טוען הגדרות"
+  >
     {/* Header skeleton */}
     <div className="px-4 pt-6">
       <SkeletonBox height={32} width={100} />
@@ -545,7 +565,12 @@ export const SkeletonChatMessage: React.FC<{ isUser?: boolean }> = ({ isUser = f
 
 /** Full AssistantScreen skeleton for initial load */
 export const AssistantScreenSkeleton: React.FC = () => (
-  <div className="screen-shell flex flex-col h-[calc(100vh-6rem)] animate-pulse">
+  <div
+    className="screen-shell flex flex-col h-[calc(100vh-6rem)] animate-pulse"
+    role="status"
+    aria-busy="true"
+    aria-label="טוען עוזר"
+  >
     {/* Header skeleton */}
     <div className="px-4 pt-6 pb-4 flex items-center gap-3">
       <SkeletonCircle size={48} />
@@ -602,7 +627,12 @@ export const SkeletonLibraryItem: React.FC = () => (
 
 /** Full LibraryScreen skeleton for initial load */
 export const LibraryScreenSkeleton: React.FC = () => (
-  <div className="screen-shell space-y-4 pb-32 animate-pulse">
+  <div
+    className="screen-shell space-y-4 pb-32 animate-pulse"
+    role="status"
+    aria-busy="true"
+    aria-label="טוען ספרייה"
+  >
     {/* Header skeleton */}
     <div className="px-4 pt-6 space-y-4">
       <SkeletonBox height={32} width={120} />
@@ -654,7 +684,12 @@ export const SkeletonPasswordItem: React.FC = () => (
 
 /** Full PasswordManagerScreen skeleton for initial load */
 export const PasswordManagerScreenSkeleton: React.FC = () => (
-  <div className="screen-shell space-y-4 pb-32 animate-pulse">
+  <div
+    className="screen-shell space-y-4 pb-32 animate-pulse"
+    role="status"
+    aria-busy="true"
+    aria-label="טוען מנהל סיסמאות"
+  >
     {/* Header skeleton */}
     <div className="px-4 pt-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -681,7 +716,12 @@ export const PasswordManagerScreenSkeleton: React.FC = () => (
 
 /** Full AddScreen skeleton for initial load */
 export const AddScreenSkeleton: React.FC = () => (
-  <div className="screen-shell space-y-6 pb-32 animate-pulse">
+  <div
+    className="screen-shell space-y-6 pb-32 animate-pulse"
+    role="status"
+    aria-busy="true"
+    aria-label="טוען מסך הוספה"
+  >
     {/* Header skeleton */}
     <div className="px-4 pt-6">
       <SkeletonBox height={32} width={120} />

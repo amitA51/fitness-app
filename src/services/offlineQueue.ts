@@ -41,6 +41,12 @@ interface QueuedMutation {
   type: MutationType;
   payload: unknown;
   timestamp: number;
+  // Monotonic sequence assigned at enqueue time. Two mutations enqueued within
+  // the same millisecond share a timestamp, so timestamp alone cannot preserve
+  // FIFO order (e.g. create -> delete -> update of one record). `seq` breaks
+  // those ties deterministically. Optional for backward compat with rows
+  // written before this field existed (they sort first, as the oldest).
+  seq?: number;
   retryCount: number;
   lastError?: string;
 }
@@ -153,16 +159,31 @@ function openQueueDB(): Promise<IDBDatabase> {
   return queueDbOpenPromise;
 }
 
+// Monotonic sequence generator. Seeded from Date.now() and forced to strictly
+// increase, so values are unique and ordered even when many mutations are
+// enqueued within the same millisecond, and remain larger than any previously
+// persisted seq across reloads (wall-clock only moves forward). Same ms scale
+// as `timestamp`, so the two are directly comparable when sorting.
+let lastSeq = 0;
+function nextSeq(): number {
+  lastSeq = Math.max(lastSeq + 1, Date.now());
+  return lastSeq;
+}
+
 async function getAllMutations(): Promise<QueuedMutation[]> {
   const db = await openQueueDB();
-  return new Promise((resolve, reject) => {
+  const mutations = await new Promise<QueuedMutation[]>((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
     const store = tx.objectStore(STORE_NAME);
     const index = store.index('timestamp');
     const req = index.getAll();
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => resolve(req.result as QueuedMutation[]);
     req.onerror = () => reject(req.error);
   });
+  // Order by monotonic seq so create -> delete -> update FIFO holds even when
+  // timestamps collide. Legacy rows without `seq` fall back to `timestamp`
+  // (same scale) and sort as the oldest entries.
+  return mutations.sort((a, b) => (a.seq ?? a.timestamp) - (b.seq ?? b.timestamp));
 }
 
 async function putMutation(mutation: QueuedMutation): Promise<void> {
@@ -358,6 +379,7 @@ export async function queueMutation(type: MutationType, payload: unknown): Promi
         type,
         payload,
         timestamp: Date.now(),
+        seq: nextSeq(),
         retryCount: 0,
       } as QueuedMutation);
     }

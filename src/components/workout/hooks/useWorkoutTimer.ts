@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { playDing } from '../../../utils/audio';
+import { useWorkoutDispatch } from '../core/WorkoutContext';
 
 /**
  * Format seconds to time string (MM:SS or H:MM:SS)
@@ -85,6 +86,7 @@ export function useRestTimer(
   const soundPlayedRef = useRef<boolean>(false);
   const lastTickRef = useRef<number>(0);
   const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dispatch = useWorkoutDispatch();
 
   useEffect(() => {
     if (!active || !endTime) {
@@ -107,12 +109,16 @@ export function useRestTimer(
 
       setTimeLeft(left);
 
-      // Trigger when reaching 0 — only play ding (settings-aware feedback
-      // is handled by useWorkoutSettings.playRestEndSound via the reducer's
-      // REST_END haptic signal)
+      // Trigger when reaching 0. The local ding plays immediately; we also
+      // dispatch SYNC_REST_TIMER so the reducer clears restTimer.active and
+      // sets pendingHaptic='REST_END' (honoring vibrate/sound settings) even
+      // when the timer ends in the FOREGROUND — previously this only happened
+      // on visibilitychange, leaving the timer stuck active. soundPlayedRef
+      // guards against re-dispatching on subsequent ticks.
       if (left <= 0 && !soundPlayedRef.current) {
         soundPlayedRef.current = true;
         playDing();
+        dispatch({ type: 'SYNC_REST_TIMER' });
       }
     }, 100);
 
@@ -123,7 +129,7 @@ export function useRestTimer(
         speakTimeoutRef.current = null;
       }
     };
-  }, [endTime, active]);
+  }, [endTime, active, dispatch]);
 
   const progress =
     totalTimeRef.current > 0 ? ((totalTimeRef.current - timeLeft) / totalTimeRef.current) * 100 : 0;

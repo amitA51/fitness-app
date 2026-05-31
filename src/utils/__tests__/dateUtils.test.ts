@@ -37,6 +37,54 @@ describe('fmtDate', () => {
   });
 });
 
+describe('fmtDate - calendar-day and future-date correctness', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns "היום" for a timestamp earlier the same calendar day', () => {
+    // Arrange: now = 2026-05-15 13:00 local; entry = same day 08:00
+    vi.setSystemTime(new Date(2026, 4, 15, 13, 0, 0));
+
+    // Act / Assert
+    expect(fmtDate('2026-05-15T08:00:00')).toBe('היום');
+  });
+
+  it('labels the previous calendar day "אתמול" even within a 24h window', () => {
+    // Arrange: now = 2026-05-15 01:00 local; entry = 2026-05-14 23:00 local.
+    // Only ~2h apart, so the old 24h-window math wrongly returned "היום".
+    vi.setSystemTime(new Date(2026, 4, 15, 1, 0, 0));
+
+    // Act / Assert
+    expect(fmtDate('2026-05-14T23:00:00')).toBe('אתמול');
+  });
+
+  it('returns "לפני N ימים" for a date a few calendar days back', () => {
+    // Arrange
+    vi.setSystemTime(new Date(2026, 4, 15, 12, 0, 0));
+
+    // Act / Assert
+    expect(fmtDate('2026-05-12T12:00:00')).toBe('לפני 3 ימים');
+  });
+
+  it('does not produce a negative "לפני" label for a future date', () => {
+    // Arrange: entry is 5 days in the future (negative diff).
+    vi.setSystemTime(new Date(2026, 4, 15, 12, 0, 0));
+
+    // Act
+    const result = fmtDate('2026-05-20T12:00:00');
+
+    // Assert: falls through to the absolute date, never "לפני -5 ימים".
+    expect(result).not.toContain('לפני');
+    expect(result).not.toBe('היום');
+    expect(result).not.toBe('אתמול');
+  });
+});
+
 describe('formatHebrewDate', () => {
   it('returns empty string for invalid input', () => {
     expect(formatHebrewDate('garbage')).toBe('');

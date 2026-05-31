@@ -46,6 +46,44 @@ const getUserId = async (): Promise<string | null> => {
   return user?.id || null;
 };
 
+// Page size for keyset/range pagination. Supabase caps a single response at
+// ~1000 rows; without paging, history beyond this was silently truncated.
+const PAGE_SIZE = 1000;
+
+/**
+ * Pull every row of a query via range pagination, looping until a short page
+ * (< PAGE_SIZE) is returned. The `build` callback receives a [from, to] window
+ * and must apply `.range(from, to)` to the query.
+ *
+ * Throws on any page error so callers can distinguish a genuine fetch failure
+ * from a legitimately empty result set (see DA fix #2). Tombstoned rows are
+ * intentionally NOT filtered here: the tombstone-aware merges rely on receiving
+ * `deleted_at` rows to propagate deletions on pull (see DA fix #1). With full
+ * pagination there is no fixed row budget for tombstones to exhaust.
+ */
+async function fetchAllPages<T>(
+  label: string,
+  build: (
+    from: number,
+    to: number
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
+): Promise<T[]> {
+  const all: T[] = [];
+  let from = 0;
+  for (;;) {
+    const to = from + PAGE_SIZE - 1;
+    const { data, error } = await build(from, to);
+    if (error) {
+      throw new Error(`fetch ${label} failed: ${error.message}`);
+    }
+    const page = data ?? [];
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return all;
+}
+
 // ==================== WORKOUT TEMPLATES ====================
 
 export const syncWorkoutTemplate = async (
@@ -62,6 +100,7 @@ export const syncWorkoutTemplate = async (
     exercises: template.exercises,
     created_at: template.createdAt || new Date().toISOString(),
     updated_at: template.updatedAt || new Date().toISOString(),
+    deleted_at: template.deletedAt || null,
   });
 
   if (error) {
@@ -73,25 +112,23 @@ export const syncWorkoutTemplate = async (
 export const fetchWorkoutTemplates = async (userId: string): Promise<WorkoutTemplate[]> => {
   if (!isSupabaseConfigured() || !supabase) return [];
 
-  const { data, error } = await supabase
-    .from('workout_templates')
-    .select('id, name, description, exercises, created_at, updated_at')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(500);
+  const data = await fetchAllPages('workout_templates', (from, to) =>
+    supabase!
+      .from('workout_templates')
+      .select('id, name, description, exercises, created_at, updated_at, deleted_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(from, to)
+  );
 
-  if (error) {
-    logger.sync.error('Error fetching workout templates', error);
-    return [];
-  }
-
-  return (data || []).map((row) => ({
+  return data.map((row) => ({
     id: row.id,
     name: row.name,
     description: row.description,
     exercises: row.exercises,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
   }));
 };
 
@@ -131,6 +168,7 @@ export const syncWorkoutSession = async (
     notes: session.notes || null,
     created_at: session.startTime,
     updated_at: session.updatedAt || session.startTime || new Date().toISOString(),
+    deleted_at: session.deletedAt || null,
   });
 
   if (error) {
@@ -142,21 +180,18 @@ export const syncWorkoutSession = async (
 export const fetchWorkoutSessions = async (userId: string): Promise<WorkoutSession[]> => {
   if (!isSupabaseConfigured() || !supabase) return [];
 
-  const { data, error } = await supabase
-    .from('workout_sessions')
-    .select(
-      'id, title, date, start_time, end_time, duration, exercises, total_volume, notes, created_at, updated_at'
-    )
-    .eq('user_id', userId)
-    .order('start_time', { ascending: false })
-    .limit(500);
+  const data = await fetchAllPages('workout_sessions', (from, to) =>
+    supabase!
+      .from('workout_sessions')
+      .select(
+        'id, title, date, start_time, end_time, duration, exercises, total_volume, notes, created_at, updated_at, deleted_at'
+      )
+      .eq('user_id', userId)
+      .order('start_time', { ascending: false })
+      .range(from, to)
+  );
 
-  if (error) {
-    logger.sync.error('Error fetching workout sessions', error);
-    return [];
-  }
-
-  return (data || []).map((row) => ({
+  return data.map((row) => ({
     id: row.id,
     title: row.title,
     date: row.date,
@@ -168,6 +203,7 @@ export const fetchWorkoutSessions = async (userId: string): Promise<WorkoutSessi
     notes: row.notes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
   }));
 };
 
@@ -210,6 +246,7 @@ export const syncPersonalExercise = async (
     last_used: exercise.lastUsed || null,
     created_at: exercise.createdAt || new Date().toISOString(),
     updated_at: exercise.updatedAt || exercise.createdAt || new Date().toISOString(),
+    deleted_at: exercise.deletedAt || null,
   });
 
   if (error) {
@@ -221,21 +258,18 @@ export const syncPersonalExercise = async (
 export const fetchPersonalExercises = async (userId: string): Promise<PersonalExercise[]> => {
   if (!isSupabaseConfigured() || !supabase) return [];
 
-  const { data, error } = await supabase
-    .from('personal_exercises')
-    .select(
-      'id, name, muscle_group, category, tempo, default_rest_time, default_sets, notes, tutorial_text, is_favorite, use_count, last_used, created_at, updated_at'
-    )
-    .eq('user_id', userId)
-    .order('last_used', { ascending: false, nullsFirst: false })
-    .limit(500);
+  const data = await fetchAllPages('personal_exercises', (from, to) =>
+    supabase!
+      .from('personal_exercises')
+      .select(
+        'id, name, muscle_group, category, tempo, default_rest_time, default_sets, notes, tutorial_text, is_favorite, use_count, last_used, created_at, updated_at, deleted_at'
+      )
+      .eq('user_id', userId)
+      .order('last_used', { ascending: false, nullsFirst: false })
+      .range(from, to)
+  );
 
-  if (error) {
-    logger.sync.error('Error fetching personal exercises', error);
-    return [];
-  }
-
-  return (data || []).map((row) => ({
+  return data.map((row) => ({
     id: row.id,
     name: row.name,
     muscleGroup: row.muscle_group,
@@ -250,6 +284,7 @@ export const fetchPersonalExercises = async (userId: string): Promise<PersonalEx
     lastUsed: row.last_used,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
   }));
 };
 
@@ -280,6 +315,7 @@ export const syncBodyWeight = async (userId: string, entry: BodyWeightEntry): Pr
     date: entry.date,
     created_at: entry.createdAt ?? new Date().toISOString(),
     updated_at: entry.updatedAt ?? entry.createdAt ?? new Date().toISOString(),
+    deleted_at: entry.deletedAt || null,
   });
 
   if (error) {
@@ -291,24 +327,22 @@ export const syncBodyWeight = async (userId: string, entry: BodyWeightEntry): Pr
 export const fetchBodyWeight = async (userId: string): Promise<BodyWeightEntry[]> => {
   if (!isSupabaseConfigured() || !supabase) return [];
 
-  const { data, error } = await supabase
-    .from('body_weight')
-    .select('id, weight, date, created_at, updated_at')
-    .eq('user_id', userId)
-    .order('date', { ascending: false })
-    .limit(500);
+  const data = await fetchAllPages('body_weight', (from, to) =>
+    supabase!
+      .from('body_weight')
+      .select('id, weight, date, created_at, updated_at, deleted_at')
+      .eq('user_id', userId)
+      .order('date', { ascending: false })
+      .range(from, to)
+  );
 
-  if (error) {
-    logger.sync.error('Error fetching body weight', error);
-    return [];
-  }
-
-  return (data || []).map((row) => ({
+  return data.map((row) => ({
     id: row.id,
     weight: row.weight,
     date: row.date,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
   }));
 };
 
@@ -339,6 +373,7 @@ export const syncBodyMeasurement = async (
     notes: measurement.notes || null,
     created_at: measurement.createdAt || new Date().toISOString(),
     updated_at: measurement.updatedAt ?? measurement.createdAt ?? new Date().toISOString(),
+    deleted_at: measurement.deletedAt || null,
   });
 
   if (error) {
@@ -350,25 +385,23 @@ export const syncBodyMeasurement = async (
 export const fetchBodyMeasurements = async (userId: string): Promise<BodyMeasurement[]> => {
   if (!isSupabaseConfigured() || !supabase) return [];
 
-  const { data, error } = await supabase
-    .from('body_measurements')
-    .select('id, date, measurements, notes, created_at, updated_at')
-    .eq('user_id', userId)
-    .order('date', { ascending: false })
-    .limit(500);
+  const data = await fetchAllPages('body_measurements', (from, to) =>
+    supabase!
+      .from('body_measurements')
+      .select('id, date, measurements, notes, created_at, updated_at, deleted_at')
+      .eq('user_id', userId)
+      .order('date', { ascending: false })
+      .range(from, to)
+  );
 
-  if (error) {
-    logger.sync.error('Error fetching body measurements', error);
-    return [];
-  }
-
-  return (data || []).map((row) => ({
+  return data.map((row) => ({
     id: row.id,
     date: row.date,
     measurements: row.measurements,
     notes: row.notes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
   }));
 };
 
@@ -406,6 +439,7 @@ export const syncPersonalRecord = async (
     record_type: record.recordType,
     created_at: record.createdAt || new Date().toISOString(),
     updated_at: record.updatedAt ?? record.createdAt ?? new Date().toISOString(),
+    deleted_at: record.deletedAt || null,
   });
 
   if (error) {
@@ -417,21 +451,18 @@ export const syncPersonalRecord = async (
 export const fetchPersonalRecords = async (userId: string): Promise<PersonalRecordRow[]> => {
   if (!isSupabaseConfigured() || !supabase) return [];
 
-  const { data, error } = await supabase
-    .from('personal_records')
-    .select(
-      'id, exercise_id, exercise_name, weight, reps, date, record_type, created_at, updated_at'
-    )
-    .eq('user_id', userId)
-    .order('date', { ascending: false })
-    .limit(500);
+  const data = await fetchAllPages('personal_records', (from, to) =>
+    supabase!
+      .from('personal_records')
+      .select(
+        'id, exercise_id, exercise_name, weight, reps, date, record_type, created_at, updated_at, deleted_at'
+      )
+      .eq('user_id', userId)
+      .order('date', { ascending: false })
+      .range(from, to)
+  );
 
-  if (error) {
-    logger.sync.error('Error fetching personal records', error);
-    return [];
-  }
-
-  return (data || []).map((row) => ({
+  return data.map((row) => ({
     id: row.id,
     exerciseId: row.exercise_id,
     exerciseName: row.exercise_name,
@@ -441,6 +472,7 @@ export const fetchPersonalRecords = async (userId: string): Promise<PersonalReco
     recordType: row.record_type,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
   }));
 };
 
@@ -479,6 +511,7 @@ export const syncRecoveryLog = async (userId: string, log: RecoveryLog): Promise
     notes: log.notes || null,
     created_at: log.createdAt || new Date().toISOString(),
     updated_at: log.updatedAt ?? log.createdAt ?? new Date().toISOString(),
+    deleted_at: log.deletedAt || null,
   });
 
   if (error) {
@@ -490,21 +523,18 @@ export const syncRecoveryLog = async (userId: string, log: RecoveryLog): Promise
 export const fetchRecoveryLogs = async (userId: string): Promise<RecoveryLog[]> => {
   if (!isSupabaseConfigured() || !supabase) return [];
 
-  const { data, error } = await supabase
-    .from('recovery_logs')
-    .select(
-      'id, date, sleep_hours, sleep_quality, soreness_level, energy_level, stress_level, tight_areas, overall_score, session_id, notes, created_at, updated_at'
-    )
-    .eq('user_id', userId)
-    .order('date', { ascending: false })
-    .limit(500);
+  const data = await fetchAllPages('recovery_logs', (from, to) =>
+    supabase!
+      .from('recovery_logs')
+      .select(
+        'id, date, sleep_hours, sleep_quality, soreness_level, energy_level, stress_level, tight_areas, overall_score, session_id, notes, created_at, updated_at, deleted_at'
+      )
+      .eq('user_id', userId)
+      .order('date', { ascending: false })
+      .range(from, to)
+  );
 
-  if (error) {
-    logger.sync.error('Error fetching recovery logs', error);
-    return [];
-  }
-
-  return (data || []).map((row) => ({
+  return data.map((row) => ({
     id: row.id,
     date: row.date,
     sleepHours: row.sleep_hours,
@@ -518,6 +548,7 @@ export const fetchRecoveryLogs = async (userId: string): Promise<RecoveryLog[]> 
     notes: row.notes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
   }));
 };
 
@@ -553,6 +584,7 @@ export const syncNutritionLog = async (userId: string, log: NutritionLog): Promi
     notes: log.notes || null,
     created_at: log.createdAt || new Date().toISOString(),
     updated_at: log.updatedAt ?? log.createdAt ?? new Date().toISOString(),
+    deleted_at: log.deletedAt || null,
   });
 
   if (error) {
@@ -564,19 +596,18 @@ export const syncNutritionLog = async (userId: string, log: NutritionLog): Promi
 export const fetchNutritionLogs = async (userId: string): Promise<NutritionLog[]> => {
   if (!isSupabaseConfigured() || !supabase) return [];
 
-  const { data, error } = await supabase
-    .from('nutrition_logs')
-    .select('id, date, calories, protein, carbs, fat, meals, notes, created_at, updated_at')
-    .eq('user_id', userId)
-    .order('date', { ascending: false })
-    .limit(500);
+  const data = await fetchAllPages('nutrition_logs', (from, to) =>
+    supabase!
+      .from('nutrition_logs')
+      .select(
+        'id, date, calories, protein, carbs, fat, meals, notes, created_at, updated_at, deleted_at'
+      )
+      .eq('user_id', userId)
+      .order('date', { ascending: false })
+      .range(from, to)
+  );
 
-  if (error) {
-    logger.sync.error('Error fetching nutrition logs', error);
-    return [];
-  }
-
-  return (data || []).map((row) => ({
+  return data.map((row) => ({
     id: row.id,
     date: row.date,
     calories: row.calories,
@@ -587,6 +618,7 @@ export const fetchNutritionLogs = async (userId: string): Promise<NutritionLog[]
     notes: row.notes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
   }));
 };
 
@@ -631,17 +663,15 @@ export const syncUserSetting = async (userId: string, setting: UserSetting): Pro
 export const fetchUserSettings = async (userId: string): Promise<UserSetting[]> => {
   if (!isSupabaseConfigured() || !supabase) return [];
 
-  const { data, error } = await supabase
-    .from('user_settings')
-    .select('id, key, value, created_at, updated_at')
-    .eq('user_id', userId);
+  const data = await fetchAllPages('user_settings', (from, to) =>
+    supabase!
+      .from('user_settings')
+      .select('id, key, value, created_at, updated_at')
+      .eq('user_id', userId)
+      .range(from, to)
+  );
 
-  if (error) {
-    logger.sync.error('Error fetching user settings', error);
-    return [];
-  }
-
-  return (data || []).map((row) => ({
+  return data.map((row) => ({
     id: row.id,
     key: row.key,
     value: row.value,
@@ -653,6 +683,14 @@ export const fetchUserSettings = async (userId: string): Promise<UserSetting[]> 
 export const deleteCloudUserSetting = async (userId: string, id: string): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
+  // INTENTIONAL hard delete (no tombstone). Unlike sessions/templates/water,
+  // user_settings rows are keyed by (user_id, key) and treated as upsert-only
+  // state — a setting is overwritten via `syncUserSetting`, not deleted, during
+  // normal use. There is therefore no local delete path that needs to propagate
+  // to other devices, and the `UserSetting` shape carries no `deletedAt`.
+  // mergeUserSettingsFromCloud already routes through the tombstone-aware
+  // generic merge, so if a `deleted_at` column is added server-side later, a
+  // soft-delete here would propagate without further merge changes.
   const { error } = await supabase
     .from('user_settings')
     .delete()
@@ -692,19 +730,16 @@ export const syncAIConversation = async (
 export const fetchAIConversations = async (userId: string): Promise<AIConversation[]> => {
   if (!isSupabaseConfigured() || !supabase) return [];
 
-  const { data, error } = await supabase
-    .from('ai_conversations')
-    .select('id, title, messages, context, created_at, updated_at')
-    .eq('user_id', userId)
-    .order('updated_at', { ascending: false })
-    .limit(100);
+  const data = await fetchAllPages('ai_conversations', (from, to) =>
+    supabase!
+      .from('ai_conversations')
+      .select('id, title, messages, context, created_at, updated_at')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .range(from, to)
+  );
 
-  if (error) {
-    logger.sync.error('Error fetching AI conversations', error);
-    return [];
-  }
-
-  return (data || []).map((row) => ({
+  return data.map((row) => ({
     id: row.id,
     title: row.title,
     messages: row.messages || [],
@@ -1206,34 +1241,65 @@ const pullAllDataImpl = async (): Promise<SyncResult> => {
   }
 
   try {
-    const [
-      templates,
-      sessions,
-      exercises,
-      bodyWeight,
-      bodyMeasurements,
-      personalRecords,
-      recoveryLogs,
-      nutritionLogs,
-      userSettings,
-      aiConversations,
-      waterLogs,
-    ] = await Promise.all([
-      fetchWorkoutTemplates(userId),
-      fetchWorkoutSessions(userId),
-      fetchPersonalExercises(userId),
-      fetchBodyWeight(userId),
-      fetchBodyMeasurements(userId),
-      fetchPersonalRecords(userId),
-      fetchRecoveryLogs(userId),
-      fetchNutritionLogs(userId),
-      fetchUserSettings(userId),
-      fetchAIConversations(userId),
-      import('./waterService').then((m) => m.fetchWaterLogs(userId)),
-    ]);
+    // Fetch each store independently: a single failed fetch must not discard
+    // the stores that succeeded (DA fix #2). Fetch funcs now throw on a real
+    // error, so a rejected result means a genuine failure — distinct from an
+    // empty (but successful) result.
+    const fetchSpecs = [
+      { store: 'templates', run: () => fetchWorkoutTemplates(userId) },
+      { store: 'sessions', run: () => fetchWorkoutSessions(userId) },
+      { store: 'exercises', run: () => fetchPersonalExercises(userId) },
+      { store: 'bodyWeight', run: () => fetchBodyWeight(userId) },
+      { store: 'bodyMeasurements', run: () => fetchBodyMeasurements(userId) },
+      { store: 'personalRecords', run: () => fetchPersonalRecords(userId) },
+      { store: 'recoveryLogs', run: () => fetchRecoveryLogs(userId) },
+      { store: 'nutritionLogs', run: () => fetchNutritionLogs(userId) },
+      { store: 'userSettings', run: () => fetchUserSettings(userId) },
+      { store: 'aiConversations', run: () => fetchAIConversations(userId) },
+      {
+        store: 'waterLogs',
+        run: () => import('./waterService').then((m) => m.fetchWaterLogs(userId)),
+      },
+    ] as const;
+
+    const fetchResults = await Promise.allSettled(fetchSpecs.map((spec) => spec.run()));
+
+    const failedStores: string[] = [];
+    fetchResults.forEach((result, i) => {
+      if (result.status === 'rejected') {
+        const spec = fetchSpecs[i];
+        if (spec) {
+          failedStores.push(spec.store);
+          logger.sync.error(`Fetch failed for ${spec.store} during pull`, result.reason);
+        }
+      }
+    });
+
+    const pickResult = <T>(i: number): T[] => {
+      const r = fetchResults[i];
+      return r && r.status === 'fulfilled' ? (r.value as T[]) : [];
+    };
+    const templates = pickResult<WorkoutTemplate>(0);
+    const sessions = pickResult<WorkoutSession>(1);
+    const exercises = pickResult<PersonalExercise>(2);
+    const bodyWeight = pickResult<BodyWeightEntry>(3);
+    const bodyMeasurements = pickResult<BodyMeasurement>(4);
+    const personalRecords = pickResult<PersonalRecordRow>(5);
+    const recoveryLogs = pickResult<RecoveryLog>(6);
+    const nutritionLogs = pickResult<NutritionLog>(7);
+    const userSettings = pickResult<UserSetting>(8);
+    const aiConversations = pickResult<AIConversation>(9);
+    const waterLogs = pickResult<{
+      id: string;
+      date: string;
+      amountMl: number;
+      createdAt: string;
+    }>(10);
 
     // Merge each store independently: one failed merge must not discard the
-    // others (they have already been fetched from the cloud).
+    // others (they have already been fetched from the cloud). A store whose
+    // fetch failed yields an empty array above, so nothing is merged for it —
+    // crucially we do NOT treat that as success.
     const mergeResults = await Promise.allSettled([
       mergeWorkoutTemplatesFromCloud(templates.map(toCanonicalTemplate)),
       mergeWorkoutSessionsFromCloud(sessions.map(toCanonicalSession)),
@@ -1275,11 +1341,21 @@ const pullAllDataImpl = async (): Promise<SyncResult> => {
       counts,
     });
 
+    // A partial pull (any fetch or merge failure) is NOT a success — reporting
+    // it as such let callers believe the local store mirrors the cloud.
+    const errorParts: string[] = [];
+    if (failedStores.length > 0) {
+      errorParts.push(`fetch failed: ${failedStores.join(', ')}`);
+    }
+    if (mergeFailed.length > 0) {
+      errorParts.push(`${mergeFailed.length} merge operations failed`);
+    }
+
     return {
-      success: mergeFailed.length === 0,
+      success: failedStores.length === 0 && mergeFailed.length === 0,
       syncedItems: totalItems,
       counts,
-      ...(mergeFailed.length > 0 && { error: `${mergeFailed.length} merge operations failed` }),
+      ...(errorParts.length > 0 && { error: errorParts.join('; ') }),
     };
   } catch (error) {
     logger.sync.error('Error pulling all data', error);

@@ -66,6 +66,7 @@ export const WORKOUT_STATUS = {
 
 export const PR_TYPES = {
   WEIGHT: 'weight',
+  ONE_RM: '1rm',
   REPS: 'reps',
   VOLUME: 'volume',
 } as const;

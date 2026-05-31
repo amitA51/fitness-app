@@ -127,6 +127,10 @@ const StatCard = memo(
 );
 StatCard.displayName = 'StatCard';
 
+// These analytics run synchronously on the main thread, so bound the input to
+// a sane window (matches Progress) to keep the work proportional.
+const ANALYTICS_SESSION_LIMIT = 50;
+
 const AnalyticsDashboard: React.FC = () => {
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [volumeData, setVolumeData] = useState<VolumeDataPoint[]>([]);
@@ -150,7 +154,7 @@ const AnalyticsDashboard: React.FC = () => {
     let cancelled = false;
     const loadAnalytics = async () => {
       try {
-        const workoutSessions = await getWorkoutSessions();
+        const workoutSessions = await getWorkoutSessions(ANALYTICS_SESSION_LIMIT);
         if (cancelled) return;
 
         const volume = calculateVolumeHistory(workoutSessions);

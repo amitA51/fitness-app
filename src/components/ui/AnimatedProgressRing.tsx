@@ -78,15 +78,15 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
     return undefined;
   }, [percentage, prevPercentage, showConfetti, shouldReduceMotion]);
 
-  // Confetti colors - defined outside useMemo to avoid recreation
+  // Confetti colors sourced from the design-token palette
   const confettiColors = useMemo(
     () => [
-      '#00F0FF', // cyan
-      '#7B61FF', // violet
-      '#FF006E', // magenta
-      '#FFB800', // gold
-      '#10B981', // emerald
-      '#F43F5E', // rose
+      'var(--fs-accent)',
+      'var(--fs-accent-2)',
+      'var(--fs-signal)',
+      'var(--fs-warn)',
+      'var(--fs-steel)',
+      'var(--fs-primary)',
     ],
     []
   );
@@ -108,11 +108,11 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
   // and the radial-gradient background do not get a new prop reference on
   // every parent render.
   const gradientColors = useMemo(() => {
-    if (percentage >= 100) return { start: '#10B981', end: '#34D399' };
-    if (percentage >= 75) return { start: '#00F0FF', end: '#7B61FF' };
-    if (percentage >= 50) return { start: '#7B61FF', end: '#C77DFF' };
-    if (percentage >= 25) return { start: '#F97316', end: '#FBBF24' };
-    return { start: '#6B7280', end: '#9CA3AF' };
+    if (percentage >= 100) return { start: 'var(--fs-accent)', end: 'var(--fs-accent-2)' };
+    if (percentage >= 75) return { start: 'var(--fs-accent-2)', end: 'var(--fs-accent)' };
+    if (percentage >= 50) return { start: 'var(--fs-signal)', end: 'var(--fs-accent)' };
+    if (percentage >= 25) return { start: 'var(--fs-warn)', end: 'var(--fs-signal)' };
+    return { start: 'var(--fs-steel)', end: 'var(--fs-muted)' };
   }, [percentage]);
 
   const reactId = useId();
@@ -126,7 +126,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
       }`}
       style={{ width: size, height: size }}
       role="progressbar"
-      tabIndex={0}
+      tabIndex={-1}
       aria-valuenow={Math.round(percentage)}
       aria-valuemin={0}
       aria-valuemax={100}
@@ -156,7 +156,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
         style={{
           width: size,
           height: size,
-          background: `radial-gradient(circle, ${gradientColors.start}20 0%, transparent 70%)`,
+          background: `radial-gradient(circle, color-mix(in srgb, ${gradientColors.start} 13%, transparent) 0%, transparent 70%)`,
         }}
         animate={
           shouldReduceMotion

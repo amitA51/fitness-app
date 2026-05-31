@@ -3,7 +3,7 @@
 
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type React from 'react';
-import { memo, useRef } from 'react';
+import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { PersonalExercise } from '../../../types';
 import { CustomDumbbellIcon as DumbbellIcon } from '../../icons/CustomDumbbellIcon';
 import { ExerciseCard } from './ExerciseCard';
@@ -91,22 +91,45 @@ const ExerciseList: React.FC<ExerciseListProps> = memo(
 const VirtualizedExerciseList: React.FC<ExerciseListProps> = memo(
   ({ exercises, isSelectionMode = false, selectedIds, onExerciseClick, onDeleteExercise }) => {
     const parentRef = useRef<HTMLDivElement>(null);
+    const [scrollMargin, setScrollMargin] = useState(0);
+
+    // Resolve the nearest scrollable ancestor (the app's scrolling <main>).
+    const getScrollElement = useCallback((): HTMLElement | null => {
+      let el: HTMLElement | null = parentRef.current?.parentElement ?? null;
+      while (el) {
+        const style = window.getComputedStyle(el);
+        if (/(auto|scroll)/.test(style.overflowY)) return el;
+        el = el.parentElement;
+      }
+      return null;
+    }, []);
+
+    // The list can start far below other content inside the shared scroll
+    // container, so tell the virtualizer how far down it begins. Measure the
+    // offset of parentRef relative to the scroll element and keep it fresh.
+    useLayoutEffect(() => {
+      const measure = () => {
+        const parent = parentRef.current;
+        const scrollEl = getScrollElement();
+        if (!parent || !scrollEl) return;
+        const offset =
+          parent.getBoundingClientRect().top -
+          scrollEl.getBoundingClientRect().top +
+          scrollEl.scrollTop;
+        setScrollMargin(offset);
+      };
+      measure();
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
+    }, [getScrollElement]);
 
     const virtualizer = useVirtualizer({
       count: exercises.length,
-      getScrollElement: () => {
-        // Walk up to find the nearest scrollable ancestor.
-        let el: HTMLElement | null = parentRef.current?.parentElement ?? null;
-        while (el) {
-          const style = window.getComputedStyle(el);
-          if (/(auto|scroll)/.test(style.overflowY)) return el;
-          el = el.parentElement;
-        }
-        return null;
-      },
+      getScrollElement,
       estimateSize: () => ESTIMATED_CARD_HEIGHT,
       overscan: 5,
       gap: 8,
+      scrollMargin,
     });
 
     return (
@@ -124,12 +147,14 @@ const VirtualizedExerciseList: React.FC<ExerciseListProps> = memo(
             return (
               <div
                 key={exercise.id}
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
                 style={{
                   position: 'absolute',
                   top: 0,
                   left: 0,
                   width: '100%',
-                  transform: `translateY(${virtualRow.start}px)`,
+                  transform: `translateY(${virtualRow.start - scrollMargin}px)`,
                 }}
               >
                 <ExerciseCard
