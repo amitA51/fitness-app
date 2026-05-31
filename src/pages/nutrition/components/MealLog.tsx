@@ -1,7 +1,11 @@
 import { Flame, Plus, Trash2 } from 'lucide-react';
-import { memo } from 'react';
-import { MEAL_TYPE_LABELS } from '../../../services/nutritionService';
-import type { MealEntry } from '../../../types';
+import { memo, useMemo } from 'react';
+import {
+  MEAL_TYPE_ICONS,
+  MEAL_TYPE_LABELS,
+  sumEntryMacros,
+} from '../../../services/nutritionService';
+import type { MealEntry, MealType } from '../../../types';
 
 export const EmptyMealState = memo(function EmptyMealState({ onAdd }: { onAdd: () => void }) {
   return (
@@ -52,7 +56,9 @@ export const MealEntryCard = memo(function MealEntryCard({
   entry,
   onDelete,
 }: { entry: MealEntry; onDelete: (id: string) => void }) {
-  const mealLabel = entry.meals.map((m) => MEAL_TYPE_LABELS[m.name]).join(', ');
+  // Eyebrow shows the logging time; the meal-type label lives on the group
+  // header in GroupedMealLog, so repeating it here would be redundant.
+  const time = entry.meals[0]?.time ?? '';
   return (
     <div
       className="magnetic-card glass-surface"
@@ -68,7 +74,7 @@ export const MealEntryCard = memo(function MealEntryCard({
     >
       <div className="flex items-start justify-between mb-2">
         <span className="eyebrow" style={{ color: 'var(--fs-accent)' }}>
-          {mealLabel}
+          {time}
         </span>
         <button
           type="button"
@@ -157,6 +163,85 @@ export const MealEntryCard = memo(function MealEntryCard({
           </>
         )}
       </div>
+    </div>
+  );
+});
+
+const MEAL_TYPE_ORDER: MealType[] = [
+  'breakfast',
+  'lunch',
+  'dinner',
+  'snack',
+  'pre-workout',
+  'post-workout',
+];
+
+/**
+ * Journal grouped by meal type. Each group shows a header with the meal-type
+ * label, its icon, and a per-group calorie/macro summary, then the entries.
+ * Replaces the flat list so the day reads as breakfast/lunch/dinner sections.
+ */
+export const GroupedMealLog = memo(function GroupedMealLog({
+  entries,
+  onDelete,
+}: { entries: MealEntry[]; onDelete: (id: string) => void }) {
+  const groups = useMemo(() => {
+    const byType = new Map<MealType, MealEntry[]>();
+    for (const entry of entries) {
+      const type = entry.meals[0]?.name ?? 'snack';
+      const list = byType.get(type) ?? [];
+      list.push(entry);
+      byType.set(type, list);
+    }
+    return MEAL_TYPE_ORDER.filter((t) => byType.has(t)).map((type) => {
+      const groupEntries = byType.get(type) ?? [];
+      return { type, entries: groupEntries, macros: sumEntryMacros(groupEntries) };
+    });
+  }, [entries]);
+
+  return (
+    <div className="space-y-5">
+      {groups.map((group) => {
+        const Icon = MEAL_TYPE_ICONS[group.type];
+        return (
+          <section key={group.type} className="space-y-3" aria-label={MEAL_TYPE_LABELS[group.type]}>
+            <div
+              className="flex items-center justify-between"
+              style={{ borderBottom: '1px solid var(--fs-surface-2)', paddingBottom: 8 }}
+            >
+              <span
+                className="flex items-center gap-2"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: 15,
+                  color: 'var(--fs-ink)',
+                  textTransform: 'uppercase',
+                }}
+              >
+                <Icon size={15} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
+                {MEAL_TYPE_LABELS[group.type]}
+              </span>
+              <span
+                dir="ltr"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  letterSpacing: '0.1em',
+                  color: 'var(--fs-muted)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {group.macros.calories} KCAL · P{group.macros.protein} · C{group.macros.carbs} · F
+                {group.macros.fat}
+              </span>
+            </div>
+            {group.entries.map((entry) => (
+              <MealEntryCard key={entry.id} entry={entry} onDelete={onDelete} />
+            ))}
+          </section>
+        );
+      })}
     </div>
   );
 });

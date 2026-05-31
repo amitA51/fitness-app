@@ -1,5 +1,8 @@
 export type EquipmentAccess = 'gym' | 'home_full' | 'home_minimal' | 'bodyweight' | '';
 export type UnitSystem = 'metric' | 'imperial';
+/** Role chosen at onboarding. Additive: 'coach' enables coach mode on top of the
+ * normal trainee app; 'trainee' (or empty) is the default trainee-only path. */
+export type OnboardingRole = 'coach' | 'trainee' | '';
 
 export interface OnboardingData {
   name: string;
@@ -21,6 +24,9 @@ export interface OnboardingData {
   // with any persisted onboarding_data; readers should default to metric/gym.
   equipment?: EquipmentAccess;
   unitSystem?: UnitSystem;
+  // Added 2026-05-31: role split (coach/trainee). Optional for back-compat with
+  // any persisted onboarding_data; readers should default to trainee.
+  role?: OnboardingRole;
 }
 
 export const DEFAULT_ONBOARDING: OnboardingData = {
@@ -41,6 +47,7 @@ export const DEFAULT_ONBOARDING: OnboardingData = {
   dailyCalorieGoal: '',
   equipment: '',
   unitSystem: 'metric',
+  role: '',
 };
 
 export interface OnboardingProps {
@@ -50,6 +57,7 @@ export interface OnboardingProps {
 
 export const STEPS = [
   { id: 'welcome', title: 'ברוך הבא', subtitle: 'הכר את עצמך' },
+  { id: 'role', title: 'מי אתה?', subtitle: 'מאמן או מתאמן' },
   { id: 'profile', title: 'פרופיל אישי', subtitle: 'ספר לנו על עצמך' },
   { id: 'goals', title: 'מטרות כושר', subtitle: 'מה המטרות שלך?' },
   { id: 'experience', title: 'ניסיון', subtitle: 'רמת האימון שלך' },

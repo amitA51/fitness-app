@@ -1,13 +1,12 @@
-import { ChevronLeft, Target, User, Zap } from 'lucide-react';
+import { ChevronLeft, Scale, Target, User, Users, Zap } from 'lucide-react';
 import { ProfileAvatar } from '../../../components/ui/ProfileAvatar';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
 import { NumberInput } from '../../../components/ui/SettingsNumberInput';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
 import { SaveButton } from '../../../components/ui/SettingsSaveButton';
 import { SectionLabel } from '../../../components/ui/SettingsSectionLabel';
-import { useSettings } from '../../../contexts/SettingsContext';
-import type { ActivityLevel, UserProfile, WeightGoal } from '../types';
-import { DIVIDER_STYLE } from '../types';
+import type { ActivityLevel, Gender, UserProfile, WeightGoal } from '../types';
+import { DIVIDER_STYLE, GENDER_OPTIONS } from '../types';
 
 interface Props {
   profile: UserProfile;
@@ -17,12 +16,13 @@ interface Props {
 }
 
 export function ProfileSection({ profile, setProfile, profileSaved, onSave }: Props) {
-  const { settings, updateSettings } = useSettings();
+  const genderLabel =
+    GENDER_OPTIONS.find((o) => o.value === profile.gender)?.label ?? GENDER_OPTIONS[0]?.label ?? '';
 
   return (
     <div className="mb-7">
-      <SectionLabel num="01" titleEn="GENERAL · PROFILE">
-        כללי
+      <SectionLabel num="02" titleEn="PROFILE · BODY">
+        פרופיל
       </SectionLabel>
 
       {/* Avatar card */}
@@ -136,6 +136,71 @@ export function ProfileSection({ profile, setProfile, profileSaved, onSave }: Pr
           />
         </SettingsRow>
 
+        {/* Weight (kg) — feeds the TDEE auto-calc in the Nutrition screen */}
+        <SettingsRow
+          icon={<Scale size={15} style={{ color: 'var(--fs-accent)' }} />}
+          label="משקל"
+          divider={true}
+        >
+          <NumberInput
+            value={profile.weight}
+            onChange={(v) => setProfile({ ...profile, weight: v })}
+            min={30}
+            max={300}
+            placeholder="—"
+            unit='ק"ג'
+          />
+        </SettingsRow>
+
+        {/* Gender — feeds the TDEE BMR formula */}
+        <div className="flex flex-col">
+          <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
+            <div
+              className="w-8 h-8 flex items-center justify-center shrink-0"
+              style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
+            >
+              <Users size={15} />
+            </div>
+            <span
+              className="flex-1"
+              style={{
+                fontFamily: 'var(--font-hebrew)',
+                fontSize: '15px',
+                fontWeight: 500,
+                color: 'var(--fs-ink)',
+              }}
+            >
+              מין
+            </span>
+            <div className="relative flex items-center gap-1">
+              <span
+                style={{
+                  fontFamily: 'var(--font-hebrew)',
+                  fontSize: '14px',
+                  color: 'var(--fs-heading)',
+                  fontWeight: 600,
+                }}
+              >
+                {genderLabel}
+              </span>
+              <ChevronLeft size={14} style={{ color: 'var(--fs-muted)' }} />
+              <select
+                value={profile.gender}
+                onChange={(e) => setProfile({ ...profile, gender: e.target.value as Gender })}
+                aria-label="מין"
+                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+              >
+                {GENDER_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div style={DIVIDER_STYLE} />
+        </div>
+
         {/* Weight goal */}
         <div className="flex flex-col">
           <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
@@ -234,77 +299,6 @@ export function ProfileSection({ profile, setProfile, profileSaved, onSave }: Pr
             </div>
           </div>
         </div>
-      </SettingsCard>
-
-      {/* Unit System Card */}
-      <SettingsCard>
-        <SettingsRow
-          icon={
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 12,
-                fontWeight: 700,
-                color: 'var(--fs-heading)',
-              }}
-            >
-              KG
-            </span>
-          }
-          label="יחידות מידה"
-        >
-          <div
-            style={{
-              display: 'flex',
-              background: 'var(--fs-surface-2)',
-              border: '1px solid var(--fs-primary)',
-              borderRadius: 0,
-              overflow: 'hidden',
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => updateSettings({ unitSystem: 'metric' })}
-              style={{
-                padding: '6px 14px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 12,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                background: settings.unitSystem === 'metric' ? 'var(--fs-primary)' : 'transparent',
-                color: settings.unitSystem === 'metric' ? 'var(--fs-accent)' : 'var(--fs-muted)',
-                border: 'none',
-                fontWeight: 600,
-                transition: 'all 150ms ease',
-              }}
-              aria-pressed={settings.unitSystem === 'metric'}
-            >
-              מטרי
-            </button>
-            <button
-              type="button"
-              onClick={() => updateSettings({ unitSystem: 'imperial' })}
-              style={{
-                padding: '6px 14px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 12,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                background:
-                  settings.unitSystem === 'imperial' ? 'var(--fs-primary)' : 'transparent',
-                color: settings.unitSystem === 'imperial' ? 'var(--fs-accent)' : 'var(--fs-muted)',
-                border: 'none',
-                fontWeight: 600,
-                transition: 'all 150ms ease',
-              }}
-              aria-pressed={settings.unitSystem === 'imperial'}
-            >
-              אימפריאלי
-            </button>
-          </div>
-        </SettingsRow>
       </SettingsCard>
 
       <div className="mt-3">

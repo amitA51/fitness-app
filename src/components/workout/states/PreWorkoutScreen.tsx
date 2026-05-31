@@ -78,6 +78,14 @@ interface PreWorkoutScreenProps {
   onStartWorkout: () => void;
   onCancel: () => void;
   onSelectTemplate?: (templateId: string) => void;
+  /** Inline coach injection: a coach-assigned program exists (kind === 'program'). */
+  hasCoachProgram?: boolean;
+  /** Title of the coach-assigned program (falls back to a generic label). */
+  coachProgramTitle?: string | null;
+  /** True while the coach program is being synced + started. */
+  isStartingCoachProgram?: boolean;
+  /** Start the coach-assigned program. */
+  onStartCoachProgram?: () => void;
 }
 
 interface PreWorkoutScreenFC extends React.FC<PreWorkoutScreenProps> {
@@ -89,6 +97,10 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
   onStartWorkout,
   onCancel,
   onSelectTemplate,
+  hasCoachProgram = false,
+  coachProgramTitle = null,
+  isStartingCoachProgram = false,
+  onStartCoachProgram,
 }) => {
   const [favoriteTemplates, setFavoriteTemplates] = useState<WorkoutTemplate[]>([]);
   const [recentMuscles, setRecentMuscles] = useState<MuscleGroupLastTrained[]>([]);
@@ -236,6 +248,11 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
     };
   }, [lastWorkout]);
 
+  // A genuinely fresh user has no completed history at all. For them the three
+  // "—" stat cards are noise, so we swap the stat row for a guiding first-workout
+  // empty state instead of showing dashes.
+  const hasHistory = !!lastWorkout || workoutStreak > 0;
+
   return (
     <motion.div
       className="fixed inset-0 z-overlay flex flex-col overflow-y-auto overscroll-contain ambient-mesh ambient-mesh-soft"
@@ -297,114 +314,148 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
             </div>
           </div>
 
-          {/* Stats row */}
-          <div className="grid grid-cols-3" style={{ gap: 0 }}>
-            {/* Sets */}
-            <div
-              className="text-center"
-              style={{
-                padding: '12px 8px',
-                borderRight: '1px solid rgba(255,255,255,0.15)',
-              }}
-            >
+          {/* Stats row — real history. Brand-new users (no last workout, no
+              streak) get a guiding first-workout message instead of three "—". */}
+          {hasHistory ? (
+            <div className="grid grid-cols-3" style={{ gap: 0 }}>
+              {/* Sets */}
               <div
-                className="kinetic-number"
+                className="text-center"
                 style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 900,
-                  fontSize: 36,
-                  color: 'var(--fs-accent)',
-                  lineHeight: 0.9,
-                  letterSpacing: '-0.02em',
-                  direction: 'ltr',
-                  textAlign: 'center',
+                  padding: '12px 8px',
+                  borderRight: '1px solid rgba(255,255,255,0.15)',
                 }}
               >
-                {lastWorkoutLabel ? lastWorkoutLabel.exercises : '—'}
+                <div
+                  className="kinetic-number"
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 900,
+                    fontSize: 36,
+                    color: 'var(--fs-accent)',
+                    lineHeight: 0.9,
+                    letterSpacing: '-0.02em',
+                    direction: 'ltr',
+                    textAlign: 'center',
+                  }}
+                >
+                  {lastWorkoutLabel ? lastWorkoutLabel.exercises : '—'}
+                </div>
+                <div
+                  className="uppercase mt-1"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    letterSpacing: '0.22em',
+                    color: 'rgba(255,255,255,0.5)',
+                  }}
+                >
+                  תרגילים
+                </div>
               </div>
+
+              {/* Volume */}
               <div
-                className="uppercase mt-1"
+                className="text-center"
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 9,
-                  letterSpacing: '0.22em',
-                  color: 'rgba(255,255,255,0.5)',
+                  padding: '12px 8px',
+                  borderRight: '1px solid rgba(255,255,255,0.15)',
                 }}
               >
-                תרגילים
+                <div
+                  className="kinetic-number"
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 900,
+                    fontSize: 36,
+                    color: '#FFFFFF',
+                    lineHeight: 0.9,
+                    letterSpacing: '-0.02em',
+                    direction: 'ltr',
+                    textAlign: 'center',
+                  }}
+                >
+                  {lastWorkoutLabel && lastWorkoutLabel.volume > 0
+                    ? lastWorkoutLabel.volume >= 1000
+                      ? `${(lastWorkoutLabel.volume / 1000).toFixed(1)}k`
+                      : lastWorkoutLabel.volume
+                    : '—'}
+                </div>
+                <div
+                  className="uppercase mt-1"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    letterSpacing: '0.22em',
+                    color: 'rgba(255,255,255,0.5)',
+                  }}
+                >
+                  ק"ג
+                </div>
+              </div>
+
+              {/* Streak */}
+              <div className="text-center" style={{ padding: '12px 8px' }}>
+                <div
+                  className="kinetic-number"
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 900,
+                    fontSize: 36,
+                    color: workoutStreak > 0 ? 'var(--fs-accent)' : '#FFFFFF',
+                    lineHeight: 0.9,
+                    letterSpacing: '-0.02em',
+                    direction: 'ltr',
+                    textAlign: 'center',
+                  }}
+                >
+                  {workoutStreak > 0 ? workoutStreak : '—'}
+                </div>
+                <div
+                  className="uppercase mt-1"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    letterSpacing: '0.22em',
+                    color: 'rgba(255,255,255,0.5)',
+                  }}
+                >
+                  ימים
+                </div>
               </div>
             </div>
-
-            {/* Volume */}
+          ) : (
             <div
-              className="text-center"
               style={{
-                padding: '12px 8px',
-                borderRight: '1px solid rgba(255,255,255,0.15)',
+                padding: '4px 4px 8px',
+                borderTop: '1px solid rgba(255,255,255,0.12)',
               }}
             >
               <div
-                className="kinetic-number"
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 900,
-                  fontSize: 36,
+                  fontWeight: 800,
+                  fontSize: 20,
                   color: '#FFFFFF',
-                  lineHeight: 0.9,
-                  letterSpacing: '-0.02em',
-                  direction: 'ltr',
-                  textAlign: 'center',
+                  lineHeight: 1.05,
+                  marginTop: 12,
                 }}
               >
-                {lastWorkoutLabel && lastWorkoutLabel.volume > 0
-                  ? lastWorkoutLabel.volume >= 1000
-                    ? `${(lastWorkoutLabel.volume / 1000).toFixed(1)}k`
-                    : lastWorkoutLabel.volume
-                  : '—'}
+                האימון הראשון שלך
               </div>
               <div
-                className="uppercase mt-1"
+                className="uppercase mt-2"
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: 9,
-                  letterSpacing: '0.22em',
+                  fontSize: 10,
+                  letterSpacing: '0.18em',
                   color: 'rgba(255,255,255,0.5)',
                 }}
               >
-                ק"ג
+                בוא נתחיל לבנות את ההיסטוריה שלך
               </div>
             </div>
-
-            {/* Streak */}
-            <div className="text-center" style={{ padding: '12px 8px' }}>
-              <div
-                className="kinetic-number"
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 900,
-                  fontSize: 36,
-                  color: workoutStreak > 0 ? 'var(--fs-accent)' : '#FFFFFF',
-                  lineHeight: 0.9,
-                  letterSpacing: '-0.02em',
-                  direction: 'ltr',
-                  textAlign: 'center',
-                }}
-              >
-                {workoutStreak > 0 ? workoutStreak : '—'}
-              </div>
-              <div
-                className="uppercase mt-1"
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 9,
-                  letterSpacing: '0.22em',
-                  color: 'rgba(255,255,255,0.5)',
-                }}
-              >
-                ימים
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* Last workout label */}
           {lastWorkoutLabel && (
@@ -428,6 +479,70 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
       {/* ── BONE BODY ── */}
       <div className="relative z-10 flex-1 flex flex-col px-5 pt-6 pb-8">
         <AnimatePresence mode="sync">
+          {/* Coach-assigned program — inline coach injection for the workout
+              surface. Tapping it syncs + starts that program's template. */}
+          {hasCoachProgram && onStartCoachProgram && (
+            <motion.div key="coach-program" variants={itemVariants} className="mb-5">
+              <button
+                type="button"
+                onClick={onStartCoachProgram}
+                disabled={isStartingCoachProgram}
+                className="w-full relative focus-ring"
+                style={{
+                  background: 'var(--fs-primary)',
+                  border: '2px solid var(--fs-accent)',
+                  padding: '18px 20px',
+                  textAlign: 'right',
+                  cursor: isStartingCoachProgram ? 'wait' : 'pointer',
+                  opacity: isStartingCoachProgram ? 0.7 : 1,
+                }}
+                aria-label={`התחל את האימון שהמאמן הקצה: ${coachProgramTitle || 'תוכנית אימון'}`}
+              >
+                {/* Ribbon */}
+                <div
+                  className="absolute top-0 left-0 px-2 py-1"
+                  style={{
+                    background: 'var(--fs-accent)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    letterSpacing: '0.2em',
+                    color: 'var(--fs-primary)',
+                    textTransform: 'uppercase',
+                    fontWeight: 600,
+                  }}
+                >
+                  מהמאמן
+                </div>
+                <div className="pt-3">
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      letterSpacing: '0.18em',
+                      color: 'var(--fs-accent)',
+                      textTransform: 'uppercase',
+                      marginBottom: 6,
+                    }}
+                  >
+                    האימון שהמאמן הקצה לך
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 800,
+                      fontSize: 20,
+                      color: '#FFFFFF',
+                      lineHeight: 1.05,
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {isStartingCoachProgram ? 'טוען…' : coachProgramTitle || 'תוכנית אימון'}
+                  </p>
+                </div>
+              </button>
+            </motion.div>
+          )}
+
           {/* Suggestion card */}
           {suggestion && (
             <motion.div key="suggestion" variants={itemVariants} className="mb-5">

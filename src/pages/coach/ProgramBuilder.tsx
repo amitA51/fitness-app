@@ -1,12 +1,16 @@
 import { Plus, Trash2, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { showToast } from '../../components/ui/GlobalToast';
 import { createAssignment, upsertClientTemplate } from '../../services/coach';
-import type { WorkoutTemplate, WorkoutTemplateExercise } from '../../types';
+import { getPersonalExercises } from '../../services/exerciseDb';
+import type { PersonalExercise, WorkoutTemplate, WorkoutTemplateExercise } from '../../types';
 
 interface ProgramExercise {
   exerciseName: string;
+  /** Canonical library id when the name matches a known exercise, else ''. */
+  exerciseId: string;
+  targetMuscle: string;
   sets: number;
   reps: number;
 }
@@ -23,6 +27,29 @@ export default function ProgramBuilder({
   const [programName, setProgramName] = useState('');
   const [days, setDays] = useState<ProgramDay[]>([{ name: 'יום A', exercises: [] }]);
   const [busy, setBusy] = useState(false);
+  const [library, setLibrary] = useState<PersonalExercise[]>([]);
+
+  // Pull the canonical exercise library (built-ins are seeded on first read) so
+  // the coach picks real exercises instead of typing free-text with empty ids.
+  useEffect(() => {
+    let cancelled = false;
+    getPersonalExercises()
+      .then((list) => {
+        if (!cancelled) setLibrary(list);
+      })
+      .catch(() => {
+        /* library is an optional aid; free-text still works if it fails */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const libraryByName = useMemo(() => {
+    const map = new Map<string, PersonalExercise>();
+    for (const ex of library) if (ex.name) map.set(ex.name.toLowerCase(), ex);
+    return map;
+  }, [library]);
 
   const addDay = () =>
     setDays((d) => [...d, { name: `יום ${String.fromCharCode(65 + d.length)}`, exercises: [] }]);
@@ -36,7 +63,13 @@ export default function ProgramBuilder({
     setDays((d) =>
       d.map((day, idx) =>
         idx === dayIdx
-          ? { ...day, exercises: [...day.exercises, { exerciseName: '', sets: 3, reps: 10 }] }
+          ? {
+              ...day,
+              exercises: [
+                ...day.exercises,
+                { exerciseName: '', exerciseId: '', targetMuscle: '', sets: 3, reps: 10 },
+              ],
+            }
           : day
       )
     );
@@ -60,48 +93,65 @@ export default function ProgramBuilder({
       )
     );
 
+  // Resolve a typed/picked name against the library: fills the canonical id and
+  // target muscle when it matches a known exercise, clearing them otherwise.
+  const setExerciseName = (dayIdx: number, exIdx: number, name: string) => {
+    const match = libraryByName.get(name.trim().toLowerCase());
+    updateExercise(dayIdx, exIdx, {
+      exerciseName: name,
+      exerciseId: match?.id ?? '',
+      targetMuscle: match?.muscleGroup ?? match?.targetMuscle ?? '',
+    });
+  };
+
+  const buildTemplate = (day: ProgramDay): WorkoutTemplate => {
+    const exercises: WorkoutTemplateExercise[] = (day.exercises ?? []).map((ex, i) => ({
+      id: crypto.randomUUID(),
+      exerciseId: ex.exerciseId ?? '',
+      exerciseName: ex.exerciseName ?? '',
+      targetMuscle: ex.targetMuscle ?? '',
+      targetSets: ex.sets ?? 3,
+      targetReps: ex.reps ?? 10,
+      targetWeight: null,
+      restSeconds: 60,
+      order: i,
+      notes: '',
+      sets: Array.from({ length: ex.sets ?? 3 }, () => ({ reps: ex.reps ?? 10, weight: 0 })),
+    }));
+    return {
+      id: crypto.randomUUID(),
+      name: day.name,
+      description: programName || '',
+      exercises,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastUsed: null,
+      timesUsed: 0,
+      isFavorite: false,
+    };
+  };
+
   const handleAssign = async () => {
     if (days.length === 0) return;
     setBusy(true);
     try {
+      // Persist one runnable template per day…
+      const dayRefs: { templateId: string; name: string }[] = [];
       for (const day of days) {
-        const exercises: WorkoutTemplateExercise[] = (day.exercises ?? []).map((ex, i) => ({
-          id: crypto.randomUUID(),
-          exerciseId: '',
-          exerciseName: ex?.exerciseName ?? '',
-          targetMuscle: '',
-          targetSets: ex?.sets ?? 3,
-          targetReps: ex?.reps ?? 10,
-          targetWeight: null,
-          restSeconds: 60,
-          order: i,
-          notes: '',
-          sets: Array.from({ length: ex?.sets ?? 3 }, () => ({
-            reps: ex?.reps ?? 10,
-            weight: 0,
-          })),
-        }));
-
-        const tpl: WorkoutTemplate = {
-          id: crypto.randomUUID(),
-          name: day.name,
-          description: programName || '',
-          exercises,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          lastUsed: null,
-          timesUsed: 0,
-          isFavorite: false,
-        };
-
+        const tpl = buildTemplate(day);
         await upsertClientTemplate(clientId, tpl);
-        await createAssignment({
-          kind: 'program',
-          title: tpl.name,
-          templateId: tpl.id,
-          clientId,
-        });
+        dayRefs.push({ templateId: tpl.id, name: tpl.name });
       }
+      // …but surface the whole week as ONE program assignment so the trainee
+      // sees a structured plan, not N independent "התחל אימון" rows. templateId
+      // points at the first day for backward-compatible single-start fallback.
+      await createAssignment({
+        kind: 'program',
+        title: programName || 'תוכנית אימון',
+        templateId: dayRefs[0]?.templateId ?? null,
+        clientId,
+        payload: { programName: programName || 'תוכנית אימון', days: dayRefs },
+      });
       showToast('התוכנית שויכה', 'success');
       onClose();
     } catch {
@@ -155,6 +205,11 @@ export default function ProgramBuilder({
       </header>
 
       <main className="px-5 py-5" style={{ paddingBottom: 96 }}>
+        <datalist id="coach-exercise-library">
+          {library.map((ex) => (
+            <option key={ex.id} value={ex.name ?? ''} />
+          ))}
+        </datalist>
         <input
           type="text"
           value={programName}
@@ -217,8 +272,9 @@ export default function ProgramBuilder({
               >
                 <input
                   type="text"
+                  list="coach-exercise-library"
                   value={ex.exerciseName}
-                  onChange={(e) => updateExercise(dayIdx, exIdx, { exerciseName: e.target.value })}
+                  onChange={(e) => setExerciseName(dayIdx, exIdx, e.target.value)}
                   placeholder="שם תרגיל"
                   className="flex-1 px-2 py-1"
                   style={{

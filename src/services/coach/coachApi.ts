@@ -54,6 +54,43 @@ export const getClientSessions = async (
   );
 };
 
+/**
+ * Batched activity fetch for the coach overview. ONE query for ALL clients
+ * (only 3 small columns, no exercises JSON) instead of N per-client fetches —
+ * fixes the roster N+1. Returns sessions grouped by clientId. RLS keeps the
+ * rows scoped to the coach's active links.
+ */
+export const getClientsActivity = async (
+  clientIds: string[]
+): Promise<Record<string, { startTime: string; totalVolume: number }[]>> => {
+  const grouped: Record<string, { startTime: string; totalVolume: number }[]> = {};
+  if (clientIds.length === 0) return grouped;
+  const supabase = requireClient();
+  const { data, error } = await supabase
+    .from('workout_sessions')
+    .select('user_id, start_time, total_volume')
+    .in('user_id', clientIds)
+    .order('start_time', { ascending: false });
+  if (error) {
+    logger.db.error('getClientsActivity failed', error);
+    return grouped;
+  }
+  for (const id of clientIds) grouped[id] = [];
+  for (const r of data ?? []) {
+    const row = r as { user_id: string; start_time: string; total_volume: number | null };
+    let bucket = grouped[row.user_id];
+    if (!bucket) {
+      bucket = [];
+      grouped[row.user_id] = bucket;
+    }
+    bucket.push({
+      startTime: row.start_time,
+      totalVolume: row.total_volume ?? 0,
+    });
+  }
+  return grouped;
+};
+
 export const getClientTemplates = async (clientId: string): Promise<WorkoutTemplate[]> => {
   const supabase = requireClient();
   const { data, error } = await supabase

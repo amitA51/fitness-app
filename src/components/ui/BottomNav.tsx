@@ -1,4 +1,11 @@
-import { Dumbbell, LayoutDashboard, TrendingUp, UserCog, UtensilsCrossed } from 'lucide-react';
+import {
+  Dumbbell,
+  LayoutDashboard,
+  TrendingUp,
+  UserCog,
+  Users,
+  UtensilsCrossed,
+} from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCoach } from '../../contexts/CoachContext';
@@ -17,14 +24,15 @@ export default memo(function BottomNav() {
   const { isCoach } = useCoach();
   const unread = useUnreadMessages();
 
-  // Context-aware coaching tab: coaches reach their hub; everyone else reaches
-  // the trainee "My Coach" screen (connect to a coach, view assignments).
+  // Additive role split: everyone is a trainee, so the "מאמן" tab always routes
+  // to the trainee "My Coach" surface (connect to a coach, view assignments).
+  // Coaches get an ADDITIONAL "ניהול" management entry to their hub — it does
+  // not replace the trainee tab, so a user who is BOTH reaches both screens.
   const NAV_ITEMS = useMemo(
     () => [
       ...BASE_NAV_ITEMS,
-      isCoach
-        ? { path: '/coach', label: 'מאמן', icon: UserCog }
-        : { path: '/my-coach', label: 'מאמן', icon: UserCog },
+      { path: '/my-coach', label: 'מאמן', icon: UserCog },
+      ...(isCoach ? [{ path: '/coach', label: 'ניהול', icon: Users }] : []),
     ],
     [isCoach]
   );

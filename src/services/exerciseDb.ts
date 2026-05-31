@@ -8,6 +8,7 @@
 import { getBUILT_IN_EXERCISES } from '../data/builtInExercises';
 import { NotFoundError } from '../errors';
 import type { CreatePersonalExerciseInput, PersonalExercise } from '../types';
+import { generateId } from '../utils/id';
 import { mergeGenericRecords } from './cloudMerge';
 import { STORES, dbDelete, dbGetAll, dbGetByIndex, dbPut, initDB } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
@@ -30,7 +31,7 @@ export const getPersonalExercises = async (): Promise<PersonalExercise[]> => {
   if (missingBuiltIns.length > 0) {
     const newExercises = missingBuiltIns.map((ex) => ({
       ...ex,
-      id: crypto.randomUUID(),
+      id: crypto.randomUUID?.() || generateId('ex'),
       createdAt: now,
     })) as PersonalExercise[];
 
@@ -75,7 +76,7 @@ export const createPersonalExercise = async (
 ): Promise<PersonalExercise> => {
   const newExercise = {
     ...exercise,
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID?.() || generateId('ex'),
     createdAt: new Date().toISOString(),
     useCount: 0,
   } as PersonalExercise;

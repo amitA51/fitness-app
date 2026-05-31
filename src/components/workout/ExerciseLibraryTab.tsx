@@ -7,6 +7,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { WORKOUT } from '../../constants';
 import * as dataService from '../../services/dataService';
 import type { CreatePersonalExerciseInput, PersonalExercise } from '../../types';
+import { logger } from '../../utils/logger';
 import { DeleteConfirmDialog } from './components/DeleteConfirmDialog';
 import { ExerciseFilter } from './components/ExerciseFilter';
 import { ExerciseForm } from './components/ExerciseForm';
@@ -82,14 +83,21 @@ const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
   }, []);
 
   const loadExercises = useCallback(async () => {
-    const data = await dataService.getPersonalExercises();
-    if (data.length > 0) {
-      setExercises(data);
-      return;
+    try {
+      const data = await dataService.getPersonalExercises();
+      if (data.length > 0) {
+        setExercises(data);
+        return;
+      }
+      await new Promise<void>((resolve) => setTimeout(resolve, 300));
+      const retried = await dataService.getPersonalExercises();
+      setExercises(retried);
+    } catch (error) {
+      // Never leave the selector stuck behind the blur on a fresh/empty load:
+      // surface the failure and render an empty (but resolved) list.
+      logger.workout.error('Failed to load personal exercises', error);
+      setExercises([]);
     }
-    await new Promise<void>((resolve) => setTimeout(resolve, 300));
-    const retried = await dataService.getPersonalExercises();
-    setExercises(retried);
   }, []);
 
   const handleDelete = useCallback((exercise: PersonalExercise, e: React.MouseEvent) => {

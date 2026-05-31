@@ -1,78 +1,63 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Dumbbell, Heart, Ruler, Scale } from 'lucide-react';
+import { Activity, Dumbbell, Heart, LayoutGrid, Ruler, Scale } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  type ActivityRingData,
-  ActivityRings,
-  GlowAreaChart,
-  type GlowAreaPoint,
-  GradientSparkline,
-} from '../components/charts';
+import { useCallback, useMemo, useState } from 'react';
 import {
   addBodyMeasurement,
   addBodyWeight,
   addRecoveryLog,
   calculateBMI,
-  calculateWeightTrend,
   getBMICategory,
-  getBodyMeasurementsByDateRange,
-  getBodyWeightsByDateRange,
-  getLatestMeasurement,
-  getLatestWeight,
-  getLegacyRecoveryScore,
-  getTodayRecoveryLog,
-  getWeeklyRecoveryAverage,
 } from '../services/bodyStatsService';
-import type {
-  BodyMeasurement,
-  BodyWeightEntry,
-  RecoveryLog,
-  WeightTrend,
-} from '../services/bodyStatsService';
-import { getWorkoutSessions } from '../services/dataService';
-import { getAllPRs } from '../services/prService';
-import type { WorkoutSession } from '../types';
-import { formatVolume, toLocalDateStr, todayStr } from '../utils/dateUtils';
+import type { BodyMeasurement, RecoveryLog } from '../services/bodyStatsService';
+import { todayStr } from '../utils/dateUtils';
 import { safeJsonParse } from '../utils/safeJson';
-import { setVolume } from '../utils/workoutMath';
-import { ProgressInsightCard } from './progress/components/ProgressInsightCard';
-import { WorkoutHistoryList } from './progress/components/WorkoutHistoryList';
 import { AddMeasurementModal } from './progress/modals/AddMeasurementModal';
 import { AddRecoveryModal } from './progress/modals/AddRecoveryModal';
 import { AddWeightModal } from './progress/modals/AddWeightModal';
+import { onlyCompleted } from './progress/progressMetrics';
 import { MeasurementsTab } from './progress/tabs/MeasurementsTab';
+import { OverviewTab } from './progress/tabs/OverviewTab';
 import { RecoveryTab } from './progress/tabs/RecoveryTab';
 import { StrengthTab } from './progress/tabs/StrengthTab';
 import { WeightTab } from './progress/tabs/WeightTab';
+import { WorkoutsTab } from './progress/tabs/WorkoutsTab';
 import type { ProgressTab } from './progress/types';
+import { useProgressData } from './progress/useProgressData';
 
 const TABS: { key: ProgressTab; label: string; icon: React.ReactNode }[] = [
+  { key: 'overview', label: 'סקירה', icon: <LayoutGrid size={15} /> },
+  { key: 'workouts', label: 'אימונים', icon: <Activity size={15} /> },
+  { key: 'strength', label: 'כוח', icon: <Dumbbell size={15} /> },
   { key: 'weight', label: 'משקל', icon: <Scale size={15} /> },
   { key: 'measurements', label: 'מדידות', icon: <Ruler size={15} /> },
   { key: 'recovery', label: 'ריקאברי', icon: <Heart size={15} /> },
-  { key: 'strength', label: 'כוח', icon: <Dumbbell size={15} /> },
 ];
 
+const motionProps = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+  transition: { duration: 0.2 },
+};
+
 export default function ProgressPage() {
-  const [activeTab, setActiveTab] = useState<ProgressTab>('weight');
-  const [weightEntries, setWeightEntries] = useState<BodyWeightEntry[]>([]);
-  const [latestWeight, setLatestWeight] = useState<BodyWeightEntry | null>(null);
-  const [weightTrend, setWeightTrend] = useState<WeightTrend | null>(null);
-  const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
-  const [latestMeasurement, setLatestMeasurement] = useState<BodyMeasurement | null>(null);
-  const [todayRecovery, setTodayRecovery] = useState<RecoveryLog | null>(null);
-  const [recoveryScore, setRecoveryScore] = useState<ReturnType<
-    typeof getLegacyRecoveryScore
-  > | null>(null);
-  const [weeklyRecovery, setWeeklyRecovery] = useState({
-    avgSleep: 0,
-    avgEnergy: 0,
-    avgSoreness: 0,
-    avgStress: 0,
-    avgScore: 0,
-  });
-  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+  const [activeTab, setActiveTab] = useState<ProgressTab>('overview');
+  const {
+    sessions,
+    prs,
+    weightEntries,
+    latestWeight,
+    weightTrend,
+    measurements,
+    latestMeasurement,
+    todayRecovery,
+    recoveryScore,
+    recoveryHistory,
+    weeklyRecovery,
+    reload,
+  } = useProgressData();
+
   const [showAddWeight, setShowAddWeight] = useState(false);
   const [showAddMeasurement, setShowAddMeasurement] = useState(false);
   const [showAddRecovery, setShowAddRecovery] = useState(false);
@@ -88,133 +73,14 @@ export default function ProgressPage() {
     }
   });
 
-  const loadData = useCallback(async () => {
-    const today = todayStr();
-    const monthAgo = toLocalDateStr(new Date(Date.now() - 30 * 86400000));
-
-    // Parallel data loading for better performance
-    const [weights, latest, meas, latestMeas, rec, weekly, loadedSessions] = await Promise.all([
-      getBodyWeightsByDateRange(monthAgo, today),
-      getLatestWeight(),
-      getBodyMeasurementsByDateRange(monthAgo, today),
-      getLatestMeasurement(),
-      getTodayRecoveryLog(),
-      getWeeklyRecoveryAverage(),
-      getWorkoutSessions(50),
-    ]);
-
-    setWeightEntries(weights);
-    setLatestWeight(latest);
-    if (weights.length >= 2) setWeightTrend(calculateWeightTrend(weights));
-    setMeasurements(meas);
-    setLatestMeasurement(latestMeas);
-    setTodayRecovery(rec);
-    if (rec) setRecoveryScore(getLegacyRecoveryScore(rec));
-    setWeeklyRecovery(weekly);
-    // Store raw sessions; the completedSessions memo is the single point that
-    // filters by status, feeding every derived metric below.
-    setSessions(loadedSessions);
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // Single status filter feeding every session-derived metric across the tabs.
+  const completedSessions = useMemo(() => onlyCompleted(sessions), [sessions]);
 
   const bmi = useMemo(
     () => (latestWeight ? calculateBMI(latestWeight.weight, userHeight) : null),
     [latestWeight, userHeight]
   );
   const bmiCategory = useMemo(() => (bmi ? getBMICategory(bmi) : null), [bmi]);
-
-  // Compute auto metrics for insight row
-  const completedSessions = useMemo(
-    () => sessions.filter((s) => s.status === 'completed'),
-    [sessions]
-  );
-
-  const [prCount, setPRCount] = useState(0);
-  useEffect(() => {
-    if (sessions.length === 0) return;
-    let cancelled = false;
-    getAllPRs()
-      .then((all) => {
-        if (!cancelled) setPRCount(all.length);
-      })
-      .catch(() => {
-        // Non-fatal — score just won't show PR count
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [sessions]);
-
-  const metrics = useMemo(() => {
-    const count = completedSessions.length;
-    const volume = completedSessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
-    return { count, volume, prs: prCount };
-  }, [completedSessions, prCount]);
-
-  // Weekly hero rings — past 7 days
-  const heroRings = useMemo<ActivityRingData[]>(() => {
-    const sevenDaysAgoMs = Date.now() - 7 * 86400000;
-    const weekSessions = completedSessions.filter(
-      (s) => new Date(s.startTime).getTime() >= sevenDaysAgoMs
-    );
-    const weekVol = weekSessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
-    const weekTimeMin = Math.round(
-      weekSessions.reduce((sum, s) => sum + (s.duration || 0), 0) / 60
-    );
-    const weekCount = weekSessions.length;
-    return [
-      { value: weekVol, max: Math.max(20000, weekVol), label: 'נפח', variant: 'accent' },
-      { value: weekTimeMin, max: Math.max(240, weekTimeMin), label: 'זמן', variant: 'signal' },
-      { value: weekCount, max: Math.max(5, weekCount), label: 'אימונים', variant: 'warn' },
-    ];
-  }, [completedSessions]);
-
-  const hasHeroData = heroRings.some((r) => r.value > 0);
-
-  // Volume over time — last 14 sessions for glow area chart
-  const volumeData = useMemo<GlowAreaPoint[]>(() => {
-    const ordered = [...completedSessions]
-      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-      .slice(-14);
-    return ordered.map((s) => {
-      const d = new Date(s.startTime);
-      const label = Number.isNaN(d.getTime())
-        ? ''
-        : d.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
-      return { x: label, y: s.totalVolume || 0 };
-    });
-  }, [completedSessions]);
-
-  // Per-exercise best-set sparklines — top 4 most-tracked lifts
-  const prSparklines = useMemo(() => {
-    const byExercise = new Map<string, number[]>();
-    for (const session of completedSessions) {
-      for (const ex of session.exercises ?? []) {
-        const name = ex.exerciseName || ex.name;
-        if (!name) continue;
-        let bestSetVolume = 0;
-        for (const set of ex.sets ?? []) {
-          if (!set.isCompleted) continue;
-          const vol = setVolume(set);
-          if (vol > bestSetVolume) bestSetVolume = vol;
-        }
-        if (bestSetVolume === 0) continue;
-        const existing = byExercise.get(name) ?? [];
-        existing.push(bestSetVolume);
-        byExercise.set(name, existing);
-      }
-    }
-    const rows: { name: string; data: number[]; latest: number }[] = [];
-    for (const [name, data] of byExercise) {
-      if (data.length < 2) continue;
-      rows.push({ name, data: data.slice(-12), latest: data[data.length - 1] ?? 0 });
-    }
-    rows.sort((a, b) => b.data.length - a.data.length);
-    return rows.slice(0, 4);
-  }, [completedSessions]);
 
   const handleShowAddWeight = useCallback(() => setShowAddWeight(true), []);
   const handleShowAddMeasurement = useCallback(() => setShowAddMeasurement(true), []);
@@ -227,25 +93,25 @@ export default function ProgressPage() {
     async (weight: number, notes: string) => {
       await addBodyWeight({ date: todayStr(), weight, notes });
       setShowAddWeight(false);
-      loadData();
+      reload();
     },
-    [loadData]
+    [reload]
   );
   const handleSaveMeasurement = useCallback(
     async (m: Omit<BodyMeasurement, 'id' | 'createdAt'>) => {
       await addBodyMeasurement(m);
       setShowAddMeasurement(false);
-      loadData();
+      reload();
     },
-    [loadData]
+    [reload]
   );
   const handleSaveRecovery = useCallback(
     async (r: Omit<RecoveryLog, 'id' | 'createdAt'>) => {
       await addRecoveryLog(r);
       setShowAddRecovery(false);
-      loadData();
+      reload();
     },
-    [loadData]
+    [reload]
   );
 
   const todayISO = useMemo(() => todayStr(), []);
@@ -309,345 +175,14 @@ export default function ProgressPage() {
         </p>
       </header>
 
-      {/* Insight Card */}
-      <div className="px-5 pt-4">
-        <ProgressInsightCard sessions={completedSessions} />
-      </div>
-
-      {/* Premium hero — activity rings + glow volume + lift sparklines */}
-      {hasHeroData && (
-        <div className="px-5 pt-4">
-          <section
-            className="section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in"
-            aria-label="סיכום שבועי"
-            style={{
-              padding: '18px',
-              borderRadius: '24px 18px 24px 18px',
-              display: 'grid',
-              gridTemplateColumns: 'auto minmax(0, 1fr)',
-              gap: 16,
-              alignItems: 'center',
-            }}
-          >
-            <ActivityRings size={148} rings={heroRings} />
-            <div style={{ minWidth: 0, display: 'grid', gap: 8 }}>
-              <span
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: 'var(--fs-ink)',
-                }}
-              >
-                מחזור 7 ימים
-              </span>
-              {heroRings.map((r) => {
-                const pct = r.max > 0 ? Math.min(100, Math.round((r.value / r.max) * 100)) : 0;
-                const dotColor =
-                  r.variant === 'signal'
-                    ? 'var(--fs-signal)'
-                    : r.variant === 'warn'
-                      ? 'var(--fs-warn)'
-                      : 'var(--fs-accent)';
-                return (
-                  <div
-                    key={r.label}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'baseline',
-                      justifyContent: 'space-between',
-                      gap: 8,
-                      borderBottom: '1px solid var(--fs-surface-2)',
-                      paddingBottom: 5,
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        color: 'var(--fs-muted)',
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 11,
-                        fontWeight: 800,
-                      }}
-                    >
-                      <span
-                        aria-hidden="true"
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: 999,
-                          background: dotColor,
-                        }}
-                      />
-                      {r.label}
-                    </span>
-                    <span
-                      className="kinetic-number"
-                      style={{
-                        color: 'var(--fs-ink)',
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 13,
-                        fontWeight: 800,
-                      }}
-                    >
-                      {pct}%
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        </div>
-      )}
-
-      {/* Volume trajectory — glow area chart */}
-      {volumeData.length >= 3 && (
-        <div className="px-5 pt-4">
-          <div
-            className="magnetic-card glass-surface scrim-noise fs-accent-rail"
-            style={{
-              padding: 16,
-              borderRadius: '22px 16px 22px 16px',
-            }}
-          >
-            <div
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 14,
-                fontWeight: 700,
-                color: 'var(--fs-ink)',
-                marginBottom: 10,
-              }}
-            >
-              מגמת נפח
-            </div>
-            <GlowAreaChart data={volumeData} height={160} xAxis />
-          </div>
-        </div>
-      )}
-
-      {/* Per-lift sparklines */}
-      {prSparklines.length > 0 && (
-        <div className="px-5 pt-4">
-          <div
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 14,
-              fontWeight: 700,
-              color: 'var(--fs-ink)',
-              marginBottom: 10,
-            }}
-          >
-            הרמות מובילות
-          </div>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {prSparklines.map((row) => (
-              <div
-                key={row.name}
-                className="magnetic-card glass-surface fs-accent-rail"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1.4fr)',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '10px 14px',
-                  borderRadius: '20px 14px 20px 14px',
-                }}
-              >
-                <span
-                  style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    color: 'var(--fs-ink)',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 14,
-                    fontWeight: 800,
-                  }}
-                >
-                  {row.name}
-                </span>
-                <span
-                  className="kinetic-number"
-                  style={{
-                    direction: 'ltr',
-                    color: 'var(--fs-accent)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 12,
-                    fontWeight: 800,
-                  }}
-                >
-                  {Math.round(row.latest).toLocaleString('en-US')}
-                </span>
-                <GradientSparkline data={row.data} width={160} height={36} live />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Metrics Row */}
-      {metrics.count > 0 && (
-        <div
-          className="px-5 pt-3"
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}
-        >
-          <div
-            style={{
-              background: 'var(--fs-surface)',
-              borderRadius: '22px 16px 22px 16px',
-              border: '1px solid var(--fs-surface-2)',
-              boxShadow: 'var(--shadow-card)',
-              padding: '12px 10px',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 3,
-                background: 'var(--fs-accent)',
-                borderTopLeftRadius: '22px',
-                borderBottomLeftRadius: '16px',
-              }}
-            />
-            <div
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 600,
-                fontSize: 20,
-                color: 'var(--fs-ink)',
-                lineHeight: 1,
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              {metrics.count}
-            </div>
-            <div
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 8,
-                letterSpacing: '0.12em',
-                color: 'var(--fs-muted)',
-                marginTop: 4,
-                textTransform: 'uppercase',
-              }}
-            >
-              אימונים
-            </div>
-          </div>
-          <div
-            style={{
-              background: 'var(--fs-surface)',
-              borderRadius: '22px 16px 22px 16px',
-              border: '1px solid var(--fs-surface-2)',
-              boxShadow: 'var(--shadow-card)',
-              padding: '12px 10px',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 3,
-                background: 'var(--fs-accent)',
-                borderTopLeftRadius: '22px',
-                borderBottomLeftRadius: '16px',
-              }}
-            />
-            <div
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 800,
-                fontSize: 26,
-                color: 'var(--fs-ink)',
-                lineHeight: 1,
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              {formatVolume(metrics.volume)}
-            </div>
-            <div
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 8,
-                letterSpacing: '0.12em',
-                color: 'var(--fs-muted)',
-                marginTop: 4,
-                textTransform: 'uppercase',
-              }}
-            >
-              נפח (ק"ג)
-            </div>
-          </div>
-          <div
-            style={{
-              background: 'var(--fs-surface)',
-              borderRadius: '22px 16px 22px 16px',
-              border: '1px solid var(--fs-surface-2)',
-              boxShadow: 'var(--shadow-card)',
-              padding: '12px 10px',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 3,
-                background: 'var(--fs-accent)',
-                borderTopLeftRadius: '22px',
-                borderBottomLeftRadius: '16px',
-              }}
-            />
-            <div
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 600,
-                fontSize: 20,
-                color: 'var(--fs-ink)',
-                lineHeight: 1,
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              {metrics.prs}
-            </div>
-            <div
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 8,
-                letterSpacing: '0.12em',
-                color: 'var(--fs-muted)',
-                marginTop: 4,
-                textTransform: 'uppercase',
-              }}
-            >
-              PRs
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Editorial Tab Bar — compact */}
+      {/* Editorial Tab Bar — horizontally scrollable for the six sections */}
       <div className="px-5 pt-4 pb-2">
         <div
-          className="flex gap-1"
+          className="flex gap-1 overflow-x-auto"
           style={{
             borderBottom: '1px solid var(--fs-surface-2)',
             gap: 0,
+            scrollbarWidth: 'none',
           }}
           role="tablist"
           aria-label="התקדמות"
@@ -705,19 +240,49 @@ export default function ProgressPage() {
         </div>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content — exactly ONE logical section visible at a time */}
       <div className="px-5">
         <AnimatePresence mode="sync">
+          {activeTab === 'overview' && (
+            <motion.div
+              key="overview"
+              id="progress-panel-overview"
+              role="tabpanel"
+              aria-labelledby="progress-tab-overview"
+              {...motionProps}
+            >
+              <OverviewTab sessions={completedSessions} prs={prs} />
+            </motion.div>
+          )}
+          {activeTab === 'workouts' && (
+            <motion.div
+              key="workouts"
+              id="progress-panel-workouts"
+              role="tabpanel"
+              aria-labelledby="progress-tab-workouts"
+              {...motionProps}
+            >
+              <WorkoutsTab sessions={completedSessions} />
+            </motion.div>
+          )}
+          {activeTab === 'strength' && (
+            <motion.div
+              key="strength"
+              id="progress-panel-strength"
+              role="tabpanel"
+              aria-labelledby="progress-tab-strength"
+              {...motionProps}
+            >
+              <StrengthTab sessions={completedSessions} prs={prs} />
+            </motion.div>
+          )}
           {activeTab === 'weight' && (
             <motion.div
               key="weight"
               id="progress-panel-weight"
               role="tabpanel"
               aria-labelledby="progress-tab-weight"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
+              {...motionProps}
             >
               <WeightTab
                 latestWeight={latestWeight}
@@ -735,10 +300,7 @@ export default function ProgressPage() {
               id="progress-panel-measurements"
               role="tabpanel"
               aria-labelledby="progress-tab-measurements"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
+              {...motionProps}
             >
               <MeasurementsTab
                 latestMeasurement={latestMeasurement}
@@ -753,61 +315,18 @@ export default function ProgressPage() {
               id="progress-panel-recovery"
               role="tabpanel"
               aria-labelledby="progress-tab-recovery"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
+              {...motionProps}
             >
               <RecoveryTab
                 todayRecovery={todayRecovery}
                 recoveryScore={recoveryScore}
                 weeklyRecovery={weeklyRecovery}
+                history={recoveryHistory}
                 onAdd={handleShowAddRecovery}
               />
             </motion.div>
           )}
-          {activeTab === 'strength' && (
-            <motion.div
-              key="strength"
-              id="progress-panel-strength"
-              role="tabpanel"
-              aria-labelledby="progress-tab-strength"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
-              <StrengthTab />
-            </motion.div>
-          )}
         </AnimatePresence>
-      </div>
-
-      {/* Workout History at Bottom */}
-      <div className="px-5 pt-6">
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 12,
-          }}
-        >
-          <div style={{ flex: 1, height: 1, background: 'var(--fs-surface-2)' }} />
-          <span
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: 'var(--fs-muted)',
-            }}
-          >
-            היסטוריית אימונים
-          </span>
-          <div style={{ flex: 1, height: 1, background: 'var(--fs-surface-2)' }} />
-        </div>
-        <WorkoutHistoryList sessions={completedSessions} />
       </div>
 
       <AnimatePresence>

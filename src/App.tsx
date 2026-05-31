@@ -1,5 +1,6 @@
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion';
 import {
+  type ReactNode,
   Suspense,
   lazy,
   memo,
@@ -24,12 +25,13 @@ import { ToastContainer } from './components/ui/GlobalToast';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import { WorkoutProvider } from './components/workout/core';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { CoachProvider } from './contexts/CoachContext';
+import { CoachProvider, useCoach } from './contexts/CoachContext';
 import { DataProvider } from './contexts/DataContext';
 import { type PageAccent, PageThemeProvider } from './contexts/PageThemeContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { PageErrorBoundary } from './errors/PageErrorBoundary';
 import type { OnboardingData } from './pages/OnboardingFlow';
+import { enableCoachMode } from './services/coach';
 import { trackPageView } from './services/eventTracker';
 
 import type { PersonalItem } from './types';
@@ -180,7 +182,7 @@ function App() {
 // ----------------------------------------------------------------------------
 
 function AppRouter() {
-  const { status } = useAuth();
+  const { status, isGuest, clearGuest } = useAuth();
   const [onboardingDone, setOnboardingDone] = useState<boolean>(
     () => localStorage.getItem('onboarding_completed') === 'true'
   );
@@ -217,10 +219,44 @@ function AppRouter() {
     );
   }, [status, onboardingDone]);
 
-  const handleOnboardingComplete = useCallback((data: OnboardingData) => {
-    saveOnboardingData(data);
-    setOnboardingDone(true);
-  }, []);
+  const handleOnboardingComplete = useCallback(
+    (data: OnboardingData) => {
+      saveOnboardingData(data);
+
+      if (data.role === 'coach') {
+        // Coach mode creates a coach_profiles row, which needs an authenticated
+        // user id. Record the intent so it's honored even across the
+        // guest -> sign-up -> sign-in gap; CoachContext reconciles it on mount.
+        try {
+          localStorage.setItem('pending_coach_intent', 'true');
+        } catch (err) {
+          logger.app.warn('Failed to persist coach intent', err);
+        }
+
+        if (status === 'authenticated') {
+          // Already authenticated — enable immediately. CoachContext also
+          // reconciles from the flag on mount, so a failure here is recoverable.
+          enableCoachMode()
+            .then(() => {
+              try {
+                localStorage.removeItem('pending_coach_intent');
+              } catch {
+                /* best-effort */
+              }
+            })
+            .catch((err) => logger.app.warn('enableCoachMode on onboarding failed', err));
+        } else if (isGuest) {
+          // Guests have no user id — coach mode can't be created yet. Send them
+          // to the auth screen (onboarding itself is already saved). The stored
+          // intent is honored by CoachContext after they sign in.
+          clearGuest();
+        }
+      }
+
+      setOnboardingDone(true);
+    },
+    [status, isGuest, clearGuest]
+  );
 
   const handleOnboardingSkip = useCallback(() => {
     localStorage.setItem('onboarding_completed', 'true');
@@ -255,6 +291,22 @@ function AppRouter() {
       <AppShell />
     </BrowserRouter>
   );
+}
+
+// ============================================================================
+// Role guards (UX-only — Supabase RLS is the real authorization boundary).
+// CoachGuard keeps non-coaches out of /coach/*. There is intentionally no
+// trainee guard: a trainee is the DEFAULT role, and a guest (local-only, no
+// cloud identity) is treated as a trainee. /my-coach renders for everyone —
+// without a session the coach services simply return an empty state (the
+// "connect with a coach via invite code" entry point), never an auth bounce.
+// ============================================================================
+
+function CoachGuard({ children }: { children: ReactNode }) {
+  const { isCoach, loading } = useCoach();
+  if (loading) return <PageLoader />;
+  if (!isCoach) return <Navigate to="/" replace />;
+  return <>{children}</>;
 }
 
 // ============================================================================
@@ -332,49 +384,61 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
       <Route
         path="/coach"
         element={
-          <PageErrorBoundary pageLabel="מאמן">
-            <CoachHome />
-          </PageErrorBoundary>
+          <CoachGuard>
+            <PageErrorBoundary pageLabel="מאמן">
+              <CoachHome />
+            </PageErrorBoundary>
+          </CoachGuard>
         }
       />
       <Route
         path="/coach/invites"
         element={
-          <PageErrorBoundary pageLabel="הזמנות">
-            <CoachInvites />
-          </PageErrorBoundary>
+          <CoachGuard>
+            <PageErrorBoundary pageLabel="הזמנות">
+              <CoachInvites />
+            </PageErrorBoundary>
+          </CoachGuard>
         }
       />
       <Route
         path="/coach/groups"
         element={
-          <PageErrorBoundary pageLabel="קבוצות">
-            <CoachGroups />
-          </PageErrorBoundary>
+          <CoachGuard>
+            <PageErrorBoundary pageLabel="קבוצות">
+              <CoachGroups />
+            </PageErrorBoundary>
+          </CoachGuard>
         }
       />
       <Route
         path="/coach/messages"
         element={
-          <PageErrorBoundary pageLabel="הודעות">
-            <CoachMessages />
-          </PageErrorBoundary>
+          <CoachGuard>
+            <PageErrorBoundary pageLabel="הודעות">
+              <CoachMessages />
+            </PageErrorBoundary>
+          </CoachGuard>
         }
       />
       <Route
         path="/coach/messages/:otherId"
         element={
-          <PageErrorBoundary pageLabel="שיחה">
-            <MessageThread viewer="coach" />
-          </PageErrorBoundary>
+          <CoachGuard>
+            <PageErrorBoundary pageLabel="שיחה">
+              <MessageThread viewer="coach" />
+            </PageErrorBoundary>
+          </CoachGuard>
         }
       />
       <Route
         path="/coach/clients/:id"
         element={
-          <PageErrorBoundary pageLabel="מתאמן">
-            <ClientDetail />
-          </PageErrorBoundary>
+          <CoachGuard>
+            <PageErrorBoundary pageLabel="מתאמן">
+              <ClientDetail />
+            </PageErrorBoundary>
+          </CoachGuard>
         }
       />
       <Route
@@ -530,7 +594,7 @@ function AppShell() {
                 {reduceMotion ? (
                   <AppRoutes location={location} />
                 ) : (
-                  <AnimatePresence mode="sync" initial={false}>
+                  <AnimatePresence mode="wait" initial={false}>
                     <motion.div
                       key={location.pathname}
                       initial={{ opacity: 0 }}

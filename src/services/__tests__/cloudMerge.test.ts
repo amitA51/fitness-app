@@ -8,6 +8,7 @@ vi.mock('../supabaseSync', () => ({
   syncWorkoutTemplate: vi.fn(),
 }));
 
+import type { WorkoutSession, WorkoutTemplate } from '../../types';
 import { mergeGenericRecords, safeTimestamp } from '../cloudMerge';
 import { STORES, clearDatabase, dbGetAll, dbPut } from '../indexedDBCore';
 import { mergeWorkoutSessionsFromCloud } from '../sessionDb';
@@ -105,7 +106,7 @@ describe('mergeGenericRecords', () => {
 describe('mergeWorkoutSessionsFromCloud', () => {
   it('cloud record with timestamps beats local with undefined timestamps', async () => {
     // Simulate legacy local record with missing timestamps at runtime
-    const legacy: any = {
+    const legacy: Omit<WorkoutSession, 'createdAt' | 'updatedAt'> = {
       id: 's1',
       date: '2025-01-01',
       startTime: '',
@@ -121,7 +122,7 @@ describe('mergeWorkoutSessionsFromCloud', () => {
     };
     await dbPut(STORES.WORKOUT_SESSIONS, legacy);
 
-    const cloud: any = {
+    const cloud: WorkoutSession = {
       ...legacy,
       updatedAt: '2026-06-01T00:00:00Z',
       createdAt: '2026-01-01T00:00:00Z',
@@ -130,7 +131,7 @@ describe('mergeWorkoutSessionsFromCloud', () => {
     expect(result.updated).toBe(1);
 
     const stored = await dbGetAll(STORES.WORKOUT_SESSIONS);
-    expect((stored[0] as any).updatedAt).toBe('2026-06-01T00:00:00Z');
+    expect((stored[0] as WorkoutSession).updatedAt).toBe('2026-06-01T00:00:00Z');
   });
 });
 
@@ -138,7 +139,7 @@ describe('mergeWorkoutSessionsFromCloud', () => {
 
 describe('mergeWorkoutTemplatesFromCloud', () => {
   it('cloud record with timestamps beats local with undefined timestamps', async () => {
-    const legacy: any = {
+    const legacy: Omit<WorkoutTemplate, 'createdAt' | 'updatedAt'> = {
       id: 't1',
       name: 'Test',
       description: '',
@@ -149,7 +150,7 @@ describe('mergeWorkoutTemplatesFromCloud', () => {
     };
     await dbPut(STORES.WORKOUT_TEMPLATES, legacy);
 
-    const cloud: any = {
+    const cloud: WorkoutTemplate = {
       ...legacy,
       updatedAt: '2026-06-01T00:00:00Z',
       createdAt: '2026-01-01T00:00:00Z',
@@ -158,6 +159,6 @@ describe('mergeWorkoutTemplatesFromCloud', () => {
     expect(result.updated).toBe(1);
 
     const stored = await dbGetAll(STORES.WORKOUT_TEMPLATES);
-    expect((stored[0] as any).updatedAt).toBe('2026-06-01T00:00:00Z');
+    expect((stored[0] as WorkoutTemplate).updatedAt).toBe('2026-06-01T00:00:00Z');
   });
 });

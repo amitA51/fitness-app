@@ -3,23 +3,23 @@ import { SettingsCard } from '../../../components/ui/SettingsCard';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
 import { SectionLabel } from '../../../components/ui/SettingsSectionLabel';
 import { SettingsToggle } from '../../../components/ui/SettingsToggle';
-import type { NotificationSettings } from '../types';
+import type { NotificationConfig } from '../../../services/notificationService';
 
 interface Props {
-  notificationSettings: NotificationSettings;
-  toggleNotification: (key: string) => void;
+  notificationConfig: NotificationConfig;
+  toggleNotification: (key: keyof NotificationConfig) => void;
 }
 
-export function NotificationsSection({ notificationSettings, toggleNotification }: Props) {
+export function NotificationsSection({ notificationConfig, toggleNotification }: Props) {
   return (
     <div className="mb-7">
-      <SectionLabel num="04" titleEn="NOTIFICATIONS · ALERTS">
+      <SectionLabel num="05" titleEn="NOTIFICATIONS · ALERTS">
         התראות
       </SectionLabel>
       <SettingsCard>
         <SettingsRow icon={<Bell size={15} />} label="תזכורת אימון" divider={true}>
           <SettingsToggle
-            checked={notificationSettings.workoutReminderEnabled}
+            checked={notificationConfig.workoutReminderEnabled}
             onChange={() => toggleNotification('workoutReminderEnabled')}
             label="תזכורת אימון"
           />
@@ -27,7 +27,7 @@ export function NotificationsSection({ notificationSettings, toggleNotification 
 
         <SettingsRow icon={<Bell size={15} />} label="תזכורת תזונה" divider={true}>
           <SettingsToggle
-            checked={notificationSettings.nutritionReminderEnabled}
+            checked={notificationConfig.nutritionReminderEnabled}
             onChange={() => toggleNotification('nutritionReminderEnabled')}
             label="תזכורת תזונה"
           />
@@ -35,7 +35,7 @@ export function NotificationsSection({ notificationSettings, toggleNotification 
 
         <SettingsRow icon={<Bell size={15} />} label="התראת שיא אישי (PR)" divider={false}>
           <SettingsToggle
-            checked={notificationSettings.prNotificationEnabled}
+            checked={notificationConfig.prNotificationEnabled}
             onChange={() => toggleNotification('prNotificationEnabled')}
             label="התראת PR"
           />

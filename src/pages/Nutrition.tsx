@@ -7,9 +7,11 @@ import { AddMealModal } from './nutrition/components/AddMealModal';
 import { CalorieHero } from './nutrition/components/CalorieHero';
 import { DateNavigator } from './nutrition/components/DateNavigator';
 import { FoodLibrary } from './nutrition/components/FoodLibrary';
+import { GoalsEditor } from './nutrition/components/GoalsEditor';
 import { MacroStrip } from './nutrition/components/MacroStrip';
-import { EmptyMealState, MealEntryCard } from './nutrition/components/MealLog';
+import { EmptyMealState, GroupedMealLog } from './nutrition/components/MealLog';
 import { MealPresetCard } from './nutrition/components/MealPresetCard';
+import { NutritionTrendChart } from './nutrition/components/NutritionTrendChart';
 import { WaterHistoryChart } from './nutrition/components/WaterHistoryChart';
 import { useNutritionData } from './nutrition/hooks/useNutritionData';
 
@@ -25,6 +27,10 @@ export default function NutritionPage() {
     selectedDate,
     isToday,
     waterHistory,
+    weeklySummary,
+    showGoalsEditor,
+    setShowGoalsEditor,
+    handleSaveGoals,
     showAddMeal,
     setShowAddMeal,
     selectedMealType,
@@ -122,6 +128,7 @@ export default function NutritionPage() {
         goal={macroGoals.calories}
         calPct={calPct}
         coachTarget={coachTarget}
+        onEditGoals={() => setShowGoalsEditor(true)}
       />
 
       <MacroStrip
@@ -132,7 +139,7 @@ export default function NutritionPage() {
         fatPct={fatPct}
       />
 
-      <WaterTracker />
+      <WaterTracker selectedDate={selectedDate} isToday={isToday} />
 
       {/* Section heading */}
       <h2
@@ -213,11 +220,7 @@ export default function NutritionPage() {
               {todayEntries.length === 0 ? (
                 <EmptyMealState onAdd={() => setShowAddMeal(true)} />
               ) : (
-                <div className="space-y-3">
-                  {todayEntries.map((entry) => (
-                    <MealEntryCard key={entry.id} entry={entry} onDelete={handleDeleteEntry} />
-                  ))}
-                </div>
+                <GroupedMealLog entries={todayEntries} onDelete={handleDeleteEntry} />
               )}
             </motion.div>
           )}
@@ -266,6 +269,8 @@ export default function NutritionPage() {
         </AnimatePresence>
       </div>
 
+      <NutritionTrendChart summary={weeklySummary} calorieGoal={macroGoals.calories} />
+
       <WaterHistoryChart waterHistory={waterHistory} />
 
       {/* FAB */}
@@ -301,6 +306,18 @@ export default function NutritionPage() {
             onClose={handleCloseModal}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Goals Editor — daily control point, writes the shared nutrition_goals key */}
+      <AnimatePresence>
+        {showGoalsEditor && (
+          <GoalsEditor
+            goals={macroGoals}
+            coachTarget={coachTarget}
+            onSave={handleSaveGoals}
+            onClose={() => setShowGoalsEditor(false)}
           />
         )}
       </AnimatePresence>

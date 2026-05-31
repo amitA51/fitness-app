@@ -199,6 +199,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
     <AnimatePresence>
       {/* Backdrop */}
       <motion.div
+        key="reorder-backdrop"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -215,6 +216,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
 
       {/* Bottom Sheet */}
       <motion.div
+        key="reorder-sheet"
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}

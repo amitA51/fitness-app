@@ -2,7 +2,7 @@
 // CLIENT DETAIL — coach view of one trainee (read) + assign actions
 // ============================================================================
 
-import { MessageSquare } from 'lucide-react';
+import { Archive, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
@@ -10,20 +10,31 @@ import { showToast } from '../../components/ui/GlobalToast';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import {
   addCoachNote,
+  archiveAssignment,
   clientStatusMeta,
   createAssignment,
   getClientAnalytics,
   getClientBodyWeight,
   getClientLink,
+  getClientMeasurements,
   getClientNutrition,
   getClientPRs,
   getClientSessions,
   listCheckIns,
+  listCoachAssignments,
   listCoachNotes,
   setClientStatus,
 } from '../../services/coach';
+import type { Assignment } from '../../types/coach';
 import ProgramBuilder from './ProgramBuilder';
 import { CoachPage, EmptyHint, ListRow, Section, formatDate, useAsyncData } from './_shared';
+
+const KIND_LABEL: Record<Assignment['kind'], string> = {
+  program: 'תוכנית אימון',
+  nutrition_target: 'יעד תזונה',
+  note: 'המלצה',
+  announcement: 'הודעה',
+};
 
 export default function ClientDetail() {
   const { id = '' } = useParams<{ id: string }>();
@@ -34,6 +45,7 @@ export default function ClientDetail() {
   const { data: analytics } = useAsyncData(() => getClientAnalytics(id), null);
   const { data: sessions, loading } = useAsyncData(() => getClientSessions(id, 10), []);
   const { data: weights } = useAsyncData(() => getClientBodyWeight(id), []);
+  const { data: measurements } = useAsyncData(() => getClientMeasurements(id), []);
   const { data: prs } = useAsyncData(() => getClientPRs(id), []);
   const { data: nutrition } = useAsyncData(() => getClientNutrition(id, 7), []);
   const { data: checkIns } = useAsyncData(() => listCheckIns(id), []);
@@ -98,7 +110,26 @@ export default function ClientDetail() {
         </Section>
       )}
 
+      {analytics && (
+        <Section title="היענות לתוכנית">
+          <div className="grid grid-cols-2 gap-2">
+            <Stat label="אימונים השבוע" value={String(analytics.sessionsLast7)} />
+            <Stat
+              label="לעומת שבוע שעבר"
+              value={adherenceDelta(analytics.sessionsLast7, analytics.sessionsPrev7)}
+              color={
+                analytics.sessionsLast7 >= analytics.sessionsPrev7
+                  ? 'var(--fs-accent)'
+                  : 'var(--fs-warn)'
+              }
+            />
+          </div>
+        </Section>
+      )}
+
       <AssignBox clientId={id} />
+
+      <AssignmentsBox clientId={id} />
 
       <Section title="תוכנית אימון">
         <Button variant="primary" fullWidth onClick={() => setBuilderOpen(true)}>
@@ -148,6 +179,22 @@ export default function ClientDetail() {
                 key={pr.id}
                 label={pr.exerciseName}
                 meta={`${pr.weight} ק"ג × ${pr.reps} · ${formatDate(pr.date)}`}
+              />
+            ))
+        )}
+      </Section>
+
+      <Section title="מדדי גוף">
+        {measurements.length === 0 ? (
+          <EmptyHint>אין מדידות גוף.</EmptyHint>
+        ) : (
+          measurements
+            .slice(0, 8)
+            .map((m) => (
+              <ListRow
+                key={m.id}
+                label={formatDate(m.date)}
+                meta={formatMeasurements(m.measurements)}
               />
             ))
         )}
@@ -263,6 +310,78 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
         {value}
       </div>
     </div>
+  );
+}
+
+/** Signed week-over-week session delta for the adherence card. */
+function adherenceDelta(last7: number, prev7: number): string {
+  const diff = last7 - prev7;
+  if (diff === 0) return 'ללא שינוי';
+  return diff > 0 ? `+${diff}` : String(diff);
+}
+
+/** Compact summary of a body-measurement record's numeric fields. */
+function formatMeasurements(measurements: Record<string, unknown>): string {
+  const parts = Object.entries(measurements)
+    .filter(([, v]) => typeof v === 'number' && Number.isFinite(v))
+    .map(([k, v]) => `${k} ${v}`);
+  return parts.length > 0 ? parts.join(' · ') : '—';
+}
+
+/**
+ * Sent recommendations/assignments authored by this coach for this client,
+ * with the ability to REVOKE (archive) one — wires archiveAssignment, which
+ * previously had no caller.
+ */
+function AssignmentsBox({ clientId }: { clientId: string }) {
+  const {
+    data: assignments,
+    loading,
+    reload,
+  } = useAsyncData<Assignment[]>(() => listCoachAssignments(clientId), []);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+
+  const active = assignments.filter((a) => a.status === 'active');
+
+  const revoke = async (id: string) => {
+    setRevokingId(id);
+    const { error } = await archiveAssignment(id);
+    setRevokingId(null);
+    if (error) {
+      showToast('ביטול השיוך נכשל', 'error');
+      return;
+    }
+    showToast('השיוך בוטל', 'success');
+    reload();
+  };
+
+  return (
+    <Section title="שיוכים פעילים">
+      {loading ? (
+        <LoadingSpinner />
+      ) : active.length === 0 ? (
+        <EmptyHint>לא נשלחו שיוכים פעילים.</EmptyHint>
+      ) : (
+        active.map((a) => (
+          <ListRow
+            key={a.id}
+            label={a.title || KIND_LABEL[a.kind]}
+            meta={`${KIND_LABEL[a.kind]} · ${formatDate(a.createdAt)}`}
+            trailing={
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Archive size={14} />}
+                isLoading={revokingId === a.id}
+                onClick={() => revoke(a.id)}
+              >
+                בטל
+              </Button>
+            }
+          />
+        ))
+      )}
+    </Section>
   );
 }
 

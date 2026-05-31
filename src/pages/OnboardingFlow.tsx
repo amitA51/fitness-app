@@ -20,6 +20,7 @@ import { ExperienceStep } from './onboarding/steps/ExperienceStep';
 import { GoalsStep } from './onboarding/steps/GoalsStep';
 import { PreferencesStep } from './onboarding/steps/PreferencesStep';
 import { ProfileStep } from './onboarding/steps/ProfileStep';
+import { RoleStep } from './onboarding/steps/RoleStep';
 import { WelcomeStep } from './onboarding/steps/WelcomeStep';
 import { type OnboardingProps, STEPS } from './onboarding/types';
 import { useOnboardingWizard } from './onboarding/useOnboardingWizard';
@@ -41,14 +42,16 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
       case 0:
         return <WelcomeStep onNext={goNext} />;
       case 1:
-        return <ProfileStep data={data} onChange={updateData} />;
+        return <RoleStep data={data} onChange={updateData} />;
       case 2:
-        return <GoalsStep data={data} onChange={updateData} />;
+        return <ProfileStep data={data} onChange={updateData} />;
       case 3:
-        return <ExperienceStep data={data} onChange={updateData} />;
+        return <GoalsStep data={data} onChange={updateData} />;
       case 4:
-        return <PreferencesStep data={data} onChange={updateData} />;
+        return <ExperienceStep data={data} onChange={updateData} />;
       case 5:
+        return <PreferencesStep data={data} onChange={updateData} />;
+      case 6:
         return <CompleteStep data={data} />;
       default:
         return null;

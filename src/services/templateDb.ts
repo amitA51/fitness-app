@@ -7,6 +7,7 @@
 import { NotFoundError, ValidationError } from '../errors';
 import type { Exercise, PersonalItem, WorkoutTemplate } from '../types';
 import { createWorkoutSet } from '../types';
+import { generateId } from '../utils/id';
 import { safeTimestamp } from './cloudMerge';
 import { STORES, dbDelete, dbGet, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { addPersonalItem } from './personalItemsDb';
@@ -49,7 +50,7 @@ export const createWorkoutTemplate = async (
   }
 
   const newTemplate: WorkoutTemplate = {
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID?.() || generateId('tmpl'),
     createdAt: new Date().toISOString(),
     ...templateData,
     updatedAt: new Date().toISOString(),

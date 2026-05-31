@@ -2,14 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listMyAssignments } from '../../../services/coach';
 import {
   DEFAULT_MACRO_GOALS,
+  type DailyNutritionSummary,
   addFoodFromPreset,
   addMealEntry,
-  calcFoodMacros,
   createQuickMeal,
   deleteMealEntry,
   getDailyMacros,
   getMealEntriesByDate,
   getMealPresets,
+  getWeeklyNutritionSummary,
+  saveNutritionGoals,
   searchFoods,
 } from '../../../services/nutritionService';
 import type { MealPreset } from '../../../services/nutritionService';
@@ -30,6 +32,8 @@ export function useNutritionData() {
   const [selectedDate, setSelectedDate] = useState(() => todayStr());
   const [isToday, setIsToday] = useState(true);
   const [waterHistory, setWaterHistory] = useState<{ date: string; total: number }[]>([]);
+  const [weeklySummary, setWeeklySummary] = useState<DailyNutritionSummary[]>([]);
+  const [showGoalsEditor, setShowGoalsEditor] = useState(false);
   const [showAddMeal, setShowAddMeal] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('lunch');
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,6 +46,8 @@ export function useNutritionData() {
     setTodayEntries(entries);
     const macros = await getDailyMacros(dateToUse);
     setTodayMacros(macros);
+    const summary = await getWeeklyNutritionSummary();
+    setWeeklySummary(summary);
   }, [selectedDate, isToday]);
 
   const loadWaterHistory = useCallback(async () => {
@@ -66,33 +72,29 @@ export function useNutritionData() {
   useEffect(() => {
     loadData();
     loadWaterHistory();
+    // Keep the 7-day chart fresh when a glass is added/removed anywhere,
+    // mirroring the settings-updated pattern (the chart loaded once on mount).
+    window.addEventListener('water-updated', loadWaterHistory);
+    return () => window.removeEventListener('water-updated', loadWaterHistory);
   }, [loadData, loadWaterHistory]);
 
   const handleSaveMeal = useCallback(async () => {
     if (selectedFoods.length === 0) return;
+    // createQuickMeal already sums macros via calcMacroTotals (one source of
+    // truth) and stamps the selected day, so retroactive logging lands on the
+    // day being viewed instead of always on today.
+    const dateToUse = isToday ? todayStr() : selectedDate;
     const entry = createQuickMeal(
       selectedMealType,
-      selectedFoods.map((f) => ({ ...f, servings: f.servings }))
+      selectedFoods.map((f) => ({ ...f, servings: f.servings })),
+      dateToUse
     );
-    const totalMacros = selectedFoods.reduce(
-      (acc, f) => {
-        const m = calcFoodMacros(f);
-        return {
-          calories: acc.calories + m.calories,
-          protein: acc.protein + m.protein,
-          carbs: acc.carbs + m.carbs,
-          fat: acc.fat + m.fat,
-        };
-      },
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    );
-    const fullEntry: MealEntry = { ...entry, totalMacros };
-    await addMealEntry(fullEntry);
+    await addMealEntry(entry);
     setShowAddMeal(false);
     setSelectedFoods([]);
     setSearchQuery('');
     loadData();
-  }, [selectedFoods, selectedMealType, loadData]);
+  }, [selectedFoods, selectedMealType, selectedDate, isToday, loadData]);
 
   const handleDeleteEntry = useCallback(
     async (id: string) => {
@@ -104,12 +106,13 @@ export function useNutritionData() {
 
   const handleQuickPreset = useCallback(
     async (preset: MealPreset, mealType: MealType) => {
-      const entry = await addFoodFromPreset(preset.id, mealType);
+      const dateToUse = isToday ? todayStr() : selectedDate;
+      const entry = await addFoodFromPreset(preset.id, mealType, dateToUse);
       if (entry) {
         loadData();
       }
     },
-    [loadData]
+    [selectedDate, isToday, loadData]
   );
 
   const goBack = useCallback(() => {
@@ -159,6 +162,19 @@ export function useNutritionData() {
     setShowAddMeal(false);
     setSelectedFoods([]);
   }, []);
+
+  // Persist edited goals to the SAME key + event Settings uses. When a coach
+  // target is active we refuse the write (the editor disables the form and
+  // explains why) so a silent localStorage write can't be clobbered on reload.
+  const handleSaveGoals = useCallback(
+    (goals: MacroNutrients): boolean => {
+      if (coachTarget) return false;
+      saveNutritionGoals(goals);
+      setShowGoalsEditor(false);
+      return true;
+    },
+    [coachTarget]
+  );
 
   // Read the user's saved macro goals from Settings
   useEffect(() => {
@@ -231,6 +247,10 @@ export function useNutritionData() {
     selectedDate,
     isToday,
     waterHistory,
+    weeklySummary,
+    showGoalsEditor,
+    setShowGoalsEditor,
+    handleSaveGoals,
     showAddMeal,
     setShowAddMeal,
     selectedMealType,

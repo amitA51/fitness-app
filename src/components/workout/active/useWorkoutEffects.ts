@@ -9,7 +9,6 @@ interface UseWorkoutEffectsOptions {
   dispatch: React.Dispatch<WorkoutAction>;
   exercises: Exercise[];
   currentExerciseIndex: number;
-  startTimestamp: number;
   workoutSettings: Partial<WorkoutSettings>;
   showGoalSelector: boolean;
   showWarmup: boolean;
@@ -33,7 +32,6 @@ export function useWorkoutEffects({
   dispatch,
   exercises,
   currentExerciseIndex,
-  startTimestamp,
   workoutSettings,
   showGoalSelector,
   showWarmup,
@@ -118,14 +116,19 @@ export function useWorkoutEffects({
     loadTemplate();
   }, [initialTemplateId, exercises.length, dispatch]);
 
-  // Workout start flow - runs once on mount (StrictMode-safe via ref guard)
+  // Workout start flow (goal → warmup) — runs ONCE, and ONLY after the workout
+  // has actually started (the PreWorkoutScreen was dismissed AND at least one
+  // exercise exists). Running it while still on PreWorkoutScreen turned on
+  // showGoalSelector/showWarmup invisibly (those modals only render in the main
+  // workout branch), which then blocked the auto-open-selector effect below.
+  // Gating on `preWorkoutScreenShown && exercises.length > 0` makes the flow
+  // deterministic: goal/warmup only appear over the live workout UI that hosts
+  // their modals.
   const startFlowRan = useRef(false);
   useEffect(() => {
     if (startFlowRan.current) return;
+    if (!preWorkoutScreenShown || exercises.length === 0) return;
     startFlowRan.current = true;
-
-    const elapsed = Math.floor((Date.now() - startTimestamp) / 1000);
-    if (elapsed > 10) return;
 
     const warmupPreference = workoutSettings.warmupPreference || 'ask';
     const hasGoal = !!workoutSettings.defaultWorkoutGoal;
@@ -135,19 +138,23 @@ export function useWorkoutEffects({
       return;
     }
 
-    if (hasGoal && warmupPreference !== 'never' && !showWarmup && !showExerciseSelector) {
+    if (hasGoal && warmupPreference !== 'never' && !showWarmup) {
       dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'warmup', isOpen: true } });
     }
   }, [
-    startTimestamp,
+    preWorkoutScreenShown,
+    exercises.length,
     workoutSettings,
     dispatch,
     showGoalSelector,
     showWarmup,
-    showExerciseSelector,
   ]);
 
-  // Auto-open exercise selector after PreWorkoutScreen
+  // Auto-open exercise selector after PreWorkoutScreen.
+  // Only runs once the welcome screen was dismissed and there are still no
+  // exercises — and never while a flow modal is open. With the start flow no
+  // longer firing during PreWorkoutScreen, showGoalSelector/showWarmup stay
+  // false here, so the selector reliably opens for the empty-start path.
   useEffect(() => {
     if (
       preWorkoutScreenShown &&

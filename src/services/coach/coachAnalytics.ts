@@ -5,10 +5,16 @@
 // workout sessions (read via coachApi, RLS-gated to an active link). Pure
 // `computeClientAnalytics` is unit-testable; `getClientAnalytics` fetches first.
 
-import type { WorkoutSession } from '../../types';
-import { getClientSessions } from './coachApi';
+import type { CoachClient } from '../../types/coach';
+import { getClientSessions, getClientsActivity } from './coachApi';
 
 export type ClientStatusLevel = 'active' | 'at_risk' | 'inactive' | 'new';
+
+/** Minimal session shape the analytics need — WorkoutSession is assignable to this. */
+export interface SessionActivity {
+  startTime: string;
+  totalVolume: number;
+}
 
 export interface ClientAnalytics {
   /** ISO timestamp of the most recent session, or null when none. */
@@ -26,7 +32,7 @@ const DAY = 86_400_000;
 
 /** Derive activity/adherence signals from a client's sessions. */
 export function computeClientAnalytics(
-  sessions: WorkoutSession[],
+  sessions: SessionActivity[],
   inactiveDays = 7,
   now: number = Date.now()
 ): ClientAnalytics {
@@ -86,4 +92,73 @@ export function clientStatusMeta(level: ClientStatusLevel): { label: string; col
     default:
       return { label: 'חדש', color: 'var(--fs-muted)' };
   }
+}
+
+// ---- Roster overview (aggregate across ALL clients) ------------------------
+
+export interface ClientOverviewRow {
+  client: CoachClient;
+  analytics: ClientAnalytics;
+}
+
+export interface RosterSummary {
+  total: number;
+  active: number;
+  atRisk: number;
+  inactive: number;
+  /** at_risk + inactive — clients that need the coach's attention. */
+  needsAttention: number;
+  /** Clients with no session ever (new). */
+  awaitingFirst: number;
+}
+
+/**
+ * Build per-client analytics for the WHOLE roster with ONE batched activity
+ * query (no N+1). Sorted attention-first: inactive/at_risk before active, then
+ * by days since last activity descending so the stalest float to the top.
+ */
+export async function getClientsOverview(
+  clients: CoachClient[],
+  inactiveDays = 7,
+  now: number = Date.now()
+): Promise<ClientOverviewRow[]> {
+  const ids = clients.map((c) => c.clientId);
+  const activity = await getClientsActivity(ids);
+  const rows = clients.map((client) => ({
+    client,
+    analytics: computeClientAnalytics(activity[client.clientId] ?? [], inactiveDays, now),
+  }));
+  return rows.sort((a, b) => attentionRank(b.analytics) - attentionRank(a.analytics));
+}
+
+/** Higher rank = needs more attention (sorts to the top). */
+function attentionRank(a: ClientAnalytics): number {
+  const base =
+    a.level === 'inactive' ? 3000 : a.level === 'at_risk' ? 2000 : a.level === 'new' ? 1000 : 0;
+  return base + (a.daysSinceActivity ?? 0);
+}
+
+/** Aggregate counts for the overview header cards. Pure + unit-testable. */
+export function summarizeRoster(rows: ClientOverviewRow[]): RosterSummary {
+  const summary: RosterSummary = {
+    total: rows.length,
+    active: 0,
+    atRisk: 0,
+    inactive: 0,
+    needsAttention: 0,
+    awaitingFirst: 0,
+  };
+  for (const { analytics } of rows) {
+    if (analytics.level === 'active') summary.active += 1;
+    else if (analytics.level === 'at_risk') {
+      summary.atRisk += 1;
+      summary.needsAttention += 1;
+    } else if (analytics.level === 'inactive') {
+      summary.inactive += 1;
+      summary.needsAttention += 1;
+    } else {
+      summary.awaitingFirst += 1;
+    }
+  }
+  return summary;
 }

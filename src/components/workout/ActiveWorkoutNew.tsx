@@ -1,8 +1,13 @@
 // ActiveWorkout - Main workout component that composes everything
 // This replaces the old 1295-line monolithic ActiveWorkout.tsx
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { PersonalItem, WorkoutSettings } from '../../types';
+
+import { syncTemplatesFromCloud } from '../../hooks/useCloudTemplateReflection';
+import { listMyAssignments } from '../../services/coach';
+import { logger } from '../../utils/logger';
 
 import { useWorkoutDerived, useWorkoutDispatch, useWorkoutState } from './core/WorkoutContext';
 // Core
@@ -74,9 +79,38 @@ export const WorkoutContent: React.FC<{
   const state = useWorkoutState();
   const dispatch = useWorkoutDispatch();
   const derived = useWorkoutDerived();
+  const navigate = useNavigate();
 
   // Track whether PreWorkoutScreen has been shown (so we don't auto-open selector before it)
   const [preWorkoutScreenShown, setPreWorkoutScreenShown] = useState(false);
+
+  // Inline coach injection for the workout surface: the most recent coach-assigned
+  // program (kind === 'program' with a templateId). Sourced from Supabase, so it
+  // degrades gracefully offline/guest (stays null, card simply isn't rendered).
+  const [coachProgram, setCoachProgram] = useState<{
+    id: string;
+    title: string | null;
+    templateId: string;
+  } | null>(null);
+  const [startingCoachProgram, setStartingCoachProgram] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const assignments = await listMyAssignments();
+        const program = assignments.find((a) => a.kind === 'program' && a.templateId);
+        if (cancelled || !program || !program.templateId) return;
+        setCoachProgram({ id: program.id, title: program.title, templateId: program.templateId });
+      } catch (err) {
+        // Offline/guest: no coach card. Log for visibility, never surface to the user here.
+        logger.workout?.warn?.('coach program assignment load failed', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Local state
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
@@ -140,7 +174,6 @@ export const WorkoutContent: React.FC<{
     dispatch,
     exercises: state.exercises,
     currentExerciseIndex: state.currentExerciseIndex,
-    startTimestamp: state.startTimestamp,
     workoutSettings,
     showGoalSelector: state.showGoalSelector,
     showWarmup: state.showWarmup,
@@ -258,6 +291,22 @@ export const WorkoutContent: React.FC<{
       onChangeExercise: handleChangeExercise,
     });
 
+  // Start the coach-assigned program: ensure the referenced template is synced
+  // into the local-first store (it lives in Supabase), then SPA-navigate into
+  // the workout flow with that template. Mirrors MyCoach.startProgram so both
+  // entry points behave identically.
+  const handleStartCoachProgram = async () => {
+    if (!coachProgram || startingCoachProgram) return;
+    setStartingCoachProgram(true);
+    try {
+      await syncTemplatesFromCloud();
+      navigate(`/workout/${coachProgram.templateId}`);
+    } catch (err) {
+      logger.workout?.error?.('failed to start coach program', err);
+      setStartingCoachProgram(false);
+    }
+  };
+
   // If showing summary
   if (showSummary && completedSession) {
     return <WorkoutSummaryView completedSession={completedSession} onExit={onExit} />;
@@ -266,13 +315,29 @@ export const WorkoutContent: React.FC<{
   // If no current exercise OR exercise has no name, show PreWorkoutScreen for initial welcome
   if (!derived.currentExercise || !derived.currentExercise.name?.trim()) {
     return (
-      <React.Suspense
-        fallback={<div className="fixed inset-0" style={{ background: 'var(--fs-bg)' }} />}
-      >
+      <>
+        {/* PreWorkoutScreen is rendered OUTSIDE Suspense so it always stays
+            mounted. Previously it shared one Suspense boundary with the lazy
+            ExerciseSelector: pressing "התחל אימון" set showExerciseSelector,
+            which mounted the lazy selector and SUSPENDED the shared boundary —
+            replacing the whole subtree (including this welcome screen) with the
+            blank fallback until the chunk resolved. On any delay/abort that read
+            as "nothing happened / the library never opened". Keeping the welcome
+            screen out of Suspense, and giving the lazy overlays their own
+            boundary with a transparent fallback, makes the selector overlay
+            reliably on top the moment its chunk is ready. */}
         <PreWorkoutScreen
           oledMode={!!workoutSettings.oledMode}
+          coachProgramTitle={coachProgram?.title ?? null}
+          hasCoachProgram={!!coachProgram}
+          isStartingCoachProgram={startingCoachProgram}
+          onStartCoachProgram={handleStartCoachProgram}
           onStartWorkout={() => {
-            // Mark that the welcome screen was shown, then open selector
+            // Mark that the welcome screen was shown. Clear any stuck flow modals
+            // (goal/warmup can linger on if a prior session left them set) so the
+            // selector isn't blocked, then open it for the empty-start path.
+            dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'goal', isOpen: false } });
+            dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'warmup', isOpen: false } });
             setPreWorkoutScreenShown(true);
             dispatch({ type: 'OPEN_SELECTOR' });
           }}
@@ -285,28 +350,36 @@ export const WorkoutContent: React.FC<{
             onExit();
           }}
           onSelectTemplate={(templateId: string) => {
-            // Navigate to workout with template - full page navigation
-            window.location.href = `/workout/${templateId}`;
+            // SPA navigation (preserves app state) — the route remounts the
+            // workout with this template via initialTemplateId. Previously this
+            // did a full page reload (window.location.href), losing state.
+            navigate(`/workout/${templateId}`);
           }}
         />
 
-        {state.showExerciseSelector && (
-          <ExerciseSelector
-            isOpen={true}
-            onSelect={(ex) => dispatch({ type: 'ADD_EXERCISE', payload: ex })}
-            onClose={() => dispatch({ type: 'CLOSE_SELECTOR' })}
-            onCreateNew={() => dispatch({ type: 'OPEN_QUICK_FORM' })}
-            goal={workoutSettings.defaultWorkoutGoal}
-          />
-        )}
+        {/* Lazy overlays get their OWN Suspense with a transparent fallback so a
+            still-loading chunk can never blank the welcome screen behind them. */}
+        {(state.showExerciseSelector || state.showQuickForm) && (
+          <React.Suspense fallback={null}>
+            {state.showExerciseSelector && (
+              <ExerciseSelector
+                isOpen={true}
+                onSelect={(ex) => dispatch({ type: 'ADD_EXERCISE', payload: ex })}
+                onClose={() => dispatch({ type: 'CLOSE_SELECTOR' })}
+                onCreateNew={() => dispatch({ type: 'OPEN_QUICK_FORM' })}
+                goal={workoutSettings.defaultWorkoutGoal}
+              />
+            )}
 
-        {state.showQuickForm && (
-          <QuickExerciseForm
-            onAdd={(ex) => dispatch({ type: 'ADD_EXERCISE', payload: ex })}
-            onClose={() => dispatch({ type: 'CLOSE_QUICK_FORM' })}
-          />
+            {state.showQuickForm && (
+              <QuickExerciseForm
+                onAdd={(ex) => dispatch({ type: 'ADD_EXERCISE', payload: ex })}
+                onClose={() => dispatch({ type: 'CLOSE_QUICK_FORM' })}
+              />
+            )}
+          </React.Suspense>
         )}
-      </React.Suspense>
+      </>
     );
   }
 

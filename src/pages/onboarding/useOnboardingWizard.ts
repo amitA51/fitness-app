@@ -49,12 +49,14 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
   const canProceed = useCallback(() => {
     switch (currentStep) {
       case 1:
-        return data.name.trim().length > 0 && data.gender !== '' && data.age !== '';
+        return data.role !== undefined && data.role !== '';
       case 2:
-        return data.primaryGoal !== '';
+        return data.name.trim().length > 0 && data.gender !== '' && data.age !== '';
       case 3:
-        return data.experienceLevel !== '';
+        return data.primaryGoal !== '';
       case 4:
+        return data.experienceLevel !== '';
+      case 5:
         return data.preferredTime !== '';
       default:
         return true;

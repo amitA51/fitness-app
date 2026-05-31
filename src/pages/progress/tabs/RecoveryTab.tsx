@@ -1,10 +1,7 @@
 import { motion } from 'framer-motion';
-import { Activity, Battery, Heart, Moon, Plus } from 'lucide-react';
-import { memo, useEffect, useState } from 'react';
-import {
-  getLegacyRecoveryScore,
-  getRecoveryLogsByDateRange,
-} from '../../../services/bodyStatsService';
+import { Activity, Battery, Dumbbell, Heart, Moon, Plus, Wind } from 'lucide-react';
+import { memo } from 'react';
+import { getLegacyRecoveryScore } from '../../../services/bodyStatsService';
 import type { RecoveryLog } from '../../../services/bodyStatsService';
 import { RecoveryBar } from '../components/RecoveryBar';
 import type { WeeklyRecoveryAverage } from '../types';
@@ -13,24 +10,17 @@ export const RecoveryTab = memo(function RecoveryTab({
   todayRecovery,
   recoveryScore,
   weeklyRecovery,
+  history,
   onAdd,
 }: {
   todayRecovery: RecoveryLog | null;
   recoveryScore: ReturnType<typeof getLegacyRecoveryScore> | null;
   weeklyRecovery: WeeklyRecoveryAverage;
+  // Recovery history is loaded once by the parent's single data source and passed
+  // down — the tab no longer fetches its own logs.
+  history: RecoveryLog[];
   onAdd: () => void;
 }) {
-  const [history, setHistory] = useState<RecoveryLog[]>([]);
-  useEffect(() => {
-    const load = async () => {
-      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
-      const today = todayRecovery?.date ?? new Date().toISOString().slice(0, 10);
-      const logs = await getRecoveryLogsByDateRange(weekAgo, today);
-      setHistory(logs);
-    };
-    load();
-  }, [todayRecovery]);
-
   const scoreColor = recoveryScore?.color ?? 'var(--fs-muted)';
   const scorePct = recoveryScore ? recoveryScore.score : 0;
 
@@ -275,9 +265,31 @@ export const RecoveryTab = memo(function RecoveryTab({
               </div>
               <div className="val">
                 {weeklyRecovery.avgEnergy}
-                <em>/10</em>
+                <em>/5</em>
               </div>
               <div className="lbl">אנרגיה ממוצעת</div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Dumbbell size={12} style={{ color: 'var(--fs-heading)' }} />
+                <span className="eyebrow">SORENESS</span>
+              </div>
+              <div className="val">
+                {weeklyRecovery.avgSoreness}
+                <em>/5</em>
+              </div>
+              <div className="lbl">תחושת כאב</div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Wind size={12} style={{ color: 'var(--fs-heading)' }} />
+                <span className="eyebrow">STRESS</span>
+              </div>
+              <div className="val">
+                {weeklyRecovery.avgStress}
+                <em>/5</em>
+              </div>
+              <div className="lbl">רמת לחץ</div>
             </div>
           </div>
         </div>

@@ -1,6 +1,5 @@
-import { useCoach } from '../contexts/CoachContext';
+import { SectionLabel } from '../components/ui/SettingsSectionLabel';
 import { isSupabaseConfigured } from '../lib/supabase';
-import { updateMyProfile } from '../services/coach/profileService';
 import { deleteAllUserData } from '../services/settingsService';
 import { signOut } from '../services/supabaseAuth';
 import { logger } from '../utils/logger';
@@ -8,12 +7,10 @@ import { useCloudSync } from './settings/hooks/useCloudSync';
 import { useSettingsState } from './settings/hooks/useSettingsState';
 import { AccountSection } from './settings/sections/AccountSection';
 import { CloudSyncSection } from './settings/sections/CloudSyncSection';
-import { CoachingSection } from './settings/sections/CoachingSection';
 import { DangerZoneSection } from './settings/sections/DangerZoneSection';
 import { DataAboutSection } from './settings/sections/DataAboutSection';
 import { ExportSection } from './settings/sections/ExportSection';
 import { NotificationsSection } from './settings/sections/NotificationsSection';
-import { NutritionSection } from './settings/sections/NutritionSection';
 import { ProfileSection } from './settings/sections/ProfileSection';
 import { ThemeSection } from './settings/sections/ThemeSection';
 import { WorkoutPrefsSection } from './settings/sections/WorkoutPrefsSection';
@@ -21,10 +18,16 @@ import { HEADER_SUBTITLE_STYLE, HEADER_TITLE_STYLE } from './settings/types';
 
 // ============================================================================
 // MAIN SETTINGS PAGE (thin orchestrator)
+//
+// Section order mirrors the numbered labels rendered below:
+//   01 חשבון · 02 פרופיל · 03 תצוגה ונגישות · 04 אימון ·
+//   05 התראות · 06 פרטיות ונתונים
+// Nutrition-goal editing lives in the Nutrition screen (shares the
+// "nutrition_goals" key + "settings-updated" event); coach/role lives in
+// onboarding + the coach panel — neither is duplicated here.
 // ============================================================================
 
 export default function Settings() {
-  const { isCoach, enable } = useCoach();
   const state = useSettingsState();
   const cloudSync = useCloudSync();
 
@@ -43,24 +46,6 @@ export default function Settings() {
   const handleDeleteAllData = async () => {
     await deleteAllUserData();
     window.location.reload();
-  };
-
-  const handleSaveCoachName = async () => {
-    await updateMyProfile({ displayName: state.coachName.trim() || null });
-    state.setCoachNameSaved(true);
-    setTimeout(() => state.setCoachNameSaved(false), 2000);
-  };
-
-  const handleEnableCoach = async () => {
-    if (isCoach || state.enablingCoach) return;
-    state.setEnablingCoach(true);
-    try {
-      await enable();
-    } catch (err) {
-      logger.app.warn('enable coach mode failed', err);
-    } finally {
-      state.setEnablingCoach(false);
-    }
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -98,8 +83,10 @@ export default function Settings() {
             marginBottom: '20px',
           }}
         >
-          התאמות מובייל, אימון, תזונה וסנכרון במקום אחד.
+          חשבון, פרופיל, תצוגה, אימון, התראות ונתונים במקום אחד.
         </p>
+
+        <AccountSection authEmail={state.authEmail} onSignOut={handleSignOut} />
 
         <ProfileSection
           profile={state.profile}
@@ -108,24 +95,7 @@ export default function Settings() {
           onSave={state.handleSaveProfile}
         />
 
-        <AccountSection authEmail={state.authEmail} onSignOut={handleSignOut} />
-
-        <CoachingSection
-          isCoach={isCoach}
-          coachName={state.coachName}
-          setCoachName={state.setCoachName}
-          coachNameSaved={state.coachNameSaved}
-          onSaveCoachName={handleSaveCoachName}
-          onEnableCoach={handleEnableCoach}
-        />
-
-        <NutritionSection
-          profile={state.profile}
-          nutrition={state.nutrition}
-          setNutrition={state.setNutrition}
-          nutritionSaved={state.nutritionSaved}
-          onSave={state.handleSaveNutrition}
-        />
+        <ThemeSection />
 
         <WorkoutPrefsSection
           workoutPrefs={state.workoutPrefs}
@@ -135,16 +105,21 @@ export default function Settings() {
         />
 
         <NotificationsSection
-          notificationSettings={state.notificationSettings}
+          notificationConfig={state.notificationConfig}
           toggleNotification={state.toggleNotification}
         />
 
-        <ThemeSection
-          darkMode={state.settings.darkMode}
-          onToggle={() => state.updateSettings({ darkMode: !state.settings.darkMode })}
-        />
+        {/* 06 · Privacy & data — export, cloud sync and the delete danger-zone */}
+        <SectionLabel num="06" titleEn="PRIVACY · DATA">
+          פרטיות ונתונים
+        </SectionLabel>
 
-        <DataAboutSection />
+        <ExportSection
+          weeklyReport={state.weeklyReport}
+          setWeeklyReport={state.setWeeklyReport}
+          copiedReport={state.copiedReport}
+          setCopiedReport={state.setCopiedReport}
+        />
 
         {isSupabaseConfigured() && (
           <CloudSyncSection
@@ -161,18 +136,13 @@ export default function Settings() {
           />
         )}
 
-        <ExportSection
-          weeklyReport={state.weeklyReport}
-          setWeeklyReport={state.setWeeklyReport}
-          copiedReport={state.copiedReport}
-          setCopiedReport={state.setCopiedReport}
-        />
-
         <DangerZoneSection
           confirmDelete={state.confirmDelete}
           setConfirmDelete={state.setConfirmDelete}
           onDeleteAll={handleDeleteAllData}
         />
+
+        <DataAboutSection />
       </div>
     </div>
   );

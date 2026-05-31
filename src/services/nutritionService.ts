@@ -10,6 +10,7 @@ import {
 import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../types';
 import { toLocalDateStr, todayStr } from '../utils/dateUtils';
 import { generateId } from '../utils/id';
+import { writeJsonStorage } from '../utils/safeJson';
 import { STORES, dbDelete, dbGetAll, dbGetByRange, dbPut } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudNutritionLog, syncNutritionLog } from './supabaseSync';
@@ -21,6 +22,26 @@ export const DEFAULT_MACRO_GOALS: MacroNutrients = {
   carbs: 300,
   fat: 80,
 };
+
+/** localStorage key shared with Settings for the user's manual macro goals. */
+export const NUTRITION_GOALS_KEY = 'nutrition_goals';
+
+/**
+ * Persist the user's macro goals to the SAME localStorage key Settings uses and
+ * broadcast the SAME `settings-updated` event, so every existing listener
+ * (nutrition hook, settings screen) stays in sync from a single write path.
+ */
+export function saveNutritionGoals(goals: MacroNutrients): void {
+  writeJsonStorage(NUTRITION_GOALS_KEY, {
+    calories: goals.calories,
+    protein: goals.protein,
+    carbs: goals.carbs,
+    fat: goals.fat,
+  });
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('settings-updated'));
+  }
+}
 
 const FOOD_LIBRARY: FoodItem[] = [
   {
@@ -559,7 +580,12 @@ export interface MealPreset {
   meals: { foodId: string; servings: number }[];
 }
 
-function calcMacroTotals(foods: FoodItem[]): MacroNutrients {
+/**
+ * Single source of truth for summing a list of foods into macro totals.
+ * Rounds each food's contribution consistently (calories to integer, macros to
+ * one decimal) so the meal modal, quick-save, and presets never drift apart.
+ */
+export function calcMacroTotals(foods: FoodItem[]): MacroNutrients {
   return foods.reduce<MacroNutrients>(
     (acc, f) => ({
       calories: acc.calories + Math.round(f.calories * f.servings),
@@ -567,6 +593,23 @@ function calcMacroTotals(foods: FoodItem[]): MacroNutrients {
       carbs: acc.carbs + Math.round(f.carbs * f.servings * 10) / 10,
       fat: acc.fat + Math.round(f.fat * f.servings * 10) / 10,
       fiber: (acc.fiber ?? 0) + Math.round((f.fiber ?? 0) * f.servings * 10) / 10,
+    }),
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
+  );
+}
+
+/**
+ * Sum macro totals across a list of meal entries. Used for per-meal-type group
+ * summaries in the journal so the math matches calcMacroTotals' rounding.
+ */
+export function sumEntryMacros(entries: MealEntry[]): MacroNutrients {
+  return entries.reduce<MacroNutrients>(
+    (acc, e) => ({
+      calories: acc.calories + e.totalMacros.calories,
+      protein: Math.round((acc.protein + e.totalMacros.protein) * 10) / 10,
+      carbs: Math.round((acc.carbs + e.totalMacros.carbs) * 10) / 10,
+      fat: Math.round((acc.fat + e.totalMacros.fat) * 10) / 10,
+      fiber: Math.round(((acc.fiber ?? 0) + (e.totalMacros.fiber ?? 0)) * 10) / 10,
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
   );
@@ -583,14 +626,13 @@ export function getMealPresets(): MealPreset[] {
 export function searchFoods(query: string): FoodItem[] {
   const q = query.toLowerCase().trim();
   if (!q) return FOOD_LIBRARY;
-  return FOOD_LIBRARY.filter(
-    (f) => f.name.toLowerCase().includes(q) || f.brand?.toLowerCase().includes(q)
-  );
+  return FOOD_LIBRARY.filter((f) => f.name.toLowerCase().includes(q));
 }
 
 export async function addFoodFromPreset(
   presetId: string,
-  mealType: MealType
+  mealType: MealType,
+  date: string = todayStr()
 ): Promise<MealEntry | null> {
   const preset = MEAL_PRESETS.find((p) => p.id === presetId);
   if (!preset) return null;
@@ -606,7 +648,7 @@ export async function addFoodFromPreset(
   const totalMacros = calcMacroTotals(foods);
   const mealEntry: MealEntry = {
     id: generateId('meal'),
-    date: todayStr(),
+    date,
     name: preset.name,
     meals: [
       {
@@ -842,12 +884,20 @@ export async function getWeeklyNutritionSummary(): Promise<DailyNutritionSummary
   });
 }
 
-export function createQuickMeal(mealType: MealType, foods: FoodItem[]): MealEntry {
+export function createQuickMeal(
+  mealType: MealType,
+  foods: FoodItem[],
+  date: string = todayStr()
+): MealEntry {
   const totalMacros = calcMacroTotals(foods);
+  // Name the entry after its foods (first food + count) rather than the meal
+  // type, so the card title doesn't duplicate the meal-type eyebrow/group header.
+  const firstFood = foods[0]?.name ?? MEAL_TYPE_LABELS[mealType];
+  const name = foods.length > 1 ? `${firstFood} +${foods.length - 1}` : firstFood;
   return {
     id: generateId('meal'),
-    date: todayStr(),
-    name: `${MEAL_TYPE_LABELS[mealType]}`,
+    date,
+    name,
     meals: [
       {
         id: generateId('meal'),

@@ -20,6 +20,27 @@ import type { CoachProfile, CoachSubscription } from '../types/coach';
 import { logger } from '../utils/logger';
 import { useAuth } from './AuthContext';
 
+/** Set during onboarding when a user picks the coach role while unauthenticated
+ * (guest). Honored here once a real session exists, since enableCoachMode needs
+ * an authenticated user id. */
+const PENDING_COACH_INTENT_KEY = 'pending_coach_intent';
+
+const readPendingCoachIntent = (): boolean => {
+  try {
+    return localStorage.getItem(PENDING_COACH_INTENT_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
+
+const clearPendingCoachIntent = (): void => {
+  try {
+    localStorage.removeItem(PENDING_COACH_INTENT_KEY);
+  } catch {
+    /* best-effort */
+  }
+};
+
 interface CoachContextValue {
   /** True when the user has enabled coach mode (has a coach profile). */
   isCoach: boolean;
@@ -46,7 +67,21 @@ export const CoachProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       return;
     }
     try {
-      const [profile, sub] = await Promise.all([getMyCoachProfile(), getMySubscription()]);
+      let [profile, sub] = await Promise.all([getMyCoachProfile(), getMySubscription()]);
+
+      // Honor a coach role chosen during onboarding while unauthenticated:
+      // create the coach_profiles row now that a session exists, then clear the
+      // flag so we only try once per intent.
+      if (!profile && readPendingCoachIntent()) {
+        try {
+          profile = await enableCoachMode();
+          sub = await getMySubscription();
+        } catch (err) {
+          logger.app.warn('CoachContext: pending coach intent enable failed', err);
+        }
+        clearPendingCoachIntent();
+      }
+
       setCoachProfile(profile);
       setSubscription(sub);
     } catch (err) {

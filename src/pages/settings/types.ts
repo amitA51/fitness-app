@@ -4,11 +4,14 @@ import { safeJsonParseOr } from '../../utils/safeJson';
 
 export type WeightGoal = 'ירידה במשקל' | 'שמירה על משקל' | 'עלייה במסה';
 export type ActivityLevel = 'לא פעיל' | 'פעיל מעט' | 'פעיל מתון' | 'פעיל מאוד' | 'ספורטאי';
+export type Gender = 'male' | 'female' | 'other';
 
 export interface UserProfile {
   name: string;
   age: number | '';
   height: number | '';
+  weight: number | '';
+  gender: Gender;
   weightGoal: WeightGoal;
   activityLevel: ActivityLevel;
 }
@@ -20,22 +23,21 @@ export interface NutritionGoals {
   fat: number | '';
 }
 
+// Only real, app-wide workout preferences live here. Accessibility/display
+// toggles (reducedAnimations/largeText/highContrast) and dark mode are owned
+// by SettingsContext and surfaced in the "תצוגה ונגישות" section instead.
 export interface WorkoutPrefs {
   defaultRestTime: number;
   autoStartRest: boolean;
   hapticsEnabled: boolean;
-  reducedAnimations: boolean;
-  largeText: boolean;
-  highContrast: boolean;
 }
 
-export interface NotificationSettings {
-  workoutReminderEnabled: boolean;
-  workoutReminderTime: string;
-  missedWorkoutAlertDays: number;
-  nutritionReminderEnabled: boolean;
-  prNotificationEnabled: boolean;
-}
+// Gender option labels for the profile form (value -> Hebrew label).
+export const GENDER_OPTIONS: ReadonlyArray<{ value: Gender; label: string }> = [
+  { value: 'male', label: 'זכר' },
+  { value: 'female', label: 'נקבה' },
+  { value: 'other', label: 'אחר' },
+] as const;
 
 // ─── Defaults ───────────────────────────────────────────────────────────────
 
@@ -43,6 +45,8 @@ export const DEFAULT_PROFILE: UserProfile = {
   name: '',
   age: '',
   height: '',
+  weight: '',
+  gender: 'male',
   weightGoal: 'שמירה על משקל',
   activityLevel: 'פעיל מתון',
 };
@@ -58,17 +62,6 @@ export const DEFAULT_WORKOUT_PREFS: WorkoutPrefs = {
   defaultRestTime: 90,
   autoStartRest: true,
   hapticsEnabled: true,
-  reducedAnimations: false,
-  largeText: false,
-  highContrast: false,
-};
-
-export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
-  workoutReminderEnabled: false,
-  workoutReminderTime: '08:00',
-  missedWorkoutAlertDays: 3,
-  nutritionReminderEnabled: false,
-  prNotificationEnabled: true,
 };
 
 export const REST_TIME_OPTIONS = [

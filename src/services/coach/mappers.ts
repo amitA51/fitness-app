@@ -35,6 +35,15 @@ export function requireClient(): SupabaseClient {
   return supabase;
 }
 
+/**
+ * Baseline seat allowance when a coach has no explicit subscription row.
+ * Kept in one place so the seed (enableCoachMode), the usage check
+ * (getSeatUsage) and this row mapper agree — previously the seed used 3 while
+ * fallbacks used 1, which made the three disagree. The free baseline is a
+ * single solo seat; paid plans set seat_limit explicitly.
+ */
+export const DEFAULT_SEAT_LIMIT = 1;
+
 // ---- row -> domain mappers (snake_case columns -> camelCase domain) --------
 
 type Row = Record<string, unknown>;
@@ -129,7 +138,7 @@ export const toReminder = (r: Row): Reminder => ({
 export const toSubscription = (r: Row): CoachSubscription => ({
   coachId: r.coach_id as string,
   plan: r.plan as CoachSubscription['plan'],
-  seatLimit: (r.seat_limit as number) ?? 1,
+  seatLimit: (r.seat_limit as number) ?? DEFAULT_SEAT_LIMIT,
   status: r.status as CoachSubscription['status'],
   createdAt: r.created_at as string | undefined,
   updatedAt: r.updated_at as string | undefined,

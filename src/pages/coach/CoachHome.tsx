@@ -9,12 +9,13 @@ import { Button } from '../../components/ui/Button';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { useCoach } from '../../contexts/CoachContext';
 import {
+  type ClientOverviewRow,
   clientStatusMeta,
-  getClientAnalytics,
+  getClientsOverview,
   getSeatUsage,
   listClients,
+  summarizeRoster,
 } from '../../services/coach';
-import type { CoachClient } from '../../types/coach';
 import { CoachPage, EmptyHint, ListRow, Section, formatDate, useAsyncData } from './_shared';
 
 export default function CoachHome() {
@@ -69,45 +70,58 @@ export default function CoachHome() {
   return <Roster />;
 }
 
-type SortMode = 'name' | 'activity';
+type SortMode = 'attention' | 'name' | 'activity';
 
 function Roster() {
   const navigate = useNavigate();
-  const { data: clients, loading } = useAsyncData(() => listClients('active'), []);
+  // ONE batched load: roster + per-client analytics from a single activity
+  // query (no N+1). Rows arrive pre-sorted attention-first.
+  const { data: rows, loading } = useAsyncData<ClientOverviewRow[]>(
+    () => listClients('active').then((clients) => getClientsOverview(clients)),
+    []
+  );
   const { data: seats } = useAsyncData(() => getSeatUsage(), { used: 0, limit: 0, full: false });
 
   const [search, setSearch] = useState('');
   const [activeTag, setActiveTag] = useState<string | null>(null);
-  const [sort, setSort] = useState<SortMode>('name');
+  const [sort, setSort] = useState<SortMode>('attention');
+
+  const summary = useMemo(() => summarizeRoster(rows), [rows]);
 
   const allTags = useMemo(
-    () => [...new Set(clients.flatMap((c) => c.tags ?? []))].sort(),
-    [clients]
+    () => [...new Set(rows.flatMap((r) => r.client.tags ?? []))].sort(),
+    [rows]
   );
 
   const filtered = useMemo(() => {
-    let list = clients;
+    let list = rows;
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter((c) => (c.clientProfile?.displayName ?? '').toLowerCase().includes(q));
+      list = list.filter((r) =>
+        (r.client.clientProfile?.displayName ?? '').toLowerCase().includes(q)
+      );
     }
     if (activeTag) {
-      list = list.filter((c) => c.tags?.includes(activeTag));
+      list = list.filter((r) => r.client.tags?.includes(activeTag));
     }
     const sorted = [...list];
     if (sort === 'name') {
       sorted.sort((a, b) =>
-        (a.clientProfile?.displayName ?? '').localeCompare(b.clientProfile?.displayName ?? '', 'he')
+        (a.client.clientProfile?.displayName ?? '').localeCompare(
+          b.client.clientProfile?.displayName ?? '',
+          'he'
+        )
       );
-    } else {
+    } else if (sort === 'activity') {
       sorted.sort(
         (a, b) =>
-          new Date(b.consentAt ?? b.createdAt ?? 0).getTime() -
-          new Date(a.consentAt ?? a.createdAt ?? 0).getTime()
+          new Date(b.client.consentAt ?? b.client.createdAt ?? 0).getTime() -
+          new Date(a.client.consentAt ?? a.client.createdAt ?? 0).getTime()
       );
     }
+    // 'attention' keeps the service's attention-first ordering.
     return sorted;
-  }, [clients, search, activeTag, sort]);
+  }, [rows, search, activeTag, sort]);
 
   return (
     <CoachPage
@@ -150,6 +164,21 @@ function Roster() {
           />
         </div>
       </Section>
+
+      {/* Aggregate overview across ALL clients */}
+      {!loading && rows.length > 0 && (
+        <Section title="סקירה כללית">
+          <div className="grid grid-cols-3 gap-2">
+            <OverviewStat
+              label="דורשים תשומת לב"
+              value={summary.needsAttention}
+              color="var(--fs-warn)"
+            />
+            <OverviewStat label="פעילים" value={summary.active} color="var(--fs-accent)" />
+            <OverviewStat label="ממתינים להתחלה" value={summary.awaitingFirst} />
+          </div>
+        </Section>
+      )}
 
       <Section title="מתאמנים פעילים">
         {/* Search */}
@@ -200,54 +229,31 @@ function Roster() {
         )}
 
         {/* Sort toggle */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <button
-            type="button"
-            onClick={() => setSort('name')}
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              fontWeight: sort === 'name' ? 700 : 400,
-              color: sort === 'name' ? 'var(--fs-heading)' : 'var(--fs-muted)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
+        <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+          <SortButton active={sort === 'attention'} onClick={() => setSort('attention')}>
+            תשומת לב
+          </SortButton>
+          <SortButton active={sort === 'name'} onClick={() => setSort('name')}>
             שם
-          </button>
-          <button
-            type="button"
-            onClick={() => setSort('activity')}
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              fontWeight: sort === 'activity' ? 700 : 400,
-              color: sort === 'activity' ? 'var(--fs-heading)' : 'var(--fs-muted)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
+          </SortButton>
+          <SortButton active={sort === 'activity'} onClick={() => setSort('activity')}>
             פעילות אחרונה
-          </button>
+          </SortButton>
         </div>
 
         {/* Client list */}
         {loading ? (
           <LoadingSpinner />
-        ) : clients.length === 0 ? (
+        ) : rows.length === 0 ? (
           <EmptyHint>עדיין אין מתאמנים מחוברים. הזמן מתאמן דרך כפתור ההזמנה למעלה.</EmptyHint>
         ) : filtered.length === 0 ? (
           <EmptyHint>אין מתאמנים תואמים</EmptyHint>
         ) : (
-          filtered.map((c) => (
+          filtered.map((row) => (
             <RosterRow
-              key={c.id}
-              client={c}
-              onOpen={() => navigate(`/coach/clients/${c.clientId}`)}
+              key={row.client.id}
+              row={row}
+              onOpen={() => navigate(`/coach/clients/${row.client.clientId}`)}
             />
           ))
         )}
@@ -256,12 +262,69 @@ function Roster() {
   );
 }
 
-function RosterRow({ client, onOpen }: { client: CoachClient; onOpen: () => void }) {
-  const { data: analytics } = useAsyncData(() => getClientAnalytics(client.clientId), null);
-  const meta = analytics
-    ? analytics.lastActivity
-      ? `פעילות אחרונה ${formatDate(analytics.lastActivity)}`
-      : 'אין פעילות עדיין'
+function SortButton({
+  active,
+  onClick,
+  children,
+}: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: 11,
+        fontWeight: active ? 700 : 400,
+        color: active ? 'var(--fs-heading)' : 'var(--fs-muted)',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: 0,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function OverviewStat({ label, value, color }: { label: string; value: number; color?: string }) {
+  return (
+    <div
+      className="px-3 py-3"
+      style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}
+    >
+      <div
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 24,
+          fontWeight: 700,
+          fontVariantNumeric: 'tabular-nums',
+          color: color ?? 'var(--fs-heading)',
+          lineHeight: 1,
+        }}
+      >
+        {value}
+      </div>
+      <div
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 9,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          color: 'var(--fs-muted)',
+          marginTop: 6,
+        }}
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function RosterRow({ row, onOpen }: { row: ClientOverviewRow; onOpen: () => void }) {
+  const { client, analytics } = row;
+  const meta = analytics.lastActivity
+    ? `פעילות אחרונה ${formatDate(analytics.lastActivity)} · ${analytics.sessionsLast7} אימונים השבוע`
     : `מחובר מאז ${formatDate(client.consentAt ?? client.createdAt)}`;
 
   return (
@@ -269,7 +332,7 @@ function RosterRow({ client, onOpen }: { client: CoachClient; onOpen: () => void
       label={client.clientProfile?.displayName ?? 'מתאמן'}
       meta={meta}
       onClick={onOpen}
-      trailing={analytics ? <StatusChip {...clientStatusMeta(analytics.level)} /> : undefined}
+      trailing={<StatusChip {...clientStatusMeta(analytics.level)} />}
     />
   );
 }

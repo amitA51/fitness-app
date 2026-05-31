@@ -1,132 +1,29 @@
 import { BarChart3, Dumbbell, TrendingDown, TrendingUp } from 'lucide-react';
-import { memo, useEffect, useState } from 'react';
-import { getWorkoutSessions } from '../../../services/dataService';
-import { setVolume } from '../../../utils/workoutMath';
-import type { ExerciseStrengthCurve, StrengthDataPoint } from '../types';
+import { memo, useEffect, useMemo, useState } from 'react';
+import type { PersonalRecord, WorkoutSession } from '../../../types';
+import { buildPRBoard, buildStrengthCurves } from '../progressMetrics';
 
-export const StrengthTab = memo(function StrengthTab() {
-  const [curves, setCurves] = useState<ExerciseStrengthCurve[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export const StrengthTab = memo(function StrengthTab({
+  sessions,
+  prs,
+}: {
+  // Already status-filtered to completed by the parent (single data source).
+  sessions: WorkoutSession[];
+  prs: PersonalRecord[];
+}) {
+  const curves = useMemo(() => buildStrengthCurves(sessions), [sessions]);
+  // PR board is e1RM-based and sourced from prService — the single PR definition
+  // shared with the Overview tab. No duplicate sparkline math here anymore.
+  const prBoard = useMemo(() => buildPRBoard(prs), [prs]);
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadStrengthData = async () => {
-      try {
-        setIsLoading(true);
-        const sessions = await getWorkoutSessions(100);
-
-        // Build a map of exercise name -> array of {date, maxWeight x reps (volume per set)}
-        const exerciseMap = new Map<string, StrengthDataPoint[]>();
-
-        for (const session of sessions) {
-          if (session.status !== 'completed') continue;
-          const date = session.date || session.startTime?.slice(0, 10);
-          if (!date) continue;
-
-          for (const exercise of session.exercises) {
-            const name = exercise.exerciseName || exercise.name;
-            if (!name) continue;
-
-            // Find the best set (highest weight x reps) for this exercise in this session
-            let bestWeight = 0;
-            let bestVolume = 0;
-            for (const set of exercise.sets || []) {
-              if (!set.isCompleted) continue;
-              const vol = setVolume(set);
-              if (vol > bestVolume) {
-                bestVolume = vol;
-                bestWeight = set.weight || 0;
-              }
-            }
-
-            if (bestVolume === 0) continue;
-
-            const existing = exerciseMap.get(name) || [];
-            existing.push({ date, value: bestWeight, volume: bestVolume });
-            exerciseMap.set(name, existing);
-          }
-        }
-
-        // Convert to curves and compute changes
-        const result: ExerciseStrengthCurve[] = [];
-        for (const [name, points] of exerciseMap.entries()) {
-          // Sort by date ascending
-          points.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-          // Deduplicate: keep best per date
-          const deduped = new Map<string, StrengthDataPoint>();
-          for (const p of points) {
-            const existing = deduped.get(p.date);
-            if (!existing || p.value > existing.value) {
-              deduped.set(p.date, p);
-            }
-          }
-          const uniquePoints = [...deduped.values()];
-
-          if (uniquePoints.length < 2) continue;
-
-          const latest = uniquePoints[uniquePoints.length - 1]!;
-          const earliest = uniquePoints[0]!;
-          const change = latest.value - earliest.value;
-          const changePct = earliest.value > 0 ? Math.round((change / earliest.value) * 100) : 0;
-
-          result.push({
-            exerciseName: name,
-            data: uniquePoints.slice(-15), // last 15 data points
-            latestWeight: latest.value,
-            change,
-            changePct,
-          });
-        }
-
-        // Sort by number of data points (most tracked first)
-        result.sort((a, b) => b.data.length - a.data.length);
-        setCurves(result);
-        setSelectedExercise((prev) => prev ?? (result.length > 0 ? result[0]!.exerciseName : null));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadStrengthData();
-  }, []);
+    setSelectedExercise((prev) => prev ?? (curves.length > 0 ? curves[0]!.exerciseName : null));
+  }, [curves]);
 
   const activeCurve = curves.find((c) => c.exerciseName === selectedExercise);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-          <span className="left" />
-          <span className="right">כוח</span>
-        </div>
-        <div
-          style={{
-            background: 'var(--fs-surface)',
-            borderRadius: '22px 16px 22px 16px',
-            border: '1px solid var(--fs-surface-2)',
-            boxShadow: 'var(--shadow-card)',
-            padding: '32px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div
-            style={{
-              width: 24,
-              height: 24,
-              border: '2px solid var(--fs-signal)',
-              borderTopColor: 'transparent',
-              borderRadius: '50%',
-              animation: 'spin 0.8s linear infinite',
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  if (curves.length === 0) {
+  if (curves.length === 0 && prBoard.length === 0) {
     return (
       <div className="space-y-4">
         <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
@@ -184,140 +81,144 @@ export const StrengthTab = memo(function StrengthTab() {
         <span className="right">כוח</span>
       </div>
 
-      {/* PR Leaderboard */}
-      <div
-        style={{
-          background: 'var(--fs-surface)',
-          borderRadius: '22px 16px 22px 16px',
-          border: '1px solid var(--fs-surface-2)',
-          boxShadow: 'var(--shadow-card)',
-          padding: '16px 20px',
-        }}
-      >
-        <h3
+      {/* PR Leaderboard — e1RM based */}
+      {prBoard.length > 0 && (
+        <div
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            letterSpacing: '0.15em',
-            color: 'var(--fs-muted)',
-            textTransform: 'uppercase',
-            marginBottom: 12,
+            background: 'var(--fs-surface)',
+            borderRadius: '22px 16px 22px 16px',
+            border: '1px solid var(--fs-surface-2)',
+            boxShadow: 'var(--shadow-card)',
+            padding: '16px 20px',
           }}
         >
-          לוח שיאים · PR BOARD
-        </h3>
-        <div style={{ display: 'grid', gap: 6 }}>
-          {curves.slice(0, 6).map((curve, i) => (
-            <div
-              key={curve.exerciseName}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '8px 12px',
-                background:
-                  i === 0
-                    ? 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))'
-                    : 'var(--fs-surface-2)',
-                borderRadius: 10,
-                borderInlineStart: i === 0 ? '3px solid var(--fs-accent)' : 'none',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    fontWeight: 800,
-                    color: i === 0 ? 'var(--fs-accent)' : 'var(--fs-muted)',
-                    width: 20,
-                  }}
-                >
-                  #{i + 1}
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-hebrew)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: 'var(--fs-ink)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {curve.exerciseName.split('|')[0]?.trim() || curve.exerciseName}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexShrink: 0 }}>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
-                    fontSize: 18,
-                    color: 'var(--fs-ink)',
-                    direction: 'ltr',
-                  }}
-                >
-                  {curve.latestWeight}
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 9,
-                    fontWeight: 700,
-                    color: 'var(--fs-muted)',
-                    letterSpacing: '0.08em',
-                  }}
-                >
-                  KG
-                </span>
-                {curve.change > 0 && (
+          <h3
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.15em',
+              color: 'var(--fs-muted)',
+              textTransform: 'uppercase',
+              marginBottom: 12,
+            }}
+          >
+            לוח שיאים · PR BOARD (1RM)
+          </h3>
+          <div style={{ display: 'grid', gap: 6 }}>
+            {prBoard.slice(0, 6).map((entry, i) => (
+              <div
+                key={entry.exerciseName}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  background:
+                    i === 0
+                      ? 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))'
+                      : 'var(--fs-surface-2)',
+                  borderRadius: 10,
+                  borderInlineStart: i === 0 ? '3px solid var(--fs-accent)' : 'none',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      fontWeight: 800,
+                      color: i === 0 ? 'var(--fs-accent)' : 'var(--fs-muted)',
+                      width: 20,
+                    }}
+                  >
+                    #{i + 1}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-hebrew)',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--fs-ink)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {entry.exerciseName.split('|')[0]?.trim() || entry.exerciseName}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexShrink: 0 }}>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 800,
+                      fontSize: 18,
+                      color: 'var(--fs-ink)',
+                      direction: 'ltr',
+                    }}
+                  >
+                    {entry.e1RM}
+                  </span>
                   <span
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 9,
                       fontWeight: 700,
-                      color: 'var(--fs-accent)',
-                      letterSpacing: '0.04em',
+                      color: 'var(--fs-muted)',
+                      letterSpacing: '0.08em',
                     }}
                   >
-                    +{curve.changePct}%
+                    1RM
                   </span>
-                )}
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9,
+                      fontWeight: 600,
+                      color: 'var(--fs-muted)',
+                      letterSpacing: '0.04em',
+                      marginInlineStart: 4,
+                      direction: 'ltr',
+                    }}
+                  >
+                    {entry.weight}×{entry.reps}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Exercise selector */}
-      <div className="flex gap-2 flex-wrap">
-        {curves.slice(0, 8).map((curve) => (
-          <button
-            type="button"
-            key={curve.exerciseName}
-            onClick={() => setSelectedExercise(curve.exerciseName)}
-            className="chip"
-            style={{
-              background:
-                selectedExercise === curve.exerciseName
-                  ? 'var(--fs-signal)'
-                  : 'var(--fs-surface-2)',
-              color:
-                selectedExercise === curve.exerciseName ? 'var(--fs-primary)' : 'var(--fs-ink)',
-              borderColor:
-                selectedExercise === curve.exerciseName ? 'var(--fs-primary)' : 'transparent',
-              borderWidth: '1px',
-              borderStyle: 'solid',
-            }}
-          >
-            <span style={{ fontFamily: 'var(--font-hebrew)', fontSize: '13px', fontWeight: 600 }}>
-              {curve.exerciseName.split('|')[0]?.trim() || curve.exerciseName}
-            </span>
-          </button>
-        ))}
-      </div>
+      {curves.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          {curves.slice(0, 8).map((curve) => (
+            <button
+              type="button"
+              key={curve.exerciseName}
+              onClick={() => setSelectedExercise(curve.exerciseName)}
+              className="chip"
+              style={{
+                background:
+                  selectedExercise === curve.exerciseName
+                    ? 'var(--fs-signal)'
+                    : 'var(--fs-surface-2)',
+                color:
+                  selectedExercise === curve.exerciseName ? 'var(--fs-primary)' : 'var(--fs-ink)',
+                borderColor:
+                  selectedExercise === curve.exerciseName ? 'var(--fs-primary)' : 'transparent',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+              }}
+            >
+              <span style={{ fontFamily: 'var(--font-hebrew)', fontSize: '13px', fontWeight: 600 }}>
+                {curve.exerciseName.split('|')[0]?.trim() || curve.exerciseName}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Active exercise curve */}
       {activeCurve && (

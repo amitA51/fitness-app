@@ -1,4 +1,4 @@
-import { Bell, Dumbbell, User, Zap } from 'lucide-react';
+import { Bell, Dumbbell, Zap } from 'lucide-react';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
 import { SaveButton } from '../../../components/ui/SettingsSaveButton';
@@ -22,7 +22,7 @@ export function WorkoutPrefsSection({
 }: Props) {
   return (
     <div className="mb-7">
-      <SectionLabel num="03" titleEn="TRAINING · PREFS">
+      <SectionLabel num="04" titleEn="TRAINING · PREFS">
         אימון
       </SectionLabel>
       <SettingsCard>
@@ -93,7 +93,7 @@ export function WorkoutPrefsSection({
         <SettingsRow
           icon={<Zap size={15} style={{ color: 'var(--fs-accent)' }} />}
           label="רטט (Haptic Feedback)"
-          divider={true}
+          divider={false}
         >
           <SettingsToggle
             checked={workoutPrefs.hapticsEnabled}
@@ -101,51 +101,6 @@ export function WorkoutPrefsSection({
               setWorkoutPrefs({ ...workoutPrefs, hapticsEnabled: !workoutPrefs.hapticsEnabled })
             }
             label="רטט"
-          />
-        </SettingsRow>
-
-        <SettingsRow
-          icon={<Bell size={15} style={{ color: 'var(--fs-accent-2)' }} />}
-          label="הפחתת אנימציות"
-          divider={true}
-        >
-          <SettingsToggle
-            checked={workoutPrefs.reducedAnimations}
-            onChange={() =>
-              setWorkoutPrefs({
-                ...workoutPrefs,
-                reducedAnimations: !workoutPrefs.reducedAnimations,
-              })
-            }
-            label="הפחתת אנימציות"
-          />
-        </SettingsRow>
-
-        <SettingsRow
-          icon={<User size={15} style={{ color: 'var(--fs-accent)' }} />}
-          label="טקסט גדול"
-          divider={true}
-        >
-          <SettingsToggle
-            checked={workoutPrefs.largeText}
-            onChange={() =>
-              setWorkoutPrefs({ ...workoutPrefs, largeText: !workoutPrefs.largeText })
-            }
-            label="טקסט גדול"
-          />
-        </SettingsRow>
-
-        <SettingsRow
-          icon={<Zap size={15} style={{ color: 'var(--fs-accent-2)' }} />}
-          label="ניגודיות גבוהה"
-          divider={false}
-        >
-          <SettingsToggle
-            checked={workoutPrefs.highContrast}
-            onChange={() =>
-              setWorkoutPrefs({ ...workoutPrefs, highContrast: !workoutPrefs.highContrast })
-            }
-            label="ניגודיות גבוהה"
           />
         </SettingsRow>
       </SettingsCard>

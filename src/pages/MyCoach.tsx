@@ -161,7 +161,19 @@ export default function MyCoach() {
 
       <CheckInForm />
 
-      <Section title="נשלח אליי">
+      <Section title="היסטוריית שיוכים">
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 13,
+            color: 'var(--fs-muted)',
+            lineHeight: 1.6,
+            marginBottom: 12,
+          }}
+        >
+          תוכניות האימון מופיעות במסך האימון, ויעדי התזונה במסך התזונה. כאן מרוכזת היסטוריית כל מה
+          שהמאמן שלח אליך.
+        </p>
         {aLoading ? (
           <EmptyHint>טוען…</EmptyHint>
         ) : assignments.length === 0 ? (

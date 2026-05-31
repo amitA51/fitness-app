@@ -18,6 +18,16 @@ export interface WaterEntry {
 const WATER_GOAL_ML = 2500;
 const GLASS_ML = 250;
 
+/** Event broadcast after any water mutation so listeners (chart, tracker)
+ * can refresh, mirroring the `settings-updated` pattern used for goals. */
+export const WATER_UPDATED_EVENT = 'water-updated';
+
+function broadcastWaterUpdated(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(WATER_UPDATED_EVENT));
+  }
+}
+
 export function getWaterGoal(): number {
   return WATER_GOAL_ML;
 }
@@ -34,6 +44,7 @@ export async function addWaterEntry(amountMl: number): Promise<WaterEntry> {
     createdAt: new Date().toISOString(),
   };
   await dbPut(STORES.WATER_LOGS, entry);
+  broadcastWaterUpdated();
 
   const user = await getCurrentUser();
   if (user) {
@@ -48,11 +59,14 @@ export async function addWaterEntry(amountMl: number): Promise<WaterEntry> {
 }
 
 export async function getTodayWaterTotal(): Promise<number> {
-  const today = todayStr();
+  return getWaterTotalForDate(todayStr());
+}
+
+/** Sum non-deleted water for a single day. Lets the tracker follow the
+ * date navigator instead of being hardcoded to today. */
+export async function getWaterTotalForDate(date: string): Promise<number> {
   const all = await dbGetAll<WaterEntry>(STORES.WATER_LOGS);
-  return all
-    .filter((e) => e.date === today && !e.deletedAt)
-    .reduce((sum, e) => sum + e.amountMl, 0);
+  return all.filter((e) => e.date === date && !e.deletedAt).reduce((sum, e) => sum + e.amountMl, 0);
 }
 
 export async function getTodayWaterEntries(): Promise<WaterEntry[]> {

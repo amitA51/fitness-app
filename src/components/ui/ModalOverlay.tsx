@@ -68,11 +68,11 @@ const zIndexMap: Record<ZLevel, number> = {
   extreme: Z_INDEX.splash,
 };
 
-const blurMap: Record<BlurLevel, string> = {
-  none: '',
-  sm: 'backdrop-blur-sm',
-  md: 'backdrop-blur-md',
-  xl: 'backdrop-blur-xl',
+const blurPxMap: Record<BlurLevel, string | undefined> = {
+  none: undefined,
+  sm: 'blur(8px)',
+  md: 'blur(12px)',
+  xl: 'blur(24px)',
 };
 
 /**
@@ -201,7 +201,6 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
           transition={{ duration: backdropDuration, ease: 'easeOut' }}
           className={`
                         fixed inset-0
-                        ${blurMap[blur]}
                         ${positionClasses}
                         ${isBottomSheet ? 'p-0' : isFullscreen ? 'p-0' : 'p-4'}
                         ${className}
@@ -210,10 +209,11 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
             .trim()}
           style={{
             zIndex: zIndexMap[zLevel],
-            // Premium glass backdrop — primary-tinted with universal blur
+            // Premium glass backdrop — primary-tinted. Blur honors the `blur`
+            // prop (blur="none" => no filter), instead of a hardcoded 8px.
             backgroundColor: `color-mix(in srgb, var(--fs-primary) ${backdropOpacity}%, transparent)`,
-            WebkitBackdropFilter: 'blur(8px)',
-            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: blurPxMap[blur],
+            backdropFilter: blurPxMap[blur],
           }}
           onClick={handleBackdropClick}
           role="dialog"

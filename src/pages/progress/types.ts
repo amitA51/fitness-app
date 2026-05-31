@@ -1,4 +1,10 @@
-export type ProgressTab = 'weight' | 'measurements' | 'recovery' | 'strength';
+export type ProgressTab =
+  | 'overview'
+  | 'workouts'
+  | 'strength'
+  | 'weight'
+  | 'measurements'
+  | 'recovery';
 
 export interface WeeklyRecoveryAverage {
   avgSleep: number;

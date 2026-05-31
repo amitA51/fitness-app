@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Droplets } from 'lucide-react';
 import { memo } from 'react';
+import { getGlassSize, getWaterGoal } from '../../../services/waterService';
 
 interface WaterHistoryChartProps {
   waterHistory: { date: string; total: number }[];
@@ -10,6 +11,9 @@ export const WaterHistoryChart = memo(function WaterHistoryChart({
   waterHistory,
 }: WaterHistoryChartProps) {
   if (waterHistory.length === 0) return null;
+
+  const goalMl = getWaterGoal();
+  const glassMl = getGlassSize();
 
   return (
     <div className="px-5 mt-6">
@@ -29,7 +33,7 @@ export const WaterHistoryChart = memo(function WaterHistoryChart({
         </div>
         <div className="h-28 flex items-end gap-2" role="img" aria-label="היסטוריית שתייה - 7 ימים">
           {waterHistory.map((entry, i) => {
-            const maxMl = 2500;
+            const maxMl = goalMl;
             const heightPct = Math.max(4, (entry.total / maxMl) * 100);
             const isLast = i === waterHistory.length - 1;
             return (
@@ -41,7 +45,7 @@ export const WaterHistoryChart = memo(function WaterHistoryChart({
                     color: 'var(--fs-muted)',
                   }}
                 >
-                  {entry.total > 0 ? `${Math.round(entry.total / 250)}` : ''}
+                  {entry.total > 0 ? `${Math.round(entry.total / glassMl)}` : ''}
                 </span>
                 <motion.div
                   className="w-full"
@@ -71,7 +75,7 @@ export const WaterHistoryChart = memo(function WaterHistoryChart({
         </div>
         <div className="flex items-center justify-center gap-4 mt-3">
           <span className="eyebrow" style={{ color: 'var(--fs-muted)', fontSize: '10px' }}>
-            כוסות · 250 מ״ל · יעד 2500 מ״ל
+            כוסות · {glassMl} מ״ל · יעד {goalMl} מ״ל
           </span>
         </div>
       </div>

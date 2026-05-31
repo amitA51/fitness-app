@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion';
+import { SlidersHorizontal } from 'lucide-react';
 import { memo } from 'react';
 
 interface CalorieHeroProps {
@@ -6,6 +7,7 @@ interface CalorieHeroProps {
   goal: number;
   calPct: number;
   coachTarget: boolean;
+  onEditGoals: () => void;
 }
 
 export const CalorieHero = memo(function CalorieHero({
@@ -13,11 +15,36 @@ export const CalorieHero = memo(function CalorieHero({
   goal,
   calPct,
   coachTarget,
+  onEditGoals,
 }: CalorieHeroProps) {
   const shouldReduceMotion = useReducedMotion();
   return (
     <div className="block-hero section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in">
       <span className="ribbon">{calPct}% מהיעד</span>
+      <button
+        type="button"
+        onClick={onEditGoals}
+        className="flex items-center gap-1.5"
+        aria-label="ערוך יעדים"
+        style={{
+          position: 'absolute',
+          insetInlineEnd: 16,
+          top: 16,
+          minHeight: 44,
+          padding: '6px 12px',
+          background: 'var(--fs-surface-2)',
+          border: '1px solid var(--fs-surface-2)',
+          color: 'var(--fs-ink)',
+          cursor: 'pointer',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 11,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+        }}
+      >
+        <SlidersHorizontal size={13} aria-hidden="true" />
+        ערוך יעדים
+      </button>
       <div className="label">נצרך היום</div>
       <div className="number kinetic-number large" style={{ fontVariantNumeric: 'tabular-nums' }}>
         {calories || 0}

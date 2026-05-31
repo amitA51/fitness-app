@@ -11,7 +11,7 @@ interface Props {
 export function AccountSection({ authEmail, onSignOut }: Props) {
   return (
     <div className="mb-7">
-      <SectionLabel num="01b" titleEn="ACCOUNT · AUTH">
+      <SectionLabel num="01" titleEn="ACCOUNT · AUTH">
         חשבון
       </SectionLabel>
       <SettingsCard>

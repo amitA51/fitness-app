@@ -7,7 +7,13 @@
 import type { CoachClient, CoachProfile, CoachSubscription } from '../../types/coach';
 import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
-import { requireClient, toCoachClient, toCoachProfile, toSubscription } from './mappers';
+import {
+  DEFAULT_SEAT_LIMIT,
+  requireClient,
+  toCoachClient,
+  toCoachProfile,
+  toSubscription,
+} from './mappers';
 
 const CLIENT_WITH_PROFILE = '*, client_profile:profiles!coach_clients_client_id_fkey(*)';
 const COACH_WITH_PROFILE = '*, coach_profile:profiles!coach_clients_coach_id_fkey(*)';
@@ -25,7 +31,7 @@ export const getMyCoachProfile = async (): Promise<CoachProfile | null> => {
   if (!user) return null;
   const { data, error } = await supabase
     .from('coach_profiles')
-    .select('id, business_name, bio, specialties, created_at')
+    .select('id, business_name, bio, settings, created_at, updated_at')
     .eq('id', user.id)
     .maybeSingle();
   if (error) {
@@ -55,7 +61,7 @@ export const enableCoachMode = async (businessName?: string): Promise<CoachProfi
   await supabase
     .from('coach_subscriptions')
     .upsert(
-      { coach_id: user.id, plan: 'free', seat_limit: 3, status: 'active' },
+      { coach_id: user.id, plan: 'free', seat_limit: DEFAULT_SEAT_LIMIT, status: 'active' },
       { onConflict: 'coach_id', ignoreDuplicates: true }
     );
 
