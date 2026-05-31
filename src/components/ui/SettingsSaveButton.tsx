@@ -6,14 +6,25 @@ interface SaveButtonProps {
   saved: boolean;
   label: string;
   savedLabel?: string;
+  disabled?: boolean;
+  isLoading?: boolean;
 }
 
-export function SaveButton({ onClick, saved, label, savedLabel = 'נשמר!' }: SaveButtonProps) {
+export function SaveButton({
+  onClick,
+  saved,
+  label,
+  savedLabel = 'נשמר!',
+  disabled,
+  isLoading,
+}: SaveButtonProps) {
+  const inactive = disabled || isLoading;
   return (
     <button
       type="button"
       onClick={onClick}
       className={saved ? 'accent-glow' : undefined}
+      aria-disabled={inactive || undefined}
       style={{
         width: '100%',
         display: 'flex',
@@ -33,6 +44,7 @@ export function SaveButton({ onClick, saved, label, savedLabel = 'נשמר!' }: 
         ...(saved
           ? { color: 'var(--fs-heading)', background: 'var(--fs-accent)' }
           : { color: 'var(--fs-accent)', background: 'var(--fs-primary)' }),
+        ...(inactive ? { opacity: 0.5, pointerEvents: 'none' } : {}),
       }}
     >
       {saved ? (
@@ -42,7 +54,7 @@ export function SaveButton({ onClick, saved, label, savedLabel = 'נשמר!' }: 
         </>
       ) : (
         <>
-          <Save size={17} />
+          <Save size={17} className={isLoading ? 'animate-spin' : ''} />
           {label}
         </>
       )}

@@ -23,15 +23,15 @@ export function NumberInput({ value, onChange, min, max, placeholder, unit }: Nu
         style={{
           width: '80px',
           minHeight: '44px',
-          padding: '6px 10px',
-          textAlign: 'left',
+          paddingBlock: '6px',
+          paddingInline: '10px',
+          textAlign: 'start',
           fontFamily: 'var(--font-mono)',
           fontSize: '14px',
           backgroundColor: 'var(--fs-surface)',
           border: '1px solid var(--fs-surface-2)',
           borderRadius: 0,
           color: 'var(--fs-ink)',
-          outline: 'none',
         }}
       />
       {unit && (

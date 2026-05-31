@@ -66,7 +66,6 @@ const createLogger = (context: string) => {
             extra: {
               context,
               message,
-              data: data instanceof Error ? undefined : data,
             },
           });
         } catch {

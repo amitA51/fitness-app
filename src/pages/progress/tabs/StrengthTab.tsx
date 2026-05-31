@@ -82,9 +82,7 @@ export const StrengthTab = memo(function StrengthTab() {
         // Sort by number of data points (most tracked first)
         result.sort((a, b) => b.data.length - a.data.length);
         setCurves(result);
-        if (result.length > 0 && !selectedExercise) {
-          setSelectedExercise(result[0]!.exerciseName);
-        }
+        setSelectedExercise((prev) => prev ?? (result.length > 0 ? result[0]!.exerciseName : null));
       } finally {
         setIsLoading(false);
       }

@@ -3,7 +3,7 @@
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
 import { motion } from 'framer-motion';
-import { CheckCircle as CheckCircleIcon, Pencil, X as CloseIcon } from 'lucide-react';
+import { CheckCircle as CheckCircleIcon, X as CloseIcon, Pencil } from 'lucide-react';
 import { memo, useCallback, useId, useMemo, useState } from 'react';
 import type { WorkoutSet } from '../../../types';
 import { ModalOverlay } from '../../ui/ModalOverlay';
@@ -228,8 +228,10 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                               type="button"
                               onClick={() => setTempWeight((w) => Math.max(0, w - 2.5))}
                               style={{
-                                width: 40,
-                                height: 40,
+                                width: 44,
+                                height: 44,
+                                minWidth: 44,
+                                minHeight: 44,
                                 background: 'var(--fs-surface)',
                                 border: '2px solid var(--fs-primary)',
                                 borderRadius: 0,
@@ -269,8 +271,10 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                               type="button"
                               onClick={() => setTempWeight((w) => w + 2.5)}
                               style={{
-                                width: 40,
-                                height: 40,
+                                width: 44,
+                                height: 44,
+                                minWidth: 44,
+                                minHeight: 44,
                                 background: 'var(--fs-primary)',
                                 border: '2px solid var(--fs-primary)',
                                 borderRadius: 0,
@@ -308,8 +312,10 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                               type="button"
                               onClick={() => setTempReps((r) => Math.max(0, r - 1))}
                               style={{
-                                width: 40,
-                                height: 40,
+                                width: 44,
+                                height: 44,
+                                minWidth: 44,
+                                minHeight: 44,
                                 background: 'var(--fs-surface)',
                                 border: '2px solid var(--fs-primary)',
                                 borderRadius: 0,
@@ -348,8 +354,10 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                               type="button"
                               onClick={() => setTempReps((r) => r + 1)}
                               style={{
-                                width: 40,
-                                height: 40,
+                                width: 44,
+                                height: 44,
+                                minWidth: 44,
+                                minHeight: 44,
                                 background: 'var(--fs-primary)',
                                 border: '2px solid var(--fs-primary)',
                                 borderRadius: 0,

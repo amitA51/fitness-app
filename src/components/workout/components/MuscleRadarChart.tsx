@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import type React from 'react';
-import { memo, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import type { MuscleBalanceData } from '../../../services/analyticsService';
 
 interface MuscleRadarChartProps {
@@ -40,15 +40,18 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
   const angleStep = numPoints > 0 ? (2 * Math.PI) / numPoints : 0;
 
   // Calculate polygon points
-  const getPoint = (index: number, value: number): { x: number; y: number } => {
-    const angle = index * angleStep - Math.PI / 2; // Start from top
-    const normalizedValue = Math.min(value / 100, 1); // Normalize percentage to 0-1
-    const r = radius * normalizedValue;
-    return {
-      x: centerX + r * Math.cos(angle),
-      y: centerY + r * Math.sin(angle),
-    };
-  };
+  const getPoint = useCallback(
+    (index: number, value: number): { x: number; y: number } => {
+      const angle = index * angleStep - Math.PI / 2; // Start from top
+      const normalizedValue = Math.min(value / 100, 1); // Normalize percentage to 0-1
+      const r = radius * normalizedValue;
+      return {
+        x: centerX + r * Math.cos(angle),
+        y: centerY + r * Math.sin(angle),
+      };
+    },
+    [angleStep, radius, centerX, centerY]
+  );
 
   // Calculate label positions
   const getLabelPosition = (index: number): { x: number; y: number; anchor: string } => {
@@ -73,7 +76,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
         return `${point.x},${point.y}`;
       })
       .join(' ');
-  }, [displayData]);
+  }, [displayData, getPoint]);
 
   // Build background polygon (full radius)
   const backgroundPoints = useMemo(() => {
@@ -83,7 +86,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
       const y = centerY + radius * Math.sin(angle);
       return `${x},${y}`;
     }).join(' ');
-  }, [numPoints, radius, centerX, centerY]);
+  }, [numPoints, angleStep, radius, centerX, centerY]);
 
   // Build axis lines
   const axisLines = useMemo(() => {
@@ -93,7 +96,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
       const endY = centerY + radius * Math.sin(angle);
       return { x1: centerX, y1: centerY, x2: endX, y2: endY };
     });
-  }, [numPoints, radius, centerX, centerY]);
+  }, [numPoints, angleStep, radius, centerX, centerY]);
 
   // Get color for muscle status
   const getMuscleColor = (muscle: MuscleBalanceData): string => {
@@ -216,11 +219,12 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
               fontSize={9}
               fill={color}
               fontWeight="bold"
+              fontFamily="var(--font-mono)"
               initial={{ opacity: 0 }}
               animate={{ opacity: hoveredIndex === i ? 1 : 0.8 }}
               transition={{ delay: 0.4 + i * 0.05 }}
             >
-              {muscle.muscle.length > 6 ? `${muscle.muscle.slice(0, 5)}…` : muscle.muscle}
+              {muscle.muscle.length > 8 ? `${muscle.muscle.slice(0, 7)}…` : muscle.muscle}
             </motion.text>
           );
         })}

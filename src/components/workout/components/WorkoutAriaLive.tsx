@@ -121,7 +121,6 @@ function WorkoutAriaLive(): JSX.Element {
   // surface across NVDA / VoiceOver / JAWS / TalkBack. <output> is not yet as
   // well-supported for live regions, so we keep the explicit ARIA pattern.
   return (
-    // biome-ignore lint/a11y/useSemanticElements: see note above; <output> live-region support is uneven
     <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
       {message}
     </div>

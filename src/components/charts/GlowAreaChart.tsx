@@ -191,7 +191,8 @@ export const GlowAreaChart = memo(function GlowAreaChart({
               textAnchor="end"
               fontFamily="var(--font-mono)"
               fontSize={10}
-              fill="var(--fs-muted)"
+              fill="var(--fs-ink)"
+              fillOpacity={0.6}
             >
               {Math.round(yMax)}
             </text>
@@ -201,7 +202,8 @@ export const GlowAreaChart = memo(function GlowAreaChart({
               textAnchor="end"
               fontFamily="var(--font-mono)"
               fontSize={10}
-              fill="var(--fs-muted)"
+              fill="var(--fs-ink)"
+              fillOpacity={0.6}
             >
               {Math.round(yMin)}
             </text>
@@ -219,7 +221,8 @@ export const GlowAreaChart = memo(function GlowAreaChart({
                 textAnchor="middle"
                 fontFamily="var(--font-mono)"
                 fontSize={10}
-                fill="var(--fs-muted)"
+                fill="var(--fs-ink)"
+                fillOpacity={0.6}
               >
                 {entry.label}
               </text>

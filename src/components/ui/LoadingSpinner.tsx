@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import React, { useId } from 'react';
 
 type SpinnerVariant = 'default' | 'dots' | 'pulse' | 'orbit' | 'gradient' | 'wave';
@@ -292,6 +292,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   showText = false,
   ignoreSettings = false,
 }) => {
+  const prefersReducedMotion = useReducedMotion();
   // Determine effective variant:
   // 1. If ignoreSettings is true, use the prop (or default)
   // 2. Otherwise, use the prop directly
@@ -306,7 +307,19 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       aria-busy="true"
       className={`flex flex-col items-center justify-center gap-3 ${className}`}
     >
-      <SpinnerComponent size={size} />
+      {prefersReducedMotion ? (
+        <div
+          className={`${sizeMap[size].container} rounded-full border-2`}
+          style={{
+            borderColor: 'var(--fs-surface-2)',
+            borderTopColor: 'var(--fs-primary)',
+            borderRightColor: 'var(--fs-primary)',
+            opacity: 0.6,
+          }}
+        />
+      ) : (
+        <SpinnerComponent size={size} />
+      )}
 
       {showText && (
         <motion.span

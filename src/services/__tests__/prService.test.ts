@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { WorkoutSession } from '../../types';
-import { calculateEst1RM, calculatePRsFromHistory, getBestPRs, isNewPR } from '../prService';
+import {
+  calculateEst1RM,
+  calculatePRsFromHistory,
+  diffSetAgainstPRs,
+  getBestPRs,
+  isNewPR,
+} from '../prService';
 
 describe('calculateEst1RM (Epley)', () => {
   it('returns the weight unchanged for a single rep', () => {
@@ -227,5 +233,45 @@ describe('diffSetAgainstPRs date parameter', () => {
     const weightPR = prMap.get('ex-date-weight');
     expect(weightPR).toBeDefined();
     expect(weightPR!.date).toBe('2025-06-15');
+  });
+});
+
+describe('diffSetAgainstPRs captures multiple PR types simultaneously', () => {
+  it('persists BOTH weight and volume PRs when a single set breaks both', () => {
+    // Existing PRs: weight=80, volume=80*5=400
+    const existingPRs = [
+      {
+        id: 'pr-w',
+        exerciseId: 'bench',
+        exerciseName: 'Bench Press',
+        date: '2026-01-01',
+        weight: 80,
+        reps: 5,
+        type: 'weight' as const,
+        maxWeight: 80,
+      },
+      {
+        id: 'pr-v',
+        exerciseId: 'bench',
+        exerciseName: 'Bench Press',
+        date: '2026-01-01',
+        weight: 80,
+        reps: 5,
+        type: 'volume' as const,
+        maxWeight: 80,
+      },
+    ];
+
+    // New set: weight=100, reps=6 -> weight PR (100>80) AND volume PR (600>400)
+    const result = diffSetAgainstPRs('bench', 'Bench Press', 100, 6, existingPRs, '2026-02-01');
+
+    expect(result.newPRs.length).toBeGreaterThanOrEqual(2);
+    const types = result.newPRs.map((pr) => pr.type);
+    expect(types).toContain('weight');
+    expect(types).toContain('volume');
+    // nextPRs includes all existing + all new
+    expect(result.nextPRs.length).toBe(existingPRs.length + result.newPRs.length);
+    // backward compat: newPR is the first one
+    expect(result.newPR).toBe(result.newPRs[0]);
   });
 });

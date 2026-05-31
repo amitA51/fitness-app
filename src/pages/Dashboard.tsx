@@ -448,50 +448,52 @@ export default function Dashboard() {
         </div>
 
         {/* Workout streak */}
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 16 }}>
           <WorkoutStreak sessions={workoutSessions} />
         </div>
 
         {/* 2. Hero bento — weekly activity rings */}
-        <section
-          className="section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in"
-          aria-label="סיכום שבועי"
-          style={{
-            marginTop: 24,
-            padding: '20px 18px 22px',
-            borderRadius: '24px 18px 24px 18px',
-            display: 'grid',
-            gridTemplateColumns: 'auto minmax(0, 1fr)',
-            gap: 18,
-            alignItems: 'center',
-          }}
-        >
-          <ActivityRings size={156} rings={heroRings} />
-          <div style={{ minWidth: 0, display: 'grid', gap: 10 }}>
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                fontWeight: 800,
-                color: 'var(--fs-muted)',
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-              }}
-            >
-              § WEEKLY · SUMMARY
-            </span>
-            <div style={{ display: 'grid', gap: 6 }}>
-              <BentoRow dot="accent" label="אימונים" value={`${weekData.workoutsThisWeek} / 4`} />
-              <BentoRow
-                dot="signal"
-                label="נפח"
-                value={`${volumeLabel} ק״ג`}
-                sub={volDelta !== '—' ? volDelta : undefined}
-              />
-              <BentoRow dot="warn" label="זמן" value={`${weekData.totalMinutes}′ / 240′`} />
+        {(weekData.workoutsThisWeek > 0 || weekData.volume > 0) && (
+          <section
+            className="section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in"
+            aria-label="סיכום שבועי"
+            style={{
+              marginTop: 20,
+              padding: '20px 18px 22px',
+              borderRadius: '24px 18px 24px 18px',
+              display: 'grid',
+              gridTemplateColumns: 'auto minmax(0, 1fr)',
+              gap: 18,
+              alignItems: 'center',
+            }}
+          >
+            <ActivityRings size={156} rings={heroRings} />
+            <div style={{ minWidth: 0, display: 'grid', gap: 10 }}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 800,
+                  color: 'var(--fs-muted)',
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                § WEEKLY · SUMMARY
+              </span>
+              <div style={{ display: 'grid', gap: 6 }}>
+                <BentoRow dot="accent" label="אימונים" value={`${weekData.workoutsThisWeek} / 4`} />
+                <BentoRow
+                  dot="signal"
+                  label="נפח"
+                  value={`${volumeLabel} ק״ג`}
+                  sub={volDelta !== '—' ? volDelta : undefined}
+                />
+                <BentoRow dot="warn" label="זמן" value={`${weekData.totalMinutes}′ / 240′`} />
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* 3. "המשך מהר" — Quick templates */}
         <section style={{ marginTop: 24 }}>
@@ -836,6 +838,9 @@ const BentoRow = memo(function BentoRow({
           fontFamily: 'var(--font-mono)',
           fontSize: 13,
           fontWeight: 800,
+          fontVariantNumeric: 'tabular-nums',
+          minWidth: '3ch',
+          textAlign: 'end',
         }}
       >
         <span className="kinetic-number">{value}</span>
@@ -875,6 +880,7 @@ const MetricCard = memo(function MetricCard({
           lineHeight: 1,
           color: 'var(--fs-ink)',
           letterSpacing: '-0.01em',
+          fontVariantNumeric: 'tabular-nums',
         }}
       >
         <span className="kinetic-number">{value}</span>

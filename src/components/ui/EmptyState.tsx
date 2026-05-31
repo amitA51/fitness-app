@@ -497,6 +497,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
           <button
             type="button"
             onClick={action.onClick}
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-focus-ring)] focus-visible:ring-offset-2"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -512,6 +513,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
               border: 'none',
               cursor: 'pointer',
               transition: 'all 0.2s',
+              minHeight: 44,
             }}
           >
             {action.icon}
@@ -523,6 +525,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
           <button
             type="button"
             onClick={secondaryAction.onClick}
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-focus-ring)] focus-visible:ring-offset-2"
             style={{
               fontFamily: 'var(--font-body)',
               fontWeight: 600,
@@ -534,6 +537,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
               border: '1px solid var(--fs-surface-2)',
               cursor: 'pointer',
               transition: 'all 0.2s',
+              minHeight: 44,
             }}
           >
             {secondaryAction.label}
@@ -557,6 +561,9 @@ const EmptyState: React.FC<EmptyStateProps> = ({
         .animate-emptyStateIllustration {
           animation: emptyStateIllustration 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
           opacity: 0;
+        }
+        @media (prefers-reduced-motion: reduce){
+          .animate-emptyStateReveal,.animate-emptyStateIllustration{animation:none;opacity:1}
         }
       `}</style>
     </div>

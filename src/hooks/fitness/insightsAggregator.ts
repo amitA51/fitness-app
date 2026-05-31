@@ -295,7 +295,7 @@ export function aggregateInsights(
  * Streak computation from a set of unique date strings.
  * Mirrors achievementService.calculateStreak logic.
  */
-function computeStreak(
+export function computeStreak(
   dateSet: ReadonlySet<string>,
   now: Date
 ): { currentStreak: number; longestStreak: number } {
@@ -317,10 +317,8 @@ function computeStreak(
     }
   }
 
+  // currentStreak: consecutive days ending at anchor
   let currentStreak = 0;
-  let longestStreak = 0;
-  let tempStreak = 0;
-
   for (let i = 0; i < uniqueDates.length; i++) {
     const dateStr = uniqueDates[i];
     if (!dateStr) continue;
@@ -328,17 +326,34 @@ function computeStreak(
     const date = new Date(y, m - 1, d);
     const expectedDate = new Date(anchor);
     expectedDate.setDate(anchor.getDate() - i);
-
     if (date.getTime() === expectedDate.getTime()) {
-      tempStreak++;
-      currentStreak = tempStreak;
+      currentStreak++;
     } else {
-      longestStreak = Math.max(longestStreak, tempStreak);
-      tempStreak = 0;
       break;
     }
   }
 
-  longestStreak = Math.max(longestStreak, tempStreak);
+  // longestStreak: longest run of consecutive calendar days in sorted dates
+  const sorted = Array.from(dateSet).sort(); // ascending
+  let longestStreak = sorted.length > 0 ? 1 : 0;
+  let run = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    const [py, pm, pd] = (sorted[i - 1] as string).split('-').map(Number) as [
+      number,
+      number,
+      number,
+    ];
+    const [cy, cm, cd] = (sorted[i] as string).split('-').map(Number) as [number, number, number];
+    const prev = new Date(py, pm - 1, pd);
+    const curr = new Date(cy, cm - 1, cd);
+    const diff = curr.getTime() - prev.getTime();
+    if (diff === 86400000) {
+      run++;
+    } else {
+      run = 1;
+    }
+    longestStreak = Math.max(longestStreak, run);
+  }
+
   return { currentStreak, longestStreak };
 }

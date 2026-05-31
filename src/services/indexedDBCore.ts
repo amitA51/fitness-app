@@ -6,7 +6,7 @@
 // Cloud-sync orchestration lives in ./syncEngine (engine -> core dependency).
 // These re-exports keep existing `import { syncWithRetry, syncPendingToServer }
 // from './indexedDBCore'` call sites working without core depending on cloud config.
-export { syncPendingToServer, syncWithRetry } from './syncEngine';
+export { syncWithRetry } from './syncEngine';
 export type { SyncResult } from './syncEngine';
 
 const DB_NAME = 'sparkos-fitness-db';
@@ -199,6 +199,21 @@ export const dbGetAll = <T>(storeName: string): Promise<T[]> => {
       const tx = db.transaction(storeName, 'readonly');
       const store = tx.objectStore(storeName);
       const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result as T[]);
+      request.onerror = () => reject(request.error);
+    });
+  });
+};
+
+// Generic get all items ordered by an index
+export const dbGetAllByIndex = <T>(storeName: string, indexName: string): Promise<T[]> => {
+  return initDB().then((db) => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readonly');
+      const store = tx.objectStore(storeName);
+      const index = store.index(indexName);
+      const request = index.getAll();
 
       request.onsuccess = () => resolve(request.result as T[]);
       request.onerror = () => reject(request.error);

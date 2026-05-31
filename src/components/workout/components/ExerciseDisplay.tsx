@@ -80,7 +80,7 @@ const ActionChip = memo<ActionChipProps>(({ icon, label, onClick, active, ariaLa
       fontWeight: 700,
       color: active ? 'var(--fs-primary)' : 'var(--fs-ink)',
       cursor: 'pointer',
-      minHeight: 38,
+      minHeight: 44,
       whiteSpace: 'nowrap',
       position: 'relative',
     }}

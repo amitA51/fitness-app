@@ -63,11 +63,12 @@ export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonPr
       secondary:
         'bg-[var(--fs-overlay-hover)] text-[var(--fs-ink)] border border-[var(--color-border)] hover:bg-[var(--fs-overlay-active)]',
       ghost: 'bg-transparent text-[var(--fs-ink)] hover:bg-[var(--fs-overlay-hover)]',
-      danger: 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20',
+      danger:
+        'bg-[var(--color-error)]/10 text-[var(--color-error)] border border-[var(--color-error)]/20 hover:bg-[var(--color-error)]/20',
     };
 
     const sizeClasses = {
-      sm: 'px-3 py-1.5 text-sm min-h-[32px]',
+      sm: 'px-3 py-1.5 text-sm min-h-[44px]',
       md: 'px-4 py-2.5 text-base min-h-[44px]',
       lg: 'px-6 py-3 text-lg min-h-[52px]',
     };
@@ -83,7 +84,7 @@ export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonPr
           'inline-flex items-center justify-center gap-2',
           'font-medium rounded-xl',
           'transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-[var(--fs-accent)] focus:ring-offset-2 focus:ring-offset-transparent',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           'active:scale-[0.98]',
           variantClasses[variant],
@@ -176,7 +177,7 @@ export const AccessibleInput = forwardRef<HTMLInputElement, AccessibleInputProps
         >
           {label}
           {required && (
-            <span className="text-red-400 mr-1" aria-hidden="true">
+            <span className="text-[var(--color-error)] mr-1" aria-hidden="true">
               *
             </span>
           )}
@@ -203,11 +204,13 @@ export const AccessibleInput = forwardRef<HTMLInputElement, AccessibleInputProps
             className={cn(
               'w-full px-4 rounded-xl',
               'bg-[var(--fs-overlay-hover)] border',
-              error ? 'border-red-500/50' : 'border-[var(--color-border)]',
+              error ? 'border-[var(--color-error)]/50' : 'border-[var(--color-border)]',
               'text-[var(--fs-ink)] placeholder:text-[var(--text-tertiary)]',
-              'focus:outline-none focus:ring-2',
-              error ? 'focus:ring-red-500' : 'focus:ring-[var(--fs-accent)]',
-              'focus:border-transparent',
+              'focus-visible:outline-none focus-visible:ring-2',
+              error
+                ? 'focus-visible:ring-[var(--color-error)]'
+                : 'focus-visible:ring-[var(--fs-accent)]',
+              'focus-visible:border-transparent',
               'transition-all duration-200',
               'disabled:opacity-50 disabled:cursor-not-allowed',
               leftAddon ? 'pr-10' : '',
@@ -235,7 +238,7 @@ export const AccessibleInput = forwardRef<HTMLInputElement, AccessibleInputProps
         )}
 
         {error && (
-          <p id={errorId} className="mt-1.5 text-xs text-red-400" role="alert">
+          <p id={errorId} className="mt-1.5 text-xs text-[var(--color-error)]" role="alert">
             {error}
           </p>
         )}
@@ -397,7 +400,7 @@ export const AccessibleModal: React.FC<AccessibleModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 rounded-lg hover:bg-[var(--fs-overlay-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--fs-accent)]"
+                className="p-2 rounded-lg hover:bg-[var(--fs-overlay-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
                 aria-label="סגור"
               >
                 <svg
@@ -453,7 +456,7 @@ export const SkipLink: React.FC<SkipLinkProps> = ({ targetId, children = 'דלג
       'bg-[var(--fs-accent)] text-[var(--fs-primary)]',
       'px-4 py-2 rounded-lg font-medium',
       'transition-all duration-200',
-      'focus:outline-none focus:ring-2 focus:ring-white'
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white'
     )}
   >
     {children}
@@ -661,14 +664,14 @@ export const AccessibleTabs: React.FC<AccessibleTabsProps> = ({
               onKeyDown={(e) => handleKeyDown(e, index)}
               className={cn(
                 'transition-all duration-200',
-                'focus:outline-none focus:ring-2 focus:ring-[var(--fs-accent)] focus:ring-inset',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-inset',
                 tab.disabled && 'opacity-50 cursor-not-allowed'
               )}
               style={{
                 background: isActive ? 'var(--fs-surface)' : 'transparent',
                 color: isActive ? 'var(--fs-ink)' : 'var(--fs-muted)',
                 borderRadius: 12,
-                minHeight: 36,
+                minHeight: 44,
                 fontFamily: 'var(--font-body)',
                 fontWeight: 900,
                 fontSize: 12,

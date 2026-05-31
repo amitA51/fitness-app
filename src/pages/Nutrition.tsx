@@ -191,6 +191,11 @@ export default function NutritionPage() {
     );
   }, []);
 
+  const handleCloseModal = useCallback(() => {
+    setShowAddMeal(false);
+    setSelectedFoods([]);
+  }, []);
+
   const filteredFoods = useMemo(() => searchFoods(searchQuery), [searchQuery]);
   const presets = useMemo(() => getMealPresets(), []);
 
@@ -274,6 +279,46 @@ export default function NutritionPage() {
     []
   );
 
+  const macroStrip = useMemo(
+    () => [
+      {
+        label: 'PROTEIN',
+        he: 'חלבון',
+        icon: <Beef size={12} />,
+        cur: todayMacros.protein,
+        goal: macroGoals.protein,
+        pct: proteinPct,
+      },
+      {
+        label: 'CARBS',
+        he: 'פחמימות',
+        icon: <Wheat size={12} />,
+        cur: todayMacros.carbs,
+        goal: macroGoals.carbs,
+        pct: carbsPct,
+      },
+      {
+        label: 'FAT',
+        he: 'שומן',
+        icon: <Droplets size={12} />,
+        cur: todayMacros.fat,
+        goal: macroGoals.fat,
+        pct: fatPct,
+      },
+    ],
+    [
+      todayMacros.protein,
+      todayMacros.carbs,
+      todayMacros.fat,
+      macroGoals.protein,
+      macroGoals.carbs,
+      macroGoals.fat,
+      proteinPct,
+      carbsPct,
+      fatPct,
+    ]
+  );
+
   return (
     <div
       className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))] ambient-mesh ambient-mesh-soft"
@@ -354,32 +399,7 @@ export default function NutritionPage() {
           borderTop: 'none',
         }}
       >
-        {[
-          {
-            label: 'PROTEIN',
-            he: 'חלבון',
-            icon: <Beef size={12} />,
-            cur: todayMacros.protein,
-            goal: macroGoals.protein,
-            pct: proteinPct,
-          },
-          {
-            label: 'CARBS',
-            he: 'פחמימות',
-            icon: <Wheat size={12} />,
-            cur: todayMacros.carbs,
-            goal: macroGoals.carbs,
-            pct: carbsPct,
-          },
-          {
-            label: 'FAT',
-            he: 'שומן',
-            icon: <Droplets size={12} />,
-            cur: todayMacros.fat,
-            goal: macroGoals.fat,
-            pct: fatPct,
-          },
-        ].map((m, i) => (
+        {macroStrip.map((m, i) => (
           <div
             key={m.label}
             className="glass-surface"
@@ -709,10 +729,7 @@ export default function NutritionPage() {
             onRemoveFood={handleRemoveFood}
             onServingsChange={handleServingsChange}
             onSave={handleSaveMeal}
-            onClose={() => {
-              setShowAddMeal(false);
-              setSelectedFoods([]);
-            }}
+            onClose={handleCloseModal}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
           />
@@ -1212,7 +1229,7 @@ const MealPresetCard = memo(function MealPresetCard({
   );
 });
 
-function AddMealModal({
+const AddMealModal = memo(function AddMealModal({
   selectedMealType,
   onMealTypeChange,
   selectedFoods,
@@ -1634,4 +1651,4 @@ function AddMealModal({
       </motion.div>
     </motion.div>
   );
-}
+});

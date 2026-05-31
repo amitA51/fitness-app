@@ -845,7 +845,21 @@ export interface FullSyncCounts {
   aiConversations: number;
 }
 
+// Re-entrancy guards: concurrent calls coalesce onto the in-flight promise.
+let syncAllInFlight: Promise<SyncResult> | null = null;
+let pullAllInFlight: Promise<SyncResult> | null = null;
+
 export const syncAllData = async (): Promise<SyncResult> => {
+  if (syncAllInFlight) return syncAllInFlight;
+  syncAllInFlight = syncAllDataImpl();
+  try {
+    return await syncAllInFlight;
+  } finally {
+    syncAllInFlight = null;
+  }
+};
+
+const syncAllDataImpl = async (): Promise<SyncResult> => {
   const userId = await getUserId();
   if (!userId) {
     return { success: false, error: 'Not authenticated' };
@@ -1013,6 +1027,16 @@ export const syncAllData = async (): Promise<SyncResult> => {
 };
 
 export const pullAllData = async (): Promise<SyncResult> => {
+  if (pullAllInFlight) return pullAllInFlight;
+  pullAllInFlight = pullAllDataImpl();
+  try {
+    return await pullAllInFlight;
+  } finally {
+    pullAllInFlight = null;
+  }
+};
+
+const pullAllDataImpl = async (): Promise<SyncResult> => {
   const userId = await getUserId();
   if (!userId) {
     return { success: false, error: 'Not authenticated' };

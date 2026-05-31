@@ -163,16 +163,43 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
     return exercise.sets?.length || 0;
   }, []);
 
-  const getOriginalExerciseIndex = useCallback(
-    (exercise: Exercise) => exercises.findIndex((ex) => ex.id === exercise.id),
-    [exercises]
-  );
+  const indexById = useMemo(() => {
+    const m = new Map<string, number>();
+    exercises.forEach((e, i) => m.set(e.id, i));
+    return m;
+  }, [exercises]);
 
   const handleDragEnd = useCallback(
     (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       if (info.velocity.y > 500 || info.offset.y > 200) onClose();
     },
     [onClose]
+  );
+
+  const handleItemSelect = useCallback(
+    (index: number, id: string) => {
+      if (supersetMode) {
+        toggleSelection(id);
+      } else {
+        onSelectExercise(index);
+        onClose();
+      }
+    },
+    [supersetMode, toggleSelection, onSelectExercise, onClose]
+  );
+
+  const handleItemDelete = useCallback(
+    (index: number, e: React.MouseEvent) => {
+      handleDelete(index, e);
+    },
+    [handleDelete]
+  );
+
+  const handleItemToggleExpand = useCallback(
+    (index: number, e: React.MouseEvent) => {
+      toggleExpand(index, e);
+    },
+    [toggleExpand]
   );
 
   const sheetContent = (
@@ -408,7 +435,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                   key={exercise.id}
                   exercise={exercise}
                   index={index}
-                  originalIndex={getOriginalExerciseIndex(exercise)}
+                  originalIndex={indexById.get(exercise.id) ?? -1}
                   isActive={index === currentIndex}
                   isExpanded={expandedExercise === index}
                   completedSets={getCompletedSets(exercise)}
@@ -417,16 +444,9 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                   supersetMembership={membership}
                   selectMode={supersetMode}
                   isSelected={isSelected}
-                  onSelect={() => {
-                    if (supersetMode) {
-                      toggleSelection(exercise.id);
-                    } else {
-                      onSelectExercise(index);
-                      onClose();
-                    }
-                  }}
-                  onDelete={(e) => handleDelete(index, e)}
-                  onToggleExpand={(e) => toggleExpand(index, e)}
+                  onSelect={handleItemSelect}
+                  onDelete={handleItemDelete}
+                  onToggleExpand={handleItemToggleExpand}
                   onEditSet={onEditSet}
                   onDeleteSet={onDeleteSet}
                 />
@@ -486,9 +506,9 @@ interface ExerciseReorderItemProps {
   supersetMembership?: { groupIndex: number; position: number; total: number };
   selectMode?: boolean;
   isSelected?: boolean;
-  onSelect: () => void;
-  onDelete: (e: React.MouseEvent) => void;
-  onToggleExpand: (e: React.MouseEvent) => void;
+  onSelect: (index: number, id: string) => void;
+  onDelete: (index: number, e: React.MouseEvent) => void;
+  onToggleExpand: (index: number, e: React.MouseEvent) => void;
   onEditSet?: (
     exerciseIndex: number,
     setIndex: number,
@@ -601,7 +621,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              onSelect();
+              onSelect(index, exercise.id);
             }}
             style={{
               flex: 1,
@@ -705,7 +725,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
             onPointerDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              onToggleExpand(e);
+              onToggleExpand(index, e);
             }}
             style={{
               width: 40,
@@ -735,7 +755,7 @@ const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
             onPointerDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              onDelete(e);
+              onDelete(index, e);
             }}
             style={{
               width: 40,

@@ -20,7 +20,10 @@ export const saveBodyWeight = async (entry: BodyWeightEntry): Promise<void> => {
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(() => syncBodyWeight(user.id, entry), `saveBodyWeight:${entry.id}`);
+    syncWithRetry(() => syncBodyWeight(user.id, entry), `saveBodyWeight:${entry.id}`, 3, {
+      type: 'bodyweight:create',
+      payload: entry,
+    });
   }
 };
 
@@ -73,7 +76,10 @@ export const deleteBodyWeight = async (id: string): Promise<void> => {
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(() => deleteCloudBodyWeight(user.id, id), `deleteBodyWeight:${id}`);
+    syncWithRetry(() => deleteCloudBodyWeight(user.id, id), `deleteBodyWeight:${id}`, 3, {
+      type: 'bodyweight:delete',
+      payload: id,
+    });
   }
 };
 

@@ -3,7 +3,7 @@
 // ============================================================================
 
 import type { PersonalRecord, WorkoutSession } from '../types';
-import { HEBREW_DAYS } from '../utils/dateUtils';
+import { HEBREW_DAYS, pad2, todayStr } from '../utils/dateUtils';
 import { completedSetsVolume, setVolume } from '../utils/workoutMath';
 import { getWorkoutSessions } from './workoutDb';
 
@@ -87,6 +87,16 @@ const FORECAST_SLOPE_THRESHOLD = 10;
 /** Ratio threshold for muscle-balance trend detection (5% change). */
 const MUSCLE_BALANCE_TREND_THRESHOLD = 0.05;
 
+/** Parse a YYYY-MM-DD string as local midnight (avoids UTC-shift from `new Date(str)`). */
+const parseLocalDate = (s: string): Date => {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y!, (m || 1) - 1, d || 1);
+};
+
+/** Format a local Date as YYYY-MM-DD string. */
+const formatLocalDateStr = (d: Date): string =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
 function getISOWeek(date: Date): string {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -162,7 +172,7 @@ function filterByWeeks(sessions: WorkoutSession[], weeks?: number): WorkoutSessi
   if (!weeks || weeks <= 0) return sessions;
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - weeks * 7);
-  const cutoffStr = cutoff.toISOString().slice(0, 10);
+  const cutoffStr = formatLocalDateStr(cutoff);
   return sessions.filter((s) => s.date >= cutoffStr);
 }
 
@@ -256,7 +266,7 @@ export const getAnalyticsSummary = async (
   // Weekly frequency: workouts per day of week (0=Sunday .. 6=Saturday)
   const dayCounts = [0, 0, 0, 0, 0, 0, 0];
   for (const session of completedSessions) {
-    const dayOfWeek = new Date(session.date).getDay();
+    const dayOfWeek = parseLocalDate(session.date).getDay();
     dayCounts[dayOfWeek] = (dayCounts[dayOfWeek] ?? 0) + 1;
   }
 
@@ -284,7 +294,7 @@ export const calculateVolumeHistory = (
   const weekMap = new Map<string, { volume: number; sets: number }>();
 
   for (const session of completedSessions) {
-    const weekKey = getISOWeek(new Date(session.date));
+    const weekKey = getISOWeek(parseLocalDate(session.date));
     const stats = computeSessionStats(session);
     const existing = weekMap.get(weekKey) || { volume: 0, sets: 0 };
     weekMap.set(weekKey, {
@@ -308,7 +318,7 @@ export const calculateFrequency = (sessions: WorkoutSession[]): FrequencyData[] 
 
   for (const session of sessions) {
     if (session.status !== 'completed') continue;
-    const dayOfWeek = new Date(session.date).getDay();
+    const dayOfWeek = parseLocalDate(session.date).getDay();
     counts[dayOfWeek] = (counts[dayOfWeek] ?? 0) + 1;
   }
 
@@ -360,8 +370,8 @@ export const getProgressData = async (
 ): Promise<{ date: string; value: number }[]> => {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - weeks * 7);
-  const startDate = cutoff.toISOString().slice(0, 10);
-  const endDate = new Date().toISOString().slice(0, 10);
+  const startDate = formatLocalDateStr(cutoff);
+  const endDate = todayStr();
 
   let sessions: WorkoutSession[];
   try {
@@ -391,7 +401,7 @@ export const calculateWeeklyVolumes = (
   // Group sessions by ISO week
   const weekGroupMap = new Map<string, WorkoutSession[]>();
   for (const session of completedSessions) {
-    const weekKey = getISOWeek(new Date(session.date));
+    const weekKey = getISOWeek(parseLocalDate(session.date));
     const group = weekGroupMap.get(weekKey);
     if (group) {
       group.push(session);
@@ -584,7 +594,7 @@ export const forecastProgress = (
         }
       }
       if (exerciseVol > 0) {
-        const weekKey = getISOWeek(new Date(session.date));
+        const weekKey = getISOWeek(parseLocalDate(session.date));
         weekMap.set(weekKey, (weekMap.get(weekKey) || 0) + exerciseVol);
       }
     }
@@ -765,12 +775,12 @@ export const getMuscleGroupDaysSince = (sessions: WorkoutSession[]): MuscleGroup
       }
     }
   }
-  const today = new Date().toISOString().split('T')[0] ?? '';
+  const today = todayStr();
   return Array.from(muscleLastDate.entries()).map(([muscle, date]) => ({
     muscle,
     lastDate: date,
     daysSince: Math.floor(
-      (new Date(today).getTime() - new Date(date).getTime()) / (1000 * 60 * 60 * 24)
+      (parseLocalDate(today).getTime() - parseLocalDate(date).getTime()) / (1000 * 60 * 60 * 24)
     ),
   }));
 };
@@ -782,8 +792,8 @@ export const getWeekOverWeekProgress = (sessions: WorkoutSession[]): ProgressDel
   const lastWeekStart = new Date(thisWeekStart);
   lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
-  const thisWeekStartStr = thisWeekStart.toISOString().split('T')[0] ?? '';
-  const lastWeekStartStr = lastWeekStart.toISOString().split('T')[0] ?? '';
+  const thisWeekStartStr = formatLocalDateStr(thisWeekStart);
+  const lastWeekStartStr = formatLocalDateStr(lastWeekStart);
   const thisWeek = sessions.filter((s) => s.status === 'completed' && s.date >= thisWeekStartStr);
   const lastWeek = sessions.filter(
     (s) => s.status === 'completed' && s.date >= lastWeekStartStr && s.date < thisWeekStartStr

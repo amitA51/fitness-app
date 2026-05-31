@@ -71,7 +71,7 @@ export const AnnualInput = memo(function AnnualInput({
             'w-full h-14 transition-all duration-200',
             'text-base',
             'placeholder:opacity-60',
-            'focus:outline-none',
+            'focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--fs-focus-ring)]',
             icon ? 'pl-12 pr-4' : 'px-4',
             suffix ? 'pr-12' : '',
             disabled ? 'opacity-50 cursor-not-allowed' : ''
@@ -82,18 +82,6 @@ export const AnnualInput = memo(function AnnualInput({
             borderRadius: '22px 16px 22px 16px',
             fontFamily: 'var(--font-body)',
             color: 'var(--fs-ink)',
-          }}
-          onFocus={(e) => {
-            if (!error) {
-              e.currentTarget.style.borderColor = 'var(--fs-accent)';
-              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(67, 199, 165, 0.2)';
-            }
-          }}
-          onBlur={(e) => {
-            if (!error) {
-              e.currentTarget.style.borderColor = 'var(--fs-surface-2)';
-              e.currentTarget.style.boxShadow = 'none';
-            }
           }}
         />
         {suffix && <div className="absolute right-4 top-1/2 -translate-y-1/2">{suffix}</div>}

@@ -134,7 +134,10 @@ export function getExerciseSnapshot(
     setsCompleted: completedSets.length,
     setsTarget: targetSets,
     wasCompleted:
-      targetSets > 0 ? exercise.isCompleted || completedSets.length >= targetSets * 0.7 : false,
+      targetSets > 0
+        ? (exercise.isCompleted && completedSets.length > 0) ||
+          completedSets.length >= targetSets * 0.7
+        : false,
   };
 }
 

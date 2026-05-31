@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest';
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../../types';
 import { completedSetsVolume } from '../../utils/workoutMath';
 import {
+  calculateFrequency,
   calculateMuscleBalance,
   calculateStrengthProgression,
+  calculateVolumeHistory,
   calculateWeeklyVolumes,
   forecastProgress,
   getLastWorkoutSummary,
+  getMuscleGroupDaysSince,
 } from '../analyticsService';
 
 const set = (id: string, weight: number, reps: number): WorkoutSet => ({
@@ -218,5 +221,62 @@ describe('calculateWeeklyVolumes - output stability', () => {
     // Change from previous
     expect(result[0]!.changeFromPrevious).toBeNull();
     expect(result[1]!.changeFromPrevious).toBe(-73); // (400-1500)/1500*100 = -73.33 => -73
+  });
+});
+
+// ============================================================================
+// Timezone fix tests: parseLocalDate prevents UTC-shift corruption
+// ============================================================================
+
+describe('calculateFrequency - local date parsing (timezone fix)', () => {
+  it('counts a Sunday session (2026-01-04) on day index 0 (Sunday)', () => {
+    // 2026-01-04 is a Sunday. Before the fix, `new Date('2026-01-04')` parses
+    // as UTC midnight; in UTC+2/+3 timezones getDay() would return 6 (Saturday).
+    const sessions: WorkoutSession[] = [mkSession('s1', '2026-01-04', [set('a', 80, 5)])];
+    const freq = calculateFrequency(sessions);
+    // HEBREW_DAYS[0] = 'א' (Sunday)
+    const sunday = freq[0];
+    expect(sunday?.count).toBe(1);
+    // Saturday should be 0
+    const saturday = freq[6];
+    expect(saturday?.count).toBe(0);
+  });
+
+  it('counts a Monday session (2026-01-05) on day index 1 (Monday)', () => {
+    // 2026-01-05 is a Monday.
+    const sessions: WorkoutSession[] = [mkSession('s1', '2026-01-05', [set('a', 80, 5)])];
+    const freq = calculateFrequency(sessions);
+    const monday = freq[1];
+    expect(monday?.count).toBe(1);
+    const sunday = freq[0];
+    expect(sunday?.count).toBe(0);
+  });
+});
+
+describe('calculateVolumeHistory - week bucketing (timezone fix)', () => {
+  it('buckets sessions near a week boundary into the correct ISO week', () => {
+    // 2026-01-05 (Monday) is in ISO week 2026-W02.
+    // 2026-01-04 (Sunday) is in ISO week 2026-W01.
+    // Before the fix, UTC-shift could move Sunday into Saturday's week.
+    const sessions: WorkoutSession[] = [
+      mkSession('s1', '2026-01-04', [set('a', 60, 10)]), // Sunday -> W01
+      mkSession('s2', '2026-01-05', [set('b', 80, 10)]), // Monday -> W02
+    ];
+    const result = calculateVolumeHistory(sessions, 52);
+    expect(result).toHaveLength(2);
+    expect(result[0]!.date).toBe('2026-W01');
+    expect(result[1]!.date).toBe('2026-W02');
+  });
+});
+
+describe('getMuscleGroupDaysSince - local today (timezone fix)', () => {
+  it('returns 0 daysSince for a session dated today', () => {
+    // Use the actual local today string to create a session
+    const now = new Date();
+    const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const sessions: WorkoutSession[] = [mkSession('s1', todayLocal, [set('a', 80, 5)])];
+    const result = getMuscleGroupDaysSince(sessions);
+    expect(result).toHaveLength(1);
+    expect(result[0]!.daysSince).toBe(0);
   });
 });

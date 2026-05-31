@@ -833,8 +833,7 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
     } catch {
       dispatch({ type: 'SET_ITEMS', payload: defaultItems });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storageKey]);
+  }, [storageKey, defaultItems]);
 
   useEffect(() => {
     if (state.items.length === 0) return;

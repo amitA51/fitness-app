@@ -101,7 +101,10 @@ export async function addBodyWeight(
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(() => syncBodyWeight(user.id, newEntry), `addBodyWeight:${newEntry.id}`);
+    syncWithRetry(() => syncBodyWeight(user.id, newEntry), `addBodyWeight:${newEntry.id}`, 3, {
+      type: 'bodyweight:create',
+      payload: newEntry,
+    });
   }
 
   // Notify TDEE-aware consumers (Settings / Nutrition) that latest weight has changed.
@@ -125,7 +128,10 @@ export async function updateBodyWeight(entry: BodyWeightEntry): Promise<void> {
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(() => syncBodyWeight(user.id, entry), `updateBodyWeight:${entry.id}`);
+    syncWithRetry(() => syncBodyWeight(user.id, entry), `updateBodyWeight:${entry.id}`, 3, {
+      type: 'bodyweight:create',
+      payload: entry,
+    });
   }
 }
 
@@ -134,7 +140,10 @@ export async function deleteBodyWeight(id: string): Promise<void> {
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(() => deleteCloudBodyWeight(user.id, id), `deleteBodyWeight:${id}`);
+    syncWithRetry(() => deleteCloudBodyWeight(user.id, id), `deleteBodyWeight:${id}`, 3, {
+      type: 'bodyweight:delete',
+      payload: id,
+    });
   }
 }
 
@@ -217,7 +226,9 @@ export async function addBodyMeasurement(
           notes: newEntry.notes,
           createdAt: newEntry.createdAt,
         }),
-      `addBodyMeasurement:${newEntry.id}`
+      `addBodyMeasurement:${newEntry.id}`,
+      3,
+      { type: 'measurement:create', payload: newEntry }
     );
   }
 

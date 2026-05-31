@@ -99,7 +99,9 @@ export const createPersonalExercise = async (
         if (user) {
           syncWithRetry(
             () => syncPersonalExercise(user.id, { ...newExercise, name: newExercise.name ?? '' }),
-            `createPersonalExercise:${newExercise.id}`
+            `createPersonalExercise:${newExercise.id}`,
+            3,
+            { type: 'exercise:update', payload: { ...newExercise, name: newExercise.name ?? '' } }
           );
         }
       });
@@ -132,7 +134,9 @@ export const updatePersonalExercise = async (
         if (user) {
           syncWithRetry(
             () => syncPersonalExercise(user.id, { ...updated, name: updated.name ?? '' }),
-            `updatePersonalExercise:${id}`
+            `updatePersonalExercise:${id}`,
+            3,
+            { type: 'exercise:update', payload: { ...updated, name: updated.name ?? '' } }
           );
         }
       });
@@ -165,7 +169,9 @@ export const deletePersonalExercise = async (id: string): Promise<void> => {
         if (user) {
           syncWithRetry(
             () => deleteCloudPersonalExercise(user.id, id),
-            `deletePersonalExercise:${id}`
+            `deletePersonalExercise:${id}`,
+            3,
+            { type: 'exercise:delete', payload: id }
           );
         }
       });

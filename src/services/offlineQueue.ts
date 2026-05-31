@@ -8,7 +8,7 @@ import { logger } from '../utils/logger';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type MutationType =
+export type MutationType =
   | 'template:create'
   | 'template:update'
   | 'template:delete'
@@ -329,36 +329,52 @@ function getDedupKey(type: MutationType, payload: unknown): string | null {
  * is unchanged.
  */
 export async function queueMutation(type: MutationType, payload: unknown): Promise<void> {
-  let queueId: string = crypto.randomUUID();
   const dedupKey = getDedupKey(type, payload);
+  const db = await openQueueDB();
 
-  if (dedupKey) {
-    try {
-      const existing = await getAllMutations();
-      const match = existing.find((m) => getDedupKey(m.type, m.payload) === dedupKey);
-      if (match) {
-        queueId = match.id;
-      }
-    } catch (err) {
-      // If we can't read the queue, fall through and enqueue a new entry.
-      logger.sync.warn('Dedup lookup failed, enqueueing fresh entry', err);
+  return new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    let queueId: string = crypto.randomUUID();
+
+    function doPut() {
+      store.put({
+        id: queueId,
+        type,
+        payload,
+        timestamp: Date.now(),
+        retryCount: 0,
+      } as QueuedMutation);
     }
-  }
 
-  const mutation: QueuedMutation = {
-    id: queueId,
-    type,
-    payload,
-    timestamp: Date.now(),
-    retryCount: 0,
-  };
+    if (dedupKey) {
+      const idx = store.index('timestamp');
+      const cursorReq = idx.openCursor();
+      cursorReq.onsuccess = () => {
+        const cursor = cursorReq.result;
+        if (cursor) {
+          const m = cursor.value as QueuedMutation;
+          if (getDedupKey(m.type, m.payload) === dedupKey) {
+            queueId = m.id;
+            doPut();
+            return;
+          }
+          cursor.continue();
+        } else {
+          doPut();
+        }
+      };
+      cursorReq.onerror = () => doPut();
+    } else {
+      doPut();
+    }
 
-  try {
-    await putMutation(mutation);
-    logger.sync.info('Queued offline mutation', { type, id: mutation.id });
-  } catch (err) {
-    logger.sync.error('Failed to queue mutation', err);
-  }
+    tx.oncomplete = () => {
+      logger.sync.info('Queued offline mutation', { type, id: queueId });
+      resolve();
+    };
+    tx.onerror = () => reject(tx.error);
+  });
 }
 
 // ── Queue processing guard ──────────────────────────────────────────────────

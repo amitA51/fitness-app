@@ -7,6 +7,7 @@
 import { LOCAL_STORAGE_KEYS as LS } from '../constants';
 import { ValidationError } from '../errors';
 import type { WorkoutSession } from '../types';
+import { safeTimestamp } from './cloudMerge';
 import { emitWorkoutSaved } from './dataEvents';
 import { STORES, dbDelete, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
@@ -22,7 +23,9 @@ export const saveWorkoutSession = async (session: WorkoutSession): Promise<void>
   if (user) {
     syncWithRetry(
       () => syncWorkoutSession(user.id, { ...session, endTime: session.endTime ?? undefined }),
-      `saveWorkoutSession:${session.id}`
+      `saveWorkoutSession:${session.id}`,
+      3,
+      { type: 'session:update', payload: { ...session, endTime: session.endTime ?? undefined } }
     );
   }
 
@@ -165,7 +168,9 @@ export const deleteWorkoutSession = async (sessionId: string): Promise<void> => 
   if (user) {
     syncWithRetry(
       () => deleteCloudWorkoutSession(user.id, sessionId),
-      `deleteWorkoutSession:${sessionId}`
+      `deleteWorkoutSession:${sessionId}`,
+      3,
+      { type: 'session:delete', payload: sessionId }
     );
   }
 
@@ -186,21 +191,27 @@ export const mergeWorkoutSessionsFromCloud = async (
   let updated = 0;
   let kept = 0;
 
+  const writes: WorkoutSession[] = [];
+
   for (const cloud of cloudSessions) {
     const local = localMap.get(cloud.id);
     if (!local) {
-      await dbPut(STORES.WORKOUT_SESSIONS, cloud);
+      writes.push(cloud);
       added++;
     } else {
-      const localTime = new Date(local.updatedAt || local.createdAt).getTime();
-      const cloudTime = new Date(cloud.updatedAt || cloud.createdAt || '').getTime();
-      if (cloudTime > localTime) {
-        await dbPut(STORES.WORKOUT_SESSIONS, cloud);
+      const localTime = safeTimestamp(local.updatedAt) || safeTimestamp(local.createdAt);
+      const cloudTime = safeTimestamp(cloud.updatedAt) || safeTimestamp(cloud.createdAt);
+      if (cloudTime > localTime || (cloudTime > 0 && localTime === 0)) {
+        writes.push(cloud);
         updated++;
       } else {
         kept++;
       }
     }
+  }
+
+  if (writes.length > 0) {
+    await Promise.all(writes.map((s) => dbPut(STORES.WORKOUT_SESSIONS, s)));
   }
 
   return { added, updated, kept };

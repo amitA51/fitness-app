@@ -132,6 +132,7 @@ export default function ProgressPage() {
 
   const [prCount, setPRCount] = useState(0);
   useEffect(() => {
+    if (sessions.length === 0) return;
     let cancelled = false;
     getAllPRs()
       .then((all) => {
@@ -143,7 +144,7 @@ export default function ProgressPage() {
     return () => {
       cancelled = true;
     };
-  }, [sessions.length]);
+  }, [sessions]);
 
   const metrics = useMemo(() => {
     const count = completedSessions.length;
@@ -524,10 +525,11 @@ export default function ProgressPage() {
             <div
               style={{
                 fontFamily: 'var(--font-mono)',
-                fontWeight: 700,
-                fontSize: 22,
+                fontWeight: 600,
+                fontSize: 20,
                 color: 'var(--fs-ink)',
                 lineHeight: 1,
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               {metrics.count}
@@ -571,10 +573,11 @@ export default function ProgressPage() {
             <div
               style={{
                 fontFamily: 'var(--font-mono)',
-                fontWeight: 700,
-                fontSize: 22,
+                fontWeight: 800,
+                fontSize: 26,
                 color: 'var(--fs-ink)',
                 lineHeight: 1,
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               {formatVolume(metrics.volume)}
@@ -618,10 +621,11 @@ export default function ProgressPage() {
             <div
               style={{
                 fontFamily: 'var(--font-mono)',
-                fontWeight: 700,
-                fontSize: 22,
+                fontWeight: 600,
+                fontSize: 20,
                 color: 'var(--fs-ink)',
                 lineHeight: 1,
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               {metrics.prs}

@@ -53,7 +53,10 @@ export default memo(function BottomNav() {
         boxShadow: 'var(--nav-shadow)',
       }}
     >
-      <ul className="flex justify-around items-center h-16 max-w-md mx-auto px-1">
+      <ul
+        className="flex justify-around items-center h-16 max-w-md mx-auto px-1"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
         {NAV_ITEMS.map(({ path, label, icon: Icon }) => {
           const isActive =
             path === '/'
@@ -92,7 +95,7 @@ export default memo(function BottomNav() {
                     }
                   }
                 }}
-                className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-h-[48px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fs-primary)] rounded-sm ${
+                className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-h-[48px] transition-colors transition-transform duration-75 active:scale-[0.92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fs-primary)] rounded-sm ${
                   isActive ? '' : 'magnetic-card'
                 }`}
               >

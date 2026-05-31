@@ -95,7 +95,20 @@ export const savePR = async (pr: PersonalRecord): Promise<void> => {
           date: pr.date,
           recordType: pr.type,
         }),
-      `savePR:${pr.id}`
+      `savePR:${pr.id}`,
+      3,
+      {
+        type: 'record:create',
+        payload: {
+          id: pr.id,
+          exerciseId: pr.exerciseId,
+          exerciseName: pr.exerciseName,
+          weight: pr.weight,
+          reps: pr.reps,
+          date: pr.date,
+          recordType: pr.type,
+        },
+      }
     );
   }
 };
@@ -111,32 +124,35 @@ export const deletePR = async (prId: string): Promise<void> => {
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(() => deleteCloudPersonalRecord(user.id, prId), `deletePR:${prId}`);
+    syncWithRetry(() => deleteCloudPersonalRecord(user.id, prId), `deletePR:${prId}`, 3, {
+      type: 'record:delete',
+      payload: prId,
+    });
   }
 };
 
 // Internal: diff a completed set against an in-memory list of existing PRs
-// for that exercise. Pure function — no IO. Returns a newly-broken PR or null,
+// for that exercise. Pure function — no IO. Returns ALL newly-broken PRs,
 // plus the updated PR list so a caller iterating sets can keep state in sync
 // without re-hitting IndexedDB between sets.
-const diffSetAgainstPRs = (
+export const diffSetAgainstPRs = (
   exerciseId: string,
   exerciseName: string,
   weight: number,
   reps: number,
   existingPRs: PersonalRecord[],
   date?: string
-): { newPR: PersonalRecord | null; nextPRs: PersonalRecord[] } => {
-  if (weight <= 0 || reps <= 0) return { newPR: null, nextPRs: existingPRs };
+): { newPR: PersonalRecord | null; newPRs: PersonalRecord[]; nextPRs: PersonalRecord[] } => {
+  if (weight <= 0 || reps <= 0) return { newPR: null, newPRs: [], nextPRs: existingPRs };
 
   const prDate = date ?? new Date().toISOString();
   const volume = weight * reps;
   const est1RM = calculateEst1RM(weight, reps); // canonical: handles reps===1 + rounding
-  let newPR: PersonalRecord | null = null;
+  const newPRs: PersonalRecord[] = [];
 
   const weightPR = existingPRs.find((pr) => pr.type === 'weight');
   if (!weightPR || weight > weightPR.weight) {
-    newPR = {
+    newPRs.push({
       id: crypto.randomUUID(),
       exerciseId,
       exerciseName,
@@ -146,7 +162,7 @@ const diffSetAgainstPRs = (
       type: 'weight',
       maxWeight: weight,
       oneRepMax: est1RM,
-    };
+    });
   }
 
   const volumePR = existingPRs.find((pr) => pr.type === 'volume');
@@ -159,7 +175,7 @@ const diffSetAgainstPRs = (
       )
     : 0;
   if (!volumePR || volume > existingVolume) {
-    const pr: PersonalRecord = {
+    newPRs.push({
       id: crypto.randomUUID(),
       exerciseId,
       exerciseName,
@@ -169,8 +185,7 @@ const diffSetAgainstPRs = (
       type: 'volume',
       maxWeight: weight,
       oneRepMax: est1RM,
-    };
-    if (!newPR) newPR = pr;
+    });
   }
 
   // Reps PR: highest reps at weight ≥ 0.85 × current weight PR
@@ -178,7 +193,7 @@ const diffSetAgainstPRs = (
   const repsPR = existingPRs.find((pr) => pr.type === 'reps');
   const weightThreshold = (weightPR?.weight || 0) * 0.85;
   if (weight >= weightThreshold && (!repsPR || reps > (repsPR.reps || 0))) {
-    const pr: PersonalRecord = {
+    newPRs.push({
       id: crypto.randomUUID(),
       exerciseId,
       exerciseName,
@@ -188,12 +203,12 @@ const diffSetAgainstPRs = (
       type: 'reps',
       maxWeight: weight,
       oneRepMax: est1RM,
-    };
-    if (!newPR) newPR = pr;
+    });
   }
 
-  const nextPRs = newPR ? [...existingPRs, newPR] : existingPRs;
-  return { newPR, nextPRs };
+  const newPR = newPRs[0] ?? null;
+  const nextPRs = newPRs.length > 0 ? [...existingPRs, ...newPRs] : existingPRs;
+  return { newPR, newPRs, nextPRs };
 };
 
 // Check if a completed set is a new PR - this is the key real-time detection function.
@@ -207,13 +222,13 @@ export const checkForNewPR = async (
   if (weight <= 0 || reps <= 0) return null;
 
   const existingPRs = await getPRsForExercise(exerciseId);
-  const { newPR } = diffSetAgainstPRs(exerciseId, exerciseName, weight, reps, existingPRs);
+  const { newPR, newPRs } = diffSetAgainstPRs(exerciseId, exerciseName, weight, reps, existingPRs);
 
-  if (newPR) {
-    await savePR(newPR);
+  for (const pr of newPRs) {
+    await savePR(pr);
     import('./notificationService')
       .then(({ showPRNotification }) => {
-        showPRNotification(exerciseName, newPR.type);
+        showPRNotification(exerciseName, pr.type);
       })
       .catch(() => {});
   }
@@ -258,7 +273,7 @@ export const createBatchedPRChecker = async (exerciseIds: string[]): Promise<Bat
       cache.set(exerciseId, existingPRs);
     }
 
-    const { newPR, nextPRs } = diffSetAgainstPRs(
+    const { newPR, newPRs, nextPRs } = diffSetAgainstPRs(
       exerciseId,
       exerciseName,
       weight,
@@ -266,9 +281,11 @@ export const createBatchedPRChecker = async (exerciseIds: string[]): Promise<Bat
       existingPRs
     );
 
-    if (newPR) {
+    if (newPRs.length > 0) {
       cache.set(exerciseId, nextPRs);
-      await savePR(newPR);
+      for (const pr of newPRs) {
+        await savePR(pr);
+      }
     }
     return newPR;
   };

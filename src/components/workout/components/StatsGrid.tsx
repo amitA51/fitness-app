@@ -30,6 +30,10 @@ const AnimatedCounter: React.FC<AnimatedCounterProps> = memo(
     const [displayValue, setDisplayValue] = useState(0);
 
     useEffect(() => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        setDisplayValue(value);
+        return;
+      }
       const steps = 40;
       let step = 0;
       const timer = setInterval(() => {

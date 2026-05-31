@@ -9,6 +9,7 @@ import App from './App';
 import { RootErrorBoundary } from './errors/RootErrorBoundary';
 import { initAI } from './services/ai/bootstrap';
 import { checkMissedWorkouts } from './services/notificationService';
+import { initOfflineSync } from './services/offlineQueue';
 import { initWebVitals } from './services/webVitals';
 import { logger } from './utils/logger';
 import './styles/global.css';
@@ -24,6 +25,13 @@ if (sentryDsn) {
     dsn: sentryDsn,
     environment: import.meta.env.MODE,
     tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
+    sendDefaultPii: false,
+    beforeSend(event) {
+      if (event.extra?.data) {
+        event.extra.data = undefined;
+      }
+      return event;
+    },
   });
   logger.app.info('Sentry initialized');
 }
@@ -55,6 +63,10 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 initAI();
+
+// Activate the offline mutation queue: replays failed cloud writes on
+// startup and when the network comes back online.
+initOfflineSync();
 
 // Notification permission is now requested from Settings when the user
 // explicitly enables reminders (better UX, higher grant rates).

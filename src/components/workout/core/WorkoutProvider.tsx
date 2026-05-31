@@ -182,6 +182,15 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
     };
   }, [state]);
 
+  // Flush latest state on unmount to avoid losing the last debounced write
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(
+    () => () => {
+      persistState(stateRef.current);
+    },
+    []
+  );
+
   // ============================================================
   // VISIBILITY CHANGE HANDLING (Background/Foreground)
   // ============================================================

@@ -25,7 +25,7 @@ export const AuroraBackground: React.FC = () => {
             ? { duration: 0 }
             : { duration: 20, repeat: Number.POSITIVE_INFINITY, ease: 'linear' }
         }
-        className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-purple-500/20 rounded-full blur-[120px]"
+        className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-[color-mix(in_srgb,var(--fs-accent)_20%,transparent)] rounded-full blur-[120px]"
       />
 
       <motion.div
@@ -44,7 +44,7 @@ export const AuroraBackground: React.FC = () => {
             ? { duration: 0 }
             : { duration: 25, repeat: Number.POSITIVE_INFINITY, ease: 'linear' }
         }
-        className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-blue-500/20 rounded-full blur-[140px]"
+        className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-[color-mix(in_srgb,var(--fs-accent-2)_20%,transparent)] rounded-full blur-[140px]"
       />
 
       <motion.div
@@ -61,7 +61,7 @@ export const AuroraBackground: React.FC = () => {
             ? { duration: 0 }
             : { duration: 15, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }
         }
-        className="absolute top-[30%] left-[30%] w-[40vw] h-[40vw] bg-indigo-500/10 rounded-full blur-[100px]"
+        className="absolute top-[30%] left-[30%] w-[40vw] h-[40vw] bg-[color-mix(in_srgb,var(--fs-accent)_10%,transparent)] rounded-full blur-[100px]"
       />
 
       {/* Grain Overlay for Texture */}

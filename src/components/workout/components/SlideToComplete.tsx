@@ -28,6 +28,9 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
   const [isDragging, setIsDragging] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
+  const prefersReducedMotion =
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   const isRTL = typeof document !== 'undefined' && document.dir === 'rtl';
   const sign = isRTL ? -1 : 1;
 
@@ -47,12 +50,18 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     setIsComplete(true);
     setOffset(maxOffsetRef.current);
     triggerHaptic('success');
-    window.setTimeout(() => {
+    if (prefersReducedMotion) {
       onComplete();
       setOffset(0);
       setIsComplete(false);
-    }, 240);
-  }, [onComplete]);
+    } else {
+      window.setTimeout(() => {
+        onComplete();
+        setOffset(0);
+        setIsComplete(false);
+      }, 240);
+    }
+  }, [onComplete, prefersReducedMotion]);
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (disabled || isComplete) return;
@@ -105,9 +114,11 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
   };
 
   const progress = maxOffsetRef.current > 0 ? offset / maxOffsetRef.current : 0;
-  const snap = isDragging
+  const snap = prefersReducedMotion
     ? 'none'
-    : 'transform 280ms cubic-bezier(0.16, 1, 0.3, 1), width 280ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease';
+    : isDragging
+      ? 'none'
+      : 'transform 280ms cubic-bezier(0.16, 1, 0.3, 1), width 280ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease';
 
   // Pattern fill for track background
   const patternFill =

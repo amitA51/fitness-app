@@ -3,6 +3,7 @@ import { memo, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { greeting } from '../../utils/dateUtils';
 import { safeJsonParse } from '../../utils/safeJson';
+import { parseUserProfile } from '../../utils/validation';
 
 interface DashboardHeaderProps {
   hasSessionToday?: boolean;
@@ -12,14 +13,8 @@ export const DashboardHeader = memo(function DashboardHeader({
   hasSessionToday = false,
 }: DashboardHeaderProps) {
   const userName = useMemo(() => {
-    try {
-      const profile = localStorage.getItem('user_profile');
-      const parsed = safeJsonParse<{ name?: string; displayName?: string }>(profile);
-      if (parsed) return parsed.name || parsed.displayName || null;
-    } catch {
-      /* ignore */
-    }
-    return null;
+    const raw = safeJsonParse(localStorage.getItem('user_profile'));
+    return parseUserProfile(raw).name ?? null;
   }, []);
 
   const todayFull = useMemo(

@@ -194,7 +194,7 @@ const FS_BASE_STYLE: React.CSSProperties = {
 const fsStyles: Record<FsVariant, React.CSSProperties> = {
   'fs-primary': {
     background: 'linear-gradient(135deg, var(--fs-accent), var(--fs-accent-2))',
-    color: '#071412',
+    color: 'var(--color-ink-on-accent)',
     borderRadius: '22px 16px 22px 16px',
     boxShadow: 'var(--shadow-button)',
   },
@@ -284,7 +284,7 @@ export const Button: React.FC<ButtonProps> = ({
     return (
       <button
         disabled={disabled || isLoading}
-        className={className}
+        className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2${className ? ` ${className}` : ''}`}
         style={{
           ...FS_BASE_STYLE,
           cursor: disabled || isLoading ? 'not-allowed' : 'pointer',

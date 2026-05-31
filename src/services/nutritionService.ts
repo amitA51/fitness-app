@@ -627,28 +627,30 @@ export async function addFoodFromPreset(
     try {
       const user = await getCurrentUser();
       if (user) {
+        const syncPayload = {
+          id: mealEntry.id,
+          date: mealEntry.date,
+          calories: Math.round(mealEntry.totalMacros.calories),
+          protein: Math.round(mealEntry.totalMacros.protein),
+          carbs: Math.round(mealEntry.totalMacros.carbs),
+          fat: Math.round(mealEntry.totalMacros.fat),
+          meals: mealEntry.meals.map((m) => ({
+            id: m.id,
+            name: m.name,
+            calories: Math.round(m.totalMacros.calories),
+            protein: Math.round(m.totalMacros.protein),
+            carbs: Math.round(m.totalMacros.carbs),
+            fat: Math.round(m.totalMacros.fat),
+            time: m.time,
+          })),
+          notes: mealEntry.notes,
+          createdAt: mealEntry.createdAt,
+        };
         syncWithRetry(
-          () =>
-            syncNutritionLog(user.id, {
-              id: mealEntry.id,
-              date: mealEntry.date,
-              calories: Math.round(mealEntry.totalMacros.calories),
-              protein: Math.round(mealEntry.totalMacros.protein),
-              carbs: Math.round(mealEntry.totalMacros.carbs),
-              fat: Math.round(mealEntry.totalMacros.fat),
-              meals: mealEntry.meals.map((m) => ({
-                id: m.id,
-                name: m.name,
-                calories: Math.round(m.totalMacros.calories),
-                protein: Math.round(m.totalMacros.protein),
-                carbs: Math.round(m.totalMacros.carbs),
-                fat: Math.round(m.totalMacros.fat),
-                time: m.time,
-              })),
-              notes: mealEntry.notes,
-              createdAt: mealEntry.createdAt,
-            }),
-          `addMealEntryFromPreset:${mealEntry.id}`
+          () => syncNutritionLog(user.id, syncPayload),
+          `addMealEntryFromPreset:${mealEntry.id}`,
+          3,
+          { type: 'nutrition:update', payload: syncPayload }
         );
       }
     } catch {
@@ -669,29 +671,29 @@ export async function addMealEntry(entry: Omit<MealEntry, 'id' | 'createdAt'>): 
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(
-      () =>
-        syncNutritionLog(user.id, {
-          id: newEntry.id,
-          date: newEntry.date,
-          calories: Math.round(newEntry.totalMacros.calories),
-          protein: Math.round(newEntry.totalMacros.protein),
-          carbs: Math.round(newEntry.totalMacros.carbs),
-          fat: Math.round(newEntry.totalMacros.fat),
-          meals: newEntry.meals.map((m) => ({
-            id: m.id,
-            name: m.name,
-            calories: Math.round(m.totalMacros.calories),
-            protein: Math.round(m.totalMacros.protein),
-            carbs: Math.round(m.totalMacros.carbs),
-            fat: Math.round(m.totalMacros.fat),
-            time: m.time,
-          })),
-          notes: newEntry.notes,
-          createdAt: newEntry.createdAt,
-        }),
-      `addMealEntry:${newEntry.id}`
-    );
+    const syncPayload = {
+      id: newEntry.id,
+      date: newEntry.date,
+      calories: Math.round(newEntry.totalMacros.calories),
+      protein: Math.round(newEntry.totalMacros.protein),
+      carbs: Math.round(newEntry.totalMacros.carbs),
+      fat: Math.round(newEntry.totalMacros.fat),
+      meals: newEntry.meals.map((m) => ({
+        id: m.id,
+        name: m.name,
+        calories: Math.round(m.totalMacros.calories),
+        protein: Math.round(m.totalMacros.protein),
+        carbs: Math.round(m.totalMacros.carbs),
+        fat: Math.round(m.totalMacros.fat),
+        time: m.time,
+      })),
+      notes: newEntry.notes,
+      createdAt: newEntry.createdAt,
+    };
+    syncWithRetry(() => syncNutritionLog(user.id, syncPayload), `addMealEntry:${newEntry.id}`, 3, {
+      type: 'nutrition:update',
+      payload: syncPayload,
+    });
   }
 
   return newEntry;
@@ -702,29 +704,29 @@ export async function updateMealEntry(entry: MealEntry): Promise<void> {
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(
-      () =>
-        syncNutritionLog(user.id, {
-          id: entry.id,
-          date: entry.date,
-          calories: Math.round(entry.totalMacros.calories),
-          protein: Math.round(entry.totalMacros.protein),
-          carbs: Math.round(entry.totalMacros.carbs),
-          fat: Math.round(entry.totalMacros.fat),
-          meals: entry.meals.map((m) => ({
-            id: m.id,
-            name: m.name,
-            calories: Math.round(m.totalMacros.calories),
-            protein: Math.round(m.totalMacros.protein),
-            carbs: Math.round(m.totalMacros.carbs),
-            fat: Math.round(m.totalMacros.fat),
-            time: m.time,
-          })),
-          notes: entry.notes,
-          createdAt: entry.createdAt,
-        }),
-      `updateMealEntry:${entry.id}`
-    );
+    const syncPayload = {
+      id: entry.id,
+      date: entry.date,
+      calories: Math.round(entry.totalMacros.calories),
+      protein: Math.round(entry.totalMacros.protein),
+      carbs: Math.round(entry.totalMacros.carbs),
+      fat: Math.round(entry.totalMacros.fat),
+      meals: entry.meals.map((m) => ({
+        id: m.id,
+        name: m.name,
+        calories: Math.round(m.totalMacros.calories),
+        protein: Math.round(m.totalMacros.protein),
+        carbs: Math.round(m.totalMacros.carbs),
+        fat: Math.round(m.totalMacros.fat),
+        time: m.time,
+      })),
+      notes: entry.notes,
+      createdAt: entry.createdAt,
+    };
+    syncWithRetry(() => syncNutritionLog(user.id, syncPayload), `updateMealEntry:${entry.id}`, 3, {
+      type: 'nutrition:update',
+      payload: syncPayload,
+    });
   }
 }
 
@@ -733,7 +735,10 @@ export async function deleteMealEntry(id: string): Promise<void> {
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(() => deleteCloudNutritionLog(user.id, id), `deleteMealEntry:${id}`);
+    syncWithRetry(() => deleteCloudNutritionLog(user.id, id), `deleteMealEntry:${id}`, 3, {
+      type: 'nutrition:delete',
+      payload: id,
+    });
   }
 }
 

@@ -496,9 +496,15 @@ function AppShell() {
             <main
               ref={mainRef}
               id="main-content"
-              className={cn('flex-1 overflow-y-auto', !isWorkoutActive && 'pb-24')}
+              className={cn('flex-1 overflow-y-auto')}
               tabIndex={-1}
-              style={{ contain: 'layout style' }}
+              style={{
+                contain: 'layout style',
+                ...(!isWorkoutActive && {
+                  paddingBottom:
+                    'calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-4))',
+                }),
+              }}
             >
               <Suspense fallback={<PageLoader />}>
                 {reduceMotion ? (

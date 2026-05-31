@@ -35,9 +35,11 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Sync selected when currentValue changes
+  // Sync selected when currentValue changes or picker opens
   useEffect(() => {
-    setSelected(currentValue ?? null);
+    if (isOpen) {
+      setSelected(currentValue ?? null);
+    }
   }, [currentValue, isOpen]);
 
   const handleSelect = useCallback(
@@ -194,6 +196,7 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
                       flexDirection: 'column',
                       alignItems: 'center',
                       gap: 2,
+                      minHeight: 48,
                       padding: '14px 4px',
                       background: isActive ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
                       border: isActive ? '1.5px solid var(--fs-accent)' : '1.5px solid transparent',

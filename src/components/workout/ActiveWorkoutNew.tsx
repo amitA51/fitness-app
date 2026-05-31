@@ -104,6 +104,15 @@ export const WorkoutContent: React.FC<{
   // Track last announced set count to avoid re-announcing on re-renders
   const lastAnnouncedSetsRef = useRef(0);
 
+  // Track pending setTimeout IDs to clear on unmount (prevent dispatch-after-unmount)
+  const pendingTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(
+    () => () => {
+      pendingTimeouts.current.forEach(clearTimeout);
+    },
+    []
+  );
+
   // Settings
   const workoutSettings: Partial<WorkoutSettings> = state.appSettings?.workoutSettings || {};
 
@@ -224,8 +233,12 @@ export const WorkoutContent: React.FC<{
     loadTemplate();
   }, [initialTemplateId, state.exercises.length, dispatch]);
 
-  // Workout start flow - runs on mount
+  // Workout start flow - runs once on mount (StrictMode-safe via ref guard)
+  const startFlowRan = useRef(false);
   useEffect(() => {
+    if (startFlowRan.current) return;
+    startFlowRan.current = true;
+
     const elapsed = Math.floor((Date.now() - state.startTimestamp) / 1000);
     if (elapsed > 10) return; // Only run on fresh workout start
 
@@ -248,8 +261,14 @@ export const WorkoutContent: React.FC<{
       // Show warmup flow
       dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'warmup', isOpen: true } });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [
+    state.startTimestamp,
+    workoutSettings,
+    dispatch,
+    state.showGoalSelector,
+    state.showWarmup,
+    state.showExerciseSelector,
+  ]);
 
   // Handle goal selection - optionally trigger warmup
   const handleGoalSelect = useCallback(
@@ -261,14 +280,18 @@ export const WorkoutContent: React.FC<{
       // Check warmup preference
       const warmupPreference = workoutSettings.warmupPreference || 'ask';
       if (warmupPreference === 'always') {
-        setTimeout(() => {
-          dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'warmup', isOpen: true } });
-        }, 300);
+        pendingTimeouts.current.push(
+          setTimeout(() => {
+            dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'warmup', isOpen: true } });
+          }, 300)
+        );
       } else if (warmupPreference === 'ask') {
         // Could show a prompt here, for now let's trigger warmup
-        setTimeout(() => {
-          dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'warmup', isOpen: true } });
-        }, 300);
+        pendingTimeouts.current.push(
+          setTimeout(() => {
+            dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'warmup', isOpen: true } });
+          }, 300)
+        );
       }
       // 'never' - do nothing
     },
@@ -611,7 +634,7 @@ export const WorkoutContent: React.FC<{
   const handleCancelFinish = useCallback(() => {
     setShowFinishConfirm(false);
     setSaveError(null);
-  }, []);
+  }, [setSaveError]);
 
   const handleCooldownFromFinish = useCallback(() => {
     setShowFinishConfirm(false);
@@ -1039,14 +1062,18 @@ export const WorkoutContent: React.FC<{
               dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'warmup', isOpen: false } });
               // After warmup, open exercise selector if no exercises
               if (state.exercises.length === 0) {
-                setTimeout(() => dispatch({ type: 'OPEN_SELECTOR' }), 300);
+                pendingTimeouts.current.push(
+                  setTimeout(() => dispatch({ type: 'OPEN_SELECTOR' }), 300)
+                );
               }
             }}
             onSkip={() => {
               dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'warmup', isOpen: false } });
               // After skip, open exercise selector if no exercises
               if (state.exercises.length === 0) {
-                setTimeout(() => dispatch({ type: 'OPEN_SELECTOR' }), 300);
+                pendingTimeouts.current.push(
+                  setTimeout(() => dispatch({ type: 'OPEN_SELECTOR' }), 300)
+                );
               }
             }}
           />

@@ -136,7 +136,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
         >
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+        <span className="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-4">
           <motion.div
             animate={{ rotate: isOpen ? 180 : 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}

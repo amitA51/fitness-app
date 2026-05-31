@@ -24,7 +24,7 @@ export const RecoveryTab = memo(function RecoveryTab({
   useEffect(() => {
     const load = async () => {
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayRecovery?.date ?? new Date().toISOString().slice(0, 10);
       const logs = await getRecoveryLogsByDateRange(weekAgo, today);
       setHistory(logs);
     };

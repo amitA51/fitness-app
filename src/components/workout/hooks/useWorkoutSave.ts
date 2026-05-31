@@ -4,7 +4,7 @@
 // + error flags) and exposes the confirm-finish handler. The component wires the
 // returned state/setters into its overlays exactly as before.
 import type React from 'react';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { saveWorkoutSession } from '../../../services/dataService';
 import type {
@@ -57,11 +57,12 @@ export function useWorkoutSave({
   const [showSummary, setShowSummary] = useState(false);
   const [completedSession, setCompletedSession] = useState<WorkoutSession | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const isSavingRef = useRef(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const handleConfirmFinish = useCallback(async () => {
     // Guard against double-tap while a save is already in-flight
-    if (isSaving) return;
+    if (isSavingRef.current) return;
     if (finishIntent === 'cancel') {
       setShowFinishConfirm(false);
       setSaveError(null);
@@ -104,6 +105,7 @@ export function useWorkoutSave({
     setSaveError(null);
 
     setIsSaving(true);
+    isSavingRef.current = true;
 
     try {
       // Transform Exercise[] to WorkoutExercise[] for saving
@@ -199,10 +201,10 @@ export function useWorkoutSave({
       setSaveError(`שגיאה בשמירת האימון: ${errorMessage}`);
     } finally {
       setIsSaving(false);
+      isSavingRef.current = false;
     }
   }, [
     finishIntent,
-    isSaving,
     state,
     workoutSettings.defaultWorkoutGoal,
     onExit,

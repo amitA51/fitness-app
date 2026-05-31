@@ -35,6 +35,7 @@ export const sendMessage = async (
   if (!user) return { error: 'unauthenticated' };
   const trimmed = body.trim();
   if (!trimmed) return { error: 'empty' };
+  if (trimmed.length > 5000) return { error: 'message_too_long' };
 
   const { error } = await supabase.from('messages').insert({
     coach_id: coachId,

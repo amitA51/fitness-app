@@ -303,3 +303,65 @@ describe('getExerciseSnapshot wasCompleted via getExerciseSnapshot', () => {
     expect(snapshot?.wasCompleted).toBe(false);
   });
 });
+
+describe('getExerciseSnapshot wasCompleted with zero completed working sets', () => {
+  it('returns wasCompleted=false when exercise.isCompleted is true but no working sets are completed', () => {
+    const incompleteSets: WorkoutSet[] = [
+      {
+        id: 's1',
+        setNumber: 1,
+        reps: 8,
+        weight: 60,
+        rpe: null,
+        isWarmup: false,
+        isCompleted: false,
+        notes: '',
+        completedAt: undefined as unknown as string,
+      },
+      {
+        id: 's2',
+        setNumber: 2,
+        reps: 8,
+        weight: 60,
+        rpe: null,
+        isWarmup: false,
+        isCompleted: false,
+        notes: '',
+        completedAt: undefined as unknown as string,
+      },
+    ];
+
+    const session: WorkoutSession = {
+      id: 'zero-completed',
+      date: '2026-05-01',
+      startTime: '2026-05-01T10:00:00.000Z',
+      endTime: '2026-05-01T11:00:00.000Z',
+      exercises: [
+        {
+          id: 'ex-zero',
+          exerciseId: 'curl',
+          exerciseName: 'Bicep Curl',
+          targetMuscle: 'Biceps',
+          sets: incompleteSets,
+          notes: '',
+          restSeconds: 60,
+          isCompleted: true, // marked completed despite no sets done
+          order: 0,
+        },
+      ],
+      duration: 3600,
+      status: 'completed',
+      templateId: null,
+      notes: '',
+      rating: null,
+      totalVolume: 0,
+      caloriesBurned: null,
+      createdAt: '2026-05-01T10:00:00.000Z',
+      updatedAt: '2026-05-01T11:00:00.000Z',
+    };
+
+    const snapshot = getExerciseSnapshot(session, 'curl');
+    expect(snapshot).not.toBeNull();
+    expect(snapshot?.wasCompleted).toBe(false);
+  });
+});

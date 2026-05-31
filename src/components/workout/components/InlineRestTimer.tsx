@@ -127,6 +127,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                 <span
                   className={`breathing-dot${isCritical ? ' signal' : ''}`}
                   aria-hidden="true"
+                  style={{ animation: prefersReduced ? 'none' : undefined }}
                 />
               )}
               {formatted}
@@ -157,7 +158,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
             aria-label="הפחת 15 שניות"
             style={{
               minWidth: 48,
-              minHeight: 40,
+              minHeight: 48,
               padding: '0 10px',
               background: 'var(--fs-surface-2)',
               color: 'var(--fs-ink)',
@@ -180,7 +181,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
             aria-label="הוסף 15 שניות"
             style={{
               minWidth: 48,
-              minHeight: 40,
+              minHeight: 48,
               padding: '0 10px',
               background: 'var(--fs-surface-2)',
               color: 'var(--fs-ink)',
@@ -203,7 +204,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
             aria-label="דלג על המנוחה"
             style={{
               minWidth: 56,
-              minHeight: 40,
+              minHeight: 48,
               padding: '0 14px',
               background: 'var(--fs-accent)',
               color: 'var(--fs-heading)',

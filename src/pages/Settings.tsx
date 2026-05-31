@@ -107,6 +107,32 @@ const DEFAULT_WORKOUT_PREFS: WorkoutPrefs = {
   highContrast: false,
 };
 
+// Static styles hoisted to module level to avoid per-render allocations
+const HEADER_SUBTITLE_STYLE = {
+  fontFamily: 'var(--font-body)',
+  fontSize: 13,
+  fontWeight: 500,
+  color: 'var(--fs-muted)',
+  margin: 0,
+  lineHeight: 1.4,
+} as const;
+
+const HEADER_TITLE_STYLE = {
+  fontFamily: 'var(--font-display)',
+  fontWeight: 800,
+  fontSize: 26,
+  lineHeight: 1.15,
+  letterSpacing: '-0.01em',
+  color: 'var(--fs-ink)',
+  margin: '4px 0 0',
+} as const;
+
+const DIVIDER_STYLE = {
+  height: '1px',
+  background: 'var(--fs-surface-2)',
+  margin: '0 16px',
+} as const;
+
 function loadFromStorage<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -322,7 +348,14 @@ export default function Settings() {
         prNotificationEnabled: true,
       })
     );
-  }, [settings.workoutSettings]);
+  }, [
+    settings.workoutSettings.defaultRestTime,
+    settings.workoutSettings.autoStartRest,
+    settings.workoutSettings.hapticsEnabled,
+    settings.workoutSettings.reducedAnimations,
+    settings.workoutSettings.largeText,
+    settings.workoutSettings.highContrast,
+  ]);
 
   // Load auth user email on mount
   useEffect(() => {
@@ -437,31 +470,8 @@ export default function Settings() {
           borderBottom: '2px solid var(--fs-accent)',
         }}
       >
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 13,
-            fontWeight: 500,
-            color: 'var(--fs-muted)',
-            margin: 0,
-            lineHeight: 1.4,
-          }}
-        >
-          התאמות אישיות וסנכרון
-        </p>
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            fontSize: 26,
-            lineHeight: 1.15,
-            letterSpacing: '-0.01em',
-            color: 'var(--fs-ink)',
-            margin: '4px 0 0',
-          }}
-        >
-          הגדרות
-        </h1>
+        <p style={HEADER_SUBTITLE_STYLE}>התאמות אישיות וסנכרון</p>
+        <h1 style={HEADER_TITLE_STYLE}>הגדרות</h1>
       </header>
 
       <div className="px-4 pt-5">
@@ -536,7 +546,7 @@ export default function Settings() {
                   }}
                 />
               </div>
-              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
+              <div style={DIVIDER_STYLE} />
             </div>
 
             {/* Age */}
@@ -639,7 +649,7 @@ export default function Settings() {
                   </select>
                 </div>
               </div>
-              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
+              <div style={DIVIDER_STYLE} />
             </div>
 
             {/* Activity level */}
@@ -883,7 +893,7 @@ export default function Settings() {
                   }}
                 />
               </div>
-              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
+              <div style={DIVIDER_STYLE} />
             </div>
 
             {/* Coach mode toggle */}
@@ -924,11 +934,7 @@ export default function Settings() {
                   </span>
                   <ChevronLeft size={16} style={{ color: 'var(--fs-muted)' }} />
                 </button>
-                {i < arr.length - 1 && (
-                  <div
-                    style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }}
-                  />
-                )}
+                {i < arr.length - 1 && <div style={DIVIDER_STYLE} />}
               </div>
             ))}
           </SettingsCard>
@@ -1135,7 +1141,7 @@ export default function Settings() {
               </div>
             </div>
 
-            <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
+            <div style={DIVIDER_STYLE} />
 
             {/* Auto start rest */}
             <SettingsRow
@@ -1362,7 +1368,7 @@ export default function Settings() {
                   </span>
                 )}
               </div>
-              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
+              <div style={DIVIDER_STYLE} />
 
               {/* Status Info Row */}
               <div className="px-4 py-3 flex flex-wrap gap-x-6 gap-y-2">
@@ -1399,7 +1405,7 @@ export default function Settings() {
               </div>
 
               {/* Action Buttons */}
-              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
+              <div style={DIVIDER_STYLE} />
               <div
                 style={{
                   padding: '12px 16px',
@@ -1558,7 +1564,7 @@ export default function Settings() {
                   ייצוא היסטוריית אימונים (CSV)
                 </span>
               </button>
-              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
+              <div style={DIVIDER_STYLE} />
             </div>
 
             <div className="flex flex-col">
@@ -1634,7 +1640,7 @@ export default function Settings() {
                   גיבוי מלא (JSON)
                 </span>
               </button>
-              <div style={{ height: '1px', background: 'var(--fs-surface-2)', margin: '0 16px' }} />
+              <div style={DIVIDER_STYLE} />
             </div>
 
             <div className="flex flex-col">

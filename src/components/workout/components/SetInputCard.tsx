@@ -211,7 +211,8 @@ const SetInputCard = memo<SetInputCardProps>(
               type="button"
               onClick={handleDecrement}
               style={{
-                height: 42,
+                height: 48,
+                minHeight: 48,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -242,7 +243,8 @@ const SetInputCard = memo<SetInputCardProps>(
               type="button"
               onClick={handleIncrement}
               style={{
-                height: 42,
+                height: 48,
+                minHeight: 48,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

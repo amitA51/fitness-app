@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   WORKOUT_LIMITS,
   clampNumber,
+  parseUserProfile,
   sanitizeText,
   validateProfileInput,
   validateRPE,
@@ -264,5 +265,53 @@ describe('WORKOUT_LIMITS', () => {
   it('is typed Readonly (compile-time only, not frozen at runtime)', () => {
     expect(typeof WORKOUT_LIMITS).toBe('object');
     expect(Object.isFrozen(WORKOUT_LIMITS)).toBe(false);
+  });
+});
+
+describe('parseUserProfile', () => {
+  it('returns name from valid profile object', () => {
+    expect(parseUserProfile({ name: 'Amit' })).toEqual({ name: 'Amit' });
+  });
+
+  it('trims and caps name length at 100', () => {
+    const long = `  ${'a'.repeat(150)}  `;
+    const result = parseUserProfile({ name: long });
+    expect(result.name).toHaveLength(100);
+  });
+
+  it('returns {} for null input', () => {
+    expect(parseUserProfile(null)).toEqual({});
+  });
+
+  it('returns {} for undefined input', () => {
+    expect(parseUserProfile(undefined)).toEqual({});
+  });
+
+  it('returns {} for non-object (string)', () => {
+    expect(parseUserProfile('not an object')).toEqual({});
+  });
+
+  it('returns {} for non-object (number)', () => {
+    expect(parseUserProfile(42)).toEqual({});
+  });
+
+  it('returns {} for array input', () => {
+    expect(parseUserProfile([1, 2, 3])).toEqual({});
+  });
+
+  it('returns {} when name is not a string', () => {
+    expect(parseUserProfile({ name: 123 })).toEqual({});
+    expect(parseUserProfile({ name: null })).toEqual({});
+    expect(parseUserProfile({ name: {} })).toEqual({});
+  });
+
+  it('returns {} when name is empty after trim', () => {
+    expect(parseUserProfile({ name: '   ' })).toEqual({});
+  });
+
+  it('strips angle brackets from name', () => {
+    expect(parseUserProfile({ name: '<script>xss</script>' })).toEqual({
+      name: 'scriptxss/script',
+    });
   });
 });

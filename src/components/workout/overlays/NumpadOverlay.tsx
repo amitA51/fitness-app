@@ -671,7 +671,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
               style={{
                 opacity: value === '' ? 0.4 : 1,
                 cursor: value === '' ? 'not-allowed' : 'pointer',
-                minHeight: 48,
+                minHeight: 56,
               }}
               aria-label="אישור ערך"
             >

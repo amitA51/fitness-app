@@ -23,6 +23,7 @@ html {
   overflow-y: auto;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 body {
@@ -56,7 +57,7 @@ body {
 .skip-link {
   position: absolute;
   top: -100%;
-  left: 0;
+  inset-inline-start: 0;
   background: var(--fs-primary);
   color: var(--fs-signal);
   padding: 0.5rem 1rem;
@@ -801,6 +802,14 @@ body {
     padding-right: env(safe-area-inset-right, 0px);
   }
 
+  .safe-area-inline-start {
+    padding-inline-start: env(safe-area-inset-left, 0px);
+  }
+
+  .safe-area-inline-end {
+    padding-inline-end: env(safe-area-inset-right, 0px);
+  }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -1051,8 +1060,10 @@ main > * {
 
 /* Fallback for browsers without View Transitions API */
 @supports not (view-transition-name: none) {
-  main > * {
-    animation: page-fade-in 150ms ease-out;
+  @media (prefers-reduced-motion: no-preference) {
+    main > * {
+      animation: page-fade-in 150ms ease-out;
+    }
   }
 }
 

@@ -33,22 +33,22 @@ const TYPE_CONFIG: Record<StatusMessageType, ToastTypeConfig> = {
   success: {
     Icon: CheckCircle,
     accent: 'var(--fs-accent)',
-    eyebrow: 'SUCCESS',
+    eyebrow: 'הצלחה',
   },
   error: {
     Icon: XCircle,
     accent: 'var(--fs-warn)',
-    eyebrow: 'ERROR',
+    eyebrow: 'שגיאה',
   },
   info: {
     Icon: Info,
     accent: 'var(--fs-accent)',
-    eyebrow: 'INFO',
+    eyebrow: 'מידע',
   },
   warning: {
     Icon: AlertTriangle,
     accent: 'var(--fs-warn)',
-    eyebrow: 'WARNING',
+    eyebrow: 'אזהרה',
   },
 };
 
@@ -206,7 +206,7 @@ export const Toast: React.FC<ToastProps> = ({
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-2 shrink-0 ml-1">
+              <div className="flex items-center gap-2 shrink-0 ms-1">
                 {onUndo && (
                   <button
                     type="button"

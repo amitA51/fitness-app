@@ -86,7 +86,7 @@ interface TimestampedRecord {
 }
 
 /** Parse a date string to epoch ms, returning 0 for invalid/missing values. */
-const safeTimestamp = (value: string | undefined | null): number => {
+export const safeTimestamp = (value: string | undefined | null): number => {
   if (!value) return 0;
   const t = new Date(value).getTime();
   return Number.isNaN(t) ? 0 : t;

@@ -58,3 +58,10 @@ export function validateProfileInput(raw: Record<string, unknown>): ProfileInput
     height: Math.round(clampNumber(raw.height, 100, 250, 170)),
   };
 }
+
+export function parseUserProfile(raw: unknown): { name?: string } {
+  if (raw == null || typeof raw !== 'object') return {};
+  const obj = raw as Record<string, unknown>;
+  const name = typeof obj.name === 'string' ? sanitizeText(obj.name, 100) : undefined;
+  return name ? { name } : {};
+}

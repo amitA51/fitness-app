@@ -8,6 +8,7 @@ import { LOCAL_STORAGE_KEYS as LS } from '../constants';
 import { NotFoundError, ValidationError } from '../errors';
 import type { Exercise, PersonalItem, WorkoutTemplate } from '../types';
 import { createWorkoutSet } from '../types';
+import { safeTimestamp } from './cloudMerge';
 import { STORES, dbDelete, dbGet, dbGetAll, dbPut, initDB, syncWithRetry } from './indexedDBCore';
 import { addPersonalItem } from './personalItemsDb';
 import { getCurrentUser } from './supabaseAuth';
@@ -53,7 +54,9 @@ export const createWorkoutTemplate = async (
     const userId = user.id;
     syncWithRetry(
       () => syncWorkoutTemplate(userId, newTemplate),
-      `createWorkoutTemplate:${newTemplate.id}`
+      `createWorkoutTemplate:${newTemplate.id}`,
+      3,
+      { type: 'template:update', payload: newTemplate }
     );
   }
 
@@ -82,7 +85,9 @@ export const updateWorkoutTemplate = async (
   if (user) {
     syncWithRetry(
       () => syncWorkoutTemplate(user.id, updatedTemplate),
-      `updateWorkoutTemplate:${id}`
+      `updateWorkoutTemplate:${id}`,
+      3,
+      { type: 'template:update', payload: updatedTemplate }
     );
   }
 
@@ -98,7 +103,10 @@ export const deleteWorkoutTemplate = async (id: string): Promise<void> => {
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(() => deleteCloudWorkoutTemplate(user.id, id), `deleteWorkoutTemplate:${id}`);
+    syncWithRetry(() => deleteCloudWorkoutTemplate(user.id, id), `deleteWorkoutTemplate:${id}`, 3, {
+      type: 'template:delete',
+      payload: id,
+    });
   }
 };
 
@@ -173,23 +181,27 @@ export const mergeWorkoutTemplatesFromCloud = async (
   let updated = 0;
   let kept = 0;
 
+  const writes: WorkoutTemplate[] = [];
+
   for (const cloud of cloudTemplates) {
     const local = localMap.get(cloud.id);
     if (!local) {
-      // New from cloud - add it
-      await dbPut(STORES.WORKOUT_TEMPLATES, cloud);
+      writes.push(cloud);
       added++;
     } else {
-      // Both exist - keep the newer one
-      const localTime = new Date(local.updatedAt || local.createdAt).getTime();
-      const cloudTime = new Date(cloud.updatedAt || cloud.createdAt || '').getTime();
-      if (cloudTime > localTime) {
-        await dbPut(STORES.WORKOUT_TEMPLATES, cloud);
+      const localTime = safeTimestamp(local.updatedAt) || safeTimestamp(local.createdAt);
+      const cloudTime = safeTimestamp(cloud.updatedAt) || safeTimestamp(cloud.createdAt);
+      if (cloudTime > localTime || (cloudTime > 0 && localTime === 0)) {
+        writes.push(cloud);
         updated++;
       } else {
         kept++;
       }
     }
+  }
+
+  if (writes.length > 0) {
+    await Promise.all(writes.map((t) => dbPut(STORES.WORKOUT_TEMPLATES, t)));
   }
 
   return { added, updated, kept };

@@ -81,6 +81,8 @@ export const GradientSparkline = memo(function GradientSparkline({
   }, [linePath, points, height]);
 
   const endPoint = points[points.length - 1];
+  const prefersReduced =
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   if (data.length === 0) {
     return (
@@ -127,7 +129,7 @@ export const GradientSparkline = memo(function GradientSparkline({
       {endPoint && (
         <g>
           <circle cx={endPoint.x} cy={endPoint.y} r={3.5} fill={accent} />
-          {live && (
+          {live && !prefersReduced && (
             <circle
               cx={endPoint.x}
               cy={endPoint.y}
