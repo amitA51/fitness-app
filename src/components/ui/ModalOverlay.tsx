@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import type React from 'react';
 import { useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -193,7 +193,7 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
   const modalContent = (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
+        <m.div
           ref={containerRef}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -221,7 +221,7 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
           aria-label={ariaLabel}
           aria-describedby={ariaDescribedBy}
         >
-          <motion.div
+          <m.div
             ref={contentRef}
             initial={contentAnimation.initial}
             animate={contentAnimation.animate}
@@ -243,8 +243,8 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {children}
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

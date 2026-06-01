@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Dumbbell } from 'lucide-react';
 import { MobileToggle } from '../components/MobileToggle';
 import { StepHeader } from '../components/ProgressDots';
@@ -11,7 +11,7 @@ interface PreferencesStepProps {
 
 export function PreferencesStep({ data, onChange }: PreferencesStepProps) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
@@ -214,6 +214,6 @@ export function PreferencesStep({ data, onChange }: PreferencesStepProps) {
           />
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }

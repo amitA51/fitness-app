@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import type React from 'react';
 
@@ -271,6 +271,7 @@ export const Button: React.FC<ButtonProps> = ({
     const decorClass = variant === 'editorial' ? 'start-workout-btn accent-glow' : '';
     return (
       <button
+        type="button"
         disabled={disabled || isLoading}
         className={`${EDITORIAL_BASE} ${decorClass} ${fullWidth ? 'w-full' : ''} ${className}`}
         style={{ ...editorialStyles[variant], ...style }}
@@ -292,6 +293,7 @@ export const Button: React.FC<ButtonProps> = ({
   if (isFsVariant(variant)) {
     return (
       <button
+        type="button"
         disabled={disabled || isLoading}
         className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2${className ? ` ${className}` : ''}`}
         style={{
@@ -315,7 +317,7 @@ export const Button: React.FC<ButtonProps> = ({
   }
 
   return (
-    <motion.button
+    <m.button
       disabled={disabled || isLoading}
       whileHover={{ scale: disabled || isLoading ? 1 : 1.01 }}
       whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
@@ -412,7 +414,7 @@ export const Button: React.FC<ButtonProps> = ({
           )}
         </>
       )}
-    </motion.button>
+    </m.button>
   );
 };
 

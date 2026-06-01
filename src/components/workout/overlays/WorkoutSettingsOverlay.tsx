@@ -11,7 +11,7 @@
 // PR celebrations, supersets toggle, CSV export toggle, body-weight prompts…)
 // has been removed because it was either UI-only or duplicated by global Settings.
 
-import { AnimatePresence, type PanInfo, motion, useMotionValue, useTransform } from 'framer-motion';
+import { AnimatePresence, type PanInfo, m, useMotionValue, useTransform } from 'framer-motion';
 import { X as CloseIcon } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 import type { WorkoutSettings } from '../../../types';
@@ -91,13 +91,13 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
         ariaLabel="הגדרות אימון"
       >
         {/* Custom backdrop with motion-value for drag interaction */}
-        <motion.div
+        <m.div
           className="absolute inset-0"
           style={{ opacity: backdropOpacity, background: 'rgba(0,0,0,0.5)' }}
           onClick={handleClose}
         />
 
-        <motion.div
+        <m.div
           initial={{ y: '100%' }}
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
@@ -197,7 +197,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
             <AnimatePresence mode="sync">
               {/* ────── GENERAL ────── */}
               {activeTab === 'general' && (
-                <motion.div
+                <m.div
                   key="general"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -222,12 +222,12 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                     value={get('keepAwake') ?? true}
                     onChange={(v) => onUpdateSetting('keepAwake', v)}
                   />
-                </motion.div>
+                </m.div>
               )}
 
               {/* ────── REST ────── */}
               {activeTab === 'rest' && (
-                <motion.div
+                <m.div
                   key="rest"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -258,12 +258,12 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                     value={get('autoStartRest') ?? true}
                     onChange={(v) => onUpdateSetting('autoStartRest', v)}
                   />
-                </motion.div>
+                </m.div>
               )}
 
               {/* ────── AUDIO ────── */}
               {activeTab === 'audio' && (
-                <motion.div
+                <m.div
                   key="audio"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -282,12 +282,12 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                     value={get('countdownBeepEnabled') ?? true}
                     onChange={(v) => onUpdateSetting('countdownBeepEnabled', v)}
                   />
-                </motion.div>
+                </m.div>
               )}
 
               {/* ────── FLOW (warmup/cooldown/water) ────── */}
               {activeTab === 'flow' && (
-                <motion.div
+                <m.div
                   key="flow"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -334,12 +334,12 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                       onChange={(v) => onUpdateSetting('waterReminderInterval', v)}
                     />
                   )}
-                </motion.div>
+                </m.div>
               )}
 
               {/* ────── ADVANCED ────── */}
               {activeTab === 'advanced' && (
-                <motion.div
+                <m.div
                   key="advanced"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -440,12 +440,12 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                     value={get('highContrast') ?? false}
                     onChange={(v) => onUpdateSetting('highContrast', v)}
                   />
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
             <div style={{ height: 32 }} />
           </div>
-        </motion.div>
+        </m.div>
 
         <style>{`
                 .hide-scrollbar::-webkit-scrollbar { display: none; }

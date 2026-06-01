@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { memo, useState } from 'react';
 import { MACRO_COLORS } from '../../../constants/nutrition';
@@ -85,7 +85,7 @@ export const FoodLibrary = memo(function FoodLibrary({
             </button>
             <AnimatePresence>
               {expanded === food.id && (
-                <motion.div
+                <m.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
@@ -131,7 +131,7 @@ export const FoodLibrary = memo(function FoodLibrary({
                       הוסף
                     </button>
                   </div>
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
           </div>

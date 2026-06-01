@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Trash2 } from 'lucide-react';
 
 export function LoadingState() {
@@ -14,7 +14,7 @@ export function LoadingState() {
         {/* Cards */}
         <div className="flex flex-col gap-4">
           {[1, 2, 3].map((i) => (
-            <motion.div
+            <m.div
               key={i}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -28,7 +28,7 @@ export function LoadingState() {
                   <div className="w-32 h-4 rounded-lg skeleton-shimmer" />
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </div>
       </div>
@@ -39,22 +39,22 @@ export function LoadingState() {
 export function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="pb-[88px] flex flex-col items-center justify-center px-6" dir="rtl">
-      <motion.div
+      <m.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="w-20 h-20 rounded-2xl bg-error/10 flex items-center justify-center mb-6"
       >
         <Trash2 size={32} className="text-error" />
-      </motion.div>
+      </m.div>
       <p className="mb-2 font-semibold" style={{ color: 'var(--fs-ink)', fontSize: '15px' }}>
         שגיאה בטעינה
       </p>
       <p className="mb-8 text-center" style={{ color: 'var(--fs-muted)', fontSize: '15px' }}>
         לא הצלחנו לטעון את התבניות. נסה שוב.
       </p>
-      <motion.button whileTap={{ scale: 0.95 }} onClick={onRetry} className="btn btn-primary">
+      <m.button whileTap={{ scale: 0.95 }} onClick={onRetry} className="btn btn-primary">
         נסה שוב
-      </motion.button>
+      </m.button>
     </div>
   );
 }

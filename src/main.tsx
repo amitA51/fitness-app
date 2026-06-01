@@ -3,6 +3,7 @@
 // ============================================================================
 
 import * as Sentry from '@sentry/react';
+import { domMax, LazyMotion } from 'framer-motion';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -81,7 +82,9 @@ if (typeof Notification !== 'undefined' && Notification.permission === 'granted'
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <RootErrorBoundary>
-      <App />
+      <LazyMotion features={domMax}>
+        <App />
+      </LazyMotion>
     </RootErrorBoundary>
   </React.StrictMode>
 );

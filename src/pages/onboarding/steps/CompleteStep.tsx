@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Calendar, Check, Clock, Target } from 'lucide-react';
 import type { OnboardingData } from '../types';
 
@@ -19,14 +19,14 @@ export function CompleteStep({ data }: CompleteStepProps) {
   };
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       className="flex flex-col h-full items-center justify-center text-center px-6 py-8"
     >
       {/* Success Animation */}
-      <motion.div
+      <m.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
@@ -38,9 +38,9 @@ export function CompleteStep({ data }: CompleteStepProps) {
         }}
       >
         <Check size={56} strokeWidth={3} />
-      </motion.div>
+      </m.div>
 
-      <motion.h1
+      <m.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
@@ -54,9 +54,9 @@ export function CompleteStep({ data }: CompleteStepProps) {
         }}
       >
         {data.name ? `${data.name}, ` : ''}מוכן לאימון!
-      </motion.h1>
+      </m.h1>
 
-      <motion.p
+      <m.p
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
@@ -68,10 +68,10 @@ export function CompleteStep({ data }: CompleteStepProps) {
         }}
       >
         הפרופיל שלך הוגדר. בוא נתחיל!
-      </motion.p>
+      </m.p>
 
       {/* Summary Cards */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
@@ -201,7 +201,7 @@ export function CompleteStep({ data }: CompleteStepProps) {
             </p>
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 }

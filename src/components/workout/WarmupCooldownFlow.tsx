@@ -3,7 +3,7 @@
 // Warmup: dynamic movement warmup routine
 // Cooldown: guided stretching routine
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import React, { useEffect, useRef, useCallback, useReducer, useMemo } from 'react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { logger } from '../../utils/logger';
@@ -207,7 +207,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
   const subtitle = type === 'warmup' ? 'בחר תרגילי חימום' : 'בחר מתיחות לצינון';
 
   return (
-    <motion.div
+    <m.div
       key="selection"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -302,7 +302,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
       >
         <div className="flex flex-col gap-2 pb-4">
           {items.map((item) => (
-            <motion.button
+            <m.button
               key={item.id}
               onClick={() => onToggle(item.id)}
               type="button"
@@ -371,7 +371,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
               >
                 {formatTime(item.duration)}
               </span>
-            </motion.button>
+            </m.button>
           ))}
         </div>
       </div>
@@ -453,7 +453,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
           דלג על {title}
         </button>
       </div>
-    </motion.div>
+    </m.div>
   );
 };
 
@@ -497,7 +497,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
   const timerColor = isWarning ? 'var(--fs-warn)' : 'var(--fs-accent)';
 
   return (
-    <motion.div
+    <m.div
       key="active"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -662,7 +662,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               justifyContent: 'center',
             }}
           >
-            <motion.span
+            <m.span
               key={timeLeft}
               initial={{ scale: 1.08 }}
               animate={{ scale: 1 }}
@@ -677,7 +677,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               }}
             >
               {formatTime(timeLeft)}
-            </motion.span>
+            </m.span>
             {isPaused && (
               <span
                 style={{
@@ -794,7 +794,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
           </button>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 };
 
@@ -911,7 +911,7 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
   const isWarning = state.timeLeft <= 3 && state.timeLeft > 0;
 
   return (
-    <motion.div
+    <m.div
       ref={flowRef}
       className="fixed inset-0 z-modal flex flex-col"
       style={{ background: 'var(--fs-surface)' }}
@@ -971,7 +971,7 @@ const WarmupCooldownFlow: React.FC<WarmupCooldownFlowProps> = ({ type, onComplet
           flexShrink: 0,
         }}
       />
-    </motion.div>
+    </m.div>
   );
 };
 

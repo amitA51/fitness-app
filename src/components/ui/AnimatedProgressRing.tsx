@@ -1,6 +1,6 @@
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import type React from 'react';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 interface AnimatedProgressRingProps {
   percentage: number;
@@ -20,7 +20,7 @@ const ConfettiParticle: React.FC<{
   yOffset: number;
 }> = ({ delay, color, x, rotation, yOffset }) => {
   return (
-    <motion.div
+    <m.div
       className="absolute w-2 h-2 rounded-sm"
       style={{
         backgroundColor: color,
@@ -60,23 +60,25 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
 }) => {
   const shouldReduceMotion = useReducedMotion();
   const [showCelebration, setShowCelebration] = useState(false);
-  const [prevPercentage, setPrevPercentage] = useState(percentage);
+  // Previous value tracked in a ref, not state: it only gates the rising-edge
+  // detection below and must never trigger its own re-render or sit in deps.
+  const prevPercentageRef = useRef(percentage);
 
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
-  // Detect when we reach 100%
+  // Detect the moment we cross into 100% (rising edge only)
   useEffect(() => {
-    if (percentage >= 100 && prevPercentage < 100 && showConfetti && !shouldReduceMotion) {
+    const prev = prevPercentageRef.current;
+    prevPercentageRef.current = percentage;
+    if (percentage >= 100 && prev < 100 && showConfetti && !shouldReduceMotion) {
       setShowCelebration(true);
-      setPrevPercentage(percentage);
       const timer = setTimeout(() => setShowCelebration(false), 2000);
       return () => clearTimeout(timer);
     }
-    setPrevPercentage(percentage);
     return undefined;
-  }, [percentage, prevPercentage, showConfetti, shouldReduceMotion]);
+  }, [percentage, showConfetti, shouldReduceMotion]);
 
   // Confetti colors sourced from the design-token palette
   const confettiColors = useMemo(
@@ -151,7 +153,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
       </AnimatePresence>
 
       {/* Background glow */}
-      <motion.div
+      <m.div
         className="absolute rounded-full"
         style={{
           width: size,
@@ -207,7 +209,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
         />
 
         {/* Progress arc */}
-        <motion.circle
+        <m.circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -228,14 +230,14 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
 
       {/* Center content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <motion.span
+        <m.span
           key={Math.round(percentage)}
           initial={shouldReduceMotion ? false : { scale: 1.2, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className={`font-bold text-[var(--fs-ink)] font-heading tabular-nums ${size < 50 ? 'text-[10px]' : size < 100 ? 'text-xl' : 'text-3xl'}`}
         >
           {Math.round(percentage)}%
-        </motion.span>
+        </m.span>
 
         {label && <span className="text-xs text-theme-secondary mt-0.5">{label}</span>}
 
@@ -244,7 +246,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
         {/* Completion badge */}
         <AnimatePresence>
           {percentage >= 100 && (
-            <motion.div
+            <m.div
               initial={{ scale: 0, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0, y: 10 }}
@@ -260,7 +262,7 @@ const AnimatedProgressRing: React.FC<AnimatedProgressRingProps> = ({
                   strokeLinejoin="round"
                 />
               </svg>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

@@ -5,7 +5,7 @@
 // Canonical toast for the whole app. Replaces ad-hoc toasts (e.g. the workout
 // WaterReminderToast) — see showToast() docs for the exact water call.
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Z_INDEX } from '../../constants/zIndex';
 
@@ -103,7 +103,7 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
     const exitY = prefersReduced ? 0 : isBottom ? 20 : -20;
 
     return (
-      <motion.div
+      <m.div
         layout
         initial={{ opacity: 0, y: enterY, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -179,7 +179,7 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
         >
           ✕
         </button>
-      </motion.div>
+      </m.div>
     );
   }
 );

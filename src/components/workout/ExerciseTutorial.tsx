@@ -2,7 +2,7 @@
 // Navy overlay · Bone text · Sharp corners
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { X as CloseIcon } from 'lucide-react';
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
@@ -124,7 +124,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   const currentStep = currentExerciseSteps[activeStep];
 
   return (
-    <motion.div
+    <m.div
       ref={containerRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -275,7 +275,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
       {/* Main Content */}
       <div style={{ flex: 1, padding: '24px 20px' }}>
         {currentStep && (
-          <motion.div
+          <m.div
             key={activeStep}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -407,7 +407,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             </button>
 
             {showContent && tutorialContent && (
-              <motion.div
+              <m.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 style={{
@@ -425,9 +425,9 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 }}
               >
                 {tutorialContent}
-              </motion.div>
+              </m.div>
             )}
-          </motion.div>
+          </m.div>
         )}
       </div>
 
@@ -487,7 +487,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
       </div>
 
       <div style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--fs-bg)' }} />
-    </motion.div>
+    </m.div>
   );
 };
 

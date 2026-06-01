@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Activity, Battery, Dumbbell, Heart, Moon, Plus, Wind } from 'lucide-react';
 import { memo } from 'react';
 import { getLegacyRecoveryScore } from '../../../services/bodyStatsService';
@@ -91,7 +91,7 @@ export const RecoveryTab = memo(function RecoveryTab({
                     stroke="var(--fs-surface-2)"
                     strokeWidth="6"
                   />
-                  <motion.circle
+                  <m.circle
                     cx="56"
                     cy="56"
                     r="50"

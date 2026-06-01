@@ -1,9 +1,9 @@
 // AlternativesSheet — pick an alternative exercise, built on the foundation
-// <Sheet>. Migrated off the bespoke ModalOverlay variant="none" + raw motion.div
+// <Sheet>. Migrated off the bespoke ModalOverlay variant="none" + raw m.div
 // sheet: drag handle, header, scroll body, safe-area, focus trap all come from
 // Sheet. Behavior unchanged: tapping an alternative fires onSelect then closes.
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { memo, useCallback } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import { Sheet } from '../../ui/Sheet';
@@ -45,7 +45,7 @@ const AlternativesSheet = memo<AlternativesSheetProps>(
 
         <div className="space-y-2">
           {alternatives.map((alt, idx) => (
-            <motion.button
+            <m.button
               key={alt}
               type="button"
               initial={{ opacity: 0, x: -10 }}
@@ -87,7 +87,7 @@ const AlternativesSheet = memo<AlternativesSheetProps>(
                   <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
-            </motion.button>
+            </m.button>
           ))}
         </div>
       </Sheet>

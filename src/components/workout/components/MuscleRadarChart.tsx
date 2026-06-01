@@ -1,6 +1,6 @@
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { EASE, gsap, useGSAP } from '@/lib/gsap';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import type React from 'react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MuscleBalanceData } from '../../../services/analyticsService';
@@ -314,7 +314,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
         ))}
 
         {/* Background polygon (full) */}
-        <motion.polygon
+        <m.polygon
           points={backgroundPoints}
           fill="color-mix(in srgb, var(--fs-accent) 8%, transparent)"
           stroke="color-mix(in srgb, var(--fs-accent) 20%, transparent)"
@@ -412,7 +412,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
 
       {/* Hover tooltip */}
       {hoveredIndex !== null && displayData[hoveredIndex] && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full bg-black/95 text-white text-[10px] px-3 py-2 rounded-lg whitespace-nowrap shadow-lg border border-white/10 pointer-events-none"
@@ -430,7 +430,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
               <span className="text-red-400 text-[8px]">↓ בירידה</span>
             )}
           </div>
-        </motion.div>
+        </m.div>
       )}
 
       {/* Legend */}

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { X as CloseIcon, Dumbbell as DumbbellIcon } from 'lucide-react';
 // ConfirmExitOverlay - Confirmation dialog for finishing/canceling workout
 // Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
@@ -85,7 +85,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
         closeOnEscape
         ariaLabel={isFinishing ? 'סיום אימון' : 'ביטול אימון'}
       >
-        <motion.div
+        <m.div
           initial={{ scale: 0.96, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.96, opacity: 0 }}
@@ -284,7 +284,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
 
             {/* Actions */}
             <div className="flex flex-col gap-2">
-              <motion.button
+              <m.button
                 whileHover={!isSaving ? { scale: 1.005 } : undefined}
                 whileTap={!isSaving ? { scale: 0.98 } : undefined}
                 onClick={(e) => {
@@ -328,10 +328,10 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                 ) : (
                   'בטל אימון'
                 )}
-              </motion.button>
+              </m.button>
 
               {isFinishing && onCooldown && (
-                <motion.button
+                <m.button
                   whileHover={{ scale: 1.005 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={(e) => {
@@ -342,11 +342,11 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   style={{ minHeight: 44 }}
                 >
                   צינון מודרך לפני סיום
-                </motion.button>
+                </m.button>
               )}
 
               {isFinishing && onSaveAsTemplate && (
-                <motion.button
+                <m.button
                   whileHover={{ scale: 1.005 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={(e) => {
@@ -357,10 +357,10 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   style={{ minHeight: 44 }}
                 >
                   שמור כתבנית
-                </motion.button>
+                </m.button>
               )}
 
-              <motion.button
+              <m.button
                 whileHover={{ scale: 1.005 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={(e) => {
@@ -383,10 +383,10 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                 }}
               >
                 חזור
-              </motion.button>
+              </m.button>
             </div>
           </div>
-        </motion.div>
+        </m.div>
       </ModalOverlay>
     );
   }

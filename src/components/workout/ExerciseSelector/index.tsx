@@ -2,7 +2,7 @@
 // Navy masthead · Bone body · Sharp corners · Big Shoulders Display
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { AnimatePresence, type PanInfo, motion, useMotionValue, useTransform } from 'framer-motion';
+import { AnimatePresence, type PanInfo, m, useMotionValue, useTransform } from 'framer-motion';
 import { X as CloseIcon, Dumbbell as DumbbellIcon } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useState } from 'react';
@@ -136,7 +136,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       closeOnEscape
       ariaLabel="בחירת תרגילים"
     >
-      <motion.div
+      <m.div
         className="fixed bottom-0 left-0 right-0 flex flex-col"
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
@@ -274,7 +274,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         {/* ── FOOTER CTA ── */}
         <AnimatePresence>
           {pendingExercises.length > 0 ? (
-            <motion.div
+            <m.div
               initial={{ y: 100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 100, opacity: 0 }}
@@ -305,9 +305,9 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 <DumbbellIcon style={{ width: 20, height: 20, flexShrink: 0 }} />
                 התחל ({pendingExercises.length})
               </button>
-            </motion.div>
+            </m.div>
           ) : (
-            <motion.div
+            <m.div
               initial={{ opacity: 1 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -360,7 +360,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               >
                 חזרה לאימון
               </button>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
@@ -368,7 +368,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         <div
           style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--fs-surface)' }}
         />
-      </motion.div>
+      </m.div>
     </ModalOverlay>
   );
 };

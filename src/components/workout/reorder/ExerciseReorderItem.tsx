@@ -1,4 +1,4 @@
-import { AnimatePresence, Reorder, motion, useDragControls } from 'framer-motion';
+import { AnimatePresence, Reorder, m, useDragControls } from 'framer-motion';
 import {
   Check as CheckCheckIcon,
   ChevronDown as ChevronDownIcon,
@@ -296,7 +296,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
         {/* Expanded Sets */}
         <AnimatePresence>
           {isExpanded && (
-            <motion.div
+            <m.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -343,7 +343,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                   </div>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 

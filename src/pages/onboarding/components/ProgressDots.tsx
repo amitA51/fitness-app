@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import type React from 'react';
 
 export interface ProgressDotsProps {
@@ -17,7 +17,7 @@ export function ProgressDots({ currentStep, totalSteps }: ProgressDotsProps) {
       aria-label={`שלב ${currentStep + 1} מתוך ${totalSteps}`}
     >
       {Array.from({ length: totalSteps }).map((_, i) => (
-        <motion.div
+        <m.div
           // biome-ignore lint/suspicious/noArrayIndexKey: positional step progress dots derived from a count, never reordered
           key={i}
           aria-hidden="true"
@@ -42,14 +42,14 @@ export interface StepHeaderProps {
 
 export function StepHeader({ title, subtitle, icon }: StepHeaderProps) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
       className="text-center mb-6 px-2"
     >
       {icon && (
-        <motion.div
+        <m.div
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
           className="w-14 h-14 flex items-center justify-center mx-auto mb-4"
@@ -60,7 +60,7 @@ export function StepHeader({ title, subtitle, icon }: StepHeaderProps) {
           }}
         >
           {icon}
-        </motion.div>
+        </m.div>
       )}
       <h2
         style={{
@@ -78,6 +78,6 @@ export function StepHeader({ title, subtitle, icon }: StepHeaderProps) {
       <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--fs-muted)' }}>
         {subtitle}
       </p>
-    </motion.div>
+    </m.div>
   );
 }

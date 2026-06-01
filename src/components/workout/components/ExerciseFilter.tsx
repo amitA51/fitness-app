@@ -4,7 +4,7 @@
 
 import { Search as SearchIcon } from 'lucide-react';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MUSCLE_GROUPS } from '../../../constants';
 import type { PersonalExercise } from '../../../types';
 import { CustomDumbbellIcon as DumbbellIcon } from '../../icons/CustomDumbbellIcon';
@@ -41,7 +41,6 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
 }) => {
   const muscleGroups = Object.values(MUSCLE_GROUPS);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestions, setSuggestions] = useState<PersonalExercise[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -51,15 +50,12 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
     .sort((a, b) => (b.useCount || 0) - (a.useCount || 0))
     .slice(0, 5);
 
-  // Search suggestions
-  useEffect(() => {
-    if (!searchQuery.trim() || searchQuery.length < 2) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
+  // Search suggestions are pure derived state — compute them inline instead of
+  // mirroring searchQuery/exercises into a useState via an effect.
+  const suggestions = useMemo(() => {
+    if (!searchQuery.trim() || searchQuery.length < 2) return [];
     const query = searchQuery.toLowerCase();
-    const matches = exercises
+    return exercises
       .filter(
         (ex) =>
           ex.name?.toLowerCase().includes(query) || ex.muscleGroup?.toLowerCase().includes(query)
@@ -72,8 +68,6 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
         return (b.useCount || 0) - (a.useCount || 0);
       })
       .slice(0, 6);
-    setSuggestions(matches);
-    setShowSuggestions(matches.length > 0);
   }, [searchQuery, exercises]);
 
   // Close on outside click
@@ -107,11 +101,15 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
           type="text"
           inputMode="search"
           enterKeyHint="search"
+          aria-label="חיפוש תרגיל"
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
           value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) => {
+            onSearchChange(e.target.value);
+            setShowSuggestions(true);
+          }}
           onFocus={() => searchQuery.length >= 2 && setShowSuggestions(suggestions.length > 0)}
           placeholder="חיפוש תרגיל..."
           className="w-full"

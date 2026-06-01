@@ -1,11 +1,11 @@
 // RPEPicker — rate-of-perceived-exertion picker, built on the foundation
-// <Sheet>. Migrated off the bespoke fixed motion.div backdrop + popover (and its
+// <Sheet>. Migrated off the bespoke fixed m.div backdrop + popover (and its
 // hand-rolled focus trap / backdrop handler): the drag handle, header, scroll
 // body, safe-area, focus trap, Esc + backdrop dismissal now come from Sheet.
 // Behavior is unchanged: tapping a value auto-selects (no confirm button),
 // arrow keys move the radio selection, tags are local annotations.
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import { Sheet } from '../../ui/Sheet';
@@ -121,6 +121,7 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
       <div
         role="radiogroup"
         aria-label="ערך RPE"
+        tabIndex={0}
         onKeyDown={(e) => {
           const idx = RPE_VALUES.indexOf(selected ?? RPE_VALUES[0]!);
           if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
@@ -143,7 +144,7 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
         {RPE_VALUES.map((rpe) => {
           const isActive = selected === rpe;
           return (
-            <motion.button
+            <m.button
               key={rpe}
               type="button"
               whileTap={{ scale: 0.93 }}
@@ -190,7 +191,7 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
               >
                 {RPE_LABELS[rpe as keyof typeof RPE_LABELS]?.slice(0, 4) ?? ''}
               </span>
-            </motion.button>
+            </m.button>
           );
         })}
       </div>

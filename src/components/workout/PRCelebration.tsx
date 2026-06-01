@@ -2,7 +2,7 @@
 // Navy masthead · Bone body · Mustard accents · Sharp corners
 // Celebrates new personal records with editorial style
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import React, { useCallback, useRef } from 'react';
 import { useCountUp } from '../../hooks/useCountUp';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
@@ -107,7 +107,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
   return (
     <AnimatePresence>
       {isVisible && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -117,7 +117,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
           aria-modal="true"
           aria-label="שיא אישי חדש"
         >
-          <motion.div
+          <m.div
             initial={shouldReduceMotion ? { opacity: 1 } : { scale: 0.85, opacity: 0, y: 20 }}
             animate={shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1, y: 0 }}
             exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.9, opacity: 0 }}
@@ -174,7 +174,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
               {/* Content */}
               <div className="px-6 pt-6 pb-5">
                 {/* Exercise name */}
-                <motion.div
+                <m.div
                   initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
                   animate={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
                   transition={{ delay: shouldReduceMotion ? 0 : 0.1 }}
@@ -203,10 +203,10 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                   >
                     {pr.exerciseName}
                   </h2>
-                </motion.div>
+                </m.div>
 
                 {/* Big number display */}
-                <motion.div
+                <m.div
                   initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={
@@ -297,10 +297,10 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                   >
                     1RM משוער: ~<span ref={oneRepMaxRef}>{oneRepMaxValue}</span> ק"ג
                   </div>
-                </motion.div>
+                </m.div>
 
                 {/* Actions */}
-                <motion.div
+                <m.div
                   initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: shouldReduceMotion ? 0 : 0.25 }}
@@ -361,7 +361,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                   >
                     המשך
                   </button>
-                </motion.div>
+                </m.div>
               </div>
             </div>
 
@@ -380,8 +380,8 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                 zIndex: 1,
               }}
             />
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

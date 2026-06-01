@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { Dumbbell, Plus, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { getPersonalExercises } from '../../../services/workoutDb';
@@ -91,7 +91,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
   };
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -99,7 +99,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
       onClick={onClose}
       dir="rtl"
     >
-      <motion.div
+      <m.div
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
@@ -134,7 +134,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
             >
               תבנית חדשה
             </h2>
-            <motion.button
+            <m.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onClose}
@@ -153,7 +153,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
               }}
             >
               <X size={16} style={{ color: 'var(--fs-muted)' }} />
-            </motion.button>
+            </m.button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -192,7 +192,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                 }}
               />
               {error && (
-                <motion.p
+                <m.p
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   style={{
@@ -203,7 +203,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                   }}
                 >
                   {error}
-                </motion.p>
+                </m.p>
               )}
             </div>
 
@@ -237,7 +237,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
               {exercises.length > 0 && (
                 <div className="flex flex-col gap-2 mb-3">
                   {exercises.map((ex, i) => (
-                    <motion.div
+                    <m.div
                       // biome-ignore lint/suspicious/noArrayIndexKey: TemplateExerciseInput has no id (adding one would change persisted shape); chips are stateless display-only, list is append/remove without reorder
                       key={i}
                       initial={{ opacity: 0, y: 8 }}
@@ -284,7 +284,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                           {ex.restSeconds}s
                         </span>
                       </div>
-                      <motion.button
+                      <m.button
                         whileTap={{ scale: 0.9 }}
                         type="button"
                         onClick={() => handleRemoveExercise(i)}
@@ -293,14 +293,14 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                         aria-label={`הסר ${ex.exerciseName}`}
                       >
                         <X size={12} style={{ color: 'var(--fs-heading)' }} />
-                      </motion.button>
-                    </motion.div>
+                      </m.button>
+                    </m.div>
                   ))}
                 </div>
               )}
 
               {/* Add Exercise button */}
-              <motion.button
+              <m.button
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setShowExercisePicker(true)}
@@ -319,13 +319,13 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
               >
                 <Plus size={16} />
                 הוסף תרגיל
-              </motion.button>
+              </m.button>
             </div>
 
             {/* Exercise Picker Overlay */}
             <AnimatePresence>
               {showExercisePicker && (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
@@ -348,7 +348,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                       >
                         בחר תרגיל
                       </span>
-                      <motion.button
+                      <m.button
                         whileTap={{ scale: 0.9 }}
                         type="button"
                         onClick={() => {
@@ -359,13 +359,14 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                         style={{ background: 'var(--fs-surface-2)' }}
                       >
                         <X size={12} style={{ color: 'var(--fs-heading)' }} />
-                      </motion.button>
+                      </m.button>
                     </div>
                     <input
                       type="text"
                       value={exerciseSearch}
                       onChange={(e) => setExerciseSearch(e.target.value)}
                       placeholder="חפש תרגיל..."
+                      aria-label="חפש תרגיל"
                       autoFocus
                       style={{
                         width: '100%',
@@ -400,7 +401,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                         </p>
                       )}
                       {filteredExercises.map((ex) => (
-                        <motion.button
+                        <m.button
                           key={ex.id}
                           type="button"
                           whileTap={{ scale: 0.98 }}
@@ -426,11 +427,11 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                         >
                           <span>{ex.name || 'תרגיל'}</span>
                           <Plus size={14} style={{ color: 'var(--fs-heading)' }} />
-                        </motion.button>
+                        </m.button>
                       ))}
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
 
@@ -469,7 +470,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
               </div>
             )}
 
-            <motion.button
+            <m.button
               type="submit"
               disabled={isSubmitting}
               whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
@@ -504,10 +505,10 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
               ) : (
                 'צור תבנית'
               )}
-            </motion.button>
+            </m.button>
           </form>
         </div>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 }

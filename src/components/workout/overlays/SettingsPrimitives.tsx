@@ -2,7 +2,7 @@
 // All visuals use var(--fs-*) tokens (no `bg-white/10` etc.) so the overlay
 // matches the rest of the active workout shell, NumpadOverlay, ConfirmExit etc.
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { memo } from 'react';
 
 // ============================================================
@@ -117,7 +117,7 @@ export const Toggle = memo<{
         transition: 'background-color 200ms ease',
       }}
     >
-      <motion.div
+      <m.div
         style={{
           position: 'absolute',
           top: 2,

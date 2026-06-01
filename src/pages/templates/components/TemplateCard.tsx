@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Clock, Copy, Dumbbell, Play, Star, Trash2 } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 import type { WorkoutTemplate } from '../../../types';
@@ -44,7 +44,7 @@ export const TemplateCard = memo(function TemplateCard({
   };
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...springTransition, delay: index * 0.06 }}
@@ -128,7 +128,7 @@ export const TemplateCard = memo(function TemplateCard({
         className="flex items-center gap-2 flex-wrap pt-3"
         style={{ borderTop: '1px solid var(--fs-surface-2)' }}
       >
-        <motion.button
+        <m.button
           whileTap={{ scale: 0.95 }}
           onClick={() => onStart(template.id)}
           className="btn-primary flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
@@ -137,8 +137,8 @@ export const TemplateCard = memo(function TemplateCard({
         >
           <Play size={14} />
           התחל
-        </motion.button>
-        <motion.button
+        </m.button>
+        <m.button
           whileTap={{ scale: isFavoriting ? 1 : 0.95 }}
           onClick={() => onToggleFavorite(template)}
           disabled={isFavoriting}
@@ -164,8 +164,8 @@ export const TemplateCard = memo(function TemplateCard({
               style={{ color: template.isFavorite ? 'var(--fs-primary)' : 'var(--fs-primary)' }}
             />
           )}
-        </motion.button>
-        <motion.button
+        </m.button>
+        <m.button
           whileTap={{ scale: 0.95 }}
           onClick={() => onDuplicate(template)}
           className="chip"
@@ -177,8 +177,8 @@ export const TemplateCard = memo(function TemplateCard({
           aria-label="שכפל תבנית"
         >
           <Copy size={14} />
-        </motion.button>
-        <motion.button
+        </m.button>
+        <m.button
           whileTap={{ scale: isDeleting ? 1 : 0.95 }}
           onClick={handleDeleteClick}
           onBlur={() => setConfirmDelete(false)}
@@ -202,8 +202,8 @@ export const TemplateCard = memo(function TemplateCard({
               {confirmDelete && <span className="me-1">?</span>}
             </>
           )}
-        </motion.button>
+        </m.button>
       </div>
-    </motion.div>
+    </m.div>
   );
 });

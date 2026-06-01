@@ -2,7 +2,7 @@
  * STEP: FORGOT PASSWORD
  */
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { AlertCircle, ArrowLeft, Check, Mail } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { AnnualInput } from '../../../components/ui/AnnualInput';
@@ -54,12 +54,12 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
 
   if (sent) {
     return (
-      <motion.div
+      <m.div
         key="reset-sent"
         {...pageVariants}
         className="flex flex-col items-center justify-center flex-1 px-5 py-8 text-center"
       >
-        <motion.div
+        <m.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 200, damping: 15 }}
@@ -67,9 +67,9 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
           style={{ background: 'var(--fs-accent)', borderRadius: '22px 16px 22px 16px' }}
         >
           <Check size={36} style={{ color: 'var(--fs-heading)' }} />
-        </motion.div>
+        </m.div>
 
-        <motion.h2
+        <m.h2
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -82,9 +82,9 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
           }}
         >
           קישור נשלח!
-        </motion.h2>
+        </m.h2>
 
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -100,9 +100,9 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
           <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--fs-ink)', fontWeight: 600 }}>
             {form.email}
           </span>
-        </motion.p>
+        </m.p>
 
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
@@ -111,13 +111,13 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
           <Button variant="editorial-secondary" type="button" onClick={onBack} fullWidth={false}>
             חזרה להתחברות
           </Button>
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
     );
   }
 
   return (
-    <motion.div key="forgot" {...slideFromLeft} className="flex flex-col">
+    <m.div key="forgot" {...slideFromLeft} className="flex flex-col">
       <div className="px-5 pt-5">
         <GhostLink onClick={onBack}>
           <ArrowLeft size={14} />
@@ -126,13 +126,13 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col flex-1">
-        <motion.div
+        <m.div
           variants={staggerContainer}
           initial="initial"
           animate="animate"
           className="flex flex-col gap-5 px-5 py-6 flex-1"
         >
-          <motion.div variants={staggerItem}>
+          <m.div variants={staggerItem}>
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
@@ -157,9 +157,9 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
             >
               נשלח קישור לאיפוס לדוא"ל שלך
             </p>
-          </motion.div>
+          </m.div>
 
-          <motion.div variants={staggerItem}>
+          <m.div variants={staggerItem}>
             <AnnualInput
               label={'דוא"ל'}
               type="email"
@@ -172,10 +172,10 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
               autoComplete="email"
               autoFocus
             />
-          </motion.div>
+          </m.div>
 
           {errors.general && (
-            <motion.div
+            <m.div
               variants={staggerItem}
               role="alert"
               className="p-4 flex items-start gap-3"
@@ -195,9 +195,9 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
               >
                 {errors.general}
               </p>
-            </motion.div>
+            </m.div>
           )}
-        </motion.div>
+        </m.div>
 
         <div className="px-5 pb-8">
           <Button
@@ -211,6 +211,6 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
           </Button>
         </div>
       </form>
-    </motion.div>
+    </m.div>
   );
 }

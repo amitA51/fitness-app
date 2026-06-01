@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import type React from 'react';
 import { memo, useMemo } from 'react';
 import type { ForecastData, WeeklyVolume } from '../../../services/analyticsService';
@@ -71,7 +71,7 @@ const TrendLineOverlay: React.FC<TrendLineOverlayProps> = ({
   return (
     <g className="trend-overlay">
       {/* Trend Line */}
-      <motion.line
+      <m.line
         x1={startPoint.x}
         y1={startPoint.y}
         x2={endPoint.x}
@@ -85,7 +85,7 @@ const TrendLineOverlay: React.FC<TrendLineOverlayProps> = ({
       />
 
       {/* Trend arrow at end */}
-      <motion.circle
+      <m.circle
         cx={endPoint.x}
         cy={endPoint.y}
         r={4}
@@ -99,7 +99,7 @@ const TrendLineOverlay: React.FC<TrendLineOverlayProps> = ({
       {forecastPoint && (
         <>
           {/* Dashed line from last point to forecast */}
-          <motion.line
+          <m.line
             x1={endPoint.x}
             y1={endPoint.y}
             x2={forecastPoint.x}
@@ -113,7 +113,7 @@ const TrendLineOverlay: React.FC<TrendLineOverlayProps> = ({
           />
 
           {/* Forecast point */}
-          <motion.circle
+          <m.circle
             cx={forecastPoint.x}
             cy={forecastPoint.y}
             r={6}
@@ -129,7 +129,7 @@ const TrendLineOverlay: React.FC<TrendLineOverlayProps> = ({
           />
 
           {/* Forecast label */}
-          <motion.text
+          <m.text
             x={forecastPoint.x}
             y={forecastPoint.y - 12}
             textAnchor="middle"
@@ -141,7 +141,7 @@ const TrendLineOverlay: React.FC<TrendLineOverlayProps> = ({
             transition={{ delay: 1.1 }}
           >
             {forecastPoint.predicted.toLocaleString()}
-          </motion.text>
+          </m.text>
         </>
       )}
     </g>

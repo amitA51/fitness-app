@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import React, { useId } from 'react';
 
 type SpinnerVariant = 'default' | 'dots' | 'pulse' | 'orbit' | 'gradient' | 'wave';
@@ -29,7 +29,7 @@ const sizeMap: Record<SpinnerSize, { container: string; text: string }> = {
 
 // Default circular spinner — navy ring on bone-deep track
 const DefaultSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => (
-  <motion.div
+  <m.div
     className={`${sizeMap[size].container} rounded-full border-2`}
     style={{
       borderColor: 'var(--fs-surface-2)',
@@ -61,7 +61,7 @@ const DotsSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
   return (
     <div className="flex items-center gap-1">
       {[0, 1, 2].map((i) => (
-        <motion.div
+        <m.div
           key={i}
           className={`${dotSize} rounded-full`}
           style={{ backgroundColor: 'var(--fs-primary)' }}
@@ -84,7 +84,7 @@ const DotsSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
 // Pulsing circle — navy inner + mustard outer
 const PulseSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => (
   <div className="relative">
-    <motion.div
+    <m.div
       className={`${sizeMap[size].container} rounded-full`}
       style={{ backgroundColor: 'var(--fs-primary)' }}
       animate={{
@@ -97,7 +97,7 @@ const PulseSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => (
         ease: 'easeInOut',
       }}
     />
-    <motion.div
+    <m.div
       className={`absolute inset-0 ${sizeMap[size].container} rounded-full`}
       style={{ backgroundColor: 'var(--fs-accent)' }}
       animate={{
@@ -119,7 +119,7 @@ const OrbitSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
   const dotSize = size === 'xs' || size === 'sm' ? 'w-1 h-1' : 'w-1.5 h-1.5';
 
   return (
-    <motion.div
+    <m.div
       className={`${containerSize} relative`}
       animate={{ rotate: 360 }}
       transition={{
@@ -129,7 +129,7 @@ const OrbitSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
       }}
     >
       {[0, 1, 2, 3].map((i) => (
-        <motion.div
+        <m.div
           key={i}
           className={`absolute ${dotSize} rounded-full`}
           style={{
@@ -150,7 +150,7 @@ const OrbitSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
           }}
         />
       ))}
-    </motion.div>
+    </m.div>
   );
 };
 
@@ -170,7 +170,7 @@ const GradientSpinner: React.FC<{ size: SpinnerSize; instanceId?: string }> = ({
   return (
     <div className="relative" style={{ width: sizeValue, height: sizeValue }}>
       {/* Glow effect — navy to mustard */}
-      <motion.div
+      <m.div
         className="absolute inset-0 rounded-full blur-md"
         style={{
           background: 'linear-gradient(135deg, var(--fs-primary), var(--fs-accent))',
@@ -187,7 +187,7 @@ const GradientSpinner: React.FC<{ size: SpinnerSize; instanceId?: string }> = ({
         }}
       />
       {/* Spinning gradient arc */}
-      <motion.svg
+      <m.svg
         className="relative z-10"
         width={sizeValue}
         height={sizeValue}
@@ -218,7 +218,7 @@ const GradientSpinner: React.FC<{ size: SpinnerSize; instanceId?: string }> = ({
           strokeDasharray={circumference}
           strokeDashoffset={circumference * 0.7}
         />
-      </motion.svg>
+      </m.svg>
     </div>
   );
 };
@@ -234,7 +234,7 @@ const WaveSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
       style={{ width: sizeValue, height: sizeValue }}
     >
       {[0, 1, 2].map((i) => (
-        <motion.div
+        <m.div
           key={i}
           className="absolute rounded-full"
           style={{
@@ -255,7 +255,7 @@ const WaveSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
         />
       ))}
       {/* Center dot */}
-      <motion.div
+      <m.div
         className="absolute rounded-full"
         style={{
           width: sizeValue * 0.25,
@@ -322,7 +322,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       )}
 
       {showText && (
-        <motion.span
+        <m.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className={`${sizeMap[size].text} font-medium uppercase`}
@@ -333,7 +333,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
           }}
         >
           {text}
-        </motion.span>
+        </m.span>
       )}
 
       <span className="sr-only">{text}</span>

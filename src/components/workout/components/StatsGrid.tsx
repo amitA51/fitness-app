@@ -4,7 +4,7 @@
 import { useCountUp } from '@/hooks/useCountUp';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { DUR, EASE, formatInt, formatThousands, gsap, useGSAP } from '@/lib/gsap';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
 import type React from 'react';
 import { memo, useRef } from 'react';
@@ -72,7 +72,7 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
     const isSame = Math.abs(change) < 1;
 
     return (
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay, duration: 0.3 }}
@@ -157,7 +157,7 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
             {unit}
           </div>
         </div>
-      </motion.div>
+      </m.div>
     );
   }
 );
@@ -330,7 +330,7 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
 
         {/* Comparison section */}
         {comparison && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.25 }}
@@ -376,7 +376,7 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
                 delay={0.4}
               />
             </div>
-          </motion.div>
+          </m.div>
         )}
       </div>
     );

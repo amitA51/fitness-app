@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 // PerformanceAnalytics - Real-time workout performance tracking
 // Live stats, volume tracking, and workout insights
 import { memo, useMemo } from 'react';
@@ -115,7 +115,7 @@ const calculateCompletedSets = (exercises: ExerciseData[]): number => {
 /** Individual stat card */
 const StatCard = memo<StatCardProps>(
   ({ label, value, suffix = '', trend, trendValue, color = 'var(--fs-accent)' }) => (
-    <motion.div
+    <m.div
       className="bg-white/5 rounded-2xl p-4 flex flex-col"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -146,7 +146,7 @@ const StatCard = memo<StatCardProps>(
           <span>{trendValue}</span>
         </div>
       )}
-    </motion.div>
+    </m.div>
   )
 );
 
@@ -170,7 +170,7 @@ const MiniProgress = memo<{ progress: number; size?: number; color?: string }>(
           stroke="rgba(255,255,255,0.1)"
           strokeWidth={strokeWidth}
         />
-        <motion.circle
+        <m.circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -207,7 +207,7 @@ const VolumeComparisonBar = memo<{
       <div className="flex items-center gap-3">
         <span className="text-xs text-white/50 w-16">היום</span>
         <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden relative">
-          <motion.div
+          <m.div
             className="h-full w-full rounded-full"
             style={{
               background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
@@ -233,7 +233,7 @@ const VolumeComparisonBar = memo<{
       <div className="flex items-center gap-3">
         <span className="text-xs text-white/40 w-16">קודם</span>
         <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">
-          <motion.div
+          <m.div
             className="h-full w-full rounded-full bg-white/30"
             style={{ transformOrigin: 'left center' }}
             initial={{ scaleX: 0 }}
@@ -261,7 +261,7 @@ const ExerciseProgressRow = memo<{ exercise: ExerciseData; index: number }>(
       .reduce((total, s) => total + setVolume(s), 0);
 
     return (
-      <motion.div
+      <m.div
         className="flex items-center gap-3 py-2"
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -281,11 +281,11 @@ const ExerciseProgressRow = memo<{ exercise: ExerciseData; index: number }>(
         </div>
 
         {progress >= 1 && (
-          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-lg">
+          <m.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-lg">
             ✓
-          </motion.span>
+          </m.span>
         )}
-      </motion.div>
+      </m.div>
     );
   }
 );
@@ -352,7 +352,7 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
     // Compact mode - single row of stats
     if (compact) {
       return (
-        <motion.div
+        <m.div
           className={`flex items-center justify-around bg-black/40 backdrop-blur-md rounded-2xl p-3 ${className}`}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -381,12 +381,12 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
             </div>
             <div className="text-[10px] text-white/40 uppercase">זמן</div>
           </div>
-        </motion.div>
+        </m.div>
       );
     }
 
     return (
-      <motion.div
+      <m.div
         className={`premium-card p-5 ${className}`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -396,7 +396,7 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm text-white/60 font-medium">ביצועים בזמן אמת</h3>
           <div className="flex items-center gap-2">
-            <motion.div
+            <m.div
               className="w-2 h-2 rounded-full bg-[var(--color-live)]"
               animate={shouldReduce ? { opacity: 1 } : { opacity: [1, 0.5, 1] }}
               transition={
@@ -460,7 +460,7 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
             </span>
           </div>
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-            <motion.div
+            <m.div
               className="h-full w-full rounded-full"
               style={{
                 background:
@@ -475,7 +475,7 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
             />
           </div>
         </div>
-      </motion.div>
+      </m.div>
     );
   }
 );

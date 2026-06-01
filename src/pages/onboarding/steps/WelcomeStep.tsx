@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Award, ChevronRight, Target, TrendingUp } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 
@@ -7,7 +7,7 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
     <div className="w-full" style={{ color: 'var(--fs-ink)' }} dir="rtl">
       <div className="flex-1 flex flex-col items-center justify-center text-center px-6 pt-8">
         {/* App Icon - FS Brand Mark */}
-        <motion.div
+        <m.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }}
@@ -28,9 +28,9 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
           >
             FS
           </span>
-        </motion.div>
+        </m.div>
 
-        <motion.h1
+        <m.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
@@ -43,9 +43,9 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
           }}
         >
           SparkOS
-        </motion.h1>
+        </m.h1>
 
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
@@ -57,9 +57,9 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
           }}
         >
           אפליקציית הכושר שלך
-        </motion.p>
+        </m.p>
 
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.55 }}
@@ -72,10 +72,10 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
           }}
         >
           בוא נתחיל לבנות את תוכנית האימונים המושלמת עבורך
-        </motion.p>
+        </m.p>
 
         {/* Feature Highlights */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.65 }}
@@ -109,10 +109,10 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
               </span>
             </div>
           ))}
-        </motion.div>
+        </m.div>
       </div>
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.75 }}
@@ -122,7 +122,7 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
           בוא נתחיל
           <ChevronRight size={24} aria-hidden="true" />
         </Button>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

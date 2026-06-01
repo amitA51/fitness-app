@@ -2,7 +2,7 @@
 // Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import type React from 'react';
 import { memo, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -153,7 +153,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
   ).length;
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.35 }}
@@ -247,6 +247,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
           <button
             type="button"
             onClick={goToNextMonth}
+            aria-label="החודש הבא"
             style={{
               width: 36,
               height: 36,
@@ -466,7 +467,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
           {monthlyWorkoutDays} ימים
         </span>
       </div>
-    </motion.div>
+    </m.div>
   );
 };
 

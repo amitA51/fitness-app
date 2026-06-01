@@ -7,9 +7,9 @@
 // useIsRTL(): the stepper mirrors (− right / + left) so increment stays on the
 // leading edge. Honors prefers-reduced-motion for the value-change flash.
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import type React from 'react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import { useIsRTL } from '../../../hooks/useIsRTL';
 
@@ -155,20 +155,18 @@ const SetInputCard = memo<SetInputCardProps>(
     );
 
     // Mirror the stepper in RTL so increment stays on the leading (right) edge.
-    const stepperButtons = useMemo(
-      () =>
-        isRTL ? (
-          <>
-            {incrementButton}
-            {decrementButton}
-          </>
-        ) : (
-          <>
-            {decrementButton}
-            {incrementButton}
-          </>
-        ),
-      [isRTL, incrementButton, decrementButton]
+    // Computed inline: incrementButton/decrementButton are fresh JSX every render,
+    // so wrapping this in useMemo never hit its cache — it recomputed regardless.
+    const stepperButtons = isRTL ? (
+      <>
+        {incrementButton}
+        {decrementButton}
+      </>
+    ) : (
+      <>
+        {decrementButton}
+        {incrementButton}
+      </>
     );
 
     return (
@@ -324,7 +322,7 @@ const SetInputCard = memo<SetInputCardProps>(
         {/* Flash effect on value change (suppressed when reduced-motion) */}
         <AnimatePresence>
           {shouldFlash && !prefersReduced && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0.15 }}
               animate={{ opacity: 0 }}
               exit={{ opacity: 0 }}

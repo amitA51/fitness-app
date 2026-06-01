@@ -2,7 +2,7 @@
  * STEP: CHOICE (Sign In vs Sign Up)
  */
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { ChevronRight, Lock, User } from 'lucide-react';
 import { useState } from 'react';
 import { signInWithGoogle } from '../../../services/supabaseAuth';
@@ -17,9 +17,9 @@ interface ChoiceStepProps {
 export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
   const [oauthError, setOauthError] = useState('');
   return (
-    <motion.div key="choice" {...slideFromRight} className="flex flex-col gap-6 px-5 py-8">
+    <m.div key="choice" {...slideFromRight} className="flex flex-col gap-6 px-5 py-8">
       {/* Sign In Card */}
-      <motion.button
+      <m.button
         variants={staggerItem}
         initial="initial"
         animate="animate"
@@ -74,10 +74,10 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             <ChevronRight size={18} style={{ color: 'var(--fs-ink)' }} aria-hidden="true" />
           </div>
         </div>
-      </motion.button>
+      </m.button>
 
       {/* Sign Up Card */}
-      <motion.button
+      <m.button
         variants={staggerItem}
         initial="initial"
         animate="animate"
@@ -132,7 +132,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             <ChevronRight size={18} style={{ color: 'var(--fs-ink)' }} aria-hidden="true" />
           </div>
         </div>
-      </motion.button>
+      </m.button>
 
       {/* Divider */}
       <div className="flex items-center gap-4">
@@ -152,7 +152,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
       </div>
 
       {/* Guest Button */}
-      <motion.button
+      <m.button
         variants={staggerItem}
         initial="initial"
         animate="animate"
@@ -171,10 +171,10 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
         }}
       >
         התחל כאורח
-      </motion.button>
+      </m.button>
 
       {/* Google OAuth */}
-      <motion.button
+      <m.button
         variants={staggerItem}
         initial="initial"
         animate="animate"
@@ -221,7 +221,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
           />
         </svg>
         המשך עם Google
-      </motion.button>
+      </m.button>
 
       {oauthError && (
         <div
@@ -241,6 +241,6 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
           {oauthError}
         </div>
       )}
-    </motion.div>
+    </m.div>
   );
 }

@@ -3,7 +3,7 @@
  * Double-Bezel Cards, Spring Physics, Staggered Reveals
  */
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { Plus, Sparkles } from 'lucide-react';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useCloudTemplateReflection } from '../hooks/useCloudTemplateReflection';
@@ -44,7 +44,7 @@ export default function Templates() {
 
   return (
     <>
-      <motion.div
+      <m.div
         className="pb-[88px] ambient-mesh ambient-mesh-soft"
         style={{ background: 'var(--fs-bg)' }}
         dir="rtl"
@@ -132,16 +132,16 @@ export default function Templates() {
 
         <div className="px-5 pt-5">
           {/* Primary CTA */}
-          <motion.div variants={itemVariants} className="mb-5">
-            <motion.button
+          <m.div variants={itemVariants} className="mb-5">
+            <m.button
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowCreateModal(true)}
               className="btn-primary start-workout-btn accent-glow w-full flex items-center justify-center gap-2"
               aria-label="צור תבנית חדשה"
             >
               <Plus size={18} />+ תבנית חדשה
-            </motion.button>
-          </motion.div>
+            </m.button>
+          </m.div>
 
           <TemplateList
             favorites={favorites}
@@ -155,7 +155,7 @@ export default function Templates() {
             onCreateClick={() => setShowCreateModal(true)}
           />
         </div>
-      </motion.div>
+      </m.div>
 
       <AnimatePresence>
         {showCreateModal && (

@@ -2,7 +2,7 @@
  * STEP: SIGN IN CREDENTIALS
  */
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { AlertCircle, ArrowLeft, Mail } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnnualInput } from '../../../components/ui/AnnualInput';
@@ -90,7 +90,7 @@ export function SignInStep({
   );
 
   return (
-    <motion.div key="signin" {...slideFromRight} className="flex flex-col">
+    <m.div key="signin" {...slideFromRight} className="flex flex-col">
       {/* Back button */}
       <div className="px-5 pt-5">
         <GhostLink onClick={onBack}>
@@ -100,13 +100,13 @@ export function SignInStep({
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col flex-1">
-        <motion.div
+        <m.div
           variants={staggerContainer}
           initial="initial"
           animate="animate"
           className="flex flex-col gap-6 px-5 py-6 flex-1"
         >
-          <motion.div variants={staggerItem}>
+          <m.div variants={staggerItem}>
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
@@ -132,9 +132,9 @@ export function SignInStep({
             >
               משתמש קיים
             </p>
-          </motion.div>
+          </m.div>
 
-          <motion.div variants={staggerItem}>
+          <m.div variants={staggerItem}>
             <AnnualInput
               label={'דוא"ל'}
               type="email"
@@ -147,9 +147,9 @@ export function SignInStep({
               autoComplete="email"
               autoFocus
             />
-          </motion.div>
+          </m.div>
 
-          <motion.div variants={staggerItem}>
+          <m.div variants={staggerItem}>
             <AnnualPasswordInput
               label="סיסמה"
               value={form.password}
@@ -158,10 +158,10 @@ export function SignInStep({
               error={errors.password}
               autoComplete="current-password"
             />
-          </motion.div>
+          </m.div>
 
           {/* Forgot password link */}
-          <motion.div variants={staggerItem}>
+          <m.div variants={staggerItem}>
             <button
               type="button"
               onClick={onForgotPassword}
@@ -180,11 +180,11 @@ export function SignInStep({
             >
               שכחתי סיסמה
             </button>
-          </motion.div>
+          </m.div>
 
           {/* General error */}
           {generalError && (
-            <motion.div
+            <m.div
               variants={staggerItem}
               role="alert"
               className="p-4 flex items-start gap-3"
@@ -208,12 +208,12 @@ export function SignInStep({
               >
                 {generalError}
               </p>
-            </motion.div>
+            </m.div>
           )}
 
           {/* Supabase not configured notice */}
           {!isSupabaseConfigured && (
-            <motion.div
+            <m.div
               variants={staggerItem}
               className="p-4"
               style={{
@@ -234,9 +234,9 @@ export function SignInStep({
                 Supabase not configured — login disabled. Add VITE_SUPABASE_URL and
                 VITE_SUPABASE_ANON_KEY to .env
               </p>
-            </motion.div>
+            </m.div>
           )}
-        </motion.div>
+        </m.div>
 
         {/* Submit button */}
         <div className="px-5 pb-8">
@@ -251,6 +251,6 @@ export function SignInStep({
           </Button>
         </div>
       </form>
-    </motion.div>
+    </m.div>
   );
 }

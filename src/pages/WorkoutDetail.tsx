@@ -3,7 +3,7 @@
  * Shows all exercises, sets, reps, weights, and overall stats
  */
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import {
   Activity,
   ArrowRight,
@@ -147,7 +147,7 @@ function ExerciseCard({ exercise, index, reduceMotion }: ExerciseCardProps) {
   const totalVolume = completedSets.reduce((sum, s) => sum + setVolume(s), 0);
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={reduceMotion ? { duration: 0 } : { delay: index * 0.08, duration: 0.3 }}
@@ -306,7 +306,7 @@ function ExerciseCard({ exercise, index, reduceMotion }: ExerciseCardProps) {
           ))}
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -455,7 +455,7 @@ function MuscleBreakdown({ exercises, reduceMotion }: MuscleBreakdownProps) {
   };
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
@@ -524,7 +524,7 @@ function MuscleBreakdown({ exercises, reduceMotion }: MuscleBreakdownProps) {
                   overflow: 'hidden',
                 }}
               >
-                <motion.div
+                <m.div
                   initial={{ width: 0 }}
                   animate={{ width: `${percentage}%` }}
                   transition={
@@ -537,7 +537,7 @@ function MuscleBreakdown({ exercises, reduceMotion }: MuscleBreakdownProps) {
           );
         })}
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -808,7 +808,7 @@ export default function WorkoutDetail() {
 
       <div className="px-4 pt-4">
         {/* Time Info */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           style={{
@@ -875,10 +875,10 @@ export default function WorkoutDetail() {
               {session.endTime ? formatHebrewTime(session.endTime) : '—'}
             </span>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* Stats Grid */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -900,11 +900,11 @@ export default function WorkoutDetail() {
             value={totalSets.toString()}
             subValue={`${totalReps} חזרות`}
           />
-        </motion.div>
+        </m.div>
 
         {/* Goal Badge */}
         {session.goalType && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -942,7 +942,7 @@ export default function WorkoutDetail() {
                     ? 'סיבולת'
                     : 'תחזוקה'}
             </span>
-          </motion.div>
+          </m.div>
         )}
 
         {/* Muscle Breakdown */}
@@ -996,7 +996,7 @@ export default function WorkoutDetail() {
         </div>
 
         {/* Next time recommendation */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -1053,11 +1053,11 @@ export default function WorkoutDetail() {
                 }`
               : 'המשך לעקוב אחר ההתקדמות שלך לאורך זמן.'}
           </p>
-        </motion.div>
+        </m.div>
 
         {/* Notes Section */}
         {session.notes && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
@@ -1104,11 +1104,11 @@ export default function WorkoutDetail() {
             >
               {session.notes}
             </p>
-          </motion.div>
+          </m.div>
         )}
 
         {/* Action Buttons */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
@@ -1165,7 +1165,7 @@ export default function WorkoutDetail() {
             <Share2 size={14} />
             שתף אימון
           </button>
-        </motion.div>
+        </m.div>
       </div>
     </div>
   );

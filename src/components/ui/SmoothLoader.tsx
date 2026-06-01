@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -67,7 +67,7 @@ export const SmoothLoader: React.FC<SmoothLoaderProps> = ({
     <div className={`relative ${className}`}>
       <AnimatePresence mode="sync">
         {!showContent ? (
-          <motion.div
+          <m.div
             key="skeleton"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -75,9 +75,9 @@ export const SmoothLoader: React.FC<SmoothLoaderProps> = ({
             transition={{ duration: duration * 0.5 }}
           >
             {skeleton}
-          </motion.div>
+          </m.div>
         ) : (
-          <motion.div
+          <m.div
             key="content"
             className="fade-rise-in"
             initial={{ opacity: 0, y: 4 }}
@@ -88,7 +88,7 @@ export const SmoothLoader: React.FC<SmoothLoaderProps> = ({
             }}
           >
             {children}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
@@ -115,13 +115,13 @@ export const InlineLoader: React.FC<{
 
       <AnimatePresence>
         {isLoading && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 flex items-center justify-center"
           >
-            <motion.div
+            <m.div
               className="border-2"
               style={{
                 width: spinnerSize,
@@ -136,7 +136,7 @@ export const InlineLoader: React.FC<{
                 ease: 'linear',
               }}
             />
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
@@ -161,7 +161,7 @@ export const ErrorWithRetry: React.FC<{
   compact = false,
 }) => {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className={`flex ${compact ? 'flex-row items-center gap-3' : 'flex-col items-center gap-4'} ${className}`}
@@ -231,7 +231,7 @@ export const ErrorWithRetry: React.FC<{
         </svg>
         {'\u05E0\u05E1\u05D4 \u05E9\u05D5\u05D1'}
       </button>
-    </motion.div>
+    </m.div>
   );
 };
 

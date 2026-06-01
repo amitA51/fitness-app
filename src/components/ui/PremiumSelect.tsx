@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import type React from 'react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
@@ -106,7 +106,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
         </label>
       )}
 
-      <motion.button
+      <m.button
         id={buttonId}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -138,7 +138,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <span className="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-4">
-          <motion.div
+          <m.div
             animate={{ rotate: isOpen ? 180 : 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           >
@@ -154,13 +154,13 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
             </svg>
-          </motion.div>
+          </m.div>
         </span>
-      </motion.button>
+      </m.button>
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
@@ -179,7 +179,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
             {options.map((option) => {
               const isSelected = value === option.value;
               return (
-                <motion.button
+                <m.button
                   key={option.value}
                   onClick={() => {
                     onChange(option.value);
@@ -225,10 +225,10 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                       </svg>
                     </span>
                   )}
-                </motion.button>
+                </m.button>
               );
             })}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

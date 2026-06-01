@@ -5,7 +5,7 @@
  * Follows Apple's "peek and pop" design philosophy with spring animations.
  */
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -280,7 +280,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
           {isOpen && (
             <>
               {/* Backdrop */}
-              <motion.div
+              <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -290,7 +290,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
               />
 
               {/* Menu */}
-              <motion.div
+              <m.div
                 className="fixed z-50 min-w-[180px] rounded-2xl overflow-hidden"
                 initial={{ opacity: 0, scale: 0.85, y: -10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -310,7 +310,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <motion.div
+                <m.div
                   className="py-2"
                   variants={{
                     hidden: {},
@@ -324,7 +324,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
                   animate="visible"
                 >
                   {actions.map((action, index) => (
-                    <motion.button
+                    <m.button
                       key={action.id}
                       variants={{
                         hidden: { opacity: 0, x: -10 },
@@ -348,10 +348,10 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
                         {action.icon}
                       </span>
                       <span className="flex-1 text-sm font-medium">{action.label}</span>
-                    </motion.button>
+                    </m.button>
                   ))}
-                </motion.div>
-              </motion.div>
+                </m.div>
+              </m.div>
             </>
           )}
         </AnimatePresence>,

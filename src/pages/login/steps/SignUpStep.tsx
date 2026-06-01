@@ -2,7 +2,7 @@
  * STEP: SIGN UP (NEW USER)
  */
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { AlertCircle, ArrowLeft, Mail, MailOpen, User } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { AnnualInput } from '../../../components/ui/AnnualInput';
@@ -95,12 +95,12 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
 
   if (confirmSent) {
     return (
-      <motion.div
+      <m.div
         key="confirm-sent"
         {...pageVariants}
         className="flex flex-col items-center justify-center flex-1 px-5 py-8 text-center"
       >
-        <motion.div
+        <m.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
@@ -108,9 +108,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           style={{ background: 'var(--fs-accent)', borderRadius: '22px 16px 22px 16px' }}
         >
           <MailOpen size={36} style={{ color: 'var(--fs-heading)' }} />
-        </motion.div>
+        </m.div>
 
-        <motion.h2
+        <m.h2
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -125,9 +125,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           }}
         >
           בדוק את הדוא"ל שלך
-        </motion.h2>
+        </m.h2>
 
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -140,9 +140,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           }}
         >
           שלחנו קישור אימות אל
-        </motion.p>
+        </m.p>
 
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
@@ -156,9 +156,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           }}
         >
           {form.email}
-        </motion.p>
+        </m.p>
 
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
@@ -170,9 +170,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           }}
         >
           לחץ על הקישור בדוא"ל כדי להפעיל את החשבון
-        </motion.p>
+        </m.p>
 
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
@@ -181,13 +181,13 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           <Button variant="editorial-secondary" type="button" onClick={onBack} fullWidth={false}>
             חזרה להתחברות
           </Button>
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
     );
   }
 
   return (
-    <motion.div key="signup" {...slideFromRight} className="flex flex-col">
+    <m.div key="signup" {...slideFromRight} className="flex flex-col">
       {/* Back button */}
       <div className="px-5 pt-5">
         <GhostLink onClick={onBack}>
@@ -197,13 +197,13 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col flex-1">
-        <motion.div
+        <m.div
           variants={staggerContainer}
           initial="initial"
           animate="animate"
           className="flex flex-col gap-5 px-5 py-6 flex-1"
         >
-          <motion.div variants={staggerItem}>
+          <m.div variants={staggerItem}>
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
@@ -229,10 +229,10 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
             >
               צור את החשבון שלך
             </p>
-          </motion.div>
+          </m.div>
 
           {/* Chapter-style section marker */}
-          <motion.div variants={staggerItem} className="flex items-center gap-3 mt-1">
+          <m.div variants={staggerItem} className="flex items-center gap-3 mt-1">
             <span
               style={{
                 fontFamily: 'var(--font-mono)',
@@ -245,9 +245,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               פרופיל
             </span>
             <div className="flex-1" style={{ height: '1px', background: 'var(--fs-surface-2)' }} />
-          </motion.div>
+          </m.div>
 
-          <motion.div variants={staggerItem}>
+          <m.div variants={staggerItem}>
             <AnnualInput
               label="שם מלא"
               type="text"
@@ -259,9 +259,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               autoComplete="name"
               autoFocus
             />
-          </motion.div>
+          </m.div>
 
-          <motion.div variants={staggerItem}>
+          <m.div variants={staggerItem}>
             <AnnualInput
               label={'דוא"ל'}
               type="email"
@@ -273,10 +273,10 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               error={errors.email}
               autoComplete="email"
             />
-          </motion.div>
+          </m.div>
 
           {/* Password section */}
-          <motion.div variants={staggerItem} className="flex items-center gap-3 mt-1">
+          <m.div variants={staggerItem} className="flex items-center gap-3 mt-1">
             <span
               style={{
                 fontFamily: 'var(--font-mono)',
@@ -289,9 +289,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               אבטחה
             </span>
             <div className="flex-1" style={{ height: '1px', background: 'var(--fs-surface-2)' }} />
-          </motion.div>
+          </m.div>
 
-          <motion.div variants={staggerItem}>
+          <m.div variants={staggerItem}>
             <AnnualPasswordInput
               label="סיסמה"
               value={form.password}
@@ -300,9 +300,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               error={errors.password}
               autoComplete="new-password"
             />
-          </motion.div>
+          </m.div>
 
-          <motion.div variants={staggerItem}>
+          <m.div variants={staggerItem}>
             <AnnualPasswordInput
               label="אישור סיסמה"
               value={form.confirmPassword}
@@ -311,11 +311,11 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               error={errors.confirmPassword}
               autoComplete="new-password"
             />
-          </motion.div>
+          </m.div>
 
           {/* General error */}
           {generalError && (
-            <motion.div
+            <m.div
               variants={staggerItem}
               role="alert"
               className="p-4 flex items-start gap-3"
@@ -339,9 +339,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               >
                 {generalError}
               </p>
-            </motion.div>
+            </m.div>
           )}
-        </motion.div>
+        </m.div>
 
         {/* Submit button */}
         <div className="px-5 pb-8">
@@ -356,6 +356,6 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           </Button>
         </div>
       </form>
-    </motion.div>
+    </m.div>
   );
 }

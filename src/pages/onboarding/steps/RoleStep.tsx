@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Check, Dumbbell, UserCog, Users } from 'lucide-react';
 import { StepHeader } from '../components/ProgressDots';
 import type { OnboardingData, OnboardingRole } from '../types';
@@ -32,7 +32,7 @@ const ROLE_OPTIONS: RoleOption[] = [
 
 export function RoleStep({ data, onChange }: RoleStepProps) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
@@ -44,7 +44,7 @@ export function RoleStep({ data, onChange }: RoleStepProps) {
         {ROLE_OPTIONS.map((option) => {
           const isSelected = data.role === option.value;
           return (
-            <motion.button
+            <m.button
               key={option.value}
               type="button"
               whileTap={{ scale: 0.98 }}
@@ -93,7 +93,7 @@ export function RoleStep({ data, onChange }: RoleStepProps) {
                 </p>
               </div>
               {isSelected && (
-                <motion.div
+                <m.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   className="w-7 h-7 flex items-center justify-center shrink-0"
@@ -104,9 +104,9 @@ export function RoleStep({ data, onChange }: RoleStepProps) {
                   }}
                 >
                   <Check size={16} strokeWidth={3} />
-                </motion.div>
+                </m.div>
               )}
-            </motion.button>
+            </m.button>
           );
         })}
 
@@ -117,6 +117,6 @@ export function RoleStep({ data, onChange }: RoleStepProps) {
           תמיד אפשר לשנות בהגדרות בהמשך
         </p>
       </div>
-    </motion.div>
+    </m.div>
   );
 }

@@ -15,6 +15,7 @@ export function NumberInput({ value, onChange, min, max, placeholder, unit }: Nu
         type="number"
         inputMode="numeric"
         pattern="[0-9]*"
+        aria-label={placeholder || unit || 'ערך מספרי'}
         min={min}
         max={max}
         value={value}

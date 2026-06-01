@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { memo, useMemo } from 'react';
 
 export const RecoveryBar = memo(function RecoveryBar({
@@ -26,7 +26,7 @@ export const RecoveryBar = memo(function RecoveryBar({
           overflow: 'hidden',
         }}
       >
-        <motion.div
+        <m.div
           style={{ height: '100%', borderRadius: '9999px', backgroundColor: color }}
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}

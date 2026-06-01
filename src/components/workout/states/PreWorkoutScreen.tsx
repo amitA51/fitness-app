@@ -4,7 +4,7 @@
  * Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
  */
 
-import { AnimatePresence, type Variants, motion } from 'framer-motion';
+import { AnimatePresence, type Variants, m } from 'framer-motion';
 import { Dumbbell as DumbbellIcon } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
@@ -254,7 +254,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
   const hasHistory = !!lastWorkout || workoutStreak > 0;
 
   return (
-    <motion.div
+    <m.div
       className="fixed inset-0 z-overlay flex flex-col overflow-y-auto overscroll-contain ambient-mesh ambient-mesh-soft"
       style={{
         background: oledMode ? '#000000' : 'var(--fs-bg)',
@@ -482,7 +482,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
           {/* Coach-assigned program — inline coach injection for the workout
               surface. Tapping it syncs + starts that program's template. */}
           {hasCoachProgram && onStartCoachProgram && (
-            <motion.div key="coach-program" variants={itemVariants} className="mb-5">
+            <m.div key="coach-program" variants={itemVariants} className="mb-5">
               <button
                 type="button"
                 onClick={onStartCoachProgram}
@@ -540,12 +540,12 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   </p>
                 </div>
               </button>
-            </motion.div>
+            </m.div>
           )}
 
           {/* Suggestion card */}
           {suggestion && (
-            <motion.div key="suggestion" variants={itemVariants} className="mb-5">
+            <m.div key="suggestion" variants={itemVariants} className="mb-5">
               <div
                 className="relative"
                 style={{
@@ -600,12 +600,12 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   </p>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {/* Templates section */}
           {favoriteTemplates.length > 0 && (
-            <motion.div key="templates" variants={itemVariants} className="mb-5">
+            <m.div key="templates" variants={itemVariants} className="mb-5">
               <div
                 className="mb-3"
                 style={{
@@ -631,7 +631,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 }}
               >
                 {favoriteTemplates.map((template, index) => (
-                  <motion.button
+                  <m.button
                     key={template.id}
                     onClick={() => handleTemplateSelect(template)}
                     className="template-card fs-accent-rail"
@@ -688,14 +688,14 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     >
                       {template.exercises?.length || 0} תרגילים
                     </div>
-                  </motion.button>
+                  </m.button>
                 ))}
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {/* CTA Button */}
-          <motion.div
+          <m.div
             key="cta"
             variants={itemVariants}
             className="mt-auto"
@@ -765,10 +765,10 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
             >
               ביטול
             </button>
-          </motion.div>
+          </m.div>
         </AnimatePresence>
       </div>
-    </motion.div>
+    </m.div>
   );
 };
 

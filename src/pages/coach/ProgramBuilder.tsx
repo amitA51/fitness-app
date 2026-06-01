@@ -195,7 +195,9 @@ export default function ProgramBuilder({
     >
       <datalist id="coach-exercise-library">
         {library.map((ex) => (
-          <option key={ex.id} value={ex.name ?? ''} />
+          <option key={ex.id} value={ex.name ?? ''}>
+            {ex.name ?? ''}
+          </option>
         ))}
       </datalist>
 

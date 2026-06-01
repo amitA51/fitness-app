@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import React, { useId, useCallback } from 'react';
 import { triggerHaptic } from '../../utils/haptics';
 
@@ -105,7 +105,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         />
 
         {/* Track — sharp rect, 1px navy border */}
-        <motion.div
+        <m.div
           className="block peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--fs-accent)] peer-focus-visible:ring-offset-2"
           style={{
             width: config.trackW,
@@ -120,7 +120,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         />
 
         {/* Knob — navy sharp square */}
-        <motion.div
+        <m.div
           className="absolute"
           style={{
             top: config.padding,

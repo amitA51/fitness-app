@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import type React from 'react';
 
 export const AuroraBackground: React.FC = () => {
@@ -9,7 +9,7 @@ export const AuroraBackground: React.FC = () => {
       <div className="absolute inset-0 bg-[var(--fs-bg)]" />
 
       {/* Ambient Orbs */}
-      <motion.div
+      <m.div
         animate={
           shouldReduceMotion
             ? { scale: 1, rotate: 0, x: 0, y: 0 }
@@ -28,7 +28,7 @@ export const AuroraBackground: React.FC = () => {
         className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-[color-mix(in_srgb,var(--fs-accent)_20%,transparent)] rounded-full blur-[120px]"
       />
 
-      <motion.div
+      <m.div
         animate={
           shouldReduceMotion
             ? { scale: 1, rotate: 0, x: 0, y: 0 }
@@ -47,7 +47,7 @@ export const AuroraBackground: React.FC = () => {
         className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-[color-mix(in_srgb,var(--fs-accent-2)_20%,transparent)] rounded-full blur-[140px]"
       />
 
-      <motion.div
+      <m.div
         animate={
           shouldReduceMotion
             ? { scale: 1, opacity: 0.3 }

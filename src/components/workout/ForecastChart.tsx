@@ -2,7 +2,7 @@
 // Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import type React from 'react';
 import { memo, useMemo, useState } from 'react';
 import {
@@ -51,7 +51,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
   const hasChartData = forecastData.length >= 2;
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
@@ -205,7 +205,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
           אין מספיק נתונים לתרגיל זה
         </div>
       )}
-    </motion.div>
+    </m.div>
   );
 };
 

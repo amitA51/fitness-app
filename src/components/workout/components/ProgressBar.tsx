@@ -1,7 +1,7 @@
 // ProgressBar - Ultra Premium Top Progress Indicator with Glow Effects
 // Features: Gradient animation, particle trail, milestone markers
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { memo } from 'react';
 
 // ============================================================
@@ -18,7 +18,7 @@ interface ProgressBarProps {
 // ============================================================
 
 const ProgressParticle = memo<{ delay: number }>(({ delay }) => (
-  <motion.div
+  <m.div
     className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-white"
     initial={{ opacity: 0, scale: 0, x: 0 }}
     animate={{
@@ -58,7 +58,7 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
       <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10" />
 
       {/* Progress Fill */}
-      <motion.div
+      <m.div
         className="absolute top-0 left-0 h-full w-full shadow-[0_0_15px_var(--fs-accent)]"
         style={{
           background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
@@ -73,7 +73,7 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
       >
         {/* Shimmer effect */}
         {!shouldReduce && (
-          <motion.div
+          <m.div
             className="absolute inset-0"
             style={{
               background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
@@ -92,7 +92,7 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
 
         {/* Leading edge glow */}
         {!shouldReduce && (
-          <motion.div
+          <m.div
             className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full accent-glow"
             style={{
               background:
@@ -109,7 +109,7 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
             }}
           />
         )}
-      </motion.div>
+      </m.div>
 
       {/* Milestone Markers */}
       {showMilestones &&
@@ -125,7 +125,7 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
             {/* Completion indicator */}
             <AnimatePresence>
               {clampedProgress >= milestone && (
-                <motion.div
+                <m.div
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-lg shadow-white/50"

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 // Extracted from WorkoutSummary.tsx
 import type React from 'react';
 import { memo, useMemo } from 'react';
@@ -34,7 +34,7 @@ export const Confetti: React.FC<ConfettiProps> = memo(({ show }) => {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {particles.map((p) => (
-        <motion.div
+        <m.div
           key={p.id}
           className="absolute"
           style={{
@@ -82,7 +82,7 @@ export const RPEDisplay: React.FC<RPEDisplayProps> = memo(
     if (avgRpeActual === null) return null;
 
     return (
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay }}
@@ -99,7 +99,7 @@ export const RPEDisplay: React.FC<RPEDisplayProps> = memo(
         <div className="flex items-center gap-3">
           <span className="text-2xl font-[800] text-white">{avgRpeActual}</span>
           <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-            <motion.div
+            <m.div
               className="h-full rounded-full"
               style={{
                 backgroundColor:
@@ -125,7 +125,7 @@ export const RPEDisplay: React.FC<RPEDisplayProps> = memo(
                 : 'ביעד'}
           </p>
         )}
-      </motion.div>
+      </m.div>
     );
   }
 );

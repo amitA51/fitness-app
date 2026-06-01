@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { BookOpen, Clock, Plus, Search } from 'lucide-react';
 import type React from 'react';
 import { useMemo } from 'react';
@@ -222,7 +222,7 @@ export default function NutritionPage() {
       <div className="px-5">
         <AnimatePresence mode="sync">
           {activeTab === 'log' && (
-            <motion.div
+            <m.div
               key="log"
               id="nutrition-panel-log"
               role="tabpanel"
@@ -239,11 +239,11 @@ export default function NutritionPage() {
               ) : (
                 <GroupedMealLog entries={todayEntries} onDelete={handleDeleteEntry} />
               )}
-            </motion.div>
+            </m.div>
           )}
 
           {activeTab === 'library' && (
-            <motion.div
+            <m.div
               key="library"
               id="nutrition-panel-library"
               role="tabpanel"
@@ -259,11 +259,11 @@ export default function NutritionPage() {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
               />
-            </motion.div>
+            </m.div>
           )}
 
           {activeTab === 'presets' && (
-            <motion.div
+            <m.div
               key="presets"
               id="nutrition-panel-presets"
               role="tabpanel"
@@ -281,7 +281,7 @@ export default function NutritionPage() {
                   onSelect={(m) => handleQuickPreset(preset, m)}
                 />
               ))}
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>
@@ -291,7 +291,7 @@ export default function NutritionPage() {
       <WaterHistoryChart waterHistory={waterHistory} />
 
       {/* FAB */}
-      <motion.button
+      <m.button
         onClick={() => setShowAddMeal(true)}
         className="fixed bottom-24 z-40 flex items-center justify-center accent-glow"
         style={{
@@ -307,7 +307,7 @@ export default function NutritionPage() {
         aria-label="הוסף ארוחה"
       >
         <Plus size={24} strokeWidth={2.5} />
-      </motion.button>
+      </m.button>
 
       {/* Add Meal Modal */}
       <AddMealModal

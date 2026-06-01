@@ -1,4 +1,4 @@
-import { motion, useReducedMotion, useSpring, useTransform } from 'framer-motion';
+import { m, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 // IntensityMeter - Real-time workout intensity visualization
 // Apple Fitness+ inspired intensity zones with animated gauge
 import { memo, useEffect, useId, useState } from 'react';
@@ -159,7 +159,7 @@ const ArcGauge = memo<{ intensity: number; size: number; strokeWidth: number; in
         })}
 
         {/* Active progress arc */}
-        <motion.path
+        <m.path
           d={`M ${strokeWidth / 2} ${size / 2} A ${radius} ${radius} 0 0 1 ${size - strokeWidth / 2} ${size / 2}`}
           fill="none"
           stroke={`url(#intensity-gradient-${instanceId}-${zone})`}
@@ -170,7 +170,7 @@ const ArcGauge = memo<{ intensity: number; size: number; strokeWidth: number; in
         />
 
         {/* Glow effect */}
-        <motion.circle
+        <m.circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -228,12 +228,12 @@ const ZoneBar = memo<{ intensity: number }>(({ intensity }) => {
         const isPassed = intensity >= data.range[1];
 
         return (
-          <motion.div
+          <m.div
             key={key}
             className="flex-1 h-2 rounded-full overflow-hidden"
             style={{ backgroundColor: 'var(--color-bar-track)' }}
           >
-            <motion.div
+            <m.div
               className="h-full rounded-full"
               initial={{ scaleX: 0 }}
               animate={{
@@ -250,7 +250,7 @@ const ZoneBar = memo<{ intensity: number }>(({ intensity }) => {
               }}
               transition={{ type: 'spring', stiffness: 200, damping: 25 }}
             />
-          </motion.div>
+          </m.div>
         );
       })}
     </div>
@@ -273,7 +273,7 @@ const VolumeBar = memo<{ current: number; target: number }>(({ current, target }
         </span>
       </div>
       <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-        <motion.div
+        <m.div
           className="h-full rounded-full"
           initial={{ scaleX: 0 }}
           animate={{ scaleX: percentage / 100 }}
@@ -297,7 +297,7 @@ VolumeBar.displayName = 'VolumeBar';
 const PulsingDot = memo<{ color: string; isActive: boolean }>(({ color, isActive }) => {
   const shouldReduce = useReducedMotion();
   return (
-    <motion.div
+    <m.div
       className="relative w-3 h-3"
       animate={isActive && !shouldReduce ? { scale: [1, 1.2, 1] } : { scale: 1 }}
       transition={
@@ -308,14 +308,14 @@ const PulsingDot = memo<{ color: string; isActive: boolean }>(({ color, isActive
     >
       <div className="absolute inset-0 rounded-full" style={{ backgroundColor: color }} />
       {isActive && !shouldReduce && (
-        <motion.div
+        <m.div
           className="absolute inset-0 rounded-full"
           style={{ backgroundColor: color }}
           animate={{ scale: [1, 2], opacity: [0.5, 0] }}
           transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, ease: 'easeOut' }}
         />
       )}
-    </motion.div>
+    </m.div>
   );
 });
 
@@ -362,7 +362,7 @@ const IntensityMeter = memo<IntensityMeterProps>(
     // Compact mode for header display
     if (compact) {
       return (
-        <motion.div
+        <m.div
           className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md ${className}`}
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -378,12 +378,12 @@ const IntensityMeter = memo<IntensityMeterProps>(
           <span className="text-white text-xs font-bold tabular-nums">
             {Math.round(displayIntensity)}%
           </span>
-        </motion.div>
+        </m.div>
       );
     }
 
     return (
-      <motion.div
+      <m.div
         className={`premium-card p-6 ${className}`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -395,7 +395,7 @@ const IntensityMeter = memo<IntensityMeterProps>(
             <PulsingDot color={zoneData.color} isActive={isActive} />
             <span className="text-white/60 text-sm">עצימות אימון</span>
           </div>
-          <motion.div
+          <m.div
             className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
             style={{
               background: `${zoneData.color}20`,
@@ -407,7 +407,7 @@ const IntensityMeter = memo<IntensityMeterProps>(
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
           >
             {zoneData.labelHe}
-          </motion.div>
+          </m.div>
         </div>
 
         {/* Arc Gauge */}
@@ -421,7 +421,7 @@ const IntensityMeter = memo<IntensityMeterProps>(
 
           {/* Center value */}
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
-            <motion.div
+            <m.div
               className="text-5xl font-[800] tabular-nums"
               style={{ color: zoneData.color }}
               key={Math.round(displayIntensity)}
@@ -431,7 +431,7 @@ const IntensityMeter = memo<IntensityMeterProps>(
             >
               {Math.round(displayIntensity)}
               <span className="text-2xl">%</span>
-            </motion.div>
+            </m.div>
           </div>
         </div>
 
@@ -480,7 +480,7 @@ const IntensityMeter = memo<IntensityMeterProps>(
             </div>
           </div>
         )}
-      </motion.div>
+      </m.div>
     );
   }
 );

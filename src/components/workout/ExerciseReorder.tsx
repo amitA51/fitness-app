@@ -2,7 +2,7 @@
 // Sharp corners · Navy header · Bone body
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { AnimatePresence, type PanInfo, Reorder, motion } from 'framer-motion';
+import { AnimatePresence, type PanInfo, Reorder, m } from 'framer-motion';
 import { Link2 } from 'lucide-react';
 import { X as CloseIcon } from 'lucide-react';
 import React, { useState, useCallback, memo, useMemo } from 'react';
@@ -198,7 +198,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
   const sheetContent = (
     <AnimatePresence>
       {/* Backdrop */}
-      <motion.div
+      <m.div
         key="reorder-backdrop"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -215,7 +215,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
       />
 
       {/* Bottom Sheet */}
-      <motion.div
+      <m.div
         key="reorder-sheet"
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
@@ -482,7 +482,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
         </div>
 
         <div style={{ height: 'env(safe-area-inset-bottom, 16px)' }} />
-      </motion.div>
+      </m.div>
     </AnimatePresence>
   );
 

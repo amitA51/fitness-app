@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import type React from 'react';
 import { forwardRef, useId } from 'react';
 
@@ -74,7 +74,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         />
 
         {error && (
-          <motion.span
+          <m.span
             id={errorId}
             role="alert"
             initial={{ opacity: 0, y: -4 }}
@@ -90,7 +90,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             }}
           >
             {error}
-          </motion.span>
+          </m.span>
         )}
 
         {helper && !error && (

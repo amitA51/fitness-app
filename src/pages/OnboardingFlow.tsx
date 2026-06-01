@@ -11,7 +11,7 @@
  * - Smooth animations with reduced-motion support
  */
 
-import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
+import { AnimatePresence, MotionConfig, m } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useId, useState } from 'react';
 
@@ -81,7 +81,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
         {/* Progress bar at top — premium track */}
         {currentStep > 0 && currentStep < STEPS.length - 1 && (
           <div className="w-full fs-progress-track" style={{ height: '4px' }}>
-            <motion.div
+            <m.div
               className="h-full fs-progress-fill"
               initial={{ width: 0 }}
               animate={{
@@ -136,7 +136,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
                 region so screen readers announce the requirement when it changes. */}
             <div aria-live="polite" className="min-h-[20px] mb-2 px-1">
               {currentStep < STEPS.length - 1 && hint && (
-                <motion.p
+                <m.p
                   id={hintId}
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -149,7 +149,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
                   }}
                 >
                   {hint}
-                </motion.p>
+                </m.p>
               )}
             </div>
             <div className="flex gap-3">

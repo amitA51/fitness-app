@@ -2,7 +2,7 @@
 // Sharp corners, bone-deep cards, navy borders, Big Shoulders typography
 
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import type React from 'react';
 import { memo } from 'react';
@@ -32,7 +32,7 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
   ({ name, setsCompleted, totalVolume: _totalVolume, bestSet, isPR, delay = 0 }) => {
     const reduced = useReducedMotion();
     return (
-      <motion.div
+      <m.div
         initial={reduced ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={reduced ? { duration: 0 } : { delay, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
@@ -48,7 +48,7 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
       >
         {/* PR badge */}
         {isPR && (
-          <motion.div
+          <m.div
             initial={reduced ? false : { scale: 0 }}
             animate={{ scale: 1 }}
             transition={
@@ -69,7 +69,7 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
             }}
           >
             PR
-          </motion.div>
+          </m.div>
         )}
 
         <div className="flex items-center gap-3">
@@ -121,7 +121,7 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
             </span>
           )}
         </div>
-      </motion.div>
+      </m.div>
     );
   }
 );

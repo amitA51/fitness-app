@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Dumbbell, Plus } from 'lucide-react';
 import type { WorkoutTemplate } from '../../../types';
 import { itemVariants, springTransition } from '../constants';
@@ -33,11 +33,11 @@ export function TemplateList({
     <>
       {/* Empty State */}
       {!hasTemplates && (
-        <motion.div
+        <m.div
           variants={itemVariants}
           className="flex flex-col items-center justify-center py-20 text-center"
         >
-          <motion.div
+          <m.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ ...springTransition, delay: 0.2 }}
@@ -45,7 +45,7 @@ export function TemplateList({
             style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)' }}
           >
             <Dumbbell size={36} />
-          </motion.div>
+          </m.div>
           <p
             style={{
               fontFamily: 'var(--font-display)',
@@ -61,20 +61,20 @@ export function TemplateList({
           <p className="eyebrow mb-6" style={{ color: 'var(--fs-muted)' }}>
             CREATE YOUR FIRST ROUTINE
           </p>
-          <motion.button
+          <m.button
             whileTap={{ scale: 0.95 }}
             onClick={onCreateClick}
             className="btn-primary flex items-center gap-2"
           >
             <Plus size={18} />
             צור תבנית ראשונה
-          </motion.button>
-        </motion.div>
+          </m.button>
+        </m.div>
       )}
 
       {/* Favorites Section */}
       {favorites.length > 0 && (
-        <motion.div variants={itemVariants} className="mb-6">
+        <m.div variants={itemVariants} className="mb-6">
           <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
             <span className="left" />
             <span
@@ -104,12 +104,12 @@ export function TemplateList({
               />
             ))}
           </div>
-        </motion.div>
+        </m.div>
       )}
 
       {/* All Templates Section */}
       {regular.length > 0 && (
-        <motion.div variants={itemVariants} className="mb-6">
+        <m.div variants={itemVariants} className="mb-6">
           {favorites.length > 0 && (
             <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
               <span className="left" />
@@ -141,7 +141,7 @@ export function TemplateList({
               />
             ))}
           </div>
-        </motion.div>
+        </m.div>
       )}
     </>
   );

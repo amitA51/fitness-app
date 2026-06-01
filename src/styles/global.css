@@ -1147,9 +1147,14 @@ main > * {
 
 /* Ensure inputs are visible when keyboard opens */
 input:focus-visible,
-textarea:focus-visible {
+textarea:focus-visible,
+select:focus-visible {
   position: relative;
   z-index: 100;
+  /* Keyboard focus ring via box-shadow so it survives inline `outline: none`
+     (box-shadow is a separate property an inline outline reset can't override).
+     Gives every form control a visible focus indicator for keyboard users. */
+  box-shadow: 0 0 0 2px var(--fs-surface), 0 0 0 4px var(--fs-accent);
 }
 
 /* Visual viewport height for mobile */

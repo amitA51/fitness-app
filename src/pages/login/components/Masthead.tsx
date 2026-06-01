@@ -2,11 +2,11 @@
  * MASTHEAD — FS brand lockup
  */
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 
 export function Masthead() {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -65,6 +65,6 @@ export function Masthead() {
       >
         רשמו אימונים, עקבו אחר משקלים וגלו איך הגוף שלכם מתפתח עם הזמן
       </p>
-    </motion.div>
+    </m.div>
   );
 }

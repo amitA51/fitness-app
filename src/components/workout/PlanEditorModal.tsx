@@ -1,4 +1,4 @@
-import { AnimatePresence, Reorder, motion } from 'framer-motion';
+import { AnimatePresence, Reorder, m } from 'framer-motion';
 // PlanEditorModal - Modal for creating and editing workout plans
 // Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
 import type React from 'react';
@@ -151,7 +151,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
       closeOnEscape
       ariaLabel={initialPlan ? 'עריכת תוכנית' : 'תוכנית חדשה'}
     >
-      <motion.div
+      <m.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
@@ -473,7 +473,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
           {/* Library Sidebar / Drawer */}
           <AnimatePresence>
             {showLibrary && (
-              <motion.div
+              <m.div
                 initial={{ x: '100%', opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: '100%', opacity: 0 }}
@@ -531,11 +531,11 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                     isSelectionMode={true}
                   />
                 </div>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
         </div>
-      </motion.div>
+      </m.div>
     </ModalOverlay>
   );
 };

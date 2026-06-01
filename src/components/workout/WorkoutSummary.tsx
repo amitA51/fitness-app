@@ -5,7 +5,7 @@ import { useCountUp } from '@/hooks/useCountUp';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { DUR, gsap, useGSAP } from '@/lib/gsap';
 import { fireSparks } from '@/lib/gsapSparks';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
@@ -265,7 +265,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
 
   // Hero count-up: the giant PR number in the masthead rolls up and lands with
   // a settle pop as the screen settles. RAF-driven (no React re-render) and
-  // RTL-neutral. useCountUp snaps to the final value under reduced motion. Only
+  // RTL-neutral. useCountUp snaps to the final value under reduced m. Only
   // active when there's a PR to celebrate (otherwise the headline is text).
   // This is the SINGLE place the PR number animates — StatsGrid's PR cell
   // renders it static to avoid double-animating the same number.
@@ -324,7 +324,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
       closeOnEscape
       ariaLabel="סיכום אימון"
     >
-      <motion.div
+      <m.div
         ref={rootRef}
         initial={{ scale: 0.94, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -452,7 +452,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         >
           <AnimatePresence mode="sync">
             {view === 'overview' ? (
-              <motion.div
+              <m.div
                 key="overview"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -558,9 +558,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                     startDelay={EXERCISES_START}
                   />
                 )}
-              </motion.div>
+              </m.div>
             ) : (
-              <motion.div
+              <m.div
                 key="details"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -568,7 +568,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 className="flex flex-col gap-2"
               >
                 {stats.exerciseStats.map((ex, i) => (
-                  <motion.div
+                  <m.div
                     key={ex.name ?? ''}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -636,9 +636,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                         </span>
                       )}
                     </div>
-                  </motion.div>
+                  </m.div>
                 ))}
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
         </div>
@@ -773,7 +773,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             )}
           </div>
         </div>
-      </motion.div>
+      </m.div>
     </ModalOverlay>
   );
 };

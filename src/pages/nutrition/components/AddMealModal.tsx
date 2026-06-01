@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { memo } from 'react';
 import { Sheet } from '../../../components/ui/Sheet';
 import { MACRO_COLORS } from '../../../constants/nutrition';
@@ -59,7 +59,7 @@ export const AddMealModal = memo(function AddMealModal({
       onClose={onClose}
       title="הוסף ארוחה"
       footer={
-        <motion.button
+        <m.button
           onClick={onSave}
           disabled={!hasFoods}
           style={{
@@ -80,7 +80,7 @@ export const AddMealModal = memo(function AddMealModal({
           whileTap={{ scale: hasFoods ? 0.98 : 1 }}
         >
           שמור ארוחה {hasFoods && `(${totalMacros.calories} קל׳)`}
-        </motion.button>
+        </m.button>
       }
     >
       <div className="space-y-4">

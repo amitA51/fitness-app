@@ -3,7 +3,7 @@
 // Sharp corners · IBM Plex Mono labels · Big Shoulders Display
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { Trash as TrashIcon } from 'lucide-react';
 import type React from 'react';
 import { memo } from 'react';
@@ -65,7 +65,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
     const isSelected = selectedIds?.has(exercise.id);
 
     return (
-      <motion.div
+      <m.div
         key={exercise.id}
         onClick={() => onClick?.(exercise)}
         className="magnetic-card glass-surface"
@@ -113,7 +113,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
           >
             <AnimatePresence>
               {isSelected && (
-                <motion.svg
+                <m.svg
                   viewBox="0 0 24 24"
                   role="img"
                   aria-label="נבחר"
@@ -128,7 +128,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                   strokeWidth={3}
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </motion.svg>
+                </m.svg>
               )}
             </AnimatePresence>
           </div>
@@ -240,7 +240,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
             </button>
           )}
         </div>
-      </motion.div>
+      </m.div>
     );
   }
 );

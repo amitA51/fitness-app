@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import type React from 'react';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 
@@ -56,7 +56,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
             transition: isRefreshing ? 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none',
           }}
         >
-          <motion.svg
+          <m.svg
             width={44}
             height={44}
             viewBox="0 0 44 44"
@@ -88,7 +88,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
               transform="rotate(-90 22 22)"
               style={{ transition: isRefreshing ? 'none' : 'stroke-dashoffset 0.1s linear' }}
             />
-          </motion.svg>
+          </m.svg>
           {isReleasing && (
             <span
               className="breathing-dot absolute"

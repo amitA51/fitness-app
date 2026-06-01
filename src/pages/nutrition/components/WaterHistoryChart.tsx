@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Droplets } from 'lucide-react';
 import { memo } from 'react';
 import { getGlassSize, getWaterGoal } from '../../../services/waterService';
@@ -47,7 +47,7 @@ export const WaterHistoryChart = memo(function WaterHistoryChart({
                 >
                   {entry.total > 0 ? `${Math.round(entry.total / glassMl)}` : ''}
                 </span>
-                <motion.div
+                <m.div
                   className="w-full"
                   style={{
                     backgroundColor: isLast ? 'var(--fs-accent)' : 'var(--fs-surface-2)',

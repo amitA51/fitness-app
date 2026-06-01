@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { Activity, Heart, LayoutGrid, User } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useMemo, useState } from 'react';
@@ -251,7 +251,7 @@ export default function ProgressPage() {
         ) : (
           <AnimatePresence mode="sync">
             {activeTab === 'overview' && (
-              <motion.div
+              <m.div
                 key="overview"
                 id="progress-panel-overview"
                 role="tabpanel"
@@ -259,10 +259,10 @@ export default function ProgressPage() {
                 {...motionProps}
               >
                 <OverviewTab sessions={completedSessions} prs={prs} />
-              </motion.div>
+              </m.div>
             )}
             {activeTab === 'workouts' && (
-              <motion.div
+              <m.div
                 key="workouts"
                 id="progress-panel-workouts"
                 role="tabpanel"
@@ -270,10 +270,10 @@ export default function ProgressPage() {
                 {...motionProps}
               >
                 <WorkoutsTab sessions={completedSessions} prs={prs} isLoading={isLoading} />
-              </motion.div>
+              </m.div>
             )}
             {activeTab === 'body' && (
-              <motion.div
+              <m.div
                 key="body"
                 id="progress-panel-body"
                 role="tabpanel"
@@ -291,10 +291,10 @@ export default function ProgressPage() {
                   onAddWeight={handleShowAddWeight}
                   onAddMeasurement={handleShowAddMeasurement}
                 />
-              </motion.div>
+              </m.div>
             )}
             {activeTab === 'recovery' && (
-              <motion.div
+              <m.div
                 key="recovery"
                 id="progress-panel-recovery"
                 role="tabpanel"
@@ -308,7 +308,7 @@ export default function ProgressPage() {
                   history={recoveryHistory}
                   onAdd={handleShowAddRecovery}
                 />
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
         )}

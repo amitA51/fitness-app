@@ -2,7 +2,7 @@
 // Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import React from 'react';
 import { triggerHaptic } from '../../../utils/haptics';
 
@@ -32,7 +32,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
       role="main"
       aria-label="Empty workout state"
     >
-      <motion.div
+      <m.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="glass-surface scrim-noise"
@@ -46,7 +46,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
         }}
       >
         {/* Icon */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -70,7 +70,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
               strokeLinecap="square"
             />
           </svg>
-        </motion.div>
+        </m.div>
 
         {/* Title */}
         <h1
@@ -101,7 +101,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
         </p>
 
         {/* Add exercise button */}
-        <motion.button
+        <m.button
           onClick={() => {
             triggerHaptic('medium');
             onAddExercise();
@@ -136,7 +136,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
           aria-label="בחר תרגיל להוספה"
         >
           <span style={{ fontSize: 20 }}>+</span> בחר תרגיל
-        </motion.button>
+        </m.button>
 
         {/* Cancel button */}
         <button
@@ -168,7 +168,7 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
         >
           ביטול
         </button>
-      </motion.div>
+      </m.div>
     </div>
   )
 );

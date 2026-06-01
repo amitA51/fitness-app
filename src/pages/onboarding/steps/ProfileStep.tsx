@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { User } from 'lucide-react';
 import { MobileInput } from '../components/MobileInput';
 import { StepHeader } from '../components/ProgressDots';
@@ -11,7 +11,7 @@ interface ProfileStepProps {
 
 export function ProfileStep({ data, onChange }: ProfileStepProps) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
@@ -117,6 +117,6 @@ export function ProfileStep({ data, onChange }: ProfileStepProps) {
           step="0.1"
         />
       </div>
-    </motion.div>
+    </m.div>
   );
 }

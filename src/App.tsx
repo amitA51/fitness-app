@@ -1,4 +1,4 @@
-import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, MotionConfig, m, useReducedMotion } from 'framer-motion';
 import {
   type ReactNode,
   Suspense,
@@ -595,7 +595,7 @@ function AppShell() {
                   <AppRoutes location={location} />
                 ) : (
                   <AnimatePresence mode="wait" initial={false}>
-                    <motion.div
+                    <m.div
                       key={location.pathname}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -603,7 +603,7 @@ function AppShell() {
                       transition={{ duration: 0.15, ease: 'easeOut' }}
                     >
                       <AppRoutes location={location} />
-                    </motion.div>
+                    </m.div>
                   </AnimatePresence>
                 )}
               </Suspense>

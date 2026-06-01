@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
 /**
@@ -17,7 +17,7 @@ export function SavedIndicator({ saved }: { saved: boolean }) {
     <div aria-live="polite" className="flex items-center" style={{ minHeight: 20 }}>
       <AnimatePresence>
         {saved && (
-          <motion.span
+          <m.span
             key="saved"
             initial={prefersReduced ? { opacity: 0 } : { opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
@@ -35,7 +35,7 @@ export function SavedIndicator({ saved }: { saved: boolean }) {
           >
             <Check size={13} aria-hidden="true" strokeWidth={3} />
             נשמר
-          </motion.span>
+          </m.span>
         )}
       </AnimatePresence>
     </div>

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Award, Check, Dumbbell, TrendingUp, User } from 'lucide-react';
 import { StepHeader } from '../components/ProgressDots';
 import type { OnboardingData } from '../types';
@@ -31,7 +31,7 @@ export function ExperienceStep({ data, onChange }: ExperienceStepProps) {
   ];
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
@@ -45,7 +45,7 @@ export function ExperienceStep({ data, onChange }: ExperienceStepProps) {
 
       <div className="flex-1 px-4 space-y-4 overflow-y-auto pb-4">
         {levels.map((level) => (
-          <motion.button
+          <m.button
             key={level.value}
             type="button"
             whileTap={{ scale: 0.98 }}
@@ -106,7 +106,7 @@ export function ExperienceStep({ data, onChange }: ExperienceStepProps) {
               </p>
             </div>
             {data.experienceLevel === level.value && (
-              <motion.div
+              <m.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 className="w-7 h-7 flex items-center justify-center shrink-0"
@@ -117,9 +117,9 @@ export function ExperienceStep({ data, onChange }: ExperienceStepProps) {
                 }}
               >
                 <Check size={16} strokeWidth={3} />
-              </motion.div>
+              </m.div>
             )}
-          </motion.button>
+          </m.button>
         ))}
 
         {/* Workout Days Selection */}
@@ -174,6 +174,6 @@ export function ExperienceStep({ data, onChange }: ExperienceStepProps) {
           </p>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }

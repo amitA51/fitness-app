@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import type { DailyNutritionSummary } from '../../../services/nutritionService';
@@ -78,7 +78,7 @@ export const NutritionTrendChart = memo(function NutritionTrendChart({
                 >
                   {day.macros.calories > 0 ? Math.round(day.macros.calories) : ''}
                 </span>
-                <motion.div
+                <m.div
                   className="w-full"
                   style={{
                     backgroundColor: overGoal

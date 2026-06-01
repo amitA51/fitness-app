@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 // NumpadOverlay - Sport Annual numpad for weight/reps
 // Editorial sports-yearbook: navy masthead, bone body, sharp corners, display numbers
 // Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
@@ -63,7 +63,7 @@ const AnimatedValue = memo<{ value: string; target: 'weight' | 'reps' | null }>(
 
     return (
       <div className="relative overflow-hidden">
-        <motion.div
+        <m.div
           className="tabular-nums"
           dir="ltr"
           style={{
@@ -78,7 +78,7 @@ const AnimatedValue = memo<{ value: string; target: 'weight' | 'reps' | null }>(
           transition={{ duration: 0.15 }}
         >
           {displayValue.split('').map((char, i) => (
-            <motion.span
+            <m.span
               key={`${i}-${char}`}
               initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -16 }}
               animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
@@ -95,12 +95,12 @@ const AnimatedValue = memo<{ value: string; target: 'weight' | 'reps' | null }>(
               }
             >
               {char}
-            </motion.span>
+            </m.span>
           ))}
-        </motion.div>
+        </m.div>
 
         {/* Unit suffix — mono */}
-        <motion.span
+        <m.span
           className="absolute -end-10 bottom-3 uppercase"
           style={{
             fontFamily: 'var(--font-mono)',
@@ -112,7 +112,7 @@ const AnimatedValue = memo<{ value: string; target: 'weight' | 'reps' | null }>(
           animate={{ opacity: 1 }}
         >
           {target === 'weight' ? 'ק״ג' : 'x'}
-        </motion.span>
+        </m.span>
       </div>
     );
   }
@@ -179,7 +179,7 @@ const NumpadButton = memo<{
         : '';
 
   return (
-    <motion.button
+    <m.button
       whileTap={{ scale: 0.95 }}
       onClick={handleClick}
       disabled={disabled}
@@ -193,7 +193,7 @@ const NumpadButton = memo<{
       aria-label={getAriaLabel()}
     >
       {value}
-    </motion.button>
+    </m.button>
   );
 });
 
@@ -208,7 +208,7 @@ const PresetButton = memo<{
 }>(({ value, isSelected, onSelect, isPrevious }) => {
   const shouldReduceMotion = useReducedMotion();
   return (
-    <motion.button
+    <m.button
       whileTap={{ scale: shouldReduceMotion ? 1 : 0.96 }}
       onClick={() => {
         triggerHaptic();
@@ -230,7 +230,7 @@ const PresetButton = memo<{
     >
       {value}
       {isPrevious && (
-        <motion.div
+        <m.div
           className="absolute -top-1 -end-1"
           style={{
             width: 8,
@@ -247,7 +247,7 @@ const PresetButton = memo<{
           }
         />
       )}
-    </motion.button>
+    </m.button>
   );
 });
 
@@ -268,7 +268,7 @@ const ValueStepper = memo<{
           .slice()
           .reverse()
           .map((inc) => (
-            <motion.button
+            <m.button
               key={`dec-${inc}`}
               whileTap={{ scale: shouldReduceMotion ? 1 : 0.92 }}
               onClick={() => {
@@ -288,7 +288,7 @@ const ValueStepper = memo<{
               aria-label={`הפחת ${inc}`}
             >
               -{inc}
-            </motion.button>
+            </m.button>
           ))}
       </div>
 
@@ -317,7 +317,7 @@ const ValueStepper = memo<{
       {/* Increase buttons */}
       <div className="flex gap-1">
         {increments.map((inc) => (
-          <motion.button
+          <m.button
             key={`inc-${inc}`}
             whileTap={{ scale: shouldReduceMotion ? 1 : 0.92 }}
             onClick={() => {
@@ -337,7 +337,7 @@ const ValueStepper = memo<{
             aria-label={`הוסף ${inc}`}
           >
             +{inc}
-          </motion.button>
+          </m.button>
         ))}
       </div>
     </div>
@@ -351,7 +351,7 @@ const GhostValue = memo<{ value: number; label: string; entryX?: number }>(
   ({ value, label, entryX = -10 }) => {
     const shouldReduceMotion = useReducedMotion();
     return (
-      <motion.div
+      <m.div
         className="flex items-center gap-2 px-3 py-1.5 uppercase"
         style={{
           backgroundColor: 'var(--fs-surface-2)',
@@ -369,7 +369,7 @@ const GhostValue = memo<{ value: number; label: string; entryX?: number }>(
         >
           {value}
         </span>
-      </motion.div>
+      </m.div>
     );
   }
 );
@@ -518,7 +518,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
         closeOnEscape
         ariaLabel={label}
       >
-        <motion.div
+        <m.div
           initial={shouldReduceMotion ? { y: 0 } : { y: '100%' }}
           animate={{ y: 0 }}
           exit={shouldReduceMotion ? { y: 0 } : { y: '100%' }}
@@ -538,7 +538,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
           {/* Navy Masthead — exercise + label */}
           <div className="px-6 py-4" style={{ backgroundColor: 'var(--fs-primary)' }}>
             {exerciseName && (
-              <motion.div
+              <m.div
                 className="text-center mb-1 uppercase"
                 style={{
                   fontFamily: 'var(--font-mono)',
@@ -551,7 +551,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                 animate={{ opacity: 1, y: 0 }}
               >
                 {exerciseName}
-              </motion.div>
+              </m.div>
             )}
             <div
               className="text-center uppercase"
@@ -590,7 +590,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
           {/* Mode Toggle — sharp tabs */}
           <div className="flex justify-center mb-4 px-6">
             <div className="tab-row">
-              <motion.button
+              <m.button
                 onClick={() => setMode('numpad')}
                 className={`tab${mode === 'numpad' ? ' active' : ''}`}
                 whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
@@ -598,8 +598,8 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                 aria-pressed={mode === 'numpad'}
               >
                 מקלדת
-              </motion.button>
-              <motion.button
+              </m.button>
+              <m.button
                 onClick={() => setMode('stepper')}
                 className={`tab${mode === 'stepper' ? ' active' : ''}`}
                 whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
@@ -607,7 +607,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                 aria-pressed={mode === 'stepper'}
               >
                 כפתורי +/-
-              </motion.button>
+              </m.button>
             </div>
           </div>
 
@@ -629,7 +629,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
           <AnimatePresence mode="sync">
             {mode === 'numpad' ? (
               /* Number Grid */
-              <motion.div
+              <m.div
                 key="numpad"
                 initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: numpadEntryX }}
                 animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
@@ -653,10 +653,10 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </m.div>
             ) : (
               /* Stepper Mode */
-              <motion.div
+              <m.div
                 key="stepper"
                 initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: stepperEntryX }}
                 animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
@@ -668,7 +668,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                   increments={increments}
                   onAdjust={handleAdjust}
                 />
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
 
@@ -683,7 +683,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
               zIndex: 2,
             }}
           >
-            <motion.button
+            <m.button
               whileTap={{ scale: shouldReduceMotion ? 1 : 0.98 }}
               onClick={handleSubmit}
               disabled={value === ''}
@@ -696,9 +696,9 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
               aria-label="אישור ערך"
             >
               אישור
-            </motion.button>
+            </m.button>
           </div>
-        </motion.div>
+        </m.div>
       </ModalOverlay>
     );
   }
