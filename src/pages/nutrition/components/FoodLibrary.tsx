@@ -1,14 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, ChevronUp, Plus, Search } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { memo, useState } from 'react';
+import { MACRO_COLORS } from '../../../constants/nutrition';
 import type { FoodItem } from '../../../types';
-
-const MACRO_COLORS = {
-  calories: 'var(--fs-warn)',
-  protein: 'var(--fs-accent)',
-  carbs: 'var(--fs-accent-2)',
-  fat: 'var(--fs-signal)',
-};
+import { FoodSearchInput } from './shared/FoodSearchInput';
+import { MacroGrid } from './shared/MacroGrid';
 
 interface FoodLibraryProps {
   foods: FoodItem[];
@@ -26,27 +22,8 @@ export const FoodLibrary = memo(function FoodLibrary({
   const [expanded, setExpanded] = useState<string | null>(null);
   return (
     <div>
-      <div className="relative mb-4">
-        <Search
-          size={16}
-          className="absolute top-1/2 -translate-y-1/2 end-4"
-          style={{ color: 'var(--fs-muted)' }}
-        />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="חפש מזון..."
-          className="w-full py-3 pe-11 ps-5 text-sm"
-          style={{
-            backgroundColor: 'var(--fs-surface)',
-            border: '1px solid var(--fs-surface-2)',
-            borderRadius: 0,
-            color: 'var(--fs-ink)',
-            fontFamily: 'var(--font-body)',
-            minHeight: '48px',
-          }}
-        />
+      <div className="mb-4">
+        <FoodSearchInput value={searchQuery} onChange={onSearchChange} variant="panel" />
       </div>
       <div className="space-y-2">
         {foods.map((food) => (
@@ -118,43 +95,16 @@ export const FoodLibrary = memo(function FoodLibrary({
                     className="px-4 pb-4 pt-2"
                     style={{ borderTop: '1px solid var(--fs-surface-2)' }}
                   >
-                    <div className="grid grid-cols-4 gap-2 text-center text-xs mb-4">
-                      {[
-                        { val: food.calories, label: 'קל', color: MACRO_COLORS.calories },
-                        { val: `${food.protein}ג`, label: 'חלבון', color: MACRO_COLORS.protein },
-                        { val: `${food.carbs}ג`, label: 'פחמימות', color: MACRO_COLORS.carbs },
-                        { val: `${food.fat}ג`, label: 'שומן', color: MACRO_COLORS.fat },
-                      ].map((m) => (
-                        <div
-                          key={m.label}
-                          style={{
-                            borderRadius: '12px',
-                            padding: '8px 4px',
-                            backgroundColor: 'var(--fs-surface-2)',
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontFamily: 'var(--font-display)',
-                              fontWeight: 700,
-                              fontSize: '14px',
-                              color: m.color,
-                            }}
-                          >
-                            {m.val}
-                          </div>
-                          <div
-                            style={{
-                              fontFamily: 'var(--font-mono)',
-                              fontSize: '10px',
-                              color: 'var(--fs-muted)',
-                              marginTop: '2px',
-                            }}
-                          >
-                            {m.label}
-                          </div>
-                        </div>
-                      ))}
+                    <div className="mb-4">
+                      <MacroGrid
+                        macros={{
+                          calories: food.calories,
+                          protein: food.protein,
+                          carbs: food.carbs,
+                          fat: food.fat,
+                        }}
+                        variant="boxed"
+                      />
                     </div>
                     <button
                       type="button"

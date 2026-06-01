@@ -1,4 +1,6 @@
 import { Copy, Download, FileJson, Share2 } from 'lucide-react';
+import type React from 'react';
+import { Button } from '../../../components/ui/Button';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
 import {
   copyToClipboard,
@@ -7,7 +9,8 @@ import {
 } from '../../../services/exportService';
 import { exportFullBackup, exportWorkoutHistory } from '../../../services/settingsService';
 import { logger } from '../../../utils/logger';
-import { DIVIDER_STYLE } from '../types';
+import { Divider } from '../components/Divider';
+import { IconBox } from '../components/IconBox';
 
 interface Props {
   weeklyReport: string | null;
@@ -16,158 +19,117 @@ interface Props {
   setCopiedReport: (v: boolean) => void;
 }
 
+/**
+ * A single full-width "action row" (icon + label) inside the export card.
+ * Collapses the three identical inline-styled buttons ProfileSection's export
+ * card used to repeat. Logical `text-align: start` keeps the label edge-anchored
+ * in both RTL and LTR.
+ */
+function ExportRow({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '14px 16px',
+        minHeight: '52px',
+        border: 'none',
+        background: 'transparent',
+        cursor: 'pointer',
+        width: '100%',
+        textAlign: 'start',
+      }}
+    >
+      <IconBox>{icon}</IconBox>
+      <span
+        className="flex-1"
+        style={{
+          fontFamily: 'var(--font-hebrew)',
+          fontSize: '15px',
+          fontWeight: 500,
+          color: 'var(--fs-ink)',
+          textAlign: 'start',
+        }}
+      >
+        {label}
+      </span>
+    </button>
+  );
+}
+
 export function ExportSection({
   weeklyReport,
   setWeeklyReport,
   copiedReport,
   setCopiedReport,
 }: Props) {
+  const handleExportCsv = async () => {
+    try {
+      await exportWorkoutHistory();
+    } catch (e) {
+      logger.app.error('Export failed', e);
+    }
+  };
+
+  const handleFullBackup = async () => {
+    try {
+      await exportFullBackup();
+    } catch (e) {
+      logger.app.error('Backup export failed', e);
+    }
+  };
+
+  const handleWeeklyReport = async () => {
+    try {
+      const report = await generateWeeklyReport();
+      setWeeklyReport(report);
+    } catch (e) {
+      logger.app.error('Report generation failed', e);
+    }
+  };
+
+  const handleCopy = () => {
+    if (!weeklyReport) return;
+    copyToClipboard(weeklyReport);
+    setCopiedReport(true);
+    setTimeout(() => setCopiedReport(false), 2000);
+  };
+
   return (
     <div className="mb-7">
       <p className="section-title mb-3 px-1">ייצוא ושיתוף</p>
       <SettingsCard>
         <div className="flex flex-col">
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                await exportWorkoutHistory();
-              } catch (e) {
-                logger.app.error('Export failed', e);
-              }
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '14px 16px',
-              minHeight: '52px',
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              width: '100%',
-              textAlign: 'right',
-            }}
-          >
-            <div
-              className="w-8 h-8 flex items-center justify-center shrink-0"
-              style={{
-                background: 'var(--fs-surface-2)',
-                color: 'var(--fs-heading)',
-                borderRadius: '8px',
-              }}
-            >
-              <Download size={15} />
-            </div>
-            <span
-              className="flex-1 text-right"
-              style={{
-                fontFamily: 'var(--font-hebrew)',
-                fontSize: '15px',
-                fontWeight: 500,
-                color: 'var(--fs-ink)',
-              }}
-            >
-              ייצוא היסטוריית אימונים (CSV)
-            </span>
-          </button>
-          <div style={DIVIDER_STYLE} />
+          <ExportRow
+            icon={<Download size={15} />}
+            label="ייצוא היסטוריית אימונים (CSV)"
+            onClick={handleExportCsv}
+          />
+          <Divider />
         </div>
 
         <div className="flex flex-col">
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                await exportFullBackup();
-              } catch (e) {
-                logger.app.error('Backup export failed', e);
-              }
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '14px 16px',
-              minHeight: '52px',
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              width: '100%',
-              textAlign: 'right',
-            }}
-          >
-            <div
-              className="w-8 h-8 flex items-center justify-center shrink-0"
-              style={{
-                background: 'var(--fs-surface-2)',
-                color: 'var(--fs-heading)',
-                borderRadius: '8px',
-              }}
-            >
-              <FileJson size={15} />
-            </div>
-            <span
-              className="flex-1 text-right"
-              style={{
-                fontFamily: 'var(--font-hebrew)',
-                fontSize: '15px',
-                fontWeight: 500,
-                color: 'var(--fs-ink)',
-              }}
-            >
-              גיבוי מלא (JSON)
-            </span>
-          </button>
-          <div style={DIVIDER_STYLE} />
+          <ExportRow
+            icon={<FileJson size={15} />}
+            label="גיבוי מלא (JSON)"
+            onClick={handleFullBackup}
+          />
+          <Divider />
         </div>
 
         <div className="flex flex-col">
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                const report = await generateWeeklyReport();
-                setWeeklyReport(report);
-              } catch (e) {
-                logger.app.error('Report generation failed', e);
-              }
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '14px 16px',
-              minHeight: '52px',
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              width: '100%',
-              textAlign: 'right',
-            }}
-          >
-            <div
-              className="w-8 h-8 flex items-center justify-center shrink-0"
-              style={{
-                background: 'var(--fs-surface-2)',
-                color: 'var(--fs-heading)',
-                borderRadius: '8px',
-              }}
-            >
-              <Share2 size={15} />
-            </div>
-            <span
-              className="flex-1 text-right"
-              style={{
-                fontFamily: 'var(--font-hebrew)',
-                fontSize: '15px',
-                fontWeight: 500,
-                color: 'var(--fs-ink)',
-              }}
-            >
-              דוח שבועי
-            </span>
-          </button>
+          <ExportRow icon={<Share2 size={15} />} label="דוח שבועי" onClick={handleWeeklyReport} />
         </div>
 
         {weeklyReport && (
@@ -182,55 +144,30 @@ export function ExportSection({
                 padding: '12px',
                 border: '1px solid var(--fs-primary)',
                 borderRadius: 0,
+                textAlign: 'start',
               }}
             >
               {weeklyReport}
             </pre>
             <div className="flex gap-2 mt-2">
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                size="sm"
+                shape="sharp"
+                icon={<Share2 size={14} aria-hidden="true" />}
                 onClick={() => shareReport(weeklyReport)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: 0,
-                  fontFamily: 'var(--font-hebrew)',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  background: 'var(--fs-accent)',
-                  color: 'var(--fs-heading)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
               >
-                <Share2 size={12} /> שתף
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  copyToClipboard(weeklyReport);
-                  setCopiedReport(true);
-                  setTimeout(() => setCopiedReport(false), 2000);
-                }}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: 0,
-                  fontFamily: 'var(--font-hebrew)',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  background: 'var(--fs-surface-2)',
-                  color: 'var(--fs-ink)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
+                שתף
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                shape="sharp"
+                icon={<Copy size={14} aria-hidden="true" />}
+                onClick={handleCopy}
               >
-                <Copy size={12} /> {copiedReport ? 'הועתק!' : 'העתק'}
-              </button>
+                {copiedReport ? 'הועתק!' : 'העתק'}
+              </Button>
             </div>
           </div>
         )}

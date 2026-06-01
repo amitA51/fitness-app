@@ -1,12 +1,9 @@
 import { Sparkles } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
-import {
-  MEAL_TYPE_ICONS,
-  MEAL_TYPE_LABELS,
-  getFoodLibrary,
-} from '../../../services/nutritionService';
+import { getFoodLibrary } from '../../../services/nutritionService';
 import type { MealPreset } from '../../../services/nutritionService';
 import type { MealType } from '../../../types';
+import { MealTypeSelector } from './shared/MealTypeSelector';
 
 interface MealPresetCardProps {
   preset: MealPreset;
@@ -94,37 +91,13 @@ export const MealPresetCard = memo(function MealPresetCard({
         })}
       </div>
       {showMealSelect ? (
-        <div className="flex gap-2 flex-wrap">
-          {Object.entries(MEAL_TYPE_LABELS).map(([key, label]) => {
-            const Icon = MEAL_TYPE_ICONS[key as MealType];
-            return (
-              <button
-                type="button"
-                key={key}
-                onClick={() => {
-                  onSelect(key as MealType);
-                  setShowMealSelect(false);
-                }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 12px',
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  backgroundColor: 'var(--fs-surface-2)',
-                  color: 'var(--fs-heading)',
-                  border: '1px solid var(--fs-surface-2)',
-                  cursor: 'pointer',
-                }}
-              >
-                <Icon size={13} />
-                {label}
-              </button>
-            );
-          })}
-        </div>
+        <MealTypeSelector
+          layout="wrap"
+          onSelect={(m) => {
+            onSelect(m);
+            setShowMealSelect(false);
+          }}
+        />
       ) : (
         <button
           type="button"

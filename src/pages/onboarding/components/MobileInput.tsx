@@ -1,4 +1,5 @@
-import { memo, useEffect, useId, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
+import { Input } from '../../../components/ui/Input';
 
 export interface MobileInputProps {
   type: 'text' | 'number';
@@ -11,8 +12,18 @@ export interface MobileInputProps {
   max?: number;
   inputMode?: 'numeric' | 'decimal' | 'text';
   step?: number | string;
+  /** Optional inline validation error (Hebrew), rendered by the foundation Input. */
+  error?: string;
 }
 
+/**
+ * Thin onboarding wrapper around the foundation {@link Input}. It exists only to
+ * preserve the number-field UX (type freely as a raw string, commit a parsed
+ * number on blur) that the onboarding steps rely on. All rendering — label,
+ * RTL-correct `unit` suffix, error state, 48px min height — is delegated to
+ * `Input`, so there is no bespoke markup to drift out of sync with the design
+ * system. The previous LTR-biased `left: '1rem'` unit positioning is gone.
+ */
 export const MobileInput = memo(function MobileInput({
   type,
   value,
@@ -24,91 +35,50 @@ export const MobileInput = memo(function MobileInput({
   max,
   inputMode,
   step,
+  error,
 }: MobileInputProps) {
+  // Raw draft for number fields so partial input (empty, "1.", trailing dot) is
+  // never clobbered by eager parsing mid-typing. Committed on blur.
   const [rawValue, setRawValue] = useState(value === '' ? '' : String(value));
-  const inputId = useId();
 
-  // Sync external value changes (e.g. parent reset)
+  // Sync external value changes (e.g. parent reset / restored draft).
   useEffect(() => {
     setRawValue(value === '' ? '' : String(value));
   }, [value]);
 
+  if (type === 'number') {
+    const resolvedMode = inputMode ?? 'numeric';
+    return (
+      <Input
+        type="number"
+        inputMode={resolvedMode}
+        pattern={resolvedMode === 'numeric' ? '[0-9]*' : undefined}
+        step={step}
+        value={rawValue}
+        onChange={(e) => setRawValue(e.target.value)}
+        onBlur={() => {
+          const parsed = rawValue === '' ? '' : Number(rawValue);
+          onChange(parsed === '' || Number.isNaN(parsed as number) ? '' : parsed);
+        }}
+        placeholder={placeholder}
+        min={min}
+        max={max}
+        label={label}
+        unit={unit}
+        error={error}
+      />
+    );
+  }
+
   return (
-    <div className="w-full">
-      {label && (
-        <label
-          htmlFor={inputId}
-          className="block mb-2 px-1"
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '11px',
-            color: 'var(--fs-muted)',
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
-          }}
-        >
-          {label}
-        </label>
-      )}
-      <div className="relative">
-        <input
-          id={inputId}
-          type={type}
-          inputMode={inputMode ?? (type === 'number' ? 'numeric' : 'text')}
-          pattern={
-            type === 'number' && (inputMode ?? 'numeric') === 'numeric' ? '[0-9]*' : undefined
-          }
-          step={step}
-          value={type === 'number' ? rawValue : value}
-          onChange={(e) => {
-            if (type === 'number') {
-              setRawValue(e.target.value);
-            } else {
-              onChange(e.target.value);
-            }
-          }}
-          onBlur={() => {
-            if (type === 'number') {
-              const parsed = rawValue === '' ? '' : Number(rawValue);
-              onChange(parsed === '' || Number.isNaN(parsed as number) ? '' : parsed);
-            }
-          }}
-          placeholder={placeholder}
-          min={min}
-          max={max}
-          className="w-full h-14 px-4 text-base placeholder:opacity-60 focus:outline-none transition-all appearance-none"
-          style={{
-            background: 'var(--fs-surface)',
-            border: '1px solid var(--fs-surface-2)',
-            borderRadius: '22px 16px 22px 16px',
-            fontFamily: 'var(--font-body)',
-            color: 'var(--fs-ink)',
-            paddingLeft: unit ? '3rem' : undefined,
-            paddingRight: unit ? '3rem' : undefined,
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = 'var(--fs-accent)';
-            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(67, 199, 165, 0.2)';
-          }}
-          onBlurCapture={(e) => {
-            e.currentTarget.style.borderColor = 'var(--fs-surface-2)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        />
-        {unit && (
-          <span
-            className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '14px',
-              color: 'var(--fs-muted)',
-              left: '1rem',
-            }}
-          >
-            {unit}
-          </span>
-        )}
-      </div>
-    </div>
+    <Input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      label={label}
+      unit={unit}
+      error={error}
+    />
   );
 });

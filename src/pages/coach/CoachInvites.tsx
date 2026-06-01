@@ -5,7 +5,10 @@
 import { Copy, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '../../components/ui/Button';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import EmptyState from '../../components/ui/EmptyState';
 import { showToast } from '../../components/ui/GlobalToast';
+import { Input } from '../../components/ui/Input';
 import {
   createInvite,
   getSeatUsage,
@@ -14,7 +17,7 @@ import {
   revokeInvite,
 } from '../../services/coach';
 import type { CoachInvite } from '../../types/coach';
-import { CoachPage, EmptyHint, Section, formatDate, useAsyncData } from './_shared';
+import { CoachPage, ListSkeleton, Section, formatDate, useAsyncData } from './_shared';
 
 export default function CoachInvites() {
   const { data: invites, loading, reload } = useAsyncData<CoachInvite[]>(() => listInvites(), []);
@@ -25,6 +28,7 @@ export default function CoachInvites() {
   });
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
+  const [revokeId, setRevokeId] = useState<string | null>(null);
 
   const handleCreate = async () => {
     setBusy(true);
@@ -50,6 +54,14 @@ export default function CoachInvites() {
     }
   };
 
+  const confirmRevoke = async () => {
+    if (!revokeId) return;
+    await revokeInvite(revokeId);
+    setRevokeId(null);
+    reload();
+    showToast('ההזמנה בוטלה', 'success');
+  };
+
   return (
     <CoachPage title="הזמנות" subtitle={`${seats.used}/${seats.limit} מושבים`}>
       <Section title="הזמנה חדשה">
@@ -65,22 +77,17 @@ export default function CoachInvites() {
             הגעת למכסת המושבים. שדרג את המנוי כדי להוסיף מתאמנים.
           </p>
         )}
-        <input
-          type="email"
-          inputMode="email"
-          dir="ltr"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="email@example.com (אופציונלי)"
-          className="w-full mb-2 px-3 py-3"
-          style={{
-            background: 'var(--fs-surface)',
-            border: '1px solid var(--fs-surface-2)',
-            color: 'var(--fs-ink)',
-            fontFamily: 'var(--font-body)',
-            fontSize: 14,
-          }}
-        />
+        <div className="mb-2">
+          <Input
+            type="email"
+            inputMode="email"
+            dir="ltr"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="email@example.com (אופציונלי)"
+            aria-label="אימייל מתאמן"
+          />
+        </div>
         <Button variant="primary" fullWidth isLoading={busy} onClick={handleCreate}>
           צור קוד הזמנה
         </Button>
@@ -88,9 +95,13 @@ export default function CoachInvites() {
 
       <Section title="הזמנות פתוחות">
         {loading ? (
-          <EmptyHint>טוען…</EmptyHint>
+          <ListSkeleton rows={3} />
         ) : invites.length === 0 ? (
-          <EmptyHint>אין הזמנות עדיין.</EmptyHint>
+          <EmptyState
+            illustration="generic"
+            title="אין הזמנות עדיין"
+            description="צור קוד הזמנה כדי לחבר מתאמן חדש."
+          />
         ) : (
           invites.map((inv) => (
             <div
@@ -107,6 +118,7 @@ export default function CoachInvites() {
                     fontWeight: 700,
                     letterSpacing: '0.15em',
                     color: 'var(--fs-heading)',
+                    textAlign: 'start',
                   }}
                 >
                   {inv.code}
@@ -119,42 +131,41 @@ export default function CoachInvites() {
               </div>
               {inv.status === 'pending' && (
                 <>
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     aria-label="העתק קישור"
                     onClick={() => copy(inv.code)}
-                    style={iconBtn}
+                    className="shrink-0"
                   >
-                    <Copy size={16} />
-                  </button>
-                  <button
-                    type="button"
+                    <Copy size={16} aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     aria-label="בטל הזמנה"
-                    onClick={async () => {
-                      await revokeInvite(inv.id);
-                      reload();
-                    }}
-                    style={iconBtn}
+                    onClick={() => setRevokeId(inv.id)}
+                    className="shrink-0"
                   >
-                    <Trash2 size={16} />
-                  </button>
+                    <Trash2 size={16} aria-hidden="true" />
+                  </Button>
                 </>
               )}
             </div>
           ))
         )}
       </Section>
+
+      <ConfirmDialog
+        isOpen={revokeId !== null}
+        variant="danger"
+        title="ביטול הזמנה"
+        description="הקוד יפסיק לעבוד מיידית. לא ניתן לשחזר הזמנה שבוטלה."
+        confirmLabel="בטל הזמנה"
+        cancelLabel="חזרה"
+        onConfirm={confirmRevoke}
+        onCancel={() => setRevokeId(null)}
+      />
     </CoachPage>
   );
 }
-
-const iconBtn: React.CSSProperties = {
-  width: 34,
-  height: 34,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: 'var(--fs-surface-2)',
-  color: 'var(--fs-heading)',
-  flexShrink: 0,
-};

@@ -28,7 +28,7 @@ export const WaterHistoryChart = memo(function WaterHistoryChart({
         <div className="flex items-center justify-between mb-4">
           <h3 className="section-title flex items-center gap-2">
             <Droplets size={14} />
-            היסטוריית מים
+            היסטוריית מים · 7 ימים
           </h3>
         </div>
         <div className="h-28 flex items-end gap-2" role="img" aria-label="היסטוריית שתייה - 7 ימים">

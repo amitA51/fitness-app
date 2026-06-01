@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Activity, Dumbbell, Heart, LayoutGrid, Ruler, Scale } from 'lucide-react';
+import { Activity, Heart, LayoutGrid, User } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -12,26 +12,26 @@ import {
 import type { BodyMeasurement, RecoveryLog } from '../services/bodyStatsService';
 import { todayStr } from '../utils/dateUtils';
 import { safeJsonParse } from '../utils/safeJson';
+import { ProgressSkeleton } from './progress/components/ProgressSkeleton';
 import { AddMeasurementModal } from './progress/modals/AddMeasurementModal';
 import { AddRecoveryModal } from './progress/modals/AddRecoveryModal';
 import { AddWeightModal } from './progress/modals/AddWeightModal';
 import { onlyCompleted } from './progress/progressMetrics';
-import { MeasurementsTab } from './progress/tabs/MeasurementsTab';
+import { BodyTab } from './progress/tabs/BodyTab';
 import { OverviewTab } from './progress/tabs/OverviewTab';
 import { RecoveryTab } from './progress/tabs/RecoveryTab';
-import { StrengthTab } from './progress/tabs/StrengthTab';
-import { WeightTab } from './progress/tabs/WeightTab';
 import { WorkoutsTab } from './progress/tabs/WorkoutsTab';
 import type { ProgressTab } from './progress/types';
 import { useProgressData } from './progress/useProgressData';
 
+// Four grouped sections (was six). Strength folds into Workouts; Weight +
+// Measurements merge into Body. Each tab now owns a secondary segmented control
+// where it needs one, so no single tab is an undifferentiated long scroll.
 const TABS: { key: ProgressTab; label: string; icon: React.ReactNode }[] = [
-  { key: 'overview', label: 'סקירה', icon: <LayoutGrid size={15} /> },
-  { key: 'workouts', label: 'אימונים', icon: <Activity size={15} /> },
-  { key: 'strength', label: 'כוח', icon: <Dumbbell size={15} /> },
-  { key: 'weight', label: 'משקל', icon: <Scale size={15} /> },
-  { key: 'measurements', label: 'מדידות', icon: <Ruler size={15} /> },
-  { key: 'recovery', label: 'ריקאברי', icon: <Heart size={15} /> },
+  { key: 'overview', label: 'סקירה', icon: <LayoutGrid size={15} aria-hidden="true" /> },
+  { key: 'workouts', label: 'אימונים', icon: <Activity size={15} aria-hidden="true" /> },
+  { key: 'body', label: 'גוף', icon: <User size={15} aria-hidden="true" /> },
+  { key: 'recovery', label: 'ריקאברי', icon: <Heart size={15} aria-hidden="true" /> },
 ];
 
 const motionProps = {
@@ -55,6 +55,7 @@ export default function ProgressPage() {
     recoveryScore,
     recoveryHistory,
     weeklyRecovery,
+    isLoading,
     reload,
   } = useProgressData();
 
@@ -175,7 +176,7 @@ export default function ProgressPage() {
         </p>
       </header>
 
-      {/* Editorial Tab Bar — horizontally scrollable for the six sections */}
+      {/* Editorial Tab Bar — four primary sections */}
       <div className="px-5 pt-4 pb-2">
         <div
           className="flex gap-1 overflow-x-auto"
@@ -216,7 +217,10 @@ export default function ProgressPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
-                padding: '8px 12px',
+                padding: '10px 14px',
+                minHeight: 44,
+                flex: 1,
+                justifyContent: 'center',
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 letterSpacing: '0.08em',
@@ -242,112 +246,91 @@ export default function ProgressPage() {
 
       {/* Tab Content — exactly ONE logical section visible at a time */}
       <div className="px-5">
-        <AnimatePresence mode="sync">
-          {activeTab === 'overview' && (
-            <motion.div
-              key="overview"
-              id="progress-panel-overview"
-              role="tabpanel"
-              aria-labelledby="progress-tab-overview"
-              {...motionProps}
-            >
-              <OverviewTab sessions={completedSessions} prs={prs} />
-            </motion.div>
-          )}
-          {activeTab === 'workouts' && (
-            <motion.div
-              key="workouts"
-              id="progress-panel-workouts"
-              role="tabpanel"
-              aria-labelledby="progress-tab-workouts"
-              {...motionProps}
-            >
-              <WorkoutsTab sessions={completedSessions} />
-            </motion.div>
-          )}
-          {activeTab === 'strength' && (
-            <motion.div
-              key="strength"
-              id="progress-panel-strength"
-              role="tabpanel"
-              aria-labelledby="progress-tab-strength"
-              {...motionProps}
-            >
-              <StrengthTab sessions={completedSessions} prs={prs} />
-            </motion.div>
-          )}
-          {activeTab === 'weight' && (
-            <motion.div
-              key="weight"
-              id="progress-panel-weight"
-              role="tabpanel"
-              aria-labelledby="progress-tab-weight"
-              {...motionProps}
-            >
-              <WeightTab
-                latestWeight={latestWeight}
-                weightTrend={weightTrend}
-                bmi={bmi}
-                bmiCategory={bmiCategory}
-                weightEntries={weightEntries}
-                onAdd={handleShowAddWeight}
-              />
-            </motion.div>
-          )}
-          {activeTab === 'measurements' && (
-            <motion.div
-              key="measurements"
-              id="progress-panel-measurements"
-              role="tabpanel"
-              aria-labelledby="progress-tab-measurements"
-              {...motionProps}
-            >
-              <MeasurementsTab
-                latestMeasurement={latestMeasurement}
-                measurements={measurements}
-                onAdd={handleShowAddMeasurement}
-              />
-            </motion.div>
-          )}
-          {activeTab === 'recovery' && (
-            <motion.div
-              key="recovery"
-              id="progress-panel-recovery"
-              role="tabpanel"
-              aria-labelledby="progress-tab-recovery"
-              {...motionProps}
-            >
-              <RecoveryTab
-                todayRecovery={todayRecovery}
-                recoveryScore={recoveryScore}
-                weeklyRecovery={weeklyRecovery}
-                history={recoveryHistory}
-                onAdd={handleShowAddRecovery}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {isLoading ? (
+          <ProgressSkeleton />
+        ) : (
+          <AnimatePresence mode="sync">
+            {activeTab === 'overview' && (
+              <motion.div
+                key="overview"
+                id="progress-panel-overview"
+                role="tabpanel"
+                aria-labelledby="progress-tab-overview"
+                {...motionProps}
+              >
+                <OverviewTab sessions={completedSessions} prs={prs} />
+              </motion.div>
+            )}
+            {activeTab === 'workouts' && (
+              <motion.div
+                key="workouts"
+                id="progress-panel-workouts"
+                role="tabpanel"
+                aria-labelledby="progress-tab-workouts"
+                {...motionProps}
+              >
+                <WorkoutsTab sessions={completedSessions} prs={prs} isLoading={isLoading} />
+              </motion.div>
+            )}
+            {activeTab === 'body' && (
+              <motion.div
+                key="body"
+                id="progress-panel-body"
+                role="tabpanel"
+                aria-labelledby="progress-tab-body"
+                {...motionProps}
+              >
+                <BodyTab
+                  latestWeight={latestWeight}
+                  weightTrend={weightTrend}
+                  bmi={bmi}
+                  bmiCategory={bmiCategory}
+                  weightEntries={weightEntries}
+                  latestMeasurement={latestMeasurement}
+                  measurements={measurements}
+                  onAddWeight={handleShowAddWeight}
+                  onAddMeasurement={handleShowAddMeasurement}
+                />
+              </motion.div>
+            )}
+            {activeTab === 'recovery' && (
+              <motion.div
+                key="recovery"
+                id="progress-panel-recovery"
+                role="tabpanel"
+                aria-labelledby="progress-tab-recovery"
+                {...motionProps}
+              >
+                <RecoveryTab
+                  todayRecovery={todayRecovery}
+                  recoveryScore={recoveryScore}
+                  weeklyRecovery={weeklyRecovery}
+                  history={recoveryHistory}
+                  onAdd={handleShowAddRecovery}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
       </div>
 
-      <AnimatePresence>
-        {showAddWeight && (
-          <AddWeightModal onSave={handleSaveWeight} onClose={handleCloseAddWeight} />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {showAddMeasurement && (
-          <AddMeasurementModal
-            onSave={handleSaveMeasurement}
-            onClose={handleCloseAddMeasurement}
-            latest={latestMeasurement}
-          />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {showAddRecovery && (
-          <AddRecoveryModal onSave={handleSaveRecovery} onClose={handleCloseAddRecovery} />
-        )}
-      </AnimatePresence>
+      {/* Add sheets — always mounted; <Sheet> owns open/close animation. */}
+      <AddWeightModal
+        isOpen={showAddWeight}
+        onSave={handleSaveWeight}
+        onClose={handleCloseAddWeight}
+      />
+      <AddMeasurementModal
+        isOpen={showAddMeasurement}
+        onSave={handleSaveMeasurement}
+        onClose={handleCloseAddMeasurement}
+        latest={latestMeasurement}
+      />
+      <AddRecoveryModal
+        isOpen={showAddRecovery}
+        onSave={handleSaveRecovery}
+        onClose={handleCloseAddRecovery}
+      />
     </div>
   );
 }

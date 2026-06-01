@@ -6,11 +6,13 @@ import { MessageSquare, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import EmptyState from '../components/ui/EmptyState';
 import { showToast } from '../components/ui/GlobalToast';
+import { Input } from '../components/ui/Input';
+import { Textarea } from '../components/ui/Textarea';
 import { useAuth } from '../contexts/AuthContext';
 import { syncTemplatesFromCloud } from '../hooks/useCloudTemplateReflection';
 import {
-  acceptInvite,
   disconnectCoach,
   listMyAssignments,
   listMyCoaches,
@@ -18,7 +20,15 @@ import {
   subscribeToAssignments,
 } from '../services/coach';
 import type { Assignment } from '../types/coach';
-import { CoachPage, EmptyHint, ListRow, Section, formatDate, useAsyncData } from './coach/_shared';
+import {
+  CoachPage,
+  ListRow,
+  ListSkeleton,
+  Section,
+  formatDate,
+  useAsyncData,
+} from './coach/_shared';
+import { inviteErrorMessage, useAcceptInvite } from './coach/useAcceptInvite';
 
 const KIND_LABEL: Record<Assignment['kind'], string> = {
   program: 'תוכנית אימון',
@@ -41,7 +51,7 @@ export default function MyCoach() {
     reload: reloadAssignments,
   } = useAsyncData(() => listMyAssignments(), []);
   const [code, setCode] = useState('');
-  const [busy, setBusy] = useState(false);
+  const { busy, accept } = useAcceptInvite();
   const [startingId, setStartingId] = useState<string | null>(null);
 
   // Live inbox: reflect coach actions (program/note/announcement) the moment they land.
@@ -64,39 +74,33 @@ export default function MyCoach() {
     }
   };
 
+  // Manual code entry. Shares one accept path with JoinPage via useAcceptInvite.
   const connect = async () => {
     if (!code.trim()) return;
-    setBusy(true);
-    const res = await acceptInvite(code);
-    setBusy(false);
+    const res = await accept(code);
     if (res.ok) {
       setCode('');
       reload();
       showToast('התחברת למאמן', 'success');
     } else {
-      showToast(res.error === 'seat_limit' ? 'למאמן אין מקום פנוי' : 'קוד לא תקין', 'error');
+      showToast(inviteErrorMessage(res.error), 'error');
     }
   };
 
   return (
     <CoachPage title="המאמן שלי" subtitle="My Coach" onBack={() => navigate('/')}>
       <Section title="חיבור למאמן">
-        <div className="flex gap-2">
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="קוד הזמנה"
-            dir="ltr"
-            className="flex-1 px-3 py-2"
-            style={{
-              background: 'var(--fs-surface)',
-              border: '1px solid var(--fs-surface-2)',
-              color: 'var(--fs-ink)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 16,
-              letterSpacing: '0.12em',
-            }}
-          />
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <Input
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder="קוד הזמנה"
+              dir="ltr"
+              aria-label="קוד הזמנה"
+              style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.12em' }}
+            />
+          </div>
           <Button variant="primary" isLoading={busy} onClick={connect}>
             התחבר
           </Button>
@@ -105,9 +109,13 @@ export default function MyCoach() {
 
       <Section title="המאמנים שלי">
         {coachesLoading ? (
-          <EmptyHint>טוען…</EmptyHint>
+          <ListSkeleton rows={2} />
         ) : coaches.length === 0 ? (
-          <EmptyHint>עדיין לא התחברת למאמן. הזן קוד הזמנה למעלה.</EmptyHint>
+          <EmptyState
+            illustration="generic"
+            title="עדיין לא התחברת למאמן"
+            description="הזן קוד הזמנה למעלה כדי להתחבר למאמן."
+          />
         ) : (
           coaches.map((c) => (
             <ListRow
@@ -115,43 +123,28 @@ export default function MyCoach() {
               label={c.coachProfile?.displayName ?? 'מאמן'}
               meta={`מחובר מאז ${formatDate(c.consentAt ?? c.createdAt)}`}
               trailing={
-                <div className="flex gap-2">
-                  <button
-                    type="button"
+                <div className="flex gap-2 items-center">
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     aria-label="שלח הודעה למאמן"
                     onClick={() => navigate(`/my-coach/messages/${c.coachId}`)}
-                    className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-accent)]"
-                    style={{
-                      width: 44,
-                      height: 44,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: 'var(--fs-surface-2)',
-                      color: 'var(--fs-heading)',
-                    }}
+                    className="shrink-0"
                   >
-                    <MessageSquare size={15} />
-                  </button>
-                  <button
-                    type="button"
-                    className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-accent)]"
+                    <MessageSquare size={15} aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    style={{ color: 'var(--fs-muted)' }}
                     onClick={async () => {
                       await disconnectCoach(c.id);
                       reload();
                       showToast('המאמן נותק', 'success');
                     }}
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 11,
-                      color: 'var(--fs-muted)',
-                      background: 'transparent',
-                      padding: '0 8px',
-                      minHeight: 44,
-                    }}
                   >
                     נתק
-                  </button>
+                  </Button>
                 </div>
               }
             />
@@ -175,9 +168,13 @@ export default function MyCoach() {
           שהמאמן שלח אליך.
         </p>
         {aLoading ? (
-          <EmptyHint>טוען…</EmptyHint>
+          <ListSkeleton rows={3} />
         ) : assignments.length === 0 ? (
-          <EmptyHint>אין המלצות או שיוכים עדיין.</EmptyHint>
+          <EmptyState
+            illustration="notes"
+            title="אין המלצות או שיוכים עדיין"
+            description="כשהמאמן ישלח תוכנית או המלצה, היא תופיע כאן."
+          />
         ) : (
           assignments.map((a) => (
             <ListRow
@@ -213,14 +210,6 @@ function CheckInForm() {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const inputStyle = {
-    background: 'var(--fs-surface)',
-    border: '1px solid var(--fs-surface-2)',
-    color: 'var(--fs-ink)',
-    fontFamily: 'var(--font-body)',
-    fontSize: 14,
-  };
-
   const submit = async () => {
     setBusy(true);
     const { error } = await submitCheckIn({
@@ -241,50 +230,51 @@ function CheckInForm() {
 
   return (
     <Section title="צ׳ק-אין שבועי">
-      <div className="flex gap-2 mb-2">
-        <input
+      <div className="mb-3">
+        <Input
           type="number"
           inputMode="decimal"
           value={weight}
           onChange={(e) => setWeight(e.target.value)}
           placeholder='משקל (ק"ג)'
           aria-label="משקל"
-          className="flex-1 px-3 py-2"
-          style={inputStyle}
+          unit='ק"ג'
         />
-        <div className="flex gap-1" role="group" aria-label="מצב רוח">
-          {[1, 2, 3, 4, 5].map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMood(m)}
-              aria-label={`מצב רוח ${m}`}
-              aria-pressed={mood === m}
-              style={{
-                width: 34,
-                minHeight: 44,
-                background: mood === m ? 'var(--fs-primary)' : 'var(--fs-surface)',
-                color: mood === m ? 'var(--fs-accent)' : 'var(--fs-muted)',
-                border: '1px solid var(--fs-surface-2)',
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
       </div>
-      <textarea
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        rows={2}
-        placeholder="איך עבר השבוע?"
-        aria-label="הערות צ׳ק-אין"
-        className="w-full mb-2 px-3 py-2"
-        style={{ ...inputStyle, resize: 'none' }}
-      />
+      {/* Mood: 5 buttons, each ≥44×44 (flex-1 row keeps them tappable + aligned). */}
+      <div className="flex gap-2 mb-3" role="group" aria-label="מצב רוח">
+        {[1, 2, 3, 4, 5].map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMood(m)}
+            aria-label={`מצב רוח ${m}`}
+            aria-pressed={mood === m}
+            className="flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-0"
+            style={{
+              minWidth: 44,
+              minHeight: 44,
+              background: mood === m ? 'var(--fs-primary)' : 'var(--fs-surface)',
+              color: mood === m ? 'var(--fs-accent)' : 'var(--fs-muted)',
+              border: '1px solid var(--fs-surface-2)',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
+      <div className="mb-2">
+        <Textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={2}
+          placeholder="איך עבר השבוע?"
+          aria-label="הערות צ׳ק-אין"
+        />
+      </div>
       <Button variant="primary" fullWidth isLoading={busy} onClick={submit}>
         שמור צ׳ק-אין
       </Button>

@@ -6,7 +6,11 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '../../components/ui/Button';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import EmptyState from '../../components/ui/EmptyState';
 import { showToast } from '../../components/ui/GlobalToast';
+import { Input } from '../../components/ui/Input';
+import { Textarea } from '../../components/ui/Textarea';
 import {
   createAssignment,
   createGroup,
@@ -17,7 +21,7 @@ import {
   setGroupMembers,
 } from '../../services/coach';
 import type { ClientGroup, CoachClient } from '../../types/coach';
-import { CoachPage, EmptyHint, Section, useAsyncData } from './_shared';
+import { Checkbox, CoachPage, ListSkeleton, Section, useAsyncData } from './_shared';
 
 export default function CoachGroups() {
   const { data: groups, loading, reload } = useAsyncData<ClientGroup[]>(() => listGroups(), []);
@@ -35,20 +39,15 @@ export default function CoachGroups() {
   return (
     <CoachPage title="קבוצות" subtitle="Groups">
       <Section title="קבוצה חדשה">
-        <div className="flex gap-2">
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="שם הקבוצה"
-            className="flex-1 px-3 py-2"
-            style={{
-              background: 'var(--fs-surface)',
-              border: '1px solid var(--fs-surface-2)',
-              color: 'var(--fs-ink)',
-              fontFamily: 'var(--font-body)',
-              fontSize: 14,
-            }}
-          />
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="שם הקבוצה"
+              aria-label="שם הקבוצה"
+            />
+          </div>
           <Button variant="primary" onClick={create}>
             צור
           </Button>
@@ -57,22 +56,27 @@ export default function CoachGroups() {
 
       <Section title="הקבוצות שלי">
         {loading ? (
-          <EmptyHint>טוען…</EmptyHint>
+          <ListSkeleton rows={3} />
         ) : groups.length === 0 ? (
-          <EmptyHint>אין קבוצות עדיין.</EmptyHint>
+          <EmptyState
+            illustration="habits"
+            title="אין קבוצות עדיין"
+            description="צור קבוצה כדי לשלוח הודעות והמלצות לכמה מתאמנים יחד."
+          />
         ) : (
           groups.map((g) => (
             <button
               key={g.id}
               type="button"
               onClick={() => setSelected(selected?.id === g.id ? null : g)}
-              className="w-full text-right px-4 py-3 mb-2"
+              className="w-full text-right px-4 py-3 mb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-0"
               style={{
                 background: 'var(--fs-surface)',
                 border: '1px solid var(--fs-surface-2)',
                 color: 'var(--fs-ink)',
                 fontFamily: 'var(--font-body)',
                 fontWeight: 600,
+                minHeight: 44,
               }}
             >
               {g.name}
@@ -107,6 +111,7 @@ function GroupEditor({
   const [members, setMembers] = useState<Set<string>>(new Set());
   const [announcement, setAnnouncement] = useState('');
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     void getGroupMemberIds(group.id).then((ids) => setMembers(new Set(ids)));
@@ -150,33 +155,25 @@ function GroupEditor({
     }
   };
 
+  const confirmDeleteGroup = async () => {
+    await deleteGroup(group.id);
+    setConfirmDelete(false);
+    onDeleted();
+  };
+
   return (
     <Section title={`עריכת "${group.name}"`}>
       <div className="mb-3">
         {clients.length === 0 ? (
-          <EmptyHint>אין מתאמנים פעילים להוספה.</EmptyHint>
+          <EmptyState illustration="generic" size="small" title="אין מתאמנים פעילים להוספה" />
         ) : (
           clients.map((c) => (
-            <label
+            <Checkbox
               key={c.id}
-              className="flex items-center gap-3 px-4 py-2.5 mb-1.5"
-              style={{
-                background: 'var(--fs-surface)',
-                border: '1px solid var(--fs-surface-2)',
-                cursor: 'pointer',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={members.has(c.clientId)}
-                onChange={() => toggle(c.clientId)}
-              />
-              <span
-                style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--fs-ink)' }}
-              >
-                {c.clientProfile?.displayName ?? 'מתאמן'}
-              </span>
-            </label>
+              checked={members.has(c.clientId)}
+              onChange={() => toggle(c.clientId)}
+              label={c.clientProfile?.displayName ?? 'מתאמן'}
+            />
           ))
         )}
       </div>
@@ -185,41 +182,40 @@ function GroupEditor({
       </Button>
 
       <div className="mt-4">
-        <textarea
-          value={announcement}
-          onChange={(e) => setAnnouncement(e.target.value)}
-          rows={2}
-          placeholder="הודעה לכל חברי הקבוצה…"
-          className="w-full mb-2 px-3 py-2"
-          style={{
-            background: 'var(--fs-surface)',
-            border: '1px solid var(--fs-surface-2)',
-            color: 'var(--fs-ink)',
-            fontFamily: 'var(--font-body)',
-            fontSize: 14,
-          }}
-        />
+        <div className="mb-2">
+          <Textarea
+            value={announcement}
+            onChange={(e) => setAnnouncement(e.target.value)}
+            rows={2}
+            placeholder="הודעה לכל חברי הקבוצה…"
+            aria-label="הודעה לקבוצה"
+          />
+        </div>
         <Button variant="secondary" fullWidth isLoading={busy} onClick={broadcast}>
           שלח הודעה לקבוצה
         </Button>
       </div>
 
-      <button
-        type="button"
-        onClick={async () => {
-          await deleteGroup(group.id);
-          onDeleted();
-        }}
-        className="w-full mt-3 py-2"
-        style={{
-          background: 'transparent',
-          color: 'var(--fs-muted)',
-          fontFamily: 'var(--font-mono)',
-          fontSize: 12,
-        }}
+      <Button
+        variant="ghost"
+        fullWidth
+        className="mt-3"
+        style={{ color: 'var(--fs-muted)' }}
+        onClick={() => setConfirmDelete(true)}
       >
         מחק קבוצה
-      </button>
+      </Button>
+
+      <ConfirmDialog
+        isOpen={confirmDelete}
+        variant="danger"
+        title="מחיקת קבוצה"
+        description={`הקבוצה "${group.name}" תימחק לצמיתות. החברים יישארו מתאמנים פעילים.`}
+        confirmLabel="מחק"
+        cancelLabel="חזרה"
+        onConfirm={confirmDeleteGroup}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </Section>
   );
 }

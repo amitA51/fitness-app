@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Award, ChevronRight, Target, TrendingUp } from 'lucide-react';
+import { Button } from '../../../components/ui/Button';
 
 export function WelcomeStep({ onNext }: { onNext: () => void }) {
   return (
@@ -117,25 +118,10 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
         transition={{ delay: 0.75 }}
         className="px-6 pb-8 pt-4"
       >
-        <button
-          type="button"
-          onClick={onNext}
-          className="w-full flex items-center justify-center gap-3 transition-all active:scale-[0.98] start-workout-btn accent-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
-          style={{
-            background: 'var(--fs-primary)',
-            color: 'var(--fs-accent)',
-            borderRadius: '22px 16px 22px 16px',
-            minHeight: '56px',
-            fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
+        <Button variant="editorial" onClick={onNext} fullWidth style={{ minHeight: '56px' }}>
           בוא נתחיל
-          <ChevronRight size={24} />
-        </button>
+          <ChevronRight size={24} aria-hidden="true" />
+        </Button>
       </motion.div>
     </div>
   );

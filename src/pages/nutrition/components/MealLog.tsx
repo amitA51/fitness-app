@@ -1,5 +1,7 @@
 import { Flame, Plus, Trash2 } from 'lucide-react';
 import { memo, useMemo } from 'react';
+import { SkeletonBox } from '../../../components/ui/SkeletonLoader';
+import { MEAL_TYPE_ORDER, normalizeMealType } from '../../../constants/nutrition';
 import {
   MEAL_TYPE_ICONS,
   MEAL_TYPE_LABELS,
@@ -43,9 +45,22 @@ export const EmptyMealState = memo(function EmptyMealState({ onAdd }: { onAdd: (
       <button
         type="button"
         onClick={onAdd}
-        className="btn-primary start-workout-btn accent-glow flex items-center gap-2"
+        className="accent-glow flex items-center justify-center gap-2"
+        style={{
+          minHeight: 48,
+          padding: '12px 24px',
+          background: 'var(--fs-primary)',
+          color: 'var(--fs-accent)',
+          border: 'none',
+          borderRadius: 0,
+          cursor: 'pointer',
+          fontFamily: 'var(--font-display)',
+          fontWeight: 800,
+          fontSize: 14,
+          textTransform: 'uppercase',
+        }}
       >
-        <Plus size={15} />
+        <Plus size={15} aria-hidden="true" />
         הוסף ארוחה
       </button>
     </div>
@@ -167,19 +182,18 @@ export const MealEntryCard = memo(function MealEntryCard({
   );
 });
 
-const MEAL_TYPE_ORDER: MealType[] = [
-  'breakfast',
-  'lunch',
-  'dinner',
-  'snack',
-  'pre-workout',
-  'post-workout',
-];
-
 /**
  * Journal grouped by meal type. Each group shows a header with the meal-type
  * label, its icon, and a per-group calorie/macro summary, then the entries.
  * Replaces the flat list so the day reads as breakfast/lunch/dinner sections.
+ *
+ * Grouping key: each entry's meal TYPE, read from `entry.meals[0].name` (the
+ * `Meal.name` field is typed `MealType`). The value is run through
+ * `normalizeMealType` because entries pulled from the cloud are rebuilt from
+ * unvalidated JSON — an entry whose stored type is missing or a foreign string
+ * would otherwise land in a bucket the ordered render drops, silently removing
+ * it (and its calories) from the day. Normalizing to `snack` guarantees every
+ * entry is shown and counted exactly once.
  */
 export const GroupedMealLog = memo(function GroupedMealLog({
   entries,
@@ -188,7 +202,7 @@ export const GroupedMealLog = memo(function GroupedMealLog({
   const groups = useMemo(() => {
     const byType = new Map<MealType, MealEntry[]>();
     for (const entry of entries) {
-      const type = entry.meals[0]?.name ?? 'snack';
+      const type = normalizeMealType(entry.meals[0]?.name);
       const list = byType.get(type) ?? [];
       list.push(entry);
       byType.set(type, list);
@@ -242,6 +256,42 @@ export const GroupedMealLog = memo(function GroupedMealLog({
           </section>
         );
       })}
+    </div>
+  );
+});
+
+/**
+ * Placeholder shown while the day's entries load, matching the grouped journal
+ * shape (a header row plus two entry cards) so the layout doesn't jump when
+ * real data arrives.
+ */
+export const MealLogSkeleton = memo(function MealLogSkeleton() {
+  return (
+    <div className="space-y-5" role="status" aria-busy="true" aria-label="טוען ארוחות">
+      {[0, 1].map((group) => (
+        <div key={group} className="space-y-3">
+          <div
+            className="flex items-center justify-between"
+            style={{ borderBottom: '1px solid var(--fs-surface-2)', paddingBottom: 8 }}
+          >
+            <SkeletonBox width={120} height={15} borderRadius="sm" />
+            <SkeletonBox width={90} height={11} borderRadius="sm" />
+          </div>
+          <div
+            className="magnetic-card"
+            style={{
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--fs-surface-2)',
+              borderRadius: '22px 16px 22px 16px',
+              padding: 20,
+            }}
+          >
+            <SkeletonBox width="40%" height={14} borderRadius="sm" className="mb-3" />
+            <SkeletonBox width="55%" height={32} borderRadius="sm" className="mb-3" />
+            <SkeletonBox width="80%" height={12} borderRadius="sm" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 });

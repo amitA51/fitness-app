@@ -1,6 +1,8 @@
 import { Flame, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 import { memo, useMemo } from 'react';
-import { computeStreak } from '../../../hooks/fitness/insightsAggregator';
+import { ConsistencyScore } from '../../../components/insights/ConsistencyScore';
+import { MuscleDistribution } from '../../../components/insights/MuscleDistribution';
+import { useWorkoutStreak } from '../../../hooks/useWorkoutStreak';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
 import { formatVolume } from '../../../utils/dateUtils';
 import { buildPRBoard, recentPRs, summarizeWeeklyVolume } from '../progressMetrics';
@@ -53,10 +55,9 @@ export const OverviewTab = memo(function OverviewTab({
 }) {
   const weekly = useMemo(() => summarizeWeeklyVolume(sessions), [sessions]);
 
-  const streak = useMemo(() => {
-    const dates = new Set(sessions.map((s) => s.date || s.startTime.slice(0, 10)).filter(Boolean));
-    return computeStreak(dates, new Date());
-  }, [sessions]);
+  // Unified streak math — same hook the Dashboard chip uses, so the two surfaces
+  // can never drift apart. Replaces the local computeStreak wiring.
+  const streak = useWorkoutStreak(sessions);
 
   const board = useMemo(() => buildPRBoard(prs), [prs]);
   const latestPRs = useMemo(() => recentPRs(prs, 2), [prs]);
@@ -127,7 +128,7 @@ export const OverviewTab = memo(function OverviewTab({
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
           <div>
-            <div style={valueStyle}>{streak.currentStreak}</div>
+            <div style={valueStyle}>{streak.current}</div>
             <div style={labelStyle}>רצף ימים</div>
           </div>
           <div>
@@ -252,6 +253,11 @@ export const OverviewTab = memo(function OverviewTab({
           </div>
         </div>
       )}
+
+      {/* Consistency + muscle distribution — migrated from the Dashboard. These
+          insights belong to Progress now; each self-hides when there is no data. */}
+      <ConsistencyScore sessions={sessions} />
+      <MuscleDistribution sessions={sessions} />
     </div>
   );
 });

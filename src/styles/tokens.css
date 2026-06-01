@@ -19,6 +19,9 @@
   --fs-primary: #16292d;
   --fs-accent: #43c7a5;
   --fs-accent-2: #2c7f91;
+  /* Accent as raw RGB channels — enables rgba(var(--fs-accent-rgb), <alpha>)
+     for tinted fills/borders without hardcoding hex (e.g. water-reminder cyan). */
+  --fs-accent-rgb: 67, 199, 165;
   --fs-signal: #e2fb70;
   --fs-warn: #e26e3f;
   --fs-steel: #b9c8c6;
@@ -357,6 +360,7 @@ html.dark {
   --fs-primary: #0a0a0a;
   --fs-accent: #4ddcbb;
   --fs-accent-2: #38b5c9;
+  --fs-accent-rgb: 77, 220, 187;
   --fs-signal: #e2fb70;
   --fs-warn: #ff8a65;
   --fs-steel: #2a2a2a;

@@ -1,21 +1,26 @@
 /**
  * SparkOS Fitness — Dashboard (Fresh Steel)
- * Clean home layout: CTA, quick templates, metrics row, weekly calendar.
+ * Lean home: entry point + one primary CTA + glanceable weekly summary.
+ * Deep analytics (consistency, muscle distribution, full history) live in Progress.
  */
 
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ActivityRings } from '../components/charts';
+import { RING_DRAW_DURATION, ringDelay } from '../components/charts/ActivityRings';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { ForecastNudge } from '../components/dashboard/ForecastNudge';
 import { RecentPRBanner } from '../components/dashboard/RecentPRBanner';
-import { RecentWorkouts } from '../components/dashboard/RecentWorkouts';
-import { TemplateQuickStart, TemplateStrip } from '../components/dashboard/TemplateQuickStart';
+import { StartWorkoutSheet } from '../components/dashboard/StartWorkoutSheet';
+import { TemplateStrip } from '../components/dashboard/TemplateQuickStart';
 import { WeeklyGrid } from '../components/dashboard/WeeklyGrid';
 import { WorkoutStreak } from '../components/dashboard/WorkoutStreak';
+import { WorkoutHistory } from '../components/workout/history/WorkoutHistory';
 import { useData } from '../contexts/DataContext';
 import { useFitnessInsights } from '../hooks/fitness/useFitnessInsights';
+import { useCountUp } from '../hooks/useCountUp';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { formatThousands } from '../lib/gsap';
 import { onWorkoutSaved } from '../services/dataEvents';
 import { getWorkoutTemplates } from '../services/workoutDb';
 import type { WorkoutTemplate } from '../types';
@@ -26,6 +31,10 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [selectedWeekOffset, setSelectedWeekOffset] = useState(0);
+  const [isStartSheetOpen, setIsStartSheetOpen] = useState(false);
+  // Bumped after a pull-to-refresh so the memo'd rings + legend count-ups replay
+  // the cascade in lockstep even when the underlying values are unchanged.
+  const [refreshTick, setRefreshTick] = useState(0);
 
   const { sessions: dataContextSessions, refreshData, loading: dataLoading } = useData();
   const { workoutSessions } = useFitnessInsights(dataContextSessions);
@@ -38,6 +47,7 @@ export default function Dashboard() {
           .then(setTemplates)
           .catch((err) => logger.workout.warn('Failed to refresh templates', err)),
       ]);
+      setRefreshTick((tick) => tick + 1);
     },
     threshold: 80,
   });
@@ -77,19 +87,25 @@ export default function Dashboard() {
     return completed[0] ?? null;
   }, [templates]);
 
-  const handleQuickStart = useCallback(() => {
+  // ── Start-workout flow ──────────────────────────────────────────────────────
+  // One primary CTA opens a choice sheet (continue last / pick template / empty).
+  const openStartSheet = useCallback(() => setIsStartSheetOpen(true), []);
+  const closeStartSheet = useCallback(() => setIsStartSheetOpen(false), []);
+
+  const handleContinueLast = useCallback(() => {
+    setIsStartSheetOpen(false);
     if (lastUsedTemplate) navigate(`/workout/${lastUsedTemplate.id}`);
-    else navigate('/workout');
   }, [lastUsedTemplate, navigate]);
 
-  const handleEmptyWorkout = useCallback(() => {
-    navigate('/workout');
+  const handlePickTemplate = useCallback(() => {
+    setIsStartSheetOpen(false);
+    navigate('/templates');
   }, [navigate]);
 
-  const handleRepeatLast = useCallback(() => {
-    if (!lastUsedTemplate) return;
-    navigate(`/workout/${lastUsedTemplate.id}`);
-  }, [lastUsedTemplate, navigate]);
+  const handleEmptyWorkout = useCallback(() => {
+    setIsStartSheetOpen(false);
+    navigate('/workout');
+  }, [navigate]);
 
   const goToPrevWeek = useCallback(() => {
     setSelectedWeekOffset((prev) => prev - 1);
@@ -160,84 +176,14 @@ export default function Dashboard() {
   }, [workoutSessions]);
 
   const handleNavigate = useCallback((path: string) => navigate(path), [navigate]);
+  const goToTemplates = useCallback(() => navigate('/templates'), [navigate]);
 
   // Format helpers
-  const volumeLabel = useMemo(
-    () =>
-      Math.round(weekData.volume) >= 1000
-        ? Math.round(weekData.volume).toLocaleString('en-US')
-        : String(Math.round(weekData.volume)),
-    [weekData.volume]
-  );
-
   const volDelta = useMemo(() => {
     if (!Number.isFinite(weekData.volDeltaPct) || weekData.volDeltaPct === 0) return '—';
     const sign = weekData.volDeltaPct > 0 ? '+' : '';
     return `${sign}${weekData.volDeltaPct.toFixed(1)}%`;
   }, [weekData.volDeltaPct]);
-
-  const metricCards = useMemo(
-    () => [
-      {
-        val: String(weekData.workoutsThisWeek),
-        lbl: 'אימונים השבוע',
-      },
-      {
-        val: volumeLabel || '—',
-        sub: volDelta !== '—' ? volDelta : null,
-        lbl: 'נפח (ק"ג)',
-      },
-      {
-        val: weekData.avgDurationMin > 0 ? `${weekData.avgDurationMin}′` : '—',
-        lbl: 'משך ממוצע',
-      },
-    ],
-    [weekData.workoutsThisWeek, weekData.avgDurationMin, volumeLabel, volDelta]
-  );
-
-  // 4-week consistency data
-  const consistencyData = useMemo(() => {
-    const completed = completedSessions;
-    const now = new Date();
-    const weekCounts: number[] = [0, 0, 0, 0]; // [3 weeks ago, 2 weeks ago, last week, this week]
-
-    for (const s of completed) {
-      const sessionDate = new Date(s.startTime);
-      const diffMs = now.getTime() - sessionDate.getTime();
-      const diffWeeks = Math.floor(diffMs / (7 * 86400000));
-      const idx = 3 - diffWeeks;
-      if (idx >= 0 && idx < 4) {
-        weekCounts[idx] = (weekCounts[idx] ?? 0) + 1;
-      }
-    }
-
-    const weeksActive = weekCounts.filter((c) => c > 0).length;
-    const totalSessions = weekCounts.reduce((a, b) => a + b, 0);
-    const consistencyPct = Math.round((weeksActive / 4) * 100);
-
-    return { weeksActive, totalSessions, consistencyPct, weekCounts };
-  }, [completedSessions]);
-
-  // Weekly muscle group distribution — top 5 muscles by completed sets this week
-  const weeklyMuscleData = useMemo(() => {
-    const now = new Date();
-    const weekStart = getWeekStart(now);
-    const completed = completedSessions.filter((s) => new Date(s.startTime) >= weekStart);
-
-    const muscleMap = new Map<string, number>();
-    for (const s of completed) {
-      for (const ex of s.exercises) {
-        const muscle = ex.targetMuscle || ex.muscleGroup || 'אחר';
-        const sets = ex.sets.filter((set) => set.isCompleted).length;
-        muscleMap.set(muscle, (muscleMap.get(muscle) || 0) + sets);
-      }
-    }
-
-    return [...muscleMap.entries()]
-      .map(([muscle, sets]) => ({ muscle, sets }))
-      .sort((a, b) => b.sets - a.sets)
-      .slice(0, 5);
-  }, [completedSessions]);
 
   // Stabilise rings array so ActivityRings (memo'd) doesn't re-render on parent re-renders.
   const heroRings = useMemo(
@@ -334,14 +280,14 @@ export default function Dashboard() {
       <DashboardHeader hasSessionToday={hasSessionToday} />
 
       <main style={{ padding: '20px 20px 32px' }}>
-        {/* 1. Primary CTA — "התחל אימון חדש" */}
+        {/* 1. Single primary CTA — opens the start-workout choice sheet */}
         <button
           type="button"
-          onClick={handleQuickStart}
+          onClick={openStartSheet}
           className="accent-glow"
-          aria-label={
-            lastUsedTemplate ? `התחל מחדש אימון ${lastUsedTemplate.name}` : 'התחל אימון חדש'
-          }
+          aria-haspopup="dialog"
+          aria-expanded={isStartSheetOpen}
+          aria-label="התחל אימון"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -350,9 +296,9 @@ export default function Dashboard() {
             padding: '20px 24px',
             background: 'linear-gradient(135deg, var(--fs-accent), var(--fs-accent-2))',
             border: '2px solid var(--fs-accent)',
-            borderRadius: '22px 16px 22px 16px',
+            borderRadius: 'var(--radius-asymmetric)',
             cursor: 'pointer',
-            color: '#071412',
+            color: 'var(--color-ink-on-accent)',
             fontFamily: 'var(--font-display)',
             fontWeight: 900,
             fontSize: 24,
@@ -365,6 +311,7 @@ export default function Dashboard() {
           }}
         >
           <span
+            aria-hidden="true"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -382,81 +329,18 @@ export default function Dashboard() {
           >
             ←
           </span>
-          <span>התחל אימון חדש</span>
+          <span>התחל אימון</span>
         </button>
-
-        {/* Quick actions row */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: lastUsedTemplate ? '1fr 1fr' : '1fr',
-            gap: 10,
-            marginTop: 10,
-          }}
-        >
-          <button
-            type="button"
-            onClick={handleEmptyWorkout}
-            aria-label="התחל אימון ריק"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: '12px 16px',
-              minHeight: 48,
-              background: 'var(--fs-surface)',
-              border: '1px solid var(--fs-steel)',
-              borderRadius: '14px 10px 14px 10px',
-              cursor: 'pointer',
-              color: 'var(--fs-ink)',
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              fontSize: 13,
-              letterSpacing: '0.04em',
-            }}
-          >
-            <span style={{ fontSize: 16 }}>+</span>
-            אימון ריק
-          </button>
-          {lastUsedTemplate && (
-            <button
-              type="button"
-              onClick={handleRepeatLast}
-              aria-label={`חזור על ${lastUsedTemplate.name}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                padding: '12px 16px',
-                minHeight: 48,
-                background: 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))',
-                border: '1px solid var(--fs-accent)',
-                borderRadius: '14px 10px 14px 10px',
-                cursor: 'pointer',
-                color: 'var(--fs-accent)',
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 700,
-                fontSize: 13,
-                letterSpacing: '0.04em',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <span style={{ fontSize: 14 }}>↺</span>
-              חזור על {lastUsedTemplate.name}
-            </button>
-          )}
-        </div>
 
         {/* Workout streak */}
         <div style={{ marginTop: 16 }}>
           <WorkoutStreak sessions={workoutSessions} />
         </div>
 
-        {/* 2. Hero bento — weekly activity rings */}
+        {/* 2. Forecast nudge — moved up so it isn't missed at the bottom */}
+        <ForecastNudge sessions={workoutSessions} />
+
+        {/* 3. Hero bento — weekly activity rings (the glanceable summary) */}
         {(weekData.workoutsThisWeek > 0 || weekData.volume > 0) && (
           <section
             className="section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in"
@@ -471,7 +355,7 @@ export default function Dashboard() {
               alignItems: 'center',
             }}
           >
-            <ActivityRings size={156} rings={heroRings} />
+            <ActivityRings size={156} rings={heroRings} trigger={refreshTick} />
             <div style={{ minWidth: 0, display: 'grid', gap: 10 }}>
               <span
                 style={{
@@ -484,45 +368,47 @@ export default function Dashboard() {
                 סיכום שבועי
               </span>
               <div style={{ display: 'grid', gap: 6 }}>
-                <BentoRow dot="accent" label="אימונים" value={`${weekData.workoutsThisWeek} / 4`} />
                 <BentoRow
+                  key={`accent-${refreshTick}`}
+                  dot="accent"
+                  label="אימונים"
+                  value={weekData.workoutsThisWeek}
+                  suffix=" / 4"
+                  delay={ringDelay(0)}
+                />
+                <BentoRow
+                  key={`signal-${refreshTick}`}
                   dot="signal"
                   label="נפח"
-                  value={`${volumeLabel} ק״ג`}
+                  value={weekData.volume}
+                  format={formatThousands}
+                  ltr
+                  suffix={' ק״ג'}
+                  delay={ringDelay(1)}
                   sub={volDelta !== '—' ? volDelta : undefined}
                 />
-                <BentoRow dot="warn" label="זמן" value={`${weekData.totalMinutes}′ / 240′`} />
+                <BentoRow
+                  key={`warn-${refreshTick}`}
+                  dot="warn"
+                  label="זמן"
+                  value={weekData.totalMinutes}
+                  suffix="′ / 240′"
+                  delay={ringDelay(2)}
+                />
               </div>
             </div>
           </section>
         )}
 
-        {/* 3. "המשך מהר" — Quick templates */}
-        <section style={{ marginTop: 24 }}>
-          <SectionTitle text="המשך מהר" />
-          <TemplateQuickStart onQuickStart={handleQuickStart} />
-          <TemplateStrip templates={sortedTemplates} onNavigate={handleNavigate} />
-        </section>
+        {/* 4. Templates — quick strip + library affordance */}
+        {sortedTemplates.length > 0 && (
+          <section style={{ marginTop: 24 }}>
+            <SectionTitle text="תבניות" action={{ label: 'כל התבניות', onClick: goToTemplates }} />
+            <TemplateStrip templates={sortedTemplates} onNavigate={handleNavigate} />
+          </section>
+        )}
 
-        {/* 3. Metrics row — single surface, 3 columns */}
-        <section
-          className="fade-rise-in"
-          style={{
-            marginTop: 24,
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
-            background: 'var(--fs-surface)',
-            borderRadius: 16,
-            border: '1px solid var(--fs-surface-2)',
-            boxShadow: 'var(--elevation-1)',
-          }}
-        >
-          {metricCards.map((m) => (
-            <MetricCard key={m.lbl} value={m.val} label={m.lbl} sub={m.sub} />
-          ))}
-        </section>
-
-        {/* 4. Weekly calendar */}
+        {/* 5. Weekly calendar */}
         <section style={{ marginTop: 24 }}>
           <SectionTitle text="יומן אימונים" />
           <div
@@ -543,264 +429,128 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* 4b. Workout Consistency Score */}
-        {consistencyData.totalSessions > 0 && (
-          <section style={{ marginTop: 24 }}>
-            <SectionTitle text="עקביות אימונים" />
-            <div
-              className="magnetic-card glass-surface fs-accent-rail"
-              style={{
-                background: 'var(--fs-surface)',
-                borderRadius: '22px 16px 22px 16px',
-                border: '1px solid var(--fs-surface-2)',
-                padding: '16px 18px',
-                boxShadow: 'var(--shadow-card)',
-              }}
-            >
-              {/* Top row: consistency percentage + label */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: 12,
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: 'var(--fs-ink)',
-                  }}
-                >
-                  עקביות 4 שבועות
-                </span>
-                <span
-                  className="kinetic-number"
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 20,
-                    fontWeight: 800,
-                    color:
-                      consistencyData.consistencyPct >= 75
-                        ? 'var(--fs-accent)'
-                        : consistencyData.consistencyPct >= 50
-                          ? 'var(--fs-signal)'
-                          : 'var(--fs-warn)',
-                  }}
-                >
-                  {consistencyData.consistencyPct}%
-                </span>
-              </div>
-
-              {/* 4-week bar visualization */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                {consistencyData.weekCounts.map((count, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: positional 4-week bars, fixed-length array, never reordered
-                  <div key={i} style={{ textAlign: 'center' }}>
-                    <div
-                      style={{
-                        height: 40,
-                        background: count > 0 ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
-                        borderRadius: 6,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        opacity: count > 0 ? 1 : 0.3,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 14,
-                          fontWeight: 800,
-                          color: count > 0 ? '#071412' : 'var(--fs-muted)',
-                        }}
-                      >
-                        {count}
-                      </span>
-                    </div>
-                    <span
-                      style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 9,
-                        color: 'var(--fs-muted)',
-                        marginTop: 4,
-                        display: 'block',
-                      }}
-                    >
-                      {i === 3 ? 'השבוע' : i === 2 ? 'שבוע שעבר' : `לפני ${3 - i} שבועות`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Bottom row: total sessions label */}
-              <div
-                style={{
-                  marginTop: 12,
-                  borderTop: '1px solid var(--fs-surface-2)',
-                  paddingTop: 10,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    color: 'var(--fs-muted)',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  סה"כ אימונים (4 שבועות)
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 12,
-                    fontWeight: 800,
-                    color: 'var(--fs-ink)',
-                  }}
-                >
-                  {consistencyData.totalSessions}
-                </span>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* 4c. Weekly Muscle Group Distribution */}
-        {weeklyMuscleData.length > 0 && (
-          <section style={{ marginTop: 24 }}>
-            <SectionTitle text="שרירים השבוע" />
-            <div
-              className="magnetic-card glass-surface fs-accent-rail"
-              style={{
-                background: 'var(--fs-surface)',
-                borderRadius: '22px 16px 22px 16px',
-                border: '1px solid var(--fs-surface-2)',
-                padding: '16px 18px',
-                boxShadow: 'var(--shadow-card)',
-              }}
-            >
-              <div style={{ display: 'grid', gap: 8 }}>
-                {weeklyMuscleData.map((item, i) => {
-                  const maxSets = weeklyMuscleData[0]?.sets || 1;
-                  const pct = Math.round((item.sets / maxSets) * 100);
-                  return (
-                    <div key={item.muscle}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginBottom: 4,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontFamily: 'var(--font-body)',
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: 'var(--fs-ink)',
-                          }}
-                        >
-                          {item.muscle}
-                        </span>
-                        <span
-                          style={{
-                            fontFamily: 'var(--font-mono)',
-                            fontSize: 11,
-                            fontWeight: 800,
-                            color: 'var(--fs-muted)',
-                          }}
-                        >
-                          {item.sets} סטים
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          height: 6,
-                          background: 'var(--fs-surface-2)',
-                          borderRadius: 999,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <div
-                          style={{
-                            height: '100%',
-                            width: `${pct}%`,
-                            borderRadius: 999,
-                            background:
-                              i === 0
-                                ? 'var(--fs-accent)'
-                                : i === 1
-                                  ? 'var(--fs-accent-2)'
-                                  : 'var(--fs-signal)',
-                            transition: 'width 0.5s ease',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* 5. Recent workouts */}
+        {/* 6. Recent workouts — unified compact history */}
         <section style={{ marginTop: 24 }}>
           <SectionTitle text="אימונים אחרונים" />
-          <RecentWorkouts sessions={workoutSessions} loading={dataLoading} />
+          <WorkoutHistory sessions={workoutSessions} mode="compact" isLoading={dataLoading} />
         </section>
 
-        {/* 6. PR highlights (compact) */}
+        {/* 7. PR highlights (compact) */}
         <RecentPRBanner />
-
-        {/* 7. Forecast nudge — overdue muscle / declining volume */}
-        <ForecastNudge sessions={workoutSessions} />
 
         <div style={{ height: 24 }} />
       </main>
+
+      <StartWorkoutSheet
+        isOpen={isStartSheetOpen}
+        onClose={closeStartSheet}
+        lastUsedTemplate={lastUsedTemplate}
+        onContinueLast={handleContinueLast}
+        onPickTemplate={handlePickTemplate}
+        onEmptyWorkout={handleEmptyWorkout}
+      />
     </div>
   );
 }
 
 // ── SectionTitle ─────────────────────────────────────────────────────────────
-const SectionTitle = memo(function SectionTitle({ text }: { text: string }) {
+interface SectionTitleAction {
+  label: string;
+  onClick: () => void;
+}
+
+const SectionTitle = memo(function SectionTitle({
+  text,
+  action,
+}: {
+  text: string;
+  action?: SectionTitleAction;
+}) {
   return (
-    <h2
+    <div
       style={{
-        fontFamily: 'var(--font-display)',
-        fontWeight: 700,
-        fontSize: 16,
-        lineHeight: 1.2,
-        color: 'var(--fs-ink)',
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        gap: 12,
         marginBottom: 12,
       }}
     >
-      {text}
-    </h2>
+      <h2
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontWeight: 700,
+          fontSize: 16,
+          lineHeight: 1.2,
+          color: 'var(--fs-ink)',
+          margin: 0,
+        }}
+      >
+        {text}
+      </h2>
+      {action && (
+        <button
+          type="button"
+          onClick={action.onClick}
+          className="focus-ring"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '4px 0',
+            minHeight: 44,
+            display: 'inline-flex',
+            alignItems: 'center',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: 'var(--fs-accent-2)',
+          }}
+        >
+          {action.label} →
+        </button>
+      )}
+    </div>
   );
 });
 
 // ── BentoRow — single legend line under hero rings ───────────────────────────
+// Each number counts up in lockstep with its matching ring: it STARTS at the
+// ring's stagger delay and runs for RING_DRAW_DURATION, so ring + number finish
+// together. useCountUp already guards reduced-motion (snaps to final).
 const BentoRow = memo(function BentoRow({
   dot,
   label,
   value,
+  suffix,
   sub,
+  delay,
+  format,
+  ltr,
 }: {
   dot: 'accent' | 'signal' | 'warn';
   label: string;
-  value: string;
+  value: number;
+  suffix?: string;
   sub?: string;
+  delay: number;
+  format?: (value: number) => string;
+  ltr?: boolean;
 }) {
   const dotColor =
     dot === 'signal' ? 'var(--fs-signal)' : dot === 'warn' ? 'var(--fs-warn)' : 'var(--fs-accent)';
+
+  const numberRef = useRef<HTMLSpanElement>(null);
+  useCountUp(numberRef, value, { delay, duration: RING_DRAW_DURATION, format });
+
+  const fallback = format ? format(value) : String(Math.round(value));
+  const numberSpan = (
+    <span ref={numberRef} style={{ fontVariantNumeric: 'tabular-nums' }}>
+      {fallback}
+    </span>
+  );
+
   return (
     <div
       style={{
@@ -844,66 +594,12 @@ const BentoRow = memo(function BentoRow({
           textAlign: 'end',
         }}
       >
-        <span className="kinetic-number">{value}</span>
+        <span className="kinetic-number">
+          {ltr ? <span dir="ltr">{numberSpan}</span> : numberSpan}
+          {suffix}
+        </span>
         {sub && <span style={{ color: 'var(--fs-accent)', fontSize: 10 }}>{sub}</span>}
       </span>
-    </div>
-  );
-});
-
-// ── MetricCard — flush stat, no card wrapper (breaks card soup) ───────────────
-const MetricCard = memo(function MetricCard({
-  value,
-  label,
-  sub,
-}: {
-  value: string;
-  label: string;
-  sub?: string | null;
-}) {
-  return (
-    <div
-      style={{
-        padding: '14px 8px',
-        textAlign: 'center',
-        borderInlineEnd: '1px solid var(--fs-surface-2)',
-      }}
-    >
-      <div
-        style={{
-          fontFamily: 'var(--font-display)',
-          fontWeight: 700,
-          fontSize: 24,
-          lineHeight: 1,
-          color: 'var(--fs-ink)',
-          letterSpacing: '-0.02em',
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
-        <span className="kinetic-number">{value}</span>
-      </div>
-      {sub && (
-        <div
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            color: 'var(--fs-accent)',
-            marginTop: 2,
-          }}
-        >
-          {sub}
-        </div>
-      )}
-      <div
-        style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: 11,
-          color: 'var(--fs-muted)',
-          marginTop: sub ? 0 : 4,
-        }}
-      >
-        {label}
-      </div>
     </div>
   );
 });

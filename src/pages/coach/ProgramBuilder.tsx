@@ -1,7 +1,15 @@
+// ============================================================================
+// PROGRAM BUILDER — coach assembles a multi-day program for one client
+// ============================================================================
+// Rendered as a foundation <Sheet> (focus trap, scroll lock, Esc, RTL chrome)
+// instead of the former hardcoded z-index:9999 full-screen overlay.
+
 import { Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { showToast } from '../../components/ui/GlobalToast';
+import { Input } from '../../components/ui/Input';
+import { Sheet } from '../../components/ui/Sheet';
 import { createAssignment, upsertClientTemplate } from '../../services/coach';
 import { getPersonalExercises } from '../../services/exerciseDb';
 import type { PersonalExercise, WorkoutTemplate, WorkoutTemplateExercise } from '../../types';
@@ -20,18 +28,31 @@ interface ProgramDay {
   exercises: ProgramExercise[];
 }
 
+const freshDays = (): ProgramDay[] => [{ name: 'יום A', exercises: [] }];
+
 export default function ProgramBuilder({
   clientId,
+  isOpen,
   onClose,
-}: { clientId: string; onClose: () => void }) {
+}: { clientId: string; isOpen: boolean; onClose: () => void }) {
   const [programName, setProgramName] = useState('');
-  const [days, setDays] = useState<ProgramDay[]>([{ name: 'יום A', exercises: [] }]);
+  const [days, setDays] = useState<ProgramDay[]>(freshDays);
   const [busy, setBusy] = useState(false);
   const [library, setLibrary] = useState<PersonalExercise[]>([]);
+
+  // Fresh form each time the sheet opens — matches the previous unmount-on-close
+  // behaviour now that the component stays mounted for enter/exit animations.
+  useEffect(() => {
+    if (isOpen) {
+      setProgramName('');
+      setDays(freshDays());
+    }
+  }, [isOpen]);
 
   // Pull the canonical exercise library (built-ins are seeded on first read) so
   // the coach picks real exercises instead of typing free-text with empty ids.
   useEffect(() => {
+    if (!isOpen || library.length > 0) return;
     let cancelled = false;
     getPersonalExercises()
       .then((list) => {
@@ -43,7 +64,7 @@ export default function ProgramBuilder({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isOpen, library.length]);
 
   const libraryByName = useMemo(() => {
     const map = new Map<string, PersonalExercise>();
@@ -162,217 +183,132 @@ export default function ProgramBuilder({
   };
 
   return (
-    <div
-      dir="rtl"
-      lang="he"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        background: 'var(--fs-bg)',
-        overflowY: 'auto',
-      }}
+    <Sheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title="בניית תוכנית"
+      footer={
+        <Button variant="primary" fullWidth isLoading={busy} onClick={handleAssign}>
+          שייך תוכנית
+        </Button>
+      }
     >
-      <header
-        className="flex items-center gap-3 px-5 py-4"
-        style={{ borderBottom: '1px solid var(--fs-surface-2)' }}
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="סגור"
-          className="shrink-0 flex items-center justify-center"
-          style={{
-            width: 36,
-            height: 36,
-            background: 'var(--fs-surface-2)',
-            color: 'var(--fs-heading)',
-          }}
-        >
-          <X size={20} aria-hidden="true" />
-        </button>
-        <h1
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 20,
-            fontWeight: 700,
-            color: 'var(--fs-heading)',
-            margin: 0,
-          }}
-        >
-          בניית תוכנית
-        </h1>
-      </header>
+      <datalist id="coach-exercise-library">
+        {library.map((ex) => (
+          <option key={ex.id} value={ex.name ?? ''} />
+        ))}
+      </datalist>
 
-      <main className="px-5 py-5" style={{ paddingBottom: 96 }}>
-        <datalist id="coach-exercise-library">
-          {library.map((ex) => (
-            <option key={ex.id} value={ex.name ?? ''} />
-          ))}
-        </datalist>
-        <input
-          type="text"
+      <div className="mb-4">
+        <Input
           value={programName}
           onChange={(e) => setProgramName(e.target.value)}
           placeholder="שם התוכנית (אופציונלי)"
-          className="w-full mb-4 px-3 py-2"
-          style={{
-            background: 'var(--fs-surface)',
-            border: '1px solid var(--fs-surface-2)',
-            color: 'var(--fs-ink)',
-            fontFamily: 'var(--font-body)',
-            fontSize: 14,
-          }}
+          aria-label="שם התוכנית"
         />
+      </div>
 
-        {days.map((day, dayIdx) => (
-          <section
-            // biome-ignore lint/suspicious/noArrayIndexKey: days are append/remove without stable IDs
-            key={dayIdx}
-            className="mb-5 p-4"
-            style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <input
-                type="text"
+      {days.map((day, dayIdx) => (
+        <section
+          // biome-ignore lint/suspicious/noArrayIndexKey: days are append/remove without stable IDs
+          key={dayIdx}
+          className="mb-5 p-4"
+          style={{ background: 'var(--fs-bg)', border: '1px solid var(--fs-surface-2)' }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex-1">
+              <Input
                 value={day.name}
                 onChange={(e) => updateDayName(dayIdx, e.target.value)}
-                className="flex-1 px-2 py-1"
-                style={{
-                  background: 'var(--fs-surface-2)',
-                  border: 'none',
-                  color: 'var(--fs-heading)',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 16,
-                  fontWeight: 700,
-                }}
+                aria-label="שם היום"
               />
-              {days.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeDay(dayIdx)}
-                  aria-label="הסר יום"
-                  style={{
-                    color: 'var(--fs-muted)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Trash2 size={16} />
-                </button>
-              )}
             </div>
-
-            {day.exercises.map((ex, exIdx) => (
-              <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: exercises are append/remove without stable IDs
-                key={exIdx}
-                className="flex items-center gap-2 mb-2"
+            {days.length > 1 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => removeDay(dayIdx)}
+                aria-label="הסר יום"
+                className="shrink-0"
               >
-                <input
-                  type="text"
+                <Trash2 size={16} aria-hidden="true" />
+              </Button>
+            )}
+          </div>
+
+          {day.exercises.map((ex, exIdx) => (
+            <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: exercises are append/remove without stable IDs
+              key={exIdx}
+              className="flex items-center gap-2 mb-2"
+            >
+              <div className="flex-1 min-w-0">
+                <Input
                   list="coach-exercise-library"
                   value={ex.exerciseName}
                   onChange={(e) => setExerciseName(dayIdx, exIdx, e.target.value)}
                   placeholder="שם תרגיל"
-                  className="flex-1 px-2 py-1"
-                  style={{
-                    background: 'var(--fs-surface-2)',
-                    border: 'none',
-                    color: 'var(--fs-ink)',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 13,
-                  }}
+                  aria-label="שם תרגיל"
                 />
-                <input
+              </div>
+              <div style={{ width: 60 }} className="shrink-0">
+                <Input
                   type="number"
                   inputMode="numeric"
                   value={ex.sets}
                   onChange={(e) =>
                     updateExercise(dayIdx, exIdx, { sets: Number(e.target.value) || 1 })
                   }
-                  className="w-12 px-1 py-1 text-center"
-                  style={{
-                    background: 'var(--fs-surface-2)',
-                    border: 'none',
-                    color: 'var(--fs-ink)',
-                    fontSize: 13,
-                  }}
                   aria-label="סטים"
                 />
-                <span style={{ color: 'var(--fs-muted)', fontSize: 12 }}>×</span>
-                <input
+              </div>
+              <span style={{ color: 'var(--fs-muted)', fontSize: 12 }} aria-hidden="true">
+                ×
+              </span>
+              <div style={{ width: 60 }} className="shrink-0">
+                <Input
                   type="number"
                   inputMode="numeric"
                   value={ex.reps}
                   onChange={(e) =>
                     updateExercise(dayIdx, exIdx, { reps: Number(e.target.value) || 1 })
                   }
-                  className="w-12 px-1 py-1 text-center"
-                  style={{
-                    background: 'var(--fs-surface-2)',
-                    border: 'none',
-                    color: 'var(--fs-ink)',
-                    fontSize: 13,
-                  }}
                   aria-label="חזרות"
                 />
-                <button
-                  type="button"
-                  onClick={() => removeExercise(dayIdx, exIdx)}
-                  aria-label="הסר תרגיל"
-                  style={{
-                    color: 'var(--fs-muted)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <X size={14} />
-                </button>
               </div>
-            ))}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => removeExercise(dayIdx, exIdx)}
+                aria-label="הסר תרגיל"
+                className="shrink-0"
+              >
+                <X size={14} aria-hidden="true" />
+              </Button>
+            </div>
+          ))}
 
-            <button
-              type="button"
-              onClick={() => addExercise(dayIdx)}
-              className="flex items-center gap-1 mt-2"
-              style={{
-                color: 'var(--fs-heading)',
-                fontFamily: 'var(--font-body)',
-                fontSize: 13,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <Plus size={14} /> הוסף תרגיל
-            </button>
-          </section>
-        ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Plus size={14} />}
+            onClick={() => addExercise(dayIdx)}
+            className="mt-2"
+          >
+            הוסף תרגיל
+          </Button>
+        </section>
+      ))}
 
-        <button
-          type="button"
-          onClick={addDay}
-          className="w-full py-2 mb-5 flex items-center justify-center gap-1"
-          style={{
-            border: '1.5px dashed var(--fs-surface-2)',
-            background: 'transparent',
-            color: 'var(--fs-heading)',
-            fontFamily: 'var(--font-body)',
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          <Plus size={16} /> הוסף יום
-        </button>
-
-        <Button variant="primary" fullWidth isLoading={busy} onClick={handleAssign}>
-          שייך תוכנית
-        </Button>
-      </main>
-    </div>
+      <Button
+        variant="secondary"
+        fullWidth
+        icon={<Plus size={16} />}
+        onClick={addDay}
+        className="mb-2"
+      >
+        הוסף יום
+      </Button>
+    </Sheet>
   );
 }

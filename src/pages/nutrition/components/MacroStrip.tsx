@@ -1,6 +1,8 @@
-import { motion, useReducedMotion } from 'framer-motion';
+import { useCountUp } from '@/hooks/useCountUp';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { DUR, EASE, gsap, useGSAP } from '@/lib/gsap';
 import { Beef, Droplets, Wheat } from 'lucide-react';
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useRef } from 'react';
 import type { MacroNutrients } from '../../../types';
 
 interface MacroStripProps {
@@ -11,6 +13,9 @@ interface MacroStripProps {
   fatPct: number;
 }
 
+/** Staggered offset (s) between the three bars / count-ups. */
+const STAGGER = 0.08;
+
 export const MacroStrip = memo(function MacroStrip({
   todayMacros,
   macroGoals,
@@ -18,7 +23,20 @@ export const MacroStrip = memo(function MacroStrip({
   carbsPct,
   fatPct,
 }: MacroStripProps) {
-  const shouldReduceMotion = useReducedMotion();
+  const reduced = useReducedMotion();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const barRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  // One ref per macro (fixed order: protein, carbs, fat) so the hook count is
+  // stable. The number counts up to its current gram value on mount/update.
+  const proteinNumRef = useRef<HTMLSpanElement>(null);
+  const carbsNumRef = useRef<HTMLSpanElement>(null);
+  const fatNumRef = useRef<HTMLSpanElement>(null);
+  const numRefs = [proteinNumRef, carbsNumRef, fatNumRef];
+
+  useCountUp(proteinNumRef, todayMacros.protein, { delay: 0 });
+  useCountUp(carbsNumRef, todayMacros.carbs, { delay: STAGGER });
+  useCountUp(fatNumRef, todayMacros.fat, { delay: STAGGER * 2 });
 
   const macroStrip = useMemo(
     () => [
@@ -60,8 +78,40 @@ export const MacroStrip = memo(function MacroStrip({
     ]
   );
 
+  // Bars draw to their value with a staggered scaleX. RTL: transformOrigin is on
+  // the logical start edge ('right center' for this dir:'rtl' app) so the fill
+  // grows from the right. Reduced motion snaps to the final state.
+  useGSAP(
+    () => {
+      const bars = barRefs.current.filter((b): b is HTMLDivElement => b !== null);
+      if (bars.length === 0) return;
+
+      const target = (i: number): number => (macroStrip[i]?.pct ?? 0) / 100;
+
+      if (reduced) {
+        bars.forEach((bar, i) => {
+          gsap.set(bar, { scaleX: target(i), transformOrigin: 'right center' });
+        });
+        return;
+      }
+
+      gsap.fromTo(
+        bars,
+        { scaleX: 0, transformOrigin: 'right center' },
+        {
+          scaleX: (i: number) => target(i),
+          duration: DUR.base,
+          ease: EASE.reveal,
+          stagger: STAGGER,
+        }
+      );
+    },
+    { scope: rootRef, dependencies: [proteinPct, carbsPct, fatPct, reduced] }
+  );
+
   return (
     <div
+      ref={rootRef}
       className="mx-0"
       style={{
         display: 'grid',
@@ -104,7 +154,7 @@ export const MacroStrip = memo(function MacroStrip({
               fontVariantNumeric: 'tabular-nums',
             }}
           >
-            {m.cur}
+            <span ref={numRefs[i]}>{m.cur}</span>
             <em
               style={{
                 fontStyle: 'normal',
@@ -117,12 +167,12 @@ export const MacroStrip = memo(function MacroStrip({
             </em>
           </div>
           <div className="mt-2 fs-progress-track" style={{ height: '4px' }}>
-            <motion.div
+            <div
+              ref={(el) => {
+                barRefs.current[i] = el;
+              }}
               className="fs-progress-fill"
-              style={{ height: '100%', transformOrigin: 'left center' }}
-              initial={shouldReduceMotion ? false : { scaleX: 0 }}
-              animate={{ scaleX: m.pct / 100 }}
-              transition={{ duration: shouldReduceMotion ? 0 : 0.7, ease: 'easeOut' }}
+              style={{ height: '100%', transformOrigin: 'right center', transform: 'scaleX(0)' }}
             />
           </div>
           <div

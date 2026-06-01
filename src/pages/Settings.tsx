@@ -90,29 +90,27 @@ export default function Settings() {
 
         <ProfileSection
           profile={state.profile}
-          setProfile={state.setProfile}
+          updateProfile={state.updateProfile}
+          commitProfile={state.commitProfile}
           profileSaved={state.profileSaved}
-          onSave={state.handleSaveProfile}
         />
 
         <ThemeSection />
 
         <WorkoutPrefsSection
           workoutPrefs={state.workoutPrefs}
-          setWorkoutPrefs={state.setWorkoutPrefs}
+          commitWorkout={state.commitWorkout}
           workoutSaved={state.workoutSaved}
-          onSave={state.handleSaveWorkout}
         />
 
         <NotificationsSection
           notificationConfig={state.notificationConfig}
           toggleNotification={state.toggleNotification}
+          notificationsSaved={state.notificationsSaved}
         />
 
         {/* 06 · Privacy & data — export, cloud sync and the delete danger-zone */}
-        <SectionLabel num="06" titleEn="PRIVACY · DATA">
-          פרטיות ונתונים
-        </SectionLabel>
+        <SectionLabel>פרטיות ונתונים</SectionLabel>
 
         <ExportSection
           weeklyReport={state.weeklyReport}
@@ -136,11 +134,7 @@ export default function Settings() {
           />
         )}
 
-        <DangerZoneSection
-          confirmDelete={state.confirmDelete}
-          setConfirmDelete={state.setConfirmDelete}
-          onDeleteAll={handleDeleteAllData}
-        />
+        <DangerZoneSection onDeleteAll={handleDeleteAllData} />
 
         <DataAboutSection />
       </div>

@@ -1,6 +1,14 @@
+import {
+  DEFAULT_GLASS_ML,
+  DEFAULT_WATER_GOAL_ML,
+  GLASS_SIZE_BOUNDS,
+  WATER_GOAL_BOUNDS,
+  WATER_SETTINGS_KEY,
+} from '../constants/nutrition';
 import { supabase } from '../lib/supabase';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { todayStr } from '../utils/dateUtils';
+import { safeJsonParse, writeJsonStorage } from '../utils/safeJson';
 import { STORES, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { queueMutation } from './offlineQueue';
 import { getCurrentUser } from './supabaseAuth';
@@ -15,12 +23,17 @@ export interface WaterEntry {
   deletedAt?: string | null;
 }
 
-const WATER_GOAL_ML = 2500;
-const GLASS_ML = 250;
-
 /** Event broadcast after any water mutation so listeners (chart, tracker)
  * can refresh, mirroring the `settings-updated` pattern used for goals. */
 export const WATER_UPDATED_EVENT = 'water-updated';
+
+/** Persisted, user-configurable water settings. */
+export interface WaterSettings {
+  /** Daily hydration goal in milliliters. */
+  goalMl: number;
+  /** Single-glass size in milliliters (the +/- step). */
+  glassMl: number;
+}
 
 function broadcastWaterUpdated(): void {
   if (typeof window !== 'undefined') {
@@ -28,12 +41,48 @@ function broadcastWaterUpdated(): void {
   }
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+/**
+ * Read the user's water settings from localStorage, falling back to defaults
+ * and clamping to sane bounds so a corrupt or hostile value can't break the UI.
+ * Mirrors the `nutrition_goals` read pattern used for calorie goals.
+ */
+export function getWaterSettings(): WaterSettings {
+  const parsed =
+    typeof window !== 'undefined'
+      ? safeJsonParse<Partial<WaterSettings>>(localStorage.getItem(WATER_SETTINGS_KEY))
+      : null;
+  const goalRaw = typeof parsed?.goalMl === 'number' ? parsed.goalMl : DEFAULT_WATER_GOAL_ML;
+  const glassRaw = typeof parsed?.glassMl === 'number' ? parsed.glassMl : DEFAULT_GLASS_ML;
+  return {
+    goalMl: clamp(goalRaw, WATER_GOAL_BOUNDS.min, WATER_GOAL_BOUNDS.max),
+    glassMl: clamp(glassRaw, GLASS_SIZE_BOUNDS.min, GLASS_SIZE_BOUNDS.max),
+  };
+}
+
+/**
+ * Persist water settings and broadcast `water-updated` so the tracker and chart
+ * re-read immediately. Values are clamped on the way in. Mirrors
+ * `saveNutritionGoals`.
+ */
+export function saveWaterSettings(settings: WaterSettings): void {
+  const clamped: WaterSettings = {
+    goalMl: clamp(settings.goalMl, WATER_GOAL_BOUNDS.min, WATER_GOAL_BOUNDS.max),
+    glassMl: clamp(settings.glassMl, GLASS_SIZE_BOUNDS.min, GLASS_SIZE_BOUNDS.max),
+  };
+  writeJsonStorage(WATER_SETTINGS_KEY, clamped);
+  broadcastWaterUpdated();
+}
+
 export function getWaterGoal(): number {
-  return WATER_GOAL_ML;
+  return getWaterSettings().goalMl;
 }
 
 export function getGlassSize(): number {
-  return GLASS_ML;
+  return getWaterSettings().glassMl;
 }
 
 export async function addWaterEntry(amountMl: number): Promise<WaterEntry> {

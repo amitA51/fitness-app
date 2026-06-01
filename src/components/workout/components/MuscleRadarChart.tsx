@@ -1,6 +1,8 @@
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { EASE, gsap, useGSAP } from '@/lib/gsap';
 import { motion } from 'framer-motion';
 import type React from 'react';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MuscleBalanceData } from '../../../services/analyticsService';
 
 interface MuscleRadarChartProps {
@@ -16,8 +18,20 @@ const MUSCLE_STATUS_COLORS = {
   neutral: 'var(--fs-accent)',
 };
 
+// Sonar sweep timing (seconds). Kept within ~1-1.4s for mid-range phones.
+const ARM_DURATION = 1.0; // full rotation of the measuring arm
+const VERTEX_DURATION = 0.5; // back.out pop per measured vertex
+const LABEL_DURATION = 0.3; // label fade-in at its vertex
+const LABEL_BASE_OPACITY = 0.8;
+
 /**
- * MuscleRadarChart - SVG Radar chart showing muscle group balance
+ * MuscleRadarChart - SVG Radar chart showing muscle group balance.
+ *
+ * Entrance reads like sonar: a rotating sweep arm measures one muscle at a
+ * time. As the arm reaches each vertex angle, that vertex interpolates its
+ * radius from 0 to the data value (back.out), the polygon edge stroke draws
+ * progressively (hand-rolled getTotalLength + strokeDashoffset), and the
+ * matching dot + Hebrew label fade in place at that vertex.
  */
 const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
   data,
@@ -25,6 +39,14 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
   maxDisplay = 8,
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const reduced = useReducedMotion();
+
+  const rootRef = useRef<HTMLDivElement>(null);
+  const polygonRef = useRef<SVGPolygonElement>(null);
+  const sweepRef = useRef<SVGGElement>(null);
+  const dotRefs = useRef<(SVGCircleElement | null)[]>([]);
+  const labelRefs = useRef<(SVGTextElement | null)[]>([]);
+  const interactedRef = useRef(false);
 
   // Take top muscles by volume, up to maxDisplay
   const displayData = useMemo(() => {
@@ -68,7 +90,7 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
     return { x, y, anchor };
   };
 
-  // Build polygon path
+  // Build polygon path (final shape — used as SSR / reduced-motion fallback)
   const polygonPoints = useMemo(() => {
     return displayData
       .map((muscle, i) => {
@@ -106,10 +128,148 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
     return MUSCLE_STATUS_COLORS.stable;
   };
 
+  // ---- Sonar measuring-sweep entrance (GSAP) -----------------------------
+  // useGSAP must run before any early return to keep hook order stable.
+  const { contextSafe } = useGSAP(
+    () => {
+      const polygon = polygonRef.current;
+      if (!polygon || numPoints === 0) return;
+
+      const dots = dotRefs.current;
+      const labels = labelRefs.current;
+
+      // Per-vertex final radius and an interpolator (0 -> target) per vertex.
+      const targets = displayData.map((m) => radius * Math.min(m.percentage / 100, 1));
+      const interps = targets.map((t) => gsap.utils.interpolate(0, t));
+
+      // Mutable animation state: per-vertex eased progress + global stroke draw.
+      const state = {
+        progress: new Array<number>(numPoints).fill(0),
+        draw: 0,
+      };
+
+      // Each frame: rebuild the polygon points from the current radii and
+      // advance the hand-rolled stroke draw via getTotalLength.
+      const render = (): void => {
+        let pts = '';
+        for (let i = 0; i < numPoints; i++) {
+          const angle = i * angleStep - Math.PI / 2;
+          const interp = interps[i];
+          const r = interp ? interp(state.progress[i] ?? 0) : 0;
+          const x = centerX + r * Math.cos(angle);
+          const y = centerY + r * Math.sin(angle);
+          pts += `${i === 0 ? '' : ' '}${x},${y}`;
+        }
+        polygon.setAttribute('points', pts);
+
+        const len = polygon.getTotalLength();
+        polygon.style.strokeDasharray = `${len}`;
+        polygon.style.strokeDashoffset = `${len * (1 - state.draw)}`;
+      };
+
+      // Reduced motion: snap to final state, no tween / draw / sweep.
+      if (reduced) {
+        state.progress.fill(1);
+        state.draw = 1;
+        render();
+        polygon.style.strokeDasharray = '';
+        polygon.style.strokeDashoffset = '';
+        dots.forEach((el) => el && gsap.set(el, { opacity: 1, scale: 1 }));
+        labels.forEach((el) => el && gsap.set(el, { opacity: LABEL_BASE_OPACITY }));
+        if (sweepRef.current) gsap.set(sweepRef.current, { opacity: 0 });
+        return;
+      }
+
+      // Initial hidden state (runs in layout phase, before paint -> no flash).
+      dots.forEach((el, i) => {
+        const muscle = displayData[i];
+        if (!el || !muscle) return;
+        const p = getPoint(i, muscle.percentage);
+        gsap.set(el, {
+          opacity: 0,
+          scale: 0,
+          svgOrigin: `${p.x} ${p.y}`,
+          transformOrigin: '50% 50%',
+        });
+      });
+      labels.forEach((el) => el && gsap.set(el, { opacity: 0 }));
+      if (sweepRef.current) gsap.set(sweepRef.current, { opacity: 0.55 });
+      render();
+
+      const tl = gsap.timeline({ onUpdate: render });
+
+      // Sweep arm rotates a full turn, oldest -> newest (clockwise from top).
+      if (sweepRef.current) {
+        tl.fromTo(
+          sweepRef.current,
+          { rotation: 0 },
+          {
+            rotation: 360,
+            svgOrigin: `${centerX} ${centerY}`,
+            ease: 'none',
+            duration: ARM_DURATION,
+          },
+          0
+        );
+        tl.to(sweepRef.current, { opacity: 0, duration: 0.25, ease: EASE.out }, ARM_DURATION);
+      }
+
+      // Stroke draws progressively in lockstep with the sweep arm.
+      tl.to(state, { draw: 1, ease: 'none', duration: ARM_DURATION }, 0);
+
+      // Each vertex measures itself as the arm reaches its angle.
+      displayData.forEach((_, i) => {
+        const start = (i / numPoints) * ARM_DURATION;
+        tl.to(state.progress, { [i]: 1, ease: EASE.pop, duration: VERTEX_DURATION }, start);
+        const dot = dots[i];
+        if (dot) {
+          tl.to(dot, { opacity: 1, scale: 1, ease: EASE.pop, duration: VERTEX_DURATION }, start);
+        }
+        const label = labels[i];
+        if (label) {
+          tl.to(
+            label,
+            { opacity: LABEL_BASE_OPACITY, ease: EASE.out, duration: LABEL_DURATION },
+            start + 0.1
+          );
+        }
+      });
+    },
+    { scope: rootRef, dependencies: [displayData, size, reduced] }
+  );
+
+  // Preserve the subtle label hover highlight without fighting the entrance
+  // timeline (only engages once the user has actually hovered a vertex). Wrapped
+  // in contextSafe so these tweens join the useGSAP context and revert on unmount.
+  const applyHover = contextSafe((idx: number | null) => {
+    labelRefs.current.forEach((el, i) => {
+      if (!el) return;
+      gsap.to(el, {
+        opacity: idx === i ? 1 : LABEL_BASE_OPACITY,
+        duration: 0.2,
+        overwrite: 'auto',
+      });
+    });
+  });
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: applyHover is recreated each render (contextSafe wrapper); the effect is intentionally gated on hoveredIndex only.
+  useEffect(() => {
+    if (hoveredIndex !== null) interactedRef.current = true;
+    if (!interactedRef.current) return;
+    applyHover(hoveredIndex);
+  }, [hoveredIndex]);
+
   return (
     <div
+      ref={rootRef}
       className="relative magnetic-card glass-surface scrim-noise"
       style={{ padding: 16, borderRadius: '22px 16px 22px 16px' }}
+      role="img"
+      aria-label={
+        displayData.length > 0
+          ? `מפת איזון שרירים: ${displayData.map((m) => `${m.muscle} ${Math.round(m.percentage)}%`).join(', ')}`
+          : 'מפת שרירים'
+      }
     >
       <div
         style={{
@@ -164,16 +324,35 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
           transition={{ duration: 0.3 }}
         />
 
-        {/* Data polygon */}
-        <motion.polygon
+        {/* Sonar sweep arm — rotates from center, measuring one vertex at a time */}
+        <g ref={sweepRef} style={{ opacity: 0 }}>
+          <line
+            x1={centerX}
+            y1={centerY}
+            x2={centerX}
+            y2={centerY - radius}
+            stroke="var(--fs-accent)"
+            strokeOpacity={0.45}
+            strokeWidth={1.5}
+            strokeLinecap="round"
+          />
+          <circle
+            cx={centerX}
+            cy={centerY - radius}
+            r={2.5}
+            fill="var(--fs-accent)"
+            fillOpacity={0.8}
+          />
+        </g>
+
+        {/* Data polygon — points + stroke draw are driven by GSAP each frame */}
+        <polygon
+          ref={polygonRef}
           points={polygonPoints}
           fill="color-mix(in srgb, var(--fs-accent) 22%, transparent)"
           stroke="var(--fs-accent)"
           strokeWidth={2}
           strokeLinejoin="round"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
           style={{
             filter: 'drop-shadow(0 6px 16px color-mix(in srgb, var(--fs-accent) 25%, transparent))',
           }}
@@ -184,17 +363,17 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
           const point = getPoint(i, muscle.percentage);
 
           return (
-            <motion.circle
+            <circle
               key={muscle.muscle}
+              ref={(el) => {
+                dotRefs.current[i] = el;
+              }}
               cx={point.x}
               cy={point.y}
               r={hoveredIndex === i ? 8 : 6}
               fill={getMuscleColor(muscle)}
               stroke="rgba(0, 0, 0, 0.3)"
               strokeWidth={2}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3 + i * 0.05, type: 'spring', stiffness: 200 }}
               style={{ cursor: 'pointer' }}
               onMouseEnter={() => setHoveredIndex(i)}
               onMouseLeave={() => setHoveredIndex(null)}
@@ -205,14 +384,17 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
         {/* Center dot */}
         <circle cx={centerX} cy={centerY} r={3} fill="var(--fs-muted)" />
 
-        {/* Labels */}
+        {/* Labels — fade in place at their vertex (no translation, RTL-neutral) */}
         {displayData.map((muscle, i) => {
           const pos = getLabelPosition(i);
           const color = getMuscleColor(muscle);
 
           return (
-            <motion.text
+            <text
               key={muscle.muscle}
+              ref={(el) => {
+                labelRefs.current[i] = el;
+              }}
               x={pos.x}
               y={pos.y}
               textAnchor={pos.anchor as 'start' | 'middle' | 'end'}
@@ -220,12 +402,10 @@ const MuscleRadarChart: React.FC<MuscleRadarChartProps> = ({
               fill={color}
               fontWeight="bold"
               fontFamily="var(--font-mono)"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: hoveredIndex === i ? 1 : 0.8 }}
-              transition={{ delay: 0.4 + i * 0.05 }}
+              style={{ opacity: LABEL_BASE_OPACITY }}
             >
               {muscle.muscle.length > 8 ? `${muscle.muscle.slice(0, 7)}…` : muscle.muscle}
-            </motion.text>
+            </text>
           );
         })}
       </svg>

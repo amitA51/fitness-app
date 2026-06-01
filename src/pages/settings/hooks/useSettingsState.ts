@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSettings } from '../../../contexts/SettingsContext';
 import {
   getNotificationConfig,
@@ -9,15 +9,20 @@ import type { NotificationConfig } from '../../../services/notificationService';
 import { getCurrentUser } from '../../../services/supabaseAuth';
 import { logger } from '../../../utils/logger';
 import type { UserProfile, WorkoutPrefs } from '../types';
-import { DEFAULT_PROFILE, DEFAULT_WORKOUT_PREFS, loadFromStorage, saveToStorage } from '../types';
+import {
+  AUTOSAVE_DEBOUNCE_MS,
+  DEFAULT_PROFILE,
+  DEFAULT_WORKOUT_PREFS,
+  loadFromStorage,
+  saveToStorage,
+} from '../types';
+import { useAutosave, useSavedFlash } from './useAutosave';
 
 export function useSettingsState() {
   const { settings, updateSettings, updateWorkoutSettings } = useSettings();
 
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [workoutPrefs, setWorkoutPrefs] = useState<WorkoutPrefs>(DEFAULT_WORKOUT_PREFS);
-  const [profileSaved, setProfileSaved] = useState(false);
-  const [workoutSaved, setWorkoutSaved] = useState(false);
   const [notificationConfig, setNotificationConfig] = useState<NotificationConfig>(() =>
     getNotificationConfig()
   );
@@ -26,14 +31,35 @@ export function useSettingsState() {
 
   // Account / Auth state
   const [authEmail, setAuthEmail] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Load from storage + settings context on mount.
-  // Workout prefs hold ONLY real workout knobs; accessibility/display toggles
-  // and dark mode are owned by SettingsContext (see "תצוגה ונגישות" section).
-  // Nutrition-goal editing lives in the Nutrition screen now, not here.
+  // Autosave engines own the persistence + the shared "נשמר" flash. Profile is
+  // pure localStorage; workout prefs also mirror three knobs into SettingsContext
+  // so they keep applying app-wide (rest timer, auto-start, haptics).
+  const profileAutosave = useAutosave<UserProfile>(
+    (next) => saveToStorage('user_profile', next),
+    AUTOSAVE_DEBOUNCE_MS
+  );
+  const workoutAutosave = useAutosave<WorkoutPrefs>((next) => {
+    const ok = saveToStorage('workout_prefs', next);
+    updateWorkoutSettings({
+      defaultRestTime: next.defaultRestTime,
+      autoStartRest: next.autoStartRest,
+      hapticsEnabled: next.hapticsEnabled,
+    });
+    return ok;
+  }, AUTOSAVE_DEBOUNCE_MS);
+  const notificationsFlash = useSavedFlash();
+
+  // Load profile once on mount — kept independent of the workout-settings sync
+  // below so a context change never clobbers an in-flight (debounced) edit.
   useEffect(() => {
     setProfile(loadFromStorage<UserProfile>('user_profile', DEFAULT_PROFILE));
+  }, []);
+
+  // Workout prefs hold ONLY real workout knobs; accessibility/display toggles and
+  // dark mode are owned by SettingsContext (see "תצוגה ונגישות" section). Load
+  // from storage and keep the context-owned knobs in sync.
+  useEffect(() => {
     setWorkoutPrefs({
       ...loadFromStorage<WorkoutPrefs>('workout_prefs', DEFAULT_WORKOUT_PREFS),
       defaultRestTime: settings.workoutSettings.defaultRestTime,
@@ -53,22 +79,34 @@ export function useSettingsState() {
     });
   }, []);
 
-  function handleSaveProfile() {
-    saveToStorage('user_profile', profile);
-    setProfileSaved(true);
-    setTimeout(() => setProfileSaved(false), 2000);
-  }
+  // ── Autosave entry points exposed to the sections ──────────────────────────
+  // `update*` debounces (free-text / number fields); `commit*` flushes
+  // immediately (discrete choices: selects, toggles, rest-time pills). Both set
+  // React state right away so the UI stays responsive.
 
-  function handleSaveWorkout() {
-    saveToStorage('workout_prefs', workoutPrefs);
-    updateWorkoutSettings({
-      defaultRestTime: workoutPrefs.defaultRestTime,
-      autoStartRest: workoutPrefs.autoStartRest,
-      hapticsEnabled: workoutPrefs.hapticsEnabled,
-    });
-    setWorkoutSaved(true);
-    setTimeout(() => setWorkoutSaved(false), 2000);
-  }
+  const updateProfile = useCallback(
+    (next: UserProfile) => {
+      setProfile(next);
+      profileAutosave.saveDebounced(next);
+    },
+    [profileAutosave.saveDebounced]
+  );
+
+  const commitProfile = useCallback(
+    (next: UserProfile) => {
+      setProfile(next);
+      profileAutosave.saveNow(next);
+    },
+    [profileAutosave.saveNow]
+  );
+
+  const commitWorkout = useCallback(
+    (next: WorkoutPrefs) => {
+      setWorkoutPrefs(next);
+      workoutAutosave.saveNow(next);
+    },
+    [workoutAutosave.saveNow]
+  );
 
   // Wire notification toggles directly to notificationService (unified
   // CONFIG_KEY). Turning a toggle on requests browser permission so the
@@ -84,28 +122,27 @@ export function useSettingsState() {
     }
     const updated = saveNotificationConfig({ [key]: nextEnabled });
     setNotificationConfig(updated);
+    notificationsFlash.flash();
   };
 
   return {
     settings,
     updateSettings,
     profile,
-    setProfile,
+    updateProfile,
+    commitProfile,
+    profileSaved: profileAutosave.saved,
     workoutPrefs,
-    setWorkoutPrefs,
-    profileSaved,
-    workoutSaved,
+    commitWorkout,
+    workoutSaved: workoutAutosave.saved,
     notificationConfig,
     toggleNotification,
+    notificationsSaved: notificationsFlash.saved,
     weeklyReport,
     setWeeklyReport,
     copiedReport,
     setCopiedReport,
     authEmail,
     setAuthEmail,
-    confirmDelete,
-    setConfirmDelete,
-    handleSaveProfile,
-    handleSaveWorkout,
   };
 }

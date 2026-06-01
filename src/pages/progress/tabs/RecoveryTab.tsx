@@ -3,7 +3,9 @@ import { Activity, Battery, Dumbbell, Heart, Moon, Plus, Wind } from 'lucide-rea
 import { memo } from 'react';
 import { getLegacyRecoveryScore } from '../../../services/bodyStatsService';
 import type { RecoveryLog } from '../../../services/bodyStatsService';
+import { ChapterBreak } from '../components/ChapterBreak';
 import { RecoveryBar } from '../components/RecoveryBar';
+import { SectionCard } from '../components/SectionCard';
 import type { WeeklyRecoveryAverage } from '../types';
 
 export const RecoveryTab = memo(function RecoveryTab({
@@ -26,46 +28,10 @@ export const RecoveryTab = memo(function RecoveryTab({
 
   return (
     <div className="space-y-4">
-      {/* Chapter break */}
-      <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-        <span className="left" />
-        <span
-          className="right"
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 700,
-            fontSize: 16,
-            color: 'var(--fs-ink)',
-          }}
-        >
-          ריקאברי
-        </span>
-      </div>
+      <ChapterBreak title="ריקאברי" />
 
       {/* Recovery score */}
-      <div
-        style={{
-          background: 'var(--fs-surface)',
-          borderRadius: '22px 16px 22px 16px',
-          border: '1px solid var(--fs-surface-2)',
-          boxShadow: 'var(--shadow-card)',
-          padding: '20px',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: 4,
-            background: 'var(--fs-accent)',
-            borderTopLeftRadius: '22px',
-            borderBottomLeftRadius: '16px',
-          }}
-        />
+      <SectionCard style={{ padding: 20 }}>
         <div className="flex items-center justify-between mb-5">
           <h2
             className="section-title"
@@ -197,42 +163,20 @@ export const RecoveryTab = memo(function RecoveryTab({
           </div>
         ) : (
           <div className="flex flex-col items-center py-10 text-center gap-3">
-            <Heart size={30} style={{ color: 'var(--fs-muted)' }} />
+            <Heart size={30} style={{ color: 'var(--fs-muted)' }} aria-hidden="true" />
             <p style={{ fontSize: 13, color: 'var(--fs-muted)' }}>
               עדיין לא דיווחת על ההתאוששות שלך
             </p>
-            <button type="button" onClick={onAdd} className="btn-primary">
+            <button type="button" onClick={onAdd} className="btn-primary" style={{ minHeight: 44 }}>
               התחל דיווח
             </button>
           </div>
         )}
-      </div>
+      </SectionCard>
 
       {/* Weekly avg */}
       {weeklyRecovery.avgScore > 0 && (
-        <div
-          style={{
-            background: 'var(--fs-surface)',
-            borderRadius: '22px 16px 22px 16px',
-            border: '1px solid var(--fs-surface-2)',
-            boxShadow: 'var(--shadow-card)',
-            padding: '20px',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 4,
-              background: 'var(--fs-accent)',
-              borderTopLeftRadius: '22px',
-              borderBottomLeftRadius: '16px',
-            }}
-          />
+        <SectionCard style={{ padding: 20 }}>
           <h3
             className="section-title mb-4 flex items-center gap-2"
             style={{
@@ -292,34 +236,12 @@ export const RecoveryTab = memo(function RecoveryTab({
               <div className="lbl">רמת לחץ</div>
             </div>
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* History */}
       {history.length > 0 && (
-        <div
-          style={{
-            background: 'var(--fs-surface)',
-            borderRadius: '22px 16px 22px 16px',
-            border: '1px solid var(--fs-surface-2)',
-            boxShadow: 'var(--shadow-card)',
-            padding: '20px',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 4,
-              background: 'var(--fs-accent)',
-              borderTopLeftRadius: '22px',
-              borderBottomLeftRadius: '16px',
-            }}
-          />
+        <SectionCard style={{ padding: 20 }}>
           <h3
             className="section-title mb-3"
             style={{
@@ -366,7 +288,7 @@ export const RecoveryTab = memo(function RecoveryTab({
                 );
               })}
           </div>
-        </div>
+        </SectionCard>
       )}
     </div>
   );

@@ -3,12 +3,12 @@
 // No dark hero panel, no internal SlideToComplete
 
 import { Edit, FileText, Link2, RotateCcw, Star, Unlink } from 'lucide-react';
-import type React from 'react';
 import { memo, useCallback, useMemo, useState } from 'react';
+import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import type { Exercise, SetTechnique, WorkoutSet } from '../../../types';
-import { triggerHaptic } from '../../../utils/haptics';
 import type { SupersetGroup } from '../core/workoutTypes';
-import { usePreviousData } from '../hooks/usePreviousData';
+import { usePreviousSetData } from '../hooks/usePreviousSetData';
+import ActionChip from './ActionChip';
 import AlternativesSheet from './AlternativesSheet';
 import NotesBottomSheet from './NotesBottomSheet';
 import RPEPicker from './RPEPicker';
@@ -46,67 +46,6 @@ interface ExerciseDisplayProps {
 }
 
 // ============================================================
-// ACTION CHIP (spec §5D)
-// ============================================================
-
-interface ActionChipProps {
-  icon: React.ReactNode;
-  label?: string;
-  onClick: () => void;
-  active?: boolean;
-  ariaLabel: string;
-  dot?: boolean;
-}
-
-const ActionChip = memo<ActionChipProps>(({ icon, label, onClick, active, ariaLabel, dot }) => (
-  <button
-    type="button"
-    onClick={(e) => {
-      e.stopPropagation();
-      onClick();
-    }}
-    aria-label={ariaLabel}
-    className="transition-all active:scale-95"
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 5,
-      padding: label ? '7px 12px' : '7px 10px',
-      background: active ? 'var(--fs-accent)' : 'var(--fs-surface)',
-      border: '1px solid var(--fs-steel)',
-      borderRadius: '12px 8px 12px 8px',
-      fontFamily: 'var(--font-mono)',
-      fontSize: 11,
-      fontWeight: 700,
-      color: active ? 'var(--fs-primary)' : 'var(--fs-ink)',
-      cursor: 'pointer',
-      minHeight: 44,
-      whiteSpace: 'nowrap',
-      position: 'relative',
-    }}
-  >
-    <span style={{ display: 'inline-flex', width: 14, height: 14, flexShrink: 0 }}>{icon}</span>
-    {label && <span>{label}</span>}
-    {dot && (
-      <span
-        aria-hidden
-        style={{
-          position: 'absolute',
-          top: 4,
-          insetInlineEnd: 4,
-          width: 6,
-          height: 6,
-          background: 'var(--fs-accent)',
-          borderRadius: '50%',
-        }}
-      />
-    )}
-  </button>
-));
-
-ActionChip.displayName = 'ActionChip';
-
-// ============================================================
 // MAIN COMPONENT
 // ============================================================
 
@@ -135,12 +74,14 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     const [showRPEPicker, setShowRPEPicker] = useState(false);
     const [showNotesSheet, setShowNotesSheet] = useState(false);
     const [showAlternatives, setShowAlternatives] = useState(false);
+    const haptics = useHapticFeedback();
 
-    const { previousSets } = usePreviousData(exercise.name);
-    const previousSet = previousSets?.[displaySetIndex];
-
-    const showGhostWeight = showGhostValues && !currentSet.weight && !!previousSet?.weight;
-    const showGhostReps = showGhostValues && !currentSet.reps && !!previousSet?.reps;
+    const { previousSet, showGhostWeight, showGhostReps } = usePreviousSetData(
+      exercise.name,
+      displaySetIndex,
+      currentSet,
+      showGhostValues
+    );
 
     const completedSetsCount = useMemo(
       () => exercise.sets?.filter((s) => s.completedAt).length || 0,
@@ -186,7 +127,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               overflow: 'hidden',
               background: 'var(--fs-surface)',
               border: '1px solid var(--fs-steel)',
-              borderRadius: '22px 16px 22px 16px',
+              borderRadius: 'var(--radius-asymmetric)',
               padding: '14px 16px 12px',
               boxShadow: 'var(--shadow-card)',
             }}
@@ -515,7 +456,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                     icon={<Unlink size={14} strokeWidth={2.5} />}
                     label="בטל סופרסט"
                     onClick={() => {
-                      triggerHaptic('medium');
+                      haptics.impact('medium');
                       onRemoveSuperset(exercise.id);
                     }}
                     active
@@ -527,7 +468,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                       icon={<Link2 size={14} strokeWidth={2.5} />}
                       label="סופרסט"
                       onClick={() => {
-                        triggerHaptic('medium');
+                        haptics.impact('medium');
                         onCreateSuperset(exercise.id);
                       }}
                       ariaLabel="צור סופרסט"

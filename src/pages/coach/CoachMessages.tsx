@@ -3,8 +3,9 @@
 // ============================================================================
 
 import { useNavigate } from 'react-router-dom';
+import EmptyState from '../../components/ui/EmptyState';
 import { listClients } from '../../services/coach';
-import { CoachPage, EmptyHint, ListRow, useAsyncData } from './_shared';
+import { CoachPage, ListRow, ListSkeleton, useAsyncData } from './_shared';
 
 export default function CoachMessages() {
   const navigate = useNavigate();
@@ -13,9 +14,13 @@ export default function CoachMessages() {
   return (
     <CoachPage title="הודעות" subtitle="Messages">
       {loading ? (
-        <EmptyHint>טוען…</EmptyHint>
+        <ListSkeleton rows={4} />
       ) : clients.length === 0 ? (
-        <EmptyHint>אין מתאמנים פעילים לשיחה.</EmptyHint>
+        <EmptyState
+          illustration="feed"
+          title="אין מתאמנים פעילים לשיחה"
+          description="הזמן מתאמן כדי להתחיל התכתבות."
+        />
       ) : (
         clients.map((c) => (
           <ListRow

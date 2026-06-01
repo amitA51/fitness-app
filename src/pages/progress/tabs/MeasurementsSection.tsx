@@ -1,6 +1,14 @@
+// ============================================================================
+// MeasurementsSection — measurements sub-area of the Body tab (was
+// MeasurementsTab). The former duplicate "update" affordance (a header chip
+// AND a bottom button, both calling onAdd) is collapsed to a single bottom
+// action, parallel to WeightSection.
+// ============================================================================
+
 import { Plus, Ruler } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import type { BodyMeasurement } from '../../../services/bodyStatsService';
+import { SectionCard } from '../components/SectionCard';
 
 const MEASUREMENT_LABELS: Record<string, string> = {
   chest: 'חזה',
@@ -11,7 +19,7 @@ const MEASUREMENT_LABELS: Record<string, string> = {
   neck: 'צוואר',
 };
 
-export const MeasurementsTab = memo(function MeasurementsTab({
+export const MeasurementsSection = memo(function MeasurementsSection({
   latestMeasurement,
   measurements,
   onAdd,
@@ -30,68 +38,19 @@ export const MeasurementsTab = memo(function MeasurementsTab({
 
   return (
     <div className="space-y-4">
-      {/* Chapter break */}
-      <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-        <span className="left" />
-        <span
-          className="right"
+      <SectionCard style={{ padding: 20 }}>
+        <h2
           style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 700,
-            fontSize: 16,
-            color: 'var(--fs-ink)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.15em',
+            color: 'var(--fs-muted)',
+            textTransform: 'uppercase',
+            marginBottom: 16,
           }}
         >
-          מידות
-        </span>
-      </div>
-
-      <div
-        style={{
-          background: 'var(--fs-surface)',
-          borderRadius: '22px 16px 22px 16px',
-          border: '1px solid var(--fs-surface-2)',
-          boxShadow: 'var(--shadow-card)',
-          padding: '20px',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: 4,
-            background: 'var(--fs-accent)',
-            borderTopLeftRadius: '22px',
-            borderBottomLeftRadius: '16px',
-          }}
-        />
-        <div className="flex items-center justify-between mb-4">
-          <h2
-            className="section-title"
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: '0.15em',
-              color: 'var(--fs-muted)',
-              textTransform: 'uppercase',
-            }}
-          >
-            עדכון אחרון
-          </h2>
-          <button
-            type="button"
-            onClick={onAdd}
-            className="chip"
-            style={{ background: 'var(--fs-signal)', color: 'var(--fs-heading)' }}
-          >
-            <Plus size={12} />
-            עדכן
-          </button>
-        </div>
+          עדכון אחרון · מידות
+        </h2>
 
         {latestMeasurement ? (
           <div>
@@ -103,15 +62,12 @@ export const MeasurementsTab = memo(function MeasurementsTab({
                 <div
                   key={key}
                   className="flex items-center justify-between"
-                  style={{
-                    padding: '14px 0',
-                    borderBottom: '1px solid var(--fs-surface-2)',
-                  }}
+                  style={{ padding: '14px 0', borderBottom: '1px solid var(--fs-surface-2)' }}
                 >
                   <span
                     style={{
                       fontFamily: 'var(--font-hebrew)',
-                      fontSize: '16px',
+                      fontSize: 16,
                       fontWeight: 700,
                       color: 'var(--fs-ink)',
                     }}
@@ -123,11 +79,12 @@ export const MeasurementsTab = memo(function MeasurementsTab({
                       <span
                         style={{
                           fontFamily: 'var(--font-mono)',
-                          fontSize: '11px',
+                          fontSize: 11,
                           letterSpacing: '0.12em',
                           color: diff < 0 ? 'var(--fs-primary)' : 'var(--fs-signal)',
                           background: diff < 0 ? 'var(--fs-signal)' : 'var(--fs-primary)',
                           padding: '2px 8px',
+                          direction: 'ltr',
                         }}
                       >
                         {diff > 0 ? '+' : ''}
@@ -138,8 +95,9 @@ export const MeasurementsTab = memo(function MeasurementsTab({
                       style={{
                         fontFamily: 'var(--font-display)',
                         fontWeight: 800,
-                        fontSize: '20px',
+                        fontSize: 20,
                         color: 'var(--fs-ink)',
+                        direction: 'ltr',
                       }}
                     >
                       {curr ? `${curr}` : '—'}
@@ -154,34 +112,39 @@ export const MeasurementsTab = memo(function MeasurementsTab({
           </div>
         ) : (
           <div className="flex flex-col items-center py-10 text-center">
-            <Ruler size={36} style={{ color: 'var(--fs-muted)' }} className="mb-3" />
+            <Ruler
+              size={36}
+              style={{ color: 'var(--fs-muted)' }}
+              className="mb-3"
+              aria-hidden="true"
+            />
             <p
               className="mb-5"
-              style={{
-                fontFamily: 'var(--font-hebrew)',
-                fontSize: '16px',
-                color: 'var(--fs-ink)',
-              }}
+              style={{ fontFamily: 'var(--font-hebrew)', fontSize: 16, color: 'var(--fs-ink)' }}
             >
               עדיין לא תיעדת מידות
             </p>
-            <button type="button" onClick={onAdd} className="btn-primary">
+            <button type="button" onClick={onAdd} className="btn-primary" style={{ minHeight: 44 }}>
               הוסף מידות ראשונות
             </button>
           </div>
         )}
-      </div>
+      </SectionCard>
 
+      {/* Single add action (parallel to WeightSection) */}
       {latestMeasurement && (
         <button
           type="button"
           onClick={onAdd}
           className="btn-primary w-full flex items-center justify-center gap-2"
+          style={{ minHeight: 44 }}
         >
-          <Plus size={16} />
+          <Plus size={16} aria-hidden="true" />
           הוסף מדידה
         </button>
       )}
     </div>
   );
 });
+
+export default MeasurementsSection;

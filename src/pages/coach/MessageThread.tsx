@@ -5,10 +5,12 @@
 import { Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { Button } from '../../components/ui/Button';
+import EmptyState from '../../components/ui/EmptyState';
 import { useAuth } from '../../contexts/AuthContext';
 import { getThread, markThreadRead, sendMessage, subscribeToThread } from '../../services/coach';
 import type { Message } from '../../types/coach';
-import { CoachPage, EmptyHint } from './_shared';
+import { CoachPage, ListSkeleton } from './_shared';
 
 export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' }) {
   const { otherId = '' } = useParams<{ otherId: string }>();
@@ -63,17 +65,27 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
     <CoachPage title="הודעות" subtitle="Messages">
       <div className="flex flex-col gap-2" style={{ minHeight: '50vh' }}>
         {loading ? (
-          <EmptyHint>טוען…</EmptyHint>
+          <ListSkeleton rows={4} />
         ) : messages.length === 0 ? (
-          <EmptyHint>אין הודעות עדיין. כתוב את ההודעה הראשונה.</EmptyHint>
+          <EmptyState
+            illustration="notes"
+            title="אין הודעות עדיין"
+            description="כתוב את ההודעה הראשונה."
+          />
         ) : (
           messages.map((m) => {
             const mine = m.senderId === me;
             return (
               <div
                 key={m.id}
+                role="article"
+                aria-label={mine ? 'הודעה שנשלחה' : 'הודעה שהתקבלה'}
                 style={{
-                  alignSelf: mine ? 'flex-start' : 'flex-end',
+                  // Logical alignment: `margin-inline-start:auto` pushes a flex
+                  // item to the inline-END (right in RTL) for MY messages;
+                  // `margin-inline-end:auto` pushes received ones to inline-START.
+                  marginInlineStart: mine ? 'auto' : 0,
+                  marginInlineEnd: mine ? 0 : 'auto',
                   maxWidth: '80%',
                   background: mine ? 'var(--fs-primary)' : 'var(--fs-surface)',
                   color: mine ? 'var(--fs-accent)' : 'var(--fs-ink)',
@@ -81,6 +93,7 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
                   padding: '8px 12px',
                   fontFamily: 'var(--font-body)',
                   fontSize: 14,
+                  textAlign: 'start',
                 }}
               >
                 {m.body}
@@ -95,6 +108,9 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
         className="flex gap-2 items-end fixed inset-x-0 bottom-0 px-5 py-3"
         style={{ background: 'var(--fs-bg)', borderTop: '1px solid var(--fs-surface-2)' }}
       >
+        {/* Compact single-line chat composer — the form <Textarea> (88px min)
+            is intentionally not used here; a message bar must stay one row tall
+            and auto-send on Enter. Still fully labelled + RTL via text-align:start. */}
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
@@ -106,30 +122,30 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
           }}
           rows={1}
           placeholder="הקלד הודעה…"
+          aria-label="כתיבת הודעה"
           className="flex-1 px-3 py-2"
           style={{
             background: 'var(--fs-surface)',
             border: '1px solid var(--fs-surface-2)',
             color: 'var(--fs-ink)',
             fontFamily: 'var(--font-body)',
-            fontSize: 14,
+            fontSize: 16,
+            textAlign: 'start',
             resize: 'none',
+            minHeight: 44,
           }}
         />
-        <button
-          type="button"
+        {/* 44×44 send control (foundation Button icon size) tinted primary. */}
+        <Button
+          variant="primary"
+          size="icon"
           aria-label="שלח"
           onClick={handleSend}
-          className="shrink-0 flex items-center justify-center"
-          style={{
-            width: 40,
-            height: 40,
-            background: 'var(--fs-primary)',
-            color: 'var(--fs-accent)',
-          }}
+          className="shrink-0"
+          style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)' }}
         >
           <Send size={18} aria-hidden="true" />
-        </button>
+        </Button>
       </div>
     </CoachPage>
   );

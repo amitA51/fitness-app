@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { showToast } from '../../../components/ui/GlobalToast';
 import { getWorkoutTemplates } from '../../../services/dataService';
 import type { Exercise, WorkoutSettings } from '../../../types';
 import { createWorkoutSet } from '../../../types';
@@ -18,7 +19,6 @@ interface UseWorkoutEffectsOptions {
   initialTemplateId?: string;
   preWorkoutScreenShown: boolean;
   setPreWorkoutScreenShown?: (v: boolean) => void;
-  setShowWaterReminder: (v: boolean) => void;
   // Derived
   completedSetsCount: number;
   currentExercise: Exercise | null | undefined;
@@ -40,7 +40,6 @@ export function useWorkoutEffects({
   showQuickForm,
   initialTemplateId,
   preWorkoutScreenShown,
-  setShowWaterReminder,
   completedSetsCount,
   currentExercise,
   keepScreenAwake,
@@ -178,20 +177,22 @@ export function useWorkoutEffects({
     dispatch,
   ]);
 
-  // Water reminder
+  // Water reminder — routed through the canonical bottom toast (replaces the
+  // bespoke WaterReminderToast). The interval here is the scheduler; showToast
+  // owns rendering, auto-dismiss, and the accent (cyan) hydration styling.
   useEffect(() => {
     if (!workoutSettings.waterReminderEnabled) return;
 
     const minutes = (workoutSettings.waterReminderInterval as number) || 15;
     const WATER_INTERVAL = minutes * 60 * 1000;
     const interval = setInterval(() => {
-      setShowWaterReminder(true);
+      showToast('תזכורת מים', {
+        variant: 'water',
+        position: 'bottom',
+        description: 'זמן ללגום מים',
+      });
     }, WATER_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [
-    workoutSettings.waterReminderEnabled,
-    workoutSettings.waterReminderInterval,
-    setShowWaterReminder,
-  ]);
+  }, [workoutSettings.waterReminderEnabled, workoutSettings.waterReminderInterval]);
 }

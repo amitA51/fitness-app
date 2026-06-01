@@ -1,4 +1,5 @@
-import { User } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
+import { Button } from '../../../components/ui/Button';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
 import { SectionLabel } from '../../../components/ui/SettingsSectionLabel';
@@ -11,9 +12,7 @@ interface Props {
 export function AccountSection({ authEmail, onSignOut }: Props) {
   return (
     <div className="mb-7">
-      <SectionLabel num="01" titleEn="ACCOUNT · AUTH">
-        חשבון
-      </SectionLabel>
+      <SectionLabel>חשבון</SectionLabel>
       <SettingsCard>
         <SettingsRow
           icon={<User size={15} />}
@@ -45,29 +44,15 @@ export function AccountSection({ authEmail, onSignOut }: Props) {
         </SettingsRow>
         {authEmail && (
           <div className="px-4 py-3">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              fullWidth
+              shape="sharp"
+              icon={<LogOut size={16} aria-hidden="true" />}
               onClick={onSignOut}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                minHeight: '44px',
-                padding: '12px',
-                borderRadius: 0,
-                fontFamily: 'var(--font-hebrew)',
-                fontSize: '14px',
-                fontWeight: 600,
-                border: '1px solid var(--fs-surface-2)',
-                cursor: 'pointer',
-                color: 'var(--fs-ink)',
-                background: 'var(--fs-surface)',
-              }}
             >
               התנתק
-            </button>
+            </Button>
           </div>
         )}
       </SettingsCard>

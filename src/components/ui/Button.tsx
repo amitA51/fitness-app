@@ -6,7 +6,14 @@ import type React from 'react';
 // Types
 // ============================================================================
 
-/** Core variants — use these for new code */
+/**
+ * Core variants — CANONICAL. Use these for all new code.
+ * `primary` and `secondary` cover the vast majority of actions; `ghost` for
+ * low-emphasis, `danger` for destructive, `glass`/`pill` for chrome. The
+ * `editorial-*` and `fs-*` families below are DEPRECATED legacy aliases kept
+ * only so existing call sites keep working — a later cleanup migrates them.
+ * Do NOT reach for a legacy variant in new code.
+ */
 type CoreVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'glass' | 'pill';
 
 /** @deprecated Legacy aliases — mapped internally to core + shape */
@@ -150,14 +157,14 @@ const editorialStyles: Record<EditorialVariant, React.CSSProperties> = {
     ...EDITORIAL_SHARED_STYLE,
     background: 'var(--fs-primary)',
     color: 'var(--fs-accent)',
-    borderRadius: '22px 16px 22px 16px',
+    borderRadius: 'var(--radius-asymmetric)',
   },
   'editorial-secondary': {
     ...EDITORIAL_SHARED_STYLE,
     background: 'var(--fs-surface)',
     color: 'var(--fs-heading)',
     border: '2px solid var(--fs-primary)',
-    borderRadius: '22px 16px 22px 16px',
+    borderRadius: 'var(--radius-asymmetric)',
   },
   'editorial-ghost': {
     ...EDITORIAL_SHARED_STYLE,
@@ -196,7 +203,7 @@ const fsStyles: Record<FsVariant, React.CSSProperties> = {
   'fs-primary': {
     background: 'linear-gradient(135deg, var(--fs-accent), var(--fs-accent-2))',
     color: 'var(--color-ink-on-accent)',
-    borderRadius: '22px 16px 22px 16px',
+    borderRadius: 'var(--radius-asymmetric)',
     boxShadow: 'var(--shadow-button)',
   },
   'fs-secondary': {

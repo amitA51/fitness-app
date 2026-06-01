@@ -1,4 +1,6 @@
-import { memo, useId, useMemo } from 'react';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { DUR, EASE, gsap, useGSAP } from '@/lib/gsap';
+import { memo, useId, useMemo, useRef } from 'react';
 
 export interface GlowAreaPoint {
   x: string | number;
@@ -117,9 +119,102 @@ export const GlowAreaChart = memo(function GlowAreaChart({
   const ys = data.map((p) => p.y);
   const yMin = ys.length > 0 ? Math.min(...ys) : 0;
   const yMax = ys.length > 0 ? Math.max(...ys) : 0;
+  const lastPoint = points.length > 0 ? points[points.length - 1]! : null;
+
+  const reduced = useReducedMotion();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const linePathRef = useRef<SVGPathElement>(null);
+  const areaPathRef = useRef<SVGPathElement>(null);
+  const gridRef = useRef<SVGGElement>(null);
+  const axisRef = useRef<SVGGElement>(null);
+  const tailRef = useRef<SVGCircleElement>(null);
+
+  useGSAP(
+    () => {
+      const lineEl = linePathRef.current;
+      if (!lineEl) return;
+
+      const areaEl = areaPathRef.current;
+      const gridLines = gridRef.current ? Array.from(gridRef.current.children) : [];
+      const axisLabels = axisRef.current
+        ? Array.from(axisRef.current.querySelectorAll('text'))
+        : [];
+      const tailEl = tailRef.current;
+
+      // Reduced motion: snap straight to the final composed state, no draw.
+      if (reduced) {
+        gsap.set(lineEl, {
+          strokeDasharray: 'none',
+          strokeDashoffset: 0,
+          opacity: 1,
+        });
+        if (areaEl) gsap.set(areaEl, { opacity: 1 });
+        if (gridLines.length) gsap.set(gridLines, { opacity: 1 });
+        if (axisLabels.length) gsap.set(axisLabels, { opacity: 1 });
+        if (tailEl) gsap.set(tailEl, { opacity: 1, scale: 1 });
+        return;
+      }
+
+      // Hand-rolled stroke draw via getTotalLength + strokeDashoffset (no DrawSVG).
+      const length = lineEl.getTotalLength();
+      gsap.set(lineEl, {
+        strokeDasharray: length,
+        strokeDashoffset: length,
+        opacity: 1,
+      });
+      if (areaEl) gsap.set(areaEl, { opacity: 0 });
+      if (gridLines.length) gsap.set(gridLines, { opacity: 0 });
+      if (axisLabels.length) gsap.set(axisLabels, { opacity: 0 });
+      if (tailEl)
+        gsap.set(tailEl, {
+          opacity: 0,
+          scale: 0,
+          transformOrigin: '50% 50%',
+        });
+
+      const tl = gsap.timeline();
+      // Gridlines stagger in underneath everything.
+      if (gridLines.length) {
+        tl.to(gridLines, { opacity: 1, duration: DUR.fast, stagger: 0.08, ease: EASE.out }, 0);
+      }
+      // Line draws oldest -> newest (path starts at the leftmost/oldest point).
+      tl.to(lineEl, { strokeDashoffset: 0, duration: DUR.count, ease: EASE.reveal }, 0.05);
+      // Gradient area fades in trailing the line.
+      if (areaEl) {
+        tl.to(areaEl, { opacity: 1, duration: DUR.base, ease: EASE.out }, 0.35);
+      }
+      // Axis labels fade last.
+      if (axisLabels.length) {
+        tl.to(axisLabels, { opacity: 1, duration: DUR.fast, stagger: 0.05, ease: EASE.out }, 0.7);
+      }
+      // Forecast tail point: pop in, then gentle infinite pulse.
+      if (tailEl) {
+        tl.to(tailEl, { opacity: 1, scale: 1, duration: DUR.fast, ease: EASE.pop }, 0.75);
+        tl.to(
+          tailEl,
+          {
+            scale: 1.55,
+            opacity: 0.45,
+            duration: DUR.slow,
+            ease: 'sine.inOut',
+            repeat: -1,
+            yoyo: true,
+            transformOrigin: '50% 50%',
+          },
+          '>'
+        );
+      }
+
+      return () => {
+        tl.kill();
+      };
+    },
+    { scope: rootRef, dependencies: [linePath, reduced] }
+  );
 
   return (
     <div
+      ref={rootRef}
       className="glass-surface scrim-noise"
       style={{
         position: 'relative',
@@ -148,24 +243,27 @@ export const GlowAreaChart = memo(function GlowAreaChart({
             <stop offset="100%" stopColor={accent} />
           </linearGradient>
         </defs>
-        {[0.25, 0.5, 0.75].map((lvl) => {
-          const y = PAD_TOP + lvl * (bottomY - PAD_TOP);
-          return (
-            <line
-              key={lvl}
-              x1={PAD_X}
-              y1={y}
-              x2={VIEW_WIDTH - PAD_X}
-              y2={y}
-              stroke="var(--fs-surface-2)"
-              strokeOpacity={0.5}
-              strokeWidth={1}
-              strokeDasharray="3 4"
-            />
-          );
-        })}
+        <g ref={gridRef}>
+          {[0.25, 0.5, 0.75].map((lvl) => {
+            const y = PAD_TOP + lvl * (bottomY - PAD_TOP);
+            return (
+              <line
+                key={lvl}
+                x1={PAD_X}
+                y1={y}
+                x2={VIEW_WIDTH - PAD_X}
+                y2={y}
+                stroke="var(--fs-surface-2)"
+                strokeOpacity={0.5}
+                strokeWidth={1}
+                strokeDasharray="3 4"
+              />
+            );
+          })}
+        </g>
         {areaPath && (
           <path
+            ref={areaPathRef}
             d={areaPath}
             fill={`url(#${gradientId})`}
             style={{
@@ -175,6 +273,7 @@ export const GlowAreaChart = memo(function GlowAreaChart({
         )}
         {linePath && (
           <path
+            ref={linePathRef}
             d={linePath}
             fill="none"
             stroke={`url(#${lineGradId})`}
@@ -183,51 +282,65 @@ export const GlowAreaChart = memo(function GlowAreaChart({
             strokeLinejoin="round"
           />
         )}
-        {yAxis && data.length > 0 && (
-          <g>
-            <text
-              x={VIEW_WIDTH - PAD_X}
-              y={PAD_TOP + 8}
-              textAnchor="end"
-              fontFamily="var(--font-mono)"
-              fontSize={10}
-              fill="var(--fs-ink)"
-              fillOpacity={0.6}
-            >
-              {Math.round(yMax)}
-            </text>
-            <text
-              x={VIEW_WIDTH - PAD_X}
-              y={bottomY - 2}
-              textAnchor="end"
-              fontFamily="var(--font-mono)"
-              fontSize={10}
-              fill="var(--fs-ink)"
-              fillOpacity={0.6}
-            >
-              {Math.round(yMin)}
-            </text>
-          </g>
+        {lastPoint && (
+          <circle
+            ref={tailRef}
+            cx={lastPoint.x}
+            cy={lastPoint.y}
+            r={3.5}
+            fill={accent}
+            style={{
+              filter: `drop-shadow(0 0 6px color-mix(in srgb, ${accent} 70%, transparent))`,
+            }}
+          />
         )}
-        {xAxis &&
-          xLabels.map((entry) => {
-            const pt = points[entry.index];
-            if (!pt) return null;
-            return (
+        <g ref={axisRef}>
+          {yAxis && data.length > 0 && (
+            <g>
               <text
-                key={`${entry.label}-${entry.index}`}
-                x={pt.x}
-                y={height - 6}
-                textAnchor="middle"
+                x={VIEW_WIDTH - PAD_X}
+                y={PAD_TOP + 8}
+                textAnchor="end"
                 fontFamily="var(--font-mono)"
                 fontSize={10}
                 fill="var(--fs-ink)"
                 fillOpacity={0.6}
               >
-                {entry.label}
+                {Math.round(yMax)}
               </text>
-            );
-          })}
+              <text
+                x={VIEW_WIDTH - PAD_X}
+                y={bottomY - 2}
+                textAnchor="end"
+                fontFamily="var(--font-mono)"
+                fontSize={10}
+                fill="var(--fs-ink)"
+                fillOpacity={0.6}
+              >
+                {Math.round(yMin)}
+              </text>
+            </g>
+          )}
+          {xAxis &&
+            xLabels.map((entry) => {
+              const pt = points[entry.index];
+              if (!pt) return null;
+              return (
+                <text
+                  key={`${entry.label}-${entry.index}`}
+                  x={pt.x}
+                  y={height - 6}
+                  textAnchor="middle"
+                  fontFamily="var(--font-mono)"
+                  fontSize={10}
+                  fill="var(--fs-ink)"
+                  fillOpacity={0.6}
+                >
+                  {entry.label}
+                </text>
+              );
+            })}
+        </g>
       </svg>
     </div>
   );

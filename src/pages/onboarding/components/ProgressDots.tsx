@@ -8,11 +8,19 @@ export interface ProgressDotsProps {
 
 export function ProgressDots({ currentStep, totalSteps }: ProgressDotsProps) {
   return (
-    <div className="flex items-center justify-center gap-2 py-4">
+    <div
+      className="flex items-center justify-center gap-2 py-4"
+      role="progressbar"
+      aria-valuemin={1}
+      aria-valuemax={totalSteps}
+      aria-valuenow={currentStep + 1}
+      aria-label={`שלב ${currentStep + 1} מתוך ${totalSteps}`}
+    >
       {Array.from({ length: totalSteps }).map((_, i) => (
         <motion.div
           // biome-ignore lint/suspicious/noArrayIndexKey: positional step progress dots derived from a count, never reordered
           key={i}
+          aria-hidden="true"
           layoutId={`progress-dot-${i}`}
           className="h-2 rounded-full"
           style={{

@@ -1,40 +1,32 @@
 import { Bell, Dumbbell, Zap } from 'lucide-react';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
-import { SaveButton } from '../../../components/ui/SettingsSaveButton';
 import { SectionLabel } from '../../../components/ui/SettingsSectionLabel';
 import { SettingsToggle } from '../../../components/ui/SettingsToggle';
+import { Divider } from '../components/Divider';
+import { IconBox } from '../components/IconBox';
+import { SavedIndicator } from '../components/SavedIndicator';
 import type { WorkoutPrefs } from '../types';
-import { DIVIDER_STYLE, REST_TIME_OPTIONS } from '../types';
+import { REST_TIME_OPTIONS } from '../types';
 
 interface Props {
   workoutPrefs: WorkoutPrefs;
-  setWorkoutPrefs: (p: WorkoutPrefs) => void;
+  /** Immediate autosave — every control here is a discrete choice. */
+  commitWorkout: (p: WorkoutPrefs) => void;
   workoutSaved: boolean;
-  onSave: () => void;
 }
 
-export function WorkoutPrefsSection({
-  workoutPrefs,
-  setWorkoutPrefs,
-  workoutSaved,
-  onSave,
-}: Props) {
+export function WorkoutPrefsSection({ workoutPrefs, commitWorkout, workoutSaved }: Props) {
   return (
     <div className="mb-7">
-      <SectionLabel num="04" titleEn="TRAINING · PREFS">
-        אימון
-      </SectionLabel>
+      <SectionLabel trailing={<SavedIndicator saved={workoutSaved} />}>אימון</SectionLabel>
       <SettingsCard>
         {/* Rest time pills */}
         <div className="px-4 py-4">
           <div className="flex items-center gap-3 mb-3">
-            <div
-              className="w-8 h-8 flex items-center justify-center shrink-0"
-              style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
-            >
+            <IconBox>
               <Dumbbell size={15} />
-            </div>
+            </IconBox>
             <span
               style={{
                 fontFamily: 'var(--font-hebrew)',
@@ -46,33 +38,42 @@ export function WorkoutPrefsSection({
               זמן מנוחה ברירת מחדל
             </span>
           </div>
-          <div className="flex flex-wrap gap-2 pe-11">
-            {REST_TIME_OPTIONS.map((opt) => (
-              <button
-                type="button"
-                key={opt.value}
-                onClick={() => setWorkoutPrefs({ ...workoutPrefs, defaultRestTime: opt.value })}
-                style={{
-                  padding: '8px 14px',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  borderRadius: 0,
-                  cursor: 'pointer',
-                  border: '1px solid var(--fs-surface-2)',
-                  transition: 'all 0.15s ease',
-                  ...(workoutPrefs.defaultRestTime === opt.value
-                    ? { background: 'var(--fs-primary)', color: 'var(--fs-accent)' }
-                    : { background: 'transparent', color: 'var(--fs-muted)' }),
-                }}
-              >
-                {opt.label}
-              </button>
-            ))}
+          <div
+            className="flex flex-wrap gap-2 pe-11"
+            role="group"
+            aria-label="זמן מנוחה ברירת מחדל"
+          >
+            {REST_TIME_OPTIONS.map((opt) => {
+              const active = workoutPrefs.defaultRestTime === opt.value;
+              return (
+                <button
+                  type="button"
+                  key={opt.value}
+                  aria-pressed={active}
+                  onClick={() => commitWorkout({ ...workoutPrefs, defaultRestTime: opt.value })}
+                  style={{
+                    minHeight: '44px',
+                    padding: '8px 14px',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    borderRadius: 0,
+                    cursor: 'pointer',
+                    border: '1px solid var(--fs-surface-2)',
+                    transition: 'all 0.15s ease',
+                    ...(active
+                      ? { background: 'var(--fs-primary)', color: 'var(--fs-accent)' }
+                      : { background: 'transparent', color: 'var(--fs-muted)' }),
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <div style={DIVIDER_STYLE} />
+        <Divider />
 
         {/* Auto start rest */}
         <SettingsRow
@@ -83,7 +84,7 @@ export function WorkoutPrefsSection({
           <SettingsToggle
             checked={workoutPrefs.autoStartRest}
             onChange={() =>
-              setWorkoutPrefs({ ...workoutPrefs, autoStartRest: !workoutPrefs.autoStartRest })
+              commitWorkout({ ...workoutPrefs, autoStartRest: !workoutPrefs.autoStartRest })
             }
             label="התחלה אוטומטית"
           />
@@ -98,16 +99,12 @@ export function WorkoutPrefsSection({
           <SettingsToggle
             checked={workoutPrefs.hapticsEnabled}
             onChange={() =>
-              setWorkoutPrefs({ ...workoutPrefs, hapticsEnabled: !workoutPrefs.hapticsEnabled })
+              commitWorkout({ ...workoutPrefs, hapticsEnabled: !workoutPrefs.hapticsEnabled })
             }
             label="רטט"
           />
         </SettingsRow>
       </SettingsCard>
-
-      <div className="mt-3">
-        <SaveButton onClick={onSave} saved={workoutSaved} label="שמור הגדרות אימון" />
-      </div>
     </div>
   );
 }

@@ -118,6 +118,9 @@ export default defineConfig({
           if (id.includes('framer-motion')) {
             return 'framer';
           }
+          if (id.includes('@gsap') || id.includes('node_modules/gsap')) {
+            return 'gsap';
+          }
           if (id.includes('lucide-react')) {
             return 'icons';
           }

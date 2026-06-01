@@ -4,18 +4,22 @@ import { SettingsRow } from '../../../components/ui/SettingsRow';
 import { SectionLabel } from '../../../components/ui/SettingsSectionLabel';
 import { SettingsToggle } from '../../../components/ui/SettingsToggle';
 import type { NotificationConfig } from '../../../services/notificationService';
+import { SavedIndicator } from '../components/SavedIndicator';
 
 interface Props {
   notificationConfig: NotificationConfig;
   toggleNotification: (key: keyof NotificationConfig) => void;
+  notificationsSaved: boolean;
 }
 
-export function NotificationsSection({ notificationConfig, toggleNotification }: Props) {
+export function NotificationsSection({
+  notificationConfig,
+  toggleNotification,
+  notificationsSaved,
+}: Props) {
   return (
     <div className="mb-7">
-      <SectionLabel num="05" titleEn="NOTIFICATIONS · ALERTS">
-        התראות
-      </SectionLabel>
+      <SectionLabel trailing={<SavedIndicator saved={notificationsSaved} />}>התראות</SectionLabel>
       <SettingsCard>
         <SettingsRow icon={<Bell size={15} />} label="תזכורת אימון" divider={true}>
           <SettingsToggle

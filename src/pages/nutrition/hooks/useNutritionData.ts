@@ -12,12 +12,12 @@ import {
   getMealPresets,
   getWeeklyNutritionSummary,
   saveNutritionGoals,
-  searchFoods,
 } from '../../../services/nutritionService';
 import type { MealPreset } from '../../../services/nutritionService';
 import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../../../types';
 import { toLocalDateStr, todayStr } from '../../../utils/dateUtils';
 import { safeJsonParse } from '../../../utils/safeJson';
+import { useSearchFoods } from './useSearchFoods';
 
 export function useNutritionData() {
   const [todayEntries, setTodayEntries] = useState<MealEntry[]>([]);
@@ -39,6 +39,9 @@ export function useNutritionData() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFoods, setSelectedFoods] = useState<(FoodItem & { servings: number })[]>([]);
   const [activeTab, setActiveTab] = useState<'log' | 'library' | 'presets'>('log');
+  // True only until the first day-load resolves, so the calorie/macro/journal
+  // surfaces can show skeletons on initial mount instead of flashing zeros.
+  const [isLoading, setIsLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     const dateToUse = isToday ? todayStr() : selectedDate;
@@ -48,6 +51,7 @@ export function useNutritionData() {
     setTodayMacros(macros);
     const summary = await getWeeklyNutritionSummary();
     setWeeklySummary(summary);
+    setIsLoading(false);
   }, [selectedDate, isToday]);
 
   const loadWaterHistory = useCallback(async () => {
@@ -231,7 +235,7 @@ export function useNutritionData() {
     };
   }, []);
 
-  const filteredFoods = useMemo(() => searchFoods(searchQuery), [searchQuery]);
+  const filteredFoods = useSearchFoods(searchQuery);
   const presets = useMemo(() => getMealPresets(), []);
 
   const calPct = Math.min(Math.round((todayMacros.calories / macroGoals.calories) * 100), 100);
@@ -244,6 +248,7 @@ export function useNutritionData() {
     todayMacros,
     macroGoals,
     coachTarget,
+    isLoading,
     selectedDate,
     isToday,
     waterHistory,

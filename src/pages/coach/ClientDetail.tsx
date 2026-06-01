@@ -7,7 +7,8 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { showToast } from '../../components/ui/GlobalToast';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { Input } from '../../components/ui/Input';
+import { Textarea } from '../../components/ui/Textarea';
 import {
   addCoachNote,
   archiveAssignment,
@@ -27,7 +28,15 @@ import {
 } from '../../services/coach';
 import type { Assignment } from '../../types/coach';
 import ProgramBuilder from './ProgramBuilder';
-import { CoachPage, EmptyHint, ListRow, Section, formatDate, useAsyncData } from './_shared';
+import {
+  CoachPage,
+  InlineEmpty,
+  ListRow,
+  ListSkeleton,
+  Section,
+  formatDate,
+  useAsyncData,
+} from './_shared';
 
 const KIND_LABEL: Record<Assignment['kind'], string> = {
   program: 'תוכנית אימון',
@@ -58,20 +67,16 @@ export default function ClientDetail() {
       title={name}
       subtitle={link ? `מצב: ${link.status}` : 'מתאמן'}
       actions={
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          size="icon"
           aria-label="שלח הודעה למתאמן"
           onClick={() => navigate(`/coach/messages/${id}`)}
-          className="shrink-0 flex items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-accent)]"
-          style={{
-            width: 44,
-            height: 44,
-            background: 'var(--fs-primary)',
-            color: 'var(--fs-accent)',
-          }}
+          className="shrink-0"
+          style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)' }}
         >
           <MessageSquare size={18} aria-hidden="true" />
-        </button>
+        </Button>
       }
     >
       <Section title="תקציר">
@@ -136,13 +141,13 @@ export default function ClientDetail() {
           בנה תוכנית
         </Button>
       </Section>
-      {builderOpen && <ProgramBuilder clientId={id} onClose={() => setBuilderOpen(false)} />}
+      <ProgramBuilder clientId={id} isOpen={builderOpen} onClose={() => setBuilderOpen(false)} />
 
       <Section title="אימונים אחרונים">
         {loading ? (
-          <LoadingSpinner />
+          <ListSkeleton rows={3} />
         ) : sessions.length === 0 ? (
-          <EmptyHint>אין אימונים מתועדים.</EmptyHint>
+          <InlineEmpty>אין אימונים מתועדים.</InlineEmpty>
         ) : (
           sessions.map((s) => (
             <ListRow
@@ -156,7 +161,7 @@ export default function ClientDetail() {
 
       <Section title="תזונה (7 ימים)">
         {nutrition.length === 0 ? (
-          <EmptyHint>אין יומני תזונה.</EmptyHint>
+          <InlineEmpty>אין יומני תזונה.</InlineEmpty>
         ) : (
           nutrition.map((n) => (
             <ListRow
@@ -170,7 +175,7 @@ export default function ClientDetail() {
 
       <Section title="שיאים אישיים">
         {prs.length === 0 ? (
-          <EmptyHint>אין שיאים.</EmptyHint>
+          <InlineEmpty>אין שיאים.</InlineEmpty>
         ) : (
           prs
             .slice(0, 8)
@@ -186,7 +191,7 @@ export default function ClientDetail() {
 
       <Section title="מדדי גוף">
         {measurements.length === 0 ? (
-          <EmptyHint>אין מדידות גוף.</EmptyHint>
+          <InlineEmpty>אין מדידות גוף.</InlineEmpty>
         ) : (
           measurements
             .slice(0, 8)
@@ -202,7 +207,7 @@ export default function ClientDetail() {
 
       <Section title="צ׳ק-אינים">
         {checkIns.length === 0 ? (
-          <EmptyHint>אין צ׳ק-אינים.</EmptyHint>
+          <InlineEmpty>אין צ׳ק-אינים.</InlineEmpty>
         ) : (
           checkIns.map((ci) => (
             <ListRow
@@ -358,9 +363,9 @@ function AssignmentsBox({ clientId }: { clientId: string }) {
   return (
     <Section title="שיוכים פעילים">
       {loading ? (
-        <LoadingSpinner />
+        <ListSkeleton rows={3} />
       ) : active.length === 0 ? (
-        <EmptyHint>לא נשלחו שיוכים פעילים.</EmptyHint>
+        <InlineEmpty>לא נשלחו שיוכים פעילים.</InlineEmpty>
       ) : (
         active.map((a) => (
           <ListRow
@@ -431,39 +436,29 @@ function AssignBox({ clientId }: { clientId: string }) {
 
   return (
     <Section title="שיוך והמלצות">
-      <textarea
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        placeholder="כתוב המלצה למתאמן…"
-        rows={2}
-        className="w-full mb-2 px-3 py-2"
-        style={{
-          background: 'var(--fs-surface)',
-          border: '1px solid var(--fs-surface-2)',
-          color: 'var(--fs-ink)',
-          fontFamily: 'var(--font-body)',
-          fontSize: 14,
-        }}
-      />
+      <div className="mb-2">
+        <Textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="כתוב המלצה למתאמן…"
+          rows={2}
+          aria-label="המלצה למתאמן"
+        />
+      </div>
       <Button variant="primary" fullWidth isLoading={busy} onClick={sendNote}>
         שלח המלצה
       </Button>
-      <div className="flex gap-2 mt-3">
-        <input
-          type="number"
-          inputMode="numeric"
-          value={calories}
-          onChange={(e) => setCalories(e.target.value)}
-          placeholder="יעד קלוריות"
-          className="flex-1 px-3 py-2"
-          style={{
-            background: 'var(--fs-surface)',
-            border: '1px solid var(--fs-surface-2)',
-            color: 'var(--fs-ink)',
-            fontFamily: 'var(--font-body)',
-            fontSize: 14,
-          }}
-        />
+      <div className="flex gap-2 mt-3 items-end">
+        <div className="flex-1">
+          <Input
+            type="number"
+            inputMode="numeric"
+            value={calories}
+            onChange={(e) => setCalories(e.target.value)}
+            placeholder="יעד קלוריות"
+            aria-label="יעד קלוריות"
+          />
+        </div>
         <Button variant="secondary" isLoading={busy} onClick={sendTarget}>
           שייך יעד
         </Button>
@@ -492,22 +487,15 @@ function NotesBox({ clientId }: { clientId: string }) {
 
   return (
     <Section title="הערות פרטיות">
-      <textarea
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        rows={2}
-        placeholder="הערה פרטית (רק אתה רואה)…"
-        aria-label="הערה פרטית"
-        className="w-full mb-2 px-3 py-2"
-        style={{
-          background: 'var(--fs-surface)',
-          border: '1px solid var(--fs-surface-2)',
-          color: 'var(--fs-ink)',
-          fontFamily: 'var(--font-body)',
-          fontSize: 14,
-          resize: 'none',
-        }}
-      />
+      <div className="mb-2">
+        <Textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={2}
+          placeholder="הערה פרטית (רק אתה רואה)…"
+          aria-label="הערה פרטית"
+        />
+      </div>
       <Button variant="secondary" fullWidth isLoading={busy} onClick={add}>
         הוסף הערה
       </Button>

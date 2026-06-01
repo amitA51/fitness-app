@@ -1,41 +1,5 @@
 import { memo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { WorkoutTemplate } from '../../types';
-import { Button } from '../ui/Button';
-
-interface TemplateQuickStartProps {
-  onQuickStart: () => void;
-}
-
-export const TemplateQuickStart = memo(function TemplateQuickStart({
-  onQuickStart,
-}: TemplateQuickStartProps) {
-  const navigate = useNavigate();
-  const handleTemplates = useCallback(() => navigate('/templates'), [navigate]);
-
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 10,
-      }}
-    >
-      <Button
-        type="button"
-        onClick={onQuickStart}
-        variant="fs-primary"
-        aria-label="התחל אימון"
-        className="accent-glow"
-      >
-        התחל אימון
-      </Button>
-      <Button type="button" onClick={handleTemplates} variant="fs-secondary" aria-label="תבניות">
-        תבניות
-      </Button>
-    </div>
-  );
-});
 
 interface TemplateItemProps {
   template: WorkoutTemplate;

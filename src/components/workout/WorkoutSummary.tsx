@@ -1,9 +1,13 @@
 // WorkoutSummary - Sport Annual Editorial Design
 // Navy masthead · Bone body · Big Shoulders typography · Sharp corners
 
+import { useCountUp } from '@/hooks/useCountUp';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { DUR, gsap, useGSAP } from '@/lib/gsap';
+import { fireSparks } from '@/lib/gsapSparks';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   getAllWorkoutSessions,
   getWorkoutSessions,
@@ -65,6 +69,17 @@ const computeStats = (session: Partial<WorkoutSession>): ComputedStats => {
 // MAIN COMPONENT
 // ============================================================
 
+// ============================================================
+// FINISH-LINE CHOREOGRAPHY TIMINGS (seconds)
+// Headline hero count-up lands as the screen settles, then the stat cards
+// stagger in (StatsGrid drives its own scoped stagger via startDelay), then a
+// restrained spark puff punctuates the landing — only when the session had a PR.
+// ============================================================
+const HEADLINE_DELAY = 0.15;
+const STATS_START = 0.5;
+const EXERCISES_START = 0.78;
+const SPARKS_DELAY = 1.0;
+
 const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   isOpen,
   session,
@@ -76,6 +91,11 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   const [prExercises, setPrExercises] = useState<Set<string>>(new Set());
   const [comparison, setComparison] = useState<ComparisonData | null>(null);
   const [workoutRating, setWorkoutRating] = useState<number | null>(null);
+
+  const reduced = useReducedMotion();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const mastheadRef = useRef<HTMLDivElement>(null);
+  const headlineRef = useRef<HTMLSpanElement>(null);
 
   const stats = useMemo(() => computeStats(session), [session]);
 
@@ -243,6 +263,53 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
     }
   }, [stats]);
 
+  // Hero count-up: the giant PR number in the masthead rolls up and lands with
+  // a settle pop as the screen settles. RAF-driven (no React re-render) and
+  // RTL-neutral. useCountUp snaps to the final value under reduced motion. Only
+  // active when there's a PR to celebrate (otherwise the headline is text).
+  // This is the SINGLE place the PR number animates — StatsGrid's PR cell
+  // renders it static to avoid double-animating the same number.
+  useCountUp(headlineRef, prsCount, {
+    delay: HEADLINE_DELAY,
+    duration: DUR.slow,
+    pop: true,
+    enabled: isOpen && prsCount > 0,
+  });
+
+  // Restrained spark puff — fires from the hero number ONLY when the session
+  // had a PR, after the stat cards have staggered in. Upward fan (240-300°) is
+  // vertically symmetric, so RTL-neutral. Reduced motion / no-PR: skipped.
+  useGSAP(
+    () => {
+      if (reduced || !isOpen || prsCount <= 0) return;
+      const cont = mastheadRef.current;
+      if (!cont) return;
+      const head = headlineRef.current;
+      let originX = cont.clientWidth / 2;
+      let originY = cont.clientHeight / 2;
+      if (head) {
+        const cr = cont.getBoundingClientRect();
+        const hr = head.getBoundingClientRect();
+        originX = hr.left - cr.left + hr.width / 2;
+        originY = hr.top - cr.top + hr.height / 2;
+      }
+      gsap.delayedCall(SPARKS_DELAY, () => {
+        fireSparks(cont, {
+          count: 18,
+          originX,
+          originY,
+          angleMin: 240,
+          angleMax: 300,
+          minVelocity: 220,
+          maxVelocity: 420,
+          gravity: 700,
+          duration: 1.1,
+        });
+      });
+    },
+    { scope: rootRef, dependencies: [isOpen, prsCount, reduced] }
+  );
+
   return (
     <ModalOverlay
       isOpen={isOpen}
@@ -258,14 +325,11 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
       ariaLabel="סיכום אימון"
     >
       <motion.div
+        ref={rootRef}
         initial={{ scale: 0.94, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.94, opacity: 0 }}
-        transition={
-          window.matchMedia('(prefers-reduced-motion: reduce)').matches
-            ? { duration: 0 }
-            : { type: 'spring', stiffness: 300, damping: 30 }
-        }
+        transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg overflow-hidden flex flex-col scale-pop-in"
         style={{
@@ -277,7 +341,11 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         }}
       >
         {/* ── PREMIUM DARK MASTHEAD ── */}
-        <div className="premium-dark-surface scrim-noise" style={{ flexShrink: 0 }}>
+        <div
+          ref={mastheadRef}
+          className="premium-dark-surface scrim-noise"
+          style={{ flexShrink: 0, position: 'relative', overflow: 'visible' }}
+        >
           {/* Chapter strip */}
           <div
             className="chapter-break"
@@ -307,12 +375,15 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               {prsCount > 0 ? (
                 <>
                   <span
+                    ref={headlineRef}
+                    dir="ltr"
                     className="kinetic-number"
                     style={{
                       color: 'var(--fs-accent)',
                       fontVariantNumeric: 'tabular-nums',
                       fontSize: 56,
                       fontWeight: 900,
+                      display: 'inline-block',
                     }}
                   >
                     {prsCount}
@@ -340,8 +411,12 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               }}
             >
               {stats.exerciseCount} תרגילים · {stats.totalSets} סטים ·{' '}
-              {stats.totalVolume > 0 ? `${stats.totalVolume.toLocaleString()} ק"ג` : '—'} ·{' '}
-              {stats.duration > 0 ? `${stats.duration} דקות` : '—'}
+              {stats.totalVolume > 0 ? (
+                <span dir="ltr">{stats.totalVolume.toLocaleString()} ק"ג</span>
+              ) : (
+                '—'
+              )}{' '}
+              · {stats.duration > 0 ? `${stats.duration} דקות` : '—'}
             </p>
           </div>
         </div>
@@ -391,6 +466,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   totalSets={stats.totalSets}
                   prsCount={prsCount}
                   comparison={comparison}
+                  startDelay={STATS_START}
                 />
 
                 {/* Workout Rating */}
@@ -479,7 +555,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                     exercises={stats.exerciseStats}
                     prExercises={prExercises}
                     maxItems={4}
-                    startDelay={0.3}
+                    startDelay={EXERCISES_START}
                   />
                 )}
               </motion.div>

@@ -1,6 +1,7 @@
 // SummaryExerciseList - Sport Annual Editorial Design
 // Sharp corners, bone-deep cards, navy borders, Big Shoulders typography
 
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { motion } from 'framer-motion';
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import type React from 'react';
@@ -29,11 +30,12 @@ interface ExerciseSummaryItemProps {
 
 const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
   ({ name, setsCompleted, totalVolume: _totalVolume, bestSet, isPR, delay = 0 }) => {
+    const reduced = useReducedMotion();
     return (
       <motion.div
-        initial={{ opacity: 0, x: -8 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        initial={reduced ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={reduced ? { duration: 0 } : { delay, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -47,13 +49,15 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
         {/* PR badge */}
         {isPR && (
           <motion.div
-            initial={{ scale: 0 }}
+            initial={reduced ? false : { scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ delay: delay + 0.2, type: 'spring', stiffness: 400 }}
+            transition={
+              reduced ? { duration: 0 } : { delay: delay + 0.2, type: 'spring', stiffness: 400 }
+            }
             style={{
               position: 'absolute',
               top: -8,
-              right: 12,
+              insetInlineEnd: 12,
               padding: '2px 8px',
               background: 'var(--fs-primary)',
               fontFamily: 'var(--font-mono)',

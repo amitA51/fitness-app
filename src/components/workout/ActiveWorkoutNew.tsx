@@ -1,7 +1,7 @@
 // ActiveWorkout - Main workout component that composes everything
 // This replaces the old 1295-line monolithic ActiveWorkout.tsx
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { PersonalItem, WorkoutSettings } from '../../types';
 
@@ -34,9 +34,6 @@ import { formatTime } from './hooks/useWorkoutTimer';
 // Extracted components
 import PreWorkoutScreen from './states/PreWorkoutScreen';
 
-// Existing components we preserve - WaterReminderToast kept static (small and frequently shown)
-import WaterReminderToast from './WaterReminderToast';
-
 // Extracted sub-components (AR-2)
 import {
   WorkoutBottomBar,
@@ -52,6 +49,12 @@ const ExerciseSelector = React.lazy(() => import('./ExerciseSelector'));
 const QuickExerciseForm = React.lazy(() => import('./QuickExerciseForm'));
 
 import { cn } from '../../utils/styles';
+
+// sessionStorage key for the "user started a fresh workout / wants the selector"
+// intent. Namespaced to avoid collisions; survives remounts of both
+// WorkoutContent and WorkoutProvider, and is explicitly cleared once the
+// workout has exercises or the user cancels.
+const PREWO_STARTED_KEY = 'sparkos_prewo_started';
 
 // ============================================================
 // TYPES
@@ -81,8 +84,46 @@ export const WorkoutContent: React.FC<{
   const derived = useWorkoutDerived();
   const navigate = useNavigate();
 
-  // Track whether PreWorkoutScreen has been shown (so we don't auto-open selector before it)
-  const [preWorkoutScreenShown, setPreWorkoutScreenShown] = useState(false);
+  // Track whether the user started a fresh workout and wants the selector. This
+  // intent is persisted in sessionStorage under a single namespaced key so it
+  // SURVIVES remounts of both WorkoutContent (local useState would reset to
+  // false) AND WorkoutProvider (the reducer sanitizes showExerciseSelector to
+  // false on init). The lazy initializer recovers the true value after any
+  // remount, which lets the safety-net effect in useWorkoutEffects re-open the
+  // selector. The flag is cleared the moment the workout truly starts (an
+  // exercise exists) or the user cancels, so it can never leak into a later or
+  // mid-workout session.
+  const [preWorkoutScreenShown, setPreWorkoutScreenShownState] = useState(() => {
+    try {
+      return sessionStorage.getItem(PREWO_STARTED_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const setPreWorkoutScreenShown = useCallback((v: boolean) => {
+    try {
+      if (v) {
+        sessionStorage.setItem(PREWO_STARTED_KEY, '1');
+      } else {
+        sessionStorage.removeItem(PREWO_STARTED_KEY);
+      }
+    } catch (err) {
+      logger.workout?.warn?.('prewo flag persist failed', err);
+    }
+    setPreWorkoutScreenShownState(v);
+  }, []);
+
+  // Clear the persisted pre-workout intent as soon as the workout actually has
+  // exercises (currentExercise is truthy). From that point we have left the
+  // empty fresh-start window, so the safety-net effect must never re-open the
+  // selector again — clearing the flag guarantees the persisted intent only
+  // lives during the empty pre-workout window and cannot leak mid-workout or
+  // into a later session.
+  useEffect(() => {
+    if (derived.currentExercise && preWorkoutScreenShown) {
+      setPreWorkoutScreenShown(false);
+    }
+  }, [derived.currentExercise, preWorkoutScreenShown, setPreWorkoutScreenShown]);
 
   // Inline coach injection for the workout surface: the most recent coach-assigned
   // program (kind === 'program' with a templateId). Sourced from Supabase, so it
@@ -115,8 +156,6 @@ export const WorkoutContent: React.FC<{
   // Local state
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [finishIntent, setFinishIntent] = useState<'finish' | 'cancel'>('finish');
-
-  const [showWaterReminder, setShowWaterReminder] = useState(false);
 
   // Track pending setTimeout IDs to clear on unmount (prevent dispatch-after-unmount)
   const pendingTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -182,7 +221,6 @@ export const WorkoutContent: React.FC<{
     showQuickForm: state.showQuickForm,
     initialTemplateId,
     preWorkoutScreenShown,
-    setShowWaterReminder,
     completedSetsCount: derived.completedSetsCount,
     currentExercise: derived.currentExercise,
     keepScreenAwake,
@@ -342,7 +380,10 @@ export const WorkoutContent: React.FC<{
             dispatch({ type: 'OPEN_SELECTOR' });
           }}
           onCancel={() => {
-            // User explicitly cancelled — close any open modals first, then exit
+            // User explicitly cancelled — clear the persisted pre-workout intent
+            // so the selector can't reopen on a future mount, close any open
+            // modals, then exit.
+            setPreWorkoutScreenShown(false);
             dispatch({ type: 'CLOSE_SELECTOR' });
             dispatch({ type: 'CLOSE_QUICK_FORM' });
             dispatch({ type: 'TOGGLE_SETTINGS', payload: false });
@@ -519,12 +560,6 @@ export const WorkoutContent: React.FC<{
         tutorialCustomNotes={derived.currentExercise?.programExtras?.notes as string | undefined}
         onCloseTutorial={handleCloseTutorial}
         onCloseAICoach={handleCloseAICoach}
-      />
-
-      {/* Water Reminder Toast */}
-      <WaterReminderToast
-        isVisible={showWaterReminder}
-        onDismiss={() => setShowWaterReminder(false)}
       />
     </div>
   );

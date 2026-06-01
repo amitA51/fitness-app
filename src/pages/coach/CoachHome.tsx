@@ -6,7 +6,8 @@ import { MessageSquare, UserPlus, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import EmptyState from '../../components/ui/EmptyState';
+import { Input } from '../../components/ui/Input';
 import { useCoach } from '../../contexts/CoachContext';
 import {
   type ClientOverviewRow,
@@ -16,7 +17,7 @@ import {
   listClients,
   summarizeRoster,
 } from '../../services/coach';
-import { CoachPage, EmptyHint, ListRow, Section, formatDate, useAsyncData } from './_shared';
+import { CoachPage, ListRow, ListSkeleton, Section, formatDate, useAsyncData } from './_shared';
 
 export default function CoachHome() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export default function CoachHome() {
   if (coachLoading) {
     return (
       <CoachPage title="מאמן" subtitle="Coaching">
-        <LoadingSpinner />
+        <ListSkeleton rows={4} />
       </CoachPage>
     );
   }
@@ -129,20 +130,16 @@ function Roster() {
       subtitle={`${seats.used}/${seats.limit} מושבים`}
       onBack={() => navigate('/')}
       actions={
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          size="icon"
           aria-label="הזמן מתאמן"
           onClick={() => navigate('/coach/invites')}
-          className="shrink-0 flex items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-accent)]"
-          style={{
-            width: 44,
-            height: 44,
-            background: 'var(--fs-primary)',
-            color: 'var(--fs-accent)',
-          }}
+          className="shrink-0"
+          style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)' }}
         >
           <UserPlus size={18} aria-hidden="true" />
-        </button>
+        </Button>
       }
     >
       <Section>
@@ -182,25 +179,16 @@ function Roster() {
 
       <Section title="מתאמנים פעילים">
         {/* Search */}
-        <input
-          type="text"
-          dir="rtl"
-          placeholder="חיפוש לפי שם…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '8px 12px',
-            marginBottom: 8,
-            fontFamily: 'var(--font-body)',
-            fontSize: 14,
-            color: 'var(--fs-ink)',
-            background: 'var(--fs-surface)',
-            border: '1px solid var(--fs-surface-2)',
-            borderRadius: 4,
-            outline: 'none',
-          }}
-        />
+        <div className="mb-2">
+          <Input
+            type="text"
+            dir="rtl"
+            placeholder="חיפוש לפי שם…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="חיפוש מתאמן לפי שם"
+          />
+        </div>
 
         {/* Tag filter chips */}
         {allTags.length > 0 && (
@@ -243,11 +231,16 @@ function Roster() {
 
         {/* Client list */}
         {loading ? (
-          <LoadingSpinner />
+          <ListSkeleton rows={4} />
         ) : rows.length === 0 ? (
-          <EmptyHint>עדיין אין מתאמנים מחוברים. הזמן מתאמן דרך כפתור ההזמנה למעלה.</EmptyHint>
+          <EmptyState
+            illustration="generic"
+            title="עדיין אין מתאמנים מחוברים"
+            description="הזמן מתאמן דרך כפתור ההזמנה למעלה."
+            action={{ label: 'הזמן מתאמן', onClick: () => navigate('/coach/invites') }}
+          />
         ) : filtered.length === 0 ? (
-          <EmptyHint>אין מתאמנים תואמים</EmptyHint>
+          <EmptyState illustration="search" size="small" title="אין מתאמנים תואמים" />
         ) : (
           filtered.map((row) => (
             <RosterRow

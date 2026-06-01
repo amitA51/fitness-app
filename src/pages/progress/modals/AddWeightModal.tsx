@@ -1,165 +1,150 @@
-import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
-import { memo, useRef, useState } from 'react';
-import { useFocusTrap } from '../../../hooks/useFocusTrap';
+// ============================================================================
+// AddWeightModal — body-weight entry sheet.
+// ============================================================================
+// Refactored onto the foundation <Sheet>: the drag handle, header (title + 44px
+// close), scrollable body, sticky footer, focus trap, scroll lock, Esc-to-close
+// and backdrop-dismiss all come from Sheet/ModalOverlay. Only the form body and
+// the save action remain here. The sheet stays mounted and is driven by
+// `isOpen`; form state resets each time it opens.
+
+import { memo, useEffect, useState } from 'react';
+import { Sheet } from '../../../components/ui/Sheet';
 
 export const AddWeightModal = memo(function AddWeightModal({
+  isOpen,
   onSave,
   onClose,
-}: { onSave: (weight: number, notes: string) => Promise<void>; onClose: () => void }) {
+}: {
+  isOpen: boolean;
+  onSave: (weight: number, notes: string) => Promise<void>;
+  onClose: () => void;
+}) {
   const [weight, setWeight] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
 
-  useFocusTrap(contentRef, { isOpen: true, onClose, closeOnEscape: true, lockScroll: true });
+  // Fresh form on every open (parity with the former mount-on-open behavior).
+  useEffect(() => {
+    if (isOpen) {
+      setWeight('');
+      setNotes('');
+      setSaving(false);
+    }
+  }, [isOpen]);
+
+  const canSave = !!weight && !saving;
+
+  const handleSave = async () => {
+    if (!canSave) return;
+    setSaving(true);
+    try {
+      await onSave(Number.parseFloat(weight), notes);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm"
-      onClick={onClose}
+    <Sheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title="עדכון משקל"
+      footer={<SaveButton onClick={handleSave} disabled={!canSave} saving={saving} label="שמור" />}
     >
-      <motion.div
-        ref={contentRef}
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="w-full max-w-lg p-6"
-        style={{ background: 'var(--fs-surface)', borderTop: '1px solid var(--fs-surface-2)' }}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="עדכון משקל"
-      >
-        <div className="flex justify-center mb-4">
+      <div className="space-y-5">
+        <div className="text-center py-4">
+          <input
+            type="number"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+            placeholder="0.0"
+            aria-label="משקל בק״ג"
+            style={{
+              width: 144,
+              textAlign: 'center',
+              background: 'transparent',
+              color: 'var(--fs-ink)',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 900,
+              fontSize: 48,
+              borderBottom: '2px solid var(--fs-accent)',
+              outline: 'none',
+              direction: 'ltr',
+            }}
+            step="0.1"
+            inputMode="decimal"
+          />
           <div
             style={{
-              width: '40px',
-              height: '4px',
-              background: 'var(--fs-surface-2)',
-              borderRadius: 0,
-            }}
-          />
-        </div>
-        <div className="flex items-center justify-between mb-6">
-          <h2
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: '18px',
-              color: 'var(--fs-ink)',
-              textTransform: 'uppercase',
-            }}
-          >
-            עדכון משקל
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              width: '44px',
-              height: '44px',
-              background: 'var(--fs-surface-2)',
-              border: 'none',
-              borderRadius: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              fontSize: 18,
               color: 'var(--fs-muted)',
-              cursor: 'pointer',
-            }}
-            aria-label="סגור"
-          >
-            <X size={17} />
-          </button>
-        </div>
-        <div className="space-y-5">
-          <div className="text-center py-4">
-            <input
-              type="number"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              placeholder="0.0"
-              aria-label="משקל בק״ג"
-              style={{
-                width: '144px',
-                textAlign: 'center',
-                background: 'transparent',
-                color: 'var(--fs-ink)',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 900,
-                fontSize: '48px',
-                borderBottom: '2px solid var(--fs-accent)',
-                outline: 'none',
-              }}
-              step="0.1"
-              inputMode="decimal"
-            />
-            <div
-              style={{
-                fontSize: '18px',
-                color: 'var(--fs-muted)',
-                marginTop: '8px',
-                fontWeight: 500,
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              ק״ג
-            </div>
-          </div>
-          <input
-            type="text"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="הערות (אופציונלי)"
-            aria-label="הערות"
-            style={{
-              width: '100%',
-              background: 'var(--fs-surface-2)',
-              border: '1px solid var(--fs-surface-2)',
-              borderRadius: 0,
-              padding: '14px 16px',
-              color: 'var(--fs-ink)',
+              marginTop: 8,
+              fontWeight: 500,
               fontFamily: 'var(--font-body)',
-              fontSize: '14px',
-              outline: 'none',
             }}
-          />
-          <motion.button
-            onClick={async () => {
-              if (!weight || saving) return;
-              setSaving(true);
-              try {
-                await onSave(Number.parseFloat(weight), notes);
-              } finally {
-                setSaving(false);
-              }
-            }}
-            disabled={!weight || saving}
-            style={{
-              width: '100%',
-              padding: '16px',
-              borderRadius: 0,
-              background: !weight || saving ? 'var(--fs-surface-2)' : 'var(--fs-primary)',
-              color: !weight || saving ? 'var(--fs-muted)' : 'var(--fs-accent)',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: '16px',
-              textTransform: 'uppercase',
-              border: 'none',
-              cursor: !weight || saving ? 'not-allowed' : 'pointer',
-              opacity: !weight || saving ? 0.4 : 1,
-            }}
-            whileTap={{ scale: weight ? 0.98 : 1 }}
           >
-            שמור
-          </motion.button>
+            ק״ג
+          </div>
         </div>
-      </motion.div>
-    </motion.div>
+        <input
+          type="text"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="הערות (אופציונלי)"
+          aria-label="הערות"
+          style={{
+            width: '100%',
+            background: 'var(--fs-surface-2)',
+            border: '1px solid var(--fs-surface-2)',
+            borderRadius: 0,
+            padding: '14px 16px',
+            color: 'var(--fs-ink)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 14,
+            outline: 'none',
+          }}
+        />
+      </div>
+    </Sheet>
   );
 });
+
+/** Shared sharp primary save action used by the three Add* sheets. */
+export function SaveButton({
+  onClick,
+  disabled,
+  saving,
+  label,
+}: {
+  onClick: () => void;
+  disabled: boolean;
+  saving: boolean;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        width: '100%',
+        padding: 16,
+        minHeight: 44,
+        borderRadius: 0,
+        background: disabled ? 'var(--fs-surface-2)' : 'var(--fs-primary)',
+        color: disabled ? 'var(--fs-muted)' : 'var(--fs-accent)',
+        fontFamily: 'var(--font-display)',
+        fontWeight: 800,
+        fontSize: 16,
+        textTransform: 'uppercase',
+        border: 'none',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.4 : 1,
+      }}
+    >
+      {saving ? '...שומר' : label}
+    </button>
+  );
+}
+
+export default AddWeightModal;

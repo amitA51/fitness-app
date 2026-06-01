@@ -1,11 +1,17 @@
 // SetInputCard - Fresh Steel v2 Stepper Design
 // Layout: label (top) → value → ghost badge → stepper row → step hint
-// border-radius: 24px 16px 24px 16px · radial gradient bg · accent plus / surface-2 minus
+// border-radius via --radius-asymmetric · radial gradient bg · accent plus / surface-2 minus
+//
+// A11y: the value area is a real <button> (opens the numpad), and the +/-
+// steppers are sibling <button>s — no nested-interactive markup. RTL-aware via
+// useIsRTL(): the stepper mirrors (− right / + left) so increment stays on the
+// leading edge. Honors prefers-reduced-motion for the value-change flash.
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import type React from 'react';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { triggerHaptic } from '../../../utils/haptics';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
+import { useIsRTL } from '../../../hooks/useIsRTL';
 
 // ============================================================
 // TYPES
@@ -45,6 +51,9 @@ const SetInputCard = memo<SetInputCardProps>(
   }) => {
     const displayValue = value || (showGhost ? ghostValue : 0) || 0;
     const isGhostValue = !value && showGhost && !!ghostValue;
+    const isRTL = useIsRTL();
+    const haptics = useHapticFeedback();
+    const prefersReduced = useReducedMotion() ?? false;
 
     const [shouldFlash, setShouldFlash] = useState(false);
     const prevValueRef = useRef(value);
@@ -61,26 +70,105 @@ const SetInputCard = memo<SetInputCardProps>(
     }, [value]);
 
     const handleTap = useCallback(() => {
-      triggerHaptic('medium');
+      haptics.impact('medium');
       onTap();
-    }, [onTap]);
+    }, [onTap, haptics]);
 
-    const handleIncrement = useCallback(
-      (e: React.MouseEvent) => {
-        e.stopPropagation();
-        triggerHaptic('light');
-        onIncrement();
-      },
-      [onIncrement]
+    const handleIncrement = useCallback(() => {
+      haptics.tap();
+      onIncrement();
+    }, [onIncrement, haptics]);
+
+    const handleDecrement = useCallback(() => {
+      haptics.tap();
+      onDecrement();
+    }, [onDecrement, haptics]);
+
+    const decrementButton = (
+      <button
+        type="button"
+        onClick={handleDecrement}
+        style={{
+          height: 48,
+          minHeight: 48,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 14,
+          background: 'var(--fs-surface-2)',
+          border: '1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))',
+          fontFamily: 'var(--font-display)',
+          fontWeight: 800,
+          fontSize: 20,
+          color: 'var(--fs-ink)',
+          cursor: 'pointer',
+          transition: 'transform 100ms ease',
+        }}
+        onPointerDown={(e) => {
+          (e.currentTarget as HTMLElement).style.transform = 'scale(0.93)';
+        }}
+        onPointerUp={(e) => {
+          (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+        }}
+        onPointerLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+        }}
+        aria-label={`הפחת ${label}`}
+      >
+        −
+      </button>
     );
 
-    const handleDecrement = useCallback(
-      (e: React.MouseEvent) => {
-        e.stopPropagation();
-        triggerHaptic('light');
-        onDecrement();
-      },
-      [onDecrement]
+    const incrementButton = (
+      <button
+        type="button"
+        onClick={handleIncrement}
+        style={{
+          height: 48,
+          minHeight: 48,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 14,
+          background: 'var(--fs-accent)',
+          border: '1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))',
+          fontFamily: 'var(--font-display)',
+          fontWeight: 800,
+          fontSize: 20,
+          color: 'var(--color-ink-on-accent)',
+          cursor: 'pointer',
+          transition: 'transform 100ms ease',
+        }}
+        onPointerDown={(e) => {
+          (e.currentTarget as HTMLElement).style.transform = 'scale(0.93)';
+        }}
+        onPointerUp={(e) => {
+          (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+        }}
+        onPointerLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+        }}
+        aria-label={`הגדל ${label}`}
+      >
+        +
+      </button>
+    );
+
+    // Mirror the stepper in RTL so increment stays on the leading (right) edge.
+    const stepperButtons = useMemo(
+      () =>
+        isRTL ? (
+          <>
+            {incrementButton}
+            {decrementButton}
+          </>
+        ) : (
+          <>
+            {decrementButton}
+            {incrementButton}
+          </>
+        ),
+      [isRTL, incrementButton, decrementButton]
     );
 
     return (
@@ -96,104 +184,111 @@ const SetInputCard = memo<SetInputCardProps>(
             var(--fs-surface)
           `,
           border: '1px solid var(--fs-steel)',
-          borderRadius: '24px 16px 24px 16px',
+          borderRadius: 'var(--radius-asymmetric)',
           padding: '16px 12px 12px',
           overflow: 'hidden',
-          cursor: 'pointer',
-          transition: 'transform 150ms ease',
           gap: 4,
         }}
-        onClick={(e) => {
-          e.stopPropagation();
-          handleTap();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            e.stopPropagation();
-            handleTap();
-          }
-        }}
-        onPointerDown={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = 'scale(0.97)';
-        }}
-        onPointerUp={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-        }}
-        onPointerLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-        }}
-        role="button"
-        tabIndex={0}
       >
-        {/* 1. Label (top) */}
-        <span
+        {/* Tap target — opens the numpad for this field. Real <button> so it's
+            keyboard- and screen-reader-operable; the steppers are siblings, not
+            nested, to keep the markup valid. */}
+        <button
+          type="button"
+          onClick={handleTap}
+          aria-label={`${label}: ${displayValue}${unit ? ` ${unit}` : ''} — הקש לעריכה`}
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1"
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 9,
-            textTransform: 'uppercase',
-            letterSpacing: '0.18em',
-            fontWeight: 700,
-            color: 'var(--fs-accent)',
-          }}
-        >
-          {label}
-        </span>
-
-        {/* 2. Value */}
-        <div
-          style={{
-            position: 'relative',
             display: 'flex',
-            alignItems: 'baseline',
-            direction: 'ltr',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 4,
+            width: '100%',
+            background: 'transparent',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            transition: 'transform 150ms ease',
+          }}
+          onPointerDown={(e) => {
+            (e.currentTarget as HTMLElement).style.transform = 'scale(0.97)';
+          }}
+          onPointerUp={(e) => {
+            (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+          }}
+          onPointerLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
           }}
         >
-          <span
-            className="kinetic-number"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: 'clamp(34px, 10vw, 42px)',
-              lineHeight: 1,
-              color: isGhostValue
-                ? 'color-mix(in srgb, var(--fs-muted) 56%, transparent)'
-                : 'var(--fs-ink)',
-            }}
-          >
-            {displayValue}
-          </span>
-          {unit && (
-            <span
-              style={{
-                marginInlineStart: 3,
-                fontSize: 11,
-                fontFamily: 'var(--font-mono)',
-                color: 'var(--fs-muted)',
-                fontWeight: 600,
-              }}
-            >
-              {unit}
-            </span>
-          )}
-        </div>
-
-        {/* 3. Ghost badge (when value=0 and previous exists) */}
-        {showGhost && ghostValue && !value && (
+          {/* 1. Label (top) */}
           <span
             style={{
               fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              color: 'color-mix(in srgb, var(--fs-accent) 70%, var(--fs-muted))',
-              background: 'color-mix(in srgb, var(--fs-accent) 10%, transparent)',
-              padding: '2px 7px',
-              borderRadius: 5,
+              fontSize: 9,
+              textTransform: 'uppercase',
+              letterSpacing: '0.18em',
+              fontWeight: 700,
+              color: 'var(--fs-accent)',
+            }}
+          >
+            {label}
+          </span>
+
+          {/* 2. Value */}
+          <div
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'baseline',
               direction: 'ltr',
             }}
           >
-            קודם {ghostValue}
-          </span>
-        )}
+            <span
+              className="kinetic-number"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 'clamp(34px, 10vw, 42px)',
+                lineHeight: 1,
+                color: isGhostValue
+                  ? 'color-mix(in srgb, var(--fs-muted) 56%, transparent)'
+                  : 'var(--fs-ink)',
+              }}
+            >
+              {displayValue}
+            </span>
+            {unit && (
+              <span
+                style={{
+                  marginInlineStart: 3,
+                  fontSize: 11,
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--fs-muted)',
+                  fontWeight: 600,
+                }}
+              >
+                {unit}
+              </span>
+            )}
+          </div>
+
+          {/* 3. Ghost badge (when value=0 and previous exists) */}
+          {showGhost && ghostValue && !value && (
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                color: 'color-mix(in srgb, var(--fs-accent) 70%, var(--fs-muted))',
+                background: 'color-mix(in srgb, var(--fs-accent) 10%, transparent)',
+                padding: '2px 7px',
+                borderRadius: 5,
+                direction: 'ltr',
+              }}
+            >
+              קודם {ghostValue}
+            </span>
+          )}
+        </button>
 
         {/* 4. Stepper row */}
         {showButtons && (
@@ -205,72 +300,8 @@ const SetInputCard = memo<SetInputCardProps>(
               width: '100%',
               marginTop: 8,
             }}
-            onPointerDown={(e) => e.stopPropagation()}
           >
-            <button
-              type="button"
-              onClick={handleDecrement}
-              style={{
-                height: 48,
-                minHeight: 48,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 14,
-                background: 'var(--fs-surface-2)',
-                border: '1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 20,
-                color: 'var(--fs-ink)',
-                cursor: 'pointer',
-                transition: 'transform 100ms ease',
-              }}
-              onPointerDown={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(0.93)';
-              }}
-              onPointerUp={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-              }}
-              onPointerLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-              }}
-              aria-label="הפחת ערך"
-            >
-              −
-            </button>
-            <button
-              type="button"
-              onClick={handleIncrement}
-              style={{
-                height: 48,
-                minHeight: 48,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 14,
-                background: 'var(--fs-accent)',
-                border: '1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 20,
-                color: '#FFFFFF',
-                cursor: 'pointer',
-                transition: 'transform 100ms ease',
-              }}
-              onPointerDown={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(0.93)';
-              }}
-              onPointerUp={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-              }}
-              onPointerLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-              }}
-              aria-label="הגדל ערך"
-            >
-              +
-            </button>
+            {stepperButtons}
           </div>
         )}
 
@@ -290,9 +321,9 @@ const SetInputCard = memo<SetInputCardProps>(
           </span>
         )}
 
-        {/* Flash effect on value change */}
+        {/* Flash effect on value change (suppressed when reduced-motion) */}
         <AnimatePresence>
-          {shouldFlash && (
+          {shouldFlash && !prefersReduced && (
             <motion.div
               initial={{ opacity: 0.15 }}
               animate={{ opacity: 0 }}

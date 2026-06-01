@@ -1,10 +1,13 @@
-// NotesBottomSheet - Sport Annual Editorial Design
-// Sharp corners · Navy header · Bone body
-// VISION: Bold · Editorial · Confident · Narrative · Printed
+// NotesBottomSheet — set-level notes editor, built on the foundation <Sheet>.
+// Migrated off the bespoke ModalOverlay variant="none" + raw motion.div sheet:
+// drag handle, header (title + 44px close), scroll body, and sticky footer now
+// come from Sheet (RTL-correct, focus-trapped, reduced-motion aware). Behavior
+// is unchanged: quick-note chips append text, Enter saves, clear wipes notes.
 
-import { motion } from 'framer-motion';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { ModalOverlay } from '../../ui/ModalOverlay';
+import { Button } from '../../ui/Button';
+import { Sheet } from '../../ui/Sheet';
+import { Textarea } from '../../ui/Textarea';
 
 interface NotesBottomSheetProps {
   isOpen: boolean;
@@ -34,14 +37,21 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
     useEffect(() => {
       if (isOpen) {
         setText(currentNotes);
-        setTimeout(() => textAreaRef.current?.focus(), 200);
+        const t = setTimeout(() => textAreaRef.current?.focus(), 200);
+        return () => clearTimeout(t);
       }
+      return undefined;
     }, [isOpen, currentNotes]);
 
     const handleSave = useCallback(() => {
       onSave(text.trim());
       onClose();
     }, [text, onClose, onSave]);
+
+    const handleClear = useCallback(() => {
+      onSave('');
+      onClose();
+    }, [onClose, onSave]);
 
     const handleQuickNote = useCallback((note: string) => {
       setText((prev) => {
@@ -50,250 +60,129 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
       });
     }, []);
 
+    const footer = (
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Button variant="ghost" onClick={onClose} style={{ flex: 1 }}>
+          ביטול
+        </Button>
+        {text.trim() && (
+          <Button variant="danger" onClick={handleClear}>
+            נקה
+          </Button>
+        )}
+        <Button variant="primary" onClick={handleSave} style={{ flex: 1 }}>
+          שמור
+        </Button>
+      </div>
+    );
+
     return (
-      <ModalOverlay
+      <Sheet
         isOpen={isOpen}
         onClose={onClose}
-        variant="none"
-        zLevel="high"
-        backdropOpacity={60}
-        blur="none"
-        trapFocus
-        lockScroll
-        closeOnBackdropClick
-        closeOnEscape
+        title="הערה לסט"
         ariaLabel={`הערה לסט ${setIndex + 1} - ${exerciseName}`}
+        footer={footer}
       >
-        <motion.div
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          exit={{ y: '100%' }}
-          transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          onClick={(e) => e.stopPropagation()}
-          className="glass-surface"
+        {/* Context line — exercise · set */}
+        <p
           style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            background: 'var(--fs-surface)',
-            borderTop: '2px solid var(--fs-primary)',
-            display: 'flex',
-            flexDirection: 'column',
-            maxHeight: '70vh',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.12em',
+            color: 'var(--fs-muted)',
+            textTransform: 'uppercase',
+            marginBottom: 12,
+            textAlign: 'start',
           }}
         >
-          {/* Drag Handle */}
-          <div className="flex justify-center pt-3 pb-1">
-            <div className="w-8 h-1 rounded-full bg-ink/20 mx-auto mb-4" />
-          </div>
+          {exerciseName} · סט {setIndex + 1}
+        </p>
 
-          {/* Header */}
-          <div style={{ padding: '8px 20px 16px', borderBottom: '1px solid var(--fs-surface-2)' }}>
-            <h3
+        {/* Quick Notes */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 6,
+            overflowX: 'auto',
+            paddingBottom: 8,
+            scrollbarWidth: 'none',
+          }}
+        >
+          {QUICK_NOTES.map((note) => (
+            <button
+              key={note}
+              type="button"
+              onClick={() => handleQuickNote(note)}
               style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 20,
-                color: 'var(--fs-heading)',
-                letterSpacing: '-0.01em',
-              }}
-            >
-              הערה לסט
-            </h3>
-            <p
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '0.12em',
+                flexShrink: 0,
+                minHeight: 44,
+                padding: '6px 14px',
+                background: 'var(--fs-surface-2)',
                 color: 'var(--fs-muted)',
-                textTransform: 'uppercase',
-                marginTop: 2,
+                border: '1px solid var(--fs-steel)',
+                borderRadius: 'var(--radius-asymmetric)',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 700,
+                fontSize: 12,
+                letterSpacing: '0.04em',
+                cursor: 'pointer',
+                transition: 'all 150ms',
               }}
             >
-              {exerciseName} · סט {setIndex + 1}
-            </p>
-          </div>
+              {note}
+            </button>
+          ))}
+        </div>
 
-          {/* Quick Notes */}
-          <div style={{ padding: '12px 20px 0' }}>
-            <div
-              style={{
-                display: 'flex',
-                gap: 6,
-                overflowX: 'auto',
-                paddingBottom: 8,
-                direction: 'rtl',
-                scrollbarWidth: 'none',
-              }}
-            >
-              {QUICK_NOTES.map((note) => (
-                <button
-                  key={note}
-                  type="button"
-                  onClick={() => handleQuickNote(note)}
-                  style={{
-                    flexShrink: 0,
-                    padding: '6px 14px',
-                    background: 'var(--fs-surface-2)',
-                    color: 'var(--fs-muted)',
-                    border: '2px solid var(--fs-primary)',
-                    borderRadius: 0,
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
-                    fontSize: 12,
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    cursor: 'pointer',
-                    transition: 'all 150ms',
-                  }}
-                >
-                  {note}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Text Area */}
-          <div style={{ padding: '12px 20px' }}>
-            <textarea
-              ref={textAreaRef}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="כתוב הערה..."
-              rows={3}
-              style={{
-                width: '100%',
-                padding: '14px 16px',
-                background: 'var(--fs-surface)',
-                border: '2px solid var(--fs-primary)',
-                borderRadius: 0,
-                fontFamily: 'var(--font-body)',
-                fontSize: 15,
-                color: 'var(--fs-ink)',
-                outline: 'none',
-                resize: 'none',
-                direction: 'rtl',
-                textAlign: 'right',
-                lineHeight: 1.55,
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSave();
-                }
-              }}
-            />
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginTop: 4,
-                padding: '0 2px',
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 9,
-                  letterSpacing: '0.12em',
-                  color: 'var(--fs-muted)',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {text.length} תווים
-              </span>
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 9,
-                  letterSpacing: '0.12em',
-                  color: 'var(--fs-muted)',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Enter לשמירה
-              </span>
-            </div>
-          </div>
-
-          {/* Actions */}
+        {/* Text Area */}
+        <div style={{ marginTop: 12 }}>
+          <Textarea
+            ref={textAreaRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="כתוב הערה..."
+            rows={3}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSave();
+              }
+            }}
+          />
           <div
             style={{
               display: 'flex',
-              gap: 8,
-              padding: '8px 20px 20px',
+              justifyContent: 'space-between',
+              marginTop: 4,
+              padding: '0 2px',
             }}
           >
-            <button
-              type="button"
-              onClick={onClose}
+            <span
               style={{
-                flex: 1,
-                padding: '14px 16px',
-                background: 'var(--fs-surface-2)',
-                border: '2px solid var(--fs-primary)',
-                borderRadius: 0,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 13,
-                letterSpacing: '0.06em',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                letterSpacing: '0.12em',
+                color: 'var(--fs-muted)',
                 textTransform: 'uppercase',
-                color: 'var(--fs-heading)',
               }}
             >
-              ביטול
-            </button>
-            {text.trim() && (
-              <button
-                type="button"
-                onClick={() => {
-                  onSave('');
-                  onClose();
-                }}
-                style={{
-                  padding: '14px 16px',
-                  background: 'rgba(196,43,43,0.1)',
-                  border: '2px solid var(--fs-warn)',
-                  borderRadius: 0,
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
-                  fontSize: 13,
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                  color: 'var(--fs-warn)',
-                }}
-              >
-                נקה
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={handleSave}
+              {text.length} תווים
+            </span>
+            <span
               style={{
-                flex: 1,
-                padding: '14px 16px',
-                background: 'var(--fs-primary)',
-                border: '2px solid var(--fs-primary)',
-                borderRadius: 0,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 13,
-                letterSpacing: '0.06em',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                letterSpacing: '0.12em',
+                color: 'var(--fs-muted)',
                 textTransform: 'uppercase',
-                color: 'var(--fs-accent)',
               }}
             >
-              שמור
-            </button>
+              Enter לשמירה
+            </span>
           </div>
-
-          <div style={{ height: 'env(safe-area-inset-bottom, 8px)' }} />
-        </motion.div>
-      </ModalOverlay>
+        </div>
+      </Sheet>
     );
   }
 );

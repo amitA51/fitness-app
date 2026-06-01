@@ -4,8 +4,12 @@
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import React, { useCallback, useRef } from 'react';
+import { useCountUp } from '../../hooks/useCountUp';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
-import type { PersonalRecord } from '../../services/prService';
+import { useReducedMotion as useAppReducedMotion } from '../../hooks/useReducedMotion';
+import { DUR, gsap, useGSAP } from '../../lib/gsap';
+import { fireSparks } from '../../lib/gsapSparks';
+import { type PersonalRecord, calculateEst1RM } from '../../services/prService';
 import { showToast } from '../ui/GlobalToast';
 
 interface PRCelebrationProps {
@@ -14,33 +18,18 @@ interface PRCelebrationProps {
   onDismiss: () => void;
 }
 
-// Pre-computed confetti particles with deterministic values
+// Editorial confetti palette — reused for the GSAP upward spark fan.
 const CONFETTI_COLORS = ['#E8B82D', '#F5F1EB', '#1A1A1A', '#7E7D78', '#EAE4DA', '#0A0A0A'];
-
-const CONFETTI_PARTICLES = Array.from({ length: 20 }, (_, i) => {
-  const seed = (i * 1337) % 100;
-  const angle = (i / 20) * Math.PI * 2;
-  const distance = 80 + (seed % 50);
-  const rotation = seed * 7.2;
-  const delay = (seed % 30) / 100;
-  const size = 6 + (seed % 6);
-  const isCircle = seed % 2 === 0;
-  return {
-    id: i,
-    angle,
-    distance,
-    rotation,
-    delay,
-    size,
-    isCircle,
-    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-  };
-});
 
 const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss }) => {
   const shouldReduceMotion = useReducedMotion();
-  const isRTL = document.dir === 'rtl';
+  // App hook (boolean, never null) for the GSAP spark guard, matching what
+  // useCountUp uses internally — keeps the numbers and the sparks in agreement.
+  const gsapReduced = useAppReducedMotion();
   const contentRef = useRef<HTMLDivElement>(null);
+  const burstRef = useRef<HTMLDivElement>(null);
+  const weightRef = useRef<HTMLSpanElement>(null);
+  const oneRepMaxRef = useRef<HTMLSpanElement>(null);
 
   useFocusTrap(contentRef, {
     isOpen: isVisible,
@@ -68,6 +57,51 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
     [pr]
   );
 
+  // Final values the numbers climb TO. maxWeight/oneRepMax are optional on the
+  // type, so fall back to the raw set values / a computed 1RM.
+  const maxWeightValue = pr?.maxWeight ?? pr?.weight ?? 0;
+  const oneRepMaxValue = pr?.oneRepMax ?? (pr ? calculateEst1RM(pr.weight, pr.reps) : 0);
+
+  // Climb FROM the previous record. The type has no previous* fields, so start
+  // at ~95% of the new value — the digits visibly tick past the old PR rather
+  // than rolling up from zero (which would look wrong for heavy lifts).
+  const countEnabled = isVisible && !!pr;
+  useCountUp(weightRef, maxWeightValue, {
+    from: Math.round(maxWeightValue * 0.95),
+    delay: 0.2,
+    enabled: countEnabled,
+    pop: true,
+  });
+  useCountUp(oneRepMaxRef, oneRepMaxValue, {
+    from: Math.round(oneRepMaxValue * 0.95),
+    delay: 0.2,
+    enabled: countEnabled,
+  });
+
+  // Fire the upward spark fan exactly as the numbers land (start delay + count
+  // duration). Centered on 270 (straight up) so it's mirror-symmetric — RTL-safe
+  // with no flip. The fan lives OUTSIDE the overflow:hidden card so sparks can
+  // travel past its edges.
+  useGSAP(
+    () => {
+      if (gsapReduced || !countEnabled) return;
+      const landAt = 0.2 + DUR.count;
+      const call = gsap.delayedCall(landAt, () => {
+        fireSparks(burstRef.current, {
+          count: 28,
+          colors: CONFETTI_COLORS,
+          angleMin: 240,
+          angleMax: 300,
+          gravity: 900,
+          minVelocity: 420,
+          maxVelocity: 820,
+        });
+      });
+      return () => call.kill();
+    },
+    { scope: contentRef, dependencies: [countEnabled, gsapReduced, pr?.id] }
+  );
+
   if (!pr) return null;
 
   return (
@@ -89,6 +123,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
             exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.9, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 280, damping: 24 }}
             className="w-full max-w-sm mx-4"
+            style={{ position: 'relative' }}
             ref={contentRef}
             onClick={(e) => e.stopPropagation()}
           >
@@ -204,7 +239,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                           fontVariantNumeric: 'tabular-nums',
                         }}
                       >
-                        {pr.maxWeight}
+                        <span ref={weightRef}>{maxWeightValue}</span>
                       </div>
                       <div
                         style={{
@@ -257,9 +292,10 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       letterSpacing: '0.15em',
                       color: 'rgba(var(--text-on-navy-rgb),0.6)',
                       textTransform: 'uppercase',
+                      fontVariantNumeric: 'tabular-nums',
                     }}
                   >
-                    1RM משוער: ~{pr.oneRepMax} ק"ג
+                    1RM משוער: ~<span ref={oneRepMaxRef}>{oneRepMaxValue}</span> ק"ג
                   </div>
                 </motion.div>
 
@@ -327,38 +363,23 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                   </button>
                 </motion.div>
               </div>
-
-              {/* Confetti */}
-              {!shouldReduceMotion &&
-                CONFETTI_PARTICLES.map((particle) => (
-                  <motion.div
-                    key={particle.id}
-                    initial={{ scale: 0, opacity: 1, x: 0, y: 0 }}
-                    animate={{
-                      scale: [0, 1, 0.6],
-                      opacity: [1, 1, 0],
-                      x: Math.cos(particle.angle) * particle.distance * (isRTL ? -1 : 1),
-                      y: Math.sin(particle.angle) * particle.distance + 20,
-                      rotate: particle.rotation,
-                    }}
-                    transition={{
-                      duration: 1.2,
-                      delay: particle.delay,
-                      ease: 'easeOut',
-                    }}
-                    style={{
-                      position: 'absolute',
-                      top: '40%',
-                      left: '50%',
-                      width: particle.size,
-                      height: particle.size,
-                      backgroundColor: particle.color,
-                      borderRadius: particle.isCircle ? '50%' : '2px',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                ))}
             </div>
+
+            {/* Spark fan — lives OUTSIDE the overflow:hidden card so the
+                upward burst can travel past the card edges. Fired by fireSparks
+                in the useGSAP hook above, centered on 270 (straight up) so it's
+                mirror-symmetric and RTL-safe. */}
+            <div
+              ref={burstRef}
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                overflow: 'visible',
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            />
           </motion.div>
         </motion.div>
       )}

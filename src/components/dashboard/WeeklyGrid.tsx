@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { memo, useMemo } from 'react';
+import { useIsRTL } from '../../hooks/useIsRTL';
 import type { WorkoutSession } from '../../types';
 import { DAYS, getWeekEnd, getWeekStart } from '../../utils/dateUtils';
 import { RingProgress } from '../charts';
@@ -17,6 +18,11 @@ export const WeeklyGrid = memo(function WeeklyGrid({
   onPrevWeek,
   onNextWeek,
 }: WeeklyGridProps) {
+  const isRTL = useIsRTL();
+  // Temporal direction → visual arrow. "Back/past" points toward the reading
+  // origin (right in RTL, left in LTR); "next/future" points the other way.
+  const PrevIcon = isRTL ? ChevronRight : ChevronLeft;
+  const NextIcon = isRTL ? ChevronLeft : ChevronRight;
   const { days, weekLabel, isCurrentWeek, weekProgress } = useMemo(() => {
     const now = new Date();
     const currentWeekStart = getWeekStart(now);
@@ -101,7 +107,7 @@ export const WeeklyGrid = memo(function WeeklyGrid({
           }}
           aria-label="שבוע קודם"
         >
-          <ChevronRight size={18} aria-hidden="true" />
+          <PrevIcon size={18} aria-hidden="true" />
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -175,7 +181,7 @@ export const WeeklyGrid = memo(function WeeklyGrid({
             }}
             aria-label="שבוע הבא"
           >
-            <ChevronLeft size={18} aria-hidden="true" />
+            <NextIcon size={18} aria-hidden="true" />
           </button>
         </div>
       </div>

@@ -1,3 +1,5 @@
+import { showToast } from '../../components/ui/GlobalToast';
+import { logger } from '../../utils/logger';
 import { safeJsonParseOr } from '../../utils/safeJson';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -39,6 +41,23 @@ export const GENDER_OPTIONS: ReadonlyArray<{ value: Gender; label: string }> = [
   { value: 'other', label: 'אחר' },
 ] as const;
 
+// Weight-goal options. value === label here (the union is Hebrew), but the
+// {value,label} shape keeps SettingsSelect generic across all three dropdowns.
+export const WEIGHT_GOAL_OPTIONS: ReadonlyArray<{ value: WeightGoal; label: string }> = [
+  { value: 'ירידה במשקל', label: 'ירידה במשקל' },
+  { value: 'שמירה על משקל', label: 'שמירה על משקל' },
+  { value: 'עלייה במסה', label: 'עלייה במסה' },
+] as const;
+
+// Activity-level options (feeds the TDEE multiplier in the Nutrition screen).
+export const ACTIVITY_LEVEL_OPTIONS: ReadonlyArray<{ value: ActivityLevel; label: string }> = [
+  { value: 'לא פעיל', label: 'לא פעיל' },
+  { value: 'פעיל מעט', label: 'פעיל מעט' },
+  { value: 'פעיל מתון', label: 'פעיל מתון' },
+  { value: 'פעיל מאוד', label: 'פעיל מאוד' },
+  { value: 'ספורטאי', label: 'ספורטאי' },
+] as const;
+
 // ─── Defaults ───────────────────────────────────────────────────────────────
 
 export const DEFAULT_PROFILE: UserProfile = {
@@ -72,6 +91,19 @@ export const REST_TIME_OPTIONS = [
   { value: 180, label: '3 דק' },
 ] as const;
 
+// ─── Autosave tuning ──────────────────────────────────────────────────────────
+
+/**
+ * Debounce window for text/number autosaves. Long enough to coalesce typing
+ * into one localStorage write, short enough that the "נשמר" flash still feels
+ * responsive once the field settles. Toggles/selects bypass this and save
+ * immediately.
+ */
+export const AUTOSAVE_DEBOUNCE_MS = 500;
+
+/** How long the subtle "נשמר" saved-indicator stays visible after a write. */
+export const SAVED_FLASH_MS = 1500;
+
 // ─── Static styles ──────────────────────────────────────────────────────────
 
 export const HEADER_SUBTITLE_STYLE = {
@@ -93,12 +125,6 @@ export const HEADER_TITLE_STYLE = {
   margin: '4px 0 0',
 } as const;
 
-export const DIVIDER_STYLE = {
-  height: '1px',
-  background: 'var(--fs-surface-2)',
-  margin: '0 16px',
-} as const;
-
 // ─── Storage helpers ────────────────────────────────────────────────────────
 
 export function loadFromStorage<T>(key: string, fallback: T): T {
@@ -111,6 +137,21 @@ export function loadFromStorage<T>(key: string, fallback: T): T {
   }
 }
 
-export function saveToStorage<T>(key: string, value: T): void {
-  localStorage.setItem(key, JSON.stringify(value));
+/**
+ * Persist a value to localStorage.
+ *
+ * Returns `true` on success, `false` on failure (quota exceeded, storage
+ * disabled, serialization error). On failure it surfaces a Hebrew error toast
+ * and logs the cause, so callers never silently claim a save succeeded — they
+ * can branch on the return value to decide whether to show "saved" feedback.
+ */
+export function saveToStorage<T>(key: string, value: T): boolean {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (err) {
+    logger.app.error(`saveToStorage failed for "${key}"`, err);
+    showToast('שמירה נכשלה', { variant: 'error' });
+    return false;
+  }
 }

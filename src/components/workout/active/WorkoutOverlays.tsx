@@ -1,25 +1,21 @@
+// WorkoutOverlays — thin orchestrator that composes the active-workout overlay
+// groups. The 10+ overlays and their 50+ props were split into three scoped
+// components by category:
+//   • WorkoutInputOverlays    — numpad, plate calculator
+//   • WorkoutSettingsOverlays — settings sheet (own error boundary)
+//   • WorkoutFlowOverlays     — confirm-exit, drawer, selector, quick-add, goal,
+//                               warmup/cooldown, tutorial+AI, saving spinner
+//
+// This file keeps the ORIGINAL external props contract so ActiveWorkoutNew is
+// unchanged. Each group lazy-loads its heavy overlays and only mounts what the
+// workout reducer reports as open — closed overlays are no longer in the tree.
+
 import React from 'react';
 import type { Exercise, WorkoutGoal, WorkoutSettings } from '../../../types';
-import OverlayLoader from '../components/ui/OverlayLoader';
-import OverlayErrorBoundary from '../core/OverlayErrorBoundary';
-
-// Overlays (lazy - loaded on demand)
-const NumpadOverlay = React.lazy(() => import('../overlays/NumpadOverlay'));
-const ConfirmExitOverlay = React.lazy(() => import('../overlays/ConfirmExitOverlay'));
-const PlateCalculatorOverlay = React.lazy(() => import('../overlays/PlateCalculatorOverlay'));
-const WorkoutSettingsOverlay = React.lazy(() => import('../overlays/WorkoutSettingsOverlay'));
-const ExerciseSelector = React.lazy(() => import('../ExerciseSelector'));
-const QuickExerciseForm = React.lazy(() => import('../QuickExerciseForm'));
-const WorkoutGoalSelector = React.lazy(() => import('../WorkoutGoalSelector'));
-const WarmupCooldownFlow = React.lazy(() => import('../WarmupCooldownFlow'));
-const ExerciseReorder = React.lazy(() => import('../ExerciseReorder'));
-const ExerciseTutorial = React.lazy(() => import('../ExerciseTutorial'));
-
-interface NumpadState {
-  isOpen: boolean;
-  target: 'weight' | 'reps' | null;
-  value: string;
-}
+import type { NumpadState } from '../core/workoutTypes';
+import WorkoutFlowOverlays from './WorkoutFlowOverlays';
+import WorkoutInputOverlays from './WorkoutInputOverlays';
+import WorkoutSettingsOverlays from './WorkoutSettingsOverlays';
 
 interface WorkoutOverlaysProps {
   // Numpad
@@ -89,194 +85,67 @@ interface WorkoutOverlaysProps {
   onCloseAICoach: () => void;
 }
 
-const WorkoutOverlays: React.FC<WorkoutOverlaysProps> = ({
-  numpad,
-  onNumpadInput,
-  onNumpadSetValue,
-  onNumpadDelete,
-  onNumpadSubmit,
-  onCloseNumpad,
-  showPlateCalc,
-  onClosePlateCalc,
-  currentSetWeight,
-  showFinishConfirm,
-  finishIntent,
-  workoutStats,
-  onConfirmFinish,
-  onCancelFinish,
-  onCooldownFromFinish,
-  isSaving,
-  saveError,
-  showSettings,
-  workoutSettings,
-  onCloseSettings,
-  onUpdateSetting,
-  isDrawerOpen,
-  exercises,
-  currentExerciseIndex,
-  onReorderExercises,
-  onSelectExerciseFromList,
-  onRemoveExercise,
-  onEditSetInList,
-  onDeleteSet,
-  onCloseDrawer,
-  showExerciseSelector,
-  onAddExercise,
-  onCloseSelector,
-  onOpenQuickForm,
-  defaultWorkoutGoal,
-  showQuickForm,
-  onCloseQuickForm,
-  showGoalSelector,
-  onGoalSelect,
-  onCloseGoalSelector,
-  showWarmup,
-  showCooldown,
-  onWarmupComplete,
-  onWarmupSkip,
-  onCooldownComplete,
-  onCooldownSkip,
-  showTutorial,
-  tutorialExercise,
-  tutorialCustomNotes,
-  onCloseTutorial,
-  onCloseAICoach,
-}) => (
+const WorkoutOverlays: React.FC<WorkoutOverlaysProps> = (props) => (
   <>
-    {/* Numpad */}
-    <React.Suspense fallback={null}>
-      <NumpadOverlay
-        isOpen={numpad.isOpen}
-        target={numpad.target}
-        value={numpad.value}
-        onInput={onNumpadInput}
-        onSetValue={onNumpadSetValue}
-        onDelete={onNumpadDelete}
-        onSubmit={onNumpadSubmit}
-        onClose={onCloseNumpad}
-      />
-    </React.Suspense>
+    <WorkoutInputOverlays
+      numpad={props.numpad}
+      onNumpadInput={props.onNumpadInput}
+      onNumpadSetValue={props.onNumpadSetValue}
+      onNumpadDelete={props.onNumpadDelete}
+      onNumpadSubmit={props.onNumpadSubmit}
+      onCloseNumpad={props.onCloseNumpad}
+      showPlateCalc={props.showPlateCalc}
+      onClosePlateCalc={props.onClosePlateCalc}
+      currentSetWeight={props.currentSetWeight}
+    />
 
-    {/* Plate Calculator */}
-    {showPlateCalc && (
-      <React.Suspense fallback={null}>
-        <PlateCalculatorOverlay
-          isOpen={showPlateCalc}
-          onClose={onClosePlateCalc}
-          initialTarget={currentSetWeight}
-        />
-      </React.Suspense>
-    )}
+    <WorkoutSettingsOverlays
+      showSettings={props.showSettings}
+      workoutSettings={props.workoutSettings}
+      onCloseSettings={props.onCloseSettings}
+      onUpdateSetting={props.onUpdateSetting}
+    />
 
-    {/* Confirm Exit */}
-    <React.Suspense fallback={null}>
-      <ConfirmExitOverlay
-        isOpen={showFinishConfirm}
-        intent={finishIntent}
-        workoutStats={workoutStats}
-        onConfirm={onConfirmFinish}
-        onCancel={onCancelFinish}
-        onCooldown={onCooldownFromFinish}
-        isSaving={isSaving}
-        saveError={saveError}
-      />
-    </React.Suspense>
-
-    {/* Settings Overlay */}
-    <OverlayErrorBoundary fallbackLabel="שגיאה בהגדרות" onDismiss={onCloseSettings}>
-      <React.Suspense fallback={<OverlayLoader />}>
-        <WorkoutSettingsOverlay
-          isOpen={showSettings}
-          settings={workoutSettings}
-          onClose={onCloseSettings}
-          onUpdateSetting={onUpdateSetting}
-        />
-      </React.Suspense>
-    </OverlayErrorBoundary>
-
-    {/* Exercise List Drawer */}
-    {isDrawerOpen && (
-      <React.Suspense fallback={null}>
-        <ExerciseReorder
-          exercises={exercises}
-          currentIndex={currentExerciseIndex}
-          onReorder={onReorderExercises}
-          onSelectExercise={onSelectExerciseFromList}
-          onDeleteExercise={onRemoveExercise}
-          onEditSet={onEditSetInList}
-          onDeleteSet={onDeleteSet}
-          onClose={onCloseDrawer}
-        />
-      </React.Suspense>
-    )}
-
-    {/* Exercise Selector */}
-    {showExerciseSelector && (
-      <React.Suspense fallback={null}>
-        <ExerciseSelector
-          isOpen={true}
-          onSelect={onAddExercise}
-          onClose={onCloseSelector}
-          onCreateNew={onOpenQuickForm}
-          goal={defaultWorkoutGoal}
-        />
-      </React.Suspense>
-    )}
-
-    {/* Quick Exercise Form */}
-    {showQuickForm && (
-      <React.Suspense fallback={null}>
-        <QuickExerciseForm onAdd={onAddExercise} onClose={onCloseQuickForm} />
-      </React.Suspense>
-    )}
-
-    {/* Goal Selector */}
-    {showGoalSelector && (
-      <React.Suspense fallback={null}>
-        <WorkoutGoalSelector onSelect={onGoalSelect} onClose={onCloseGoalSelector} />
-      </React.Suspense>
-    )}
-
-    {/* Warmup Flow */}
-    {showWarmup && (
-      <React.Suspense fallback={null}>
-        <WarmupCooldownFlow type="warmup" onComplete={onWarmupComplete} onSkip={onWarmupSkip} />
-      </React.Suspense>
-    )}
-
-    {/* Cooldown Flow */}
-    {showCooldown && (
-      <React.Suspense fallback={null}>
-        <WarmupCooldownFlow
-          type="cooldown"
-          onComplete={onCooldownComplete}
-          onSkip={onCooldownSkip}
-        />
-      </React.Suspense>
-    )}
-
-    {/* Tutorial + AI Coach */}
-    <OverlayErrorBoundary
-      fallbackLabel="שגיאה ב-AI"
-      onDismiss={() => {
-        onCloseTutorial();
-        onCloseAICoach();
-      }}
-    >
-      <React.Suspense fallback={null}>
-        {showTutorial && tutorialExercise && (
-          <ExerciseTutorial
-            isOpen={true}
-            exerciseName={tutorialExercise}
-            customNotes={tutorialCustomNotes}
-            onClose={onCloseTutorial}
-          />
-        )}
-      </React.Suspense>
-    </OverlayErrorBoundary>
-
-    {/* Saving overlay */}
-    {isSaving && <OverlayLoader />}
+    <WorkoutFlowOverlays
+      showFinishConfirm={props.showFinishConfirm}
+      finishIntent={props.finishIntent}
+      workoutStats={props.workoutStats}
+      onConfirmFinish={props.onConfirmFinish}
+      onCancelFinish={props.onCancelFinish}
+      onCooldownFromFinish={props.onCooldownFromFinish}
+      isSaving={props.isSaving}
+      saveError={props.saveError}
+      isDrawerOpen={props.isDrawerOpen}
+      exercises={props.exercises}
+      currentExerciseIndex={props.currentExerciseIndex}
+      onReorderExercises={props.onReorderExercises}
+      onSelectExerciseFromList={props.onSelectExerciseFromList}
+      onRemoveExercise={props.onRemoveExercise}
+      onEditSetInList={props.onEditSetInList}
+      onDeleteSet={props.onDeleteSet}
+      onCloseDrawer={props.onCloseDrawer}
+      showExerciseSelector={props.showExerciseSelector}
+      onAddExercise={props.onAddExercise}
+      onCloseSelector={props.onCloseSelector}
+      onOpenQuickForm={props.onOpenQuickForm}
+      defaultWorkoutGoal={props.defaultWorkoutGoal}
+      showQuickForm={props.showQuickForm}
+      onCloseQuickForm={props.onCloseQuickForm}
+      showGoalSelector={props.showGoalSelector}
+      onGoalSelect={props.onGoalSelect}
+      onCloseGoalSelector={props.onCloseGoalSelector}
+      showWarmup={props.showWarmup}
+      showCooldown={props.showCooldown}
+      onWarmupComplete={props.onWarmupComplete}
+      onWarmupSkip={props.onWarmupSkip}
+      onCooldownComplete={props.onCooldownComplete}
+      onCooldownSkip={props.onCooldownSkip}
+      showTutorial={props.showTutorial}
+      tutorialExercise={props.tutorialExercise}
+      tutorialCustomNotes={props.tutorialCustomNotes}
+      onCloseTutorial={props.onCloseTutorial}
+      onCloseAICoach={props.onCloseAICoach}
+    />
   </>
 );
 

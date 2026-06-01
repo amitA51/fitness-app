@@ -20,6 +20,7 @@ export { ExerciseList } from './ExerciseList';
 export { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 // Bottom sheets & overlays
+export { default as ActionChip } from './ActionChip';
 export { default as AlternativesSheet } from './AlternativesSheet';
 export { default as NotesBottomSheet } from './NotesBottomSheet';
 export { default as RPEPicker } from './RPEPicker';
@@ -36,7 +37,6 @@ export { default as MuscleRadarChart } from './MuscleRadarChart';
 export { default as TrendLineOverlay } from './TrendLineOverlay';
 
 // Handlers & hooks
-export { WaterReminderHandler } from './WaterReminderHandler';
 export { default as WorkoutAriaLive } from './WorkoutAriaLive';
 export { default as useWorkoutFinish } from './WorkoutActions';
 export { default as useExerciseSuggestions } from './ExerciseSuggestionLoader';

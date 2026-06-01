@@ -13,7 +13,10 @@
 
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useId, useState } from 'react';
 
+import { Button } from '../components/ui/Button';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { ProgressDots } from './onboarding/components/ProgressDots';
 import { CompleteStep } from './onboarding/steps/CompleteStep';
 import { ExperienceStep } from './onboarding/steps/ExperienceStep';
@@ -34,8 +37,13 @@ export type {
 } from './onboarding/types';
 
 export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) {
-  const { currentStep, data, updateData, goNext, goBack, canProceed } =
+  const { currentStep, data, updateData, goNext, goBack, canProceed, validationHint } =
     useOnboardingWizard(onComplete);
+  const [showSkipConfirm, setShowSkipConfirm] = useState(false);
+  const hintId = useId();
+
+  const hint = validationHint();
+  const isLastInteractiveStep = currentStep === STEPS.length - 2;
 
   const renderStep = () => {
     switch (currentStep) {
@@ -89,7 +97,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
           <div className="absolute top-0 left-0 right-0 p-4 z-10 pt-[calc(1rem+env(safe-area-inset-top))]">
             <button
               type="button"
-              onClick={onSkip}
+              onClick={() => setShowSkipConfirm(true)}
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '12px',
@@ -124,46 +132,73 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
             className="px-4 pb-4 pt-2"
             style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
           >
+            {/* Validation hint — explains why "הבא" is disabled. Polite live
+                region so screen readers announce the requirement when it changes. */}
+            <div aria-live="polite" className="min-h-[20px] mb-2 px-1">
+              {currentStep < STEPS.length - 1 && hint && (
+                <motion.p
+                  id={hintId}
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '11px',
+                    letterSpacing: '0.08em',
+                    color: 'var(--fs-muted)',
+                    textAlign: 'center',
+                  }}
+                >
+                  {hint}
+                </motion.p>
+              )}
+            </div>
             <div className="flex gap-3">
               {currentStep < STEPS.length - 1 && (
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
                   onClick={goBack}
-                  className="w-16 h-16 flex items-center justify-center active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
+                  aria-label="חזרה לשלב הקודם"
+                  className="shrink-0 !px-0"
                   style={{
-                    background: 'var(--fs-surface)',
-                    border: '1px solid var(--fs-surface-2)',
+                    width: 64,
+                    height: 64,
+                    minHeight: 64,
                     borderRadius: '22px 16px 22px 16px',
                   }}
                 >
-                  <ChevronLeft size={28} style={{ color: 'var(--fs-ink)' }} />
-                </button>
+                  <ChevronLeft size={28} aria-hidden="true" />
+                </Button>
               )}
-              <button
-                type="button"
+              <Button
+                variant="editorial"
                 onClick={goNext}
                 disabled={!canProceed()}
-                className={`flex-1 flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] ${
-                  canProceed() ? 'start-workout-btn accent-glow' : ''
-                }`}
-                style={{
-                  background: canProceed() ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
-                  color: canProceed() ? 'var(--fs-accent)' : 'var(--fs-muted)',
-                  borderRadius: '22px 16px 22px 16px',
-                  minHeight: '56px',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  border: 'none',
-                }}
+                aria-describedby={hint ? hintId : undefined}
+                fullWidth
+                className="flex-1"
+                style={{ minHeight: '56px' }}
               >
-                {currentStep === STEPS.length - 2 ? 'סיום' : 'הבא'}
-                <ChevronRight size={24} />
-              </button>
+                {isLastInteractiveStep ? 'סיום' : 'הבא'}
+                <ChevronRight size={24} aria-hidden="true" />
+              </Button>
             </div>
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={showSkipConfirm}
+        variant="warning"
+        title="לדלג על ההגדרה?"
+        description="בטוח שברצונך לדלג? תוכל להשלים זאת בהגדרות מאוחר יותר."
+        confirmLabel="דלג"
+        cancelLabel="המשך הגדרה"
+        onConfirm={() => {
+          setShowSkipConfirm(false);
+          onSkip();
+        }}
+        onCancel={() => setShowSkipConfirm(false)}
+      />
     </MotionConfig>
   );
 }

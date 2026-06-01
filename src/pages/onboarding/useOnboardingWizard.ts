@@ -46,22 +46,29 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
     }
   }, [currentStep]);
 
-  const canProceed = useCallback(() => {
+  // Per-step reason the user cannot advance yet — null when the step is valid.
+  // Surfaced near the disabled "הבא" button so the block is explained, not silent.
+  const validationHint = useCallback((): string | null => {
     switch (currentStep) {
       case 1:
-        return data.role !== undefined && data.role !== '';
+        return data.role === undefined || data.role === '' ? 'בחר תפקיד כדי להמשיך' : null;
       case 2:
-        return data.name.trim().length > 0 && data.gender !== '' && data.age !== '';
+        if (data.name.trim().length === 0) return 'הזן את שמך כדי להמשיך';
+        if (data.gender === '') return 'בחר מגדר כדי להמשיך';
+        if (data.age === '') return 'הזן את גילך כדי להמשיך';
+        return null;
       case 3:
-        return data.primaryGoal !== '';
+        return data.primaryGoal === '' ? 'בחר מטרה עיקרית כדי להמשיך' : null;
       case 4:
-        return data.experienceLevel !== '';
+        return data.experienceLevel === '' ? 'בחר רמת ניסיון כדי להמשיך' : null;
       case 5:
-        return data.preferredTime !== '';
+        return data.preferredTime === '' ? 'בחר שעת אימון מועדפת כדי להמשיך' : null;
       default:
-        return true;
+        return null;
     }
   }, [currentStep, data]);
 
-  return { currentStep, data, updateData, goNext, goBack, canProceed };
+  const canProceed = useCallback(() => validationHint() === null, [validationHint]);
+
+  return { currentStep, data, updateData, goNext, goBack, canProceed, validationHint };
 }

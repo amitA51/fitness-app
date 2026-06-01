@@ -15,9 +15,9 @@ import {
   createWorkoutSet,
 } from '../../../types';
 import { triggerHaptic } from '../../../utils/haptics';
+import { EmbeddedTemplatePicker } from '../../templates/EmbeddedTemplatePicker';
 import { ModalOverlay } from '../../ui/ModalOverlay';
 import ExerciseLibraryTab from '../ExerciseLibraryTab';
-import WorkoutTemplates from '../WorkoutTemplates';
 
 const makeExerciseId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -266,7 +266,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
             </div>
           ) : (
             <div className="pt-4 px-5 h-full overflow-y-auto">
-              <WorkoutTemplates onStartWorkout={handleTemplateSelect} isEmbedded={true} />
+              <EmbeddedTemplatePicker onSelectTemplate={handleTemplateSelect} />
             </div>
           )}
         </div>

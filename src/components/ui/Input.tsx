@@ -9,11 +9,34 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   success?: boolean;
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
+  /** Trailing unit suffix rendered inside the field (e.g. "ק"ג", "גרם", "ס"מ"). */
+  unit?: string;
 }
 
+/**
+ * Global text/number input — mono eyebrow label, sharp editorial border that
+ * recolors by state (error/success), optional leading/trailing icon and a unit
+ * suffix. RTL-correct: padding via logical `ps-*`/`pe-*` classes, the icon
+ * anchored with `start-*`/`end-*`, and `text-align: start`. 48px min height.
+ * Use with `type="number"` for numeric coach fields.
+ *
+ * @example
+ * <Input label="משקל" type="number" unit='ק"ג' value={w} onChange={e => set(e.target.value)} />
+ */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
-    { label, error, helper, success, icon, iconPosition = 'left', className = '', id, ...props },
+    {
+      label,
+      error,
+      helper,
+      success,
+      icon,
+      iconPosition = 'left',
+      unit,
+      className = '',
+      id,
+      ...props
+    },
     ref
   ) => {
     const reactId = useId();
@@ -63,6 +86,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               input
               ${icon && iconPosition === 'left' ? 'ps-11' : ''}
               ${icon && iconPosition === 'right' ? 'pe-11' : ''}
+              ${unit ? 'pe-14' : ''}
             `}
             style={{
               border: stateBorder,
@@ -87,6 +111,23 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             >
               {icon}
             </div>
+          )}
+
+          {/* Unit suffix — trailing (logical end), non-interactive */}
+          {unit && (
+            <span
+              aria-hidden="true"
+              className="absolute top-1/2 -translate-y-1/2 end-4 pointer-events-none"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '12px',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                color: 'var(--fs-muted)',
+              }}
+            >
+              {unit}
+            </span>
           )}
         </div>
 

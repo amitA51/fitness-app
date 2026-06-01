@@ -1,29 +1,29 @@
-import { ChevronLeft, Scale, Target, User, Users, Zap } from 'lucide-react';
+import { Scale, Target, User, Users, Zap } from 'lucide-react';
 import { ProfileAvatar } from '../../../components/ui/ProfileAvatar';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
 import { NumberInput } from '../../../components/ui/SettingsNumberInput';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
-import { SaveButton } from '../../../components/ui/SettingsSaveButton';
 import { SectionLabel } from '../../../components/ui/SettingsSectionLabel';
+import { Divider } from '../components/Divider';
+import { IconBox } from '../components/IconBox';
+import { SavedIndicator } from '../components/SavedIndicator';
+import { SettingsSelect } from '../components/SettingsSelect';
 import type { ActivityLevel, Gender, UserProfile, WeightGoal } from '../types';
-import { DIVIDER_STYLE, GENDER_OPTIONS } from '../types';
+import { ACTIVITY_LEVEL_OPTIONS, GENDER_OPTIONS, WEIGHT_GOAL_OPTIONS } from '../types';
 
 interface Props {
   profile: UserProfile;
-  setProfile: (p: UserProfile) => void;
+  /** Debounced autosave — for free-text / number fields. */
+  updateProfile: (p: UserProfile) => void;
+  /** Immediate autosave — for discrete choices (selects). */
+  commitProfile: (p: UserProfile) => void;
   profileSaved: boolean;
-  onSave: () => void;
 }
 
-export function ProfileSection({ profile, setProfile, profileSaved, onSave }: Props) {
-  const genderLabel =
-    GENDER_OPTIONS.find((o) => o.value === profile.gender)?.label ?? GENDER_OPTIONS[0]?.label ?? '';
-
+export function ProfileSection({ profile, updateProfile, commitProfile, profileSaved }: Props) {
   return (
     <div className="mb-7">
-      <SectionLabel num="02" titleEn="PROFILE · BODY">
-        פרופיל
-      </SectionLabel>
+      <SectionLabel trailing={<SavedIndicator saved={profileSaved} />}>פרופיל</SectionLabel>
 
       {/* Avatar card */}
       <div
@@ -40,13 +40,10 @@ export function ProfileSection({ profile, setProfile, profileSaved, onSave }: Pr
       <SettingsCard>
         {/* Name */}
         <div className="flex flex-col">
-          <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
-            <div
-              className="w-8 h-8 flex items-center justify-center shrink-0"
-              style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
-            >
+          <div className="flex items-center gap-3 ps-4 pe-4 py-3.5 min-h-[52px]">
+            <IconBox>
               <User size={15} />
-            </div>
+            </IconBox>
             <span
               className="flex-1"
               style={{
@@ -61,7 +58,7 @@ export function ProfileSection({ profile, setProfile, profileSaved, onSave }: Pr
             <input
               type="text"
               value={profile.name}
-              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+              onChange={(e) => updateProfile({ ...profile, name: e.target.value })}
               placeholder="הכנס שם..."
               aria-label="שם"
               style={{
@@ -75,11 +72,11 @@ export function ProfileSection({ profile, setProfile, profileSaved, onSave }: Pr
                 color: 'var(--fs-ink)',
                 fontFamily: 'var(--font-hebrew)',
                 outline: 'none',
-                textAlign: 'left',
+                textAlign: 'start',
               }}
             />
           </div>
-          <div style={DIVIDER_STYLE} />
+          <Divider />
         </div>
 
         {/* Age */}
@@ -101,7 +98,7 @@ export function ProfileSection({ profile, setProfile, profileSaved, onSave }: Pr
         >
           <NumberInput
             value={profile.age}
-            onChange={(v) => setProfile({ ...profile, age: v })}
+            onChange={(v) => updateProfile({ ...profile, age: v })}
             min={10}
             max={100}
             placeholder="—"
@@ -128,7 +125,7 @@ export function ProfileSection({ profile, setProfile, profileSaved, onSave }: Pr
         >
           <NumberInput
             value={profile.height}
-            onChange={(v) => setProfile({ ...profile, height: v })}
+            onChange={(v) => updateProfile({ ...profile, height: v })}
             min={100}
             max={250}
             placeholder="—"
@@ -144,7 +141,7 @@ export function ProfileSection({ profile, setProfile, profileSaved, onSave }: Pr
         >
           <NumberInput
             value={profile.weight}
-            onChange={(v) => setProfile({ ...profile, weight: v })}
+            onChange={(v) => updateProfile({ ...profile, weight: v })}
             min={30}
             max={300}
             placeholder="—"
@@ -153,157 +150,35 @@ export function ProfileSection({ profile, setProfile, profileSaved, onSave }: Pr
         </SettingsRow>
 
         {/* Gender — feeds the TDEE BMR formula */}
-        <div className="flex flex-col">
-          <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
-            <div
-              className="w-8 h-8 flex items-center justify-center shrink-0"
-              style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
-            >
-              <Users size={15} />
-            </div>
-            <span
-              className="flex-1"
-              style={{
-                fontFamily: 'var(--font-hebrew)',
-                fontSize: '15px',
-                fontWeight: 500,
-                color: 'var(--fs-ink)',
-              }}
-            >
-              מין
-            </span>
-            <div className="relative flex items-center gap-1">
-              <span
-                style={{
-                  fontFamily: 'var(--font-hebrew)',
-                  fontSize: '14px',
-                  color: 'var(--fs-heading)',
-                  fontWeight: 600,
-                }}
-              >
-                {genderLabel}
-              </span>
-              <ChevronLeft size={14} style={{ color: 'var(--fs-muted)' }} />
-              <select
-                value={profile.gender}
-                onChange={(e) => setProfile({ ...profile, gender: e.target.value as Gender })}
-                aria-label="מין"
-                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-              >
-                {GENDER_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div style={DIVIDER_STYLE} />
-        </div>
+        <SettingsSelect<Gender>
+          value={profile.gender}
+          options={GENDER_OPTIONS}
+          onChange={(gender) => commitProfile({ ...profile, gender })}
+          label="מין"
+          icon={<Users size={15} />}
+          divider={true}
+        />
 
         {/* Weight goal */}
-        <div className="flex flex-col">
-          <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
-            <div
-              className="w-8 h-8 flex items-center justify-center shrink-0"
-              style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
-            >
-              <Target size={15} />
-            </div>
-            <span
-              className="flex-1"
-              style={{
-                fontFamily: 'var(--font-hebrew)',
-                fontSize: '15px',
-                fontWeight: 500,
-                color: 'var(--fs-ink)',
-              }}
-            >
-              מטרת משקל
-            </span>
-            <div className="relative flex items-center gap-1">
-              <span
-                style={{
-                  fontFamily: 'var(--font-hebrew)',
-                  fontSize: '14px',
-                  color: 'var(--fs-heading)',
-                  fontWeight: 600,
-                }}
-              >
-                {profile.weightGoal}
-              </span>
-              <ChevronLeft size={14} style={{ color: 'var(--fs-muted)' }} />
-              <select
-                value={profile.weightGoal}
-                onChange={(e) =>
-                  setProfile({ ...profile, weightGoal: e.target.value as WeightGoal })
-                }
-                aria-label="מטרת משקל"
-                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-              >
-                <option>ירידה במשקל</option>
-                <option>שמירה על משקל</option>
-                <option>עלייה במסה</option>
-              </select>
-            </div>
-          </div>
-          <div style={DIVIDER_STYLE} />
-        </div>
+        <SettingsSelect<WeightGoal>
+          value={profile.weightGoal}
+          options={WEIGHT_GOAL_OPTIONS}
+          onChange={(weightGoal) => commitProfile({ ...profile, weightGoal })}
+          label="מטרת משקל"
+          icon={<Target size={15} />}
+          divider={true}
+        />
 
         {/* Activity level */}
-        <div className="flex flex-col">
-          <div className="flex items-center gap-3 px-4 py-3.5 min-h-[52px]">
-            <div
-              className="w-8 h-8 flex items-center justify-center shrink-0"
-              style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-heading)' }}
-            >
-              <Zap size={15} />
-            </div>
-            <span
-              className="flex-1"
-              style={{
-                fontFamily: 'var(--font-hebrew)',
-                fontSize: '15px',
-                fontWeight: 500,
-                color: 'var(--fs-ink)',
-              }}
-            >
-              רמת פעילות
-            </span>
-            <div className="relative flex items-center gap-1">
-              <span
-                style={{
-                  fontFamily: 'var(--font-hebrew)',
-                  fontSize: '14px',
-                  color: 'var(--fs-heading)',
-                  fontWeight: 600,
-                }}
-              >
-                {profile.activityLevel}
-              </span>
-              <ChevronLeft size={14} style={{ color: 'var(--fs-muted)' }} />
-              <select
-                value={profile.activityLevel}
-                onChange={(e) =>
-                  setProfile({ ...profile, activityLevel: e.target.value as ActivityLevel })
-                }
-                aria-label="רמת פעילות"
-                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-              >
-                <option>לא פעיל</option>
-                <option>פעיל מעט</option>
-                <option>פעיל מתון</option>
-                <option>פעיל מאוד</option>
-                <option>ספורטאי</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        <SettingsSelect<ActivityLevel>
+          value={profile.activityLevel}
+          options={ACTIVITY_LEVEL_OPTIONS}
+          onChange={(activityLevel) => commitProfile({ ...profile, activityLevel })}
+          label="רמת פעילות"
+          icon={<Zap size={15} />}
+          divider={false}
+        />
       </SettingsCard>
-
-      <div className="mt-3">
-        <SaveButton onClick={onSave} saved={profileSaved} label="שמור פרופיל" />
-      </div>
     </div>
   );
 }

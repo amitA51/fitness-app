@@ -1,13 +1,17 @@
 // ============================================================================
 // COACH PLATFORM — shared page primitives
 // ============================================================================
-// Small building blocks so the coach/trainee screens stay lean and consistent
-// with the existing Fresh Steel design (CSS vars, RTL, sharp corners).
+// Thin layout helpers (page shell, section heading, list row) plus the small
+// cross-screen building blocks the coach/trainee surfaces need. Inner controls
+// (inputs, textareas, buttons, empty/loading states) come from the GLOBAL UI
+// kit — these helpers carry layout only, never bespoke form controls.
 
 import { ChevronRight } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '../../components/ui/Button';
+import { SkeletonBox } from '../../components/ui/SkeletonLoader';
 
 export function CoachPage({
   title,
@@ -30,20 +34,11 @@ export function CoachPage({
         className="flex items-center gap-3 px-5 py-4"
         style={{ borderBottom: '1px solid var(--fs-surface-2)' }}
       >
-        <button
-          type="button"
-          onClick={back}
-          aria-label="חזרה"
-          className="shrink-0 flex items-center justify-center"
-          style={{
-            width: 36,
-            height: 36,
-            background: 'var(--fs-surface-2)',
-            color: 'var(--fs-heading)',
-          }}
-        >
+        {/* 44×44 back control with focus ring (foundation Button, icon size). */}
+        <Button variant="ghost" size="icon" onClick={back} aria-label="חזרה" className="shrink-0">
+          {/* In RTL the chevron points back (toward the inline-start the user came from). */}
           <ChevronRight size={20} aria-hidden="true" />
-        </button>
+        </Button>
         <div className="flex-1 min-w-0">
           <h1
             style={{
@@ -118,11 +113,16 @@ export function ListRow({
     <Comp
       type={onClick ? 'button' : undefined}
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-3.5 text-right"
+      className={`w-full flex items-center gap-3 px-4 py-3.5 text-right${
+        onClick
+          ? ' focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-0'
+          : ''
+      }`}
       style={{
         background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
         marginBottom: 8,
+        minHeight: 44,
         cursor: onClick ? 'pointer' : 'default',
       }}
     >
@@ -155,7 +155,94 @@ export function ListRow({
   );
 }
 
-export function EmptyHint({ children }: { children: React.ReactNode }) {
+/**
+ * Accessible checkbox — native `<input type="checkbox">` (keeps Space/Enter,
+ * focus, and form semantics) visually replaced by a token-styled box, wrapped
+ * in a `<label>` so the whole 44px-tall row is a hit target and the text is
+ * programmatically associated. The native control is positioned over the box
+ * (not `display:none`) so the focus ring tracks it.
+ */
+export function Checkbox({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  label: string;
+}) {
+  const id = useId();
+  return (
+    <label
+      htmlFor={id}
+      className="flex items-center gap-3 px-4 mb-1.5"
+      style={{
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        cursor: 'pointer',
+        minHeight: 44,
+      }}
+    >
+      <span className="relative inline-flex shrink-0" style={{ width: 22, height: 22 }}>
+        <input
+          id={id}
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="peer absolute inset-0 m-0 cursor-pointer opacity-0"
+          style={{ width: 22, height: 22 }}
+        />
+        <span
+          aria-hidden="true"
+          className="inline-flex items-center justify-center peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--fs-accent)] peer-focus-visible:ring-offset-1"
+          style={{
+            width: 22,
+            height: 22,
+            border: '2px solid var(--fs-surface-2)',
+            background: checked ? 'var(--fs-primary)' : 'var(--fs-surface)',
+            color: 'var(--fs-accent)',
+            transition: 'background 120ms ease, border-color 120ms ease',
+          }}
+        >
+          {checked && (
+            <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path
+                d="M2 6.2 4.6 9 10 3"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </span>
+      </span>
+      <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--fs-ink)' }}>
+        {label}
+      </span>
+    </label>
+  );
+}
+
+/** Shimmer placeholder rows matching ListRow height — the single coach loading pattern. */
+export function ListSkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <div role="status" aria-busy="true" aria-label="טוען" className="space-y-2">
+      {Array.from({ length: rows }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: fixed-count placeholders, never reordered
+        <SkeletonBox key={i} height={56} width="100%" />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Compact in-page placeholder for DENSE stacked sub-sections (e.g. ClientDetail's
+ * six data lists, where a brand-new client would otherwise show six large
+ * illustrated empties). Page-level / primary empties use the global
+ * <EmptyState> with an illustration; this is the proportional inline variant.
+ */
+export function InlineEmpty({ children }: { children: React.ReactNode }) {
   return (
     <p
       style={{
@@ -163,7 +250,7 @@ export function EmptyHint({ children }: { children: React.ReactNode }) {
         fontSize: 14,
         color: 'var(--fs-muted)',
         textAlign: 'center',
-        padding: '32px 16px',
+        padding: '20px 16px',
       }}
     >
       {children}

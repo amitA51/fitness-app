@@ -1,6 +1,8 @@
-import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { DUR, EASE, gsap, useGSAP } from '@/lib/gsap';
+import { fireSparks } from '@/lib/gsapSparks';
 import { Droplets, Minus, Plus } from 'lucide-react';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   WATER_UPDATED_EVENT,
   addWaterEntry,
@@ -17,14 +19,26 @@ interface WaterTrackerProps {
   isToday?: boolean;
 }
 
+/** Watery droplet palette for the add-a-glass splash. */
+const DROPLET_COLORS = ['#5BC0EB', '#9BE7FF', '#35B392', '#EAF6FF'];
+
 export const WaterTracker = memo(function WaterTracker({
   selectedDate,
   isToday = true,
 }: WaterTrackerProps) {
   const [totalMl, setTotalMl] = useState(0);
+  // Bumped only on user-initiated additions so the splash fires on add, never
+  // on initial load, date switches, or removals.
+  const [addTick, setAddTick] = useState(0);
   const goalMl = getWaterGoal();
   const glassMl = getGlassSize();
   const dateToShow = selectedDate ?? todayStr();
+
+  const reduced = useReducedMotion();
+  const sparkContainerRef = useRef<HTMLDivElement>(null);
+  const fillRef = useRef<HTMLDivElement>(null);
+  const countRef = useRef<HTMLSpanElement>(null);
+  const prevPctRef = useRef<number | null>(null);
 
   const loadTotal = useCallback(async () => {
     const t = await getWaterTotalForDate(dateToShow);
@@ -43,8 +57,89 @@ export const WaterTracker = memo(function WaterTracker({
   const glasses = glassMl > 0 ? Math.round(totalMl / glassMl) : 0;
   const goalGlasses = glassMl > 0 ? Math.round(goalMl / glassMl) : 0;
 
+  // Water level fills smoothly to the current amount. Increases (a fresh add)
+  // get a satisfying overshoot rise; everything else (mount, date change,
+  // removal) eases in/out cleanly. Reduced motion snaps to the final width.
+  useGSAP(
+    () => {
+      const fill = fillRef.current;
+      if (!fill) return;
+
+      if (reduced) {
+        gsap.set(fill, { width: `${pct}%` });
+        prevPctRef.current = pct;
+        return;
+      }
+
+      const prev = prevPctRef.current;
+      const isIncrease = prev !== null && pct > prev;
+      prevPctRef.current = pct;
+
+      gsap.to(fill, {
+        width: `${pct}%`,
+        duration: isIncrease ? DUR.base : DUR.fast,
+        ease: isIncrease ? EASE.pop : EASE.out,
+      });
+    },
+    { scope: sparkContainerRef, dependencies: [pct, reduced] }
+  );
+
+  // Add-a-glass feedback: a tiny droplet splash at the fill's leading edge plus
+  // a quick pop on the glasses count. Skipped on first run and reduced motion.
+  useGSAP(
+    () => {
+      if (addTick === 0 || reduced) return;
+
+      const count = countRef.current;
+      if (count) {
+        gsap.fromTo(
+          count,
+          { scale: 1 },
+          {
+            scale: 1.22,
+            duration: DUR.micro,
+            ease: EASE.popHard,
+            yoyo: true,
+            repeat: 1,
+            transformOrigin: 'center',
+          }
+        );
+      }
+
+      const container = sparkContainerRef.current;
+      const fill = fillRef.current;
+      if (!container || !fill) return;
+
+      // Origin = the fill's leading (growing) edge. In RTL the fill is anchored
+      // to the right and grows left, so its left edge leads; LTR is mirrored.
+      const isRTL = document.dir === 'rtl';
+      const containerRect = container.getBoundingClientRect();
+      const fillRect = fill.getBoundingClientRect();
+      const edgeX = isRTL ? fillRect.left : fillRect.right;
+
+      fireSparks(container, {
+        count: 8,
+        colors: DROPLET_COLORS,
+        originX: edgeX - containerRect.left,
+        originY: fillRect.top - containerRect.top + fillRect.height / 2,
+        // Arc up out of the bar, then gravity pulls the droplets back down.
+        angleMin: 240,
+        angleMax: 300,
+        minVelocity: 120,
+        maxVelocity: 260,
+        gravity: 700,
+        sizeMin: 4,
+        sizeMax: 8,
+        duration: 0.8,
+        mixedShapes: false,
+      });
+    },
+    { scope: sparkContainerRef, dependencies: [addTick, reduced] }
+  );
+
   const handleAdd = useCallback(async () => {
     setTotalMl((prev) => prev + glassMl);
+    setAddTick((t) => t + 1);
     try {
       await addWaterEntry(glassMl);
     } catch {
@@ -64,6 +159,7 @@ export const WaterTracker = memo(function WaterTracker({
 
   const handleQuickAdd = useCallback(async (amountMl: number) => {
     setTotalMl((prev) => prev + amountMl);
+    setAddTick((t) => t + 1);
     try {
       await addWaterEntry(amountMl);
     } catch {
@@ -87,7 +183,7 @@ export const WaterTracker = memo(function WaterTracker({
       }}
     >
       <Droplets size={20} style={{ color: 'var(--fs-accent)', flexShrink: 0 }} aria-hidden="true" />
-      <div style={{ flex: 1 }}>
+      <div ref={sparkContainerRef} style={{ flex: 1, position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
           <span
             style={{
@@ -97,9 +193,10 @@ export const WaterTracker = memo(function WaterTracker({
               color: 'var(--fs-ink)',
             }}
           >
-            שתייה
+            מים היום
           </span>
           <span
+            ref={countRef}
             className="kinetic-number"
             dir="ltr"
             aria-label={`${glasses} מתוך ${goalGlasses} כוסות`}
@@ -109,21 +206,22 @@ export const WaterTracker = memo(function WaterTracker({
               letterSpacing: '0.12em',
               color: pct >= 100 ? 'var(--fs-accent)' : 'var(--fs-ink)',
               fontWeight: 600,
+              fontVariantNumeric: 'tabular-nums',
+              display: 'inline-block',
             }}
           >
             {glasses}/{goalGlasses}
           </span>
         </div>
         <div className="mt-2 fs-progress-track" style={{ height: 6 }}>
-          <motion.div
+          <div
+            ref={fillRef}
             className="fs-progress-fill"
             style={{
               height: '100%',
+              width: 0,
               background: pct >= 100 ? 'var(--fs-signal)' : undefined,
             }}
-            initial={{ width: 0 }}
-            animate={{ width: `${pct}%` }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
           />
         </div>
       </div>

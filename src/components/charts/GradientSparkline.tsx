@@ -1,5 +1,10 @@
-import { useReducedMotion } from 'framer-motion';
-import { memo, useId, useMemo } from 'react';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { DUR, EASE, gsap, useGSAP } from '@/lib/gsap';
+import { memo, useId, useMemo, useRef } from 'react';
+
+// Line draw-on duration (seconds). Uses the shared DUR.count token so this
+// matches GlowAreaChart's line draw — both chart surfaces draw at one speed.
+const LINE_DRAW_DURATION = DUR.count;
 
 interface GradientSparklineProps {
   data: number[];
@@ -84,6 +89,53 @@ export const GradientSparkline = memo(function GradientSparkline({
   const endPoint = points[points.length - 1];
   const prefersReduced = useReducedMotion();
 
+  const rootRef = useRef<SVGSVGElement>(null);
+  const lineRef = useRef<SVGPathElement>(null);
+  const areaRef = useRef<SVGPathElement>(null);
+  const dotRef = useRef<SVGCircleElement>(null);
+
+  // Draw the line on mount via hand-rolled strokeDashoffset (no DrawSVGPlugin),
+  // fade the gradient fill in trailing the line, then pop the end dot.
+  // SVG viewBox space draws oldest -> newest; not mirrored for RTL.
+  useGSAP(
+    () => {
+      const line = lineRef.current;
+      const area = areaRef.current;
+      const dot = dotRef.current;
+
+      // Reduced motion: snap to final visible state, no tween.
+      if (prefersReduced) {
+        if (line) gsap.set(line, { strokeDasharray: 'none', strokeDashoffset: 0 });
+        if (area) gsap.set(area, { opacity: 1 });
+        if (dot) gsap.set(dot, { scale: 1, opacity: 1 });
+        return;
+      }
+
+      if (!line) return;
+
+      const length = line.getTotalLength();
+      gsap.set(line, { strokeDasharray: length, strokeDashoffset: length });
+      if (area) gsap.set(area, { opacity: 0 });
+      if (dot) gsap.set(dot, { scale: 0, opacity: 0, transformOrigin: 'center center' });
+
+      const tl = gsap.timeline();
+      tl.to(line, {
+        strokeDashoffset: 0,
+        duration: LINE_DRAW_DURATION,
+        ease: EASE.reveal,
+      });
+      if (area) {
+        // Trail the line: start the fill fade-in partway through the draw.
+        tl.to(area, { opacity: 1, duration: DUR.base, ease: EASE.out }, LINE_DRAW_DURATION * 0.45);
+      }
+      if (dot) {
+        // Pop the end/last point at the end of the draw.
+        tl.to(dot, { scale: 1, opacity: 1, duration: DUR.fast, ease: EASE.pop }, '>-0.05');
+      }
+    },
+    { scope: rootRef, dependencies: [linePath, areaPath, prefersReduced] }
+  );
+
   if (data.length === 0) {
     return (
       <svg
@@ -98,6 +150,7 @@ export const GradientSparkline = memo(function GradientSparkline({
 
   return (
     <svg
+      ref={rootRef}
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
@@ -114,9 +167,10 @@ export const GradientSparkline = memo(function GradientSparkline({
           <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor={accent} floodOpacity="0.35" />
         </filter>
       </defs>
-      {showArea && areaPath && <path d={areaPath} fill={`url(#${gradientId})`} />}
+      {showArea && areaPath && <path ref={areaRef} d={areaPath} fill={`url(#${gradientId})`} />}
       {linePath && (
         <path
+          ref={lineRef}
           d={linePath}
           fill="none"
           stroke={accent}
@@ -128,7 +182,7 @@ export const GradientSparkline = memo(function GradientSparkline({
       )}
       {endPoint && (
         <g>
-          <circle cx={endPoint.x} cy={endPoint.y} r={3.5} fill={accent} />
+          <circle ref={dotRef} cx={endPoint.x} cy={endPoint.y} r={3.5} fill={accent} />
           {live && !prefersReduced && (
             <circle
               cx={endPoint.x}

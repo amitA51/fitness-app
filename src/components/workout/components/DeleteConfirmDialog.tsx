@@ -1,11 +1,12 @@
-// DeleteConfirmDialog - Sport Annual Editorial Design
-// Sharp corners · Navy header · Bone body
-// VISION: Bold · Editorial · Confident · Narrative · Printed
+// DeleteConfirmDialog — confirm deleting a personal-library exercise.
+// Migrated onto the foundation <ConfirmDialog> (danger variant). The public
+// `exercise`-based API is preserved so the ExerciseLibraryTab call site is
+// unchanged; visibility is driven by `exercise !== null`, the name is folded
+// into the description, and the destructive action uses the danger styling.
 
-import { Trash as TrashIcon } from 'lucide-react';
 import type React from 'react';
 import type { PersonalExercise } from '../../../types';
-import { ModalOverlay } from '../../ui/ModalOverlay';
+import { ConfirmDialog } from '../../ui/ConfirmDialog';
 
 interface DeleteConfirmDialogProps {
   exercise: PersonalExercise | null;
@@ -17,126 +18,17 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   exercise,
   onConfirm,
   onCancel,
-}) => {
-  return (
-    <ModalOverlay
-      isOpen={!!exercise}
-      onClose={onCancel}
-      variant="none"
-      zLevel="ultra"
-      ariaLabel="אישור מחיקת תרגיל"
-    >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: 360,
-          background: 'var(--fs-bg)',
-          border: '2px solid var(--fs-primary)',
-          padding: 24,
-          textAlign: 'center',
-        }}
-      >
-        {/* Icon */}
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            background: 'rgba(196,43,43,0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-          }}
-        >
-          <TrashIcon style={{ width: 32, height: 32, color: 'var(--color-error)' }} />
-        </div>
+}) => (
+  <ConfirmDialog
+    isOpen={!!exercise}
+    onConfirm={onConfirm}
+    onCancel={onCancel}
+    variant="danger"
+    title="למחוק תרגיל?"
+    description={`${exercise?.name ?? ''} — המחיקה תסיר את התרגיל מהספרייה לצמיתות.`}
+    confirmLabel="מחק"
+    cancelLabel="ביטול"
+  />
+);
 
-        {/* Title */}
-        <h3
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            fontSize: 20,
-            color: 'var(--fs-heading)',
-            marginBottom: 8,
-          }}
-        >
-          למחוק תרגיל?
-        </h3>
-
-        {/* Name */}
-        <p
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            fontSize: 16,
-            color: 'var(--fs-ink)',
-            marginBottom: 4,
-          }}
-        >
-          {exercise?.name ?? ''}
-        </p>
-
-        {/* Description */}
-        <p
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            letterSpacing: '0.12em',
-            color: 'var(--fs-muted)',
-            textTransform: 'uppercase',
-            marginBottom: 20,
-          }}
-        >
-          המחיקה תסיר את התרגיל מהספרייה לצמיתות.
-        </p>
-
-        {/* Buttons */}
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            type="button"
-            onClick={onCancel}
-            style={{
-              flex: 1,
-              padding: '14px 16px',
-              background: 'var(--fs-surface-2)',
-              border: '2px solid var(--fs-primary)',
-              borderRadius: 0,
-              cursor: 'pointer',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: 13,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: 'var(--fs-heading)',
-              minHeight: 48,
-            }}
-          >
-            ביטול
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            style={{
-              flex: 1,
-              padding: '14px 16px',
-              background: 'var(--color-error)',
-              border: '2px solid var(--color-error)',
-              borderRadius: 0,
-              cursor: 'pointer',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: 13,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: '#FFFFFF',
-              minHeight: 48,
-            }}
-          >
-            מחק
-          </button>
-        </div>
-      </div>
-    </ModalOverlay>
-  );
-};
+export default DeleteConfirmDialog;

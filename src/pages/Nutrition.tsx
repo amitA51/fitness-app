@@ -3,13 +3,14 @@ import { BookOpen, Clock, Plus, Search } from 'lucide-react';
 import type React from 'react';
 import { useMemo } from 'react';
 import { WaterTracker } from '../components/nutrition/WaterTracker';
+import { SkeletonBox } from '../components/ui/SkeletonLoader';
 import { AddMealModal } from './nutrition/components/AddMealModal';
 import { CalorieHero } from './nutrition/components/CalorieHero';
 import { DateNavigator } from './nutrition/components/DateNavigator';
 import { FoodLibrary } from './nutrition/components/FoodLibrary';
 import { GoalsEditor } from './nutrition/components/GoalsEditor';
 import { MacroStrip } from './nutrition/components/MacroStrip';
-import { EmptyMealState, GroupedMealLog } from './nutrition/components/MealLog';
+import { EmptyMealState, GroupedMealLog, MealLogSkeleton } from './nutrition/components/MealLog';
 import { MealPresetCard } from './nutrition/components/MealPresetCard';
 import { NutritionTrendChart } from './nutrition/components/NutritionTrendChart';
 import { WaterHistoryChart } from './nutrition/components/WaterHistoryChart';
@@ -24,6 +25,7 @@ export default function NutritionPage() {
     todayMacros,
     macroGoals,
     coachTarget,
+    isLoading,
     selectedDate,
     isToday,
     waterHistory,
@@ -123,21 +125,34 @@ export default function NutritionPage() {
         </h1>
       </header>
 
-      <CalorieHero
-        calories={todayMacros.calories}
-        goal={macroGoals.calories}
-        calPct={calPct}
-        coachTarget={coachTarget}
-        onEditGoals={() => setShowGoalsEditor(true)}
-      />
+      {isLoading ? (
+        <div className="px-5 mt-4" role="status" aria-busy="true" aria-label="טוען נתוני תזונה">
+          <SkeletonBox height={150} borderRadius="lg" className="mb-0" />
+          <div className="grid grid-cols-3 gap-px mt-px">
+            <SkeletonBox height={96} />
+            <SkeletonBox height={96} />
+            <SkeletonBox height={96} />
+          </div>
+        </div>
+      ) : (
+        <>
+          <CalorieHero
+            calories={todayMacros.calories}
+            goal={macroGoals.calories}
+            calPct={calPct}
+            coachTarget={coachTarget}
+            onEditGoals={() => setShowGoalsEditor(true)}
+          />
 
-      <MacroStrip
-        todayMacros={todayMacros}
-        macroGoals={macroGoals}
-        proteinPct={proteinPct}
-        carbsPct={carbsPct}
-        fatPct={fatPct}
-      />
+          <MacroStrip
+            todayMacros={todayMacros}
+            macroGoals={macroGoals}
+            proteinPct={proteinPct}
+            carbsPct={carbsPct}
+            fatPct={fatPct}
+          />
+        </>
+      )}
 
       <WaterTracker selectedDate={selectedDate} isToday={isToday} />
 
@@ -217,7 +232,9 @@ export default function NutritionPage() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
             >
-              {todayEntries.length === 0 ? (
+              {isLoading ? (
+                <MealLogSkeleton />
+              ) : todayEntries.length === 0 ? (
                 <EmptyMealState onAdd={() => setShowAddMeal(true)} />
               ) : (
                 <GroupedMealLog entries={todayEntries} onDelete={handleDeleteEntry} />
@@ -293,34 +310,28 @@ export default function NutritionPage() {
       </motion.button>
 
       {/* Add Meal Modal */}
-      <AnimatePresence>
-        {showAddMeal && (
-          <AddMealModal
-            selectedMealType={selectedMealType}
-            onMealTypeChange={setSelectedMealType}
-            selectedFoods={selectedFoods}
-            onAddFood={handleAddFood}
-            onRemoveFood={handleRemoveFood}
-            onServingsChange={handleServingsChange}
-            onSave={handleSaveMeal}
-            onClose={handleCloseModal}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-          />
-        )}
-      </AnimatePresence>
+      <AddMealModal
+        isOpen={showAddMeal}
+        selectedMealType={selectedMealType}
+        onMealTypeChange={setSelectedMealType}
+        selectedFoods={selectedFoods}
+        onAddFood={handleAddFood}
+        onRemoveFood={handleRemoveFood}
+        onServingsChange={handleServingsChange}
+        onSave={handleSaveMeal}
+        onClose={handleCloseModal}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
       {/* Goals Editor — daily control point, writes the shared nutrition_goals key */}
-      <AnimatePresence>
-        {showGoalsEditor && (
-          <GoalsEditor
-            goals={macroGoals}
-            coachTarget={coachTarget}
-            onSave={handleSaveGoals}
-            onClose={() => setShowGoalsEditor(false)}
-          />
-        )}
-      </AnimatePresence>
+      <GoalsEditor
+        isOpen={showGoalsEditor}
+        goals={macroGoals}
+        coachTarget={coachTarget}
+        onSave={handleSaveGoals}
+        onClose={() => setShowGoalsEditor(false)}
+      />
     </div>
   );
 }

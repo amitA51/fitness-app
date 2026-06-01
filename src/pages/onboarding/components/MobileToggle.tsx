@@ -1,4 +1,5 @@
-import { memo } from 'react';
+import { memo, useId } from 'react';
+import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 
 export interface MobileToggleProps {
   checked: boolean;
@@ -7,65 +8,64 @@ export interface MobileToggleProps {
   description?: string;
 }
 
+/**
+ * Onboarding preference row: a title + optional description on the inline-start,
+ * a real accessible {@link ToggleSwitch} (role="switch", keyboard, RTL-aware) on
+ * the inline-end. Replaces the former color-changing `<button>` that had no
+ * switch semantics. The title is a `<label htmlFor>` bound to the switch, so the
+ * whole text region toggles on click and gives the control its accessible name.
+ */
 export const MobileToggle = memo(function MobileToggle({
   checked,
   onChange,
   label,
   description,
 }: MobileToggleProps) {
+  const switchId = useId();
+
   return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className="w-full flex items-center justify-between p-4 transition-colors min-h-[72px]"
+    <div
+      className="w-full flex items-center justify-between gap-4 p-4"
       style={{
-        background: checked ? 'var(--fs-accent)' : 'var(--fs-surface)',
+        background: checked ? 'var(--fs-surface-2)' : 'var(--fs-surface)',
         border: checked ? '2px solid var(--fs-accent)' : '1px solid var(--fs-surface-2)',
         borderRadius: '22px 16px 22px 16px',
+        minHeight: '72px',
+        transition: 'background 0.2s, border-color 0.2s',
       }}
     >
-      <div className="text-right flex-1 ms-4">
-        <p
+      <label
+        htmlFor={switchId}
+        className="flex-1 min-w-0 cursor-pointer"
+        style={{ textAlign: 'start' }}
+      >
+        <span
+          className="block"
           style={{
             fontFamily: 'var(--font-body)',
             fontWeight: 600,
             fontSize: '16px',
-            color: checked ? 'var(--fs-primary)' : 'var(--fs-ink)',
+            color: 'var(--fs-ink)',
           }}
         >
           {label}
-        </p>
+        </span>
         {description && (
-          <p
+          <span
+            className="block"
             style={{
               fontFamily: 'var(--font-body)',
               fontSize: '14px',
-              color: checked ? 'var(--fs-primary)' : 'var(--fs-muted)',
+              color: 'var(--fs-muted)',
               marginTop: '2px',
             }}
           >
             {description}
-          </p>
+          </span>
         )}
-      </div>
-      <div
-        className="w-14 h-8 relative flex-shrink-0"
-        style={{
-          background: checked ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
-          border: '2px solid var(--fs-primary)',
-          borderRadius: '22px',
-        }}
-      >
-        <div
-          className="absolute top-1 w-6 h-6 shadow-lg transition-all"
-          style={{
-            left: checked ? 'auto' : '4px',
-            right: checked ? '4px' : 'auto',
-            borderRadius: '50%',
-            background: 'var(--fs-surface)',
-          }}
-        />
-      </div>
-    </button>
+      </label>
+
+      <ToggleSwitch id={switchId} checked={checked} onChange={onChange} size="lg" />
+    </div>
   );
 });
