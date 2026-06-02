@@ -7,11 +7,27 @@ import { completedSetsVolume, oneRepMax } from '../../utils/workoutMath';
 import { calculateStreak } from '../achievementService';
 import type { RecoveryLog } from '../bodyStatsService';
 import {
+  type NutritionAdherence,
+  computeNutritionAdherence,
+} from '../intelligence/nutritionAdherence';
+import { type AthleteProfile, describeProfile, readAthleteProfile } from '../intelligence/profile';
+import {
   type MuscleRecoveryState,
   type TrainingLoadRecommendation,
   calculateTrainingLoad,
 } from '../trainingLoadService';
 import { WEAK_MUSCLE_THRESHOLD } from './constants';
+
+/** Which inputs were actually available, so the model can hedge rather than
+ * narrate defaulted values as fact (TL-7). */
+export interface DataSufficiency {
+  hasRpe: boolean;
+  hasRecovery: boolean;
+  hasChronicBaseline: boolean;
+  /** 0..1 fraction of profile fields populated. */
+  profileCompleteness: number;
+  sessionCount: number;
+}
 
 export interface TopExerciseEntry {
   readonly exerciseName: string;
@@ -34,8 +50,11 @@ export interface AIContext {
   muscleCoverage: string[];
   muscleRecovery: MuscleRecoveryState[];
   weakMuscles: string[];
+  neglectedMuscles: string[];
   recoveryScore: number | null;
-  nutritionCompliance: number | null;
+  nutrition: NutritionAdherence | null;
+  profile: AthleteProfile;
+  dataSufficiency: DataSufficiency;
   readinessScore: number;
   readinessLabel: 'low' | 'moderate' | 'good' | 'high';
   primaryConstraint: 'recovery' | 'load_spike' | 'high_rpe' | 'low_volume' | 'balanced';
@@ -57,6 +76,7 @@ export function buildSystemPrompt(context: AIContext): string {
   // ה-persona הגלובלי מוזרק אוטומטית ב-RemoteProvider (ראה ai/config.ts::withPersona).
   // כאן רק מוסיפים את ההקשר הדינמי של המשתמש.
   let prompt = `נתוני המתאמן (התייחס אליהם בתשובה):
+- פרופיל: ${describeProfile(context.profile)}
 - מגמת נפח: ${context.volumeTrend}
 - נפח שבועי: ${context.weeklyVolume} ק"ג
 - נפח שבוע קודם: ${context.previousWeeklyVolume} ק"ג
@@ -68,8 +88,9 @@ export function buildSystemPrompt(context: AIContext): string {
 - המלצת עומס מתמטית: ${context.trainingLoadRecommendation}
 - שרירים שעבד: ${context.muscleCoverage.map(sanitize).join(', ') || 'אין'}
 - שרירים חלשים: ${context.weakMuscles.map(sanitize).join(', ') || 'אין'}
+- שרירים מוזנחים: ${context.neglectedMuscles.map(sanitize).join(', ') || 'אין'}
 - ציון התאוששות: ${context.recoveryScore ?? 'לא ידוע'}
-- עמידה בתזונה: ${context.nutritionCompliance !== null ? `${context.nutritionCompliance}%` : 'לא ידוע'}
+- עמידה בתזונה: ${context.nutrition ? context.nutrition.summary : 'לא ידוע'}
 - רצף אימונים: ${context.streakDays} ימים`;
 
   if (context.topExercises && context.topExercises.length > 0) {
@@ -81,8 +102,33 @@ export function buildSystemPrompt(context: AIContext): string {
     }
   }
 
+  // Per-muscle recovery — previously computed and stored but never shown to the
+  // model (TL-6). Render the most fatigued/neglected muscles only, to keep it tight.
+  const notableMuscles = context.muscleRecovery
+    .filter((m) => m.status === 'fatigued' || m.status === 'neglected')
+    .slice(0, 5);
+  if (notableMuscles.length > 0) {
+    prompt += '\n\n--- התאוששות לפי שריר (חישוב מתמטי) ---';
+    for (const m of notableMuscles) {
+      const days = m.daysSinceLastTrained === null ? '?' : m.daysSinceLastTrained;
+      prompt += `\n• ${sanitize(m.muscle)}: ${m.status} | מוכנות=${m.recoveryScore}/100 | ${days} ימים מאז אימון`;
+    }
+  }
+
+  // Data-sufficiency hedge (TL-7): when key inputs were defaulted, tell the model
+  // to qualify its confidence instead of narrating assumptions as fact.
+  const { dataSufficiency: ds } = context;
+  const gaps: string[] = [];
+  if (!ds.hasRpe) gaps.push('אין נתוני RPE');
+  if (!ds.hasRecovery) gaps.push('אין יומן התאוששות');
+  if (!ds.hasChronicBaseline) gaps.push('אין בסיס נתונים של 3 שבועות');
+  if (ds.profileCompleteness < 0.5) gaps.push('פרופיל חלקי');
+  if (gaps.length > 0) {
+    prompt += `\n\nשים לב — נתונים חסרים (${gaps.join(', ')}): סייג את רמת הביטחון בהמלצה ואל תציג הערכות ברירת-מחדל כעובדה.`;
+  }
+
   prompt +=
-    '\n\nקודם השתמש בחישובים המתמטיים האלה כדי להחליט על עומס/מנוחה/דלואד. השתמש ב-AI רק כדי לנסח הסבר קצר וברור.';
+    '\n\nקודם השתמש בחישובים המתמטיים האלה כדי להחליט על עומס/מנוחה/דלואד. השתמש ב-AI רק כדי לנסח הסבר קצר וברור. אל תמציא מספרים — השתמש רק במספרים שסופקו כאן.';
 
   return prompt;
 }
@@ -230,18 +276,28 @@ export function buildContext(
     .filter(([, v]) => v < avgVolume * WEAK_MUSCLE_THRESHOLD)
     .map(([m]) => m);
 
-  // Nutrition compliance
-  let nutritionCompliance: number | null = null;
-  if (nutritionData && nutritionData.goal.calories > 0) {
-    const pct = Math.min(
-      100,
-      Math.round((nutritionData.dailyAverage.calories / nutritionData.goal.calories) * 100)
-    );
-    nutritionCompliance = pct;
-  }
+  // Profile (age/weight/experience/goal/equipment) — feeds personalization and
+  // the goal-aware nutrition signal. Read from settings/onboarding stores.
+  const profile = readAthleteProfile();
 
-  // Streak (shared canonical calculation — local-date keyed, see achievementService)
-  const streakDays = calculateStreak(sessions).currentStreak;
+  // Goal-aware, protein-inclusive nutrition adherence (replaces calories-only %).
+  const nutrition = nutritionData
+    ? computeNutritionAdherence(
+        nutritionData.dailyAverage,
+        nutritionData.goal,
+        profile.weightDirection
+      )
+    : null;
+
+  const neglectedMuscles = trainingLoad.muscles
+    .filter((m) => m.status === 'neglected')
+    .map((m) => m.muscle);
+
+  // Streak — use COMPLETED sessions so the AI's streak matches the dashboard's
+  // (which counts completed-only), instead of counting in-progress sessions (SM-4).
+  const streakDays = calculateStreak(
+    sessions.filter((s) => s.status === 'completed')
+  ).currentStreak;
 
   // Top exercises enrichment
   const topExercises = computeTopExercises(recentSessions);
@@ -257,8 +313,17 @@ export function buildContext(
     muscleCoverage: Array.from(muscleSet),
     muscleRecovery: trainingLoad.muscles,
     weakMuscles,
+    neglectedMuscles,
     recoveryScore: trainingLoad.recoveryScore,
-    nutritionCompliance,
+    nutrition,
+    profile,
+    dataSufficiency: {
+      hasRpe: trainingLoad.hasRpeData,
+      hasRecovery: trainingLoad.hasRecoveryData,
+      hasChronicBaseline: trainingLoad.hasChronicBaseline,
+      profileCompleteness: profile.completeness,
+      sessionCount: sessions.filter((s) => s.status === 'completed').length,
+    },
     primaryConstraint: trainingLoad.primaryConstraint,
     readinessLabel: trainingLoad.readinessLabel,
     readinessScore: trainingLoad.readinessScore,

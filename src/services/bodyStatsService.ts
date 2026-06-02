@@ -365,11 +365,17 @@ export async function getTodayRecoveryLog(now = new Date()): Promise<RecoveryLog
 }
 
 function mapSleepHoursToScore(hours: number): number {
-  if (hours <= 5) return 20;
-  if (hours <= 6) return 20 + (hours - 5) * 20;
-  if (hours <= 7) return 40 + (hours - 6) * 20;
-  if (hours <= 8) return 60 + (hours - 7) * 20;
-  if (hours <= 9) return 80 + (hours - 8) * 20;
+  // Clamp to a sane window so garbage/typo input (e.g. 80h, negative from synced
+  // data) can't silently produce a perfect or inverted sub-score (RN-4/RN-5).
+  const h = Math.min(16, Math.max(0, Number.isFinite(hours) ? hours : 0));
+  // Intentional floor of 20 (not 0): this is a sleep-QUALITY curve, where even
+  // a short night leaves some baseline recovery. The composite can still reach
+  // the 'poor' band because the Likert components (soreness/energy/stress) zero out.
+  if (h <= 5) return 20;
+  if (h <= 6) return 20 + (h - 5) * 20;
+  if (h <= 7) return 40 + (h - 6) * 20;
+  if (h <= 8) return 60 + (h - 7) * 20;
+  if (h <= 9) return 80 + (h - 8) * 20;
   return 100;
 }
 
@@ -388,11 +394,20 @@ function getScoreColor(overall: number): string {
 }
 
 export function calculateRecoveryScore(log: RecoveryLog): RecoveryScore {
+  // Likert 1-5 inputs map to a TRUE 0-100 scale ((level-1)/4*100) so the worst
+  // day can actually reach the 'poor' band. Previously level*20 floored every
+  // component at 20, so 'overall' never dropped below ~15 even though the
+  // poor/fair/good/excellent labels were calibrated for a full 0-100 range (RN-1).
+  // Inputs are clamped so out-of-range synced data can't push a component past
+  // 100 or below 0 (RN-4).
+  const clampLevel = (n: number): number => Math.min(5, Math.max(1, Number.isFinite(n) ? n : 1));
+  const levelToScore = (level: number): number => ((clampLevel(level) - 1) / 4) * 100;
+
   const rawSleepScore = mapSleepHoursToScore(log.sleepHours);
-  const sleep = Math.round(rawSleepScore * (log.sleepQuality / 5));
-  const soreness = log.sorenessLevel * 20;
-  const energy = log.energyLevel * 20;
-  const stress = log.stressLevel * 20;
+  const sleep = Math.round(rawSleepScore * (clampLevel(log.sleepQuality) / 5));
+  const soreness = levelToScore(log.sorenessLevel);
+  const energy = levelToScore(log.energyLevel);
+  const stress = levelToScore(log.stressLevel);
 
   const overall = Math.round(sleep * 0.3 + soreness * 0.25 + energy * 0.25 + stress * 0.2);
 

@@ -1,0 +1,318 @@
+// SupersetPicker — bottom sheet for building a superset / giant set.
+//
+// Opened from an exercise's "סופרסט" chip (the anchor). Lists every exercise in
+// the current workout and lets the user multi-select which ones to group with
+// the anchor. The anchor is always selected and cannot be deselected. Confirm
+// dispatches a single CREATE_SUPERSET (2 = superset, 3+ = giant set).
+//
+// Uses the ModalOverlay variant="none" + m.div initial/animate-y pattern (the
+// same one ExerciseSelector uses). It deliberately does NOT bind an external
+// useMotionValue to style.y — that was the bug that left earlier sheets parked
+// off-screen at translateY(100%).
+
+import { type PanInfo, m } from 'framer-motion';
+import { Check, X as CloseIcon, Link2 } from 'lucide-react';
+import type React from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { triggerHaptic } from '../../../utils/haptics';
+import { ModalOverlay } from '../../ui/ModalOverlay';
+import type { SupersetGroup } from '../core/workoutTypes';
+
+interface SupersetPickerExercise {
+  id: string;
+  name?: string;
+}
+
+interface SupersetPickerProps {
+  isOpen: boolean;
+  exercises: SupersetPickerExercise[];
+  anchorExerciseId: string | null;
+  existingGroups: SupersetGroup[];
+  onConfirm: (exerciseIds: string[]) => void;
+  onClose: () => void;
+}
+
+const SupersetPicker: React.FC<SupersetPickerProps> = ({
+  isOpen,
+  exercises,
+  anchorExerciseId,
+  existingGroups,
+  onConfirm,
+  onClose,
+}) => {
+  // Selected set seeded with the anchor; the anchor stays locked-in.
+  const [selected, setSelected] = useState<Set<string>>(() =>
+    anchorExerciseId ? new Set([anchorExerciseId]) : new Set()
+  );
+
+  // Re-seed whenever the anchor changes (picker reused across openings).
+  const seededFor = useMemo(() => anchorExerciseId, [anchorExerciseId]);
+  const [lastSeed, setLastSeed] = useState(seededFor);
+  if (lastSeed !== seededFor) {
+    setLastSeed(seededFor);
+    setSelected(anchorExerciseId ? new Set([anchorExerciseId]) : new Set());
+  }
+
+  const toggle = useCallback(
+    (id: string) => {
+      if (id === anchorExerciseId) return; // anchor locked
+      triggerHaptic('light');
+      setSelected((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    },
+    [anchorExerciseId]
+  );
+
+  const groupIdOf = useCallback(
+    (exerciseId: string): string | null =>
+      existingGroups.find((g) => g.exercises.includes(exerciseId))?.id ?? null,
+    [existingGroups]
+  );
+
+  const handleConfirm = useCallback(() => {
+    // Preserve workout order so the round-robin order is intuitive (top→bottom).
+    const orderedIds = exercises.map((e) => e.id).filter((id) => selected.has(id));
+    if (orderedIds.length < 2) return;
+    onConfirm(orderedIds);
+  }, [exercises, selected, onConfirm]);
+
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
+    if (info.offset.y > 150) onClose();
+  };
+
+  const selectedCount = selected.size;
+  const canConfirm = selectedCount >= 2;
+
+  return (
+    <ModalOverlay
+      isOpen={isOpen}
+      onClose={onClose}
+      variant="none"
+      zLevel="extreme"
+      backdropOpacity={60}
+      blur="none"
+      trapFocus
+      lockScroll={false}
+      closeOnBackdropClick
+      closeOnEscape
+      ariaLabel="בחירת תרגילים לסופרסט"
+    >
+      <m.div
+        className="fixed bottom-0 left-0 right-0 flex flex-col"
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        style={{ maxHeight: '85dvh' }}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.5 }}
+        onDragEnd={handleDragEnd}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Masthead */}
+        <div style={{ background: 'var(--fs-primary)' }}>
+          <div className="flex justify-center pt-3 pb-2">
+            <div className="w-10 h-1" style={{ background: 'var(--fs-surface)', opacity: 0.3 }} />
+          </div>
+          <div className="px-5 pb-4 flex items-center justify-between">
+            <div>
+              <h1
+                className="uppercase flex items-center gap-2"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 900,
+                  fontSize: 24,
+                  color: 'var(--fs-ink)',
+                  lineHeight: 1,
+                }}
+              >
+                <Link2 size={20} strokeWidth={2.5} />
+                סופרסט
+              </h1>
+              <p
+                className="mt-1"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  letterSpacing: '0.12em',
+                  color: 'var(--fs-ink)',
+                  opacity: 0.5,
+                  textTransform: 'uppercase',
+                }}
+              >
+                בחר תרגילים לקיבוץ
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-11 h-11 flex items-center justify-center cursor-pointer"
+              style={{ background: 'var(--fs-surface)', opacity: 0.1 }}
+              aria-label="סגור"
+            >
+              <CloseIcon className="w-5 h-5" style={{ color: 'var(--fs-ink)' }} />
+            </button>
+          </div>
+        </div>
+
+        {/* Body — exercise list */}
+        <div
+          className="flex-1 overflow-y-auto"
+          style={{ background: 'var(--fs-surface)', padding: '12px 14px' }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {exercises.map((ex) => {
+              const isSelected = selected.has(ex.id);
+              const isAnchor = ex.id === anchorExerciseId;
+              const inOtherGroup = !isAnchor && groupIdOf(ex.id) !== null;
+              return (
+                <button
+                  key={ex.id}
+                  type="button"
+                  onClick={() => toggle(ex.id)}
+                  disabled={isAnchor}
+                  aria-pressed={isSelected}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '14px 16px',
+                    minHeight: 56,
+                    textAlign: 'right',
+                    borderRadius: 12,
+                    cursor: isAnchor ? 'default' : 'pointer',
+                    background: isSelected
+                      ? 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))'
+                      : 'var(--fs-surface)',
+                    border: isSelected ? '2px solid var(--fs-accent)' : '1px solid var(--fs-steel)',
+                    opacity: isAnchor ? 0.9 : 1,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 24,
+                      height: 24,
+                      flexShrink: 0,
+                      borderRadius: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: isSelected ? 'var(--fs-accent)' : 'transparent',
+                      border: isSelected ? 'none' : '2px solid var(--fs-steel)',
+                      color: '#FFFFFF',
+                    }}
+                  >
+                    {isSelected && <Check size={16} strokeWidth={3} />}
+                  </div>
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 700,
+                      fontSize: 16,
+                      color: 'var(--fs-heading)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {ex.name || 'תרגיל ללא שם'}
+                  </span>
+                  {isAnchor && (
+                    <span
+                      style={{
+                        flexShrink: 0,
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 9,
+                        fontWeight: 700,
+                        letterSpacing: '0.08em',
+                        color: 'var(--fs-accent-2)',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      בסיס
+                    </span>
+                  )}
+                  {inOtherGroup && (
+                    <span
+                      style={{
+                        flexShrink: 0,
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 9,
+                        fontWeight: 700,
+                        letterSpacing: '0.06em',
+                        color: 'var(--fs-muted)',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      בקבוצה אחרת
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Footer CTAs */}
+        <div
+          className="px-5 py-4 flex flex-col gap-2"
+          style={{ background: 'var(--fs-surface)', borderTop: '2px solid var(--fs-primary)' }}
+        >
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={!canConfirm}
+            className="w-full flex items-center justify-center gap-2 cursor-pointer"
+            style={{
+              background: canConfirm ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+              color: canConfirm ? 'var(--fs-accent)' : 'var(--fs-muted)',
+              padding: '16px 24px',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 15,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              minHeight: 52,
+              cursor: canConfirm ? 'pointer' : 'not-allowed',
+            }}
+          >
+            <Link2 size={18} strokeWidth={2.5} />
+            צור סופרסט ({selectedCount})
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full cursor-pointer"
+            style={{
+              background: 'transparent',
+              color: 'var(--fs-muted)',
+              border: '2px solid var(--fs-surface-2)',
+              padding: '12px 24px',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 13,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              minHeight: 44,
+            }}
+          >
+            ביטול
+          </button>
+        </div>
+
+        <div
+          style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--fs-surface)' }}
+        />
+      </m.div>
+    </ModalOverlay>
+  );
+};
+
+export default SupersetPicker;

@@ -7,6 +7,20 @@ import { resolveActiveSet } from './setHelpers';
 import type { SupersetGroup, WorkoutAction, WorkoutState } from './workoutTypes';
 
 // ============================================================
+// CONSTANTS
+// ============================================================
+
+/**
+ * Short transitional rest (seconds) inserted between exercises of a superset
+ * round, before the full `restBetweenRounds` rest at the end of a round.
+ * Named constant — replaces the former magic 15.
+ */
+export const SUPERSET_TRANSITION_REST = 15;
+
+/** Fallback rest (seconds) between superset rounds when none is configured. */
+export const DEFAULT_SUPERSET_ROUND_REST = 60;
+
+// ============================================================
 // HELPER FUNCTIONS
 // ============================================================
 
@@ -83,7 +97,10 @@ const calculateRestTime = (
       restTime = settings?.mediumRestTime ?? DEFAULT_WORKOUT_SETTINGS.mediumRestTime;
     }
 
-    // 4. Scale by training goal (only when smart-rest computed the base)
+    // 4. Scale by training goal — INTENTIONALLY scoped to the smart-rest path
+    // only. The plain `defaultRestTime` (and program/target rest) are explicit
+    // user/coach choices, so we don't second-guess them by goal. Goal scaling
+    // applies solely to the auto-derived smart-rest base computed just above.
     const goal = settings?.defaultWorkoutGoal;
     const factor = goal === 'strength' ? 1.8 : goal === 'endurance' ? 0.5 : 1.0; // hypertrophy/maintenance/general
     restTime = Math.round(restTime * factor);
@@ -209,12 +226,25 @@ const exerciseReducer = (draft: WorkoutState, action: WorkoutAction): void => {
 
     case 'CREATE_SUPERSET': {
       const { exerciseIds, restBetweenRounds } = action.payload;
-      if (exerciseIds.length < 2) return;
+
+      // De-duplicate and keep only ids that map to real exercises. Supports
+      // 2 (superset) and 3+ (giant set). Preserves the caller's ordering, which
+      // defines the round-robin order used by COMPLETE_SET.
+      const uniqueIds = [...new Set(exerciseIds)].filter((id) =>
+        draft.exercises.some((e) => e.id === id)
+      );
+      if (uniqueIds.length < 2) return;
+
+      // Prevent overlapping groups: strip these exercises out of any existing
+      // group first, then drop groups that fall below 2 members (degenerate).
+      draft.supersetGroups = draft.supersetGroups
+        .map((g) => ({ ...g, exercises: g.exercises.filter((id) => !uniqueIds.includes(id)) }))
+        .filter((g) => g.exercises.length >= 2);
 
       const superset: SupersetGroup = {
         id: `superset-${Date.now()}`,
-        exercises: exerciseIds,
-        restBetweenRounds: restBetweenRounds || 60,
+        exercises: uniqueIds,
+        restBetweenRounds: restBetweenRounds || DEFAULT_SUPERSET_ROUND_REST,
       };
 
       draft.supersetGroups.push(superset);
@@ -261,6 +291,13 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       if (!exercise) return;
       const sets = exercise.sets ?? [];
       const activeIdx = getActiveSetIndex(sets);
+      // Guard against junk sets: when the exercise already has sets and every
+      // one is completed, resolveActiveSet returns a virtual index at
+      // sets.length. Completing "again" must NOT fabricate an empty 0×0 set
+      // (a common path now that auto-add-sets defaults off). The exercise is
+      // done — the user must press "הוסף סט" (ADD_SET) to train more. The
+      // genuinely-empty case (no planned sets) still creates the first set.
+      if (sets.length > 0 && activeIdx >= sets.length) return;
       if (!sets[activeIdx]) {
         sets[activeIdx] = createEmptySet(activeIdx + 1, exercise.isTimed);
       }
@@ -272,12 +309,18 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       currentSet.completedAt = new Date().toISOString();
       currentSet.isCompleted = true;
 
-      // --- SUPERSET MEMBERSHIP / TRANSITION (computed BEFORE auto-add) ---
-      // If current exercise is part of a superset and not the last in the group,
-      // we will jump to the next exercise + use a short between-exercise rest.
-      // Round rest (full prescribed rest) applies only after the last exercise.
-      // Detect a transition up front so we can skip auto-adding a trailing set
-      // to the exercise we're leaving (otherwise it leaks an empty set there).
+      // --- SUPERSET MEMBERSHIP / ROUND TRANSITION (computed BEFORE auto-add) ---
+      // Round-robin model (the just-completed set is already marked above):
+      //   • Find the next group exercise (after this one, wrapping) that still
+      //     has an incomplete set — that's where we go next.
+      //   • If it lies AFTER us in group order → same round → short transition
+      //     rest (SUPERSET_TRANSITION_REST).
+      //   • If we wrapped back to it (≤ our position) → a NEW round started →
+      //     use the group's restBetweenRounds.
+      //   • If no group exercise has an incomplete set → the whole group is
+      //     done → no advance, normal rest applies.
+      // Detecting a transition up front also lets us skip auto-adding a trailing
+      // set to the exercise we're leaving (which would leak an empty set there).
       const supersetMembership = draft.supersetGroups.find((g) =>
         g.exercises.includes(exercise.id)
       );
@@ -285,21 +328,37 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       let isSupersetTransition = false;
       let nextSupersetIdx = -1;
       if (supersetMembership) {
-        const orderInGroup = supersetMembership.exercises.indexOf(exercise.id);
-        const isLastInGroup = orderInGroup === supersetMembership.exercises.length - 1;
-        if (!isLastInGroup) {
-          const nextExerciseId = supersetMembership.exercises[orderInGroup + 1];
-          const nextIdx = draft.exercises.findIndex((e) => e.id === nextExerciseId);
-          if (nextIdx !== -1) {
-            isSupersetTransition = true;
-            nextSupersetIdx = nextIdx;
-            // Short transitional rest between superset exercises (default 15s)
-            supersetShortRest = 15;
+        const groupExercises = supersetMembership.exercises;
+        const n = groupExercises.length;
+        const curPos = groupExercises.indexOf(exercise.id);
+
+        let targetExerciseId: string | null = null;
+        let wrappedToNewRound = false;
+        for (let step = 1; step <= n; step++) {
+          const pos = (curPos + step) % n;
+          const candidateId = groupExercises[pos];
+          const candidate = draft.exercises.find((e) => e.id === candidateId);
+          if (!candidate) continue;
+          const hasIncompleteSet = (candidate.sets ?? []).some((s) => !s.completedAt);
+          if (hasIncompleteSet) {
+            targetExerciseId = candidateId ?? null;
+            wrappedToNewRound = pos <= curPos;
+            break;
           }
-        } else {
-          // Last exercise of round → use group's restBetweenRounds
-          supersetShortRest = supersetMembership.restBetweenRounds ?? 60;
         }
+
+        if (targetExerciseId) {
+          const targetIdx = draft.exercises.findIndex((e) => e.id === targetExerciseId);
+          if (targetIdx !== -1) {
+            isSupersetTransition = true;
+            nextSupersetIdx = targetIdx;
+            supersetShortRest = wrappedToNewRound
+              ? (supersetMembership.restBetweenRounds ?? DEFAULT_SUPERSET_ROUND_REST)
+              : SUPERSET_TRANSITION_REST;
+          }
+        }
+        // else: group fully complete → leave supersetShortRest null (normal rest)
+        // and do not advance.
       }
 
       // --- AUTO INCREMENT WEIGHT (Progressive Overload) ---
@@ -309,11 +368,13 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       const incrementAmount = settings?.weightIncrementAmount || 2.5;
 
       // --- AUTO ADD NEXT SET ---
-      // Logic: Only add next set if we haven't reached a target set count (not implemented yet)
-      // OR if the user just completed the last existing set.
-      // Skip when transitioning to the next exercise in a superset group — the
-      // active exercise is changing, so a trailing set here would just leak.
-      if (activeIdx === sets.length - 1 && !isSupersetTransition) {
+      // Only when the user opted into the legacy "infinite sets" flow. By default
+      // (autoAddSets !== true) the set count stays fixed to what the user/template
+      // defined; extra sets are added manually via ADD_SET. Always skip during a
+      // superset transition — the active exercise is changing, so a trailing set
+      // here would just leak.
+      const autoAddSets = settings?.autoAddSets === true;
+      if (autoAddSets && activeIdx === sets.length - 1 && !isSupersetTransition) {
         const nextSet = createNextSet(currentSet, sets.length + 1, exercise.isTimed);
         nextSet.autoGenerated = true;
 
@@ -325,26 +386,32 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
         sets.push(nextSet);
       }
 
-      // --- AUTO ADVANCE EXERCISE ---
-      // If enabled, and this was the last planned set (logic difficult without "planned sets",
-      // assuming manual advance for now unless explicit "3 sets done").
-      // For now, we WON'T auto-advance on simple set completion to avoid confusion,
-      // as users often add sets dynamically. keeping it manual or "Flow" button based.
-      // *Wait, the requirement was to fix it.*
-      // Let's implement it carefully: Only if `autoAdvanceExercise` is TRUE.
-      if (settings?.autoAdvanceExercise) {
-        // Determine if we should move on.
-        // Since we just added a new set above, "advancing" might be annoying if they wanted to do that new set.
-        // Standard behavior: Don't auto-advance in infinite-set mode.
-        // Only auto-advance if we hit a target. Since we don't have targets, SKIP for safety.
-        // Alternative: If `autoNav` is on, maybe we *don't* add the next set automatically?
-        // Let's leave Auto-Advance for manual trigger in the UI (Next button behavior) for now
-        // to avoid UX disasters.
-      }
-
       // --- SUPERSET AUTO-ADVANCE (apply the transition computed above) ---
       if (isSupersetTransition) {
         draft.currentExerciseIndex = nextSupersetIdx;
+      }
+
+      // --- AUTO ADVANCE EXERCISE ---
+      // When enabled, completing the LAST open set of an exercise jumps to the
+      // next exercise that still has an open set (round-robin, wrapping). Only
+      // fires when there are no open sets left here — so it never interrupts a
+      // user mid-exercise — and never during a superset transition (the group
+      // logic already drives navigation). In legacy infinite-set mode
+      // (autoAddSets), a fresh set was just appended, so the exercise is never
+      // "done" and this stays inert by design.
+      if (settings?.autoAdvanceExercise && !isSupersetTransition) {
+        const exerciseDone = sets.length > 0 && sets.every((s) => s.completedAt);
+        if (exerciseDone) {
+          const total = draft.exercises.length;
+          for (let step = 1; step <= total; step++) {
+            const idx = (draft.currentExerciseIndex + step) % total;
+            const candidate = draft.exercises[idx];
+            if (candidate && (candidate.sets ?? []).some((s) => !s.completedAt)) {
+              draft.currentExerciseIndex = idx;
+              break;
+            }
+          }
+        }
       }
 
       // --- REST TIMER ---
@@ -376,6 +443,23 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       // Confetti is NOT fired here. Mere set completion is not a PR; confetti is
       // gated on an actual PR via the SHOW_PR_CELEBRATION handler (honoring
       // prCelebrationIntensity), which is dispatched only when a record is set.
+      break;
+    }
+
+    case 'ADD_SET': {
+      if (!exercise) return;
+      const sets = exercise.sets ?? [];
+      // Seed the new set from the last existing one (weight/reps carry over) so
+      // the user only adjusts what changed. Falls back to an empty set when the
+      // exercise has none yet.
+      const lastSet = sets[sets.length - 1];
+      const newSet = lastSet
+        ? createNextSet(lastSet, sets.length + 1, exercise.isTimed)
+        : createEmptySet(sets.length + 1, exercise.isTimed);
+      newSet.isCompleted = false;
+      newSet.completedAt = null;
+      sets.push(newSet);
+      exercise.sets = sets;
       break;
     }
 
@@ -620,11 +704,16 @@ const uiReducer = (draft: WorkoutState, action: WorkoutAction): void => {
           if (exercise) {
             const sets = exercise.sets ?? [];
             const activeIdx = getActiveSetIndex(sets);
-            if (!sets[activeIdx]) {
-              sets[activeIdx] = createEmptySet(activeIdx + 1, exercise.isTimed);
+            // Mirror COMPLETE_SET's guard: don't write into a virtual slot past
+            // the last set when the exercise is fully completed (would create a
+            // junk 0×0 set). Just close the numpad.
+            if (!(sets.length > 0 && activeIdx >= sets.length)) {
+              if (!sets[activeIdx]) {
+                sets[activeIdx] = createEmptySet(activeIdx + 1, exercise.isTimed);
+              }
+              exercise.sets = sets;
+              sets[activeIdx]![draft.numpad.target] = val;
             }
-            exercise.sets = sets;
-            sets[activeIdx]![draft.numpad.target] = val;
           }
         }
       }
@@ -748,6 +837,12 @@ const dataReducer = (draft: WorkoutState, action: WorkoutAction): void => {
     case 'CLEAR_PENDING_HAPTIC':
       draft.pendingHaptic = null;
       break;
+
+    case 'FINALIZE_WORKOUT':
+      // Marks the workout as finished/discarded. The provider observes this and
+      // stops persisting + clears the saved snapshot so it can't be restored.
+      draft.finalized = true;
+      break;
   }
 };
 
@@ -772,6 +867,7 @@ const EXERCISE_ACTIONS = new Set([
 const SET_ACTIONS = new Set([
   'UPDATE_SET',
   'COMPLETE_SET',
+  'ADD_SET',
   'UNDO_LAST_SET',
   'EDIT_SPECIFIC_SET',
   'DELETE_SET',
@@ -817,7 +913,12 @@ const MODAL_ACTIONS = new Set([
   'HIDE_CONFETTI',
 ]);
 
-const DATA_ACTIONS = new Set(['UPDATE_SETTINGS', 'SET_PREVIOUS_DATA', 'CLEAR_PENDING_HAPTIC']);
+const DATA_ACTIONS = new Set([
+  'UPDATE_SETTINGS',
+  'SET_PREVIOUS_DATA',
+  'CLEAR_PENDING_HAPTIC',
+  'FINALIZE_WORKOUT',
+]);
 
 // ============================================================
 // MAIN REDUCER (Optimized routing)

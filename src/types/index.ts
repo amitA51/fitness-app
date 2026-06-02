@@ -529,6 +529,13 @@ export interface WorkoutSettings {
   confirmExerciseComplete: boolean;
   enableSupersets: boolean;
   showRestBetweenExercises: boolean;
+  /**
+   * When true, completing the last set of an exercise automatically appends a
+   * fresh set (legacy "infinite sets" behavior). When false (default), the set
+   * count is fixed to what the user/template defined and extra sets are added
+   * manually via the "add set" button.
+   */
+  autoAddSets?: boolean;
 
   // Personal Records
   enablePRAlerts: boolean;

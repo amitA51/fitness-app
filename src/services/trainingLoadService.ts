@@ -1,6 +1,20 @@
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../types';
 import { completedSetsVolume } from '../utils/workoutMath';
 import { type RecoveryLog, calculateRecoveryScore } from './bodyStatsService';
+import {
+  RECOVERY_BANDS,
+  VOLUME_SPIKE_PERCENT,
+  readinessBandFromFatigue,
+  recommendationFromFatigue,
+} from './intelligence/scoringThresholds';
+
+/**
+ * RPE factor used to convert raw volume into a fatigue-weighted "load". When a
+ * session/week has no logged RPE we assume a moderate effort (RPE 7 -> 0.7).
+ * The SAME default is applied to both the acute and the chronic window so the
+ * acute:chronic ratio compares like-with-like (see TL-1 fix).
+ */
+const DEFAULT_RPE_FACTOR = 0.7;
 
 export type TrainingLoadRecommendation = 'push' | 'maintain' | 'deload' | 'rest';
 export type TrainingLoadConstraint =
@@ -38,6 +52,14 @@ export interface TrainingLoadResult {
   weeklySessionCount: number;
   weeklyVolume: number;
   volumeChangePercent: number;
+  /** True when at least one acute-week working set carried an RPE. When false,
+   * acuteLoad/fatigue used the DEFAULT_RPE_FACTOR assumption — consumers should
+   * treat the recommendation as lower-confidence (see dataSufficiency). */
+  hasRpeData: boolean;
+  /** True when a recovery log fed the recovery penalty (else a default was used). */
+  hasRecoveryData: boolean;
+  /** True when there is enough history (>=1 prior week) for a meaningful ACWR. */
+  hasChronicBaseline: boolean;
 }
 
 export interface TrainingLoadOptions {
@@ -107,18 +129,29 @@ function latestRecoveryScore(recoveryLogs: RecoveryLog[]): number | null {
   return latest ? calculateRecoveryScore(latest).overall : null;
 }
 
-function getReadinessLabel(score: number): TrainingLoadResult['readinessLabel'] {
-  if (score < 45) return 'low';
-  if (score < 65) return 'moderate';
-  if (score < 82) return 'good';
-  return 'high';
+/**
+ * RPE-weighted load of a single session: volume * (avgRPE/10), falling back to
+ * DEFAULT_RPE_FACTOR when the session has no logged RPE. Used for BOTH the acute
+ * and chronic windows so the acute:chronic ratio is unit-consistent (TL-1).
+ */
+function getSessionLoad(session: WorkoutSession): number {
+  const avgRPE = getSessionAverageRPE(session);
+  const factor = avgRPE !== null ? avgRPE / 10 : DEFAULT_RPE_FACTOR;
+  return getSessionVolume(session) * factor;
 }
 
-function getRecommendation(fatigueScore: number): TrainingLoadRecommendation {
-  if (fatigueScore >= 75) return 'rest';
-  if (fatigueScore >= 55) return 'deload';
-  if (fatigueScore >= 35) return 'maintain';
-  return 'push';
+/**
+ * Per-muscle readiness (0-100) from days since last trained. Rises from a
+ * freshly-trained low, peaks in the recovery window (~day 3), then declines as
+ * neglect/detraining sets in, so a neglected muscle scores LOWER than a freshly
+ * recovered one (the previous flat-100 plateau made them indistinguishable).
+ *   day0 ~50 · day1 ~67 · day2 ~83 · day3 100 · day7 ~82 · day14 ~50 · day21+ ~floor 35
+ */
+function muscleReadinessFromDays(days: number): number {
+  if (days <= 0) return 50;
+  if (days <= 3) return 50 + days * (50 / 3); // ramp up to the 100 peak at day 3
+  if (days <= 14) return Math.max(50, 100 - (days - 3) * 4.5); // decline through the week
+  return Math.max(35, 50 - (days - 14) * 1.5); // long-neglect floor
 }
 
 function getPrimaryConstraint(params: {
@@ -129,8 +162,8 @@ function getPrimaryConstraint(params: {
 }): TrainingLoadConstraint {
   const { averageRPE, recoveryScore, weeklyVolume, volumeChangePercent } = params;
 
-  if (recoveryScore !== null && recoveryScore < 45) return 'recovery';
-  if (volumeChangePercent > 25) return 'load_spike';
+  if (recoveryScore !== null && recoveryScore < RECOVERY_BANDS.LOW) return 'recovery';
+  if (volumeChangePercent > VOLUME_SPIKE_PERCENT) return 'load_spike';
   if (averageRPE !== null && averageRPE >= 8.5) return 'high_rpe';
   if (weeklyVolume === 0) return 'low_volume';
   return 'balanced';
@@ -194,17 +227,24 @@ function calculateMuscleRecovery(params: {
       const daysSinceLastTrained = lastTrained ? daysBetween(now, lastTrained) : null;
       const isTight = tightAreas.includes(muscle);
 
-      let recoveryScore = 100;
-      if (daysSinceLastTrained !== null) {
-        recoveryScore -= Math.max(0, 35 - daysSinceLastTrained * 12);
-      }
-      if (volumeChangePercent > 25) {
-        recoveryScore -= Math.min(30, Math.round((volumeChangePercent - 25) * 0.3));
+      // Physiological readiness curve: a freshly-trained muscle is fatigued (low),
+      // readiness climbs to a peak around the recovery window, then DECLINES as the
+      // muscle is increasingly neglected/detrained. This restores monotonic meaning
+      // to the scalar — previously the term only subtracted for days<3 and plateaued
+      // at a flat 100, so a 2-week-neglected muscle scored the SAME 100 as a perfectly
+      // recovered one (TL-3) and days 3-6 were indistinguishable (TL-8).
+      let recoveryScore =
+        daysSinceLastTrained !== null ? muscleReadinessFromDays(daysSinceLastTrained) : 100;
+      if (volumeChangePercent > VOLUME_SPIKE_PERCENT) {
+        recoveryScore -= Math.min(
+          30,
+          Math.round((volumeChangePercent - VOLUME_SPIKE_PERCENT) * 0.3)
+        );
       }
       if (isTight) {
         recoveryScore -= 45;
       }
-      recoveryScore = clamp(recoveryScore, 0, 100);
+      recoveryScore = clamp(Math.round(recoveryScore), 0, 100);
 
       let status: MuscleRecoveryStatus = 'fresh';
       if (isTight || recoveryScore < 55) {
@@ -251,8 +291,12 @@ export function calculateTrainingLoad(
     (session) =>
       session.date >= getDateKey(previousWeekStart) && session.date < getDateKey(weekStart)
   );
-  const chronicSessions = completedSessions.filter(
-    (session) => session.date >= getDateKey(chronicStart) && session.date <= todayKey
+  // Chronic baseline = the 3 weeks BEFORE the acute week ([-28d, -7d)). Excluding
+  // the acute week makes acute-vs-chronic a genuine comparison against an
+  // independent baseline; previously the 28-day window CONTAINED the acute week,
+  // so a spike inflated both sides and the ratio was biased toward 1 (TL-2).
+  const baselineSessions = completedSessions.filter(
+    (session) => session.date >= getDateKey(chronicStart) && session.date < getDateKey(weekStart)
   );
 
   const weeklyVolume = weeklySessions.reduce((sum, session) => sum + getSessionVolume(session), 0);
@@ -260,11 +304,6 @@ export function calculateTrainingLoad(
     (sum, session) => sum + getSessionVolume(session),
     0
   );
-  const chronicVolume = chronicSessions.reduce(
-    (sum, session) => sum + getSessionVolume(session),
-    0
-  );
-  const chronicLoad = chronicVolume / 4;
   const volumeChangePercent =
     previousWeeklyVolume > 0
       ? Math.round(((weeklyVolume - previousWeeklyVolume) / previousWeeklyVolume) * 100)
@@ -279,8 +318,19 @@ export function calculateTrainingLoad(
     weeklyRPEs.length > 0
       ? weeklyRPEs.reduce((sum, rpe) => sum + rpe, 0) / weeklyRPEs.length
       : null;
-  const rpeFactor = averageRPE !== null ? averageRPE / 10 : 0.7;
-  const acuteLoad = weeklyVolume * rpeFactor;
+
+  // Both sides are RPE-weighted load (volume * RPE/10, same DEFAULT_RPE_FACTOR
+  // fallback), so the ratio is unit-consistent (TL-1). Chronic is the mean
+  // weekly load over the 3-week baseline.
+  const acuteLoad = weeklySessions.reduce((sum, session) => sum + getSessionLoad(session), 0);
+  const baselineLoad = baselineSessions.reduce((sum, session) => sum + getSessionLoad(session), 0);
+  // Divide by the number of prior weeks that ACTUALLY have data (1-3), not a fixed
+  // 3. A cold start with only one prior week would otherwise be divided by 3,
+  // understating the baseline and inflating the ratio into a false load spike.
+  const baselineWeeks = new Set(
+    baselineSessions.map((s) => Math.floor((daysBetween(now, s.date) - 7) / 7))
+  ).size;
+  const chronicLoad = baselineLoad / Math.max(1, baselineWeeks);
   const acuteChronicRatio = chronicLoad > 0 ? acuteLoad / chronicLoad : acuteLoad > 0 ? 1.0 : 0;
 
   const recoveryScore = latestRecoveryScore(recoveryLogs);
@@ -320,11 +370,14 @@ export function calculateTrainingLoad(
     previousWeeklyVolume,
     primaryConstraint,
     recoveryScore,
-    readinessLabel: getReadinessLabel(readinessScore),
+    readinessLabel: readinessBandFromFatigue(fatigueScore),
     readinessScore,
-    recommendation: getRecommendation(fatigueScore),
+    recommendation: recommendationFromFatigue(fatigueScore),
     weeklySessionCount: weeklySessions.length,
     weeklyVolume,
     volumeChangePercent,
+    hasRpeData: weeklyRPEs.length > 0,
+    hasRecoveryData: recoveryScore !== null,
+    hasChronicBaseline: baselineSessions.length > 0,
   };
 }

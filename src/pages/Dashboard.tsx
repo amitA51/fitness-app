@@ -8,6 +8,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ActivityRings } from '../components/charts';
 import { RING_DRAW_DURATION, ringDelay } from '../components/charts/ActivityRings';
+import { CoachBriefCard } from '../components/dashboard/CoachBriefCard';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { ForecastNudge } from '../components/dashboard/ForecastNudge';
 import { RecentPRBanner } from '../components/dashboard/RecentPRBanner';
@@ -340,6 +341,9 @@ export default function Dashboard() {
         {/* 2. Forecast nudge — moved up so it isn't missed at the bottom */}
         <ForecastNudge sessions={workoutSessions} />
 
+        {/* Daily readiness — math-grounded AI coach note (readiness + load recommendation) */}
+        <CoachBriefCard sessions={workoutSessions} kind="daily-readiness" />
+
         {/* 3. Hero bento — weekly activity rings (the glanceable summary) */}
         {(weekData.workoutsThisWeek > 0 || weekData.volume > 0) && (
           <section
@@ -399,6 +403,9 @@ export default function Dashboard() {
             </div>
           </section>
         )}
+
+        {/* Weekly review — math-grounded AI recap beneath the weekly rings */}
+        <CoachBriefCard sessions={workoutSessions} kind="weekly-review" />
 
         {/* 4. Templates — quick strip + library affordance */}
         {sortedTemplates.length > 0 && (

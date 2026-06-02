@@ -57,6 +57,11 @@ export function useWorkoutHandlers({
     [dispatch]
   );
 
+  const handleAddSet = useCallback(() => {
+    triggerHaptic('light');
+    dispatch({ type: 'ADD_SET' });
+  }, [dispatch]);
+
   const handleUndoSet = useCallback(() => {
     triggerHaptic('medium');
     dispatch({ type: 'UNDO_LAST_SET' });
@@ -162,6 +167,13 @@ export function useWorkoutHandlers({
     },
     [dispatch]
   );
+
+  const handleNextExercise = useCallback(() => {
+    if (currentExerciseIndex < exercisesLength - 1) {
+      triggerHaptic('light');
+      dispatch({ type: 'CHANGE_EXERCISE', payload: currentExerciseIndex + 1 });
+    }
+  }, [dispatch, currentExerciseIndex, exercisesLength]);
 
   const handleOpenDrawer = useCallback(() => {
     dispatch({ type: 'TOGGLE_DRAWER', payload: true });
@@ -340,6 +352,7 @@ export function useWorkoutHandlers({
   return {
     handleUpdateSet,
     handleCompleteSet,
+    handleAddSet,
     handleOpenNumpad,
     handleUndoSet,
     handleUpdateRPE,
@@ -354,6 +367,7 @@ export function useWorkoutHandlers({
     handleFinishRequest,
     handleDiscardRequest,
     handleChangeExercise,
+    handleNextExercise,
     handleOpenDrawer,
     handleCloseDrawer,
     handleCloseSelector,

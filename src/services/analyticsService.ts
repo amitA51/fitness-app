@@ -7,6 +7,7 @@ import { HEBREW_DAYS, pad2, todayStr } from '../utils/dateUtils';
 import {
   completedSetsVolume,
   computeSessionStats as computeSessionStatsSSOT,
+  oneRepMax,
   setVolume,
 } from '../utils/workoutMath';
 import { getWorkoutSessions } from './workoutDb';
@@ -862,13 +863,15 @@ export const calculateStrengthProgression = (
         let best1RM = 0;
         for (const set of exercise.sets) {
           if (set.isCompleted && !set.isWarmup) {
-            const est = set.weight * (1 + set.reps / 30);
+            // Canonical Epley (handles reps===1 + 0.1 rounding) so the chart's
+            // 1RM matches the PR/AI pipeline for the same set (SM-2).
+            const est = oneRepMax(set.weight, set.reps);
             if (est > best1RM) best1RM = est;
           }
         }
         const volume = completedSetsVolume(exercise.sets);
         if (best1RM === 0 && volume === 0) continue;
-        points.push({ date: session.date, estimated1RM: Math.round(best1RM * 10) / 10, volume });
+        points.push({ date: session.date, estimated1RM: best1RM, volume });
       }
       return points;
     }, [])

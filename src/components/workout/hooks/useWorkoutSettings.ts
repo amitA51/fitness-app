@@ -82,6 +82,9 @@ export const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
   confirmExerciseComplete: true,
   enableSupersets: false,
   showRestBetweenExercises: true,
+  // Sets are fixed to the user/template-defined count by default; extra sets are
+  // added manually. Set true to restore the legacy auto-append-on-last-set flow.
+  autoAddSets: false,
 
   // Personal Records
   enablePRAlerts: true,

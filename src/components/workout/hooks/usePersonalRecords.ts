@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getAllWorkoutSessions } from '../../../services/dataService';
 import {
   type PersonalRecord,
+  calculateEst1RM,
   calculatePRsFromHistory,
   isNewPR as checkIsNewPR,
 } from '../../../services/prService';
@@ -107,7 +108,7 @@ export function usePersonalRecords(
         exerciseName,
         maxWeight: weight,
         maxReps: reps,
-        oneRepMax: Math.round(weight * (1 + reps / 30)),
+        oneRepMax: calculateEst1RM(weight, reps),
         date: set.completedAt || new Date().toISOString(),
         weight,
         reps,

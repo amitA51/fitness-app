@@ -31,6 +31,10 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   const [showContent, setShowContent] = useState(false);
   const [tutorialContent, setTutorialContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
+  const [qaError, setQaError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useFocusTrap(containerRef, { isOpen, onClose, closeOnEscape: true, lockScroll: true });
@@ -118,6 +122,32 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
       setLoading(false);
     }
   }, [exerciseName]);
+
+  // Grounded per-exercise Q&A: the answer is anchored to the user's REAL recent
+  // numbers for this exercise (most-recent set + estimated 1RM) and the model is
+  // told not to invent figures — so it can't hallucinate a weight (AW-2/AS-6).
+  const handleAsk = useCallback(async () => {
+    const q = question.trim();
+    if (!q || asking) return;
+    setAsking(true);
+    setQaError(null);
+    let humanize: (e: unknown) => string = () => 'לא הצלחתי לענות כרגע. נסה שוב.';
+    try {
+      const ai = await import('../../services/ai');
+      const { getWorkoutSessions } = await import('../../services/dataService');
+      const errMod = await import('../../services/ai/errorMessages');
+      humanize = errMod.humanizeAIError;
+      const sessions = await getWorkoutSessions(100);
+      const grounding = ai.buildExerciseGrounding(exerciseName, sessions);
+      const reply = await ai.askExerciseQuestion(exerciseName, q, { grounding });
+      setAnswer(reply);
+    } catch (error) {
+      logger.ai.error('Exercise Q&A failed', error);
+      setQaError(humanize(error));
+    } finally {
+      setAsking(false);
+    }
+  }, [question, asking, exerciseName]);
 
   if (!isOpen) return null;
 
@@ -382,7 +412,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
               )}
             </div>
 
-            {/* AI Tips */}
+            {/* Form tips — static technique reference (not AI-generated) */}
             <button
               type="button"
               onClick={handleShowTips}
@@ -403,7 +433,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 opacity: loading || showContent ? 0.7 : 1,
               }}
             >
-              {loading ? 'טוען טיפים...' : showContent ? 'טיפים נטענו' : 'טיפים נוספים'}
+              {loading ? 'טוען טיפים...' : showContent ? 'טיפים לטכניקה' : 'טיפים לטכניקה'}
             </button>
 
             {showContent && tutorialContent && (
@@ -427,6 +457,86 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 {tutorialContent}
               </m.div>
             )}
+
+            {/* Grounded per-exercise Q&A — answer anchored to the user's real numbers */}
+            <div style={{ marginTop: 16 }}>
+              <label
+                htmlFor="exercise-qa"
+                style={{
+                  display: 'block',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                  color: 'var(--fs-muted)',
+                  marginBottom: 6,
+                }}
+              >
+                שאל על התרגיל
+              </label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  id="exercise-qa"
+                  type="text"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAsk();
+                  }}
+                  placeholder="למשל: איזה משקל לנסות?"
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    background: 'rgba(var(--text-on-navy-rgb),0.06)',
+                    border: '1px solid rgba(var(--text-on-navy-rgb),0.15)',
+                    borderRadius: 0,
+                    color: 'var(--fs-ink)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 14,
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAsk}
+                  disabled={asking || !question.trim()}
+                  style={{
+                    padding: '10px 16px',
+                    background: 'var(--fs-accent)',
+                    color: 'var(--fs-heading)',
+                    border: 'none',
+                    borderRadius: 0,
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: 13,
+                    cursor: asking || !question.trim() ? 'default' : 'pointer',
+                    opacity: asking || !question.trim() ? 0.6 : 1,
+                  }}
+                >
+                  {asking ? '...' : 'שאל'}
+                </button>
+              </div>
+              {answer && (
+                <p
+                  style={{
+                    margin: '10px 0 0',
+                    padding: 12,
+                    background: 'rgba(var(--text-on-navy-rgb),0.05)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                    color: 'var(--fs-ink)',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {answer}
+                </p>
+              )}
+              {qaError && (
+                <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--fs-warn, #d97706)' }}>
+                  {qaError}
+                </p>
+              )}
+            </div>
           </m.div>
         )}
       </div>

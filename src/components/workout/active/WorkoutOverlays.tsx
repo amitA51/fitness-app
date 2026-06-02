@@ -12,7 +12,7 @@
 
 import React from 'react';
 import type { Exercise, WorkoutGoal, WorkoutSettings } from '../../../types';
-import type { NumpadState } from '../core/workoutTypes';
+import type { NumpadState, SupersetGroup } from '../core/workoutTypes';
 import WorkoutFlowOverlays from './WorkoutFlowOverlays';
 import WorkoutInputOverlays from './WorkoutInputOverlays';
 import WorkoutSettingsOverlays from './WorkoutSettingsOverlays';
@@ -57,6 +57,8 @@ interface WorkoutOverlaysProps {
   ) => void;
   onDeleteSet: (exerciseIndex: number, setIndex: number) => void;
   onCloseDrawer: () => void;
+  supersetGroups?: SupersetGroup[];
+  onCreateSupersetGroup?: (exerciseIds: string[]) => void;
   // Exercise selector
   showExerciseSelector: boolean;
   onAddExercise: (ex: Exercise) => void;
@@ -124,6 +126,8 @@ const WorkoutOverlays: React.FC<WorkoutOverlaysProps> = (props) => (
       onEditSetInList={props.onEditSetInList}
       onDeleteSet={props.onDeleteSet}
       onCloseDrawer={props.onCloseDrawer}
+      supersetGroups={props.supersetGroups}
+      onCreateSupersetGroup={props.onCreateSupersetGroup}
       showExerciseSelector={props.showExerciseSelector}
       onAddExercise={props.onAddExercise}
       onCloseSelector={props.onCloseSelector}

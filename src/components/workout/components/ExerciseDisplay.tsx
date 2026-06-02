@@ -2,7 +2,7 @@
 // Exercise card (pinned) → technique pills → input cards → previous badge → action group
 // No dark hero panel, no internal SlideToComplete
 
-import { Edit, FileText, Link2, RotateCcw, Star, Unlink } from 'lucide-react';
+import { Check, ChevronLeft, Edit, FileText, Link2, Plus, RotateCcw, Star, Unlink } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import type { Exercise, SetTechnique, WorkoutSet } from '../../../types';
@@ -27,6 +27,9 @@ interface ExerciseDisplayProps {
   prInfo: string;
   onUpdateSet: (field: 'weight' | 'reps', value: number) => void;
   onCompleteSet: () => void;
+  onAddSet?: () => void;
+  onNextExercise?: () => void;
+  hasNextExercise?: boolean;
   onOpenNumpad: (target: 'weight' | 'reps') => void;
   onRenameExercise?: (name: string) => void;
   onEditSet?: (setIndex: number, updates: Partial<WorkoutSet>) => void;
@@ -56,6 +59,9 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     currentSet,
     prInfo,
     onUpdateSet,
+    onAddSet,
+    onNextExercise,
+    hasNextExercise = false,
     onOpenNumpad,
     onEditSet,
     onUpdateNotes,
@@ -89,6 +95,12 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     );
 
     const totalSets = useMemo(() => exercise.sets?.length || 0, [exercise.sets]);
+
+    // Exercise is "done" when it has planned sets and every one is completed.
+    // In this state there is no real active set (displaySetIndex points at the
+    // virtual slot past the end), so we swap the input cards for a clear
+    // "completed" panel instead of showing a confusing empty SET n+1/n.
+    const isExerciseComplete = totalSets > 0 && completedSetsCount >= totalSets;
 
     const isInSuperset = useMemo(() => {
       if (!exercise?.id || supersetGroups.length === 0) return false;
@@ -234,7 +246,9 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   direction: 'ltr',
                 }}
               >
-                SET {completedSetsCount + 1} / {totalSets}
+                {isExerciseComplete
+                  ? `DONE · ${totalSets}/${totalSets}`
+                  : `SET ${completedSetsCount + 1} / ${totalSets}`}
               </span>
             </div>
           </div>
@@ -253,44 +267,160 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             overscrollBehavior: 'contain',
           }}
         >
-          {/* 5A: Technique pills */}
-          {onToggleTechnique && <SetTechniquePills set={currentSet} onToggle={onToggleTechnique} />}
+          {isExerciseComplete ? (
+            /* Exercise-done panel — replaces the input cards once every set is
+               completed. Makes the finished state explicit and offers the two
+               natural next actions (train another set / move on). */
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 14,
+                padding: '22px 16px',
+                background: 'color-mix(in srgb, var(--fs-accent) 8%, var(--fs-surface))',
+                border: '1px solid color-mix(in srgb, var(--fs-accent) 25%, var(--fs-steel))',
+                borderRadius: 16,
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  background: 'var(--fs-accent)',
+                  color: '#FFFFFF',
+                }}
+              >
+                <Check size={26} strokeWidth={3} />
+              </div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: 'var(--fs-heading)',
+                }}
+              >
+                התרגיל הושלם
+              </div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  color: 'var(--fs-muted)',
+                  letterSpacing: '0.04em',
+                  direction: 'ltr',
+                }}
+              >
+                {completedSetsCount} / {totalSets} sets
+              </div>
+              <div style={{ display: 'flex', gap: 10, width: '100%', marginTop: 2 }}>
+                {onAddSet && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptics.impact('light');
+                      onAddSet();
+                    }}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      minHeight: 48,
+                      borderRadius: 12,
+                      background: 'var(--fs-surface)',
+                      border: '1px solid var(--fs-steel)',
+                      color: 'var(--fs-ink)',
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 700,
+                      fontSize: 14,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Plus size={16} strokeWidth={2.5} />
+                    הוסף סט
+                  </button>
+                )}
+                {hasNextExercise && onNextExercise && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptics.impact('medium');
+                      onNextExercise();
+                    }}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      minHeight: 48,
+                      borderRadius: 12,
+                      background: 'var(--fs-accent)',
+                      border: 'none',
+                      color: '#FFFFFF',
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 800,
+                      fontSize: 14,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    לתרגיל הבא
+                    <ChevronLeft size={16} strokeWidth={2.5} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* 5A: Technique pills */}
+              {onToggleTechnique && (
+                <SetTechniquePills set={currentSet} onToggle={onToggleTechnique} />
+              )}
 
-          {/* Gap after pills */}
-          <div style={{ height: 12, flexShrink: 0 }} />
+              {/* Gap after pills */}
+              <div style={{ height: 12, flexShrink: 0 }} />
 
-          {/* 5B: Input cards grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <SetInputCard
-              label="משקל"
-              value={currentSet.weight || 0}
-              ghostValue={previousSet?.weight}
-              showGhost={showGhostWeight}
-              unit="kg"
-              incrementAmount={2.5}
-              onTap={handleWeightTap}
-              onIncrement={handleIncrementWeight}
-              onDecrement={handleDecrementWeight}
-              showButtons={enableQuickWeightButtons}
-            />
-            <SetInputCard
-              label="חזרות"
-              value={currentSet.reps || 0}
-              ghostValue={previousSet?.reps}
-              showGhost={showGhostReps}
-              incrementAmount={1}
-              onTap={handleRepsTap}
-              onIncrement={handleIncrementReps}
-              onDecrement={handleDecrementReps}
-              showButtons={enableQuickRepsButtons}
-            />
-          </div>
+              {/* 5B: Input cards grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <SetInputCard
+                  label="משקל"
+                  value={currentSet.weight || 0}
+                  ghostValue={previousSet?.weight}
+                  showGhost={showGhostWeight}
+                  unit="kg"
+                  incrementAmount={2.5}
+                  onTap={handleWeightTap}
+                  onIncrement={handleIncrementWeight}
+                  onDecrement={handleDecrementWeight}
+                  showButtons={enableQuickWeightButtons}
+                />
+                <SetInputCard
+                  label="חזרות"
+                  value={currentSet.reps || 0}
+                  ghostValue={previousSet?.reps}
+                  showGhost={showGhostReps}
+                  incrementAmount={1}
+                  onTap={handleRepsTap}
+                  onIncrement={handleIncrementReps}
+                  onDecrement={handleDecrementReps}
+                  showButtons={enableQuickRepsButtons}
+                />
+              </div>
 
-          {/* Gap */}
-          <div style={{ height: 8, flexShrink: 0 }} />
+              {/* Gap */}
+              <div style={{ height: 8, flexShrink: 0 }} />
+            </>
+          )}
 
           {/* 5C: Previous set badge */}
-          {previousSet && (previousSet.weight || previousSet.reps) && (
+          {!isExerciseComplete && previousSet && (previousSet.weight || previousSet.reps) && (
             <>
               <div
                 style={{
@@ -376,6 +506,17 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
 
             {/* Row 1: Primary actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {onAddSet && (
+                <ActionChip
+                  icon={<Plus size={14} strokeWidth={2.5} />}
+                  label="הוסף סט"
+                  onClick={() => {
+                    haptics.impact('light');
+                    onAddSet();
+                  }}
+                  ariaLabel="הוסף סט לתרגיל"
+                />
+              )}
               {onUpdateRPE && (
                 <ActionChip
                   icon={

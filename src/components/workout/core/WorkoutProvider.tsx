@@ -40,8 +40,21 @@ const platform: PlatformAdapter = webPlatform;
  * Returns true on success.
  */
 const persistState = (state: WorkoutState): boolean => {
+  // A finished/discarded workout must never be re-persisted (which would let it
+  // be restored). Clear the snapshot and bail — this guards every persist path
+  // (debounced, interval, visibility, unmount flush).
+  if (state.finalized) {
+    try {
+      platform.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    return true;
+  }
+  // Stamp the wall-clock write time so restore can subtract closed-app time.
+  const payload = { ...state, lastPersistedAt: Date.now() };
   try {
-    platform.setItem(STORAGE_KEY, JSON.stringify(state));
+    platform.setItem(STORAGE_KEY, JSON.stringify(payload));
     return true;
   } catch (err) {
     // Try a stripped payload — keep only durable fields a user would lose
@@ -56,6 +69,7 @@ const persistState = (state: WorkoutState): boolean => {
         isPaused: state.isPaused,
         restTimer: state.restTimer,
         appSettings: state.appSettings,
+        lastPersistedAt: payload.lastPersistedAt,
       };
       platform.setItem(STORAGE_KEY, JSON.stringify(slim));
       logger.workout?.warn?.('Workout state slim-persist succeeded after full failure', err);
@@ -114,18 +128,26 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
     const appSettings = loadAppSettings();
 
     if (savedState) {
-      // Calculate wall-time elapsed while app was closed and add to totalPausedTime
-      const lastTimestamp = savedState.lastPauseTimestamp || Date.now();
+      // Subtract the wall-time the app was closed/backgrounded from the workout
+      // duration by adding it to totalPausedTime. Prefer the persist stamp; fall
+      // back to the last pause time, then to now (no adjustment).
+      const lastTimestamp =
+        savedState.lastPersistedAt || savedState.lastPauseTimestamp || Date.now();
       const closedAppElapsed = Math.max(0, Date.now() - lastTimestamp);
+      // Preserve the user's own pause state. Previously we force-paused on every
+      // restore, which froze the duration timer with no obvious way to resume —
+      // so a resumed-but-still-"paused" workout saved a far-too-short duration.
+      const wasPaused = savedState.isPaused === true;
 
       return {
         ...createInitialState([], 0, appSettings),
         ...savedState,
         appSettings,
-        isPaused: true,
-        lastPauseTimestamp: Date.now(),
+        isPaused: wasPaused,
+        lastPauseTimestamp: wasPaused ? Date.now() : null,
         totalPausedTime: (savedState.totalPausedTime || 0) + closedAppElapsed,
         pendingHaptic: null,
+        finalized: false,
         // Sanitize transient UI/celebration flags
         showConfetti: false,
         showPRCelebration: null,
@@ -176,6 +198,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
       totalPausedTime: state.totalPausedTime,
       isPaused: state.isPaused,
       restTimer: state.restTimer,
+      finalized: state.finalized,
     });
     if (meaningful === lastPersistedRef.current) return;
     lastPersistedRef.current = meaningful;

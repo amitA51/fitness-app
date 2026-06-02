@@ -11,7 +11,7 @@
 // PR celebrations, supersets toggle, CSV export toggle, body-weight prompts…)
 // has been removed because it was either UI-only or duplicated by global Settings.
 
-import { AnimatePresence, type PanInfo, m, useMotionValue, useTransform } from 'framer-motion';
+import { AnimatePresence, type PanInfo, m } from 'framer-motion';
 import { X as CloseIcon } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 import type { WorkoutSettings } from '../../../types';
@@ -50,8 +50,6 @@ interface WorkoutSettingsOverlayProps {
 const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
   ({ isOpen, settings, onClose, onUpdateSetting }) => {
     const [activeTab, setActiveTab] = useState<SettingsTab>('general');
-    const y = useMotionValue(0);
-    const backdropOpacity = useTransform(y, [0, 200], [1, 0]);
 
     const handleDragEnd = (_: unknown, info: PanInfo) => {
       if (info.offset.y > 100) onClose();
@@ -93,7 +91,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
         {/* Custom backdrop with motion-value for drag interaction */}
         <m.div
           className="absolute inset-0"
-          style={{ opacity: backdropOpacity, background: 'rgba(0,0,0,0.5)' }}
+          style={{ background: 'rgba(0,0,0,0.5)' }}
           onClick={handleClose}
         />
 
@@ -107,7 +105,6 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
           dragElastic={{ top: 0, bottom: 0.4 }}
           onDragEnd={handleDragEnd}
           style={{
-            y,
             background: 'var(--fs-bg)',
             borderTop: '2px solid var(--fs-primary)',
             borderRadius: '24px 24px 0 0',
@@ -257,6 +254,12 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                     description="התחל מנוחה אוטומטית אחרי סט"
                     value={get('autoStartRest') ?? true}
                     onChange={(v) => onUpdateSetting('autoStartRest', v)}
+                  />
+                  <Toggle
+                    label="הוספת סטים אוטומטית"
+                    description="הוסף סט חדש אוטומטית בסיום הסט האחרון. כבוי = מספר הסטים קבוע ומוסיפים ידנית"
+                    value={get('autoAddSets') ?? false}
+                    onChange={(v) => onUpdateSetting('autoAddSets', v)}
                   />
                 </m.div>
               )}

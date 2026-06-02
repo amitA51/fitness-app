@@ -3,7 +3,7 @@
 // ============================================================================
 
 import * as Sentry from '@sentry/react';
-import { domMax, LazyMotion } from 'framer-motion';
+import { LazyMotion, domMax } from 'framer-motion';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';

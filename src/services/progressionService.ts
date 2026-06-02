@@ -5,6 +5,7 @@
 
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../types';
 import { completedSetsVolume } from '../utils/workoutMath';
+import { FATIGUE_BANDS, RECOVERY_BANDS } from './intelligence/scoringThresholds';
 
 // ============================================================================
 // TYPES
@@ -62,11 +63,16 @@ const WEIGHT_INCREMENT_SMALL = 2.5; // kg
 const WEIGHT_INCREMENT_MEDIUM = 5; // kg
 
 const DELOAD_PERCENT = 0.6; // 60% of last weight for deload
-const RECOVERY_SCORE_DELOAD_THRESHOLD = 40;
-const RECOVERY_SCORE_MAINTAIN_THRESHOLD = 65;
+// Fatigue/recovery cut-points are shared with trainingLoadService via
+// scoringThresholds so the per-exercise card and the global readiness chip can
+// never disagree about what counts as "deload"/"poor recovery" (PR-1/PR-2).
+// Previously these were 65/40 (fatigue) and 40/65 (recovery), diverging from the
+// global engine's 55 deload / 45 recovery cut-points.
+const RECOVERY_SCORE_DELOAD_THRESHOLD = RECOVERY_BANDS.LOW; // 45
+const RECOVERY_SCORE_MAINTAIN_THRESHOLD = RECOVERY_BANDS.MODERATE; // 65
 const RECOVERY_DELOAD_PERCENT = 0.8;
-const FATIGUE_SCORE_DELOAD_THRESHOLD = 65;
-const FATIGUE_SCORE_MAINTAIN_THRESHOLD = 40;
+const FATIGUE_SCORE_DELOAD_THRESHOLD = FATIGUE_BANDS.DELOAD; // 55
+const FATIGUE_SCORE_MAINTAIN_THRESHOLD = FATIGUE_BANDS.MAINTAIN; // 35
 const FATIGUE_DELOAD_PERCENT = 0.85;
 
 // ============================================================================
@@ -211,7 +217,15 @@ export interface ProgressionInput {
 }
 
 export function calculateProgression(input: ProgressionInput): ExerciseProgressionData {
-  const { exerciseId, exerciseName, targetReps, sessions, fatigueScore, recoveryScore } = input;
+  const {
+    exerciseId,
+    exerciseName,
+    targetReps,
+    targetSets,
+    sessions,
+    fatigueScore,
+    recoveryScore,
+  } = input;
 
   const history = getExerciseHistory(sessions, exerciseId);
   const lastSession = history[history.length - 1] ?? null;
@@ -371,9 +385,13 @@ export function calculateProgression(input: ProgressionInput): ExerciseProgressi
   // RULE 6: Very fresh (low RPE, low volume) - might need more volume first
   // =========================================================================
   const rpeForRule6 = avgRPE;
+  // Compare TOTAL session volume against EXPECTED total volume (sets*reps*weight).
+  // Previously the threshold was a single set's volume (targetReps*weight*0.5),
+  // so for any multi-set session the branch was unreachable (PR-3).
+  const expectedSessionVolume = targetSets * targetReps * currentWeight;
   if (
     lastSession &&
-    lastSession.volume < targetReps * currentWeight * 0.5 &&
+    lastSession.volume < expectedSessionVolume * 0.5 &&
     rpeForRule6 != null &&
     rpeForRule6 < 5
   ) {

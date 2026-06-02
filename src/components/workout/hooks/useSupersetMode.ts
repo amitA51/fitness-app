@@ -1,8 +1,11 @@
-// useSupersetMode - Owns superset selection state and its create/remove handlers.
-// Extracted from ActiveWorkoutNew. The hook tracks the two-step "pick first
-// exercise, then pick second" selection flow and dispatches the resulting
-// CREATE_SUPERSET / REMOVE_SUPERSET actions. The component consumes `supersetMode`
-// for its indicator and wires the two handlers into ExerciseDisplay unchanged.
+// useSupersetMode - Owns superset creation via a picker bottom sheet.
+//
+// Previous design was a fragile two-step "tap the chip on exercise A, then
+// navigate to exercise B and tap again" flow with no way to pick, cancel, or
+// build a 3+ giant set. This version opens a `SupersetPicker` anchored on the
+// exercise whose chip was tapped; the user multi-selects the other members and
+// confirms, which dispatches a single CREATE_SUPERSET. `handleRemoveSuperset`
+// removes the group an exercise belongs to.
 import type React from 'react';
 import { useCallback, useState } from 'react';
 
@@ -15,59 +18,69 @@ interface UseSupersetModeParams {
 }
 
 interface UseSupersetModeReturn {
-  supersetMode: boolean;
-  handleCreateSuperset: (exerciseId: string) => void;
+  /** Whether the SupersetPicker bottom sheet is open. */
+  supersetPickerOpen: boolean;
+  /** The exercise the picker was opened from (pre-selected and locked). */
+  supersetAnchorId: string | null;
+  /** Open the picker anchored on an exercise (wired to the "סופרסט" chip). */
+  openSupersetPicker: (exerciseId: string) => void;
+  /** Close the picker without creating a group. */
+  closeSupersetPicker: () => void;
+  /** Confirm the selection → dispatch CREATE_SUPERSET and close. */
+  confirmSuperset: (exerciseIds: string[]) => void;
+  /** Remove the superset group an exercise belongs to. */
   handleRemoveSuperset: (exerciseId: string) => void;
 }
 
-/**
- * Encapsulates the superset selection state machine.
- *
- * `handleCreateSuperset` is a two-step toggle: the first call enters superset
- * mode and records the first exercise; the second call (with a different
- * exercise) dispatches CREATE_SUPERSET and resets. `handleRemoveSuperset`
- * removes a superset and clears any in-progress selection.
- */
 export function useSupersetMode({
   dispatch,
   defaultRestTime,
 }: UseSupersetModeParams): UseSupersetModeReturn {
-  const [supersetMode, setSupersetMode] = useState(false);
-  const [supersetFirstExerciseId, setSupersetFirstExerciseId] = useState<string | null>(null);
+  const [supersetAnchorId, setSupersetAnchorId] = useState<string | null>(null);
 
-  const handleCreateSuperset = useCallback(
-    (exerciseId: string) => {
-      if (!supersetMode) {
-        // Enter superset mode - select first exercise
-        triggerHaptic('medium');
-        setSupersetMode(true);
-        setSupersetFirstExerciseId(exerciseId);
-      } else if (supersetFirstExerciseId && supersetFirstExerciseId !== exerciseId) {
-        // Create superset with two exercises
-        triggerHaptic('success');
-        dispatch({
-          type: 'CREATE_SUPERSET',
-          payload: {
-            exerciseIds: [supersetFirstExerciseId, exerciseId],
-            restBetweenRounds: defaultRestTime || 60,
-          },
-        });
-        setSupersetMode(false);
-        setSupersetFirstExerciseId(null);
+  const openSupersetPicker = useCallback((exerciseId: string) => {
+    triggerHaptic('medium');
+    setSupersetAnchorId(exerciseId);
+  }, []);
+
+  const closeSupersetPicker = useCallback(() => {
+    setSupersetAnchorId(null);
+  }, []);
+
+  const confirmSuperset = useCallback(
+    (exerciseIds: string[]) => {
+      if (exerciseIds.length < 2) {
+        setSupersetAnchorId(null);
+        return;
       }
+      triggerHaptic('success');
+      dispatch({
+        type: 'CREATE_SUPERSET',
+        payload: {
+          exerciseIds,
+          restBetweenRounds: defaultRestTime || 60,
+        },
+      });
+      setSupersetAnchorId(null);
     },
-    [dispatch, supersetMode, supersetFirstExerciseId, defaultRestTime]
+    [dispatch, defaultRestTime]
   );
 
   const handleRemoveSuperset = useCallback(
     (exerciseId: string) => {
       triggerHaptic('medium');
       dispatch({ type: 'REMOVE_SUPERSET', payload: { exerciseId } });
-      setSupersetMode(false);
-      setSupersetFirstExerciseId(null);
+      setSupersetAnchorId(null);
     },
     [dispatch]
   );
 
-  return { supersetMode, handleCreateSuperset, handleRemoveSuperset };
+  return {
+    supersetPickerOpen: supersetAnchorId !== null,
+    supersetAnchorId,
+    openSupersetPicker,
+    closeSupersetPicker,
+    confirmSuperset,
+    handleRemoveSuperset,
+  };
 }

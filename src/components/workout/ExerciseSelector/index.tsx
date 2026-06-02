@@ -2,8 +2,12 @@
 // Navy masthead · Bone body · Sharp corners · Big Shoulders Display
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
-import { AnimatePresence, type PanInfo, m, useMotionValue, useTransform } from 'framer-motion';
-import { X as CloseIcon, Dumbbell as DumbbellIcon } from 'lucide-react';
+import { AnimatePresence, type PanInfo, m } from 'framer-motion';
+import {
+  ClipboardList as ClipboardIcon,
+  X as CloseIcon,
+  Dumbbell as DumbbellIcon,
+} from 'lucide-react';
 import type React from 'react';
 import { useCallback, useState } from 'react';
 import * as dataService from '../../../services/dataService';
@@ -30,6 +34,13 @@ interface ExerciseSelectorProps {
   onClose: () => void;
   onCreateNew: () => void;
   goal?: WorkoutGoal;
+  /** Label for the primary confirm CTA (defaults to "התחל"). */
+  confirmLabel?: string;
+  /**
+   * When provided, shows a secondary "plan ahead" CTA that hands the picked
+   * exercises to the pre-workout planning table instead of starting immediately.
+   */
+  onPlanRequested?: (exercises: Exercise[]) => void;
 }
 
 const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
@@ -38,13 +49,12 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   onClose,
   onCreateNew,
   goal: _goal,
+  confirmLabel = 'התחל',
+  onPlanRequested,
 }) => {
   const [activeTab, setActiveTab] = useState<'exercises' | 'templates'>('exercises');
   const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
   const [pendingExercises, setPendingExercises] = useState<PersonalExercise[]>([]);
-
-  const y = useMotionValue(0);
-  const sheetScale = useTransform(y, [0, 300], [1, 0.95]);
 
   const handleSelect = useCallback((personalExercise: PersonalExercise) => {
     if (!personalExercise.name?.trim()) return;
@@ -77,9 +87,10 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         name: personalExercise.name,
         muscleGroup: personalExercise.muscleGroup,
         targetRestTime: personalExercise.defaultRestTime || 90,
-        sets: Array(personalExercise.defaultSets || 4)
-          .fill(null)
-          .map(() => createWorkoutSet({ reps: 0, weight: 0 })),
+        // Start every picked exercise with a single set; the trainee adds more
+        // during the workout via "הוסף סט". The library no longer prescribes a
+        // default set count.
+        sets: [createWorkoutSet({ reps: 0, weight: 0 })],
       };
       dataService.incrementExerciseUse(personalExercise.id).catch(() => {});
       onSelect(exercise);
@@ -89,6 +100,29 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     setPendingExercises([]);
     onClose();
   }, [pendingExercises, onSelect, onClose]);
+
+  // Hand the current selection to the pre-workout planning table. Sets are left
+  // empty here on purpose — the planning screen seeds each exercise with the
+  // user's defaultSets count.
+  const handlePlanSelection = useCallback(() => {
+    if (pendingExercises.length === 0 || !onPlanRequested) return;
+    triggerHaptic('success');
+
+    const exercises: Exercise[] = pendingExercises.map((personalExercise) => ({
+      id: makeExerciseId(),
+      name: personalExercise.name,
+      muscleGroup: personalExercise.muscleGroup,
+      targetRestTime: personalExercise.defaultRestTime || 90,
+      sets: [],
+    }));
+    pendingExercises.forEach((personalExercise) => {
+      dataService.incrementExerciseUse(personalExercise.id).catch(() => {});
+    });
+
+    setSelectedExercises(new Set());
+    setPendingExercises([]);
+    onPlanRequested(exercises);
+  }, [pendingExercises, onPlanRequested]);
 
   const handleTemplateSelect = useCallback(
     (template: WorkoutTemplate) => {
@@ -142,7 +176,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        style={{ scale: sheetScale, y, maxHeight: '90dvh' }}
+        style={{ maxHeight: '90dvh' }}
         drag="y"
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.5 }}
@@ -300,11 +334,36 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   textTransform: 'uppercase',
                   minHeight: 56,
                 }}
-                aria-label={`התחל אימון עם ${pendingExercises.length} תרגילים`}
+                aria-label={`${confirmLabel} עם ${pendingExercises.length} תרגילים`}
               >
                 <DumbbellIcon style={{ width: 20, height: 20, flexShrink: 0 }} />
-                התחל ({pendingExercises.length})
+                {confirmLabel} ({pendingExercises.length})
               </button>
+
+              {onPlanRequested && (
+                <button
+                  type="button"
+                  onClick={handlePlanSelection}
+                  className="w-full flex items-center justify-center gap-2 cursor-pointer mt-2"
+                  style={{
+                    background: 'transparent',
+                    color: 'var(--fs-primary)',
+                    border: '2px solid var(--fs-primary)',
+                    borderRadius: 0,
+                    padding: '12px 24px',
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: 14,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    minHeight: 48,
+                  }}
+                  aria-label={`תכנן מראש ${pendingExercises.length} תרגילים — סטים, משקל וחזרות`}
+                >
+                  <ClipboardIcon style={{ width: 18, height: 18, flexShrink: 0 }} />
+                  תכנן מראש ({pendingExercises.length})
+                </button>
+              )}
             </m.div>
           ) : (
             <m.div

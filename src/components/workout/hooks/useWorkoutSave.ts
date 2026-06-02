@@ -12,10 +12,11 @@ import type { PersonalItem, WorkoutSession, WorkoutSettings } from '../../../typ
 import { triggerHaptic } from '../../../utils/haptics';
 import { logger } from '../../../utils/logger';
 import { safeJsonParse } from '../../../utils/safeJson';
-import type { WorkoutState } from '../core/workoutTypes';
+import type { WorkoutAction, WorkoutState } from '../core/workoutTypes';
 
 interface UseWorkoutSaveParams {
   state: WorkoutState;
+  dispatch: React.Dispatch<WorkoutAction>;
   workoutSettings: Partial<WorkoutSettings>;
   finishIntent: 'finish' | 'cancel';
   setShowFinishConfirm: (open: boolean) => void;
@@ -43,6 +44,7 @@ interface UseWorkoutSaveReturn {
  */
 export function useWorkoutSave({
   state,
+  dispatch,
   workoutSettings,
   finishIntent,
   setShowFinishConfirm,
@@ -76,6 +78,10 @@ export function useWorkoutSave({
         }
       }
       localStorage.removeItem('active_workout_v3_state');
+
+      // Stop the provider from re-persisting this (now discarded) workout on
+      // unmount / interval / visibility — otherwise it would be restored next time.
+      dispatch({ type: 'FINALIZE_WORKOUT' });
 
       // Call onExit - the overlay will handle removing the item
       onExit();
@@ -141,6 +147,11 @@ export function useWorkoutSave({
       // Don't delete yet! Wait until summary is closed.
       // keeping the item active allows this component to stay mounted so Summary can be shown.
 
+      // The workout is saved — mark it finalized so the provider stops persisting
+      // and clears the snapshot. Without this, the still-mounted provider re-writes
+      // the workout to localStorage on unmount and it reappears as "active" next time.
+      dispatch({ type: 'FINALIZE_WORKOUT' });
+
       setCompletedSession(session);
       setShowSummary(true);
     } catch (e) {
@@ -154,6 +165,7 @@ export function useWorkoutSave({
   }, [
     finishIntent,
     state,
+    dispatch,
     workoutSettings.defaultWorkoutGoal,
     onExit,
     item?.id,

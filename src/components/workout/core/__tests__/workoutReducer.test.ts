@@ -17,6 +17,10 @@ const mkSettings = (overrides: Partial<AppSettings['workoutSettings']> = {}): Ap
       smartRestEnabled: false,
       autoAdvanceExercise: false,
       prCelebrationIntensity: 'off',
+      // Legacy auto-append flow on by default in this fixture so the existing
+      // COMPLETE_SET append tests stay valid. The new default-off behavior is
+      // covered explicitly in the "autoAddSets" + "ADD_SET" describe blocks.
+      autoAddSets: true,
       ...overrides,
     },
     theme: 'dark',
@@ -253,37 +257,283 @@ describe('workoutReducer', () => {
   });
 
   // ============================================================
-  // SUPERSET AUTO-ADVANCE
+  // autoAddSets — default-off behavior
   // ============================================================
-  describe('COMPLETE_SET — superset auto-advance', () => {
-    it('advances to next exercise in superset group (not last)', () => {
-      const exercises: Exercise[] = [
-        mkExercise({ id: 'ex-1', name: 'Bench' }),
-        mkExercise({ id: 'ex-2', name: 'Row' }),
-      ];
-      const state = createInitialState(exercises, 0, mkSettings());
+  describe('COMPLETE_SET — autoAddSets disabled (default)', () => {
+    it('does NOT append a new set when autoAddSets is false', () => {
+      const state = createInitialState([mkExercise()], 0, mkSettings({ autoAddSets: false }));
+      const next = apply(state, { type: 'COMPLETE_SET' });
+      // The single set is completed but no auto-generated set is appended.
+      expect(next.exercises[0]!.sets!).toHaveLength(1);
+      expect(next.exercises[0]!.sets![0]!.isCompleted).toBe(true);
+    });
+
+    it('still starts the rest timer when autoAddSets is false', () => {
+      const state = createInitialState([mkExercise()], 0, mkSettings({ autoAddSets: false }));
+      const next = apply(state, { type: 'COMPLETE_SET' });
+      expect(next.restTimer.active).toBe(true);
+      expect(next.restTimer.totalTime).toBe(60);
+    });
+  });
+
+  // ============================================================
+  // COMPLETE_SET / NUMPAD_SUBMIT — junk-set guard after full completion
+  // ============================================================
+  describe('COMPLETE_SET — no junk sets after full completion', () => {
+    it('is a no-op when completing an already fully-completed exercise', () => {
+      const state = createInitialState([mkExercise()], 0, mkSettings({ autoAddSets: false }));
+      // Complete the only set → exercise is now fully done.
+      let next = apply(state, { type: 'COMPLETE_SET' });
+      expect(next.exercises[0]!.sets!).toHaveLength(1);
+      expect(next.exercises[0]!.sets![0]!.isCompleted).toBe(true);
+      // A second COMPLETE_SET (e.g. an accidental slide) must NOT fabricate a
+      // junk 0×0 set on the virtual slot past the end.
+      next = apply(next, { type: 'COMPLETE_SET' });
+      expect(next.exercises[0]!.sets!).toHaveLength(1);
+    });
+
+    it('ADD_SET then COMPLETE_SET flows correctly after completion', () => {
+      const state = createInitialState([mkExercise()], 0, mkSettings({ autoAddSets: false }));
+      let next = apply(state, { type: 'COMPLETE_SET' }); // 1/1 done
+      next = apply(next, { type: 'ADD_SET' }); // manual extra set → 1 done, 1 open
+      expect(next.exercises[0]!.sets!).toHaveLength(2);
+      expect(next.exercises[0]!.sets![1]!.isCompleted).toBe(false);
+      next = apply(next, { type: 'COMPLETE_SET' }); // completes the new set
+      expect(next.exercises[0]!.sets!).toHaveLength(2);
+      expect(next.exercises[0]!.sets![1]!.isCompleted).toBe(true);
+    });
+
+    it('NUMPAD_SUBMIT does not create a junk set when the exercise is fully completed', () => {
+      const state = createInitialState([mkExercise()], 0, mkSettings({ autoAddSets: false }));
+      const completed = apply(state, { type: 'COMPLETE_SET' });
+      const numpadState = structuredClone(completed);
+      numpadState.numpad = { isOpen: true, target: 'weight', value: '100' };
+      const next = apply(numpadState, { type: 'NUMPAD_SUBMIT' });
+      expect(next.exercises[0]!.sets!).toHaveLength(1);
+      expect(next.numpad.isOpen).toBe(false);
+      // The already-completed set's weight is untouched (80 from the fixture).
+      expect(next.exercises[0]!.sets![0]!.weight).toBe(80);
+    });
+  });
+
+  // ============================================================
+  // ADD_SET — manual set append
+  // ============================================================
+  describe('ADD_SET', () => {
+    it('appends a new uncompleted set inheriting weight and reps from the last set', () => {
+      const state = createInitialState([mkExercise()], 0, mkSettings({ autoAddSets: false }));
+      const next = apply(state, { type: 'ADD_SET' });
+      const sets = next.exercises[0]!.sets!;
+      expect(sets).toHaveLength(2);
+      expect(sets[1]!.weight).toBe(80);
+      expect(sets[1]!.reps).toBe(10);
+      expect(sets[1]!.isCompleted).toBe(false);
+      expect(sets[1]!.completedAt).toBeNull();
+      expect(sets[1]!.setNumber).toBe(2);
+    });
+
+    it('creates a first set when the exercise has none', () => {
+      const ex = mkExercise();
+      ex.sets = [];
+      const state = createInitialState([ex], 0, mkSettings());
+      const next = apply(state, { type: 'ADD_SET' });
+      expect(next.exercises[0]!.sets!).toHaveLength(1);
+      expect(next.exercises[0]!.sets![0]!.isCompleted).toBe(false);
+    });
+
+    it('is a no-op when there is no active exercise', () => {
+      const state = createInitialState([], 0, mkSettings());
+      const next = apply(state, { type: 'ADD_SET' });
+      expect(next.exercises).toHaveLength(0);
+    });
+  });
+
+  // ============================================================
+  // FINALIZE_WORKOUT
+  // ============================================================
+  describe('FINALIZE_WORKOUT', () => {
+    it('sets finalized to true', () => {
+      expect(baseState.finalized).toBe(false);
+      const next = apply(baseState, { type: 'FINALIZE_WORKOUT' });
+      expect(next.finalized).toBe(true);
+    });
+  });
+
+  // ============================================================
+  // SUPERSET ROUND LOGIC
+  // ============================================================
+  describe('COMPLETE_SET — superset rounds', () => {
+    // Exercise with `count` uncompleted sets.
+    const mkMulti = (id: string, name: string, count: number): Exercise => ({
+      id,
+      name,
+      sets: Array.from({ length: count }, (_, i) => ({
+        id: `${id}-s${i + 1}`,
+        setNumber: i + 1,
+        reps: 10,
+        weight: 50,
+        rpe: null,
+        isWarmup: false,
+        isCompleted: false,
+        notes: '',
+        completedAt: null,
+      })),
+    });
+
+    it('advances to next exercise in group (not last) with short transition rest', () => {
+      const exercises = [mkMulti('ex-1', 'Bench', 1), mkMulti('ex-2', 'Row', 1)];
+      const state = createInitialState(exercises, 0, mkSettings({ autoAddSets: false }));
       state.supersetGroups = [{ id: 'ss-1', exercises: ['ex-1', 'ex-2'], restBetweenRounds: 90 }];
       state.currentExerciseIndex = 0;
 
       const next = apply(state, { type: 'COMPLETE_SET' });
       expect(next.currentExerciseIndex).toBe(1);
-      // Short transitional rest (15s)
-      expect(next.restTimer.totalTime).toBe(15);
+      expect(next.restTimer.totalTime).toBe(15); // SUPERSET_TRANSITION_REST
     });
 
-    it('uses restBetweenRounds when completing last exercise in superset', () => {
-      const exercises: Exercise[] = [
-        mkExercise({ id: 'ex-1', name: 'Bench' }),
-        mkExercise({ id: 'ex-2', name: 'Row' }),
-      ];
-      const state = createInitialState(exercises, 0, mkSettings());
-      state.supersetGroups = [{ id: 'ss-1', exercises: ['ex-1', 'ex-2'], restBetweenRounds: 90 }];
-      state.currentExerciseIndex = 1; // last in group
+    it('runs a full 2-exercise superset across 2 rounds, returning to the first', () => {
+      const exercises = [mkMulti('ex-1', 'A', 2), mkMulti('ex-2', 'B', 2)];
+      const state = createInitialState(exercises, 0, mkSettings({ autoAddSets: false }));
+      state.supersetGroups = [{ id: 'ss', exercises: ['ex-1', 'ex-2'], restBetweenRounds: 90 }];
+      state.currentExerciseIndex = 0;
 
-      const next = apply(state, { type: 'COMPLETE_SET' });
-      // Does NOT advance (stays at 1)
+      // R1: A set1 → advance to B, short transition rest
+      let s = apply(state, { type: 'COMPLETE_SET' });
+      expect(s.currentExerciseIndex).toBe(1);
+      expect(s.restTimer.totalTime).toBe(15);
+
+      // R1: B set1 → wrap back to A (set2 still open) → NEW ROUND → round rest
+      s = apply(s, { type: 'COMPLETE_SET' });
+      expect(s.currentExerciseIndex).toBe(0);
+      expect(s.restTimer.totalTime).toBe(90);
+
+      // R2: A set2 → advance to B (set2 open) → transition rest
+      s = apply(s, { type: 'COMPLETE_SET' });
+      expect(s.currentExerciseIndex).toBe(1);
+      expect(s.restTimer.totalTime).toBe(15);
+
+      // R2: B set2 → group fully done → no advance, normal rest (default 60)
+      s = apply(s, { type: 'COMPLETE_SET' });
+      expect(s.currentExerciseIndex).toBe(1);
+      expect(s.restTimer.totalTime).toBe(60);
+    });
+
+    it('cycles a 3-exercise giant set then stops when the group is done', () => {
+      const exercises = [mkMulti('ex-1', 'A', 1), mkMulti('ex-2', 'B', 1), mkMulti('ex-3', 'C', 1)];
+      const state = createInitialState(exercises, 0, mkSettings({ autoAddSets: false }));
+      state.supersetGroups = [
+        { id: 'gs', exercises: ['ex-1', 'ex-2', 'ex-3'], restBetweenRounds: 120 },
+      ];
+      state.currentExerciseIndex = 0;
+
+      let s = apply(state, { type: 'COMPLETE_SET' }); // A → B
+      expect(s.currentExerciseIndex).toBe(1);
+      expect(s.restTimer.totalTime).toBe(15);
+
+      s = apply(s, { type: 'COMPLETE_SET' }); // B → C
+      expect(s.currentExerciseIndex).toBe(2);
+      expect(s.restTimer.totalTime).toBe(15);
+
+      s = apply(s, { type: 'COMPLETE_SET' }); // C → group done
+      expect(s.currentExerciseIndex).toBe(2);
+      expect(s.restTimer.totalTime).toBe(60);
+    });
+  });
+
+  // ============================================================
+  // COMPLETE_SET — autoAdvanceExercise
+  // ============================================================
+  describe('COMPLETE_SET — autoAdvanceExercise', () => {
+    it('advances to the next exercise with open sets once the current one is done', () => {
+      const exercises = [mkExercise({ id: 'ex-1' }), mkExercise({ id: 'ex-2' })];
+      const state = createInitialState(
+        exercises,
+        0,
+        mkSettings({ autoAddSets: false, autoAdvanceExercise: true })
+      );
+      state.currentExerciseIndex = 0;
+      const next = apply(state, { type: 'COMPLETE_SET' }); // completes ex-1's only set
       expect(next.currentExerciseIndex).toBe(1);
-      expect(next.restTimer.totalTime).toBe(90);
+    });
+
+    it('does not advance when no other exercise has open sets', () => {
+      const ex1 = mkExercise({ id: 'ex-1' });
+      const ex2 = mkExercise({ id: 'ex-2' });
+      ex2.sets![0]!.completedAt = new Date().toISOString();
+      ex2.sets![0]!.isCompleted = true;
+      const state = createInitialState(
+        [ex1, ex2],
+        0,
+        mkSettings({ autoAddSets: false, autoAdvanceExercise: true })
+      );
+      const next = apply(state, { type: 'COMPLETE_SET' });
+      expect(next.currentExerciseIndex).toBe(0);
+    });
+
+    it('stays put when autoAdvanceExercise is off', () => {
+      const exercises = [mkExercise({ id: 'ex-1' }), mkExercise({ id: 'ex-2' })];
+      const state = createInitialState(
+        exercises,
+        0,
+        mkSettings({ autoAddSets: false, autoAdvanceExercise: false })
+      );
+      const next = apply(state, { type: 'COMPLETE_SET' });
+      expect(next.currentExerciseIndex).toBe(0);
+    });
+
+    it('does not auto-advance in legacy autoAddSets mode (exercise never "done")', () => {
+      const exercises = [mkExercise({ id: 'ex-1' }), mkExercise({ id: 'ex-2' })];
+      const state = createInitialState(
+        exercises,
+        0,
+        mkSettings({ autoAddSets: true, autoAdvanceExercise: true })
+      );
+      const next = apply(state, { type: 'COMPLETE_SET' });
+      // A fresh set was appended to ex-1, so it isn't complete → no advance.
+      expect(next.currentExerciseIndex).toBe(0);
+      expect(next.exercises[0]!.sets!).toHaveLength(2);
+    });
+  });
+
+  // ============================================================
+  // CREATE_SUPERSET — validation & overlap
+  // ============================================================
+  describe('CREATE_SUPERSET', () => {
+    const threeExercises = (): Exercise[] => [
+      mkExercise({ id: 'ex-1', name: 'A' }),
+      mkExercise({ id: 'ex-2', name: 'B' }),
+      mkExercise({ id: 'ex-3', name: 'C' }),
+    ];
+
+    it('creates a giant set with 3 exercises, de-duping ids', () => {
+      const state = createInitialState(threeExercises(), 0, mkSettings());
+      const next = apply(state, {
+        type: 'CREATE_SUPERSET',
+        payload: { exerciseIds: ['ex-1', 'ex-2', 'ex-2', 'ex-3'] },
+      });
+      expect(next.supersetGroups).toHaveLength(1);
+      expect(next.supersetGroups[0]!.exercises).toEqual(['ex-1', 'ex-2', 'ex-3']);
+    });
+
+    it('is a no-op when fewer than 2 valid exercises remain', () => {
+      const state = createInitialState([mkExercise({ id: 'ex-1' })], 0, mkSettings());
+      const next = apply(state, {
+        type: 'CREATE_SUPERSET',
+        payload: { exerciseIds: ['ex-1', 'ghost'] },
+      });
+      expect(next.supersetGroups).toHaveLength(0);
+    });
+
+    it('removes overlapping exercises from a prior group, dropping it if degenerate', () => {
+      const state = createInitialState(threeExercises(), 0, mkSettings());
+      state.supersetGroups = [{ id: 'old', exercises: ['ex-1', 'ex-2'], restBetweenRounds: 60 }];
+      // New group reuses ex-2 → old group loses ex-2 → only ex-1 left (<2) → dropped
+      const next = apply(state, {
+        type: 'CREATE_SUPERSET',
+        payload: { exerciseIds: ['ex-2', 'ex-3'] },
+      });
+      expect(next.supersetGroups).toHaveLength(1);
+      expect(next.supersetGroups[0]!.exercises).toEqual(['ex-2', 'ex-3']);
     });
   });
 

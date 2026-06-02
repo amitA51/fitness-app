@@ -71,6 +71,24 @@ export class LocalFallbackProvider implements AIProvider {
   }
 
   async chat(messages: ChatMessage[]): Promise<string> {
+    // If the system context carries a deterministic load recommendation, stay
+    // consistent with it instead of returning generic keyword advice that could
+    // contradict the math (e.g. "raise weight" while the engine says rest) — AW-5.
+    const systemText = messages
+      .filter((m) => m.role === 'system')
+      .map((m) => m.content)
+      .join('\n');
+    const recMatch = systemText.match(/המלצת עומס מתמטית:\s*(push|maintain|deload|rest)/);
+    if (recMatch) {
+      const lines: Record<string, string> = {
+        rest: 'הנתונים מצביעים על עומס מצטבר גבוה — היום עדיף מנוחה. חזור כשהמוכנות עולה.',
+        deload: 'המוכנות נמוכה — אימון קל (דלואד): הורד בערך 15-20% מהעומס ושמור על טכניקה.',
+        maintain: 'שמור על העומס הנוכחי והתמקד בביצוע נקי לפני שמעלים.',
+        push: 'המוכנות טובה — אפשר להעלות עומס בהדרגה תוך שמירה על טכניקה.',
+      };
+      return lines[recMatch[1] as string] ?? 'שמור על העומס הנוכחי והתמקד בביצוע נקי לפני שמעלים.';
+    }
+
     const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
     const query = lastUserMessage?.content.toLowerCase() || '';
 

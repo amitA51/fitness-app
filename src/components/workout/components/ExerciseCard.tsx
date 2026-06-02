@@ -182,17 +182,6 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
               >
                 {exercise.defaultRestTime || 90}s
               </span>
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 9,
-                  letterSpacing: '0.12em',
-                  color: 'var(--fs-muted)',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {exercise.defaultSets || 4} סטים
-              </span>
             </div>
 
             {exercise.notes && (

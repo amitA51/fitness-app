@@ -1,9 +1,10 @@
 // ExerciseNav - Fresh Steel v2 Compact Nav Row
 // Prev/Next arrows + center panel (set info · position) + list button + add exercise button
 
-import { ChevronLeft as ChevronLeftIcon, List, Plus } from 'lucide-react';
+import { ChevronLeft as ChevronLeftIcon, Link2, List, Plus } from 'lucide-react';
 import { memo, useCallback, useEffect } from 'react';
 import type { Exercise } from '../../../types';
+import type { SupersetGroup } from '../core/workoutTypes';
 
 interface ExerciseNavProps {
   exercises: Exercise[];
@@ -11,15 +12,25 @@ interface ExerciseNavProps {
   onChangeExercise: (index: number) => void;
   onOpenDrawer: () => void;
   onAddExercise?: () => void;
+  supersetGroups?: SupersetGroup[];
 }
 
 const ExerciseNav = memo<ExerciseNavProps>(
-  ({ exercises, currentIndex, onChangeExercise, onOpenDrawer, onAddExercise }) => {
+  ({ exercises, currentIndex, onChangeExercise, onOpenDrawer, onAddExercise, supersetGroups }) => {
     const canGoPrev = currentIndex > 0;
     const canGoNext = currentIndex < exercises.length - 1;
     const currentExercise = exercises[currentIndex];
     const totalSets = currentExercise?.sets?.length || 0;
     const completedSets = currentExercise?.sets?.filter((s) => s.completedAt).length || 0;
+
+    // Superset membership of the current exercise (for the nav badge): which
+    // group it belongs to and its 1-based position within that group.
+    const supersetGroup = currentExercise?.id
+      ? supersetGroups?.find((g) => g.exercises.includes(currentExercise.id))
+      : undefined;
+    const supersetPosition = supersetGroup
+      ? supersetGroup.exercises.indexOf(currentExercise!.id) + 1
+      : 0;
 
     const handlePrev = useCallback(() => {
       if (canGoPrev) onChangeExercise(currentIndex - 1);
@@ -98,6 +109,25 @@ const ExerciseNav = memo<ExerciseNavProps>(
             gap: 10,
           }}
         >
+          {supersetGroup && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.04em',
+                color: 'var(--fs-accent)',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+              }}
+              aria-label={`סופרסט, תרגיל ${supersetPosition} מתוך ${supersetGroup.exercises.length}`}
+            >
+              <Link2 size={11} strokeWidth={3} />
+              {supersetPosition}/{supersetGroup.exercises.length}
+            </span>
+          )}
           {totalSets > 0 && (
             <span
               style={{
@@ -222,6 +252,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
   },
   (prev, next) => {
     if (prev.currentIndex !== next.currentIndex) return false;
+    if (prev.supersetGroups !== next.supersetGroups) return false;
     if (prev.exercises.length !== next.exercises.length) return false;
     for (let i = 0; i < prev.exercises.length; i++) {
       if (prev.exercises[i]?.id !== next.exercises[i]?.id) return false;

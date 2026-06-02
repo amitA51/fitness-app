@@ -34,11 +34,15 @@ const DEFAULT_MODEL = 'openai/gpt-oss-120b:free';
 // Allowlist of models that clients are permitted to request. Any model not in
 // this list is silently replaced with DEFAULT_MODEL to prevent a malicious
 // caller from specifying an expensive paid model and burning quota.
+// Every entry MUST be a real OpenRouter provider/model[:tag] slug. A bare id
+// (e.g. the former 'deepseek-v4-flash') passes this allowlist gate but is not
+// routable, so OpenRouter returns an upstream error instead of a clean fallback
+// (AW-6/AS-7). Keep ids provider-namespaced.
 const ALLOWED_MODELS: readonly string[] = [
   'openai/gpt-oss-120b:free',
   'google/gemini-2.0-flash-exp:free',
   'openai/gpt-4o-mini',
-  'deepseek-v4-flash',
+  'deepseek/deepseek-chat',
 ];
 const DEFAULT_TEMPERATURE = 0.7;
 const DEFAULT_MAX_TOKENS = 1024;

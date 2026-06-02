@@ -12,6 +12,7 @@ import React from 'react';
 import type { Exercise, WorkoutGoal } from '../../../types';
 import OverlayLoader from '../components/ui/OverlayLoader';
 import OverlayErrorBoundary from '../core/OverlayErrorBoundary';
+import type { SupersetGroup } from '../core/workoutTypes';
 
 const ConfirmExitOverlay = React.lazy(() => import('../overlays/ConfirmExitOverlay'));
 const ExerciseSelector = React.lazy(() => import('../ExerciseSelector'));
@@ -45,6 +46,8 @@ export interface WorkoutFlowOverlaysProps {
   ) => void;
   onDeleteSet: (exerciseIndex: number, setIndex: number) => void;
   onCloseDrawer: () => void;
+  supersetGroups?: SupersetGroup[];
+  onCreateSupersetGroup?: (exerciseIds: string[]) => void;
   // Exercise selector
   showExerciseSelector: boolean;
   onAddExercise: (ex: Exercise) => void;
@@ -91,6 +94,8 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
   onEditSetInList,
   onDeleteSet,
   onCloseDrawer,
+  supersetGroups,
+  onCreateSupersetGroup,
   showExerciseSelector,
   onAddExercise,
   onCloseSelector,
@@ -141,6 +146,8 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
           onDeleteExercise={onRemoveExercise}
           onEditSet={onEditSetInList}
           onDeleteSet={onDeleteSet}
+          supersetGroups={supersetGroups}
+          onCreateSupersetGroup={onCreateSupersetGroup}
           onClose={onCloseDrawer}
         />
       </React.Suspense>

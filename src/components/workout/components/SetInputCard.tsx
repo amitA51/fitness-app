@@ -154,18 +154,18 @@ const SetInputCard = memo<SetInputCardProps>(
       </button>
     );
 
-    // Mirror the stepper in RTL so increment stays on the leading (right) edge.
-    // Computed inline: incrementButton/decrementButton are fresh JSX every render,
-    // so wrapping this in useMemo never hit its cache — it recomputed regardless.
+    // Stepper order (swapped per user preference): in RTL the minus sits on the
+    // right (leading edge) and plus on the left; mirrored for LTR. Computed inline
+    // because incrementButton/decrementButton are fresh JSX every render.
     const stepperButtons = isRTL ? (
       <>
-        {incrementButton}
         {decrementButton}
+        {incrementButton}
       </>
     ) : (
       <>
-        {decrementButton}
         {incrementButton}
+        {decrementButton}
       </>
     );
 

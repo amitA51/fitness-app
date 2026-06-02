@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { PersonalItem, WorkoutSettings } from '../../types';
+import type { ActiveExercise, PersonalItem, WorkoutSettings } from '../../types';
 
 import { syncTemplatesFromCloud } from '../../hooks/useCloudTemplateReflection';
 import { listMyAssignments } from '../../services/coach';
@@ -15,6 +15,7 @@ import { WorkoutProvider } from './core/WorkoutProvider';
 
 // Components
 import { ExerciseDisplay, ProgressBar } from './components';
+import SupersetPicker from './components/SupersetPicker';
 // Aria-live announcer for screen readers (set complete, rest start/end, PRs)
 import WorkoutAriaLive from './components/WorkoutAriaLive';
 
@@ -47,6 +48,7 @@ import {
 // Lazy loaded components (heavy - only loaded when needed)
 const ExerciseSelector = React.lazy(() => import('./ExerciseSelector'));
 const QuickExerciseForm = React.lazy(() => import('./QuickExerciseForm'));
+const WorkoutPlanScreen = React.lazy(() => import('./states/WorkoutPlanScreen'));
 
 import { cn } from '../../utils/styles';
 
@@ -157,6 +159,13 @@ export const WorkoutContent: React.FC<{
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [finishIntent, setFinishIntent] = useState<'finish' | 'cancel'>('finish');
 
+  // Optional pre-workout planning table. `planningMode` gates a full-screen
+  // planning step; `planDraft` holds the exercises picked in the selector that
+  // seed it. Both are transient UI state — nothing is committed to the reducer
+  // until the trainee taps "התחל אימון" (which dispatches SET_EXERCISES).
+  const [planningMode, setPlanningMode] = useState(false);
+  const [planDraft, setPlanDraft] = useState<ActiveExercise[]>([]);
+
   // Track pending setTimeout IDs to clear on unmount (prevent dispatch-after-unmount)
   const pendingTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -175,6 +184,7 @@ export const WorkoutContent: React.FC<{
   const { showSummary, completedSession, isSaving, saveError, setSaveError, handleConfirmFinish } =
     useWorkoutSave({
       state,
+      dispatch,
       workoutSettings,
       finishIntent,
       setShowFinishConfirm,
@@ -182,8 +192,15 @@ export const WorkoutContent: React.FC<{
       onExit,
     });
 
-  // Superset selection state machine + its create/remove handlers.
-  const { supersetMode, handleCreateSuperset, handleRemoveSuperset } = useSupersetMode({
+  // Superset creation via picker bottom sheet + remove handler.
+  const {
+    supersetPickerOpen,
+    supersetAnchorId,
+    openSupersetPicker,
+    closeSupersetPicker,
+    confirmSuperset,
+    handleRemoveSuperset,
+  } = useSupersetMode({
     dispatch,
     defaultRestTime: workoutSettings.defaultRestTime,
   });
@@ -264,6 +281,7 @@ export const WorkoutContent: React.FC<{
   const {
     handleUpdateSet,
     handleCompleteSet,
+    handleAddSet,
     handleOpenNumpad,
     handleUndoSet,
     handleUpdateRPE,
@@ -278,6 +296,7 @@ export const WorkoutContent: React.FC<{
     handleFinishRequest,
     handleDiscardRequest,
     handleChangeExercise,
+    handleNextExercise,
     handleOpenDrawer,
     handleCloseDrawer,
     handleCloseSelector,
@@ -350,6 +369,36 @@ export const WorkoutContent: React.FC<{
     return <WorkoutSummaryView completedSession={completedSession} onExit={onExit} />;
   }
 
+  // Optional pre-workout planning table. Gated before the empty-state branch so
+  // it owns the screen while the draft is uncommitted (the reducer still has no
+  // exercises at this point — the draft lives entirely in WorkoutPlanScreen).
+  if (planningMode) {
+    return (
+      <React.Suspense fallback={null}>
+        <WorkoutPlanScreen
+          initialExercises={planDraft}
+          defaultSets={workoutSettings.defaultSets ?? 3}
+          weightIncrement={workoutSettings.weightIncrementAmount ?? 2.5}
+          goal={workoutSettings.defaultWorkoutGoal}
+          oledMode={!!workoutSettings.oledMode}
+          showGhostValues={showGhostValues}
+          onStart={(exercises) => {
+            dispatch({ type: 'SET_EXERCISES', payload: exercises });
+            dispatch({ type: 'CHANGE_EXERCISE', payload: 0 });
+            setPlanningMode(false);
+            setPlanDraft([]);
+          }}
+          onCancel={() => {
+            // Back to exercise selection: drop the draft and reopen the selector.
+            setPlanningMode(false);
+            setPlanDraft([]);
+            dispatch({ type: 'OPEN_SELECTOR' });
+          }}
+        />
+      </React.Suspense>
+    );
+  }
+
   // If no current exercise OR exercise has no name, show PreWorkoutScreen for initial welcome
   if (!derived.currentExercise || !derived.currentExercise.name?.trim()) {
     return (
@@ -409,6 +458,12 @@ export const WorkoutContent: React.FC<{
                 onClose={() => dispatch({ type: 'CLOSE_SELECTOR' })}
                 onCreateNew={() => dispatch({ type: 'OPEN_QUICK_FORM' })}
                 goal={workoutSettings.defaultWorkoutGoal}
+                onPlanRequested={(exercises) => {
+                  // Hand the picks to the planning table instead of starting now.
+                  setPlanDraft(exercises);
+                  setPlanningMode(true);
+                  dispatch({ type: 'CLOSE_SELECTOR' });
+                }}
               />
             )}
 
@@ -453,7 +508,6 @@ export const WorkoutContent: React.FC<{
           onOpenSettings={handleOpenSettings}
           onOpenTutorial={handleOpenTutorial}
           isSaving={isSaving}
-          supersetMode={!!supersetMode}
           restTimerActive={state.restTimer.active}
           restTimerEndTime={state.restTimer.endTime}
           onSkipRest={handleSkipRest}
@@ -477,6 +531,9 @@ export const WorkoutContent: React.FC<{
             prInfo={prInfo}
             onUpdateSet={handleUpdateSet}
             onCompleteSet={handleCompleteSet}
+            onAddSet={handleAddSet}
+            onNextExercise={handleNextExercise}
+            hasNextExercise={state.currentExerciseIndex < state.exercises.length - 1}
             onOpenNumpad={handleOpenNumpad}
             onRenameExercise={handleRenameExercise}
             onEditSet={handleEditSet}
@@ -489,7 +546,7 @@ export const WorkoutContent: React.FC<{
             enableQuickWeightButtons={enableQuickWeightButtons}
             enableQuickRepsButtons={enableQuickRepsButtons}
             supersetGroups={state.supersetGroups}
-            onCreateSuperset={handleCreateSuperset}
+            onCreateSuperset={openSupersetPicker}
             onRemoveSuperset={handleRemoveSuperset}
             onToggleTechnique={handleToggleTechnique}
             onOpenPlateCalc={handleOpenPlateCalc}
@@ -504,6 +561,7 @@ export const WorkoutContent: React.FC<{
           onOpenDrawer={handleOpenDrawer}
           onAddExercise={handleOpenSelector}
           onCompleteSet={handleCompleteSet}
+          supersetGroups={state.supersetGroups}
         />
       </div>
 
@@ -539,6 +597,8 @@ export const WorkoutContent: React.FC<{
         onEditSetInList={handleEditSetInList}
         onDeleteSet={handleDeleteSet}
         onCloseDrawer={handleCloseDrawer}
+        supersetGroups={state.supersetGroups}
+        onCreateSupersetGroup={confirmSuperset}
         showExerciseSelector={state.showExerciseSelector}
         onAddExercise={handleAddExercise}
         onCloseSelector={handleCloseSelector}
@@ -561,6 +621,18 @@ export const WorkoutContent: React.FC<{
         onCloseTutorial={handleCloseTutorial}
         onCloseAICoach={handleCloseAICoach}
       />
+
+      {/* Superset picker — anchored on the exercise whose chip was tapped */}
+      {supersetPickerOpen && (
+        <SupersetPicker
+          isOpen={supersetPickerOpen}
+          exercises={state.exercises}
+          anchorExerciseId={supersetAnchorId}
+          existingGroups={state.supersetGroups}
+          onConfirm={confirmSuperset}
+          onClose={closeSupersetPicker}
+        />
+      )}
     </div>
   );
 };

@@ -82,6 +82,16 @@ export interface WorkoutState {
 
   // === Haptic Trigger ===
   pendingHaptic: 'REST_END' | 'SET_COMPLETE' | null;
+
+  // === Lifecycle ===
+  // Set once the workout has been finished or discarded. While true the
+  // provider stops persisting and clears the saved snapshot, so a finished
+  // workout can never be restored / re-opened.
+  finalized: boolean;
+
+  // Wall-clock time (ms) of the last persist, used on restore to subtract the
+  // time the app was closed/backgrounded from the workout duration.
+  lastPersistedAt?: number;
 }
 
 // ============================================================
@@ -112,6 +122,7 @@ export type ExerciseAction =
 export type SetAction =
   | { type: 'UPDATE_SET'; payload: { field: 'weight' | 'reps'; value: number } }
   | { type: 'COMPLETE_SET' }
+  | { type: 'ADD_SET' }
   | { type: 'UNDO_LAST_SET' }
   | { type: 'UPDATE_SET_NOTES'; payload: string | undefined }
   | { type: 'UPDATE_SET_RPE'; payload: number | undefined }
@@ -168,7 +179,8 @@ export type DataAction =
   | { type: 'SET_EXERCISES'; payload: ActiveExercise[] }
   | { type: 'UPDATE_SETTINGS'; payload: Partial<AppSettings['workoutSettings']> }
   | { type: 'SET_PREVIOUS_DATA'; payload: WorkoutSet[] | null }
-  | { type: 'CLEAR_PENDING_HAPTIC' };
+  | { type: 'CLEAR_PENDING_HAPTIC' }
+  | { type: 'FINALIZE_WORKOUT' };
 
 // Combined Action Type
 export type WorkoutAction =
@@ -284,5 +296,7 @@ export const createInitialState = (
     appSettings,
     previousExerciseData: null,
     pendingHaptic: null,
+    finalized: false,
+    lastPersistedAt: now,
   };
 };

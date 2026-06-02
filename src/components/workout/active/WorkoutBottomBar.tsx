@@ -2,6 +2,7 @@ import React from 'react';
 import type { Exercise } from '../../../types';
 import { ExerciseNav } from '../components';
 import SlideToComplete from '../components/SlideToComplete';
+import type { SupersetGroup } from '../core/workoutTypes';
 
 interface WorkoutBottomBarProps {
   exercises: Exercise[];
@@ -10,6 +11,7 @@ interface WorkoutBottomBarProps {
   onOpenDrawer: () => void;
   onAddExercise: () => void;
   onCompleteSet: () => void;
+  supersetGroups?: SupersetGroup[];
 }
 
 const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
@@ -19,9 +21,19 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
   onOpenDrawer,
   onAddExercise,
   onCompleteSet,
+  supersetGroups,
 }) => {
   const nextEx =
     currentExerciseIndex < exercises.length - 1 ? exercises[currentExerciseIndex + 1] : null;
+
+  // Disable the slide-to-complete once every set of the current exercise is
+  // done. Without this, a slide on a finished exercise would try to "complete"
+  // a non-existent set; the reducer now no-ops, but disabling makes it clear
+  // there's nothing left to mark (use "הוסף סט" to train more).
+  const currentEx = exercises[currentExerciseIndex];
+  const curTotalSets = currentEx?.sets?.length ?? 0;
+  const curCompletedSets = currentEx?.sets?.filter((s) => s.completedAt).length ?? 0;
+  const isExerciseComplete = curTotalSets > 0 && curCompletedSets >= curTotalSets;
 
   return (
     <div
@@ -37,7 +49,11 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
     >
       {/* 6A: Slide to complete */}
       <div style={{ paddingTop: 8 }}>
-        <SlideToComplete label="החלק לסימון סט כבוצע" onComplete={onCompleteSet} disabled={false} />
+        <SlideToComplete
+          label={isExerciseComplete ? 'התרגיל הושלם' : 'החלק לסימון סט כבוצע'}
+          onComplete={onCompleteSet}
+          disabled={isExerciseComplete}
+        />
       </div>
 
       {/* 6B: Nav row */}
@@ -47,6 +63,7 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
         onChangeExercise={onChangeExercise}
         onOpenDrawer={onOpenDrawer}
         onAddExercise={onAddExercise}
+        supersetGroups={supersetGroups}
       />
 
       {/* 6C: Next up strip */}
