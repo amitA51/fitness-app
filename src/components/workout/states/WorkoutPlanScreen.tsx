@@ -10,7 +10,7 @@
  * land with isCompleted:false (createWorkoutSet default) — visible but not marked
  * done, so the trainee still confirms each set during the workout.
  *
- * Editorial "Sport Annual" styling mirrors PreWorkoutScreen / ExerciseSelector.
+ * Fresh Steel / Obsidian styling mirrors PreWorkoutScreen / ExerciseSelector.
  */
 
 import { AnimatePresence, type Variants, m } from 'framer-motion';

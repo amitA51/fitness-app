@@ -2,16 +2,16 @@
 // Supabase Edge Function: ai-chat
 // ----------------------------------------------------------------------------
 // מקבל {messages, model?, temperature?, maxTokens?} מהאפליקציה ומעביר אותו
-// ל-OpenRouter עם המפתח שיושב ב-Supabase Secrets.
+// ל-DeepSeek עם המפתח שיושב ב-Supabase Secrets (המפתח לעולם לא בקוד/ב-bundle).
 //
 // פריסה:
 //   supabase functions deploy ai-chat
 //
 // הגדרת המפתח (פעם אחת):
-//   supabase secrets set OPENROUTER_API_KEY=sk-or-v1-xxxxx
+//   supabase secrets set DEEPSEEK_API_KEY=sk-xxxxx
 //
-// החלפה לספק אחר (OpenAI / Anthropic / Groq וכו'):
-//   שנה את PROVIDER_URL ו-AUTH_HEADER בסעיף PROVIDER CONFIG למטה.
+// החלפה לספק אחר (OpenAI / Anthropic / OpenRouter וכו'):
+//   שנה את PROVIDER_URL / PROVIDER_SECRET_NAME / ALLOWED_MODELS בסעיף PROVIDER CONFIG למטה.
 // ============================================================================
 
 // @ts-expect-error Deno runtime import
@@ -21,29 +21,22 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 // PROVIDER CONFIG — שנה כאן כדי להחליף ספק
 // ----------------------------------------------------------------------------
 
-const PROVIDER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const PROVIDER_SECRET_NAME = 'OPENROUTER_API_KEY';
+// Provider: DeepSeek direct API. It is OpenAI-format compatible (POST
+// /chat/completions, Bearer auth, choices[0].message.content), so the request
+// build and response parsing below are unchanged from the OpenRouter setup.
+const PROVIDER_URL = 'https://api.deepseek.com/chat/completions';
+const PROVIDER_SECRET_NAME = 'DEEPSEEK_API_KEY';
 
-const EXTRA_HEADERS: Record<string, string> = {
-  'HTTP-Referer': 'https://sparkos-fitness.app',
-  'X-Title': 'SPARKOS Fitness',
-};
+// OpenRouter-specific headers are not needed for the direct DeepSeek API.
+const EXTRA_HEADERS: Record<string, string> = {};
 
-const DEFAULT_MODEL = 'openai/gpt-oss-120b:free';
+const DEFAULT_MODEL = 'deepseek-v4-flash';
 
 // Allowlist of models that clients are permitted to request. Any model not in
 // this list is silently replaced with DEFAULT_MODEL to prevent a malicious
-// caller from specifying an expensive paid model and burning quota.
-// Every entry MUST be a real OpenRouter provider/model[:tag] slug. A bare id
-// (e.g. the former 'deepseek-v4-flash') passes this allowlist gate but is not
-// routable, so OpenRouter returns an upstream error instead of a clean fallback
-// (AW-6/AS-7). Keep ids provider-namespaced.
-const ALLOWED_MODELS: readonly string[] = [
-  'openai/gpt-oss-120b:free',
-  'google/gemini-2.0-flash-exp:free',
-  'openai/gpt-4o-mini',
-  'deepseek/deepseek-chat',
-];
+// caller from specifying an expensive model and burning quota. For the DeepSeek
+// DIRECT API these are bare model names (NOT provider-namespaced slugs).
+const ALLOWED_MODELS: readonly string[] = ['deepseek-v4-flash', 'deepseek-v4-pro'];
 const DEFAULT_TEMPERATURE = 0.7;
 const DEFAULT_MAX_TOKENS = 1024;
 

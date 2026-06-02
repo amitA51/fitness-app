@@ -22,14 +22,13 @@ import type { ChatMessage } from './core';
 export const AI_FUNCTION_NAME = 'ai-chat';
 
 // המודל שישלח ל-Edge Function. שנה כאן כשתרצה מודל אחר.
-// OpenRouter models (https://openrouter.ai/models):
-//   - 'openai/gpt-oss-120b:free'        חינמי, איכותי (ברירת מחדל)
-//   - 'openai/gpt-4o-mini'              חסכוני וטוב
-//   - 'anthropic/claude-3-5-sonnet'     איכותי, יקר יותר
-//   - 'google/gemini-2.0-flash-exp:free' חינם
+// DeepSeek direct API (https://api.deepseek.com) — שמות מודל בודדים:
+//   - 'deepseek-v4-flash'   מהיר וחסכוני (ברירת מחדל)
+//   - 'deepseek-v4-pro'     איכותי יותר
+// המודל חייב להופיע גם ב-ALLOWED_MODELS ב-supabase/functions/ai-chat/index.ts.
 //
 // >>> שנה כאן את מודל ברירת המחדל <<<
-export const AI_DEFAULT_MODEL = 'openai/gpt-oss-120b:free';
+export const AI_DEFAULT_MODEL = 'deepseek-v4-flash';
 
 export const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
 
