@@ -9,7 +9,12 @@ vi.mock('../supabaseSync', () => ({
 }));
 
 import type { WorkoutSession, WorkoutTemplate } from '../../types';
-import { mergeGenericRecords, safeTimestamp } from '../cloudMerge';
+import {
+  mergeAIConversationsFromCloud,
+  mergeGenericRecords,
+  safeTimestamp,
+  unionMessagesById,
+} from '../cloudMerge';
 import { STORES, clearDatabase, dbGetAll, dbPut } from '../indexedDBCore';
 import { mergeWorkoutSessionsFromCloud } from '../sessionDb';
 import { mergeWorkoutTemplatesFromCloud } from '../templateDb';
@@ -160,5 +165,157 @@ describe('mergeWorkoutTemplatesFromCloud', () => {
 
     const stored = await dbGetAll(STORES.WORKOUT_TEMPLATES);
     expect((stored[0] as WorkoutTemplate).updatedAt).toBe('2026-06-01T00:00:00Z');
+  });
+});
+
+// --- unionMessagesById unit tests (pure) ---
+
+describe('unionMessagesById', () => {
+  it('returns empty array for empty/undefined inputs', () => {
+    expect(unionMessagesById()).toEqual([]);
+    expect(unionMessagesById([], [])).toEqual([]);
+  });
+
+  it('keeps every unique message from both sides', () => {
+    const local = [{ id: 'a', timestamp: '2026-01-01T00:00:00Z' }];
+    const cloud = [{ id: 'b', timestamp: '2026-01-02T00:00:00Z' }];
+    const merged = unionMessagesById(local, cloud);
+    expect(merged.map((m) => m.id)).toEqual(['a', 'b']);
+  });
+
+  it('sorts merged messages chronologically by timestamp', () => {
+    const local = [{ id: 'late', timestamp: '2026-03-01T00:00:00Z' }];
+    const cloud = [{ id: 'early', timestamp: '2026-01-01T00:00:00Z' }];
+    const merged = unionMessagesById(local, cloud);
+    expect(merged.map((m) => m.id)).toEqual(['early', 'late']);
+  });
+
+  it('on duplicate id, keeps the copy with the newer timestamp', () => {
+    const local = [{ id: 'a', content: 'old', timestamp: '2026-01-01T00:00:00Z' }];
+    const cloud = [{ id: 'a', content: 'new', timestamp: '2026-02-01T00:00:00Z' }];
+    const merged = unionMessagesById(local, cloud);
+    expect(merged).toHaveLength(1);
+    expect(merged[0]!.content).toBe('new');
+  });
+
+  it('skips messages without an id', () => {
+    const local = [{ id: '', content: 'no-id' } as { id: string; content: string }];
+    const cloud = [{ id: 'valid', content: 'ok' }];
+    const merged = unionMessagesById(local, cloud);
+    expect(merged.map((m) => m.id)).toEqual(['valid']);
+  });
+});
+
+// --- mergeAIConversationsFromCloud integration tests ---
+
+describe('mergeAIConversationsFromCloud', () => {
+  it('adds a new cloud conversation that does not exist locally', async () => {
+    const result = await mergeAIConversationsFromCloud([
+      {
+        id: 'c1',
+        title: 'Chat',
+        messages: [{ id: 'm1', timestamp: '2026-01-01T00:00:00Z' }],
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+    ]);
+    expect(result.added).toBe(1);
+
+    const stored = await dbGetAll<{ id: string; messages: unknown[] }>(STORES.AI_CONVERSATIONS);
+    expect(stored).toHaveLength(1);
+    expect(stored[0]!.messages).toHaveLength(1);
+  });
+
+  it('unions messages from parallel device appends without losing either side', async () => {
+    // Local device appended m-local; cloud device appended m-cloud to the same chat.
+    await dbPut(STORES.AI_CONVERSATIONS, {
+      id: 'c1',
+      title: 'Chat',
+      messages: [
+        { id: 'm-shared', timestamp: '2026-01-01T00:00:00Z' },
+        { id: 'm-local', timestamp: '2026-01-02T00:00:00Z' },
+      ],
+      updatedAt: '2026-01-02T00:00:00Z',
+    });
+
+    await mergeAIConversationsFromCloud([
+      {
+        id: 'c1',
+        title: 'Chat',
+        messages: [
+          { id: 'm-shared', timestamp: '2026-01-01T00:00:00Z' },
+          { id: 'm-cloud', timestamp: '2026-01-03T00:00:00Z' },
+        ],
+        updatedAt: '2026-01-03T00:00:00Z',
+      },
+    ]);
+
+    const stored = await dbGetAll<{ id: string; messages: { id: string }[] }>(
+      STORES.AI_CONVERSATIONS
+    );
+    const ids = stored[0]!.messages.map((m) => m.id);
+    expect(ids).toContain('m-local');
+    expect(ids).toContain('m-cloud');
+    expect(ids).toContain('m-shared');
+    expect(ids).toHaveLength(3);
+  });
+
+  it('resolves conversation metadata by last-write-wins (cloud newer)', async () => {
+    await dbPut(STORES.AI_CONVERSATIONS, {
+      id: 'c1',
+      title: 'Old title',
+      messages: [{ id: 'm1', timestamp: '2026-01-01T00:00:00Z' }],
+      updatedAt: '2026-01-01T00:00:00Z',
+    });
+
+    await mergeAIConversationsFromCloud([
+      {
+        id: 'c1',
+        title: 'New title',
+        messages: [{ id: 'm1', timestamp: '2026-01-01T00:00:00Z' }],
+        updatedAt: '2026-02-01T00:00:00Z',
+      },
+    ]);
+
+    const stored = await dbGetAll<{ id: string; title: string }>(STORES.AI_CONVERSATIONS);
+    expect(stored[0]!.title).toBe('New title');
+  });
+
+  it('removes a local conversation when the cloud copy is tombstoned', async () => {
+    await dbPut(STORES.AI_CONVERSATIONS, {
+      id: 'c1',
+      title: 'Chat',
+      messages: [{ id: 'm1', timestamp: '2026-01-01T00:00:00Z' }],
+      updatedAt: '2026-01-01T00:00:00Z',
+    });
+
+    const result = await mergeAIConversationsFromCloud([
+      { id: 'c1', deletedAt: '2026-02-01T00:00:00Z' },
+    ]);
+    expect(result.deleted).toBe(1);
+
+    const stored = await dbGetAll(STORES.AI_CONVERSATIONS);
+    expect(stored).toHaveLength(0);
+  });
+
+  it('keeps local untouched when cloud is older and has no new messages', async () => {
+    await dbPut(STORES.AI_CONVERSATIONS, {
+      id: 'c1',
+      title: 'Local title',
+      messages: [{ id: 'm1', timestamp: '2026-01-01T00:00:00Z' }],
+      updatedAt: '2026-03-01T00:00:00Z',
+    });
+
+    const result = await mergeAIConversationsFromCloud([
+      {
+        id: 'c1',
+        title: 'Stale cloud title',
+        messages: [{ id: 'm1', timestamp: '2026-01-01T00:00:00Z' }],
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+    ]);
+    expect(result.kept).toBe(1);
+
+    const stored = await dbGetAll<{ id: string; title: string }>(STORES.AI_CONVERSATIONS);
+    expect(stored[0]!.title).toBe('Local title');
   });
 });
