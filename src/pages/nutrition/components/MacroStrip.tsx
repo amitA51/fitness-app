@@ -120,73 +120,84 @@ export const MacroStrip = memo(function MacroStrip({
         borderTop: 'none',
       }}
     >
-      {macroStrip.map((m, i) => (
-        <div
-          key={m.label}
-          className="glass-surface"
-          style={{
-            background: 'var(--fs-surface)',
-            padding: '18px 14px',
-            borderInlineStart: i > 0 ? '2px solid var(--fs-primary)' : 'none',
-          }}
-        >
+      {macroStrip.map((m, i) => {
+        // Over-budget: the bar fill stays visually clamped (pct caps at 100),
+        // but the gram value crossing the goal is surfaced by warn-coloring the
+        // number and the fill so the overshoot isn't invisible.
+        const isOver = m.cur > m.goal;
+        return (
           <div
-            className="flex items-center gap-1 mb-2"
+            key={m.label}
+            className="glass-surface"
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '10px',
-              letterSpacing: '0.22em',
-              color: 'var(--fs-muted)',
-              textTransform: 'uppercase',
+              background: 'var(--fs-surface)',
+              padding: '18px 14px',
+              borderInlineStart: i > 0 ? '2px solid var(--fs-primary)' : 'none',
             }}
           >
-            {m.icon}
-            <span>{m.label}</span>
-          </div>
-          <div
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: '32px',
-              lineHeight: 0.9,
-              color: 'var(--fs-ink)',
-              letterSpacing: '-0.02em',
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
-            <span ref={numRefs[i]}>{m.cur}</span>
-            <em
+            <div
+              className="flex items-center gap-1 mb-2"
               style={{
-                fontStyle: 'normal',
-                fontSize: '16px',
-                color: 'var(--fs-accent)',
-                marginInlineStart: '2px',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                letterSpacing: '0.22em',
+                color: 'var(--fs-muted)',
+                textTransform: 'uppercase',
               }}
             >
-              G
-            </em>
-          </div>
-          <div className="mt-2 fs-progress-track" style={{ height: '4px' }}>
+              {m.icon}
+              <span>{m.label}</span>
+            </div>
             <div
-              ref={(el) => {
-                barRefs.current[i] = el;
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: '32px',
+                lineHeight: 0.9,
+                color: isOver ? 'var(--fs-warn)' : 'var(--fs-ink)',
+                letterSpacing: '-0.02em',
+                fontVariantNumeric: 'tabular-nums',
               }}
-              className="fs-progress-fill"
-              style={{ height: '100%', transformOrigin: 'right center', transform: 'scaleX(0)' }}
-            />
+            >
+              <span ref={numRefs[i]}>{m.cur}</span>
+              <em
+                style={{
+                  fontStyle: 'normal',
+                  fontSize: '16px',
+                  color: 'var(--fs-accent)',
+                  marginInlineStart: '2px',
+                }}
+              >
+                G
+              </em>
+            </div>
+            <div className="mt-2 fs-progress-track" style={{ height: '4px' }}>
+              <div
+                ref={(el) => {
+                  barRefs.current[i] = el;
+                }}
+                className="fs-progress-fill"
+                style={{
+                  height: '100%',
+                  transformOrigin: 'right center',
+                  transform: 'scaleX(0)',
+                  background: isOver ? 'var(--fs-warn)' : undefined,
+                }}
+              />
+            </div>
+            <div
+              className="mt-1"
+              style={{
+                fontFamily: 'var(--font-hebrew)',
+                fontSize: '11px',
+                color: isOver ? 'var(--fs-warn)' : 'var(--fs-muted)',
+              }}
+            >
+              {m.he} · {m.cur}/{m.goal}
+            </div>
           </div>
-          <div
-            className="mt-1"
-            style={{
-              fontFamily: 'var(--font-hebrew)',
-              fontSize: '11px',
-              color: 'var(--fs-muted)',
-            }}
-          >
-            {m.he} · {m.cur}/{m.goal}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 });

@@ -1,6 +1,8 @@
 import { Copy, Download, FileJson, Share2 } from 'lucide-react';
 import type React from 'react';
+import { useState } from 'react';
 import { Button } from '../../../components/ui/Button';
+import { showToast } from '../../../components/ui/GlobalToast';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
 import {
   copyToClipboard,
@@ -29,15 +31,19 @@ function ExportRow({
   icon,
   label,
   onClick,
+  disabled = false,
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
+      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -46,7 +52,8 @@ function ExportRow({
         minHeight: '52px',
         border: 'none',
         background: 'transparent',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.5 : 1,
         width: '100%',
         textAlign: 'start',
       }}
@@ -74,36 +81,70 @@ export function ExportSection({
   copiedReport,
   setCopiedReport,
 }: Props) {
+  // Tracks which action is mid-flight so we can disable its row and prevent
+  // a double-fire (e.g. a second file download before the first resolves).
+  const [busy, setBusy] = useState<'csv' | 'backup' | 'report' | null>(null);
+
   const handleExportCsv = async () => {
+    if (busy) return;
+    setBusy('csv');
     try {
       await exportWorkoutHistory();
+      showToast('הקובץ יוצא בהצלחה');
     } catch (e) {
       logger.app.error('Export failed', e);
+      showToast('הייצוא נכשל', 'error');
+    } finally {
+      setBusy(null);
     }
   };
 
   const handleFullBackup = async () => {
+    if (busy) return;
+    setBusy('backup');
     try {
       await exportFullBackup();
+      showToast('הקובץ יוצא בהצלחה');
     } catch (e) {
       logger.app.error('Backup export failed', e);
+      showToast('הייצוא נכשל', 'error');
+    } finally {
+      setBusy(null);
     }
   };
 
   const handleWeeklyReport = async () => {
+    if (busy) return;
+    setBusy('report');
     try {
       const report = await generateWeeklyReport();
       setWeeklyReport(report);
+      showToast('הקובץ יוצא בהצלחה');
     } catch (e) {
       logger.app.error('Report generation failed', e);
+      showToast('הייצוא נכשל', 'error');
+    } finally {
+      setBusy(null);
     }
   };
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!weeklyReport) return;
-    copyToClipboard(weeklyReport);
+    const ok = await copyToClipboard(weeklyReport);
+    if (!ok) {
+      showToast('ההעתקה נכשלה', 'error');
+      return;
+    }
     setCopiedReport(true);
     setTimeout(() => setCopiedReport(false), 2000);
+  };
+
+  const handleShare = async () => {
+    if (!weeklyReport) return;
+    const ok = await shareReport(weeklyReport);
+    if (!ok) {
+      showToast('השיתוף נכשל', 'error');
+    }
   };
 
   return (
@@ -115,6 +156,7 @@ export function ExportSection({
             icon={<Download size={15} />}
             label="ייצוא היסטוריית אימונים (CSV)"
             onClick={handleExportCsv}
+            disabled={busy === 'csv'}
           />
           <Divider />
         </div>
@@ -124,12 +166,18 @@ export function ExportSection({
             icon={<FileJson size={15} />}
             label="גיבוי מלא (JSON)"
             onClick={handleFullBackup}
+            disabled={busy === 'backup'}
           />
           <Divider />
         </div>
 
         <div className="flex flex-col">
-          <ExportRow icon={<Share2 size={15} />} label="דוח שבועי" onClick={handleWeeklyReport} />
+          <ExportRow
+            icon={<Share2 size={15} />}
+            label="דוח שבועי"
+            onClick={handleWeeklyReport}
+            disabled={busy === 'report'}
+          />
         </div>
 
         {weeklyReport && (
@@ -155,7 +203,7 @@ export function ExportSection({
                 size="sm"
                 shape="sharp"
                 icon={<Share2 size={14} aria-hidden="true" />}
-                onClick={() => shareReport(weeklyReport)}
+                onClick={handleShare}
               >
                 שתף
               </Button>

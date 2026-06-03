@@ -1068,4 +1068,110 @@ describe('workoutReducer', () => {
       expect(next.showConfetti).toBe(false);
     });
   });
+
+  // ============================================================
+  // DELETE_SET undo buffer + RESTORE_DELETED_SET
+  // ============================================================
+  describe('DELETE_SET + RESTORE_DELETED_SET (undo)', () => {
+    const twoSets = (): Exercise =>
+      mkExercise({
+        sets: [
+          {
+            id: 'set-1',
+            setNumber: 1,
+            reps: 10,
+            weight: 80,
+            rpe: null,
+            isWarmup: false,
+            isCompleted: false,
+            notes: '',
+            completedAt: null,
+          },
+          {
+            id: 'set-2',
+            setNumber: 2,
+            reps: 8,
+            weight: 85,
+            rpe: null,
+            isWarmup: false,
+            isCompleted: false,
+            notes: '',
+            completedAt: null,
+          },
+        ],
+      });
+
+    it('snapshots the deleted set into lastDeletedSet', () => {
+      const state = createInitialState([twoSets()], 0, mkSettings());
+      const next = apply(state, { type: 'DELETE_SET', payload: { exerciseIndex: 0, setIndex: 0 } });
+      expect(next.exercises[0]?.sets).toHaveLength(1);
+      expect(next.lastDeletedSet?.set.id).toBe('set-1');
+      expect(next.lastDeletedSet?.setIndex).toBe(0);
+    });
+
+    it('restores the deleted set at its original index and consumes the buffer', () => {
+      const state = createInitialState([twoSets()], 0, mkSettings());
+      const deleted = apply(state, {
+        type: 'DELETE_SET',
+        payload: { exerciseIndex: 0, setIndex: 0 },
+      });
+      const restored = apply(deleted, { type: 'RESTORE_DELETED_SET' });
+      expect(restored.exercises[0]?.sets?.map((s) => s.id)).toEqual(['set-1', 'set-2']);
+      expect(restored.lastDeletedSet).toBeNull();
+    });
+
+    it('RESTORE_DELETED_SET is a no-op when nothing was deleted', () => {
+      const next = apply(baseState, { type: 'RESTORE_DELETED_SET' });
+      expect(next.exercises[0]?.sets).toHaveLength(1);
+      expect(next.lastDeletedSet).toBeNull();
+    });
+
+    it('does not snapshot when deleting the last remaining set is refused', () => {
+      const next = apply(baseState, {
+        type: 'DELETE_SET',
+        payload: { exerciseIndex: 0, setIndex: 0 },
+      });
+      expect(next.exercises[0]?.sets).toHaveLength(1);
+      expect(next.lastDeletedSet).toBeNull();
+    });
+  });
+
+  // ============================================================
+  // NUMPAD_CLEAR + NUMPAD_SUBMIT advance flow
+  // ============================================================
+  describe('NUMPAD_CLEAR + NUMPAD_SUBMIT advance', () => {
+    it('NUMPAD_CLEAR empties the working value and keeps the numpad open', () => {
+      let state = apply(baseState, { type: 'OPEN_NUMPAD', payload: 'weight' });
+      state = apply(state, { type: 'SET_NUMPAD_VALUE', payload: '127.5' });
+      const next = apply(state, { type: 'NUMPAD_CLEAR' });
+      expect(next.numpad.value).toBe('');
+      expect(next.numpad.isOpen).toBe(true);
+    });
+
+    it('NUMPAD_SUBMIT with advance writes the weight, re-targets reps, and stays open', () => {
+      let state = apply(baseState, { type: 'OPEN_NUMPAD', payload: 'weight' });
+      state = apply(state, { type: 'SET_NUMPAD_VALUE', payload: '90' });
+      const next = apply(state, { type: 'NUMPAD_SUBMIT', payload: { advance: true } });
+      expect(next.exercises[0]?.sets?.[0]?.weight).toBe(90);
+      expect(next.numpad.isOpen).toBe(true);
+      expect(next.numpad.target).toBe('reps');
+      expect(next.numpad.value).toBe('');
+    });
+
+    it('NUMPAD_SUBMIT with advance from reps closes normally (advance is weight-only)', () => {
+      let state = apply(baseState, { type: 'OPEN_NUMPAD', payload: 'reps' });
+      state = apply(state, { type: 'SET_NUMPAD_VALUE', payload: '12' });
+      const next = apply(state, { type: 'NUMPAD_SUBMIT', payload: { advance: true } });
+      expect(next.exercises[0]?.sets?.[0]?.reps).toBe(12);
+      expect(next.numpad.isOpen).toBe(false);
+    });
+
+    it('plain NUMPAD_SUBMIT (no payload) keeps the legacy close-on-submit behavior', () => {
+      let state = apply(baseState, { type: 'OPEN_NUMPAD', payload: 'weight' });
+      state = apply(state, { type: 'SET_NUMPAD_VALUE', payload: '100' });
+      const next = apply(state, { type: 'NUMPAD_SUBMIT' });
+      expect(next.exercises[0]?.sets?.[0]?.weight).toBe(100);
+      expect(next.numpad.isOpen).toBe(false);
+    });
+  });
 });

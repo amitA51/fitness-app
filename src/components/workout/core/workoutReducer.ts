@@ -558,12 +558,47 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       const targetExercise = draft.exercises[exerciseIndex];
       if (!targetExercise) return;
       const targetSets = targetExercise.sets ?? [];
-      if (!targetSets[setIndex]) return;
+      const removed = targetSets[setIndex];
+      if (!removed) return;
 
       // Don't allow deleting the last set
       if (targetSets.length <= 1) return;
 
+      // Snapshot before removal so RESTORE_DELETED_SET can re-insert it at the
+      // same index. One-deep buffer — each delete overwrites the prior snapshot.
+      // Key by exerciseId (stable across reorders), falling back to index.
+      draft.lastDeletedSet = {
+        exerciseId: targetExercise.id ?? String(exerciseIndex),
+        setIndex,
+        set: { ...removed },
+      };
+
       targetSets.splice(setIndex, 1);
+      break;
+    }
+
+    case 'RESTORE_DELETED_SET': {
+      const snapshot = draft.lastDeletedSet;
+      if (!snapshot) return;
+
+      // Resolve the exercise by its stable id, falling back to the recorded
+      // index if the id can't be matched (e.g. legacy exercises without ids).
+      const targetExercise =
+        draft.exercises.find((e) => e.id === snapshot.exerciseId) ??
+        draft.exercises[Number(snapshot.exerciseId)];
+      if (!targetExercise) {
+        draft.lastDeletedSet = null;
+        return;
+      }
+
+      const targetSets = targetExercise.sets ?? [];
+      // Clamp the insert index — the list may have shrunk/grown since deletion.
+      const insertAt = Math.min(Math.max(0, snapshot.setIndex), targetSets.length);
+      targetSets.splice(insertAt, 0, { ...snapshot.set });
+      targetExercise.sets = targetSets;
+
+      // One-deep buffer: consume the snapshot so a second undo is a no-op.
+      draft.lastDeletedSet = null;
       break;
     }
   }
@@ -692,7 +727,18 @@ const uiReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       draft.numpad.value = draft.numpad.value.slice(0, -1);
       break;
 
+    case 'NUMPAD_CLEAR':
+      // Empty the working value in one tap (the 'נקה' key).
+      draft.numpad.value = '';
+      break;
+
     case 'NUMPAD_SUBMIT': {
+      // `advance` (task 4): only valid from the 'weight' target — after writing
+      // the weight, re-target the numpad to 'reps' on the SAME set and KEEP it
+      // open, so a set is logged in one continuous flow. The default (no
+      // payload / advance !== true) keeps the existing close-on-submit behavior.
+      const advance = action.payload?.advance === true && draft.numpad.target === 'weight';
+
       if (draft.numpad.target) {
         let val = Number.parseFloat(draft.numpad.value);
         if (!Number.isNaN(val)) {
@@ -717,7 +763,14 @@ const uiReducer = (draft: WorkoutState, action: WorkoutAction): void => {
           }
         }
       }
-      draft.numpad.isOpen = false;
+
+      if (advance) {
+        // Stay open, switch to reps, start with an empty value for fresh entry.
+        draft.numpad.target = 'reps';
+        draft.numpad.value = '';
+      } else {
+        draft.numpad.isOpen = false;
+      }
       break;
     }
 
@@ -871,6 +924,7 @@ const SET_ACTIONS = new Set([
   'UNDO_LAST_SET',
   'EDIT_SPECIFIC_SET',
   'DELETE_SET',
+  'RESTORE_DELETED_SET',
   'UPDATE_SET_RPE',
   'UPDATE_SET_NOTES',
   'SET_TECHNIQUE',
@@ -892,6 +946,7 @@ const UI_ACTIONS = new Set([
   'NUMPAD_INPUT',
   'SET_NUMPAD_VALUE',
   'NUMPAD_DELETE',
+  'NUMPAD_CLEAR',
   'NUMPAD_SUBMIT',
   'OPEN_SELECTOR',
   'CLOSE_SELECTOR',

@@ -21,6 +21,12 @@ const DEFAULT_DURATION_MS: Record<ToastPosition, number> = {
   bottom: 5000,
 };
 
+/** Inline action rendered inside the toast (e.g. "בטל" for undo). */
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 /** Options accepted by the imperative {@link showToast} API. */
 export interface ToastOptions {
   variant?: ToastVariant;
@@ -30,6 +36,8 @@ export interface ToastOptions {
   duration?: number;
   /** Optional secondary line under the title (e.g. "זמן ללגום מים"). */
   description?: string;
+  /** Optional action button (e.g. undo). Tapping it dismisses the toast. */
+  action?: ToastAction;
 }
 
 interface ToastMessage {
@@ -39,6 +47,7 @@ interface ToastMessage {
   position: ToastPosition;
   duration: number;
   description?: string;
+  action?: ToastAction;
 }
 
 const VARIANT_STYLES: Record<ToastVariant, { accent: string; eyebrow: string }> = {
@@ -80,10 +89,23 @@ export function showToast(text: string, optionsOrVariant: ToastOptions | ToastVa
   const duration = options.duration ?? DEFAULT_DURATION_MS[position];
 
   const id = ++toastId;
-  globalSetToasts((prev) => [
-    ...prev.slice(-2),
-    { id, text, variant, position, duration, description: options.description },
-  ]);
+  globalSetToasts((prev) => {
+    const next = {
+      id,
+      text,
+      variant,
+      position,
+      duration,
+      description: options.description,
+      action: options.action,
+    };
+    if (prev.length < 3) return [...prev, next];
+    // Stack is full — evict the oldest non-error toast first so error
+    // feedback is never silently dropped before the user can read it.
+    const evictIndex = prev.findIndex((t) => t.variant !== 'error');
+    const survivors = evictIndex === -1 ? prev.slice(1) : prev.filter((_, i) => i !== evictIndex);
+    return [...survivors, next];
+  });
 }
 
 const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>(
@@ -160,6 +182,30 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
             </div>
           )}
         </div>
+        {toast.action && (
+          <button
+            type="button"
+            onClick={() => {
+              toast.action?.onClick();
+              onDismiss(toast.id);
+            }}
+            className="transition-colors text-xs font-bold uppercase"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              color: style.accent,
+              letterSpacing: '0.08em',
+              borderRadius: 0,
+              minWidth: 44,
+              minHeight: 44,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingInline: 'var(--space-2)',
+            }}
+          >
+            {toast.action.label}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => onDismiss(toast.id)}

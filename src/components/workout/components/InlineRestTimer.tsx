@@ -155,6 +155,11 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
               e.preventDefault();
               handleAddTime(-15);
             }}
+            // Keyboard/AT activation dispatches click with detail === 0 (no
+            // pointer event fires), so this never double-fires for touch.
+            onClick={(e) => {
+              if (e.detail === 0) handleAddTime(-15);
+            }}
             aria-label="הפחת 15 שניות"
             style={{
               minWidth: 48,
@@ -178,6 +183,9 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
               e.preventDefault();
               handleAddTime(15);
             }}
+            onClick={(e) => {
+              if (e.detail === 0) handleAddTime(15);
+            }}
             aria-label="הוסף 15 שניות"
             style={{
               minWidth: 48,
@@ -200,6 +208,9 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
             onPointerDown={(e) => {
               e.preventDefault();
               handleSkip();
+            }}
+            onClick={(e) => {
+              if (e.detail === 0) handleSkip();
             }}
             aria-label="דלג על המנוחה"
             style={{

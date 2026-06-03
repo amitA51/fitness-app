@@ -2,7 +2,17 @@
 // Exercise card (pinned) → technique pills → input cards → previous badge → action group
 // No dark hero panel, no internal SlideToComplete
 
-import { Check, ChevronLeft, Edit, FileText, Link2, Plus, RotateCcw, Star, Unlink } from 'lucide-react';
+import {
+  Check,
+  ChevronLeft,
+  Edit,
+  FileText,
+  Link2,
+  Plus,
+  RotateCcw,
+  Star,
+  Unlink,
+} from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import type { Exercise, SetTechnique, WorkoutSet } from '../../../types';
@@ -40,6 +50,8 @@ interface ExerciseDisplayProps {
   showGhostValues?: boolean;
   enableQuickWeightButtons?: boolean;
   enableQuickRepsButtons?: boolean;
+  /** User-configured quick +/- weight step (kg). Same contract as WorkoutPlanScreen. */
+  weightIncrement?: number;
   showVolumePreview?: boolean;
   supersetGroups?: SupersetGroup[];
   onCreateSuperset?: (exerciseId: string) => void;
@@ -70,6 +82,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     showGhostValues = true,
     enableQuickWeightButtons = true,
     enableQuickRepsButtons = true,
+    weightIncrement = 2.5,
     supersetGroups = [],
     onCreateSuperset,
     onRemoveSuperset,
@@ -118,12 +131,12 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     );
     const handleWeightTap = useCallback(() => onOpenNumpad('weight'), [onOpenNumpad]);
     const handleIncrementWeight = useCallback(
-      () => onUpdateSet('weight', (currentSet.weight || 0) + 2.5),
-      [currentSet.weight, onUpdateSet]
+      () => onUpdateSet('weight', (currentSet.weight || 0) + weightIncrement),
+      [currentSet.weight, onUpdateSet, weightIncrement]
     );
     const handleDecrementWeight = useCallback(
-      () => onUpdateSet('weight', Math.max(0, (currentSet.weight || 0) - 2.5)),
-      [currentSet.weight, onUpdateSet]
+      () => onUpdateSet('weight', Math.max(0, (currentSet.weight || 0) - weightIncrement)),
+      [currentSet.weight, onUpdateSet, weightIncrement]
     );
 
     return (
@@ -230,7 +243,8 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                           ? '0 0 8px color-mix(in srgb, var(--fs-accent-2) 50%, transparent)'
                           : 'none',
                         transform: isCurrent ? 'scale(1.25)' : 'none',
-                        transition: 'background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease',
+                        transition:
+                          'background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease',
                       }}
                     />
                   );
@@ -397,7 +411,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   ghostValue={previousSet?.weight}
                   showGhost={showGhostWeight}
                   unit="kg"
-                  incrementAmount={2.5}
+                  incrementAmount={weightIncrement}
                   onTap={handleWeightTap}
                   onIncrement={handleIncrementWeight}
                   onDecrement={handleDecrementWeight}

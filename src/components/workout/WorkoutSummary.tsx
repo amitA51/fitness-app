@@ -8,6 +8,8 @@ import { fireSparks } from '@/lib/gsapSparks';
 import { AnimatePresence, m } from 'framer-motion';
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { HABIT_HAPTIC_PATTERNS } from '../../hooks/useHaptics';
+import { calculateStreak } from '../../services/achievementService';
 import {
   getAllWorkoutSessions,
   getWorkoutSessions,
@@ -16,6 +18,7 @@ import {
 import { exportWorkoutHistoryCSV } from '../../services/exportService';
 import { calculatePRsFromHistory, isNewPR } from '../../services/prService';
 import type { WorkoutSession } from '../../types';
+import { triggerHapticEffect, vibratePattern } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 import { computeSessionStats, setVolume } from '../../utils/workoutMath';
 import { ModalOverlay } from '../ui/ModalOverlay';
@@ -80,6 +83,21 @@ const STATS_START = 0.5;
 const EXERCISES_START = 0.78;
 const SPARKS_DELAY = 1.0;
 
+// Streak thresholds worth celebrating in the summary. Crossing one of these
+// (streak grew from below the milestone to at/above it this session) fires the
+// milestone strip + sparks + the streakMilestone haptic.
+const STREAK_MILESTONES = [7, 21, 30, 66] as const;
+
+// The highest milestone newly crossed when the streak moved from `before` to
+// `after` this session. null when no milestone boundary was crossed.
+const crossedMilestone = (before: number, after: number): number | null => {
+  let crossed: number | null = null;
+  for (const m of STREAK_MILESTONES) {
+    if (before < m && after >= m) crossed = m;
+  }
+  return crossed;
+};
+
 const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   isOpen,
   session,
@@ -91,6 +109,12 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   const [prExercises, setPrExercises] = useState<Set<string>>(new Set());
   const [comparison, setComparison] = useState<ComparisonData | null>(null);
   const [workoutRating, setWorkoutRating] = useState<number | null>(null);
+  // True when this is the user's first ever completed session — the highest
+  // activation moment, which otherwise falls through to the flat headline.
+  const [isFirstSession, setIsFirstSession] = useState<boolean>(false);
+  // The streak milestone newly crossed by completing this session (7/21/30/66),
+  // or null when no boundary was crossed.
+  const [streakMilestone, setStreakMilestone] = useState<number | null>(null);
 
   const reduced = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -237,6 +261,61 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
     };
   }, [isOpen, session]);
 
+  // First-session detection + streak-milestone crossing. Both lean on the full
+  // history (tombstones already excluded by getAllWorkoutSessions) and run only
+  // while the summary is open so we don't scan history needlessly.
+  useEffect(() => {
+    let cancelled = false;
+    const detectMoments = async () => {
+      try {
+        const allSessions = await getAllWorkoutSessions();
+
+        // Sessions other than the one being summarized. Dedup by id covers the
+        // case where the current session is already persisted; the startTime
+        // guard covers the not-yet-saved case.
+        const currentStartMs = session.startTime ? new Date(session.startTime).getTime() : null;
+        const others = allSessions.filter((s) => {
+          if (session.id && s.id === session.id) return false;
+          if (currentStartMs && s.startTime) {
+            return new Date(s.startTime).getTime() !== currentStartMs;
+          }
+          return true;
+        });
+
+        // First-session: no other completed session exists yet.
+        const priorCompleted = others.filter((s) => s.status === 'completed');
+        const firstSession = priorCompleted.length === 0;
+
+        // Streak crossing: compare the streak WITHOUT this session against the
+        // streak WITH it merged in. A merged completed copy of the current
+        // session is used so detection works whether or not it's persisted yet.
+        const withCurrent: WorkoutSession[] = [
+          ...others,
+          { ...(session as WorkoutSession), status: 'completed' },
+        ];
+        const before = calculateStreak(others).currentStreak;
+        const after = calculateStreak(withCurrent).currentStreak;
+        const milestone = crossedMilestone(before, after);
+
+        if (!cancelled) {
+          setIsFirstSession(firstSession);
+          setStreakMilestone(milestone);
+        }
+      } catch (error) {
+        logger.workout.warn('Failed to detect first-session / streak milestone', error);
+        if (!cancelled) {
+          setIsFirstSession(false);
+          setStreakMilestone(null);
+        }
+      }
+    };
+
+    if (isOpen) detectMoments();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, session]);
+
   const handleExportCSV = useCallback(() => {
     exportWorkoutHistoryCSV([session as WorkoutSession]);
   }, [session]);
@@ -276,12 +355,35 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
     enabled: isOpen && prsCount > 0,
   });
 
-  // Restrained spark puff — fires from the hero number ONLY when the session
-  // had a PR, after the stat cards have staggered in. Upward fan (240-300°) is
-  // vertically symmetric, so RTL-neutral. Reduced motion / no-PR: skipped.
+  // Celebration haptics — gated through utils/haptics so the Settings toggle
+  // owns them. A PR or first-ever session earns a success buzz; crossing a
+  // streak milestone gets the dedicated streakMilestone pattern. Fires once per
+  // open, only when there's something to celebrate.
+  const hapticsFiredRef = useRef(false);
+  useEffect(() => {
+    if (!isOpen) {
+      hapticsFiredRef.current = false;
+      return;
+    }
+    if (hapticsFiredRef.current) return;
+    const hasCelebration = prsCount > 0 || isFirstSession || streakMilestone !== null;
+    if (!hasCelebration) return;
+    hapticsFiredRef.current = true;
+    if (streakMilestone !== null) {
+      vibratePattern([...HABIT_HAPTIC_PATTERNS.streakMilestone]);
+    } else {
+      triggerHapticEffect('success', 'medium');
+    }
+  }, [isOpen, prsCount, isFirstSession, streakMilestone]);
+
+  // Restrained spark puff — fires from the hero number after the stat cards
+  // have staggered in, for any celebratory moment (PR, first-ever session, or a
+  // streak milestone crossing). Upward fan (240-300°) is vertically symmetric,
+  // so RTL-neutral. Reduced motion / nothing to celebrate: skipped.
+  const hasCelebration = prsCount > 0 || isFirstSession || streakMilestone !== null;
   useGSAP(
     () => {
-      if (reduced || !isOpen || prsCount <= 0) return;
+      if (reduced || !isOpen || !hasCelebration) return;
       const cont = mastheadRef.current;
       if (!cont) return;
       const head = headlineRef.current;
@@ -307,7 +409,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         });
       });
     },
-    { scope: rootRef, dependencies: [isOpen, prsCount, reduced] }
+    { scope: rootRef, dependencies: [isOpen, hasCelebration, reduced] }
   );
 
   return (

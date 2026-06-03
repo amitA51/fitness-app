@@ -63,7 +63,7 @@ export default function JoinPage() {
   // Loading state
   if (status === 'loading' || busy) {
     return (
-      <div className="flex items-center justify-center min-h-screen" dir="rtl">
+      <div className="flex items-center justify-center min-h-screen min-h-[100dvh]" dir="rtl">
         <LoadingSpinner />
       </div>
     );
@@ -72,7 +72,10 @@ export default function JoinPage() {
   // Unauthenticated: prompt to login
   if (status === 'unauthenticated') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6" dir="rtl">
+      <div
+        className="flex flex-col items-center justify-center min-h-screen min-h-[100dvh] gap-4 px-6"
+        dir="rtl"
+      >
         <h1
           style={{
             fontFamily: 'var(--font-heading)',
@@ -102,7 +105,10 @@ export default function JoinPage() {
   // Error state (authenticated but invite failed)
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6" dir="rtl">
+      <div
+        className="flex flex-col items-center justify-center min-h-screen min-h-[100dvh] gap-4 px-6"
+        dir="rtl"
+      >
         <p
           style={{
             fontFamily: 'var(--font-body)',
@@ -121,7 +127,10 @@ export default function JoinPage() {
 
   // No code at all
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6" dir="rtl">
+    <div
+      className="flex flex-col items-center justify-center min-h-screen min-h-[100dvh] gap-4 px-6"
+      dir="rtl"
+    >
       <p
         style={{
           fontFamily: 'var(--font-body)',

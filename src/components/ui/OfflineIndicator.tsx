@@ -1,9 +1,26 @@
 import { useEffect, useState } from 'react';
-import { getQueueDepth } from '../../services/offlineQueue';
+import { getQueueDepth, processQueue } from '../../services/offlineQueue';
 
 export function OfflineIndicator() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [queueDepth, setQueueDepth] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Force a sync pass now. Success/failure feedback is surfaced by the queue
+  // itself via the shared toast; here we just refresh the visible depth.
+  const handleSyncNow = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    try {
+      await processQueue();
+      const depth = await getQueueDepth();
+      setQueueDepth(depth);
+    } catch {
+      // ignore — the queue keeps its items and the periodic retry will run
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -54,7 +71,32 @@ export function OfflineIndicator() {
         }}
       >
         <span className="breathing-dot warn" aria-hidden="true" />
-        {queueDepth} פעולות ממתינות לסנכרון
+        <span>
+          <span dir="ltr" className="kinetic-number">
+            {queueDepth}
+          </span>{' '}
+          פעולות ממתינות לסנכרון
+        </span>
+        <button
+          type="button"
+          onClick={handleSyncNow}
+          disabled={isSyncing}
+          aria-label="סנכרן עכשיו"
+          className="font-mono uppercase transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
+          style={{
+            fontSize: '11px',
+            letterSpacing: '0.08em',
+            fontWeight: 600,
+            color: 'var(--fs-accent)',
+            background: 'transparent',
+            border: 'none',
+            padding: '2px 6px',
+            cursor: isSyncing ? 'not-allowed' : 'pointer',
+            opacity: isSyncing ? 0.5 : 1,
+          }}
+        >
+          {isSyncing ? 'מסנכרן…' : 'סנכרן עכשיו'}
+        </button>
       </div>
     );
   }

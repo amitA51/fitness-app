@@ -224,61 +224,75 @@ export const AddMealModal = memo(function AddMealModal({
 
         <FoodSearchInput value={searchQuery} onChange={onSearchChange} variant="sheet" />
 
-        <div className="space-y-1.5 max-h-56 overflow-y-auto">
-          {foods.slice(0, 20).map((food) => (
-            <button
-              type="button"
-              key={food.id}
-              onClick={() => onAddFood(food)}
-              style={{
-                width: '100%',
-                minHeight: 44,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '14px',
-                borderRadius: '14px',
-                backgroundColor: 'var(--fs-surface-2)',
-                border: 'none',
-                cursor: 'pointer',
-                textAlign: 'start',
-                transition: 'background-color 0.15s ease',
-              }}
-            >
-              <div>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-hebrew)',
-                    fontSize: '14px',
-                    color: 'var(--fs-ink)',
-                  }}
-                >
-                  {food.name}
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '11px',
-                    color: 'var(--fs-muted)',
-                    marginInlineStart: '8px',
-                  }}
-                >
-                  {food.servingSize}
-                </span>
-              </div>
-              <span
+        {searchQuery.trim() && foods.length === 0 ? (
+          <div
+            className="flex flex-col items-center justify-center py-10 text-center"
+            style={{ fontFamily: 'var(--font-body)' }}
+          >
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--fs-muted)' }}>
+              לא נמצא מזון מתאים
+            </span>
+            <span style={{ fontSize: '12px', color: 'var(--fs-muted)', marginTop: '4px' }}>
+              נסו שם אחר או קיצור
+            </span>
+          </div>
+        ) : (
+          <div className="space-y-1.5 max-h-56 overflow-y-auto">
+            {foods.slice(0, 20).map((food) => (
+              <button
+                type="button"
+                key={food.id}
+                onClick={() => onAddFood(food)}
                 style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  color: MACRO_COLORS.calories,
+                  width: '100%',
+                  minHeight: 44,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '14px',
+                  borderRadius: '14px',
+                  backgroundColor: 'var(--fs-surface-2)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'start',
+                  transition: 'background-color 0.15s ease',
                 }}
               >
-                {food.calories} קל׳
-              </span>
-            </button>
-          ))}
-        </div>
+                <div>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-hebrew)',
+                      fontSize: '14px',
+                      color: 'var(--fs-ink)',
+                    }}
+                  >
+                    {food.name}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      color: 'var(--fs-muted)',
+                      marginInlineStart: '8px',
+                    }}
+                  >
+                    {food.servingSize}
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    color: MACRO_COLORS.calories,
+                  }}
+                >
+                  {food.calories} קל׳
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </Sheet>
   );

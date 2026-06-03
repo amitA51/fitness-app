@@ -52,7 +52,12 @@ export const DEFAULT_ONBOARDING: OnboardingData = {
 
 export interface OnboardingProps {
   onComplete: (data: OnboardingData) => void;
-  onSkip: () => void;
+  /**
+   * Called when the user skips onboarding. Receives the partial wizard data so
+   * any fields already typed (name, age, goals, …) can still be persisted —
+   * honoring the skip dialog's promise that it can be completed later.
+   */
+  onSkip: (data: OnboardingData) => void;
 }
 
 export const STEPS = [

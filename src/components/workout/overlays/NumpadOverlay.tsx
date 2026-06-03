@@ -19,6 +19,10 @@ interface NumpadOverlayProps {
   onSetValue: (value: string) => void;
   onDelete: () => void;
   onSubmit: () => void;
+  /** Clear the whole value in one tap (calculator "C"). */
+  onClear?: () => void;
+  /** Submit weight and re-target the numpad to reps without closing. */
+  onSubmitAdvance?: () => void;
   onClose: () => void;
   /** Previous value for this set (ghost value) */
   previousValue?: number;
@@ -402,6 +406,8 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
     onSetValue,
     onDelete,
     onSubmit,
+    onClear,
+    onSubmitAdvance,
     onClose,
     previousValue,
     recentValues = [],
@@ -475,6 +481,19 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
       triggerHaptic('success');
       onSubmit();
     }, [onSubmit]);
+
+    const handleClear = useCallback(() => {
+      triggerHaptic('light');
+      onClear?.();
+    }, [onClear]);
+
+    const handleSubmitAdvance = useCallback(() => {
+      triggerHaptic('success');
+      onSubmitAdvance?.();
+    }, [onSubmitAdvance]);
+
+    // The advance flow only makes sense from weight → reps.
+    const showAdvance = target === 'weight' && onSubmitAdvance !== undefined;
 
     // Number pad keys - weight allows decimal, reps doesn't
     const keys: (number | string | null)[][] = useMemo(
@@ -568,7 +587,30 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
           </div>
 
           {/* Value Display on bone */}
-          <div className="px-6 pt-5 pb-4 text-center">
+          <div className="px-6 pt-5 pb-4 text-center relative">
+            {/* Clear-all — calculator "C" affordance; beats 5 backspaces on a typo */}
+            {onClear && value !== '' && (
+              <m.button
+                whileTap={{ scale: shouldReduceMotion ? 1 : 0.95 }}
+                onClick={handleClear}
+                className="absolute top-2 start-6 uppercase"
+                style={{
+                  minWidth: 44,
+                  minHeight: 44,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: '0.1em',
+                  fontWeight: 700,
+                  color: 'var(--fs-warn)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                aria-label="נקה את הערך"
+              >
+                נקה
+              </m.button>
+            )}
             <div className="flex justify-center mb-3">
               <AnimatedValue value={value} target={target} />
             </div>
@@ -683,20 +725,47 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
               zIndex: 2,
             }}
           >
-            <m.button
-              whileTap={{ scale: shouldReduceMotion ? 1 : 0.98 }}
-              onClick={handleSubmit}
-              disabled={value === ''}
-              className="btn-primary w-full accent-glow"
-              style={{
-                opacity: value === '' ? 0.4 : 1,
-                cursor: value === '' ? 'not-allowed' : 'pointer',
-                minHeight: 56,
-              }}
-              aria-label="אישור ערך"
-            >
-              אישור
-            </m.button>
+            <div className="flex gap-2">
+              <m.button
+                whileTap={{ scale: shouldReduceMotion ? 1 : 0.98 }}
+                onClick={handleSubmit}
+                disabled={value === ''}
+                className="btn-primary flex-1 accent-glow"
+                style={{
+                  opacity: value === '' ? 0.4 : 1,
+                  cursor: value === '' ? 'not-allowed' : 'pointer',
+                  minHeight: 56,
+                }}
+                aria-label="אישור ערך"
+              >
+                אישור
+              </m.button>
+              {/* Submit-and-advance: write the weight, jump straight to reps on
+                  the SAME set — halves the taps on the most-repeated action */}
+              {showAdvance && (
+                <m.button
+                  whileTap={{ scale: shouldReduceMotion ? 1 : 0.98 }}
+                  onClick={handleSubmitAdvance}
+                  disabled={value === ''}
+                  style={{
+                    minHeight: 56,
+                    paddingInline: 24,
+                    borderRadius: 0,
+                    border: '2px solid var(--fs-primary)',
+                    backgroundColor: 'var(--fs-surface-2)',
+                    color: 'var(--fs-heading)',
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: 18,
+                    opacity: value === '' ? 0.4 : 1,
+                    cursor: value === '' ? 'not-allowed' : 'pointer',
+                  }}
+                  aria-label="אישור ומעבר לחזרות"
+                >
+                  הבא
+                </m.button>
+              )}
+            </div>
           </div>
         </m.div>
       </ModalOverlay>

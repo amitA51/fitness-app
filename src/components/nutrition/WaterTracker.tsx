@@ -3,6 +3,7 @@ import { DUR, EASE, gsap, useGSAP } from '@/lib/gsap';
 import { fireSparks } from '@/lib/gsapSparks';
 import { Droplets, Minus, Plus } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { showToast } from '../../components/ui/GlobalToast';
 import {
   WATER_UPDATED_EVENT,
   addWaterEntry,
@@ -11,6 +12,7 @@ import {
   getWaterTotalForDate,
 } from '../../services/waterService';
 import { todayStr } from '../../utils/dateUtils';
+import { triggerHapticEffect } from '../../utils/haptics';
 
 interface WaterTrackerProps {
   /** Day the page is showing. Defaults to today. */
@@ -39,11 +41,37 @@ export const WaterTracker = memo(function WaterTracker({
   const fillRef = useRef<HTMLDivElement>(null);
   const countRef = useRef<HTMLSpanElement>(null);
   const prevPctRef = useRef<number | null>(null);
+  // Fires the goal celebration once per day. Latched true as soon as the day
+  // loads already at/over goal so re-opening the page (or further adds past
+  // 100%) doesn't re-fire it; reset whenever the shown day changes.
+  const goalCelebratedRef = useRef(false);
 
   const loadTotal = useCallback(async () => {
     const t = await getWaterTotalForDate(dateToShow);
     setTotalMl(t);
+    // If the day is already complete on load, latch so we never celebrate a
+    // goal that was reached earlier (or on a previous session).
+    if (goalMl > 0 && t >= goalMl) goalCelebratedRef.current = true;
+  }, [dateToShow, goalMl]);
+
+  // A fresh day starts un-celebrated. loadTotal re-latches if it's already done.
+  useEffect(() => {
+    goalCelebratedRef.current = false;
   }, [dateToShow]);
+
+  // Fires the goal toast + success haptic the first time the running total
+  // crosses the goal. Takes the projected new total so it can run from the
+  // optimistic add handlers (before state/pct recompute).
+  const celebrateIfGoalReached = useCallback(
+    (newTotalMl: number) => {
+      if (goalMl <= 0 || goalCelebratedRef.current) return;
+      if (newTotalMl < goalMl) return;
+      goalCelebratedRef.current = true;
+      triggerHapticEffect('success');
+      showToast('הגעת ליעד המים היומי!', { variant: 'water' });
+    },
+    [goalMl]
+  );
 
   useEffect(() => {
     loadTotal();
@@ -138,14 +166,16 @@ export const WaterTracker = memo(function WaterTracker({
   );
 
   const handleAdd = useCallback(async () => {
+    triggerHapticEffect('tap', 'light');
     setTotalMl((prev) => prev + glassMl);
+    celebrateIfGoalReached(totalMl + glassMl);
     setAddTick((t) => t + 1);
     try {
       await addWaterEntry(glassMl);
     } catch {
       setTotalMl((prev) => Math.max(0, prev - glassMl));
     }
-  }, [glassMl]);
+  }, [glassMl, totalMl, celebrateIfGoalReached]);
 
   const handleRemove = useCallback(async () => {
     if (totalMl <= 0) return;
@@ -157,15 +187,20 @@ export const WaterTracker = memo(function WaterTracker({
     }
   }, [glassMl, totalMl]);
 
-  const handleQuickAdd = useCallback(async (amountMl: number) => {
-    setTotalMl((prev) => prev + amountMl);
-    setAddTick((t) => t + 1);
-    try {
-      await addWaterEntry(amountMl);
-    } catch {
-      setTotalMl((prev) => Math.max(0, prev - amountMl));
-    }
-  }, []);
+  const handleQuickAdd = useCallback(
+    async (amountMl: number) => {
+      triggerHapticEffect('tap', 'light');
+      setTotalMl((prev) => prev + amountMl);
+      celebrateIfGoalReached(totalMl + amountMl);
+      setAddTick((t) => t + 1);
+      try {
+        await addWaterEntry(amountMl);
+      } catch {
+        setTotalMl((prev) => Math.max(0, prev - amountMl));
+      }
+    },
+    [totalMl, celebrateIfGoalReached]
+  );
 
   return (
     <div

@@ -24,6 +24,8 @@ interface WorkoutOverlaysProps {
   onNumpadSetValue: (value: string) => void;
   onNumpadDelete: () => void;
   onNumpadSubmit: () => void;
+  onNumpadSubmitAdvance: () => void;
+  onNumpadClear: () => void;
   onCloseNumpad: () => void;
   // Plate calc
   showPlateCalc: boolean;
@@ -95,6 +97,8 @@ const WorkoutOverlays: React.FC<WorkoutOverlaysProps> = (props) => (
       onNumpadSetValue={props.onNumpadSetValue}
       onNumpadDelete={props.onNumpadDelete}
       onNumpadSubmit={props.onNumpadSubmit}
+      onNumpadSubmitAdvance={props.onNumpadSubmitAdvance}
+      onNumpadClear={props.onNumpadClear}
       onCloseNumpad={props.onCloseNumpad}
       showPlateCalc={props.showPlateCalc}
       onClosePlateCalc={props.onClosePlateCalc}

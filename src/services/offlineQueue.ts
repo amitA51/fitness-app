@@ -414,6 +414,22 @@ export async function queueMutation(type: MutationType, payload: unknown): Promi
   });
 }
 
+// ── User-facing feedback ─────────────────────────────────────────────────────
+
+// Lazy-load the toast module so this pure service never pulls the React/
+// framer-motion GlobalToast component into its own (potentially worker/early
+// boot) import graph. Matches the lazy-import style already used here for
+// supabaseSync / waterService, and sidesteps any future circular-import risk.
+async function notify(text: string, variant: 'error' | 'info'): Promise<void> {
+  try {
+    const { showToast } = await import('../components/ui/GlobalToast');
+    showToast(text, variant);
+  } catch {
+    // Toast unavailable (e.g. container not mounted yet) — never let feedback
+    // failures break queue processing.
+  }
+}
+
 // ── Queue processing guard ──────────────────────────────────────────────────
 let isProcessing = false;
 
@@ -446,6 +462,10 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
 
   let success = 0;
   let failed = 0;
+  // True once any mutation is permanently dropped in this pass (4xx or max
+  // retries). Debounced to a single toast per run so a burst of drops can't
+  // spam the user.
+  let droppedPermanently = false;
 
   // Track dedup keys we've already successfully synced in this pass. If a
   // later queued entry targets the same record we can drop it — the latest
@@ -487,6 +507,7 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
           error: errMsg,
         });
         await deleteMutation(mutation.id);
+        droppedPermanently = true;
         failed++;
         continue;
       }
@@ -501,6 +522,7 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
           errors: mutation.lastError,
         });
         await deleteMutation(mutation.id);
+        droppedPermanently = true;
       } else {
         await putMutation(mutation);
         logger.sync.warn('Mutation failed, will retry', {
@@ -512,6 +534,12 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
       }
       failed++;
     }
+  }
+
+  // One toast per run if anything was permanently dropped — debounced so a
+  // burst of drops in a single pass doesn't spam the user.
+  if (droppedPermanently) {
+    await notify('שינוי אחד לא נשמר בענן', 'error');
   }
 
   return { success, failed };
@@ -544,6 +572,9 @@ function setupOnlineListener() {
     if (result.success > 0 || result.failed > 0) {
       logger.sync.info('Queue processing complete', result);
     }
+    if (result.failed > 0) {
+      await notify('חלק מהשינויים לא הסתנכרנו — ננסה שוב אוטומטית', 'error');
+    }
   });
 
   window.addEventListener('offline', () => {
@@ -563,6 +594,9 @@ export function initOfflineSync() {
     if (result.success > 0) {
       logger.sync.info('Processed queued mutations on startup', result);
     }
+    if (result.failed > 0) {
+      void notify('חלק מהשינויים לא הסתנכרנו — ננסה שוב אוטומטית', 'error');
+    }
   });
 
   // DA-9: Periodic retry every 90s when online and queue has items
@@ -573,6 +607,9 @@ export function initOfflineSync() {
     const result = await processQueue();
     if (result.success > 0 || result.failed > 0) {
       logger.sync.info('Periodic queue retry', result);
+    }
+    if (result.failed > 0) {
+      await notify('חלק מהשינויים לא הסתנכרנו — ננסה שוב אוטומטית', 'error');
     }
   }, 90_000);
 }

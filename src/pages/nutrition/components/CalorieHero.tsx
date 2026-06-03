@@ -36,7 +36,11 @@ export const CalorieHero = memo(function CalorieHero({
   // else 0 on first mount. Plain useEffect runs AFTER useCountUp's layout
   // effect, so `from` is read at render time as the prior committed value.
   const prevCaloriesRef = useRef(0);
-  const isOver = calPct > 100;
+  // calPct arrives pre-clamped to 100, so derive the over/under state from the
+  // raw calories vs goal instead — used for the ring color and the remaining
+  // / over-budget line below.
+  const isOver = (calories || 0) > goal;
+  const remaining = goal - (calories || 0);
   const fraction = Math.min(Math.max(calPct, 0), 100) / 100;
   const targetOffset = RING_CIRCUMFERENCE * (1 - fraction);
 
@@ -163,6 +167,26 @@ export const CalorieHero = memo(function CalorieHero({
           </div>
           <div className="sub">/ {goal} KCAL</div>
         </div>
+      </div>
+
+      {/* Remaining vs over-budget calories. The Hebrew label stays RTL; only the
+          number is dir=ltr + tabular so it doesn't bidi-flip. Warn color signals
+          the overshoot. */}
+      <div
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 12,
+          letterSpacing: '0.06em',
+          fontWeight: 600,
+          color: isOver ? 'var(--fs-warn)' : 'var(--fs-muted)',
+          marginTop: 'var(--space-2)',
+        }}
+      >
+        {isOver ? 'חריגה של ' : 'נותרו '}
+        <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {Math.abs(remaining)}
+        </span>{' '}
+        קק״ל
       </div>
 
       {coachTarget && (

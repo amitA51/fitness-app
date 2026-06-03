@@ -29,7 +29,12 @@ export function CoachPage({
   const navigate = useNavigate();
   const back = onBack ?? (() => navigate(-1));
   return (
-    <div dir="rtl" lang="he" className="min-h-screen" style={{ background: 'var(--fs-bg)' }}>
+    <div
+      dir="rtl"
+      lang="he"
+      className="min-h-screen min-h-[100dvh]"
+      style={{ background: 'var(--fs-bg)' }}
+    >
       <header
         className="flex items-center gap-3 px-5 py-4"
         style={{ borderBottom: '1px solid var(--fs-surface-2)' }}

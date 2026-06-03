@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { showToast } from '../../../components/ui/GlobalToast';
 import { listMyAssignments } from '../../../services/coach';
 import {
   DEFAULT_MACRO_GOALS,
@@ -16,6 +17,8 @@ import {
 import type { MealPreset } from '../../../services/nutritionService';
 import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../../../types';
 import { toLocalDateStr, todayStr } from '../../../utils/dateUtils';
+import { triggerHapticEffect } from '../../../utils/haptics';
+import { logger } from '../../../utils/logger';
 import { safeJsonParse } from '../../../utils/safeJson';
 import { useSearchFoods } from './useSearchFoods';
 
@@ -93,19 +96,51 @@ export function useNutritionData() {
       selectedFoods.map((f) => ({ ...f, servings: f.servings })),
       dateToUse
     );
-    await addMealEntry(entry);
-    setShowAddMeal(false);
-    setSelectedFoods([]);
-    setSearchQuery('');
-    loadData();
+    try {
+      await addMealEntry(entry);
+      triggerHapticEffect('success', 'light');
+      showToast('הארוחה נשמרה');
+      setShowAddMeal(false);
+      setSelectedFoods([]);
+      setSearchQuery('');
+      loadData();
+    } catch (error) {
+      logger.ui.error('Failed to save meal', error);
+      showToast('שמירת הארוחה נכשלה', { variant: 'error' });
+    }
   }, [selectedFoods, selectedMealType, selectedDate, isToday, loadData]);
 
   const handleDeleteEntry = useCallback(
     async (id: string) => {
+      // Snapshot the full entry before deleting so the undo action can re-insert
+      // it. The journal passes only the id, so we look it up in the loaded day.
+      const removed = todayEntries.find((e) => e.id === id);
       await deleteMealEntry(id);
+      triggerHapticEffect('tap', 'light');
       loadData();
+      if (!removed) return;
+      // addMealEntry strips id/createdAt and re-stamps fresh ones, so undo
+      // re-creates the entry with identical data (date, name, meals, macros).
+      const { id: _id, createdAt: _createdAt, ...fields } = removed;
+      showToast('הארוחה נמחקה', {
+        duration: 5000,
+        action: {
+          label: 'בטל',
+          onClick: () => {
+            void (async () => {
+              try {
+                await addMealEntry(fields);
+                loadData();
+              } catch (error) {
+                logger.ui.error('Failed to undo meal delete', error);
+                showToast('שחזור הארוחה נכשל', { variant: 'error' });
+              }
+            })();
+          },
+        },
+      });
     },
-    [loadData]
+    [loadData, todayEntries]
   );
 
   const handleQuickPreset = useCallback(

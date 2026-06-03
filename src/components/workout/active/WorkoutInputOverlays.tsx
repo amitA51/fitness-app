@@ -18,6 +18,8 @@ export interface WorkoutInputOverlaysProps {
   onNumpadSetValue: (value: string) => void;
   onNumpadDelete: () => void;
   onNumpadSubmit: () => void;
+  onNumpadSubmitAdvance: () => void;
+  onNumpadClear: () => void;
   onCloseNumpad: () => void;
   // Plate calculator
   showPlateCalc: boolean;
@@ -31,6 +33,8 @@ const WorkoutInputOverlays: React.FC<WorkoutInputOverlaysProps> = ({
   onNumpadSetValue,
   onNumpadDelete,
   onNumpadSubmit,
+  onNumpadSubmitAdvance,
+  onNumpadClear,
   onCloseNumpad,
   showPlateCalc,
   onClosePlateCalc,
@@ -48,6 +52,8 @@ const WorkoutInputOverlays: React.FC<WorkoutInputOverlaysProps> = ({
           onSetValue={onNumpadSetValue}
           onDelete={onNumpadDelete}
           onSubmit={onNumpadSubmit}
+          onSubmitAdvance={onNumpadSubmitAdvance}
+          onClear={onNumpadClear}
           onClose={onCloseNumpad}
         />
       </React.Suspense>

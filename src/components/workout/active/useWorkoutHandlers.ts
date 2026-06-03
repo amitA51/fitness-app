@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { showToast } from '../../../components/ui/GlobalToast';
 import type { Exercise, WorkoutSettings } from '../../../types';
 import { playSuccess } from '../../../utils/audio';
 import { triggerHaptic } from '../../../utils/haptics';
@@ -120,6 +121,17 @@ export function useWorkoutHandlers({
   const handleDeleteSet = useCallback(
     (exerciseIndex: number, setIndex: number) => {
       dispatch({ type: 'DELETE_SET', payload: { exerciseIndex, setIndex } });
+      triggerHaptic('light');
+      // A mis-tap on the trash icon shouldn't destroy logged data — offer a
+      // one-deep undo. RESTORE_DELETED_SET is a safe no-op if nothing was
+      // actually deleted (e.g. the reducer refused to remove the last set).
+      showToast('הסט נמחק', {
+        duration: 5000,
+        action: {
+          label: 'בטל',
+          onClick: () => dispatch({ type: 'RESTORE_DELETED_SET' }),
+        },
+      });
     },
     [dispatch]
   );
@@ -225,6 +237,16 @@ export function useWorkoutHandlers({
 
   const handleNumpadSubmit = useCallback(() => {
     dispatch({ type: 'NUMPAD_SUBMIT' });
+  }, [dispatch]);
+
+  // Submit the weight AND keep the numpad open on 'reps' — logs a whole set in
+  // one continuous flow instead of two open/confirm/close cycles.
+  const handleNumpadSubmitAdvance = useCallback(() => {
+    dispatch({ type: 'NUMPAD_SUBMIT', payload: { advance: true } });
+  }, [dispatch]);
+
+  const handleNumpadClear = useCallback(() => {
+    dispatch({ type: 'NUMPAD_CLEAR' });
   }, [dispatch]);
 
   const handleCloseNumpad = useCallback(() => {
@@ -378,6 +400,8 @@ export function useWorkoutHandlers({
     handleNumpadSetValue,
     handleNumpadDelete,
     handleNumpadSubmit,
+    handleNumpadSubmitAdvance,
+    handleNumpadClear,
     handleCloseNumpad,
     handleCloseSettings,
     handleUpdateSetting,

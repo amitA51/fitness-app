@@ -192,6 +192,40 @@ export const WorkoutContent: React.FC<{
       onExit,
     });
 
+  // ── Back-button guard ─────────────────────────────────────────────────
+  // A stray hardware-Back / swipe-back must not silently tear down a live
+  // session. While exercises exist we keep a same-URL sentinel entry on the
+  // history stack: pressing Back pops the sentinel (the /workout route — and
+  // this component — stay mounted), and we convert the gesture into the
+  // existing discard-confirm dialog while re-arming the sentinel.
+  const hasLiveSession = state.exercises.length > 0 && !showSummary;
+  useEffect(() => {
+    if (!hasLiveSession) return undefined;
+    window.history.pushState({ fsWorkoutGuard: true }, '');
+    const onPopState = () => {
+      window.history.pushState({ fsWorkoutGuard: true }, '');
+      setFinishIntent('cancel');
+      setShowFinishConfirm(true);
+    };
+    // Tab close / refresh — native confirm (session state is auto-persisted,
+    // but the user should still know they're leaving mid-workout).
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('popstate', onPopState);
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      // Consume the sentinel so post-workout navigation isn't one entry
+      // behind. Skipped when the router already moved on (state isn't ours).
+      if ((window.history.state as { fsWorkoutGuard?: boolean } | null)?.fsWorkoutGuard) {
+        window.history.back();
+      }
+    };
+  }, [hasLiveSession]);
+
   // Superset creation via picker bottom sheet + remove handler.
   const {
     supersetPickerOpen,
@@ -307,6 +341,8 @@ export const WorkoutContent: React.FC<{
     handleNumpadSetValue,
     handleNumpadDelete,
     handleNumpadSubmit,
+    handleNumpadSubmitAdvance,
+    handleNumpadClear,
     handleCloseNumpad,
     handleCloseSettings,
     handleUpdateSetting,
@@ -545,6 +581,7 @@ export const WorkoutContent: React.FC<{
             showVolumePreview={showVolumePreview}
             enableQuickWeightButtons={enableQuickWeightButtons}
             enableQuickRepsButtons={enableQuickRepsButtons}
+            weightIncrement={workoutSettings.weightIncrementAmount ?? 2.5}
             supersetGroups={state.supersetGroups}
             onCreateSuperset={openSupersetPicker}
             onRemoveSuperset={handleRemoveSuperset}
@@ -572,6 +609,8 @@ export const WorkoutContent: React.FC<{
         onNumpadSetValue={handleNumpadSetValue}
         onNumpadDelete={handleNumpadDelete}
         onNumpadSubmit={handleNumpadSubmit}
+        onNumpadSubmitAdvance={handleNumpadSubmitAdvance}
+        onNumpadClear={handleNumpadClear}
         onCloseNumpad={handleCloseNumpad}
         showPlateCalc={state.showPlateCalc}
         onClosePlateCalc={handleClosePlateCalc}

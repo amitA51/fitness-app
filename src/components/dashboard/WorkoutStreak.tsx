@@ -1,12 +1,29 @@
-import { memo, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { useCountUp } from '../../hooks/useCountUp';
 import { useWorkoutStreak } from '../../hooks/useWorkoutStreak';
 import { DUR } from '../../lib/gsap';
 import type { WorkoutSession } from '../../types';
+import { logger } from '../../utils/logger';
 
 interface WorkoutStreakProps {
   sessions: WorkoutSession[];
 }
+
+// Persisted across dashboard visits so the count-up only celebrates real
+// growth. Reading a stale or missing value just animates from 0 — safe default.
+const LAST_SEEN_STREAK_KEY = 'fitness_last_seen_streak';
+
+const readLastSeenStreak = (): number => {
+  try {
+    const raw = localStorage.getItem(LAST_SEEN_STREAK_KEY);
+    if (!raw) return 0;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  } catch (err) {
+    logger.app.warn('Failed to read last-seen streak', err);
+    return 0;
+  }
+};
 
 export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutStreakProps) {
   const streak = useWorkoutStreak(sessions);
@@ -16,10 +33,34 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
   const currentRef = useRef<HTMLSpanElement>(null);
   const bestRef = useRef<HTMLSpanElement>(null);
 
-  // Hero "current" digit: count up from 0 with a back.out scale settle.
-  useCountUp(currentRef, streak.current, { duration: DUR.base, pop: true });
-  // "Best" digit: count up from 0, no pop.
-  useCountUp(bestRef, streak.best, { duration: DUR.base });
+  // Only animate the streak when it actually GREW since the last dashboard
+  // visit. Re-celebrating a static streak on every mount cheapens the moment,
+  // so a non-increasing value snaps to its final number instead.
+  // Captured once on mount (not reactive) so the very first render decides.
+  const lastSeenRef = useRef<number>(readLastSeenStreak());
+  const shouldAnimate = streak.current > lastSeenRef.current;
+
+  // Persist the freshly shown value so the next visit measures growth against
+  // it. Best-effort: a storage failure only means we may re-animate next time.
+  useEffect(() => {
+    if (streak.current <= 0) return;
+    try {
+      localStorage.setItem(LAST_SEEN_STREAK_KEY, String(streak.current));
+    } catch (err) {
+      logger.app.warn('Failed to persist last-seen streak', err);
+    }
+  }, [streak.current]);
+
+  // Hero "current" digit: count up from 0 with a back.out scale settle — but
+  // only when the streak grew; otherwise render the number statically.
+  useCountUp(currentRef, streak.current, {
+    duration: DUR.base,
+    pop: true,
+    enabled: shouldAnimate,
+  });
+  // "Best" digit: count up from 0, no pop. Mirrors the current-digit gating so
+  // a static streak doesn't re-roll the best number either.
+  useCountUp(bestRef, streak.best, { duration: DUR.base, enabled: shouldAnimate });
 
   if (streak.current === 0) return null;
 

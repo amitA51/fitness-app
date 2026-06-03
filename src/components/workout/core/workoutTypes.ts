@@ -80,6 +80,12 @@ export interface WorkoutState {
   // === Ghost Values (Previous Workout Data) ===
   previousExerciseData: WorkoutSet[] | null;
 
+  // === Undo Buffer (one-deep) ===
+  // Snapshot of the most recently deleted set so DELETE_SET can be undone via
+  // RESTORE_DELETED_SET (re-inserted at its original index). One-deep only —
+  // each delete overwrites the prior snapshot; restore clears it.
+  lastDeletedSet: { exerciseId: string; setIndex: number; set: WorkoutSet } | null;
+
   // === Haptic Trigger ===
   pendingHaptic: 'REST_END' | 'SET_COMPLETE' | null;
 
@@ -135,7 +141,8 @@ export type SetAction =
         updates: Partial<{ weight: number; reps: number }>;
       };
     }
-  | { type: 'DELETE_SET'; payload: { exerciseIndex: number; setIndex: number } };
+  | { type: 'DELETE_SET'; payload: { exerciseIndex: number; setIndex: number } }
+  | { type: 'RESTORE_DELETED_SET' };
 
 // --- Timer Actions ---
 export type TimerAction =
@@ -152,7 +159,10 @@ export type UIAction =
   | { type: 'NUMPAD_INPUT'; payload: string }
   | { type: 'SET_NUMPAD_VALUE'; payload: string }
   | { type: 'NUMPAD_DELETE' }
-  | { type: 'NUMPAD_SUBMIT' }
+  | { type: 'NUMPAD_CLEAR' }
+  // `advance` (task 4): submit weight, then re-open the numpad on the SAME set
+  // targeting 'reps' instead of closing — lets a set be logged in one flow.
+  | { type: 'NUMPAD_SUBMIT'; payload?: { advance?: boolean } }
   | { type: 'TOGGLE_DRAWER'; payload: boolean }
   | { type: 'TOGGLE_SETTINGS'; payload: boolean }
   | { type: 'OPEN_SELECTOR' }
@@ -295,6 +305,7 @@ export const createInitialState = (
 
     appSettings,
     previousExerciseData: null,
+    lastDeletedSet: null,
     pendingHaptic: null,
     finalized: false,
     lastPersistedAt: now,

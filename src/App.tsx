@@ -74,7 +74,7 @@ const WorkoutContent = lazy(async () => {
 function PageLoader() {
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen min-h-[100dvh]"
       role="status"
       aria-live="polite"
       aria-label="טוען"
@@ -258,7 +258,11 @@ function AppRouter() {
     [status, isGuest, clearGuest]
   );
 
-  const handleOnboardingSkip = useCallback(() => {
+  const handleOnboardingSkip = useCallback((data: OnboardingData) => {
+    // The skip dialog promises "you can complete this in settings later", so we
+    // must not throw away what the user already typed. Persist only the valid,
+    // non-empty fields (mirroring the complete path), then mark onboarding done.
+    savePartialOnboardingData(data);
     localStorage.setItem('onboarding_completed', 'true');
     setOnboardingDone(true);
   }, []);
@@ -569,7 +573,7 @@ function AppShell() {
             דלג לתוכן הראשי
           </a>
           <div
-            className="app-shell min-h-screen flex flex-col"
+            className="app-shell min-h-screen min-h-[100dvh] flex flex-col"
             style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
           >
             <OfflineIndicator />
@@ -711,6 +715,54 @@ function saveOnboardingData(data: OnboardingData) {
       hapticsEnabled: true,
     })
   );
+}
+
+// A wizard field counts as "filled" when it's neither the empty-string sentinel
+// (the OnboardingData default for unset text/number/select fields) nor null.
+function isFilled(value: unknown): boolean {
+  return value !== '' && value !== null && value !== undefined;
+}
+
+// Persist only the fields the user actually filled in before skipping. Unlike
+// saveOnboardingData this never writes empty sentinels into the saved profile,
+// so a half-completed wizard yields a partial — but truthful — profile that the
+// user can finish in Settings later (the skip dialog's promise).
+function savePartialOnboardingData(data: OnboardingData) {
+  // Keep the raw draft so re-entering onboarding / hydration can resume it.
+  localStorage.setItem('onboarding_data', JSON.stringify(data));
+
+  const profile: Record<string, unknown> = {};
+  if (isFilled(data.name)) profile.name = data.name;
+  if (isFilled(data.age)) profile.age = data.age;
+  if (isFilled(data.height)) profile.height = data.height;
+  if (isFilled(data.weight)) profile.weight = data.weight;
+  if (isFilled(data.gender)) profile.gender = data.gender;
+  if (isFilled(data.primaryGoal)) {
+    profile.weightGoal = getWeightGoalFromOnboarding(data.primaryGoal);
+  }
+  if (isFilled(data.experienceLevel)) {
+    profile.activityLevel = getActivityLevelFromOnboarding(data.experienceLevel);
+  }
+
+  // Merge onto any existing profile so we never clobber previously saved values
+  // with nothing — immutable build, single write.
+  if (Object.keys(profile).length > 0) {
+    const existing = safeJsonParse<Record<string, unknown>>(localStorage.getItem('user_profile'));
+    localStorage.setItem('user_profile', JSON.stringify({ ...(existing ?? {}), ...profile }));
+  }
+
+  // restBetweenSets always has a sensible default in the wizard, so the workout
+  // prefs are worth persisting even on skip.
+  if (isFilled(data.restBetweenSets)) {
+    localStorage.setItem(
+      'workout_prefs',
+      JSON.stringify({
+        defaultRestTime: data.restBetweenSets,
+        autoStartRest: true,
+        hapticsEnabled: true,
+      })
+    );
+  }
 }
 
 export default App;

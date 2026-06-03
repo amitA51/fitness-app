@@ -1,5 +1,6 @@
 import type { BodyWeightEntry, MealEntry, WorkoutSession } from '../types';
 import { todayStr } from '../utils/dateUtils';
+import { logger } from '../utils/logger';
 import { exerciseVolume, setVolume } from '../utils/workoutMath';
 import { STORES, dbGetAll } from './indexedDBCore';
 
@@ -169,7 +170,7 @@ export async function shareReport(reportText: string): Promise<boolean> {
     });
     return true;
   } catch (err) {
-    console.debug('shareReport failed:', err);
+    logger.app.debug('shareReport failed', err);
     return false;
   }
 }
@@ -179,7 +180,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     await navigator.clipboard.writeText(text);
     return true;
   } catch (err) {
-    console.debug('copyToClipboard failed:', err);
+    logger.app.debug('copyToClipboard failed', err);
     return false;
   }
 }

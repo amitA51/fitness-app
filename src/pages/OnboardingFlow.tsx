@@ -195,7 +195,9 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
         cancelLabel="המשך הגדרה"
         onConfirm={() => {
           setShowSkipConfirm(false);
-          onSkip();
+          // Thread the partial wizard data through so whatever the user already
+          // typed is preserved (the dialog promises they can finish later).
+          onSkip(data);
         }}
         onCancel={() => setShowSkipConfirm(false)}
       />
