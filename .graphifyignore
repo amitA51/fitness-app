@@ -1,0 +1,36 @@
+# .graphifyignore — keeps the knowledge graph lean, cheap, and reproducible.
+# Same syntax as .gitignore (supports ! negation). Mirrors the agreed scope:
+# "everything except .github", plus vendored/generated noise that adds no signal.
+
+# --- Vendored / generated code (never useful in the graph) ---
+node_modules/
+dist/
+build/
+coverage/
+.netlify/
+*.tsbuildinfo
+*.log
+temp_debug.txt
+
+# --- Lockfiles: huge, zero semantic value ---
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lockb
+uv.lock
+
+# --- Third-party AI assistant skill/agent bundles (not this project's code) ---
+.github/
+.claude/
+.cursor/
+.kiro/
+.agents/
+.factory/
+.commandcode/
+.openclaude/
+.codegraph/
+plugins/
+everything-claude-code/
+
+# --- graphify's own output (don't graph the graph) ---
+graphify-out/

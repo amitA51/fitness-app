@@ -30,3 +30,11 @@ everything-claude-code/
 .codegraph/
 plugins/
 skills-lock.json
+
+# graphify — commit graphify-out/ (graph.json, graph.html, GRAPH_REPORT.md) for the
+# team, but keep these local-only: manifest is mtime-based (breaks after clone),
+# cost/cache are machine-local.
+graphify-out/manifest.json
+graphify-out/cost.json
+graphify-out/cache/
+graphify-out/.graphify_*
