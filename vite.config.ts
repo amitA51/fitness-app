@@ -8,6 +8,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // 'prompt': a new build's SW installs but waits; the app surfaces an in-UI
+      // "new version" toast (PWAUpdatePrompt) that calls updateServiceWorker to
+      // skip-waiting + reload on the user's command. Fixes the old bug where the
+      // SW sat in "waiting" forever (stale version until a manual cache clear),
+      // without forcing an abrupt auto-reload in the middle of a workout.
       registerType: 'prompt',
       includeAssets: ['favicon.ico', 'robots.txt'],
       manifest: {
@@ -31,6 +36,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Delete precaches from previous builds so old hashed assets don't pile
+        // up and can't be served after an update.
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/__/, /^chrome-extension:\/\//],
         // Custom Web Push handler (push + notificationclick) for coach reminders.

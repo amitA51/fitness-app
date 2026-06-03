@@ -7,6 +7,7 @@ import { LazyMotion, domMax } from 'framer-motion';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { PWAUpdatePrompt } from './components/pwa/PWAUpdatePrompt';
 import { RootErrorBoundary } from './errors/RootErrorBoundary';
 import { initAI } from './services/ai/bootstrap';
 import { checkMissedWorkouts } from './services/notificationService';
@@ -85,18 +86,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <LazyMotion features={domMax}>
         <App />
       </LazyMotion>
+      {/* Service-worker registration + "new version" toast. The hook self-
+          registers the SW (production only; no-op in dev) so there is no manual
+          registerSW call here and no HMR-socket conflict. */}
+      <PWAUpdatePrompt />
     </RootErrorBoundary>
   </React.StrictMode>
 );
-
-// Register service worker for PWA offline support — production only.
-// In dev, the SW interferes with Vite's HMR WebSocket, causing connection failures.
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  import('virtual:pwa-register')
-    .then(({ registerSW }) => {
-      registerSW({ immediate: true });
-    })
-    .catch((err) => {
-      logger.app.warn('SW registration skipped', err);
-    });
-}
