@@ -91,11 +91,18 @@ const OverflowMenu = memo<{
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent | PointerEvent) => {
+    const handlePointerDown = (e: MouseEvent | PointerEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener('pointerdown', handler);
-    return () => document.removeEventListener('pointerdown', handler);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [open]);
 
   const item = (icon: React.ReactNode, label: string, handler: () => void, destructive = false) => (
@@ -106,7 +113,8 @@ const OverflowMenu = memo<{
         handler();
         setOpen(false);
       }}
-      className="w-full flex items-center gap-3 px-4 py-3 active:bg-[var(--fs-surface-2)] transition-colors"
+      role="menuitem"
+      className="w-full flex items-center gap-3 px-4 py-3 active:bg-[var(--fs-surface-2)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-inset"
       style={{
         background: 'var(--fs-surface)',
         color: destructive ? 'var(--fs-danger, #C84141)' : 'var(--fs-ink)',
@@ -135,6 +143,7 @@ const OverflowMenu = memo<{
         aria-label="עוד פעולות"
         aria-haspopup="menu"
         aria-expanded={open}
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1"
         style={{
           width: 42,
           height: 42,
@@ -154,11 +163,13 @@ const OverflowMenu = memo<{
       </button>
       {open && (
         <div
+          role="menu"
+          aria-label="פעולות אימון"
           className="absolute z-50"
           style={{
             top: 'calc(100% + 6px)',
             insetInlineEnd: 0,
-            minWidth: 160,
+            minWidth: 176,
             background: 'var(--fs-surface)',
             border: '1px solid var(--fs-steel)',
             borderRadius: '14px 10px 14px 10px',
@@ -287,6 +298,7 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
             disabled={isSaving}
             aria-label="סיים אימון"
             aria-busy={isSaving}
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 disabled:cursor-not-allowed"
             style={{
               width: 42,
               height: 42,

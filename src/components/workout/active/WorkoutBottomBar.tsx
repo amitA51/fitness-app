@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Exercise } from '../../../types';
-import { ExerciseNav } from '../components';
+import ExerciseNav from '../components/ExerciseNav';
 import SlideToComplete from '../components/SlideToComplete';
 import type { SupersetGroup } from '../core/workoutTypes';
 
@@ -34,6 +34,10 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
   const curTotalSets = currentEx?.sets?.length ?? 0;
   const curCompletedSets = currentEx?.sets?.filter((s) => s.completedAt).length ?? 0;
   const isExerciseComplete = curTotalSets > 0 && curCompletedSets >= curTotalSets;
+  const activeSetNumber = Math.min(curCompletedSets + 1, Math.max(curTotalSets, 1));
+  const completeLabel = isExerciseComplete
+    ? 'התרגיל הושלם'
+    : `החלק לסימון סט ${activeSetNumber} מתוך ${curTotalSets || 1} כבוצע`;
 
   return (
     <div
@@ -50,7 +54,7 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
       {/* 6A: Slide to complete */}
       <div style={{ paddingTop: 8 }}>
         <SlideToComplete
-          label={isExerciseComplete ? 'התרגיל הושלם' : 'החלק לסימון סט כבוצע'}
+          label={completeLabel}
           onComplete={onCompleteSet}
           disabled={isExerciseComplete}
         />
@@ -115,7 +119,7 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
               flexShrink: 0,
             }}
           >
-            {nextEx?.sets?.length || 0} sets
+            {nextEx?.sets?.length || 0} סטים
           </span>
         </div>
       )}

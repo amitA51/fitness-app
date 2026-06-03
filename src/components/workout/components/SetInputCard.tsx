@@ -9,7 +9,7 @@
 
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import type React from 'react';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import { useIsRTL } from '../../../hooks/useIsRTL';
 
@@ -55,19 +55,7 @@ const SetInputCard = memo<SetInputCardProps>(
     const haptics = useHapticFeedback();
     const prefersReduced = useReducedMotion() ?? false;
 
-    const [shouldFlash, setShouldFlash] = useState(false);
-    const prevValueRef = useRef(value);
-
-    useEffect(() => {
-      if (value !== prevValueRef.current && value !== 0) {
-        setShouldFlash(true);
-        const timer = setTimeout(() => setShouldFlash(false), 400);
-        prevValueRef.current = value;
-        return () => clearTimeout(timer);
-      }
-      prevValueRef.current = value;
-      return undefined;
-    }, [value]);
+    const flashKey = value > 0 ? value : null;
 
     const handleTap = useCallback(() => {
       haptics.impact('medium');
@@ -88,6 +76,8 @@ const SetInputCard = memo<SetInputCardProps>(
       <button
         type="button"
         onClick={handleDecrement}
+        disabled={value <= 0}
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 disabled:cursor-not-allowed"
         style={{
           height: 48,
           minHeight: 48,
@@ -101,10 +91,12 @@ const SetInputCard = memo<SetInputCardProps>(
           fontWeight: 800,
           fontSize: 20,
           color: 'var(--fs-ink)',
-          cursor: 'pointer',
-          transition: 'transform 100ms ease',
+          cursor: value <= 0 ? 'not-allowed' : 'pointer',
+          opacity: value <= 0 ? 0.45 : 1,
+          transition: prefersReduced ? 'none' : 'transform 100ms ease, opacity 150ms ease',
         }}
         onPointerDown={(e) => {
+          if (prefersReduced || value <= 0) return;
           (e.currentTarget as HTMLElement).style.transform = 'scale(0.93)';
         }}
         onPointerUp={(e) => {
@@ -123,6 +115,7 @@ const SetInputCard = memo<SetInputCardProps>(
       <button
         type="button"
         onClick={handleIncrement}
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1"
         style={{
           height: 48,
           minHeight: 48,
@@ -137,9 +130,10 @@ const SetInputCard = memo<SetInputCardProps>(
           fontSize: 20,
           color: 'var(--color-ink-on-accent)',
           cursor: 'pointer',
-          transition: 'transform 100ms ease',
+          transition: prefersReduced ? 'none' : 'transform 100ms ease',
         }}
         onPointerDown={(e) => {
+          if (prefersReduced) return;
           (e.currentTarget as HTMLElement).style.transform = 'scale(0.93)';
         }}
         onPointerUp={(e) => {
@@ -206,9 +200,10 @@ const SetInputCard = memo<SetInputCardProps>(
             border: 'none',
             padding: 0,
             cursor: 'pointer',
-            transition: 'transform 150ms ease',
+            transition: prefersReduced ? 'none' : 'transform 150ms ease',
           }}
           onPointerDown={(e) => {
+            if (prefersReduced) return;
             (e.currentTarget as HTMLElement).style.transform = 'scale(0.97)';
           }}
           onPointerUp={(e) => {
@@ -303,8 +298,8 @@ const SetInputCard = memo<SetInputCardProps>(
           </div>
         )}
 
-        {/* 5. Step hint (weight card only — shows when incrementAmount > 1) */}
-        {incrementAmount > 1 && (
+        {/* 5. Step hint — keeps the stepper behavior explicit without adding chrome. */}
+        {showButtons && (
           <span
             style={{
               marginTop: 4,
@@ -321,8 +316,9 @@ const SetInputCard = memo<SetInputCardProps>(
 
         {/* Flash effect on value change (suppressed when reduced-motion) */}
         <AnimatePresence>
-          {shouldFlash && !prefersReduced && (
+          {flashKey !== null && !prefersReduced && (
             <m.div
+              key={flashKey}
               initial={{ opacity: 0.15 }}
               animate={{ opacity: 0 }}
               exit={{ opacity: 0 }}

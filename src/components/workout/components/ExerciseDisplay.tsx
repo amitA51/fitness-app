@@ -230,7 +230,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                           ? '0 0 8px color-mix(in srgb, var(--fs-accent-2) 50%, transparent)'
                           : 'none',
                         transform: isCurrent ? 'scale(1.25)' : 'none',
-                        transition: 'all 200ms ease',
+                        transition: 'background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease',
                       }}
                     />
                   );
@@ -247,8 +247,8 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                 }}
               >
                 {isExerciseComplete
-                  ? `DONE · ${totalSets}/${totalSets}`
-                  : `SET ${completedSetsCount + 1} / ${totalSets}`}
+                  ? `הושלם · ${totalSets}/${totalSets}`
+                  : `סט ${completedSetsCount + 1} / ${totalSets}`}
               </span>
             </div>
           </div>
@@ -292,7 +292,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   height: 48,
                   borderRadius: '50%',
                   background: 'var(--fs-accent)',
-                  color: '#FFFFFF',
+                  color: 'var(--color-ink-on-accent)',
                 }}
               >
                 <Check size={26} strokeWidth={3} />
@@ -326,6 +326,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                       haptics.impact('light');
                       onAddSet();
                     }}
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-95 transition-transform"
                     style={{
                       flex: 1,
                       display: 'flex',
@@ -354,6 +355,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                       haptics.impact('medium');
                       onNextExercise();
                     }}
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-95 transition-transform"
                     style={{
                       flex: 1,
                       display: 'flex',
@@ -364,7 +366,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                       borderRadius: 12,
                       background: 'var(--fs-accent)',
                       border: 'none',
-                      color: '#FFFFFF',
+                      color: 'var(--color-ink-on-accent)',
                       fontFamily: 'var(--font-display)',
                       fontWeight: 800,
                       fontSize: 14,

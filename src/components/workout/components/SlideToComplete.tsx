@@ -9,7 +9,7 @@
 // the lock-in instant so the next set is never gated on the cosmetic tail.
 
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import { DUR, EASE, gsap, useGSAP } from '../../../lib/gsap';
 import { fireSparks } from '../../../lib/gsapSparks';
@@ -27,7 +27,7 @@ const TRACK_PAD = 4;
 const THRESHOLD = 0.75;
 
 const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disabled }) => {
-  const trackRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLButtonElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
   const fillRef = useRef<HTMLDivElement>(null);
   const checkRef = useRef<HTMLDivElement>(null);
@@ -36,6 +36,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
   const maxOffsetRef = useRef(0);
   const flingFromRef = useRef(0);
   const finishTickRef = useRef(0);
+  const instructionId = useId();
 
   const [offset, setOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -138,7 +139,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     { dependencies: [finishTick], scope: trackRef }
   );
 
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (disabled || isComplete) return;
     e.preventDefault();
     recalcMax();
@@ -149,7 +150,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+  const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (!isDragging) return;
     const delta = (e.clientX - startXRef.current) * sign;
     setOffset((prev) => {
@@ -163,7 +164,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     });
   };
 
-  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+  const onPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (!isDragging) return;
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
@@ -199,27 +200,34 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     'repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 14px)';
 
   return (
-    <div
+    <button
       ref={trackRef}
-      role="button"
-      tabIndex={disabled ? -1 : 0}
+      type="button"
+      disabled={disabled}
       aria-label={label}
-      aria-disabled={disabled}
+      aria-describedby={instructionId}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onKeyDown={onKeyDown}
-      className="relative w-full select-none overflow-hidden outline-none"
+      className="relative w-full select-none overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 disabled:cursor-not-allowed"
       style={{
         height: TRACK_HEIGHT,
         background: `${patternFill}, var(--fs-primary)`,
         borderRadius: 999,
-        opacity: disabled ? 0.4 : 1,
+        opacity: disabled ? 0.48 : 1,
         cursor: disabled ? 'not-allowed' : isDragging ? 'grabbing' : 'grab',
         touchAction: 'none',
+        border: '1px solid color-mix(in srgb, var(--fs-accent) 22%, transparent)',
+        boxShadow: isDragging
+          ? '0 0 0 3px color-mix(in srgb, var(--fs-accent) 16%, transparent)'
+          : 'var(--elevation-1, 0 2px 10px rgba(0,0,0,0.08))',
       }}
     >
+      <span id={instructionId} className="sr-only">
+        גרור את הכפתור עד סוף המסילה, או לחץ Enter או רווח כדי לסמן את הסט כבוצע.
+      </span>
       {/* Accent fill — trails behind the thumb with opacity */}
       <div
         ref={fillRef}
@@ -284,7 +292,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
           [isRTL ? 'right' : 'left']: TRACK_PAD,
           ...(isFlinging ? {} : { transform: `translateX(${offset * sign}px)` }),
           background: 'var(--fs-accent)',
-          color: '#FFFFFF',
+          color: 'var(--color-ink-on-accent)',
           borderRadius: 999,
           transition: snap,
           pointerEvents: 'none',
@@ -302,7 +310,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
           )}
         </div>
       </div>
-    </div>
+    </button>
   );
 });
 
