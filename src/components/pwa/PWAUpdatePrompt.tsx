@@ -11,6 +11,7 @@
 // no-op in dev unless devOptions.enabled, so it never fights Vite's HMR socket.
 
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { Z_INDEX } from '../../constants/zIndex';
 
 // Re-check for a new deployment during long-lived sessions so a user who keeps
 // the app open all day still gets prompted without a manual refresh.
@@ -46,17 +47,17 @@ export function PWAUpdatePrompt() {
       dir="rtl"
       style={{
         position: 'fixed',
-        insetInlineStart: '50%',
-        transform: 'translateX(50%)',
+        left: '50%',
+        transform: 'translateX(-50%)',
         bottom: 'calc(env(safe-area-inset-bottom, 0px) + 84px)',
-        zIndex: 1000,
+        zIndex: Z_INDEX.toast,
         display: 'flex',
         alignItems: 'center',
         gap: 12,
         maxWidth: 'min(92vw, 420px)',
         padding: '10px 12px 10px 16px',
         background: 'var(--color-surface-elevated)',
-        color: 'var(--fs-primary)',
+        color: 'var(--fs-ink)',
         border: '1px solid var(--color-separator)',
         borderRadius: 'var(--radius-asymmetric, 14px)',
         boxShadow: 'var(--shadow-glow-accent, 0 8px 28px rgba(0,0,0,0.18))',
@@ -77,7 +78,11 @@ export function PWAUpdatePrompt() {
         onClick={() => updateServiceWorker(true)}
         style={{
           flexShrink: 0,
-          padding: '6px 14px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 44,
+          padding: '6px 16px',
           background: 'var(--fs-accent)',
           color: 'var(--color-ink-on-accent)',
           border: 'none',
@@ -96,13 +101,13 @@ export function PWAUpdatePrompt() {
         aria-label="התעלם מעדכון"
         style={{
           flexShrink: 0,
-          width: 28,
-          height: 28,
+          width: 44,
+          height: 44,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           background: 'transparent',
-          color: 'var(--fs-primary)',
+          color: 'var(--fs-ink)',
           border: 'none',
           borderRadius: 999,
           fontSize: 18,

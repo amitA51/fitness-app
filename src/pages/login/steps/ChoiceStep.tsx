@@ -98,7 +98,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
               className="w-12 h-12 flex items-center justify-center"
               style={{ background: 'var(--fs-accent)', borderRadius: 0 }}
             >
-              <User size={20} style={{ color: 'var(--fs-heading)' }} aria-hidden="true" />
+              <User size={20} style={{ color: 'var(--color-ink-on-accent)' }} aria-hidden="true" />
             </div>
             <div>
               <h3
@@ -229,10 +229,10 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
           dir="rtl"
           style={{
             padding: '10px 14px',
-            background: 'rgba(220, 50, 50, 0.08)',
-            border: '1px solid rgba(220, 50, 50, 0.3)',
+            background: 'var(--color-error-muted)',
+            border: '1px solid var(--color-error)',
             borderRadius: '12px 8px 12px 8px',
-            color: '#dc3232',
+            color: 'var(--color-error)',
             fontFamily: 'var(--font-mono)',
             fontSize: 12,
             textAlign: 'right',

@@ -121,7 +121,7 @@ const Badge = memo(function Badge({ count }: { count: number }) {
         padding: '0 4px',
         borderRadius: 999,
         background: 'var(--fs-accent)',
-        color: 'var(--fs-primary)',
+        color: 'var(--color-ink-on-accent)',
         fontFamily: 'var(--font-mono)',
         fontSize: 9,
         fontWeight: 700,

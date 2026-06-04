@@ -34,6 +34,22 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
     }
   }, [showExercisePicker]);
 
+  // Keyboard dismissal: Escape closes the picker first, then the whole sheet —
+  // backdrop tap was the only exit, which left keyboard users stuck.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showExercisePicker) {
+        setShowExercisePicker(false);
+        setExerciseSearch('');
+      } else {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showExercisePicker, onClose]);
+
   const filteredExercises = useMemo(
     () =>
       allExercises.filter((ex) =>
@@ -193,13 +209,14 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
               />
               {error && (
                 <m.p
+                  role="alert"
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   style={{
                     marginTop: '8px',
                     fontFamily: 'var(--font-body)',
                     fontSize: '13px',
-                    color: 'var(--fs-warn)',
+                    color: 'var(--color-error)',
                   }}
                 >
                   {error}

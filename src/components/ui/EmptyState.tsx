@@ -464,7 +464,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
         className="absolute inset-0 -z-10 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse 60% 50% at center 40%, rgba(67,199,165,0.07) 0%, transparent 100%)',
+            'radial-gradient(ellipse 60% 50% at center 40%, rgba(var(--fs-accent-rgb), 0.07) 0%, transparent 100%)',
         }}
       />
 

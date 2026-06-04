@@ -78,7 +78,7 @@ export default function JoinPage() {
       >
         <h1
           style={{
-            fontFamily: 'var(--font-heading)',
+            fontFamily: 'var(--font-display)',
             fontSize: 22,
             color: 'var(--fs-ink)',
           }}
@@ -89,7 +89,7 @@ export default function JoinPage() {
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: 15,
-            color: 'var(--fs-ink-muted)',
+            color: 'var(--fs-muted)',
             textAlign: 'center',
           }}
         >
@@ -113,7 +113,7 @@ export default function JoinPage() {
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: 16,
-            color: 'var(--fs-danger, #e53e3e)',
+            color: 'var(--color-error)',
           }}
         >
           {error}
@@ -135,7 +135,7 @@ export default function JoinPage() {
         style={{
           fontFamily: 'var(--font-body)',
           fontSize: 16,
-          color: 'var(--fs-ink-muted)',
+          color: 'var(--fs-muted)',
         }}
       >
         לא נמצא קוד הזמנה

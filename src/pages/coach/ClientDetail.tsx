@@ -45,6 +45,14 @@ const KIND_LABEL: Record<Assignment['kind'], string> = {
   announcement: 'הודעה',
 };
 
+// Trainee link status → Hebrew (never surface the raw English enum to the coach).
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'ממתין',
+  active: 'פעיל',
+  paused: 'מושהה',
+  ended: 'הסתיים',
+};
+
 export default function ClientDetail() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -65,7 +73,7 @@ export default function ClientDetail() {
   return (
     <CoachPage
       title={name}
-      subtitle={link ? `מצב: ${link.status}` : 'מתאמן'}
+      subtitle={link ? `מצב: ${STATUS_LABEL[link.status] ?? link.status}` : 'מתאמן'}
       actions={
         <Button
           variant="primary"

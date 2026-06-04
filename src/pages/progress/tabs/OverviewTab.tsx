@@ -20,13 +20,15 @@ const cardStyle: React.CSSProperties = {
 
 const railStyle: React.CSSProperties = {
   position: 'absolute',
-  left: 0,
+  // Logical inline-start so the accent rail sits on the correct (right) edge in
+  // the RTL layout — was physically pinned to the left, mirroring SectionCard.
+  insetInlineStart: 0,
   top: 0,
   bottom: 0,
   width: 4,
   background: 'var(--fs-accent)',
-  borderTopLeftRadius: '22px',
-  borderBottomLeftRadius: '16px',
+  borderStartStartRadius: '22px',
+  borderEndStartRadius: '16px',
 };
 
 const labelStyle: React.CSSProperties = {
@@ -122,7 +124,7 @@ export const OverviewTab = memo(function OverviewTab({
 
       {/* Streak + weekly volume hero */}
       <div style={cardStyle}>
-        <div style={railStyle} />
+        <div aria-hidden="true" style={railStyle} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
           <Flame size={16} style={{ color: 'var(--fs-accent)' }} />
           <span
@@ -177,7 +179,7 @@ export const OverviewTab = memo(function OverviewTab({
       {/* Recent PRs — pulled from the same prService source as the Strength board */}
       {latestPRs.length > 0 && (
         <div style={cardStyle}>
-          <div style={railStyle} />
+          <div aria-hidden="true" style={railStyle} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <Trophy size={14} style={{ color: 'var(--fs-accent)' }} />
             <span

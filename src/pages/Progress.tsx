@@ -115,7 +115,6 @@ export default function ProgressPage() {
     [reload]
   );
 
-  const todayISO = useMemo(() => todayStr(), []);
   const todayLabel = useMemo(
     () =>
       new Date().toLocaleDateString('he-IL', {
@@ -143,12 +142,14 @@ export default function ProgressPage() {
         <div
           className="kicker"
           style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 12,
-            color: 'var(--fs-muted)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            letterSpacing: '0.22em',
+            color: 'var(--fs-accent-2)',
+            textTransform: 'uppercase',
           }}
         >
-          {todayISO}
+          {todayLabel}
         </div>
         <h1
           style={{
@@ -162,18 +163,6 @@ export default function ProgressPage() {
         >
           התקדמות
         </h1>
-        <p
-          className="mt-2"
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '11px',
-            letterSpacing: '0.22em',
-            color: 'var(--fs-accent-2)',
-            textTransform: 'uppercase',
-          }}
-        >
-          {todayLabel}
-        </p>
       </header>
 
       {/* Editorial Tab Bar — four primary sections */}

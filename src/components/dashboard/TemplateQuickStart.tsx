@@ -19,6 +19,7 @@ export const TemplateItem = memo(function TemplateItem({ template, onClick }: Te
         padding: '10px 16px',
         minWidth: 130,
         flexShrink: 0,
+        scrollSnapAlign: 'start',
         whiteSpace: 'nowrap',
         background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
@@ -94,6 +95,8 @@ export const TemplateStrip = memo(function TemplateStrip({
         overflowX: 'auto',
         padding: '4px 0',
         scrollbarWidth: 'none',
+        // Light, non-jarring snap so the horizontal strip settles on a card edge.
+        scrollSnapType: 'x proximity',
       }}
       className="no-scrollbar"
     >
@@ -110,6 +113,7 @@ export const TemplateStrip = memo(function TemplateStrip({
             justifyContent: 'center',
             padding: '10px 14px',
             flexShrink: 0,
+            scrollSnapAlign: 'start',
             background: 'var(--fs-surface-2)',
             border: '1px solid var(--fs-surface-2)',
             borderRadius: '22px 16px 22px 16px',

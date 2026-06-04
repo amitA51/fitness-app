@@ -29,8 +29,11 @@ export const ForecastNudge = memo(function ForecastNudge({ sessions }: ForecastN
     if (overdue) {
       const muscleHe = MUSCLE_HE[overdue.muscle] ?? overdue.muscle;
       return {
+        // Plain note copy — this surface is a non-interactive note, so it must
+        // not imply a tap target (a forward "▸" glyph also points the wrong way
+        // in RTL).
         label: `${muscleHe} ממתין · ${overdue.daysSince} ימים`,
-        sub: 'מומלץ לאימון ▸',
+        sub: 'מומלץ לאימון',
       };
     }
 

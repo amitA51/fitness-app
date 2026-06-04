@@ -229,7 +229,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
               borderRadius: '12px 8px 12px 8px',
               background: 'var(--fs-accent)',
               border: '1px solid color-mix(in srgb, var(--fs-primary) 20%, var(--fs-steel))',
-              color: '#FFFFFF',
+              color: 'var(--color-ink-on-accent)',
               cursor: 'pointer',
               flexShrink: 0,
               transition: 'transform 100ms ease',

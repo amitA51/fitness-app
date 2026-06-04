@@ -80,7 +80,7 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
           min={0}
           max={12}
           step={0.5}
-          unit=" ש"
+          unit=" ש'"
           color="var(--fs-accent)"
         />
         <SliderInput

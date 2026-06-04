@@ -702,7 +702,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   letterSpacing: '0.2em',
-                  color: '#2F8F58',
+                  color: 'var(--color-success)',
                   textTransform: 'uppercase',
                   marginTop: 4,
                 }}
@@ -747,7 +747,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               background: 'var(--fs-surface-2)',
-              color: currentIndex === 0 ? '#93A09E' : 'var(--fs-primary)',
+              color: currentIndex === 0 ? 'var(--fs-muted)' : 'var(--fs-primary)',
               border: '2px solid var(--fs-primary)',
               borderRadius: 0,
               cursor: currentIndex === 0 ? 'not-allowed' : 'pointer',
@@ -759,7 +759,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
             }}
             aria-label="תרגיל קודם"
           >
-            ←
+            {/* RTL: "previous" moves backward, which points right */}→
           </button>
 
           <button
@@ -794,7 +794,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               e.currentTarget.style.background = 'var(--fs-primary)';
             }}
           >
-            {isLast ? 'סיום' : 'הבא →'}
+            {isLast ? 'סיום' : 'הבא ←'}
           </button>
         </div>
       </div>

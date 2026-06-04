@@ -64,7 +64,7 @@ export const AnnualPasswordInput = memo(function AnnualPasswordInput({
           )}
           style={{
             background: 'var(--fs-surface)',
-            border: error ? '1px solid var(--fs-warn)' : '1px solid var(--fs-surface-2)',
+            border: error ? '1px solid var(--color-error)' : '1px solid var(--fs-surface-2)',
             borderRadius: '22px 16px 22px 16px',
             fontFamily: 'var(--font-body)',
             color: 'var(--fs-ink)',
@@ -74,7 +74,7 @@ export const AnnualPasswordInput = memo(function AnnualPasswordInput({
         <button
           type="button"
           onClick={() => setShow(!show)}
-          className="absolute start-4 top-1/2 -translate-y-1/2 transition-colors"
+          className="absolute end-1 top-1/2 -translate-y-1/2 flex items-center justify-center min-w-[44px] min-h-[44px] transition-colors"
           style={{ color: 'var(--fs-muted)' }}
           aria-label={show ? 'הסתר סיסמה' : 'הצג סיסמה'}
         >
@@ -87,7 +87,7 @@ export const AnnualPasswordInput = memo(function AnnualPasswordInput({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
-            color: 'var(--fs-warn)',
+            color: 'var(--color-error)',
             letterSpacing: '0.05em',
           }}
         >

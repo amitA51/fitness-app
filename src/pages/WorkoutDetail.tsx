@@ -368,6 +368,7 @@ function StatItem({ icon, label, value, subValue, trend }: StatItemProps) {
         {icon}
       </div>
       <p
+        dir="ltr"
         style={{
           fontSize: 18,
           fontWeight: 700,
@@ -674,6 +675,7 @@ export default function WorkoutDetail() {
   if (error || !session) {
     return (
       <div
+        className="min-h-screen min-h-[100dvh]"
         style={{
           background: 'var(--fs-bg)',
           display: 'flex',
@@ -681,7 +683,6 @@ export default function WorkoutDetail() {
           alignItems: 'center',
           justifyContent: 'center',
           padding: 24,
-          minHeight: '100vh',
         }}
       >
         <div
@@ -727,7 +728,7 @@ export default function WorkoutDetail() {
             minHeight: 48,
             padding: '12px 24px',
             background: 'var(--fs-primary)',
-            color: 'var(--fs-signal)',
+            color: 'var(--color-ink-on-dark)',
             borderRadius: 14,
             fontFamily: 'var(--font-mono)',
             fontWeight: 600,

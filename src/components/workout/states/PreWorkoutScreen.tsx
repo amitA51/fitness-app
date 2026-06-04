@@ -482,7 +482,16 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
           {/* Coach-assigned program — inline coach injection for the workout
               surface. Tapping it syncs + starts that program's template. */}
           {hasCoachProgram && onStartCoachProgram && (
-            <m.div key="coach-program" variants={itemVariants} className="mb-5">
+            // Explicit initial/animate (not parent propagation): blocks that
+            // mount after the container finished its entrance otherwise stay
+            // stuck at "hidden" and the section ships invisible.
+            <m.div
+              key="coach-program"
+              variants={itemVariants}
+              initial="hidden"
+              animate="visible"
+              className="mb-5"
+            >
               <button
                 type="button"
                 onClick={onStartCoachProgram}
@@ -545,7 +554,13 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
 
           {/* Suggestion card */}
           {suggestion && (
-            <m.div key="suggestion" variants={itemVariants} className="mb-5">
+            <m.div
+              key="suggestion"
+              variants={itemVariants}
+              initial="hidden"
+              animate="visible"
+              className="mb-5"
+            >
               <div
                 className="relative"
                 style={{
@@ -605,7 +620,13 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
 
           {/* Templates section */}
           {favoriteTemplates.length > 0 && (
-            <m.div key="templates" variants={itemVariants} className="mb-5">
+            <m.div
+              key="templates"
+              variants={itemVariants}
+              initial="hidden"
+              animate="visible"
+              className="mb-5"
+            >
               <div
                 className="mb-3"
                 style={{
@@ -698,6 +719,8 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
           <m.div
             key="cta"
             variants={itemVariants}
+            initial="hidden"
+            animate="visible"
             className="mt-auto"
             style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
           >
@@ -712,7 +735,9 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 justifyContent: 'center',
                 gap: 12,
                 padding: '20px 24px',
-                color: 'var(--fs-heading)',
+                // ink-on-accent: --fs-heading goes near-white in dark and
+                // fails on the mint gradient fill.
+                color: 'var(--color-ink-on-accent)',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,

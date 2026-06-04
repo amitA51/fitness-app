@@ -195,13 +195,16 @@ export const AddMealModal = memo(function AddMealModal({
                     type="button"
                     onClick={() => onRemoveFood(food.id)}
                     style={{
-                      display: 'block',
+                      // Destructive action → error token, never --fs-warn.
                       fontSize: '12px',
-                      color: 'var(--fs-warn)',
+                      color: 'var(--color-error)',
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
                       marginTop: '4px',
+                      // Pad to a comfortable tap target for the destructive control.
+                      minHeight: '36px',
+                      paddingInline: '8px',
                     }}
                   >
                     הסר

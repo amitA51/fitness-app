@@ -54,7 +54,7 @@ export const AnnualInput = memo(function AnnualInput({
       <div className="relative">
         {icon && (
           <div
-            className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
+            className="absolute start-4 top-1/2 -translate-y-1/2 pointer-events-none"
             style={{ color: 'var(--fs-muted)' }}
           >
             {icon}
@@ -81,7 +81,7 @@ export const AnnualInput = memo(function AnnualInput({
           )}
           style={{
             background: 'var(--fs-surface)',
-            border: error ? '1px solid var(--fs-warn)' : '1px solid var(--fs-surface-2)',
+            border: error ? '1px solid var(--color-error)' : '1px solid var(--fs-surface-2)',
             borderRadius: '22px 16px 22px 16px',
             fontFamily: 'var(--font-body)',
             color: 'var(--fs-ink)',
@@ -95,7 +95,7 @@ export const AnnualInput = memo(function AnnualInput({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
-            color: 'var(--fs-warn)',
+            color: 'var(--color-error)',
             letterSpacing: '0.05em',
           }}
         >

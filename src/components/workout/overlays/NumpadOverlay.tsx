@@ -165,7 +165,7 @@ const NumpadButton = memo<{
     number: { backgroundColor: 'var(--fs-surface)', color: 'var(--fs-heading)' },
     action: { backgroundColor: 'var(--fs-surface-2)', color: 'var(--fs-heading)' },
     delete: { backgroundColor: 'var(--fs-surface)', color: 'var(--fs-warn)' },
-    submit: { backgroundColor: 'var(--fs-accent)', color: 'var(--fs-heading)' },
+    submit: { backgroundColor: 'var(--fs-accent)', color: 'var(--color-ink-on-accent)' },
   };
 
   const getAriaLabel = (): string => {
@@ -224,7 +224,9 @@ const PresetButton = memo<{
         borderRadius: 999,
         border: '2px solid var(--fs-primary)',
         backgroundColor: isSelected ? 'var(--fs-accent)' : 'var(--fs-surface)',
-        color: 'var(--fs-heading)',
+        // Selected chip sits on the mint accent fill — use ink-on-accent so it
+        // stays legible in dark mode (where --fs-heading is light text).
+        color: isSelected ? 'var(--color-ink-on-accent)' : 'var(--fs-heading)',
         fontFamily: 'var(--font-mono)',
         fontSize: '12px',
         letterSpacing: '0.04em',
@@ -332,7 +334,7 @@ const ValueStepper = memo<{
             style={{
               backgroundColor: 'var(--fs-accent)',
               border: '2px solid var(--fs-primary)',
-              color: 'var(--fs-heading)',
+              color: 'var(--color-ink-on-accent)',
               fontFamily: 'var(--font-mono)',
               fontSize: '12px',
               fontWeight: 700,

@@ -139,7 +139,7 @@ const PlateCalculatorOverlay = memo<PlateCalculatorOverlayProps>(
                   fontFamily: 'var(--font-mono)',
                   fontSize: 11,
                   fontWeight: 700,
-                  color: unit === u ? '#FFFFFF' : 'var(--fs-ink)',
+                  color: unit === u ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
                   cursor: 'pointer',
                 }}
               >

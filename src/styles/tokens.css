@@ -78,6 +78,8 @@
   --color-delete: #b83228;
   --color-live: #2f8f58;
   --color-toggle-on: #34c759;
+  /* Text token for headings on bg/surface only. NEVER on accent/primary fills —
+     in dark it resolves near-white and fails on --fs-accent. Use --color-ink-on-* there. */
   --fs-heading: var(--fs-primary);
   --color-ink-on-dark: #ffffff;
   --color-ink-on-accent: #071412;

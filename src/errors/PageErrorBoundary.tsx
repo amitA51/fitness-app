@@ -61,8 +61,11 @@ export class PageErrorBoundary extends Component<PageErrorBoundaryProps, PageErr
         role="alert"
         className="min-h-[60vh] flex flex-col items-center justify-center px-6 text-center"
       >
-        <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4">
-          <AlertTriangle size={24} className="text-red-400" />
+        <div
+          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+          style={{ background: 'color-mix(in srgb, var(--color-error) 12%, transparent)' }}
+        >
+          <AlertTriangle size={24} style={{ color: 'var(--color-error)' }} />
         </div>
         <h2 className="text-[18px] font-bold text-[var(--color-text)] mb-1">
           משהו השתבש ב{this.props.pageLabel}

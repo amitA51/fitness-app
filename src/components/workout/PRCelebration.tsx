@@ -151,7 +151,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     letterSpacing: '0.28em',
-                    color: 'var(--fs-heading)',
+                    color: 'var(--color-ink-on-accent)',
                     fontWeight: 600,
                     textTransform: 'uppercase',
                   }}
@@ -163,7 +163,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                     fontFamily: 'var(--font-display)',
                     fontWeight: 900,
                     fontSize: 16,
-                    color: 'var(--fs-heading)',
+                    color: 'var(--color-ink-on-accent)',
                     letterSpacing: '-0.01em',
                   }}
                 >
@@ -316,7 +316,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       justifyContent: 'center',
                       padding: '14px 20px',
                       background: 'var(--fs-accent)',
-                      color: 'var(--fs-heading)',
+                      color: 'var(--color-ink-on-accent)',
                       border: 'none',
                       cursor: 'pointer',
                       fontFamily: 'var(--font-display)',
@@ -328,7 +328,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                       minHeight: 48,
                     }}
                     onPointerDown={(e) => {
-                      e.currentTarget.style.background = '#35B392';
+                      e.currentTarget.style.background = 'var(--fs-accent-2)';
                     }}
                     onPointerUp={(e) => {
                       e.currentTarget.style.background = 'var(--fs-accent)';

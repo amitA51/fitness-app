@@ -298,7 +298,9 @@ export default function NutritionPage() {
           width: '56px',
           height: '56px',
           background: 'var(--fs-accent)',
-          color: 'var(--fs-heading)',
+          // Dark ink on the mint fill — readable in both themes (--fs-heading is
+          // near-white in dark mode and washes out the icon on bright mint).
+          color: 'var(--color-ink-on-accent)',
           border: '2px solid var(--fs-primary)',
           insetInlineEnd: '20px',
         }}

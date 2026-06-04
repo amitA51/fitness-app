@@ -107,7 +107,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           className="w-20 h-20 flex items-center justify-center mb-6"
           style={{ background: 'var(--fs-accent)', borderRadius: '22px 16px 22px 16px' }}
         >
-          <MailOpen size={36} style={{ color: 'var(--fs-heading)' }} />
+          <MailOpen size={36} style={{ color: 'var(--color-ink-on-accent)' }} />
         </m.div>
 
         <m.h2

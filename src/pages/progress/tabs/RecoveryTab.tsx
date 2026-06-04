@@ -49,9 +49,12 @@ export const RecoveryTab = memo(function RecoveryTab({
             type="button"
             onClick={onAdd}
             className="chip"
-            style={{ background: 'var(--fs-signal)', color: 'var(--fs-heading)' }}
+            // Action chip uses the mint accent (signal lime is reserved for
+            // PR/celebration). ink-on-accent keeps AA contrast in both themes —
+            // the previous lime+heading pair failed contrast in dark mode.
+            style={{ background: 'var(--fs-accent)', color: 'var(--color-ink-on-accent)' }}
           >
-            <Plus size={12} />
+            <Plus size={12} aria-hidden="true" />
             עדכן
           </button>
         </div>

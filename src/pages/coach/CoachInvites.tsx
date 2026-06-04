@@ -16,8 +16,16 @@ import {
   listInvites,
   revokeInvite,
 } from '../../services/coach';
-import type { CoachInvite } from '../../types/coach';
+import type { CoachInvite, InviteStatus } from '../../types/coach';
 import { CoachPage, ListSkeleton, Section, formatDate, useAsyncData } from './_shared';
+
+// Invite status → Hebrew (never surface the raw English enum in the meta line).
+const INVITE_STATUS_LABEL: Record<InviteStatus, string> = {
+  pending: 'ממתינה',
+  accepted: 'התקבלה',
+  revoked: 'בוטלה',
+  expired: 'פגה',
+};
 
 export default function CoachInvites() {
   const { data: invites, loading, reload } = useAsyncData<CoachInvite[]>(() => listInvites(), []);
@@ -126,7 +134,8 @@ export default function CoachInvites() {
                 <div
                   style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fs-muted)' }}
                 >
-                  {inv.email ?? 'קוד משותף'} · {inv.status} · תוקף {formatDate(inv.expiresAt)}
+                  {inv.email ?? 'קוד משותף'} · {INVITE_STATUS_LABEL[inv.status] ?? inv.status} ·
+                  תוקף {formatDate(inv.expiresAt)}
                 </div>
               </div>
               {inv.status === 'pending' && (

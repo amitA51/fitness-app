@@ -218,7 +218,7 @@ export function SignInStep({
               className="p-4"
               style={{
                 background: 'var(--fs-accent)',
-                color: 'var(--fs-heading)',
+                color: 'var(--color-ink-on-accent)',
                 borderRadius: 0,
               }}
             >

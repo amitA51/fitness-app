@@ -218,7 +218,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
               minHeight: 48,
               padding: '0 14px',
               background: 'var(--fs-accent)',
-              color: 'var(--fs-heading)',
+              color: 'var(--color-ink-on-accent)',
               border: '1px solid var(--fs-accent)',
               borderRadius: 8,
               fontFamily: 'var(--font-mono)',

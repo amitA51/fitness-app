@@ -53,7 +53,10 @@ interface ToastMessage {
 const VARIANT_STYLES: Record<ToastVariant, { accent: string; eyebrow: string }> = {
   success: { accent: 'var(--fs-accent)', eyebrow: 'SUCCESS' },
   error: { accent: 'var(--color-error)', eyebrow: 'ERROR' },
-  info: { accent: 'var(--fs-primary)', eyebrow: 'INFO' },
+  // `info` uses --fs-ink (not --fs-primary): in dark mode --fs-primary (#0a0a0a)
+  // is near-black on the toast's --fs-bg (#000) surface, so the border + eyebrow
+  // would vanish. --fs-ink always contrasts against --fs-bg in both themes.
+  info: { accent: 'var(--fs-ink)', eyebrow: 'INFO' },
   // Water — hydration reminder. Accent-tinted fill via the RGB channel token
   // (replaces the old hardcoded cyan in WaterReminderToast).
   water: { accent: 'var(--fs-accent)', eyebrow: 'מים' },

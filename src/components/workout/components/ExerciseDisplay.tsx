@@ -520,8 +520,17 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               כלים
             </div>
 
-            {/* Row 1: Primary actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {/* Row 1: Primary actions — horizontal scroll so the full tool set
+                stays reachable at 360–390px without clipping or orphan wraps. */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                overflowX: 'auto',
+                scrollbarWidth: 'none',
+              }}
+            >
               {onAddSet && (
                 <ActionChip
                   icon={<Plus size={14} strokeWidth={2.5} />}

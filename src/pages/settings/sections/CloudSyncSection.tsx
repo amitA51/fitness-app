@@ -50,7 +50,21 @@ export function CloudSyncSection({
               color: 'var(--fs-ink)',
             }}
           >
-            {cloudConnected && <span className="breathing-dot signal" />}
+            {/* Static accent dot — not the animated/lime breathing-dot: blinking
+                "live" indicators are an anti-slop fingerprint and the lime signal
+                is reserved for PRs/celebration. */}
+            {cloudConnected && (
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: 'var(--fs-accent)',
+                  flexShrink: 0,
+                }}
+              />
+            )}
             {cloudConnected ? 'מחובר לענן' : 'לא מחובר'}
           </span>
           {syncMessage && (
@@ -109,7 +123,23 @@ export function CloudSyncSection({
         <div
           style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}
         >
-          {/* Sync All — the section's single primary; refresh icon = two-way sync */}
+          {/* Disconnected: the buttons below are disabled, so explain the path
+              instead of leaving a dead end. */}
+          {!cloudConnected && (
+            <p
+              style={{
+                fontFamily: 'var(--font-hebrew)',
+                fontSize: '13px',
+                color: 'var(--fs-muted)',
+                lineHeight: 1.5,
+              }}
+            >
+              התחברו לחשבון כדי לסנכרן את הנתונים עם הענן.
+            </p>
+          )}
+
+          {/* Sync All — the section's single primary; refresh icon = two-way sync.
+              Swaps its label while in flight, matching the up/down siblings. */}
           <Button
             variant="primary"
             fullWidth
@@ -118,7 +148,7 @@ export function CloudSyncSection({
             icon={<RefreshCw size={14} aria-hidden="true" />}
             onClick={onSyncAll}
           >
-            סנכרון מלא
+            {isSyncingAll ? 'מסנכרן...' : 'סנכרון מלא'}
           </Button>
 
           {/* Directional pair — equal secondary siblings, mirrored up/down icons */}

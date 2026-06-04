@@ -1,5 +1,5 @@
 import { m } from 'framer-motion';
-import { Award, ChevronRight, Target, TrendingUp } from 'lucide-react';
+import { Award, ChevronLeft, Target, TrendingUp } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 
 export function WelcomeStep({ onNext }: { onNext: () => void }) {
@@ -120,7 +120,8 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
       >
         <Button variant="editorial" onClick={onNext} fullWidth style={{ minHeight: '56px' }}>
           בוא נתחיל
-          <ChevronRight size={24} aria-hidden="true" />
+          {/* forward = left in RTL */}
+          <ChevronLeft size={24} aria-hidden="true" />
         </Button>
       </m.div>
     </div>

@@ -18,6 +18,7 @@ import { TemplateStrip } from '../components/dashboard/TemplateQuickStart';
 import { WeeklyGrid } from '../components/dashboard/WeeklyGrid';
 import { WorkoutStreak } from '../components/dashboard/WorkoutStreak';
 import { WorkoutHistory } from '../components/workout/history/WorkoutHistory';
+import { Z_INDEX } from '../constants/zIndex';
 import { useData } from '../contexts/DataContext';
 import { useFitnessInsights } from '../hooks/fitness/useFitnessInsights';
 import { useCountUp } from '../hooks/useCountUp';
@@ -232,7 +233,9 @@ export default function Dashboard() {
           top: 0,
           left: 0,
           right: 0,
-          zIndex: 9999,
+          // Floats above the sticky header; uses the shared scale (was an
+          // off-scale 9999) and stays below modals/toasts.
+          zIndex: Z_INDEX.overlay,
           height: pullDistance > 0 ? Math.min(pullDistance, threshold * 1.5) : 0,
           overflow: 'hidden',
           transition: isPulling && !isRefreshing ? 'none' : 'height 0.3s ease',

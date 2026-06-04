@@ -185,8 +185,8 @@ export const TemplateCard = memo(function TemplateCard({
           disabled={isDeleting}
           className="chip"
           style={{
-            background: confirmDelete ? 'var(--fs-primary)' : 'var(--fs-surface)',
-            color: confirmDelete ? 'var(--fs-accent)' : 'var(--fs-primary)',
+            background: confirmDelete ? 'var(--color-error)' : 'var(--fs-surface)',
+            color: confirmDelete ? 'var(--color-ink-on-error)' : 'var(--fs-primary)',
             minHeight: '44px',
             padding: '0 14px',
             opacity: isDeleting ? 0.6 : 1,

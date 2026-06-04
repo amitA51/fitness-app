@@ -131,7 +131,7 @@ export const WeeklyGrid = memo(function WeeklyGrid({
                 letterSpacing: '0.2em',
                 textTransform: 'uppercase',
                 background: 'var(--fs-accent)',
-                color: 'var(--fs-heading)',
+                color: 'var(--color-ink-on-accent)',
                 padding: '2px 7px',
                 fontWeight: 600,
                 borderRadius: 2,

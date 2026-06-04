@@ -502,7 +502,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                   style={{
                     padding: '10px 16px',
                     background: 'var(--fs-accent)',
-                    color: 'var(--fs-heading)',
+                    color: 'var(--color-ink-on-accent)',
                     border: 'none',
                     borderRadius: 0,
                     fontFamily: 'var(--font-display)',
@@ -557,11 +557,15 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
           style={{
             flex: 1,
             padding: '14px 16px',
-            background: 'rgba(var(--text-on-navy-rgb),0.08)',
-            color: activeStep === 0 ? 'rgba(var(--text-on-navy-rgb),0.2)' : 'var(--fs-surface)',
-            border: '2px solid rgba(var(--text-on-navy-rgb),0.15)',
+            // This nav bar sits on --fs-bg (bone), not the navy masthead, so it
+            // must use neutral surface tokens — the old text-on-navy values made
+            // the label invisible (white text on bone) in light mode.
+            background: 'var(--fs-surface)',
+            color: 'var(--fs-ink)',
+            border: '2px solid var(--fs-steel)',
             borderRadius: 0,
             cursor: activeStep === 0 ? 'not-allowed' : 'pointer',
+            opacity: activeStep === 0 ? 0.4 : 1,
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
             fontSize: 13,
@@ -581,7 +585,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             flex: 1,
             padding: '14px 16px',
             background: 'var(--fs-accent)',
-            color: 'var(--fs-heading)',
+            color: 'var(--color-ink-on-accent)',
             border: '2px solid var(--fs-accent)',
             borderRadius: 0,
             cursor: 'pointer',

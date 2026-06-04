@@ -34,7 +34,9 @@ export function CompleteStep({ data }: CompleteStepProps) {
         style={{
           background: 'var(--fs-accent)',
           borderRadius: '22px 16px 22px 16px',
-          color: 'var(--fs-heading)',
+          // ink-on-accent — fs-heading is near-white in dark mode and the
+          // check would disappear on the bright mint block
+          color: 'var(--color-ink-on-accent)',
         }}
       >
         <Check size={56} strokeWidth={3} />

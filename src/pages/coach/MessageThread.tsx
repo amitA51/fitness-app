@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
+import { showToast } from '../../components/ui/GlobalToast';
 import { useAuth } from '../../contexts/AuthContext';
 import { getThread, markThreadRead, sendMessage, subscribeToThread } from '../../services/coach';
 import type { Message } from '../../types/coach';
@@ -22,14 +23,22 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
   const [messages, setMessages] = useState<Message[]>([]);
   const [body, setBody] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
 
   const load = async () => {
-    const thread = await getThread(coachId, clientId);
-    setMessages(thread);
-    setLoading(false);
-    await markThreadRead(coachId, clientId);
-    window.dispatchEvent(new Event('coach:unread-refresh'));
+    setError(false);
+    try {
+      const thread = await getThread(coachId, clientId);
+      setMessages(thread);
+      setLoading(false);
+      await markThreadRead(coachId, clientId);
+      window.dispatchEvent(new Event('coach:unread-refresh'));
+    } catch {
+      // Network/RLS failure: surface a retry instead of an endless skeleton.
+      setError(true);
+      setLoading(false);
+    }
   };
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-load only when the thread participants change
@@ -58,19 +67,37 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
     if (!text) return;
     setBody('');
     const { error } = await sendMessage(coachId, clientId, text);
-    if (!error) await load();
+    if (error) {
+      // Restore the unsent text so it isn't silently lost, and tell the user.
+      setBody(text);
+      showToast('שליחת ההודעה נכשלה', 'error');
+      return;
+    }
+    await load();
   };
 
   return (
     <CoachPage title="הודעות" subtitle="Messages">
-      <div className="flex flex-col gap-2" style={{ minHeight: '50vh' }}>
+      {/* Pad the scroll area so the last bubble / empty state clears the fixed
+          composer below (its height + iOS home-indicator inset). */}
+      <div
+        className="flex flex-col gap-2"
+        style={{ minHeight: '50vh', paddingBottom: 'calc(72px + env(safe-area-inset-bottom))' }}
+      >
         {loading ? (
           <ListSkeleton rows={4} />
+        ) : error ? (
+          <EmptyState
+            illustration="error"
+            title="טעינת ההודעות נכשלה"
+            description="בדקו את החיבור ונסו שוב."
+            action={{ label: 'נסו שוב', onClick: () => void load() }}
+          />
         ) : messages.length === 0 ? (
           <EmptyState
             illustration="notes"
             title="אין הודעות עדיין"
-            description="כתוב את ההודעה הראשונה."
+            description="כתבו את ההודעה הראשונה."
           />
         ) : (
           messages.map((m) => {
@@ -105,8 +132,12 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
       </div>
 
       <div
-        className="flex gap-2 items-end fixed inset-x-0 bottom-0 px-5 py-3"
-        style={{ background: 'var(--fs-bg)', borderTop: '1px solid var(--fs-surface-2)' }}
+        className="flex gap-2 items-end fixed inset-x-0 bottom-0 px-5 pt-3"
+        style={{
+          background: 'var(--fs-bg)',
+          borderTop: '1px solid var(--fs-surface-2)',
+          paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
+        }}
       >
         {/* Compact single-line chat composer — the form <Textarea> (88px min)
             is intentionally not used here; a message bar must stay one row tall
@@ -141,6 +172,7 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
           size="icon"
           aria-label="שלח"
           onClick={handleSend}
+          disabled={!body.trim()}
           className="shrink-0"
           style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)' }}
         >

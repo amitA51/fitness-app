@@ -54,7 +54,10 @@ export const MealTypeSelector = memo(function MealTypeSelector({
               fontFamily: 'var(--font-hebrew)',
               transition: 'background-color 0.15s ease, color 0.15s ease',
               backgroundColor: isActive ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
-              color: isActive ? 'var(--fs-heading)' : 'var(--fs-muted)',
+              // On the mint accent fill the ink must be the dark on-accent token
+              // (dark in both themes); --fs-heading is near-white in dark mode and
+              // would fail contrast on bright mint.
+              color: isActive ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
             }}
           >
             <Icon size={13} aria-hidden="true" />

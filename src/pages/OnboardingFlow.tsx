@@ -13,6 +13,8 @@
 
 import { AnimatePresence, MotionConfig, m } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+// RTL direction note: in Hebrew, "forward/next" points LEFT and "back" points
+// RIGHT. Back button uses ChevronRight; the next/finish CTA uses ChevronLeft.
 import { useId, useState } from 'react';
 
 import { Button } from '../components/ui/Button';
@@ -166,7 +168,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
                     borderRadius: '22px 16px 22px 16px',
                   }}
                 >
-                  <ChevronLeft size={28} aria-hidden="true" />
+                  <ChevronRight size={28} aria-hidden="true" />
                 </Button>
               )}
               <Button
@@ -179,7 +181,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
                 style={{ minHeight: '56px' }}
               >
                 {isLastInteractiveStep ? 'סיום' : 'הבא'}
-                <ChevronRight size={24} aria-hidden="true" />
+                <ChevronLeft size={24} aria-hidden="true" />
               </Button>
             </div>
           </div>

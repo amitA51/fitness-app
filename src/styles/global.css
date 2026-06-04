@@ -414,7 +414,10 @@ body {
   .data-strip {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    border: 2px solid var(--fs-primary);
+    /* --color-border-strong (not --fs-primary): in dark, --fs-primary is #0a0a0a
+       on #111 surface → grid lines vanish. The strong-border token keeps the
+       light look (#16292d) and reads clearly in dark (white @14%). */
+    border: 2px solid var(--color-border-strong);
   }
 
   .data-strip > div {
@@ -423,12 +426,12 @@ body {
   }
 
   .data-strip > div + div {
-    border-left: 2px solid var(--fs-primary);
+    border-left: 2px solid var(--color-border-strong);
   }
 
   [dir="rtl"] .data-strip > div + div {
     border-left: none;
-    border-right: 2px solid var(--fs-primary);
+    border-right: 2px solid var(--color-border-strong);
   }
 
   .data-strip .val {

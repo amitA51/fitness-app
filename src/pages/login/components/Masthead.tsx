@@ -30,7 +30,9 @@ export function Masthead() {
               fontFamily: '"Bricolage Grotesque", var(--font-display)',
               fontWeight: 800,
               fontSize: '28px',
-              color: 'var(--fs-heading)',
+              // ink-on-accent, not fs-heading — fs-heading is near-white in dark
+              // mode and vanishes on the bright mint accent block
+              color: 'var(--color-ink-on-accent)',
               lineHeight: 1,
             }}
           >

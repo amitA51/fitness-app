@@ -70,14 +70,14 @@ export class RootErrorBoundary extends Component<Props, State> {
             width: '80px',
             height: '80px',
             borderRadius: '24px',
-            background: 'rgba(239, 68, 68, 0.1)',
+            background: 'color-mix(in srgb, var(--color-error, #b83228) 12%, transparent)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: '24px',
           }}
         >
-          <AlertTriangle size={40} style={{ color: '#EF4444' }} />
+          <AlertTriangle size={40} style={{ color: 'var(--color-error, #b83228)' }} />
         </div>
         <h1
           style={{
@@ -112,8 +112,8 @@ export class RootErrorBoundary extends Component<Props, State> {
               padding: '12px 24px',
               fontSize: '16px',
               fontWeight: 600,
-              background: 'var(--fs-primary, #2C2C2E)',
-              color: 'var(--fs-accent, #EEF3F1)',
+              background: 'var(--fs-primary, #16292d)',
+              color: 'var(--color-ink-on-dark, #ffffff)',
               border: 'none',
               borderRadius: '12px',
               cursor: 'pointer',

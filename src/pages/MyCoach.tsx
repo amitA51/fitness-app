@@ -95,13 +95,19 @@ export default function MyCoach() {
             <Input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void connect();
+                }
+              }}
               placeholder="קוד הזמנה"
               dir="ltr"
               aria-label="קוד הזמנה"
               style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.12em' }}
             />
           </div>
-          <Button variant="primary" isLoading={busy} onClick={connect}>
+          <Button variant="primary" isLoading={busy} disabled={!code.trim()} onClick={connect}>
             התחבר
           </Button>
         </div>
