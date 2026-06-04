@@ -75,7 +75,9 @@ export const FoodLibrary = memo(function FoodLibrary({
                       marginInlineStart: '8px',
                     }}
                   >
-                    {food.servingSize}
+                    {/* Leading middot keeps the accessible name from reading
+                        as one word ("חזה עוף100ג") — margin alone is visual. */}
+                    · {food.servingSize}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

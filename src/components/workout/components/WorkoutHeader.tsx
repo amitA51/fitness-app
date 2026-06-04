@@ -66,7 +66,9 @@ const MonoTimer = memo<{
           fontSize: 26,
           fontWeight: 700,
           letterSpacing: '0.06em',
-          color: 'var(--fs-accent)',
+          // accent-2, not accent: mint on the light chip is ~1.9:1 (fails AA
+          // large-text 3:1); deep teal passes in both modes, dot keeps the mint
+          color: 'var(--fs-accent-2)',
         }}
       >
         {formatted}

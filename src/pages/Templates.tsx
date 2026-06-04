@@ -131,17 +131,21 @@ export default function Templates() {
         </header>
 
         <div className="px-5 pt-5">
-          {/* Primary CTA */}
-          <m.div variants={itemVariants} className="mb-5">
-            <m.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowCreateModal(true)}
-              className="btn-primary start-workout-btn accent-glow w-full flex items-center justify-center gap-2"
-              aria-label="צור תבנית חדשה"
-            >
-              <Plus size={18} />+ תבנית חדשה
-            </m.button>
-          </m.div>
+          {/* Primary CTA — hidden when the list is empty: the empty state below
+              carries its own single "צור תבנית ראשונה" CTA (one label per intent). */}
+          {templates.length > 0 && (
+            <m.div variants={itemVariants} className="mb-5">
+              <m.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowCreateModal(true)}
+                className="btn-primary start-workout-btn accent-glow w-full flex items-center justify-center gap-2"
+                aria-label="צור תבנית חדשה"
+              >
+                <Plus size={18} />
+                תבנית חדשה
+              </m.button>
+            </m.div>
+          )}
 
           <TemplateList
             favorites={favorites}

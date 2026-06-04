@@ -136,7 +136,8 @@ export default function LoginPage() {
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '9px',
-            color: 'var(--fs-muted)',
+            // on-navy tint, not fs-muted — muted is 2.1:1 on the navy footer band
+            color: 'rgba(var(--text-on-navy-rgb), 0.6)',
             letterSpacing: '0.22em',
             textTransform: 'uppercase',
           }}

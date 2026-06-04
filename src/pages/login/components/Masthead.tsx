@@ -59,7 +59,9 @@ export function Masthead() {
         style={{
           fontFamily: 'var(--font-body)',
           fontSize: '14px',
-          color: 'rgba(var(--text-on-navy-rgb), 0.7)',
+          // fs-muted, not text-on-navy — this masthead sits on fs-bg, which is
+          // LIGHT in light mode (text-on-navy made the line invisible there)
+          color: 'var(--fs-muted)',
           lineHeight: 1.5,
         }}
       >

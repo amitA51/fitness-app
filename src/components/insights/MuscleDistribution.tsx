@@ -110,10 +110,14 @@ export const MuscleDistribution = memo(function MuscleDistribution({
                 <div
                   style={{
                     height: '100%',
-                    width: `${pct}%`,
+                    width: '100%',
+                    // scaleX instead of width: compositor-only animation.
+                    // Origin = right, the RTL leading edge of the fill.
+                    transform: `scaleX(${pct / 100})`,
+                    transformOrigin: '100% 50%',
                     borderRadius: 999,
                     background: barColor(i),
-                    transition: 'width 0.5s ease',
+                    transition: 'transform 0.5s ease',
                   }}
                 />
               </div>

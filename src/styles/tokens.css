@@ -81,6 +81,9 @@
   --fs-heading: var(--fs-primary);
   --color-ink-on-dark: #ffffff;
   --color-ink-on-accent: #071412;
+  /* Text on --color-error fills. Light error is dark (#b83228) → white ink;
+     dark error is bright (#ff5449) → near-black ink. */
+  --color-ink-on-error: #ffffff;
   --color-drag-handle: rgba(19, 35, 39, 0.2);
   --color-bar-track: rgba(255, 255, 255, 0.1);
 
@@ -141,8 +144,9 @@
   --nav-bg: rgba(255, 255, 255, 0.82);
   --nav-border: rgba(19, 35, 39, 0.08);
   --nav-shadow: 0 -1px 12px rgba(19, 35, 39, 0.06);
-  --nav-icon-inactive: rgba(19, 35, 39, 0.45);
-  --nav-label-inactive: rgba(19, 35, 39, 0.5);
+  /* 0.6/0.66, not 0.45/0.5 — the lighter alphas fell to ~3.2:1 on the glass nav */
+  --nav-icon-inactive: rgba(19, 35, 39, 0.6);
+  --nav-label-inactive: rgba(19, 35, 39, 0.66);
   --nav-pill-bg: var(--fs-primary);
   --nav-pill-text: #ffffff;
   --nav-pill-shadow: 0 2px 8px rgba(22, 41, 45, 0.25);
@@ -356,7 +360,8 @@ html.dark {
   --fs-surface: #111111;
   --fs-surface-2: #1a1a1a;
   --fs-ink: #f0f0f0;
-  --fs-muted: #808080;
+  /* #8c8c8c, not #808080 — 808080 is 4.4:1 on surface-2 (#1a1a1a), just under AA */
+  --fs-muted: #8c8c8c;
   --fs-primary: #0a0a0a;
   --fs-accent: #4ddcbb;
   --fs-accent-2: #38b5c9;
@@ -434,6 +439,8 @@ html.dark {
   --fs-heading: var(--fs-ink);
   --color-ink-on-dark: #f0f0f0;
   --color-ink-on-accent: #071412;
+  /* Bright error (#ff5449) needs dark ink — white fails AA here. */
+  --color-ink-on-error: #071412;
   --color-drag-handle: rgba(255, 255, 255, 0.2);
   --color-bar-track: rgba(255, 255, 255, 0.08);
 
@@ -454,8 +461,8 @@ html.dark {
   --nav-bg: rgba(17, 17, 17, 0.88);
   --nav-border: rgba(255, 255, 255, 0.06);
   --nav-shadow: 0 -1px 16px rgba(0, 0, 0, 0.4);
-  --nav-icon-inactive: rgba(240, 240, 240, 0.4);
-  --nav-label-inactive: rgba(240, 240, 240, 0.45);
+  --nav-icon-inactive: rgba(240, 240, 240, 0.5);
+  --nav-label-inactive: rgba(240, 240, 240, 0.55);
   --nav-pill-bg: var(--fs-accent);
   --nav-pill-text: #071412;
   --nav-pill-shadow: 0 2px 12px rgba(77, 220, 187, 0.3);

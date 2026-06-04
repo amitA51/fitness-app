@@ -122,7 +122,7 @@ export const MeasurementsSection = memo(function MeasurementsSection({
               className="mb-5"
               style={{ fontFamily: 'var(--font-hebrew)', fontSize: 16, color: 'var(--fs-ink)' }}
             >
-              עדיין לא תיעדת מידות
+              עדיין לא תועדו מידות
             </p>
             <button type="button" onClick={onAdd} className="btn-primary" style={{ minHeight: 44 }}>
               הוסף מידות ראשונות

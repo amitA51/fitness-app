@@ -36,7 +36,7 @@ Editorial Minimalism × Data-Dense Pro, with a brutalist-editorial masthead. The
 | `--fs-warn` | `#e26e3f` | warnings |
 | `--fs-steel` `--fs-plate` `--fs-rubber` | `#b9c8c6` `#d7e0de` `#0d1516` | equipment-metaphor neutrals |
 
-Semantic: `--color-success #2f8f58` · `--color-error #b83228` · `--color-ink-on-accent #071412` · `--color-ink-on-dark #ffffff`. Accent as channels: `--fs-accent-rgb: 67,199,165` for `rgba()` tints.
+Semantic: `--color-success #2f8f58` · `--color-error #b83228` · `--color-ink-on-accent #071412` · `--color-ink-on-dark #ffffff` · `--color-ink-on-error` (`#ffffff` light / `#071412` dark — error red is dark in light mode and bright in dark mode). Accent as channels: `--fs-accent-rgb: 67,199,165` for `rgba()` tints.
 
 ## Color — Dark (Obsidian) — `html.dark`
 
@@ -48,7 +48,7 @@ Philosophy: near-black, **zero color tint on surfaces** — all personality from
 | `--fs-surface` | `#111111` |
 | `--fs-surface-2` | `#1a1a1a` |
 | `--fs-ink` | `#f0f0f0` |
-| `--fs-muted` | `#808080` |
+| `--fs-muted` | `#8c8c8c` |
 | `--fs-primary` | `#0a0a0a` |
 | `--fs-accent` | `#4ddcbb` (bright mint pops on black) |
 | `--fs-signal` | `#e2fb70` |

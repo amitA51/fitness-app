@@ -16,7 +16,7 @@ export const ChapterBreak = memo(function ChapterBreak({ title }: { title: strin
           fontFamily: 'var(--font-display)',
           fontWeight: 700,
           fontSize: 16,
-          color: 'var(--fs-ink)',
+          color: 'var(--color-ink-on-dark)',
         }}
       >
         {title}

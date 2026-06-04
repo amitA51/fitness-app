@@ -482,6 +482,11 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
       onSubmit();
     }, [onSubmit]);
 
+    // Confirm is dead with no value, and for reps also at 0 (0 reps is never a
+    // valid set; stepper mode holds value '0' so the empty-check alone misses it).
+    // Weight stays submittable at 0 — bodyweight exercises are real.
+    const isConfirmDisabled = value === '' || (target === 'reps' && numericValue <= 0);
+
     const handleClear = useCallback(() => {
       triggerHaptic('light');
       onClear?.();
@@ -729,11 +734,11 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
               <m.button
                 whileTap={{ scale: shouldReduceMotion ? 1 : 0.98 }}
                 onClick={handleSubmit}
-                disabled={value === ''}
-                className="btn-primary flex-1 accent-glow"
+                disabled={isConfirmDisabled}
+                className={`btn-primary flex-1${isConfirmDisabled ? '' : ' accent-glow'}`}
                 style={{
-                  opacity: value === '' ? 0.4 : 1,
-                  cursor: value === '' ? 'not-allowed' : 'pointer',
+                  opacity: isConfirmDisabled ? 0.4 : 1,
+                  cursor: isConfirmDisabled ? 'not-allowed' : 'pointer',
                   minHeight: 56,
                 }}
                 aria-label="אישור ערך"
@@ -746,7 +751,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                 <m.button
                   whileTap={{ scale: shouldReduceMotion ? 1 : 0.98 }}
                   onClick={handleSubmitAdvance}
-                  disabled={value === ''}
+                  disabled={isConfirmDisabled}
                   style={{
                     minHeight: 56,
                     paddingInline: 24,
@@ -757,8 +762,8 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 18,
-                    opacity: value === '' ? 0.4 : 1,
-                    cursor: value === '' ? 'not-allowed' : 'pointer',
+                    opacity: isConfirmDisabled ? 0.4 : 1,
+                    cursor: isConfirmDisabled ? 'not-allowed' : 'pointer',
                   }}
                   aria-label="אישור ומעבר לחזרות"
                 >

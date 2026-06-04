@@ -304,10 +304,11 @@ body {
     color: var(--fs-accent);
   }
 
-  /* Masthead — dark block */
+  /* Masthead — dark block. Text must stay readable on the navy/obsidian
+     primary surface in BOTH modes — never var(--fs-ink) (dark-on-dark in light). */
   .masthead {
     background: var(--fs-primary);
-    color: var(--fs-ink);
+    color: var(--color-ink-on-dark);
     padding: 20px 24px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     /* padding handled inline with calc(max()) for safe-area-inset support */
@@ -328,13 +329,13 @@ body {
     line-height: 0.9;
     letter-spacing: -0.02em;
     text-transform: uppercase;
-    color: var(--fs-ink);
+    color: var(--color-ink-on-dark);
   }
 
   /* Chapter Break Strip */
   .chapter-break {
     background: var(--fs-primary);
-    color: var(--fs-ink);
+    color: var(--color-ink-on-dark);
     padding: 16px 20px;
     display: flex;
     align-items: center;
@@ -355,7 +356,7 @@ body {
     font-size: 20px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--fs-ink);
+    color: var(--color-ink-on-dark);
   }
 
   /* Mustard Block — hero stat */
@@ -405,10 +406,9 @@ body {
     text-transform: uppercase;
   }
 
-  [dir="rtl"] .block-hero .ribbon {
-    right: auto;
-    left: 0;
-  }
+  /* RTL keeps the ribbon at the top-right (inline-start) corner: the far
+     (left) corner is owned by the hero's action button, and mirroring the
+     ribbon there made the two overlap. */
 
   /* Data Strip — two-column stats */
   .data-strip {
@@ -550,7 +550,7 @@ body {
   /* AW Masthead — top bar with exercise + set counter */
   .aw-masthead {
     background: var(--fs-primary);
-    color: var(--fs-ink);
+    color: var(--color-ink-on-dark);
     padding: 12px 20px;
     display: flex;
     justify-content: space-between;
@@ -579,7 +579,7 @@ body {
   /* AW Hero — massive weight number on navy, flexes to fill available space */
   .aw-hero {
     background: var(--fs-primary);
-    color: var(--fs-ink);
+    color: var(--color-ink-on-dark);
     text-align: center;
     padding: 20px 20px;
     position: relative;
@@ -598,7 +598,7 @@ body {
     font-size: clamp(80px, 22vmin, 140px);
     line-height: 0.85;
     letter-spacing: -0.04em;
-    color: var(--fs-ink);
+    color: var(--color-ink-on-dark);
     font-variant-numeric: tabular-nums;
   }
 
@@ -618,7 +618,7 @@ body {
     font-size: 11px;
     letter-spacing: 0.16em;
     background: var(--fs-accent);
-    color: var(--fs-heading);
+    color: var(--color-ink-on-accent);
     padding: 3px 8px;
     text-transform: uppercase;
     font-weight: 500;
@@ -702,7 +702,8 @@ body {
   .set-row-annual.active .num,
   .set-row-annual.active .val,
   .set-row-annual.active .mark {
-    color: var(--fs-heading);
+    /* On the accent band — fs-heading is near-white in dark mode (1.5:1 on mint) */
+    color: var(--color-ink-on-accent);
   }
 
   .set-row-annual.active .val {

@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   type LucideIcon,
   MoreHorizontal,
+  Settings,
   TrendingUp,
   UserCog,
   Users,
@@ -21,9 +22,10 @@ import { Sheet } from './Sheet';
 // BottomNav — 5 fixed tabs + a "More" sheet.
 //
 // Tabs: בית /, אימון /workout, התקדמות /progress, תזונה /nutrition, עוד (sheet).
-// The "עוד" sheet holds the coach surfaces: "המאמן שלי" /my-coach (everyone)
-// and, only for coaches, "ניהול מתאמנים" /coach. Coach destinations no longer
-// live in the bar itself — keeping it a stable 5-up grid regardless of role.
+// The "עוד" sheet holds the coach surfaces: "המאמן שלי" /my-coach (everyone),
+// "הגדרות" /settings (everyone) and, only for coaches, "ניהול מתאמנים" /coach.
+// Coach destinations no longer live in the bar itself — keeping it a stable
+// 5-up grid regardless of role.
 // The unread coach-message badge moves to the "עוד" tab.
 //
 // Motion (GSAP): a single shared underlay pill flows between tab slots as the
@@ -45,7 +47,7 @@ const MAIN_TABS: readonly NavDestination[] = [
   { path: '/nutrition', label: 'תזונה', icon: UtensilsCrossed },
 ] as const;
 
-const MORE_PATHS = ['/my-coach', '/coach'] as const;
+const MORE_PATHS = ['/my-coach', '/coach', '/settings'] as const;
 
 /** Whether `pathname` matches a nav destination (exact for "/", prefix otherwise). */
 function matchesPath(pathname: string, path: string): boolean {
@@ -242,6 +244,7 @@ function BottomNav() {
     () => [
       { path: '/my-coach', label: 'המאמן שלי', icon: UserCog },
       ...(isCoach ? [{ path: '/coach', label: 'ניהול מתאמנים', icon: Users }] : []),
+      { path: '/settings', label: 'הגדרות', icon: Settings },
     ],
     [isCoach]
   );

@@ -221,7 +221,8 @@ const SetInputCard = memo<SetInputCardProps>(
               textTransform: 'uppercase',
               letterSpacing: '0.18em',
               fontWeight: 700,
-              color: 'var(--fs-accent)',
+              // accent-2, not accent: 9px mint on the white card is 2.1:1
+              color: 'var(--fs-accent-2)',
             }}
           >
             {label}

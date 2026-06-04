@@ -28,7 +28,7 @@ export const EmptyMealState = memo(function EmptyMealState({ onAdd }: { onAdd: (
           textTransform: 'uppercase',
         }}
       >
-        עדיין לא תיעדת ארוחות
+        עדיין לא תועדו ארוחות
       </h3>
       <p
         className="mb-5"

@@ -24,6 +24,9 @@ interface WaterTrackerProps {
 /** Watery droplet palette for the add-a-glass splash. */
 const DROPLET_COLORS = ['#5BC0EB', '#9BE7FF', '#35B392', '#EAF6FF'];
 
+/** One-tap quick-add volumes; an amount equal to the glass size is hidden. */
+const QUICK_ADD_AMOUNTS_ML = [250, 500];
+
 export const WaterTracker = memo(function WaterTracker({
   selectedDate,
   isToday = true,
@@ -312,59 +315,37 @@ export const WaterTracker = memo(function WaterTracker({
                 cursor: 'pointer',
               }}
             >
-              <Plus size={16} style={{ color: 'var(--fs-heading)' }} aria-hidden="true" />
+              <Plus size={16} style={{ color: 'var(--color-ink-on-accent)' }} aria-hidden="true" />
             </button>
-            {/* Quick water buttons: +250ml pill */}
-            <button
-              type="button"
-              onClick={() => handleQuickAdd(250)}
-              aria-label="הוסף 250 מ״ל"
-              dir="ltr"
-              style={{
-                padding: '0 12px',
-                minWidth: 44,
-                height: 44,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'var(--fs-accent)',
-                border: 'none',
-                cursor: 'pointer',
-                borderRadius: 0,
-                fontFamily: 'var(--font-mono)',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: 'var(--fs-heading)',
-                gap: 3,
-              }}
-            >
-              +250
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickAdd(500)}
-              aria-label="הוסף 500 מ״ל"
-              dir="ltr"
-              style={{
-                padding: '0 12px',
-                minWidth: 44,
-                height: 44,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'var(--fs-accent)',
-                border: 'none',
-                cursor: 'pointer',
-                borderRadius: 0,
-                fontFamily: 'var(--font-mono)',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: 'var(--fs-heading)',
-                gap: 3,
-              }}
-            >
-              +500
-            </button>
+            {/* Quick-add pills. A quick-add equal to the glass size duplicates the
+                + button (two controls, one intent), so it is filtered out. */}
+            {QUICK_ADD_AMOUNTS_ML.filter((amount) => amount !== glassMl).map((amount) => (
+              <button
+                key={amount}
+                type="button"
+                onClick={() => handleQuickAdd(amount)}
+                aria-label={`הוסף ${amount} מ״ל`}
+                dir="ltr"
+                style={{
+                  padding: '0 12px',
+                  minWidth: 44,
+                  height: 44,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'var(--fs-accent)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  borderRadius: 15,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: 'var(--color-ink-on-accent)',
+                }}
+              >
+                +{amount}
+              </button>
+            ))}
           </>
         )}
       </div>

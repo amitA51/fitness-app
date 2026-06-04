@@ -235,7 +235,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
               fontFamily: 'var(--font-display)',
               fontWeight: 900,
               fontSize: 36,
-              color: 'var(--fs-ink)',
+              color: 'var(--color-ink-on-dark)',
               lineHeight: 0.9,
               letterSpacing: '-0.02em',
               direction: 'ltr',
@@ -249,7 +249,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               letterSpacing: '0.15em',
-              color: 'rgba(var(--text-on-navy-rgb),0.45)',
+              color: 'rgba(var(--text-on-navy-rgb),0.7)',
               textTransform: 'uppercase',
               marginTop: 8,
             }}
@@ -285,7 +285,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 letterSpacing: '0.15em',
-                color: 'rgba(var(--text-on-navy-rgb),0.4)',
+                color: 'rgba(var(--text-on-navy-rgb),0.7)',
                 textTransform: 'uppercase',
               }}
             >
@@ -312,7 +312,9 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                 justifyContent: 'space-between',
                 padding: '16px 16px',
                 background: item.selected ? 'var(--fs-surface-2)' : 'var(--fs-surface)',
-                border: `2px solid ${item.selected ? 'var(--fs-primary)' : 'var(--fs-surface-2)'}`,
+                // color-border-strong, not fs-primary: in dark, fs-primary (#0a0a0a)
+                // melts into the surface and the selected outline vanishes
+                border: `2px solid ${item.selected ? 'var(--color-border-strong)' : 'var(--fs-surface-2)'}`,
                 cursor: 'pointer',
                 transition: 'all 150ms',
                 minHeight: 56,
@@ -326,7 +328,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                     width: 22,
                     height: 22,
                     borderRadius: 0,
-                    border: `2px solid ${item.selected ? 'var(--fs-primary)' : 'var(--fs-muted)'}`,
+                    border: `2px solid ${item.selected ? 'var(--color-border-strong)' : 'var(--fs-muted)'}`,
                     background: item.selected ? 'var(--fs-accent)' : 'transparent',
                     display: 'flex',
                     alignItems: 'center',
@@ -351,7 +353,9 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                     fontFamily: 'var(--font-display)',
                     fontWeight: 800,
                     fontSize: 15,
-                    color: item.selected ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                    // fs-ink, not fs-primary: selected-row text was #0a0a0a on
+                    // #1a1a1a in dark mode (1.1:1 — the invisible-warmup bug)
+                    color: item.selected ? 'var(--fs-ink)' : 'var(--fs-muted)',
                     letterSpacing: '-0.01em',
                     textAlign: 'right',
                   }}
@@ -364,7 +368,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 12,
                   letterSpacing: '0.1em',
-                  color: item.selected ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                  color: item.selected ? 'var(--fs-ink)' : 'var(--fs-muted)',
                   fontVariantNumeric: 'tabular-nums',
                   flexShrink: 0,
                 }}
@@ -545,7 +549,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
           style={{
             background: 'transparent',
             border: 'none',
-            color: 'rgba(var(--text-on-navy-rgb),0.4)',
+            color: 'rgba(var(--text-on-navy-rgb),0.7)',
             cursor: 'pointer',
             fontFamily: 'var(--font-mono)',
             fontSize: 10,

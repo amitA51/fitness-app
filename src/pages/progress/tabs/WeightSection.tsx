@@ -127,7 +127,7 @@ export const WeightSection = memo(function WeightSection({
                 textTransform: 'uppercase',
               }}
             >
-              עדיין לא תיעדת משקל
+              עדיין לא תועד משקל
             </p>
             <button type="button" onClick={onAdd} className="btn-primary" style={{ minHeight: 44 }}>
               הוסף משקל

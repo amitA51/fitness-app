@@ -131,7 +131,13 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
                 : isImprovement
                   ? 'var(--fs-accent)'
                   : 'var(--color-error)',
-              color: isSame ? 'var(--fs-muted)' : 'var(--fs-primary)',
+              // Ink matched to each fill — fs-primary on the error red was
+              // near-invisible in light mode (navy on dark red).
+              color: isSame
+                ? 'var(--fs-muted)'
+                : isImprovement
+                  ? 'var(--color-ink-on-accent)'
+                  : 'var(--color-ink-on-error)',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               fontWeight: 600,
@@ -330,11 +336,7 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
 
         {/* Comparison section */}
         {comparison && (
-          <m.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.25 }}
-          >
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>
             <div
               style={{
                 fontFamily: 'var(--font-mono)',

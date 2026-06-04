@@ -25,7 +25,8 @@ export function DangerZoneSection({ onDeleteAll }: Props) {
 
   return (
     <div className="mb-7">
-      <p className="section-title mb-3 px-1" style={{ color: 'var(--fs-warn)' }}>
+      {/* color-error, not fs-warn — the orange is 2.5:1 on the light bg */}
+      <p className="section-title mb-3 px-1" style={{ color: 'var(--color-error)' }}>
         אזור מסוכן
       </p>
       <SettingsCard>

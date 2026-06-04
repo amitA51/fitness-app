@@ -40,6 +40,7 @@ export function useFocusTrap(
     lockScroll = !isLegacyMode,
     autoFocus = !isLegacyMode,
     restoreFocus = !isLegacyMode,
+    initialFocus,
   } = isLegacyMode ? {} : options || {};
 
   const originalOverflowRef = useRef<string>('');
@@ -94,11 +95,12 @@ export function useFocusTrap(
 
     document.addEventListener('keydown', handleKeyDown);
 
-    // Auto-focus first element
+    // Auto-focus the initialFocus selector when provided (e.g. the safe action
+    // in a destructive confirm), otherwise the first focusable element.
     if (autoFocus) {
       autoFocusTimerRef.current = setTimeout(() => {
-        const focusable = getFocusable();
-        focusable[0]?.focus();
+        const preferred = initialFocus ? container.querySelector<HTMLElement>(initialFocus) : null;
+        (preferred ?? getFocusable()[0])?.focus();
       }, 50);
     } else if (isLegacyMode) {
       // Legacy mode: immediate focus without delay
@@ -126,6 +128,7 @@ export function useFocusTrap(
     lockScroll,
     autoFocus,
     restoreFocus,
+    initialFocus,
     isLegacyMode,
   ]);
 

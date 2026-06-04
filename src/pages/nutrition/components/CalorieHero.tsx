@@ -165,7 +165,10 @@ export const CalorieHero = memo(function CalorieHero({
           >
             <span ref={numberRef}>{formatThousands(calories || 0)}</span>
           </div>
-          <div className="sub">/ {goal} KCAL</div>
+          {/* dir=ltr: in the RTL page this line bidi-flipped to "KCAL 2500 /". */}
+          <div className="sub" dir="ltr">
+            / {formatThousands(goal)} KCAL
+          </div>
         </div>
       </div>
 

@@ -164,7 +164,8 @@ export const MacroStrip = memo(function MacroStrip({
                 style={{
                   fontStyle: 'normal',
                   fontSize: '16px',
-                  color: 'var(--fs-accent)',
+                  // accent-2, not accent: mint "G" on the white card is 2.1:1
+                  color: 'var(--fs-accent-2)',
                   marginInlineStart: '2px',
                 }}
               >

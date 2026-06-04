@@ -1,5 +1,6 @@
 import { Flame, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 import { memo, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ConsistencyScore } from '../../../components/insights/ConsistencyScore';
 import { MuscleDistribution } from '../../../components/insights/MuscleDistribution';
 import { useWorkoutStreak } from '../../../hooks/useWorkoutStreak';
@@ -53,6 +54,7 @@ export const OverviewTab = memo(function OverviewTab({
   sessions: WorkoutSession[];
   prs: PersonalRecord[];
 }) {
+  const navigate = useNavigate();
   const weekly = useMemo(() => summarizeWeeklyVolume(sessions), [sessions]);
 
   // Unified streak math — same hook the Dashboard chip uses, so the two surfaces
@@ -73,7 +75,7 @@ export const OverviewTab = memo(function OverviewTab({
               fontFamily: 'var(--font-display)',
               fontWeight: 700,
               fontSize: 16,
-              color: 'var(--fs-ink)',
+              color: 'var(--color-ink-on-dark)',
             }}
           >
             סקירה
@@ -85,6 +87,15 @@ export const OverviewTab = memo(function OverviewTab({
             <p style={{ fontSize: 14, color: 'var(--fs-muted)' }}>
               השלם אימון ראשון כדי לראות את הסקירה שלך
             </p>
+            {/* Same recovery-path the recovery tab's empty state offers. */}
+            <button
+              type="button"
+              onClick={() => navigate('/workout')}
+              className="btn-primary"
+              style={{ minHeight: 44 }}
+            >
+              התחל אימון
+            </button>
           </div>
         </div>
       </div>
@@ -102,7 +113,7 @@ export const OverviewTab = memo(function OverviewTab({
             fontFamily: 'var(--font-display)',
             fontWeight: 700,
             fontSize: 16,
-            color: 'var(--fs-ink)',
+            color: 'var(--color-ink-on-dark)',
           }}
         >
           סקירה

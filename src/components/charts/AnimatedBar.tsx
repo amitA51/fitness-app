@@ -80,9 +80,13 @@ export const AnimatedBar = memo(function AnimatedBar({
         <div
           style={{
             height: '100%',
-            width: `${safeValue}%`,
+            width: '100%',
+            // scaleX instead of width so the fill animates on the compositor
+            // (no layout pass per frame). Origin = right, the RTL leading edge.
+            transform: `scaleX(${safeValue / 100})`,
+            transformOrigin: '100% 50%',
             background: `linear-gradient(90deg, color-mix(in srgb, ${accent} 70%, transparent), ${accent})`,
-            transition: 'width var(--duration-premium) var(--ease-premium)',
+            transition: 'transform var(--duration-premium) var(--ease-premium)',
             boxShadow: isComplete
               ? `0 0 12px color-mix(in srgb, ${accent} 55%, transparent)`
               : 'none',

@@ -213,7 +213,8 @@
 
 .btn-danger {
   background: var(--color-error);
-  color: #fff;
+  /* per-mode ink: white fails AA on the bright dark-mode error red */
+  color: var(--color-ink-on-error);
   box-shadow: 0 4px 16px color-mix(in srgb, var(--color-error) 25%, transparent);
 }
 
@@ -599,7 +600,7 @@ textarea {
 
 .chip-fs.active {
   background: var(--fs-primary);
-  color: var(--fs-ink);
+  color: var(--color-ink-on-dark);
   border-color: var(--fs-primary);
 }
 
@@ -774,7 +775,7 @@ textarea {
       var(--fs-accent),
       color-mix(in srgb, var(--fs-accent-2) 42%, var(--fs-accent))
     ), var(--fs-accent);
-  color: #071412;
+  color: var(--color-ink-on-accent);
   font-family: var(--font-body);
   font-weight: 900;
   cursor: pointer;
@@ -836,7 +837,8 @@ textarea {
 
 .tab-row .tab.active {
   background: var(--fs-primary);
-  color: var(--fs-ink);
+  /* ink-on-dark, not fs-ink — fs-ink is dark-on-dark in light mode */
+  color: var(--color-ink-on-dark);
 }
 
 /* Value-display field (read-only numeric, mono) */
@@ -881,7 +883,7 @@ textarea {
 
 .day-cell.done {
   background: var(--fs-primary);
-  color: #fff;
+  color: var(--color-ink-on-dark);
 }
 
 .day-cell.today {
@@ -955,7 +957,7 @@ textarea {
 
 .step-btn.plus {
   background: var(--fs-accent);
-  color: #071412;
+  color: var(--color-ink-on-accent);
 }
 
 .ghost-value {
@@ -1293,7 +1295,8 @@ textarea {
 .premium-dark-surface {
   position: relative;
   overflow: hidden;
-  color: var(--fs-ink);
+  /* Always a dark surface (derived from --fs-primary) — text must be light in both modes */
+  color: var(--color-ink-on-dark);
   background: radial-gradient(
       circle at 18% 12%,
       color-mix(in srgb, var(--fs-accent) 22%, transparent),

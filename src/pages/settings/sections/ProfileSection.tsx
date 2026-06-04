@@ -1,4 +1,4 @@
-import { Scale, Target, User, Users, Zap } from 'lucide-react';
+import { Cake, Ruler, Scale, Target, User, Users, Zap } from 'lucide-react';
 import { ProfileAvatar } from '../../../components/ui/ProfileAvatar';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
 import { NumberInput } from '../../../components/ui/SettingsNumberInput';
@@ -79,23 +79,9 @@ export function ProfileSection({ profile, updateProfile, commitProfile, profileS
           <Divider />
         </div>
 
-        {/* Age */}
-        <SettingsRow
-          icon={
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 700,
-                fontSize: '12px',
-                color: 'var(--fs-warn)',
-              }}
-            >
-              גיל
-            </span>
-          }
-          label="גיל"
-          divider={true}
-        >
+        {/* Age — Lucide icon like every other row (the old "גיל" text badge
+            duplicated the label). */}
+        <SettingsRow icon={<Cake size={15} />} label="גיל" divider={true}>
           <NumberInput
             value={profile.age}
             onChange={(v) => updateProfile({ ...profile, age: v })}
@@ -106,23 +92,8 @@ export function ProfileSection({ profile, updateProfile, commitProfile, profileS
           />
         </SettingsRow>
 
-        {/* Height */}
-        <SettingsRow
-          icon={
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 700,
-                fontSize: '12px',
-                color: 'var(--fs-accent-2)',
-              }}
-            >
-              גב'
-            </span>
-          }
-          label="גובה"
-          divider={true}
-        >
+        {/* Height — Lucide icon; the old "גב'" text badge read like "גברת". */}
+        <SettingsRow icon={<Ruler size={15} />} label="גובה" divider={true}>
           <NumberInput
             value={profile.height}
             onChange={(v) => updateProfile({ ...profile, height: v })}

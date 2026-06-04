@@ -4,6 +4,7 @@
  * Deep analytics (consistency, muscle distribution, full history) live in Progress.
  */
 
+import { ArrowLeft } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ActivityRings } from '../components/charts';
@@ -320,15 +321,15 @@ export default function Dashboard() {
               width: 44,
               height: 44,
               borderRadius: '50%',
-              background: 'var(--fs-accent)',
-              color: 'var(--fs-heading)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 20,
-              fontWeight: 600,
+              // Primary (navy / near-black) pill on the mint gradient: reads in
+              // both modes. The previous accent-on-accent pill vanished in light
+              // and put light ink on bright mint in dark (contrast fail).
+              background: 'var(--fs-primary)',
+              color: 'var(--color-ink-on-dark)',
               flexShrink: 0,
             }}
           >
-            ←
+            <ArrowLeft size={22} aria-hidden="true" />
           </span>
           <span>התחל אימון</span>
         </button>

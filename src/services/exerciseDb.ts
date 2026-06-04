@@ -16,31 +16,88 @@ import { syncPersonalExercise } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
 
 /**
- * Get all personal exercises, sorted by last used.
- * Seeds built-in exercises if library is empty.
+ * Module-level seeding lock. Concurrent first loads (React StrictMode double
+ * effects, two components mounting together) used to each see an empty store,
+ * each compute the full missing-built-ins list, and each insert it — leaving
+ * every exercise duplicated in the selector. Sharing one in-flight pass makes
+ * the seed run exactly once per burst.
  */
-export const getPersonalExercises = async (): Promise<PersonalExercise[]> => {
-  let exercises = await dbGetAll<PersonalExercise>(STORES.PERSONAL_EXERCISES);
+let seedingPass: Promise<PersonalExercise[]> | null = null;
 
-  // Check for missing built-in exercises and seed them if needed
+/** Read the store and insert any built-ins missing by name. Returns the full list. */
+const loadAndSeedBuiltIns = async (): Promise<PersonalExercise[]> => {
+  const exercises = await dbGetAll<PersonalExercise>(STORES.PERSONAL_EXERCISES);
+
   const now = new Date().toISOString();
   const builtIn = getBUILT_IN_EXERCISES(now);
   const existingNames = new Set(exercises.map((e) => e.name));
   const missingBuiltIns = builtIn.filter((b) => !existingNames.has(b.name));
 
-  if (missingBuiltIns.length > 0) {
-    const newExercises = missingBuiltIns.map((ex) => ({
-      ...ex,
-      id: crypto.randomUUID?.() || generateId('ex'),
-      createdAt: now,
-    })) as PersonalExercise[];
+  if (missingBuiltIns.length === 0) return exercises;
 
-    await Promise.all(newExercises.map((ex) => dbPut(STORES.PERSONAL_EXERCISES, ex)));
-    exercises = [...exercises, ...newExercises];
+  const newExercises = missingBuiltIns.map((ex) => ({
+    ...ex,
+    id: crypto.randomUUID?.() || generateId('ex'),
+    createdAt: now,
+  })) as PersonalExercise[];
+
+  await Promise.all(newExercises.map((ex) => dbPut(STORES.PERSONAL_EXERCISES, ex)));
+  return [...exercises, ...newExercises];
+};
+
+/**
+ * Self-heal libraries hit by the old concurrent double-seed: collapse extra
+ * UNTRAINED copies of a duplicated name down to one. The seeder stamps
+ * lastUsed on built-ins, so useCount (only incremented by real workouts) is
+ * the usage marker — a copy with useCount > 0 is never deleted. Local-only
+ * delete: the legacy duplicates predate any usage, and guests (the common
+ * first-run case) have no cloud rows to tombstone.
+ */
+const healDuplicateBuiltIns = async (
+  exercises: PersonalExercise[]
+): Promise<PersonalExercise[]> => {
+  const byName = new Map<string, PersonalExercise[]>();
+  for (const ex of exercises) {
+    const key = ex.name ?? '';
+    byName.set(key, [...(byName.get(key) ?? []), ex]);
   }
 
+  const removals: PersonalExercise[] = [];
+  for (const group of byName.values()) {
+    if (group.length < 2) continue;
+    // Keep the trained copy (highest useCount, then freshest lastUsed);
+    // extras are deletable only if they were never trained.
+    const sorted = [...group].sort(
+      (a, b) =>
+        (b.useCount || 0) - (a.useCount || 0) ||
+        new Date(b.lastUsed ?? 0).getTime() - new Date(a.lastUsed ?? 0).getTime()
+    );
+    removals.push(...sorted.slice(1).filter((ex) => !ex.useCount));
+  }
+
+  if (removals.length === 0) return exercises;
+
+  await Promise.all(removals.map((ex) => dbDelete(STORES.PERSONAL_EXERCISES, ex.id)));
+  const removedIds = new Set(removals.map((ex) => ex.id));
+  return exercises.filter((ex) => !removedIds.has(ex.id));
+};
+
+/**
+ * Get all personal exercises, sorted by last used.
+ * Seeds built-in exercises if library is empty.
+ */
+export const getPersonalExercises = async (): Promise<PersonalExercise[]> => {
+  if (!seedingPass) {
+    seedingPass = loadAndSeedBuiltIns().finally(() => {
+      seedingPass = null;
+    });
+  }
+  let exercises = await seedingPass;
+
+  exercises = await healDuplicateBuiltIns(exercises);
+
   // Sort by last used, then by use count, then by name
-  exercises.sort((a, b) => {
+  exercises = [...exercises].sort((a, b) => {
     if (a.lastUsed && b.lastUsed) {
       return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime();
     }

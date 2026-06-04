@@ -200,7 +200,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     fontFamily: 'var(--font-display)',
                     fontWeight: 900,
                     fontSize: 28,
-                    color: 'var(--fs-ink)',
+                    color: 'var(--color-ink-on-dark)',
                     letterSpacing: '-0.01em',
                     lineHeight: 0.95,
                     direction: 'ltr',
@@ -215,8 +215,8 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     letterSpacing: '0.15em',
-                    color: 'var(--fs-ink)',
-                    opacity: 0.5,
+                    color: 'var(--color-ink-on-dark)',
+                    opacity: 0.7,
                     textTransform: 'uppercase',
                   }}
                 >
@@ -228,20 +228,20 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 onClick={onClose}
                 className="w-11 h-11 flex items-center justify-center transition-colors cursor-pointer"
                 style={{
-                  background: 'var(--fs-surface)',
-                  opacity: 0.1,
+                  // Tint the BACKGROUND only — element-level opacity would ghost the icon too
+                  background: 'rgba(var(--text-on-navy-rgb), 0.1)',
                   borderRadius: 0,
                 }}
                 aria-label="סגור"
               >
-                <CloseIcon className="w-5 h-5" style={{ color: 'var(--fs-ink)' }} />
+                <CloseIcon className="w-5 h-5" style={{ color: 'var(--color-ink-on-dark)' }} />
               </button>
             </div>
 
             {/* Tabs — Apple Segmented */}
             <div
               className="mt-4 grid grid-cols-2 gap-0"
-              style={{ background: 'var(--fs-surface)', opacity: 0.08 }}
+              style={{ background: 'rgba(var(--text-on-navy-rgb), 0.08)' }}
             >
               <button
                 type="button"
@@ -253,7 +253,10 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
                 style={{
                   background: activeTab === 'exercises' ? 'var(--fs-accent)' : 'transparent',
-                  color: activeTab === 'exercises' ? 'var(--fs-primary)' : 'var(--fs-surface)',
+                  color:
+                    activeTab === 'exercises'
+                      ? 'var(--color-ink-on-accent)'
+                      : 'rgba(var(--text-on-navy-rgb), 0.75)',
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.04em',
                   textTransform: 'uppercase',
@@ -272,7 +275,10 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
                 style={{
                   background: activeTab === 'templates' ? 'var(--fs-accent)' : 'transparent',
-                  color: activeTab === 'templates' ? 'var(--fs-primary)' : 'var(--fs-surface)',
+                  color:
+                    activeTab === 'templates'
+                      ? 'var(--color-ink-on-accent)'
+                      : 'rgba(var(--text-on-navy-rgb), 0.75)',
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.04em',
                   textTransform: 'uppercase',

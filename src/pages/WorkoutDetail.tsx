@@ -1154,7 +1154,7 @@ export default function WorkoutDetail() {
               fontFamily: 'var(--font-mono)',
               fontWeight: 600,
               fontSize: 13,
-              color: '#071412',
+              color: 'var(--color-ink-on-accent)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

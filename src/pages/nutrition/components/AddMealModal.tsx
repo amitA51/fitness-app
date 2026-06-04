@@ -276,7 +276,9 @@ export const AddMealModal = memo(function AddMealModal({
                       marginInlineStart: '8px',
                     }}
                   >
-                    {food.servingSize}
+                    {/* Leading middot keeps the accessible name from reading
+                        as one word ("חזה עוף100ג") — margin alone is visual. */}
+                    · {food.servingSize}
                   </span>
                 </div>
                 <span

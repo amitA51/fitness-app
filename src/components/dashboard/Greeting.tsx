@@ -45,7 +45,7 @@ export function Greeting({ weekNumber }: GreetingProps) {
             lineHeight: 0.9,
             letterSpacing: '-0.02em',
             textTransform: 'uppercase',
-            color: 'var(--fs-ink)',
+            color: 'var(--color-ink-on-dark)',
             marginTop: 8,
           }}
         >

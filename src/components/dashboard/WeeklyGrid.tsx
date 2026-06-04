@@ -190,7 +190,10 @@ export const WeeklyGrid = memo(function WeeklyGrid({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
+          // minmax(0, 1fr): the .day-cell min-height (48px) + aspect-ratio gives
+          // each column a 48px min-content width, which overflows narrow screens
+          // and clips the last day. Allow columns to shrink below min-content.
+          gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
           gap: 3,
         }}
       >
@@ -204,6 +207,10 @@ export const WeeklyGrid = memo(function WeeklyGrid({
               key={day.date.toISOString().split('T')[0]}
               className={classes.join(' ')}
               style={{
+                // width: 100% pins the cell to its track so aspect-ratio derives
+                // height from width (not the 48px min-height transferred back as
+                // width, which overflowed the row on narrow screens).
+                width: '100%',
                 aspectRatio: '1 / 1',
                 fontSize: day.isToday ? 16 : 14,
               }}

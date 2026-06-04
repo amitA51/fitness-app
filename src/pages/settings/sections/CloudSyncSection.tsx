@@ -1,4 +1,4 @@
-import { ArrowUpFromLine, Check, Cloud, CloudOff, Download, RefreshCw } from 'lucide-react';
+import { Check, Cloud, CloudOff, Download, RefreshCw, Upload } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
 import { Divider } from '../components/Divider';
@@ -109,27 +109,27 @@ export function CloudSyncSection({
         <div
           style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}
         >
-          {/* Sync All — primary */}
+          {/* Sync All — the section's single primary; refresh icon = two-way sync */}
           <Button
             variant="primary"
             fullWidth
             shape="sharp"
             disabled={disabled}
-            icon={<ArrowUpFromLine size={14} aria-hidden="true" />}
+            icon={<RefreshCw size={14} aria-hidden="true" />}
             onClick={onSyncAll}
           >
             סנכרון מלא
           </Button>
 
-          {/* Individual Sync Buttons */}
+          {/* Directional pair — equal secondary siblings, mirrored up/down icons */}
           <div className="flex gap-2">
             <div className="flex-1">
               <Button
-                variant="primary"
+                variant="secondary"
                 fullWidth
                 shape="sharp"
                 disabled={disabled}
-                icon={<RefreshCw size={14} aria-hidden="true" />}
+                icon={<Upload size={14} aria-hidden="true" />}
                 onClick={onSyncToCloud}
               >
                 {isSyncingUp ? 'מעלה...' : 'העלה לענן'}

@@ -84,9 +84,9 @@ const variantStyles: Record<ButtonVariant, string> = {
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
-  // Danger — warn fill, dark text on bright bg
+  // Danger — error fill (destructive ≠ warn) with per-mode AA ink
   danger: `
-    bg-[var(--fs-warn)] text-black
+    bg-[var(--color-error)] text-[var(--color-ink-on-error)]
     hover:brightness-90
     active:brightness-90
     disabled:opacity-50 disabled:cursor-not-allowed
@@ -217,7 +217,7 @@ const fsStyles: Record<FsVariant, React.CSSProperties> = {
   },
   'fs-danger': {
     background: 'var(--color-error)',
-    color: 'var(--color-ink-on-dark)',
+    color: 'var(--color-ink-on-error)',
   },
   'fs-glass': {
     background: 'var(--fs-overlay-hover)',

@@ -37,7 +37,9 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
   const activeSetNumber = Math.min(curCompletedSets + 1, Math.max(curTotalSets, 1));
   const completeLabel = isExerciseComplete
     ? 'התרגיל הושלם'
-    : `החלק לסימון סט ${activeSetNumber} מתוך ${curTotalSets || 1} כבוצע`;
+    : // Short form ("סט 1/3") — the long "סט X מתוך Y כבוצע" wrapped the
+      // slider label to two lines on narrow screens.
+      `החלק לסימון סט ${activeSetNumber}/${curTotalSets || 1}`;
 
   return (
     <div

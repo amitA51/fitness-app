@@ -74,20 +74,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     if (initialLoadRef.current) return;
     initialLoadRef.current = true;
 
-    let cancelled = false;
+    // No `cancelled` cleanup guard here, on purpose: under StrictMode the first
+    // mount's cleanup ran before loadData resolved, the remount was blocked by
+    // initialLoadRef, and the skipped setLoading(false) left the dashboard
+    // skeletons up forever. React 18 makes post-unmount setState a no-op, so
+    // always clearing the flag is safe.
     (async () => {
       setLoading(true);
       setError(null);
       try {
         await loadData();
-        if (!cancelled) setLoading(false);
-      } catch {
-        if (!cancelled) setLoading(false);
+      } finally {
+        setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
   }, [loadData]);
 
   const contextValue = useMemo(

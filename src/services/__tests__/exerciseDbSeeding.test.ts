@@ -28,6 +28,41 @@ describe('exerciseDb seeding (fresh / empty storage)', () => {
     expect(second.length).toBe(first.length);
   });
 
+  it('does not duplicate built-ins when first calls race (StrictMode / concurrent mounts)', async () => {
+    // Reproduces the live bug: two concurrent first calls both see an empty
+    // store, both compute the full missing-built-ins list, and both insert —
+    // every exercise then appears twice in the selector.
+    await Promise.all([getPersonalExercises(), getPersonalExercises()]);
+
+    const exercises = await getPersonalExercises();
+    const names = exercises.map((e) => e.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it('self-heals pre-existing unused duplicate built-ins on load', async () => {
+    // Users hit by the old double-seed have two unused copies of every
+    // built-in persisted. A later load should collapse them back to one.
+    const first = await getPersonalExercises();
+    const seededCount = first.length;
+
+    // Simulate the legacy double-seed: persist an extra copy of one. Note the
+    // seeder stamps lastUsed on built-ins, so real duplicates carry a lastUsed
+    // timestamp — only useCount distinguishes a copy that was actually trained.
+    const victim = first[0];
+    if (!victim) throw new Error('expected seeded exercises');
+    const { dbPut, STORES } = await import('../indexedDBCore');
+    await dbPut(STORES.PERSONAL_EXERCISES, {
+      ...victim,
+      id: 'legacy-duplicate-copy',
+      useCount: 0,
+      lastUsed: new Date().toISOString(),
+    });
+
+    const healed = await getPersonalExercises();
+    expect(healed.length).toBe(seededCount);
+    expect(healed.filter((e) => e.name === victim.name).length).toBe(1);
+  });
+
   it('still seeds when crypto.randomUUID is unavailable (non-secure context)', async () => {
     // Reproduces the fresh-only bug: over plain HTTP (e.g. a LAN IP) the
     // browser does not expose crypto.randomUUID, so the seeding branch used to

@@ -2,7 +2,7 @@ import { m } from 'framer-motion';
 import { X as CloseIcon, Dumbbell as DumbbellIcon } from 'lucide-react';
 // ConfirmExitOverlay - Confirmation dialog for finishing/canceling workout
 // Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
-// Sport Annual restyle: navy masthead + bone body, sharp corners, editorial typography
+// Fresh Steel / Obsidian: primary masthead + surface body, sharp corners, editorial typography
 import { memo, useCallback } from 'react';
 import { triggerHaptic } from '../../../utils/haptics';
 import { ModalOverlay } from '../../ui/ModalOverlay';
@@ -83,6 +83,9 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
         lockScroll
         closeOnBackdropClick
         closeOnEscape
+        // Destructive confirm (cancel intent): focus lands on the safe "חזור"
+        // so Enter doesn't discard the session by default.
+        initialFocusSelector={isFinishing ? undefined : '[data-safe-action]'}
         ariaLabel={isFinishing ? 'סיום אימון' : 'ביטול אימון'}
       >
         <m.div
@@ -110,7 +113,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                 width: 48,
                 height: 48,
                 backgroundColor: isFinishing ? 'var(--fs-accent)' : 'var(--fs-warn)',
-                color: 'var(--fs-heading)',
+                color: 'var(--color-ink-on-accent)',
                 borderRadius: 0,
               }}
             >
@@ -140,7 +143,8 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   fontSize: '22px',
                   fontWeight: 900,
                   letterSpacing: '-0.01em',
-                  color: 'var(--fs-ink)',
+                  // ink-on-dark, not fs-ink — fs-ink is 1.07:1 on the navy masthead in light
+                  color: 'var(--color-ink-on-dark)',
                   lineHeight: 0.95,
                 }}
               >
@@ -297,7 +301,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                 className="btn-primary focus-ring flex items-center justify-center gap-2"
                 style={{
                   backgroundColor: isFinishing ? 'var(--fs-primary)' : 'var(--color-error)',
-                  color: isFinishing ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                  color: isFinishing ? 'var(--fs-accent)' : 'var(--color-ink-on-error)',
                   opacity: isSaving ? 0.7 : 1,
                   cursor: isSaving ? 'not-allowed' : 'pointer',
                   minHeight: 44,
@@ -361,6 +365,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
               )}
 
               <m.button
+                data-safe-action
                 whileHover={{ scale: 1.005 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={(e) => {
