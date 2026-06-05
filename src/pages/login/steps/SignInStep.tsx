@@ -79,7 +79,7 @@ export function SignInStep({
           setGeneralError('יש לאמת את כתובת הדוא"ל לפני התחברות');
         } else {
           logger.auth.warn('Unrecognized sign-in error', error);
-          setGeneralError('אירעה שגיאה בלתי צפויה. נסה שוב.');
+          setGeneralError('אירעה שגיאה בלתי צפויה. יש לנסות שוב.');
         }
         return;
       }

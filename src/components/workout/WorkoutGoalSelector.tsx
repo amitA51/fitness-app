@@ -8,7 +8,7 @@ interface WorkoutGoalSelectorProps {
 
 const GOALS: Array<{ id: WorkoutGoal; label: string; description: string }> = [
   { id: 'strength', label: 'כוח', description: 'משקלים כבדים ומנוחות ארוכות יותר' },
-  { id: 'hypertrophy', label: 'היפרטרופיה', description: 'פוקוס על בניית שריר ונפח' },
+  { id: 'hypertrophy', label: 'היפרטרופיה', description: 'התמקדות בבניית שריר ונפח' },
   { id: 'endurance', label: 'סיבולת', description: 'יותר חזרות וקצב עבודה גבוה' },
   { id: 'maintenance', label: 'שימור', description: 'אימון מאוזן לשמירה על הכוח' },
   { id: 'general', label: 'כללי', description: 'אימון חופשי שמתאים לרוב המשתמשים' },

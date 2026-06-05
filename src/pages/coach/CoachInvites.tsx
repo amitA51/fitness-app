@@ -94,7 +94,7 @@ export default function CoachInvites() {
               marginBottom: 10,
             }}
           >
-            הגעת למכסת המושבים. שדרג את המנוי כדי להוסיף מתאמנים.
+            הגעתם לתקרת המושבים. יש לשדרג את המנוי כדי להוסיף מתאמנים.
           </p>
         )}
         <div className="mb-2">

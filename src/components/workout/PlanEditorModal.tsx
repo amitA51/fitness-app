@@ -361,6 +361,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                     }}
                     role="button"
                     tabIndex={0}
+                    aria-label="הוספת תרגילים לתוכנית"
                     style={{
                       height: 160,
                       borderRadius: 0,
@@ -374,7 +375,7 @@ const PlanEditorModal: React.FC<PlanEditorModalProps> = ({
                       gap: 8,
                     }}
                   >
-                    <DumbbellIcon className="w-8 h-8" />
+                    <DumbbellIcon className="w-8 h-8" aria-hidden="true" />
                     <span style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>
                       לחץ כאן להוספת תרגילים
                     </span>

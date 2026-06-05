@@ -445,7 +445,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   color: 'rgba(255,255,255,0.5)',
                 }}
               >
-                בוא נתחיל לבנות את ההיסטוריה שלך
+                בואו נתחיל לבנות את ההיסטוריה שלך
               </div>
             </div>
           )}

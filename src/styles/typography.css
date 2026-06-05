@@ -17,6 +17,7 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
+  text-align: start;
 }
 
 body {
@@ -336,13 +337,9 @@ h4,
    RTL SUPPORT
    ============================================================================ */
 
-[dir="rtl"] {
-  text-align: right;
-}
-
-[dir="rtl"] .ltr-only {
+.ltr-only {
   direction: ltr;
-  text-align: left;
+  text-align: end;
 }
 
 /* ============================================================================
@@ -364,26 +361,7 @@ h4,
   color: var(--fs-ink);
 }
 
-.skip-link {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 110;
-  transform: translateY(-150%);
-  background: var(--fs-primary);
-  color: var(--fs-accent);
-  padding: 10px 14px;
-  font-family: var(--font-display);
-  font-weight: var(--font-extrabold);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  text-decoration: none;
-  transition: transform var(--duration-fast) var(--ease-editorial);
-}
-
-.skip-link:focus-visible {
-  transform: translateY(0);
-}
+/* skip-link styles consolidated in global.css */
 
 /* ============================================================================
    PAGE-SPECIFIC TYPOGRAPHY

@@ -53,6 +53,9 @@ const DEFAULT_SETTINGS: VoiceSettings = {
   announceReady: true,
 };
 
+// Feminine number forms — correct for standalone countdown ("...3, 2, 1").
+// If these are ever placed before a masculine noun (e.g. "3 סטים"), flip to
+// masculine: אחד, שניים, שלושה, ארבעה, חמישה, שישה, שבעה, שמונה, תשעה, עשרה.
 const HEBREW_NUMBERS: Record<number, string> = {
   1: 'אחת',
   2: 'שתיים',

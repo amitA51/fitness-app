@@ -144,7 +144,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                   textTransform: 'uppercase',
                 }}
               >
-                Settings · הגדרות
+                הגדרות
               </div>
               <h2
                 style={{

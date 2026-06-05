@@ -230,7 +230,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       }}
     >
       <span id={instructionId} className="sr-only">
-        גרור את הכפתור עד סוף המסילה, או לחץ Enter או רווח כדי לסמן את הסט כבוצע.
+        ניתן לגרור עד סוף המסילה, או ללחוץ Enter או רווח כדי לסמן את הסט כבוצע.
       </span>
       {/* Accent fill — trails behind the thumb with opacity */}
       <div
@@ -270,7 +270,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
         style={{
           top: 0,
           bottom: 0,
-          [isRTL ? 'left' : 'right']: 14,
+          insetInlineEnd: 14,
           color: 'color-mix(in srgb, var(--fs-accent) 40%, transparent)',
           opacity: 1 - progress,
           transition: isDragging ? 'none' : 'opacity 200ms ease',
@@ -293,7 +293,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
           top: TRACK_PAD,
           width: THUMB_SIZE,
           height: TRACK_HEIGHT - TRACK_PAD * 2,
-          [isRTL ? 'right' : 'left']: TRACK_PAD,
+          insetInlineStart: TRACK_PAD,
           ...(isFlinging ? {} : { transform: `translateX(${offset * sign}px)` }),
           background: 'var(--fs-accent)',
           color: 'var(--color-ink-on-accent)',

@@ -69,7 +69,7 @@ export const ProgressionRecommendation: React.FC<ProgressionRecommendationProps>
             {data.suggestedWeight > 0 ? (
               <>
                 <span className={colorClass}>{data.suggestedWeight}</span>
-                <span className="text-slate-400 text-sm mr-1">ק"ג</span>
+                <span className="text-slate-400 text-sm me-1">ק"ג</span>
               </>
             ) : (
               <span className="text-slate-400">-</span>

@@ -1,3 +1,13 @@
+## Hebrew-first skills (installed globally, use in this project)
+
+This is a Hebrew RTL PWA. The following skills are installed and MUST be used when their domain comes up — invoke via the Skill tool before doing the work manually:
+
+- **hebrew-content-writer** — any time you write or edit user-visible Hebrew copy (UX text, buttons, empty states, errors, aria-labels, marketing). Complements the copy self-audit in `.claude/rules/common/ui-preflight.md`.
+- **hebrew-rtl-best-practices** — any RTL/bidi layout work: direction issues, CSS logical properties, Tailwind RTL, icon mirroring, mixed Hebrew/English/numbers rendering.
+- **israeli-accessibility-compliance** — accessibility work beyond generic WCAG: IS 5568 (תקן ישראלי), Hebrew screen readers (NVDA/JAWS/VoiceOver), RTL ARIA patterns. Use for a11y audits of this app.
+- **hebrew-document-generator** — if asked to produce Hebrew PDF/DOCX/PPTX (e.g. workout reports, coach documents, invoices).
+- **hebrew-nlp-toolkit** — if asked to process Hebrew text programmatically (tokenization, NER, speech-to-text for Hebrew).
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.

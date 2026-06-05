@@ -56,8 +56,8 @@ body {
 
 .skip-link {
   position: absolute;
-  top: -100%;
-  inset-inline-start: 0;
+  top: 12px;
+  inset-inline-start: 12px;
   background: var(--fs-primary);
   color: var(--fs-signal);
   padding: 0.5rem 1rem;
@@ -67,11 +67,12 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   text-decoration: none;
-  transition: top 0.15s ease;
+  transform: translateY(-110%);
+  transition: transform var(--duration-fast) ease;
 }
 
-.skip-link:focus {
-  top: 0;
+.skip-link:focus-visible {
+  transform: translateY(0);
 }
 
 /* ============================================================================
@@ -426,12 +427,7 @@ body {
   }
 
   .data-strip > div + div {
-    border-left: 2px solid var(--color-border-strong);
-  }
-
-  [dir="rtl"] .data-strip > div + div {
-    border-left: none;
-    border-right: 2px solid var(--color-border-strong);
+    border-inline-start: 2px solid var(--color-border-strong);
   }
 
   .data-strip .val {
@@ -1114,14 +1110,14 @@ main > * {
 }
 
 .swipeable-actions-left {
-  left: 0;
-  padding-left: 12px;
+  inset-inline-start: 0;
+  padding-inline-start: 12px;
   background: linear-gradient(to right, var(--color-success), transparent);
 }
 
 .swipeable-actions-right {
-  right: 0;
-  padding-right: 12px;
+  inset-inline-end: 0;
+  padding-inline-end: 12px;
   background: linear-gradient(to left, var(--color-danger), transparent);
 }
 

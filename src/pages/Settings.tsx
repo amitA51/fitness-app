@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { SectionLabel } from '../components/ui/SettingsSectionLabel';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { deleteAllUserData } from '../services/settingsService';
@@ -171,6 +172,28 @@ export default function Settings() {
         )}
 
         <DataAboutSection />
+
+        {/* Accessibility statement link — required by Israeli IS 5568 regulations */}
+        <div
+          style={{
+            marginTop: '24px',
+            paddingTop: '16px',
+            borderTop: '1px solid var(--fs-border)',
+            textAlign: 'center',
+          }}
+        >
+          <Link
+            to="/accessibility"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '14px',
+              color: 'var(--fs-accent)',
+              textDecoration: 'underline',
+            }}
+          >
+            הצהרת נגישות
+          </Link>
+        </div>
       </div>
     </div>
   );

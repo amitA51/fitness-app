@@ -219,7 +219,7 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
       );
 
       if (completedExercises.length === 0) {
-        setSaveError('לא הושלמו סטים באימון זה. השלם לפחות סט אחד כדי לשמור את האימון.');
+        setSaveError('לא הושלם אף סט. יש להשלים לפחות סט אחד כדי לשמור.');
         return;
       }
 

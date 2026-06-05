@@ -49,7 +49,7 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
     ? 'התרגיל הושלם'
     : // Short form ("סט 1/3") — the long "סט X מתוך Y כבוצע" wrapped the
       // slider label to two lines on narrow screens.
-      `החלק לסימון סט ${activeSetNumber}/${curTotalSets || 1}`;
+      `החלק לסיום סט ${activeSetNumber}/${curTotalSets || 1}`;
 
   return (
     <div

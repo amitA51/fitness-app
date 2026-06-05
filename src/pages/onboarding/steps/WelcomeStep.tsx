@@ -71,7 +71,7 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
             marginTop: '4px',
           }}
         >
-          בוא נתחיל לבנות את תוכנית האימונים המושלמת עבורך
+          בואו נתחיל לבנות את תוכנית האימונים המושלמת עבורך
         </m.p>
 
         {/* Feature Highlights */}
@@ -119,7 +119,7 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
         className="px-6 pb-8 pt-4"
       >
         <Button variant="editorial" onClick={onNext} fullWidth style={{ minHeight: '56px' }}>
-          בוא נתחיל
+          בואו נתחיל
           {/* forward = left in RTL */}
           <ChevronLeft size={24} aria-hidden="true" />
         </Button>

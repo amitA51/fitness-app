@@ -1,7 +1,13 @@
 // ExerciseNav - Fresh Steel v2 Compact Nav Row
 // Prev/Next arrows + center panel (set info · position) + list button + add exercise button
 
-import { ChevronLeft as ChevronLeftIcon, Link2, List, Plus } from 'lucide-react';
+import {
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  Link2,
+  List,
+  Plus,
+} from 'lucide-react';
 import { memo, useCallback, useEffect } from 'react';
 import type { Exercise } from '../../../types';
 import type { SupersetGroup } from '../core/workoutTypes';
@@ -92,7 +98,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
             flexShrink: 0,
           }}
         >
-          <ChevronLeftIcon size={16} strokeWidth={2.5} style={{ transform: 'rotate(180deg)' }} />
+          <ChevronRightIcon size={16} strokeWidth={2.5} />
         </button>
 
         {/* Center panel */}

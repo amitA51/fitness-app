@@ -135,9 +135,6 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
         exit={{ opacity: 0, y: exitY, scale: 0.98 }}
         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         className="flex items-start gap-3 px-4 py-3"
-        role={toast.variant === 'error' ? 'alert' : 'status'}
-        aria-live={toast.variant === 'error' ? 'assertive' : 'polite'}
-        aria-atomic="true"
         style={{
           backgroundColor: isWater ? 'rgba(var(--fs-accent-rgb), 0.16)' : 'var(--fs-bg)',
           border: `1px solid ${style.accent}`,
@@ -250,24 +247,55 @@ export const ToastContainer = memo(() => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const topToasts = useMemo(() => toasts.filter((t) => t.position === 'top'), [toasts]);
+  const topPoliteToasts = useMemo(
+    () => toasts.filter((t) => t.position === 'top' && t.variant !== 'error'),
+    [toasts]
+  );
+  const topAlertToasts = useMemo(
+    () => toasts.filter((t) => t.position === 'top' && t.variant === 'error'),
+    [toasts]
+  );
   const bottomToasts = useMemo(() => toasts.filter((t) => t.position === 'bottom'), [toasts]);
 
   return (
     <>
+      {/* Top — polite (success / info / water) */}
       <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
         className="fixed top-4 inset-x-4 flex flex-col items-center gap-2 pointer-events-none"
         style={{ zIndex: Z_INDEX.toast }}
       >
         <AnimatePresence>
-          {topToasts.map((t) => (
+          {topPoliteToasts.map((t) => (
             <div key={t.id} className="pointer-events-auto w-full max-w-sm">
               <ToastItem toast={t} onDismiss={dismiss} />
             </div>
           ))}
         </AnimatePresence>
       </div>
+      {/* Top — assertive (error only) */}
       <div
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        className="fixed top-4 inset-x-4 flex flex-col items-center gap-2 pointer-events-none"
+        style={{ zIndex: Z_INDEX.toast }}
+      >
+        <AnimatePresence>
+          {topAlertToasts.map((t) => (
+            <div key={t.id} className="pointer-events-auto w-full max-w-sm">
+              <ToastItem toast={t} onDismiss={dismiss} />
+            </div>
+          ))}
+        </AnimatePresence>
+      </div>
+      {/* Bottom — polite (ambient / water reminders) */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
         className="fixed inset-x-4 flex flex-col items-center gap-2 pointer-events-none"
         style={{
           zIndex: Z_INDEX.toast,

@@ -68,7 +68,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       isOpen={isOpen}
       onClose={onCancel}
       variant="modal"
-      ariaLabel={title}
+      ariaLabelledBy={titleId}
       ariaDescribedBy={descId}
     >
       <div className="w-full max-w-sm p-6 flex flex-col gap-4" style={{ textAlign: 'start' }}>

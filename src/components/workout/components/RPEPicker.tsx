@@ -121,14 +121,16 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
       <div
         role="radiogroup"
         aria-label="ערך RPE"
-        tabIndex={0}
+        tabIndex={-1}
         onKeyDown={(e) => {
           const idx = RPE_VALUES.indexOf(selected ?? RPE_VALUES[0]!);
-          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          // RTL layout: ArrowLeft = visually forward = higher RPE value
+          //             ArrowRight = visually backward = lower RPE value
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
             e.preventDefault();
             const next = RPE_VALUES[Math.min(idx + 1, RPE_VALUES.length - 1)]!;
             handleSelect(next);
-          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
             e.preventDefault();
             const prev = RPE_VALUES[Math.max(idx - 1, 0)]!;
             handleSelect(prev);
@@ -220,6 +222,7 @@ const RPEPicker = memo<RPEPickerProps>(({ isOpen, currentValue, targetRPE, onSel
                 key={tag.value}
                 type="button"
                 onClick={() => handleTagSelect(tag.value)}
+                aria-pressed={isActive}
                 style={{
                   minHeight: 44,
                   padding: '8px 14px',

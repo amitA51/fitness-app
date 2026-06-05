@@ -73,9 +73,9 @@ export function CoachPage({
         </div>
         {actions}
       </header>
-      <main className="px-5 py-5" style={{ paddingBottom: 96 }}>
+      <div className="px-5 py-5" style={{ paddingBottom: 96 }}>
         {children}
-      </main>
+      </div>
     </div>
   );
 }

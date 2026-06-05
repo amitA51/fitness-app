@@ -83,7 +83,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           setGeneralError('כתובת אימייל זו כבר רשומה');
         } else {
           logger.auth.warn('Unrecognized sign-up error', error);
-          setGeneralError('אירעה שגיאה בלתי צפויה. נסה שוב.');
+          setGeneralError('אירעה שגיאה בלתי צפויה. יש לנסות שוב.');
         }
         return;
       }
@@ -169,7 +169,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
             lineHeight: 1.5,
           }}
         >
-          לחץ על הקישור בדוא"ל כדי להפעיל את החשבון
+          יש ללחוץ על הקישור בדוא"ל כדי להפעיל את החשבון
         </m.p>
 
         <m.div

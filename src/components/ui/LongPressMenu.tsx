@@ -36,6 +36,8 @@ interface LongPressMenuProps {
   onClose?: () => void;
   /** Additional class for the wrapper */
   className?: string;
+  /** Accessible label for the trigger element */
+  ariaLabel?: string;
 }
 
 /**
@@ -59,6 +61,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
   onOpen,
   onClose,
   className = '',
+  ariaLabel,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -249,6 +252,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
         className={`${className} ${isPressed ? 'scale-[0.98]' : ''} transition-transform duration-150`}
         role="button"
         aria-haspopup="menu"
+        aria-label={ariaLabel}
         tabIndex={0}
         onKeyDown={(e) => {
           if (!enabled) return;

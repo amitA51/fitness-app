@@ -133,7 +133,7 @@ function GroupEditor({
     setBusy(true);
     const { error } = await setGroupMembers(group.id, [...members]);
     setBusy(false);
-    showToast(error ? 'שמירת החברים נכשלה' : 'החברים נשמרו', error ? 'error' : 'success');
+    showToast(error ? 'שמירת חברי הקבוצה נכשלה' : 'חברי הקבוצה נשמרו', error ? 'error' : 'success');
   };
 
   const broadcast = async () => {

@@ -63,6 +63,7 @@ const MessageThread = lazy(() => import('./pages/coach/MessageThread'));
 const ClientDetail = lazy(() => import('./pages/coach/ClientDetail'));
 const MyCoach = lazy(() => import('./pages/MyCoach'));
 const JoinPage = lazy(() => import('./pages/JoinPage'));
+const AccessibilityStatement = lazy(() => import('./pages/AccessibilityStatement'));
 
 const WorkoutContent = lazy(async () => {
   const mod = await import('./components/workout/ActiveWorkoutNew');
@@ -147,6 +148,7 @@ const PATH_LABEL_MAP: Array<[RegExp, string]> = [
   [/^\/templates/, 'תבניות'],
   [/^\/detail/, 'פרטי אימון'],
   [/^\/settings/, 'הגדרות'],
+  [/^\/accessibility/, 'הצהרת נגישות'],
 ];
 
 function getPageAccent(path: string): PageAccent {
@@ -478,6 +480,14 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
           </PageErrorBoundary>
         }
       />
+      <Route
+        path="/accessibility"
+        element={
+          <PageErrorBoundary pageLabel="הצהרת נגישות">
+            <AccessibilityStatement />
+          </PageErrorBoundary>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -490,13 +500,17 @@ const MemoizedBottomNav = memo(BottomNav);
 function AppShell() {
   const location = useLocation();
   const reduceMotion = useReducedMotion() ?? false;
-  const mainRef = useRef<HTMLDivElement | null>(null);
+  const mainRef = useRef<HTMLElement | null>(null);
   const prevPathRef = useRef<string | null>(null);
 
   const isWorkoutActive = location.pathname.startsWith('/workout');
 
   const pageAccent = useMemo(() => getPageAccent(location.pathname), [location.pathname]);
-  const pageLabel = useMemo(() => getPageLabel(location.pathname), [location.pathname]);
+
+  // Live-region text is kept in state so React flushes the DOM update before
+  // the rAF fires — guaranteeing screen readers see the new text on the same
+  // frame as the focus move (WCAG 2.4.2 / live-region timing fix).
+  const [liveAnnouncement, setLiveAnnouncement] = useState('');
 
   useLayoutEffect(() => {
     if (prevPathRef.current) {
@@ -520,11 +534,19 @@ function AppShell() {
       logger.app.warn('Failed to restore scroll position', error);
     }
 
-    // Single rAF: scroll + focus together after the new route paints.
+    // Set document title (WCAG 2.4.2) — one call site, driven by PATH_LABEL_MAP.
+    const label = getPageLabel(location.pathname);
+    document.title = `${label} — SparkOS Fitness`;
+
+    // Single rAF: scroll + focus + live-region update after the new route paints.
     requestAnimationFrame(() => {
       window.scrollTo({ top: targetY, behavior: 'auto' });
       const el = mainRef.current ?? (document.getElementById('main-content') as HTMLElement | null);
       el?.focus({ preventScroll: true });
+      // Announce navigation AFTER paint so the live region fires in the same
+      // frame as the focus move (avoids the race where the old page is still
+      // in the DOM when the region updates).
+      setLiveAnnouncement(`ניווט: ${label}`);
     });
 
     prevPathRef.current = location.pathname;
@@ -590,12 +612,13 @@ function AppShell() {
               <ToastContainer />
               {/* First-use guidance — auto-opens once, re-launchable from Settings. */}
               <WelcomeGuideSheet />
-              <div className="sr-only" aria-live="polite">
-                {pageLabel}
+              <div className="sr-only" aria-live="polite" aria-atomic="true">
+                {liveAnnouncement}
               </div>
-              {/* Scroll/focus container, not a landmark: each page renders its own
-                <main>, so this stays a <div> to avoid nested-main invalid HTML. */}
-              <div
+              {/* Scroll/focus container — IS the <main> landmark. Pages that
+                previously rendered their own <main> now use <div> to avoid
+                nested-main invalid HTML (Dashboard, coach/_shared). */}
+              <main
                 ref={mainRef}
                 id="main-content"
                 className={cn('flex-1 overflow-y-auto')}
@@ -625,7 +648,7 @@ function AppShell() {
                     </AnimatePresence>
                   )}
                 </Suspense>
-              </div>
+              </main>
               {!isWorkoutActive && <MemoizedBottomNav />}
             </div>
           </PageThemeProvider>

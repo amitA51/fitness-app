@@ -67,5 +67,5 @@ export const STEPS = [
   { id: 'goals', title: 'מטרות כושר', subtitle: 'מה המטרות שלך?' },
   { id: 'experience', title: 'ניסיון', subtitle: 'רמת האימון שלך' },
   { id: 'preferences', title: 'העדפות', subtitle: 'התאם אישית' },
-  { id: 'complete', title: 'מוכן!', subtitle: 'בוא נתחיל' },
+  { id: 'complete', title: 'מוכן!', subtitle: 'בואו נתחיל' },
 ];

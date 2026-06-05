@@ -69,7 +69,7 @@ export function CompleteStep({ data }: CompleteStepProps) {
           marginBottom: '32px',
         }}
       >
-        הפרופיל שלך הוגדר. בוא נתחיל!
+        הפרופיל שלך הוגדר. בואו נתחיל!
       </m.p>
 
       {/* Summary Cards */}

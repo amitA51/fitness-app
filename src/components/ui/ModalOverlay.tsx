@@ -57,6 +57,8 @@ interface ModalOverlayProps {
   lockScroll?: boolean;
   /** Accessibility label for the modal */
   ariaLabel?: string;
+  /** ID of element that labels the modal (takes precedence over ariaLabel) */
+  ariaLabelledBy?: string;
   /** ID of element that describes the modal */
   ariaDescribedBy?: string;
 }
@@ -120,6 +122,7 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
   closeOnEscape = true,
   lockScroll = true,
   ariaLabel,
+  ariaLabelledBy,
   ariaDescribedBy,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -218,7 +221,8 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
           onClick={handleBackdropClick}
           role="dialog"
           aria-modal="true"
-          aria-label={ariaLabel}
+          aria-label={ariaLabelledBy ? undefined : ariaLabel}
+          aria-labelledby={ariaLabelledBy}
           aria-describedby={ariaDescribedBy}
         >
           <m.div

@@ -599,7 +599,7 @@ function EmptyState({ compact }: { compact: boolean }) {
           letterSpacing: '0.04em',
         }}
       >
-        התחל להתאמן כדי ליצור את הפרק הראשון
+        התחל להתאמן כדי לרשום את האימון הראשון שלך
       </div>
     </Card>
   );

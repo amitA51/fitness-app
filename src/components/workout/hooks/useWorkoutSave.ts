@@ -100,7 +100,7 @@ export function useWorkoutSave({
     if (!buildResult) {
       // No completed sets - show message to user instead of silently exiting
       // Keep overlay open and show error
-      setSaveError('לא הושלמו סטים באימון זה. השלם לפחות סט אחד כדי לשמור את האימון.');
+      setSaveError('לא הושלם אף סט. יש להשלים לפחות סט אחד כדי לשמור.');
       return;
     }
 

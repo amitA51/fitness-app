@@ -9,7 +9,7 @@
 
 import { m, useReducedMotion } from 'framer-motion';
 import {
-  ArrowRight,
+  ArrowLeft,
   BarChart2,
   ChevronRight,
   Clock,
@@ -531,7 +531,7 @@ export default function WorkoutDetail() {
               cursor: 'pointer',
             }}
           >
-            <ArrowRight size={14} />
+            <ArrowLeft size={14} />
             חזרה לבית
           </button>
           <button

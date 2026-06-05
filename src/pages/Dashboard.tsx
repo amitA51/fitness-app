@@ -285,7 +285,7 @@ export default function Dashboard() {
 
       <DashboardHeader hasSessionToday={hasSessionToday} />
 
-      <main style={{ padding: '20px 20px 32px' }}>
+      <div style={{ padding: '20px 20px 32px' }}>
         {/* 1. Single primary CTA — opens the start-workout choice sheet */}
         <button
           type="button"
@@ -460,7 +460,7 @@ export default function Dashboard() {
         <RecentPRBanner />
 
         <div style={{ height: 24 }} />
-      </main>
+      </div>
 
       <StartWorkoutSheet
         isOpen={isStartSheetOpen}

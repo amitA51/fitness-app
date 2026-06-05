@@ -608,6 +608,8 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
         style={{ background: 'var(--fs-surface)', minHeight: 0 }}
         role="button"
         tabIndex={0}
+        aria-label={isPaused ? 'המשך' : 'השהיה'}
+        aria-pressed={isPaused}
         onClick={onTogglePause}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
