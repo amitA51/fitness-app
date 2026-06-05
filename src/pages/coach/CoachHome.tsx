@@ -198,6 +198,7 @@ function Roster() {
                 key={tag}
                 type="button"
                 onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                className="active:scale-[0.98]"
                 style={{
                   padding: '3px 10px',
                   fontFamily: 'var(--font-mono)',
@@ -264,6 +265,7 @@ function SortButton({
     <button
       type="button"
       onClick={onClick}
+      className="active:scale-[0.98]"
       style={{
         fontFamily: 'var(--font-mono)',
         fontSize: 11,

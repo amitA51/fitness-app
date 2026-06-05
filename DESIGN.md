@@ -78,7 +78,7 @@ Scale (`--text-*`): hero 120 · xl 88 · lg 48 · display 36 · sm 24 · title 2
 - `.start-workout-btn` `.primary-btn` `.icon-btn` — buttons.
 - `.stepper-card` / `.step-btn.plus` / `.ghost-value` — set inputs (active workout).
 - `.template-card` `.quick-card` `.magnetic-card` `.glass-surface` — cards.
-- `.fs-accent-rail` — RTL-aware 4px accent bar. **Reserve for one semantic role; do not apply decoratively.** (Currently over-applied — see audit.)
+- `.fs-accent-rail` — **containment-only utility** (`position: relative; overflow: hidden`). The colored 4px side-stripe it once drew was retired app-wide; the class is kept solely for positioning/overflow containment on the ~14 cards that rely on it (see `components.css`). It no longer paints an accent — do not treat it as a decorative rail.
 - `.kinetic-number(.large)` · `.chapter-break` (masthead kicker row) · `.ambient-mesh(-soft/-strong)` (background) · `.accent-glow` / `.signal-glow` · `.scrim-noise` · `.focus-ring`.
 
 ## Layout
@@ -92,7 +92,7 @@ Hebrew-first, concise, confident. Mono micro-labels are uppercase kickers ("תכ
 ## Anti-slop guardrails (summary)
 
 1. The mint accent is intentional — but **never hardcode `#43c7a5`/`#4ddcbb`**; use `var(--fs-accent)`.
-2. **One accent-rail role**, never decoration on every card.
+2. **No unowned third accent.** The colored `.fs-accent-rail` stripe was retired; the class is containment-only. Do not reintroduce a decorative accent bar on every card.
 3. **Containers nest ≤ 2 levels.** No pill-wrapping-card-wrapping-card.
 4. Display font = Bricolage with explicit weight+tracking — never fall back to Inter/Roboto/system "by vibe".
 5. Lucide is the single icon family — don't mix sets.

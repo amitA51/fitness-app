@@ -28,7 +28,11 @@ export function reportError(error: unknown, ctx: ErrorContext): void {
       },
       extra: ctx.extra,
     });
-  } catch {
-    // Sentry not initialized — swallow silently
+  } catch (reportingError) {
+    // Sentry failed (not initialized, transport error, …). Never let the
+    // original error vanish entirely — fall back to console so it stays
+    // visible in logs. console.error is deliberate here: the dedicated logger
+    // also routes through Sentry, which is exactly what just failed.
+    console.error('reportError: failed to report to Sentry', { error, reportingError });
   }
 }

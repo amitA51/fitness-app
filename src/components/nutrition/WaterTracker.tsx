@@ -35,8 +35,12 @@ export const WaterTracker = memo(function WaterTracker({
   // Bumped only on user-initiated additions so the splash fires on add, never
   // on initial load, date switches, or removals.
   const [addTick, setAddTick] = useState(0);
-  const goalMl = getWaterGoal();
-  const glassMl = getGlassSize();
+  // Read once on mount instead of re-parsing localStorage on every render.
+  // Kept live via the WATER_UPDATED_EVENT handler below, which also fires when
+  // the user edits the goal/glass size in GoalsEditor (saveWaterSettings
+  // broadcasts the same event), so behavior matches the old render-body reads.
+  const [goalMl, setGoalMl] = useState(getWaterGoal);
+  const [glassMl, setGlassMl] = useState(getGlassSize);
   const dateToShow = selectedDate ?? todayStr();
 
   const reduced = useReducedMotion();
@@ -80,8 +84,15 @@ export const WaterTracker = memo(function WaterTracker({
     loadTotal();
     // Refresh whenever water changes anywhere (mirrors the settings-updated
     // pattern), so the displayed total never goes stale after a glass is added.
-    window.addEventListener(WATER_UPDATED_EVENT, loadTotal);
-    return () => window.removeEventListener(WATER_UPDATED_EVENT, loadTotal);
+    // The same event fires when the goal/glass size is edited, so re-read both
+    // here to keep them live (they used to be read in the render body).
+    const onWaterUpdated = () => {
+      setGoalMl(getWaterGoal());
+      setGlassMl(getGlassSize());
+      loadTotal();
+    };
+    window.addEventListener(WATER_UPDATED_EVENT, onWaterUpdated);
+    return () => window.removeEventListener(WATER_UPDATED_EVENT, onWaterUpdated);
   }, [loadTotal]);
 
   const pct = goalMl > 0 ? Math.min(Math.round((totalMl / goalMl) * 100), 100) : 0;
@@ -234,21 +245,38 @@ export const WaterTracker = memo(function WaterTracker({
             מים היום
           </span>
           <span
-            ref={countRef}
-            className="kinetic-number"
-            dir="ltr"
             aria-label={`${glasses} מתוך ${goalGlasses} כוסות`}
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 12,
-              letterSpacing: '0.12em',
-              color: pct >= 100 ? 'var(--fs-accent)' : 'var(--fs-ink)',
-              fontWeight: 600,
-              fontVariantNumeric: 'tabular-nums',
-              display: 'inline-block',
-            }}
+            style={{ display: 'inline-flex', alignItems: 'baseline', gap: 4 }}
           >
-            {glasses}/{goalGlasses}
+            <span
+              ref={countRef}
+              className="kinetic-number"
+              dir="ltr"
+              aria-hidden="true"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                letterSpacing: '0.12em',
+                color: pct >= 100 ? 'var(--fs-accent)' : 'var(--fs-ink)',
+                fontWeight: 600,
+                fontVariantNumeric: 'tabular-nums',
+                display: 'inline-block',
+              }}
+            >
+              {glasses}/{goalGlasses}
+            </span>
+            <span
+              aria-hidden="true"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.08em',
+                color: 'var(--fs-muted)',
+                fontWeight: 600,
+              }}
+            >
+              כוסות
+            </span>
           </span>
         </div>
         <div className="mt-2 fs-progress-track" style={{ height: 6 }}>
@@ -344,6 +372,7 @@ export const WaterTracker = memo(function WaterTracker({
                 }}
               >
                 +{amount}
+                <span style={{ marginInlineStart: 3, fontSize: '9px', opacity: 0.85 }}>מ״ל</span>
               </button>
             ))}
           </>

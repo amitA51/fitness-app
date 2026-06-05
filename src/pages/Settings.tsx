@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { SectionLabel } from '../components/ui/SettingsSectionLabel';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { deleteAllUserData } from '../services/settingsService';
@@ -10,6 +11,7 @@ import { CloudSyncSection } from './settings/sections/CloudSyncSection';
 import { DangerZoneSection } from './settings/sections/DangerZoneSection';
 import { DataAboutSection } from './settings/sections/DataAboutSection';
 import { ExportSection } from './settings/sections/ExportSection';
+import { GuidanceSection } from './settings/sections/GuidanceSection';
 import { NotificationsSection } from './settings/sections/NotificationsSection';
 import { ProfileSection } from './settings/sections/ProfileSection';
 import { ThemeSection } from './settings/sections/ThemeSection';
@@ -30,6 +32,13 @@ import { HEADER_SUBTITLE_STYLE, HEADER_TITLE_STYLE } from './settings/types';
 export default function Settings() {
   const state = useSettingsState();
   const cloudSync = useCloudSync();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // The cloud-sync section reports "connected" only when BOTH the backend is
+  // reachable AND the user is actually signed in — a reachable Supabase with no
+  // session is NOT a usable cloud connection, so showing "מחובר לענן" there is
+  // misleading. authEmail is the real auth signal already loaded in state.
+  const cloudConnected = cloudSync.cloudConnected && Boolean(state.authEmail);
 
   // ── Handlers that bridge state + services ──────────────────────────────────
 
@@ -44,8 +53,14 @@ export default function Settings() {
   };
 
   const handleDeleteAllData = async () => {
-    await deleteAllUserData();
-    window.location.reload();
+    setDeleteError(null);
+    try {
+      await deleteAllUserData();
+      window.location.reload();
+    } catch (err) {
+      logger.app.error('handleDeleteAllData: deleteAllUserData threw', err);
+      setDeleteError('מחיקת הנתונים נכשלה. ייתכן שחלק מהנתונים לא נמחקו — נסו שוב.');
+    }
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -97,6 +112,8 @@ export default function Settings() {
 
         <ThemeSection />
 
+        <GuidanceSection />
+
         <WorkoutPrefsSection
           workoutPrefs={state.workoutPrefs}
           commitWorkout={state.commitWorkout}
@@ -121,7 +138,7 @@ export default function Settings() {
 
         {isSupabaseConfigured() && (
           <CloudSyncSection
-            cloudConnected={cloudSync.cloudConnected}
+            cloudConnected={cloudConnected}
             isSyncingUp={cloudSync.isSyncingUp}
             isSyncingDown={cloudSync.isSyncingDown}
             isSyncingAll={cloudSync.isSyncingAll}
@@ -135,6 +152,23 @@ export default function Settings() {
         )}
 
         <DangerZoneSection onDeleteAll={handleDeleteAllData} />
+
+        {deleteError && (
+          <p
+            role="alert"
+            style={{
+              fontFamily: 'var(--font-hebrew)',
+              fontSize: '14px',
+              color: 'var(--color-error)',
+              marginTop: '-12px',
+              marginBottom: '20px',
+              paddingInline: '4px',
+              lineHeight: 1.5,
+            }}
+          >
+            {deleteError}
+          </p>
+        )}
 
         <DataAboutSection />
       </div>

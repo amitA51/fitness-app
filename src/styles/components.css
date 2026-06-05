@@ -1155,6 +1155,12 @@ textarea {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .breathing-dot {
+    animation: none;
+  }
+}
+
 .breathing-dot.signal {
   background: var(--fs-signal);
 }

@@ -150,7 +150,8 @@
   --nav-icon-inactive: rgba(19, 35, 39, 0.6);
   --nav-label-inactive: rgba(19, 35, 39, 0.66);
   --nav-pill-bg: var(--fs-primary);
-  --nav-pill-text: #ffffff;
+  /* Pill bg is the dark --fs-primary here, so its ink is the on-dark token. */
+  --nav-pill-text: var(--color-ink-on-dark);
   --nav-pill-shadow: 0 2px 8px rgba(22, 41, 45, 0.25);
 
   /* Premium motion */
@@ -466,7 +467,8 @@ html.dark {
   --nav-icon-inactive: rgba(240, 240, 240, 0.5);
   --nav-label-inactive: rgba(240, 240, 240, 0.55);
   --nav-pill-bg: var(--fs-accent);
-  --nav-pill-text: #071412;
+  /* Pill bg is the mint --fs-accent here, so its ink is the on-accent token. */
+  --nav-pill-text: var(--color-ink-on-accent);
   --nav-pill-shadow: 0 2px 12px rgba(77, 220, 187, 0.3);
 
   /* Glass — neutral dark glass, no green tint */

@@ -5,6 +5,7 @@
 import { m } from 'framer-motion';
 import React from 'react';
 import { triggerHaptic } from '../../../utils/haptics';
+import { CoachMark } from '../../guidance/CoachMark';
 
 interface EmptyWorkoutStateProps {
   /** Whether OLED mode is enabled */
@@ -94,11 +95,18 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
             fontSize: 14,
             color: 'var(--fs-muted)',
             lineHeight: 1.6,
-            marginBottom: 32,
+            marginBottom: 16,
           }}
         >
           בחר את התרגיל הראשון שלך כדי להתחיל את האימון
         </p>
+
+        {/* First-visit hint about slide-to-complete + auto rest timer */}
+        <div style={{ width: '100%', marginBottom: 24, textAlign: 'start' }}>
+          <CoachMark hintKey="hintWorkout">
+            בסיום כל סט החליקו את הכפתור והמנוחה תתחיל אוטומטית.
+          </CoachMark>
+        </div>
 
         {/* Add exercise button */}
         <m.button

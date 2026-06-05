@@ -87,7 +87,16 @@ export const CoachBriefCard = memo(function CoachBriefCard({
 
   if (sessions.length === 0) return null;
 
-  const detail = brief?.detail ?? '';
+  // Sparse / first-week guard (RN coherence): with too little history the
+  // readiness number is high by default, yet the underlying template can still
+  // pair it with a "sharp load spike" warning and a push-load nudge after a
+  // single workout — a contradiction. When confidence is low on the daily card
+  // we lead with the partial-data frame instead of that prose, so the message
+  // matches the thin data. The hero score itself stays (it's a computed fact).
+  const isSparse = kind === 'daily-readiness' && facts.confidence === 'low';
+  const detail = isSparse
+    ? 'עוד מעט נתונים — אספנו מעט אימונים. המשך לתעד כדי שההמלצה היומית תהיה מדויקת.'
+    : (brief?.detail ?? '');
   const sign = facts.volumeChangePercent >= 0 ? '+' : '';
 
   return (
@@ -118,6 +127,7 @@ export const CoachBriefCard = memo(function CoachBriefCard({
       {kind === 'daily-readiness' ? (
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 6 }}>
           <span
+            dir="ltr"
             style={{
               fontFamily: 'var(--font-display)',
               fontSize: 56,
@@ -148,6 +158,7 @@ export const CoachBriefCard = memo(function CoachBriefCard({
       ) : (
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 6 }}>
           <span
+            dir="ltr"
             style={{
               fontFamily: 'var(--font-display)',
               fontSize: 44,
@@ -162,6 +173,7 @@ export const CoachBriefCard = memo(function CoachBriefCard({
             ק"ג
           </span>
           <span
+            dir="ltr"
             style={{
               marginInlineStart: 'auto',
               fontFamily: 'var(--font-mono)',

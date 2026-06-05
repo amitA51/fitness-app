@@ -51,7 +51,11 @@ export const isToday = (d: string) => {
 
 export const greeting = () => {
   const h = new Date().getHours();
-  return h < 12 ? 'בוקר טוב' : h < 17 ? 'צהריים טובים' : 'ערב טוב';
+  if (h < 5) return 'לילה טוב';
+  if (h < 12) return 'בוקר טוב';
+  if (h < 17) return 'צהריים טובים';
+  if (h < 21) return 'ערב טוב';
+  return 'לילה טוב';
 };
 
 export const todayHe = () =>

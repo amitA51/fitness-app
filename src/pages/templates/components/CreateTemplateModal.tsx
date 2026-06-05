@@ -1,6 +1,7 @@
 import { AnimatePresence, m } from 'framer-motion';
 import { Dumbbell, Plus, X } from 'lucide-react';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import { getPersonalExercises } from '../../../services/workoutDb';
 import type { PersonalExercise } from '../../../types';
 import { springTransition } from '../constants';
@@ -22,6 +23,19 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const templateNameId = useId();
+  const titleId = useId();
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  // Trap Tab focus inside the sheet so it can't leak to the page behind the
+  // backdrop. Escape stays owned by the handler below (it closes the picker
+  // first, then the sheet); the input keeps its own autoFocus.
+  useFocusTrap(sheetRef, {
+    isOpen: true,
+    closeOnEscape: false,
+    autoFocus: false,
+    restoreFocus: true,
+    lockScroll: false,
+  });
 
   const [exercises, setExercises] = useState<TemplateExerciseInput[]>([]);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
@@ -116,6 +130,10 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
       dir="rtl"
     >
       <m.div
+        ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
@@ -140,6 +158,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
           {/* Title Row */}
           <div className="flex items-center justify-between mb-7">
             <h2
+              id={titleId}
               style={{
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,

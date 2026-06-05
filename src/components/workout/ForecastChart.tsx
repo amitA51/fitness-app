@@ -1,6 +1,5 @@
-// ForecastChart - VISION Sport Annual Editorial Design
-// Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
-// VISION: Bold · Editorial · Confident · Narrative · Printed
+// ForecastChart - Fresh Steel / Obsidian design language
+// Primary · accent · surface · Bricolage Grotesque display + IBM Plex Mono
 
 import { m } from 'framer-motion';
 import type React from 'react';
@@ -169,9 +168,9 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
                   style={{
                     color:
                       progressionData.forecast.trend === 'increasing'
-                        ? '#22c55e'
+                        ? 'var(--color-success-fg)'
                         : progressionData.forecast.trend === 'decreasing'
-                          ? '#ef4444'
+                          ? 'var(--color-error-fg)'
                           : 'var(--fs-muted)',
                   }}
                 >

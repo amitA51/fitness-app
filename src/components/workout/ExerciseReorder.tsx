@@ -5,8 +5,9 @@
 import { AnimatePresence, type PanInfo, Reorder, m } from 'framer-motion';
 import { Link2 } from 'lucide-react';
 import { X as CloseIcon } from 'lucide-react';
-import React, { useState, useCallback, memo, useMemo } from 'react';
+import React, { useState, useCallback, memo, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import type { Exercise } from '../../types';
 import type { SupersetGroup } from './core/workoutTypes';
 import { ExerciseReorderItem } from './reorder/ExerciseReorderItem';
@@ -40,9 +41,20 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
   onCreateSupersetGroup,
   onClose,
 }) => {
+  const sheetRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState(exercises);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [expandedExercise, setExpandedExercise] = useState<number | null>(null);
+
+  // Make this raw createPortal sheet behave like the canonical ModalOverlay:
+  // trap Tab focus inside it, lock body scroll, and close on Escape. The
+  // component is only mounted while the drawer is open, so isOpen is always true.
+  useFocusTrap(sheetRef, {
+    isOpen: true,
+    onClose,
+    closeOnEscape: true,
+    restoreFocus: true,
+  });
 
   // Superset multi-select mode
   const [supersetMode, setSupersetMode] = useState(false);
@@ -94,6 +106,22 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
 
   const handleReorder = useCallback((newOrder: Exercise[]) => {
     setItems(newOrder);
+  }, []);
+
+  // Keyboard reorder fallback for the drag handle (framer-motion Reorder has no
+  // native keyboard path). Swaps the item with its neighbour immutably.
+  const handleMove = useCallback((index: number, direction: 'up' | 'down') => {
+    setItems((prev) => {
+      const target = direction === 'up' ? index - 1 : index + 1;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      const moved = next[index];
+      const swapped = next[target];
+      if (!moved || !swapped) return prev;
+      next[index] = swapped;
+      next[target] = moved;
+      return next;
+    });
   }, []);
 
   const handleSave = useCallback(
@@ -216,7 +244,11 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
 
       {/* Bottom Sheet */}
       <m.div
+        ref={sheetRef}
         key="reorder-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={supersetMode ? 'בחר תרגילים לסופרסט' : 'סדר תרגילים'}
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
@@ -431,6 +463,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                   exercise={exercise}
                   index={index}
                   originalIndex={indexById.get(exercise.id) ?? -1}
+                  total={items.length}
                   isActive={index === currentIndex}
                   isExpanded={expandedExercise === index}
                   completedSets={getCompletedSets(exercise)}
@@ -442,6 +475,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                   onSelect={handleItemSelect}
                   onDelete={handleItemDelete}
                   onToggleExpand={handleItemToggleExpand}
+                  onMove={handleMove}
                   onEditSet={onEditSet}
                   onDeleteSet={onDeleteSet}
                 />

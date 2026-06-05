@@ -15,6 +15,8 @@ export interface ExerciseReorderItemProps {
   exercise: Exercise;
   index: number;
   originalIndex: number;
+  /** Total number of items in the list — used for the reorder handle a11y label. */
+  total: number;
   isActive: boolean;
   isExpanded: boolean;
   completedSets: number;
@@ -26,6 +28,8 @@ export interface ExerciseReorderItemProps {
   onSelect: (index: number, id: string) => void;
   onDelete: (index: number, e: React.MouseEvent) => void;
   onToggleExpand: (index: number, e: React.MouseEvent) => void;
+  /** Keyboard reorder fallback: framer-motion Reorder has no native keyboard path. */
+  onMove: (index: number, direction: 'up' | 'down') => void;
   onEditSet?: (
     exerciseIndex: number,
     setIndex: number,
@@ -39,6 +43,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
     exercise,
     index,
     originalIndex,
+    total,
     isActive,
     isExpanded,
     completedSets,
@@ -50,6 +55,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
     onSelect,
     onDelete,
     onToggleExpand,
+    onMove,
     onEditSet,
     onDeleteSet,
   }) => {
@@ -89,23 +95,38 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
             border: `2px solid ${(selectMode && isSelected) || isActive || inSuperset ? 'var(--fs-accent)' : 'var(--fs-primary)'}`,
           }}
         >
-          {/* Drag Handle */}
-          <div
+          {/* Drag Handle — also the keyboard reorder control (Arrow Up/Down),
+              since framer-motion Reorder offers no native keyboard path. */}
+          <button
+            type="button"
             onPointerDown={(e) => {
               e.stopPropagation();
               dragControls.start(e);
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (index > 0) onMove(index, 'up');
+              } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (index < total - 1) onMove(index, 'down');
+              }
+            }}
+            aria-label={`גרור או השתמש בחצים לשינוי סדר — תרגיל ${index + 1} מתוך ${total}`}
             style={{
               cursor: 'grab',
               padding: 8,
               marginLeft: -8,
               borderRadius: 0,
+              background: 'transparent',
+              border: 'none',
+              touchAction: 'none',
             }}
           >
             <DragHandleIcon
               style={{ width: 20, height: 20, color: 'var(--fs-muted)', display: 'block' }}
             />
-          </div>
+          </button>
 
           {/* Number */}
           <div

@@ -162,7 +162,12 @@ const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
         </div>
       )}
 
-      {!showAddForm && (
+      {/* In-list "create" affordance. In selection mode the ExerciseSelector
+          already shows a sticky bottom "+ צור תרגיל חדש", so this duplicate is
+          shown ONLY when the filtered list is empty (the one moment the sticky
+          CTA isn't the obvious next action). Standalone (non-selection) keeps it
+          always visible. */}
+      {!showAddForm && (!isSelectionMode || filteredExercises.length === 0) && (
         <div style={{ padding: '0 5px 12px' }}>
           <AddExerciseButton onClick={() => setShowAddForm(true)} />
         </div>

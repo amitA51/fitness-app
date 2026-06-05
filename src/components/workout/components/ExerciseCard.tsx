@@ -14,7 +14,13 @@ const hasHebrew = (text: string) => /[\u0590-\u05FF]/.test(text);
 interface ExerciseCardProps {
   exercise: PersonalExercise;
   isSelectionMode?: boolean;
-  selectedIds?: Set<string>;
+  /**
+   * Selection state as a primitive boolean (NOT the whole `selectedIds` Set).
+   * Passing the Set broke `memo` — every card re-rendered whenever ANY card's
+   * selection changed because the Set reference was new each time. A boolean
+   * lets memo skip cards whose own selection is unchanged.
+   */
+  isSelected?: boolean;
   onClick?: (exercise: PersonalExercise) => void;
   onDelete?: (exercise: PersonalExercise, e: React.MouseEvent) => void;
 }
@@ -61,14 +67,13 @@ function renderExerciseName(name: string) {
 }
 
 const ExerciseCard: React.FC<ExerciseCardProps> = memo(
-  ({ exercise, isSelectionMode = false, selectedIds, onClick, onDelete }) => {
-    const isSelected = selectedIds?.has(exercise.id);
-
+  ({ exercise, isSelectionMode = false, isSelected = false, onClick, onDelete }) => {
     return (
       <m.div
         key={exercise.id}
         onClick={() => onClick?.(exercise)}
         className="magnetic-card glass-surface"
+        aria-pressed={isSelectionMode ? isSelected : undefined}
         style={{
           position: 'relative',
           padding: '14px',
@@ -197,7 +202,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                   whiteSpace: 'nowrap',
                 }}
               >
-                "{exercise.notes}"
+                {exercise.notes}
               </p>
             )}
           </div>

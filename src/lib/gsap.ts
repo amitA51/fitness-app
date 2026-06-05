@@ -49,8 +49,8 @@ export const DUR = {
 } as const;
 
 /**
- * Convenience: number formatters used across count-ups so thousands-separated
- * values (e.g. volume "8,140") render consistently. LTR-forced via callers.
+ * Number formatters live in utils/formatThousands now (pure, GSAP-free) so the
+ * landing chunk doesn't pull GSAP just to format a number. Re-exported here for
+ * backwards compatibility with existing importers that also use the GSAP tokens.
  */
-export const formatInt = (n: number): string => String(Math.round(n));
-export const formatThousands = (n: number): string => Math.round(n).toLocaleString('en-US');
+export { formatInt, formatThousands } from '../utils/formatThousands';

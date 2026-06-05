@@ -11,6 +11,8 @@ interface InlineRestTimerProps {
   onSkip: () => void;
   onAddTime: (seconds: number) => void;
   nextSetHint?: string;
+  /** Freeze the countdown while the workout is paused. */
+  isPaused?: boolean;
 }
 
 const usePrefersReducedMotion = (): boolean => {
@@ -31,8 +33,8 @@ const usePrefersReducedMotion = (): boolean => {
 };
 
 const InlineRestTimer = memo<InlineRestTimerProps>(
-  ({ active, endTime, onSkip, onAddTime, nextSetHint }) => {
-    const { formatted, progress, timeLeft } = useRestTimer(endTime, active);
+  ({ active, endTime, onSkip, onAddTime, nextSetHint, isPaused = false }) => {
+    const { formatted, progress, timeLeft } = useRestTimer(endTime, active, isPaused);
     const prefersReduced = usePrefersReducedMotion();
 
     if (!active) return null;
@@ -175,7 +177,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
               cursor: 'pointer',
             }}
           >
-            -15s
+            <span dir="ltr">15-</span> שנ׳
           </button>
           <button
             type="button"
@@ -201,7 +203,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
               cursor: 'pointer',
             }}
           >
-            +15s
+            <span dir="ltr">15+</span> שנ׳
           </button>
           <button
             type="button"

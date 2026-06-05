@@ -181,7 +181,26 @@ const exerciseReducer = (draft: WorkoutState, action: WorkoutAction): void => {
     }
 
     case 'REMOVE_EXERCISE': {
-      draft.exercises.splice(action.payload, 1);
+      const removedIdx = action.payload;
+      // Capture the removed exercise's id BEFORE splicing so we can prune it
+      // from any superset/giant-set group it belonged to.
+      const removedId = draft.exercises[removedIdx]?.id;
+      draft.exercises.splice(removedIdx, 1);
+
+      // Prune the orphan id from every group, then drop degenerate (<2 member)
+      // groups — mirrors CREATE_SUPERSET's cleanup so a superset can't be left
+      // pointing at a deleted exercise.
+      if (removedId) {
+        draft.supersetGroups = draft.supersetGroups
+          .map((g) => ({ ...g, exercises: g.exercises.filter((id) => id !== removedId) }))
+          .filter((g) => g.exercises.length >= 2);
+      }
+
+      // Keep the active exercise stable: deleting a position at or before the
+      // active one shifts later exercises down, so decrement to follow it.
+      if (draft.currentExerciseIndex > removedIdx) {
+        draft.currentExerciseIndex -= 1;
+      }
       if (draft.currentExerciseIndex >= draft.exercises.length) {
         draft.currentExerciseIndex = Math.max(0, draft.exercises.length - 1);
       }
@@ -189,7 +208,17 @@ const exerciseReducer = (draft: WorkoutState, action: WorkoutAction): void => {
     }
 
     case 'REORDER_EXERCISES': {
+      // Preserve the active exercise by identity across the reorder. Capture its
+      // id first, replace the array, then re-resolve its new position. The
+      // `.filter` can shorten the array (dropping unnamed exercises), so clamp
+      // the fallback index to stay in bounds and avoid an undefined active card.
+      const activeId = draft.exercises[draft.currentExerciseIndex]?.id;
       draft.exercises = action.payload.filter((ex) => ex.name?.trim());
+      const newIdx = activeId ? draft.exercises.findIndex((e) => e.id === activeId) : -1;
+      draft.currentExerciseIndex =
+        newIdx !== -1
+          ? newIdx
+          : Math.min(draft.currentExerciseIndex, Math.max(0, draft.exercises.length - 1));
       break;
     }
 

@@ -78,7 +78,7 @@ const ExerciseList: React.FC<ExerciseListProps> = memo(
             key={exercise.id}
             exercise={exercise}
             isSelectionMode={isSelectionMode}
-            selectedIds={selectedIds}
+            isSelected={selectedIds?.has(exercise.id) ?? false}
             onClick={onExerciseClick}
             onDelete={onDeleteExercise}
           />
@@ -160,7 +160,7 @@ const VirtualizedExerciseList: React.FC<ExerciseListProps> = memo(
                 <ExerciseCard
                   exercise={exercise}
                   isSelectionMode={isSelectionMode}
-                  selectedIds={selectedIds}
+                  isSelected={selectedIds?.has(exercise.id) ?? false}
                   onClick={onExerciseClick}
                   onDelete={onDeleteExercise}
                 />

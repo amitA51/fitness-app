@@ -10,6 +10,7 @@ import {
 import type { FoodItem, MacroNutrients, MealEntry, MealType } from '../types';
 import { toLocalDateStr, todayStr } from '../utils/dateUtils';
 import { generateId } from '../utils/id';
+import { KCAL_PER_GRAM, kcalFromMacros } from '../utils/nutritionMath';
 import { writeJsonStorage } from '../utils/safeJson';
 import { STORES, dbDelete, dbGetAll, dbGetByRange, dbPut } from './indexedDBCore';
 import { FOOD_LIBRARY, MEAL_PRESETS, type MealPreset } from './nutritionData';
@@ -73,11 +74,11 @@ export function calcMacroTotals(foods: FoodItem[]): MacroNutrients {
 export function sumEntryMacros(entries: MealEntry[]): MacroNutrients {
   return entries.reduce<MacroNutrients>(
     (acc, e) => ({
-      calories: acc.calories + e.totalMacros.calories,
-      protein: Math.round((acc.protein + e.totalMacros.protein) * 10) / 10,
-      carbs: Math.round((acc.carbs + e.totalMacros.carbs) * 10) / 10,
-      fat: Math.round((acc.fat + e.totalMacros.fat) * 10) / 10,
-      fiber: Math.round(((acc.fiber ?? 0) + (e.totalMacros.fiber ?? 0)) * 10) / 10,
+      calories: acc.calories + (e.totalMacros?.calories ?? 0),
+      protein: Math.round((acc.protein + (e.totalMacros?.protein ?? 0)) * 10) / 10,
+      carbs: Math.round((acc.carbs + (e.totalMacros?.carbs ?? 0)) * 10) / 10,
+      fat: Math.round((acc.fat + (e.totalMacros?.fat ?? 0)) * 10) / 10,
+      fiber: Math.round(((acc.fiber ?? 0) + (e.totalMacros?.fiber ?? 0)) * 10) / 10,
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
   );
@@ -274,11 +275,11 @@ export async function getDailyMacros(date: string): Promise<MacroNutrients> {
   const entries = await getMealEntriesByDate(date);
   return entries.reduce<MacroNutrients>(
     (acc, e) => ({
-      calories: acc.calories + e.totalMacros.calories,
-      protein: acc.protein + e.totalMacros.protein,
-      carbs: acc.carbs + e.totalMacros.carbs,
-      fat: acc.fat + e.totalMacros.fat,
-      fiber: (acc.fiber ?? 0) + (e.totalMacros.fiber ?? 0),
+      calories: acc.calories + (e.totalMacros?.calories ?? 0),
+      protein: acc.protein + (e.totalMacros?.protein ?? 0),
+      carbs: acc.carbs + (e.totalMacros?.carbs ?? 0),
+      fat: acc.fat + (e.totalMacros?.fat ?? 0),
+      fiber: (acc.fiber ?? 0) + (e.totalMacros?.fiber ?? 0),
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
   );
@@ -293,12 +294,14 @@ export function getMacroPercentages(macros: MacroNutrients): {
   carbsPct: number;
   fatPct: number;
 } {
-  const totalCaloriesFromMacros = macros.protein * 4 + macros.carbs * 4 + macros.fat * 9;
+  const totalCaloriesFromMacros = kcalFromMacros(macros.protein, macros.carbs, macros.fat);
   if (totalCaloriesFromMacros === 0) return { proteinPct: 0, carbsPct: 0, fatPct: 0 };
   return {
-    proteinPct: Math.round(((macros.protein * 4) / totalCaloriesFromMacros) * 100),
-    carbsPct: Math.round(((macros.carbs * 4) / totalCaloriesFromMacros) * 100),
-    fatPct: Math.round(((macros.fat * 9) / totalCaloriesFromMacros) * 100),
+    proteinPct: Math.round(
+      ((macros.protein * KCAL_PER_GRAM.protein) / totalCaloriesFromMacros) * 100
+    ),
+    carbsPct: Math.round(((macros.carbs * KCAL_PER_GRAM.carbs) / totalCaloriesFromMacros) * 100),
+    fatPct: Math.round(((macros.fat * KCAL_PER_GRAM.fat) / totalCaloriesFromMacros) * 100),
   };
 }
 
@@ -335,11 +338,11 @@ export async function getWeeklyNutritionSummary(): Promise<DailyNutritionSummary
     const entries = entriesByDate.get(dateStr) ?? [];
     const macros = entries.reduce<MacroNutrients>(
       (acc, e) => ({
-        calories: acc.calories + e.totalMacros.calories,
-        protein: acc.protein + e.totalMacros.protein,
-        carbs: acc.carbs + e.totalMacros.carbs,
-        fat: acc.fat + e.totalMacros.fat,
-        fiber: (acc.fiber ?? 0) + (e.totalMacros.fiber ?? 0),
+        calories: acc.calories + (e.totalMacros?.calories ?? 0),
+        protein: acc.protein + (e.totalMacros?.protein ?? 0),
+        carbs: acc.carbs + (e.totalMacros?.carbs ?? 0),
+        fat: acc.fat + (e.totalMacros?.fat ?? 0),
+        fiber: (acc.fiber ?? 0) + (e.totalMacros?.fiber ?? 0),
       }),
       { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
     );

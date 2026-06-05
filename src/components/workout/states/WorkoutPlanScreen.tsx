@@ -22,6 +22,7 @@ import {
   Wand2 as WandIcon,
 } from 'lucide-react';
 import React, { Suspense, useMemo, useState } from 'react';
+import { translateMuscle } from '../../../constants';
 import {
   type ActiveExercise,
   type Exercise,
@@ -30,6 +31,7 @@ import {
   createWorkoutSet,
 } from '../../../types';
 import { triggerHaptic } from '../../../utils/haptics';
+import { HE_NOUNS, pluralizeHe } from '../../../utils/pluralizeHe';
 import PlanSetRow from '../components/PlanSetRow';
 import { usePlanPreviousData } from '../hooks/usePlanPreviousData';
 
@@ -225,7 +227,8 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
               color: 'rgba(255,255,255,0.55)',
             }}
           >
-            {draft.length} תרגילים · {totalSets} סטים — קבע סטים, משקל וחזרות מראש (אופציונלי)
+            {pluralizeHe(draft.length, HE_NOUNS.exercise)} · {pluralizeHe(totalSets, HE_NOUNS.set)}{' '}
+            — קבע סטים, משקל וחזרות מראש (אופציונלי)
           </p>
         </div>
       </div>
@@ -318,7 +321,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
                               textTransform: 'uppercase',
                             }}
                           >
-                            {ex.muscleGroup}
+                            {translateMuscle(ex.muscleGroup)}
                           </p>
                         )}
                       </div>

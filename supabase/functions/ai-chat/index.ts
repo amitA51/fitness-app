@@ -42,8 +42,11 @@ const DEFAULT_MAX_TOKENS = 1024;
 
 // ----------------------------------------------------------------------------
 // CORS — origin allow-list מ-ALLOWED_ORIGIN env var (פסיק כמפריד).
-// אם origin לא נמצא ברשימה — מחזירים "null" (חוסם CORS).
+// מקורות localhost מותרים תמיד (פיתוח); אתר עוין לא יכול להציג Origin כזה,
+// כך שזה לא מחליש production. כל מקור אחר שלא ברשימה — "null" (חוסם CORS).
 // ----------------------------------------------------------------------------
+
+const LOCALHOST_ORIGIN_RE = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 function getCorsOrigin(req: Request): string {
   // @ts-expect-error Deno global
@@ -53,7 +56,9 @@ function getCorsOrigin(req: Request): string {
     .map((s) => s.trim())
     .filter(Boolean);
   const origin = req.headers.get('origin') ?? '';
-  return allowed.length > 0 && allowed.includes(origin) ? origin : 'null';
+  if (allowed.includes(origin)) return origin;
+  if (LOCALHOST_ORIGIN_RE.test(origin)) return origin;
+  return 'null';
 }
 
 function buildCorsHeaders(req: Request): Record<string, string> {

@@ -34,6 +34,7 @@ import {
   ListRow,
   ListSkeleton,
   Section,
+  SectionError,
   formatDate,
   useAsyncData,
 } from './_shared';
@@ -350,6 +351,7 @@ function AssignmentsBox({ clientId }: { clientId: string }) {
   const {
     data: assignments,
     loading,
+    error,
     reload,
   } = useAsyncData<Assignment[]>(() => listCoachAssignments(clientId), []);
   const [revokingId, setRevokingId] = useState<string | null>(null);
@@ -372,6 +374,8 @@ function AssignmentsBox({ clientId }: { clientId: string }) {
     <Section title="שיוכים פעילים">
       {loading ? (
         <ListSkeleton rows={3} />
+      ) : error ? (
+        <SectionError onRetry={reload} />
       ) : active.length === 0 ? (
         <InlineEmpty>לא נשלחו שיוכים פעילים.</InlineEmpty>
       ) : (

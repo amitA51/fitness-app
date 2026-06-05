@@ -22,6 +22,12 @@ import {
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
+  // Stable id + ISO timestamp are stamped on persisted chat messages so the
+  // cloud sync layer (unionMessagesById) can union per-device appends without
+  // dropping history. Optional because transient prompt messages built for a
+  // single provider call (system prompts, grounding) are never persisted.
+  id?: string;
+  timestamp?: string;
 }
 
 export interface AIProvider {

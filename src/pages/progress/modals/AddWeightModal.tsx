@@ -7,7 +7,7 @@
 // the save action remain here. The sheet stays mounted and is driven by
 // `isOpen`; form state resets each time it opens.
 
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useId, useState } from 'react';
 import { Sheet } from '../../../components/ui/Sheet';
 
 export const AddWeightModal = memo(function AddWeightModal({
@@ -22,6 +22,7 @@ export const AddWeightModal = memo(function AddWeightModal({
   const [weight, setWeight] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const weightId = useId();
 
   // Fresh form on every open (parity with the former mount-on-open behavior).
   useEffect(() => {
@@ -53,7 +54,21 @@ export const AddWeightModal = memo(function AddWeightModal({
     >
       <div className="space-y-5">
         <div className="text-center py-4">
+          <label
+            htmlFor={weightId}
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              color: 'var(--fs-muted)',
+              marginBottom: 12,
+              display: 'block',
+              fontWeight: 500,
+            }}
+          >
+            משקל
+          </label>
           <input
+            id={weightId}
             type="number"
             value={weight}
             onChange={(e) => setWeight(e.target.value)}

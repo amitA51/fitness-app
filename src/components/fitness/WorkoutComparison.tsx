@@ -275,10 +275,7 @@ const WorkoutComparisonInner: React.FC<WorkoutComparisonProps> = ({
                 ? `${row.prevBest.weight} ק״ג × ${row.prevBest.reps}`
                 : '—';
               return (
-                <li
-                  key={row.id}
-                  className="flex items-center justify-between py-2 border-b border-[var(--color-separator)] last:border-b-0"
-                >
+                <li key={row.id} className="flex items-center justify-between py-2">
                   <span className="text-xs text-[var(--color-text)] truncate max-w-[45%]">
                     {row.name}
                   </span>

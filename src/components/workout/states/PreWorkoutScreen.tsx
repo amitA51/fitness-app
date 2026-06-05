@@ -1,7 +1,7 @@
 /**
  * PreWorkoutScreen - Welcome screen before starting workout
- * Sport Annual Editorial Design (VISION)
- * Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
+ * Fresh Steel / Obsidian design language.
+ * Primary masthead · surface body · Bricolage Grotesque display + IBM Plex Mono
  */
 
 import { AnimatePresence, type Variants, m } from 'framer-motion';
@@ -17,7 +17,9 @@ import {
 import { getWorkoutSessions } from '../../../services/dataService';
 import { getWorkoutTemplates } from '../../../services/workoutDb';
 import type { WorkoutTemplate } from '../../../types';
+import { greeting } from '../../../utils/dateUtils';
 import { triggerHaptic } from '../../../utils/haptics';
+import { HE_NOUNS, pluralizeHe } from '../../../utils/pluralizeHe';
 
 const NOISE_TEXTURE_SVG = `data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E`;
 
@@ -39,15 +41,6 @@ const itemVariants: Variants = {
   },
 };
 
-const getGreeting = (): { text: string } => {
-  const hour = new Date().getHours();
-  if (hour < 5) return { text: 'לילה טוב' };
-  if (hour < 12) return { text: 'בוקר טוב' };
-  if (hour < 17) return { text: 'צהריים טובים' };
-  if (hour < 21) return { text: 'ערב טוב' };
-  return { text: 'לילה טוב' };
-};
-
 const getTodayDate = (): { day: string; full: string } => {
   const now = new Date();
   return {
@@ -63,10 +56,10 @@ const MUSCLE_SUGGESTIONS: Record<string, string> = {
   Chest: 'חזה',
   Back: 'גב',
   Shoulders: 'כתפיים',
-  Biceps: 'זרועות קידמיות',
-  Triceps: 'זרועות אחוריות',
-  Quadriceps: 'ירכיים קידמיות',
-  Hamstrings: 'ירכיים אחוריות',
+  Biceps: 'יד קדמית',
+  Triceps: 'יד אחורית',
+  Quadriceps: 'ירך קדמית',
+  Hamstrings: 'ירך אחורית',
   Glutes: 'ישבן',
   Calves: 'שוקיים',
   Abs: 'בטן',
@@ -106,7 +99,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
   const [recentMuscles, setRecentMuscles] = useState<MuscleGroupLastTrained[]>([]);
   const [lastWorkout, setLastWorkout] = useState<LastWorkoutSummary | null>(null);
   const [workoutStreak, setWorkoutStreak] = useState(0);
-  const greeting = getGreeting();
+  const greetingText = greeting();
   const { day, full: todayFull } = getTodayDate();
 
   useEffect(() => {
@@ -302,14 +295,14 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,
                   fontSize: 48,
-                  color: '#FFFFFF',
+                  color: 'var(--color-ink-on-dark)',
                   lineHeight: 0.88,
                   letterSpacing: '-0.02em',
-                  direction: 'ltr',
-                  textAlign: 'left',
+                  // Hebrew greeting — keep it RTL/start-aligned, not forced LTR-left.
+                  textAlign: 'start',
                 }}
               >
-                {greeting.text}
+                {greetingText}
               </h1>
             </div>
           </div>
@@ -470,7 +463,8 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 direction: 'ltr',
               }}
             >
-              אימון אחרון {lastWorkoutLabel.timeLabel} · {lastWorkoutLabel.exercises} תרגילים
+              אימון אחרון {lastWorkoutLabel.timeLabel} ·{' '}
+              {pluralizeHe(lastWorkoutLabel.exercises, HE_NOUNS.exercise)}
             </div>
           )}
         </div>
@@ -594,7 +588,9 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                       fontFamily: 'var(--font-display)',
                       fontWeight: 800,
                       fontSize: 22,
-                      color: 'var(--fs-heading)',
+                      // ink-on-accent: --fs-heading goes near-white in dark and
+                      // fails AA on the mint suggestion block.
+                      color: 'var(--color-ink-on-accent)',
                       lineHeight: 1,
                       letterSpacing: '-0.01em',
                     }}
@@ -607,7 +603,9 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
                       letterSpacing: '0.12em',
-                      color: 'color-mix(in srgb, var(--fs-ink) 60%, transparent)',
+                      // Derive the muted secondary tone from ink-on-accent so it
+                      // stays legible on the mint fill in both themes.
+                      color: 'color-mix(in srgb, var(--color-ink-on-accent) 70%, transparent)',
                       textTransform: 'uppercase',
                     }}
                   >
@@ -707,7 +705,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                         textTransform: 'uppercase',
                       }}
                     >
-                      {template.exercises?.length || 0} תרגילים
+                      {pluralizeHe(template.exercises?.length || 0, HE_NOUNS.exercise)}
                     </div>
                   </m.button>
                 ))}

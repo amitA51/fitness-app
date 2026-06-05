@@ -9,14 +9,29 @@ import {
   Users,
   UtensilsCrossed,
 } from 'lucide-react';
-import { memo, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCoach } from '../../contexts/CoachContext';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { useUnreadMessages } from '../../hooks/useUnreadMessages';
-import { DUR, EASE, gsap, useGSAP } from '../../lib/gsap';
 import { prefetchRoute } from '../../utils/routePrefetch';
 import { Sheet } from './Sheet';
+
+// Lazy GSAP handle — loaded on first interaction so the ~28KB gsap chunk stays
+// out of the critical initial bundle (BottomNav is always mounted). Until it
+// resolves, the pill snaps instantly via direct DOM styles (no animation).
+type GsapModule = typeof import('../../lib/gsap');
+let gsapModulePromise: Promise<GsapModule> | null = null;
+function loadGsap(): Promise<GsapModule> {
+  if (!gsapModulePromise) gsapModulePromise = import('../../lib/gsap');
+  return gsapModulePromise;
+}
+
+// Local copies of the few motion tokens this component animates with. Inlined
+// (not imported from lib/gsap) so reading them never eagerly pulls the gsap
+// chunk into the initial bundle — they're just primitive values.
+const DUR = { micro: 0.16, fast: 0.3, base: 0.6 } as const;
+const EASE = { popHard: 'back.out(3)', slide: 'power3.inOut' } as const;
 
 // ============================================================================
 // BottomNav — 5 fixed tabs + a "More" sheet.
@@ -98,7 +113,18 @@ const TabVisual = memo(function TabVisual({
           letterSpacing: '0.08em',
         }}
       >
-        {isActive && <span className="breathing-dot" aria-hidden="true" />}
+        {isActive && (
+          <span
+            aria-hidden="true"
+            style={{
+              display: 'inline-block',
+              width: 5,
+              height: 5,
+              borderRadius: '50%',
+              background: 'var(--nav-pill-text)',
+            }}
+          />
+        )}
         {label}
       </span>
     </span>
@@ -161,84 +187,108 @@ function BottomNav() {
     return isMoreActive ? 'more' : undefined;
   }, [location.pathname, isMoreActive]);
 
-  // Flow the shared pill to the active slot. Measuring physical getBoundingClientRect
-  // is RTL-correct for free: the browser already laid the tabs out right→left, so
-  // the pill travels the right physical direction with no sign flipping.
-  useGSAP(
-    () => {
-      const ul = ulRef.current;
-      const pill = pillRef.current;
-      if (!ul || !pill) return;
+  // Whether GSAP has loaded yet. Before it does, pill moves snap instantly via
+  // direct DOM styles (no animation); after, transitions flow smoothly.
+  const gsapRef = useRef<GsapModule | null>(null);
 
-      const slot = ul.querySelector<HTMLElement>('[data-nav-slot][data-active="true"]');
-      if (!slot) {
-        gsap.to(pill, { autoAlpha: 0, duration: DUR.micro });
-        return;
-      }
+  // Snap the pill to the active slot with plain DOM styles — no library needed.
+  // Measuring physical getBoundingClientRect is RTL-correct for free: the browser
+  // already laid the tabs out right→left, so the pill lands in the right place
+  // with no sign flipping. Returns the measured box (or null if no active slot).
+  const snapPillToActive = useCallback(() => {
+    const ul = ulRef.current;
+    const pill = pillRef.current;
+    if (!ul || !pill) return null;
+    const slot = ul.querySelector<HTMLElement>('[data-nav-slot][data-active="true"]');
+    if (!slot) {
+      pill.style.opacity = '0';
+      return null;
+    }
+    const u = ul.getBoundingClientRect();
+    const b = slot.getBoundingClientRect();
+    const box = { x: b.left - u.left, y: b.top - u.top, width: b.width, height: b.height };
+    pill.style.transform = `translate(${box.x}px, ${box.y}px)`;
+    pill.style.width = `${box.width}px`;
+    pill.style.height = `${box.height}px`;
+    pill.style.opacity = '1';
+    pill.style.visibility = 'visible';
+    return box;
+  }, []);
 
-      const u = ul.getBoundingClientRect();
-      const b = slot.getBoundingClientRect();
-      const box = { x: b.left - u.left, y: b.top - u.top, width: b.width, height: b.height };
+  // Flow the shared pill to the active slot. First paint and reduced-motion snap
+  // instantly; once GSAP has loaded (first interaction), subsequent route changes
+  // animate the flow + a small icon pop.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: activeKey is the route-change trigger; the body reads the active slot from the DOM, so it must re-run when activeKey changes.
+  useLayoutEffect(() => {
+    const g = gsapRef.current;
+    const pill = pillRef.current;
+    const ul = ulRef.current;
 
-      if (reduced || firstRunRef.current) {
-        gsap.set(pill, { ...box, autoAlpha: 1 });
-        firstRunRef.current = false;
-        return;
-      }
+    if (reduced || firstRunRef.current || !g || !pill || !ul) {
+      snapPillToActive();
+      firstRunRef.current = false;
+      return;
+    }
 
-      gsap.to(pill, { ...box, autoAlpha: 1, duration: DUR.fast, ease: EASE.slide });
-      const icon = slot.querySelector<SVGElement>('[data-nav-icon]');
-      if (icon) {
-        gsap.fromTo(
-          icon,
-          { scale: 1 },
-          { scale: 1.12, duration: DUR.micro, ease: EASE.popHard, yoyo: true, repeat: 1 }
-        );
-      }
-    },
-    { dependencies: [activeKey, reduced], scope: ulRef }
-  );
+    const slot = ul.querySelector<HTMLElement>('[data-nav-slot][data-active="true"]');
+    if (!slot) {
+      g.gsap.to(pill, { autoAlpha: 0, duration: DUR.micro });
+      return;
+    }
+    const u = ul.getBoundingClientRect();
+    const b = slot.getBoundingClientRect();
+    const box = { x: b.left - u.left, y: b.top - u.top, width: b.width, height: b.height };
+    g.gsap.to(pill, { ...box, autoAlpha: 1, duration: DUR.fast, ease: EASE.slide });
+    const icon = slot.querySelector<SVGElement>('[data-nav-icon]');
+    if (icon) {
+      g.gsap.fromTo(
+        icon,
+        { scale: 1 },
+        { scale: 1.12, duration: DUR.micro, ease: EASE.popHard, yoyo: true, repeat: 1 }
+      );
+    }
+  }, [activeKey, reduced, snapPillToActive]);
 
   // Re-measure when the viewport resizes or webfonts load (Hebrew mono labels
-  // shift width on font swap, which would desync the pill).
-  useGSAP(
-    () => {
-      const remeasure = () => {
-        const ul = ulRef.current;
-        const pill = pillRef.current;
-        if (!ul || !pill) return;
-        const slot = ul.querySelector<HTMLElement>('[data-nav-slot][data-active="true"]');
-        if (!slot) return;
-        const u = ul.getBoundingClientRect();
-        const b = slot.getBoundingClientRect();
-        gsap.set(pill, { x: b.left - u.left, y: b.top - u.top, width: b.width, height: b.height });
-      };
-      window.addEventListener('resize', remeasure);
-      if (typeof document !== 'undefined' && 'fonts' in document) {
-        document.fonts.ready.then(remeasure).catch(() => {});
-      }
-      return () => window.removeEventListener('resize', remeasure);
-    },
-    { scope: ulRef }
-  );
+  // shift width on font swap, which would desync the pill). Snap-only — no anim.
+  useEffect(() => {
+    const remeasure = () => snapPillToActive();
+    window.addEventListener('resize', remeasure);
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      document.fonts.ready.then(remeasure).catch(() => {});
+    }
+    return () => window.removeEventListener('resize', remeasure);
+  }, [snapPillToActive]);
 
-  // Badge pop only when the unread count INCREASES (not on every render).
-  useGSAP(
-    () => {
-      const increased = unread > prevUnreadRef.current;
-      prevUnreadRef.current = unread;
-      if (reduced || !increased) return;
-      const badge = ulRef.current?.querySelector<HTMLElement>('.js-nav-badge');
-      if (badge) {
-        gsap.fromTo(
-          badge,
-          { scale: 0.6 },
-          { scale: 1, duration: DUR.base, ease: 'back.out(2.5)', clearProps: 'scale' }
-        );
-      }
-    },
-    { dependencies: [unread, reduced], scope: ulRef }
-  );
+  // Badge pop only when the unread count INCREASES (not on every render). Needs
+  // GSAP; before it loads, the badge simply appears (no pop).
+  useEffect(() => {
+    const increased = unread > prevUnreadRef.current;
+    prevUnreadRef.current = unread;
+    const g = gsapRef.current;
+    if (reduced || !increased || !g) return;
+    const badge = ulRef.current?.querySelector<HTMLElement>('.js-nav-badge');
+    if (badge) {
+      g.gsap.fromTo(
+        badge,
+        { scale: 0.6 },
+        { scale: 1, duration: DUR.base, ease: 'back.out(2.5)', clearProps: 'scale' }
+      );
+    }
+  }, [unread, reduced]);
+
+  // Lazy-load GSAP on the first interaction anywhere in the nav, so the ~28KB
+  // gsap chunk never blocks initial paint. Reduced-motion users skip it entirely.
+  const ensureGsap = useCallback(() => {
+    if (reduced || gsapRef.current) return;
+    loadGsap()
+      .then((mod) => {
+        gsapRef.current = mod;
+      })
+      .catch(() => {
+        /* animation is purely cosmetic — snap fallback stays in effect */
+      });
+  }, [reduced]);
 
   const moreItems = useMemo<NavDestination[]>(
     () => [
@@ -270,10 +320,13 @@ function BottomNav() {
       >
         <ul
           ref={ulRef}
+          onPointerDown={ensureGsap}
+          onPointerEnter={ensureGsap}
           className="relative flex justify-around items-center h-16 max-w-md mx-auto px-1"
           style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
-          {/* Shared flowing pill underlay — GSAP solely owns its transform/size. */}
+          {/* Shared flowing pill underlay — positioned instantly via DOM styles on
+              first paint; GSAP (lazy-loaded on first interaction) animates the flow. */}
           <div
             ref={pillRef}
             aria-hidden="true"
@@ -398,7 +451,9 @@ function BottomNav() {
 }
 
 function scrollToTop(): void {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const prefersReducedMotion =
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
   (document.getElementById('main-content') as HTMLElement | null)?.focus({
     preventScroll: true,
   });

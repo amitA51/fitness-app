@@ -142,6 +142,10 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
   const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (disabled || isComplete) return;
     e.preventDefault();
+    // preventDefault suppresses the native focus-on-press, so a following Enter
+    // would activate whatever was focused before. Focus the track explicitly so
+    // keyboard activation lands on the slider, not the previous control.
+    e.currentTarget.focus();
     recalcMax();
     startXRef.current = e.clientX;
     startOffsetRef.current = offset;

@@ -93,11 +93,22 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
         </span>{' '}
         {streak.current === 1 ? 'יום' : 'ימים'}
       </span>
-      <span style={{ color: 'var(--fs-muted)', fontSize: 10 }}>STREAK</span>
-      {streak.activeToday && <span className="breathing-dot" aria-hidden />}
+      <span style={{ color: 'var(--fs-muted)', fontSize: 10 }}>רצף</span>
+      {streak.activeToday && (
+        <span
+          aria-hidden
+          style={{
+            display: 'inline-block',
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: 'var(--fs-accent)',
+          }}
+        />
+      )}
       {streak.best > streak.current && (
         <span style={{ marginInlineStart: 'auto', color: 'var(--fs-muted)', fontSize: 10 }}>
-          BEST:{' '}
+          שיא:{' '}
           <span
             ref={bestRef}
             className="kinetic-number"

@@ -224,7 +224,11 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
           <span className="left" style={{ color: 'var(--fs-accent)' }}>
             {title}
           </span>
-          <span className="right">{activeItems.length} תרגילים</span>
+          <span className="right">
+            {activeItems.length === 1
+              ? `תרגיל ${type === 'warmup' ? 'חימום' : 'צינון'} אחד`
+              : `${activeItems.length} תרגילי ${type === 'warmup' ? 'חימום' : 'צינון'}`}
+          </span>
         </div>
 
         {/* Title area */}

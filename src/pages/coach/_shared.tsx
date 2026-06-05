@@ -242,6 +242,41 @@ export function ListSkeleton({ rows = 3 }: { rows?: number }) {
 }
 
 /**
+ * Inline load-failure state for a coach Section: distinct from the empty state,
+ * with an explicit Hebrew message and a retry path. Proportional to InlineEmpty
+ * (no full-screen illustration); tokenized for light + dark. Render this when a
+ * useAsyncData `error` is set, BEFORE the empty branch — otherwise a failed load
+ * masquerades as "no data".
+ */
+export function SectionError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div
+      role="alert"
+      className="flex flex-col items-center gap-3 text-center"
+      style={{
+        padding: '20px 16px',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+      }}
+    >
+      <p
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 14,
+          color: 'var(--fs-muted)',
+          lineHeight: 1.6,
+        }}
+      >
+        לא ניתן לטעון את הנתונים. בדוק את החיבור לאינטרנט ונסה שוב.
+      </p>
+      <Button variant="secondary" size="sm" onClick={onRetry}>
+        נסה שוב
+      </Button>
+    </div>
+  );
+}
+
+/**
  * Compact in-page placeholder for DENSE stacked sub-sections (e.g. ClientDetail's
  * six data lists, where a brand-new client would otherwise show six large
  * illustrated empties). Page-level / primary empties use the global

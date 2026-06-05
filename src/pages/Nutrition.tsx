@@ -2,6 +2,7 @@ import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { BookOpen, Clock, Plus, Search } from 'lucide-react';
 import type React from 'react';
 import { useMemo } from 'react';
+import { CoachMark } from '../components/guidance/CoachMark';
 import { WaterTracker } from '../components/nutrition/WaterTracker';
 import { SkeletonBox } from '../components/ui/SkeletonLoader';
 import { AddMealModal } from './nutrition/components/AddMealModal';
@@ -124,6 +125,13 @@ export default function NutritionPage() {
           תזונה
         </h1>
       </header>
+
+      {/* First-visit hint at the top of the nutrition body */}
+      <div className="px-5 pt-4">
+        <CoachMark hintKey="hintNutrition">
+          תעדו כאן ארוחות ומים — הנתונים מתעדכנים מיד בסיכום היומי.
+        </CoachMark>
+      </div>
 
       {isLoading ? (
         <div className="px-5 mt-4" role="status" aria-busy="true" aria-label="טוען נתוני תזונה">

@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { playDing } from '../../../utils/audio';
-import { useWorkoutDispatch } from '../core/WorkoutContext';
+import { useWorkoutDispatch, useWorkoutSettingsRaw } from '../core/WorkoutContext';
 
 /**
  * Format seconds to time string (MM:SS or H:MM:SS)
@@ -74,7 +74,11 @@ export function useWorkoutTimer({
  */
 export function useRestTimer(
   endTime: number | null,
-  active: boolean
+  active: boolean,
+  // When true the countdown is frozen: the last computed timeLeft is held and
+  // no ding / SYNC_REST_TIMER fires. Pause is also encoded upstream as a
+  // negative endTime; this param lets callers freeze without re-encoding.
+  isPaused = false
 ): {
   timeLeft: number;
   formatted: string;
@@ -87,10 +91,34 @@ export function useRestTimer(
   const lastTickRef = useRef<number>(0);
   const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dispatch = useWorkoutDispatch();
+  const workoutSettings = useWorkoutSettingsRaw();
+  // Rest-end ding honors the rest-timer sound toggle, matching the REST_END
+  // gate in WorkoutProvider (restTimerSound). The global soundEnabled flag is
+  // already enforced inside playDing()/playBeep(); this adds the rest-specific
+  // opt-out so a user who silenced only the rest timer doesn't hear the ding.
+  const restTimerSoundEnabled = workoutSettings.restTimerSound !== false;
 
   useEffect(() => {
     if (!active || !endTime) {
       setTimeLeft(0);
+      return;
+    }
+
+    // Explicitly paused: hold whatever is currently displayed and run no
+    // interval, so the countdown neither advances nor fires the rest-end ding.
+    if (isPaused) {
+      return;
+    }
+
+    // Frozen (paused) timer: TOGGLE_PAUSE encodes the remaining time as a
+    // NEGATIVE endTime (-remainingMs). Hold the displayed time at the frozen
+    // remaining instead of running the countdown — otherwise `(endTime - now)`
+    // is always negative, snapping the display to 00:00 and firing a spurious
+    // rest-end ding/dispatch the moment the timer is paused.
+    if (endTime <= 0) {
+      const frozenLeft = -endTime / 1000;
+      totalTimeRef.current = Math.max(totalTimeRef.current, frozenLeft);
+      setTimeLeft(frozenLeft);
       return;
     }
 
@@ -117,7 +145,7 @@ export function useRestTimer(
       // guards against re-dispatching on subsequent ticks.
       if (left <= 0 && !soundPlayedRef.current) {
         soundPlayedRef.current = true;
-        playDing();
+        if (restTimerSoundEnabled) playDing();
         dispatch({ type: 'SYNC_REST_TIMER' });
       }
     }, 100);
@@ -129,7 +157,7 @@ export function useRestTimer(
         speakTimeoutRef.current = null;
       }
     };
-  }, [endTime, active, dispatch]);
+  }, [endTime, active, isPaused, dispatch, restTimerSoundEnabled]);
 
   const progress =
     totalTimeRef.current > 0 ? ((totalTimeRef.current - timeLeft) / totalTimeRef.current) * 100 : 0;

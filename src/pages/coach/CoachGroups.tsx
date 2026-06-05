@@ -42,10 +42,10 @@ export default function CoachGroups() {
         <div className="flex gap-2 items-end">
           <div className="flex-1">
             <Input
+              label="שם הקבוצה"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="שם הקבוצה"
-              aria-label="שם הקבוצה"
+              placeholder="למשל: מתאמני בוקר"
             />
           </div>
           <Button variant="primary" onClick={create}>

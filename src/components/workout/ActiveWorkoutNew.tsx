@@ -279,10 +279,10 @@ export const WorkoutContent: React.FC<{
     pendingTimeouts,
   });
 
-  // Stable nextSetHint string for InlineRestTimer
+  // Stable nextSetHint string for InlineRestTimer (Hebrew kicker).
   const nextSetHint = useMemo(() => {
     if (derived.activeSetIndex >= 0) {
-      return `NEXT · SET ${String(derived.activeSetIndex + 1).padStart(2, '0')}`;
+      return `הסט הבא · ${String(derived.activeSetIndex + 1).padStart(2, '0')}`;
     }
     return undefined;
   }, [derived.activeSetIndex]);

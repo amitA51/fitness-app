@@ -17,7 +17,14 @@ import {
   revokeInvite,
 } from '../../services/coach';
 import type { CoachInvite, InviteStatus } from '../../types/coach';
-import { CoachPage, ListSkeleton, Section, formatDate, useAsyncData } from './_shared';
+import {
+  CoachPage,
+  ListSkeleton,
+  Section,
+  SectionError,
+  formatDate,
+  useAsyncData,
+} from './_shared';
 
 // Invite status → Hebrew (never surface the raw English enum in the meta line).
 const INVITE_STATUS_LABEL: Record<InviteStatus, string> = {
@@ -28,7 +35,12 @@ const INVITE_STATUS_LABEL: Record<InviteStatus, string> = {
 };
 
 export default function CoachInvites() {
-  const { data: invites, loading, reload } = useAsyncData<CoachInvite[]>(() => listInvites(), []);
+  const {
+    data: invites,
+    loading,
+    error,
+    reload,
+  } = useAsyncData<CoachInvite[]>(() => listInvites(), []);
   const { data: seats, reload: reloadSeats } = useAsyncData(() => getSeatUsage(), {
     used: 0,
     limit: 0,
@@ -104,6 +116,8 @@ export default function CoachInvites() {
       <Section title="הזמנות פתוחות">
         {loading ? (
           <ListSkeleton rows={3} />
+        ) : error ? (
+          <SectionError onRetry={reload} />
         ) : invites.length === 0 ? (
           <EmptyState
             illustration="generic"

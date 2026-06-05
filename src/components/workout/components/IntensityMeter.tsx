@@ -44,39 +44,41 @@ const ZONES: Record<
     range: [number, number];
   }
 > = {
+  // Tokenized intensity scale (cool → hot) so both Fresh Steel light and
+  // Obsidian dark adapt. No raw brand/Apple hex — see DESIGN.md two-accent rule.
   warmup: {
     label: 'WARM UP',
     labelHe: 'חימום',
-    color: '#30D158',
-    gradient: 'linear-gradient(135deg, #30D158, #34C759)',
+    color: 'var(--fs-accent)',
+    gradient: 'linear-gradient(135deg, var(--fs-accent), var(--fs-accent-2))',
     range: [0, 20],
   },
   fatburn: {
     label: 'FAT BURN',
     labelHe: 'שריפת שומן',
-    color: '#FFD60A',
-    gradient: 'linear-gradient(135deg, #FFD60A, #FF9F0A)',
+    color: 'var(--color-success-fg)',
+    gradient: 'linear-gradient(135deg, var(--color-success-fg), var(--fs-signal))',
     range: [20, 40],
   },
   cardio: {
     label: 'CARDIO',
     labelHe: 'אירובי',
-    color: '#FF9F0A',
-    gradient: 'linear-gradient(135deg, #FF9F0A, #FF6B35)',
+    color: 'var(--fs-signal)',
+    gradient: 'linear-gradient(135deg, var(--fs-signal), var(--fs-warn))',
     range: [40, 60],
   },
   peak: {
     label: 'PEAK',
     labelHe: 'שיא',
-    color: '#FF453A',
-    gradient: 'linear-gradient(135deg, #FF453A, #FF2D55)',
+    color: 'var(--fs-warn)',
+    gradient: 'linear-gradient(135deg, var(--fs-warn), var(--color-error-fg))',
     range: [60, 80],
   },
   max: {
     label: 'MAXIMUM',
     labelHe: 'מקסימום',
-    color: '#BF5AF2',
-    gradient: 'linear-gradient(135deg, #BF5AF2, #FF2D55)',
+    color: 'var(--color-error-fg)',
+    gradient: 'linear-gradient(135deg, var(--color-error-fg), var(--fs-warn))',
     range: [80, 100],
   },
 };
@@ -127,7 +129,7 @@ const ArcGauge = memo<{ intensity: number; size: number; strokeWidth: number; in
         <path
           d={`M ${strokeWidth / 2} ${size / 2} A ${radius} ${radius} 0 0 1 ${size - strokeWidth / 2} ${size / 2}`}
           fill="none"
-          stroke="rgba(255,255,255,0.1)"
+          stroke="var(--color-bar-track)"
           strokeWidth={strokeWidth}
           strokeLinecap="round"
         />
@@ -267,21 +269,24 @@ const VolumeBar = memo<{ current: number; target: number }>(({ current, target }
   return (
     <div className="w-full">
       <div className="flex justify-between text-xs mb-1">
-        <span className="text-white/60">נפח אימון</span>
-        <span className="text-white font-medium tabular-nums">
+        <span style={{ color: 'var(--fs-text-on-dark)' }}>נפח אימון</span>
+        <span className="font-medium tabular-nums" style={{ color: 'var(--color-ink-on-dark)' }}>
           {current.toLocaleString()} / {target.toLocaleString()} ק״ג
         </span>
       </div>
-      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+      <div
+        className="h-2 rounded-full overflow-hidden"
+        style={{ background: 'var(--color-bar-track)' }}
+      >
         <m.div
           className="h-full rounded-full"
           initial={{ scaleX: 0 }}
           animate={{ scaleX: percentage / 100 }}
           style={{
             background: isComplete
-              ? 'linear-gradient(90deg, #30D158, #34C759)'
+              ? 'linear-gradient(90deg, var(--fs-signal), var(--fs-accent))'
               : 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
-            boxShadow: isComplete ? '0 0 12px #30D158' : undefined,
+            boxShadow: isComplete ? '0 0 12px var(--fs-signal)' : undefined,
             transformOrigin: 'left center',
           }}
           transition={{ type: 'spring', stiffness: 100, damping: 20 }}
@@ -363,7 +368,8 @@ const IntensityMeter = memo<IntensityMeterProps>(
     if (compact) {
       return (
         <m.div
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md ${className}`}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md ${className}`}
+          style={{ background: 'var(--color-scrim)' }}
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >
@@ -374,8 +380,13 @@ const IntensityMeter = memo<IntensityMeterProps>(
           >
             {zoneData.labelHe}
           </span>
-          <span className="text-white/60 text-xs">|</span>
-          <span className="text-white text-xs font-bold tabular-nums">
+          <span className="text-xs" style={{ color: 'var(--fs-text-on-dark)' }}>
+            |
+          </span>
+          <span
+            className="text-xs font-bold tabular-nums"
+            style={{ color: 'var(--color-ink-on-dark)' }}
+          >
             {Math.round(displayIntensity)}%
           </span>
         </m.div>
@@ -393,7 +404,9 @@ const IntensityMeter = memo<IntensityMeterProps>(
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <PulsingDot color={zoneData.color} isActive={isActive} />
-            <span className="text-white/60 text-sm">עצימות אימון</span>
+            <span className="text-sm" style={{ color: 'var(--fs-text-on-dark)' }}>
+              עצימות אימון
+            </span>
           </div>
           <m.div
             className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
@@ -438,7 +451,10 @@ const IntensityMeter = memo<IntensityMeterProps>(
         {/* Zone Bar */}
         <div className="mb-4">
           <ZoneBar intensity={displayIntensity} />
-          <div className="flex justify-between mt-1 text-[10px] text-white/40 uppercase tracking-wider">
+          <div
+            className="flex justify-between mt-1 text-[10px] uppercase tracking-wider"
+            style={{ color: 'var(--fs-text-on-dark)' }}
+          >
             <span>חימום</span>
             <span>שומן</span>
             <span>אירובי</span>
@@ -449,34 +465,51 @@ const IntensityMeter = memo<IntensityMeterProps>(
 
         {/* Volume Bar */}
         {showVolume && (
-          <div className="pt-4 border-t border-white/10">
+          <div className="pt-4 border-t" style={{ borderColor: 'var(--fs-border-on-dark)' }}>
             <VolumeBar current={currentVolume} target={targetVolume} />
           </div>
         )}
 
         {/* Stats Row */}
         {totalSets > 0 && (
-          <div className="flex justify-around pt-4 mt-4 border-t border-white/10">
+          <div
+            className="flex justify-around pt-4 mt-4 border-t"
+            style={{ borderColor: 'var(--fs-border-on-dark)' }}
+          >
             <div className="text-center">
-              <div className="text-2xl font-bold text-white tabular-nums">
+              <div
+                className="text-2xl font-bold tabular-nums"
+                style={{ color: 'var(--color-ink-on-dark)' }}
+              >
                 {setsCompleted}
-                <span className="text-white/40 text-lg">/{totalSets}</span>
+                <span className="text-lg" style={{ color: 'var(--fs-text-on-dark)' }}>
+                  /{totalSets}
+                </span>
               </div>
-              <div className="text-xs text-white/60">סטים</div>
+              <div className="text-xs" style={{ color: 'var(--fs-text-on-dark)' }}>
+                סטים
+              </div>
             </div>
-            <div className="w-px bg-white/10" />
+            <div className="w-px" style={{ background: 'var(--fs-border-on-dark)' }} />
             <div className="text-center">
-              <div className="text-2xl font-bold text-white tabular-nums">
+              <div
+                className="text-2xl font-bold tabular-nums"
+                style={{ color: 'var(--color-ink-on-dark)' }}
+              >
                 {currentVolume.toLocaleString()}
               </div>
-              <div className="text-xs text-white/60">נפח (ק״ג)</div>
+              <div className="text-xs" style={{ color: 'var(--fs-text-on-dark)' }}>
+                נפח (ק״ג)
+              </div>
             </div>
-            <div className="w-px bg-white/10" />
+            <div className="w-px" style={{ background: 'var(--fs-border-on-dark)' }} />
             <div className="text-center">
               <div className="text-2xl font-bold tabular-nums" style={{ color: zoneData.color }}>
                 {Math.round(displayIntensity)}%
               </div>
-              <div className="text-xs text-white/60">עצימות</div>
+              <div className="text-xs" style={{ color: 'var(--fs-text-on-dark)' }}>
+                עצימות
+              </div>
             </div>
           </div>
         )}

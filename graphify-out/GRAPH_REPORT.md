@@ -1,16 +1,16 @@
-# Graph Report - fitness-app  (2026-06-04)
+# Graph Report - fitness-app  (2026-06-05)
 
 ## Corpus Check
-- 518 files · ~491,656 words
+- 549 files · ~515,098 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4865 nodes · 8498 edges · 362 communities (339 shown, 23 thin omitted)
+- 5007 nodes · 8854 edges · 389 communities (359 shown, 30 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 94 edges (avg confidence: 0.79)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `3b580460`
+- Built from commit: `a8515453`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -177,6 +177,7 @@
 - [[_COMMUNITY_Community 159|Community 159]]
 - [[_COMMUNITY_Community 160|Community 160]]
 - [[_COMMUNITY_Community 161|Community 161]]
+- [[_COMMUNITY_Community 162|Community 162]]
 - [[_COMMUNITY_Community 163|Community 163]]
 - [[_COMMUNITY_Community 164|Community 164]]
 - [[_COMMUNITY_Community 165|Community 165]]
@@ -184,10 +185,12 @@
 - [[_COMMUNITY_Community 167|Community 167]]
 - [[_COMMUNITY_Community 168|Community 168]]
 - [[_COMMUNITY_Community 170|Community 170]]
+- [[_COMMUNITY_Community 171|Community 171]]
 - [[_COMMUNITY_Community 175|Community 175]]
 - [[_COMMUNITY_Community 183|Community 183]]
 - [[_COMMUNITY_Community 184|Community 184]]
 - [[_COMMUNITY_Community 185|Community 185]]
+- [[_COMMUNITY_Community 186|Community 186]]
 - [[_COMMUNITY_Community 187|Community 187]]
 - [[_COMMUNITY_Community 188|Community 188]]
 - [[_COMMUNITY_Community 189|Community 189]]
@@ -206,6 +209,7 @@
 - [[_COMMUNITY_Community 202|Community 202]]
 - [[_COMMUNITY_Community 203|Community 203]]
 - [[_COMMUNITY_Community 204|Community 204]]
+- [[_COMMUNITY_Community 205|Community 205]]
 - [[_COMMUNITY_Community 206|Community 206]]
 - [[_COMMUNITY_Community 207|Community 207]]
 - [[_COMMUNITY_Community 208|Community 208]]
@@ -220,6 +224,7 @@
 - [[_COMMUNITY_Community 217|Community 217]]
 - [[_COMMUNITY_Community 218|Community 218]]
 - [[_COMMUNITY_Community 219|Community 219]]
+- [[_COMMUNITY_Community 220|Community 220]]
 - [[_COMMUNITY_Community 221|Community 221]]
 - [[_COMMUNITY_Community 222|Community 222]]
 - [[_COMMUNITY_Community 223|Community 223]]
@@ -228,6 +233,7 @@
 - [[_COMMUNITY_Community 226|Community 226]]
 - [[_COMMUNITY_Community 227|Community 227]]
 - [[_COMMUNITY_Community 228|Community 228]]
+- [[_COMMUNITY_Community 229|Community 229]]
 - [[_COMMUNITY_Community 230|Community 230]]
 - [[_COMMUNITY_Community 231|Community 231]]
 - [[_COMMUNITY_Community 232|Community 232]]
@@ -246,6 +252,7 @@
 - [[_COMMUNITY_Community 245|Community 245]]
 - [[_COMMUNITY_Community 246|Community 246]]
 - [[_COMMUNITY_Community 247|Community 247]]
+- [[_COMMUNITY_Community 248|Community 248]]
 - [[_COMMUNITY_Community 249|Community 249]]
 - [[_COMMUNITY_Community 250|Community 250]]
 - [[_COMMUNITY_Community 251|Community 251]]
@@ -280,6 +287,7 @@
 - [[_COMMUNITY_Community 280|Community 280]]
 - [[_COMMUNITY_Community 281|Community 281]]
 - [[_COMMUNITY_Community 282|Community 282]]
+- [[_COMMUNITY_Community 283|Community 283]]
 - [[_COMMUNITY_Community 284|Community 284]]
 - [[_COMMUNITY_Community 285|Community 285]]
 - [[_COMMUNITY_Community 286|Community 286]]
@@ -302,6 +310,7 @@
 - [[_COMMUNITY_Community 303|Community 303]]
 - [[_COMMUNITY_Community 304|Community 304]]
 - [[_COMMUNITY_Community 306|Community 306]]
+- [[_COMMUNITY_Community 307|Community 307]]
 - [[_COMMUNITY_Community 308|Community 308]]
 - [[_COMMUNITY_Community 309|Community 309]]
 - [[_COMMUNITY_Community 310|Community 310]]
@@ -318,7 +327,15 @@
 - [[_COMMUNITY_Community 322|Community 322]]
 - [[_COMMUNITY_Community 323|Community 323]]
 - [[_COMMUNITY_Community 324|Community 324]]
+- [[_COMMUNITY_Community 325|Community 325]]
+- [[_COMMUNITY_Community 326|Community 326]]
+- [[_COMMUNITY_Community 327|Community 327]]
+- [[_COMMUNITY_Community 328|Community 328]]
+- [[_COMMUNITY_Community 329|Community 329]]
+- [[_COMMUNITY_Community 330|Community 330]]
 - [[_COMMUNITY_Community 331|Community 331]]
+- [[_COMMUNITY_Community 332|Community 332]]
+- [[_COMMUNITY_Community 333|Community 333]]
 - [[_COMMUNITY_Community 334|Community 334]]
 - [[_COMMUNITY_Community 335|Community 335]]
 - [[_COMMUNITY_Community 336|Community 336]]
@@ -337,9 +354,12 @@
 - [[_COMMUNITY_Community 349|Community 349]]
 - [[_COMMUNITY_Community 350|Community 350]]
 - [[_COMMUNITY_Community 351|Community 351]]
+- [[_COMMUNITY_Community 352|Community 352]]
 - [[_COMMUNITY_Community 353|Community 353]]
 - [[_COMMUNITY_Community 354|Community 354]]
+- [[_COMMUNITY_Community 355|Community 355]]
 - [[_COMMUNITY_Community 356|Community 356]]
+- [[_COMMUNITY_Community 357|Community 357]]
 - [[_COMMUNITY_Community 358|Community 358]]
 - [[_COMMUNITY_Community 359|Community 359]]
 - [[_COMMUNITY_Community 360|Community 360]]
@@ -360,20 +380,27 @@
 - [[_COMMUNITY_Community 375|Community 375]]
 - [[_COMMUNITY_Community 376|Community 376]]
 - [[_COMMUNITY_Community 377|Community 377]]
+- [[_COMMUNITY_Community 378|Community 378]]
 - [[_COMMUNITY_Community 379|Community 379]]
 - [[_COMMUNITY_Community 380|Community 380]]
+- [[_COMMUNITY_Community 382|Community 382]]
+- [[_COMMUNITY_Community 383|Community 383]]
+- [[_COMMUNITY_Community 384|Community 384]]
+- [[_COMMUNITY_Community 385|Community 385]]
+- [[_COMMUNITY_Community 386|Community 386]]
+- [[_COMMUNITY_Community 388|Community 388]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `WorkoutSession` - 83 edges
+1. `WorkoutSession` - 86 edges
 2. `isSupabaseConfigured()` - 79 edges
-3. `getCurrentUser()` - 77 edges
-4. `logger` - 63 edges
+3. `getCurrentUser()` - 79 edges
+4. `logger` - 65 edges
 5. `requireClient()` - 56 edges
 6. `dbPut()` - 38 edges
 7. `initDB()` - 34 edges
-8. `WorkoutSet` - 33 edges
-9. `setVolume()` - 30 edges
-10. `useReducedMotion()` - 29 edges
+8. `WorkoutSet` - 34 edges
+9. `useReducedMotion()` - 31 edges
+10. `setVolume()` - 31 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Printed/Editorial Brand DNA (paper/ink/tangerine)` --semantically_similar_to--> `Fresh Steel / Obsidian Design Identity`  [INFERRED] [semantically similar]
@@ -388,8 +415,9 @@
   GSAP-ANIMATION-NOTES.md → REMAINING-WORK.md
 
 ## Import Cycles
-- 3-file cycle: `src/services/supabaseSync.ts -> src/services/workoutDb.ts -> src/services/templateDb.ts -> src/services/supabaseSync.ts`
+- 3-file cycle: `src/services/bodyStatsService.ts -> src/services/supabaseSync.ts -> src/services/supabaseSyncMappers.ts -> src/services/bodyStatsService.ts`
 - 3-file cycle: `src/services/exerciseDb.ts -> src/services/supabaseSync.ts -> src/services/workoutDb.ts -> src/services/exerciseDb.ts`
+- 3-file cycle: `src/services/supabaseSync.ts -> src/services/workoutDb.ts -> src/services/templateDb.ts -> src/services/supabaseSync.ts`
 - 3-file cycle: `src/services/sessionDb.ts -> src/services/supabaseSync.ts -> src/services/workoutDb.ts -> src/services/sessionDb.ts`
 - 4-file cycle: `src/services/bodyStatsService.ts -> src/services/supabaseSync.ts -> src/services/workoutDb.ts -> src/services/bodyWeightDb.ts -> src/services/bodyStatsService.ts`
 
@@ -407,175 +435,175 @@
 - **AI Service Layer (config, core, contextBuilder, edge function)** — src_services_ai_config, src_services_ai_core, src_services_ai_contextbuilder, functions_ai_chat_index [EXTRACTED 0.95]
 - **Supabase Security Hardening (RLS optimize, composite indexes, WITH CHECK)** — supabase_migration_rls_optimize, supabase_migration_composite_indexes, supabase_migration_with_check, supabase_schema_sql [EXTRACTED 0.90]
 
-## Communities (362 total, 23 thin omitted)
+## Communities (389 total, 30 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.04
-Nodes (49): 04 — Hooks, Utils, Contexts, Constants, Types, Errors, Data, Config, `biome.json`, CONFIG, CONTEXTS, HOOKS, `index.html` / `netlify.toml` / `postcss.config.js`, OTHER, `src/App.tsx` (+41 more)
+Cohesion: 0.08
+Nodes (24): 04 — Hooks, Utils, Contexts, Constants, Types, Errors, Data, Config, `biome.json`, CONFIG, CONTEXTS, HOOKS, `index.html` / `netlify.toml` / `postcss.config.js`, `src/contexts/AuthContext.tsx`, `src/contexts/DataContext.tsx` (+16 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.10
-Nodes (27): useWorkoutEffects(), UseWorkoutEffectsOptions, useWorkoutHandlers(), UseWorkoutHandlersOptions, WorkoutSettingsOverlay, WorkoutSettingsOverlaysProps, useWorkoutDispatch(), WorkoutAction (+19 more)
+Cohesion: 0.11
+Nodes (27): useWorkoutEffects(), UseWorkoutEffectsOptions, useWorkoutHandlers(), UseWorkoutHandlersOptions, WorkoutFinishHandlers, useWorkoutDispatch(), WorkoutProvider(), WorkoutAction (+19 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.11
-Nodes (26): CalorieHeroProps, SlideToComplete, SlideToCompleteProps, ComparisonBadge, ComparisonBadgeProps, ComparisonData, CountUpValue, CountUpValueProps (+18 more)
+Cohesion: 0.06
+Nodes (46): GlowAreaChartProps, XY, GradientSparkline, GradientSparklineProps, PointXY, CalorieHero, CalorieHeroProps, DateNavigator (+38 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.10
-Nodes (32): MobileInput, MobileInputProps, MobileToggle, MobileToggleProps, ProgressDots(), ProgressDotsProps, StepHeader(), StepHeaderProps (+24 more)
+Cohesion: 0.11
+Nodes (29): MobileToggle, MobileToggleProps, ProgressDots(), ProgressDotsProps, StepHeader(), StepHeaderProps, DEFAULT_ONBOARDING, EquipmentAccess (+21 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.07
-Nodes (39): listCheckIns(), adherenceDelta(), AssignmentsBox(), ClientDetail(), KIND_LABEL, NotesBox(), STATUS_LABEL, WEEK_LABELS (+31 more)
+Cohesion: 0.09
+Nodes (27): adherenceDelta(), AssignmentsBox(), ClientDetail(), KIND_LABEL, NotesBox(), STATUS_LABEL, WEEK_LABELS, clientStatusMeta() (+19 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.14
-Nodes (10): Completed-Set Dual Flag (completedAt vs isCompleted), Duplicate Sources of Truth (anti-pattern), Exercise God-Object Type, Modal Focus Trap / Escape / Scroll Lock, React Native Portability Preparation, Reduced-Motion Coverage via MotionConfig, Rules of Hooks Violations, SVG ID Collisions (use useId) (+2 more)
+Cohesion: 0.10
+Nodes (20): SparkOS Fitness — Production Readiness Fix Plan, איך להשתמש במסמך, טבלת מעקב, סיכום והמלצת ביצוע, Coach Platform RLS Policies, Completed-Set Dual Flag (completedAt vs isCompleted), Duplicate Sources of Truth (anti-pattern), ecc-universal Supply-Chain Risk (+12 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.12
-Nodes (25): clearMutationQueue(), clearQueue(), deleteMutation(), getAllMutations(), getDedupKey(), getQueueDepth(), getRecordId(), getSyncFn() (+17 more)
+Cohesion: 0.16
+Nodes (21): clearMutationQueue(), clearQueue(), deleteMutation(), getAllMutations(), getDedupKey(), getQueueDepth(), getRecordId(), getSyncFn() (+13 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.08
-Nodes (17): ConsistencyData, ConsistencyScore, ConsistencyScoreProps, computeWeeklyMuscles(), MuscleDatum, MuscleDistribution, MuscleDistributionProps, Card (+9 more)
+Cohesion: 0.10
+Nodes (12): ConsistencyData, ConsistencyScore, ConsistencyScoreProps, Card, CardProps, CardVariant, variantStyle, Premium3DCardProps (+4 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.18
-Nodes (6): DeleteConfirmDialog(), DeleteConfirmDialogProps, ConfirmDialog(), AddExerciseButtonProps, ExerciseLibraryTabProps, FormData
+Cohesion: 0.07
+Nodes (34): toProfile(), getMyProfile(), getProfilesByIds(), updateMyProfile(), isPushSupported(), subscribeToPush(), unsubscribeFromPush(), urlBase64ToUint8Array() (+26 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.07
-Nodes (41): createInvite(), generateCode(), inviteLink(), CoachOfflineError, Row, toAssignment(), toCoachClient(), toCoachProfile() (+33 more)
+Cohesion: 0.11
+Nodes (27): INVITE_STATUS_LABEL, createInvite(), generateCode(), inviteLink(), listInvites(), revokeInvite(), CoachOfflineError, Row (+19 more)
 
 ### Community 10 - "Community 10"
 Cohesion: 0.08
-Nodes (28): GreetingProps, WeeklyGrid, WeeklyGridProps, WorkoutComparison, calculateTotalReps(), calculateTotalSets(), ExerciseCard(), ExerciseCardProps (+20 more)
+Nodes (35): WeeklyGrid, WeeklyGridProps, calculateTotalReps(), calculateTotalSets(), ExerciseCard(), ExerciseCardProps, getBestSet(), MUSCLE_COLOR (+27 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.09
-Nodes (31): AIProgressionContext, calculateAverageRPE(), calculateConsistency(), calculateExerciseVolume(), calculateProgression(), calculateRPEDelta(), ExerciseProgressionData, getBestWeight() (+23 more)
+Cohesion: 0.10
+Nodes (27): AIProgressionContext, calculateAverageRPE(), calculateConsistency(), calculateExerciseVolume(), calculateProgression(), calculateRPEDelta(), ExerciseProgressionData, getBestWeight() (+19 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.10
-Nodes (35): ForecastNudge, ForecastNudgeProps, MAJOR_MUSCLES, MUSCLE_HE, calculateFrequency(), calculateMuscleBalance(), calculateMuscleGroupDistribution(), calculateStrengthProgression() (+27 more)
+Nodes (34): TrendLineOverlayProps, calculateFrequency(), calculateMuscleBalance(), calculateMuscleGroupDistribution(), calculateStrengthProgression(), calculateVolumeHistory(), calculateWeeklyVolumes(), computeSessionStats() (+26 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.06
-Nodes (52): DEFAULT_SETTINGS, ENGLISH_NUMBERS, HEBREW_NUMBERS, useAudioBeep(), UseAudioBeepOptions, useVoiceCountdown(), UseVoiceCountdownOptions, UseVoiceCountdownReturn (+44 more)
+Cohesion: 0.09
+Nodes (36): DEFAULT_SETTINGS, ENGLISH_NUMBERS, HEBREW_NUMBERS, useAudioBeep(), UseAudioBeepOptions, useVoiceCountdown(), UseVoiceCountdownOptions, UseVoiceCountdownReturn (+28 more)
 
 ### Community 14 - "Community 14"
 Cohesion: 0.07
-Nodes (26): ClientDetail, CoachGroups, CoachHome, CoachInvites, CoachMessages, Dashboard, getActivityLevelFromOnboarding(), getWeightGoalFromOnboarding() (+18 more)
+Nodes (27): ClientDetail, CoachGroups, CoachHome, CoachInvites, CoachMessages, Dashboard, getActivityLevelFromOnboarding(), getWeightGoalFromOnboarding() (+19 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.12
-Nodes (14): initAI(), withPersona(), AIConfig, AIError, AIErrorCode, AIProvider, currentProvider, delay() (+6 more)
+Cohesion: 0.11
+Nodes (15): initAI(), withPersona(), AIConfig, AIError, AIErrorCode, AIProvider, currentProvider, delay() (+7 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.12
-Nodes (21): FIELDS, GoalsEditor, NumberFieldProps, StoredProfile, WaterHistoryChartProps, addWaterEntry(), broadcastWaterUpdated(), clamp() (+13 more)
+Cohesion: 0.14
+Nodes (18): WaterHistoryChartProps, queueMutation(), syncWorkoutSession(), addWaterEntry(), broadcastWaterUpdated(), clamp(), getGlassSize(), getTodayWaterTotal() (+10 more)
 
 ### Community 17 - "Community 17"
 Cohesion: 0.04
 Nodes (47): 1.1 TypeScript Strict Mode, 1.2 ניקוי console.log, 1.3 פיצול קבצים גדולים, 1.4 הסרת Zustand הלא בשימוש, 2.1 חיבור useFitnessInsights ל-Dashboard, 2.2 חיבור useWorkoutHistoryHub ל-History, 2.3 חיבור supabaseSync ל-Settings, 2.4 איחוד recoveryService עם bodyStatsService (+39 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.17
-Nodes (13): ChapterBreak, RecoveryBar, SegmentedControl, SegmentedControlProps, SegmentOption, BodySubTab, ExerciseStrengthCurve, ProgressTab (+5 more)
+Cohesion: 0.21
+Nodes (11): ChapterBreak, SegmentedControl, SegmentedControlProps, SegmentOption, BodySubTab, ExerciseStrengthCurve, ProgressTab, StrengthDataPoint (+3 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.12
-Nodes (23): useWorkoutSettings, WorkoutProvider(), createInitialState(), DataAction, ExerciseAction, HAPTIC_PATTERNS, ModalAction, ModalType (+15 more)
+Cohesion: 0.13
+Nodes (22): useWorkoutSettings, createInitialState(), DataAction, ExerciseAction, HAPTIC_PATTERNS, ModalAction, ModalType, RestTimerState (+14 more)
 
 ### Community 20 - "Community 20"
 Cohesion: 0.05
 Nodes (43): 10. DESIGN TOKENS REFERENCE, 11. FILES TO MODIFY, 12. NEW ELEMENT: NextUpStrip, 1. PROGRESS BAR, 2. HEADER, 3. REST TIMER (conditional), 4. EXERCISE CARD, 5. SCROLLABLE CONTENT (+35 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.20
-Nodes (10): ExerciseCard, ExerciseCardProps, hasHebrew(), NAME_PRIMARY_STYLE, NAME_SECONDARY_STYLE, NAME_SOLO_STYLE, renderExerciseName(), ExerciseList (+2 more)
+Cohesion: 0.29
+Nodes (7): ExerciseCard, ExerciseCardProps, hasHebrew(), NAME_PRIMARY_STYLE, NAME_SECONDARY_STYLE, NAME_SOLO_STYLE, renderExerciseName()
 
 ### Community 22 - "Community 22"
 Cohesion: 0.06
-Nodes (7): cardStyle, ProgressSkeleton, getRadiusStyle(), RADIUS_MAP, screenSkeletonMap, SkeletonBox(), SkeletonProps
+Nodes (6): Screen, getRadiusStyle(), RADIUS_MAP, screenSkeletonMap, SkeletonBox(), SkeletonProps
 
 ### Community 23 - "Community 23"
-Cohesion: 0.11
-Nodes (18): ActionChip, ActionChipProps, ExerciseDisplay, ExerciseDisplayProps, SetEditBottomSheet, SetEditBottomSheetProps, PillConfig, SetTechniquePills (+10 more)
+Cohesion: 0.12
+Nodes (17): ExerciseDisplay, ExerciseDisplayProps, SetEditBottomSheet, SetEditBottomSheetProps, PillConfig, SetTechniquePills, SetTechniquePillsProps, UsePersonalRecordsReturn (+9 more)
 
 ### Community 24 - "Community 24"
-Cohesion: 0.07
-Nodes (36): PlanSetRow, PlanSetRowProps, StepperField, StepperFieldProps, HapticFeedback, HABIT_HAPTIC_PATTERNS, LUXURY_HAPTIC_PATTERNS, UseSwipeNavigationParams (+28 more)
+Cohesion: 0.08
+Nodes (33): PlanSetRow, PlanSetRowProps, StepperField, StepperFieldProps, MonoTimer, OverflowMenu, WorkoutHeader, WorkoutHeaderProps (+25 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.12
-Nodes (11): ActivityRingData, ActivityRings, ActivityRingsProps, AnimatedBar, AnimatedBarProps, GradientSparkline, GradientSparklineProps, PointXY (+3 more)
+Cohesion: 0.25
+Nodes (6): ActivityRingData, AnimatedBar, AnimatedBarProps, RingProgress, RingProgressProps, RingVariant
 
 ### Community 26 - "Community 26"
-Cohesion: 0.06
-Nodes (34): WorkoutBottomBarProps, ConfirmExitOverlay, ExerciseReorder, ExerciseSelector, ExerciseTutorial, QuickExerciseForm, WarmupCooldownFlow, WorkoutFlowOverlaysProps (+26 more)
+Cohesion: 0.09
+Nodes (24): WorkoutBottomBarProps, ConfirmExitOverlay, ExerciseReorder, ExerciseSelector, ExerciseTutorial, QuickExerciseForm, WarmupCooldownFlow, WorkoutFlowOverlaysProps (+16 more)
 
 ### Community 27 - "Community 27"
-Cohesion: 0.10
-Nodes (19): ButtonProps, ButtonShape, ButtonSize, ButtonVariant, CoreVariant, EDITORIAL_SHARED_STYLE, editorialStyles, EditorialVariant (+11 more)
+Cohesion: 0.08
+Nodes (27): NotesBottomSheet, NotesBottomSheetProps, QUICK_NOTES, DangerZoneSection(), Props, WelcomeStep(), Button(), ButtonProps (+19 more)
 
 ### Community 28 - "Community 28"
-Cohesion: 0.12
-Nodes (23): AIContext, computeTopExercises(), DataSufficiency, TopExerciseEntry, computeNutritionAdherence(), NutritionAdherence, AthleteProfile, describeProfile() (+15 more)
+Cohesion: 0.10
+Nodes (24): CoachBriefInput, AIContext, DataSufficiency, TopExerciseEntry, GoalsEditorProps, MacroStripProps, computeNutritionAdherence(), NutritionAdherence (+16 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.16
-Nodes (22): WeeklyRecoveryAverage, EMPTY_WEEKLY, ProgressData, BODY_AREAS, BodyMeasurement, BodyWeightEntry, calculateRecoveryScore(), calculateWeightTrend() (+14 more)
+Cohesion: 0.11
+Nodes (31): RecoveryBar, WeeklyRecoveryAverage, EMPTY_WEEKLY, ProgressData, addBodyWeight(), addRecoveryLog(), BODY_AREAS, BodyMeasurement (+23 more)
 
 ### Community 30 - "Community 30"
-Cohesion: 0.09
-Nodes (23): getBodyWeightsByDateRange(), getLatestWeight(), getBodyWeightHistory(), getLatestBodyWeight(), reAddBodyWeight(), replaceBodyWeightFromCloud(), saveBodyWeight(), BodyWeightEntry (+15 more)
+Cohesion: 0.08
+Nodes (20): CreatePersonalExerciseInput, ExerciseCatalogEntry, ExercisePR, FitnessGoals, Meal, MealTiming, NutritionAnalytics, NutritionGoals (+12 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.12
-Nodes (25): SavedIndicator(), useSettings(), useCloudSync(), Settings(), Props, DangerZoneSection(), Props, DataAboutSection() (+17 more)
+Nodes (23): SavedIndicator(), useGuidance(), useCloudSync(), Settings(), Props, DataAboutSection(), ExportSection(), GuidanceSection() (+15 more)
 
 ### Community 32 - "Community 32"
-Cohesion: 0.13
-Nodes (20): FATIGUE_BANDS, LoadRecommendation, ReadinessBand, readinessBandFromFatigue(), recommendationFromFatigue(), RECOVERY_BANDS, calculateMuscleRecovery(), calculateTrainingLoad() (+12 more)
+Cohesion: 0.10
+Nodes (23): FATIGUE_BANDS, LoadRecommendation, ReadinessBand, readinessBandFromFatigue(), recommendationFromFatigue(), RECOVERY_BANDS, calculateMuscleRecovery(), calculateTrainingLoad() (+15 more)
 
 ### Community 33 - "Community 33"
-Cohesion: 0.06
-Nodes (57): AddMealModal, AddMealModalProps, CalorieHero, DateNavigator, DateNavigatorProps, FoodLibrary, FoodLibraryProps, MacroStrip (+49 more)
+Cohesion: 0.09
+Nodes (31): AddMealModal, AddMealModalProps, FoodLibrary, FoodLibraryProps, EmptyMealState, GroupedMealLog, MealEntryCard, MealLogSkeleton (+23 more)
 
 ### Community 34 - "Community 34"
-Cohesion: 0.20
-Nodes (17): calculateEst1RM(), calculatePRsFromHistory(), checkForNewPR(), createBatchedPRChecker(), dbGetByIndexRange(), diffSetAgainstPRs(), getBestPRs(), getPRDisplayText() (+9 more)
+Cohesion: 0.16
+Nodes (19): HABIT_HAPTIC_PATTERNS, calculateEst1RM(), calculatePRsFromHistory(), checkForNewPR(), createBatchedPRChecker(), dbGetByIndexRange(), diffSetAgainstPRs(), getBestPRs() (+11 more)
 
 ### Community 35 - "Community 35"
-Cohesion: 0.11
-Nodes (33): AIConversationLike, AIMessageLike, mergeAIConversationsFromCloud(), mergeGenericRecords(), replaceAIConversationsFromCloud(), replaceBodyMeasurementsFromCloud(), replaceNutritionLogsFromCloud(), replacePersonalRecordsFromCloud() (+25 more)
+Cohesion: 0.10
+Nodes (31): AIConversationLike, AIMessageLike, mergeAIConversationsFromCloud(), mergeGenericRecords(), mergePersonalRecordsFromCloud(), replaceAIConversationsFromCloud(), replaceBodyMeasurementsFromCloud(), replaceNutritionLogsFromCloud() (+23 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.15
-Nodes (14): calculateAllStats(), calculateCompletedSets(), calculateVolume(), ExerciseData, ExerciseProgressRow, ExerciseStats, formatDuration(), MiniProgress (+6 more)
+Cohesion: 0.14
+Nodes (19): FOOD_LIBRARY, MEAL_PRESETS, addFoodFromPreset(), addMealEntry(), calcMacroTotals(), createQuickMeal(), DEFAULT_MACRO_GOALS, getDailyMacros() (+11 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.11
-Nodes (22): BriefConfidence, buildCoachFacts(), CoachBrief, CoachBriefFacts, CoachBriefInput, CoachBriefKind, CONSTRAINT_REASON, deriveConfidence() (+14 more)
+Cohesion: 0.16
+Nodes (16): BriefConfidence, buildCoachFacts(), CoachBrief, CoachBriefFacts, CoachBriefKind, CONSTRAINT_REASON, deriveConfidence(), deterministicProse() (+8 more)
 
 ### Community 38 - "Community 38"
 Cohesion: 0.11
 Nodes (20): AIProvider Interface, ai-chat Edge Function (index.ts), API Key Exposed in Client Bundle (Critical), Hebrew AI Persona (SPARKOS), Client/Server Model Mismatch, ai.ts (legacy facade), ai/bootstrap.ts, ai/chat.ts (+12 more)
 
 ### Community 39 - "Community 39"
-Cohesion: 0.20
-Nodes (13): FitnessInsightsData, LastWorkoutSummary, MuscleGroupLastTrained, ProgressDelta, StrengthProgressPoint, containerVariants, getGreeting(), getTodayDate() (+5 more)
+Cohesion: 0.14
+Nodes (16): GreetingProps, FitnessInsightsData, LastWorkoutSummary, MuscleGroupLastTrained, ProgressDelta, StrengthProgressPoint, containerVariants, getGreeting() (+8 more)
 
 ### Community 40 - "Community 40"
 Cohesion: 0.08
 Nodes (23): compilerOptions, allowImportingTsExtensions, baseUrl, isolatedModules, jsx, lib, module, moduleResolution (+15 more)
 
 ### Community 41 - "Community 41"
-Cohesion: 0.09
-Nodes (21): MessageThread(), AuthContext, AuthContextValue, AuthProvider(), AuthStatus, useAuth(), CoachProvider(), getCode() (+13 more)
+Cohesion: 0.11
+Nodes (19): acceptInvite(), AcceptResult, MessageThread(), subscribeToAssignments(), inviteErrorMessage(), useAcceptInvite(), AuthContext, AuthContextValue (+11 more)
 
 ### Community 42 - "Community 42"
 Cohesion: 0.09
@@ -586,28 +614,28 @@ Cohesion: 0.12
 Nodes (4): EmptyStateProps, FS, ILLUSTRATIONS, SIZE_CLASSES
 
 ### Community 44 - "Community 44"
-Cohesion: 0.12
-Nodes (20): DEFAULT_SETTINGS, DEFAULT_WORKOUT_SETTINGS, loadStoredSettings(), mergeSettings(), SettingsContext, SettingsContextValue, SettingsProvider(), systemPrefersDark() (+12 more)
+Cohesion: 0.29
+Nodes (10): getAudioContext(), playBeep(), playDing(), playHeartbeat(), playRestEndSound(), playSetCompleteSound(), playSuccess(), playWorkoutCompleteSound() (+2 more)
 
 ### Community 45 - "Community 45"
 Cohesion: 0.11
 Nodes (11): ExerciseLine, HistoryStats, ListItem, MonthHeader, SessionRow, StatCard, VirtualizedItems, WorkoutHistoryMode (+3 more)
 
 ### Community 46 - "Community 46"
-Cohesion: 0.16
-Nodes (11): ArcGauge, getZoneFromIntensity(), IntensityMeter, IntensityMeterProps, IntensityZone, PulsingDot, VolumeBar, ZoneBar (+3 more)
+Cohesion: 0.06
+Nodes (30): WorkoutHeaderSectionProps, InlineRestTimer, InlineRestTimerProps, ArcGauge, getZoneFromIntensity(), IntensityMeter, IntensityMeterProps, IntensityZone (+22 more)
 
 ### Community 47 - "Community 47"
 Cohesion: 0.15
-Nodes (12): ClientAnalytics, ClientOverviewRow, ClientStatusLevel, computeClientAnalytics(), getClientAnalytics(), getClientsOverview(), RosterSummary, SessionActivity (+4 more)
+Nodes (13): ClientAnalytics, ClientOverviewRow, ClientStatusLevel, computeClientAnalytics(), getClientAnalytics(), getClientsOverview(), RosterSummary, SessionActivity (+5 more)
 
 ### Community 48 - "Community 48"
-Cohesion: 0.16
-Nodes (20): resolveActiveSet(), calculateRestTime(), createEmptySet(), createNextSet(), DATA_ACTIONS, dataReducer(), EXERCISE_ACTIONS, exerciseReducer() (+12 more)
+Cohesion: 0.14
+Nodes (22): resolveActiveSet(), calculateRestTime(), createEmptySet(), createNextSet(), DATA_ACTIONS, dataReducer(), EXERCISE_ACTIONS, exerciseReducer() (+14 more)
 
 ### Community 49 - "Community 49"
 Cohesion: 0.07
-Nodes (74): subscribeToUserTable(), syncTemplatesFromCloud(), isSupabaseConfigured(), mergeBodyWeightFromCloud(), mergeBodyMeasurementsFromCloud(), mergeNutritionLogsFromCloud(), mergePersonalRecordsFromCloud(), mergeRecoveryLogsFromCloud() (+66 more)
+Nodes (77): isSupabaseConfigured(), mergeBodyWeightFromCloud(), mergeBodyMeasurementsFromCloud(), mergeNutritionLogsFromCloud(), mergeRecoveryLogsFromCloud(), mergeUserSettingsFromCloud(), mergePersonalExercisesFromCloud(), ComputeMacrosInput (+69 more)
 
 ### Community 50 - "Community 50"
 Cohesion: 0.05
@@ -618,76 +646,80 @@ Cohesion: 0.11
 Nodes (20): ai/config.ts (model, persona, timeouts), AIError typed error handling + humanizeAIError, AIProvider Abstraction Layer, contextBuilder buildSystemPrompt(), AI Integration Document, ai-chat Supabase Edge Function, LocalFallbackProvider (rule-based), OpenRouter API (+12 more)
 
 ### Community 52 - "Community 52"
-Cohesion: 0.15
-Nodes (7): Z_INDEX, Props, RootErrorBoundary, State, PWAUpdatePrompt(), initWebVitals(), MetricHandler
+Cohesion: 0.16
+Nodes (6): Props, RootErrorBoundary, State, PWAUpdatePrompt(), initWebVitals(), MetricHandler
 
 ### Community 53 - "Community 53"
-Cohesion: 0.06
-Nodes (50): ringDelay(), CreateTemplateModal(), CreateTemplateModalProps, TemplateExerciseInput, TemplateCard, TemplateCardProps, TemplateList(), TemplateListProps (+42 more)
+Cohesion: 0.12
+Nodes (22): CreateTemplateModal(), CreateTemplateModalProps, TemplateExerciseInput, TemplateCard, TemplateCardProps, TemplateList(), TemplateListProps, ErrorState() (+14 more)
 
 ### Community 54 - "Community 54"
-Cohesion: 0.07
-Nodes (40): GhostLink(), GhostLinkProps, Masthead(), staggerContainer, ForgotPasswordFormData, FormStep, SignInFormData, SignUpFormData (+32 more)
+Cohesion: 0.15
+Nodes (19): GhostLink(), GhostLinkProps, Masthead(), staggerContainer, ForgotPasswordFormData, FormStep, SignInFormData, SignUpFormData (+11 more)
 
 ### Community 55 - "Community 55"
-Cohesion: 0.10
-Nodes (26): ExportSection(), Props, copyToClipboard(), downloadCSV(), exportBodyWeightCSV(), exportNutritionCSV(), exportWorkoutHistoryCSV(), generateWeeklyReport() (+18 more)
+Cohesion: 0.12
+Nodes (20): Divider(), IconBox(), IconBoxProps, SettingsSelect(), SettingsSelectProps, useIsRTL(), CloudSyncSection(), Props (+12 more)
 
 ### Community 56 - "Community 56"
 Cohesion: 0.12
 Nodes (11): BestSet, DeltaChip(), DeltaChipProps, DeltaDir, DeltaTone, isEffectiveSet(), sessionAvgRpe(), sessionVolume() (+3 more)
 
 ### Community 57 - "Community 57"
-Cohesion: 0.21
-Nodes (5): AppShell(), Badge, BadgeProps, Label, cn()
+Cohesion: 0.17
+Nodes (7): AppShell(), AnnualPasswordInput, AnnualPasswordInputProps, Badge, BadgeProps, Label, cn()
 
 ### Community 58 - "Community 58"
 Cohesion: 0.05
 Nodes (37): 10. Dashboard — `src/components/dashboard/`, 11.1 IndexedDB (`sparkos-fitness-db`, v6), 11.2 Supabase (`supabase/schema.sql`), 11.3 `localStorage` keys (the full list), 11. Data & Storage Map, 12. Types — `src/types/index.ts`, 13. Utilities — `src/utils/`, 14. Constants & Styles (+29 more)
 
 ### Community 60 - "Community 60"
-Cohesion: 0.15
-Nodes (25): clearConversation(), Conversation, createConversation(), deleteConversation(), getAllConversations(), getCurrentConversation(), getOrCreateConversation(), sendMessage() (+17 more)
+Cohesion: 0.18
+Nodes (21): clearConversation(), Conversation, createConversation(), deleteConversation(), getAllConversations(), getCurrentConversation(), getOrCreateConversation(), sendMessage() (+13 more)
 
 ### Community 61 - "Community 61"
 Cohesion: 0.11
 Nodes (18): noAutofocus, useSemanticElements, noForEach, useOptionalChain, noUnusedImports, noUnusedVariables, useExhaustiveDependencies, rules (+10 more)
 
 ### Community 62 - "Community 62"
-Cohesion: 0.13
-Nodes (11): RecentPRBanner, CelebrationOptions, CelebrationResult, UsePersonalRecordsReturn, AnalyticsSummary, BatchedPRChecker, getAllPRs(), PersonalRecord (+3 more)
+Cohesion: 0.09
+Nodes (21): ActivityRings, ActivityRingsProps, ringDelay(), Z_INDEX, useData(), RecentPRBanner, useFitnessInsights(), CoachMark() (+13 more)
 
 ### Community 63 - "Community 63"
-Cohesion: 0.44
-Nodes (9): AI Slop / Genericness Anti-Pattern, Fresh Steel / Obsidian Design Language, WCAG AA Contrast Compliance, Mockup 01 — OBSIDIAN (dark violet/teal), Mockup 02 — ATELIER (editorial paper serif), Mockup 03 — AURORA (glass mesh gradient), Mockup 04 — VOLT (dark lime athletic), Mockup 05 — GRID (light cobalt swiss) (+1 more)
+Cohesion: 0.10
+Nodes (15): ProgramDay, ProgramExercise, MobileInput, MobileInputProps, DEFAULT_DURATION_MS, ToastAction, ToastContainer, ToastItem (+7 more)
 
 ### Community 64 - "Community 64"
-Cohesion: 0.12
-Nodes (21): getBUILT_IN_EXERCISES(), STATIC_BUILT_IN_EXERCISES, BuiltInTemplateExercise, BuiltInWorkoutTemplate, convertBuiltInToWorkoutTemplate(), getBuiltInWorkoutTemplates(), onTemplatesChanged(), onWorkoutSaved() (+13 more)
+Cohesion: 0.22
+Nodes (16): getBUILT_IN_EXERCISES(), STATIC_BUILT_IN_EXERCISES, createPersonalExercise(), getPersonalExercise(), getPersonalExercises(), healDuplicateBuiltIns(), incrementExerciseUse(), loadAndSeedBuiltIns() (+8 more)
 
 ### Community 65 - "Community 65"
-Cohesion: 0.18
-Nodes (15): loadAppSettings(), AnalyticsEvent, AnalyticsStore, DEFAULT_STORE, getAnalyticsSummary(), getStore(), save(), trackEvent() (+7 more)
+Cohesion: 0.11
+Nodes (24): DEFAULT_SETTINGS, DEFAULT_WORKOUT_SETTINGS, loadStoredSettings(), mergeSettings(), SettingsContext, SettingsContextValue, SettingsProvider(), systemPrefersDark() (+16 more)
+
+### Community 66 - "Community 66"
+Cohesion: 0.17
+Nodes (15): toCoachClient(), toCoachProfile(), disconnectCoach(), enableCoachMode(), getClientLink(), getMyCoachProfile(), getMySubscription(), getSeatUsage() (+7 more)
 
 ### Community 67 - "Community 67"
-Cohesion: 0.15
-Nodes (15): CompletableSet, computeSessionStats(), ExerciseStats, exerciseVolume(), isSetCompleted(), SessionStats, SessionStatsOptions, sessionVolume() (+7 more)
+Cohesion: 0.08
+Nodes (29): calculateAllStats(), calculateCompletedSets(), calculateVolume(), ExerciseData, ExerciseProgressRow, ExerciseStats, formatDuration(), MiniProgress (+21 more)
 
 ### Community 68 - "Community 68"
 Cohesion: 0.08
-Nodes (39): AuditEntry, listAudit(), Row, writeAudit(), addCoachNote(), CheckIn, CoachNote, listCoachNotes() (+31 more)
+Nodes (30): archiveAssignment(), createAssignment(), listCoachAssignments(), listMyAssignments(), NewAssignment, AuditEntry, listAudit(), Row (+22 more)
 
 ### Community 69 - "Community 69"
 Cohesion: 0.12
 Nodes (14): AnimatedValue, GhostValue, NumpadButton, NumpadOverlay, NumpadOverlayProps, PresetButton, REPS_INCREMENTS, REPS_PRESETS (+6 more)
 
 ### Community 70 - "Community 70"
-Cohesion: 0.13
-Nodes (19): bestSetOfExercise(), buildPRBoard(), buildStrengthCurves(), buildVolumeTrend(), onlyCompleted(), PRBoardEntry, recentPRs(), recordE1RM() (+11 more)
+Cohesion: 0.11
+Nodes (23): bestSetOfExercise(), buildPRBoard(), buildStrengthCurves(), buildVolumeTrend(), onlyCompleted(), PRBoardEntry, recentPRs(), recordE1RM() (+15 more)
 
 ### Community 71 - "Community 71"
-Cohesion: 0.19
-Nodes (13): Props, ACTIVITY_LEVEL_OPTIONS, ActivityLevel, DEFAULT_NUTRITION, Gender, GENDER_OPTIONS, NutritionGoals, UserProfile (+5 more)
+Cohesion: 0.18
+Nodes (14): Props, ACTIVITY_LEVEL_OPTIONS, ActivityLevel, DEFAULT_NUTRITION, Gender, GENDER_OPTIONS, HEADER_SUBTITLE_STYLE, NutritionGoals (+6 more)
 
 ### Community 72 - "Community 72"
 Cohesion: 0.22
@@ -702,20 +734,20 @@ Cohesion: 0.13
 Nodes (20): ExerciseNav Component, fs-accent-rail Containment-Only Status, Anti-Slop Audit 2026-06-02, Component Header Doc-Drift (Sport Annual vs Fresh Steel), RecoveryBar Hardcoded Non-FS Colors, Audit 3 Behavioral Compliance Report, ExerciseNav 36px Touch Target Violation, Anti-Slop Guardrails (+12 more)
 
 ### Community 75 - "Community 75"
-Cohesion: 0.19
-Nodes (10): Divider(), IconBox(), IconBoxProps, SetInputCard, SetInputCardProps, SettingsSelect(), SettingsSelectProps, useIsRTL() (+2 more)
+Cohesion: 0.16
+Nodes (12): AlternativesSheet, AlternativesSheetProps, RPE_LABELS, RPE_TAGS, RPE_VALUES, RPEPicker, RPEPickerProps, SetInputCard (+4 more)
 
 ### Community 76 - "Community 76"
 Cohesion: 0.33
 Nodes (6): 2. [`src/pages/Login.tsx`](src/pages/Login.tsx) — 1,692 lines, Accessibility, Architectural Concerns, Code Quality Issues, Data Fetching Pattern, Hebrew/RTL
 
 ### Community 77 - "Community 77"
-Cohesion: 0.14
-Nodes (12): AggregatedInsights, aggregateInsights(), computeStreak(), EMPTY, LastWorkoutSummary, MuscleGroupLastTrained, PersonalRecordEntry, ProgressDelta (+4 more)
+Cohesion: 0.12
+Nodes (15): AggregatedInsights, aggregateInsights(), computeStreak(), EMPTY, LastWorkoutSummary, MuscleGroupLastTrained, PersonalRecordEntry, ProgressDelta (+7 more)
 
 ### Community 79 - "Community 79"
-Cohesion: 0.14
-Nodes (13): PlanPreviousData, usePlanPreviousData(), BuildSessionInput, buildWorkoutSession(), buildEmptySets(), containerVariants, ExerciseSelector, QuickExerciseForm (+5 more)
+Cohesion: 0.17
+Nodes (12): WorkoutBottomBar(), PlanPreviousData, usePlanPreviousData(), buildEmptySets(), containerVariants, ExerciseSelector, QuickExerciseForm, seedExercise() (+4 more)
 
 ### Community 80 - "Community 80"
 Cohesion: 0.20
@@ -726,16 +758,20 @@ Cohesion: 0.16
 Nodes (14): src/types/index.ts Canonical Types, SparkOS Coding Standards, No any / Typed Props Rule, View Transitions API (route transitions), React Native (Expo) Migration Plan, Exercise Type Migration (ExerciseCatalogEntry/ActiveExercise), REMAINING-WORK Handoff, Platform Abstraction (web/rn) for React Native (+6 more)
 
 ### Community 82 - "Community 82"
-Cohesion: 0.13
-Nodes (14): AddExerciseButton(), AddExerciseButtonProps, categoryOptions, ExerciseForm(), ExerciseFormData, ExerciseFormProps, muscleGroupOptions, EXERCISE_CATEGORIES (+6 more)
+Cohesion: 0.06
+Nodes (33): DeleteConfirmDialog(), DeleteConfirmDialogProps, ExerciseFilter(), ExerciseFilterProps, MUSCLE_LABELS, AddExerciseButton(), AddExerciseButtonProps, categoryOptions (+25 more)
 
 ### Community 83 - "Community 83"
-Cohesion: 0.25
-Nodes (7): Confetti, CONFETTI_COLORS, ConfettiProps, PRHighlights, PRHighlightsProps, RPEDisplay, RPEDisplayProps
+Cohesion: 0.14
+Nodes (13): FIELDS, GoalsEditor, NumberFieldProps, StoredProfile, computeMacrosFromProfile(), ACTIVITY_MAP, ActivityMultiplier, calculateBMR() (+5 more)
+
+### Community 84 - "Community 84"
+Cohesion: 0.20
+Nodes (15): ChipSelector, Divider(), GOALS, GoalSelector, labelStyle, REST_TIME_OPTIONS, RestTimeSelector, SectionHeader (+7 more)
 
 ### Community 85 - "Community 85"
-Cohesion: 0.13
-Nodes (14): CoachHome(), useCoach(), useUnreadMessages(), CoachGuard(), Badge, BottomNav(), MAIN_TABS, MORE_PATHS (+6 more)
+Cohesion: 0.12
+Nodes (15): useUnreadMessages(), Badge, BottomNav(), DUR, EASE, GsapModule, loadGsap(), MAIN_TABS (+7 more)
 
 ### Community 86 - "Community 86"
 Cohesion: 0.13
@@ -746,19 +782,19 @@ Cohesion: 0.13
 Nodes (15): scripts, build, dev, doctor, format, format:check, lint, lint:check (+7 more)
 
 ### Community 88 - "Community 88"
-Cohesion: 0.60
-Nodes (3): TrendLineOverlayProps, ForecastData, WeeklyVolume
+Cohesion: 0.12
+Nodes (16): `src/utils/animations.ts`, `src/utils/audio.ts`, `src/utils/dateUtils.ts`, `src/utils/errorReporting.ts`, `src/utils/haptics.ts`, `src/utils/id.ts`, `src/utils/logger.ts`, `src/utils/plateCalculator.ts` (+8 more)
 
 ### Community 89 - "Community 89"
-Cohesion: 0.11
-Nodes (18): WorkoutSummary, WorkoutSummaryView(), WorkoutSummaryViewProps, WorkoutStreakProps, WorkoutHistory, WorkoutHistoryProps, calculateStats(), useWorkoutHistory() (+10 more)
+Cohesion: 0.08
+Nodes (25): WorkoutSummary, WorkoutSummaryView(), WorkoutSummaryViewProps, ForecastNudge, ForecastNudgeProps, MAJOR_MUSCLES, MUSCLE_HE, WorkoutStreakProps (+17 more)
 
 ### Community 90 - "Community 90"
 Cohesion: 0.06
 Nodes (36): Architecture Review (2026-05-27), CONTINUE HERE (session hand-off), API Key Exposed in Client Bundle (P0.1), CSS Duplication (global.css + components.css), God Components (P1.6), Reducer Routing Bug (P0.2), todayStr UTC Timezone Bug (P1.8), Remaining Fix Plan (FIX-PLAN) (+28 more)
 
 ### Community 91 - "Community 91"
-Cohesion: 0.21
+Cohesion: 0.23
 Nodes (9): json, CI Pipeline (ci.yml), Fresh Steel Design System Coherence, Supabase RLS auth.uid() Optimization, Test Coverage Gaps, Migration: add_composite_indexes, Migration: optimize_rls_auth_uid, Migration: add_with_check_to_update_policies (+1 more)
 
 ### Community 92 - "Community 92"
@@ -770,8 +806,8 @@ Cohesion: 0.06
 Nodes (34): 1. High-Level Architecture Overview, 2. Provider / Rendering Tree, 3. Data Flow Architecture, 4. IndexedDB Schema (v7), 5.1 Solid Foundation, 5.2 Smart State Design, 5.3 Offline-First Architecture, 5.4 AI Integration (+26 more)
 
 ### Community 94 - "Community 94"
-Cohesion: 0.09
-Nodes (25): AlternativesSheet, AlternativesSheetProps, RPE_LABELS, RPE_TAGS, RPE_VALUES, RPEPicker, RPEPickerProps, SliderInput (+17 more)
+Cohesion: 0.16
+Nodes (13): SliderInput, StartOption, StartOptionProps, StartWorkoutSheet, StartWorkoutSheetProps, AddMeasurementModal, AddRecoveryModal, Rating (+5 more)
 
 ### Community 96 - "Community 96"
 Cohesion: 0.18
@@ -809,10 +845,6 @@ Nodes (11): jsxQuoteStyle, quoteStyle, semicolons, trailingCommas, javascript, f
 Cohesion: 0.40
 Nodes (5): 3.1 Type System Assessment, 3.2 Constants Organization, 3.3 Error Boundary Coverage, 3.4 CSS Architecture, 3. Cross-Cutting Analysis
 
-### Community 105 - "Community 105"
-Cohesion: 0.20
-Nodes (8): MUSCLE_STATUS_COLORS, MuscleRadarChart(), MuscleRadarChartProps, useReducedMotion(), MuscleBalanceData, AnimatedProgressRing(), AnimatedProgressRingProps, AuroraBackground()
-
 ### Community 106 - "Community 106"
 Cohesion: 0.07
 Nodes (29): 03 — שירותי דומיין ו-AI, [High] Bug — `currentStreak` נספר רק אם האימון האחרון היה היום, [High] Bug — `getExerciseHistory` שובר אחרי limit ומניח sessions ממוינים מראש, [High] Bug — חלוקה ב-`setsCompleted` שיכול להיות 0, [Low] Bug — fallback של `acuteChronicRatio` מקובע ל-1.5 מסמן משתמשים חדשים כ-spiking, [Low] Bug — `longestStreak` מוערך בחסר על פני פערים, [Low] Bug — warmups כלולים לא עקבי בחלק מחישובי ה-volume, [Low] Code Quality — `AI_TOP_P` לא בשימוש במסלול המרוחק; `DirectDeepSeekProvider` קוד מת (+21 more)
@@ -822,36 +854,40 @@ Cohesion: 0.20
 Nodes (12): Design Tokens (tokens.css), Fresh Steel / Obsidian Design System, Mockup 07 — Ember (Gold/Dark Athletic), Mockup 08 — Pulse (Cyan/Violet Neon), Fresh Steel — Dark Mode Fixed, Direction A — Dark-First Athletic, Direction B — Editorial Sport Magazine, Direction C — Clean Minimal (+4 more)
 
 ### Community 108 - "Community 108"
-Cohesion: 0.19
-Nodes (16): useAutosave(), useSavedFlash(), useSettingsState(), checkMissedWorkouts(), DEFAULT_CONFIG, getNotificationConfig(), requestNotificationPermission(), saveNotificationConfig() (+8 more)
+Cohesion: 0.17
+Nodes (19): useSettings(), useAutosave(), useSavedFlash(), useSettingsState(), ThemeSection(), checkMissedWorkouts(), DEFAULT_CONFIG, getNotificationConfig() (+11 more)
 
 ### Community 109 - "Community 109"
 Cohesion: 0.27
 Nodes (8): cmToInches(), displayWeight(), inchesToCm(), kgToLbs(), lbsToKg(), toDisplayWeight(), toStorageWeight(), UnitSystem
 
+### Community 110 - "Community 110"
+Cohesion: 0.15
+Nodes (9): ExerciseSelectorProps, onTemplatesChanged(), WorkoutPlanScreenProps, EmbeddedTemplatePicker, EmbeddedTemplatePickerProps, TemplateRow, WorkoutGoal, GOALS (+1 more)
+
 ### Community 111 - "Community 111"
-Cohesion: 0.12
-Nodes (22): ConfirmExitOverlay, SummaryOverlayComponent(), useWorkoutFinish(), UseWorkoutFinishReturn, WorkoutFinishHandlers, WorkoutFinishState, WorkoutStats, WorkoutSummary (+14 more)
+Cohesion: 0.10
+Nodes (27): ConfirmExitOverlay, SummaryOverlayComponent(), useWorkoutFinish(), UseWorkoutFinishReturn, WorkoutFinishState, WorkoutStats, WorkoutSummary, MESSAGES (+19 more)
 
 ### Community 112 - "Community 112"
 Cohesion: 0.25
 Nodes (11): Coach Platform Manual Setup Checklist, Supabase Auth URL Configuration, Web Push VAPID Keys, coachApi.ts (direct Supabase, clientId-parameterized), Coach-Client Consent Model, Coach Platform Architecture & Security, Coach Edge Functions (coach-invite-accept, coach-push-send), RLS Security Boundary (is_coach_of/is_client_of) (+3 more)
 
 ### Community 113 - "Community 113"
-Cohesion: 0.10
-Nodes (20): 01 — עיצוב ומערכת עיצוב · תיק עבודה לסוכן Design, D-10 · "card soup" — Medium→L, D-11 · 4 משפחות גופנים — Low, D-12 · spacing לא עקבי — Low, D-13 · SkeletonLoader radii=0 — Low, D-1 · Contrast נכשל ב-WCAG AA (light mode) — **Critical**, D-2 · Dark mode primary button בלתי נראה — High, D-3 · ה"גנריות" — eyebrow מונוטוני (הגורם מס' 1 לתחושת "AI") — High (+12 more)
+Cohesion: 0.09
+Nodes (29): AI Slop / Genericness Anti-Pattern, Fresh Steel / Obsidian Design Language, WCAG AA Contrast Compliance, 01 — עיצוב ומערכת עיצוב · תיק עבודה לסוכן Design, D-10 · "card soup" — Medium→L, D-11 · 4 משפחות גופנים — Low, D-12 · spacing לא עקבי — Low, D-13 · SkeletonLoader radii=0 — Low (+21 more)
 
 ### Community 114 - "Community 114"
-Cohesion: 0.16
-Nodes (13): createGroup(), deleteGroup(), getGroupMemberIds(), listGroups(), setGroupMembers(), toGroup(), Checkbox(), NotesBottomSheet (+5 more)
+Cohesion: 0.24
+Nodes (9): createGroup(), deleteGroup(), getGroupMemberIds(), listGroups(), setGroupMembers(), toGroup(), ClientGroup, Textarea (+1 more)
 
 ### Community 115 - "Community 115"
 Cohesion: 0.07
 Nodes (28): 10. Accessibility, 1. File Organization, 2. TypeScript Standards, 3. React Patterns, 4. API & Data Fetching, 5. Error Handling, 6. Performance, 7. Testing (+20 more)
 
 ### Community 116 - "Community 116"
-Cohesion: 0.11
-Nodes (33): addBodyMeasurement(), addBodyWeight(), addRecoveryLog(), deleteBodyWeight(), deleteRecoveryLog(), updateBodyWeight(), updateRecoveryLog(), emitWorkoutSaved() (+25 more)
+Cohesion: 0.12
+Nodes (30): BuiltInTemplateExercise, BuiltInWorkoutTemplate, convertBuiltInToWorkoutTemplate(), getBuiltInWorkoutTemplates(), addBodyMeasurement(), deleteBodyWeight(), deleteRecoveryLog(), updateBodyWeight() (+22 more)
 
 ### Community 118 - "Community 118"
 Cohesion: 0.08
@@ -862,8 +898,8 @@ Cohesion: 0.08
 Nodes (25): 12.1 Tone — PASS ✅, 12.2 Good examples — PASS ✅ (present or very similar), 12.3 Forbidden phrases — PASS ✅ (NONE found), 13. Accessibility — ISSUES ⚠️, Active Workout (special checklist), ADDITIONAL NOTES, AUDIT 3: Spec Behavioral Compliance — Final Report, Dashboard (+17 more)
 
 ### Community 120 - "Community 120"
-Cohesion: 0.25
-Nodes (3): WorkoutTemplateExercise, PlanEditorExercise, PlanEditorModalProps
+Cohesion: 0.22
+Nodes (9): toMessage(), getThread(), getUnreadCount(), markThreadRead(), sendMessage(), subscribeToThread(), Unsubscribe, mockInsert (+1 more)
 
 ### Community 122 - "Community 122"
 Cohesion: 0.31
@@ -890,8 +926,8 @@ Cohesion: 0.25
 Nodes (8): updatedAt Missing Breaks Conflict Resolution (T1/S3), CSV Formula Injection in exportService, getCurrentUser() Network Round-Trip Per Write, Last-Write-Wins Overwrites Newer Edits, syncEngine Retry Queue Unrecoverable (Critical), Code Review 02 — Sync/Cloud/Auth, Merge-Sync Conflict Resolution (timestamp-based), Incremental/Delta Sync + Unified Sync Engine
 
 ### Community 128 - "Community 128"
-Cohesion: 0.33
-Nodes (5): ExerciseFilter(), ExerciseFilterProps, MUSCLE_LABELS, CustomDumbbellIcon(), CustomDumbbellIconProps
+Cohesion: 0.27
+Nodes (12): GuidanceContext, GuidanceContextValue, GuidanceProvider(), clearFlag(), dismissHint(), GUIDANCE_KEYS, hasSeenWelcome(), isHintDismissed() (+4 more)
 
 ### Community 129 - "Community 129"
 Cohesion: 0.08
@@ -914,24 +950,24 @@ Cohesion: 0.25
 Nodes (7): AGENTS, COMMON, fixes, meta, repairLog, SCHEMA, VERIFY_SCHEMA
 
 ### Community 134 - "Community 134"
-Cohesion: 0.36
-Nodes (6): ErrorContext, reportError(), backoffDelay(), sleep(), SyncResult, tryExecuteSync()
+Cohesion: 0.24
+Nodes (8): ErrorContext, reportError(), backoffDelay(), sleep(), SyncResult, tryExecuteSync(), mockIsConfigured, mockQueueMutation
 
 ### Community 135 - "Community 135"
 Cohesion: 0.25
 Nodes (7): compilerOptions, allowSyntheticDefaultImports, composite, module, moduleResolution, skipLibCheck, include
 
 ### Community 136 - "Community 136"
-Cohesion: 0.09
-Nodes (22): archiveAssignment(), createAssignment(), listCoachAssignments(), listMyAssignments(), NewAssignment, isPushSupported(), sendCoachPush(), subscribeToPush() (+14 more)
+Cohesion: 0.11
+Nodes (12): OverlayErrorBoundary, Props, State, createAppLogger(), createLogger(), currentLevel(), LogEntry, logger (+4 more)
 
 ### Community 137 - "Community 137"
 Cohesion: 0.25
 Nodes (7): ANIMATION_CONFIG, ANIMATIONS, DURATION, fadeVariants, KEYFRAMES, popInVariants, TRANSITIONS
 
 ### Community 138 - "Community 138"
-Cohesion: 0.15
-Nodes (11): WorkoutHeaderSectionProps, InlineRestTimer, InlineRestTimerProps, MonoTimer, OverflowMenu, WorkoutHeader, WorkoutHeaderProps, formatTime() (+3 more)
+Cohesion: 0.28
+Nodes (12): DashboardHeader, DashboardHeaderProps, clampNumber(), parseUserProfile(), ProfileInput, sanitizeText(), validateProfileInput(), validateReps() (+4 more)
 
 ### Community 139 - "Community 139"
 Cohesion: 0.43
@@ -942,8 +978,8 @@ Cohesion: 0.08
 Nodes (24): 08 — קומפוננטות Workout, Fitness, Nutrition, `AnalyticsDashboard.tsx`, `ExerciseCard.tsx`, `ExerciseDisplay.tsx`, `ExerciseList.tsx`, `ExerciseReorder.tsx`, High נוספים, `IntensityMeter.tsx` (+16 more)
 
 ### Community 141 - "Community 141"
-Cohesion: 0.29
-Nodes (6): PAGE_CLASSES, PAGE_THEMES, PageAccent, PageThemeProvider(), PageThemeProviderProps, ThemeColors
+Cohesion: 0.25
+Nodes (7): ACCENT_THEME, PAGE_CLASSES, PAGE_THEMES, PageAccent, PageThemeProvider(), PageThemeProviderProps, ThemeColors
 
 ### Community 142 - "Community 142"
 Cohesion: 0.33
@@ -966,16 +1002,16 @@ Cohesion: 0.40
 Nodes (6): Dual Data Path (coachApi online vs trainee local-first), Coach Mode (coach manages many trainees), Coach Platform — Next Steps (Agent Handoff), Coaching Platform Implementation Plan (Coach Mode), RLS Helpers is_coach_of / is_client_of, Project Definition (Israeli RTL Fitness + Coach Layer)
 
 ### Community 147 - "Community 147"
-Cohesion: 0.67
-Nodes (3): 2.11 [`src/lib/supabase.ts`](src/lib/supabase.ts), Issues, Quality Score: 8/10
+Cohesion: 0.29
+Nodes (7): 2.10 [`src/errors/RootErrorBoundary.tsx`](src/errors/RootErrorBoundary.tsx), 2.11 [`src/lib/supabase.ts`](src/lib/supabase.ts), 2. File-by-File Analysis, Issues, Issues, Quality Score: 7/10, Quality Score: 8/10
 
 ### Community 148 - "Community 148"
 Cohesion: 0.33
 Nodes (6): Kinetic Number (tabular-nums LTR), GSAP Animation Suite, src/lib/gsap.ts (EASE/DUR tokens), gsapSparks.ts Particle Factory (fireSparks), prefers-reduced-motion Handling, useCountUp Hook (RAF count-up)
 
 ### Community 149 - "Community 149"
-Cohesion: 0.29
-Nodes (7): 1.11 `webVitals.ts`, 1.4 `recoveryService.ts`, 1. Per-File Analysis, Issues, Issues, Recommendation, Strengths
+Cohesion: 0.13
+Nodes (15): 1.10 `notificationService.ts`, 1.11 `webVitals.ts`, 1.4 `recoveryService.ts`, 1.8 `supabaseSync.ts`, 1. Per-File Analysis, Architectural Concerns, Architectural Concerns, Issues (+7 more)
 
 ### Community 151 - "Community 151"
 Cohesion: 0.33
@@ -998,8 +1034,8 @@ Cohesion: 0.60
 Nodes (4): corsHeaders(), DEFAULT_ORIGINS, env(), json()
 
 ### Community 157 - "Community 157"
-Cohesion: 0.33
-Nodes (5): ExerciseSummaryItem, ExerciseSummaryItemData, ExerciseSummaryItemProps, SummaryExerciseList, SummaryExerciseListProps
+Cohesion: 0.19
+Nodes (7): NumpadOverlay, PlateCalculatorOverlay, WorkoutInputOverlaysProps, WorkoutOverlaysProps, WorkoutSettingsOverlay, WorkoutSettingsOverlaysProps, NumpadState
 
 ### Community 158 - "Community 158"
 Cohesion: 0.40
@@ -1017,9 +1053,13 @@ Nodes (4): name, organization_id, organization_slug, ref
 Cohesion: 0.40
 Nodes (3): THEME_PRESETS, ThemeVariable, WORKOUT_THEMES
 
+### Community 162 - "Community 162"
+Cohesion: 0.24
+Nodes (10): buildContext(), buildSystemPrompt(), computeTopExercises(), getWorkoutAdvice(), buildExerciseGrounding(), generateAIWorkoutInsight(), dateDaysAgo(), recoveryLog() (+2 more)
+
 ### Community 163 - "Community 163"
-Cohesion: 0.09
-Nodes (21): Coach Platform RLS Policies, ecc-universal Supply-Chain Risk, 03 — אבטחה · תיק עבודה לסוכן Security, S-10 · `getUnreadCount` חוצה threads — Low, S-11 · `impeccable` dep לא בשימוש — Low, S-12 · CSP `unsafe-inline` ל-styles — Low, S-1 · `ecc-universal` — supply-chain — **Critical**, S-2 · `coach_clients` INSERT עוקף invite — High (+13 more)
+Cohesion: 0.11
+Nodes (19): 03 — אבטחה · תיק עבודה לסוכן Security, S-10 · `getUnreadCount` חוצה threads — Low, S-11 · `impeccable` dep לא בשימוש — Low, S-12 · CSP `unsafe-inline` ל-styles — Low, S-1 · `ecc-universal` — supply-chain — **Critical**, S-2 · `coach_clients` INSERT עוקף invite — High, S-3 · `messages` INSERT ללא קשר פעיל — High, S-4 · `coach_clients` UPDATE — שינוי כל עמודה — Medium (+11 more)
 
 ### Community 183 - "Community 183"
 Cohesion: 0.09
@@ -1028,6 +1068,10 @@ Nodes (22): 06 — ארכיטקטורה, חוב טכני והכנה ל-React Nat
 ### Community 185 - "Community 185"
 Cohesion: 0.06
 Nodes (32): 06 — ליבת האימון (Workout Core), `ActiveWorkoutNew.tsx`, CORE, `core/index.tsx`, `core/OverlayErrorBoundary.tsx`, `core/WorkoutContext.tsx`, `core/WorkoutProvider.tsx`, `core/workoutReducer.ts` (+24 more)
+
+### Community 186 - "Community 186"
+Cohesion: 0.18
+Nodes (11): cardStyle, ProgressSkeleton, motionProps, ProgressPage(), TABS, useProgressData(), calculateBMI(), getBMICategory() (+3 more)
 
 ### Community 187 - "Community 187"
 Cohesion: 0.10
@@ -1078,8 +1122,8 @@ Cohesion: 0.12
 Nodes (16): 2.10 [`src/services/__tests__/trainingLoadService.test.ts`](src/services/__tests__/trainingLoadService.test.ts) — Training Load Service, 2.11 [`src/services/__tests__/workoutDb.test.ts`](src/services/__tests__/workoutDb.test.ts) — Workout DB, 2.12 [`src/services/__tests__/workoutDbMerge.test.ts`](src/services/__tests__/workoutDbMerge.test.ts) — Workout DB Merge, 2.13 [`src/utils/__tests__/plateCalculator.test.ts`](src/utils/__tests__/plateCalculator.test.ts) — Plate Calculator, 2.14 [`src/utils/__tests__/safeJson.test.ts`](src/utils/__tests__/safeJson.test.ts) — Safe JSON, 2.15 [`src/utils/__tests__/styles.test.ts`](src/utils/__tests__/styles.test.ts) — Styles Utility, 2.1 [`src/test/setup.ts`](src/test/setup.ts) — Test Setup/Configuration, 2.2 [`src/test/no-emoji.test.ts`](src/test/no-emoji.test.ts) — No-Emoji Lint Rule (+8 more)
 
 ### Community 199 - "Community 199"
-Cohesion: 0.31
-Nodes (6): ExerciseSuggestionData, UseExerciseSuggestionsReturn, emptyStringArray, useExerciseSuggestions(), UseExerciseSuggestionsReturn, PersonalExercise
+Cohesion: 0.15
+Nodes (12): [10] LOW — JS smooth scrolling ignores prefers-reduced-motion, [11] LOW — Always-on animated status dot (breathing-dot) in primary nav, [12] LOW — errorReporter swallows Sentry failures, so service errors routed only through it can vanish entirely, [13] LOW — manualChunks uses fragile substring match `id.includes('/react/')` that can misclassify vendor modules, [1] LOW — WaterTracker reads localStorage (getWaterGoal/getGlassSize) in the render body on every render, [3] LOW — Rest-end ding from the local timer is not gated by the user's sound/vibrate settings, [4] LOW — Hardcoded '#30D158' celebration/PR green duplicated across components instead of --fs-signal/--color-success, [5] LOW — Hairline-on-every-row anti-pattern: divide-y AND per-row border-b on the same list (+4 more)
 
 ### Community 200 - "Community 200"
 Cohesion: 0.13
@@ -1101,25 +1145,29 @@ Nodes (13): 13 משטחים ששודרגו, 🛠️ Follow-ups מומלצים (�
 Cohesion: 0.14
 Nodes (13): 10. המלצת חבילות (טיוטה לדיון — §3), 11. הצעדים הבאים (אחרי אישור המסמך), 1. החזון בשורה אחת, 2. קהל יעד, 3. מודל עסקי, 4. שכבת מאמן ↔ מתאמן (לב המוצר), 5. סדר עדיפויות (לפי החלטת הבעלים), 6. טכנולוגיה (+5 more)
 
+### Community 205 - "Community 205"
+Cohesion: 0.23
+Nodes (9): HE_CANONICAL, MUSCLE_HE, muscleLabel(), resolveMuscleKey(), translateMuscle(), computeWeeklyMuscles(), MuscleDatum, MuscleDistribution (+1 more)
+
 ### Community 206 - "Community 206"
 Cohesion: 0.14
 Nodes (14): 5.10 [`fitness/useProgressionRecommendation.ts`](src/hooks/fitness/useProgressionRecommendation.ts) — 309 lines, 5.11 [`fitness/useWorkoutHistoryHub.ts`](src/hooks/fitness/useWorkoutHistoryHub.ts) — 98 lines, 5.1 [`useCelebration.ts`](src/hooks/useCelebration.ts) — 66 lines, 5.2 [`useFocusTrap.ts`](src/hooks/useFocusTrap.ts) — 178 lines, 5.3 [`useHaptics.ts`](src/hooks/useHaptics.ts) — 223 lines, 5.4 [`useMobileKeyboard.ts`](src/hooks/useMobileKeyboard.ts) — 240 lines, 5.5 [`usePullToRefresh.ts`](src/hooks/usePullToRefresh.ts) — 64 lines, 5.6 [`useReducedMotion.ts`](src/hooks/useReducedMotion.ts) — 3 lines (+6 more)
 
 ### Community 207 - "Community 207"
-Cohesion: 0.09
-Nodes (22): FocusTrapOptions, useFocusTrap(), FieldRow, NumericStepper, NumericStepperProps, PlateCalculatorOverlay, PlateCalculatorOverlayProps, PlateRow (+14 more)
+Cohesion: 0.08
+Nodes (24): FocusTrapOptions, useFocusTrap(), ConfirmExitOverlay, ConfirmExitOverlayProps, FieldRow, NumericStepper, NumericStepperProps, PlateCalculatorOverlay (+16 more)
 
 ### Community 208 - "Community 208"
-Cohesion: 0.50
-Nodes (4): 1.10 `notificationService.ts`, Architectural Concerns, Issues, Strengths
+Cohesion: 0.18
+Nodes (10): A11y / design compliance, Build order, Hebrew copy (final draft), Implementation Plan: In-App First-Use Guidance ("הדרכה איך להשתמש"), New files (exact paths), Recommendation: hand-rolled, NOT driver.js, Risks / notes, State & persistence design (+2 more)
 
 ### Community 209 - "Community 209"
 Cohesion: 0.15
 Nodes (12): 1. Commit + deploy the frontend  — REQUIRED to make coaching live, 2. Supabase Auth URL configuration — REQUIRED for login / Google / invite links in prod, 3. Edge-function CORS secret — VERIFY (probably already set, since `ai-chat` works), 4. Web Push — OPTIONAL (only for notifications when the app is CLOSED), 5. Run the RLS security tests — RECOMMENDED, 6. Enable leaked-password protection — RECOMMENDED (from the security advisor), 7. Local dev — VERIFY, 8. Granting coach seats (until billing/Stripe is built) (+4 more)
 
 ### Community 210 - "Community 210"
-Cohesion: 0.17
-Nodes (12): 0. TL;DR, 1. Architecture recap, 2.1. Broken user_id in festoreService (CRITICAL), 2.2. Four services were not syncing at all (CRITICAL), 2.3. Type/shape mismatches that Postgres would reject (HIGH), 2.4. Recovery schema was missing columns (MEDIUM), 2.5. personal_items was writing to a non-existent table, 2. What was fixed on 2026-04-22 (+4 more)
+Cohesion: 0.10
+Nodes (19): 0. TL;DR, 1. Architecture recap, 2.1. Broken user_id in festoreService (CRITICAL), 2.2. Four services were not syncing at all (CRITICAL), 2.3. Type/shape mismatches that Postgres would reject (HIGH), 2.4. Recovery schema was missing columns (MEDIUM), 2.5. personal_items was writing to a non-existent table, 2. What was fixed on 2026-04-22 (+11 more)
 
 ### Community 211 - "Community 211"
 Cohesion: 0.15
@@ -1134,8 +1182,8 @@ Cohesion: 0.17
 Nodes (11): Aesthetic family, Anti-slop guardrails (summary), Color — Dark (Obsidian) — `html.dark`, Color — Light (Fresh Steel), Component primitives (CSS classes — see `src/styles/components.css`, `global.css`), DESIGN.md — Sparkos Fitness, Identity, Layout (+3 more)
 
 ### Community 214 - "Community 214"
-Cohesion: 0.09
-Nodes (22): 11. התאמת המסכים לפיצ'רים, 13. נגישות, 14. אנימציה ומיקרו־אינטראקציות, 15.1 Progressive disclosure, 15.2 Auto first, 15.3 Manual only when useful, 15. דפוסי מידע, 16.1 קבצים רלוונטיים (+14 more)
+Cohesion: 0.08
+Nodes (26): 11. התאמת המסכים לפיצ'רים, 12.1 טון, 12.2 דוגמאות טובות, 12.3 דוגמאות לא טובות, 12. כללי תוכן, 13. נגישות, 14. אנימציה ומיקרו־אינטראקציות, 15.1 Progressive disclosure (+18 more)
 
 ### Community 215 - "Community 215"
 Cohesion: 0.17
@@ -1156,6 +1204,10 @@ Nodes (4): 1.1 `analyticsService.ts`, Architectural Concerns, Issues, Strengths
 ### Community 219 - "Community 219"
 Cohesion: 0.18
 Nodes (11): P2-10 — טעינת טבלאות מלאה בסנכרון, P2-1 — טקסונומיית שרירים אחת, P2-2 — מנוע PR אחיד, P2-3 — סקאלת z-index אחת, P2-4 — `handleError` כפול, P2-5 — SlideToComplete מול SwipeComplete, P2-6 — dual-flag של "סט הושלם", P2-7 — מגבלות אימון כפולות (+3 more)
+
+### Community 220 - "Community 220"
+Cohesion: 0.22
+Nodes (9): OTHER, `src/App.tsx`, `src/constants/*`, `src/data/builtInExercises.ts`, `src/data/builtInWorkoutTemplates.ts`, `src/errors/index.ts`, `src/errors/PageErrorBoundary.tsx` & `RootErrorBoundary.tsx`, `src/main.tsx` (+1 more)
 
 ### Community 221 - "Community 221"
 Cohesion: 0.18
@@ -1189,6 +1241,10 @@ Nodes (10): 9.1 Appbar, 9.2 Bottom nav, 9.3 Panel, 9.4 Hero card, 9.5 Metric car
 Cohesion: 0.20
 Nodes (10): C1. Volume formula duplicated (~12+ sites), C2. `generateId` duplicated (4 sites, different behavior), C3. Dual haptic systems, C4. Triple button components, C5. DumbbellIcon duplicated inline, C6. WorkoutSummary stats duplicated, C7. Hooks not memoized → unnecessary re-renders, C8. PageThemeContext — all pages share one accent (+2 more)
 
+### Community 229 - "Community 229"
+Cohesion: 0.31
+Nodes (5): BuildSessionInput, BuildSessionResult, buildWorkoutSession(), baseInput, toLocalDateStr()
+
 ### Community 230 - "Community 230"
 Cohesion: 0.20
 Nodes (10): 1.3 Exercise Selector, 1.5 States, 1.6 Common, 1. File-by-File Analysis, 45. `CategoryPill.tsx` (35 lines), 46. `ExerciseSelector/index.tsx` (375 lines), 54. `EmptyWorkoutState.tsx` (178 lines), 55. `states/index.ts` (7 lines) (+2 more)
@@ -1218,8 +1274,8 @@ Cohesion: 0.25
 Nodes (8): [High] Bug — Last-write-wins תמיד מעדיף את הענן ודורס עריכות חדשות שלא נמשכו, [High] Bug — `syncUserSetting` מייצר id חדש כשחסר → שורות כפולות ללא גבול, [High] Performance — משיכת טבלה מלאה ו-push לכל רשומה ללא pagination/batching, [Low] Code Quality — `pullAllData` חסר את guard ה-`isSupabaseConfigured` שיש ל-`syncAllData`, [Low] Code Quality — ערוצי Realtime נשמרים ב-`Map` גלובלי למודול, [Medium] Bug — `created_at` נדרס בכל update, [Medium] Bug — `success: true` מוחזר גם כשהרבה pushes/merges נכשלו, `src/services/supabaseSync.ts`
 
 ### Community 237 - "Community 237"
-Cohesion: 0.10
-Nodes (21): P0-1 — קונסולידציית תור הסנכרון לאופליין, P0-2 — Last-write-wins דורס עריכות בין מכשירים, P0-3 — הסרת תלות `ecc-universal` (supply-chain red flag), P0-4 — סוויטת בדיקות לא דטרמיניסטית + אימוג'י ב-JoinPage, P0 — חוסמי פרודקשן (חובה לפני שחרור), P1-1 — טיפול עקבי בתאריכים (UTC מול מקומי), P1-2 — web-vitals הוא no-op בפרודקשן, P1-3 — וירטואליזציה ל-WorkoutHistoryList (+13 more)
+Cohesion: 0.25
+Nodes (8): P1-1 — טיפול עקבי בתאריכים (UTC מול מקומי), P1-2 — web-vitals הוא no-op בפרודקשן, P1-3 — וירטואליזציה ל-WorkoutHistoryList, P1-4 — Focus trap + Escape ל-sheets בעמוד ההתקדמות, P1-5 — reduced-motion לאנימציות framer-motion, P1-6 — ניגודיות צבעים (WCAG AA), P1-7 — כיסוי בדיקות לנתיבים קריטיים, P1 — לתיקון לפני שחרור (חשוב, לא חוסם)
 
 ### Community 238 - "Community 238"
 Cohesion: 0.25
@@ -1246,8 +1302,8 @@ Cohesion: 0.25
 Nodes (8): 1. Executive Summary, 4. Priority Action Items, 🔴 Critical (Fix Immediately), 🟠 High (Fix Soon), 🔵 Low (Polish), 🟡 Medium (Improve), Review 02 — Contexts & Workout State Engine, Table of Contents
 
 ### Community 244 - "Community 244"
-Cohesion: 0.13
-Nodes (15): Accessibility Summary, Component Composition vs Monolithic, 🔴 Critical (do first), Cross-Cutting Analysis, Data Fetching Patterns, Executive Summary, Hebrew/RTL Handling, ⚠️ High (do next) (+7 more)
+Cohesion: 0.25
+Nodes (8): 🔴 Critical (do first), Executive Summary, ⚠️ High (do next), Line Count Summary, 💡 Medium (improve), Priority Recommendations, Proposed File Structure, Review 06 — Pages Layer
 
 ### Community 245 - "Community 245"
 Cohesion: 0.25
@@ -1260,6 +1316,10 @@ Nodes (8): 5.1 [`biome.json`](biome.json) — Biome Linter/Formatter, 5.2 [`post
 ### Community 247 - "Community 247"
 Cohesion: 0.29
 Nodes (6): 01 — שכבת אחסון IndexedDB ושירותי נתונים, E1. אירוע גלובלי לא מטופס וללא payload, `src/services/dataEvents.ts`, `src/services/workoutDb.ts`, W1. Barrel של `export *` מסתכן בהתנגשויות שמות שקטות, סיכום פריטים בעדיפות גבוהה
+
+### Community 248 - "Community 248"
+Cohesion: 0.36
+Nodes (6): subscribeToUserTable(), syncTemplatesFromCloud(), emitTemplatesChanged(), onWorkoutSaved(), isTombstoned(), mergeWorkoutTemplatesFromCloud()
 
 ### Community 249 - "Community 249"
 Cohesion: 0.50
@@ -1295,7 +1355,7 @@ Nodes (7): 9. NOTIFICATIONS & REMINDERS, Creative / Premium, Critical, Current S
 
 ### Community 257 - "Community 257"
 Cohesion: 0.29
-Nodes (7): 3.1. Run the schema migration on the live Supabase project [REQUIRED], 3.2. Wire Settings sync (OPTIONAL — product decision required), 3.3. Close the type drift between supabaseSync.ts and types/index.ts (MEDIUM), 3.4. Commit the uncommitted type-mapping fixes [QUICK], 3.5. Decide on personal_items (OPTIONAL), 3.6. Pre-existing unrelated issues surfaced by typecheck, 3. Outstanding tasks
+Nodes (5): SlideToComplete, SlideToCompleteProps, fireSparks(), SPARK_COLORS, SparkBurstOptions
 
 ### Community 258 - "Community 258"
 Cohesion: 0.29
@@ -1306,12 +1366,12 @@ Cohesion: 0.29
 Nodes (7): A1. supabaseSync — `created_at` overwritten on every upsert (body_weight + audit others), A2. supabaseSync — `Promise.all` aborts entire sync on one failure, A3. workout_sessions missing `updated_at` column + trigger, A4. SettingsContext — side effect inside setState updater, A5. WorkoutStartModal — dual onClick + onPointerDown (double execution), A6. notificationService — deprecated `new Notification()`, §A — CORRECTNESS / DATA BUGS (do first)
 
 ### Community 260 - "Community 260"
-Cohesion: 0.67
-Nodes (3): 2.10 [`src/errors/RootErrorBoundary.tsx`](src/errors/RootErrorBoundary.tsx), Issues, Quality Score: 7/10
+Cohesion: 0.29
+Nodes (6): [17] MEDIUM — User-facing micro-labels left in English (STREAK / BEST) against Hebrew-first spec, [18] MEDIUM — Hebrew muscle terminology is wrong and misspelled for Biceps/Triceps, [19] MEDIUM — 'Core' translated inconsistently across screens (בטן vs ליבה), [20] MEDIUM — Plural-agreement bug: '1 תרגילים' / '1 סטים' for singular counts, [24] HIGH — Systemic dark-mode contrast failure: --fs-heading text/icons on --fs-accent fills, [32] HIGH — Muscle-group key resolution drifts between `targetMuscle||muscleGroup` and `muscleGroup||targetMuscle`
 
 ### Community 261 - "Community 261"
-Cohesion: 0.09
-Nodes (22): 3. [`src/pages/OnboardingFlow.tsx`](src/pages/OnboardingFlow.tsx) — 1,539 lines, 6. [`src/pages/Settings.tsx`](src/pages/Settings.tsx) — 2,001 lines, 7. [`src/pages/Templates.tsx`](src/pages/Templates.tsx) — 1,143 lines, 8. [`src/pages/WorkoutDetail.tsx`](src/pages/WorkoutDetail.tsx) — 1,176 lines, 9. [`src/pages/index.ts`](src/pages/index.ts) — 10 lines, Accessibility, Accessibility, Accessibility (+14 more)
+Cohesion: 0.29
+Nodes (7): 7. [`src/pages/Templates.tsx`](src/pages/Templates.tsx) — 1,143 lines, 9. [`src/pages/index.ts`](src/pages/index.ts) — 10 lines, Accessibility, Architectural Concerns, Code Quality Issues, File-by-File Analysis, Hebrew/RTL
 
 ### Community 262 - "Community 262"
 Cohesion: 0.50
@@ -1397,6 +1457,10 @@ Nodes (6): 3.1 Context Re-render Prevention, 3.2 Workout Reducer Action Routing,
 Cohesion: 0.33
 Nodes (6): 1. [`src/pages/Dashboard.tsx`](src/pages/Dashboard.tsx) — 909 lines, Accessibility, Architectural Concerns, Code Quality Issues, Data Fetching Pattern, Hebrew/RTL
 
+### Community 283 - "Community 283"
+Cohesion: 0.29
+Nodes (7): Accessibility Summary, Component Composition vs Monolithic, Cross-Cutting Analysis, Data Fetching Patterns, Hebrew/RTL Handling, Lazy Loading & Code Splitting ✅, Mobile Responsiveness
+
 ### Community 284 - "Community 284"
 Cohesion: 0.33
 Nodes (6): 5. [`src/pages/Progress.tsx`](src/pages/Progress.tsx) — 3,259 lines ⚠️ CRITICAL, Accessibility, Architectural Concerns, Code Quality Issues, Data Fetching Pattern, Hebrew/RTL
@@ -1438,8 +1502,8 @@ Cohesion: 0.40
 Nodes (5): באגים קריטיים/גבוהים לתיקון ראשון, דירוג חומרה, מבנה הדוחות, סקירת קוד מקיפה — SparkOS Fitness App, תקציר מנהלים
 
 ### Community 294 - "Community 294"
-Cohesion: 0.50
-Nodes (4): 1.8 `supabaseSync.ts`, Architectural Concerns, Issues, Strengths
+Cohesion: 0.33
+Nodes (5): [1] HIGH — Cloud-pulled body measurements stored as nested object — all measurement values render blank on a second device, [25] HIGH — "Delete all my data" never deletes cloud data — it silently re-syncs on next sign-in, [26] MEDIUM — Destructive delete-all has no error handling — a mid-loop failure aborts silently with no UI, [27] MEDIUM — AI chat messages are persisted locally but never synced to the cloud on send, [35] MEDIUM — Kcal-from-macros formula (protein*4 + carbs*4 + fat*9) duplicated across 3+ modules
 
 ### Community 295 - "Community 295"
 Cohesion: 0.40
@@ -1474,8 +1538,8 @@ Cohesion: 0.40
 Nodes (5): 10. Recommendations Summary, 🔴 Critical (Do First), 🟠 High Priority, 🔵 Low Priority, 🟡 Medium Priority
 
 ### Community 304 - "Community 304"
-Cohesion: 0.07
-Nodes (30): 1. Executive Summary, 3. AI Provider Abstraction Quality, 4. Context Builder Completeness, 5. Error Handling & Fallback Patterns, 6. Security Analysis, 7. Cost Control Mechanisms, 8. Hebrew Persona Effectiveness, Appendix: File Size Summary (+22 more)
+Cohesion: 0.40
+Nodes (5): 6. Security Analysis, 🔴 CRITICAL: API Key in Client Bundle, Data Exposure, Edge Function Security, JWT Validation Concern
 
 ### Community 306 - "Community 306"
 Cohesion: 0.40
@@ -1526,12 +1590,12 @@ Cohesion: 0.50
 Nodes (4): [Low] Performance — סריקת store מלאה לכל קריאה, [Low] Security — מסתמך על RLS ל-`water_logs`, [Medium] Bug — id מיוצר קצר מסתכן בהתנגשות בין-מכשירית / lost update, `src/services/waterService.ts`
 
 ### Community 321 - "Community 321"
-Cohesion: 0.50
-Nodes (4): 12.1 טון, 12.2 דוגמאות טובות, 12.3 דוגמאות לא טובות, 12. כללי תוכן
+Cohesion: 0.40
+Nodes (5): P0-1 — קונסולידציית תור הסנכרון לאופליין, P0-2 — Last-write-wins דורס עריכות בין מכשירים, P0-3 — הסרת תלות `ecc-universal` (supply-chain red flag), P0-4 — סוויטת בדיקות לא דטרמיניסטית + אימוג'י ב-JoinPage, P0 — חוסמי פרודקשן (חובה לפני שחרור)
 
 ### Community 322 - "Community 322"
 Cohesion: 0.50
-Nodes (3): ProgressBar, ProgressBarProps, ProgressParticle
+Nodes (3): GUIDANCE_STEPS, GuidanceStep, WelcomeGuideSheet()
 
 ### Community 323 - "Community 323"
 Cohesion: 0.50
@@ -1541,9 +1605,41 @@ Nodes (4): DONE & verified, NOT DONE — require the running-app visual-verifica
 Cohesion: 0.67
 Nodes (3): 2.15 [`src/styles/motion.css`](src/styles/motion.css), Issues, Quality Score: 7/10
 
+### Community 325 - "Community 325"
+Cohesion: 0.40
+Nodes (5): 8. Hebrew Persona Effectiveness, Hebrew Response Parsing, Persona Design, Persona Duplication Problem, Persona Injection
+
+### Community 326 - "Community 326"
+Cohesion: 0.40
+Nodes (5): 3. [`src/pages/OnboardingFlow.tsx`](src/pages/OnboardingFlow.tsx) — 1,539 lines, Accessibility, Architectural Concerns, Code Quality Issues, Hebrew/RTL
+
+### Community 327 - "Community 327"
+Cohesion: 0.40
+Nodes (5): 6. [`src/pages/Settings.tsx`](src/pages/Settings.tsx) — 2,001 lines, Accessibility, Architectural Concerns, Code Quality Issues, Hebrew/RTL
+
+### Community 328 - "Community 328"
+Cohesion: 0.40
+Nodes (5): 8. [`src/pages/WorkoutDetail.tsx`](src/pages/WorkoutDetail.tsx) — 1,176 lines, Accessibility, Architectural Concerns, Code Quality Issues, Hebrew/RTL
+
+### Community 329 - "Community 329"
+Cohesion: 0.67
+Nodes (3): NutritionTrendChart, NutritionTrendChartProps, DailyNutritionSummary
+
+### Community 330 - "Community 330"
+Cohesion: 0.50
+Nodes (4): 1. Executive Summary, Appendix: File Size Summary, Review 05 — AI Services Layer, Table of Contents
+
 ### Community 331 - "Community 331"
 Cohesion: 0.25
 Nodes (7): Anti-patterns verdict, Combined UX Critique — Sparkos Fitness (src/pages), Design Health Score (Nielsen 0-4), Minor observations, Persona red flags, Priority issues, Questions
+
+### Community 332 - "Community 332"
+Cohesion: 0.50
+Nodes (4): 3. AI Provider Abstraction Quality, Interface Design, Key Issue: Model Mismatch, Provider Switching
+
+### Community 333 - "Community 333"
+Cohesion: 0.50
+Nodes (4): 4. Context Builder Completeness, Context vs Dashboard Duplication, What's Included, What's Missing
 
 ### Community 334 - "Community 334"
 Cohesion: 0.50
@@ -1617,9 +1713,17 @@ Nodes (3): D1. Seeding סדרתי עם cloud sync לכל פריט, D2. בדיק�
 Cohesion: 0.67
 Nodes (3): [Low] Code Quality — `color` מחושב ללא תנאי אבל בשימוש רק ב-DEV, [Low] Code Quality — מטריקות נזרקות בproduction, `src/services/webVitals.ts`
 
+### Community 352 - "Community 352"
+Cohesion: 0.50
+Nodes (4): 5. Error Handling & Fallback Patterns, Error Type Hierarchy, Fallback Coverage, `humanizeAIError` Coverage
+
 ### Community 354 - "Community 354"
-Cohesion: 0.29
-Nodes (7): 2.12 [`src/styles/tokens.css`](src/styles/tokens.css), 2.13 [`src/styles/global.css`](src/styles/global.css), 2. File-by-File Analysis, Issues, Issues, Quality Score: 4.5/10, Quality Score: 7/10
+Cohesion: 0.67
+Nodes (3): 2.12 [`src/styles/tokens.css`](src/styles/tokens.css), Issues, Quality Score: 7/10
+
+### Community 355 - "Community 355"
+Cohesion: 0.50
+Nodes (4): 7. Cost Control Mechanisms, Client-Side, Missing Cost Controls, Server-Side (Edge Function)
 
 ### Community 356 - "Community 356"
 Cohesion: 0.67
@@ -1705,25 +1809,29 @@ Nodes (3): 2.8 [`workoutSelectors.ts`](src/components/workout/core/workoutSelect
 Cohesion: 0.67
 Nodes (3): 2.9 [`WorkoutContext.tsx`](src/components/workout/core/WorkoutContext.tsx), Issues, Quality Assessment
 
+### Community 385 - "Community 385"
+Cohesion: 0.67
+Nodes (3): 2.13 [`src/styles/global.css`](src/styles/global.css), Issues, Quality Score: 4.5/10
+
 ## Knowledge Gaps
-- **2319 isolated node(s):** `supabase`, `$schema`, `enabled`, `enabled`, `recommended` (+2314 more)
+- **2379 isolated node(s):** `supabase`, `$schema`, `enabled`, `enabled`, `recommended` (+2374 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **23 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **30 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `ai/chat.ts` connect `Community 38` to `Community 78`?**
-  _High betweenness centrality (0.065) - this node is a cross-community bridge._
-- **Why does `logger` connect `Community 136` to `Community 1`, `Community 2`, `Community 6`, `Community 134`, `Community 8`, `Community 9`, `Community 10`, `Community 13`, `Community 14`, `Community 15`, `Community 19`, `Community 23`, `Community 24`, `Community 26`, `Community 29`, `Community 31`, `Community 33`, `Community 34`, `Community 37`, `Community 39`, `Community 41`, `Community 44`, `Community 48`, `Community 49`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 62`, `Community 64`, `Community 65`, `Community 68`, `Community 71`, `Community 79`, `Community 207`, `Community 89`, `Community 96`, `Community 99`, `Community 108`, `Community 114`, `Community 120`, `Community 123`?**
-  _High betweenness centrality (0.038) - this node is a cross-community bridge._
+  _High betweenness centrality (0.057) - this node is a cross-community bridge._
+- **Why does `Review 08 — UI Primitives, Dashboard Components, Charts, Hooks, Utils & Data Files` connect `Community 212` to `Community 196`, `Community 197`, `Community 235`, `Community 206`, `Community 309`, `Community 59`, `Community 285`?**
+  _High betweenness centrality (0.032) - this node is a cross-community bridge._
 - **What connects `supabase`, `$schema`, `enabled` to the rest of the system?**
-  _2342 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _2402 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.04081632653061224 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08333333333333333 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.09581646423751687 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.1092436974789916 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.10931174089068826 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05970149253731343 - nodes in this community are weakly interconnected._
 - **Should `Community 3` be split into smaller, more focused modules?**
-  _Cohesion score 0.09595959595959595 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.11282051282051282 - nodes in this community are weakly interconnected._

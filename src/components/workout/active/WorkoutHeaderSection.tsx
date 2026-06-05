@@ -53,6 +53,7 @@ const WorkoutHeaderSection: React.FC<WorkoutHeaderSectionProps> = ({
         onSkip={onSkipRest}
         onAddTime={onAddRestTime}
         nextSetHint={nextSetHint}
+        isPaused={isPaused}
       />
     )}
   </div>

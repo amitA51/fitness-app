@@ -2,6 +2,7 @@
 // Platform-agnostic: no DOM, no window, no localStorage. Reusable in React Native.
 
 import type { ActiveExercise, WorkoutExercise, WorkoutSession } from '../types';
+import { toLocalDateStr } from '../utils/dateUtils';
 import { setVolume } from '../utils/workoutMath';
 
 export interface BuildSessionInput {
@@ -70,7 +71,12 @@ export function buildWorkoutSession(input: BuildSessionInput): BuildSessionResul
     workoutItemId: itemId,
     startTime: new Date(startTimestamp).toISOString(),
     endTime: endTimeISO,
-    date: endTimeISO.slice(0, 10),
+    // Local calendar day, not endTimeISO.slice(0,10) (UTC) — for users ahead of
+    // UTC a late-evening finish would otherwise key to the next calendar day.
+    date: toLocalDateStr(new Date(now)),
+    // CANONICAL: duration is stored in SECONDS. All consumers must treat
+    // session.duration as seconds and format via utils/workoutFormatters
+    // (formatDuration) — never render it as raw minutes.
     duration: sessionDurationSec,
     status: 'completed',
     templateId: null,

@@ -31,7 +31,7 @@ const TABS: { key: ProgressTab; label: string; icon: React.ReactNode }[] = [
   { key: 'overview', label: 'סקירה', icon: <LayoutGrid size={15} aria-hidden="true" /> },
   { key: 'workouts', label: 'אימונים', icon: <Activity size={15} aria-hidden="true" /> },
   { key: 'body', label: 'גוף', icon: <User size={15} aria-hidden="true" /> },
-  { key: 'recovery', label: 'ריקאברי', icon: <Heart size={15} aria-hidden="true" /> },
+  { key: 'recovery', label: 'התאוששות', icon: <Heart size={15} aria-hidden="true" /> },
 ];
 
 const motionProps = {

@@ -7,6 +7,7 @@
 // `Card`, token colors only, RTL-correct via logical properties.
 
 import { memo, useMemo } from 'react';
+import { muscleLabel } from '../../constants/muscleNames';
 import type { WorkoutSession } from '../../types';
 import { getWeekStart } from '../../utils/dateUtils';
 import { Card } from '../ui/Card';
@@ -32,7 +33,9 @@ const computeWeeklyMuscles = (sessions: WorkoutSession[]): MuscleDatum[] => {
   const muscleMap = new Map<string, number>();
   for (const s of completed) {
     for (const ex of s.exercises) {
-      const muscle = ex.targetMuscle || ex.muscleGroup || 'אחר';
+      // Canonical Hebrew label (English keys translated, Core/בטן unified) so the
+      // distribution groups by muscle consistently and never shows raw English.
+      const muscle = muscleLabel(ex);
       const sets = ex.sets.filter((set) => set.isCompleted).length;
       muscleMap.set(muscle, (muscleMap.get(muscle) || 0) + sets);
     }

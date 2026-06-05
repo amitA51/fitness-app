@@ -538,6 +538,131 @@ describe('workoutReducer', () => {
   });
 
   // ============================================================
+  // REMOVE_EXERCISE — index remap + superset-group cleanup
+  // ============================================================
+  describe('REMOVE_EXERCISE', () => {
+    const threeExercises = (): Exercise[] => [
+      mkExercise({ id: 'ex-1', name: 'A' }),
+      mkExercise({ id: 'ex-2', name: 'B' }),
+      mkExercise({ id: 'ex-3', name: 'C' }),
+    ];
+
+    it('decrements currentExerciseIndex when deleting an exercise before the active one', () => {
+      // Arrange — 3 exercises, user mid-set on B (index 1)
+      const state = createInitialState(threeExercises(), 0, mkSettings());
+      state.currentExerciseIndex = 1;
+
+      // Act — delete A (index 0)
+      const next = apply(state, { type: 'REMOVE_EXERCISE', payload: 0 });
+
+      // Assert — index follows B to its new position (0), not C
+      expect(next.exercises.map((e) => e.id)).toEqual(['ex-2', 'ex-3']);
+      expect(next.currentExerciseIndex).toBe(0);
+      expect(next.exercises[next.currentExerciseIndex]!.id).toBe('ex-2');
+    });
+
+    it('leaves currentExerciseIndex unchanged when deleting an exercise after the active one', () => {
+      const state = createInitialState(threeExercises(), 0, mkSettings());
+      state.currentExerciseIndex = 0; // active = A
+
+      const next = apply(state, { type: 'REMOVE_EXERCISE', payload: 2 }); // delete C
+
+      expect(next.currentExerciseIndex).toBe(0);
+      expect(next.exercises[next.currentExerciseIndex]!.id).toBe('ex-1');
+    });
+
+    it('clamps currentExerciseIndex when the active exercise itself is deleted (last position)', () => {
+      const state = createInitialState(threeExercises(), 0, mkSettings());
+      state.currentExerciseIndex = 2; // active = C (last)
+
+      const next = apply(state, { type: 'REMOVE_EXERCISE', payload: 2 }); // delete C
+
+      expect(next.exercises).toHaveLength(2);
+      expect(next.currentExerciseIndex).toBe(1); // clamped to new last
+    });
+
+    it('prunes the removed exercise id from its superset group', () => {
+      const state = createInitialState(threeExercises(), 0, mkSettings());
+      state.supersetGroups = [
+        { id: 'gs', exercises: ['ex-1', 'ex-2', 'ex-3'], restBetweenRounds: 90 },
+      ];
+
+      const next = apply(state, { type: 'REMOVE_EXERCISE', payload: 1 }); // delete B
+
+      expect(next.supersetGroups).toHaveLength(1);
+      expect(next.supersetGroups[0]!.exercises).toEqual(['ex-1', 'ex-3']);
+    });
+
+    it('drops a 2-member superset group that becomes degenerate after removal', () => {
+      const state = createInitialState(threeExercises(), 0, mkSettings());
+      state.supersetGroups = [{ id: 'ss', exercises: ['ex-1', 'ex-2'], restBetweenRounds: 60 }];
+
+      const next = apply(state, { type: 'REMOVE_EXERCISE', payload: 0 }); // delete A
+
+      // Only ex-2 would remain in the group (<2) → group dropped entirely.
+      expect(next.supersetGroups).toHaveLength(0);
+    });
+
+    it('leaves unrelated superset groups untouched', () => {
+      const state = createInitialState(threeExercises(), 0, mkSettings());
+      state.supersetGroups = [{ id: 'ss', exercises: ['ex-2', 'ex-3'], restBetweenRounds: 60 }];
+
+      const next = apply(state, { type: 'REMOVE_EXERCISE', payload: 0 }); // delete A (not in group)
+
+      expect(next.supersetGroups).toHaveLength(1);
+      expect(next.supersetGroups[0]!.exercises).toEqual(['ex-2', 'ex-3']);
+    });
+  });
+
+  // ============================================================
+  // REORDER_EXERCISES — keep the active exercise by identity
+  // ============================================================
+  describe('REORDER_EXERCISES', () => {
+    const threeExercises = (): Exercise[] => [
+      mkExercise({ id: 'ex-1', name: 'A' }),
+      mkExercise({ id: 'ex-2', name: 'B' }),
+      mkExercise({ id: 'ex-3', name: 'C' }),
+    ];
+
+    it('remaps currentExerciseIndex so the active exercise stays the same after a drag-reorder', () => {
+      // Arrange — active = B (index 1)
+      const state = createInitialState(threeExercises(), 0, mkSettings());
+      state.currentExerciseIndex = 1;
+
+      // Act — drag B to the front: [B, A, C]
+      const reordered = [
+        mkExercise({ id: 'ex-2', name: 'B' }),
+        mkExercise({ id: 'ex-1', name: 'A' }),
+        mkExercise({ id: 'ex-3', name: 'C' }),
+      ];
+      const next = apply(state, { type: 'REORDER_EXERCISES', payload: reordered });
+
+      // Assert — index now points at B's new slot (0), not whatever landed at 1
+      expect(next.currentExerciseIndex).toBe(0);
+      expect(next.exercises[next.currentExerciseIndex]!.id).toBe('ex-2');
+    });
+
+    it('clamps the index when the active exercise is dropped by the name filter', () => {
+      // Arrange — active = C (index 2)
+      const state = createInitialState(threeExercises(), 0, mkSettings());
+      state.currentExerciseIndex = 2;
+
+      // Act — C gets an empty name (dropped by filter): [A, B]
+      const reordered = [
+        mkExercise({ id: 'ex-1', name: 'A' }),
+        mkExercise({ id: 'ex-2', name: 'B' }),
+        mkExercise({ id: 'ex-3', name: '   ' }),
+      ];
+      const next = apply(state, { type: 'REORDER_EXERCISES', payload: reordered });
+
+      // Assert — array shrank to 2; index clamped into bounds (still resolves a card)
+      expect(next.exercises).toHaveLength(2);
+      expect(next.currentExerciseIndex).toBeLessThan(next.exercises.length);
+      expect(next.exercises[next.currentExerciseIndex]).toBeDefined();
+    });
+  });
+
+  // ============================================================
   // UNDO_LAST_SET
   // ============================================================
   describe('UNDO_LAST_SET', () => {

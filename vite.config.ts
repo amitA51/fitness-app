@@ -4,6 +4,24 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+/**
+ * Extract the npm package name from a module id so manualChunks can match on
+ * exact package boundaries instead of fragile substrings (e.g. `/react/` used
+ * to risk matching unrelated vendor paths). Returns the bare package name —
+ * including the `@scope/name` for scoped packages — or undefined when the id is
+ * not inside node_modules. Handles both POSIX and Windows path separators.
+ */
+export function vendorPackageName(id: string): string | undefined {
+  const normalized = id.replace(/\\/g, '/');
+  const match = normalized.match(/(?:^|\/)node_modules\/(.+)$/);
+  if (!match) return undefined;
+  const segments = match[1].split('/');
+  if (segments.length === 0 || segments[0] === '') return undefined;
+  return segments[0].startsWith('@') && segments.length > 1
+    ? `${segments[0]}/${segments[1]}`
+    : segments[0];
+}
+
 export default defineConfig({
   plugins: [
     react(),
@@ -116,33 +134,39 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (!id.includes('node_modules')) return;
+          const pkg = vendorPackageName(id);
+          if (!pkg) return;
 
-          if (id.includes('@tanstack')) {
+          if (pkg.startsWith('@tanstack/')) {
             return 'tanstack';
           }
-          if (id.includes('@supabase/supabase-js') || id.includes('@supabase')) {
+          if (pkg === '@supabase/supabase-js' || pkg.startsWith('@supabase/')) {
             return 'supabase';
           }
-          if (id.includes('framer-motion')) {
+          if (pkg === 'framer-motion') {
             return 'framer';
           }
-          if (id.includes('@gsap') || id.includes('node_modules/gsap')) {
+          if (pkg === 'gsap' || pkg.startsWith('@gsap/')) {
             return 'gsap';
           }
-          if (id.includes('lucide-react')) {
+          if (pkg === 'lucide-react') {
             return 'icons';
           }
-          if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-router')) {
+          if (
+            pkg === 'react' ||
+            pkg === 'react-dom' ||
+            pkg === 'react-router' ||
+            pkg === 'react-router-dom'
+          ) {
             return 'react-vendor';
           }
-          if (id.includes('idb')) {
+          if (pkg === 'idb') {
             return 'idb';
           }
-          if (id.includes('dompurify')) {
+          if (pkg === 'dompurify') {
             return 'dompurify';
           }
-          if (id.includes('use-immer') || id.includes('immer')) {
+          if (pkg === 'immer' || pkg === 'use-immer') {
             return 'immer';
           }
         },

@@ -16,7 +16,7 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
 >[] = [
   // ==================== Warmup & Cardio ====================
   {
-    name: 'Jumping Jacks',
+    name: 'קפיצות ג׳ק | Jumping Jacks',
     muscleGroup: 'Cardio',
     category: 'warmup',
     tempo: '1-0-1-0',
@@ -28,7 +28,7 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     equipment: 'bodyweight',
   },
   {
-    name: 'Treadmill Run',
+    name: 'ריצה על מסילה | Treadmill Run',
     muscleGroup: 'Cardio',
     category: 'cardio',
     tempo: 'steady',
@@ -992,7 +992,7 @@ const STATIC_BUILT_IN_EXERCISES: Omit<
     equipment: 'dumbbell',
   },
   {
-    name: '21 | 21s',
+    name: 'עשרים ואחת | 21s',
     muscleGroup: 'Biceps',
     category: 'strength',
     tempo: '1-0-1-0',

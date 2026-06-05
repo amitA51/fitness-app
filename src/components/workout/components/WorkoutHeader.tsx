@@ -312,7 +312,9 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
               borderRadius: '12px 8px 12px 8px',
               background: 'var(--fs-accent)',
               border: 'none',
-              color: 'var(--fs-heading)',
+              // ink-on-accent: --fs-heading resolves near-white in dark and
+              // fails AA on the mint fill.
+              color: 'var(--color-ink-on-accent)',
               cursor: isSaving ? 'wait' : 'pointer',
               opacity: isSaving ? 0.6 : 1,
             }}

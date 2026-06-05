@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Exercise } from '../../../types';
+import { HE_NOUNS, pluralizeHe } from '../../../utils/pluralizeHe';
 import ExerciseNav from '../components/ExerciseNav';
 import SlideToComplete from '../components/SlideToComplete';
 import type { SupersetGroup } from '../core/workoutTypes';
@@ -23,8 +24,17 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
   onCompleteSet,
   supersetGroups,
 }) => {
+  // "הבא:" must point at the next INCOMPLETE exercise AFTER the current one,
+  // not merely the positionally-next one — otherwise it can suggest an exercise
+  // that's already fully done (or, on a 2/2 layout, nothing). When every later
+  // exercise is complete the strip is hidden entirely.
+  const isExerciseDone = (ex: Exercise | undefined): boolean => {
+    const total = ex?.sets?.length ?? 0;
+    const done = ex?.sets?.filter((s) => s.completedAt).length ?? 0;
+    return total > 0 && done >= total;
+  };
   const nextEx =
-    currentExerciseIndex < exercises.length - 1 ? exercises[currentExerciseIndex + 1] : null;
+    exercises.slice(currentExerciseIndex + 1).find((ex) => !isExerciseDone(ex)) ?? null;
 
   // Disable the slide-to-complete once every set of the current exercise is
   // done. Without this, a slide on a finished exercise would try to "complete"
@@ -121,7 +131,7 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
               flexShrink: 0,
             }}
           >
-            {nextEx?.sets?.length || 0} סטים
+            {pluralizeHe(nextEx?.sets?.length || 0, HE_NOUNS.set)}
           </span>
         </div>
       )}

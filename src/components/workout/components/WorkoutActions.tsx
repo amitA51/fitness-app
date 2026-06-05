@@ -6,6 +6,7 @@ import type React from 'react';
 import { Suspense, lazy } from 'react';
 import { createWorkoutTemplate, saveWorkoutSession } from '../../../services/dataService';
 import type { PersonalItem, WorkoutExercise, WorkoutSession } from '../../../types';
+import { todayStr } from '../../../utils/dateUtils';
 import { triggerHaptic } from '../../../utils/haptics';
 import { safeJsonParse } from '../../../utils/safeJson';
 import { setVolume } from '../../../utils/workoutMath';
@@ -250,7 +251,9 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
           workoutItemId: item?.id || `workout_${Date.now()}`,
           startTime: new Date(state.startTimestamp).toISOString(),
           endTime: new Date().toISOString(),
-          date: new Date().toISOString().slice(0, 10),
+          // Local-date key (not UTC slice) so an early-morning finish isn't
+          // mis-attributed to the previous calendar day for users ahead of UTC.
+          date: todayStr(),
           duration: Math.floor((Date.now() - state.startTimestamp - state.totalPausedTime) / 1000),
           status: 'completed',
           templateId: null,

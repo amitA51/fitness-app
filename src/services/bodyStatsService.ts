@@ -190,9 +190,9 @@ export function calculateBMI(weightKg: number, heightCm: number): number {
 
 export function getBMICategory(bmi: number): { label: string; color: string } {
   if (bmi < 18.5) return { label: 'תת משקל', color: '#3b82f6' };
-  if (bmi < 25) return { label: 'משקל תקין', color: '#22c55e' };
+  if (bmi < 25) return { label: 'משקל תקין', color: 'var(--color-success-fg)' };
   if (bmi < 30) return { label: 'עודף משקל', color: '#f59e0b' };
-  return { label: 'השמנה', color: '#ef4444' };
+  return { label: 'השמנה', color: 'var(--color-error-fg)' };
 }
 
 export async function addBodyMeasurement(
@@ -387,10 +387,10 @@ function getScoreLabel(score: number): RecoveryScore['label'] {
 }
 
 function getScoreColor(overall: number): string {
-  if (overall <= 25) return '#ef4444';
+  if (overall <= 25) return 'var(--color-error-fg)';
   if (overall <= 50) return '#f97316';
   if (overall <= 75) return '#f59e0b';
-  return '#22c55e';
+  return 'var(--color-success-fg)';
 }
 
 export function calculateRecoveryScore(log: RecoveryLog): RecoveryScore {

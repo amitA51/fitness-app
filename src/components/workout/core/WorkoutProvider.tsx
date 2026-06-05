@@ -32,6 +32,12 @@ import {
 
 const STORAGE_KEY = 'active_workout_v3_state';
 
+// A persisted draft older than this is considered abandoned and is discarded on
+// load rather than silently resumed. Without this guard, a stale draft from a
+// previous day was restored as if "active" — its old startTimestamp made the
+// live timer open at hours-elapsed and the saved duration was nonsensical.
+const MAX_DRAFT_AGE_MS = 12 * 60 * 60 * 1000; // 12 hours
+
 const platform: PlatformAdapter = webPlatform;
 
 /**
@@ -111,6 +117,14 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
         const parsed = safeJsonParse<WorkoutState & { _completed?: boolean }>(saved);
         if (!parsed) return null;
         if (parsed._completed) {
+          platform.removeItem(STORAGE_KEY);
+          return null;
+        }
+        // Discard abandoned drafts. A draft whose last persist was more than
+        // MAX_DRAFT_AGE_MS ago is treated as stale: resuming it would reuse an
+        // ancient startTimestamp (timer opens at hours-elapsed, duration bogus).
+        const lastWrite = parsed.lastPersistedAt ?? parsed.lastPauseTimestamp ?? null;
+        if (lastWrite && Date.now() - lastWrite > MAX_DRAFT_AGE_MS) {
           platform.removeItem(STORAGE_KEY);
           return null;
         }

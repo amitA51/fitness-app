@@ -15,12 +15,14 @@
 
 import type {
   BodyWeightEntry as CanonicalBodyWeightEntry,
+  MealEntry as CanonicalMealEntry,
   PersonalExercise as CanonicalPersonalExercise,
   WorkoutSession as CanonicalWorkoutSession,
   WorkoutTemplate as CanonicalWorkoutTemplate,
 } from '../types';
 import { toLocalDateStr } from '../utils/dateUtils';
 import { logger } from '../utils/logger';
+import type { BodyMeasurement as ServiceBodyMeasurement } from './bodyStatsService';
 
 export interface WorkoutTemplate {
   id: string;
@@ -333,5 +335,66 @@ export const toCanonicalBodyWeight = (b: BodyWeightEntry): CanonicalBodyWeightEn
   weight: b.weight,
   notes: b.notes,
   createdAt: b.createdAt ?? new Date().toISOString(),
+  ...(b.deletedAt !== undefined && { deletedAt: b.deletedAt }),
+});
+
+/**
+ * Rebuild the canonical local `MealEntry` from the flat Supabase nutrition row.
+ *
+ * The cloud round-trip drops `totalMacros` from the entry and every meal, and
+ * drops each meal's `foods` (push flattens them to bare `{calories,protein,...}`).
+ * The local UI/services read `entry.totalMacros.*` and `meal.totalMacros.*`
+ * without guards, so a row pulled on a second device would crash the nutrition
+ * screen. We reconstruct `totalMacros` from the flat columns and restore an
+ * empty `foods: []` on each meal so the result satisfies the local shape.
+ */
+export const toCanonicalNutritionLog = (
+  log: NutritionLog
+): CanonicalMealEntry & { updatedAt?: string; deletedAt?: string | null } => ({
+  id: log.id,
+  date: log.date,
+  name: (log as { name?: string }).name ?? '',
+  meals: (log.meals ?? []).map((m) => ({
+    id: m.id,
+    name: m.name as CanonicalMealEntry['meals'][number]['name'],
+    foods: [],
+    time: m.time ?? '',
+    totalMacros: {
+      calories: m.calories ?? 0,
+      protein: m.protein ?? 0,
+      carbs: m.carbs ?? 0,
+      fat: m.fat ?? 0,
+    },
+  })),
+  totalMacros: {
+    calories: log.calories ?? 0,
+    protein: log.protein ?? 0,
+    carbs: log.carbs ?? 0,
+    fat: log.fat ?? 0,
+  },
+  notes: log.notes ?? '',
+  createdAt: log.createdAt ?? new Date().toISOString(),
+  ...(log.updatedAt !== undefined && { updatedAt: log.updatedAt }),
+  ...(log.deletedAt !== undefined && { deletedAt: log.deletedAt }),
+});
+
+/**
+ * Flatten the nested Supabase body-measurement row back to the flat shape the
+ * local store and UI use. The pull path returns `{ measurements: { chest, … } }`
+ * but `bodyStatsService.BodyMeasurement` and the UI read flat top-level keys
+ * (`entry.chest`, `entry.waist`, …), so without this spread every measurement
+ * value renders blank on a second device. Spreading `measurements` last would
+ * let a stray `id`/`date` key inside it clobber the row's own — so identity
+ * fields are written after the spread.
+ */
+export const toCanonicalBodyMeasurement = (
+  b: BodyMeasurement
+): ServiceBodyMeasurement & { updatedAt?: string; deletedAt?: string | null } => ({
+  ...b.measurements,
+  id: b.id,
+  date: b.date,
+  notes: b.notes,
+  createdAt: b.createdAt ?? new Date().toISOString(),
+  ...(b.updatedAt !== undefined && { updatedAt: b.updatedAt }),
   ...(b.deletedAt !== undefined && { deletedAt: b.deletedAt }),
 });

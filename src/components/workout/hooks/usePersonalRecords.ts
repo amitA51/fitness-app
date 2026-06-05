@@ -26,25 +26,26 @@ const resolveExerciseKey = (exercise: Exercise): string => exercise.exerciseId |
 
 /**
  * Hook for Personal Records tracking
- * Loads historical PRs and detects new ones during workout
+ * Loads historical PRs and detects new ones during workout.
+ *
+ * NOTE: the second positional arg (current exercise index) is retained for the
+ * caller's contract but intentionally unused — PR detection now scans every
+ * exercise so a superset auto-advance can't skip a just-completed set.
  */
 export function usePersonalRecords(
   exercises: Exercise[],
-  currentExerciseIndex: number
+  _currentExerciseIndex: number
 ): UsePersonalRecordsReturn {
   const dispatch = useWorkoutDispatch();
   const [prMap, setPRMap] = useState<Map<string, PersonalRecord>>(() => new Map());
 
-  // Track what we've already checked to avoid duplicate celebrations
-  const lastPRCheckRef = useRef<{
-    exerciseIdx: number;
-    setCount: number;
-    lastSetKey: string | null;
-  }>({
-    exerciseIdx: -1,
-    setCount: 0,
-    lastSetKey: null,
-  });
+  // Track the last completed-set key we've already checked PER EXERCISE id.
+  // Keyed on the stable exercise id (not the array index) so a superset
+  // auto-advance — which reassigns currentExerciseIndex inside the same
+  // COMPLETE_SET dispatch — can't cause a just-finished exercise's set to be
+  // skipped. Each exercise is revisited independently when its own last
+  // completed set changes.
+  const seenSetKeyByExerciseRef = useRef<Map<string, string>>(new Map());
 
   // Load PRs from history on mount
   useEffect(() => {
@@ -129,45 +130,45 @@ export function usePersonalRecords(
     [prMap, exercises]
   );
 
-  // Auto-detect PRs when sets are completed
+  // Auto-detect PRs when sets are completed.
+  //
+  // Scans EVERY exercise's last completed set — not just the one at
+  // currentExerciseIndex — because during a superset the COMPLETE_SET reducer
+  // reassigns currentExerciseIndex to the next group member in the SAME
+  // dispatch. Inspecting only the current exercise would miss the set that was
+  // just completed on the previous member (silently swallowing superset PRs).
+  // Per-exercise-id dedup ensures each newly-completed set fires at most one
+  // celebration and that an auto-advance never skips the just-finished set.
   useEffect(() => {
     try {
-      const currentExercise = exercises[currentExerciseIndex];
-      if (!currentExercise || !Array.isArray(currentExercise.sets)) return;
+      for (const exercise of exercises) {
+        if (!exercise || !Array.isArray(exercise.sets)) continue;
 
-      const completedSets = currentExercise.sets.filter((s) => s.completedAt);
-      const completedCount = completedSets.length;
-      if (completedCount === 0) return;
+        const completedSets = exercise.sets.filter((s) => s.completedAt);
+        const completedCount = completedSets.length;
+        if (completedCount === 0) continue;
 
-      const lastSet = completedSets[completedCount - 1];
-      if (!lastSet) return;
+        const lastSet = completedSets[completedCount - 1];
+        if (!lastSet) continue;
 
-      const lastSetKey = `${lastSet.weight ?? 0}-${lastSet.reps ?? 0}-${lastSet.completedAt ?? ''}`;
+        const exerciseKey = resolveExerciseKey(exercise);
+        const lastSetKey = `${completedCount}-${lastSet.weight ?? 0}-${lastSet.reps ?? 0}-${lastSet.completedAt ?? ''}`;
 
-      // Check if already processed
-      const alreadyChecked =
-        lastPRCheckRef.current.exerciseIdx === currentExerciseIndex &&
-        lastPRCheckRef.current.setCount === completedCount &&
-        lastPRCheckRef.current.lastSetKey === lastSetKey;
+        // Skip if this exercise's last completed set is unchanged since last run.
+        if (seenSetKeyByExerciseRef.current.get(exerciseKey) === lastSetKey) continue;
+        seenSetKeyByExerciseRef.current.set(exerciseKey, lastSetKey);
 
-      if (alreadyChecked) return;
-
-      lastPRCheckRef.current = {
-        exerciseIdx: currentExerciseIndex,
-        setCount: completedCount,
-        lastSetKey,
-      };
-
-      // Use exerciseName for the checkForNewPR call (it resolves the id internally)
-      const name = currentExercise.name ?? currentExercise.exerciseName ?? '';
-      const newPR = checkForNewPR(name, lastSet);
-      if (newPR) {
-        dispatch({ type: 'SHOW_PR_CELEBRATION', payload: newPR });
+        // Use exerciseName for the checkForNewPR call (it resolves the id internally)
+        const name = exercise.name ?? exercise.exerciseName ?? '';
+        const newPR = checkForNewPR(name, lastSet);
+        if (newPR) {
+          dispatch({ type: 'SHOW_PR_CELEBRATION', payload: newPR });
+        }
       }
     } catch {
       // Silently handle PR detection errors
     }
-  }, [exercises, currentExerciseIndex, checkForNewPR, dispatch]);
+  }, [exercises, checkForNewPR, dispatch]);
 
   return {
     prMap,

@@ -1,5 +1,5 @@
-// WorkoutSummary - Sport Annual Editorial Design
-// Navy masthead · Bone body · Big Shoulders typography · Sharp corners
+// WorkoutSummary - Fresh Steel / Obsidian design language
+// Primary masthead · surface body · Bricolage Grotesque typography · Sharp corners
 
 import { useCountUp } from '@/hooks/useCountUp';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -20,6 +20,8 @@ import { calculatePRsFromHistory, isNewPR } from '../../services/prService';
 import type { WorkoutSession } from '../../types';
 import { triggerHapticEffect, vibratePattern } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
+import { HE_NOUNS, pluralizeHe } from '../../utils/pluralizeHe';
+import { formatDuration } from '../../utils/workoutFormatters';
 import { computeSessionStats, setVolume } from '../../utils/workoutMath';
 import { ModalOverlay } from '../ui/ModalOverlay';
 import { type ComparisonData, StatsGrid } from './components/StatsGrid';
@@ -40,7 +42,10 @@ interface ComputedStats {
   totalVolume: number;
   totalSets: number;
   totalReps: number;
+  /** Duration in MINUTES (for the StatsGrid count-up number). */
   duration: number;
+  /** Canonical duration in SECONDS (for the human formatDuration label). */
+  durationSec: number;
   exerciseCount: number;
   exerciseStats: {
     name: string | undefined;
@@ -58,14 +63,14 @@ const computeStats = (session: Partial<WorkoutSession>): ComputedStats => {
     { excludeWarmup: true }
   );
 
-  const duration =
-    session.startTime && session.endTime
-      ? Math.round(
-          (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000 / 60
-        )
-      : 0;
+  // Duration is read from the canonical `session.duration` (SECONDS) — NOT
+  // recomputed from start/end, which produced absurd values when a stale
+  // persisted startTime leaked in. `durationMin` feeds the StatsGrid number;
+  // the subtitle/share text use formatDuration for the human label.
+  const durationSec = session.duration && session.duration > 0 ? session.duration : 0;
+  const duration = Math.round(durationSec / 60);
 
-  return { totalVolume, totalSets, totalReps, duration, exerciseCount, exerciseStats };
+  return { totalVolume, totalSets, totalReps, duration, durationSec, exerciseCount, exerciseStats };
 };
 
 // ============================================================
@@ -155,14 +160,10 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           (sum, s) => (s.completedAt ? sum + setVolume(s) : sum),
           0
         );
+        // Minutes from the canonical duration (SECONDS), matching computeStats.
         const prevDuration =
-          prevSession.startTime && prevSession.endTime
-            ? Math.round(
-                (new Date(prevSession.endTime).getTime() -
-                  new Date(prevSession.startTime).getTime()) /
-                  1000 /
-                  60
-              )
+          prevSession.duration && prevSession.duration > 0
+            ? Math.round(prevSession.duration / 60)
             : 0;
         const prevSets = prevWorkingSets.filter((s) => s.completedAt).length;
 
@@ -175,13 +176,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           0
         );
         const currentDuration =
-          session.startTime && session.endTime
-            ? Math.round(
-                (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) /
-                  1000 /
-                  60
-              )
-            : 0;
+          session.duration && session.duration > 0 ? Math.round(session.duration / 60) : 0;
         const currentSets = currentWorkingSets.filter((s) => s.completedAt).length;
 
         setComparison({
@@ -334,7 +329,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
       try {
         await navigator.share({
           title: 'סיכום אימון',
-          text: `אימון · ${stats.duration} דקות · ${stats.totalVolume.toLocaleString()} ק"ג · ${stats.totalSets} סטים`,
+          text: `אימון · ${formatDuration(stats.durationSec)} · ${stats.totalVolume.toLocaleString()} ק"ג · ${pluralizeHe(stats.totalSets, HE_NOUNS.set)}`,
         });
       } catch (err) {
         logger.workout.warn('Failed to send workout completion notification', err);
@@ -512,13 +507,14 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
-              {stats.exerciseCount} תרגילים · {stats.totalSets} סטים ·{' '}
+              {pluralizeHe(stats.exerciseCount, HE_NOUNS.exercise)} ·{' '}
+              {pluralizeHe(stats.totalSets, HE_NOUNS.set)} ·{' '}
               {stats.totalVolume > 0 ? (
                 <span dir="ltr">{stats.totalVolume.toLocaleString()} ק"ג</span>
               ) : (
                 '—'
               )}{' '}
-              · {stats.duration > 0 ? `${stats.duration} דקות` : '—'}
+              · {stats.durationSec > 0 ? formatDuration(stats.durationSec) : '—'}
             </p>
           </div>
         </div>
@@ -691,7 +687,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                         <CheckCircleIcon
                           size={16}
                           strokeWidth={2.5}
-                          style={{ color: 'var(--fs-heading)', flexShrink: 0 }}
+                          style={{ color: 'var(--color-ink-on-accent)', flexShrink: 0 }}
                         />
                       )}
                       <span
@@ -720,7 +716,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                           textTransform: 'uppercase',
                         }}
                       >
-                        {ex.setsCompleted} סטים
+                        {pluralizeHe(ex.setsCompleted, HE_NOUNS.set)}
                       </span>
                       {ex.bestSet && (
                         <span
@@ -770,7 +766,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               justifyContent: 'center',
               padding: '16px 24px',
               background: 'var(--fs-accent)',
-              color: 'var(--fs-heading)',
+              // ink-on-accent: --fs-heading resolves near-white in dark and
+              // fails AA on the mint fill.
+              color: 'var(--color-ink-on-accent)',
               border: 'none',
               cursor: 'pointer',
               fontFamily: 'var(--font-display)',

@@ -391,7 +391,8 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 className="w-full cursor-pointer"
                 style={{
                   background: 'var(--fs-accent)',
-                  color: 'var(--fs-heading)',
+                  // ink-on-accent: --fs-heading fails AA on the mint fill in dark.
+                  color: 'var(--color-ink-on-accent)',
                   border: 'none',
                   borderRadius: 0,
                   padding: '14px 24px',

@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  type BodyMeasurement,
   type BodyWeightEntry,
+  type NutritionLog,
   type PersonalExercise,
   type WorkoutSession,
   type WorkoutTemplate,
+  toCanonicalBodyMeasurement,
   toCanonicalBodyWeight,
+  toCanonicalNutritionLog,
   toCanonicalPersonalExercise,
   toCanonicalSession,
   toCanonicalTemplate,
@@ -246,5 +250,97 @@ describe('toCanonicalBodyWeight', () => {
   it('omits deletedAt unless explicitly provided', () => {
     expect('deletedAt' in toCanonicalBodyWeight(base)).toBe(false);
     expect('deletedAt' in toCanonicalBodyWeight({ ...base, deletedAt: null })).toBe(true);
+  });
+});
+
+// ============================================================================
+// toCanonicalNutritionLog — rebuilds totalMacros dropped by the cloud round-trip
+// (regression for the crash on getDailyMacros after a cross-device pull)
+// ============================================================================
+
+describe('toCanonicalNutritionLog', () => {
+  const base: NutritionLog = {
+    id: 'n1',
+    date: '2026-05-01',
+    calories: 600,
+    protein: 40,
+    carbs: 60,
+    fat: 20,
+    meals: [{ id: 'm1', name: 'breakfast', calories: 600, protein: 40, carbs: 60, fat: 20 }],
+  };
+
+  it('reconstructs entry-level totalMacros from the flat columns', () => {
+    const result = toCanonicalNutritionLog(base);
+    expect(result.totalMacros).toEqual({ calories: 600, protein: 40, carbs: 60, fat: 20 });
+  });
+
+  it('reconstructs each meal totalMacros and restores an empty foods array', () => {
+    const result = toCanonicalNutritionLog(base);
+    expect(result.meals).toHaveLength(1);
+    expect(result.meals[0]!.totalMacros).toEqual({
+      calories: 600,
+      protein: 40,
+      carbs: 60,
+      fat: 20,
+    });
+    expect(result.meals[0]!.foods).toEqual([]);
+  });
+
+  it('defaults missing flat macro columns to 0 (never undefined)', () => {
+    const result = toCanonicalNutritionLog({ id: 'n2', date: '2026-05-02', meals: [] });
+    expect(result.totalMacros).toEqual({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    expect(result.meals).toEqual([]);
+  });
+
+  it('preserves timestamps and tolerates a missing meals array', () => {
+    const result = toCanonicalNutritionLog({
+      ...base,
+      meals: undefined as unknown as NutritionLog['meals'],
+      createdAt: '2026-05-01T07:00:00Z',
+      updatedAt: '2026-05-01T08:00:00Z',
+    });
+    expect(result.meals).toEqual([]);
+    expect(result.createdAt).toBe('2026-05-01T07:00:00Z');
+    expect(result.updatedAt).toBe('2026-05-01T08:00:00Z');
+  });
+});
+
+// ============================================================================
+// toCanonicalBodyMeasurement — flattens the nested `measurements` object back
+// to top-level keys (regression for blank measurements on a second device)
+// ============================================================================
+
+describe('toCanonicalBodyMeasurement', () => {
+  const base: BodyMeasurement = {
+    id: 'bm1',
+    date: '2026-04-10',
+    measurements: { chest: 100, waist: 80, arms: 38, neck: 40, bodyFat: 18 },
+  };
+
+  it('spreads nested measurement values back to flat top-level keys', () => {
+    const result = toCanonicalBodyMeasurement(base) as unknown as Record<string, unknown>;
+    expect(result.chest).toBe(100);
+    expect(result.waist).toBe(80);
+    expect(result.arms).toBe(38);
+    expect(result.neck).toBe(40);
+    expect(result.bodyFat).toBe(18);
+  });
+
+  it('keeps the row id/date even if the nested object carried stray ones', () => {
+    const result = toCanonicalBodyMeasurement({
+      ...base,
+      measurements: {
+        ...base.measurements,
+        id: 'WRONG' as unknown as number,
+        date: 'WRONG' as unknown as number,
+      },
+    });
+    expect(result.id).toBe('bm1');
+    expect(result.date).toBe('2026-04-10');
+  });
+
+  it('omits deletedAt unless explicitly provided', () => {
+    expect('deletedAt' in toCanonicalBodyMeasurement(base)).toBe(false);
+    expect('deletedAt' in toCanonicalBodyMeasurement({ ...base, deletedAt: null })).toBe(true);
   });
 });

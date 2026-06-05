@@ -203,10 +203,10 @@ export default function ProgramBuilder({
 
       <div className="mb-4">
         <Input
+          label="שם התוכנית"
           value={programName}
           onChange={(e) => setProgramName(e.target.value)}
-          placeholder="שם התוכנית (אופציונלי)"
-          aria-label="שם התוכנית"
+          placeholder="אופציונלי"
         />
       </div>
 

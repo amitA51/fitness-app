@@ -116,20 +116,30 @@ const calculateCompletedSets = (exercises: ExerciseData[]): number => {
 const StatCard = memo<StatCardProps>(
   ({ label, value, suffix = '', trend, trendValue, color = 'var(--fs-accent)' }) => (
     <m.div
-      className="bg-white/5 rounded-2xl p-4 flex flex-col"
+      className="rounded-2xl p-4 flex flex-col"
+      style={{ background: 'var(--fs-surface-shine)' }}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: 'spring', stiffness: 200, damping: 20 }}
     >
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-xs text-white/50 uppercase tracking-wider">{label}</span>
+        <span
+          className="text-xs uppercase tracking-wider"
+          style={{ color: 'var(--fs-text-on-dark)' }}
+        >
+          {label}
+        </span>
       </div>
 
       <div className="flex items-baseline gap-1">
         <span className="text-2xl font-bold tabular-nums" style={{ color }}>
           {typeof value === 'number' ? value.toLocaleString() : value}
         </span>
-        {suffix && <span className="text-sm text-white/40">{suffix}</span>}
+        {suffix && (
+          <span className="text-sm" style={{ color: 'var(--fs-text-on-dark)' }}>
+            {suffix}
+          </span>
+        )}
       </div>
 
       {trend && trendValue && (
@@ -139,7 +149,7 @@ const StatCard = memo<StatCardProps>(
               ? 'text-[var(--color-success-fg)]'
               : trend === 'down'
                 ? 'text-[var(--color-error-fg)]'
-                : 'text-white/40'
+                : 'text-[var(--fs-text-on-dark)]'
           }`}
         >
           <span>{trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→'}</span>
@@ -167,7 +177,7 @@ const MiniProgress = memo<{ progress: number; size?: number; color?: string }>(
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.1)"
+          stroke="var(--color-bar-track)"
           strokeWidth={strokeWidth}
         />
         <m.circle
@@ -205,8 +215,13 @@ const VolumeComparisonBar = memo<{
     <div className="space-y-2">
       {/* Current workout */}
       <div className="flex items-center gap-3">
-        <span className="text-xs text-white/50 w-16">היום</span>
-        <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden relative">
+        <span className="text-xs w-16" style={{ color: 'var(--fs-text-on-dark)' }}>
+          היום
+        </span>
+        <div
+          className="flex-1 h-3 rounded-full overflow-hidden relative"
+          style={{ background: 'var(--color-bar-track)' }}
+        >
           <m.div
             className="h-full w-full rounded-full"
             style={{
@@ -219,29 +234,40 @@ const VolumeComparisonBar = memo<{
           />
           {targetPercent && (
             <div
-              className="absolute top-0 bottom-0 w-0.5 bg-white/50"
-              style={{ left: `${targetPercent}%` }}
+              className="absolute top-0 bottom-0 w-0.5"
+              style={{ left: `${targetPercent}%`, background: 'var(--fs-text-on-dark)' }}
             />
           )}
         </div>
-        <span className="text-xs text-white font-medium tabular-nums w-16 text-right">
+        <span
+          className="text-xs font-medium tabular-nums w-16 text-right"
+          style={{ color: 'var(--color-ink-on-dark)' }}
+        >
           {current.toLocaleString()}
         </span>
       </div>
 
       {/* Previous workout */}
       <div className="flex items-center gap-3">
-        <span className="text-xs text-white/40 w-16">קודם</span>
-        <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">
+        <span className="text-xs w-16" style={{ color: 'var(--fs-text-on-dark)' }}>
+          קודם
+        </span>
+        <div
+          className="flex-1 h-3 rounded-full overflow-hidden"
+          style={{ background: 'var(--color-bar-track)' }}
+        >
           <m.div
-            className="h-full w-full rounded-full bg-white/30"
-            style={{ transformOrigin: 'left center' }}
+            className="h-full w-full rounded-full"
+            style={{ transformOrigin: 'left center', background: 'var(--fs-border-on-dark)' }}
             initial={{ scaleX: 0 }}
             animate={{ scaleX: previousPercent / 100 }}
             transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.1 }}
           />
         </div>
-        <span className="text-xs text-white/40 tabular-nums w-16 text-right">
+        <span
+          className="text-xs tabular-nums w-16 text-right"
+          style={{ color: 'var(--fs-text-on-dark)' }}
+        >
           {previous.toLocaleString()}
         </span>
       </div>
@@ -270,12 +296,17 @@ const ExerciseProgressRow = memo<{ exercise: ExerciseData; index: number }>(
         <MiniProgress
           progress={progress}
           size={36}
-          color={progress >= 1 ? '#30D158' : 'var(--fs-accent)'}
+          color={progress >= 1 ? 'var(--fs-signal)' : 'var(--fs-accent)'}
         />
 
         <div className="flex-1 min-w-0">
-          <div className="text-sm text-white font-medium truncate">{exercise.name}</div>
-          <div className="text-xs text-white/40">
+          <div
+            className="text-sm font-medium truncate"
+            style={{ color: 'var(--color-ink-on-dark)' }}
+          >
+            {exercise.name}
+          </div>
+          <div className="text-xs" style={{ color: 'var(--fs-text-on-dark)' }}>
             {completedSets}/{exercise.targetSets} סטים • {volume.toLocaleString()} ק״ג
           </div>
         </div>
@@ -353,33 +384,49 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
     if (compact) {
       return (
         <m.div
-          className={`flex items-center justify-around bg-black/40 backdrop-blur-md rounded-2xl p-3 ${className}`}
+          className={`flex items-center justify-around backdrop-blur-md rounded-2xl p-3 ${className}`}
+          style={{ background: 'var(--color-scrim)' }}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="text-center">
-            <div className="text-lg font-bold text-white tabular-nums">
+            <div
+              className="text-lg font-bold tabular-nums"
+              style={{ color: 'var(--color-ink-on-dark)' }}
+            >
               {stats.volume.toLocaleString()}
             </div>
-            <div className="text-[10px] text-white/40 uppercase">נפח</div>
+            <div className="text-[10px] uppercase" style={{ color: 'var(--fs-text-on-dark)' }}>
+              נפח
+            </div>
           </div>
 
-          <div className="w-px h-8 bg-white/10" />
+          <div className="w-px h-8" style={{ background: 'var(--fs-border-on-dark)' }} />
 
           <div className="text-center">
-            <div className="text-lg font-bold text-white tabular-nums">
+            <div
+              className="text-lg font-bold tabular-nums"
+              style={{ color: 'var(--color-ink-on-dark)' }}
+            >
               {stats.completedSets}/{stats.totalSets}
             </div>
-            <div className="text-[10px] text-white/40 uppercase">סטים</div>
+            <div className="text-[10px] uppercase" style={{ color: 'var(--fs-text-on-dark)' }}>
+              סטים
+            </div>
           </div>
 
-          <div className="w-px h-8 bg-white/10" />
+          <div className="w-px h-8" style={{ background: 'var(--fs-border-on-dark)' }} />
 
           <div className="text-center">
-            <div className="text-lg font-bold text-white tabular-nums">
+            <div
+              className="text-lg font-bold tabular-nums"
+              style={{ color: 'var(--color-ink-on-dark)' }}
+            >
               {formatDuration(stats.duration)}
             </div>
-            <div className="text-[10px] text-white/40 uppercase">זמן</div>
+            <div className="text-[10px] uppercase" style={{ color: 'var(--fs-text-on-dark)' }}>
+              זמן
+            </div>
           </div>
         </m.div>
       );
@@ -394,7 +441,9 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm text-white/60 font-medium">ביצועים בזמן אמת</h3>
+          <h3 className="text-sm font-medium" style={{ color: 'var(--fs-text-on-dark)' }}>
+            ביצועים בזמן אמת
+          </h3>
           <div className="flex items-center gap-2">
             <m.div
               className="w-2 h-2 rounded-full bg-[var(--color-live)]"
@@ -403,7 +452,9 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
                 shouldReduce ? { duration: 0 } : { duration: 1.5, repeat: Number.POSITIVE_INFINITY }
               }
             />
-            <span className="text-xs text-white/40">LIVE</span>
+            <span className="text-xs" style={{ color: 'var(--fs-text-on-dark)' }}>
+              LIVE
+            </span>
           </div>
         </div>
 
@@ -418,32 +469,40 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
             trendValue={stats.volumeTrendValue}
           />
 
-          <StatCard label="זמן אימון" value={formatDuration(stats.duration)} color="#FF9F0A" />
+          <StatCard
+            label="זמן אימון"
+            value={formatDuration(stats.duration)}
+            color="var(--fs-warn)"
+          />
 
           <StatCard
             label="סטים"
             value={`${stats.completedSets}/${stats.totalSets}`}
-            color="#30D158"
+            color="var(--color-success-fg)"
           />
 
           <StatCard
             label="RPE ממוצע"
             value={stats.avgRPE !== null ? stats.avgRPE.toFixed(1) : '—'}
-            color="#BF5AF2"
+            color="var(--fs-signal)"
           />
         </div>
 
         {/* Volume Comparison */}
         {previousWorkout && (
-          <div className="mb-4 pt-4 border-t border-white/10">
-            <div className="text-xs text-white/50 mb-3">השוואה לאימון הקודם</div>
+          <div className="mb-4 pt-4 border-t" style={{ borderColor: 'var(--fs-border-on-dark)' }}>
+            <div className="text-xs mb-3" style={{ color: 'var(--fs-text-on-dark)' }}>
+              השוואה לאימון הקודם
+            </div>
             <VolumeComparisonBar current={stats.volume} previous={previousWorkout.totalVolume} />
           </div>
         )}
 
         {/* Exercise Breakdown */}
-        <div className="pt-4 border-t border-white/10">
-          <div className="text-xs text-white/50 mb-2">התקדמות תרגילים</div>
+        <div className="pt-4 border-t" style={{ borderColor: 'var(--fs-border-on-dark)' }}>
+          <div className="text-xs mb-2" style={{ color: 'var(--fs-text-on-dark)' }}>
+            התקדמות תרגילים
+          </div>
           <div className="space-y-1">
             {exercises.map((exercise, index) => (
               <ExerciseProgressRow key={exercise.name} exercise={exercise} index={index} />
@@ -452,20 +511,28 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
         </div>
 
         {/* Overall Progress */}
-        <div className="mt-4 pt-4 border-t border-white/10">
+        <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--fs-border-on-dark)' }}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-white/50">התקדמות כללית</span>
-            <span className="text-xs text-white font-medium tabular-nums">
+            <span className="text-xs" style={{ color: 'var(--fs-text-on-dark)' }}>
+              התקדמות כללית
+            </span>
+            <span
+              className="text-xs font-medium tabular-nums"
+              style={{ color: 'var(--color-ink-on-dark)' }}
+            >
               {Math.round(stats.progress * 100)}%
             </span>
           </div>
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+          <div
+            className="h-2 rounded-full overflow-hidden"
+            style={{ background: 'var(--color-bar-track)' }}
+          >
             <m.div
               className="h-full w-full rounded-full"
               style={{
                 background:
                   stats.progress >= 1
-                    ? 'linear-gradient(90deg, #30D158, #34C759)'
+                    ? 'linear-gradient(90deg, var(--fs-signal), var(--fs-accent))'
                     : 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
                 transformOrigin: 'left center',
               }}

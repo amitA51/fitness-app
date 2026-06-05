@@ -272,7 +272,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
               flexShrink: 0,
             }}
           >
-            FAV
+            מועדפים
           </span>
           {favorites.map((ex) => (
             <button
@@ -282,7 +282,8 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
               style={{
                 padding: '4px 12px',
                 background: 'var(--fs-accent)',
-                color: 'var(--fs-heading)',
+                // ink-on-accent: --fs-heading fails AA on the mint fill in dark.
+                color: 'var(--color-ink-on-accent)',
                 border: 'none',
                 borderRadius: 0,
                 fontFamily: 'var(--font-display)',
@@ -303,12 +304,16 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
 
       {/* Muscle Group Pills */}
       <div
+        className="no-scrollbar"
         style={{
           display: 'flex',
           gap: 6,
           overflowX: 'auto',
           paddingBottom: 4,
           direction: 'rtl',
+          // Hide the scrollbar but keep horizontal scrolling (Firefox + IE/Edge).
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
           maskImage: 'linear-gradient(to left, black 90%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to left, black 90%, transparent 100%)',
         }}

@@ -1,9 +1,10 @@
-// StatsGrid - Sport Annual Editorial Design
-// Data strips, Big Shoulders typography, navy/bone/mustard
+// StatsGrid - Fresh Steel / Obsidian design language
+// Data strips, Bricolage Grotesque typography, primary/surface/accent
 
 import { useCountUp } from '@/hooks/useCountUp';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { DUR, EASE, formatInt, formatThousands, gsap, useGSAP } from '@/lib/gsap';
+import { DUR, EASE, formatInt, gsap, useGSAP } from '@/lib/gsap';
+import { formatThousandsDecimal } from '@/utils/formatThousands';
 import { m } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
 import type React from 'react';
@@ -286,7 +287,7 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
             value={totalVolume}
             suffix={' ק"ג'}
             delay={cellDelay(0)}
-            format={formatThousands}
+            format={formatThousandsDecimal}
           />
           <div
             className="js-stat-cell"

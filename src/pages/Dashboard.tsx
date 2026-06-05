@@ -17,17 +17,18 @@ import { StartWorkoutSheet } from '../components/dashboard/StartWorkoutSheet';
 import { TemplateStrip } from '../components/dashboard/TemplateQuickStart';
 import { WeeklyGrid } from '../components/dashboard/WeeklyGrid';
 import { WorkoutStreak } from '../components/dashboard/WorkoutStreak';
+import { CoachMark } from '../components/guidance/CoachMark';
 import { WorkoutHistory } from '../components/workout/history/WorkoutHistory';
 import { Z_INDEX } from '../constants/zIndex';
 import { useData } from '../contexts/DataContext';
 import { useFitnessInsights } from '../hooks/fitness/useFitnessInsights';
 import { useCountUp } from '../hooks/useCountUp';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
-import { formatThousands } from '../lib/gsap';
 import { onWorkoutSaved } from '../services/dataEvents';
 import { getWorkoutTemplates } from '../services/workoutDb';
 import type { WorkoutTemplate } from '../types';
 import { getWeekStart } from '../utils/dateUtils';
+import { formatThousands } from '../utils/formatThousands';
 import { logger } from '../utils/logger';
 
 export default function Dashboard() {
@@ -337,6 +338,13 @@ export default function Dashboard() {
           <span>התחל אימון</span>
         </button>
 
+        {/* First-visit hint under the primary CTA */}
+        <div style={{ marginTop: 12 }}>
+          <CoachMark hintKey="hintDashboard" dismissLabel="הבנתי" dismissAriaLabel="הבנתי, סגירה">
+            מתחילים מכאן — בחרו תרגילים והאפליקציה תנחה אתכם דרך הסטים.
+          </CoachMark>
+        </div>
+
         {/* Workout streak */}
         <div style={{ marginTop: 16 }}>
           <WorkoutStreak sessions={workoutSessions} />
@@ -382,6 +390,7 @@ export default function Dashboard() {
                   label="אימונים"
                   value={weekData.workoutsThisWeek}
                   suffix=" / 4"
+                  ltr
                   delay={ringDelay(0)}
                 />
                 <BentoRow
@@ -401,6 +410,7 @@ export default function Dashboard() {
                   label="זמן"
                   value={weekData.totalMinutes}
                   suffix="′ / 240′"
+                  ltr
                   delay={ringDelay(2)}
                 />
               </div>
@@ -562,6 +572,21 @@ const BentoRow = memo(function BentoRow({
     </span>
   );
 
+  // In LTR mode wrap the number AND its suffix together so fraction-style
+  // suffixes ("1 / 4", "12′ / 240′") don't bidi-reorder into "4 /1" inside the
+  // RTL card. Otherwise only the number was isolated and the suffix reordered.
+  const valueGroup = ltr ? (
+    <span className="kinetic-number" dir="ltr">
+      {numberSpan}
+      {suffix}
+    </span>
+  ) : (
+    <span className="kinetic-number">
+      {numberSpan}
+      {suffix}
+    </span>
+  );
+
   return (
     <div
       style={{
@@ -605,10 +630,7 @@ const BentoRow = memo(function BentoRow({
           textAlign: 'end',
         }}
       >
-        <span className="kinetic-number">
-          {ltr ? <span dir="ltr">{numberSpan}</span> : numberSpan}
-          {suffix}
-        </span>
+        {valueGroup}
         {sub && <span style={{ color: 'var(--fs-accent)', fontSize: 10 }}>{sub}</span>}
       </span>
     </div>

@@ -20,6 +20,7 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-dom';
+import { WelcomeGuideSheet } from './components/guidance/WelcomeGuideSheet';
 import BottomNav from './components/ui/BottomNav';
 import { ToastContainer } from './components/ui/GlobalToast';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
@@ -27,6 +28,7 @@ import { WorkoutProvider } from './components/workout/core';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CoachProvider, useCoach } from './contexts/CoachContext';
 import { DataProvider } from './contexts/DataContext';
+import { GuidanceProvider } from './contexts/GuidanceContext';
 import { type PageAccent, PageThemeProvider } from './contexts/PageThemeContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { PageErrorBoundary } from './errors/PageErrorBoundary';
@@ -165,6 +167,13 @@ function getPageLabel(path: string): string {
 // App Component
 // ============================================================================
 
+// Opt into React Router v7 behavior now to silence the future-flag warnings and
+// keep the v6→v7 upgrade a no-op.
+const ROUTER_FUTURE = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+} as const;
+
 function App() {
   return (
     <MotionConfig reducedMotion="user">
@@ -273,7 +282,7 @@ function AppRouter() {
 
   if (status === 'unauthenticated') {
     return (
-      <BrowserRouter>
+      <BrowserRouter future={ROUTER_FUTURE}>
         <Suspense fallback={<PageLoader />}>
           <Login />
         </Suspense>
@@ -291,7 +300,7 @@ function AppRouter() {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={ROUTER_FUTURE}>
       <AppShell />
     </BrowserRouter>
   );
@@ -481,7 +490,7 @@ const MemoizedBottomNav = memo(BottomNav);
 function AppShell() {
   const location = useLocation();
   const reduceMotion = useReducedMotion() ?? false;
-  const mainRef = useRef<HTMLElement | null>(null);
+  const mainRef = useRef<HTMLDivElement | null>(null);
   const prevPathRef = useRef<string | null>(null);
 
   const isWorkoutActive = location.pathname.startsWith('/workout');
@@ -568,53 +577,59 @@ function AppShell() {
   return (
     <DataProvider>
       <CoachProvider>
-        <PageThemeProvider page={pageAccent}>
-          <a href="#main-content" className="skip-link">
-            דלג לתוכן הראשי
-          </a>
-          <div
-            className="app-shell min-h-screen min-h-[100dvh] flex flex-col"
-            style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
-          >
-            <OfflineIndicator />
-            <ToastContainer />
-            <div className="sr-only" aria-live="polite">
-              {pageLabel}
-            </div>
-            <main
-              ref={mainRef}
-              id="main-content"
-              className={cn('flex-1 overflow-y-auto')}
-              tabIndex={-1}
-              style={{
-                contain: 'layout style',
-                ...(!isWorkoutActive && {
-                  paddingBottom:
-                    'calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-4))',
-                }),
-              }}
+        <GuidanceProvider>
+          <PageThemeProvider page={pageAccent}>
+            <a href="#main-content" className="skip-link">
+              דלג לתוכן הראשי
+            </a>
+            <div
+              className="app-shell min-h-screen min-h-[100dvh] flex flex-col"
+              style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
             >
-              <Suspense fallback={<PageLoader />}>
-                {reduceMotion ? (
-                  <AppRoutes location={location} />
-                ) : (
-                  <AnimatePresence mode="wait" initial={false}>
-                    <m.div
-                      key={location.pathname}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15, ease: 'easeOut' }}
-                    >
-                      <AppRoutes location={location} />
-                    </m.div>
-                  </AnimatePresence>
-                )}
-              </Suspense>
-            </main>
-            {!isWorkoutActive && <MemoizedBottomNav />}
-          </div>
-        </PageThemeProvider>
+              <OfflineIndicator />
+              <ToastContainer />
+              {/* First-use guidance — auto-opens once, re-launchable from Settings. */}
+              <WelcomeGuideSheet />
+              <div className="sr-only" aria-live="polite">
+                {pageLabel}
+              </div>
+              {/* Scroll/focus container, not a landmark: each page renders its own
+                <main>, so this stays a <div> to avoid nested-main invalid HTML. */}
+              <div
+                ref={mainRef}
+                id="main-content"
+                className={cn('flex-1 overflow-y-auto')}
+                tabIndex={-1}
+                style={{
+                  contain: 'layout style',
+                  ...(!isWorkoutActive && {
+                    paddingBottom:
+                      'calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-4))',
+                  }),
+                }}
+              >
+                <Suspense fallback={<PageLoader />}>
+                  {reduceMotion ? (
+                    <AppRoutes location={location} />
+                  ) : (
+                    <AnimatePresence mode="wait" initial={false}>
+                      <m.div
+                        key={location.pathname}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                      >
+                        <AppRoutes location={location} />
+                      </m.div>
+                    </AnimatePresence>
+                  )}
+                </Suspense>
+              </div>
+              {!isWorkoutActive && <MemoizedBottomNav />}
+            </div>
+          </PageThemeProvider>
+        </GuidanceProvider>
       </CoachProvider>
     </DataProvider>
   );

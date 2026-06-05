@@ -134,7 +134,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   fontWeight: 600,
                 }}
               >
-                {isFinishing ? 'SESSION · END' : 'SESSION · CANCEL'}
+                {isFinishing ? 'סיום · אימון' : 'ביטול · אימון'}
               </div>
               <h3
                 className="uppercase mt-1"

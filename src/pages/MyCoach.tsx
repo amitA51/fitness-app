@@ -43,11 +43,13 @@ export default function MyCoach() {
   const {
     data: coaches,
     loading: coachesLoading,
+    error: coachesError,
     reload,
   } = useAsyncData(() => listMyCoaches('active'), []);
   const {
     data: assignments,
     loading: aLoading,
+    error: assignmentsError,
     reload: reloadAssignments,
   } = useAsyncData(() => listMyAssignments(), []);
   const [code, setCode] = useState('');
@@ -93,6 +95,7 @@ export default function MyCoach() {
         <div className="flex gap-2 items-end">
           <div className="flex-1">
             <Input
+              label="קוד הזמנה"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               onKeyDown={(e) => {
@@ -101,7 +104,7 @@ export default function MyCoach() {
                   void connect();
                 }
               }}
-              placeholder="קוד הזמנה"
+              placeholder="ABC123"
               dir="ltr"
               aria-label="קוד הזמנה"
               style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.12em' }}
@@ -116,6 +119,8 @@ export default function MyCoach() {
       <Section title="המאמנים שלי">
         {coachesLoading ? (
           <ListSkeleton rows={2} />
+        ) : coachesError ? (
+          <SectionError onRetry={reload} />
         ) : coaches.length === 0 ? (
           <EmptyState
             illustration="generic"
@@ -175,6 +180,8 @@ export default function MyCoach() {
         </p>
         {aLoading ? (
           <ListSkeleton rows={3} />
+        ) : assignmentsError ? (
+          <SectionError onRetry={reloadAssignments} />
         ) : assignments.length === 0 ? (
           <EmptyState
             illustration="notes"
@@ -238,11 +245,12 @@ function CheckInForm() {
     <Section title="צ׳ק-אין שבועי">
       <div className="mb-3">
         <Input
+          label="משקל"
           type="number"
           inputMode="decimal"
           value={weight}
           onChange={(e) => setWeight(e.target.value)}
-          placeholder='משקל (ק"ג)'
+          placeholder="0.0"
           aria-label="משקל"
           unit='ק"ג'
         />
@@ -256,7 +264,7 @@ function CheckInForm() {
             onClick={() => setMood(m)}
             aria-label={`מצב רוח ${m}`}
             aria-pressed={mood === m}
-            className="flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-0"
+            className="flex-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-0"
             style={{
               minWidth: 44,
               minHeight: 44,
@@ -274,6 +282,7 @@ function CheckInForm() {
       </div>
       <div className="mb-2">
         <Textarea
+          label="הערות"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
@@ -285,5 +294,38 @@ function CheckInForm() {
         שמור צ׳ק-אין
       </Button>
     </Section>
+  );
+}
+
+/**
+ * Inline load-failure state for a coach Section: distinct from the empty state,
+ * with an explicit Hebrew message and a retry path. Proportional to InlineEmpty
+ * (no full-screen illustration); tokenized for light + dark.
+ */
+function SectionError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div
+      role="alert"
+      className="flex flex-col items-center gap-3 text-center"
+      style={{
+        padding: '20px 16px',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+      }}
+    >
+      <p
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 14,
+          color: 'var(--fs-muted)',
+          lineHeight: 1.6,
+        }}
+      >
+        לא ניתן לטעון את הנתונים. בדוק את החיבור לאינטרנט ונסה שוב.
+      </p>
+      <Button variant="secondary" size="sm" onClick={onRetry}>
+        נסה שוב
+      </Button>
+    </div>
   );
 }
