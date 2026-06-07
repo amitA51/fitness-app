@@ -58,10 +58,9 @@ vi.mock('../auditService', () => ({
   writeAudit: (args: unknown) => writeAuditSpy(args),
 }));
 
-// Deterministic ids for new rows.
-vi.mock('../../../utils/id', () => ({
-  generateId: (prefix: string) => `${prefix}-generated`,
-}));
+// New cloud rows get UUID ids via crypto.randomUUID() (cloud id columns are
+// UUID — a prefixed IndexedDB id would be rejected). Stub it deterministically.
+const FIXED_UUID = '00000000-0000-4000-8000-000000000abc';
 
 import {
   createClientSession,
@@ -80,6 +79,7 @@ beforeEach(() => {
   mocks.insertResult.error = null;
   mocks.upsertResult.error = null;
   mocks.updateResult.error = null;
+  vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue(FIXED_UUID);
 });
 
 const lastCallArg = (calls: unknown[][]): Record<string, unknown> =>
@@ -143,7 +143,7 @@ describe('createClientSession', () => {
     const res = await createClientSession(CLIENT_ID, { date: '2026-06-01', exercises });
 
     expect(res.error).toBeNull();
-    expect(res.id).toBe('ws-generated');
+    expect(res.id).toBe(FIXED_UUID);
     const row = lastInsertPayload();
     expect(row.user_id).toBe(CLIENT_ID);
     expect(row.updated_by).toBe('coach-1');
@@ -155,7 +155,7 @@ describe('createClientSession', () => {
         subjectUserId: CLIENT_ID,
         tableName: 'workout_sessions',
         action: 'create',
-        rowId: 'ws-generated',
+        rowId: FIXED_UUID,
       })
     );
   });
@@ -250,7 +250,7 @@ describe('upsertClientNutritionLog', () => {
     });
 
     expect(res.error).toBeNull();
-    expect(res.id).toBe('nut-generated');
+    expect(res.id).toBe(FIXED_UUID);
     const row = lastUpsertPayload();
     expect(row.user_id).toBe(CLIENT_ID);
     expect(row.date).toBe('2026-06-02');

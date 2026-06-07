@@ -11,9 +11,18 @@ import { toGroupMessage, toMessage } from './mappers';
 
 type Unsubscribe = () => void;
 
+// Monotonic suffix so each subscription gets a UNIQUE channel name. A fixed
+// name (`rt:table:user`) collides on React StrictMode remount: supabase returns
+// the still-subscribed previous channel and `.on()` after `.subscribe()` throws
+// ("cannot add postgres_changes callbacks ... after subscribe()"), which used to
+// bubble up and blank out surfaces like TodaysWorkoutCard. Unique names never
+// return a stale channel; each subscription removes exactly its own.
+let channelSeq = 0;
+
 /**
  * Subscribe to changes on a trainee-owned table for the given user and invoke
  * `onChange` on any insert/update/delete. Returns an unsubscribe function.
+ * Never throws — a realtime failure must not break the calling surface.
  */
 export function subscribeToUserTable(
   table: string,
@@ -22,18 +31,23 @@ export function subscribeToUserTable(
 ): Unsubscribe {
   if (!isSupabaseConfigured() || !supabase || !userId) return () => {};
 
-  const channel = supabase
-    .channel(`rt:${table}:${userId}`)
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table, filter: `user_id=eq.${userId}` },
-      () => onChange()
-    )
-    .subscribe();
+  try {
+    const channel = supabase
+      .channel(`rt:${table}:${userId}:${++channelSeq}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table, filter: `user_id=eq.${userId}` },
+        () => onChange()
+      )
+      .subscribe();
 
-  return () => {
-    void supabase?.removeChannel(channel);
-  };
+    return () => {
+      void supabase?.removeChannel(channel);
+    };
+  } catch {
+    // Realtime is an enhancement; the caller's initial fetch still works.
+    return () => {};
+  }
 }
 
 /**

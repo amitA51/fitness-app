@@ -8,7 +8,6 @@
 // for audit and reflect to the trainee via their normal pull/Realtime path.
 
 import type { BodyWeightEntry, WorkoutSession, WorkoutTemplate } from '../../types';
-import { generateId } from '../../utils/id';
 import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
 import type { BodyMeasurement, NutritionLog, PersonalRecordRow } from '../supabaseSyncMappers';
@@ -132,9 +131,12 @@ export const getClientTemplates = async (clientId: string): Promise<WorkoutTempl
 
 export const getClientBodyWeight = async (clientId: string): Promise<BodyWeightEntry[]> => {
   const supabase = requireClient();
+  // NB: body_weight has no `notes` column — selecting it errors out the whole
+  // query (the coach weight trend silently showed "no data"). Columns are
+  // id/weight/date/created_at/updated_at/deleted_at only.
   const { data, error } = await supabase
     .from('body_weight')
-    .select('id, weight, date, notes, created_at, updated_at')
+    .select('id, weight, date, created_at, updated_at')
     .eq('user_id', clientId)
     .order('date', { ascending: false })
     .limit(500);
@@ -148,7 +150,6 @@ export const getClientBodyWeight = async (clientId: string): Promise<BodyWeightE
       weight: r.weight,
       date: r.date,
       createdAt: r.created_at,
-      notes: r.notes,
     })
   );
 };
@@ -275,7 +276,8 @@ export const createClientSession = async (
   session: Partial<WorkoutSession>
 ): Promise<{ error: string | null; id?: string }> => {
   const supabase = requireClient();
-  const id = session.id ?? generateId('ws');
+  // Cloud id columns are UUID — generateId() (prefixed IndexedDB ids) is invalid here.
+  const id = session.id ?? crypto.randomUUID();
   const now = new Date().toISOString();
   const exercises = (session.exercises ?? []) as WorkoutSession['exercises'];
   const { error } = await auditedWrite({
@@ -380,7 +382,7 @@ export const upsertClientNutritionLog = async (
   log: ClientNutritionInput
 ): Promise<{ error: string | null; id?: string }> => {
   const supabase = requireClient();
-  const id = log.id ?? generateId('nut');
+  const id = log.id ?? crypto.randomUUID();
   const now = new Date().toISOString();
   const { error } = await auditedWrite({
     clientId,
@@ -444,7 +446,7 @@ export const upsertClientBodyWeight = async (
   entry: ClientBodyWeightInput
 ): Promise<{ error: string | null; id?: string }> => {
   const supabase = requireClient();
-  const id = entry.id ?? generateId('bw');
+  const id = entry.id ?? crypto.randomUUID();
   const now = new Date().toISOString();
   const { error } = await auditedWrite({
     clientId,

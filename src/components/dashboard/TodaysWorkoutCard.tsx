@@ -192,15 +192,24 @@ export function TodaysWorkoutCard() {
         }
         setUserId(user.id);
         await load();
-        if (!mountedRef.current) return;
-        unsubscribe = subscribeToUserTable('workout_schedule', user.id, () => {
-          void load();
-        });
       } catch (e) {
         if (!mountedRef.current) return;
         setFailed(true);
         setLoading(false);
         logger.db.warn('TodaysWorkoutCard init failed (non-fatal)', e);
+        return;
+      }
+      // Realtime is a live-update enhancement only — it must NEVER blank the
+      // card if the initial load already succeeded. subscribeToUserTable is
+      // itself non-throwing, but keep this isolated as defense in depth.
+      if (!mountedRef.current) return;
+      try {
+        const uid = await getCurrentUser();
+        if (mountedRef.current && uid) {
+          unsubscribe = subscribeToUserTable('workout_schedule', uid.id, () => void load());
+        }
+      } catch {
+        /* live updates unavailable — the loaded data still renders */
       }
     })();
 

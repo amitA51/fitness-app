@@ -9,8 +9,11 @@ import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
 import { requireClient, toCoachClient, toCoachProfile, toSubscription } from './mappers';
 
-const CLIENT_WITH_PROFILE = '*, client_profile:profiles!coach_clients_client_id_fkey(*)';
-const COACH_WITH_PROFILE = '*, coach_profile:profiles!coach_clients_coach_id_fkey(*)';
+// Embed profiles via the FKs that target public.profiles (the *_id_fkey
+// constraints point at auth.users, which PostgREST cannot embed) — see
+// migration 20260608000400_coach_clients_profile_fk.
+const CLIENT_WITH_PROFILE = '*, client_profile:profiles!coach_clients_client_id_profile_fkey(*)';
+const COACH_WITH_PROFILE = '*, coach_profile:profiles!coach_clients_coach_id_profile_fkey(*)';
 
 // ---- Coach mode (coach_profiles) -------------------------------------------
 
