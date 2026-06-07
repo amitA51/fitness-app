@@ -6,7 +6,8 @@
 // `computeClientAnalytics` is unit-testable; `getClientAnalytics` fetches first.
 
 import type { CoachClient } from '../../types/coach';
-import { getClientSessions, getClientsActivity } from './coachApi';
+import { listCoachAssignments } from './assignmentService';
+import { getClientNutrition, getClientSessions, getClientsActivity } from './coachApi';
 
 export type ClientStatusLevel = 'active' | 'at_risk' | 'inactive' | 'new';
 
@@ -26,6 +27,109 @@ export interface ClientAnalytics {
   /** Total volume per week for the last 4 weeks, oldest → newest. */
   volumeByWeek: number[];
   level: ClientStatusLevel;
+}
+
+// ---- Week adherence (per-day breakdown for the trailing 7 days) ------------
+
+export interface DayAdherence {
+  /** Local date in YYYY-MM-DD format. */
+  date: string;
+  /** Day of week: 0 = Sunday … 6 = Saturday. */
+  weekday: number;
+  /** Number of workout sessions that started on this local date. */
+  sessions: number;
+  /** Total calories logged on this date, or null if no nutrition row exists. */
+  calories: number | null;
+  /** Calorie target from the client's active nutrition_target assignment, or null. */
+  targetCalories: number | null;
+}
+
+/** Build a local YYYY-MM-DD string without UTC conversion (avoids timezone bug). */
+function toLocalDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Derive per-day adherence for the trailing 7 days ending today (local time).
+ * Pure and unit-testable — no I/O.
+ */
+export function computeWeekAdherence(
+  sessions: Array<{ startTime: string | null }>,
+  nutrition: Array<{ date: string; calories: number | null }>,
+  targetCalories: number | null,
+  now: Date = new Date()
+): DayAdherence[] {
+  // Build the 7-day window (oldest → newest, ending today in local time).
+  const days: DayAdherence[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    days.push({
+      date: toLocalDateString(d),
+      weekday: d.getDay(),
+      sessions: 0,
+      calories: null,
+      targetCalories,
+    });
+  }
+
+  // Index days by date string for O(1) lookup.
+  const dayMap = new Map<string, DayAdherence>();
+  for (const day of days) dayMap.set(day.date, day);
+
+  // Count sessions by local date of startTime.
+  for (const s of sessions) {
+    if (!s.startTime) continue;
+    const d = new Date(s.startTime);
+    if (!Number.isFinite(d.getTime())) continue;
+    const key = toLocalDateString(d);
+    const day = dayMap.get(key);
+    if (day) day.sessions += 1;
+  }
+
+  // Map nutrition calories by date.
+  for (const n of nutrition) {
+    const day = dayMap.get(n.date);
+    if (day) day.calories = n.calories ?? null;
+  }
+
+  return days;
+}
+
+/**
+ * Fetch all required data for a client and return 7-day adherence.
+ * Falls back to empty adherence on any error.
+ */
+export async function getClientWeekAdherence(clientId: string): Promise<DayAdherence[]> {
+  try {
+    const [sessions, nutrition, assignments] = await Promise.all([
+      getClientSessions(clientId, 30),
+      getClientNutrition(clientId, 10),
+      listCoachAssignments(clientId),
+    ]);
+
+    // Find the newest active nutrition_target assignment with a numeric calories payload.
+    let targetCalories: number | null = null;
+    for (const a of assignments) {
+      if (a.kind === 'nutrition_target' && a.status === 'active') {
+        const cal = a.payload?.calories;
+        if (typeof cal === 'number') {
+          targetCalories = cal;
+          break; // listCoachAssignments is ordered newest-first
+        }
+      }
+    }
+
+    const nutritionRows = nutrition.map((n) => ({
+      date: n.date,
+      calories: n.calories ?? null,
+    }));
+    return computeWeekAdherence(sessions, nutritionRows, targetCalories);
+  } catch {
+    return computeWeekAdherence([], [], null);
+  }
 }
 
 const DAY = 86_400_000;

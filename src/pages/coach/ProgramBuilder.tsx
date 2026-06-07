@@ -11,8 +11,13 @@ import { showToast } from '../../components/ui/GlobalToast';
 import { Input } from '../../components/ui/Input';
 import { Sheet } from '../../components/ui/Sheet';
 import { createAssignment, upsertClientTemplate } from '../../services/coach';
+import {
+  listProgramTemplates,
+  saveProgramTemplate,
+} from '../../services/coach/programTemplateService';
 import { getPersonalExercises } from '../../services/exerciseDb';
 import type { PersonalExercise, WorkoutTemplate, WorkoutTemplateExercise } from '../../types';
+import type { CoachProgramTemplate } from '../../types/coach';
 
 interface ProgramExercise {
   exerciseName: string;
@@ -38,7 +43,11 @@ export default function ProgramBuilder({
   const [programName, setProgramName] = useState('');
   const [days, setDays] = useState<ProgramDay[]>(freshDays);
   const [busy, setBusy] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
   const [library, setLibrary] = useState<PersonalExercise[]>([]);
+  const [libraryError, setLibraryError] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [templates, setTemplates] = useState<CoachProgramTemplate[]>([]);
 
   // Fresh form each time the sheet opens — matches the previous unmount-on-close
   // behaviour now that the component stays mounted for enter/exit animations.
@@ -46,6 +55,8 @@ export default function ProgramBuilder({
     if (isOpen) {
       setProgramName('');
       setDays(freshDays());
+      setSubmitError('');
+      setLibraryError(false);
     }
   }, [isOpen]);
 
@@ -59,12 +70,28 @@ export default function ProgramBuilder({
         if (!cancelled) setLibrary(list);
       })
       .catch(() => {
-        /* library is an optional aid; free-text still works if it fails */
+        if (!cancelled) setLibraryError(true);
       });
     return () => {
       cancelled = true;
     };
   }, [isOpen, library.length]);
+
+  // Lazy-load program templates when the sheet opens.
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    listProgramTemplates()
+      .then((list) => {
+        if (!cancelled) setTemplates(list);
+      })
+      .catch(() => {
+        // Silent failure — template picker simply won't render.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   const libraryByName = useMemo(() => {
     const map = new Map<string, PersonalExercise>();
@@ -72,15 +99,35 @@ export default function ProgramBuilder({
     return map;
   }, [library]);
 
-  const addDay = () =>
+  // Validation: every day must have a non-empty name AND the whole program must
+  // have at least one exercise with a non-empty name; no day may be completely empty.
+  const canAssign = useMemo(() => {
+    if (days.length === 0) return false;
+    const allNamed = days.every((d) => d.name.trim().length > 0);
+    const hasExercise = days.some((d) =>
+      d.exercises.some((ex) => ex.exerciseName.trim().length > 0)
+    );
+    const noDayEmpty = days.every((d) => d.exercises.length > 0);
+    return allNamed && hasExercise && noDayEmpty;
+  }, [days]);
+
+  const addDay = () => {
+    setSubmitError('');
     setDays((d) => [...d, { name: `יום ${String.fromCharCode(65 + d.length)}`, exercises: [] }]);
+  };
 
-  const removeDay = (i: number) => setDays((d) => d.filter((_, idx) => idx !== i));
+  const removeDay = (i: number) => {
+    setSubmitError('');
+    setDays((d) => d.filter((_, idx) => idx !== i));
+  };
 
-  const updateDayName = (i: number, name: string) =>
+  const updateDayName = (i: number, name: string) => {
+    setSubmitError('');
     setDays((d) => d.map((day, idx) => (idx === i ? { ...day, name } : day)));
+  };
 
-  const addExercise = (dayIdx: number) =>
+  const addExercise = (dayIdx: number) => {
+    setSubmitError('');
     setDays((d) =>
       d.map((day, idx) =>
         idx === dayIdx
@@ -94,15 +141,19 @@ export default function ProgramBuilder({
           : day
       )
     );
+  };
 
-  const removeExercise = (dayIdx: number, exIdx: number) =>
+  const removeExercise = (dayIdx: number, exIdx: number) => {
+    setSubmitError('');
     setDays((d) =>
       d.map((day, idx) =>
         idx === dayIdx ? { ...day, exercises: day.exercises.filter((_, ei) => ei !== exIdx) } : day
       )
     );
+  };
 
-  const updateExercise = (dayIdx: number, exIdx: number, patch: Partial<ProgramExercise>) =>
+  const updateExercise = (dayIdx: number, exIdx: number, patch: Partial<ProgramExercise>) => {
+    setSubmitError('');
     setDays((d) =>
       d.map((day, di) =>
         di === dayIdx
@@ -113,6 +164,7 @@ export default function ProgramBuilder({
           : day
       )
     );
+  };
 
   // Resolve a typed/picked name against the library: fills the canonical id and
   // target muscle when it matches a known exercise, clearing them otherwise.
@@ -153,7 +205,10 @@ export default function ProgramBuilder({
   };
 
   const handleAssign = async () => {
-    if (days.length === 0) return;
+    if (!canAssign) {
+      setSubmitError('יש להוסיף לפחות תרגיל אחד ושם לכל יום');
+      return;
+    }
     setBusy(true);
     try {
       // Persist one runnable template per day…
@@ -182,15 +237,78 @@ export default function ProgramBuilder({
     }
   };
 
+  const handleSaveToLibrary = async () => {
+    setSavingTemplate(true);
+    try {
+      await saveProgramTemplate({
+        name: programName.trim() || 'תוכנית ללא שם',
+        days,
+      });
+      showToast('התבנית נשמרה בספרייה', 'success');
+      // Refresh local templates list so the picker stays in sync.
+      const updated = await listProgramTemplates();
+      setTemplates(updated);
+    } catch {
+      showToast('שמירת התבנית נכשלה', 'error');
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const handleTemplateSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = e.target.value;
+    if (!id) return;
+    const tpl = templates.find((t) => t.id === id);
+    if (!tpl) return;
+    // Deep-copy so edits never mutate the cached template object.
+    setDays(structuredClone(tpl.days));
+    setProgramName(tpl.name);
+    setSubmitError('');
+    // Reset select back to placeholder.
+    e.target.value = '';
+  };
+
   return (
     <Sheet
       isOpen={isOpen}
       onClose={onClose}
       title="בניית תוכנית"
       footer={
-        <Button variant="primary" fullWidth isLoading={busy} onClick={handleAssign}>
-          שייך תוכנית
-        </Button>
+        <>
+          {submitError && (
+            <div
+              role="alert"
+              style={{
+                color: 'var(--fs-warn)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                marginBottom: 8,
+              }}
+            >
+              {submitError}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button
+              variant="secondary"
+              fullWidth
+              isLoading={savingTemplate}
+              onClick={handleSaveToLibrary}
+              disabled={!canAssign || busy || savingTemplate}
+            >
+              שמור בספרייה
+            </Button>
+            <Button
+              variant="primary"
+              fullWidth
+              isLoading={busy}
+              onClick={handleAssign}
+              disabled={!canAssign || busy || savingTemplate}
+            >
+              שייך תוכנית
+            </Button>
+          </div>
+        </>
       }
     >
       <datalist id="coach-exercise-library">
@@ -201,6 +319,48 @@ export default function ProgramBuilder({
         ))}
       </datalist>
 
+      {templates.length > 0 && (
+        <div className="mb-4">
+          <label
+            htmlFor="program-template-select"
+            style={{
+              display: 'block',
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              color: 'var(--fs-muted)',
+              marginBottom: 6,
+            }}
+          >
+            תבנית שמורה
+          </label>
+          <select
+            id="program-template-select"
+            dir="rtl"
+            onChange={handleTemplateSelect}
+            defaultValue=""
+            style={{
+              width: '100%',
+              minHeight: 44,
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--fs-surface-2)',
+              color: 'var(--fs-ink)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 14,
+              padding: '0 12px',
+              borderRadius: 4,
+              appearance: 'auto',
+            }}
+          >
+            <option value="">בחירת תבנית…</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="mb-4">
         <Input
           label="שם התוכנית"
@@ -209,6 +369,19 @@ export default function ProgramBuilder({
           placeholder="אופציונלי"
         />
       </div>
+
+      {libraryError && (
+        <p
+          style={{
+            color: 'var(--fs-muted)',
+            fontSize: 12,
+            marginBottom: 8,
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          ספריית התרגילים לא נטענה — אפשר להקליד שם תרגיל ידנית
+        </p>
+      )}
 
       {days.map((day, dayIdx) => (
         <section
@@ -253,10 +426,11 @@ export default function ProgramBuilder({
                   aria-label="שם תרגיל"
                 />
               </div>
-              <div style={{ width: 60 }} className="shrink-0">
+              <div style={{ width: 72, minHeight: 44 }} className="shrink-0">
                 <Input
                   type="number"
                   inputMode="numeric"
+                  dir="ltr"
                   value={ex.sets}
                   onChange={(e) =>
                     updateExercise(dayIdx, exIdx, { sets: Number(e.target.value) || 1 })
@@ -267,10 +441,11 @@ export default function ProgramBuilder({
               <span style={{ color: 'var(--fs-muted)', fontSize: 12 }} aria-hidden="true">
                 ×
               </span>
-              <div style={{ width: 60 }} className="shrink-0">
+              <div style={{ width: 72, minHeight: 44 }} className="shrink-0">
                 <Input
                   type="number"
                   inputMode="numeric"
+                  dir="ltr"
                   value={ex.reps}
                   onChange={(e) =>
                     updateExercise(dayIdx, exIdx, { reps: Number(e.target.value) || 1 })

@@ -1,19 +1,16 @@
 // ============================================================================
-// CLIENT DETAIL — coach view of one trainee (read) + assign actions
+// CLIENT DETAIL — Fresh Steel / Obsidian design system
+// Coach view of one trainee (read) + assign actions. Page orchestration only;
+// sub-components live in ./client/.
 // ============================================================================
 
-import { Archive, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { showToast } from '../../components/ui/GlobalToast';
-import { Input } from '../../components/ui/Input';
-import { Textarea } from '../../components/ui/Textarea';
 import {
-  addCoachNote,
-  archiveAssignment,
   clientStatusMeta,
-  createAssignment,
   getClientAnalytics,
   getClientBodyWeight,
   getClientLink,
@@ -23,10 +20,8 @@ import {
   getClientSessions,
   listCheckIns,
   listCoachAssignments,
-  listCoachNotes,
   setClientStatus,
 } from '../../services/coach';
-import type { Assignment } from '../../types/coach';
 import ProgramBuilder from './ProgramBuilder';
 import {
   CoachPage,
@@ -34,17 +29,17 @@ import {
   ListRow,
   ListSkeleton,
   Section,
-  SectionError,
   formatDate,
   useAsyncData,
 } from './_shared';
-
-const KIND_LABEL: Record<Assignment['kind'], string> = {
-  program: 'תוכנית אימון',
-  nutrition_target: 'יעד תזונה',
-  note: 'המלצה',
-  announcement: 'הודעה',
-};
+import { AssignBox } from './client/AssignBox';
+import { AssignmentsBox } from './client/AssignmentsBox';
+import { AuditBox } from './client/AuditBox';
+import { NotesBox } from './client/NotesBox';
+import { RemindersBox } from './client/RemindersBox';
+import { TimelineBox } from './client/TimelineBox';
+import { WeekGrid } from './client/WeekGrid';
+import { Stat, VolumeTrend } from './client/widgets';
 
 // Trainee link status → Hebrew (never surface the raw English enum to the coach).
 const STATUS_LABEL: Record<string, string> = {
@@ -53,6 +48,21 @@ const STATUS_LABEL: Record<string, string> = {
   paused: 'מושהה',
   ended: 'הסתיים',
 };
+
+/** Signed week-over-week session delta for the adherence card. */
+function adherenceDelta(last7: number, prev7: number): string {
+  const diff = last7 - prev7;
+  if (diff === 0) return 'ללא שינוי';
+  return diff > 0 ? `+${diff}` : String(diff);
+}
+
+/** Compact summary of a body-measurement record's numeric fields. */
+function formatMeasurements(measurements: Record<string, unknown>): string {
+  const parts = Object.entries(measurements)
+    .filter(([, v]) => typeof v === 'number' && Number.isFinite(v))
+    .map(([k, v]) => `${k} ${v}`);
+  return parts.length > 0 ? parts.join(' · ') : '—';
+}
 
 export default function ClientDetail() {
   const { id = '' } = useParams<{ id: string }>();
@@ -67,6 +77,7 @@ export default function ClientDetail() {
   const { data: prs } = useAsyncData(() => getClientPRs(id), []);
   const { data: nutrition } = useAsyncData(() => getClientNutrition(id, 7), []);
   const { data: checkIns } = useAsyncData(() => listCheckIns(id), []);
+  const { data: assignments } = useAsyncData(() => listCoachAssignments(id), []);
 
   const name = link?.clientProfile?.displayName ?? 'מתאמן';
   const latestWeight = weights[0]?.weight;
@@ -140,6 +151,10 @@ export default function ClientDetail() {
           </div>
         </Section>
       )}
+
+      <Section title="השבוע במבט-על">
+        <WeekGrid clientId={id} />
+      </Section>
 
       <AssignBox clientId={id} />
 
@@ -236,7 +251,15 @@ export default function ClientDetail() {
         )}
       </Section>
 
+      <Section title="ציר פעילות">
+        <TimelineBox sessions={sessions} checkIns={checkIns} assignments={assignments} />
+      </Section>
+
       <NotesBox clientId={id} />
+
+      <AuditBox clientId={id} />
+
+      {link && link.status === 'active' && <RemindersBox clientId={id} />}
 
       {link && link.status === 'active' && (
         <Section title="ניהול">
@@ -254,268 +277,5 @@ export default function ClientDetail() {
         </Section>
       )}
     </CoachPage>
-  );
-}
-
-const WEEK_LABELS = ['לפני 3ש׳', 'לפני 2ש׳', 'שבוע שעבר', 'השבוע'];
-
-function VolumeTrend({ weeks }: { weeks: number[] }) {
-  const max = Math.max(1, ...weeks);
-  return (
-    <div className="flex items-end gap-2" style={{ height: 72 }}>
-      {WEEK_LABELS.map((lbl, i) => (
-        <div
-          key={lbl}
-          className="flex-1 flex flex-col items-center justify-end"
-          style={{ height: '100%' }}
-        >
-          <div
-            style={{
-              width: '100%',
-              height: `${Math.round(((weeks[i] ?? 0) / max) * 100)}%`,
-              minHeight: 3,
-              background: 'var(--fs-accent)',
-            }}
-            title={`${Math.round(weeks[i] ?? 0)} ק"ג`}
-          />
-          <span
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
-              color: 'var(--fs-muted)',
-              marginTop: 6,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {lbl}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
-  return (
-    <div
-      className="px-4 py-3"
-      style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}
-    >
-      <div
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 10,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: 'var(--fs-muted)',
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: 20,
-          fontWeight: 700,
-          fontVariantNumeric: 'tabular-nums',
-          color: color ?? 'var(--fs-heading)',
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-/** Signed week-over-week session delta for the adherence card. */
-function adherenceDelta(last7: number, prev7: number): string {
-  const diff = last7 - prev7;
-  if (diff === 0) return 'ללא שינוי';
-  return diff > 0 ? `+${diff}` : String(diff);
-}
-
-/** Compact summary of a body-measurement record's numeric fields. */
-function formatMeasurements(measurements: Record<string, unknown>): string {
-  const parts = Object.entries(measurements)
-    .filter(([, v]) => typeof v === 'number' && Number.isFinite(v))
-    .map(([k, v]) => `${k} ${v}`);
-  return parts.length > 0 ? parts.join(' · ') : '—';
-}
-
-/**
- * Sent recommendations/assignments authored by this coach for this client,
- * with the ability to REVOKE (archive) one — wires archiveAssignment, which
- * previously had no caller.
- */
-function AssignmentsBox({ clientId }: { clientId: string }) {
-  const {
-    data: assignments,
-    loading,
-    error,
-    reload,
-  } = useAsyncData<Assignment[]>(() => listCoachAssignments(clientId), []);
-  const [revokingId, setRevokingId] = useState<string | null>(null);
-
-  const active = assignments.filter((a) => a.status === 'active');
-
-  const revoke = async (id: string) => {
-    setRevokingId(id);
-    const { error } = await archiveAssignment(id);
-    setRevokingId(null);
-    if (error) {
-      showToast('ביטול השיוך נכשל', 'error');
-      return;
-    }
-    showToast('השיוך בוטל', 'success');
-    reload();
-  };
-
-  return (
-    <Section title="שיוכים פעילים">
-      {loading ? (
-        <ListSkeleton rows={3} />
-      ) : error ? (
-        <SectionError onRetry={reload} />
-      ) : active.length === 0 ? (
-        <InlineEmpty>לא נשלחו שיוכים פעילים.</InlineEmpty>
-      ) : (
-        active.map((a) => (
-          <ListRow
-            key={a.id}
-            label={a.title || KIND_LABEL[a.kind]}
-            meta={`${KIND_LABEL[a.kind]} · ${formatDate(a.createdAt)}`}
-            trailing={
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={<Archive size={14} />}
-                isLoading={revokingId === a.id}
-                onClick={() => revoke(a.id)}
-              >
-                בטל
-              </Button>
-            }
-          />
-        ))
-      )}
-    </Section>
-  );
-}
-
-function AssignBox({ clientId }: { clientId: string }) {
-  const [note, setNote] = useState('');
-  const [calories, setCalories] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const sendNote = async () => {
-    if (!note.trim()) return;
-    setBusy(true);
-    try {
-      await createAssignment({
-        kind: 'note',
-        title: 'המלצה',
-        payload: { text: note.trim() },
-        clientId,
-      });
-      setNote('');
-      showToast('ההמלצה נשלחה', 'success');
-    } catch {
-      showToast('השליחה נכשלה', 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const sendTarget = async () => {
-    const kcal = Number(calories);
-    if (!kcal) return;
-    setBusy(true);
-    try {
-      await createAssignment({
-        kind: 'nutrition_target',
-        title: 'יעד תזונה',
-        payload: { calories: kcal },
-        clientId,
-      });
-      setCalories('');
-      showToast('יעד התזונה שויך', 'success');
-    } catch {
-      showToast('השליחה נכשלה', 'error');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <Section title="שיוך והמלצות">
-      <div className="mb-2">
-        <Textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="כתוב המלצה למתאמן…"
-          rows={2}
-          aria-label="המלצה למתאמן"
-        />
-      </div>
-      <Button variant="primary" fullWidth isLoading={busy} onClick={sendNote}>
-        שלח המלצה
-      </Button>
-      <div className="flex gap-2 mt-3 items-end">
-        <div className="flex-1">
-          <Input
-            type="number"
-            inputMode="numeric"
-            value={calories}
-            onChange={(e) => setCalories(e.target.value)}
-            placeholder="יעד קלוריות"
-            aria-label="יעד קלוריות"
-          />
-        </div>
-        <Button variant="secondary" isLoading={busy} onClick={sendTarget}>
-          שייך יעד
-        </Button>
-      </div>
-    </Section>
-  );
-}
-
-function NotesBox({ clientId }: { clientId: string }) {
-  const { data: notes, reload } = useAsyncData(() => listCoachNotes(clientId), []);
-  const [body, setBody] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const add = async () => {
-    if (!body.trim()) return;
-    setBusy(true);
-    const { error } = await addCoachNote(clientId, body);
-    setBusy(false);
-    if (error) {
-      showToast('שמירת ההערה נכשלה', 'error');
-      return;
-    }
-    setBody('');
-    reload();
-  };
-
-  return (
-    <Section title="הערות פרטיות">
-      <div className="mb-2">
-        <Textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          rows={2}
-          placeholder="הערה פרטית (רק אתה רואה)…"
-          aria-label="הערה פרטית"
-        />
-      </div>
-      <Button variant="secondary" fullWidth isLoading={busy} onClick={add}>
-        הוסף הערה
-      </Button>
-      <div className="mt-2">
-        {notes.map((n) => (
-          <ListRow key={n.id} label={n.body} meta={formatDate(n.createdAt)} />
-        ))}
-      </div>
-    </Section>
   );
 }

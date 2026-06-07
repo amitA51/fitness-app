@@ -469,3 +469,95 @@ CREATE TRIGGER update_water_logs_updated_at
 -- idempotent (IF NOT EXISTS / CREATE OR REPLACE / DROP POLICY IF EXISTS)
 -- and may be run directly on an existing deployment.
 -- ============================================================
+
+-- ============================================================
+-- COACH PLATFORM — GROUP CHAT (added 2026-06-07)
+-- Migration: 20260607000000_group_chat.sql
+-- Real chat thread per client_group: coach + members read and post.
+-- Read-state: per-member last_read_at on client_group_members,
+-- coach_last_read_at on client_groups (one coach per group).
+-- ============================================================
+
+-- Read-state columns on existing coach-platform tables
+ALTER TABLE public.client_group_members
+    ADD COLUMN IF NOT EXISTS last_read_at TIMESTAMPTZ;
+
+ALTER TABLE public.client_groups
+    ADD COLUMN IF NOT EXISTS coach_last_read_at TIMESTAMPTZ;
+
+-- Members may update their own membership row (to stamp last_read_at).
+CREATE POLICY "client_group_members_update_self" ON public.client_group_members
+    FOR UPDATE USING (client_id = (SELECT auth.uid()))
+    WITH CHECK (client_id = (SELECT auth.uid()));
+
+-- Group messages table
+CREATE TABLE IF NOT EXISTS public.group_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    group_id UUID NOT NULL REFERENCES public.client_groups(id) ON DELETE CASCADE,
+    sender_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_group_messages_thread
+    ON public.group_messages(group_id, created_at);
+
+ALTER TABLE public.group_messages
+    ADD CONSTRAINT group_messages_body_len CHECK (char_length(body) <= 5000);
+
+ALTER TABLE public.group_messages ENABLE ROW LEVEL SECURITY;
+
+-- Participants: the owning coach and current members
+CREATE POLICY "group_messages_select_participant" ON public.group_messages
+    FOR SELECT USING (
+        public.is_group_member(group_id)
+        OR EXISTS (
+            SELECT 1 FROM public.client_groups g
+            WHERE g.id = group_id AND g.coach_id = (SELECT auth.uid())
+        )
+    );
+
+CREATE POLICY "group_messages_insert_participant" ON public.group_messages
+    FOR INSERT WITH CHECK (
+        sender_id = (SELECT auth.uid())
+        AND (
+            public.is_group_member(group_id)
+            OR EXISTS (
+                SELECT 1 FROM public.client_groups g
+                WHERE g.id = group_id AND g.coach_id = (SELECT auth.uid())
+            )
+        )
+    );
+-- Chat is immutable: no UPDATE/DELETE policies on purpose.
+
+-- Realtime publication
+ALTER PUBLICATION supabase_realtime ADD TABLE public.group_messages;
+
+-- ============================================================
+-- COACH PLATFORM — PROGRAM TEMPLATES (added 2026-06-07)
+-- Migration: 20260607000100_program_templates.sql
+-- Reusable program library for coaches. Stores builder-form shape
+-- (days[] of exercises). Assigned to clients as fresh workout_templates.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.coach_program_templates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    coach_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    days JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_coach_program_templates_coach
+    ON public.coach_program_templates(coach_id, created_at DESC);
+
+ALTER TABLE public.coach_program_templates
+    ADD CONSTRAINT coach_program_templates_name_len CHECK (char_length(name) BETWEEN 1 AND 200);
+
+ALTER TABLE public.coach_program_templates ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "coach_program_templates_all_own" ON public.coach_program_templates
+    FOR ALL USING (coach_id = (SELECT auth.uid()))
+    WITH CHECK (coach_id = (SELECT auth.uid()));

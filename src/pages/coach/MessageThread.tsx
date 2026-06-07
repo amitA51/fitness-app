@@ -23,7 +23,9 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
   const [messages, setMessages] = useState<Message[]>([]);
   const [body, setBody] = useState('');
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState(false);
+  const [liveAnnouncement, setLiveAnnouncement] = useState('');
   const endRef = useRef<HTMLDivElement | null>(null);
 
   const load = async () => {
@@ -47,15 +49,19 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
   }, [coachId, clientId]);
 
   // Live-append messages as they arrive; mark them read since the thread is open.
+  // Announce incoming messages (not my own) to screen readers via the live region.
   useEffect(() => {
     if (!coachId || !clientId) return;
     return subscribeToThread(coachId, clientId, (m) => {
       setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+      if (m.senderId !== me) {
+        setLiveAnnouncement('הודעה חדשה התקבלה');
+      }
       void markThreadRead(coachId, clientId).then(() =>
         window.dispatchEvent(new Event('coach:unread-refresh'))
       );
     });
-  }, [coachId, clientId]);
+  }, [coachId, clientId, me]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to bottom whenever messages change
   useEffect(() => {
@@ -64,20 +70,28 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
 
   const handleSend = async () => {
     const text = body.trim();
-    if (!text) return;
+    if (!text || sending) return;
+    setSending(true);
     setBody('');
     const { error } = await sendMessage(coachId, clientId, text);
     if (error) {
       // Restore the unsent text so it isn't silently lost, and tell the user.
       setBody(text);
       showToast('שליחת ההודעה נכשלה', 'error');
+      setSending(false);
       return;
     }
     await load();
+    setSending(false);
   };
 
   return (
     <CoachPage title="הודעות" subtitle="Messages">
+      {/* Stable live region — must be outside any container that can unmount.
+          Announces incoming messages to screen readers without visual change. */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {liveAnnouncement}
+      </div>
       {/* Pad the scroll area so the last bubble / empty state clears the fixed
           composer below (its height + iOS home-indicator inset). */}
       <div
@@ -123,7 +137,11 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
                   textAlign: 'start',
                 }}
               >
-                {m.body}
+                {/* dir="auto" lets each bubble resolve its own base direction
+                    for user-generated content that may be Hebrew or English. */}
+                <span dir="auto" style={{ display: 'block', textAlign: 'start' }}>
+                  {m.body}
+                </span>
               </div>
             );
           })
@@ -172,7 +190,7 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
           size="icon"
           aria-label="שלח"
           onClick={handleSend}
-          disabled={!body.trim()}
+          disabled={!body.trim() || sending}
           className="shrink-0"
           style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)' }}
         >

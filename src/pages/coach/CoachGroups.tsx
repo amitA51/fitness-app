@@ -15,19 +15,37 @@ import {
   createAssignment,
   createGroup,
   deleteGroup,
+  getGroupMemberCounts,
   getGroupMemberIds,
   listClients,
   listGroups,
   setGroupMembers,
 } from '../../services/coach';
 import type { ClientGroup, CoachClient } from '../../types/coach';
-import { Checkbox, CoachPage, ListSkeleton, Section, useAsyncData } from './_shared';
+import { Checkbox, CoachPage, ListSkeleton, Section, SectionError, useAsyncData } from './_shared';
 
 export default function CoachGroups() {
-  const { data: groups, loading, reload } = useAsyncData<ClientGroup[]>(() => listGroups(), []);
+  const {
+    data: groups,
+    loading,
+    error,
+    reload,
+  } = useAsyncData<ClientGroup[]>(() => listGroups(), []);
   const { data: clients } = useAsyncData<CoachClient[]>(() => listClients('active'), []);
   const [name, setName] = useState('');
   const [selected, setSelected] = useState<ClientGroup | null>(null);
+  const [memberCounts, setMemberCounts] = useState<Map<string, number>>(new Map());
+
+  // Fetch member counts once groups are loaded.
+  useEffect(() => {
+    if (groups.length === 0) return;
+    void getGroupMemberCounts(groups.map((g) => g.id)).then(setMemberCounts);
+  }, [groups]);
+
+  const refreshCounts = () => {
+    if (groups.length === 0) return;
+    void getGroupMemberCounts(groups.map((g) => g.id)).then(setMemberCounts);
+  };
 
   const create = async () => {
     if (!name.trim()) return;
@@ -57,6 +75,8 @@ export default function CoachGroups() {
       <Section title="הקבוצות שלי">
         {loading ? (
           <ListSkeleton rows={3} />
+        ) : error ? (
+          <SectionError onRetry={reload} />
         ) : groups.length === 0 ? (
           <EmptyState
             illustration="habits"
@@ -64,24 +84,57 @@ export default function CoachGroups() {
             description="צור קבוצה כדי לשלוח הודעות והמלצות לכמה מתאמנים יחד."
           />
         ) : (
-          groups.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              onClick={() => setSelected(selected?.id === g.id ? null : g)}
-              className="w-full text-right px-4 py-3 mb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-0"
-              style={{
-                background: 'var(--fs-surface)',
-                border: '1px solid var(--fs-surface-2)',
-                color: 'var(--fs-ink)',
-                fontFamily: 'var(--font-body)',
-                fontWeight: 600,
-                minHeight: 44,
-              }}
-            >
-              {g.name}
-            </button>
-          ))
+          groups.map((g) => {
+            const isSelected = selected?.id === g.id;
+            const count = memberCounts.get(g.id);
+            const countLabel =
+              count === undefined
+                ? null
+                : count === 0
+                  ? 'אין חברים'
+                  : count === 1
+                    ? 'חבר אחד'
+                    : `${count} חברים`;
+            return (
+              <button
+                key={g.id}
+                type="button"
+                aria-expanded={isSelected}
+                onClick={() => setSelected(isSelected ? null : g)}
+                className="w-full text-right px-4 py-3 mb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-0"
+                style={{
+                  background: isSelected ? 'var(--fs-primary)' : 'var(--fs-surface)',
+                  border: isSelected
+                    ? '1px solid var(--fs-accent)'
+                    : '1px solid var(--fs-surface-2)',
+                  color: isSelected ? 'var(--fs-accent)' : 'var(--fs-ink)',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 600,
+                  minHeight: 44,
+                }}
+              >
+                <span className="block">{g.name}</span>
+                {countLabel !== null && (
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 11,
+                      color: 'var(--fs-muted)',
+                      fontWeight: 400,
+                    }}
+                  >
+                    {count !== undefined && count > 1 ? (
+                      <>
+                        <span dir="ltr">{count}</span> חברים
+                      </>
+                    ) : (
+                      countLabel
+                    )}
+                  </span>
+                )}
+              </button>
+            );
+          })
         )}
       </Section>
 
@@ -89,6 +142,7 @@ export default function CoachGroups() {
         <GroupEditor
           group={selected}
           clients={clients}
+          onSaved={refreshCounts}
           onDeleted={() => {
             setSelected(null);
             reload();
@@ -102,16 +156,20 @@ export default function CoachGroups() {
 function GroupEditor({
   group,
   clients,
+  onSaved,
   onDeleted,
 }: {
   group: ClientGroup;
   clients: CoachClient[];
+  onSaved: () => void;
   onDeleted: () => void;
 }) {
   const [members, setMembers] = useState<Set<string>>(new Set());
   const [announcement, setAnnouncement] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const allClientIds = clients.map((c) => c.clientId);
 
   useEffect(() => {
     void getGroupMemberIds(group.id).then((ids) => setMembers(new Set(ids)));
@@ -134,6 +192,7 @@ function GroupEditor({
     const { error } = await setGroupMembers(group.id, [...members]);
     setBusy(false);
     showToast(error ? 'שמירת חברי הקבוצה נכשלה' : 'חברי הקבוצה נשמרו', error ? 'error' : 'success');
+    if (!error) onSaved();
   };
 
   const broadcast = async () => {
@@ -167,14 +226,50 @@ function GroupEditor({
         {clients.length === 0 ? (
           <EmptyState illustration="generic" size="small" title="אין מתאמנים פעילים להוספה" />
         ) : (
-          clients.map((c) => (
-            <Checkbox
-              key={c.id}
-              checked={members.has(c.clientId)}
-              onChange={() => toggle(c.clientId)}
-              label={c.clientProfile?.displayName ?? 'מתאמן'}
-            />
-          ))
+          <>
+            <div className="flex gap-4 mb-2">
+              <button
+                type="button"
+                onClick={() => setMembers(new Set(allClientIds))}
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  color: 'var(--fs-accent)',
+                  background: 'none',
+                  border: 'none',
+                  padding: '10px 0',
+                  minHeight: 44,
+                  cursor: 'pointer',
+                }}
+              >
+                בחירת הכול
+              </button>
+              <button
+                type="button"
+                onClick={() => setMembers(new Set())}
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  color: 'var(--fs-accent)',
+                  background: 'none',
+                  border: 'none',
+                  padding: '10px 0',
+                  minHeight: 44,
+                  cursor: 'pointer',
+                }}
+              >
+                ניקוי הבחירה
+              </button>
+            </div>
+            {clients.map((c) => (
+              <Checkbox
+                key={c.id}
+                checked={members.has(c.clientId)}
+                onChange={() => toggle(c.clientId)}
+                label={c.clientProfile?.displayName ?? 'מתאמן'}
+              />
+            ))}
+          </>
         )}
       </div>
       <Button variant="primary" fullWidth isLoading={busy} onClick={saveMembers}>

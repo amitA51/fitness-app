@@ -1,5 +1,5 @@
 // ============================================================================
-// COACH HOME — enable coach mode, then roster of active clients
+// COACH HOME — command center: attention triage, quick links, roster
 // ============================================================================
 
 import { MessageSquare, UserPlus, Users } from 'lucide-react';
@@ -9,6 +9,7 @@ import { Button } from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
 import { Input } from '../../components/ui/Input';
 import { useCoach } from '../../contexts/CoachContext';
+import { useUnreadMessages } from '../../hooks/useUnreadMessages';
 import {
   type ClientOverviewRow,
   clientStatusMeta,
@@ -17,7 +18,15 @@ import {
   listClients,
   summarizeRoster,
 } from '../../services/coach';
-import { CoachPage, ListRow, ListSkeleton, Section, formatDate, useAsyncData } from './_shared';
+import {
+  CoachPage,
+  ListRow,
+  ListSkeleton,
+  Section,
+  SectionError,
+  formatDate,
+  useAsyncData,
+} from './_shared';
 
 export default function CoachHome() {
   const navigate = useNavigate();
@@ -75,20 +84,21 @@ type SortMode = 'attention' | 'name' | 'activity';
 
 function Roster() {
   const navigate = useNavigate();
-  // ONE batched load: roster + per-client analytics from a single activity
-  // query (no N+1). Rows arrive pre-sorted attention-first.
-  const { data: rows, loading } = useAsyncData<ClientOverviewRow[]>(
+  const {
+    data: rows,
+    loading,
+    error,
+    reload,
+  } = useAsyncData<ClientOverviewRow[]>(
     () => listClients('active').then((clients) => getClientsOverview(clients)),
     []
   );
   const { data: seats } = useAsyncData(() => getSeatUsage(), { used: 0, limit: 0, full: false });
-
+  const unread = useUnreadMessages();
   const [search, setSearch] = useState('');
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [sort, setSort] = useState<SortMode>('attention');
-
   const summary = useMemo(() => summarizeRoster(rows), [rows]);
-
   const allTags = useMemo(
     () => [...new Set(rows.flatMap((r) => r.client.tags ?? []))].sort(),
     [rows]
@@ -102,9 +112,7 @@ function Roster() {
         (r.client.clientProfile?.displayName ?? '').toLowerCase().includes(q)
       );
     }
-    if (activeTag) {
-      list = list.filter((r) => r.client.tags?.includes(activeTag));
-    }
+    if (activeTag) list = list.filter((r) => r.client.tags?.includes(activeTag));
     const sorted = [...list];
     if (sort === 'name') {
       sorted.sort((a, b) =>
@@ -120,9 +128,17 @@ function Roster() {
           new Date(a.client.consentAt ?? a.client.createdAt ?? 0).getTime()
       );
     }
-    // 'attention' keeps the service's attention-first ordering.
     return sorted;
   }, [rows, search, activeTag, sort]);
+
+  // Top-3 at_risk/inactive rows — already attention-sorted by getClientsOverview.
+  const attentionRows = useMemo(
+    () =>
+      rows
+        .filter((r) => r.analytics.level === 'at_risk' || r.analytics.level === 'inactive')
+        .slice(0, 3),
+    [rows]
+  );
 
   return (
     <CoachPage
@@ -142,6 +158,7 @@ function Roster() {
         </Button>
       }
     >
+      {/* Quick links */}
       <Section>
         <div className="grid grid-cols-3 gap-2 mb-2">
           <QuickLink
@@ -158,11 +175,40 @@ function Roster() {
             icon={<MessageSquare size={18} />}
             label="הודעות"
             onClick={() => navigate('/coach/messages')}
+            badge={unread}
           />
         </div>
       </Section>
 
-      {/* Aggregate overview across ALL clients */}
+      {/* דורשים טיפול היום — shown only after data loads and roster is non-empty */}
+      {!loading && rows.length > 0 && (
+        <Section title="דורשים טיפול היום">
+          {attentionRows.length === 0 ? (
+            <p
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                color: 'var(--fs-muted)',
+                margin: 0,
+                padding: '6px 0',
+              }}
+            >
+              כל המתאמנים פעילים ✓
+            </p>
+          ) : (
+            attentionRows.map((row) => (
+              <AttentionRow
+                key={row.client.id}
+                row={row}
+                onOpenClient={() => navigate(`/coach/clients/${row.client.clientId}`)}
+                onMessage={() => navigate(`/coach/messages/${row.client.clientId}`)}
+              />
+            ))
+          )}
+        </Section>
+      )}
+
+      {/* Aggregate overview */}
       {!loading && rows.length > 0 && (
         <Section title="סקירה כללית">
           <div className="grid grid-cols-3 gap-2">
@@ -177,8 +223,8 @@ function Roster() {
         </Section>
       )}
 
+      {/* Roster */}
       <Section title="מתאמנים פעילים">
-        {/* Search */}
         <div className="mb-2">
           <Input
             type="text"
@@ -189,8 +235,6 @@ function Roster() {
             aria-label="חיפוש מתאמן לפי שם"
           />
         </div>
-
-        {/* Tag filter chips */}
         {allTags.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
             {allTags.map((tag) => (
@@ -198,6 +242,7 @@ function Roster() {
                 key={tag}
                 type="button"
                 onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                aria-pressed={activeTag === tag}
                 className="active:scale-[0.98]"
                 style={{
                   padding: '3px 10px',
@@ -216,8 +261,6 @@ function Roster() {
             ))}
           </div>
         )}
-
-        {/* Sort toggle */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
           <SortButton active={sort === 'attention'} onClick={() => setSort('attention')}>
             תשומת לב
@@ -229,10 +272,10 @@ function Roster() {
             פעילות אחרונה
           </SortButton>
         </div>
-
-        {/* Client list */}
         {loading ? (
           <ListSkeleton rows={4} />
+        ) : error ? (
+          <SectionError onRetry={reload} />
         ) : rows.length === 0 ? (
           <EmptyState
             illustration="generic"
@@ -248,11 +291,162 @@ function Roster() {
               key={row.client.id}
               row={row}
               onOpen={() => navigate(`/coach/clients/${row.client.clientId}`)}
+              onMessage={() => navigate(`/coach/messages/${row.client.clientId}`)}
             />
           ))
         )}
       </Section>
     </CoachPage>
+  );
+}
+
+// ── AttentionRow ──────────────────────────────────────────────────────────────
+// Renders as a plain <div> — NOT a <button> — so the two action buttons inside
+// are never nested inside an interactive element (nested <button> = invalid HTML).
+
+function AttentionRow({
+  row,
+  onOpenClient,
+  onMessage,
+}: { row: ClientOverviewRow; onOpenClient: () => void; onMessage: () => void }) {
+  const name = row.client.clientProfile?.displayName ?? 'מתאמן';
+  const { color } = clientStatusMeta(row.analytics.level);
+  const days = row.analytics.daysSinceActivity;
+  // Gender-neutral phrasing; number stays LTR inside RTL layout.
+  const meta =
+    days !== null && days > 0
+      ? `ללא אימון ${days} ימים`
+      : row.analytics.sessionsLast7 === 0
+        ? 'ללא אימון השבוע'
+        : clientStatusMeta(row.analytics.level).label;
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '10px 16px',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        marginBottom: 8,
+        minHeight: 56,
+      }}
+    >
+      <span
+        aria-hidden="true"
+        style={{ flexShrink: 0, width: 8, height: 8, borderRadius: 999, background: color }}
+      />
+      <div className="flex-1 min-w-0">
+        <div
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 15,
+            fontWeight: 600,
+            color: 'var(--fs-ink)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          <bdi>{name}</bdi>
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fs-warn)' }}>
+          <span dir="ltr">{meta}</span>
+        </div>
+      </div>
+      <RowIconBtn onClick={onMessage} label={`שליחת הודעה ל${name}`}>
+        <MessageSquare size={18} aria-hidden="true" />
+      </RowIconBtn>
+      <RowIconBtn onClick={onOpenClient} label={`פתח פרופיל של ${name}`} accent>
+        <UserPlus size={18} aria-hidden="true" />
+      </RowIconBtn>
+    </div>
+  );
+}
+
+// ── RosterRow ─────────────────────────────────────────────────────────────────
+// ListRow renders as <button> when onClick is set — nesting a <button> inside
+// would be invalid HTML. Solution: omit onClick on ListRow (renders as <div>)
+// and handle all navigation via explicit buttons in the trailing slot.
+
+function RosterRow({
+  row,
+  onOpen,
+  onMessage,
+}: { row: ClientOverviewRow; onOpen: () => void; onMessage: () => void }) {
+  const { client, analytics } = row;
+  const name = client.clientProfile?.displayName ?? 'מתאמן';
+  const meta = analytics.lastActivity
+    ? `פעילות אחרונה ${formatDate(analytics.lastActivity)} · ${analytics.sessionsLast7} אימונים השבוע`
+    : `מחובר מאז ${formatDate(client.consentAt ?? client.createdAt)}`;
+
+  return (
+    <ListRow
+      label={name}
+      meta={meta}
+      trailing={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <RowIconBtn onClick={onMessage} label={`שליחת הודעה ל${name}`}>
+            <MessageSquare size={16} aria-hidden="true" />
+          </RowIconBtn>
+          <button
+            type="button"
+            onClick={onOpen}
+            aria-label={`פתח פרופיל של ${name}`}
+            className="active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              minHeight: 44,
+              padding: '0 4px',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              borderRadius: 4,
+              flexShrink: 0,
+            }}
+          >
+            <StatusChip {...clientStatusMeta(analytics.level)} />
+          </button>
+        </div>
+      }
+    />
+  );
+}
+
+// ── Shared primitives ─────────────────────────────────────────────────────────
+
+/** 44×44 icon-only button. accent=true swaps color to --fs-accent. */
+function RowIconBtn({
+  onClick,
+  label,
+  accent = false,
+  children,
+}: { onClick: () => void; label: string; accent?: boolean; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
+      style={{
+        flexShrink: 0,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 44,
+        height: 44,
+        border: 'none',
+        background: 'transparent',
+        color: accent ? 'var(--fs-accent)' : 'var(--fs-muted)',
+        cursor: 'pointer',
+        borderRadius: 4,
+      }}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -298,7 +492,7 @@ function OverviewStat({ label, value, color }: { label: string; value: number; c
           lineHeight: 1,
         }}
       >
-        {value}
+        <span dir="ltr">{value}</span>
       </div>
       <div
         style={{
@@ -313,22 +507,6 @@ function OverviewStat({ label, value, color }: { label: string; value: number; c
         {label}
       </div>
     </div>
-  );
-}
-
-function RosterRow({ row, onOpen }: { row: ClientOverviewRow; onOpen: () => void }) {
-  const { client, analytics } = row;
-  const meta = analytics.lastActivity
-    ? `פעילות אחרונה ${formatDate(analytics.lastActivity)} · ${analytics.sessionsLast7} אימונים השבוע`
-    : `מחובר מאז ${formatDate(client.consentAt ?? client.createdAt)}`;
-
-  return (
-    <ListRow
-      label={client.clientProfile?.displayName ?? 'מתאמן'}
-      meta={meta}
-      onClick={onOpen}
-      trailing={<StatusChip {...clientStatusMeta(analytics.level)} />}
-    />
   );
 }
 
@@ -359,19 +537,50 @@ function QuickLink({
   icon,
   label,
   onClick,
-}: { icon: React.ReactNode; label: string; onClick: () => void }) {
+  badge,
+}: { icon: React.ReactNode; label: string; onClick: () => void; badge?: number }) {
+  const hasUnread = typeof badge === 'number' && badge > 0;
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-label={hasUnread ? `${label}, ${badge} שלא נקראו` : label}
       className="flex flex-col items-center justify-center gap-1.5 py-3"
       style={{
+        position: 'relative',
         background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
         color: 'var(--fs-heading)',
       }}
     >
-      {icon}
+      <span style={{ position: 'relative', display: 'inline-flex' }}>
+        {icon}
+        {hasUnread && (
+          <span
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              top: -5,
+              insetInlineEnd: -8,
+              minWidth: 16,
+              height: 16,
+              padding: '0 4px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'var(--fs-primary)',
+              color: 'var(--fs-accent)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              fontWeight: 700,
+              borderRadius: 999,
+              lineHeight: 1,
+            }}
+          >
+            <span dir="ltr">{badge}</span>
+          </span>
+        )}
+      </span>
       <span
         style={{
           fontFamily: 'var(--font-mono)',

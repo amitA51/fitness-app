@@ -50,8 +50,8 @@ export const Sheet: React.FC<SheetProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       variant="bottomSheet"
-      ariaLabel={ariaLabel ?? title}
-      ariaDescribedBy={titleId}
+      ariaLabel={ariaLabel}
+      ariaLabelledBy={ariaLabel ? undefined : titleId}
     >
       <div
         className="flex flex-col w-full"

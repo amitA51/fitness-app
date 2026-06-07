@@ -7,11 +7,15 @@ import type { PersonalExercise } from '../../../types';
 import { springTransition } from '../constants';
 
 export interface TemplateExerciseInput {
+  exerciseId?: string;
   exerciseName: string;
+  targetMuscle?: string;
   targetSets: number;
   targetReps: number;
   restSeconds: number;
 }
+
+type DraftTemplateExercise = TemplateExerciseInput & { clientId: string };
 
 interface CreateTemplateModalProps {
   onClose: () => void;
@@ -37,7 +41,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
     lockScroll: false,
   });
 
-  const [exercises, setExercises] = useState<TemplateExerciseInput[]>([]);
+  const [exercises, setExercises] = useState<DraftTemplateExercise[]>([]);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [allExercises, setAllExercises] = useState<PersonalExercise[]>([]);
@@ -89,7 +93,10 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
     setExercises((prev) => [
       ...prev,
       {
+        clientId: crypto.randomUUID(),
+        exerciseId: exercise.id,
         exerciseName: exName,
+        targetMuscle: exercise.targetMuscle ?? exercise.muscleGroup ?? '',
         targetSets: exercise.defaultSets ?? 3,
         targetReps: 10,
         restSeconds: exercise.defaultRestTime ?? 60,
@@ -99,8 +106,8 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
     setExerciseSearch('');
   };
 
-  const handleRemoveExercise = (index: number) => {
-    setExercises((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveExercise = (clientId: string) => {
+    setExercises((prev) => prev.filter((ex) => ex.clientId !== clientId));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,7 +120,10 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
     setIsSubmitting(true);
     setError(null);
     try {
-      await onCreate(trimmed, exercises);
+      await onCreate(
+        trimmed,
+        exercises.map(({ clientId: _clientId, ...exercise }) => exercise)
+      );
     } catch {
       setError('שגיאה ביצירת התבנית. נסה שוב.');
       setIsSubmitting(false);
@@ -272,10 +282,9 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
               {/* Added exercise chips */}
               {exercises.length > 0 && (
                 <div className="flex flex-col gap-2 mb-3">
-                  {exercises.map((ex, i) => (
+                  {exercises.map((ex) => (
                     <m.div
-                      // biome-ignore lint/suspicious/noArrayIndexKey: TemplateExerciseInput has no id (adding one would change persisted shape); chips are stateless display-only, list is append/remove without reorder
-                      key={i}
+                      key={ex.clientId}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
@@ -323,7 +332,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                       <m.button
                         whileTap={{ scale: 0.9 }}
                         type="button"
-                        onClick={() => handleRemoveExercise(i)}
+                        onClick={() => handleRemoveExercise(ex.clientId)}
                         className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center me-1"
                         style={{ background: 'var(--fs-surface-2)' }}
                         aria-label={`הסר ${ex.exerciseName}`}

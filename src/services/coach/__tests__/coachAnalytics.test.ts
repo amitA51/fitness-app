@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { CoachClient } from '../../../types/coach';
-import { type ClientOverviewRow, computeClientAnalytics, summarizeRoster } from '../coachAnalytics';
+import {
+  type ClientOverviewRow,
+  computeClientAnalytics,
+  computeWeekAdherence,
+  summarizeRoster,
+} from '../coachAnalytics';
 
 const DAY = 86_400_000;
 const NOW = Date.UTC(2026, 0, 15);
@@ -69,6 +74,75 @@ describe('computeClientAnalytics', () => {
     // Assert: index 3 = this week, index 2 = last week
     expect(result.volumeByWeek[3]).toBe(50);
     expect(result.volumeByWeek[2]).toBe(80);
+  });
+});
+
+describe('computeWeekAdherence', () => {
+  // Fixed "now" = 2026-01-15 (Thursday) in local time, constructed to avoid
+  // any UTC/local ambiguity in the test itself.
+  const NOW_DATE = new Date(2026, 0, 15); // Jan 15 2026 00:00:00 local
+
+  it('returns exactly 7 entries ending today', () => {
+    // Arrange / Act
+    const result = computeWeekAdherence([], [], null, NOW_DATE);
+
+    // Assert
+    expect(result).toHaveLength(7);
+    expect(result[6]!.date).toBe('2026-01-15');
+    expect(result[0]!.date).toBe('2026-01-09');
+  });
+
+  it('counts a session at 23:30 local on the correct local date', () => {
+    // Arrange — session at 23:30 local on Jan 13 (would be Jan 14 UTC+some zones)
+    const localDt = new Date(2026, 0, 13, 23, 30, 0); // Jan 13 23:30 local
+    const sessions = [{ startTime: localDt.toISOString() }];
+
+    // Act
+    const result = computeWeekAdherence(sessions, [], null, NOW_DATE);
+
+    // Assert — Jan 13 is index 4 (Jan 9=0, 10=1, 11=2, 12=3, 13=4, 14=5, 15=6)
+    const jan13 = result.find((d) => d.date === '2026-01-13');
+    expect(jan13).toBeDefined();
+    expect(jan13?.sessions).toBe(1);
+    // Adjacent day must NOT be incremented
+    const jan14 = result.find((d) => d.date === '2026-01-14');
+    expect(jan14?.sessions).toBe(0);
+  });
+
+  it('maps calories from matching nutrition row; null when no row for that date', () => {
+    // Arrange
+    const nutrition = [
+      { date: '2026-01-15', calories: 2000 },
+      { date: '2026-01-12', calories: 1800 },
+    ];
+
+    // Act
+    const result = computeWeekAdherence([], nutrition, 2200, NOW_DATE);
+
+    // Assert
+    const jan15 = result.find((d) => d.date === '2026-01-15');
+    expect(jan15?.calories).toBe(2000);
+    expect(jan15?.targetCalories).toBe(2200);
+
+    const jan12 = result.find((d) => d.date === '2026-01-12');
+    expect(jan12?.calories).toBe(1800);
+
+    // Date without a nutrition row
+    const jan11 = result.find((d) => d.date === '2026-01-11');
+    expect(jan11?.calories).toBeNull();
+  });
+
+  it('returns 7 days with zero sessions and null calories when inputs are empty', () => {
+    // Arrange / Act
+    const result = computeWeekAdherence([], [], null, NOW_DATE);
+
+    // Assert
+    expect(result).toHaveLength(7);
+    for (const day of result) {
+      expect(day.sessions).toBe(0);
+      expect(day.calories).toBeNull();
+      expect(day.targetCalories).toBeNull();
+    }
   });
 });
 

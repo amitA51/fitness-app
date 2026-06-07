@@ -137,7 +137,9 @@ export const loadWorkoutFromTemplate = async (templateId: string): Promise<Perso
   if (!template) throw new NotFoundError('WorkoutTemplate', templateId);
 
   const exercises: Exercise[] = template.exercises.map((ex) => ({
-    id: ex.id,
+    id: generateId('active-ex'),
+    exerciseId: ex.exerciseId || ex.id,
+    exerciseName: ex.exerciseName,
     name: ex.exerciseName,
     targetMuscle: ex.targetMuscle,
     muscleGroup: ex.muscleGroup,

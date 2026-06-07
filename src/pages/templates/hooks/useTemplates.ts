@@ -58,9 +58,9 @@ export function useTemplates() {
     async (name: string, templateExercises: TemplateExerciseInput[] = []) => {
       const exercises: WorkoutTemplateExercise[] = templateExercises.map((ex, i) => ({
         id: crypto.randomUUID(),
-        exerciseId: '',
+        exerciseId: ex.exerciseId ?? '',
         exerciseName: ex.exerciseName,
-        targetMuscle: '',
+        targetMuscle: ex.targetMuscle ?? '',
         targetSets: ex.targetSets,
         targetReps: ex.targetReps,
         targetWeight: null,

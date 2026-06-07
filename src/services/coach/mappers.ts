@@ -13,9 +13,12 @@ import type {
   CoachClient,
   CoachInvite,
   CoachProfile,
+  CoachProgramTemplate,
   CoachSubscription,
+  GroupMessage,
   Message,
   Profile,
+  ProgramTemplateDay,
   Reminder,
 } from '../../types/coach';
 
@@ -142,4 +145,22 @@ export const toSubscription = (r: Row): CoachSubscription => ({
   status: r.status as CoachSubscription['status'],
   createdAt: r.created_at as string | undefined,
   updatedAt: r.updated_at as string | undefined,
+});
+
+export const toProgramTemplate = (r: Row): CoachProgramTemplate => ({
+  id: r.id as string,
+  coachId: r.coach_id as string,
+  name: r.name as string,
+  description: (r.description as string | null) ?? null,
+  days: (r.days as ProgramTemplateDay[]) ?? [],
+  createdAt: r.created_at as string | undefined,
+  updatedAt: r.updated_at as string | undefined,
+});
+
+export const toGroupMessage = (r: Row): GroupMessage => ({
+  id: r.id as string,
+  groupId: r.group_id as string,
+  senderId: r.sender_id as string,
+  body: r.body as string,
+  createdAt: r.created_at as string | undefined,
 });

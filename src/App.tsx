@@ -61,6 +61,7 @@ const CoachGroups = lazy(() => import('./pages/coach/CoachGroups'));
 const CoachMessages = lazy(() => import('./pages/coach/CoachMessages'));
 const MessageThread = lazy(() => import('./pages/coach/MessageThread'));
 const ClientDetail = lazy(() => import('./pages/coach/ClientDetail'));
+const GroupThread = lazy(() => import('./pages/coach/GroupThread'));
 const MyCoach = lazy(() => import('./pages/MyCoach'));
 const JoinPage = lazy(() => import('./pages/JoinPage'));
 const AccessibilityStatement = lazy(() => import('./pages/AccessibilityStatement'));
@@ -457,6 +458,16 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
         }
       />
       <Route
+        path="/coach/groups/:groupId/chat"
+        element={
+          <CoachGuard>
+            <PageErrorBoundary pageLabel="צ׳אט קבוצתי">
+              <GroupThread viewer="coach" />
+            </PageErrorBoundary>
+          </CoachGuard>
+        }
+      />
+      <Route
         path="/my-coach"
         element={
           <PageErrorBoundary pageLabel="המאמן שלי">
@@ -469,6 +480,14 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
         element={
           <PageErrorBoundary pageLabel="שיחה">
             <MessageThread viewer="trainee" />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/my-coach/groups/:groupId/chat"
+        element={
+          <PageErrorBoundary pageLabel="צ׳אט קבוצתי">
+            <GroupThread viewer="member" />
           </PageErrorBoundary>
         }
       />

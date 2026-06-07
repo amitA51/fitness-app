@@ -6,8 +6,8 @@
 // other trainee-owned tables. No-ops gracefully when Supabase is unconfigured.
 
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
-import type { Message } from '../../types/coach';
-import { toMessage } from './mappers';
+import type { GroupMessage, Message } from '../../types/coach';
+import { toGroupMessage, toMessage } from './mappers';
 
 type Unsubscribe = () => void;
 
@@ -64,6 +64,38 @@ export function subscribeToThread(
     void supabase?.removeChannel(channel);
   };
 }
+/**
+ * Subscribe to new messages in a group thread. Fires `onMessage` with each
+ * newly inserted message so an open group chat can append it live.
+ */
+export function subscribeToGroupThread(
+  groupId: string,
+  onMessage: (m: GroupMessage) => void
+): Unsubscribe {
+  if (!isSupabaseConfigured() || !supabase || !groupId) return () => {};
+
+  const channel = supabase
+    .channel(`rt:group_messages:${groupId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'group_messages',
+        filter: `group_id=eq.${groupId}`,
+      },
+      (payload) => {
+        const row = payload.new as Record<string, unknown>;
+        onMessage(toGroupMessage(row));
+      }
+    )
+    .subscribe();
+
+  return () => {
+    void supabase?.removeChannel(channel);
+  };
+}
+
 export function subscribeToAssignments(clientId: string, onChange: () => void): Unsubscribe {
   if (!isSupabaseConfigured() || !supabase || !clientId) return () => {};
 

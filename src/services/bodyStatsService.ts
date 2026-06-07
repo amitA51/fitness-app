@@ -1,6 +1,6 @@
 import { ValidationError } from '../errors';
 import { generateId } from '../utils/id';
-import { STORES, dbDelete, dbGetAll, dbPut } from './indexedDBCore';
+import { STORES, dbDelete, dbGetAll, dbGetByRange, dbPut } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import { syncBodyMeasurement, syncBodyWeight, syncRecoveryLog } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
@@ -149,14 +149,16 @@ export async function getBodyWeightsByDateRange(
   startDate: string,
   endDate: string
 ): Promise<BodyWeightEntry[]> {
-  const all = await dbGetAll<BodyWeightEntry>(STORES.BODY_WEIGHT);
-  return all
-    .filter((e) => e.date >= startDate && e.date <= endDate)
-    .sort((a, b) => a.date.localeCompare(b.date));
+  return dbGetByRange<BodyWeightEntry>(STORES.BODY_WEIGHT, 'date', startDate, endDate);
 }
 
 export async function getLatestWeight(): Promise<BodyWeightEntry | null> {
-  const all = await dbGetAll<BodyWeightEntry>(STORES.BODY_WEIGHT);
+  const all = await dbGetByRange<BodyWeightEntry>(
+    STORES.BODY_WEIGHT,
+    'date',
+    '0000-01-01',
+    '9999-12-31'
+  );
   if (all.length === 0) return null;
   return all.sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
 }
@@ -237,14 +239,16 @@ export async function getBodyMeasurementsByDateRange(
   startDate: string,
   endDate: string
 ): Promise<BodyMeasurement[]> {
-  const all = await dbGetAll<BodyMeasurement>(BODY_MEASUREMENTS_STORE);
-  return all
-    .filter((e) => e.date >= startDate && e.date <= endDate)
-    .sort((a, b) => a.date.localeCompare(b.date));
+  return dbGetByRange<BodyMeasurement>(BODY_MEASUREMENTS_STORE, 'date', startDate, endDate);
 }
 
 export async function getLatestMeasurement(): Promise<BodyMeasurement | null> {
-  const all = await dbGetAll<BodyMeasurement>(BODY_MEASUREMENTS_STORE);
+  const all = await dbGetByRange<BodyMeasurement>(
+    BODY_MEASUREMENTS_STORE,
+    'date',
+    '0000-01-01',
+    '9999-12-31'
+  );
   if (all.length === 0) return null;
   return all.sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
 }

@@ -13,4 +13,6 @@ export * from './reminderService';
 export * from './pushService';
 export * from './realtime';
 
+export * from './groupMessageService';
 export * from './auditService';
+export * from './programTemplateService';

@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { showToast } from '../../../components/ui/GlobalToast';
 import { useSettings } from '../../../contexts/SettingsContext';
+import {
+  isPushSupported,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from '../../../services/coach/pushService';
 import {
   getNotificationConfig,
   requestNotificationPermission,
@@ -31,6 +37,9 @@ export function useSettingsState() {
 
   // Account / Auth state
   const [authEmail, setAuthEmail] = useState<string | null>(null);
+
+  // Web-Push enrollment state — resolved asynchronously on mount
+  const [pushEnabled, setPushEnabled] = useState(false);
 
   // Autosave engines own the persistence + the shared "נשמר" flash. Profile is
   // pure localStorage; workout prefs also mirror three knobs into SettingsContext
@@ -79,6 +88,19 @@ export function useSettingsState() {
     });
   }, []);
 
+  // Resolve initial push-enabled state: supported + permission granted + active SW subscription
+  useEffect(() => {
+    if (!isPushSupported() || Notification.permission !== 'granted') return;
+    navigator.serviceWorker.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((sub) => {
+        if (sub) setPushEnabled(true);
+      })
+      .catch((err) => {
+        logger.app.warn('useSettingsState: push subscription check failed', err);
+      });
+  }, []);
+
   // ── Autosave entry points exposed to the sections ──────────────────────────
   // `update*` debounces (free-text / number fields); `commit*` flushes
   // immediately (discrete choices: selects, toggles, rest-time pills). Both set
@@ -125,6 +147,28 @@ export function useSettingsState() {
     notificationsFlash.flash();
   };
 
+  const togglePush = useCallback(async () => {
+    if (pushEnabled) {
+      await unsubscribeFromPush();
+      setPushEnabled(false);
+      return;
+    }
+    const result = await subscribeToPush();
+    if (result.ok) {
+      setPushEnabled(true);
+      return;
+    }
+    // Map service errors to Hebrew toasts
+    const errorMessages: Record<string, string> = {
+      unsupported: 'הדפדפן לא תומך בהתראות',
+      denied: 'ההתראות חסומות בדפדפן — אפשר לאפשר בהגדרות האתר',
+      no_vapid_key: 'התראות לא מוגדרות בסביבה זו',
+      offline: 'אין חיבור — נסו שוב מאוחר יותר',
+    };
+    const message = (result.error && errorMessages[result.error]) ?? 'הפעלת ההתראות נכשלה';
+    showToast(message, 'error');
+  }, [pushEnabled]);
+
   return {
     settings,
     updateSettings,
@@ -138,6 +182,8 @@ export function useSettingsState() {
     notificationConfig,
     toggleNotification,
     notificationsSaved: notificationsFlash.saved,
+    pushEnabled,
+    togglePush,
     weeklyReport,
     setWeeklyReport,
     copiedReport,

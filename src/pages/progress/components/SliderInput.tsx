@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useId } from 'react';
 
 export const SliderInput = memo(function SliderInput({
   label,
@@ -21,10 +21,14 @@ export const SliderInput = memo(function SliderInput({
   color: string;
   labels?: string[];
 }) {
+  const inputId = useId();
+  const valueText = `${value}${unit}`;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <span
+        <label
+          htmlFor={inputId}
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: '14px',
@@ -33,15 +37,16 @@ export const SliderInput = memo(function SliderInput({
           }}
         >
           {label}
-        </span>
+        </label>
         <span
+          dir="ltr"
           style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '16px', color }}
         >
-          {value}
-          {unit}
+          {valueText}
         </span>
       </div>
       <input
+        id={inputId}
         type="range"
         min={min}
         max={max}
@@ -50,7 +55,7 @@ export const SliderInput = memo(function SliderInput({
         onChange={(e) => onChange(Number.parseFloat(e.target.value))}
         className="w-full h-2 appearance-none cursor-pointer"
         style={{ accentColor: color, borderRadius: 0 }}
-        aria-label={label}
+        aria-valuetext={valueText}
       />
       {labels && (
         <div

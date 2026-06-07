@@ -105,11 +105,14 @@ export function Section({ title, children }: { title?: string; children: React.R
 export function ListRow({
   label,
   meta,
+  metaNode,
   onClick,
   trailing,
 }: {
   label: string;
   meta?: string;
+  /** Optional JSX rendered beneath the string meta line (e.g. macro details with dir="ltr" spans). */
+  metaNode?: React.ReactNode;
   onClick?: () => void;
   trailing?: React.ReactNode;
 }) {
@@ -140,13 +143,15 @@ export function ListRow({
             color: 'var(--fs-ink)',
           }}
         >
-          {label}
+          {/* bdi: labels are often user-generated (client/group names) and may be Latin inside the RTL layout */}
+          <bdi>{label}</bdi>
         </div>
         {meta && (
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fs-muted)' }}>
             {meta}
           </div>
         )}
+        {metaNode}
       </div>
       {trailing}
       {onClick && (

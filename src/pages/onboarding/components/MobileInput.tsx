@@ -48,16 +48,17 @@ export const MobileInput = memo(function MobileInput({
 
   if (type === 'number') {
     const resolvedMode = inputMode ?? 'numeric';
+    const normalizedValue = rawValue.trim().replace(',', '.');
     return (
       <Input
-        type="number"
+        type="text"
         inputMode={resolvedMode}
-        pattern={resolvedMode === 'numeric' ? '[0-9]*' : undefined}
+        pattern={resolvedMode === 'numeric' ? '[0-9]*' : '[0-9]*[.,]?[0-9]*'}
         step={step}
         value={rawValue}
         onChange={(e) => setRawValue(e.target.value)}
         onBlur={() => {
-          const parsed = rawValue === '' ? '' : Number(rawValue);
+          const parsed = normalizedValue === '' ? '' : Number(normalizedValue);
           onChange(parsed === '' || Number.isNaN(parsed as number) ? '' : parsed);
         }}
         placeholder={placeholder}

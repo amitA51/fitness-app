@@ -226,4 +226,20 @@ describe('buildWorkoutSession', () => {
     expect(result!.session.exercises[0]!.order).toBe(0);
     expect(result!.session.exercises[1]!.order).toBe(1);
   });
+
+  it('preserves catalog exerciseId separately from the active workout instance id', () => {
+    const exercises: ActiveExercise[] = [
+      makeExercise({
+        id: 'active-ex-123',
+        exerciseId: 'bench-press',
+        name: 'Bench Press',
+        sets: [makeSet({ isCompleted: true, completedAt: '2024-01-01T00:00:00Z' })],
+      }),
+    ];
+
+    const result = buildWorkoutSession({ ...baseInput, exercises });
+
+    expect(result!.session.exercises[0]!.id).toBe('active-ex-123');
+    expect(result!.session.exercises[0]!.exerciseId).toBe('bench-press');
+  });
 });

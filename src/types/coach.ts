@@ -126,3 +126,40 @@ export interface PushSubscriptionRecord {
   keys: { p256dh: string; auth: string };
   createdAt?: string;
 }
+
+export interface GroupMessage {
+  id: string;
+  groupId: string;
+  senderId: string;
+  body: string;
+  createdAt?: string;
+}
+
+export interface GroupThreadSummary {
+  groupId: string;
+  name: string;
+  lastBody: string | null;
+  lastAt: string | null;
+  unread: number;
+}
+
+export interface ProgramTemplateDay {
+  name: string;
+  exercises: Array<{
+    exerciseName: string;
+    exerciseId: string;
+    targetMuscle: string;
+    sets: number;
+    reps: number;
+  }>;
+}
+
+export interface CoachProgramTemplate {
+  id: string;
+  coachId: string;
+  name: string;
+  description: string | null;
+  days: ProgramTemplateDay[];
+  createdAt?: string;
+  updatedAt?: string;
+}

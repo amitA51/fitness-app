@@ -3,16 +3,24 @@ interface SettingsToggleProps {
   checked: boolean;
   onChange: () => void;
   label: string;
+  /** Renders the toggle in a visually dimmed, non-interactive state */
+  disabled?: boolean;
 }
 
-export function SettingsToggle({ checked, onChange, label }: SettingsToggleProps) {
+export function SettingsToggle({
+  checked,
+  onChange,
+  label,
+  disabled = false,
+}: SettingsToggleProps) {
   return (
     <button
       type="button"
       role="switch"
       aria-label={label}
       aria-checked={checked}
-      onClick={onChange}
+      aria-disabled={disabled || undefined}
+      onClick={disabled ? undefined : onChange}
       className="focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:outline-none"
       style={{
         // Tap target ≥44×44 (a11y); the visual track inside stays ~32px tall.
@@ -22,7 +30,8 @@ export function SettingsToggle({ checked, onChange, label }: SettingsToggleProps
         minWidth: '44px',
         minHeight: '44px',
         flexShrink: 0,
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.4 : 1,
         background: 'transparent',
         border: 'none',
         padding: 0,

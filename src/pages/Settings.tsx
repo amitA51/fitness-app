@@ -9,6 +9,7 @@ import { useCloudSync } from './settings/hooks/useCloudSync';
 import { useSettingsState } from './settings/hooks/useSettingsState';
 import { AccountSection } from './settings/sections/AccountSection';
 import { CloudSyncSection } from './settings/sections/CloudSyncSection';
+import { CoachSection } from './settings/sections/CoachSection';
 import { DangerZoneSection } from './settings/sections/DangerZoneSection';
 import { DataAboutSection } from './settings/sections/DataAboutSection';
 import { ExportSection } from './settings/sections/ExportSection';
@@ -121,10 +122,14 @@ export default function Settings() {
           workoutSaved={state.workoutSaved}
         />
 
+        <CoachSection />
+
         <NotificationsSection
           notificationConfig={state.notificationConfig}
           toggleNotification={state.toggleNotification}
           notificationsSaved={state.notificationsSaved}
+          pushEnabled={state.pushEnabled}
+          togglePush={state.togglePush}
         />
 
         {/* 06 · Privacy & data — export, cloud sync and the delete danger-zone */}

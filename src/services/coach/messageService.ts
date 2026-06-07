@@ -9,6 +9,15 @@ import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
 import { requireClient, toMessage } from './mappers';
 import { sendCoachPush } from './pushService';
+import { listClients } from './relationshipService';
+
+export interface ClientThreadSummary {
+  clientId: string;
+  displayName: string;
+  lastBody: string | null;
+  lastAt: string | null;
+  unread: number;
+}
 
 export const getThread = async (coachId: string, clientId: string): Promise<Message[]> => {
   const supabase = requireClient();
@@ -66,6 +75,96 @@ export const markThreadRead = async (coachId: string, clientId: string): Promise
     .neq('sender_id', user.id)
     .is('read_at', null);
   if (error) logger.db.error('markThreadRead failed', error);
+};
+
+/**
+ * Return one summary row per active client thread, sorted: unread first, then
+ * lastAt desc, then displayName. Uses ONE roster fetch + ONE bounded messages
+ * query — no N+1 queries.
+ */
+export const listClientThreads = async (): Promise<ClientThreadSummary[]> => {
+  let supabase: ReturnType<typeof requireClient>;
+  try {
+    supabase = requireClient();
+  } catch {
+    return [];
+  }
+  const user = await getCurrentUser();
+  if (!user) return [];
+
+  // ONE roster fetch — reuses the established listClients pattern.
+  const clients = await listClients('active');
+  if (clients.length === 0) return [];
+
+  // Build a map: clientId -> displayName for fast lookup during reduction.
+  const nameMap = new Map<string, string>();
+  for (const c of clients) {
+    nameMap.set(c.clientId, c.clientProfile?.displayName ?? 'מתאמן');
+  }
+
+  // ONE bounded messages query for all active threads belonging to this coach.
+  // We only need the columns required for preview + unread computation.
+  const { data: rows, error } = await supabase
+    .from('messages')
+    .select('client_id, sender_id, body, created_at, read_at')
+    .eq('coach_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(500);
+
+  if (error) {
+    logger.db.error('listClientThreads failed', error);
+    return [];
+  }
+
+  // Reduce in JS to per-client summary. We iterate newest-first so the first
+  // message we encounter per client is already the latest one.
+  const seen = new Map<
+    string,
+    { lastBody: string | null; lastAt: string | null; unread: number }
+  >();
+
+  for (const row of rows ?? []) {
+    const cid = row.client_id as string;
+    if (!nameMap.has(cid)) continue; // skip rows for inactive/removed clients
+    const existing = seen.get(cid);
+    if (!existing) {
+      // First (= latest) message for this client.
+      seen.set(cid, {
+        lastBody: (row.body as string | null) ?? null,
+        lastAt: (row.created_at as string | null) ?? null,
+        unread: row.sender_id !== user.id && row.read_at === null ? 1 : 0,
+      });
+    } else {
+      // Subsequent messages: only accumulate unread count.
+      if (row.sender_id !== user.id && row.read_at === null) {
+        existing.unread += 1;
+      }
+    }
+  }
+
+  // Build the result list, including clients with no messages yet.
+  const result: ClientThreadSummary[] = [];
+  for (const [clientId, displayName] of nameMap) {
+    const summary = seen.get(clientId);
+    result.push({
+      clientId,
+      displayName,
+      lastBody: summary?.lastBody ?? null,
+      lastAt: summary?.lastAt ?? null,
+      unread: summary?.unread ?? 0,
+    });
+  }
+
+  // Sort: unread first, then lastAt desc (nulls last), then displayName.
+  result.sort((a, b) => {
+    if (b.unread !== a.unread) return b.unread - a.unread;
+    if (a.lastAt && b.lastAt) return b.lastAt.localeCompare(a.lastAt);
+    if (a.lastAt) return -1;
+    if (b.lastAt) return 1;
+    return a.displayName.localeCompare(b.displayName, 'he');
+  });
+
+  return result;
 };
 
 /** Count of unread messages addressed to the current user across active relationships only. */

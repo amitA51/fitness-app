@@ -6,7 +6,7 @@
 // return null and writes no-op, mirroring the rest of the app's offline grace.
 
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
-import type { Profile } from '../../types/coach';
+import type { CoachProfile, Profile } from '../../types/coach';
 import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
 import { toProfile } from './mappers';
@@ -44,6 +44,26 @@ export const updateMyProfile = async (
   const { error } = await supabase.from('profiles').upsert(row);
   if (error) {
     logger.db.error('updateMyProfile failed', error);
+    return { error: error.message };
+  }
+  return { error: null };
+};
+
+/** Update the current user's coach profile (business name, bio). */
+export const updateMyCoachProfile = async (
+  updates: Partial<Pick<CoachProfile, 'businessName' | 'bio'>>
+): Promise<{ error: string | null }> => {
+  if (!isSupabaseConfigured() || !supabase) return { error: 'offline' };
+  const user = await getCurrentUser();
+  if (!user) return { error: 'unauthenticated' };
+
+  const row: Record<string, unknown> = { id: user.id };
+  if (updates.businessName !== undefined) row.business_name = updates.businessName;
+  if (updates.bio !== undefined) row.bio = updates.bio;
+
+  const { error } = await supabase.from('coach_profiles').upsert(row);
+  if (error) {
+    logger.db.error('updateMyCoachProfile failed', error);
     return { error: error.message };
   }
   return { error: null };

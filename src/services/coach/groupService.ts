@@ -55,6 +55,25 @@ export const getGroupMemberIds = async (groupId: string): Promise<string[]> => {
   return (data ?? []).map((r: { client_id: string }) => r.client_id);
 };
 
+export const getGroupMemberCounts = async (groupIds: string[]): Promise<Map<string, number>> => {
+  if (groupIds.length === 0) return new Map();
+  const supabase = requireClient();
+  const { data, error } = await supabase
+    .from('client_group_members')
+    .select('group_id')
+    .in('group_id', groupIds);
+  if (error) {
+    logger.db.error('getGroupMemberCounts failed', error);
+    return new Map();
+  }
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const id = (row as { group_id: string }).group_id;
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  return counts;
+};
+
 export const setGroupMembers = async (
   groupId: string,
   clientIds: string[]

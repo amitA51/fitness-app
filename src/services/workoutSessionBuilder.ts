@@ -36,7 +36,7 @@ export function buildWorkoutSession(input: BuildSessionInput): BuildSessionResul
   const workoutExercises: WorkoutExercise[] = completedExercises.map(
     (ex: ActiveExercise, index: number) => ({
       id: ex.id || `ex_${index}`,
-      exerciseId: ex.id || `exercise_${index}`,
+      exerciseId: ex.exerciseId || ex.id || `exercise_${index}`,
       exerciseName: ex.name || 'Unknown Exercise',
       targetMuscle: ex.muscleGroup || ex.targetMuscle || 'Other',
       sets: (ex.sets ?? [])

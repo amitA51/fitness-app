@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'sparkos-fitness-db';
-const DB_VERSION = 8;
+const DB_VERSION = 9;
 
 // Store names
 export const STORES = {
@@ -172,6 +172,19 @@ export const initDB = (): Promise<IDBDatabase> => {
       if (upgradeTx && db.objectStoreNames.contains(STORES.NUTRITION_LOGS)) {
         const nutritionStore = upgradeTx.objectStore(STORES.NUTRITION_LOGS);
         createIndexIfMissing(nutritionStore, 'date', 'date');
+      }
+
+      // -- v9 indexes: date indexes on body-stat stores ---------------------
+      // Progress reads body weight and measurements by date range. Index those
+      // stores so future range helpers can avoid full-table scans as histories
+      // grow across months of daily tracking.
+      if (upgradeTx && db.objectStoreNames.contains(STORES.BODY_WEIGHT)) {
+        const bodyWeightStore = upgradeTx.objectStore(STORES.BODY_WEIGHT);
+        createIndexIfMissing(bodyWeightStore, 'date', 'date');
+      }
+      if (upgradeTx && db.objectStoreNames.contains(STORES.BODY_MEASUREMENTS)) {
+        const bodyMeasurementsStore = upgradeTx.objectStore(STORES.BODY_MEASUREMENTS);
+        createIndexIfMissing(bodyMeasurementsStore, 'date', 'date');
       }
     };
   });

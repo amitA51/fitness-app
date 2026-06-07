@@ -19,7 +19,8 @@ import {
   submitCheckIn,
   subscribeToAssignments,
 } from '../services/coach';
-import type { Assignment } from '../types/coach';
+import { listGroupThreads } from '../services/coach/groupMessageService';
+import type { Assignment, GroupThreadSummary } from '../types/coach';
 import {
   CoachPage,
   ListRow,
@@ -52,6 +53,10 @@ export default function MyCoach() {
     error: assignmentsError,
     reload: reloadAssignments,
   } = useAsyncData(() => listMyAssignments(), []);
+  const { data: groups, loading: groupsLoading } = useAsyncData<GroupThreadSummary[]>(
+    () => listGroupThreads('member'),
+    []
+  );
   const [code, setCode] = useState('');
   const { busy, accept } = useAcceptInvite();
   const [startingId, setStartingId] = useState<string | null>(null);
@@ -64,12 +69,14 @@ export default function MyCoach() {
 
   // Start a coach-assigned program: ensure the referenced template is synced
   // into the local-first store, then enter the existing ActiveWorkout flow.
-  const startProgram = async (a: Assignment) => {
-    if (!a.templateId) return;
+  // When called with an explicit templateId (multi-day), that overrides a.templateId.
+  const startProgram = async (a: Assignment, templateId?: string) => {
+    const id = templateId ?? a.templateId;
+    if (!id) return;
     setStartingId(a.id);
     try {
       await syncTemplatesFromCloud();
-      navigate(`/workout/${a.templateId}`);
+      navigate(`/workout/${id}`);
     } catch {
       setStartingId(null);
       showToast('לא ניתן להתחיל את האימון', 'error');
@@ -163,6 +170,76 @@ export default function MyCoach() {
         )}
       </Section>
 
+      {/* הקבוצות שלי — show only when groups exist; invisible to non-grouped trainees */}
+      {groupsLoading && coaches.length > 0 ? (
+        <Section title="הקבוצות שלי">
+          <ListSkeleton rows={2} />
+        </Section>
+      ) : groups.length > 0 ? (
+        <Section title="הקבוצות שלי">
+          {groups.map((g) => (
+            <ListRow
+              key={g.groupId}
+              label={g.name}
+              metaNode={
+                <div
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 11,
+                    color: 'var(--fs-muted)',
+                    marginTop: 2,
+                    display: 'flex',
+                    gap: 8,
+                    alignItems: 'baseline',
+                  }}
+                >
+                  {g.lastBody && (
+                    <span
+                      dir="auto"
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {g.lastBody.length > 60 ? `${g.lastBody.slice(0, 60)}…` : g.lastBody}
+                    </span>
+                  )}
+                  <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    {formatDate(g.lastAt)}
+                  </span>
+                </div>
+              }
+              trailing={
+                g.unread > 0 ? (
+                  <span
+                    dir="ltr"
+                    aria-label={`${g.unread} הודעות שלא נקראו`}
+                    style={{
+                      background: 'var(--fs-primary)',
+                      color: 'var(--fs-accent)',
+                      borderRadius: 999,
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: '2px 7px',
+                      minWidth: 20,
+                      textAlign: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {g.unread}
+                  </span>
+                ) : undefined
+              }
+              onClick={() => navigate(`/my-coach/groups/${g.groupId}/chat`)}
+            />
+          ))}
+        </Section>
+      ) : null}
+
       <CheckInForm />
 
       <Section title="היסטוריית שיוכים">
@@ -189,28 +266,106 @@ export default function MyCoach() {
             description="כשהמאמן ישלח תוכנית או המלצה, היא תופיע כאן."
           />
         ) : (
-          assignments.map((a) => (
-            <ListRow
-              key={a.id}
-              label={a.title || KIND_LABEL[a.kind]}
-              meta={`${KIND_LABEL[a.kind]} · ${formatDate(a.createdAt)}${
-                typeof a.payload.text === 'string' ? ` · ${a.payload.text}` : ''
-              }${typeof a.payload.calories === 'number' ? ` · ${a.payload.calories} קל'` : ''}`}
-              trailing={
-                a.kind === 'program' && a.templateId ? (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    icon={<Play size={14} />}
-                    isLoading={startingId === a.id}
-                    onClick={() => startProgram(a)}
-                  >
-                    התחל אימון
-                  </Button>
-                ) : undefined
-              }
-            />
-          ))
+          assignments.map((a) => {
+            // Defensively extract multi-day program days from payload.
+            const days: Array<{ templateId: string; name: string }> = Array.isArray(a.payload.days)
+              ? (a.payload.days as unknown[]).filter(
+                  (d): d is { templateId: string; name: string } =>
+                    d !== null &&
+                    typeof d === 'object' &&
+                    typeof (d as Record<string, unknown>).templateId === 'string' &&
+                    typeof (d as Record<string, unknown>).name === 'string'
+                )
+              : [];
+
+            const hasMultiDays = days.length > 0;
+
+            // Build compact macro meta line for nutrition_target rows.
+            const macroMeta =
+              a.kind === 'nutrition_target' ? (
+                <span
+                  style={{
+                    display: 'block',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 12,
+                    color: 'var(--fs-muted)',
+                    marginTop: 2,
+                  }}
+                >
+                  {typeof a.payload.calories === 'number' && (
+                    <>
+                      {'קלוריות: '}
+                      <span dir="ltr">{a.payload.calories}</span>
+                    </>
+                  )}
+                  {typeof a.payload.protein === 'number' && (
+                    <>
+                      {' · חלבון: '}
+                      <span dir="ltr">{a.payload.protein}</span>
+                      {' גרם'}
+                    </>
+                  )}
+                  {typeof a.payload.carbs === 'number' && (
+                    <>
+                      {' · פחמימות: '}
+                      <span dir="ltr">{a.payload.carbs}</span>
+                      {' גרם'}
+                    </>
+                  )}
+                  {typeof a.payload.fat === 'number' && (
+                    <>
+                      {' · שומן: '}
+                      <span dir="ltr">{a.payload.fat}</span>
+                      {' גרם'}
+                    </>
+                  )}
+                </span>
+              ) : null;
+
+            return (
+              <ListRow
+                key={a.id}
+                label={a.title || KIND_LABEL[a.kind]}
+                meta={`${KIND_LABEL[a.kind]} · ${formatDate(a.createdAt)}${
+                  typeof a.payload.text === 'string' ? ` · ${a.payload.text}` : ''
+                }${a.kind !== 'nutrition_target' && typeof a.payload.calories === 'number' ? ` · ${a.payload.calories} קל'` : ''}`}
+                metaNode={macroMeta ?? undefined}
+                trailing={
+                  a.kind === 'program' ? (
+                    hasMultiDays ? (
+                      // Multi-day program: one start button per day, stacked vertically.
+                      <div className="flex flex-col gap-1">
+                        {days.map((day) => (
+                          <Button
+                            key={day.templateId}
+                            variant="primary"
+                            size="sm"
+                            icon={<Play size={14} aria-hidden="true" />}
+                            isLoading={startingId === a.id}
+                            onClick={() => startProgram(a, day.templateId)}
+                            style={{ minHeight: 44, width: '100%', justifyContent: 'flex-start' }}
+                          >
+                            <bdi>{day.name}</bdi>
+                          </Button>
+                        ))}
+                      </div>
+                    ) : a.templateId ? (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        icon={<Play size={14} aria-hidden="true" />}
+                        isLoading={startingId === a.id}
+                        onClick={() => startProgram(a)}
+                        style={{ minHeight: 44 }}
+                      >
+                        התחל אימון
+                      </Button>
+                    ) : undefined
+                  ) : undefined
+                }
+              />
+            );
+          })
         )}
       </Section>
     </CoachPage>
@@ -220,6 +375,7 @@ export default function MyCoach() {
 function CheckInForm() {
   const [weight, setWeight] = useState('');
   const [mood, setMood] = useState<number | null>(null);
+  const [energy, setEnergy] = useState<number | null>(null);
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -228,6 +384,7 @@ function CheckInForm() {
     const { error } = await submitCheckIn({
       weight: weight ? Number(weight) : null,
       mood,
+      energy,
       notes,
     });
     setBusy(false);
@@ -237,6 +394,7 @@ function CheckInForm() {
     }
     setWeight('');
     setMood(null);
+    setEnergy(null);
     setNotes('');
     showToast('הצ׳ק-אין נשמר', 'success');
   };
@@ -262,7 +420,7 @@ function CheckInForm() {
             key={m}
             type="button"
             onClick={() => setMood(m)}
-            aria-label={`מצב רוח ${m}`}
+            aria-label={`מצב רוח ${m} מתוך 5`}
             aria-pressed={mood === m}
             className="flex-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-0"
             style={{
@@ -277,6 +435,31 @@ function CheckInForm() {
             }}
           >
             {m}
+          </button>
+        ))}
+      </div>
+      {/* Energy: identical pattern to mood selector above. */}
+      <div className="flex gap-2 mb-3" role="group" aria-label="אנרגיה">
+        {[1, 2, 3, 4, 5].map((e) => (
+          <button
+            key={e}
+            type="button"
+            onClick={() => setEnergy(e)}
+            aria-label={`אנרגיה ${e} מתוך 5`}
+            aria-pressed={energy === e}
+            className="flex-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-0"
+            style={{
+              minWidth: 44,
+              minHeight: 44,
+              background: energy === e ? 'var(--fs-primary)' : 'var(--fs-surface)',
+              color: energy === e ? 'var(--fs-accent)' : 'var(--fs-muted)',
+              border: '1px solid var(--fs-surface-2)',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            {e}
           </button>
         ))}
       </div>
