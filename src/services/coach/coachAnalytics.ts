@@ -8,6 +8,7 @@
 import type { CoachClient } from '../../types/coach';
 import { listCoachAssignments } from './assignmentService';
 import { getClientNutrition, getClientSessions, getClientsActivity } from './coachApi';
+import { getClientSchedule } from './scheduleService';
 
 export type ClientStatusLevel = 'active' | 'at_risk' | 'inactive' | 'new';
 
@@ -42,6 +43,10 @@ export interface DayAdherence {
   calories: number | null;
   /** Calorie target from the client's active nutrition_target assignment, or null. */
   targetCalories: number | null;
+  /** Number of workouts the coach scheduled for this date. */
+  scheduled: number;
+  /** Of the scheduled workouts, how many are marked done. */
+  completedScheduled: number;
 }
 
 /** Build a local YYYY-MM-DD string without UTC conversion (avoids timezone bug). */
@@ -60,6 +65,7 @@ export function computeWeekAdherence(
   sessions: Array<{ startTime: string | null }>,
   nutrition: Array<{ date: string; calories: number | null }>,
   targetCalories: number | null,
+  schedule: Array<{ scheduledDate: string; status: string }> = [],
   now: Date = new Date()
 ): DayAdherence[] {
   // Build the 7-day window (oldest → newest, ending today in local time).
@@ -72,6 +78,8 @@ export function computeWeekAdherence(
       sessions: 0,
       calories: null,
       targetCalories,
+      scheduled: 0,
+      completedScheduled: 0,
     });
   }
 
@@ -95,6 +103,14 @@ export function computeWeekAdherence(
     if (day) day.calories = n.calories ?? null;
   }
 
+  // Count scheduled vs. completed-scheduled workouts by date.
+  for (const item of schedule) {
+    const day = dayMap.get(item.scheduledDate);
+    if (!day) continue;
+    day.scheduled += 1;
+    if (item.status === 'done') day.completedScheduled += 1;
+  }
+
   return days;
 }
 
@@ -104,10 +120,18 @@ export function computeWeekAdherence(
  */
 export async function getClientWeekAdherence(clientId: string): Promise<DayAdherence[]> {
   try {
-    const [sessions, nutrition, assignments] = await Promise.all([
+    // Same 7-day window as computeWeekAdherence (today and the prior 6 days).
+    const now = new Date();
+    const fromDate = toLocalDateString(
+      new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6)
+    );
+    const toDate = toLocalDateString(now);
+
+    const [sessions, nutrition, assignments, schedule] = await Promise.all([
       getClientSessions(clientId, 30),
       getClientNutrition(clientId, 10),
       listCoachAssignments(clientId),
+      getClientSchedule(clientId, fromDate, toDate),
     ]);
 
     // Find the newest active nutrition_target assignment with a numeric calories payload.
@@ -126,7 +150,11 @@ export async function getClientWeekAdherence(clientId: string): Promise<DayAdher
       date: n.date,
       calories: n.calories ?? null,
     }));
-    return computeWeekAdherence(sessions, nutritionRows, targetCalories);
+    const scheduleRows = schedule.map((s) => ({
+      scheduledDate: s.scheduledDate,
+      status: s.status,
+    }));
+    return computeWeekAdherence(sessions, nutritionRows, targetCalories, scheduleRows);
   } catch {
     return computeWeekAdherence([], [], null);
   }

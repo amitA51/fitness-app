@@ -7,13 +7,7 @@
 import type { CoachClient, CoachProfile, CoachSubscription } from '../../types/coach';
 import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
-import {
-  DEFAULT_SEAT_LIMIT,
-  requireClient,
-  toCoachClient,
-  toCoachProfile,
-  toSubscription,
-} from './mappers';
+import { requireClient, toCoachClient, toCoachProfile, toSubscription } from './mappers';
 
 const CLIENT_WITH_PROFILE = '*, client_profile:profiles!coach_clients_client_id_fkey(*)';
 const COACH_WITH_PROFILE = '*, coach_profile:profiles!coach_clients_coach_id_fkey(*)';
@@ -42,30 +36,24 @@ export const getMyCoachProfile = async (): Promise<CoachProfile | null> => {
 };
 
 /**
- * Enable coach mode: create the coach_profiles row (idempotent) and a default
- * solo subscription so seat enforcement has a baseline. Returns the profile.
+ * Enable coach mode via the atomic `become_coach` RPC: creates the
+ * coach_profiles row + default subscription AND flips profiles.role to
+ * 'coach' (the server-side role SSOT) in one transaction. Idempotent.
+ * Returns the (possibly pre-existing) coach profile.
  */
 export const enableCoachMode = async (businessName?: string): Promise<CoachProfile> => {
   const supabase = requireClient();
   const user = await getCurrentUser();
   if (!user) throw new Error('unauthenticated');
 
-  const { data, error } = await supabase
-    .from('coach_profiles')
-    .upsert({ id: user.id, business_name: businessName ?? null })
-    .select('*')
-    .single();
+  const { error } = await supabase.rpc('become_coach', {
+    _business_name: businessName ?? null,
+  });
   if (error) throw error;
 
-  // Seed a default subscription (design-only; seats granted manually later).
-  await supabase
-    .from('coach_subscriptions')
-    .upsert(
-      { coach_id: user.id, plan: 'free', seat_limit: DEFAULT_SEAT_LIMIT, status: 'active' },
-      { onConflict: 'coach_id', ignoreDuplicates: true }
-    );
-
-  return toCoachProfile(data);
+  const profile = await getMyCoachProfile();
+  if (!profile) throw new Error('coach_profile_missing_after_become_coach');
+  return profile;
 };
 
 // ---- Entitlements ----------------------------------------------------------

@@ -249,7 +249,14 @@ export function useNutritionData() {
     (async () => {
       try {
         const assignments = await listMyAssignments();
-        const target = assignments.find((a) => a.kind === 'nutrition_target');
+        // Only an ACTIVE nutrition_target overrides the user's own goals; a
+        // paused/ended assignment must not keep clamping their macros. When more
+        // than one is active (e.g. the coach re-issued the target), newest wins.
+        const target = assignments
+          .filter((a) => a.kind === 'nutrition_target' && a.status === 'active')
+          .sort((a, b) =>
+            (b.updatedAt ?? b.createdAt ?? '').localeCompare(a.updatedAt ?? a.createdAt ?? '')
+          )[0];
         if (cancelled || !target) return;
         const p = target.payload;
         const cal = typeof p.calories === 'number' ? p.calories : 0;

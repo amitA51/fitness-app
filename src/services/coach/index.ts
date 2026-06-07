@@ -16,3 +16,4 @@ export * from './realtime';
 export * from './groupMessageService';
 export * from './auditService';
 export * from './programTemplateService';
+export * from './scheduleService';

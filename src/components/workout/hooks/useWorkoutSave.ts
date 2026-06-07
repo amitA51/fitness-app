@@ -154,6 +154,20 @@ export function useWorkoutSave({
 
       setCompletedSession(session);
       setShowSummary(true);
+
+      // Best-effort: reconcile a coach-scheduled workout to "done" if this
+      // completed session matches one planned for today. Dynamic import keeps
+      // the coach service out of the workout bundle; never blocks the save.
+      void import('../../../services/coach/scheduleService')
+        .then(({ reconcileScheduleOnSessionSave }) =>
+          reconcileScheduleOnSessionSave({
+            templateId: session.templateId,
+            startTime: session.startTime,
+            status: session.status,
+            id: session.id,
+          })
+        )
+        .catch(() => undefined);
     } catch (e) {
       // Show user-friendly error message via UI instead of console
       const errorMessage = e instanceof Error ? e.message : 'שגיאה לא ידועה';

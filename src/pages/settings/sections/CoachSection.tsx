@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, Dumbbell, UserCog, Users } from 'lucide-reac
 import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { showToast } from '../../../components/ui/GlobalToast';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
@@ -18,7 +19,8 @@ const DEBOUNCE_MS = 600;
 /**
  * Coach section — Fresh Steel / Obsidian design language.
  *
- * Non-coach view: short explanation + "הפעלת מצב מאמן" CTA.
+ * Trainee view: explanation + "הפוך למאמן" (confirmed role change — the whole
+ * app experience switches to the coach shell: coach home, coach nav).
  * Coach view: autosaving businessName + bio fields, navigation to /coach.
  */
 export function CoachSection() {
@@ -26,8 +28,9 @@ export function CoachSection() {
   const navigate = useNavigate();
   const { saved, flash } = useSavedFlash();
 
-  // Enable-flow state
+  // Become-a-coach flow state
   const [enabling, setEnabling] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Local field state (controlled inputs, debounced save)
   const [businessName, setBusinessName] = useState(coachProfile?.businessName ?? '');
@@ -77,12 +80,15 @@ export function CoachSection() {
   // ── Enable handler ─────────────────────────────────────────────────────────
 
   const handleEnable = async () => {
+    setConfirmOpen(false);
     setEnabling(true);
     try {
       await enable();
-      // Context flips isCoach → true; local state picks up coachProfile on next render
+      // Role flips to coach server-side; the app re-routes to the coach shell.
+      showToast('החשבון הפך לחשבון מאמן', 'success');
+      navigate('/coach');
     } catch {
-      showToast('הפעלת מצב המאמן נכשלה', 'error');
+      showToast('המעבר לחשבון מאמן נכשל', 'error');
     } finally {
       setEnabling(false);
     }
@@ -93,7 +99,7 @@ export function CoachSection() {
   // Avoid flicker while context initialises
   if (loading) return null;
 
-  // ── Non-coach view ──────────────────────────────────────────────────────────
+  // ── Trainee view: become a coach ────────────────────────────────────────────
   if (!isCoach) {
     return (
       <div className="mb-7">
@@ -114,21 +120,32 @@ export function CoachSection() {
                   flex: 1,
                 }}
               >
-                מצב מאמן מאפשר לעקוב אחרי מתאמנים, לשייך תוכניות ולשלוח הודעות.
+                חשבון מאמן מאפשר לנהל מתאמנים: לראות את האימונים והתזונה שלהם, לשייך תוכניות ולשלוח
+                הודעות.
               </p>
             </div>
             <Button
               variant="primary"
               shape="sharp"
               isLoading={enabling}
-              onClick={() => void handleEnable()}
-              aria-label="הפעלת מצב מאמן"
+              onClick={() => setConfirmOpen(true)}
+              aria-label="הפוך למאמן"
               fullWidth
             >
-              הפעלת מצב מאמן
+              הפוך למאמן
             </Button>
           </div>
         </SettingsCard>
+        <ConfirmDialog
+          isOpen={confirmOpen}
+          variant="warning"
+          title="להפוך לחשבון מאמן?"
+          description="מסך הבית והניווט יתחלפו לממשק ניהול המתאמנים. האימונים האישיים שלך יישארו זמינים דרך ״האימונים שלי״. חשבון מאמן לא יכול להתחבר למאמן אחר."
+          confirmLabel="הפוך למאמן"
+          cancelLabel="ביטול"
+          onConfirm={() => void handleEnable()}
+          onCancel={() => setConfirmOpen(false)}
+        />
       </div>
     );
   }

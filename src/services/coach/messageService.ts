@@ -167,6 +167,42 @@ export const listClientThreads = async (): Promise<ClientThreadSummary[]> => {
   return result;
 };
 
+/**
+ * Per-client unread counts for the current coach: messages where this user is
+ * the recipient (sender is the other party) and read_at is null, grouped by
+ * client_id. ONE bounded query reduced in JS — mirrors getUnreadCount's filter,
+ * no N+1. Clients with zero unread are simply absent from the map.
+ */
+export const getUnreadCountByClient = async (): Promise<Record<string, number>> => {
+  let supabase: ReturnType<typeof requireClient>;
+  try {
+    supabase = requireClient();
+  } catch {
+    return {};
+  }
+  const user = await getCurrentUser();
+  if (!user) return {};
+
+  const { data, error } = await supabase
+    .from('messages')
+    .select('client_id')
+    .eq('coach_id', user.id)
+    .neq('sender_id', user.id)
+    .is('read_at', null)
+    .limit(1000);
+  if (error) {
+    logger.db.error('getUnreadCountByClient failed', error);
+    return {};
+  }
+
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) {
+    const cid = (row as { client_id: string }).client_id;
+    counts[cid] = (counts[cid] ?? 0) + 1;
+  }
+  return counts;
+};
+
 /** Count of unread messages addressed to the current user across active relationships only. */
 export const getUnreadCount = async (): Promise<number> => {
   const supabase = requireClient();

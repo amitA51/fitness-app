@@ -2,8 +2,8 @@
 // MY COACH — trainee view: assignments inbox, coaches, consent management
 // ============================================================================
 
-import { MessageSquare, Play } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ImagePlus, MessageSquare, Play, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
@@ -16,8 +16,11 @@ import {
   disconnectCoach,
   listMyAssignments,
   listMyCoaches,
+  resolveProgramDays,
   submitCheckIn,
   subscribeToAssignments,
+  updateCheckInPhotos,
+  uploadCheckInPhotos,
 } from '../services/coach';
 import { listGroupThreads } from '../services/coach/groupMessageService';
 import type { Assignment, GroupThreadSummary } from '../types/coach';
@@ -267,16 +270,10 @@ export default function MyCoach() {
           />
         ) : (
           assignments.map((a) => {
-            // Defensively extract multi-day program days from payload.
-            const days: Array<{ templateId: string; name: string }> = Array.isArray(a.payload.days)
-              ? (a.payload.days as unknown[]).filter(
-                  (d): d is { templateId: string; name: string } =>
-                    d !== null &&
-                    typeof d === 'object' &&
-                    typeof (d as Record<string, unknown>).templateId === 'string' &&
-                    typeof (d as Record<string, unknown>).name === 'string'
-                )
-              : [];
+            // Resolve program days: for a group program each member sees ONLY
+            // their own per-member templates (payload.memberDays[myId]); direct
+            // programs fall back to the flat payload.days. Malformed refs filtered.
+            const days = resolveProgramDays(a, user?.id ?? '');
 
             const hasMultiDays = days.length > 0;
 
@@ -372,30 +369,94 @@ export default function MyCoach() {
   );
 }
 
+const MAX_CHECKIN_PHOTOS = 4;
+
+/** A staged (not-yet-uploaded) photo: the source file plus its preview URL. */
+interface StagedPhoto {
+  file: File;
+  url: string;
+}
+
 function CheckInForm() {
   const [weight, setWeight] = useState('');
   const [mood, setMood] = useState<number | null>(null);
   const [energy, setEnergy] = useState<number | null>(null);
   const [notes, setNotes] = useState('');
+  const [photos, setPhotos] = useState<StagedPhoto[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Mirror the latest staged set so the unmount cleanup revokes the real URLs
+  // (a [] effect would otherwise capture the initial empty array and leak them).
+  const photosRef = useRef(photos);
+  photosRef.current = photos;
+
+  // Revoke any outstanding object URLs on unmount to avoid leaking them.
+  useEffect(() => {
+    return () => {
+      for (const p of photosRef.current) URL.revokeObjectURL(p.url);
+    };
+  }, []);
+
+  const addFiles = (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    setPhotoError(null);
+    const incoming = Array.from(fileList);
+    const room = MAX_CHECKIN_PHOTOS - photos.length;
+    if (room <= 0) {
+      setPhotoError(`אפשר לצרף עד ${MAX_CHECKIN_PHOTOS} תמונות`);
+      return;
+    }
+    const accepted = incoming.slice(0, room).map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+    }));
+    if (incoming.length > room) setPhotoError(`אפשר לצרף עד ${MAX_CHECKIN_PHOTOS} תמונות`);
+    setPhotos((prev) => [...prev, ...accepted]);
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => {
+      const target = prev[index];
+      if (target) URL.revokeObjectURL(target.url);
+      return prev.filter((_, i) => i !== index);
+    });
+    setPhotoError(null);
+  };
 
   const submit = async () => {
     setBusy(true);
-    const { error } = await submitCheckIn({
+    const { error, id } = await submitCheckIn({
       weight: weight ? Number(weight) : null,
       mood,
       energy,
       notes,
     });
-    setBusy(false);
     if (error) {
+      setBusy(false);
       showToast('שמירת הצ׳ק-אין נכשלה', 'error');
       return;
     }
+
+    // Upload photos AFTER the row exists (path needs its id). A per-photo
+    // failure is surfaced inline but never blocks the saved check-in itself.
+    if (id && photos.length > 0) {
+      const { refs, errors } = await uploadCheckInPhotos(
+        id,
+        photos.map((p) => p.file)
+      );
+      if (refs.length > 0) await updateCheckInPhotos(id, refs);
+      if (errors.length > 0) setPhotoError('חלק מהתמונות לא הועלו');
+    }
+
+    setBusy(false);
+    for (const p of photos) URL.revokeObjectURL(p.url);
     setWeight('');
     setMood(null);
     setEnergy(null);
     setNotes('');
+    setPhotos([]);
+    setPhotoError(null);
     showToast('הצ׳ק-אין נשמר', 'success');
   };
 
@@ -463,7 +524,7 @@ function CheckInForm() {
           </button>
         ))}
       </div>
-      <div className="mb-2">
+      <div className="mb-3">
         <Textarea
           label="הערות"
           value={notes}
@@ -473,6 +534,126 @@ function CheckInForm() {
           aria-label="הערות צ׳ק-אין"
         />
       </div>
+
+      {/* תמונות התקדמות — file input visually replaced by a 44px+ labelled button */}
+      <div className="mb-4">
+        <span
+          className="block mb-2"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.22em',
+            fontWeight: 600,
+            color: 'var(--fs-muted)',
+            textTransform: 'uppercase',
+          }}
+        >
+          תמונות התקדמות
+        </span>
+
+        {/* The native input stays in the DOM (keyboard/SR reach it) but is hidden;
+            the labelled button below triggers it. */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          capture="environment"
+          className="sr-only"
+          aria-label="הוספת תמונות התקדמות"
+          onChange={(e) => {
+            addFiles(e.target.files);
+            // Allow re-picking the same file after a remove.
+            e.target.value = '';
+          }}
+        />
+
+        {photos.length > 0 && (
+          <div className="grid grid-cols-4 gap-2 mb-2">
+            {photos.map((p, i) => (
+              <div
+                key={p.url}
+                className="relative"
+                style={{
+                  aspectRatio: '1 / 1',
+                  background: 'var(--fs-surface-2)',
+                  border: '1px solid var(--fs-surface-2)',
+                }}
+              >
+                <img
+                  src={p.url}
+                  alt={`תמונת התקדמות ${i + 1}`}
+                  className="w-full h-full"
+                  style={{ objectFit: 'cover' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => removePhoto(i)}
+                  aria-label={`הסרת תמונה ${i + 1}`}
+                  className="absolute active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
+                  style={{
+                    top: 2,
+                    insetInlineEnd: 2,
+                    width: 28,
+                    height: 28,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'var(--fs-primary)',
+                    color: 'var(--color-ink-on-dark)',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <X size={14} aria-hidden="true" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {photos.length < MAX_CHECKIN_PHOTOS && (
+          <Button
+            variant="secondary"
+            fullWidth
+            icon={<ImagePlus size={16} aria-hidden="true" />}
+            onClick={() => fileInputRef.current?.click()}
+            style={{ minHeight: 44 }}
+          >
+            הוספת תמונות התקדמות
+          </Button>
+        )}
+
+        {/* Inline error BELOW the control — not a toast (field-level). */}
+        {photoError && (
+          <p
+            role="alert"
+            className="mt-2"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              letterSpacing: '0.04em',
+              color: 'var(--fs-warn)',
+            }}
+          >
+            {photoError}
+          </p>
+        )}
+
+        <p
+          className="mt-2"
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 12,
+            color: 'var(--fs-muted)',
+            lineHeight: 1.5,
+          }}
+        >
+          התמונות פרטיות — רק המאמן שלך יכול לצפות בהן. אפשר לצרף עד{' '}
+          <span dir="ltr">{MAX_CHECKIN_PHOTOS}</span> תמונות.
+        </p>
+      </div>
+
       <Button variant="primary" fullWidth isLoading={busy} onClick={submit}>
         שמור צ׳ק-אין
       </Button>

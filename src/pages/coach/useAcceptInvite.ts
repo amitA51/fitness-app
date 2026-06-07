@@ -18,6 +18,8 @@ export function inviteErrorMessage(error?: AcceptResult['error']): string {
       return 'תוקף ההזמנה פג';
     case 'already':
       return 'כבר מחוברים למאמן הזה';
+    case 'coaches_cannot_join':
+      return 'חשבון מאמן לא יכול להתחבר למאמן אחר';
     case 'offline':
       return 'אין חיבור לאינטרנט';
     default:

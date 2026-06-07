@@ -27,7 +27,7 @@ import { PreferencesStep } from './onboarding/steps/PreferencesStep';
 import { ProfileStep } from './onboarding/steps/ProfileStep';
 import { RoleStep } from './onboarding/steps/RoleStep';
 import { WelcomeStep } from './onboarding/steps/WelcomeStep';
-import { type OnboardingProps, STEPS } from './onboarding/types';
+import type { OnboardingProps } from './onboarding/types';
 import { useOnboardingWizard } from './onboarding/useOnboardingWizard';
 
 // Re-export types for consumers
@@ -39,29 +39,40 @@ export type {
 } from './onboarding/types';
 
 export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) {
-  const { currentStep, data, updateData, goNext, goBack, canProceed, validationHint } =
-    useOnboardingWizard(onComplete);
+  const {
+    currentStep,
+    stepId,
+    activeSteps,
+    data,
+    updateData,
+    goNext,
+    goBack,
+    canProceed,
+    validationHint,
+  } = useOnboardingWizard(onComplete);
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
   const hintId = useId();
 
   const hint = validationHint();
-  const isLastInteractiveStep = currentStep === STEPS.length - 2;
+  const isLastInteractiveStep = currentStep === activeSteps.length - 2;
 
+  // Steps render by id — the list itself is role-derived (coaches skip the
+  // trainee-only goals/experience/preferences steps).
   const renderStep = () => {
-    switch (currentStep) {
-      case 0:
+    switch (stepId) {
+      case 'welcome':
         return <WelcomeStep onNext={goNext} />;
-      case 1:
+      case 'role':
         return <RoleStep data={data} onChange={updateData} />;
-      case 2:
+      case 'profile':
         return <ProfileStep data={data} onChange={updateData} />;
-      case 3:
+      case 'goals':
         return <GoalsStep data={data} onChange={updateData} />;
-      case 4:
+      case 'experience':
         return <ExperienceStep data={data} onChange={updateData} />;
-      case 5:
+      case 'preferences':
         return <PreferencesStep data={data} onChange={updateData} />;
-      case 6:
+      case 'complete':
         return <CompleteStep data={data} />;
       default:
         return null;
@@ -81,13 +92,13 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
         dir="rtl"
       >
         {/* Progress bar at top — premium track */}
-        {currentStep > 0 && currentStep < STEPS.length - 1 && (
+        {currentStep > 0 && currentStep < activeSteps.length - 1 && (
           <div className="w-full fs-progress-track" style={{ height: '4px' }}>
             <m.div
               className="h-full fs-progress-fill"
               initial={{ width: 0 }}
               animate={{
-                width: `${((currentStep - 1) / (STEPS.length - 2)) * 100}%`,
+                width: `${((currentStep - 1) / (activeSteps.length - 2)) * 100}%`,
               }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
             />
@@ -95,7 +106,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
         )}
 
         {/* Skip Button - safe area aware */}
-        {currentStep > 0 && currentStep < STEPS.length - 1 && (
+        {currentStep > 0 && currentStep < activeSteps.length - 1 && (
           <div className="absolute top-0 left-0 right-0 p-4 z-10 pt-[calc(1rem+env(safe-area-inset-top))]">
             <button
               type="button"
@@ -124,8 +135,8 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
         </div>
 
         {/* Compact dots at bottom */}
-        {currentStep > 0 && currentStep < STEPS.length - 1 && (
-          <ProgressDots currentStep={currentStep - 1} totalSteps={STEPS.length - 2} />
+        {currentStep > 0 && currentStep < activeSteps.length - 1 && (
+          <ProgressDots currentStep={currentStep - 1} totalSteps={activeSteps.length - 2} />
         )}
 
         {/* Navigation - thumb zone optimized */}
@@ -137,7 +148,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
             {/* Validation hint — explains why "הבא" is disabled. Polite live
                 region so screen readers announce the requirement when it changes. */}
             <div aria-live="polite" className="min-h-[20px] mb-2 px-1">
-              {currentStep < STEPS.length - 1 && hint && (
+              {currentStep < activeSteps.length - 1 && hint && (
                 <m.p
                   id={hintId}
                   initial={{ opacity: 0, y: -4 }}
@@ -155,7 +166,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
               )}
             </div>
             <div className="flex gap-3">
-              {currentStep < STEPS.length - 1 && (
+              {currentStep < activeSteps.length - 1 && (
                 <Button
                   variant="secondary"
                   onClick={goBack}

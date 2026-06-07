@@ -15,6 +15,7 @@ import { ForecastNudge } from '../components/dashboard/ForecastNudge';
 import { RecentPRBanner } from '../components/dashboard/RecentPRBanner';
 import { StartWorkoutSheet } from '../components/dashboard/StartWorkoutSheet';
 import { TemplateStrip } from '../components/dashboard/TemplateQuickStart';
+import { TodaysWorkoutCard } from '../components/dashboard/TodaysWorkoutCard';
 import { WeeklyGrid } from '../components/dashboard/WeeklyGrid';
 import { WorkoutStreak } from '../components/dashboard/WorkoutStreak';
 import { CoachMark } from '../components/guidance/CoachMark';
@@ -344,6 +345,9 @@ export default function Dashboard() {
             מתחילים מכאן — בחרו תרגילים והאפליקציה תנחה אתכם דרך הסטים.
           </CoachMark>
         </div>
+
+        {/* Coach-scheduled workout for today (invisible for guests / when empty) */}
+        <TodaysWorkoutCard />
 
         {/* Workout streak */}
         <div style={{ marginTop: 16 }}>

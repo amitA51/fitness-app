@@ -11,10 +11,14 @@ export type AssignmentKind = 'program' | 'nutrition_target' | 'note' | 'announce
 export type CoachPlan = 'free' | 'solo' | 'starter' | 'pro' | 'elite';
 export type SubscriptionStatus = 'active' | 'past_due' | 'canceled';
 
+/** Server-side role classification (profiles.role) — the SSOT for "who is a coach". */
+export type UserRole = 'coach' | 'trainee';
+
 export interface Profile {
   id: string;
   displayName: string | null;
   avatarUrl: string | null;
+  role: UserRole;
   createdAt?: string;
   updatedAt?: string;
 }

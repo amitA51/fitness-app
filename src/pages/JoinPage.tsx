@@ -4,7 +4,9 @@ import { Button } from '../components/ui/Button';
 import { showToast } from '../components/ui/GlobalToast';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
+import { useCoach } from '../contexts/CoachContext';
 import { acceptInvite } from '../services/coach';
+import { inviteErrorMessage } from './coach/useAcceptInvite';
 
 const STORAGE_KEY = 'pending_invite_code';
 
@@ -21,6 +23,7 @@ export default function JoinPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { status } = useAuth();
+  const { isCoach, loading: coachLoading } = useCoach();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const didRun = useRef(false);
@@ -38,8 +41,11 @@ export default function JoinPage() {
     }
   }, [status, code]);
 
-  // Authenticated (or guest with user): auto-accept
+  // Authenticated (or guest with user): auto-accept. Coaches never auto-accept —
+  // a coach has no coach of their own (the edge function rejects them too; this
+  // is the friendly client-side gate for invite deep links).
   useEffect(() => {
+    if (coachLoading || isCoach) return;
     if ((status === 'authenticated' || status === 'guest') && code && !didRun.current) {
       didRun.current = true;
       setBusy(true);
@@ -54,17 +60,50 @@ export default function JoinPage() {
           showToast('התחברת למאמן', 'success');
           navigate('/my-coach', { replace: true });
         } else {
-          setError(res.error === 'seat_limit' ? 'למאמן אין מקום פנוי' : 'קוד לא תקין');
+          setError(inviteErrorMessage(res.error));
         }
       });
     }
-  }, [status, code, navigate]);
+  }, [status, code, navigate, coachLoading, isCoach]);
 
   // Loading state
-  if (status === 'loading' || busy) {
+  if (status === 'loading' || coachLoading || busy) {
     return (
       <div className="flex items-center justify-center min-h-screen min-h-[100dvh]" dir="rtl">
         <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Coach account opened an invite link — explain instead of silently bouncing.
+  if (isCoach) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center min-h-screen min-h-[100dvh] gap-4 px-6"
+        dir="rtl"
+      >
+        <h1
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 22,
+            color: 'var(--fs-ink)',
+          }}
+        >
+          חשבון מאמן לא יכול להתחבר למאמן אחר
+        </h1>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 15,
+            color: 'var(--fs-muted)',
+            textAlign: 'center',
+          }}
+        >
+          ההזמנה הזו מיועדת למתאמנים. כדי לקבל אותה, יש להתחבר עם חשבון מתאמן.
+        </p>
+        <Button variant="primary" onClick={() => navigate('/coach', { replace: true })}>
+          למרכז המאמן
+        </Button>
       </div>
     );
   }

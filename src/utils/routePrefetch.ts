@@ -4,11 +4,14 @@
 
 const routePrefetchMap: Record<string, () => Promise<unknown>> = {
   '/': () => import('../pages/Dashboard'),
+  '/me': () => import('../pages/Dashboard'),
   '/nutrition': () => import('../pages/Nutrition'),
   '/progress': () => import('../pages/Progress'),
   '/settings': () => import('../pages/Settings'),
   '/templates': () => import('../pages/Templates'),
   '/workout': () => import('../components/workout/ActiveWorkoutNew'),
+  '/coach': () => import('../pages/coach/CoachHome'),
+  '/my-coach': () => import('../pages/MyCoach'),
 };
 
 const prefetchedRoutes = new Set<string>();

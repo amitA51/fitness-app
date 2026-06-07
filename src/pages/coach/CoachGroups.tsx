@@ -22,6 +22,7 @@ import {
   setGroupMembers,
 } from '../../services/coach';
 import type { ClientGroup, CoachClient } from '../../types/coach';
+import ProgramBuilder from './ProgramBuilder';
 import { Checkbox, CoachPage, ListSkeleton, Section, SectionError, useAsyncData } from './_shared';
 
 export default function CoachGroups() {
@@ -168,6 +169,7 @@ function GroupEditor({
   const [announcement, setAnnouncement] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [programOpen, setProgramOpen] = useState(false);
 
   const allClientIds = clients.map((c) => c.clientId);
 
@@ -290,6 +292,18 @@ function GroupEditor({
           שלח הודעה לקבוצה
         </Button>
       </div>
+
+      <div className="mt-4">
+        <Button variant="primary" fullWidth onClick={() => setProgramOpen(true)}>
+          שיוך תוכנית לקבוצה
+        </Button>
+      </div>
+
+      <ProgramBuilder
+        groupId={group.id}
+        isOpen={programOpen}
+        onClose={() => setProgramOpen(false)}
+      />
 
       <Button
         variant="ghost"

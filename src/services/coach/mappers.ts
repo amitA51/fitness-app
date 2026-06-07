@@ -55,6 +55,7 @@ export const toProfile = (r: Row): Profile => ({
   id: r.id as string,
   displayName: (r.display_name as string | null) ?? null,
   avatarUrl: (r.avatar_url as string | null) ?? null,
+  role: r.role === 'coach' ? 'coach' : 'trainee',
   createdAt: r.created_at as string | undefined,
   updatedAt: r.updated_at as string | undefined,
 });

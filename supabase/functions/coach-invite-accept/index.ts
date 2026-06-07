@@ -6,7 +6,7 @@
 // consent + seat enforcement happen here with the service role.
 //
 // Body: { code: string }
-// Returns: { ok: true, coachId } | { ok: false, error: 'invalid'|'expired'|'seat_limit'|'already'|'unauthenticated' }
+// Returns: { ok: true, coachId } | { ok: false, error: 'invalid'|'expired'|'seat_limit'|'already'|'unauthenticated'|'coaches_cannot_join' }
 //
 // Deploy:  supabase functions deploy coach-invite-accept
 // ============================================================================
@@ -94,6 +94,17 @@ Deno.serve(async (req: Request) => {
     // Rate-limit infrastructure unavailable — fail CLOSED (S-9 security hardening).
     console.error('[coach-invite-accept] rate-limit check failed, rejecting request:', _e);
     return json({ ok: false, error: 'rate_limited' }, 503, req);
+  }
+
+  // Role split: a coach has no coach of their own. Reject coach callers before
+  // any invite lookup (service role read — RLS cannot hide the row).
+  const { data: callerProfile } = await admin
+    .from('profiles')
+    .select('role')
+    .eq('id', caller.id)
+    .maybeSingle();
+  if (callerProfile?.role === 'coach') {
+    return json({ ok: false, error: 'coaches_cannot_join' }, 200, req);
   }
 
   let code = '';

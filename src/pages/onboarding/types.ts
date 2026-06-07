@@ -1,7 +1,8 @@
 export type EquipmentAccess = 'gym' | 'home_full' | 'home_minimal' | 'bodyweight' | '';
 export type UnitSystem = 'metric' | 'imperial';
-/** Role chosen at onboarding. Additive: 'coach' enables coach mode on top of the
- * normal trainee app; 'trainee' (or empty) is the default trainee-only path. */
+/** Role chosen at onboarding. 'coach' routes to the coach experience (command
+ * center home, coach nav) and is persisted server-side via become_coach();
+ * 'trainee' (or empty) is the default trainee path. */
 export type OnboardingRole = 'coach' | 'trainee' | '';
 
 export interface OnboardingData {
@@ -60,7 +61,13 @@ export interface OnboardingProps {
   onSkip: (data: OnboardingData) => void;
 }
 
-export const STEPS = [
+export interface OnboardingStep {
+  id: string;
+  title: string;
+  subtitle: string;
+}
+
+export const STEPS: OnboardingStep[] = [
   { id: 'welcome', title: 'ברוך הבא', subtitle: 'הכר את עצמך' },
   { id: 'role', title: 'מי אתה?', subtitle: 'מאמן או מתאמן' },
   { id: 'profile', title: 'פרופיל אישי', subtitle: 'ספר לנו על עצמך' },
@@ -69,3 +76,14 @@ export const STEPS = [
   { id: 'preferences', title: 'העדפות', subtitle: 'התאם אישית' },
   { id: 'complete', title: 'מוכן!', subtitle: 'בואו נתחיל' },
 ];
+
+/** Step ids that only make sense for a trainee's personal training profile. */
+const TRAINEE_ONLY_STEP_IDS = new Set(['goals', 'experience', 'preferences']);
+
+/**
+ * The wizard steps for a given role. Coaches get a short flow (welcome → role
+ * → profile → complete) — their primary surface is managing trainees, so the
+ * personal goals/experience/preferences steps are skipped.
+ */
+export const stepsForRole = (role: OnboardingRole | undefined): OnboardingStep[] =>
+  role === 'coach' ? STEPS.filter((s) => !TRAINEE_ONLY_STEP_IDS.has(s.id)) : STEPS;

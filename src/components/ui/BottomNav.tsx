@@ -1,7 +1,9 @@
 import {
+  ClipboardList,
   Dumbbell,
   LayoutDashboard,
   type LucideIcon,
+  MessageSquare,
   MoreHorizontal,
   Settings,
   TrendingUp,
@@ -34,14 +36,14 @@ const DUR = { micro: 0.16, fast: 0.3, base: 0.6 } as const;
 const EASE = { popHard: 'back.out(3)', slide: 'power3.inOut' } as const;
 
 // ============================================================================
-// BottomNav — 5 fixed tabs + a "More" sheet.
+// BottomNav — 5 fixed tabs + a "More" sheet, branched by role.
 //
-// Tabs: בית /, אימון /workout, התקדמות /progress, תזונה /nutrition, עוד (sheet).
-// The "עוד" sheet holds the coach surfaces: "המאמן שלי" /my-coach (everyone),
-// "הגדרות" /settings (everyone) and, only for coaches, "ניהול מתאמנים" /coach.
-// Coach destinations no longer live in the bar itself — keeping it a stable
-// 5-up grid regardless of role.
-// The unread coach-message badge moves to the "עוד" tab.
+// Trainee tabs: בית /, אימון /workout, התקדמות /progress, תזונה /nutrition.
+// Coach tabs:   בית /coach, מתאמנים /coach/clients, הודעות /coach/messages,
+//               תוכניות /coach/programs (the coach IS the primary experience).
+// The "עוד" sheet per role — trainee: המאמן שלי + הגדרות; coach: האימונים שלי
+// (/me, the personal-training secondary mode) + הגדרות.
+// Unread badge: trainee on "עוד"; coach directly on the הודעות tab.
 //
 // Motion (GSAP): a single shared underlay pill flows between tab slots as the
 // route changes (measured physical rects → RTL-correct with no sign flipping).
@@ -55,14 +57,32 @@ interface NavDestination {
   icon: LucideIcon;
 }
 
-const MAIN_TABS: readonly NavDestination[] = [
+const TRAINEE_MAIN_TABS: readonly NavDestination[] = [
   { path: '/', label: 'בית', icon: LayoutDashboard },
   { path: '/workout', label: 'אימון', icon: Dumbbell },
   { path: '/progress', label: 'התקדמות', icon: TrendingUp },
   { path: '/nutrition', label: 'תזונה', icon: UtensilsCrossed },
 ] as const;
 
-const MORE_PATHS = ['/my-coach', '/coach', '/settings'] as const;
+const COACH_MAIN_TABS: readonly NavDestination[] = [
+  { path: '/coach', label: 'בית', icon: LayoutDashboard },
+  { path: '/coach/clients', label: 'מתאמנים', icon: Users },
+  { path: '/coach/messages', label: 'הודעות', icon: MessageSquare },
+  { path: '/coach/programs', label: 'תוכניות', icon: ClipboardList },
+] as const;
+
+const TRAINEE_MORE_PATHS: readonly string[] = ['/my-coach', '/settings'];
+// While a coach is in personal-training mode (/me and the shared personal
+// surfaces), the "עוד" tab reads as active — those screens live in its sheet.
+const COACH_MORE_PATHS: readonly string[] = [
+  '/me',
+  '/workout',
+  '/progress',
+  '/nutrition',
+  '/templates',
+  '/detail',
+  '/settings',
+];
 
 /** Whether `pathname` matches a nav destination (exact for "/", prefix otherwise). */
 function matchesPath(pathname: string, path: string): boolean {
@@ -176,16 +196,26 @@ function BottomNav() {
   const firstRunRef = useRef(true);
   const prevUnreadRef = useRef(unread);
 
+  const mainTabs = isCoach ? COACH_MAIN_TABS : TRAINEE_MAIN_TABS;
+  const morePaths = isCoach ? COACH_MORE_PATHS : TRAINEE_MORE_PATHS;
+
   const isMoreActive = useMemo(
-    () => MORE_PATHS.some((p) => matchesPath(location.pathname, p)),
-    [location.pathname]
+    () => morePaths.some((p) => matchesPath(location.pathname, p)),
+    [location.pathname, morePaths]
   );
 
+  // Longest match wins so nested coach paths light the right tab
+  // (/coach/clients/:id → מתאמנים, not בית which is a prefix of everything).
+  const activeMainPath = useMemo(() => {
+    const matches = mainTabs.filter(({ path }) => matchesPath(location.pathname, path));
+    if (matches.length === 0) return undefined;
+    return matches.reduce((best, t) => (t.path.length > best.path.length ? t : best)).path;
+  }, [location.pathname, mainTabs]);
+
   const activeKey = useMemo(() => {
-    const main = MAIN_TABS.find(({ path }) => matchesPath(location.pathname, path));
-    if (main) return main.path;
+    if (activeMainPath) return activeMainPath;
     return isMoreActive ? 'more' : undefined;
-  }, [location.pathname, isMoreActive]);
+  }, [activeMainPath, isMoreActive]);
 
   // Whether GSAP has loaded yet. Before it does, pill moves snap instantly via
   // direct DOM styles (no animation); after, transitions flow smoothly.
@@ -291,11 +321,16 @@ function BottomNav() {
   }, [reduced]);
 
   const moreItems = useMemo<NavDestination[]>(
-    () => [
-      { path: '/my-coach', label: 'המאמן שלי', icon: UserCog },
-      ...(isCoach ? [{ path: '/coach', label: 'ניהול מתאמנים', icon: Users }] : []),
-      { path: '/settings', label: 'הגדרות', icon: Settings },
-    ],
+    () =>
+      isCoach
+        ? [
+            { path: '/me', label: 'האימונים שלי', icon: Dumbbell },
+            { path: '/settings', label: 'הגדרות', icon: Settings },
+          ]
+        : [
+            { path: '/my-coach', label: 'המאמן שלי', icon: UserCog },
+            { path: '/settings', label: 'הגדרות', icon: Settings },
+          ],
     [isCoach]
   );
 
@@ -344,14 +379,15 @@ function BottomNav() {
             }}
           />
 
-          {MAIN_TABS.map(({ path, label, icon }) => {
-            const isActive = matchesPath(location.pathname, path);
+          {mainTabs.map(({ path, label, icon }) => {
+            const isActive = path === activeMainPath;
+            const tabBadge = isCoach && path === '/coach/messages' ? unread : 0;
             return (
               <li key={path} className="flex-1 h-full">
                 <Link
                   to={path}
                   aria-current={isActive ? 'page' : undefined}
-                  aria-label={label}
+                  aria-label={tabBadge > 0 ? `${label} (${tabBadge} הודעות שלא נקראו)` : label}
                   onTouchStart={() => prefetchRoute(path)}
                   onMouseEnter={() => prefetchRoute(path)}
                   onClick={(e) => {
@@ -368,13 +404,14 @@ function BottomNav() {
                   }}
                   className={TAB_CLASS}
                 >
-                  <TabVisual icon={icon} label={label} isActive={isActive} />
+                  <TabVisual icon={icon} label={label} isActive={isActive} badgeCount={tabBadge} />
                 </Link>
               </li>
             );
           })}
 
-          {/* "עוד" — opens the coach sheet; carries the unread badge. */}
+          {/* "עוד" — opens the role sheet; for trainees it carries the unread
+              badge (coaches see it on the הודעות tab instead). */}
           <li className="flex-1 h-full">
             <button
               type="button"
@@ -382,14 +419,14 @@ function BottomNav() {
               aria-haspopup="dialog"
               aria-expanded={moreOpen}
               aria-current={isMoreActive ? 'page' : undefined}
-              aria-label={unread > 0 ? `עוד (${unread} הודעות שלא נקראו)` : 'עוד'}
+              aria-label={!isCoach && unread > 0 ? `עוד (${unread} הודעות שלא נקראו)` : 'עוד'}
               className={TAB_CLASS}
             >
               <TabVisual
                 icon={MoreHorizontal}
                 label="עוד"
                 isActive={isMoreActive}
-                badgeCount={unread}
+                badgeCount={isCoach ? 0 : unread}
               />
             </button>
           </li>

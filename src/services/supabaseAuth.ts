@@ -40,6 +40,10 @@ const USER_SCOPED_LS_KEYS: readonly string[] = [
   'workout_prefs',
   'last_sync_time',
   'notification_settings',
+  // Role-split state: a stale coach intent or cached role must never leak to
+  // the next account on a shared device (it would promote/misroute them).
+  'pending_coach_intent',
+  'cached_role',
 ];
 
 /**

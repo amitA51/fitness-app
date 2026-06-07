@@ -1,5 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
-import { DEFAULT_ONBOARDING, type OnboardingData, STEPS } from './types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  DEFAULT_ONBOARDING,
+  type OnboardingData,
+  type OnboardingStep,
+  stepsForRole,
+} from './types';
 
 export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) {
   const [currentStep, setCurrentStep] = useState(() => {
@@ -19,6 +24,15 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
     }
   });
 
+  // The step list is role-derived: coaches skip the trainee-only steps
+  // (goals/experience/preferences). All indexing below runs against this list.
+  const activeSteps: OnboardingStep[] = useMemo(() => stepsForRole(data.role), [data.role]);
+
+  // Switching role at the role step shrinks/grows the list; clamp a persisted
+  // index so it can never point past the end of the new list.
+  const safeStep = Math.min(currentStep, activeSteps.length - 1);
+  const stepId = activeSteps[safeStep]?.id ?? 'welcome';
+
   useEffect(() => {
     try {
       sessionStorage.setItem('onboarding_step', String(currentStep));
@@ -33,42 +47,53 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
   }, []);
 
   const goNext = useCallback(() => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep((prev) => prev + 1);
+    if (safeStep < activeSteps.length - 1) {
+      setCurrentStep(safeStep + 1);
     } else {
       onComplete(data);
     }
-  }, [currentStep, data, onComplete]);
+  }, [safeStep, activeSteps.length, data, onComplete]);
 
   const goBack = useCallback(() => {
-    if (currentStep > 0) {
-      setCurrentStep((prev) => prev - 1);
+    if (safeStep > 0) {
+      setCurrentStep(safeStep - 1);
     }
-  }, [currentStep]);
+  }, [safeStep]);
 
   // Per-step reason the user cannot advance yet — null when the step is valid.
   // Surfaced near the disabled "הבא" button so the block is explained, not silent.
+  // Keyed by step id (not index) so the role-derived list stays correct.
   const validationHint = useCallback((): string | null => {
-    switch (currentStep) {
-      case 1:
+    switch (stepId) {
+      case 'role':
         return data.role === undefined || data.role === '' ? 'בחר תפקיד כדי להמשיך' : null;
-      case 2:
+      case 'profile':
         if (data.name.trim().length === 0) return 'הזן את שמך כדי להמשיך';
         if (data.gender === '') return 'בחר מגדר כדי להמשיך';
         if (data.age === '') return 'הזן את גילך כדי להמשיך';
         return null;
-      case 3:
+      case 'goals':
         return data.primaryGoal === '' ? 'בחר מטרה עיקרית כדי להמשיך' : null;
-      case 4:
+      case 'experience':
         return data.experienceLevel === '' ? 'בחר רמת ניסיון כדי להמשיך' : null;
-      case 5:
+      case 'preferences':
         return data.preferredTime === '' ? 'בחר שעת אימון מועדפת כדי להמשיך' : null;
       default:
         return null;
     }
-  }, [currentStep, data]);
+  }, [stepId, data]);
 
   const canProceed = useCallback(() => validationHint() === null, [validationHint]);
 
-  return { currentStep, data, updateData, goNext, goBack, canProceed, validationHint };
+  return {
+    currentStep: safeStep,
+    stepId,
+    activeSteps,
+    data,
+    updateData,
+    goNext,
+    goBack,
+    canProceed,
+    validationHint,
+  };
 }

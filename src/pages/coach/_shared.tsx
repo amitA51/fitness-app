@@ -17,12 +17,15 @@ export function CoachPage({
   title,
   subtitle,
   onBack,
+  hideBack = false,
   actions,
   children,
 }: {
   title: string;
   subtitle?: string;
   onBack?: () => void;
+  /** Root tab screens (coach home) have no "back" — hide the chevron. */
+  hideBack?: boolean;
   actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -40,10 +43,12 @@ export function CoachPage({
         style={{ borderBottom: '1px solid var(--fs-surface-2)' }}
       >
         {/* 44×44 back control with focus ring (foundation Button, icon size). */}
-        <Button variant="ghost" size="icon" onClick={back} aria-label="חזרה" className="shrink-0">
-          {/* In RTL the chevron points back (toward the inline-start the user came from). */}
-          <ChevronRight size={20} aria-hidden="true" />
-        </Button>
+        {!hideBack && (
+          <Button variant="ghost" size="icon" onClick={back} aria-label="חזרה" className="shrink-0">
+            {/* In RTL the chevron points back (toward the inline-start the user came from). */}
+            <ChevronRight size={20} aria-hidden="true" />
+          </Button>
+        )}
         <div className="flex-1 min-w-0">
           <h1
             style={{

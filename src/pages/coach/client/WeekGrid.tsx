@@ -40,19 +40,33 @@ function buildAriaLabel(days: DayAdherence[]): string {
         (d) => d.calories != null && d.targetCalories != null && d.calories <= d.targetCalories
       ).length
     : null;
+  const scheduledTotal = days.reduce((sum, d) => sum + d.scheduled, 0);
+  const completedScheduled = days.reduce((sum, d) => sum + d.completedScheduled, 0);
   let label = `גריד 7 ימים: ${workoutDays} ימי אימון`;
   if (onTargetDays !== null) label += `, עמידה ביעד קלורי ${onTargetDays} ימים`;
+  if (scheduledTotal > 0)
+    label += `, ${completedScheduled} מתוך ${scheduledTotal} אימונים מתוכננים בוצעו`;
   return label;
 }
 
 function buildSummaryLine(days: DayAdherence[]): string | null {
   const hasTarget = days.some((d) => d.targetCalories != null);
-  if (!hasTarget) return null;
+  const scheduledTotal = days.reduce((sum, d) => sum + d.scheduled, 0);
+  if (!hasTarget && scheduledTotal === 0) return null;
+  const parts: string[] = [];
   const workouts = days.filter((d) => d.sessions > 0).length;
-  const onTarget = days.filter(
-    (d) => d.calories != null && d.targetCalories != null && d.calories <= d.targetCalories
-  ).length;
-  return `${workouts} אימונים · עמידה ביעד ${onTarget}/7 ימים`;
+  parts.push(`${workouts} אימונים`);
+  if (scheduledTotal > 0) {
+    const done = days.reduce((sum, d) => sum + d.completedScheduled, 0);
+    parts.push(`מתוכנן ${done}/${scheduledTotal}`);
+  }
+  if (hasTarget) {
+    const onTarget = days.filter(
+      (d) => d.calories != null && d.targetCalories != null && d.calories <= d.targetCalories
+    ).length;
+    parts.push(`עמידה ביעד ${onTarget}/7 ימים`);
+  }
+  return parts.join(' · ');
 }
 
 // ---- skeleton ---------------------------------------------------------------
@@ -99,6 +113,8 @@ export function WeekGrid({ clientId }: { clientId: string }) {
           const hasWorkout = day.sessions > 0;
           const barH = calBarHeight(day);
           const barColor = calBarColor(day);
+          const hasScheduled = day.scheduled > 0;
+          const scheduledDone = hasScheduled && day.completedScheduled >= day.scheduled;
 
           return (
             <div
@@ -147,6 +163,29 @@ export function WeekGrid({ clientId }: { clientId: string }) {
                   >
                     {day.sessions}
                   </span>
+                )}
+              </div>
+
+              {/* Scheduled indicator — a ring when planned, filled when all done.
+                  Reserves a fixed-height row so the calories bars stay aligned. */}
+              <div
+                style={{
+                  height: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {hasScheduled && (
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 999,
+                      background: scheduledDone ? 'var(--fs-accent)' : 'transparent',
+                      border: '1px solid var(--fs-accent)',
+                    }}
+                  />
                 )}
               </div>
 

@@ -1,5 +1,8 @@
 // ============================================================================
-// PROGRAM BUILDER — coach assembles a multi-day program for one client
+// PROGRAM BUILDER — coach assembles a multi-day program.
+// Two modes: client mode (clientId set → "שייך תוכנית" assigns to that client)
+// and library mode (no clientId → build + save to the coach's program library
+// only; assignment happens from the client/group surfaces).
 // ============================================================================
 // Rendered as a foundation <Sheet> (focus trap, scroll lock, Esc, RTL chrome)
 // instead of the former hardcoded z-index:9999 full-screen overlay.
@@ -10,7 +13,7 @@ import { Button } from '../../components/ui/Button';
 import { showToast } from '../../components/ui/GlobalToast';
 import { Input } from '../../components/ui/Input';
 import { Sheet } from '../../components/ui/Sheet';
-import { createAssignment, upsertClientTemplate } from '../../services/coach';
+import { assignProgramToGroup, createAssignment, upsertClientTemplate } from '../../services/coach';
 import {
   listProgramTemplates,
   saveProgramTemplate,
@@ -37,9 +40,15 @@ const freshDays = (): ProgramDay[] => [{ name: 'יום A', exercises: [] }];
 
 export default function ProgramBuilder({
   clientId,
+  groupId,
   isOpen,
   onClose,
-}: { clientId: string; isOpen: boolean; onClose: () => void }) {
+}: {
+  clientId?: string | null;
+  groupId?: string | null;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
   const [programName, setProgramName] = useState('');
   const [days, setDays] = useState<ProgramDay[]>(freshDays);
   const [busy, setBusy] = useState(false);
@@ -205,6 +214,7 @@ export default function ProgramBuilder({
   };
 
   const handleAssign = async () => {
+    if (!clientId) return; // library mode — assignment happens elsewhere
     if (!canAssign) {
       setSubmitError('יש להוסיף לפחות תרגיל אחד ושם לכל יום');
       return;
@@ -232,6 +242,38 @@ export default function ProgramBuilder({
       onClose();
     } catch {
       showToast('שיוך התוכנית נכשל', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleAssignGroup = async () => {
+    if (!groupId) return; // not in group mode
+    if (!canAssign) {
+      setSubmitError('יש להוסיף לפחות תרגיל אחד ושם לכל יום');
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await assignProgramToGroup({
+        groupId,
+        programName: programName || 'תוכנית אימון',
+        days: days.map((day) => ({ name: day.name, template: buildTemplate(day) })),
+      });
+      if (result.memberCount === 0) {
+        showToast('אין מתאמנים פעילים בקבוצה', 'error');
+        return;
+      }
+      const succeeded = result.memberCount - result.failures.length;
+      if (result.failures.length > 0) {
+        // Numbers render LTR inside the RTL string via embedded markers.
+        showToast(`התוכנית שויכה ל-⁨${succeeded}⁩ מתוך ⁨${result.memberCount}⁩`, 'success');
+      } else {
+        showToast('התוכנית שויכה לקבוצה', 'success');
+      }
+      onClose();
+    } catch {
+      showToast('שיוך התוכנית לקבוצה נכשל', 'error');
     } finally {
       setBusy(false);
     }
@@ -290,7 +332,7 @@ export default function ProgramBuilder({
           )}
           <div style={{ display: 'flex', gap: 8 }}>
             <Button
-              variant="secondary"
+              variant={clientId || groupId ? 'secondary' : 'primary'}
               fullWidth
               isLoading={savingTemplate}
               onClick={handleSaveToLibrary}
@@ -298,15 +340,28 @@ export default function ProgramBuilder({
             >
               שמור בספרייה
             </Button>
-            <Button
-              variant="primary"
-              fullWidth
-              isLoading={busy}
-              onClick={handleAssign}
-              disabled={!canAssign || busy || savingTemplate}
-            >
-              שייך תוכנית
-            </Button>
+            {clientId && (
+              <Button
+                variant="primary"
+                fullWidth
+                isLoading={busy}
+                onClick={handleAssign}
+                disabled={!canAssign || busy || savingTemplate}
+              >
+                שייך תוכנית
+              </Button>
+            )}
+            {groupId && (
+              <Button
+                variant="primary"
+                fullWidth
+                isLoading={busy}
+                onClick={handleAssignGroup}
+                disabled={!canAssign || busy || savingTemplate}
+              >
+                שייך לקבוצה
+              </Button>
+            )}
           </div>
         </>
       }

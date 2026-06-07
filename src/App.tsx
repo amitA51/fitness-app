@@ -32,6 +32,7 @@ import { GuidanceProvider } from './contexts/GuidanceContext';
 import { type PageAccent, PageThemeProvider } from './contexts/PageThemeContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { PageErrorBoundary } from './errors/PageErrorBoundary';
+import { useCloudDataReflection } from './hooks/useCloudDataReflection';
 import type { OnboardingData } from './pages/OnboardingFlow';
 import { enableCoachMode } from './services/coach';
 import { trackPageView } from './services/eventTracker';
@@ -56,6 +57,8 @@ const WorkoutDetail = lazy(() => import('./pages/WorkoutDetail'));
 
 // Coach platform pages
 const CoachHome = lazy(() => import('./pages/coach/CoachHome'));
+const CoachClients = lazy(() => import('./pages/coach/CoachClients'));
+const CoachPrograms = lazy(() => import('./pages/coach/CoachPrograms'));
 const CoachInvites = lazy(() => import('./pages/coach/CoachInvites'));
 const CoachGroups = lazy(() => import('./pages/coach/CoachGroups'));
 const CoachMessages = lazy(() => import('./pages/coach/CoachMessages'));
@@ -133,6 +136,7 @@ const placeholderItem: PersonalItem = {
 
 const PATH_ACCENT_MAP: Array<[RegExp, PageAccent]> = [
   [/^\/$/, 'dashboard'],
+  [/^\/me$/, 'dashboard'],
   [/^\/workout/, 'workout'],
   [/^\/nutrition/, 'nutrition'],
   [/^\/progress/, 'progress'],
@@ -143,12 +147,19 @@ const PATH_ACCENT_MAP: Array<[RegExp, PageAccent]> = [
 
 const PATH_LABEL_MAP: Array<[RegExp, string]> = [
   [/^\/$/, 'דשבורד'],
+  [/^\/me$/, 'האימונים שלי'],
   [/^\/workout/, 'אימון'],
   [/^\/nutrition/, 'תזונה'],
   [/^\/progress/, 'התקדמות'],
   [/^\/templates/, 'תבניות'],
   [/^\/detail/, 'פרטי אימון'],
   [/^\/settings/, 'הגדרות'],
+  [/^\/coach\/clients/, 'מתאמנים'],
+  [/^\/coach\/programs/, 'תוכניות'],
+  [/^\/coach\/messages/, 'הודעות'],
+  [/^\/coach/, 'מרכז המאמן'],
+  [/^\/my-coach/, 'המאמן שלי'],
+  [/^\/join/, 'חיבור למאמן'],
   [/^\/accessibility/, 'הצהרת נגישות'],
 ];
 
@@ -311,11 +322,13 @@ function AppRouter() {
 
 // ============================================================================
 // Role guards (UX-only — Supabase RLS is the real authorization boundary).
-// CoachGuard keeps non-coaches out of /coach/*. There is intentionally no
-// trainee guard: a trainee is the DEFAULT role, and a guest (local-only, no
-// cloud identity) is treated as a trainee. /my-coach renders for everyone —
-// without a session the coach services simply return an empty state (the
-// "connect with a coach via invite code" entry point), never an auth bounce.
+// Every user is classified server-side (profiles.role) as a coach OR a
+// trainee. CoachGuard keeps non-coaches out of /coach/*; TraineeGuard keeps
+// coaches out of trainee-only surfaces (/my-coach*, /join) — a coach has no
+// coach of their own. Guests (local-only, no cloud identity) are trainees.
+// RoleHome makes "/" land each role on its own home: coach → /coach command
+// center, trainee → personal Dashboard. Coaches reach their own personal
+// training surfaces via /me ("האימונים שלי"), which never redirects.
 // ============================================================================
 
 function CoachGuard({ children }: { children: ReactNode }) {
@@ -323,6 +336,24 @@ function CoachGuard({ children }: { children: ReactNode }) {
   if (loading) return <PageLoader />;
   if (!isCoach) return <Navigate to="/" replace />;
   return <>{children}</>;
+}
+
+function TraineeGuard({ children }: { children: ReactNode }) {
+  const { isCoach, loading } = useCoach();
+  if (loading) return <PageLoader />;
+  if (isCoach) return <Navigate to="/coach" replace />;
+  return <>{children}</>;
+}
+
+function RoleHome() {
+  const { isCoach, loading } = useCoach();
+  if (loading) return <PageLoader />;
+  if (isCoach) return <Navigate to="/coach" replace />;
+  return (
+    <PageErrorBoundary pageLabel="הדשבורד">
+      <Dashboard />
+    </PageErrorBoundary>
+  );
 }
 
 // ============================================================================
@@ -333,10 +364,13 @@ function CoachGuard({ children }: { children: ReactNode }) {
 function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
   return (
     <Routes location={location}>
+      <Route path="/" element={<RoleHome />} />
+      {/* Coach personal-training mode ("האימונים שלי") — same Dashboard, but
+          never role-redirects, so coaches can reach their own training data. */}
       <Route
-        path="/"
+        path="/me"
         element={
-          <PageErrorBoundary pageLabel="הדשבורד">
+          <PageErrorBoundary pageLabel="האימונים שלי">
             <Dashboard />
           </PageErrorBoundary>
         }
@@ -408,6 +442,26 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
         }
       />
       <Route
+        path="/coach/clients"
+        element={
+          <CoachGuard>
+            <PageErrorBoundary pageLabel="מתאמנים">
+              <CoachClients />
+            </PageErrorBoundary>
+          </CoachGuard>
+        }
+      />
+      <Route
+        path="/coach/programs"
+        element={
+          <CoachGuard>
+            <PageErrorBoundary pageLabel="תוכניות">
+              <CoachPrograms />
+            </PageErrorBoundary>
+          </CoachGuard>
+        }
+      />
+      <Route
         path="/coach/invites"
         element={
           <CoachGuard>
@@ -470,27 +524,36 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
       <Route
         path="/my-coach"
         element={
-          <PageErrorBoundary pageLabel="המאמן שלי">
-            <MyCoach />
-          </PageErrorBoundary>
+          <TraineeGuard>
+            <PageErrorBoundary pageLabel="המאמן שלי">
+              <MyCoach />
+            </PageErrorBoundary>
+          </TraineeGuard>
         }
       />
       <Route
         path="/my-coach/messages/:otherId"
         element={
-          <PageErrorBoundary pageLabel="שיחה">
-            <MessageThread viewer="trainee" />
-          </PageErrorBoundary>
+          <TraineeGuard>
+            <PageErrorBoundary pageLabel="שיחה">
+              <MessageThread viewer="trainee" />
+            </PageErrorBoundary>
+          </TraineeGuard>
         }
       />
       <Route
         path="/my-coach/groups/:groupId/chat"
         element={
-          <PageErrorBoundary pageLabel="צ׳אט קבוצתי">
-            <GroupThread viewer="member" />
-          </PageErrorBoundary>
+          <TraineeGuard>
+            <PageErrorBoundary pageLabel="צ׳אט קבוצתי">
+              <GroupThread viewer="member" />
+            </PageErrorBoundary>
+          </TraineeGuard>
         }
       />
+      {/* /join stays reachable for coaches too — JoinPage itself explains that
+          coaches cannot link to another coach (clearer than a silent bounce
+          when someone opens an invite deep link). */}
       <Route
         path="/join"
         element={
@@ -519,6 +582,9 @@ const MemoizedBottomNav = memo(BottomNav);
 function AppShell() {
   const location = useLocation();
   const reduceMotion = useReducedMotion() ?? false;
+  // Reflect coach edits to trainee-owned data live (pull-on-mount + realtime
+  // merge). Self-guards for guests / unconfigured Supabase.
+  useCloudDataReflection();
   const mainRef = useRef<HTMLElement | null>(null);
   const prevPathRef = useRef<string | null>(null);
 

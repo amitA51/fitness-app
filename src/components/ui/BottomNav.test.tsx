@@ -1,0 +1,121 @@
+// ============================================================================
+// BottomNav — role-branched navigation tests
+// Trainee: בית/אימון/התקדמות/תזונה + sheet(המאמן שלי, הגדרות).
+// Coach:   בית/מתאמנים/הודעות/תוכניות + sheet(האימונים שלי, הגדרות);
+//          unread badge moves from "עוד" to the הודעות tab.
+// ============================================================================
+
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import BottomNav from './BottomNav';
+
+let mockIsCoach = false;
+vi.mock('../../contexts/CoachContext', () => ({
+  useCoach: () => ({ isCoach: mockIsCoach, role: mockIsCoach ? 'coach' : 'trainee' }),
+}));
+
+let mockUnread = 0;
+vi.mock('../../hooks/useUnreadMessages', () => ({
+  useUnreadMessages: () => mockUnread,
+}));
+
+vi.mock('../../hooks/useReducedMotion', () => ({
+  useReducedMotion: () => true,
+}));
+
+vi.mock('../../utils/routePrefetch', () => ({
+  prefetchRoute: vi.fn(),
+}));
+
+const renderNav = (initialPath = '/') =>
+  render(
+    <MemoryRouter initialEntries={[initialPath]}>
+      <BottomNav />
+    </MemoryRouter>
+  );
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockIsCoach = false;
+  mockUnread = 0;
+});
+
+describe('BottomNav per role', () => {
+  it('renders the trainee tab set for trainees', () => {
+    renderNav('/');
+
+    expect(screen.getByRole('link', { name: 'בית' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'אימון' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'התקדמות' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'תזונה' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /מתאמנים/ })).toBeNull();
+  });
+
+  it('renders the coach tab set for coaches', () => {
+    mockIsCoach = true;
+    renderNav('/coach');
+
+    expect(screen.getByRole('link', { name: 'בית' })).toHaveAttribute('href', '/coach');
+    expect(screen.getByRole('link', { name: 'מתאמנים' })).toHaveAttribute('href', '/coach/clients');
+    expect(screen.getByRole('link', { name: /הודעות/ })).toHaveAttribute('href', '/coach/messages');
+    expect(screen.getByRole('link', { name: 'תוכניות' })).toHaveAttribute(
+      'href',
+      '/coach/programs'
+    );
+    expect(screen.queryByRole('link', { name: 'תזונה' })).toBeNull();
+  });
+
+  it('marks the deepest matching coach tab active (clients over home)', () => {
+    mockIsCoach = true;
+    renderNav('/coach/clients/abc');
+
+    expect(screen.getByRole('link', { name: 'מתאמנים' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'בית' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('puts the unread badge on the הודעות tab for coaches, not on עוד', () => {
+    mockIsCoach = true;
+    mockUnread = 3;
+    renderNav('/coach');
+
+    expect(screen.getByRole('link', { name: 'הודעות (3 הודעות שלא נקראו)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'עוד' })).toBeInTheDocument();
+  });
+
+  it('keeps the unread badge on עוד for trainees', () => {
+    mockUnread = 2;
+    renderNav('/');
+
+    expect(screen.getByRole('button', { name: 'עוד (2 הודעות שלא נקראו)' })).toBeInTheDocument();
+  });
+
+  it('offers האימונים שלי in the coach sheet and המאמן שלי in the trainee sheet', async () => {
+    const user = userEvent.setup();
+
+    // Trainee sheet
+    renderNav('/');
+    await user.click(screen.getByRole('button', { name: 'עוד' }));
+    expect(await screen.findByRole('link', { name: 'המאמן שלי' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'האימונים שלי' })).toBeNull();
+  });
+
+  it('coach sheet exposes the personal-training secondary mode at /me', async () => {
+    mockIsCoach = true;
+    const user = userEvent.setup();
+
+    renderNav('/coach');
+    await user.click(screen.getByRole('button', { name: 'עוד' }));
+    const personal = await screen.findByRole('link', { name: 'האימונים שלי' });
+    expect(personal).toHaveAttribute('href', '/me');
+    expect(screen.queryByRole('link', { name: 'המאמן שלי' })).toBeNull();
+  });
+
+  it('marks עוד active while a coach is in personal-training mode', () => {
+    mockIsCoach = true;
+    renderNav('/me');
+
+    expect(screen.getByRole('button', { name: 'עוד' })).toHaveAttribute('aria-current', 'page');
+  });
+});

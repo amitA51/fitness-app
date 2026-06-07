@@ -78,7 +78,14 @@ export const revokeInvite = async (id: string): Promise<{ error: string | null }
 
 export interface AcceptResult {
   ok: boolean;
-  error?: 'invalid' | 'expired' | 'seat_limit' | 'already' | 'offline' | 'unknown';
+  error?:
+    | 'invalid'
+    | 'expired'
+    | 'seat_limit'
+    | 'already'
+    | 'offline'
+    | 'unknown'
+    | 'coaches_cannot_join';
   coachId?: string;
 }
 

@@ -84,7 +84,7 @@ describe('computeWeekAdherence', () => {
 
   it('returns exactly 7 entries ending today', () => {
     // Arrange / Act
-    const result = computeWeekAdherence([], [], null, NOW_DATE);
+    const result = computeWeekAdherence([], [], null, [], NOW_DATE);
 
     // Assert
     expect(result).toHaveLength(7);
@@ -98,7 +98,7 @@ describe('computeWeekAdherence', () => {
     const sessions = [{ startTime: localDt.toISOString() }];
 
     // Act
-    const result = computeWeekAdherence(sessions, [], null, NOW_DATE);
+    const result = computeWeekAdherence(sessions, [], null, [], NOW_DATE);
 
     // Assert — Jan 13 is index 4 (Jan 9=0, 10=1, 11=2, 12=3, 13=4, 14=5, 15=6)
     const jan13 = result.find((d) => d.date === '2026-01-13');
@@ -117,7 +117,7 @@ describe('computeWeekAdherence', () => {
     ];
 
     // Act
-    const result = computeWeekAdherence([], nutrition, 2200, NOW_DATE);
+    const result = computeWeekAdherence([], nutrition, 2200, [], NOW_DATE);
 
     // Assert
     const jan15 = result.find((d) => d.date === '2026-01-15');
@@ -134,7 +134,7 @@ describe('computeWeekAdherence', () => {
 
   it('returns 7 days with zero sessions and null calories when inputs are empty', () => {
     // Arrange / Act
-    const result = computeWeekAdherence([], [], null, NOW_DATE);
+    const result = computeWeekAdherence([], [], null, [], NOW_DATE);
 
     // Assert
     expect(result).toHaveLength(7);
@@ -142,7 +142,80 @@ describe('computeWeekAdherence', () => {
       expect(day.sessions).toBe(0);
       expect(day.calories).toBeNull();
       expect(day.targetCalories).toBeNull();
+      expect(day.scheduled).toBe(0);
+      expect(day.completedScheduled).toBe(0);
     }
+  });
+});
+
+describe('computeWeekAdherence — schedule counts', () => {
+  const NOW_DATE = new Date(2026, 0, 15); // Jan 15 2026 00:00:00 local
+
+  it('counts a planned-only scheduled workout as scheduled but not completed', () => {
+    // Arrange
+    const schedule = [{ scheduledDate: '2026-01-13', status: 'planned' }];
+
+    // Act
+    const result = computeWeekAdherence([], [], null, schedule, NOW_DATE);
+
+    // Assert
+    const jan13 = result.find((d) => d.date === '2026-01-13');
+    expect(jan13?.scheduled).toBe(1);
+    expect(jan13?.completedScheduled).toBe(0);
+  });
+
+  it('counts a done scheduled workout toward completedScheduled', () => {
+    // Arrange
+    const schedule = [
+      { scheduledDate: '2026-01-14', status: 'done' },
+      { scheduledDate: '2026-01-14', status: 'planned' },
+    ];
+
+    // Act
+    const result = computeWeekAdherence([], [], null, schedule, NOW_DATE);
+
+    // Assert — two scheduled, one completed on the same day.
+    const jan14 = result.find((d) => d.date === '2026-01-14');
+    expect(jan14?.scheduled).toBe(2);
+    expect(jan14?.completedScheduled).toBe(1);
+  });
+
+  it('treats a skipped scheduled workout as scheduled but not completed', () => {
+    // Arrange
+    const schedule = [{ scheduledDate: '2026-01-12', status: 'skipped' }];
+
+    // Act
+    const result = computeWeekAdherence([], [], null, schedule, NOW_DATE);
+
+    // Assert
+    const jan12 = result.find((d) => d.date === '2026-01-12');
+    expect(jan12?.scheduled).toBe(1);
+    expect(jan12?.completedScheduled).toBe(0);
+  });
+
+  it('ignores scheduled rows that fall outside the 7-day window', () => {
+    // Arrange — a date before the window start (Jan 09).
+    const schedule = [{ scheduledDate: '2026-01-01', status: 'done' }];
+
+    // Act
+    const result = computeWeekAdherence([], [], null, schedule, NOW_DATE);
+
+    // Assert — no day picked it up.
+    const totalScheduled = result.reduce((sum, d) => sum + d.scheduled, 0);
+    expect(totalScheduled).toBe(0);
+  });
+
+  it('attributes a scheduled workout to the correct local date at the window boundary', () => {
+    // Arrange — the last day of the window (today, Jan 15).
+    const schedule = [{ scheduledDate: '2026-01-15', status: 'done' }];
+
+    // Act
+    const result = computeWeekAdherence([], [], null, schedule, NOW_DATE);
+
+    // Assert — index 6 is today; it carries the scheduled+completed count.
+    expect(result[6]!.date).toBe('2026-01-15');
+    expect(result[6]!.scheduled).toBe(1);
+    expect(result[6]!.completedScheduled).toBe(1);
   });
 });
 

@@ -1,5 +1,6 @@
 import { m } from 'framer-motion';
-import { Calendar, Check, Clock, Target } from 'lucide-react';
+import { Calendar, Check, ClipboardList, Clock, Target, UserPlus, Users } from 'lucide-react';
+import type { ReactNode } from 'react';
 import type { OnboardingData } from '../types';
 
 interface CompleteStepProps {
@@ -7,6 +8,7 @@ interface CompleteStepProps {
 }
 
 export function CompleteStep({ data }: CompleteStepProps) {
+  const isCoach = data.role === 'coach';
   const getGoalLabel = (goal: string) => {
     const labels: Record<string, string> = {
       strength: 'בניית כוח',
@@ -55,7 +57,8 @@ export function CompleteStep({ data }: CompleteStepProps) {
           textTransform: 'uppercase',
         }}
       >
-        {data.name ? `${data.name}, ` : ''}מוכן לאימון!
+        {data.name ? `${data.name}, ` : ''}
+        {isCoach ? 'מרכז המאמן מוכן!' : 'מוכן לאימון!'}
       </m.h1>
 
       <m.p
@@ -69,17 +72,38 @@ export function CompleteStep({ data }: CompleteStepProps) {
           marginBottom: '32px',
         }}
       >
-        הפרופיל שלך הוגדר. בואו נתחיל!
+        {isCoach
+          ? 'נהל מתאמנים, שלח תוכניות ויעדים ועקוב אחרי ההתקדמות שלהם — הכל ממקום אחד.'
+          : 'הפרופיל שלך הוגדר. בואו נתחיל!'}
       </m.p>
 
-      {/* Summary Cards */}
+      {/* Summary Cards — coach: what's next; trainee: profile recap */}
       <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
         className="w-full space-y-3"
       >
-        {data.primaryGoal && (
+        {isCoach && (
+          <>
+            <CoachNextCard
+              icon={<UserPlus size={22} />}
+              kicker="צעד ראשון"
+              label="הזמן מתאמנים עם קוד הזמנה"
+            />
+            <CoachNextCard
+              icon={<ClipboardList size={22} />}
+              kicker="צעד שני"
+              label="בנה תוכנית אימון בספרייה"
+            />
+            <CoachNextCard
+              icon={<Users size={22} />}
+              kicker="צעד שלישי"
+              label="עקוב אחרי הביצועים בזמן אמת"
+            />
+          </>
+        )}
+        {!isCoach && data.primaryGoal && (
           <div
             className="p-4 flex items-center gap-4"
             style={{
@@ -124,86 +148,146 @@ export function CompleteStep({ data }: CompleteStepProps) {
           </div>
         )}
 
-        <div
-          className="p-4 flex items-center gap-4"
-          style={{
-            background: 'var(--fs-surface)',
-            border: '1px solid var(--fs-surface-2)',
-            borderRadius: '22px 16px 22px 16px',
-          }}
-        >
+        {!isCoach && (
           <div
-            className="w-12 h-12 flex items-center justify-center shrink-0"
-            style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)', borderRadius: 0 }}
+            className="p-4 flex items-center gap-4"
+            style={{
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--fs-surface-2)',
+              borderRadius: '22px 16px 22px 16px',
+            }}
           >
-            <Calendar size={22} />
-          </div>
-          <div className="text-right flex-1">
-            <p
+            <div
+              className="w-12 h-12 flex items-center justify-center shrink-0"
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '10px',
-                color: 'var(--fs-muted)',
-                letterSpacing: '0.22em',
-                textTransform: 'uppercase',
+                background: 'var(--fs-primary)',
+                color: 'var(--fs-accent)',
+                borderRadius: 0,
               }}
             >
-              תדירות אימונים
-            </p>
-            <p
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontWeight: 700,
-                fontSize: '16px',
-                color: 'var(--fs-ink)',
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              {data.preferredWorkoutDays} ימים בשבוע
-            </p>
+              <Calendar size={22} />
+            </div>
+            <div className="text-right flex-1">
+              <p
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  color: 'var(--fs-muted)',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                תדירות אימונים
+              </p>
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 700,
+                  fontSize: '16px',
+                  color: 'var(--fs-ink)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {data.preferredWorkoutDays} ימים בשבוע
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div
-          className="p-4 flex items-center gap-4"
-          style={{
-            background: 'var(--fs-surface)',
-            border: '1px solid var(--fs-surface-2)',
-            borderRadius: '22px 16px 22px 16px',
-          }}
-        >
+        {!isCoach && (
           <div
-            className="w-12 h-12 flex items-center justify-center shrink-0"
-            style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)', borderRadius: 0 }}
+            className="p-4 flex items-center gap-4"
+            style={{
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--fs-surface-2)',
+              borderRadius: '22px 16px 22px 16px',
+            }}
           >
-            <Clock size={22} />
-          </div>
-          <div className="text-right flex-1">
-            <p
+            <div
+              className="w-12 h-12 flex items-center justify-center shrink-0"
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '10px',
-                color: 'var(--fs-muted)',
-                letterSpacing: '0.22em',
-                textTransform: 'uppercase',
+                background: 'var(--fs-primary)',
+                color: 'var(--fs-accent)',
+                borderRadius: 0,
               }}
             >
-              משך כל אימון
-            </p>
-            <p
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontWeight: 700,
-                fontSize: '16px',
-                color: 'var(--fs-ink)',
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              {data.workoutDuration} דקות
-            </p>
+              <Clock size={22} />
+            </div>
+            <div className="text-right flex-1">
+              <p
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  color: 'var(--fs-muted)',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                משך כל אימון
+              </p>
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 700,
+                  fontSize: '16px',
+                  color: 'var(--fs-ink)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {data.workoutDuration} דקות
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </m.div>
     </m.div>
+  );
+}
+
+/** "What's next" card for the coach completion screen. */
+function CoachNextCard({
+  icon,
+  kicker,
+  label,
+}: { icon: ReactNode; kicker: string; label: string }) {
+  return (
+    <div
+      className="p-4 flex items-center gap-4"
+      style={{
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
+      }}
+    >
+      <div
+        className="w-12 h-12 flex items-center justify-center shrink-0"
+        style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)', borderRadius: 0 }}
+      >
+        {icon}
+      </div>
+      <div className="text-right flex-1">
+        <p
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            color: 'var(--fs-muted)',
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {kicker}
+        </p>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontWeight: 700,
+            fontSize: '16px',
+            color: 'var(--fs-ink)',
+          }}
+        >
+          {label}
+        </p>
+      </div>
+    </div>
   );
 }
