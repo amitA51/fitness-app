@@ -110,6 +110,29 @@ export default function AccessibilityStatement() {
           </p>
         </section>
 
+        {/* ── Scope & conformance level ─────────────────────────────────────── */}
+        <section
+          className="mb-6"
+          style={{
+            background: 'var(--fs-surface)',
+            borderRadius: 'var(--radius-asymmetric)',
+            padding: '20px',
+          }}
+        >
+          <h2 style={SECTION_HEADING_STYLE}>תחולה ורמת התאמה</h2>
+          <p style={BODY_TEXT_STYLE}>
+            הצהרה זו חלה על אפליקציית SparkOS Fitness, לרבות גרסת ה-PWA והגרסאות לנייד.
+          </p>
+          <p style={BODY_TEXT_STYLE}>
+            רמת ההתאמה הנדרשת: תקן ישראלי IS 5568, המעוגן ב-WCAG 2.0 ברמה AA. הבדיקה האחרונה כללה
+            כלים אוטומטיים ובדיקה ידנית עם קוראי מסך.
+          </p>
+          <p style={MUTED_TEXT_STYLE}>
+            אם רכיב כלשהו אינו נגיש עבורך, נשמח לסייע ולספק את המידע בדרך חלופית — ראו פרטי פנייה
+            בהמשך.
+          </p>
+        </section>
+
         {/* ── Implemented accommodations ──────────────────────────────────── */}
         <section
           className="mb-6"
@@ -231,7 +254,7 @@ export default function AccessibilityStatement() {
             paddingBottom: '8px',
           }}
         >
-          תאריך עדכון אחרון: 5 ביוני 2026
+          גרסה 1.1 · תאריך עדכון אחרון: 9 ביוני 2026
         </p>
       </article>
     </div>

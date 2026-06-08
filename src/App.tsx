@@ -20,15 +20,22 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-dom';
+import { AgeGate } from './components/consent/AgeGate';
+import { ConsentGate } from './components/consent/ConsentGate';
+import { CookieConsentBanner } from './components/consent/CookieConsentBanner';
 import { WelcomeGuideSheet } from './components/guidance/WelcomeGuideSheet';
 import BottomNav from './components/ui/BottomNav';
 import { ToastContainer } from './components/ui/GlobalToast';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import { WorkoutProvider } from './components/workout/core';
+import { AgeGateProvider } from './contexts/AgeGateContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CoachProvider, useCoach } from './contexts/CoachContext';
+import { ConsentProvider } from './contexts/ConsentContext';
 import { DataProvider } from './contexts/DataContext';
+import { EntitlementProvider } from './contexts/EntitlementContext';
 import { GuidanceProvider } from './contexts/GuidanceContext';
+import { LocaleProvider } from './contexts/LocaleContext';
 import { type PageAccent, PageThemeProvider } from './contexts/PageThemeContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { PageErrorBoundary } from './errors/PageErrorBoundary';
@@ -68,6 +75,13 @@ const GroupThread = lazy(() => import('./pages/coach/GroupThread'));
 const MyCoach = lazy(() => import('./pages/MyCoach'));
 const JoinPage = lazy(() => import('./pages/JoinPage'));
 const AccessibilityStatement = lazy(() => import('./pages/AccessibilityStatement'));
+const TermsPage = lazy(() => import('./pages/legal/TermsPage'));
+const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'));
+
+// Wave 2 — community feed, public profile, billing paywall
+const CommunityFeed = lazy(() => import('./pages/community/CommunityFeed'));
+const PublicProfilePage = lazy(() => import('./pages/profile/PublicProfilePage'));
+const PaywallScreen = lazy(() => import('./pages/billing/PaywallScreen'));
 
 const WorkoutContent = lazy(async () => {
   const mod = await import('./components/workout/ActiveWorkoutNew');
@@ -161,6 +175,11 @@ const PATH_LABEL_MAP: Array<[RegExp, string]> = [
   [/^\/my-coach/, 'המאמן שלי'],
   [/^\/join/, 'חיבור למאמן'],
   [/^\/accessibility/, 'הצהרת נגישות'],
+  [/^\/legal\/terms/, 'תנאי שימוש'],
+  [/^\/legal\/privacy/, 'מדיניות פרטיות'],
+  [/^\/community/, 'קהילה'],
+  [/^\/u\//, 'פרופיל ציבורי'],
+  [/^\/paywall/, 'מנוי פרימיום'],
 ];
 
 function getPageAccent(path: string): PageAccent {
@@ -191,11 +210,16 @@ const ROUTER_FUTURE = {
 function App() {
   return (
     <MotionConfig reducedMotion="user">
-      <SettingsProvider>
-        <AuthProvider>
-          <AppRouter />
-        </AuthProvider>
-      </SettingsProvider>
+      <LocaleProvider>
+        <SettingsProvider>
+          <AuthProvider>
+            <EntitlementProvider>
+              <AppRouter />
+              <CookieConsentBanner />
+            </EntitlementProvider>
+          </AuthProvider>
+        </SettingsProvider>
+      </LocaleProvider>
     </MotionConfig>
   );
 }
@@ -295,10 +319,18 @@ function AppRouter() {
   }
 
   if (status === 'unauthenticated') {
+    // Legal + accessibility pages must be reachable WITHOUT auth (App Store /
+    // Play require Terms + Privacy links outside the login wall). Everything
+    // else falls through to the Login screen.
     return (
       <BrowserRouter future={ROUTER_FUTURE}>
         <Suspense fallback={<PageLoader />}>
-          <Login />
+          <Routes>
+            <Route path="/legal/terms" element={<TermsPage />} />
+            <Route path="/legal/privacy" element={<PrivacyPage />} />
+            <Route path="/accessibility" element={<AccessibilityStatement />} />
+            <Route path="*" element={<Login />} />
+          </Routes>
         </Suspense>
       </BrowserRouter>
     );
@@ -315,7 +347,15 @@ function AppRouter() {
 
   return (
     <BrowserRouter future={ROUTER_FUTURE}>
-      <AppShell />
+      <AgeGateProvider>
+        <AgeGate>
+          <ConsentProvider>
+            <ConsentGate>
+              <AppShell />
+            </ConsentGate>
+          </ConsentProvider>
+        </AgeGate>
+      </AgeGateProvider>
     </BrowserRouter>
   );
 }
@@ -567,6 +607,46 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
         element={
           <PageErrorBoundary pageLabel="הצהרת נגישות">
             <AccessibilityStatement />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/legal/terms"
+        element={
+          <PageErrorBoundary pageLabel="תנאי שימוש">
+            <TermsPage />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/legal/privacy"
+        element={
+          <PageErrorBoundary pageLabel="מדיניות פרטיות">
+            <PrivacyPage />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/community"
+        element={
+          <PageErrorBoundary pageLabel="קהילה">
+            <CommunityFeed />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/u/:userId"
+        element={
+          <PageErrorBoundary pageLabel="פרופיל ציבורי">
+            <PublicProfilePage />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/paywall"
+        element={
+          <PageErrorBoundary pageLabel="מנוי פרימיום">
+            <PaywallScreen />
           </PageErrorBoundary>
         }
       />

@@ -71,7 +71,7 @@ const COACH_MAIN_TABS: readonly NavDestination[] = [
   { path: '/coach/programs', label: 'תוכניות', icon: ClipboardList },
 ] as const;
 
-const TRAINEE_MORE_PATHS: readonly string[] = ['/my-coach', '/settings'];
+const TRAINEE_MORE_PATHS: readonly string[] = ['/my-coach', '/community', '/settings'];
 // While a coach is in personal-training mode (/me and the shared personal
 // surfaces), the "עוד" tab reads as active — those screens live in its sheet.
 const COACH_MORE_PATHS: readonly string[] = [
@@ -81,6 +81,7 @@ const COACH_MORE_PATHS: readonly string[] = [
   '/nutrition',
   '/templates',
   '/detail',
+  '/community',
   '/settings',
 ];
 
@@ -325,10 +326,12 @@ function BottomNav() {
       isCoach
         ? [
             { path: '/me', label: 'האימונים שלי', icon: Dumbbell },
+            { path: '/community', label: 'קהילה', icon: Users },
             { path: '/settings', label: 'הגדרות', icon: Settings },
           ]
         : [
             { path: '/my-coach', label: 'המאמן שלי', icon: UserCog },
+            { path: '/community', label: 'קהילה', icon: Users },
             { path: '/settings', label: 'הגדרות', icon: Settings },
           ],
     [isCoach]

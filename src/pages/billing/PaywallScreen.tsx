@@ -1,0 +1,379 @@
+// ============================================================================
+// PaywallScreen — /paywall (authed)
+//
+// Presentational plan-comparison screen. No payment SDK is wired yet; the
+// primary CTA is "בקרוב" and disabled so no money can flow. Gating UX only.
+//
+// Design: Fresh Steel / Obsidian. All colors via var(--fs-*) tokens.
+// Numbers render dir="ltr". Both light and dark tested.
+// ============================================================================
+
+import { Check, Crown, Lock, Sparkles, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import type { PremiumFeature } from '../../services/billing/types';
+
+// --------------------------------------------------------------------------
+// Feature catalogue — maps every PREMIUM_FEATURES key to Hebrew display text
+// --------------------------------------------------------------------------
+
+interface FeatureRow {
+  key: PremiumFeature;
+  label: string;
+  description: string;
+  freeValue: string | null;
+  proValue: string;
+}
+
+const FEATURE_ROWS: FeatureRow[] = [
+  {
+    key: 'ai_coach',
+    label: 'מאמן AI',
+    description: 'תוכנית אימון מותאמת אישית מבוססת AI',
+    freeValue: null,
+    proValue: 'גישה מלאה',
+  },
+  {
+    key: 'advanced_progress',
+    label: 'מעקב התקדמות מתקדם',
+    description: 'גרפים, מגמות וניתוח ביצועים לאורך זמן',
+    freeValue: 'בסיסי',
+    proValue: 'מלא',
+  },
+  {
+    key: 'progress_photos',
+    label: 'תמונות התקדמות',
+    description: 'תיעוד חזותי של השינוי הגופני',
+    freeValue: null,
+    proValue: 'ללא הגבלה',
+  },
+  {
+    key: 'cloud_sync',
+    label: 'סנכרון ענן',
+    description: 'גיבוי אוטומטי ורב-מכשיר',
+    freeValue: null,
+    proValue: 'כל המכשירים',
+  },
+  {
+    key: 'data_export',
+    label: 'ייצוא נתונים',
+    description: 'ייצוא האימונים שלך ל-CSV ו-JSON',
+    freeValue: null,
+    proValue: 'CSV ו-JSON',
+  },
+  {
+    key: 'unlimited_templates',
+    label: 'תבניות אימון',
+    description: 'שמירת תוכניות אימון מותאמות אישית',
+    freeValue: 'עד 3',
+    proValue: 'ללא הגבלה',
+  },
+];
+
+// --------------------------------------------------------------------------
+// Sub-components
+// --------------------------------------------------------------------------
+
+function PlanBadge({ variant }: { variant: 'free' | 'pro' }) {
+  const isPro = variant === 'pro';
+  return (
+    <div
+      className="inline-flex items-center gap-1.5 px-3 py-1 mb-3"
+      style={{
+        borderRadius: 'var(--radius-asymmetric)',
+        background: isPro ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+        color: isPro ? 'var(--fs-primary)' : 'var(--fs-ink-muted)',
+        fontFamily: 'var(--font-mono)',
+        fontSize: '11px',
+        fontWeight: 700,
+        letterSpacing: '0.12em',
+        textTransform: 'uppercase',
+      }}
+    >
+      {isPro ? <Crown size={12} aria-hidden="true" /> : <Lock size={12} aria-hidden="true" />}
+      {isPro ? 'פרו' : 'חינם'}
+    </div>
+  );
+}
+
+interface FeatureCheckProps {
+  value: string | null;
+  isPro: boolean;
+}
+
+function FeatureCheck({ value, isPro }: FeatureCheckProps) {
+  if (value === null) {
+    return (
+      <div
+        className="w-5 h-5 flex items-center justify-center"
+        style={{ color: 'var(--color-separator)' }}
+        aria-label="לא זמין"
+      >
+        <span style={{ fontSize: 16, lineHeight: 1 }}>—</span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1.5">
+      <Check
+        size={15}
+        strokeWidth={2.5}
+        style={{ color: isPro ? 'var(--fs-accent)' : 'var(--fs-ink-muted)', flexShrink: 0 }}
+        aria-hidden="true"
+      />
+      <span
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '13px',
+          color: isPro ? 'var(--fs-ink)' : 'var(--fs-ink-muted)',
+        }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Main screen
+// --------------------------------------------------------------------------
+
+export default function PaywallScreen() {
+  const navigate = useNavigate();
+
+  return (
+    <div
+      className="min-h-screen min-h-[100dvh] flex flex-col"
+      dir="rtl"
+      style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
+    >
+      {/* ── Header ── */}
+      <header
+        className="flex items-center gap-3 px-5 pt-safe-top"
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--space-4))',
+          paddingBottom: 'var(--space-4)',
+          borderBottom: '1px solid var(--color-separator)',
+          background: 'var(--fs-surface)',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="flex items-center justify-center w-10 h-10 active:scale-[0.98]"
+          style={{ borderRadius: 'var(--radius-asymmetric)', background: 'var(--fs-surface-2)' }}
+          aria-label="חזרה"
+        >
+          {/* RTL: arrow points right (forward in Hebrew reading direction = back in nav) */}
+          <span
+            style={{
+              display: 'inline-block',
+              transform: 'scaleX(-1)',
+              fontSize: 20,
+              color: 'var(--fs-ink)',
+              lineHeight: 1,
+            }}
+            aria-hidden="true"
+          >
+            ←
+          </span>
+        </button>
+        <h1
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: 20,
+            color: 'var(--fs-ink)',
+            margin: 0,
+          }}
+        >
+          שדרוג לפרו
+        </h1>
+      </header>
+
+      {/* ── Hero ── */}
+      <section className="px-5 py-8 flex flex-col items-center text-center gap-3">
+        <div
+          className="flex items-center justify-center w-16 h-16 mb-1"
+          style={{
+            borderRadius: 'var(--radius-asymmetric)',
+            background: 'var(--fs-accent)',
+          }}
+          aria-hidden="true"
+        >
+          <Sparkles size={32} style={{ color: 'var(--fs-primary)' }} strokeWidth={2} />
+        </div>
+        <h2
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 26,
+            color: 'var(--fs-ink)',
+            margin: 0,
+          }}
+        >
+          הרם את האימון שלך לרמה הבאה
+        </h2>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '15px',
+            color: 'var(--fs-ink-muted)',
+            maxWidth: 320,
+            lineHeight: 1.6,
+            margin: 0,
+          }}
+        >
+          כל הכלים שצריך כדי להתאמן חכם יותר, לעקוב אחרי ההתקדמות ולהגיע ליעדים מהר יותר.
+        </p>
+      </section>
+
+      {/* ── Plan comparison table ── */}
+      <section className="px-4 pb-6">
+        <div
+          style={{
+            borderRadius: 'var(--radius-asymmetric)',
+            border: '1px solid var(--color-separator)',
+            background: 'var(--fs-surface)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Column headers */}
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: '1fr auto auto',
+              padding: 'var(--space-4)',
+              paddingBottom: 'var(--space-3)',
+              borderBottom: '1px solid var(--color-separator)',
+            }}
+          >
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                color: 'var(--fs-ink-muted)',
+                textTransform: 'uppercase',
+              }}
+            >
+              תכונה
+            </span>
+            <div className="flex flex-col items-center" style={{ minWidth: 72 }}>
+              <PlanBadge variant="free" />
+            </div>
+            <div className="flex flex-col items-center" style={{ minWidth: 72 }}>
+              <PlanBadge variant="pro" />
+            </div>
+          </div>
+
+          {/* Feature rows */}
+          {FEATURE_ROWS.map((row, idx) => (
+            <div
+              key={row.key}
+              className="grid items-center"
+              style={{
+                gridTemplateColumns: '1fr auto auto',
+                padding: 'var(--space-3) var(--space-4)',
+                borderBottom:
+                  idx < FEATURE_ROWS.length - 1 ? '1px solid var(--color-separator)' : 'none',
+                gap: '8px',
+              }}
+            >
+              <div className="flex flex-col gap-0.5">
+                <span
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: 'var(--fs-ink)',
+                  }}
+                >
+                  {row.label}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '12px',
+                    color: 'var(--fs-ink-muted)',
+                  }}
+                >
+                  {row.description}
+                </span>
+              </div>
+              <div className="flex items-center justify-center" style={{ minWidth: 72 }}>
+                <FeatureCheck value={row.freeValue} isPro={false} />
+              </div>
+              <div className="flex items-center justify-center" style={{ minWidth: 72 }}>
+                <FeatureCheck value={row.proValue} isPro={true} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Pricing note ── */}
+      <section className="px-5 pb-4 flex flex-col items-center gap-2">
+        <div
+          className="flex items-center gap-2 px-4 py-3 w-full"
+          style={{
+            borderRadius: 'var(--radius-asymmetric)',
+            background: 'var(--fs-surface-2)',
+            border: '1px solid var(--color-separator)',
+          }}
+        >
+          <Zap size={16} style={{ color: 'var(--fs-accent)', flexShrink: 0 }} aria-hidden="true" />
+          <span
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
+              color: 'var(--fs-ink-muted)',
+              lineHeight: 1.5,
+            }}
+          >
+            מנוי פרימיום יושק בקרוב. הירשמ/י לרשימת ההמתנה וקבל/י גישה מוקדמת.
+          </span>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section
+        className="px-5 pb-safe-bottom flex flex-col items-center gap-3"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--space-6))' }}
+      >
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          className="w-full flex items-center justify-center gap-2"
+          style={{
+            height: 52,
+            borderRadius: 'var(--radius-asymmetric)',
+            background: 'var(--fs-surface-2)',
+            color: 'var(--fs-ink-muted)',
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: '16px',
+            border: '1px solid var(--color-separator)',
+            cursor: 'not-allowed',
+            opacity: 0.7,
+          }}
+        >
+          <Crown size={18} aria-hidden="true" />
+          בקרוב
+        </button>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '12px',
+            color: 'var(--fs-ink-muted)',
+            margin: 0,
+            textAlign: 'center',
+          }}
+        >
+          ביטול בכל עת. ללא התחייבות.
+        </p>
+      </section>
+    </div>
+  );
+}

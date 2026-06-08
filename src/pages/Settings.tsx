@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { SectionLabel } from '../components/ui/SettingsSectionLabel';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { deleteAllUserData } from '../services/settingsService';
@@ -12,9 +11,12 @@ import { CloudSyncSection } from './settings/sections/CloudSyncSection';
 import { CoachSection } from './settings/sections/CoachSection';
 import { DangerZoneSection } from './settings/sections/DangerZoneSection';
 import { DataAboutSection } from './settings/sections/DataAboutSection';
+import { DateTimeSection } from './settings/sections/DateTimeSection';
 import { ExportSection } from './settings/sections/ExportSection';
 import { GuidanceSection } from './settings/sections/GuidanceSection';
+import { LegalLinksSection } from './settings/sections/LegalLinksSection';
 import { NotificationsSection } from './settings/sections/NotificationsSection';
+import { ProfileEditSection } from './settings/sections/ProfileEditSection';
 import { ProfileSection } from './settings/sections/ProfileSection';
 import { ThemeSection } from './settings/sections/ThemeSection';
 import { WorkoutPrefsSection } from './settings/sections/WorkoutPrefsSection';
@@ -112,7 +114,11 @@ export default function Settings() {
           profileSaved={state.profileSaved}
         />
 
+        <ProfileEditSection />
+
         <ThemeSection />
+
+        <DateTimeSection />
 
         <GuidanceSection />
 
@@ -176,29 +182,11 @@ export default function Settings() {
           </p>
         )}
 
-        <DataAboutSection />
+        {/* Legal & privacy hub — terms, privacy, accessibility + tracking consent */}
+        <SectionLabel>משפטי ופרטיות</SectionLabel>
+        <LegalLinksSection />
 
-        {/* Accessibility statement link — required by Israeli IS 5568 regulations */}
-        <div
-          style={{
-            marginTop: '24px',
-            paddingTop: '16px',
-            borderTop: '1px solid var(--fs-border)',
-            textAlign: 'center',
-          }}
-        >
-          <Link
-            to="/accessibility"
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: '14px',
-              color: 'var(--fs-accent)',
-              textDecoration: 'underline',
-            }}
-          >
-            הצהרת נגישות
-          </Link>
-        </div>
+        <DataAboutSection />
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ import { RootErrorBoundary } from './errors/RootErrorBoundary';
 import { initAI } from './services/ai/bootstrap';
 import { checkMissedWorkouts } from './services/notificationService';
 import { initOfflineSync } from './services/offlineQueue';
+import { hasAnalyticsConsent, onTrackingConsentChange } from './services/tracking/trackingConsent';
 import { initWebVitals } from './services/webVitals';
 import { logger } from './utils/logger';
 import './styles/global.css';
@@ -20,24 +21,44 @@ import './styles/motion.css';
 import './styles/typography.css';
 import './styles/components.css';
 
-// Initialize Sentry error tracking
-const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
-if (sentryDsn) {
-  Sentry.init({
-    dsn: sentryDsn,
-    environment: import.meta.env.MODE,
-    tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
-    sendDefaultPii: false,
-    beforeSend(event) {
-      if (event.extra?.data) {
-        event.extra.data = undefined;
-      }
-      return event;
-    },
+// Analytics / error-monitoring (Sentry + web-vitals) initialise ONLY after the
+// user grants analytics consent (Consent-Mode pattern). Until then they stay
+// off; the local window error logging below still works.
+let analyticsStarted = false;
+function startAnalytics() {
+  if (analyticsStarted) return;
+  analyticsStarted = true;
+
+  const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
+  if (sentryDsn) {
+    Sentry.init({
+      dsn: sentryDsn,
+      environment: import.meta.env.MODE,
+      tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
+      sendDefaultPii: false,
+      beforeSend(event) {
+        if (event.extra?.data) {
+          event.extra.data = undefined;
+        }
+        return event;
+      },
+    });
+    logger.app.info('Sentry initialized (analytics consent granted)');
+  } else if (import.meta.env.PROD) {
+    logger.app.warn('Sentry NOT initialized — error reporting disabled in production');
+  }
+
+  // Web-vitals reports through Sentry, so it shares the same analytics consent.
+  initWebVitals();
+}
+
+if (hasAnalyticsConsent()) {
+  startAnalytics();
+} else {
+  // Start live the moment the user opts in via the cookie banner.
+  onTrackingConsentChange((consent) => {
+    if (consent.analytics) startAnalytics();
   });
-  logger.app.info('Sentry initialized');
-} else if (import.meta.env.PROD) {
-  logger.app.warn('Sentry NOT initialized — error reporting disabled in production');
 }
 
 // Initialize accessibility checker in development
@@ -52,8 +73,7 @@ if (import.meta.env.DEV) {
     });
 }
 
-// Initialize web vitals monitoring
-initWebVitals();
+// Web-vitals is started inside startAnalytics() once analytics consent is granted.
 
 // Local logging only. Sentry.init installs its own global error /
 // unhandledrejection handlers, so we must NOT call Sentry.captureException here
