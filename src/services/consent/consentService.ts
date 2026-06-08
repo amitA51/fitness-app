@@ -53,14 +53,20 @@ export async function recordConsent(
   options: RecordConsentOptions = {}
 ): Promise<void> {
   if (!supabase) return;
-  const { error } = await supabase.rpc('record_consent', {
-    _doc_type: docType,
-    _version: version,
-    _locale: options.locale ?? 'he',
-    _is_minor: options.isMinor ?? false,
-    _guardian_ack: options.guardianAck ?? false,
-  });
-  if (error) throw error;
+  // Fail-safe: log and return on failure — never throw. Throwing here would
+  // break ConsentContext.accept() (the consent gate would never dismiss).
+  try {
+    const { error } = await supabase.rpc('record_consent', {
+      _doc_type: docType,
+      _version: version,
+      _locale: options.locale ?? 'he',
+      _is_minor: options.isMinor ?? false,
+      _guardian_ack: options.guardianAck ?? false,
+    });
+    if (error) logger.db.error('record_consent failed', error);
+  } catch (err) {
+    logger.db.error('record_consent threw', err);
+  }
 }
 
 /** Records consent for every document that currently needs it. */

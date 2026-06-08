@@ -44,6 +44,7 @@ import {
   listAchievements,
 } from '../../services/profile/profileService';
 import type { Achievement, ProfilePublic } from '../../services/profile/types';
+import { getInitials } from '../../utils/getInitials';
 
 // ── Badge icon resolver ───────────────────────────────────────────────────
 // Achievement.icon is a free-form string from the catalog; the service defaults
@@ -71,15 +72,6 @@ const BADGE_ICONS: Record<string, LucideIcon> = {
 };
 
 const getBadgeIcon = (name: string): LucideIcon => BADGE_ICONS[name] ?? Award;
-
-const getInitials = (name: string): string =>
-  name
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
 type LoadState = 'loading' | 'error' | 'ready';
 
@@ -330,7 +322,14 @@ export default function PublicProfilePage() {
 
     (async () => {
       try {
-        const p = await getPublicProfile(userId);
+        // Launch all three reads together — each is fail-safe (returns
+        // null/[] rather than throwing), so the badge reads are harmless even
+        // when the profile turns out to be missing/private.
+        const [p, earned, catalog] = await Promise.all([
+          getPublicProfile(userId),
+          getUserAchievements(userId),
+          listAchievements(),
+        ]);
         if (!active) return;
         if (!p) {
           setProfile(null);
@@ -340,11 +339,6 @@ export default function PublicProfilePage() {
         setProfile(p);
 
         // Resolve earned badges against the catalog for titles/icons.
-        const [earned, catalog] = await Promise.all([
-          getUserAchievements(userId),
-          listAchievements(),
-        ]);
-        if (!active) return;
         const byId = new Map(catalog.map((a) => [a.id, a]));
         const resolved = earned
           .map((e) => byId.get(e.achievementId))

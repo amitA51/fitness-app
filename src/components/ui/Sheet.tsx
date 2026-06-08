@@ -25,6 +25,8 @@ export interface SheetProps {
   footer?: React.ReactNode;
   /** Accessibility label for the dialog; defaults to `title`. */
   ariaLabel?: string;
+  /** CSS selector for the element to focus initially (e.g. the heading for read-only sheets). */
+  initialFocusSelector?: string;
 }
 
 /**
@@ -42,6 +44,7 @@ export const Sheet: React.FC<SheetProps> = ({
   children,
   footer,
   ariaLabel,
+  initialFocusSelector,
 }) => {
   const titleId = useId();
 
@@ -52,6 +55,7 @@ export const Sheet: React.FC<SheetProps> = ({
       variant="bottomSheet"
       ariaLabel={ariaLabel}
       ariaLabelledBy={ariaLabel ? undefined : titleId}
+      initialFocusSelector={initialFocusSelector}
     >
       <div
         className="flex flex-col w-full"

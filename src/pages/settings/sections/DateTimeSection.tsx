@@ -56,6 +56,14 @@ const FIRST_DAY_OPTIONS: { value: FirstDayOfWeek; label: string }[] = [
   { value: 1, label: 'שני (אירופה)' },
 ];
 
+/** Narrows an untrusted select value to a supported {@link DateFormat}. */
+const isDateFormat = (value: string): value is DateFormat =>
+  DATE_FORMAT_OPTIONS.some((opt) => opt.value === value);
+
+/** Narrows an untrusted select value to a supported {@link FirstDayOfWeek}. */
+const isFirstDayOfWeek = (value: number): value is FirstDayOfWeek =>
+  FIRST_DAY_OPTIONS.some((opt) => opt.value === value);
+
 // --------------------------------------------------------------------------
 // Shared select style — used across all <select> controls in this section
 // --------------------------------------------------------------------------
@@ -124,7 +132,9 @@ export function DateTimeSection() {
   // ── Date format ──
   const handleDateFormat = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      persist({ dateFormat: e.target.value as DateFormat });
+      const value = e.target.value;
+      if (!isDateFormat(value)) return;
+      persist({ dateFormat: value });
     },
     [persist]
   );
@@ -132,7 +142,9 @@ export function DateTimeSection() {
   // ── First day of week ──
   const handleFirstDay = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      persist({ firstDayOfWeek: Number(e.target.value) as FirstDayOfWeek });
+      const value = Number(e.target.value);
+      if (!isFirstDayOfWeek(value)) return;
+      persist({ firstDayOfWeek: value });
     },
     [persist]
   );
@@ -160,7 +172,6 @@ export function DateTimeSection() {
             value={prefs.timeZone}
             onChange={handleTimezone}
             style={selectStyle}
-            aria-label="אזור זמן"
           >
             {TIMEZONE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -192,14 +203,9 @@ export function DateTimeSection() {
             value={prefs.hour12 ? '12' : '24'}
             onChange={handleHour12}
             style={selectStyle}
-            aria-label="פורמט שעה"
           >
-            <option value="24">
-              <span dir="ltr">24</span>שעות
-            </option>
-            <option value="12">
-              <span dir="ltr">12</span>שעות (AM/PM)
-            </option>
+            <option value="24">24 שעות</option>
+            <option value="12">12 שעות (AM/PM)</option>
           </select>
         </SettingsRow>
 
@@ -221,7 +227,6 @@ export function DateTimeSection() {
             value={prefs.dateFormat}
             onChange={handleDateFormat}
             style={selectStyle}
-            aria-label="פורמט תאריך"
           >
             {DATE_FORMAT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -249,7 +254,6 @@ export function DateTimeSection() {
             value={prefs.firstDayOfWeek}
             onChange={handleFirstDay}
             style={selectStyle}
-            aria-label="יום ראשון בשבוע"
           >
             {FIRST_DAY_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>

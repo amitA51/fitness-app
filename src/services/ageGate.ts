@@ -33,7 +33,18 @@ const FAIL_OPEN: AgeStatus = {
   parentalConsentStatus: 'not_required',
 };
 
+/** Fail-CLOSED: a record exists conceptually but is unverified, so the gate shows. */
+const FAIL_CLOSED: AgeStatus = {
+  hasRecord: false,
+  ageVerified: false,
+  parentalConsentStatus: null,
+};
+
+/** Postgres undefined_table — migration not applied yet (only fail-open trigger). */
+const PG_UNDEFINED_TABLE = '42P01';
+
 export async function getAgeStatus(): Promise<AgeStatus> {
+  // Unconfigured backend → fail-open so the app never hard-blocks on no backend.
   if (!supabase) return FAIL_OPEN;
   const user = await getCurrentUser();
   if (!user) return FAIL_OPEN;
@@ -43,9 +54,11 @@ export async function getAgeStatus(): Promise<AgeStatus> {
     .eq('user_id', user.id)
     .maybeSingle();
   if (error) {
-    // Table may not exist yet (migration unapplied) → fail-open, don't block.
     logger.db.error('getAgeStatus failed', error);
-    return FAIL_OPEN;
+    // Only an unapplied migration (undefined_table) fails open. Every other
+    // error (network blip, RLS) fails CLOSED so a transient failure can never
+    // silently pass a minor.
+    return error.code === PG_UNDEFINED_TABLE ? FAIL_OPEN : FAIL_CLOSED;
   }
   if (!data) return { hasRecord: false, ageVerified: false, parentalConsentStatus: null };
   return {

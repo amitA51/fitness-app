@@ -25,6 +25,11 @@ const asString = (v: unknown): string | null => (typeof v === 'string' ? v : nul
 const asNumber = (v: unknown): number => (typeof v === 'number' ? v : 0);
 const asBool = (v: unknown): boolean => v === true;
 
+/** Dedupes and drops null ids from a list of nullable string ids. */
+const uniqueIds = (ids: (string | null)[]): string[] => [
+  ...new Set(ids.filter((id): id is string => id !== null)),
+];
+
 function toPost(r: Row, myId: string | null): Post {
   return {
     id: asString(r.id) ?? '',
@@ -51,12 +56,74 @@ function toComment(r: Row): PostComment {
   };
 }
 
+// ── Name resolution ───────────────────────────────────────────────────────────
+
+/**
+ * Batch-resolves author display names. posts.author_id / post_comments.author_id
+ * FK auth.users (not profiles), so a PostgREST embed does not resolve — we map
+ * id→display_name with a single `in(...)` query. Fail-safe: any failure yields an
+ * empty map (names fall back to undefined at the UI layer), never throws.
+ */
+async function resolveAuthorNames(authorIds: string[]): Promise<Map<string, string>> {
+  const names = new Map<string, string>();
+  if (!supabase || authorIds.length === 0) return names;
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, display_name')
+      .in('id', authorIds);
+    if (error) {
+      log.error('resolveAuthorNames failed', error);
+      return names;
+    }
+    for (const row of (data ?? []) as Row[]) {
+      const id = asString(row.id);
+      const name = asString(row.display_name);
+      if (id && name) names.set(id, name);
+    }
+    return names;
+  } catch (err) {
+    log.error('resolveAuthorNames threw', err);
+    return names;
+  }
+}
+
+/**
+ * The subset of postIds the given user has liked, resolved with a single query
+ * scoped to that user's own reactions (no O(N) full-table read, no cross-user
+ * data leak). Fail-safe: any failure yields an empty set (likedByMe = false).
+ */
+async function resolveLikedPostIds(myId: string, postIds: string[]): Promise<Set<string>> {
+  const liked = new Set<string>();
+  if (!supabase || postIds.length === 0) return liked;
+  try {
+    const { data, error } = await supabase
+      .from('post_reactions')
+      .select('post_id')
+      .eq('user_id', myId)
+      .in('post_id', postIds);
+    if (error) {
+      log.error('resolveLikedPostIds failed', error);
+      return liked;
+    }
+    for (const row of (data ?? []) as Row[]) {
+      const id = asString(row.post_id);
+      if (id) liked.add(id);
+    }
+    return liked;
+  } catch (err) {
+    log.error('resolveLikedPostIds threw', err);
+    return liked;
+  }
+}
+
 // ── Feed ─────────────────────────────────────────────────────────────────────
 
 /**
- * Latest posts for the feed, excluding content from blocked users (enforced
- * by RLS on the posts table). Resolves display names via a left-join to the
- * profiles table. Returns an empty array on any failure.
+ * Latest posts for the feed, excluding content from blocked users (enforced by
+ * RLS on the posts table). Display names are batch-resolved against profiles and
+ * likedByMe is computed from the viewer's own reactions only. Returns an empty
+ * array on any failure.
  */
 export async function listFeedPosts(opts?: { limit?: number; before?: string }): Promise<
   FeedItem[]
@@ -66,16 +133,12 @@ export async function listFeedPosts(opts?: { limit?: number; before?: string }):
     const user = await getCurrentUser();
     const myId = user?.id ?? null;
 
-    // Build base query with a left join to profiles for display names.
-    // RLS already filters blocked authors; we select the liked_by_me flag
-    // via a correlated sub-select so we don't need a second round-trip.
+    // RLS already filters blocked authors. We deliberately avoid embeds: the
+    // author_id FK targets auth.users (not profiles) so profiles!… would not
+    // resolve, and an unscoped post_reactions embed would read every reaction.
     let query = supabase
       .from('posts')
-      .select(
-        `id, author_id, body, topic, image_url, like_count, comment_count, created_at,
-         profiles!posts_author_id_fkey(display_name),
-         post_reactions!left(user_id)`
-      )
+      .select('id, author_id, body, topic, image_url, like_count, comment_count, created_at')
       .order('created_at', { ascending: false })
       .limit(opts?.limit ?? 30);
 
@@ -89,22 +152,25 @@ export async function listFeedPosts(opts?: { limit?: number; before?: string }):
       return [];
     }
 
-    return (data ?? []).map((r) => {
-      const raw = r as unknown as Row & {
-        profiles?: Row | null;
-        post_reactions?: Row[] | null;
-      };
-      const reactions = raw.post_reactions ?? [];
-      const likedByMe = myId ? reactions.some((rx) => rx.user_id === myId) : false;
-      return toPost(
+    const rows = (data ?? []) as Row[];
+    const authorIds = uniqueIds(rows.map((r) => asString(r.author_id)));
+    const postIds = rows.map((r) => asString(r.id)).filter((id): id is string => id !== null);
+
+    const [names, likedIds] = await Promise.all([
+      resolveAuthorNames(authorIds),
+      myId ? resolveLikedPostIds(myId, postIds) : Promise.resolve(new Set<string>()),
+    ]);
+
+    return rows.map((raw) =>
+      toPost(
         {
           ...raw,
-          author_name: raw.profiles?.display_name ?? null,
-          liked_by_me: likedByMe,
+          author_name: names.get(asString(raw.author_id) ?? '') ?? null,
+          liked_by_me: likedIds.has(asString(raw.id) ?? ''),
         },
         myId
-      );
-    });
+      )
+    );
   } catch (err) {
     log.error('listFeedPosts threw', err);
     return [];
@@ -173,12 +239,10 @@ export async function toggleLike(postId: string): Promise<boolean | null> {
 export async function listComments(postId: string): Promise<PostComment[]> {
   if (!supabase || !postId) return [];
   try {
+    // author_id FKs auth.users, not profiles — resolve names in one batch query.
     const { data, error } = await supabase
       .from('post_comments')
-      .select(
-        `id, post_id, author_id, body, created_at,
-         profiles!post_comments_author_id_fkey(display_name)`
-      )
+      .select('id, post_id, author_id, body, created_at')
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
 
@@ -187,10 +251,13 @@ export async function listComments(postId: string): Promise<PostComment[]> {
       return [];
     }
 
-    return (data ?? []).map((r) => {
-      const raw = r as unknown as Row & { profiles?: Row | null };
-      return toComment({ ...raw, author_name: raw.profiles?.display_name ?? null });
-    });
+    const rows = (data ?? []) as Row[];
+    const authorIds = uniqueIds(rows.map((r) => asString(r.author_id)));
+    const names = await resolveAuthorNames(authorIds);
+
+    return rows.map((raw) =>
+      toComment({ ...raw, author_name: names.get(asString(raw.author_id) ?? '') ?? null })
+    );
   } catch (err) {
     log.error('listComments threw', err);
     return [];

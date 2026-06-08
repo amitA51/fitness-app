@@ -22,6 +22,7 @@ import {
   updateProfile,
   uploadAvatar,
 } from '../../../services/profile/profileService';
+import { getInitials } from '../../../utils/getInitials';
 import { SavedIndicator } from '../components/SavedIndicator';
 
 const MAX_BIO = 280;
@@ -67,7 +68,7 @@ const HELPER_STYLE: React.CSSProperties = {
 const ERROR_STYLE: React.CSSProperties = {
   fontFamily: 'var(--font-body)',
   fontSize: 12,
-  color: 'var(--fs-error, #d23f3f)',
+  color: 'var(--fs-error)',
   marginTop: 4,
 };
 
@@ -77,15 +78,6 @@ const ROW_STYLE: React.CSSProperties = {
   justifyContent: 'space-between',
   gap: 12,
 };
-
-const getInitials = (name: string): string =>
-  name
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
 type LoadState = 'loading' | 'unavailable' | 'ready';
 
@@ -311,7 +303,9 @@ export function ProfileEditSection() {
               )}
               {uploading ? 'מעלה…' : 'החלפת תמונה'}
             </button>
-            <p style={HELPER_STYLE}>JPG או PNG, עד כמה מגה-בייט.</p>
+            <p style={HELPER_STYLE}>
+              JPG או PNG, עד <span dir="ltr">2MB</span>.
+            </p>
             {avatarError && (
               <p role="alert" style={ERROR_STYLE}>
                 {avatarError}
@@ -339,9 +333,10 @@ export function ProfileEditSection() {
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="איך שיקראו לך"
+            placeholder="לדוגמה: דני כהן"
             maxLength={60}
             aria-invalid={formError != null && !displayName.trim()}
+            aria-describedby={formError ? 'profile-form-error' : undefined}
             style={INPUT_STYLE}
           />
         </div>
@@ -358,9 +353,13 @@ export function ProfileEditSection() {
             placeholder="ספרו משהו על עצמכם"
             rows={3}
             maxLength={MAX_BIO}
+            aria-invalid={bio.length > MAX_BIO}
+            aria-describedby={
+              formError ? 'profile-bio-counter profile-form-error' : 'profile-bio-counter'
+            }
             style={{ ...INPUT_STYLE, minHeight: 80, resize: 'vertical', lineHeight: 1.5 }}
           />
-          <p style={HELPER_STYLE}>
+          <p id="profile-bio-counter" style={HELPER_STYLE}>
             <span dir="ltr" className="kinetic-number">
               {bio.length}/{MAX_BIO}
             </span>
@@ -368,7 +367,7 @@ export function ProfileEditSection() {
         </div>
 
         {formError && (
-          <p role="alert" style={{ ...ERROR_STYLE, marginBottom: 12 }}>
+          <p id="profile-form-error" role="alert" style={{ ...ERROR_STYLE, marginBottom: 12 }}>
             {formError}
           </p>
         )}

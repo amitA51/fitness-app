@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { Users } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CommentSheet } from '../../components/community/CommentSheet';
 import { PostCard } from '../../components/community/PostCard';
 import { PostComposer } from '../../components/community/PostComposer';
@@ -17,6 +17,8 @@ import {
   toggleLike,
 } from '../../services/community/communityService';
 import type { FeedItem } from '../../services/community/types';
+
+const PAGE_LIMIT = 30;
 
 // ── Skeleton card ─────────────────────────────────────────────────────────────
 function PostSkeleton() {
@@ -182,19 +184,24 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 export default function CommunityFeed() {
   const [posts, setPosts] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // ids of posts/authors hidden client-side after block (complement to RLS)
   const [hiddenAuthorIds, setHiddenAuthorIds] = useState<Set<string>>(new Set());
   const clearToast = useCallback(() => setToast(null), []);
   const loadedRef = useRef(false);
+  const loadingMoreRef = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     setError(false);
     setLoading(true);
     try {
-      const items = await listFeedPosts({ limit: 30 });
+      const items = await listFeedPosts({ limit: PAGE_LIMIT });
       setPosts(items);
+      setHasMore(items.length === PAGE_LIMIT);
     } catch {
       setError(true);
     } finally {
@@ -209,6 +216,40 @@ export default function CommunityFeed() {
     }
   }, [load]);
 
+  // ── Load more (cursor pagination) ──────────────────────────────────────────
+  const loadMore = useCallback(async () => {
+    if (loadingMoreRef.current) return;
+    const last = posts[posts.length - 1];
+    if (!last) return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    try {
+      const page = await listFeedPosts({ limit: PAGE_LIMIT, before: last.createdAt });
+      setPosts((prev) => [...prev, ...page]);
+      setHasMore(page.length === PAGE_LIMIT);
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  }, [posts]);
+
+  // Observe a sentinel near the list end and fetch the next page when it enters.
+  useEffect(() => {
+    if (!hasMore || loading || error) return;
+    const node = sentinelRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          loadMore();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, loading, error, loadMore]);
+
   // ── Composer ──────────────────────────────────────────────────────────────
   const handleCreate = useCallback(async (body: string) => {
     const { post, error: err } = await createPost({ body });
@@ -217,22 +258,14 @@ export default function CommunityFeed() {
   }, []);
 
   // ── Like (optimistic) ─────────────────────────────────────────────────────
-  const handleLike = useCallback(async (postId: string) => {
-    // Optimistic update
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? {
-              ...p,
-              likedByMe: !p.likedByMe,
-              likeCount: p.likedByMe ? Math.max(0, p.likeCount - 1) : p.likeCount + 1,
-            }
-          : p
-      )
-    );
-    const nowLiked = await toggleLike(postId);
-    if (nowLiked === null) {
-      // RPC failed — revert optimistic update
+  const handleLike = useCallback(
+    async (postId: string) => {
+      // Capture the original post snapshot up front so a failed toggle restores the
+      // exact pre-tap state — robust against rapid double-tap stale-closure reverts.
+      const snapshot = posts.find((p) => p.id === postId);
+      if (!snapshot) return;
+
+      // Optimistic update
       setPosts((prev) =>
         prev.map((p) =>
           p.id === postId
@@ -244,18 +277,32 @@ export default function CommunityFeed() {
             : p
         )
       );
-    }
-  }, []);
+      const nowLiked = await toggleLike(postId);
+      if (nowLiked === null) {
+        // RPC failed — restore the captured snapshot exactly.
+        setPosts((prev) => prev.map((p) => (p.id === postId ? snapshot : p)));
+      }
+    },
+    [posts]
+  );
 
   // ── Report ────────────────────────────────────────────────────────────────
   const handleReport = useCallback(async (postId: string) => {
-    await reportContent({ postId });
+    const { error: err } = await reportContent({ postId });
+    if (err) {
+      setToast('הדיווח נכשל. נסו שוב.');
+      return;
+    }
     setToast('הדיווח נשלח. תודה על שמירת הקהילה.');
   }, []);
 
   // ── Block ─────────────────────────────────────────────────────────────────
   const handleBlock = useCallback(async (authorId: string) => {
-    await blockUser(authorId);
+    const { error: err } = await blockUser(authorId);
+    if (err) {
+      setToast('החסימה נכשלה. נסו שוב.');
+      return;
+    }
     setHiddenAuthorIds((prev) => new Set([...prev, authorId]));
     setToast('המשתמש נחסם. תוכן שלהם לא יוצג יותר.');
   }, []);
@@ -267,8 +314,18 @@ export default function CommunityFeed() {
     setOpenCommentPostId(postId);
   }, []);
 
+  // Keep the post's comment count fresh after a successful comment add.
+  const handleCommentAdded = useCallback((postId: string) => {
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, commentCount: p.commentCount + 1 } : p))
+    );
+  }, []);
+
   // ── Filtered feed (client-side block complement to RLS) ───────────────────
-  const visiblePosts = posts.filter((p) => !hiddenAuthorIds.has(p.authorId));
+  const visiblePosts = useMemo(
+    () => posts.filter((p) => !hiddenAuthorIds.has(p.authorId)),
+    [posts, hiddenAuthorIds]
+  );
 
   return (
     <div
@@ -348,6 +405,34 @@ export default function CommunityFeed() {
                 onCommentOpen={handleCommentOpen}
               />
             ))}
+
+            {/* Load-more: IntersectionObserver sentinel + accessible button fallback */}
+            {hasMore && (
+              <>
+                <div ref={sentinelRef} aria-hidden="true" style={{ height: 1 }} />
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="focus-ring"
+                  style={{
+                    alignSelf: 'center',
+                    padding: '10px 20px',
+                    background: 'var(--fs-surface)',
+                    color: 'var(--fs-ink)',
+                    border: '1px solid var(--fs-surface-2)',
+                    borderRadius: 10,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: loadingMore ? 'wait' : 'pointer',
+                    minHeight: 44,
+                  }}
+                >
+                  {loadingMore ? 'טוען…' : 'טען עוד'}
+                </button>
+              </>
+            )}
           </section>
         )}
       </main>
@@ -360,6 +445,7 @@ export default function CommunityFeed() {
         postId={openCommentPostId}
         isOpen={openCommentPostId !== null}
         onClose={() => setOpenCommentPostId(null)}
+        onCommentAdded={handleCommentAdded}
       />
     </div>
   );

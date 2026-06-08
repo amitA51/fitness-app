@@ -6,7 +6,7 @@
 // store only a version + content_hash; the body lives here in the repo so it
 // can be code-reviewed and rendered offline.
 //
-// ⚠️  DRAFT — REQUIRES HUMAN LEGAL REVIEW BEFORE PRODUCTION.
+// WARNING: DRAFT — REQUIRES HUMAN LEGAL REVIEW BEFORE PRODUCTION.
 // The wording below is a structured starting point for a Hebrew fitness PWA
 // (health disclaimer, Israeli governing law, GDPR/CCPA-style data rights). It
 // is NOT legal advice and MUST be reviewed/approved by a lawyer before it is

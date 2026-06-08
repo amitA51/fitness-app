@@ -8,7 +8,7 @@
 // Numbers render dir="ltr". Both light and dark tested.
 // ============================================================================
 
-import { Check, Crown, Lock, Sparkles, Zap } from 'lucide-react';
+import { ArrowRight, Check, Crown, Lock, Sparkles, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { PremiumFeature } from '../../services/billing/types';
 
@@ -81,7 +81,7 @@ function PlanBadge({ variant }: { variant: 'free' | 'pro' }) {
       style={{
         borderRadius: 'var(--radius-asymmetric)',
         background: isPro ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
-        color: isPro ? 'var(--fs-primary)' : 'var(--fs-ink-muted)',
+        color: isPro ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
         fontFamily: 'var(--font-mono)',
         fontSize: '11px',
         fontWeight: 700,
@@ -117,14 +117,14 @@ function FeatureCheck({ value, isPro }: FeatureCheckProps) {
       <Check
         size={15}
         strokeWidth={2.5}
-        style={{ color: isPro ? 'var(--fs-accent)' : 'var(--fs-ink-muted)', flexShrink: 0 }}
+        style={{ color: isPro ? 'var(--fs-accent)' : 'var(--fs-muted)', flexShrink: 0 }}
         aria-hidden="true"
       />
       <span
         style={{
           fontFamily: 'var(--font-body)',
           fontSize: '13px',
-          color: isPro ? 'var(--fs-ink)' : 'var(--fs-ink-muted)',
+          color: isPro ? 'var(--fs-ink)' : 'var(--fs-muted)',
         }}
       >
         {value}
@@ -163,19 +163,8 @@ export default function PaywallScreen() {
           style={{ borderRadius: 'var(--radius-asymmetric)', background: 'var(--fs-surface-2)' }}
           aria-label="חזרה"
         >
-          {/* RTL: arrow points right (forward in Hebrew reading direction = back in nav) */}
-          <span
-            style={{
-              display: 'inline-block',
-              transform: 'scaleX(-1)',
-              fontSize: 20,
-              color: 'var(--fs-ink)',
-              lineHeight: 1,
-            }}
-            aria-hidden="true"
-          >
-            ←
-          </span>
+          {/* RTL: ArrowRight points right = forward in Hebrew reading direction = back in nav. */}
+          <ArrowRight size={20} style={{ color: 'var(--fs-ink)' }} aria-hidden="true" />
         </button>
         <h1
           style={{
@@ -200,7 +189,7 @@ export default function PaywallScreen() {
           }}
           aria-hidden="true"
         >
-          <Sparkles size={32} style={{ color: 'var(--fs-primary)' }} strokeWidth={2} />
+          <Sparkles size={32} style={{ color: 'var(--color-ink-on-accent)' }} strokeWidth={2} />
         </div>
         <h2
           style={{
@@ -217,7 +206,7 @@ export default function PaywallScreen() {
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: '15px',
-            color: 'var(--fs-ink-muted)',
+            color: 'var(--fs-muted)',
             maxWidth: 320,
             lineHeight: 1.6,
             margin: 0,
@@ -229,8 +218,11 @@ export default function PaywallScreen() {
 
       {/* ── Plan comparison table ── */}
       <section className="px-4 pb-6">
-        <div
+        <table
+          dir="rtl"
           style={{
+            width: '100%',
+            borderCollapse: 'collapse',
             borderRadius: 'var(--radius-asymmetric)',
             border: '1px solid var(--color-separator)',
             background: 'var(--fs-surface)',
@@ -238,78 +230,98 @@ export default function PaywallScreen() {
           }}
         >
           {/* Column headers */}
-          <div
-            className="grid"
-            style={{
-              gridTemplateColumns: '1fr auto auto',
-              padding: 'var(--space-4)',
-              paddingBottom: 'var(--space-3)',
-              borderBottom: '1px solid var(--color-separator)',
-            }}
-          >
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '11px',
-                fontWeight: 700,
-                letterSpacing: '0.1em',
-                color: 'var(--fs-ink-muted)',
-                textTransform: 'uppercase',
-              }}
-            >
-              תכונה
-            </span>
-            <div className="flex flex-col items-center" style={{ minWidth: 72 }}>
-              <PlanBadge variant="free" />
-            </div>
-            <div className="flex flex-col items-center" style={{ minWidth: 72 }}>
-              <PlanBadge variant="pro" />
-            </div>
-          </div>
+          <thead>
+            <tr style={{ borderBottom: '1px solid var(--color-separator)' }}>
+              <th
+                scope="col"
+                style={{
+                  padding: 'var(--space-4)',
+                  paddingBottom: 'var(--space-3)',
+                  textAlign: 'start',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  color: 'var(--fs-muted)',
+                  textTransform: 'uppercase',
+                }}
+              >
+                תכונה
+              </th>
+              <th
+                scope="col"
+                style={{
+                  padding: 'var(--space-4) 0 var(--space-3)',
+                  width: '1%',
+                  minWidth: 72,
+                }}
+              >
+                <div className="flex flex-col items-center">
+                  <PlanBadge variant="free" />
+                </div>
+              </th>
+              <th
+                scope="col"
+                style={{
+                  padding: 'var(--space-4) 0 var(--space-3)',
+                  width: '1%',
+                  minWidth: 72,
+                }}
+              >
+                <div className="flex flex-col items-center">
+                  <PlanBadge variant="pro" />
+                </div>
+              </th>
+            </tr>
+          </thead>
 
           {/* Feature rows */}
-          {FEATURE_ROWS.map((row, idx) => (
-            <div
-              key={row.key}
-              className="grid items-center"
-              style={{
-                gridTemplateColumns: '1fr auto auto',
-                padding: 'var(--space-3) var(--space-4)',
-                borderBottom:
-                  idx < FEATURE_ROWS.length - 1 ? '1px solid var(--color-separator)' : 'none',
-                gap: '8px',
-              }}
-            >
-              <div className="flex flex-col gap-0.5">
-                <span
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    color: 'var(--fs-ink)',
-                  }}
-                >
-                  {row.label}
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '12px',
-                    color: 'var(--fs-ink-muted)',
-                  }}
-                >
-                  {row.description}
-                </span>
-              </div>
-              <div className="flex items-center justify-center" style={{ minWidth: 72 }}>
-                <FeatureCheck value={row.freeValue} isPro={false} />
-              </div>
-              <div className="flex items-center justify-center" style={{ minWidth: 72 }}>
-                <FeatureCheck value={row.proValue} isPro={true} />
-              </div>
-            </div>
-          ))}
-        </div>
+          <tbody>
+            {FEATURE_ROWS.map((row, idx) => (
+              <tr
+                key={row.key}
+                style={{
+                  borderBottom:
+                    idx < FEATURE_ROWS.length - 1 ? '1px solid var(--color-separator)' : 'none',
+                }}
+              >
+                <td style={{ padding: 'var(--space-3) var(--space-4)' }}>
+                  <div className="flex flex-col gap-0.5">
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: 'var(--fs-ink)',
+                      }}
+                    >
+                      {row.label}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '12px',
+                        color: 'var(--fs-muted)',
+                      }}
+                    >
+                      {row.description}
+                    </span>
+                  </div>
+                </td>
+                <td style={{ padding: 'var(--space-3) 0', width: '1%', minWidth: 72 }}>
+                  <div className="flex items-center justify-center">
+                    <FeatureCheck value={row.freeValue} isPro={false} />
+                  </div>
+                </td>
+                <td style={{ padding: 'var(--space-3) 0', width: '1%', minWidth: 72 }}>
+                  <div className="flex items-center justify-center">
+                    <FeatureCheck value={row.proValue} isPro={true} />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </section>
 
       {/* ── Pricing note ── */}
@@ -327,7 +339,7 @@ export default function PaywallScreen() {
             style={{
               fontFamily: 'var(--font-body)',
               fontSize: '13px',
-              color: 'var(--fs-ink-muted)',
+              color: 'var(--fs-muted)',
               lineHeight: 1.5,
             }}
           >
@@ -350,7 +362,7 @@ export default function PaywallScreen() {
             height: 52,
             borderRadius: 'var(--radius-asymmetric)',
             background: 'var(--fs-surface-2)',
-            color: 'var(--fs-ink-muted)',
+            color: 'var(--fs-muted)',
             fontFamily: 'var(--font-display)',
             fontWeight: 700,
             fontSize: '16px',
@@ -366,7 +378,7 @@ export default function PaywallScreen() {
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: '12px',
-            color: 'var(--fs-ink-muted)',
+            color: 'var(--fs-muted)',
             margin: 0,
             textAlign: 'center',
           }}

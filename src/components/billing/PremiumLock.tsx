@@ -83,7 +83,8 @@ function LockedOverlay({ compact }: LockedOverlayProps) {
 
   if (compact) {
     return (
-      <div
+      <button
+        type="button"
         className="inline-flex items-center gap-1.5 px-2 py-1 active:scale-[0.98]"
         style={{
           borderRadius: 'var(--radius-asymmetric)',
@@ -91,13 +92,8 @@ function LockedOverlay({ compact }: LockedOverlayProps) {
           border: '1px solid var(--color-separator)',
           cursor: 'pointer',
         }}
-        role="button"
-        tabIndex={0}
         onClick={handleUpgrade}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') handleUpgrade();
-        }}
-        aria-label="תכונה פרימיום — לחץ לשדרוג"
+        aria-label="תכונת פרימיום — מעבר לשדרוג"
       >
         <Lock size={12} style={{ color: 'var(--fs-accent)', flexShrink: 0 }} aria-hidden="true" />
         <span
@@ -112,7 +108,7 @@ function LockedOverlay({ compact }: LockedOverlayProps) {
         >
           פרו
         </span>
-      </div>
+      </button>
     );
   }
 
@@ -156,7 +152,7 @@ function LockedOverlay({ compact }: LockedOverlayProps) {
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: '14px',
-            color: 'var(--fs-ink-muted)',
+            color: 'var(--fs-muted)',
             margin: 0,
             lineHeight: 1.5,
           }}
@@ -174,7 +170,7 @@ function LockedOverlay({ compact }: LockedOverlayProps) {
           height: 44,
           borderRadius: 'var(--radius-asymmetric)',
           background: 'var(--fs-accent)',
-          color: 'var(--fs-primary)',
+          color: 'var(--color-ink-on-accent)',
           fontFamily: 'var(--font-display)',
           fontWeight: 700,
           fontSize: '14px',

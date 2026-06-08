@@ -18,6 +18,7 @@ import { Sheet } from '../ui/Sheet';
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const MAX_CHARS = 500;
+const SCROLL_TO_BOTTOM_DELAY_MS = 50;
 
 // ── Relative time formatter ───────────────────────────────────────────────────
 
@@ -30,7 +31,10 @@ function relativeTime(isoString: string): string {
     const diffHr = Math.floor(diffMin / 60);
     if (diffHr < 24) return `לפני ${diffHr} שע'`;
     const diffDay = Math.floor(diffHr / 24);
-    return `לפני ${diffDay} יום`;
+    // Hebrew day pluralization: 1 → יום, 2 → יומיים, n → ${n} ימים.
+    if (diffDay === 1) return 'לפני יום';
+    if (diffDay === 2) return 'לפני יומיים';
+    return `לפני ${diffDay} ימים`;
   } catch {
     return '';
   }
@@ -134,13 +138,21 @@ function CommentRow({ comment }: CommentRowProps) {
 interface ComposerProps {
   postId: string;
   onOptimisticAppend: (comment: PostComment) => void;
+  onRemoveOptimistic: (commentId: string) => void;
+  onCommentAdded: (postId: string) => void;
+  textareaRef: React.RefObject<HTMLTextAreaElement>;
 }
 
-function CommentComposer({ postId, onOptimisticAppend }: ComposerProps) {
+function CommentComposer({
+  postId,
+  onOptimisticAppend,
+  onRemoveOptimistic,
+  onCommentAdded,
+  textareaRef,
+}: ComposerProps) {
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const charCount = text.length;
   const overLimit = charCount > MAX_CHARS;
@@ -155,8 +167,9 @@ function CommentComposer({ postId, onOptimisticAppend }: ComposerProps) {
     setSubmitError(null);
 
     // Optimistic append with a temporary id
+    const optimisticId = `opt-${Date.now()}`;
     const optimisticComment: PostComment = {
-      id: `opt-${Date.now()}`,
+      id: optimisticId,
       postId,
       authorId: '',
       authorName: undefined,
@@ -169,14 +182,21 @@ function CommentComposer({ postId, onOptimisticAppend }: ComposerProps) {
     try {
       const { error } = await addComment(postId, trimmed);
       if (error) {
+        // Roll back the optimistic row and restore the draft text.
+        onRemoveOptimistic(optimisticId);
+        setText(trimmed);
         setSubmitError('שליחת התגובה נכשלה. נסו שוב.');
+      } else {
+        onCommentAdded(postId);
       }
     } catch {
+      onRemoveOptimistic(optimisticId);
+      setText(trimmed);
       setSubmitError('שגיאה בלתי צפויה. נסו שוב.');
     } finally {
       setSubmitting(false);
     }
-  }, [canSubmit, text, postId, onOptimisticAppend]);
+  }, [canSubmit, text, postId, onOptimisticAppend, onRemoveOptimistic, onCommentAdded]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -219,7 +239,7 @@ function CommentComposer({ postId, onOptimisticAppend }: ComposerProps) {
           dir="rtl"
           placeholder="כתבו תגובה…"
           rows={2}
-          aria-describedby={submitError ? 'comment-error' : 'comment-counter'}
+          aria-describedby="comment-counter comment-error"
           style={{
             flex: 1,
             resize: 'none',
@@ -413,13 +433,17 @@ interface CommentSheetProps {
   postId: string | null;
   isOpen: boolean;
   onClose: () => void;
+  /** Notifies the parent feed to increment the post's comment count. */
+  onCommentAdded?: (postId: string) => void;
 }
 
-export function CommentSheet({ postId, isOpen, onClose }: CommentSheetProps) {
+export function CommentSheet({ postId, isOpen, onClose, onCommentAdded }: CommentSheetProps) {
   const [comments, setComments] = useState<PostComment[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
   const listEndRef = useRef<HTMLDivElement>(null);
+  const composerTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fetch comments whenever the sheet opens for a specific post
   const fetchComments = useCallback(async (id: string) => {
@@ -442,21 +466,54 @@ export function CommentSheet({ postId, isOpen, onClose }: CommentSheetProps) {
     }
   }, [isOpen, postId, fetchComments]);
 
+  // Focus the composer textarea when the sheet opens (not the close button).
+  useEffect(() => {
+    if (isOpen && postId) {
+      const focusId = setTimeout(() => composerTextareaRef.current?.focus(), 0);
+      return () => clearTimeout(focusId);
+    }
+  }, [isOpen, postId]);
+
+  // Clear any pending scroll timeout on unmount.
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    };
+  }, []);
+
   const handleRetry = useCallback(() => {
     if (postId) fetchComments(postId);
   }, [postId, fetchComments]);
 
   const handleOptimisticAppend = useCallback((comment: PostComment) => {
     setComments((prev) => [...prev, comment]);
-    // Scroll to bottom after append
-    setTimeout(() => {
+    // Scroll to bottom after append — tracked so it can be cleared on unmount.
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
       listEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 50);
+    }, SCROLL_TO_BOTTOM_DELAY_MS);
   }, []);
+
+  const handleRemoveOptimistic = useCallback((commentId: string) => {
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+  }, []);
+
+  const handleCommentAdded = useCallback(
+    (id: string) => {
+      onCommentAdded?.(id);
+    },
+    [onCommentAdded]
+  );
 
   // Composer footer — only when postId is present
   const composerFooter = postId ? (
-    <CommentComposer postId={postId} onOptimisticAppend={handleOptimisticAppend} />
+    <CommentComposer
+      postId={postId}
+      onOptimisticAppend={handleOptimisticAppend}
+      onRemoveOptimistic={handleRemoveOptimistic}
+      onCommentAdded={handleCommentAdded}
+      textareaRef={composerTextareaRef}
+    />
   ) : null;
 
   return (

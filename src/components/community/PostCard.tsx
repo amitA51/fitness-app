@@ -5,8 +5,17 @@
 // ============================================================================
 
 import { Flag, Heart, MessageCircle, MoreHorizontal, UserX } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Post } from '../../services/community/types';
+
+// Hoisted formatter — constructed once per module, not per render.
+const HE_DATE_FMT = new Intl.DateTimeFormat('he-IL', {
+  day: 'numeric',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+});
 
 interface PostCardProps {
   post: Post;
@@ -16,20 +25,26 @@ interface PostCardProps {
   onCommentOpen: (postId: string) => void;
 }
 
-export function PostCard({ post, onLike, onReport, onBlock, onCommentOpen }: PostCardProps) {
+function PostCardComponent({ post, onLike, onReport, onBlock, onCommentOpen }: PostCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [likePending, setLikePending] = useState(false);
   const [actionPending, setActionPending] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuItemsRef = useRef<Array<HTMLButtonElement | null>>([]);
+  // Sync guard against double-tap: set before await, cleared in finally.
+  const likeInFlightRef = useRef(false);
 
   const displayName = post.authorName ?? 'משתמש';
 
   const handleLike = useCallback(async () => {
-    if (likePending) return;
+    if (likeInFlightRef.current || likePending) return;
+    likeInFlightRef.current = true;
     setLikePending(true);
     try {
       await onLike(post.id);
     } finally {
+      likeInFlightRef.current = false;
       setLikePending(false);
     }
   }, [likePending, onLike, post.id]);
@@ -63,12 +78,42 @@ export function PostCard({ post, onLike, onReport, onBlock, onCommentOpen }: Pos
     }
   }, []);
 
-  const formattedDate = new Intl.DateTimeFormat('he-IL', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(post.createdAt));
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false);
+    triggerRef.current?.focus();
+  }, []);
+
+  // Roving tabindex: ArrowDown/Up cycle menu items, Escape closes + returns focus.
+  const handleMenuKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const items = menuItemsRef.current.filter((el): el is HTMLButtonElement => el !== null);
+      if (items.length === 0) return;
+      const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const next = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
+        items[next]?.focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prev =
+          currentIndex < 0 ? items.length - 1 : (currentIndex - 1 + items.length) % items.length;
+        items[prev]?.focus();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeMenu();
+      }
+    },
+    [closeMenu]
+  );
+
+  // Focus the first menu item when the menu opens.
+  useEffect(() => {
+    if (menuOpen) {
+      menuItemsRef.current[0]?.focus();
+    }
+  }, [menuOpen]);
+
+  const formattedDate = HE_DATE_FMT.format(new Date(post.createdAt));
 
   return (
     <article
@@ -96,19 +141,25 @@ export function PostCard({ post, onLike, onReport, onBlock, onCommentOpen }: Pos
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
-          <span
+          <Link
+            to={`/u/${post.authorId}`}
+            aria-label={`צפייה בפרופיל של ${displayName}`}
+            className="focus-ring"
             style={{
               fontFamily: 'var(--font-body)',
               fontWeight: 700,
               fontSize: 14,
               color: 'var(--fs-ink)',
+              textDecoration: 'none',
+              display: 'block',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
+              borderRadius: 4,
             }}
           >
             {displayName}
-          </span>
+          </Link>
           <time
             dateTime={post.createdAt}
             style={{
@@ -122,9 +173,15 @@ export function PostCard({ post, onLike, onReport, onBlock, onCommentOpen }: Pos
         </div>
 
         {/* Overflow menu — mandatory for Apple UGC moderation */}
-        <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }} onBlur={handleMenuBlur}>
+        <div
+          ref={menuRef}
+          style={{ position: 'relative', flexShrink: 0 }}
+          onBlur={handleMenuBlur}
+          onKeyDown={menuOpen ? handleMenuKeyDown : undefined}
+        >
           <button
             type="button"
+            ref={triggerRef}
             aria-label="אפשרויות נוספות"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
@@ -173,6 +230,10 @@ export function PostCard({ post, onLike, onReport, onBlock, onCommentOpen }: Pos
               <button
                 type="button"
                 role="menuitem"
+                tabIndex={-1}
+                ref={(el) => {
+                  menuItemsRef.current[0] = el;
+                }}
                 disabled={actionPending}
                 onClick={handleReport}
                 className="focus-ring"
@@ -199,6 +260,10 @@ export function PostCard({ post, onLike, onReport, onBlock, onCommentOpen }: Pos
               <button
                 type="button"
                 role="menuitem"
+                tabIndex={-1}
+                ref={(el) => {
+                  menuItemsRef.current[1] = el;
+                }}
                 disabled={actionPending}
                 onClick={handleBlock}
                 className="focus-ring"
@@ -262,15 +327,20 @@ export function PostCard({ post, onLike, onReport, onBlock, onCommentOpen }: Pos
         {post.body}
       </p>
 
-      {/* Optional image */}
+      {/* Optional image — explicit dimensions + aspectRatio prevent CLS.
+          alt is decorative (empty) only when the post body carries the meaning. */}
       {post.imageUrl && (
         <img
           src={post.imageUrl}
-          alt=""
-          aria-hidden="true"
+          alt={post.body.trim() ? '' : `תמונה מאת ${displayName}`}
+          aria-hidden={post.body.trim() ? true : undefined}
           loading="lazy"
+          width={640}
+          height={320}
           style={{
             width: '100%',
+            height: 'auto',
+            aspectRatio: '640 / 320',
             borderRadius: 10,
             objectFit: 'cover',
             maxHeight: 320,
@@ -367,3 +437,5 @@ export function PostCard({ post, onLike, onReport, onBlock, onCommentOpen }: Pos
     </article>
   );
 }
+
+export const PostCard = React.memo(PostCardComponent);

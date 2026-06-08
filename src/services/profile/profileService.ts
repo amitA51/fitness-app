@@ -17,6 +17,28 @@ import type { Achievement, ProfilePatch, ProfilePublic, UserAchievement } from '
 /** Public-read Storage bucket holding user avatars. Path: {uid}/avatar.webp */
 export const AVATARS_BUCKET = 'avatars';
 
+/** Avatar upload guards (defence-in-depth before compression). */
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const;
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+
+/** Generic same-host Supabase Storage URL shape, used when the project URL is unknown. */
+const SUPABASE_STORAGE_URL_RE = /^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\//;
+
+/**
+ * Whether an avatar URL is an in-project Supabase Storage public URL. Prevents a
+ * patch from pointing avatar_url at an arbitrary external host. Prefers the exact
+ * project prefix (derived from the configured Supabase URL); falls back to the
+ * generic *.supabase.co/storage shape when that URL is unavailable.
+ */
+const isAllowedAvatarUrl = (url: string): boolean => {
+  const baseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  if (baseUrl) {
+    const prefix = `${baseUrl.replace(/\/$/, '')}/storage/v1/object/public/${AVATARS_BUCKET}/`;
+    return url.startsWith(prefix);
+  }
+  return SUPABASE_STORAGE_URL_RE.test(url);
+};
+
 type Row = Record<string, unknown>;
 
 const asString = (v: unknown): string | null => (typeof v === 'string' ? v : null);
@@ -85,7 +107,13 @@ export const updateProfile = async (patch: ProfilePatch): Promise<{ error: strin
   const update: Row = {};
   if (patch.displayName !== undefined) update.display_name = patch.displayName;
   if (patch.bio !== undefined) update.bio = patch.bio;
-  if (patch.avatarUrl !== undefined) update.avatar_url = patch.avatarUrl;
+  if (patch.avatarUrl !== undefined) {
+    // Reject avatar URLs that don't point at this project's Storage bucket.
+    if (patch.avatarUrl !== null && !isAllowedAvatarUrl(patch.avatarUrl)) {
+      return { error: 'invalid_avatar_url' };
+    }
+    update.avatar_url = patch.avatarUrl;
+  }
   if (patch.isPublic !== undefined) update.is_public = patch.isPublic;
   if (Object.keys(update).length === 0) return { error: null };
 
@@ -110,6 +138,14 @@ export const uploadAvatar = async (
   if (!supabase) return { url: null, error: 'unconfigured' };
   const user = await getCurrentUser();
   if (!user) return { url: null, error: 'unauthenticated' };
+
+  // Validate the raw upload before any processing (type allow-list + size cap).
+  if (!(ALLOWED_AVATAR_TYPES as readonly string[]).includes(file.type)) {
+    return { url: null, error: 'unsupported_type' };
+  }
+  if (file.size > MAX_AVATAR_BYTES) {
+    return { url: null, error: 'file_too_large' };
+  }
 
   try {
     const blob = await compressImageToWebP(file);

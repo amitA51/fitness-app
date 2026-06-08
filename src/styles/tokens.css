@@ -16,6 +16,7 @@
   --fs-surface-2: #dbe6e3;
   --fs-ink: #132327;
   --fs-muted: #4d5c5a;
+  --fs-ink-muted: var(--fs-muted);
   --fs-primary: #16292d;
   --fs-accent: #43c7a5;
   --fs-accent-2: #2c7f91;
@@ -74,6 +75,7 @@
   --color-error: #b83228;
   --color-error-fg: #b83228;
   --color-error-muted: rgba(184, 50, 40, 0.12);
+  --fs-error: #d23f3f;
   --color-check: #2f8f58;
   --color-delete: #b83228;
   --color-live: #2f8f58;
@@ -365,6 +367,7 @@ html.dark {
   --fs-ink: #f0f0f0;
   /* #8c8c8c, not #808080 — 808080 is 4.4:1 on surface-2 (#1a1a1a), just under AA */
   --fs-muted: #8c8c8c;
+  --fs-ink-muted: var(--fs-muted);
   --fs-primary: #0a0a0a;
   --fs-accent: #4ddcbb;
   --fs-accent-2: #38b5c9;
@@ -435,6 +438,7 @@ html.dark {
   --color-error: #ff5449;
   --color-error-fg: #ff5449;
   --color-error-muted: rgba(255, 84, 73, 0.14);
+  --fs-error: #f07070;
   --color-check: #34d98c;
   --color-delete: #ff5449;
   --color-live: #34d98c;

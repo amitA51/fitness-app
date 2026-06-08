@@ -219,11 +219,6 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
             backdropFilter: blurPxMap[blur],
           }}
           onClick={handleBackdropClick}
-          role="dialog"
-          aria-modal="true"
-          aria-label={ariaLabelledBy ? undefined : ariaLabel}
-          aria-labelledby={ariaLabelledBy}
-          aria-describedby={ariaDescribedBy}
         >
           <m.div
             ref={contentRef}
@@ -245,6 +240,11 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
                 : undefined
             }
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={ariaLabelledBy ? undefined : ariaLabel}
+            aria-labelledby={ariaLabelledBy}
+            aria-describedby={ariaDescribedBy}
           >
             {children}
           </m.div>
