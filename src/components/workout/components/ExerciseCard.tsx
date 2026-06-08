@@ -1,7 +1,6 @@
-// ExerciseCard - Sport Annual Editorial Design
-// Bone background · Navy border · Mustard selected state
-// Sharp corners · IBM Plex Mono labels · Big Shoulders Display
-// VISION: Bold · Editorial · Confident · Narrative · Printed
+// ExerciseCard - Fresh Steel / Obsidian
+// Surface background · steel border · accent selected state
+// Sharp corners · IBM Plex Mono labels · Bricolage display.
 
 import { AnimatePresence, m } from 'framer-motion';
 import { Trash as TrashIcon } from 'lucide-react';

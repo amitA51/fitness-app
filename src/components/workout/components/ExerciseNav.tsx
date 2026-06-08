@@ -49,6 +49,9 @@ const ExerciseNav = memo<ExerciseNavProps>(
     const handleKeyDown = useCallback(
       (e: KeyboardEvent) => {
         if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+        // Don't swap the exercise behind an open overlay (numpad, RPE sheet,
+        // reorder/superset) — arrow keys belong to the modal while it is up.
+        if (document.querySelector('[role="dialog"],[aria-modal="true"]')) return;
         if (e.key === 'ArrowRight' && canGoPrev) {
           onChangeExercise(currentIndex - 1);
         } else if (e.key === 'ArrowLeft' && canGoNext) {

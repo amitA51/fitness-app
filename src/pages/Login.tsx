@@ -142,7 +142,7 @@ export default function LoginPage() {
             textTransform: 'uppercase',
           }}
         >
-          SPARKOS · Training Log · 2026
+          SPARKOS · יומן אימונים · 2026
         </p>
       </footer>
     </div>

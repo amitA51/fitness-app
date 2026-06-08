@@ -805,7 +805,10 @@ function AppShell() {
                         key={location.pathname}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        // Instant exit (mode="wait" proceeds immediately) so the
+                        // outgoing route doesn't fade to a blank gap before the new
+                        // one mounts — the incoming page just fades in.
+                        exit={{ opacity: 0, transition: { duration: 0 } }}
                         transition={{ duration: 0.15, ease: 'easeOut' }}
                       >
                         <AppRoutes location={location} />

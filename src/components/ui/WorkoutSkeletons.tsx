@@ -1,6 +1,6 @@
 // ============================================================================
 // SPARKOS FITNESS - Workout-Specific Skeleton Loaders
-// Sport Annual Editorial Design · Navy · Mustard · Bone
+// Fresh Steel / Obsidian · dark masthead · surface · accent
 // ============================================================================
 
 import type { FC } from 'react';

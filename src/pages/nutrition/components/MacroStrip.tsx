@@ -146,7 +146,7 @@ export const MacroStrip = memo(function MacroStrip({
               }}
             >
               {m.icon}
-              <span>{m.label}</span>
+              <span>{m.he}</span>
             </div>
             <div
               style={{
@@ -169,7 +169,7 @@ export const MacroStrip = memo(function MacroStrip({
                   marginInlineStart: '2px',
                 }}
               >
-                G
+                ג׳
               </em>
             </div>
             <div className="mt-2 fs-progress-track" style={{ height: '4px' }}>
@@ -194,7 +194,7 @@ export const MacroStrip = memo(function MacroStrip({
                 color: isOver ? 'var(--fs-warn)' : 'var(--fs-muted)',
               }}
             >
-              {m.he} · {m.cur}/{m.goal}
+              {m.cur}/{m.goal}
             </div>
           </div>
         );

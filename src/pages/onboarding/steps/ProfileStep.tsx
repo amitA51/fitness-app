@@ -10,6 +10,20 @@ interface ProfileStepProps {
 }
 
 export function ProfileStep({ data, onChange }: ProfileStepProps) {
+  // Inline range errors mirror the wizard's advance-gate (useOnboardingWizard),
+  // so a bad value shows a message under the offending field instead of passing
+  // silently. Only shown once a value has been entered.
+  const ageError =
+    data.age !== '' && (data.age < 10 || data.age > 100) ? 'גיל לא תקין (10–100)' : undefined;
+  const heightError =
+    data.height !== '' && (data.height < 100 || data.height > 250)
+      ? 'גובה לא תקין (100–250)'
+      : undefined;
+  const weightError =
+    data.weight !== '' && (data.weight < 30 || data.weight > 300)
+      ? 'משקל לא תקין (30–300)'
+      : undefined;
+
   return (
     <m.div
       initial={{ opacity: 0, x: 20 }}
@@ -90,6 +104,7 @@ export function ProfileStep({ data, onChange }: ProfileStepProps) {
             unit="שנה"
             min={10}
             max={100}
+            error={ageError}
           />
           <MobileInput
             type="number"
@@ -100,6 +115,7 @@ export function ProfileStep({ data, onChange }: ProfileStepProps) {
             unit="ס״מ"
             min={100}
             max={250}
+            error={heightError}
           />
         </div>
 
@@ -115,6 +131,7 @@ export function ProfileStep({ data, onChange }: ProfileStepProps) {
           max={300}
           inputMode="decimal"
           step="0.1"
+          error={weightError}
         />
       </div>
     </m.div>

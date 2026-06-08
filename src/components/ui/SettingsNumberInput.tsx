@@ -1,4 +1,4 @@
-/** Inline number input, right-aligned, #2C2C2E bg */
+/** Inline number input — --fs-surface bg, LTR digits hugging the inline-end. */
 interface NumberInputProps {
   value: number | '';
   onChange: (val: number | '') => void;
@@ -15,6 +15,8 @@ export function NumberInput({ value, onChange, min, max, placeholder, unit }: Nu
         type="number"
         inputMode="numeric"
         pattern="[0-9]*"
+        dir="ltr"
+        enterKeyHint="done"
         aria-label={placeholder || unit || 'ערך מספרי'}
         min={min}
         max={max}
@@ -26,7 +28,7 @@ export function NumberInput({ value, onChange, min, max, placeholder, unit }: Nu
           minHeight: '44px',
           paddingBlock: '6px',
           paddingInline: '10px',
-          textAlign: 'start',
+          textAlign: 'end',
           fontFamily: 'var(--font-mono)',
           fontSize: '14px',
           backgroundColor: 'var(--fs-surface)',

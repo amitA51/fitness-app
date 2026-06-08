@@ -1,5 +1,5 @@
 /**
- * TRAINING LOG DESIGN — GHOST LINK BUTTON
+ * Fresh Steel / Obsidian — ghost link button.
  */
 
 interface GhostLinkProps {

@@ -88,6 +88,7 @@ export const AddWeightModal = memo(function AddWeightModal({
             }}
             step="0.1"
             inputMode="decimal"
+            enterKeyHint="done"
           />
           <div
             style={{
@@ -141,6 +142,7 @@ export function SaveButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
+      className="transition-transform active:scale-[0.98] motion-reduce:active:scale-100 disabled:active:scale-100"
       style={{
         width: '100%',
         padding: 16,

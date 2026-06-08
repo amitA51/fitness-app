@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type React from 'react';
 import { memo } from 'react';
+import { translateMuscle } from '../../../constants/muscleNames';
 import type { Exercise } from '../../../types';
 import { SetEditRow } from './SetEditRow';
 
@@ -88,7 +89,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
             padding: '12px 16px',
             background:
               selectMode && isSelected
-                ? 'rgba(201,162,39,0.14)'
+                ? 'color-mix(in srgb, var(--fs-accent) 14%, transparent)'
                 : isActive
                   ? 'var(--fs-surface)'
                   : 'var(--fs-surface-2)',
@@ -138,16 +139,20 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
               alignItems: 'center',
               justifyContent: 'center',
               background: isComplete
-                ? 'rgba(45,139,78,0.15)'
+                ? 'color-mix(in srgb, var(--color-success) 16%, transparent)'
                 : isActive
                   ? 'var(--fs-accent)'
                   : 'var(--fs-surface)',
-              color: isComplete ? '#2F8F58' : isActive ? 'var(--fs-primary)' : 'var(--fs-muted)',
+              color: isComplete
+                ? 'var(--color-success)'
+                : isActive
+                  ? 'var(--fs-primary)'
+                  : 'var(--fs-muted)',
               fontFamily: 'var(--font-display)',
               fontWeight: 800,
               fontSize: 14,
               flexShrink: 0,
-              border: `2px solid ${isComplete ? '#2F8F58' : isActive ? 'var(--fs-primary)' : 'var(--fs-surface-2)'}`,
+              border: `2px solid ${isComplete ? 'var(--color-success)' : isActive ? 'var(--fs-primary)' : 'var(--fs-surface-2)'}`,
             }}
           >
             {isComplete ? <CheckCheckIcon style={{ width: 16, height: 16 }} /> : index + 1}
@@ -197,7 +202,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
                   letterSpacing: '0.1em',
-                  color: isComplete ? '#2F8F58' : 'var(--fs-muted)',
+                  color: isComplete ? 'var(--color-success)' : 'var(--fs-muted)',
                   textTransform: 'uppercase',
                 }}
               >
@@ -223,7 +228,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                       textTransform: 'uppercase',
                     }}
                   >
-                    {exercise.muscleGroup}
+                    {translateMuscle(exercise.muscleGroup)}
                   </span>
                 </>
               )}

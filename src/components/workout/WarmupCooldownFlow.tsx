@@ -1,5 +1,5 @@
-// WarmupCooldownFlow - Sport Annual Editorial Design
-// Navy masthead + bone body · Sharp corners · Big Shoulders typography
+// WarmupCooldownFlow - Fresh Steel / Obsidian
+// Dark masthead + surface body · sharp corners · Bricolage display
 // Warmup: dynamic movement warmup routine
 // Cooldown: guided stretching routine
 
@@ -525,6 +525,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
         }}
       >
         <span
+          dir="ltr"
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 11,

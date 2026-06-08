@@ -46,7 +46,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 // ============================================================================
-// Sport Annual Variant Styles — sharp corners, editorial palette
+// Fresh Steel / Obsidian variant styles — sharp corners, tokenized palette
 // ============================================================================
 
 const variantStyles: Record<ButtonVariant, string> = {
@@ -374,7 +374,7 @@ export const Button: React.FC<ButtonProps> = ({
       >)}
     >
       {isLoading ? (
-        // Navy/mustard spinner — sharp edges via border-current
+        // Spinner inherits currentColor; sharp edges via border-current
         <span className="w-[18px] h-[18px] border-2 border-current border-t-transparent rounded-full animate-spin" />
       ) : (
         <>

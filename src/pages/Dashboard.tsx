@@ -4,9 +4,9 @@
  * Deep analytics (consistency, muscle distribution, full history) live in Progress.
  */
 
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Users } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ActivityRings } from '../components/charts';
 import { RING_DRAW_DURATION, ringDelay } from '../components/charts/ActivityRings';
 import { CoachBriefCard } from '../components/dashboard/CoachBriefCard';
@@ -291,7 +291,7 @@ export default function Dashboard() {
         <button
           type="button"
           onClick={openStartSheet}
-          className="accent-glow"
+          className="accent-glow magnetic-card"
           aria-haspopup="dialog"
           aria-expanded={isStartSheetOpen}
           aria-label="התחל אימון"
@@ -463,6 +463,9 @@ export default function Dashboard() {
         {/* 7. PR highlights (compact) */}
         <RecentPRBanner />
 
+        {/* 8. Community discovery — invite into the social feed */}
+        <CommunityCard />
+
         <div style={{ height: 24 }} />
       </div>
 
@@ -477,6 +480,78 @@ export default function Dashboard() {
     </div>
   );
 }
+
+// ── CommunityCard — discovery affordance into the social feed ────────────────
+// Links to /community via react-router. Matches the dashboard card idiom
+// (surface, asymmetric radius, card shadow). Tokens only; reads in both modes.
+const CommunityCard = memo(function CommunityCard() {
+  return (
+    <section style={{ marginTop: 24 }}>
+      <Link
+        to="/community"
+        aria-label="הצטרפו לקהילה"
+        className="magnetic-card focus-ring active:scale-[0.99]"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          padding: '18px 20px',
+          background: 'var(--fs-surface)',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: '22px 16px 22px 16px',
+          boxShadow: 'var(--shadow-card)',
+          textDecoration: 'none',
+          color: 'inherit',
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 48,
+            height: 48,
+            borderRadius: 14,
+            background: 'var(--fs-accent)',
+            color: 'var(--color-ink-on-accent)',
+            flexShrink: 0,
+          }}
+        >
+          <Users size={24} />
+        </span>
+        <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 17,
+              color: 'var(--fs-ink)',
+              lineHeight: 1.2,
+            }}
+          >
+            הצטרפו לקהילה
+          </span>
+          <span
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              color: 'var(--fs-muted)',
+              lineHeight: 1.4,
+            }}
+          >
+            שתפו, עקבו והתחברו עם מתאמנים אחרים.
+          </span>
+        </span>
+        <ArrowLeft
+          size={20}
+          aria-hidden="true"
+          style={{ color: 'var(--fs-muted)', flexShrink: 0 }}
+        />
+      </Link>
+    </section>
+  );
+});
 
 // ── SectionTitle ─────────────────────────────────────────────────────────────
 interface SectionTitleAction {

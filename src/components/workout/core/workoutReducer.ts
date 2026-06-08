@@ -552,6 +552,15 @@ const setReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       break;
     }
 
+    case 'UPDATE_SET_RPE_TAG': {
+      if (!exercise) return;
+      const sets = exercise.sets ?? [];
+      const activeIdx = getActiveSetIndex(sets);
+      if (activeIdx < 0 || !sets[activeIdx]) return;
+      sets[activeIdx]!.rpeTag = action.payload;
+      break;
+    }
+
     case 'SET_TECHNIQUE': {
       if (!exercise) return;
       const sets = exercise.sets ?? [];
@@ -955,6 +964,7 @@ const SET_ACTIONS = new Set([
   'DELETE_SET',
   'RESTORE_DELETED_SET',
   'UPDATE_SET_RPE',
+  'UPDATE_SET_RPE_TAG',
   'UPDATE_SET_NOTES',
   'SET_TECHNIQUE',
 ]);

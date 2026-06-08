@@ -319,6 +319,7 @@ export const WorkoutContent: React.FC<{
     handleOpenNumpad,
     handleUndoSet,
     handleUpdateRPE,
+    handleUpdateRpeTag,
     handleToggleTechnique,
     handleOpenPlateCalc,
     handleClosePlateCalc,
@@ -575,6 +576,7 @@ export const WorkoutContent: React.FC<{
             onEditSet={handleEditSet}
             nameSuggestions={nameSuggestions}
             onUpdateRPE={handleUpdateRPE}
+            onUpdateRpeTag={handleUpdateRpeTag}
             onUpdateNotes={handleUpdateNotes}
             onUndo={handleUndoSet}
             showGhostValues={showGhostValues}

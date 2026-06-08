@@ -361,7 +361,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                             marginRight: 3,
                           }}
                         >
-                          kg
+                          ק״ג
                         </span>
                       </span>
                       <span style={{ color: 'var(--fs-muted)' }}>×</span>
@@ -382,7 +382,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                             marginRight: 3,
                           }}
                         >
-                          reps
+                          חזרות
                         </span>
                       </span>
                       <span

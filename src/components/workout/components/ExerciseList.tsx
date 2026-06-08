@@ -1,5 +1,4 @@
-// ExerciseList - Sport Annual Editorial Design
-// VISION: Bold · Editorial · Confident · Narrative · Printed
+// ExerciseList - Fresh Steel / Obsidian
 
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type React from 'react';

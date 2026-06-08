@@ -257,6 +257,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               icon={<User size={16} />}
               error={errors.fullName}
               autoComplete="name"
+              enterKeyHint="next"
               autoFocus
             />
           </m.div>
@@ -272,6 +273,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               icon={<Mail size={16} />}
               error={errors.email}
               autoComplete="email"
+              enterKeyHint="next"
             />
           </m.div>
 
@@ -299,6 +301,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               placeholder="לפחות 8 תווים"
               error={errors.password}
               autoComplete="new-password"
+              enterKeyHint="next"
             />
           </m.div>
 
@@ -310,6 +313,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               placeholder="הזן שוב את הסיסמה"
               error={errors.confirmPassword}
               autoComplete="new-password"
+              enterKeyHint="go"
             />
           </m.div>
 

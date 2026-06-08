@@ -145,6 +145,7 @@ export function SignInStep({
               icon={<Mail size={16} />}
               error={errors.email}
               autoComplete="email"
+              enterKeyHint="next"
               autoFocus
             />
           </m.div>
@@ -157,6 +158,7 @@ export function SignInStep({
               placeholder="••••••••"
               error={errors.password}
               autoComplete="current-password"
+              enterKeyHint="go"
             />
           </m.div>
 

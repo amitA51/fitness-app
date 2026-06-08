@@ -1,5 +1,5 @@
 /**
- * TRAINING LOG DESIGN — INPUT COMPONENT
+ * Fresh Steel / Obsidian — text input primitive.
  */
 
 import { AlertCircle } from 'lucide-react';
@@ -19,6 +19,7 @@ interface AnnualInputProps {
   autoComplete?: string;
   autoFocus?: boolean;
   inputMode?: 'none' | 'text' | 'decimal' | 'numeric' | 'tel' | 'search' | 'email' | 'url';
+  enterKeyHint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send';
 }
 
 export const AnnualInput = memo(function AnnualInput({
@@ -34,6 +35,7 @@ export const AnnualInput = memo(function AnnualInput({
   autoComplete,
   autoFocus,
   inputMode,
+  enterKeyHint,
 }: AnnualInputProps) {
   const inputId = useId();
   return (
@@ -70,6 +72,7 @@ export const AnnualInput = memo(function AnnualInput({
           autoComplete={autoComplete}
           autoFocus={autoFocus}
           inputMode={inputMode}
+          enterKeyHint={enterKeyHint}
           className={cn(
             'w-full h-14 transition-all duration-200',
             'text-base',

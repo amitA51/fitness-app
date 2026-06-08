@@ -3,6 +3,7 @@ import type { PersonalRecord } from '../../../services/prService';
 import type {
   ActiveExercise,
   AppSettings,
+  RpeTag,
   SetTechnique,
   WorkoutSession,
   WorkoutSet,
@@ -132,6 +133,7 @@ export type SetAction =
   | { type: 'UNDO_LAST_SET' }
   | { type: 'UPDATE_SET_NOTES'; payload: string | undefined }
   | { type: 'UPDATE_SET_RPE'; payload: number | undefined }
+  | { type: 'UPDATE_SET_RPE_TAG'; payload: RpeTag | null }
   | { type: 'SET_TECHNIQUE'; payload: { technique: SetTechnique; value: boolean } }
   | {
       type: 'EDIT_SPECIFIC_SET';

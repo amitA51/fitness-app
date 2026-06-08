@@ -11,6 +11,7 @@ import {
 } from '../services/bodyStatsService';
 import type { BodyMeasurement, RecoveryLog } from '../services/bodyStatsService';
 import { todayStr } from '../utils/dateUtils';
+import { triggerHapticEffect } from '../utils/haptics';
 import { safeJsonParse } from '../utils/safeJson';
 import { ProgressSkeleton } from './progress/components/ProgressSkeleton';
 import { AddMeasurementModal } from './progress/modals/AddMeasurementModal';
@@ -93,6 +94,7 @@ export default function ProgressPage() {
   const handleSaveWeight = useCallback(
     async (weight: number, notes: string) => {
       await addBodyWeight({ date: todayStr(), weight, notes });
+      triggerHapticEffect('success');
       setShowAddWeight(false);
       reload();
     },
@@ -101,6 +103,7 @@ export default function ProgressPage() {
   const handleSaveMeasurement = useCallback(
     async (m: Omit<BodyMeasurement, 'id' | 'createdAt'>) => {
       await addBodyMeasurement(m);
+      triggerHapticEffect('success');
       setShowAddMeasurement(false);
       reload();
     },
@@ -109,6 +112,7 @@ export default function ProgressPage() {
   const handleSaveRecovery = useCallback(
     async (r: Omit<RecoveryLog, 'id' | 'createdAt'>) => {
       await addRecoveryLog(r);
+      triggerHapticEffect('success');
       setShowAddRecovery(false);
       reload();
     },
@@ -187,6 +191,7 @@ export default function ProgressPage() {
               aria-controls={`progress-panel-${tab.key}`}
               tabIndex={activeTab === tab.key ? 0 : -1}
               onClick={() => setActiveTab(tab.key)}
+              className="active:scale-[0.97] motion-reduce:active:scale-100"
               onKeyDown={(e) => {
                 if (e.key === 'ArrowRight') {
                   e.preventDefault();
@@ -220,7 +225,7 @@ export default function ProgressPage() {
                 borderBottom:
                   activeTab === tab.key ? '2px solid var(--fs-accent)' : '2px solid transparent',
                 cursor: 'pointer',
-                transition: 'color 0.15s, border-color 0.15s',
+                transition: 'color 0.15s, border-color 0.15s, transform 0.1s',
                 textTransform: 'uppercase',
                 marginBottom: -1,
                 whiteSpace: 'nowrap',

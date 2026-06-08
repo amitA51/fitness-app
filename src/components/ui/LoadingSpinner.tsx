@@ -81,7 +81,7 @@ const DotsSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
   );
 };
 
-// Pulsing circle — navy inner + mustard outer
+// Pulsing circle — primary inner + accent outer
 const PulseSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => (
   <div className="relative">
     <m.div
@@ -169,7 +169,7 @@ const GradientSpinner: React.FC<{ size: SpinnerSize; instanceId?: string }> = ({
 
   return (
     <div className="relative" style={{ width: sizeValue, height: sizeValue }}>
-      {/* Glow effect — navy to mustard */}
+      {/* Glow effect — primary to accent */}
       <m.div
         className="absolute inset-0 rounded-full blur-md"
         style={{

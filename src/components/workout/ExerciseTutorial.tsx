@@ -1,5 +1,5 @@
-// ExerciseTutorial - Sport Annual Editorial Design
-// Navy overlay · Bone text · Sharp corners
+// ExerciseTutorial - Fresh Steel / Obsidian
+// Dark overlay · light text · sharp corners
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
 import { m } from 'framer-motion';

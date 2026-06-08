@@ -67,6 +67,7 @@ export const SegmentedControl = memo(function SegmentedControl<T extends string>
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(opt.key)}
             onKeyDown={(e) => onKeyDown(e, idx)}
+            className="active:scale-[0.97] motion-reduce:active:scale-100"
             style={{
               flex: 1,
               minHeight: 44,
@@ -81,7 +82,7 @@ export const SegmentedControl = memo(function SegmentedControl<T extends string>
               fontWeight: active ? 700 : 500,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
-              transition: 'color 0.15s, background 0.15s',
+              transition: 'color 0.15s, background 0.15s, transform 0.1s',
             }}
           >
             {opt.label}

@@ -1,5 +1,5 @@
-// SummaryExerciseList - Sport Annual Editorial Design
-// Sharp corners, bone-deep cards, navy borders, Big Shoulders typography
+// SummaryExerciseList - Fresh Steel / Obsidian
+// Sharp corners, surface cards, steel borders, Bricolage display
 
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { m } from 'framer-motion';

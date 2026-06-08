@@ -1,5 +1,5 @@
-// ExerciseForm - Sport Annual Editorial Design
-// Sharp corners · Bone background · Navy border
+// ExerciseForm - Fresh Steel / Obsidian
+// Sharp corners · surface background · steel border
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
 import { Plus as AddIcon } from 'lucide-react';

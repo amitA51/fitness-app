@@ -1,6 +1,6 @@
-// PRCelebration - Sport Annual Editorial Design
-// Navy masthead · Bone body · Mustard accents · Sharp corners
-// Celebrates new personal records with editorial style
+// PRCelebration - Fresh Steel / Obsidian
+// Dark masthead · surface body · signal-lime accents · sharp corners
+// Celebrates new personal records.
 
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import React, { useCallback, useRef } from 'react';
@@ -136,7 +136,7 @@ const PRCelebration: React.FC<PRCelebrationProps> = ({ isVisible, pr, onDismiss 
                 overflow: 'hidden',
               }}
             >
-              {/* Mustard ribbon top strip */}
+              {/* Signal-lime ribbon top strip */}
               <div
                 style={{
                   background: 'var(--fs-accent)',

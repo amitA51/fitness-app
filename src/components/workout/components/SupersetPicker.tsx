@@ -127,7 +127,7 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 900,
                   fontSize: 24,
-                  color: 'var(--fs-ink)',
+                  color: 'var(--color-ink-on-dark)',
                   lineHeight: 1,
                 }}
               >
@@ -140,7 +140,7 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
                   letterSpacing: '0.12em',
-                  color: 'var(--fs-ink)',
+                  color: 'var(--color-ink-on-dark)',
                   opacity: 0.5,
                   textTransform: 'uppercase',
                 }}
@@ -155,7 +155,7 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
               style={{ background: 'var(--fs-surface)', opacity: 0.1 }}
               aria-label="סגור"
             >
-              <CloseIcon className="w-5 h-5" style={{ color: 'var(--fs-ink)' }} />
+              <CloseIcon className="w-5 h-5" style={{ color: 'var(--color-ink-on-dark)' }} />
             </button>
           </div>
         </div>

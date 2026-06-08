@@ -163,8 +163,8 @@ export const OverviewTab = memo(function OverviewTab({
               fontSize: 11,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
-              background: weekly.changePct >= 0 ? 'var(--fs-signal)' : 'var(--fs-primary)',
-              color: weekly.changePct >= 0 ? 'var(--fs-primary)' : 'var(--fs-signal)',
+              background: weekly.changePct >= 0 ? 'var(--fs-signal)' : 'var(--fs-surface-2)',
+              color: weekly.changePct >= 0 ? 'var(--fs-primary)' : 'var(--fs-ink)',
               padding: '4px 10px',
               borderRadius: 8,
             }}

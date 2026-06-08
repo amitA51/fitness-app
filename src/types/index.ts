@@ -16,6 +16,8 @@ export interface WorkoutSet {
   isWarmup: boolean;
   isCompleted: boolean;
   notes: string;
+  /** Subjective set tag from the RPE picker (technique/near-failure/pain/deload). */
+  rpeTag?: RpeTag | null;
   completedAt: string | null;
   duration?: number; // for timed exercises (e.g., plank)
   // Intensity techniques (optional — flipped via SET_TECHNIQUE action)
@@ -27,6 +29,9 @@ export interface WorkoutSet {
 }
 
 export type SetTechnique = 'warmup' | 'dropSet' | 'failure' | 'restPause';
+
+/** Subjective per-set tag chosen in the RPE picker (persisted on the set). */
+export type RpeTag = 'clean' | 'near-failure' | 'pain' | 'deload';
 
 export interface WorkoutExercise {
   id: string;

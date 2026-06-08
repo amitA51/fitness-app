@@ -1,5 +1,5 @@
 /**
- * TRAINING LOG DESIGN — PASSWORD INPUT
+ * Fresh Steel / Obsidian — password input primitive.
  */
 
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
@@ -15,6 +15,7 @@ interface AnnualPasswordInputProps {
   disabled?: boolean;
   autoFocus?: boolean;
   autoComplete?: 'current-password' | 'new-password';
+  enterKeyHint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send';
 }
 
 export const AnnualPasswordInput = memo(function AnnualPasswordInput({
@@ -26,6 +27,7 @@ export const AnnualPasswordInput = memo(function AnnualPasswordInput({
   disabled,
   autoFocus,
   autoComplete = 'current-password',
+  enterKeyHint,
 }: AnnualPasswordInputProps) {
   const [show, setShow] = useState(false);
   const inputId = useId();
@@ -54,6 +56,7 @@ export const AnnualPasswordInput = memo(function AnnualPasswordInput({
           placeholder={placeholder}
           disabled={disabled}
           autoComplete={autoComplete}
+          enterKeyHint={enterKeyHint}
           autoFocus={autoFocus}
           className={cn(
             'w-full h-14 transition-all duration-200 pe-12',

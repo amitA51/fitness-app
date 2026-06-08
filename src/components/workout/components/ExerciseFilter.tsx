@@ -1,5 +1,5 @@
-// ExerciseFilter - Sport Annual Editorial Design
-// Bone background · Navy text · Sharp corners · IBM Plex Mono labels
+// ExerciseFilter - Fresh Steel / Obsidian
+// Surface background · ink text · sharp corners · IBM Plex Mono labels
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
 import { Search as SearchIcon } from 'lucide-react';

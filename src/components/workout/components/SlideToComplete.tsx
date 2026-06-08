@@ -62,7 +62,9 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
   }, [recalcMax]);
 
   const finish = useCallback(() => {
-    triggerHaptic('success');
+    // No haptic here: the set-complete buzz is owned by the COMPLETE_SET reducer
+    // (fired once in WorkoutProvider). The slider's own spark+check animation is
+    // its visual confirmation, so self-buzzing would double/triple the vibration.
     if (prefersReducedMotion) {
       setIsComplete(true);
       setOffset(maxOffsetRef.current);

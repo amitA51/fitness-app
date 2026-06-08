@@ -1,6 +1,5 @@
-// WorkoutCalendar - VISION Sport Annual Editorial Design
-// Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
-// VISION: Bold · Editorial · Confident · Narrative · Printed
+// WorkoutCalendar - Fresh Steel / Obsidian
+// Dark masthead · surface body · Bricolage display + IBM Plex Mono labels.
 
 import { m } from 'framer-motion';
 import type React from 'react';
@@ -50,7 +49,7 @@ const HEBREW_NUMBERS: Record<number, string> = {
 };
 
 /**
- * WorkoutCalendar - Sport Annual Editorial Calendar Heatmap
+ * WorkoutCalendar - Fresh Steel / Obsidian calendar heatmap
  */
 const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -131,7 +130,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
     setCurrentDate(new Date(year, month + 1, 1));
   };
 
-  // VISION-annual intensity colors - mustard/bone gradient
+  // Intensity colors — accent/surface gradient
   const getIntensityStyle = (count: number): React.CSSProperties => {
     if (count === 0) {
       return { backgroundColor: 'var(--fs-surface-2)' };

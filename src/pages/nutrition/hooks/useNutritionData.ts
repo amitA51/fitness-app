@@ -175,6 +175,9 @@ export function useNutritionData() {
   }, [selectedDate]);
 
   const handleAddFood = useCallback((food: FoodItem) => {
+    // Tactile confirmation the tap registered (the selected list can be
+    // off-screen above the results) — matches WaterTracker's add feedback.
+    triggerHapticEffect('tap', 'light');
     setSelectedFoods((prev) => {
       const existing = prev.find((f) => f.id === food.id);
       if (existing) {

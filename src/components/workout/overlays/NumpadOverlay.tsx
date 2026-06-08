@@ -1,6 +1,6 @@
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
-// NumpadOverlay - Sport Annual numpad for weight/reps
-// Editorial sports-yearbook: navy masthead, bone body, sharp corners, display numbers
+// NumpadOverlay - Fresh Steel / Obsidian numpad for weight/reps
+// Dark masthead, surface body, sharp corners, oversized display numerals.
 // Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { triggerHaptic } from '../../../utils/haptics';
@@ -124,7 +124,7 @@ const AnimatedValue = memo<{ value: string; target: 'weight' | 'reps' | null }>(
 
 AnimatedValue.displayName = 'AnimatedValue';
 
-/** Sport Annual numpad key — sharp bone square with navy text */
+/** Numpad key — sharp surface square with heading-color text */
 const NumpadButton = memo<{
   value: string | number | null;
   onInput: (digit: string) => void;
@@ -135,7 +135,9 @@ const NumpadButton = memo<{
 }>(({ value, onInput, onDelete, variant = 'number', disabled = false, label }) => {
   const handleClick = useCallback(() => {
     if (disabled || value === null) return;
-    triggerHaptic();
+    // Single soft tap is owned here. The parent handleInput/handleDelete used to
+    // ALSO fire triggerHaptic, double-buzzing every keypress — they no longer do.
+    triggerHaptic('light');
     if (value === '⌫') {
       onDelete();
     } else {
@@ -147,7 +149,7 @@ const NumpadButton = memo<{
     return <div className="w-20 h-20" />;
   }
 
-  // Editorial style — sharp edges, navy-on-bone, mustard submit
+  // Fresh Steel / Obsidian — sharp edges, heading-on-surface, accent submit
   const baseStyle: React.CSSProperties = {
     minWidth: 72,
     minHeight: 72,
@@ -203,7 +205,7 @@ const NumpadButton = memo<{
 
 NumpadButton.displayName = 'NumpadButton';
 
-/** Preset chip — bone/navy, mustard when selected */
+/** Preset chip — surface, accent fill when selected */
 const PresetButton = memo<{
   value: number;
   isSelected: boolean;
@@ -387,7 +389,7 @@ GhostValue.displayName = 'GhostValue';
 // ============================================================
 
 /**
- * NumpadOverlay - Sport Annual numpad for precise input
+ * NumpadOverlay - Fresh Steel / Obsidian numpad for precise input
  *
  * Features:
  * - Smart presets based on exercise history
@@ -468,19 +470,21 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
 
     const handleInput = useCallback(
       (digit: string) => {
-        triggerHaptic();
+        // Haptic is fired once by NumpadButton; firing here too double-buzzed.
         onInput(digit);
       },
       [onInput]
     );
 
     const handleDelete = useCallback(() => {
-      triggerHaptic('light');
+      // Haptic is fired once by NumpadButton; firing here too double-buzzed.
       onDelete();
     }, [onDelete]);
 
     const handleSubmit = useCallback(() => {
-      triggerHaptic('success');
+      // Confirming a value is a soft commit, not a set completion — keep it a
+      // light tick; the heavier 'success' buzz is reserved for COMPLETE_SET.
+      triggerHaptic('light');
       onSubmit();
     }, [onSubmit]);
 
@@ -495,7 +499,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
     }, [onClear]);
 
     const handleSubmitAdvance = useCallback(() => {
-      triggerHaptic('success');
+      triggerHaptic('light');
       onSubmitAdvance?.();
     }, [onSubmitAdvance]);
 

@@ -119,7 +119,7 @@ const OverflowMenu = memo<{
       className="w-full flex items-center gap-3 px-4 py-3 active:bg-[var(--fs-surface-2)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-inset"
       style={{
         background: 'var(--fs-surface)',
-        color: destructive ? 'var(--fs-danger, #C84141)' : 'var(--fs-ink)',
+        color: destructive ? 'var(--color-error)' : 'var(--fs-ink)',
         fontFamily: 'var(--font-mono)',
         fontSize: 11,
         letterSpacing: '0.06em',
@@ -127,9 +127,7 @@ const OverflowMenu = memo<{
         textTransform: 'uppercase',
       }}
     >
-      <span style={{ color: destructive ? 'var(--fs-danger, #C84141)' : 'var(--fs-accent)' }}>
-        {icon}
-      </span>
+      <span style={{ color: destructive ? 'var(--color-error)' : 'var(--fs-accent)' }}>{icon}</span>
       {label}
     </button>
   );

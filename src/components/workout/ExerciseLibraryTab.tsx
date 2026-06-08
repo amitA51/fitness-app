@@ -1,6 +1,5 @@
-// ExerciseLibraryTab - Sport Annual Editorial Design
-// Clean bone background with no dark gradients
-// VISION: Bold · Editorial · Confident · Narrative · Printed
+// ExerciseLibraryTab - Fresh Steel / Obsidian
+// Clean surface background, no dark gradients.
 
 import { Plus as AddIcon } from 'lucide-react';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';

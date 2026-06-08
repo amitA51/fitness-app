@@ -1,6 +1,5 @@
-// EmptyWorkoutState - VISION Sport Annual Editorial Design
-// Navy · Mustard · Bone · Big Shoulders Display + IBM Plex Mono
-// VISION: Bold · Editorial · Confident · Narrative · Printed
+// EmptyWorkoutState - Fresh Steel / Obsidian
+// Dark masthead · surface body · Bricolage display + IBM Plex Mono labels.
 
 import { m } from 'framer-motion';
 import React from 'react';

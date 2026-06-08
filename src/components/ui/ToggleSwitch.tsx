@@ -20,7 +20,7 @@ interface ToggleSwitchProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-// Sport Annual toggles — sharp rectangles, navy knob, mustard active track
+// Fresh Steel / Obsidian toggles — sharp rect track, primary knob, accent active fill (--fs-* tokens)
 const sizeConfig = {
   sm: {
     trackW: 32,

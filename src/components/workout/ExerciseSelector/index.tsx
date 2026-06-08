@@ -1,6 +1,5 @@
-// ExerciseSelector - Sport Annual Editorial Design
-// Navy masthead · Bone body · Sharp corners · Big Shoulders Display
-// VISION: Bold · Editorial · Confident · Narrative · Printed
+// ExerciseSelector - Fresh Steel / Obsidian
+// Dark masthead · surface body · sharp corners · oversized display numerals.
 
 import { AnimatePresence, type PanInfo, m } from 'framer-motion';
 import {
@@ -19,6 +18,7 @@ import {
   createWorkoutSet,
 } from '../../../types';
 import { triggerHaptic } from '../../../utils/haptics';
+import { HE_NOUNS, pluralizeHe } from '../../../utils/pluralizeHe';
 import { EmbeddedTemplatePicker } from '../../templates/EmbeddedTemplatePicker';
 import { ModalOverlay } from '../../ui/ModalOverlay';
 import ExerciseLibraryTab from '../ExerciseLibraryTab';
@@ -340,7 +340,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   textTransform: 'uppercase',
                   minHeight: 56,
                 }}
-                aria-label={`${confirmLabel} עם ${pendingExercises.length} תרגילים`}
+                aria-label={`${confirmLabel} עם ${pluralizeHe(pendingExercises.length, HE_NOUNS.exercise)}`}
               >
                 <DumbbellIcon style={{ width: 20, height: 20, flexShrink: 0 }} />
                 {confirmLabel} ({pendingExercises.length})
@@ -364,7 +364,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     textTransform: 'uppercase',
                     minHeight: 48,
                   }}
-                  aria-label={`תכנן מראש ${pendingExercises.length} תרגילים — סטים, משקל וחזרות`}
+                  aria-label={`תכנן מראש ${pluralizeHe(pendingExercises.length, HE_NOUNS.exercise)} — סטים, משקל וחזרות`}
                 >
                   <ClipboardIcon style={{ width: 18, height: 18, flexShrink: 0 }} />
                   תכנן מראש ({pendingExercises.length})

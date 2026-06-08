@@ -1,5 +1,5 @@
 import { m } from 'framer-motion';
-import { Trash2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 export function LoadingState() {
   return (
@@ -44,7 +44,7 @@ export function ErrorState({ onRetry }: { onRetry: () => void }) {
         animate={{ opacity: 1, scale: 1 }}
         className="w-20 h-20 rounded-2xl bg-error/10 flex items-center justify-center mb-6"
       >
-        <Trash2 size={32} className="text-error" />
+        <AlertTriangle size={32} className="text-error" />
       </m.div>
       <p className="mb-2 font-semibold" style={{ color: 'var(--fs-ink)', fontSize: '15px' }}>
         שגיאה בטעינה

@@ -25,7 +25,7 @@ export function GoalsStep({ data, onChange }: GoalsStepProps) {
     {
       value: 'endurance' as const,
       title: 'סיבולת',
-      description: 'שיפור הסיבולת והקאנדישן הגופני',
+      description: 'שיפור הסיבולת והכושר הגופני',
       icon: <TrendingUp size={24} />,
     },
     {
@@ -97,7 +97,13 @@ export function GoalsStep({ data, onChange }: GoalsStepProps) {
                   fontFamily: 'var(--font-body)',
                   fontWeight: 600,
                   fontSize: '16px',
-                  color: 'var(--fs-ink)',
+                  // Selected card fills with --fs-accent; in dark mode --fs-ink is
+                  // near-white and fails AA on mint. Use the on-accent ink token
+                  // when selected (matches the description below).
+                  color:
+                    data.primaryGoal === goal.value
+                      ? 'var(--color-ink-on-accent)'
+                      : 'var(--fs-ink)',
                 }}
               >
                 {goal.title}

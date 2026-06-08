@@ -1,10 +1,11 @@
-// QuickExerciseForm - Sport Annual Editorial Design
+// QuickExerciseForm - Fresh Steel / Obsidian
 // Sharp corners · Navy border · Bone background
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
 import { X as CloseIcon } from 'lucide-react';
 import type React from 'react';
-import { memo, useId, useState } from 'react';
+import { memo, useId, useRef, useState } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import * as dataService from '../../services/dataService';
 import { type CreatePersonalExerciseInput, type Exercise, createWorkoutSet } from '../../types';
 import { logger } from '../../utils/logger';
@@ -27,6 +28,10 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
   const muscleGroupId = useId();
   const restTimeId = useId();
   const setsId = useId();
+  // Real focus trap + Esc-to-close + scroll lock (the backdrop comment used to
+  // promise Escape, but nothing implemented it; this makes it true and traps Tab).
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, { isOpen: true, onClose, closeOnEscape: true, lockScroll: true });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +81,18 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
     }
   };
 
-  const muscleGroups = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Cardio', 'Other'];
+  // Stored values stay English (unchanged data shape); only the visible label is
+  // Hebrew so the dropdown isn't stray English in the otherwise-RTL form.
+  const muscleGroups: { value: string; label: string }[] = [
+    { value: 'Chest', label: 'חזה' },
+    { value: 'Back', label: 'גב' },
+    { value: 'Legs', label: 'רגליים' },
+    { value: 'Shoulders', label: 'כתפיים' },
+    { value: 'Arms', label: 'ידיים' },
+    { value: 'Core', label: 'ליבה' },
+    { value: 'Cardio', label: 'אירובי' },
+    { value: 'Other', label: 'אחר' },
+  ];
 
   const labelStyle: React.CSSProperties = {
     display: 'block',
@@ -121,6 +137,10 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
       }}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="תרגיל חדש"
         style={{
           width: '100%',
           maxWidth: 480,
@@ -220,8 +240,8 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
             >
               <option value="">בחר (אופציונלי)</option>
               {muscleGroups.map((group) => (
-                <option key={group} value={group}>
-                  {group}
+                <option key={group.value} value={group.value}>
+                  {group.label}
                 </option>
               ))}
             </select>

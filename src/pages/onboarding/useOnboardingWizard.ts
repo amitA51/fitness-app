@@ -71,6 +71,14 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
         if (data.name.trim().length === 0) return 'הזן את שמך כדי להמשיך';
         if (data.gender === '') return 'בחר מגדר כדי להמשיך';
         if (data.age === '') return 'הזן את גילך כדי להמשיך';
+        // Range gates: min/max on the inputs were decorative, so age 5 or weight
+        // 999 passed silently and poisoned every downstream AI/program calc.
+        // Height & weight stay optional but, when entered, must be sane.
+        if (data.age < 10 || data.age > 100) return 'הזן גיל בין 10 ל-100';
+        if (data.height !== '' && (data.height < 100 || data.height > 250))
+          return 'הזן גובה בין 100 ל-250 ס״מ';
+        if (data.weight !== '' && (data.weight < 30 || data.weight > 300))
+          return 'הזן משקל בין 30 ל-300 ק״ג';
         return null;
       case 'goals':
         return data.primaryGoal === '' ? 'בחר מטרה עיקרית כדי להמשיך' : null;

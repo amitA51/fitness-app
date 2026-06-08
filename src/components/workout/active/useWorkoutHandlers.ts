@@ -45,7 +45,9 @@ export function useWorkoutHandlers({
   );
 
   const handleCompleteSet = useCallback(() => {
-    triggerHaptic('success');
+    // Haptic confirmation is owned by the COMPLETE_SET reducer (pendingHaptic),
+    // fired exactly once in WorkoutProvider. Firing it here too — on top of the
+    // slider's own finish() — produced a 2-3x stutter buzz per set. Audio stays.
     playSuccess();
     dispatch({ type: 'COMPLETE_SET' });
   }, [dispatch]);
@@ -72,6 +74,14 @@ export function useWorkoutHandlers({
     (rpe: number | null) => {
       if (rpe !== null) triggerHaptic('light');
       dispatch({ type: 'UPDATE_SET_RPE', payload: rpe ?? undefined });
+    },
+    [dispatch]
+  );
+
+  const handleUpdateRpeTag = useCallback(
+    (tag: import('../../../types').RpeTag | null) => {
+      if (tag !== null) triggerHaptic('light');
+      dispatch({ type: 'UPDATE_SET_RPE_TAG', payload: tag });
     },
     [dispatch]
   );
@@ -378,6 +388,7 @@ export function useWorkoutHandlers({
     handleOpenNumpad,
     handleUndoSet,
     handleUpdateRPE,
+    handleUpdateRpeTag,
     handleToggleTechnique,
     handleOpenPlateCalc,
     handleClosePlateCalc,

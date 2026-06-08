@@ -1,5 +1,5 @@
-// ExerciseReorder - Sport Annual Editorial Design
-// Sharp corners · Navy header · Bone body
+// ExerciseReorder - Fresh Steel / Obsidian
+// Sharp corners · dark masthead header · surface body
 // VISION: Bold · Editorial · Confident · Narrative · Printed
 
 import { AnimatePresence, type PanInfo, Reorder, m } from 'framer-motion';
@@ -308,7 +308,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 18,
-                color: 'var(--fs-ink)',
+                color: 'var(--color-ink-on-dark)',
                 letterSpacing: '-0.01em',
               }}
             >
@@ -376,7 +376,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                       alignItems: 'center',
                       gap: 6,
                       background: 'rgba(var(--text-on-navy-rgb),0.1)',
-                      color: 'var(--fs-ink)',
+                      color: 'var(--color-ink-on-dark)',
                       border: '1px solid rgba(var(--text-on-navy-rgb),0.25)',
                       borderRadius: 0,
                       fontFamily: 'var(--font-mono)',
@@ -396,7 +396,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                   style={{
                     padding: '8px 16px',
                     background: 'var(--fs-accent)',
-                    color: 'var(--fs-heading)',
+                    color: 'var(--color-ink-on-accent)',
                     border: 'none',
                     borderRadius: 0,
                     fontFamily: 'var(--font-display)',
@@ -435,7 +435,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                 cursor: 'pointer',
               }}
             >
-              <CloseIcon style={{ width: 18, height: 18, color: 'var(--fs-ink)' }} />
+              <CloseIcon style={{ width: 18, height: 18, color: 'var(--color-ink-on-dark)' }} />
             </button>
           </div>
         </div>

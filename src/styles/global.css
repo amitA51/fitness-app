@@ -1145,7 +1145,8 @@ main > * {
   flex-direction: column;
 }
 
-/* Ensure inputs are visible when keyboard opens */
+/* Focused form controls: raised z-index + keyboard focus ring. (Browser-native
+   scroll keeps the focused field above the soft keyboard — no JS hook needed.) */
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {

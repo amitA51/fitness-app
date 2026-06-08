@@ -1,4 +1,5 @@
 import { m } from 'framer-motion';
+import { Check } from 'lucide-react';
 import { memo } from 'react';
 import { Sheet } from '../../../components/ui/Sheet';
 import { MACRO_COLORS } from '../../../constants/nutrition';
@@ -241,61 +242,110 @@ export const AddMealModal = memo(function AddMealModal({
           </div>
         ) : (
           <div className="space-y-1.5 max-h-56 overflow-y-auto">
-            {foods.slice(0, 20).map((food) => (
-              <button
-                type="button"
-                key={food.id}
-                onClick={() => onAddFood(food)}
-                style={{
-                  width: '100%',
-                  minHeight: 44,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '14px',
-                  borderRadius: '14px',
-                  backgroundColor: 'var(--fs-surface-2)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textAlign: 'start',
-                  transition: 'background-color 0.15s ease',
-                }}
-              >
-                <div>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-hebrew)',
-                      fontSize: '14px',
-                      color: 'var(--fs-ink)',
-                    }}
-                  >
-                    {food.name}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '11px',
-                      color: 'var(--fs-muted)',
-                      marginInlineStart: '8px',
-                    }}
-                  >
-                    {/* Leading middot keeps the accessible name from reading
-                        as one word ("חזה עוף100ג") — margin alone is visual. */}
-                    · {food.servingSize}
-                  </span>
-                </div>
-                <span
+            {foods.slice(0, 20).map((food) => {
+              // Already-added foods get an in-place Check + serving count so the
+              // tap is confirmed even when the selected list is scrolled off-screen
+              // above the results. Tapping again adds another serving.
+              const selected = selectedFoods.find((f) => f.id === food.id);
+              return (
+                <m.button
+                  type="button"
+                  key={food.id}
+                  onClick={() => onAddFood(food)}
+                  whileTap={{ scale: 0.98 }}
+                  aria-label={
+                    selected
+                      ? `${food.name}, נבחר, ${selected.servings} מנות. הקש להוספת מנה`
+                      : `הוסף ${food.name}`
+                  }
                   style={{
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 700,
-                    fontSize: '14px',
-                    color: MACRO_COLORS.calories,
+                    width: '100%',
+                    minHeight: 44,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '14px',
+                    borderRadius: '14px',
+                    backgroundColor: selected
+                      ? 'color-mix(in srgb, var(--fs-accent) 14%, var(--fs-surface-2))'
+                      : 'var(--fs-surface-2)',
+                    border: selected
+                      ? '1px solid color-mix(in srgb, var(--fs-accent) 45%, transparent)'
+                      : '1px solid transparent',
+                    cursor: 'pointer',
+                    textAlign: 'start',
+                    transition: 'background-color 0.15s ease, border-color 0.15s ease',
                   }}
                 >
-                  {food.calories} קל׳
-                </span>
-              </button>
-            ))}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                    {selected && (
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 20,
+                          height: 20,
+                          flexShrink: 0,
+                          borderRadius: '50%',
+                          background: 'var(--fs-accent)',
+                          color: 'var(--color-ink-on-accent)',
+                        }}
+                      >
+                        <Check size={13} strokeWidth={3} />
+                      </span>
+                    )}
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-hebrew)',
+                        fontSize: '14px',
+                        color: 'var(--fs-ink)',
+                      }}
+                    >
+                      {food.name}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        color: 'var(--fs-muted)',
+                        marginInlineStart: '8px',
+                      }}
+                    >
+                      {/* Leading middot keeps the accessible name from reading
+                          as one word ("חזה עוף100ג") — margin alone is visual. */}
+                      · {food.servingSize}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    {selected && (
+                      <span
+                        dir="ltr"
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: 'var(--fs-accent-2)',
+                        }}
+                      >
+                        ×{selected.servings}
+                      </span>
+                    )}
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontWeight: 700,
+                        fontSize: '14px',
+                        color: MACRO_COLORS.calories,
+                      }}
+                    >
+                      {food.calories} קל׳
+                    </span>
+                  </div>
+                </m.button>
+              );
+            })}
           </div>
         )}
       </div>

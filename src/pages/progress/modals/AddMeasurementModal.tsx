@@ -121,6 +121,7 @@ export const AddMeasurementModal = memo(function AddMeasurementModal({
               }}
               step="0.1"
               inputMode="decimal"
+              enterKeyHint="next"
             />
           </div>
         ))}

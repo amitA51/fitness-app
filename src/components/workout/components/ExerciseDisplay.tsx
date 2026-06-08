@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
-import type { Exercise, SetTechnique, WorkoutSet } from '../../../types';
+import type { Exercise, RpeTag, SetTechnique, WorkoutSet } from '../../../types';
 import type { SupersetGroup } from '../core/workoutTypes';
 import { usePreviousSetData } from '../hooks/usePreviousSetData';
 import ActionChip from './ActionChip';
@@ -46,6 +46,7 @@ interface ExerciseDisplayProps {
   nameSuggestions?: string[];
   onUpdateNotes?: (notes: string) => void;
   onUpdateRPE?: (rpe: number | null) => void;
+  onUpdateRpeTag?: (tag: RpeTag | null) => void;
   onUndo?: () => void;
   showGhostValues?: boolean;
   enableQuickWeightButtons?: boolean;
@@ -78,6 +79,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     onEditSet,
     onUpdateNotes,
     onUpdateRPE,
+    onUpdateRpeTag,
     onUndo,
     showGhostValues = true,
     enableQuickWeightButtons = true,
@@ -330,7 +332,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   direction: 'ltr',
                 }}
               >
-                {completedSetsCount} / {totalSets} sets
+                {completedSetsCount} / {totalSets} סטים
               </div>
               <div style={{ display: 'flex', gap: 10, width: '100%', marginTop: 2 }}>
                 {onAddSet && (
@@ -410,7 +412,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   value={currentSet.weight || 0}
                   ghostValue={previousSet?.weight}
                   showGhost={showGhostWeight}
-                  unit="kg"
+                  unit="ק״ג"
                   incrementAmount={weightIncrement}
                   onTap={handleWeightTap}
                   onIncrement={handleIncrementWeight}
@@ -471,7 +473,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                     direction: 'ltr',
                   }}
                 >
-                  {previousSet.weight ? `${previousSet.weight}kg` : ''}
+                  {previousSet.weight ? `${previousSet.weight} ק״ג` : ''}
                   {previousSet.weight && previousSet.reps ? ' × ' : ''}
                   {previousSet.reps ? `${previousSet.reps}` : ''}
                 </span>
@@ -567,7 +569,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                         fontWeight: 800,
                       }}
                     >
-                      KG
+                      ק״ג
                     </span>
                   }
                   label="פלטות"
@@ -667,6 +669,8 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                 : undefined
             }
             onSelect={onUpdateRPE}
+            currentTag={currentSet.rpeTag}
+            onSelectTag={onUpdateRpeTag}
             onClose={() => setShowRPEPicker(false)}
           />
         )}

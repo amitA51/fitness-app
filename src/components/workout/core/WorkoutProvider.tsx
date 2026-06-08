@@ -6,7 +6,7 @@ import { webPlatform } from '../../../platform/web';
 import type { PlatformAdapter } from '../../../platform/web';
 import { createWorkoutSet } from '../../../types';
 import type { AppSettings } from '../../../types';
-import { vibratePattern } from '../../../utils/haptics';
+import { triggerHapticEffect, vibratePattern } from '../../../utils/haptics';
 import { logger } from '../../../utils/logger';
 import { safeJsonParse } from '../../../utils/safeJson';
 import { setVolume } from '../../../utils/workoutMath';
@@ -37,6 +37,21 @@ const STORAGE_KEY = 'active_workout_v3_state';
 // previous day was restored as if "active" — its old startTimestamp made the
 // live timer open at hours-elapsed and the saved duration was nonsensical.
 const MAX_DRAFT_AGE_MS = 12 * 60 * 60 * 1000; // 12 hours
+
+// Stable signature of the persistence-worthy fields. Shared by BOTH the debounced
+// write and the 30s backup so an idle session doesn't re-serialize + re-write an
+// ever-growing state every 30s when nothing meaningful changed.
+const meaningfulStateKey = (s: WorkoutState): string =>
+  JSON.stringify({
+    exercises: s.exercises,
+    currentExerciseIndex: s.currentExerciseIndex,
+    supersetGroups: s.supersetGroups,
+    startTimestamp: s.startTimestamp,
+    totalPausedTime: s.totalPausedTime,
+    isPaused: s.isPaused,
+    restTimer: s.restTimer,
+    finalized: s.finalized,
+  });
 
 const platform: PlatformAdapter = webPlatform;
 
@@ -204,16 +219,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
   useEffect(() => {
     // Only persist when meaningful workout data changes (exercises, index, supersets, pause state)
     // Skip overlay toggles, celebrations, and timer ticks
-    const meaningful = JSON.stringify({
-      exercises: state.exercises,
-      currentExerciseIndex: state.currentExerciseIndex,
-      supersetGroups: state.supersetGroups,
-      startTimestamp: state.startTimestamp,
-      totalPausedTime: state.totalPausedTime,
-      isPaused: state.isPaused,
-      restTimer: state.restTimer,
-      finalized: state.finalized,
-    });
+    const meaningful = meaningfulStateKey(state);
     if (meaningful === lastPersistedRef.current) return;
     lastPersistedRef.current = meaningful;
 
@@ -273,6 +279,11 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
 
   useEffect(() => {
     const intervalId = setInterval(() => {
+      // Skip the backup write when nothing persist-worthy changed since the last
+      // write — avoids re-serializing an ever-growing idle state every 30s.
+      const key = meaningfulStateKey(stateRef.current);
+      if (key === lastPersistedRef.current) return;
+      lastPersistedRef.current = key;
       persistState(stateRef.current);
     }, 30000);
 
@@ -301,7 +312,10 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
     const ws = state.appSettings?.workoutSettings;
 
     if (state.pendingHaptic === 'SET_COMPLETE') {
-      vibratePattern([...HAPTIC_PATTERNS.SET_COMPLETE]);
+      // Single source of the set-complete buzz (slider + handler no longer
+      // self-buzz). Route through the canonical Quiet-Luxury 'success' effect
+      // ([15,60,15], iOS-safe) instead of the legacy heavy [50,50,50] triple.
+      triggerHapticEffect('success');
     } else if (state.pendingHaptic === 'REST_END') {
       // Vibration honors restTimerVibrate (default true)
       if (ws?.restTimerVibrate !== false) {

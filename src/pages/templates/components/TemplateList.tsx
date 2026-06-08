@@ -59,7 +59,7 @@ export function TemplateList({
             אין תבניות עדיין
           </p>
           <p className="eyebrow mb-6" style={{ color: 'var(--fs-muted)' }}>
-            CREATE YOUR FIRST ROUTINE
+            התחילו כאן
           </p>
           <m.button
             whileTap={{ scale: 0.95 }}
