@@ -140,6 +140,8 @@ interface ComposerProps {
   onOptimisticAppend: (comment: PostComment) => void;
   onRemoveOptimistic: (commentId: string) => void;
   onCommentAdded: (postId: string) => void;
+  /** Surfaced as a toast by the host when the hourly comment limit is hit. */
+  onRateLimited: () => void;
   textareaRef: React.RefObject<HTMLTextAreaElement>;
 }
 
@@ -148,6 +150,7 @@ function CommentComposer({
   onOptimisticAppend,
   onRemoveOptimistic,
   onCommentAdded,
+  onRateLimited,
   textareaRef,
 }: ComposerProps) {
   const [text, setText] = useState('');
@@ -185,7 +188,12 @@ function CommentComposer({
         // Roll back the optimistic row and restore the draft text.
         onRemoveOptimistic(optimisticId);
         setText(trimmed);
-        setSubmitError('שליחת התגובה נכשלה. נסו שוב.');
+        if (error === 'rate_limited') {
+          // Friendly limit message goes to a toast at the host, not inline.
+          onRateLimited();
+        } else {
+          setSubmitError('שליחת התגובה נכשלה. נסו שוב.');
+        }
       } else {
         onCommentAdded(postId);
       }
@@ -196,7 +204,15 @@ function CommentComposer({
     } finally {
       setSubmitting(false);
     }
-  }, [canSubmit, text, postId, onOptimisticAppend, onRemoveOptimistic, onCommentAdded]);
+  }, [
+    canSubmit,
+    text,
+    postId,
+    onOptimisticAppend,
+    onRemoveOptimistic,
+    onCommentAdded,
+    onRateLimited,
+  ]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -435,9 +451,17 @@ interface CommentSheetProps {
   onClose: () => void;
   /** Notifies the parent feed to increment the post's comment count. */
   onCommentAdded?: (postId: string) => void;
+  /** Lets the host show the friendly hourly-limit toast for comments. */
+  onRateLimited?: () => void;
 }
 
-export function CommentSheet({ postId, isOpen, onClose, onCommentAdded }: CommentSheetProps) {
+export function CommentSheet({
+  postId,
+  isOpen,
+  onClose,
+  onCommentAdded,
+  onRateLimited,
+}: CommentSheetProps) {
   const [comments, setComments] = useState<PostComment[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
@@ -505,6 +529,10 @@ export function CommentSheet({ postId, isOpen, onClose, onCommentAdded }: Commen
     [onCommentAdded]
   );
 
+  const handleRateLimited = useCallback(() => {
+    onRateLimited?.();
+  }, [onRateLimited]);
+
   // Composer footer — only when postId is present
   const composerFooter = postId ? (
     <CommentComposer
@@ -512,6 +540,7 @@ export function CommentSheet({ postId, isOpen, onClose, onCommentAdded }: Commen
       onOptimisticAppend={handleOptimisticAppend}
       onRemoveOptimistic={handleRemoveOptimistic}
       onCommentAdded={handleCommentAdded}
+      onRateLimited={handleRateLimited}
       textareaRef={composerTextareaRef}
     />
   ) : null;

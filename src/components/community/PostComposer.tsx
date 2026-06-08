@@ -8,8 +8,15 @@ import { useCallback, useRef, useState } from 'react';
 
 const MAX_CHARS = 4000;
 
+/** Outcome the composer reacts to. A rate-limit keeps the draft (the parent
+ *  surfaces a toast); a generic failure shows the inline error below. */
+export interface PostSubmitResult {
+  ok: boolean;
+  rateLimited?: boolean;
+}
+
 interface PostComposerProps {
-  onSubmit: (body: string) => Promise<void>;
+  onSubmit: (body: string) => Promise<PostSubmitResult>;
   disabled?: boolean;
 }
 
@@ -27,9 +34,15 @@ export function PostComposer({ onSubmit, disabled = false }: PostComposerProps) 
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmit(body.trim());
-      setBody('');
-      textareaRef.current?.focus();
+      const result = await onSubmit(body.trim());
+      if (result.ok) {
+        setBody('');
+        textareaRef.current?.focus();
+      } else if (!result.rateLimited) {
+        // Rate-limit is shown as a toast by the parent; keep the draft and stay
+        // quiet inline. Any other failure gets the inline error.
+        setError('שגיאה בשליחת הפוסט. נסו שוב.');
+      }
     } catch {
       setError('שגיאה בשליחת הפוסט. נסו שוב.');
     } finally {

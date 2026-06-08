@@ -2,7 +2,8 @@
 // COMMUNITY SERVICE — CRUD + feed for the trainee social layer.
 //
 // Schema: 20260611000000_community.sql (posts, post_comments, post_reactions,
-// post_reports, user_blocks, follows). RPCs: toggle_like, report_content,
+// post_reports, user_blocks, follows). RPCs: create_post, create_comment
+// (rate-limited; direct INSERT policy dropped), toggle_like, report_content,
 // block_user.
 //
 // FAIL-SAFE-INERT: every call is wrapped so a missing table/RPC returns safe
@@ -13,7 +14,14 @@
 import { supabase } from '../../lib/supabase';
 import { logger } from '../../utils/logger';
 import { getCurrentUser } from '../supabaseAuth';
-import type { CreatePostInput, FeedItem, Post, PostComment, ReportInput } from './types';
+import type {
+  BlockedUser,
+  CreatePostInput,
+  FeedItem,
+  Post,
+  PostComment,
+  ReportInput,
+} from './types';
 
 const log = logger.db;
 
@@ -24,6 +32,19 @@ type Row = Record<string, unknown>;
 const asString = (v: unknown): string | null => (typeof v === 'string' ? v : null);
 const asNumber = (v: unknown): number => (typeof v === 'number' ? v : 0);
 const asBool = (v: unknown): boolean => v === true;
+
+/**
+ * True when a PostgREST error is the app-layer rate limit raised by the
+ * create_post / create_comment RPCs (`RAISE EXCEPTION 'rate_limited'`). The
+ * message carries the literal; PostgREST surfaces a raised exception as code
+ * 'P0001', so we also treat that as rate-limited when the message matches.
+ */
+function isRateLimited(error: { message?: string; code?: string } | null): boolean {
+  if (!error) return false;
+  const message = error.message ?? '';
+  if (message.includes('rate_limited')) return true;
+  return error.code === 'rate_limited';
+}
 
 /** Dedupes and drops null ids from a list of nullable string ids. */
 const uniqueIds = (ids: (string | null)[]): string[] => [
@@ -187,18 +208,16 @@ export async function createPost(
   if (!user) return { post: null, error: 'unauthenticated' };
 
   try {
-    const { data, error } = await supabase
-      .from('posts')
-      .insert({
-        author_id: user.id,
-        body: input.body.trim(),
-        topic: input.topic ?? null,
-        image_url: input.imageUrl ?? null,
-      })
-      .select('id, author_id, body, topic, image_url, like_count, comment_count, created_at')
-      .single();
+    // Direct INSERT policy was dropped — posts MUST be created via the
+    // rate-limited create_post RPC, which returns the inserted row.
+    const { data, error } = await supabase.rpc('create_post', {
+      _body: input.body.trim(),
+      _topic: input.topic ?? null,
+      _image_url: input.imageUrl ?? null,
+    });
 
     if (error) {
+      if (isRateLimited(error)) return { post: null, error: 'rate_limited' };
       log.error('createPost failed', error);
       return { post: null, error: error.message };
     }
@@ -273,13 +292,15 @@ export async function addComment(
   if (!user) return { comment: null, error: 'unauthenticated' };
 
   try {
-    const { data, error } = await supabase
-      .from('post_comments')
-      .insert({ post_id: postId, author_id: user.id, body: body.trim() })
-      .select('id, post_id, author_id, body, created_at')
-      .single();
+    // Direct INSERT goes through the rate-limited create_comment RPC, which
+    // returns the inserted post_comments row.
+    const { data, error } = await supabase.rpc('create_comment', {
+      _post_id: postId,
+      _body: body.trim(),
+    });
 
     if (error) {
+      if (isRateLimited(error)) return { comment: null, error: 'rate_limited' };
       log.error('addComment failed', error);
       return { comment: null, error: error.message };
     }
@@ -328,6 +349,69 @@ export async function blockUser(blockedId: string): Promise<{ error: string | nu
     return { error: null };
   } catch (err) {
     log.error('blockUser threw', err);
+    return { error: null }; // fail-safe
+  }
+}
+
+/**
+ * The users the current viewer has blocked, with display names batch-resolved
+ * against profiles (blocked_id FKs auth.users, not profiles). RLS scopes
+ * user_blocks to the caller's own rows. Returns [] on any failure (fail-safe).
+ */
+export async function listBlockedUsers(): Promise<BlockedUser[]> {
+  if (!supabase) return [];
+  try {
+    const user = await getCurrentUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from('user_blocks')
+      .select('blocked_id, created_at')
+      .eq('blocker_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      log.error('listBlockedUsers failed', error);
+      return [];
+    }
+
+    const rows = (data ?? []) as Row[];
+    const blockedIds = uniqueIds(rows.map((r) => asString(r.blocked_id)));
+    if (blockedIds.length === 0) return [];
+
+    const names = await resolveAuthorNames(blockedIds);
+
+    return blockedIds.map((userId) => ({
+      userId,
+      displayName: names.get(userId) ?? undefined,
+    }));
+  } catch (err) {
+    log.error('listBlockedUsers threw', err);
+    return [];
+  }
+}
+
+/**
+ * Removes a block so the viewer sees that user's content again. RLS allows the
+ * owner (blocker) to delete their own block rows. Fail-safe envelope.
+ */
+export async function unblockUser(blockedId: string): Promise<{ error: string | null }> {
+  if (!supabase || !blockedId) return { error: null };
+  const user = await getCurrentUser();
+  if (!user) return { error: 'unauthenticated' };
+  try {
+    const { error } = await supabase
+      .from('user_blocks')
+      .delete()
+      .eq('blocker_id', user.id)
+      .eq('blocked_id', blockedId);
+    if (error) {
+      log.error('unblockUser failed', error);
+      return { error: error.message };
+    }
+    return { error: null };
+  } catch (err) {
+    log.error('unblockUser threw', err);
     return { error: null }; // fail-safe
   }
 }

@@ -1,19 +1,22 @@
 // ============================================================================
 // PaywallScreen — /paywall (authed)
 //
-// Presentational plan-comparison screen. No payment SDK is wired yet; the
-// primary CTA is "בקרוב" and disabled so no money can flow. Gating UX only.
+// Plan-comparison screen with a live waitlist CTA.
+// On mount: checks hasJoinedWaitlist() and shows confirmed state if already in.
+// CTA: calls joinWaitlist('paywall') and switches to a confirmed state.
 //
 // Design: Fresh Steel / Obsidian. All colors via var(--fs-*) tokens.
 // Numbers render dir="ltr". Both light and dark tested.
 // ============================================================================
 
 import { ArrowRight, Check, Crown, Lock, Sparkles, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { PremiumFeature } from '../../services/billing/types';
+import { hasJoinedWaitlist, joinWaitlist } from '../../services/billing/waitlistService';
 
 // --------------------------------------------------------------------------
-// Feature catalogue — maps every PREMIUM_FEATURES key to Hebrew display text
+// Feature catalogue
 // --------------------------------------------------------------------------
 
 interface FeatureRow {
@@ -134,11 +137,135 @@ function FeatureCheck({ value, isPro }: FeatureCheckProps) {
 }
 
 // --------------------------------------------------------------------------
+// Waitlist CTA states
+// --------------------------------------------------------------------------
+
+type WaitlistState = 'idle' | 'checking' | 'submitting' | 'joined' | 'error';
+
+interface WaitlistCtaProps {
+  state: WaitlistState;
+  errorMessage: string | null;
+  onJoin: () => void;
+}
+
+function WaitlistCta({ state, errorMessage, onJoin }: WaitlistCtaProps) {
+  const isJoined = state === 'joined';
+  const isLoading = state === 'checking' || state === 'submitting';
+
+  if (isJoined) {
+    return (
+      <div
+        className="w-full flex flex-col items-center gap-2"
+        role="status"
+        aria-live="polite"
+        aria-label="נרשמת לרשימת ההמתנה"
+      >
+        <div
+          className="w-full flex items-center justify-center gap-2"
+          style={{
+            height: 52,
+            borderRadius: 'var(--radius-asymmetric)',
+            background: 'var(--fs-surface-2)',
+            border: '1px solid var(--fs-accent)',
+          }}
+        >
+          <Check
+            size={20}
+            style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
+            aria-hidden="true"
+          />
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: '15px',
+              color: 'var(--fs-accent)',
+            }}
+          >
+            נרשמת! נעדכן אותך כשהפרימיום יוצא
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full flex flex-col items-center gap-2">
+      <button
+        type="button"
+        onClick={onJoin}
+        disabled={isLoading}
+        aria-disabled={isLoading}
+        aria-label="הצטרפות לרשימת ההמתנה לפרימיום"
+        className="w-full flex items-center justify-center gap-2 active:scale-[0.98]"
+        style={{
+          height: 52,
+          borderRadius: 'var(--radius-asymmetric)',
+          background: isLoading ? 'var(--fs-surface-2)' : 'var(--fs-accent)',
+          color: isLoading ? 'var(--fs-muted)' : 'var(--color-ink-on-accent)',
+          fontFamily: 'var(--font-display)',
+          fontWeight: 700,
+          fontSize: '16px',
+          border: 'none',
+          cursor: isLoading ? 'not-allowed' : 'pointer',
+          opacity: isLoading ? 0.7 : 1,
+          transition: 'background-color 150ms ease, opacity 150ms ease',
+        }}
+      >
+        <Crown size={18} aria-hidden="true" />
+        {state === 'submitting' ? 'רושם...' : 'הצטרפו לרשימת ההמתנה'}
+      </button>
+
+      {state === 'error' && errorMessage && (
+        <p
+          role="alert"
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '13px',
+            color: 'var(--color-error)',
+            margin: 0,
+            textAlign: 'center',
+          }}
+        >
+          {errorMessage}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------
 // Main screen
 // --------------------------------------------------------------------------
 
 export default function PaywallScreen() {
   const navigate = useNavigate();
+  const [waitlistState, setWaitlistState] = useState<WaitlistState>('checking');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // On mount: check if already joined
+  useEffect(() => {
+    let cancelled = false;
+    hasJoinedWaitlist().then((joined) => {
+      if (cancelled) return;
+      setWaitlistState(joined ? 'joined' : 'idle');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleJoin = async () => {
+    setWaitlistState('submitting');
+    setErrorMessage(null);
+    const { error } = await joinWaitlist('paywall');
+    if (error) {
+      setErrorMessage(error);
+      setWaitlistState('error');
+    } else {
+      setWaitlistState('joined');
+    }
+  };
 
   return (
     <div
@@ -353,38 +480,20 @@ export default function PaywallScreen() {
         className="px-5 pb-safe-bottom flex flex-col items-center gap-3"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--space-6))' }}
       >
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          className="w-full flex items-center justify-center gap-2"
-          style={{
-            height: 52,
-            borderRadius: 'var(--radius-asymmetric)',
-            background: 'var(--fs-surface-2)',
-            color: 'var(--fs-muted)',
-            fontFamily: 'var(--font-display)',
-            fontWeight: 700,
-            fontSize: '16px',
-            border: '1px solid var(--color-separator)',
-            cursor: 'not-allowed',
-            opacity: 0.7,
-          }}
-        >
-          <Crown size={18} aria-hidden="true" />
-          בקרוב
-        </button>
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: '12px',
-            color: 'var(--fs-muted)',
-            margin: 0,
-            textAlign: 'center',
-          }}
-        >
-          ביטול בכל עת. ללא התחייבות.
-        </p>
+        <WaitlistCta state={waitlistState} errorMessage={errorMessage} onJoin={handleJoin} />
+        {waitlistState !== 'joined' && (
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '12px',
+              color: 'var(--fs-muted)',
+              margin: 0,
+              textAlign: 'center',
+            }}
+          >
+            ביטול בכל עת. ללא התחייבות.
+          </p>
+        )}
       </section>
     </div>
   );

@@ -9,6 +9,7 @@
 
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
+import { ExportCalendarButton } from '../../../components/calendar/ExportCalendarButton';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { showToast } from '../../../components/ui/GlobalToast';
 import { Sheet } from '../../../components/ui/Sheet';
@@ -22,6 +23,7 @@ import {
   updateScheduledWorkout,
 } from '../../../services/coach/scheduleService';
 import type { WorkoutTemplate } from '../../../types';
+import type { IcsEvent } from '../../../utils/icsExport';
 import { SectionError, useAsyncData } from '../_shared';
 
 // 0 = Sunday … 6 = Saturday
@@ -369,6 +371,16 @@ export function ScheduleCalendar({ clientId }: { clientId: string }) {
     return map;
   }, [schedule]);
 
+  const icsEvents = useMemo<IcsEvent[]>(
+    () =>
+      schedule.map((w) => ({
+        uid: w.id,
+        title: w.title?.trim() || 'אימון מתוכנן',
+        start: `${w.scheduledDate}T08:00:00`,
+      })),
+    [schedule]
+  );
+
   const handlePick = useCallback(
     async (template: WorkoutTemplate) => {
       if (!addDate) return;
@@ -425,38 +437,50 @@ export function ScheduleCalendar({ clientId }: { clientId: string }) {
   return (
     <div dir="rtl">
       {/* Week navigation */}
-      <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
-        <button
-          type="button"
-          onClick={() => setWeekOffset((o) => o - 1)}
-          aria-label="שבוע קודם"
-          className="inline-flex items-center justify-center active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
-          style={{ width: 44, height: 44, color: 'var(--fs-ink)' }}
-        >
-          {/* RTL: "previous" points toward the inline-start (right edge) */}
-          <ChevronRight size={20} aria-hidden="true" />
-        </button>
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 12,
-            color: 'var(--fs-muted)',
-            letterSpacing: '0.04em',
-          }}
-        >
-          <bdi dir="ltr">
-            {shortDate(fromDate)} – {shortDate(toDate)}
-          </bdi>
-        </span>
-        <button
-          type="button"
-          onClick={() => setWeekOffset((o) => o + 1)}
-          aria-label="שבוע הבא"
-          className="inline-flex items-center justify-center active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
-          style={{ width: 44, height: 44, color: 'var(--fs-ink)' }}
-        >
-          <ChevronLeft size={20} aria-hidden="true" />
-        </button>
+      <div className="flex flex-col gap-2" style={{ marginBottom: 12 }}>
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setWeekOffset((o) => o - 1)}
+            aria-label="שבוע קודם"
+            className="inline-flex items-center justify-center active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
+            style={{ width: 44, height: 44, color: 'var(--fs-ink)' }}
+          >
+            {/* RTL: "previous" points toward the inline-start (right edge) */}
+            <ChevronRight size={20} aria-hidden="true" />
+          </button>
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 12,
+              color: 'var(--fs-muted)',
+              letterSpacing: '0.04em',
+            }}
+          >
+            <bdi dir="ltr">
+              {shortDate(fromDate)} – {shortDate(toDate)}
+            </bdi>
+          </span>
+          <button
+            type="button"
+            onClick={() => setWeekOffset((o) => o + 1)}
+            aria-label="שבוע הבא"
+            className="inline-flex items-center justify-center active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
+            style={{ width: 44, height: 44, color: 'var(--fs-ink)' }}
+          >
+            <ChevronLeft size={20} aria-hidden="true" />
+          </button>
+        </div>
+        {/* Export CTA — disabled when schedule is empty or still loading */}
+        {!loading && !error && (
+          <div className="flex justify-start">
+            <ExportCalendarButton
+              events={icsEvents}
+              filename={`sparkos-schedule-${fromDate}`}
+              label="ייצוא שבוע ליומן"
+            />
+          </div>
+        )}
       </div>
 
       {/* Body — 4 UI states */}

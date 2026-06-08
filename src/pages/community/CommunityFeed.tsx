@@ -8,7 +8,7 @@ import { Users } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CommentSheet } from '../../components/community/CommentSheet';
 import { PostCard } from '../../components/community/PostCard';
-import { PostComposer } from '../../components/community/PostComposer';
+import { PostComposer, type PostSubmitResult } from '../../components/community/PostComposer';
 import {
   blockUser,
   createPost,
@@ -19,6 +19,7 @@ import {
 import type { FeedItem } from '../../services/community/types';
 
 const PAGE_LIMIT = 30;
+const RATE_LIMIT_TOAST = 'הגעת למגבלת הפרסום לשעה. נסו שוב מאוחר יותר.';
 
 // ── Skeleton card ─────────────────────────────────────────────────────────────
 function PostSkeleton() {
@@ -251,10 +252,18 @@ export default function CommunityFeed() {
   }, [hasMore, loading, error, loadMore]);
 
   // ── Composer ──────────────────────────────────────────────────────────────
-  const handleCreate = useCallback(async (body: string) => {
+  // Returns an outcome the composer reacts to: success clears the draft, a
+  // rate-limit keeps the draft (we surface the friendly toast here), and a
+  // generic failure lets the composer show its inline error.
+  const handleCreate = useCallback(async (body: string): Promise<PostSubmitResult> => {
     const { post, error: err } = await createPost({ body });
-    if (err || !post) throw new Error(err ?? 'create_failed');
+    if (err === 'rate_limited') {
+      setToast(RATE_LIMIT_TOAST);
+      return { ok: false, rateLimited: true };
+    }
+    if (err || !post) return { ok: false };
     setPosts((prev) => [post, ...prev]);
+    return { ok: true };
   }, []);
 
   // ── Like (optimistic) ─────────────────────────────────────────────────────
@@ -287,13 +296,14 @@ export default function CommunityFeed() {
   );
 
   // ── Report ────────────────────────────────────────────────────────────────
-  const handleReport = useCallback(async (postId: string) => {
-    const { error: err } = await reportContent({ postId });
+  // Called by PostCard after the user picks a reason in ReportReasonSheet.
+  const handleReport = useCallback(async (postId: string, reason: string) => {
+    const { error: err } = await reportContent({ postId, reason });
     if (err) {
-      setToast('הדיווח נכשל. נסו שוב.');
+      setToast('נסו שוב');
       return;
     }
-    setToast('הדיווח נשלח. תודה על שמירת הקהילה.');
+    setToast('הדיווח התקבל');
   }, []);
 
   // ── Block ─────────────────────────────────────────────────────────────────
@@ -304,7 +314,7 @@ export default function CommunityFeed() {
       return;
     }
     setHiddenAuthorIds((prev) => new Set([...prev, authorId]));
-    setToast('המשתמש נחסם. תוכן שלהם לא יוצג יותר.');
+    setToast('המשתמש נחסם. התוכן שלו לא יוצג לך.');
   }, []);
 
   // ── Comment sheet ─────────────────────────────────────────────────────────
@@ -319,6 +329,11 @@ export default function CommunityFeed() {
     setPosts((prev) =>
       prev.map((p) => (p.id === postId ? { ...p, commentCount: p.commentCount + 1 } : p))
     );
+  }, []);
+
+  // Comment composer hit the hourly limit — same friendly toast as posts.
+  const handleCommentRateLimited = useCallback(() => {
+    setToast(RATE_LIMIT_TOAST);
   }, []);
 
   // ── Filtered feed (client-side block complement to RLS) ───────────────────
@@ -396,14 +411,25 @@ export default function CommunityFeed() {
             style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
           >
             {visiblePosts.map((post) => (
-              <PostCard
+              // content-visibility:auto lets the browser skip layout/paint for
+              // offscreen cards (cheap virtualization, no new dependency).
+              // contain-intrinsic-size reserves an estimated height so the
+              // scrollbar stays stable. RTL-safe and a11y-neutral.
+              <div
                 key={post.id}
-                post={post}
-                onLike={handleLike}
-                onReport={handleReport}
-                onBlock={handleBlock}
-                onCommentOpen={handleCommentOpen}
-              />
+                style={{
+                  contentVisibility: 'auto',
+                  containIntrinsicSize: '0 320px',
+                }}
+              >
+                <PostCard
+                  post={post}
+                  onLike={handleLike}
+                  onReport={handleReport}
+                  onBlock={handleBlock}
+                  onCommentOpen={handleCommentOpen}
+                />
+              </div>
             ))}
 
             {/* Load-more: IntersectionObserver sentinel + accessible button fallback */}
@@ -446,6 +472,7 @@ export default function CommunityFeed() {
         isOpen={openCommentPostId !== null}
         onClose={() => setOpenCommentPostId(null)}
         onCommentAdded={handleCommentAdded}
+        onRateLimited={handleCommentRateLimited}
       />
     </div>
   );

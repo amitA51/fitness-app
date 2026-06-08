@@ -1,4 +1,6 @@
+import { Crown } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { SectionLabel } from '../components/ui/SettingsSectionLabel';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { deleteAllUserData } from '../services/settingsService';
@@ -7,6 +9,7 @@ import { logger } from '../utils/logger';
 import { useCloudSync } from './settings/hooks/useCloudSync';
 import { useSettingsState } from './settings/hooks/useSettingsState';
 import { AccountSection } from './settings/sections/AccountSection';
+import { BlockedUsersSection } from './settings/sections/BlockedUsersSection';
 import { CloudSyncSection } from './settings/sections/CloudSyncSection';
 import { CoachSection } from './settings/sections/CoachSection';
 import { DangerZoneSection } from './settings/sections/DangerZoneSection';
@@ -107,6 +110,47 @@ export default function Settings() {
 
         <AccountSection authEmail={state.authEmail} onSignOut={handleSignOut} />
 
+        <Link
+          to="/paywall"
+          className="active:scale-[0.98]"
+          aria-label="פרימיום — הצטרפות לרשימת ההמתנה"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            marginBottom: 28,
+            padding: '14px 16px',
+            background: 'var(--fs-surface)',
+            border: '1px solid var(--fs-accent)',
+            borderRadius: 'var(--radius-asymmetric)',
+            textDecoration: 'none',
+          }}
+        >
+          <span style={{ display: 'flex', flexDirection: 'column' }}>
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 700,
+                fontSize: 15,
+                color: 'var(--fs-ink)',
+              }}
+            >
+              פרימיום
+            </span>
+            <span
+              style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--fs-muted)' }}
+            >
+              הצטרפו לרשימת ההמתנה
+            </span>
+          </span>
+          <Crown
+            size={18}
+            aria-hidden="true"
+            style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
+          />
+        </Link>
+
         <ProfileSection
           profile={state.profile}
           updateProfile={state.updateProfile}
@@ -185,6 +229,8 @@ export default function Settings() {
         {/* Legal & privacy hub — terms, privacy, accessibility + tracking consent */}
         <SectionLabel>משפטי ופרטיות</SectionLabel>
         <LegalLinksSection />
+
+        <BlockedUsersSection />
 
         <DataAboutSection />
       </div>

@@ -49,3 +49,9 @@ export interface ReportInput {
   commentId?: string;
   reason?: string;
 }
+
+/** A user the current viewer has blocked, with their resolved display name. */
+export interface BlockedUser {
+  userId: string;
+  displayName?: string;
+}

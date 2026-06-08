@@ -8,6 +8,8 @@ import { Flag, Heart, MessageCircle, MoreHorizontal, UserX } from 'lucide-react'
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Post } from '../../services/community/types';
+import { Sheet } from '../ui/Sheet';
+import { ReportReasonSheet } from './ReportReasonSheet';
 
 // Hoisted formatter — constructed once per module, not per render.
 const HE_DATE_FMT = new Intl.DateTimeFormat('he-IL', {
@@ -20,7 +22,8 @@ const HE_DATE_FMT = new Intl.DateTimeFormat('he-IL', {
 interface PostCardProps {
   post: Post;
   onLike: (postId: string) => Promise<void>;
-  onReport: (postId: string) => Promise<void>;
+  /** Files a moderation report with the picked reason. */
+  onReport: (postId: string, reason: string) => Promise<void>;
   onBlock: (authorId: string) => Promise<void>;
   onCommentOpen: (postId: string) => void;
 }
@@ -29,6 +32,9 @@ function PostCardComponent({ post, onLike, onReport, onBlock, onCommentOpen }: P
   const [menuOpen, setMenuOpen] = useState(false);
   const [likePending, setLikePending] = useState(false);
   const [actionPending, setActionPending] = useState(false);
+  // Moderation sheets — opened from the overflow menu, never fired instantly.
+  const [reportOpen, setReportOpen] = useState(false);
+  const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuItemsRef = useRef<Array<HTMLButtonElement | null>>([]);
@@ -49,23 +55,32 @@ function PostCardComponent({ post, onLike, onReport, onBlock, onCommentOpen }: P
     }
   }, [likePending, onLike, post.id]);
 
-  const handleReport = useCallback(async () => {
-    if (actionPending) return;
+  // "דיווח" no longer fires instantly — it opens the reason picker. The actual
+  // report is filed once a reason chip is chosen (handleReportPick).
+  const handleReport = useCallback(() => {
     setMenuOpen(false);
-    setActionPending(true);
-    try {
-      await onReport(post.id);
-    } finally {
-      setActionPending(false);
-    }
-  }, [actionPending, onReport, post.id]);
+    setReportOpen(true);
+  }, []);
 
-  const handleBlock = useCallback(async () => {
-    if (actionPending) return;
+  const handleReportPick = useCallback(
+    async (reason: string) => {
+      await onReport(post.id, reason);
+    },
+    [onReport, post.id]
+  );
+
+  // "חסימה" opens a confirm sheet first — destructive, so never one-tap.
+  const handleBlock = useCallback(() => {
     setMenuOpen(false);
+    setBlockConfirmOpen(true);
+  }, []);
+
+  const handleBlockConfirm = useCallback(async () => {
+    if (actionPending) return;
     setActionPending(true);
     try {
       await onBlock(post.authorId);
+      setBlockConfirmOpen(false);
     } finally {
       setActionPending(false);
     }
@@ -234,7 +249,6 @@ function PostCardComponent({ post, onLike, onReport, onBlock, onCommentOpen }: P
                 ref={(el) => {
                   menuItemsRef.current[0] = el;
                 }}
-                disabled={actionPending}
                 onClick={handleReport}
                 className="focus-ring"
                 style={{
@@ -264,7 +278,6 @@ function PostCardComponent({ post, onLike, onReport, onBlock, onCommentOpen }: P
                 ref={(el) => {
                   menuItemsRef.current[1] = el;
                 }}
-                disabled={actionPending}
                 onClick={handleBlock}
                 className="focus-ring"
                 style={{
@@ -434,6 +447,78 @@ function PostCardComponent({ post, onLike, onReport, onBlock, onCommentOpen }: P
           </span>
         </button>
       </div>
+
+      {/* Report reason picker — opens from the overflow "דיווח" item. */}
+      <ReportReasonSheet
+        isOpen={reportOpen}
+        onClose={() => setReportOpen(false)}
+        onPick={handleReportPick}
+      />
+
+      {/* Block confirmation — destructive, never one-tap. */}
+      <Sheet
+        isOpen={blockConfirmOpen}
+        onClose={() => setBlockConfirmOpen(false)}
+        title="חסימת משתמש"
+        footer={
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              type="button"
+              onClick={() => setBlockConfirmOpen(false)}
+              disabled={actionPending}
+              className="focus-ring active:scale-[0.98]"
+              style={{
+                flex: 1,
+                minHeight: 44,
+                borderRadius: 12,
+                border: '1px solid var(--fs-surface-2)',
+                background: 'var(--fs-bg)',
+                color: 'var(--fs-ink)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: actionPending ? 'default' : 'pointer',
+              }}
+            >
+              ביטול
+            </button>
+            <button
+              type="button"
+              onClick={handleBlockConfirm}
+              disabled={actionPending}
+              className="focus-ring active:scale-[0.98]"
+              style={{
+                flex: 1,
+                minHeight: 44,
+                borderRadius: 12,
+                border: 'none',
+                background: 'var(--fs-error)',
+                color: 'var(--color-ink-on-error)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 15,
+                fontWeight: 700,
+                cursor: actionPending ? 'default' : 'pointer',
+                opacity: actionPending ? 0.7 : 1,
+              }}
+            >
+              {actionPending ? 'חוסם…' : 'חסימה'}
+            </button>
+          </div>
+        }
+      >
+        <p
+          dir="rtl"
+          style={{
+            margin: 0,
+            fontFamily: 'var(--font-body)',
+            fontSize: 15,
+            lineHeight: 1.6,
+            color: 'var(--fs-ink)',
+          }}
+        >
+          לחסום את {displayName}? התוכן שלו לא יוצג לך.
+        </p>
+      </Sheet>
     </article>
   );
 }
