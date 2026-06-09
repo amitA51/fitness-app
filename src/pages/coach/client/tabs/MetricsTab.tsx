@@ -11,7 +11,7 @@ import { Button } from '../../../../components/ui/Button';
 import type { BodyMeasurement, PersonalRecordRow } from '../../../../services/supabaseSyncMappers';
 import type { BodyWeightEntry } from '../../../../types';
 import { TrendChartCard } from '../../../progress/components/TrendChartCard';
-import { InlineEmpty, ListRow, Section, formatDate } from '../../_shared';
+import { InlineEmpty, ListRow, ListSkeleton, Section, SectionError, formatDate } from '../../_shared';
 import { RowIconBtn } from '../../rosterPrimitives';
 import { type EditBodyWeightInitial, EditBodyWeightSheet } from '../EditBodyWeightSheet';
 import { PhotoTimeline } from '../PhotoTimeline';
@@ -27,6 +27,12 @@ interface MetricsTabProps {
   weights: BodyWeightEntry[];
   measurements: BodyMeasurement[];
   prs: PersonalRecordRow[];
+  measurementsLoading: boolean;
+  measurementsError: string | null;
+  onReloadMeasurements: () => void;
+  prsLoading: boolean;
+  prsError: string | null;
+  onReloadPrs: () => void;
   onWeightSaved: () => void;
 }
 
@@ -116,6 +122,12 @@ export function MetricsTab({
   weights,
   measurements,
   prs,
+  measurementsLoading,
+  measurementsError,
+  onReloadMeasurements,
+  prsLoading,
+  prsError,
+  onReloadPrs,
   onWeightSaved,
 }: MetricsTabProps) {
   const [editing, setEditing] = useState<EditBodyWeightInitial | undefined>(undefined);
@@ -169,7 +181,11 @@ export function MetricsTab({
             }
           />
         )}
-        {deltas.length === 0 ? (
+        {measurementsLoading ? (
+          <ListSkeleton rows={3} />
+        ) : measurementsError ? (
+          <SectionError onRetry={onReloadMeasurements} />
+        ) : deltas.length === 0 ? (
           <InlineEmpty>אין מדידות גוף.</InlineEmpty>
         ) : (
           deltas.map((field) => <MeasurementRow key={field.key} field={field} />)
@@ -177,7 +193,11 @@ export function MetricsTab({
       </Section>
 
       <Section title="שיאים אישיים">
-        {prs.length === 0 ? (
+        {prsLoading ? (
+          <ListSkeleton rows={3} />
+        ) : prsError ? (
+          <SectionError onRetry={onReloadPrs} />
+        ) : prs.length === 0 ? (
           <InlineEmpty>אין שיאים.</InlineEmpty>
         ) : (
           prs

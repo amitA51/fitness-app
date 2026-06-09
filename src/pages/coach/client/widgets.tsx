@@ -1,47 +1,4 @@
-// Fresh Steel / Obsidian design system — client-detail widget primitives (VolumeTrend, Stat)
-
-const WEEK_LABELS = ['לפני 3ש׳', 'לפני 2ש׳', 'שבוע שעבר', 'השבוע'];
-
-export function VolumeTrend({ weeks }: { weeks: number[] }) {
-  const max = Math.max(1, ...weeks);
-  return (
-    <div
-      className="flex items-end gap-2"
-      style={{ height: 72 }}
-      role="img"
-      aria-label="מגמת נפח אימונים, 4 שבועות אחרונים"
-    >
-      {WEEK_LABELS.map((lbl, i) => (
-        <div
-          key={lbl}
-          className="flex-1 flex flex-col items-center justify-end"
-          style={{ height: '100%' }}
-        >
-          <div
-            style={{
-              width: '100%',
-              height: `${Math.round(((weeks[i] ?? 0) / max) * 100)}%`,
-              minHeight: 3,
-              background: 'var(--fs-accent)',
-            }}
-            title={`${Math.round(weeks[i] ?? 0)} ק"ג`}
-          />
-          <span
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
-              color: 'var(--fs-muted)',
-              marginTop: 6,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {lbl}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
+// Fresh Steel / Obsidian design system — client-detail widget primitive (Stat)
 
 export function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
@@ -69,7 +26,9 @@ export function Stat({ label, value, color }: { label: string; value: string; co
           color: color ?? 'var(--fs-heading)',
         }}
       >
-        <span dir="ltr">{value}</span>
+        {/* bdi auto-direction: Hebrew phrase values (e.g. 'פעיל', 'לפני 3 ימים')
+            keep RTL while pure-numeric values still render LTR — never force ltr. */}
+        <bdi>{value}</bdi>
       </div>
     </div>
   );

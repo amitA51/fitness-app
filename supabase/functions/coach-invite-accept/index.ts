@@ -150,7 +150,13 @@ Deno.serve(async (req: Request) => {
     .eq('coach_id', invite.coach_id)
     .eq('client_id', caller.id)
     .maybeSingle();
-  if ((count ?? 0) >= seatLimit && existing?.status !== 'active') {
+  // Re-accepting a coach you're already actively linked to is NOT a new
+  // connection — tell the client so it can say "כבר מחוברים" instead of
+  // celebrating a fresh link. The invite stays pending (still usable).
+  if (existing?.status === 'active') {
+    return json({ ok: false, error: 'already' }, 200, req);
+  }
+  if ((count ?? 0) >= seatLimit) {
     return json({ ok: false, error: 'seat_limit' }, 200, req);
   }
 

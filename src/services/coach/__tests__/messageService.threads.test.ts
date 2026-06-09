@@ -5,6 +5,7 @@ const mockSelect = vi.fn();
 const mockEq = vi.fn();
 const mockOrder = vi.fn();
 const mockLimit = vi.fn();
+const mockRpc = vi.fn();
 
 // Chain helpers return themselves so calls can be chained.
 const chainable = {
@@ -18,10 +19,13 @@ mockEq.mockReturnValue(chainable);
 mockOrder.mockReturnValue(chainable);
 // Default: empty messages result
 mockLimit.mockResolvedValue({ data: [], error: null });
+// Default: RPC unavailable → exercises the bounded-scan fallback the
+// reduction/sorting suites below were written against.
+mockRpc.mockResolvedValue({ data: null, error: { message: 'rpc missing' } });
 
 vi.mock('../../../lib/supabase', () => ({
   isSupabaseConfigured: vi.fn(() => true),
-  supabase: { from: vi.fn(() => chainable) },
+  supabase: { from: vi.fn(() => chainable), rpc: (...args: unknown[]) => mockRpc(...args) },
 }));
 
 // ── Auth mock ─────────────────────────────────────────────────────────────────
@@ -69,6 +73,7 @@ beforeEach(() => {
   mockEq.mockReturnValue(chainable);
   mockOrder.mockReturnValue(chainable);
   mockLimit.mockResolvedValue({ data: [], error: null });
+  mockRpc.mockResolvedValue({ data: null, error: { message: 'rpc missing' } });
 });
 
 describe('listClientThreads', () => {
@@ -166,6 +171,57 @@ describe('listClientThreads', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0]!.clientId).toBe('active-client');
+    });
+  });
+
+  describe('RPC aggregate (coach_thread_summaries)', () => {
+    it('uses the RPC rows when available and skips the fallback scan', async () => {
+      mockListClients.mockResolvedValueOnce([makeClient('c1', 'Avi')]);
+      mockRpc.mockResolvedValueOnce({
+        data: [{ client_id: 'c1', last_body: 'שלום', last_at: '2026-06-07T10:00:00Z', unread: 3 }],
+        error: null,
+      });
+
+      const result = await listClientThreads();
+
+      expect(mockRpc).toHaveBeenCalledWith('coach_thread_summaries');
+      expect(result).toHaveLength(1);
+      expect(result[0]!).toMatchObject({
+        clientId: 'c1',
+        lastBody: 'שלום',
+        lastAt: '2026-06-07T10:00:00Z',
+        unread: 3,
+      });
+      // The bounded fallback scan must not run when the RPC succeeded.
+      expect(mockLimit).not.toHaveBeenCalled();
+    });
+
+    it('ignores RPC rows for clients not in the active roster', async () => {
+      mockListClients.mockResolvedValueOnce([makeClient('c1', 'Avi')]);
+      mockRpc.mockResolvedValueOnce({
+        data: [
+          { client_id: 'c1', last_body: 'hi', last_at: '2026-06-07T10:00:00Z', unread: 0 },
+          { client_id: 'removed', last_body: 'spam', last_at: '2026-06-07T11:00:00Z', unread: 9 },
+        ],
+        error: null,
+      });
+
+      const result = await listClientThreads();
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.clientId).toBe('c1');
+    });
+
+    it('coerces a string unread count (bigint over the wire) to a number', async () => {
+      mockListClients.mockResolvedValueOnce([makeClient('c1', 'Avi')]);
+      mockRpc.mockResolvedValueOnce({
+        data: [{ client_id: 'c1', last_body: 'hi', last_at: '2026-06-07T10:00:00Z', unread: '5' }],
+        error: null,
+      });
+
+      const result = await listClientThreads();
+
+      expect(result[0]!.unread).toBe(5);
     });
   });
 

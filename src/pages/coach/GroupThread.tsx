@@ -7,15 +7,16 @@
 
 import { m } from 'framer-motion';
 import { Send } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { EASE_OUT } from '../../components/motion/easings';
 import { Button } from '../../components/ui/Button';
+import EmptyState from '../../components/ui/EmptyState';
 import { showToast } from '../../components/ui/GlobalToast';
 import { useAuth } from '../../contexts/AuthContext';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import {
-  getGroupThread,
+  getGroupThreadPage,
   listGroupThreads,
   markGroupThreadRead,
   sendGroupMessage,
@@ -23,8 +24,9 @@ import {
 import { getProfilesByIds } from '../../services/coach/profileService';
 import { subscribeToGroupThread } from '../../services/coach/realtime';
 import type { GroupMessage } from '../../types/coach';
-import { CoachPage, ListSkeleton, SectionError } from './_shared';
 import { TypingDots } from './TypingDots';
+import { CoachPage, ListSkeleton, SectionError } from './_shared';
+import { formatDayLabel, formatTime, isSameLocalDay } from './messageTime';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -32,6 +34,12 @@ import { TypingDots } from './TypingDots';
 
 interface Props {
   viewer: 'coach' | 'member';
+}
+
+/** Grow a single-row composer to fit its content, capped by its CSS max-height. */
+function autoGrow(el: HTMLTextAreaElement): void {
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
 }
 
 // ---------------------------------------------------------------------------
@@ -50,9 +58,22 @@ export default function GroupThread({ viewer }: Props) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(false);
+  const [sendError, setSendError] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingEarlier, setLoadingEarlier] = useState(false);
   const [liveAnnouncement, setLiveAnnouncement] = useState('');
   const endRef = useRef<HTMLDivElement | null>(null);
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
+  const didScrollRef = useRef(false);
+  // Set while prepending an older page so the scroll-to-bottom effect skips —
+  // "load earlier" must keep the user anchored, not yank them to the newest.
+  const prependingRef = useRef(false);
   const reduced = useReducedMotion();
+
+  // Collapse the auto-grown composer back to one row after a successful send.
+  useEffect(() => {
+    if (body === '' && composerRef.current) composerRef.current.style.height = 'auto';
+  }, [body]);
   // Debounce markRead on incoming realtime messages: avoid hammering the DB
   // for a burst of arriving messages in a short window.
   const markReadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -79,12 +100,14 @@ export default function GroupThread({ viewer }: Props) {
     setError(false);
     try {
       // Fetch messages and group name in parallel.
-      const [msgs, summaries] = await Promise.all([
-        getGroupThread(groupId),
+      const [page, summaries] = await Promise.all([
+        getGroupThreadPage(groupId),
         listGroupThreads(viewer),
       ]);
+      const msgs = page.messages;
 
       setMessages(msgs);
+      setHasMore(page.hasMore);
 
       const summary = summaries.find((s) => s.groupId === groupId);
       if (summary) setGroupName(summary.name);
@@ -109,6 +132,39 @@ export default function GroupThread({ viewer }: Props) {
   useEffect(() => {
     if (groupId) void load();
   }, [groupId, viewer]);
+
+  // Prepend the previous page, preserving the reader's scroll position (the
+  // viewport must not jump when content is inserted above it).
+  const loadEarlier = async () => {
+    const oldest = messages.find((m) => !m.id.startsWith('temp-'))?.createdAt;
+    if (!oldest || loadingEarlier) return;
+    setLoadingEarlier(true);
+    prependingRef.current = true;
+    const prevHeight = document.documentElement.scrollHeight;
+    const prevY = window.scrollY;
+    try {
+      const page = await getGroupThreadPage(groupId, oldest);
+      setMessages((prev) => {
+        const ids = new Set(prev.map((m) => m.id));
+        const fresh = page.messages.filter((m) => !ids.has(m.id));
+        return [...fresh, ...prev];
+      });
+      setHasMore(page.hasMore);
+      // Re-anchor after React commits the prepended content (double rAF —
+      // the first fires before paint, the second after layout settles).
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          const delta = document.documentElement.scrollHeight - prevHeight;
+          if (delta > 0) window.scrollTo({ top: prevY + delta });
+        })
+      );
+    } catch {
+      prependingRef.current = false;
+      showToast('טעינת ההודעות הקודמות נכשלה', 'error');
+    } finally {
+      setLoadingEarlier(false);
+    }
+  };
 
   // -------------------------------------------------------------------------
   // Realtime: append live messages; announce incoming; debounce markRead.
@@ -151,10 +207,20 @@ export default function GroupThread({ viewer }: Props) {
   // -------------------------------------------------------------------------
   // Auto-scroll to bottom whenever messages change.
   // -------------------------------------------------------------------------
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to bottom whenever messages change
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (messages.length === 0) return;
+    // Skip when an older page was just prepended — loadEarlier re-anchors the
+    // viewport itself; scrolling to the newest here would lose the reader.
+    if (prependingRef.current) {
+      prependingRef.current = false;
+      return;
+    }
+    // Jump instantly on the first populated render (and under reduced-motion);
+    // smooth-scroll only for subsequent live appends.
+    const behavior: ScrollBehavior = reduced || !didScrollRef.current ? 'auto' : 'smooth';
+    didScrollRef.current = true;
+    endRef.current?.scrollIntoView({ behavior });
+  }, [messages, reduced]);
 
   // -------------------------------------------------------------------------
   // Send.
@@ -163,15 +229,44 @@ export default function GroupThread({ viewer }: Props) {
     const text = body.trim();
     if (!text || sending) return;
     setSending(true);
+    setSendError(false);
     setBody('');
+
+    // Optimistic append: show the message immediately with a temp id, then
+    // reconcile by a single getGroupThread on success. Rolled back on failure.
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: GroupMessage = {
+      id: tempId,
+      groupId,
+      senderId: me,
+      body: text,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimistic]);
+
     const { error: sendErr } = await sendGroupMessage(groupId, text);
     if (sendErr) {
+      setMessages((prev) => prev.filter((x) => x.id !== tempId));
       setBody(text);
-      showToast('שליחת ההודעה נכשלה', 'error');
+      setSendError(true);
       setSending(false);
       return;
     }
-    await load();
+    // Reconcile temp → persisted rows without a full reload (no read churn).
+    // Merge, don't replace: earlier pages the user already loaded must survive.
+    try {
+      const page = await getGroupThreadPage(groupId);
+      setMessages((prev) => {
+        const ids = new Set(page.messages.map((m) => m.id));
+        const firstAt = page.messages[0]?.createdAt ?? '';
+        const older = prev.filter(
+          (m) => !ids.has(m.id) && !m.id.startsWith('temp-') && (m.createdAt ?? '') < firstAt
+        );
+        return [...older, ...page.messages];
+      });
+    } catch {
+      // Keep the optimistic bubble; realtime will catch up.
+    }
     setSending(false);
   };
 
@@ -189,31 +284,39 @@ export default function GroupThread({ viewer }: Props) {
       {/* Pad the scroll area so the last bubble clears the fixed composer. */}
       <div
         className="flex flex-col gap-2"
-        style={{ minHeight: '50vh', paddingBottom: 'calc(72px + env(safe-area-inset-bottom))' }}
+        style={{ minHeight: '50dvh', paddingBottom: 'calc(72px + env(safe-area-inset-bottom))' }}
       >
         {loading ? (
           <ListSkeleton rows={4} />
         ) : error ? (
           <SectionError onRetry={() => void load()} />
         ) : messages.length === 0 ? (
-          <div
-            role="status"
-            style={{
-              padding: '32px 16px',
-              textAlign: 'center',
-              fontFamily: 'var(--font-body)',
-              fontSize: 14,
-              color: 'var(--fs-muted)',
-              lineHeight: 1.7,
-            }}
-          >
-            אין הודעות עדיין — אפשר לפתוח את השיחה
-          </div>
+          <EmptyState
+            illustration="notes"
+            title="אין הודעות עדיין"
+            description="כתבו את ההודעה הראשונה לקבוצה."
+          />
         ) : (
           <>
-            {messages.map((msg) => {
+            {hasMore && (
+              <Button
+                variant="secondary"
+                size="sm"
+                isLoading={loadingEarlier}
+                onClick={() => void loadEarlier()}
+                className="self-center"
+                aria-label="טעינת הודעות קודמות"
+              >
+                הצגת הודעות קודמות
+              </Button>
+            )}
+            {messages.map((msg, i) => {
               const mine = msg.senderId === me;
               const senderLabel = !mine ? (senderNames.get(msg.senderId) ?? 'משתתף') : null;
+              const time = formatTime(msg.createdAt);
+              const prev = i > 0 ? messages[i - 1] : null;
+              const showDivider =
+                !prev || !isSameLocalDay(msg.createdAt ?? '', prev.createdAt ?? '');
 
               const itemStyle = {
                 // Logical alignment: inline-start auto → inline-END for mine
@@ -234,7 +337,7 @@ export default function GroupThread({ viewer }: Props) {
                       aria-hidden="true"
                       style={{
                         fontFamily: 'var(--font-mono)',
-                        fontSize: 10,
+                        fontSize: 12,
                         color: 'var(--fs-muted)',
                         paddingInlineStart: 4,
                         display: 'block',
@@ -249,7 +352,11 @@ export default function GroupThread({ viewer }: Props) {
                     style={{
                       background: mine ? 'var(--fs-primary)' : 'var(--fs-surface)',
                       color: mine ? 'var(--fs-accent)' : 'var(--fs-ink)',
-                      border: '1px solid var(--fs-surface-2)',
+                      // mine sits on the primary fill where --fs-surface-2 is
+                      // near-invisible — use a low-alpha edge instead.
+                      border: mine
+                        ? '1px solid color-mix(in srgb, var(--fs-accent) 22%, transparent)'
+                        : '1px solid var(--fs-surface-2)',
                       padding: '8px 12px',
                       fontFamily: 'var(--font-body)',
                       fontSize: 14,
@@ -260,6 +367,22 @@ export default function GroupThread({ viewer }: Props) {
                     <span dir="auto" style={{ display: 'block', textAlign: 'start' }}>
                       {msg.body}
                     </span>
+                    {/* Per-message time — LTR numerals, mono, muted. */}
+                    {time && (
+                      <span
+                        dir="ltr"
+                        style={{
+                          display: 'block',
+                          marginTop: 3,
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 10,
+                          color: 'var(--fs-muted)',
+                          textAlign: 'start',
+                        }}
+                      >
+                        {time}
+                      </span>
+                    )}
                   </div>
                 </>
               );
@@ -268,13 +391,12 @@ export default function GroupThread({ viewer }: Props) {
 
               // Mount entrance (opacity:0,y:8 → settled); static under reduced-motion.
               // Group messages have no per-message read state, so no read receipt.
-              return reduced ? (
-                <div key={msg.id} role="article" aria-label={ariaLabel} style={itemStyle}>
+              const bubble = reduced ? (
+                <div role="article" aria-label={ariaLabel} style={itemStyle}>
                   {inner}
                 </div>
               ) : (
                 <m.div
-                  key={msg.id}
                   role="article"
                   aria-label={ariaLabel}
                   style={itemStyle}
@@ -284,6 +406,13 @@ export default function GroupThread({ viewer }: Props) {
                 >
                   {inner}
                 </m.div>
+              );
+
+              return (
+                <Fragment key={msg.id}>
+                  {showDivider && <DayDivider iso={msg.createdAt} />}
+                  {bubble}
+                </Fragment>
               );
             })}
             {/* "Delivering" indicator on my in-flight send — backed by `sending`. */}
@@ -299,52 +428,102 @@ export default function GroupThread({ viewer }: Props) {
 
       {/* Fixed composer — identical to MessageThread. */}
       <div
-        className="flex gap-2 items-end fixed inset-x-0 bottom-0 px-5 pt-3"
+        className="fixed inset-x-0 bottom-0 px-5 pt-3"
         style={{
           background: 'var(--fs-bg)',
           borderTop: '1px solid var(--fs-surface-2)',
           paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
         }}
       >
-        {/* Single-row chat composer. Enter sends; Shift+Enter inserts a newline.
-            Deliberately not the form <Textarea> — message bars stay one row tall. */}
-        <textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              void handleSend();
-            }
-          }}
-          rows={1}
-          placeholder="כתוב הודעה…"
-          aria-label="כתיבת הודעה"
-          className="flex-1 px-3 py-2"
-          style={{
-            background: 'var(--fs-surface)',
-            border: '1px solid var(--fs-surface-2)',
-            color: 'var(--fs-ink)',
-            fontFamily: 'var(--font-body)',
-            fontSize: 16,
-            textAlign: 'start',
-            resize: 'none',
-            minHeight: 44,
-          }}
-        />
-        {/* 44×44 send control — tinted primary, matching MessageThread. */}
-        <Button
-          variant="primary"
-          size="icon"
-          aria-label="שלח"
-          onClick={handleSend}
-          disabled={!body.trim() || sending}
-          className="shrink-0"
-          style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)' }}
-        >
-          <Send size={18} aria-hidden="true" />
-        </Button>
+        {/* Inline send error — field-level failures belong beside the composer,
+            not in a transient toast. Clears on the next keystroke. */}
+        {sendError && (
+          <div
+            role="alert"
+            style={{
+              marginBottom: 6,
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              color: 'var(--fs-error)',
+            }}
+          >
+            שליחת ההודעה נכשלה. בדקו את החיבור ונסו שוב.
+          </div>
+        )}
+        <div className="flex gap-2 items-end">
+          {/* Single-row chat composer that auto-grows on input. Enter sends;
+              Shift+Enter inserts a newline. Deliberately not the form <Textarea>. */}
+          <textarea
+            ref={composerRef}
+            value={body}
+            onChange={(e) => {
+              setBody(e.target.value);
+              if (sendError) setSendError(false);
+              autoGrow(e.target);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                void handleSend();
+              }
+            }}
+            rows={1}
+            placeholder="כתוב הודעה…"
+            aria-label="כתיבת הודעה"
+            className="flex-1 px-3 py-2"
+            style={{
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--fs-surface-2)',
+              color: 'var(--fs-ink)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 16,
+              textAlign: 'start',
+              resize: 'none',
+              minHeight: 44,
+              maxHeight: 120,
+              overflowY: 'auto',
+            }}
+          />
+          {/* 44×44 send control — tinted primary, matching MessageThread. */}
+          <Button
+            variant="primary"
+            size="icon"
+            aria-label="שלח"
+            onClick={handleSend}
+            disabled={!body.trim() || sending}
+            className="shrink-0 motion-safe:active:scale-[0.98]"
+            style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)' }}
+          >
+            <Send size={18} aria-hidden="true" />
+          </Button>
+        </div>
       </div>
     </CoachPage>
+  );
+}
+
+// ── DayDivider ────────────────────────────────────────────────────────────────
+// A centered date label rendered when the calendar day changes between bubbles.
+
+function DayDivider({ iso }: { iso?: string }) {
+  const label = formatDayLabel(iso);
+  if (!label) return null;
+  return (
+    <div
+      style={{
+        alignSelf: 'center',
+        margin: '6px 0',
+        padding: '2px 10px',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: 999,
+        fontFamily: 'var(--font-mono)',
+        fontSize: 10,
+        color: 'var(--fs-muted)',
+        letterSpacing: '0.04em',
+      }}
+    >
+      {label}
+    </div>
   );
 }

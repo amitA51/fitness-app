@@ -13,41 +13,30 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
-import { m } from 'framer-motion';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FadeIn } from '../../components/motion/FadeIn';
 import { Button } from '../../components/ui/Button';
 import { useCoach } from '../../contexts/CoachContext';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { useUnreadMessages } from '../../hooks/useUnreadMessages';
-import { triggerHapticIntensity } from '../../utils/haptics';
 import {
   type ClientOverviewRow,
   type TodayScheduleCount,
   getClientsOverview,
-  getRecentCheckInFlags,
-  getScheduledTodayByClient,
   getSeatUsage,
-  getUnreadCountByClient,
   listClients,
   summarizeRoster,
 } from '../../services/coach';
+import { triggerHapticIntensity } from '../../utils/haptics';
 import { CoachPage, ListSkeleton, Section, SectionError, useAsyncData } from './_shared';
-import { AttentionRow, OverviewStat, QuickLink } from './rosterPrimitives';
-
-/** Command-center signals fetched once the roster resolves (best-effort). */
-interface RosterSignals {
-  unreadByClient: Record<string, number>;
-  recentCheckIns: Set<string>;
-  scheduledToday: Record<string, TodayScheduleCount>;
-}
-
-const EMPTY_SIGNALS: RosterSignals = {
-  unreadByClient: {},
-  recentCheckIns: new Set(),
-  scheduledToday: {},
-};
+import {
+  AttentionRow,
+  OverviewStat,
+  QuickLink,
+  RowSignalChips,
+  useRosterSignals,
+} from './rosterPrimitives';
 
 export default function CoachHome() {
   const navigate = useNavigate();
@@ -65,39 +54,12 @@ export default function CoachHome() {
   const unread = useUnreadMessages();
   const summary = useMemo(() => summarizeRoster(rows), [rows]);
 
-  // Stable join key of the active client ids — drives the signals fetch below.
-  const clientIds = useMemo(() => rows.map((r) => r.client.clientId), [rows]);
-  const clientIdsKey = clientIds.join(',');
-
   // Command-center signals: unread-per-client, recent check-ins, today's plan.
-  // Best-effort — each source degrades to empty on failure without breaking the
-  // page. One batched query per source (no N+1).
-  const [signals, setSignals] = useState<RosterSignals>(EMPTY_SIGNALS);
-  useEffect(() => {
-    if (clientIds.length === 0) {
-      setSignals(EMPTY_SIGNALS);
-      return;
-    }
-    let cancelled = false;
-    void Promise.allSettled([
-      getUnreadCountByClient(),
-      getRecentCheckInFlags(clientIds),
-      getScheduledTodayByClient(clientIds),
-    ]).then(([unreadRes, checkInRes, scheduleRes]) => {
-      if (cancelled) return;
-      setSignals({
-        unreadByClient: unreadRes.status === 'fulfilled' ? unreadRes.value : {},
-        recentCheckIns: checkInRes.status === 'fulfilled' ? checkInRes.value : new Set(),
-        scheduledToday: scheduleRes.status === 'fulfilled' ? scheduleRes.value : {},
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-    // clientIdsKey is the stable identity of clientIds; re-running on the array
-    // ref itself would refetch every render.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: clientIdsKey is the serialized identity of clientIds
-  }, [clientIdsKey]);
+  // ONE batched fetch per source via the shared hook (no N+1); while loading,
+  // the schedule-dependent overview stats render a placeholder (not a hard 0)
+  // and the per-row chips stay hidden so the page never flashes "0 planned".
+  const clientIds = useMemo(() => rows.map((r) => r.client.clientId), [rows]);
+  const { signals, signalsLoading } = useRosterSignals(clientIds);
 
   // Top-3 at_risk/inactive rows — already attention-sorted by getClientsOverview.
   const attentionRows = useMemo(
@@ -108,15 +70,42 @@ export default function CoachHome() {
     [rows]
   );
 
-  // "Supposed to train today" = clients with at least one still-planned workout.
+  // "Planned for today" = full scheduled-today denominator (still-planned OR
+  // already-done), so "כבר התאמנו" reads as a subset of it (a progress pair)
+  // instead of the two counts contradicting once everyone finishes.
   const dueToday = useMemo(
-    () => Object.values(signals.scheduledToday).filter((c) => c.planned > 0).length,
+    () => Object.values(signals.scheduledToday).filter((c) => c.planned > 0 || c.done > 0).length,
     [signals.scheduledToday]
   );
   const trainedToday = useMemo(
     () => Object.values(signals.scheduledToday).filter((c) => c.done > 0).length,
     [signals.scheduledToday]
   );
+
+  // Celebration haptic: fire ONCE when any attention row has trained today,
+  // instead of one buzz per WinChip on passive render (which felt like a stutter).
+  const anyAttentionTrained = useMemo(
+    () =>
+      !signalsLoading &&
+      attentionRows.some((r) => (signals.scheduledToday[r.client.clientId]?.done ?? 0) > 0),
+    [signalsLoading, attentionRows, signals.scheduledToday]
+  );
+  const reducedMotion = useReducedMotion();
+  useEffect(() => {
+    if (anyAttentionTrained && !reducedMotion) triggerHapticIntensity('light');
+  }, [anyAttentionTrained, reducedMotion]);
+
+  // Hide the seat subtitle until it is meaningful — avoids a "0/0 מושבים" flash
+  // before getSeatUsage resolves; the digits render LTR inside the RTL header.
+  const seatSubtitle =
+    seats.limit > 0 ? (
+      <>
+        <bdi dir="ltr">
+          {seats.used}/{seats.limit}
+        </bdi>{' '}
+        מושבים
+      </>
+    ) : undefined;
 
   if (coachLoading) {
     return (
@@ -129,7 +118,7 @@ export default function CoachHome() {
   return (
     <CoachPage
       title={coachProfile?.businessName || 'מרכז המאמן'}
-      subtitle={`${seats.used}/${seats.limit} מושבים`}
+      subtitle={seatSubtitle}
       hideBack
       actions={
         <Button
@@ -190,6 +179,7 @@ export default function CoachHome() {
                   unread={signals.unreadByClient[row.client.clientId] ?? 0}
                   hasRecentCheckIn={signals.recentCheckIns.has(row.client.clientId)}
                   today={signals.scheduledToday[row.client.clientId]}
+                  signalsLoading={signalsLoading}
                   onOpenClient={() => navigate(`/coach/clients/${row.client.clientId}`)}
                   onMessage={() => navigate(`/coach/messages/${row.client.clientId}`)}
                 />
@@ -201,16 +191,18 @@ export default function CoachHome() {
           <Section title="סקירה כללית">
             <div className="grid grid-cols-3 gap-2">
               <OverviewStat
-                label="אמורים להתאמן היום"
+                label="מתוכננים להיום"
                 value={dueToday}
                 color="var(--fs-accent)"
                 indicator="due"
+                loading={signalsLoading}
               />
               <OverviewStat
                 label="כבר התאמנו"
                 value={trainedToday}
                 color="var(--fs-accent)"
                 indicator="trained"
+                loading={signalsLoading}
               />
               <OverviewStat
                 label="דורשים תשומת לב"
@@ -298,7 +290,7 @@ function CoachEmptyState({ onInvite }: { onInvite: () => void }) {
               margin: '6px 0 18px',
             }}
           >
-            עדיין אין מתאמנים מחוברים. כך מתחילים לנהל את המאמנת או המאמן שבכם.
+            עדיין אין מתאמנים מחוברים. כך מתחילים — בשלושה צעדים.
           </p>
 
           <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 14 }}>
@@ -433,141 +425,6 @@ function AllActiveState() {
   );
 }
 
-// ── Signal chips ──────────────────────────────────────────────────────────────
-// Non-interactive <span> badges rendered ABOVE the AttentionRow so they never
-// nest inside the row's action buttons. Token-only; numbers stay dir="ltr".
-
-function SignalChip({
-  label,
-  color,
-  background,
-}: {
-  label: string;
-  color: string;
-  background: string;
-}) {
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        fontFamily: 'var(--font-mono)',
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: '0.04em',
-        color,
-        background,
-        border: `1px solid ${color}`,
-        borderRadius: 999,
-        padding: '2px 8px',
-        lineHeight: 1.4,
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
-// ── Win chip ───────────────────────────────────────────────────────────────────
-// A trained-today WIN is a legit celebration: the chip goes --fs-signal (lime),
-// the check icon scale-pops once on appear, and a light haptic fires on mobile.
-// prefers-reduced-motion: no pop, no entrance — the lime chip still renders.
-function WinChip({ label }: { label: string }) {
-  const reduced = useReducedMotion();
-
-  useEffect(() => {
-    if (reduced) return;
-    triggerHapticIntensity('light');
-  }, [reduced]);
-
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        fontFamily: 'var(--font-mono)',
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: '0.04em',
-        color: 'var(--fs-signal)',
-        background: 'var(--fs-surface)',
-        border: '1px solid var(--fs-signal)',
-        borderRadius: 999,
-        padding: '2px 8px',
-        lineHeight: 1.4,
-      }}
-    >
-      {reduced ? (
-        <Check size={11} strokeWidth={3} aria-hidden="true" />
-      ) : (
-        <m.span
-          initial={{ scale: 0.4, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 520, damping: 16 }}
-          style={{ display: 'inline-flex' }}
-        >
-          <Check size={11} strokeWidth={3} aria-hidden="true" />
-        </m.span>
-      )}
-      {label}
-    </span>
-  );
-}
-
-function RowSignalChips({
-  unread,
-  hasRecentCheckIn,
-  today,
-}: {
-  unread: number;
-  hasRecentCheckIn: boolean;
-  today?: TodayScheduleCount;
-}) {
-  const trainedToday = (today?.done ?? 0) > 0;
-  const dueToday = (today?.planned ?? 0) > 0;
-  const hasAny = hasRecentCheckIn || unread > 0 || trainedToday || dueToday;
-  if (!hasAny) return null;
-
-  return (
-    <div
-      className="flex flex-wrap items-center gap-1.5"
-      style={{ padding: '0 16px', marginBottom: 6 }}
-    >
-      {hasRecentCheckIn && (
-        <SignalChip label="צ׳ק-אין חדש" color="var(--fs-accent)" background="var(--fs-surface)" />
-      )}
-      {unread > 0 && (
-        <span
-          aria-label={`${unread} הודעות שלא נקראו`}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 4,
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: '0.04em',
-            color: 'var(--fs-accent)',
-            background: 'var(--fs-primary)',
-            borderRadius: 999,
-            padding: '2px 8px',
-            lineHeight: 1.4,
-          }}
-        >
-          <MessageSquare size={11} aria-hidden="true" />
-          <span dir="ltr">{unread}</span>
-        </span>
-      )}
-      {trainedToday ? (
-        <WinChip label="התאמן" />
-      ) : dueToday ? (
-        <SignalChip label="מתאמן היום" color="var(--fs-muted)" background="var(--fs-surface)" />
-      ) : null}
-    </div>
-  );
-}
-
 // ── AttentionRow + signals wrapper ─────────────────────────────────────────────
 // Renders the chips in a thin local wrapper around rosterPrimitives.AttentionRow
 // (which this screen does not own) so we never nest interactive elements.
@@ -577,6 +434,7 @@ function AttentionRowWithSignals({
   unread,
   hasRecentCheckIn,
   today,
+  signalsLoading,
   onOpenClient,
   onMessage,
 }: {
@@ -584,12 +442,15 @@ function AttentionRowWithSignals({
   unread: number;
   hasRecentCheckIn: boolean;
   today?: TodayScheduleCount;
+  signalsLoading: boolean;
   onOpenClient: () => void;
   onMessage: () => void;
 }) {
   return (
     <div>
-      <RowSignalChips unread={unread} hasRecentCheckIn={hasRecentCheckIn} today={today} />
+      {!signalsLoading && (
+        <RowSignalChips unread={unread} hasRecentCheckIn={hasRecentCheckIn} today={today} />
+      )}
       <AttentionRow row={row} onOpenClient={onOpenClient} onMessage={onMessage} />
     </div>
   );

@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { Button } from '../../../../components/ui/Button';
 import type { NutritionLog } from '../../../../services/supabaseSyncMappers';
 import type { Assignment } from '../../../../types/coach';
-import { InlineEmpty, ListRow, Section, formatDate } from '../../_shared';
+import { InlineEmpty, ListRow, ListSkeleton, Section, SectionError, formatDate } from '../../_shared';
 import { RowIconBtn } from '../../rosterPrimitives';
 import { type EditNutritionInitial, EditNutritionSheet } from '../EditNutritionSheet';
 
@@ -17,6 +17,9 @@ interface NutritionTabProps {
   clientId: string;
   nutrition: NutritionLog[];
   assignments: Assignment[];
+  loading: boolean;
+  error: string | null;
+  onReload: () => void;
   onNutritionSaved: () => void;
 }
 
@@ -45,6 +48,9 @@ export function NutritionTab({
   clientId,
   nutrition,
   assignments,
+  loading,
+  error,
+  onReload,
   onNutritionSaved,
 }: NutritionTabProps) {
   const [editing, setEditing] = useState<EditNutritionInitial | undefined>(undefined);
@@ -93,14 +99,24 @@ export function NutritionTab({
         </div>
       )}
 
-      {nutrition.length === 0 ? (
+      {loading ? (
+        <ListSkeleton rows={4} />
+      ) : error ? (
+        <SectionError onRetry={onReload} />
+      ) : nutrition.length === 0 ? (
         <InlineEmpty>אין יומני תזונה. אפשר להוסיף יומן ידנית למתאמן.</InlineEmpty>
       ) : (
         nutrition.map((n) => (
           <ListRow
             key={n.id}
             label={formatDate(n.date)}
-            meta={`${n.calories ?? 0} קל' · ${n.protein ?? 0}ח · ${n.carbs ?? 0}פ · ${n.fat ?? 0}ש`}
+            metaNode={
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fs-muted)' }}>
+                <bdi dir="ltr">{n.calories ?? 0}</bdi> קק"ל · חלבון{' '}
+                <bdi dir="ltr">{n.protein ?? 0}</bdi> ג׳ · פחמ׳ <bdi dir="ltr">{n.carbs ?? 0}</bdi>{' '}
+                ג׳ · שומן <bdi dir="ltr">{n.fat ?? 0}</bdi> ג׳
+              </div>
+            }
             trailing={
               <RowIconBtn
                 onClick={() => openEdit(n)}

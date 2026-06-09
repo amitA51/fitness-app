@@ -14,13 +14,21 @@ export function AssignBox({ clientId }: { clientId: string }) {
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
+  // Inline, field-level validation errors (never a toast — toasts are for
+  // transient/global events only).
+  const [noteError, setNoteError] = useState<string | null>(null);
+  const [caloriesError, setCaloriesError] = useState<string | null>(null);
   // Separate in-flight flags so sending a note doesn't show the nutrition-target
   // button as loading (and vice versa) — they are independent actions.
   const [busyNote, setBusyNote] = useState(false);
   const [busyTarget, setBusyTarget] = useState(false);
 
   const sendNote = async () => {
-    if (!note.trim()) return;
+    if (!note.trim()) {
+      setNoteError('יש להזין טקסט להמלצה');
+      return;
+    }
+    setNoteError(null);
     setBusyNote(true);
     try {
       await createAssignment({
@@ -40,7 +48,11 @@ export function AssignBox({ clientId }: { clientId: string }) {
 
   const sendTarget = async () => {
     const kcal = Number(calories);
-    if (!kcal) return;
+    if (!calories.trim() || !Number.isFinite(kcal) || kcal <= 0) {
+      setCaloriesError('יש להזין כמות קלוריות תקינה');
+      return;
+    }
+    setCaloriesError(null);
     setBusyTarget(true);
     try {
       const payload: Record<string, number> = { calories: kcal };
@@ -73,11 +85,27 @@ export function AssignBox({ clientId }: { clientId: string }) {
       <div className="mb-2">
         <Textarea
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={(e) => {
+            setNote(e.target.value);
+            if (noteError) setNoteError(null);
+          }}
           placeholder="כתוב המלצה למתאמן…"
           rows={2}
           aria-label="המלצה למתאמן"
         />
+        {noteError && (
+          <p
+            role="alert"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
+              color: 'var(--color-error)',
+              marginTop: 4,
+            }}
+          >
+            {noteError}
+          </p>
+        )}
       </div>
       <Button variant="primary" fullWidth isLoading={busyNote} onClick={sendNote}>
         שלח המלצה
@@ -103,9 +131,13 @@ export function AssignBox({ clientId }: { clientId: string }) {
               inputMode="numeric"
               dir="ltr"
               value={calories}
-              onChange={(e) => setCalories(e.target.value)}
+              onChange={(e) => {
+                setCalories(e.target.value);
+                if (caloriesError) setCaloriesError(null);
+              }}
               placeholder="קק&quot;ל"
               aria-label="יעד קלוריות"
+              error={caloriesError ?? undefined}
             />
           </div>
           <div className="flex-1">

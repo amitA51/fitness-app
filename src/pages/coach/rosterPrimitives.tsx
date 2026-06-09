@@ -3,10 +3,83 @@
 // (CoachHome) and the full roster page (CoachClients).
 // ============================================================================
 
-import { Check, MessageSquare, UserPlus } from 'lucide-react';
+import { m } from 'framer-motion';
+import { Check, MessageSquare, User } from 'lucide-react';
 import type React from 'react';
-import { type ClientOverviewRow, clientStatusMeta } from '../../services/coach';
+import { useEffect, useState } from 'react';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
+import {
+  type ClientOverviewRow,
+  type TodayScheduleCount,
+  clientStatusMeta,
+  getRecentCheckInFlags,
+  getScheduledTodayByClient,
+  getUnreadCountByClient,
+} from '../../services/coach';
 import { ListRow, formatDate } from './_shared';
+
+// ── Roster signals ────────────────────────────────────────────────────────────
+// Per-client triage signals (unread messages, recent check-ins, today's plan)
+// shared by the command center (CoachHome) and the full roster (CoachClients).
+
+/** Command-center signals fetched once the roster resolves (best-effort). */
+export interface RosterSignals {
+  unreadByClient: Record<string, number>;
+  recentCheckIns: Set<string>;
+  scheduledToday: Record<string, TodayScheduleCount>;
+}
+
+const EMPTY_SIGNALS: RosterSignals = {
+  unreadByClient: {},
+  recentCheckIns: new Set(),
+  scheduledToday: {},
+};
+
+/**
+ * Fetch the roster signals for a set of client ids. Best-effort — each source
+ * degrades to empty on failure without breaking the page. One batched query
+ * per source (no N+1). `signalsLoading` is true while in flight so callers can
+ * render placeholders instead of flashing hard zeros.
+ */
+export function useRosterSignals(clientIds: string[]): {
+  signals: RosterSignals;
+  signalsLoading: boolean;
+} {
+  // Stable join key — the effect derives the ids back from it so it never
+  // closes over a separately-memoized array.
+  const clientIdsKey = clientIds.join(',');
+  const [signals, setSignals] = useState<RosterSignals>(EMPTY_SIGNALS);
+  const [signalsLoading, setSignalsLoading] = useState(true);
+
+  useEffect(() => {
+    const ids = clientIdsKey ? clientIdsKey.split(',') : [];
+    if (ids.length === 0) {
+      setSignals(EMPTY_SIGNALS);
+      setSignalsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setSignalsLoading(true);
+    void Promise.allSettled([
+      getUnreadCountByClient(),
+      getRecentCheckInFlags(ids),
+      getScheduledTodayByClient(ids),
+    ]).then(([unreadRes, checkInRes, scheduleRes]) => {
+      if (cancelled) return;
+      setSignals({
+        unreadByClient: unreadRes.status === 'fulfilled' ? unreadRes.value : {},
+        recentCheckIns: checkInRes.status === 'fulfilled' ? checkInRes.value : new Set(),
+        scheduledToday: scheduleRes.status === 'fulfilled' ? scheduleRes.value : {},
+      });
+      setSignalsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [clientIdsKey]);
+
+  return { signals, signalsLoading };
+}
 
 /** 44×44 icon-only button. accent=true swaps color to --fs-accent. */
 export function RowIconBtn({
@@ -74,11 +147,14 @@ export function OverviewStat({
   value,
   color,
   indicator,
+  loading = false,
 }: {
   label: string;
   value: number;
   color?: string;
   indicator?: 'due' | 'trained';
+  /** While the underlying signal is in flight, render a dash, not a hard 0. */
+  loading?: boolean;
 }) {
   const tone = color ?? 'var(--fs-heading)';
   return (
@@ -97,20 +173,25 @@ export function OverviewStat({
             fontSize: 24,
             fontWeight: 700,
             fontVariantNumeric: 'tabular-nums',
-            color: tone,
+            color: loading ? 'var(--fs-muted)' : tone,
             lineHeight: 1,
           }}
         >
-          <span dir="ltr">{value}</span>
+          {loading ? <span aria-hidden="true">—</span> : <span dir="ltr">{value}</span>}
         </div>
-        {indicator === 'due' && value > 0 && (
+        {!loading && indicator === 'due' && value > 0 && (
           <span
             aria-hidden="true"
             style={{ width: 8, height: 8, borderRadius: 999, background: tone, flexShrink: 0 }}
           />
         )}
-        {indicator === 'trained' && value > 0 && (
-          <Check size={14} strokeWidth={3} style={{ color: tone, flexShrink: 0 }} aria-hidden="true" />
+        {!loading && indicator === 'trained' && value > 0 && (
+          <Check
+            size={14}
+            strokeWidth={3}
+            style={{ color: tone, flexShrink: 0 }}
+            aria-hidden="true"
+          />
         )}
       </div>
       <div
@@ -141,7 +222,7 @@ export function QuickLink({
       type="button"
       onClick={onClick}
       aria-label={hasUnread ? `${label}, ${badge} שלא נקראו` : label}
-      className="flex flex-col items-center justify-center gap-1.5 py-3"
+      className="flex flex-col items-center justify-center gap-1.5 py-3 min-h-[56px]"
       style={{
         position: 'relative',
         background: 'var(--fs-surface)',
@@ -201,7 +282,7 @@ export function AttentionRow({
   onMessage,
 }: { row: ClientOverviewRow; onOpenClient: () => void; onMessage: () => void }) {
   const name = row.client.clientProfile?.displayName ?? 'מתאמן';
-  const { color } = clientStatusMeta(row.analytics.level);
+  const { color, label: statusLabel } = clientStatusMeta(row.analytics.level);
   const days = row.analytics.daysSinceActivity;
   // Gender-neutral phrasing; number stays LTR inside RTL layout.
   const meta =
@@ -243,6 +324,9 @@ export function AttentionRow({
           <bdi>{name}</bdi>
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fs-warn)' }}>
+          {/* The severity tier is conveyed visually only by the aria-hidden dot
+              color, so expose it to assistive tech as visually-hidden text. */}
+          <span className="sr-only">{statusLabel}: </span>
           <span dir="ltr">{meta}</span>
         </div>
       </div>
@@ -250,8 +334,138 @@ export function AttentionRow({
         <MessageSquare size={18} aria-hidden="true" />
       </RowIconBtn>
       <RowIconBtn onClick={onOpenClient} label={`פתח פרופיל של ${name}`} accent>
-        <UserPlus size={18} aria-hidden="true" />
+        <User size={18} aria-hidden="true" />
       </RowIconBtn>
+    </div>
+  );
+}
+
+// ── Signal chips ──────────────────────────────────────────────────────────────
+// Non-interactive <span> badges rendered ABOVE a roster/attention row so they
+// never nest inside the row's action buttons. Token-only; numbers stay dir="ltr".
+
+function SignalChip({
+  label,
+  color,
+  background,
+}: {
+  label: string;
+  color: string;
+  background: string;
+}) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        fontFamily: 'var(--font-mono)',
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '0.04em',
+        color,
+        background,
+        border: `1px solid ${color}`,
+        borderRadius: 999,
+        padding: '2px 8px',
+        lineHeight: 1.4,
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+// A trained-today WIN is a legit celebration: the chip goes --fs-signal (lime)
+// and the check icon scale-pops once on appear. Any haptic celebration is the
+// screen's responsibility (fired ONCE per page, not per chip).
+// prefers-reduced-motion: no pop, no entrance — the lime chip still renders.
+function WinChip({ label }: { label: string }) {
+  const reduced = useReducedMotion();
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        fontFamily: 'var(--font-mono)',
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '0.04em',
+        color: 'var(--fs-signal)',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-signal)',
+        borderRadius: 999,
+        padding: '2px 8px',
+        lineHeight: 1.4,
+      }}
+    >
+      {reduced ? (
+        <Check size={11} strokeWidth={3} aria-hidden="true" />
+      ) : (
+        <m.span
+          initial={{ scale: 0.4, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 520, damping: 16 }}
+          style={{ display: 'inline-flex' }}
+        >
+          <Check size={11} strokeWidth={3} aria-hidden="true" />
+        </m.span>
+      )}
+      {label}
+    </span>
+  );
+}
+
+export function RowSignalChips({
+  unread,
+  hasRecentCheckIn,
+  today,
+}: {
+  unread: number;
+  hasRecentCheckIn: boolean;
+  today?: TodayScheduleCount;
+}) {
+  const trainedToday = (today?.done ?? 0) > 0;
+  const dueToday = (today?.planned ?? 0) > 0;
+  const hasAny = hasRecentCheckIn || unread > 0 || trainedToday || dueToday;
+  if (!hasAny) return null;
+
+  return (
+    <div
+      className="flex flex-wrap items-center gap-1.5"
+      style={{ padding: '0 16px', marginBottom: 6 }}
+    >
+      {hasRecentCheckIn && (
+        <SignalChip label="צ׳ק-אין חדש" color="var(--fs-accent)" background="var(--fs-surface)" />
+      )}
+      {unread > 0 && (
+        <span
+          aria-label={`${unread} הודעות שלא נקראו`}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '0.04em',
+            color: 'var(--fs-accent)',
+            background: 'var(--fs-primary)',
+            borderRadius: 999,
+            padding: '2px 8px',
+            lineHeight: 1.4,
+          }}
+        >
+          <MessageSquare size={11} aria-hidden="true" />
+          <span dir="ltr">{unread}</span>
+        </span>
+      )}
+      {trainedToday ? (
+        <WinChip label="התאמן" />
+      ) : dueToday ? (
+        <SignalChip label="מתאמן היום" color="var(--fs-muted)" background="var(--fs-surface)" />
+      ) : null}
     </div>
   );
 }
@@ -260,19 +474,34 @@ export function AttentionRow({
 // ListRow renders as <button> when onClick is set — nesting a <button> inside
 // would be invalid HTML. Solution: omit onClick on ListRow (renders as <div>)
 // and handle all navigation via explicit buttons in the trailing slot.
+//
+// Signals: pass the optional unread / hasRecentCheckIn / today props (from ONE
+// batched useRosterSignals fetch — never per-row) to render the same triage
+// chips as CoachHome's attention list above the row. Omit them all for a quiet
+// scan-and-sort row.
 
 export function RosterRow({
   row,
   onOpen,
   onMessage,
-}: { row: ClientOverviewRow; onOpen: () => void; onMessage: () => void }) {
+  unread = 0,
+  hasRecentCheckIn = false,
+  today,
+}: {
+  row: ClientOverviewRow;
+  onOpen: () => void;
+  onMessage: () => void;
+  unread?: number;
+  hasRecentCheckIn?: boolean;
+  today?: TodayScheduleCount;
+}) {
   const { client, analytics } = row;
   const name = client.clientProfile?.displayName ?? 'מתאמן';
   const meta = analytics.lastActivity
     ? `פעילות אחרונה ${formatDate(analytics.lastActivity)} · ${analytics.sessionsLast7} אימונים השבוע`
     : `מחובר מאז ${formatDate(client.consentAt ?? client.createdAt)}`;
 
-  return (
+  const listRow = (
     <ListRow
       label={name}
       meta={meta}
@@ -304,5 +533,13 @@ export function RosterRow({
         </div>
       }
     />
+  );
+
+  if (unread === 0 && !hasRecentCheckIn && !today) return listRow;
+  return (
+    <div>
+      <RowSignalChips unread={unread} hasRecentCheckIn={hasRecentCheckIn} today={today} />
+      {listRow}
+    </div>
   );
 }

@@ -120,6 +120,9 @@ export default function ClientDetail() {
               clientId={id}
               nutrition={data.nutrition}
               assignments={data.assignments}
+              loading={data.nutritionLoading}
+              error={data.nutritionError}
+              onReload={data.reloadNutrition}
               onNutritionSaved={data.reloadNutrition}
             />
           )}
@@ -129,6 +132,12 @@ export default function ClientDetail() {
               weights={data.weights}
               measurements={data.measurements}
               prs={data.prs}
+              measurementsLoading={data.measurementsLoading}
+              measurementsError={data.measurementsError}
+              onReloadMeasurements={data.reloadMeasurements}
+              prsLoading={data.prsLoading}
+              prsError={data.prsError}
+              onReloadPrs={data.reloadPrs}
               onWeightSaved={data.reloadWeights}
             />
           )}

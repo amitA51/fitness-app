@@ -213,18 +213,28 @@ export const updateScheduledWorkout = async (
     update.completed_at = patch.status === 'done' ? new Date().toISOString() : null;
   }
 
-  const { error } = await db.from(TABLE).update(update).eq('id', id);
+  const { data, error } = await db
+    .from(TABLE)
+    .update(update)
+    .eq('id', id)
+    .select('user_id')
+    .single();
   if (error) {
     logger.db.error('updateScheduledWorkout failed', error);
     return { error: error.message };
   }
 
-  await writeAudit({
-    subjectUserId: '',
-    tableName: TABLE,
-    action: 'update_scheduled_workout',
-    rowId: id,
-  }).catch(() => undefined);
+  // audit_log.subject_user_id is a NOT NULL FK, so an empty subject would
+  // silently reject the audit insert. Use the row's owner; skip if unresolved.
+  const subjectUserId = (data as { user_id: string } | null)?.user_id;
+  if (subjectUserId) {
+    await writeAudit({
+      subjectUserId,
+      tableName: TABLE,
+      action: 'update_scheduled_workout',
+      rowId: id,
+    }).catch(() => undefined);
+  }
   return { error: null };
 };
 
@@ -237,18 +247,25 @@ export const deleteScheduledWorkout = async (id: string): Promise<{ error: strin
     return { error: e instanceof Error ? e.message : 'offline' };
   }
 
+  // Resolve the row's owner BEFORE deleting — after the delete the row is gone,
+  // and audit_log.subject_user_id is a NOT NULL FK (an empty subject is rejected).
+  const { data: owner } = await db.from(TABLE).select('user_id').eq('id', id).single();
+  const subjectUserId = (owner as { user_id: string } | null)?.user_id;
+
   const { error } = await db.from(TABLE).delete().eq('id', id);
   if (error) {
     logger.db.error('deleteScheduledWorkout failed', error);
     return { error: error.message };
   }
 
-  await writeAudit({
-    subjectUserId: '',
-    tableName: TABLE,
-    action: 'delete_scheduled_workout',
-    rowId: id,
-  }).catch(() => undefined);
+  if (subjectUserId) {
+    await writeAudit({
+      subjectUserId,
+      tableName: TABLE,
+      action: 'delete_scheduled_workout',
+      rowId: id,
+    }).catch(() => undefined);
+  }
   return { error: null };
 };
 
@@ -256,12 +273,14 @@ export const deleteScheduledWorkout = async (id: string): Promise<{ error: strin
 export const getClientSchedule = async (
   clientId: string,
   fromDate: string,
-  toDate: string
+  toDate: string,
+  opts?: { throwOnError?: boolean }
 ): Promise<ScheduledWorkout[]> => {
   let db: ReturnType<typeof requireClient>;
   try {
     db = requireClient();
-  } catch {
+  } catch (e) {
+    if (opts?.throwOnError) throw e;
     return [];
   }
 
@@ -275,6 +294,8 @@ export const getClientSchedule = async (
 
   if (error) {
     logger.db.error('getClientSchedule failed', error);
+    // throwOnError lets aggregates distinguish a fetch failure from no data.
+    if (opts?.throwOnError) throw new Error(error.message);
     return [];
   }
   return (data ?? []).map(toScheduledWorkout);
@@ -392,7 +413,10 @@ export const markScheduleStatus = async (
     updated_by: user?.id ?? null,
   };
 
-  const { error } = await db.from(TABLE).update(update).eq('id', id);
+  let query = db.from(TABLE).update(update).eq('id', id);
+  // Defense-in-depth ownership scoping (RLS already restricts to the owner).
+  if (user?.id) query = query.eq('user_id', user.id);
+  const { error } = await query;
   if (error) {
     logger.db.error('markScheduleStatus failed', error);
     return { error: error.message };

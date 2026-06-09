@@ -409,7 +409,11 @@ export function ScheduleCalendar({ clientId }: { clientId: string }) {
       if (!item) return;
       setActiveItem(null);
       const { error: err } = await updateScheduledWorkout(item.id, { status });
-      if (err) showToast('לא ניתן לעדכן את האימון', 'error');
+      if (err) {
+        showToast('לא ניתן לעדכן את האימון', 'error');
+        return;
+      }
+      showToast('האימון עודכן');
       reload();
     },
     [activeItem, reload]
@@ -424,7 +428,11 @@ export function ScheduleCalendar({ clientId }: { clientId: string }) {
         addDaysDate(new Date(`${item.scheduledDate}T00:00:00`), deltaDays)
       );
       const { error: err } = await updateScheduledWorkout(item.id, { scheduledDate: moved });
-      if (err) showToast('לא ניתן להעביר את האימון', 'error');
+      if (err) {
+        showToast('לא ניתן להעביר את האימון', 'error');
+        return;
+      }
+      showToast('האימון הועבר');
       reload();
     },
     [activeItem, reload]
@@ -435,7 +443,11 @@ export function ScheduleCalendar({ clientId }: { clientId: string }) {
     if (!item) return;
     setPendingDelete(null);
     const { error: err } = await deleteScheduledWorkout(item.id);
-    if (err) showToast('לא ניתן למחוק את האימון', 'error');
+    if (err) {
+      showToast('לא ניתן למחוק את האימון', 'error');
+      return;
+    }
+    showToast('האימון נמחק');
     reload();
   }, [pendingDelete, reload]);
 

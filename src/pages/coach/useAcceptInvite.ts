@@ -22,6 +22,12 @@ export function inviteErrorMessage(error?: AcceptResult['error']): string {
       return 'חשבון מאמן לא יכול להתחבר למאמן אחר';
     case 'offline':
       return 'אין חיבור לאינטרנט';
+    case 'rate_limited':
+      return 'יותר מדי ניסיונות. נסו שוב בעוד דקה.';
+    case 'unauthenticated':
+      return 'יש להתחבר כדי להצטרף למאמן.';
+    case 'server':
+      return 'אירעה תקלה בשרת. נסו שוב בעוד רגע.';
     default:
       return 'קוד לא תקין';
   }

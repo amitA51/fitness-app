@@ -21,11 +21,16 @@ export interface NewReminder {
   groupId?: string;
 }
 
+/** HH:MM (24h) — the only shape isReminderDue can match on. */
+const TIME_PATTERN = /^\d{1,2}:\d{2}$/;
+
 export const createReminder = async (input: NewReminder): Promise<Reminder> => {
   const supabase = requireClient();
   const user = await getCurrentUser();
   if (!user) throw new Error('unauthenticated');
   if (!input.clientId && !input.groupId) throw new Error('reminder_needs_target');
+  const { time } = input.schedule ?? {};
+  if (!time || !TIME_PATTERN.test(time)) throw new Error('reminder_invalid_time');
   const { data, error } = await supabase
     .from('reminders')
     .insert({
@@ -85,6 +90,9 @@ export const isReminderDue = (reminder: Reminder, now: Date): boolean => {
   const { time, days, date } = reminder.schedule ?? {};
   if (!time) return false;
   const [h, m] = time.split(':').map(Number);
+  // A malformed time such as '9' (no colon) yields m=NaN, which would silently
+  // never fire; reject any non-integer hour/minute rather than miss the slot.
+  if (!Number.isInteger(h) || !Number.isInteger(m)) return false;
   if (now.getHours() !== h || now.getMinutes() !== m) return false;
   if (date && date !== now.toISOString().slice(0, 10)) return false;
   if (days && days.length > 0 && !days.includes(now.getDay())) return false;
@@ -118,14 +126,16 @@ export const materializeDueReminders = async (now: Date = new Date()): Promise<n
   const pad = (n: number): string => String(n).padStart(2, '0');
   const localDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
-  let count = 0;
-  for (const r of reminders) {
-    if (!isReminderDue(r, now)) continue;
-    if (fired[r.id] === stamp) continue;
-    await showNotification(r.title, r.body ?? '', undefined, `reminder:${r.id}:${localDate}`);
+  // Collect everything due-this-minute first, then fire in parallel — several
+  // reminders can collide on a single minute and serial awaits would stagger them.
+  const due = reminders.filter((r) => isReminderDue(r, now) && fired[r.id] !== stamp);
+  await Promise.all(
+    due.map((r) => showNotification(r.title, r.body ?? '', undefined, `reminder:${r.id}:${localDate}`))
+  );
+  for (const r of due) {
     fired[r.id] = stamp;
-    count++;
   }
+  const count = due.length;
   try {
     localStorage.setItem(FIRED_KEY, JSON.stringify(fired));
   } catch {

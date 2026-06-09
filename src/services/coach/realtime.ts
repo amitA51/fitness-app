@@ -62,21 +62,31 @@ export function subscribeToThread(
 ): Unsubscribe {
   if (!isSupabaseConfigured() || !supabase || !coachId || !clientId) return () => {};
 
-  const channel = supabase
-    .channel(`rt:messages:${coachId}:${clientId}`)
-    .on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'messages', filter: `client_id=eq.${clientId}` },
-      (payload) => {
-        const row = payload.new as Record<string, unknown>;
-        if (row.coach_id === coachId) onMessage(toMessage(row));
-      }
-    )
-    .subscribe();
+  try {
+    const channel = supabase
+      .channel(`rt:messages:${coachId}:${clientId}:${++channelSeq}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `client_id=eq.${clientId}`,
+        },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          if (row.coach_id === coachId) onMessage(toMessage(row));
+        }
+      )
+      .subscribe();
 
-  return () => {
-    void supabase?.removeChannel(channel);
-  };
+    return () => {
+      void supabase?.removeChannel(channel);
+    };
+  } catch {
+    // Realtime is an enhancement; the caller's initial fetch still works.
+    return () => {};
+  }
 }
 /**
  * Subscribe to new messages in a group thread. Fires `onMessage` with each
@@ -88,26 +98,31 @@ export function subscribeToGroupThread(
 ): Unsubscribe {
   if (!isSupabaseConfigured() || !supabase || !groupId) return () => {};
 
-  const channel = supabase
-    .channel(`rt:group_messages:${groupId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'group_messages',
-        filter: `group_id=eq.${groupId}`,
-      },
-      (payload) => {
-        const row = payload.new as Record<string, unknown>;
-        onMessage(toGroupMessage(row));
-      }
-    )
-    .subscribe();
+  try {
+    const channel = supabase
+      .channel(`rt:group_messages:${groupId}:${++channelSeq}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'group_messages',
+          filter: `group_id=eq.${groupId}`,
+        },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          onMessage(toGroupMessage(row));
+        }
+      )
+      .subscribe();
 
-  return () => {
-    void supabase?.removeChannel(channel);
-  };
+    return () => {
+      void supabase?.removeChannel(channel);
+    };
+  } catch {
+    // Realtime is an enhancement; the caller's initial fetch still works.
+    return () => {};
+  }
 }
 
 export function subscribeToAssignments(clientId: string, onChange: () => void): Unsubscribe {

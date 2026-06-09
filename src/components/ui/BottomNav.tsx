@@ -187,7 +187,7 @@ const TAB_CLASS =
 function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isCoach } = useCoach();
+  const { isCoachView } = useCoach();
   const unread = useUnreadMessages();
   const [moreOpen, setMoreOpen] = useState(false);
   const reduced = useReducedMotion();
@@ -197,8 +197,8 @@ function BottomNav() {
   const firstRunRef = useRef(true);
   const prevUnreadRef = useRef(unread);
 
-  const mainTabs = isCoach ? COACH_MAIN_TABS : TRAINEE_MAIN_TABS;
-  const morePaths = isCoach ? COACH_MORE_PATHS : TRAINEE_MORE_PATHS;
+  const mainTabs = isCoachView ? COACH_MAIN_TABS : TRAINEE_MAIN_TABS;
+  const morePaths = isCoachView ? COACH_MORE_PATHS : TRAINEE_MORE_PATHS;
 
   const isMoreActive = useMemo(
     () => morePaths.some((p) => matchesPath(location.pathname, p)),
@@ -323,7 +323,7 @@ function BottomNav() {
 
   const moreItems = useMemo<NavDestination[]>(
     () =>
-      isCoach
+      isCoachView
         ? [
             { path: '/me', label: 'האימונים שלי', icon: Dumbbell },
             { path: '/community', label: 'קהילה', icon: Users },
@@ -334,7 +334,7 @@ function BottomNav() {
             { path: '/community', label: 'קהילה', icon: Users },
             { path: '/settings', label: 'הגדרות', icon: Settings },
           ],
-    [isCoach]
+    [isCoachView]
   );
 
   const handleMoreNavigate = (path: string) => {
@@ -384,7 +384,7 @@ function BottomNav() {
 
           {mainTabs.map(({ path, label, icon }) => {
             const isActive = path === activeMainPath;
-            const tabBadge = isCoach && path === '/coach/messages' ? unread : 0;
+            const tabBadge = isCoachView && path === '/coach/messages' ? unread : 0;
             return (
               <li key={path} className="flex-1 h-full">
                 <Link
@@ -422,14 +422,14 @@ function BottomNav() {
               aria-haspopup="dialog"
               aria-expanded={moreOpen}
               aria-current={isMoreActive ? 'page' : undefined}
-              aria-label={!isCoach && unread > 0 ? `עוד (${unread} הודעות שלא נקראו)` : 'עוד'}
+              aria-label={!isCoachView && unread > 0 ? `עוד (${unread} הודעות שלא נקראו)` : 'עוד'}
               className={TAB_CLASS}
             >
               <TabVisual
                 icon={MoreHorizontal}
                 label="עוד"
                 isActive={isMoreActive}
-                badgeCount={isCoach ? 0 : unread}
+                badgeCount={isCoachView ? 0 : unread}
               />
             </button>
           </li>

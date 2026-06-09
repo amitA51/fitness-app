@@ -54,6 +54,19 @@ export interface ClientData {
   reloadSessions: () => void;
   reloadNutrition: () => void;
   reloadWeights: () => void;
+  // Per-domain load state so the Nutrition/Metrics lists can show their own
+  // loading/error/empty cycle (a failed fetch is otherwise indistinguishable
+  // from "no data", since the underlying reads swallow failures to []).
+  nutritionLoading: boolean;
+  nutritionError: string | null;
+  weightsLoading: boolean;
+  weightsError: string | null;
+  measurementsLoading: boolean;
+  measurementsError: string | null;
+  reloadMeasurements: () => void;
+  prsLoading: boolean;
+  prsError: string | null;
+  reloadPrs: () => void;
 }
 
 /**
@@ -93,5 +106,15 @@ export function useClientData(clientId: string): ClientData {
     reloadSessions: sessionsQ.reload,
     reloadNutrition: nutritionQ.reload,
     reloadWeights: weightsQ.reload,
+    nutritionLoading: nutritionQ.loading,
+    nutritionError: nutritionQ.error,
+    weightsLoading: weightsQ.loading,
+    weightsError: weightsQ.error,
+    measurementsLoading: measurementsQ.loading,
+    measurementsError: measurementsQ.error,
+    reloadMeasurements: measurementsQ.reload,
+    prsLoading: prsQ.loading,
+    prsError: prsQ.error,
+    reloadPrs: prsQ.reload,
   };
 }

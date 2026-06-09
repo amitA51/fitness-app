@@ -86,29 +86,37 @@ export default function CoachPrograms() {
               <ListRow
                 key={tpl.id}
                 label={tpl.name}
-                meta={`${dayCount} ימים · ${exerciseCount} תרגילים`}
+                metaNode={
+                  <div
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fs-muted)' }}
+                  >
+                    {dayCount === 1 ? (
+                      'יום אחד'
+                    ) : (
+                      <>
+                        <bdi dir="ltr">{dayCount}</bdi> ימים
+                      </>
+                    )}{' '}
+                    ·{' '}
+                    {exerciseCount === 1 ? (
+                      'תרגיל אחד'
+                    ) : (
+                      <>
+                        <bdi dir="ltr">{exerciseCount}</bdi> תרגילים
+                      </>
+                    )}
+                  </div>
+                }
                 trailing={
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setPendingDelete(tpl)}
                     aria-label={`מחיקת התוכנית ${tpl.name}`}
-                    className="active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
-                    style={{
-                      flexShrink: 0,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 44,
-                      height: 44,
-                      border: 'none',
-                      background: 'transparent',
-                      color: 'var(--fs-muted)',
-                      cursor: 'pointer',
-                      borderRadius: 4,
-                    }}
+                    className="shrink-0"
                   >
                     <Trash2 size={16} aria-hidden="true" />
-                  </button>
+                  </Button>
                 }
               />
             );

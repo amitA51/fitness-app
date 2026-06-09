@@ -1,5 +1,6 @@
 // Fresh Steel / Obsidian design system — audit log box (read-only, collapsed by default)
 
+import { ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AuditEntry } from '../../../services/coach/auditService';
 import { listAudit } from '../../../services/coach/auditService';
@@ -126,15 +127,13 @@ export function AuditBox({ clientId }: { clientId: string }) {
         <span
           aria-hidden="true"
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 12,
             color: 'var(--fs-muted)',
             transform: expanded ? 'rotate(180deg)' : 'none',
             transition: 'transform 150ms ease',
-            display: 'inline-block',
+            display: 'inline-flex',
           }}
         >
-          ▾
+          <ChevronDown size={16} aria-hidden="true" />
         </span>
       </button>
 

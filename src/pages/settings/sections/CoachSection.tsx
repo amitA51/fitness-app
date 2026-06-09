@@ -115,7 +115,7 @@ export function CoachSection() {
                   fontFamily: 'var(--font-body)',
                   fontSize: '14px',
                   lineHeight: '1.55',
-                  color: 'var(--fs-ink-2)',
+                  color: 'var(--fs-muted)',
                   margin: 0,
                   flex: 1,
                 }}
@@ -295,7 +295,7 @@ export function CoachSection() {
               border: 'none',
               cursor: 'pointer',
               padding: '4px',
-              color: 'var(--fs-ink-2)',
+              color: 'var(--fs-muted)',
               display: 'flex',
               alignItems: 'center',
             }}

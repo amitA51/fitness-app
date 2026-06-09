@@ -2,9 +2,12 @@
 // COACH — edit/create a trainee workout session (Fresh Steel / Obsidian)
 // ============================================================================
 // A LEAN session editor (not a full workout logger): title, date, duration in
-// minutes, notes, plus a per-exercise list of editable set rows (reps × weight)
-// with add/remove. On save it recomputes totalVolume (Σ reps×weight) and writes
-// via the audited coach writers. Labels ABOVE inputs, numbers dir="ltr".
+// minutes, plus a per-exercise list of editable set rows (reps × weight) with
+// add/remove. The session model has a single `notes` column, so the editor shows
+// one "כותרת" field that writes to it (no separate notes field that would
+// silently collapse into the same column). On save it recomputes totalVolume
+// (Σ reps×weight) and writes via the audited coach writers. Labels ABOVE inputs,
+// numbers dir="ltr".
 
 import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -12,7 +15,6 @@ import { Button } from '../../../components/ui/Button';
 import { showToast } from '../../../components/ui/GlobalToast';
 import { Input } from '../../../components/ui/Input';
 import { Sheet } from '../../../components/ui/Sheet';
-import { Textarea } from '../../../components/ui/Textarea';
 import { createClientSession, updateClientSession } from '../../../services/coach';
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../../../types';
 import { todayStr } from '../../../utils/dateUtils';
@@ -99,11 +101,11 @@ export function EditSessionSheet({
   const [durationMin, setDurationMin] = useState(
     initial?.duration ? String(Math.round(initial.duration / SECONDS_PER_MINUTE)) : ''
   );
-  const [notes, setNotes] = useState(initial?.notes ?? '');
   const [exercises, setExercises] = useState<EditableExercise[]>(() =>
     toEditableExercises(initial)
   );
   const [error, setError] = useState<string | null>(null);
+  const [exercisesError, setExercisesError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -113,9 +115,9 @@ export function EditSessionSheet({
     setDurationMin(
       initial?.duration ? String(Math.round(initial.duration / SECONDS_PER_MINUTE)) : ''
     );
-    setNotes(initial?.notes ?? '');
     setExercises(toEditableExercises(initial));
     setError(null);
+    setExercisesError(null);
   }, [isOpen, initial]);
 
   const addExercise = () =>
@@ -157,23 +159,30 @@ export function EditSessionSheet({
       return;
     }
     setError(null);
+    const builtExercises = buildExercises(exercises);
+    if (builtExercises.length === 0) {
+      setExercisesError('יש להוסיף לפחות תרגיל אחד');
+      return;
+    }
+    setExercisesError(null);
     setBusy(true);
     try {
-      const builtExercises = buildExercises(exercises);
       const durationSeconds = durationMin ? Number(durationMin) * SECONDS_PER_MINUTE : 0;
+      // The chosen date drives the canonical start_time too — getClientSessions
+      // orders/displays by start_time, so the edit must move it (matching create).
+      // `notes` is the single session column; the coach writer mirrors it into the
+      // title column, so the "כותרת" field maps straight to notes.
       const patch: Partial<WorkoutSession> = {
-        notes: title.trim() || notes.trim() || '',
+        notes: title.trim(),
         date,
+        startTime: `${date}T00:00:00.000Z`,
+        endTime: `${date}T00:00:00.000Z`,
         duration: Number.isFinite(durationSeconds) ? durationSeconds : 0,
         exercises: builtExercises,
       };
       const res = initial?.id
         ? await updateClientSession(clientId, initial.id, patch)
-        : await createClientSession(clientId, {
-            ...patch,
-            startTime: `${date}T00:00:00.000Z`,
-            endTime: `${date}T00:00:00.000Z`,
-          });
+        : await createClientSession(clientId, patch);
       if (res.error) {
         showToast('השמירה נכשלה', 'error');
         return;
@@ -311,14 +320,19 @@ export function EditSessionSheet({
           <Plus size={16} aria-hidden="true" /> הוספת תרגיל
         </Button>
 
-        <Textarea
-          label="הערות"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={2}
-          aria-label="הערות לאימון"
-          placeholder="לא חובה"
-        />
+        {exercisesError && (
+          <p
+            role="alert"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              color: 'var(--color-error)',
+              margin: 0,
+            }}
+          >
+            {exercisesError}
+          </p>
+        )}
       </div>
     </Sheet>
   );

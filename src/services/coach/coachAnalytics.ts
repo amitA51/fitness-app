@@ -6,6 +6,7 @@
 // `computeClientAnalytics` is unit-testable; `getClientAnalytics` fetches first.
 
 import type { CoachClient } from '../../types/coach';
+import { logger } from '../../utils/logger';
 import { listCoachAssignments } from './assignmentService';
 import { getClientNutrition, getClientSessions, getClientsActivity } from './coachApi';
 import { getClientSchedule } from './scheduleService';
@@ -116,7 +117,8 @@ export function computeWeekAdherence(
 
 /**
  * Fetch all required data for a client and return 7-day adherence.
- * Falls back to empty adherence on any error.
+ * THROWS on any fetch failure (the readers run with throwOnError) so callers'
+ * error states fire — a failed load must never render as an all-zero week.
  */
 export async function getClientWeekAdherence(clientId: string): Promise<DayAdherence[]> {
   try {
@@ -128,10 +130,10 @@ export async function getClientWeekAdherence(clientId: string): Promise<DayAdher
     const toDate = toLocalDateString(now);
 
     const [sessions, nutrition, assignments, schedule] = await Promise.all([
-      getClientSessions(clientId, 30),
-      getClientNutrition(clientId, 10),
-      listCoachAssignments(clientId),
-      getClientSchedule(clientId, fromDate, toDate),
+      getClientSessions(clientId, 30, { throwOnError: true }),
+      getClientNutrition(clientId, 10, { throwOnError: true }),
+      listCoachAssignments(clientId, { throwOnError: true }),
+      getClientSchedule(clientId, fromDate, toDate, { throwOnError: true }),
     ]);
 
     // Find the newest active nutrition_target assignment with a numeric calories payload.
@@ -155,8 +157,9 @@ export async function getClientWeekAdherence(clientId: string): Promise<DayAdher
       status: s.status,
     }));
     return computeWeekAdherence(sessions, nutritionRows, targetCalories, scheduleRows);
-  } catch {
-    return computeWeekAdherence([], [], null);
+  } catch (e) {
+    logger.db.error('getClientWeekAdherence failed', e);
+    throw e instanceof Error ? e : new Error('week_adherence_failed');
   }
 }
 
@@ -168,10 +171,13 @@ export function computeClientAnalytics(
   inactiveDays = 7,
   now: number = Date.now()
 ): ClientAnalytics {
-  const times = sessions
-    .map((s) => new Date(s.startTime).getTime())
-    .filter((t) => Number.isFinite(t))
-    .sort((a, b) => b - a);
+  // Parse each session's startTime once and reuse for both the times list and
+  // the volume-by-week loop (avoids re-calling new Date in the hot path).
+  const parsed = sessions
+    .map((s) => ({ t: new Date(s.startTime).getTime(), totalVolume: s.totalVolume }))
+    .filter((p) => Number.isFinite(p.t));
+
+  const times = parsed.map((p) => p.t).sort((a, b) => b - a);
 
   const lastTs = times[0] ?? null;
   const daysSinceActivity = lastTs === null ? null : Math.floor((now - lastTs) / DAY);
@@ -179,12 +185,10 @@ export function computeClientAnalytics(
   const sessionsPrev7 = times.filter((t) => t <= now - 7 * DAY && t > now - 14 * DAY).length;
 
   const volumeByWeek = [0, 0, 0, 0];
-  for (const s of sessions) {
-    const t = new Date(s.startTime).getTime();
-    if (!Number.isFinite(t)) continue;
-    const weeksAgo = Math.floor((now - t) / (7 * DAY));
+  for (const p of parsed) {
+    const weeksAgo = Math.floor((now - p.t) / (7 * DAY));
     if (weeksAgo >= 0 && weeksAgo < 4)
-      volumeByWeek[3 - weeksAgo] = (volumeByWeek[3 - weeksAgo] ?? 0) + (s.totalVolume || 0);
+      volumeByWeek[3 - weeksAgo] = (volumeByWeek[3 - weeksAgo] ?? 0) + (p.totalVolume || 0);
   }
 
   let level: ClientStatusLevel;

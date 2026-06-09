@@ -10,6 +10,7 @@ const mockIn = vi.fn();
 const mockOrder = vi.fn();
 const mockLimit = vi.fn();
 const mockSingle = vi.fn();
+const mockRpc = vi.fn();
 
 const chainable: Record<string, unknown> = {};
 chainable.select = mockSelect;
@@ -30,10 +31,13 @@ mockIn.mockReturnValue(chainable);
 mockOrder.mockReturnValue(chainable);
 mockLimit.mockResolvedValue({ data: [], error: null });
 mockSingle.mockResolvedValue({ data: null, error: null });
+// Default: RPC unavailable → exercises the bounded-scan fallback the existing
+// suites were written against.
+mockRpc.mockResolvedValue({ data: null, error: { message: 'rpc missing' } });
 
 vi.mock('../../../lib/supabase', () => ({
   isSupabaseConfigured: vi.fn(() => true),
-  supabase: { from: vi.fn(() => chainable) },
+  supabase: { from: vi.fn(() => chainable), rpc: (...args: unknown[]) => mockRpc(...args) },
 }));
 
 // ── Auth mock ─────────────────────────────────────────────────────────────────
@@ -72,6 +76,7 @@ beforeEach(() => {
   mockOrder.mockReturnValue(chainable);
   mockLimit.mockResolvedValue({ data: [], error: null });
   mockSingle.mockResolvedValue({ data: null, error: null });
+  mockRpc.mockResolvedValue({ data: null, error: { message: 'rpc missing' } });
   mockFrom.mockReturnValue(chainable as unknown);
 });
 
@@ -179,6 +184,55 @@ describe('listGroupThreads — coach reduction', () => {
       lastBody: 'תודה מורה',
       lastAt: '2026-06-07T11:00:00Z',
       unread: 1, // only the message from client-2 with null lastRead is unread
+    });
+  });
+});
+
+// ── (c2) listGroupThreads uses the group_thread_summaries RPC when available ──
+describe('listGroupThreads — RPC aggregate', () => {
+  it('takes summaries from the RPC, keeping only the viewer-role rows', async () => {
+    // client_groups query for names/cursors (still required for group names).
+    mockFrom.mockImplementation(() => {
+      const groupChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({
+          data: [{ id: 'g-1', name: 'מתקדמים', coach_last_read_at: null }],
+          error: null,
+        }),
+      };
+      return groupChain as unknown as FromReturn;
+    });
+    mockRpc.mockResolvedValueOnce({
+      data: [
+        // member-role row for the same group must be ignored for a coach viewer.
+        {
+          group_id: 'g-1',
+          role: 'member',
+          last_body: 'wrong',
+          last_at: '2026-06-07T08:00:00Z',
+          unread: 9,
+        },
+        {
+          group_id: 'g-1',
+          role: 'coach',
+          last_body: 'תודה מורה',
+          last_at: '2026-06-07T11:00:00Z',
+          unread: '2',
+        },
+      ],
+      error: null,
+    });
+
+    const result = await listGroupThreads('coach');
+
+    expect(mockRpc).toHaveBeenCalledWith('group_thread_summaries');
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      groupId: 'g-1',
+      name: 'מתקדמים',
+      lastBody: 'תודה מורה',
+      lastAt: '2026-06-07T11:00:00Z',
+      unread: 2, // string bigint coerced to number
     });
   });
 });

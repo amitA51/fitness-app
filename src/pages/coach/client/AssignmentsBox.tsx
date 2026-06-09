@@ -31,15 +31,12 @@ export function AssignmentsBox({ clientId }: { clientId: string }) {
     error,
     reload,
   } = useAsyncData<Assignment[]>(() => listCoachAssignments(clientId), []);
-  const [revokingId, setRevokingId] = useState<string | null>(null);
   const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
 
   const active = assignments.filter((a) => a.status === 'active');
 
   const revoke = async (id: string) => {
-    setRevokingId(id);
     const { error } = await archiveAssignment(id);
-    setRevokingId(null);
     if (error) {
       showToast('ביטול השיוך נכשל', 'error');
       return;
@@ -67,7 +64,6 @@ export function AssignmentsBox({ clientId }: { clientId: string }) {
                 variant="secondary"
                 size="sm"
                 icon={<Archive size={14} />}
-                isLoading={revokingId === a.id}
                 onClick={() => setConfirmRevokeId(a.id)}
               >
                 בטל

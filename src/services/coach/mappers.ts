@@ -48,6 +48,12 @@ export function requireClient(): SupabaseClient {
 export const DEFAULT_SEAT_LIMIT = 1;
 
 // ---- row -> domain mappers (snake_case columns -> camelCase domain) --------
+//
+// Required-field casts (e.g. `r.id as string`, `r.coach_id as string`) assume the
+// column is NOT NULL and is always present in the `.select(...)` that produced the
+// row. That holds for every caller here. If a future read narrows its select and
+// omits one of these columns, add a `?? ''` (or a proper guard) at that field —
+// do NOT relax this across the board, as it would mask a genuinely missing column.
 
 type Row = Record<string, unknown>;
 

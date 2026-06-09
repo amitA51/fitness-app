@@ -79,6 +79,9 @@ const days = [
 beforeEach(() => {
   vi.clearAllMocks();
   mockUpsert.mockResolvedValue({ error: null });
+  // sendCoachPush is async (best-effort); the service now chains `.catch` on it,
+  // so the mock must resolve a promise rather than return undefined.
+  mockSendPush.mockResolvedValue(undefined);
   // createAssignment insert returns a minimal assignment row.
   mocks.mockSingle.mockResolvedValue({
     data: {

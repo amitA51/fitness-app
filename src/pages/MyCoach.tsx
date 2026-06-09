@@ -6,6 +6,7 @@ import { Check, ImagePlus, MessageSquare, Play, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import { showToast } from '../components/ui/GlobalToast';
 import { Input } from '../components/ui/Input';
@@ -30,6 +31,7 @@ import {
   ListRow,
   ListSkeleton,
   Section,
+  SectionError,
   formatDate,
   useAsyncData,
 } from './coach/_shared';
@@ -122,6 +124,7 @@ export default function MyCoach() {
   const [code, setCode] = useState('');
   const { busy, accept } = useAcceptInvite();
   const [startingId, setStartingId] = useState<string | null>(null);
+  const [disconnectId, setDisconnectId] = useState<string | null>(null);
   const { isAcked, toggleAck } = useLocalAck();
 
   // coachId → display name, for stamping the sending coach on each card.
@@ -158,10 +161,26 @@ export default function MyCoach() {
     if (res.ok) {
       setCode('');
       reload();
-      showToast('התחברת למאמן', 'success');
+      // Neutral phrasing: re-entering a known code shouldn't falsely claim a NEW
+      // connection (until the 'already' contract distinguishes the two).
+      showToast('מחובר למאמן', 'success');
     } else {
       showToast(inviteErrorMessage(res.error), 'error');
     }
+  };
+
+  // Disconnect is irreversible — confirm, then check the returned {error} so a
+  // failed unlink never shows a false 'נותק' success.
+  const confirmDisconnect = async () => {
+    if (!disconnectId) return;
+    const { error } = await disconnectCoach(disconnectId);
+    setDisconnectId(null);
+    if (error) {
+      showToast('הניתוק נכשל', 'error');
+      return;
+    }
+    reload();
+    showToast('המאמן נותק', 'success');
   };
 
   return (
@@ -223,11 +242,7 @@ export default function MyCoach() {
                     variant="ghost"
                     size="sm"
                     style={{ color: 'var(--fs-muted)' }}
-                    onClick={async () => {
-                      await disconnectCoach(c.id);
-                      reload();
-                      showToast('המאמן נותק', 'success');
-                    }}
+                    onClick={() => setDisconnectId(c.id)}
                   >
                     נתק
                   </Button>
@@ -348,6 +363,17 @@ export default function MyCoach() {
           ))
         )}
       </Section>
+
+      <ConfirmDialog
+        isOpen={disconnectId !== null}
+        variant="danger"
+        title="ניתוק המאמן"
+        description="המאמן יאבד גישה לנתונים שלך. ניתן להתחבר שוב בעזרת קוד הזמנה חדש."
+        confirmLabel="נתק"
+        cancelLabel="חזרה"
+        onConfirm={confirmDisconnect}
+        onCancel={() => setDisconnectId(null)}
+      />
     </CoachPage>
   );
 }
@@ -644,7 +670,12 @@ function CheckInForm() {
         id,
         photos.map((p) => p.file)
       );
-      if (refs.length > 0) await updateCheckInPhotos(id, refs);
+      if (refs.length > 0) {
+        // Check the link result so uploaded blobs aren't silently orphaned from
+        // the check-in row.
+        const { error: linkErr } = await updateCheckInPhotos(id, refs);
+        if (linkErr) setPhotoError('שמירת התמונות נכשלה');
+      }
       if (errors.length > 0) setPhotoError('חלק מהתמונות לא הועלו');
     }
 
@@ -857,38 +888,5 @@ function CheckInForm() {
         שמור צ׳ק-אין
       </Button>
     </Section>
-  );
-}
-
-/**
- * Inline load-failure state for a coach Section: distinct from the empty state,
- * with an explicit Hebrew message and a retry path. Proportional to InlineEmpty
- * (no full-screen illustration); tokenized for light + dark.
- */
-function SectionError({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div
-      role="alert"
-      className="flex flex-col items-center gap-3 text-center"
-      style={{
-        padding: '20px 16px',
-        background: 'var(--fs-surface)',
-        border: '1px solid var(--fs-surface-2)',
-      }}
-    >
-      <p
-        style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: 14,
-          color: 'var(--fs-muted)',
-          lineHeight: 1.6,
-        }}
-      >
-        לא ניתן לטעון את הנתונים. בדוק את החיבור לאינטרנט ונסה שוב.
-      </p>
-      <Button variant="secondary" size="sm" onClick={onRetry}>
-        נסה שוב
-      </Button>
-    </div>
   );
 }

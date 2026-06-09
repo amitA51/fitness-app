@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { showToast } from '../components/ui/GlobalToast';
@@ -23,7 +23,7 @@ export default function JoinPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { status } = useAuth();
-  const { isCoach, loading: coachLoading } = useCoach();
+  const { isCoach, loading: coachLoading, setViewMode } = useCoach();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const didRun = useRef(false);
@@ -41,6 +41,25 @@ export default function JoinPage() {
     }
   }, [status, code]);
 
+  // Single accept path, callable from both the auto-run effect and the retry CTA.
+  const runAccept = useCallback(async () => {
+    setError('');
+    setBusy(true);
+    const res = await acceptInvite(code);
+    setBusy(false);
+    if (res.ok) {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        /* */
+      }
+      showToast('מחובר למאמן', 'success');
+      navigate('/my-coach', { replace: true });
+    } else {
+      setError(inviteErrorMessage(res.error));
+    }
+  }, [code, navigate]);
+
   // Authenticated (or guest with user): auto-accept. Coaches never auto-accept —
   // a coach has no coach of their own (the edge function rejects them too; this
   // is the friendly client-side gate for invite deep links).
@@ -48,23 +67,9 @@ export default function JoinPage() {
     if (coachLoading || isCoach) return;
     if ((status === 'authenticated' || status === 'guest') && code && !didRun.current) {
       didRun.current = true;
-      setBusy(true);
-      acceptInvite(code).then((res) => {
-        setBusy(false);
-        if (res.ok) {
-          try {
-            localStorage.removeItem(STORAGE_KEY);
-          } catch {
-            /* */
-          }
-          showToast('התחברת למאמן', 'success');
-          navigate('/my-coach', { replace: true });
-        } else {
-          setError(inviteErrorMessage(res.error));
-        }
-      });
+      void runAccept();
     }
-  }, [status, code, navigate, coachLoading, isCoach]);
+  }, [status, code, coachLoading, isCoach, runAccept]);
 
   // Loading state
   if (status === 'loading' || coachLoading || busy) {
@@ -101,7 +106,15 @@ export default function JoinPage() {
         >
           ההזמנה הזו מיועדת למתאמנים. כדי לקבל אותה, יש להתחבר עם חשבון מתאמן.
         </p>
-        <Button variant="primary" onClick={() => navigate('/coach', { replace: true })}>
+        <Button
+          variant="primary"
+          onClick={async () => {
+            // Flip into coach view first so CoachGuard doesn't bounce a coach who
+            // is currently in trainee view back to '/'.
+            await setViewMode('coach');
+            navigate('/coach', { replace: true });
+          }}
+        >
           למרכז המאמן
         </Button>
       </div>
@@ -143,6 +156,10 @@ export default function JoinPage() {
 
   // Error state (authenticated but invite failed)
   if (error) {
+    const retry = () => {
+      didRun.current = false;
+      void runAccept();
+    };
     return (
       <div
         className="flex flex-col items-center justify-center min-h-screen min-h-[100dvh] gap-4 px-6"
@@ -153,13 +170,33 @@ export default function JoinPage() {
             fontFamily: 'var(--font-body)',
             fontSize: 16,
             color: 'var(--color-error)',
+            textAlign: 'center',
           }}
         >
           {error}
         </p>
-        <Button variant="ghost" onClick={() => navigate('/')}>
-          חזרה
-        </Button>
+        {code && (
+          <p
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 12,
+              color: 'var(--fs-muted)',
+            }}
+          >
+            קוד:{' '}
+            <bdi dir="ltr" style={{ letterSpacing: '0.12em' }}>
+              {code}
+            </bdi>
+          </p>
+        )}
+        <div className="flex flex-col items-center gap-2 w-full max-w-xs">
+          <Button variant="primary" fullWidth onClick={retry}>
+            נסה שוב
+          </Button>
+          <Button variant="ghost" fullWidth onClick={() => navigate('/my-coach')}>
+            להזין קוד ידנית
+          </Button>
+        </div>
       </div>
     );
   }

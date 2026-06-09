@@ -79,11 +79,12 @@ export const setGroupMembers = async (
   clientIds: string[]
 ): Promise<{ error: string | null }> => {
   const supabase = requireClient();
-  // Replace membership: clear then insert the new set.
-  const del = await supabase.from('client_group_members').delete().eq('group_id', groupId);
-  if (del.error) return { error: del.error.message };
-  if (clientIds.length === 0) return { error: null };
-  const rows = clientIds.map((client_id) => ({ group_id: groupId, client_id }));
-  const { error } = await supabase.from('client_group_members').insert(rows);
+  // ONE transactional RPC (migration 20260614000000): the server diffs and
+  // applies inserts+deletes atomically, so a mid-failure can never leave the
+  // group half-updated. Ownership + active-client checks run server-side.
+  const { error } = await supabase.rpc('set_group_members', {
+    _group_id: groupId,
+    _client_ids: clientIds,
+  });
   return { error: error?.message ?? null };
 };

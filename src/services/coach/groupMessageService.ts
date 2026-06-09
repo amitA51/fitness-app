@@ -15,24 +15,46 @@ import { sendCoachPush } from './pushService';
 // getGroupThread
 // ---------------------------------------------------------------------------
 
+/** Most recent messages fetched per page (desc + limit, reversed to asc). */
+const GROUP_PAGE_SIZE = 200;
+
+export interface GroupThreadPage {
+  /** Chronological (oldest → newest) page of messages. */
+  messages: GroupMessage[];
+  /** True when an older page likely exists (the query returned a full page). */
+  hasMore: boolean;
+}
+
 /**
- * Return all messages in a group thread, oldest first.
- * Fetches desc + bounded (≤ 500) then reverses in JS to keep the query fast.
+ * One page of a group thread, oldest first. Pass `before` (the createdAt of
+ * the oldest message you already have) to fetch the previous page.
  */
-export const getGroupThread = async (groupId: string): Promise<GroupMessage[]> => {
+export const getGroupThreadPage = async (
+  groupId: string,
+  before?: string
+): Promise<GroupThreadPage> => {
   const supabase = requireClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from('group_messages')
     .select('*')
     .eq('group_id', groupId)
     .order('created_at', { ascending: false })
-    .limit(500);
+    .limit(GROUP_PAGE_SIZE);
+  if (before) query = query.lt('created_at', before);
+  const { data, error } = await query;
   if (error) {
-    logger.db.error('getGroupThread failed', error);
-    return [];
+    logger.db.error('getGroupThreadPage failed', error);
+    // Throw so GroupThread's catch reaches SectionError — a failed load must
+    // not look like an empty thread. (listGroupThreads still returns [].)
+    throw new Error(error.message);
   }
-  return ((data ?? []) as Record<string, unknown>[]).map(toGroupMessage).reverse();
+  const rows = (data ?? []) as Record<string, unknown>[];
+  return { messages: rows.map(toGroupMessage).reverse(), hasMore: rows.length === GROUP_PAGE_SIZE };
 };
+
+/** All recent messages in a group thread, oldest first (latest page only). */
+export const getGroupThread = async (groupId: string): Promise<GroupMessage[]> =>
+  (await getGroupThreadPage(groupId)).messages;
 
 // ---------------------------------------------------------------------------
 // sendGroupMessage
@@ -227,53 +249,75 @@ export const listGroupThreads = async (
   if (groupMetas.length === 0) return [];
 
   // ------------------------------------------------------------------
-  // 2. ONE bounded messages query for all groups.
+  // 2. Per-group aggregate: ONE `group_thread_summaries` RPC (exact
+  //    last-message/unread computed in the DB, per read-cursor role);
+  //    falls back to a bounded scan + JS reduction if unavailable.
   // ------------------------------------------------------------------
-  const groupIds = groupMetas.map((g) => g.groupId);
-  const { data: msgRows, error: msgErr } = await supabase
-    .from('group_messages')
-    .select('group_id, sender_id, body, created_at')
-    .in('group_id', groupIds)
-    .order('created_at', { ascending: false })
-    .limit(500);
-
-  if (msgErr) {
-    logger.db.error('listGroupThreads messages fetch failed', msgErr);
-    return [];
-  }
-
-  // ------------------------------------------------------------------
-  // 3. Reduce in JS — newest-first, so first hit per group = preview.
-  // ------------------------------------------------------------------
-  const lastReadMap = new Map<string, string | null>(
-    groupMetas.map((g) => [g.groupId, g.lastRead])
-  );
-
   const seen = new Map<
     string,
     { lastBody: string | null; lastAt: string | null; unread: number }
   >();
 
-  for (const row of (msgRows ?? []) as {
-    group_id: string;
-    sender_id: string;
-    body: string;
-    created_at: string;
-  }[]) {
-    const gid = row.group_id;
-    const lastRead = lastReadMap.get(gid) ?? null;
-    const isIncoming = row.sender_id !== user.id;
-    const isUnread = isIncoming && (lastRead === null || row.created_at > lastRead);
-
-    const existing = seen.get(gid);
-    if (!existing) {
-      seen.set(gid, {
-        lastBody: row.body,
-        lastAt: row.created_at,
-        unread: isUnread ? 1 : 0,
+  const { data: rpcRows, error: rpcError } = await supabase.rpc('group_thread_summaries');
+  if (!rpcError && Array.isArray(rpcRows)) {
+    for (const row of rpcRows as {
+      group_id: string;
+      role: string;
+      last_body: string | null;
+      last_at: string | null;
+      unread: number | string | null;
+    }[]) {
+      // The RPC returns one row per (group, role) — keep only the viewer's role
+      // so the unread count uses the right read cursor.
+      if (row.role !== viewer) continue;
+      seen.set(row.group_id, {
+        lastBody: row.last_body ?? null,
+        lastAt: row.last_at ?? null,
+        unread: Number(row.unread) || 0,
       });
-    } else {
-      if (isUnread) existing.unread += 1;
+    }
+  } else {
+    logger.db.error('group_thread_summaries RPC failed, using fallback', rpcError);
+
+    const groupIds = groupMetas.map((g) => g.groupId);
+    const { data: msgRows, error: msgErr } = await supabase
+      .from('group_messages')
+      .select('group_id, sender_id, body, created_at')
+      .in('group_id', groupIds)
+      .order('created_at', { ascending: false })
+      .limit(500);
+
+    if (msgErr) {
+      logger.db.error('listGroupThreads messages fetch failed', msgErr);
+      return [];
+    }
+
+    // Reduce in JS — newest-first, so first hit per group = preview.
+    const lastReadMap = new Map<string, string | null>(
+      groupMetas.map((g) => [g.groupId, g.lastRead])
+    );
+
+    for (const row of (msgRows ?? []) as {
+      group_id: string;
+      sender_id: string;
+      body: string;
+      created_at: string;
+    }[]) {
+      const gid = row.group_id;
+      const lastRead = lastReadMap.get(gid) ?? null;
+      const isIncoming = row.sender_id !== user.id;
+      const isUnread = isIncoming && (lastRead === null || row.created_at > lastRead);
+
+      const existing = seen.get(gid);
+      if (!existing) {
+        seen.set(gid, {
+          lastBody: row.body,
+          lastAt: row.created_at,
+          unread: isUnread ? 1 : 0,
+        });
+      } else if (isUnread) {
+        existing.unread += 1;
+      }
     }
   }
 

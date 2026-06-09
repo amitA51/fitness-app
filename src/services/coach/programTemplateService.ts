@@ -82,8 +82,10 @@ export const saveProgramTemplate = async (input: {
     .single();
 
   if (error) {
+    // Keep the raw Supabase message in the log only — never leak an English DB
+    // string into the Hebrew UI.
     logger.db.error('saveProgramTemplate failed', error);
-    throw new Error(error.message);
+    throw new Error('שמירת התבנית נכשלה');
   }
 
   return toProgramTemplate(data as Record<string, unknown>);

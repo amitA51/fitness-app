@@ -7,8 +7,8 @@
 // Rendered as a foundation <Sheet> (focus trap, scroll lock, Esc, RTL chrome)
 // instead of the former hardcoded z-index:9999 full-screen overlay.
 
-import { Plus, Trash2, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { ChevronDown, ChevronUp, Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { showToast } from '../../components/ui/GlobalToast';
 import { Input } from '../../components/ui/Input';
@@ -20,15 +20,16 @@ import {
 } from '../../services/coach/programTemplateService';
 import { getPersonalExercises } from '../../services/exerciseDb';
 import type { PersonalExercise, WorkoutTemplate, WorkoutTemplateExercise } from '../../types';
-import type { CoachProgramTemplate } from '../../types/coach';
+import type { CoachProgramTemplate, ProgramTemplateDay } from '../../types/coach';
 
 interface ProgramExercise {
   exerciseName: string;
   /** Canonical library id when the name matches a known exercise, else ''. */
   exerciseId: string;
   targetMuscle: string;
-  sets: number;
-  reps: number;
+  /** Raw string while editing — empties are allowed mid-edit; coerced in buildTemplate/validation. */
+  sets: string;
+  reps: string;
 }
 
 interface ProgramDay {
@@ -36,7 +37,28 @@ interface ProgramDay {
   exercises: ProgramExercise[];
 }
 
+const DEFAULT_SETS = '3';
+const DEFAULT_REPS = '10';
+/** Floor applied when a raw sets/reps field is blank or non-positive at build time. */
+const MIN_COUNT = 1;
+
 const freshDays = (): ProgramDay[] => [{ name: 'יום A', exercises: [] }];
+
+/** Coerce a raw sets/reps string to a positive integer, falling back to a floor. */
+const toCount = (raw: string): number => {
+  const n = Math.floor(Number(raw));
+  return Number.isFinite(n) && n > 0 ? n : MIN_COUNT;
+};
+
+/** Immutably swap two items in an array; returns the same array reference when out of range. */
+const swap = <T,>(items: T[], a: number, b: number): T[] => {
+  if (a < 0 || b < 0 || a >= items.length || b >= items.length) return items;
+  const next = [...items];
+  const tmp = next[a];
+  next[a] = next[b] as T;
+  next[b] = tmp as T;
+  return next;
+};
 
 export default function ProgramBuilder({
   clientId,
@@ -55,8 +77,13 @@ export default function ProgramBuilder({
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [library, setLibrary] = useState<PersonalExercise[]>([]);
   const [libraryError, setLibraryError] = useState(false);
+  const [libraryLoading, setLibraryLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [templates, setTemplates] = useState<CoachProgramTemplate[]>([]);
+  const [templatesError, setTemplatesError] = useState(false);
+  // Index of the day to mark/scroll when validation fails (spatial cue), else null.
+  const [invalidDayIdx, setInvalidDayIdx] = useState<number | null>(null);
+  const dayRefs = useRef<(HTMLElement | null)[]>([]);
 
   // Fresh form each time the sheet opens — matches the previous unmount-on-close
   // behaviour now that the component stays mounted for enter/exit animations.
@@ -66,6 +93,8 @@ export default function ProgramBuilder({
       setDays(freshDays());
       setSubmitError('');
       setLibraryError(false);
+      setTemplatesError(false);
+      setInvalidDayIdx(null);
     }
   }, [isOpen]);
 
@@ -74,12 +103,16 @@ export default function ProgramBuilder({
   useEffect(() => {
     if (!isOpen || library.length > 0) return;
     let cancelled = false;
+    setLibraryLoading(true);
     getPersonalExercises()
       .then((list) => {
         if (!cancelled) setLibrary(list);
       })
       .catch(() => {
         if (!cancelled) setLibraryError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLibraryLoading(false);
       });
     return () => {
       cancelled = true;
@@ -95,7 +128,8 @@ export default function ProgramBuilder({
         if (!cancelled) setTemplates(list);
       })
       .catch(() => {
-        // Silent failure — template picker simply won't render.
+        // Surface a non-blocking note instead of swallowing — picker may be empty.
+        if (!cancelled) setTemplatesError(true);
       });
     return () => {
       cancelled = true;
@@ -108,17 +142,34 @@ export default function ProgramBuilder({
     return map;
   }, [library]);
 
-  // Validation: every day must have a non-empty name AND the whole program must
-  // have at least one exercise with a non-empty name; no day may be completely empty.
+  // Assignment validation: every day must have a non-empty name AND at least one
+  // NAMED exercise — empty/unnamed rows are unstartable for the trainee.
   const canAssign = useMemo(() => {
     if (days.length === 0) return false;
     const allNamed = days.every((d) => d.name.trim().length > 0);
-    const hasExercise = days.some((d) =>
+    const everyDayHasNamedExercise = days.every((d) =>
       d.exercises.some((ex) => ex.exerciseName.trim().length > 0)
     );
-    const noDayEmpty = days.every((d) => d.exercises.length > 0);
-    return allNamed && hasExercise && noDayEmpty;
+    return allNamed && everyDayHasNamedExercise;
   }, [days]);
+
+  // Lighter rule for saving a work-in-progress template to the library: at least
+  // one named exercise anywhere — no per-day completeness required.
+  const canSaveLibrary = useMemo(
+    () => days.some((d) => d.exercises.some((ex) => ex.exerciseName.trim().length > 0)),
+    [days]
+  );
+
+  // First day that fails the assignment rule (no name, or no named exercise).
+  const findFirstInvalidDay = (): number | null => {
+    for (let i = 0; i < days.length; i++) {
+      const d = days[i];
+      if (!d) continue;
+      const named = d.exercises.some((ex) => ex.exerciseName.trim().length > 0);
+      if (d.name.trim().length === 0 || !named) return i;
+    }
+    return null;
+  };
 
   const addDay = () => {
     setSubmitError('');
@@ -130,13 +181,29 @@ export default function ProgramBuilder({
     setDays((d) => d.filter((_, idx) => idx !== i));
   };
 
+  const moveDay = (i: number, dir: -1 | 1) => {
+    setSubmitError('');
+    setDays((d) => swap(d, i, i + dir));
+  };
+
+  const moveExercise = (dayIdx: number, exIdx: number, dir: -1 | 1) => {
+    setSubmitError('');
+    setDays((d) =>
+      d.map((day, idx) =>
+        idx === dayIdx ? { ...day, exercises: swap(day.exercises, exIdx, exIdx + dir) } : day
+      )
+    );
+  };
+
   const updateDayName = (i: number, name: string) => {
     setSubmitError('');
+    setInvalidDayIdx(null);
     setDays((d) => d.map((day, idx) => (idx === i ? { ...day, name } : day)));
   };
 
   const addExercise = (dayIdx: number) => {
     setSubmitError('');
+    setInvalidDayIdx(null);
     setDays((d) =>
       d.map((day, idx) =>
         idx === dayIdx
@@ -144,7 +211,13 @@ export default function ProgramBuilder({
               ...day,
               exercises: [
                 ...day.exercises,
-                { exerciseName: '', exerciseId: '', targetMuscle: '', sets: 3, reps: 10 },
+                {
+                  exerciseName: '',
+                  exerciseId: '',
+                  targetMuscle: '',
+                  sets: DEFAULT_SETS,
+                  reps: DEFAULT_REPS,
+                },
               ],
             }
           : day
@@ -163,6 +236,7 @@ export default function ProgramBuilder({
 
   const updateExercise = (dayIdx: number, exIdx: number, patch: Partial<ProgramExercise>) => {
     setSubmitError('');
+    setInvalidDayIdx(null);
     setDays((d) =>
       d.map((day, di) =>
         di === dayIdx
@@ -187,19 +261,25 @@ export default function ProgramBuilder({
   };
 
   const buildTemplate = (day: ProgramDay): WorkoutTemplate => {
-    const exercises: WorkoutTemplateExercise[] = (day.exercises ?? []).map((ex, i) => ({
-      id: crypto.randomUUID(),
-      exerciseId: ex.exerciseId ?? '',
-      exerciseName: ex.exerciseName ?? '',
-      targetMuscle: ex.targetMuscle ?? '',
-      targetSets: ex.sets ?? 3,
-      targetReps: ex.reps ?? 10,
-      targetWeight: null,
-      restSeconds: 60,
-      order: i,
-      notes: '',
-      sets: Array.from({ length: ex.sets ?? 3 }, () => ({ reps: ex.reps ?? 10, weight: 0 })),
-    }));
+    // Drop blank-name rows so empty, unstartable exercises never reach the trainee.
+    const named = (day.exercises ?? []).filter((ex) => ex.exerciseName.trim().length > 0);
+    const exercises: WorkoutTemplateExercise[] = named.map((ex, i) => {
+      const setCount = toCount(ex.sets);
+      const repCount = toCount(ex.reps);
+      return {
+        id: crypto.randomUUID(),
+        exerciseId: ex.exerciseId ?? '',
+        exerciseName: ex.exerciseName.trim(),
+        targetMuscle: ex.targetMuscle ?? '',
+        targetSets: setCount,
+        targetReps: repCount,
+        targetWeight: null,
+        restSeconds: 60,
+        order: i,
+        notes: '',
+        sets: Array.from({ length: setCount }, () => ({ reps: repCount, weight: 0 })),
+      };
+    });
     return {
       id: crypto.randomUUID(),
       name: day.name,
@@ -213,20 +293,35 @@ export default function ProgramBuilder({
     };
   };
 
+  // Mark + scroll the first invalid day into view so the coach gets a spatial cue.
+  const flagInvalidDay = () => {
+    const idx = findFirstInvalidDay();
+    setInvalidDayIdx(idx);
+    if (idx !== null) {
+      dayRefs.current[idx]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  };
+
   const handleAssign = async () => {
     if (!clientId) return; // library mode — assignment happens elsewhere
     if (!canAssign) {
-      setSubmitError('יש להוסיף לפחות תרגיל אחד ושם לכל יום');
+      setSubmitError('כל יום חייב שם ולפחות תרגיל אחד עם שם');
+      flagInvalidDay();
       return;
     }
+    setInvalidDayIdx(null);
     setBusy(true);
     try {
       // Persist one runnable template per day…
-      const dayRefs: { templateId: string; name: string }[] = [];
+      const programDayRefs: { templateId: string; name: string }[] = [];
       for (const day of days) {
         const tpl = buildTemplate(day);
-        await upsertClientTemplate(clientId, tpl);
-        dayRefs.push({ templateId: tpl.id, name: tpl.name });
+        // upsertClientTemplate returns {error} and never throws — a swallowed
+        // failure would show a false success while the trainee's program points
+        // at templates that were never persisted.
+        const { error } = await upsertClientTemplate(clientId, tpl);
+        if (error) throw new Error(error);
+        programDayRefs.push({ templateId: tpl.id, name: tpl.name });
       }
       // …but surface the whole week as ONE program assignment so the trainee
       // sees a structured plan, not N independent "התחל אימון" rows. templateId
@@ -234,9 +329,9 @@ export default function ProgramBuilder({
       await createAssignment({
         kind: 'program',
         title: programName || 'תוכנית אימון',
-        templateId: dayRefs[0]?.templateId ?? null,
+        templateId: programDayRefs[0]?.templateId ?? null,
         clientId,
-        payload: { programName: programName || 'תוכנית אימון', days: dayRefs },
+        payload: { programName: programName || 'תוכנית אימון', days: programDayRefs },
       });
       showToast('התוכנית שויכה', 'success');
       onClose();
@@ -250,9 +345,11 @@ export default function ProgramBuilder({
   const handleAssignGroup = async () => {
     if (!groupId) return; // not in group mode
     if (!canAssign) {
-      setSubmitError('יש להוסיף לפחות תרגיל אחד ושם לכל יום');
+      setSubmitError('כל יום חייב שם ולפחות תרגיל אחד עם שם');
+      flagInvalidDay();
       return;
     }
+    setInvalidDayIdx(null);
     setBusy(true);
     try {
       const result = await assignProgramToGroup({
@@ -265,6 +362,12 @@ export default function ProgramBuilder({
         return;
       }
       const succeeded = result.memberCount - result.failures.length;
+      // Every member failed (no assignment row created) — this is a real failure,
+      // not a partial success, so don't show a green "שויכה ל-0".
+      if (succeeded === 0 || result.assignmentId === null) {
+        showToast('שיוך התוכנית לקבוצה נכשל', 'error');
+        return;
+      }
       if (result.failures.length > 0) {
         // Numbers render LTR inside the RTL string via embedded markers.
         showToast(`התוכנית שויכה ל-⁨${succeeded}⁩ מתוך ⁨${result.memberCount}⁩`, 'success');
@@ -279,12 +382,28 @@ export default function ProgramBuilder({
     }
   };
 
+  // Coerce the in-edit (string sets/reps) days to the persisted ProgramTemplateDay
+  // shape (numeric sets/reps), dropping blank-name rows.
+  const toTemplateDays = (): ProgramTemplateDay[] =>
+    days.map((day) => ({
+      name: day.name,
+      exercises: day.exercises
+        .filter((ex) => ex.exerciseName.trim().length > 0)
+        .map((ex) => ({
+          exerciseName: ex.exerciseName.trim(),
+          exerciseId: ex.exerciseId,
+          targetMuscle: ex.targetMuscle,
+          sets: toCount(ex.sets),
+          reps: toCount(ex.reps),
+        })),
+    }));
+
   const handleSaveToLibrary = async () => {
     setSavingTemplate(true);
     try {
       await saveProgramTemplate({
         name: programName.trim() || 'תוכנית ללא שם',
-        days,
+        days: toTemplateDays(),
       });
       showToast('התבנית נשמרה בספרייה', 'success');
       // Refresh local templates list so the picker stays in sync.
@@ -302,10 +421,23 @@ export default function ProgramBuilder({
     if (!id) return;
     const tpl = templates.find((t) => t.id === id);
     if (!tpl) return;
-    // Deep-copy so edits never mutate the cached template object.
-    setDays(structuredClone(tpl.days));
+    // Deep-map into the in-edit shape (string sets/reps). days come from JSON, so a
+    // plain map is JSON-safe and avoids structuredClone's unhandled-throw risk.
+    setDays(
+      tpl.days.map((day) => ({
+        name: day.name,
+        exercises: day.exercises.map((ex) => ({
+          exerciseName: ex.exerciseName,
+          exerciseId: ex.exerciseId,
+          targetMuscle: ex.targetMuscle,
+          sets: String(ex.sets),
+          reps: String(ex.reps),
+        })),
+      }))
+    );
     setProgramName(tpl.name);
     setSubmitError('');
+    setInvalidDayIdx(null);
     // Reset select back to placeholder.
     e.target.value = '';
   };
@@ -336,7 +468,7 @@ export default function ProgramBuilder({
               fullWidth
               isLoading={savingTemplate}
               onClick={handleSaveToLibrary}
-              disabled={!canAssign || busy || savingTemplate}
+              disabled={!canSaveLibrary || busy || savingTemplate}
             >
               שמור בספרייה
             </Button>
@@ -374,6 +506,19 @@ export default function ProgramBuilder({
         ))}
       </datalist>
 
+      {templatesError && (
+        <p
+          style={{
+            color: 'var(--fs-muted)',
+            fontSize: 12,
+            marginBottom: 8,
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          לא ניתן לטעון תבניות שמורות
+        </p>
+      )}
+
       {templates.length > 0 && (
         <div className="mb-4">
           <label
@@ -402,7 +547,7 @@ export default function ProgramBuilder({
               fontFamily: 'var(--font-body)',
               fontSize: 14,
               padding: '0 12px',
-              borderRadius: 4,
+              borderRadius: 0,
               appearance: 'auto',
             }}
           >
@@ -425,6 +570,20 @@ export default function ProgramBuilder({
         />
       </div>
 
+      {libraryLoading && (
+        <p
+          style={{
+            color: 'var(--fs-muted)',
+            fontSize: 12,
+            marginBottom: 8,
+            fontFamily: 'var(--font-mono)',
+            letterSpacing: '0.08em',
+          }}
+        >
+          טוען ספריית תרגילים…
+        </p>
+      )}
+
       {libraryError && (
         <p
           style={{
@@ -438,99 +597,148 @@ export default function ProgramBuilder({
         </p>
       )}
 
-      {days.map((day, dayIdx) => (
-        <section
-          // biome-ignore lint/suspicious/noArrayIndexKey: days are append/remove without stable IDs
-          key={dayIdx}
-          className="mb-5 p-4"
-          style={{ background: 'var(--fs-bg)', border: '1px solid var(--fs-surface-2)' }}
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex-1">
-              <Input
-                value={day.name}
-                onChange={(e) => updateDayName(dayIdx, e.target.value)}
-                aria-label="שם היום"
-              />
-            </div>
-            {days.length > 1 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => removeDay(dayIdx)}
-                aria-label="הסר יום"
-                className="shrink-0"
-              >
-                <Trash2 size={16} aria-hidden="true" />
-              </Button>
-            )}
-          </div>
-
-          {day.exercises.map((ex, exIdx) => (
-            <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: exercises are append/remove without stable IDs
-              key={exIdx}
-              className="flex items-center gap-2 mb-2"
-            >
-              <div className="flex-1 min-w-0">
-                <Input
-                  list="coach-exercise-library"
-                  value={ex.exerciseName}
-                  onChange={(e) => setExerciseName(dayIdx, exIdx, e.target.value)}
-                  placeholder="שם תרגיל"
-                  aria-label="שם תרגיל"
-                />
-              </div>
-              <div style={{ width: 72, minHeight: 44 }} className="shrink-0">
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  dir="ltr"
-                  value={ex.sets}
-                  onChange={(e) =>
-                    updateExercise(dayIdx, exIdx, { sets: Number(e.target.value) || 1 })
-                  }
-                  aria-label="סטים"
-                />
-              </div>
-              <span style={{ color: 'var(--fs-muted)', fontSize: 12 }} aria-hidden="true">
-                ×
-              </span>
-              <div style={{ width: 72, minHeight: 44 }} className="shrink-0">
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  dir="ltr"
-                  value={ex.reps}
-                  onChange={(e) =>
-                    updateExercise(dayIdx, exIdx, { reps: Number(e.target.value) || 1 })
-                  }
-                  aria-label="חזרות"
-                />
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => removeExercise(dayIdx, exIdx)}
-                aria-label="הסר תרגיל"
-                className="shrink-0"
-              >
-                <X size={14} aria-hidden="true" />
-              </Button>
-            </div>
-          ))}
-
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={<Plus size={14} />}
-            onClick={() => addExercise(dayIdx)}
-            className="mt-2"
+      {days.map((day, dayIdx) => {
+        const isInvalid = invalidDayIdx === dayIdx;
+        return (
+          <section
+            // biome-ignore lint/suspicious/noArrayIndexKey: days are append/remove without stable IDs
+            key={dayIdx}
+            ref={(el) => {
+              dayRefs.current[dayIdx] = el;
+            }}
+            aria-invalid={isInvalid || undefined}
+            className="mb-5 p-4"
+            style={{
+              background: 'var(--fs-surface-2)',
+              border: `1px solid ${isInvalid ? 'var(--fs-warn)' : 'var(--fs-surface-2)'}`,
+            }}
           >
-            הוסף תרגיל
-          </Button>
-        </section>
-      ))}
+            <div className="flex items-end gap-2 mb-3">
+              <div className="flex-1">
+                <Input
+                  label="שם היום"
+                  value={day.name}
+                  onChange={(e) => updateDayName(dayIdx, e.target.value)}
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => moveDay(dayIdx, -1)}
+                aria-label="העבר יום למעלה"
+                disabled={dayIdx === 0}
+                className="shrink-0"
+              >
+                <ChevronUp size={16} aria-hidden="true" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => moveDay(dayIdx, 1)}
+                aria-label="העבר יום למטה"
+                disabled={dayIdx === days.length - 1}
+                className="shrink-0"
+              >
+                <ChevronDown size={16} aria-hidden="true" />
+              </Button>
+              {days.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeDay(dayIdx)}
+                  aria-label="הסר יום"
+                  className="shrink-0"
+                >
+                  <Trash2 size={16} aria-hidden="true" />
+                </Button>
+              )}
+            </div>
+
+            {day.exercises.map((ex, exIdx) => (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: exercises are append/remove without stable IDs
+                key={exIdx}
+                className="flex items-end gap-2 mb-2"
+              >
+                <div className="flex-1 min-w-0">
+                  <Input
+                    list="coach-exercise-library"
+                    value={ex.exerciseName}
+                    onChange={(e) => setExerciseName(dayIdx, exIdx, e.target.value)}
+                    placeholder="שם תרגיל"
+                    aria-label="שם תרגיל"
+                  />
+                </div>
+                <div style={{ width: 64, minHeight: 44 }} className="shrink-0">
+                  <Input
+                    label="סטים"
+                    type="number"
+                    inputMode="numeric"
+                    dir="ltr"
+                    value={ex.sets}
+                    onChange={(e) => updateExercise(dayIdx, exIdx, { sets: e.target.value })}
+                  />
+                </div>
+                <span
+                  style={{ color: 'var(--fs-muted)', fontSize: 12, paddingBottom: 14 }}
+                  aria-hidden="true"
+                >
+                  ×
+                </span>
+                <div style={{ width: 64, minHeight: 44 }} className="shrink-0">
+                  <Input
+                    label="חזרות"
+                    type="number"
+                    inputMode="numeric"
+                    dir="ltr"
+                    value={ex.reps}
+                    onChange={(e) => updateExercise(dayIdx, exIdx, { reps: e.target.value })}
+                  />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => moveExercise(dayIdx, exIdx, -1)}
+                  aria-label="העבר תרגיל למעלה"
+                  disabled={exIdx === 0}
+                  className="shrink-0"
+                >
+                  <ChevronUp size={14} aria-hidden="true" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => moveExercise(dayIdx, exIdx, 1)}
+                  aria-label="העבר תרגיל למטה"
+                  disabled={exIdx === day.exercises.length - 1}
+                  className="shrink-0"
+                >
+                  <ChevronDown size={14} aria-hidden="true" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeExercise(dayIdx, exIdx)}
+                  aria-label="הסר תרגיל"
+                  className="shrink-0"
+                >
+                  <X size={14} aria-hidden="true" />
+                </Button>
+              </div>
+            ))}
+
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Plus size={14} />}
+              onClick={() => addExercise(dayIdx)}
+              className="mt-2"
+            >
+              הוסף תרגיל
+            </Button>
+          </section>
+        );
+      })}
 
       <Button
         variant="secondary"

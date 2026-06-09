@@ -19,20 +19,48 @@ export interface ClientThreadSummary {
   unread: number;
 }
 
-export const getThread = async (coachId: string, clientId: string): Promise<Message[]> => {
+/** Most recent messages fetched per thread (desc + limit, reversed to asc). */
+const THREAD_PAGE_SIZE = 200;
+
+export interface ThreadPage {
+  /** Chronological (oldest → newest) page of messages. */
+  messages: Message[];
+  /** True when an older page likely exists (the query returned a full page). */
+  hasMore: boolean;
+}
+
+/**
+ * One page of a thread, newest-first under the hood then reversed to
+ * chronological order. Pass `before` (the createdAt of the oldest message you
+ * already have) to fetch the previous page for "load earlier".
+ */
+export const getThreadPage = async (
+  coachId: string,
+  clientId: string,
+  before?: string
+): Promise<ThreadPage> => {
   const supabase = requireClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from('messages')
     .select('*')
     .eq('coach_id', coachId)
     .eq('client_id', clientId)
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: false })
+    .limit(THREAD_PAGE_SIZE);
+  if (before) query = query.lt('created_at', before);
+  const { data, error } = await query;
   if (error) {
-    logger.db.error('getThread failed', error);
-    return [];
+    logger.db.error('getThreadPage failed', error);
+    // Throw so the caller's catch can flip to an error/retry state — a failed
+    // load must be distinguishable from an empty thread.
+    throw new Error(error.message);
   }
-  return (data ?? []).map(toMessage);
+  const rows = data ?? [];
+  return { messages: rows.map(toMessage).reverse(), hasMore: rows.length === THREAD_PAGE_SIZE };
 };
+
+export const getThread = async (coachId: string, clientId: string): Promise<Message[]> =>
+  (await getThreadPage(coachId, clientId)).messages;
 
 export const sendMessage = async (
   coachId: string,
@@ -77,10 +105,61 @@ export const markThreadRead = async (coachId: string, clientId: string): Promise
   if (error) logger.db.error('markThreadRead failed', error);
 };
 
+/** Per-thread reduction shape shared by the RPC path and the JS fallback. */
+interface ThreadReduction {
+  lastBody: string | null;
+  lastAt: string | null;
+  unread: number;
+}
+
+/**
+ * Fallback reduction: ONE bounded messages query reduced in JS. Only used when
+ * the `coach_thread_summaries` RPC is unavailable (e.g. migration not applied);
+ * preview/unread become approximate past the 500-row window. Returns null when
+ * the query itself fails so the caller can bail instead of rendering a roster
+ * of fake "no messages" rows.
+ */
+const reduceThreadsFallback = async (
+  supabase: ReturnType<typeof requireClient>,
+  userId: string,
+  nameMap: Map<string, string>
+): Promise<Map<string, ThreadReduction> | null> => {
+  const { data: rows, error } = await supabase
+    .from('messages')
+    .select('client_id, sender_id, body, created_at, read_at')
+    .eq('coach_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(500);
+
+  if (error) {
+    logger.db.error('listClientThreads fallback failed', error);
+    return null;
+  }
+
+  // Iterate newest-first so the first message per client is the latest one.
+  const seen = new Map<string, ThreadReduction>();
+  for (const row of rows ?? []) {
+    const cid = row.client_id as string;
+    if (!nameMap.has(cid)) continue; // skip rows for inactive/removed clients
+    const existing = seen.get(cid);
+    if (!existing) {
+      seen.set(cid, {
+        lastBody: (row.body as string | null) ?? null,
+        lastAt: (row.created_at as string | null) ?? null,
+        unread: row.sender_id !== userId && row.read_at === null ? 1 : 0,
+      });
+    } else if (row.sender_id !== userId && row.read_at === null) {
+      existing.unread += 1;
+    }
+  }
+  return seen;
+};
+
 /**
  * Return one summary row per active client thread, sorted: unread first, then
- * lastAt desc, then displayName. Uses ONE roster fetch + ONE bounded messages
- * query — no N+1 queries.
+ * lastAt desc, then displayName. ONE roster fetch + ONE `coach_thread_summaries`
+ * RPC (exact last-message/unread computed in the DB, no row-window cap); falls
+ * back to a bounded scan when the RPC is unavailable.
  */
 export const listClientThreads = async (): Promise<ClientThreadSummary[]> => {
   let supabase: ReturnType<typeof requireClient>;
@@ -102,44 +181,33 @@ export const listClientThreads = async (): Promise<ClientThreadSummary[]> => {
     nameMap.set(c.clientId, c.clientProfile?.displayName ?? 'מתאמן');
   }
 
-  // ONE bounded messages query for all active threads belonging to this coach.
-  // We only need the columns required for preview + unread computation.
-  const { data: rows, error } = await supabase
-    .from('messages')
-    .select('client_id, sender_id, body, created_at, read_at')
-    .eq('coach_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(500);
-
-  if (error) {
-    logger.db.error('listClientThreads failed', error);
-    return [];
-  }
-
-  // Reduce in JS to per-client summary. We iterate newest-first so the first
-  // message we encounter per client is already the latest one.
-  const seen = new Map<
-    string,
-    { lastBody: string | null; lastAt: string | null; unread: number }
-  >();
-
-  for (const row of rows ?? []) {
-    const cid = row.client_id as string;
-    if (!nameMap.has(cid)) continue; // skip rows for inactive/removed clients
-    const existing = seen.get(cid);
-    if (!existing) {
-      // First (= latest) message for this client.
-      seen.set(cid, {
-        lastBody: (row.body as string | null) ?? null,
-        lastAt: (row.created_at as string | null) ?? null,
-        unread: row.sender_id !== user.id && row.read_at === null ? 1 : 0,
-      });
-    } else {
-      // Subsequent messages: only accumulate unread count.
-      if (row.sender_id !== user.id && row.read_at === null) {
-        existing.unread += 1;
-      }
-    }
+  let seen: Map<string, ThreadReduction>;
+  const { data: rpcRows, error: rpcError } = await supabase.rpc('coach_thread_summaries');
+  if (!rpcError && Array.isArray(rpcRows)) {
+    seen = new Map(
+      (
+        rpcRows as {
+          client_id: string;
+          last_body: string | null;
+          last_at: string | null;
+          unread: number | string | null;
+        }[]
+      )
+        .filter((r) => nameMap.has(r.client_id))
+        .map((r) => [
+          r.client_id,
+          {
+            lastBody: r.last_body ?? null,
+            lastAt: r.last_at ?? null,
+            unread: Number(r.unread) || 0,
+          },
+        ])
+    );
+  } else {
+    logger.db.error('coach_thread_summaries RPC failed, using fallback', rpcError);
+    const fallback = await reduceThreadsFallback(supabase, user.id, nameMap);
+    if (fallback === null) return []; // both paths failed — surface emptiness, not fake rows
+    seen = fallback;
   }
 
   // Build the result list, including clients with no messages yet.

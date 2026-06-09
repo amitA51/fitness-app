@@ -49,7 +49,12 @@ export const createAssignment = async (input: NewAssignment): Promise<Assignment
   if (error) throw error;
   // Best-effort push so a direct assignment reaches the client with the app closed.
   if (input.clientId) {
-    void sendCoachPush(input.clientId, input.title || 'עדכון חדש מהמאמן', undefined, '/my-coach');
+    void sendCoachPush(
+      input.clientId,
+      input.title || 'עדכון חדש מהמאמן',
+      undefined,
+      '/my-coach'
+    ).catch((e) => logger.db.error('createAssignment push failed', e));
   }
   return toAssignment(data);
 };
@@ -173,7 +178,9 @@ export const assignProgramToGroup = async (
 
   // Best-effort push per successful member so the program lands with app closed.
   for (const memberId of successfulIds) {
-    void sendCoachPush(memberId, GROUP_PROGRAM_PUSH_TITLE, programName, '/my-coach');
+    void sendCoachPush(memberId, GROUP_PROGRAM_PUSH_TITLE, programName, '/my-coach').catch((e) =>
+      logger.db.error('assignProgramToGroup push failed', e)
+    );
   }
 
   return { assignmentId: assignment.id, memberCount: targetIds.length, failures };
@@ -186,6 +193,8 @@ export const assignProgramToGroup = async (
  * the flat list, then to an empty array — so MyCoach can render uniformly.
  */
 export const resolveProgramDays = (assignment: Assignment, myUserId: string): ProgramDayRef[] => {
+  // Only program assignments carry runnable day refs — guard the trainee-facing boundary.
+  if (assignment.kind !== 'program') return [];
   const payload = assignment.payload ?? {};
   const memberDays = payload.memberDays;
   if (memberDays && typeof memberDays === 'object') {
@@ -204,7 +213,10 @@ const isProgramDayRef = (value: unknown): value is ProgramDayRef =>
   typeof (value as Record<string, unknown>).name === 'string';
 
 /** Assignments authored by the current coach (optionally for one client). */
-export const listCoachAssignments = async (clientId?: string): Promise<Assignment[]> => {
+export const listCoachAssignments = async (
+  clientId?: string,
+  opts?: { throwOnError?: boolean }
+): Promise<Assignment[]> => {
   const supabase = requireClient();
   const user = await getCurrentUser();
   if (!user) return [];
@@ -218,6 +230,8 @@ export const listCoachAssignments = async (clientId?: string): Promise<Assignmen
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) {
     logger.db.error('listCoachAssignments failed', error);
+    // throwOnError lets aggregates distinguish a fetch failure from no data.
+    if (opts?.throwOnError) throw new Error(error.message);
     return [];
   }
   return (data ?? []).map(toAssignment);

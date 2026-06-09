@@ -52,14 +52,15 @@ function buildTimeline(
     if (!Number.isFinite(ts)) continue;
     const volume = Math.round(s.totalVolume);
     const parts: string[] = [];
-    if (s.notes) parts.push(s.notes);
+    // The coach note becomes the row heading (see EventRow), so keep it OUT of the
+    // meta line to avoid showing the same text twice.
     if (volume > 0) parts.push(`${volume} ק"ג נפח`);
     if (s.exercises.length > 0) parts.push(`${s.exercises.length} תרגילים`);
     events.push({
       kind: 'session',
       ts,
       id: s.id,
-      title: s.notes || formatDate(s.startTime),
+      title: s.notes?.trim() || 'אימון הושלם',
       meta: parts.join(' · ') || '—',
     });
   }
@@ -143,7 +144,7 @@ function EventRow({ event }: { event: TimelineEvent }) {
               color: 'var(--fs-ink)',
             }}
           >
-            אימון הושלם
+            <bdi>{event.title}</bdi>
           </div>
           <div
             style={{

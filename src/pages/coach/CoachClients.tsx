@@ -3,7 +3,7 @@
 // Search, tag filter, sort; each row opens the Client 360 view.
 // ============================================================================
 
-import { UserPlus } from 'lucide-react';
+import { Check, UserPlus } from 'lucide-react';
 import { type ReactNode, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
@@ -16,7 +16,7 @@ import {
   listClients,
 } from '../../services/coach';
 import { CoachPage, ListSkeleton, Section, SectionError, useAsyncData } from './_shared';
-import { RosterRow } from './rosterPrimitives';
+import { RosterRow, useRosterSignals } from './rosterPrimitives';
 
 type SortMode = 'attention' | 'name' | 'activity';
 
@@ -35,6 +35,11 @@ export default function CoachClients() {
   const [search, setSearch] = useState('');
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [sort, setSort] = useState<SortMode>('attention');
+
+  // Same triage signals as CoachHome's attention list — ONE batched fetch per
+  // source for the whole roster (no N+1); chips stay hidden while in flight.
+  const clientIds = useMemo(() => rows.map((r) => r.client.clientId), [rows]);
+  const { signals, signalsLoading } = useRosterSignals(clientIds);
   const allTags = useMemo(
     () => [...new Set(rows.flatMap((r) => r.client.tags ?? []))].sort(),
     [rows]
@@ -67,10 +72,28 @@ export default function CoachClients() {
     return sorted;
   }, [rows, search, activeTag, sort]);
 
+  const hasFilter = search.trim().length > 0 || activeTag !== null;
+  const clearFilter = () => {
+    setSearch('');
+    setActiveTag(null);
+  };
+
+  // Hide the seat subtitle until meaningful (avoid a "0/0 מושבים" flash); digits
+  // render LTR inside the RTL header.
+  const seatSubtitle =
+    seats.limit > 0 ? (
+      <>
+        <bdi dir="ltr">
+          {seats.used}/{seats.limit}
+        </bdi>{' '}
+        מושבים
+      </>
+    ) : undefined;
+
   return (
     <CoachPage
       title="המתאמנים שלי"
-      subtitle={`${seats.used}/${seats.limit} מושבים`}
+      subtitle={seatSubtitle}
       onBack={() => navigate('/coach')}
       actions={
         <Button
@@ -98,28 +121,35 @@ export default function CoachClients() {
         </div>
         {allTags.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-            {allTags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-                aria-pressed={activeTag === tag}
-                className="active:scale-[0.98]"
-                style={{
-                  padding: '3px 10px',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  fontWeight: 600,
-                  borderRadius: 999,
-                  border: '1px solid var(--fs-surface-2)',
-                  background: activeTag === tag ? 'var(--fs-primary)' : 'var(--fs-surface)',
-                  color: activeTag === tag ? 'var(--fs-accent)' : 'var(--fs-ink)',
-                  cursor: 'pointer',
-                }}
-              >
-                {tag}
-              </button>
-            ))}
+            {allTags.map((tag) => {
+              const selected = activeTag === tag;
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setActiveTag(selected ? null : tag)}
+                  aria-pressed={selected}
+                  className="active:scale-[0.98] inline-flex items-center gap-1 min-h-[44px]"
+                  style={{
+                    padding: '8px 12px',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    borderRadius: 999,
+                    // Non-color cue: selected chip gets a 2px inset ring + check glyph.
+                    border: selected
+                      ? '2px solid var(--fs-accent)'
+                      : '1px solid var(--fs-surface-2)',
+                    background: selected ? 'var(--fs-primary)' : 'var(--fs-surface)',
+                    color: selected ? 'var(--fs-accent)' : 'var(--fs-ink)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {selected && <Check size={12} strokeWidth={3} aria-hidden="true" />}
+                  {tag}
+                </button>
+              );
+            })}
           </div>
         )}
         <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
@@ -133,6 +163,22 @@ export default function CoachClients() {
             פעילות אחרונה
           </SortButton>
         </div>
+        {!loading && !error && rows.length > 0 && hasFilter && (
+          <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+            <span
+              aria-live="polite"
+              style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fs-muted)' }}
+            >
+              <bdi dir="ltr">
+                {filtered.length}/{rows.length}
+              </bdi>{' '}
+              תואמים
+            </span>
+            <Button variant="ghost" size="sm" onClick={clearFilter}>
+              נקה סינון
+            </Button>
+          </div>
+        )}
         {loading ? (
           <ListSkeleton rows={4} />
         ) : error ? (
@@ -145,7 +191,12 @@ export default function CoachClients() {
             action={{ label: 'הזמנת מתאמן', onClick: () => navigate('/coach/invites') }}
           />
         ) : filtered.length === 0 ? (
-          <EmptyState illustration="search" size="small" title="אין מתאמנים תואמים" />
+          <EmptyState
+            illustration="search"
+            size="small"
+            title="אין מתאמנים תואמים"
+            action={{ label: 'נקה סינון', onClick: clearFilter }}
+          />
         ) : (
           filtered.map((row) => (
             <RosterRow
@@ -153,6 +204,9 @@ export default function CoachClients() {
               row={row}
               onOpen={() => navigate(`/coach/clients/${row.client.clientId}`)}
               onMessage={() => navigate(`/coach/messages/${row.client.clientId}`)}
+              unread={signalsLoading ? 0 : (signals.unreadByClient[row.client.clientId] ?? 0)}
+              hasRecentCheckIn={!signalsLoading && signals.recentCheckIns.has(row.client.clientId)}
+              today={signalsLoading ? undefined : signals.scheduledToday[row.client.clientId]}
             />
           ))
         )}
@@ -170,16 +224,20 @@ function SortButton({
     <button
       type="button"
       onClick={onClick}
-      className="active:scale-[0.98]"
+      aria-pressed={active}
+      className="active:scale-[0.98] inline-flex items-center min-h-[44px]"
       style={{
         fontFamily: 'var(--font-mono)',
         fontSize: 11,
         fontWeight: active ? 700 : 400,
+        // Non-color cue for the active sort (perceivable without color).
+        textDecoration: active ? 'underline' : 'none',
+        textUnderlineOffset: 3,
         color: active ? 'var(--fs-heading)' : 'var(--fs-muted)',
         background: 'none',
         border: 'none',
         cursor: 'pointer',
-        padding: 0,
+        padding: '10px 4px',
       }}
     >
       {children}

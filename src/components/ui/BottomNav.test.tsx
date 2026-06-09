@@ -11,9 +11,16 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import BottomNav from './BottomNav';
 
+// BottomNav branches on the ACTIVE VIEW (isCoachView), not the server role, so
+// the top mode bar can swap the whole shell. mockIsCoach drives the view here.
 let mockIsCoach = false;
 vi.mock('../../contexts/CoachContext', () => ({
-  useCoach: () => ({ isCoach: mockIsCoach, role: mockIsCoach ? 'coach' : 'trainee' }),
+  useCoach: () => ({
+    isCoach: mockIsCoach,
+    isCoachView: mockIsCoach,
+    role: mockIsCoach ? 'coach' : 'trainee',
+    viewMode: mockIsCoach ? 'coach' : 'trainee',
+  }),
 }));
 
 let mockUnread = 0;

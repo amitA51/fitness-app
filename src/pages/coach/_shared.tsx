@@ -22,7 +22,9 @@ export function CoachPage({
   children,
 }: {
   title: string;
-  subtitle?: string;
+  /** ReactNode so callers can pass LTR-isolated numeric subtitles (e.g. a
+   *  `<bdi dir="ltr">{used}/{limit}</bdi> מושבים` seat count) without bidi reorder. */
+  subtitle?: React.ReactNode;
   onBack?: () => void;
   /** Root tab screens (coach home) have no "back" — hide the chevron. */
   hideBack?: boolean;

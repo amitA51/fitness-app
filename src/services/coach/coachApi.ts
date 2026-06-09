@@ -36,7 +36,8 @@ const computeTotalVolume = (exercises: WorkoutSession['exercises']): number => {
 
 export const getClientSessions = async (
   clientId: string,
-  limit = 100
+  limit = 100,
+  opts?: { throwOnError?: boolean }
 ): Promise<WorkoutSession[]> => {
   const supabase = requireClient();
   const { data, error } = await supabase
@@ -45,10 +46,14 @@ export const getClientSessions = async (
       'id, title, date, start_time, end_time, duration, exercises, total_volume, notes, created_at, updated_at'
     )
     .eq('user_id', clientId)
+    .is('deleted_at', null)
     .order('start_time', { ascending: false })
     .limit(limit);
   if (error) {
     logger.db.error('getClientSessions failed', error);
+    // throwOnError lets aggregates (e.g. week adherence) distinguish a fetch
+    // failure from a genuinely empty result instead of rendering fake zeros.
+    if (opts?.throwOnError) throw new Error(error.message);
     return [];
   }
   return (data ?? []).map((r) =>
@@ -84,6 +89,7 @@ export const getClientsActivity = async (
     .from('workout_sessions')
     .select('user_id, start_time, total_volume')
     .in('user_id', clientIds)
+    .is('deleted_at', null)
     .order('start_time', { ascending: false });
   if (error) {
     logger.db.error('getClientsActivity failed', error);
@@ -111,6 +117,7 @@ export const getClientTemplates = async (clientId: string): Promise<WorkoutTempl
     .from('workout_templates')
     .select('id, name, description, exercises, created_at, updated_at')
     .eq('user_id', clientId)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(200);
   if (error) {
@@ -131,13 +138,13 @@ export const getClientTemplates = async (clientId: string): Promise<WorkoutTempl
 
 export const getClientBodyWeight = async (clientId: string): Promise<BodyWeightEntry[]> => {
   const supabase = requireClient();
-  // NB: body_weight has no `notes` column — selecting it errors out the whole
-  // query (the coach weight trend silently showed "no data"). Columns are
-  // id/weight/date/created_at/updated_at/deleted_at only.
+  // body_weight has a `notes` column (migration 20260608000500) that
+  // upsertClientBodyWeight writes, so it is selected and mapped here.
   const { data, error } = await supabase
     .from('body_weight')
-    .select('id, weight, date, created_at, updated_at')
+    .select('id, weight, date, notes, created_at, updated_at')
     .eq('user_id', clientId)
+    .is('deleted_at', null)
     .order('date', { ascending: false })
     .limit(500);
   if (error) {
@@ -149,6 +156,7 @@ export const getClientBodyWeight = async (clientId: string): Promise<BodyWeightE
       id: r.id,
       weight: r.weight,
       date: r.date,
+      notes: r.notes,
       createdAt: r.created_at,
     })
   );
@@ -158,8 +166,11 @@ export const getClientPRs = async (clientId: string): Promise<PersonalRecordRow[
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('personal_records')
-    .select('id, exercise_id, exercise_name, weight, reps, date, record_type, created_at')
+    .select(
+      'id, exercise_id, exercise_name, weight, reps, date, record_type, created_at, updated_at'
+    )
     .eq('user_id', clientId)
+    .is('deleted_at', null)
     .order('date', { ascending: false })
     .limit(500);
   if (error) {
@@ -175,19 +186,26 @@ export const getClientPRs = async (clientId: string): Promise<PersonalRecordRow[
     date: r.date,
     recordType: r.record_type,
     createdAt: r.created_at,
+    updatedAt: r.updated_at,
   }));
 };
 
-export const getClientNutrition = async (clientId: string, limit = 60): Promise<NutritionLog[]> => {
+export const getClientNutrition = async (
+  clientId: string,
+  limit = 60,
+  opts?: { throwOnError?: boolean }
+): Promise<NutritionLog[]> => {
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('nutrition_logs')
-    .select('id, date, calories, protein, carbs, fat, meals, notes, created_at')
+    .select('id, date, calories, protein, carbs, fat, meals, notes, created_at, updated_at')
     .eq('user_id', clientId)
+    .is('deleted_at', null)
     .order('date', { ascending: false })
     .limit(limit);
   if (error) {
     logger.db.error('getClientNutrition failed', error);
+    if (opts?.throwOnError) throw new Error(error.message);
     return [];
   }
   return (data ?? []).map((r) => ({
@@ -200,6 +218,7 @@ export const getClientNutrition = async (clientId: string, limit = 60): Promise<
     meals: r.meals ?? [],
     notes: r.notes,
     createdAt: r.created_at,
+    updatedAt: r.updated_at,
   }));
 };
 
@@ -207,8 +226,9 @@ export const getClientMeasurements = async (clientId: string): Promise<BodyMeasu
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('body_measurements')
-    .select('id, date, measurements, notes, created_at')
+    .select('id, date, measurements, notes, created_at, updated_at')
     .eq('user_id', clientId)
+    .is('deleted_at', null)
     .order('date', { ascending: false })
     .limit(500);
   if (error) {
@@ -221,6 +241,7 @@ export const getClientMeasurements = async (clientId: string): Promise<BodyMeasu
     measurements: r.measurements ?? {},
     notes: r.notes,
     createdAt: r.created_at,
+    updatedAt: r.updated_at,
   }));
 };
 
@@ -269,6 +290,10 @@ const auditedWrite = async ({
 };
 
 // ---- workout sessions ------------------------------------------------------
+// Session-title model (decided): `notes` is the ONE user-facing title concept —
+// the canonical WorkoutSession has no `title` field and nothing in the app
+// reads the row's `title` column. Coach writers mirror notes → title so the
+// column stays coherent for any future trainee-side title UI.
 
 /** Create a workout session on the trainee's behalf. Returns the new row id. */
 export const createClientSession = async (
@@ -327,7 +352,7 @@ export const updateClientSession = async (
   }
   if (patch.notes !== undefined) {
     row.notes = patch.notes || null;
-    row.title = patch.notes || null;
+    row.title = patch.notes || null; // mirror — notes is the single title concept
   }
   return auditedWrite({
     clientId,
@@ -382,6 +407,7 @@ export const upsertClientNutritionLog = async (
   log: ClientNutritionInput
 ): Promise<{ error: string | null; id?: string }> => {
   const supabase = requireClient();
+  const isCreate = !log.id;
   const id = log.id ?? crypto.randomUUID();
   const now = new Date().toISOString();
   const { error } = await auditedWrite({
@@ -398,13 +424,13 @@ export const upsertClientNutritionLog = async (
         protein: log.protein ?? null,
         carbs: log.carbs ?? null,
         fat: log.fat ?? null,
-        // meals is a jsonb NOT NULL column defaulting to []; the coach quick-log
-        // sets only the daily totals, so we keep meals as an empty array.
-        meals: [],
         notes: log.notes || null,
-        created_at: now,
         updated_at: now,
         updated_by: coachId,
+        // Create-only fields: on UPDATE these would wipe the trainee's logged
+        // meals (jsonb NOT NULL, defaults to []) and reset the original
+        // created_at, so they are sent only when minting a new row.
+        ...(isCreate && { meals: [], created_at: now }),
       }),
   });
   return error ? { error } : { error: null, id };

@@ -14,6 +14,15 @@ export type SubscriptionStatus = 'active' | 'past_due' | 'canceled';
 /** Server-side role classification (profiles.role) — the SSOT for "who is a coach". */
 export type UserRole = 'coach' | 'trainee';
 
+/**
+ * Client-side ACTIVE VIEW — which shell the user is currently looking at
+ * (coach command-center vs. personal trainee app). Layered on top of UserRole:
+ * the server role governs permissions; the view governs which screens render.
+ * One account can flip between the two (a coach has a personal side; in demo
+ * mode anyone can preview the coach side). Values mirror UserRole intentionally.
+ */
+export type ViewMode = 'coach' | 'trainee';
+
 export interface Profile {
   id: string;
   displayName: string | null;

@@ -20,12 +20,21 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-dom';
+import { PageLoader } from './AppPageLoader';
+import {
+  getActivityLevelFromOnboarding,
+  getWeightGoalFromOnboarding,
+  saveOnboardingData,
+  savePartialOnboardingData,
+} from './appOnboarding';
+import { getPageAccent, getPageLabel } from './appPathMeta';
 import { AgeGate } from './components/consent/AgeGate';
 import { ConsentGate } from './components/consent/ConsentGate';
 import { WelcomeGuideSheet } from './components/guidance/WelcomeGuideSheet';
 import BottomNav from './components/ui/BottomNav';
 import { ToastContainer } from './components/ui/GlobalToast';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
+import { ViewModeBar } from './components/ui/ViewModeBar';
 import { WorkoutProvider } from './components/workout/core';
 import { AgeGateProvider } from './contexts/AgeGateContext';
 import { useAuth } from './contexts/AuthContext';
@@ -36,14 +45,6 @@ import { GuidanceProvider } from './contexts/GuidanceContext';
 import { PageThemeProvider } from './contexts/PageThemeContext';
 import { PageErrorBoundary } from './errors/PageErrorBoundary';
 import { useCloudDataReflection } from './hooks/useCloudDataReflection';
-import {
-  getActivityLevelFromOnboarding,
-  getWeightGoalFromOnboarding,
-  saveOnboardingData,
-  savePartialOnboardingData,
-} from './appOnboarding';
-import { PageLoader } from './AppPageLoader';
-import { getPageAccent, getPageLabel } from './appPathMeta';
 import type { OnboardingData } from './pages/OnboardingFlow';
 import { enableCoachMode } from './services/coach';
 import { trackPageView } from './services/eventTracker';
@@ -259,34 +260,34 @@ export function AppRouter() {
 }
 
 // ============================================================================
-// Role guards (UX-only — Supabase RLS is the real authorization boundary).
-// Every user is classified server-side (profiles.role) as a coach OR a
-// trainee. CoachGuard keeps non-coaches out of /coach/*; TraineeGuard keeps
-// coaches out of trainee-only surfaces (/my-coach*, /join) — a coach has no
-// coach of their own. Guests (local-only, no cloud identity) are trainees.
-// RoleHome makes "/" land each role on its own home: coach → /coach command
-// center, trainee → personal Dashboard. Coaches reach their own personal
-// training surfaces via /me ("האימונים שלי"), which never redirects.
+// View guards (UX-only — Supabase RLS is the real authorization boundary).
+// These key off the ACTIVE VIEW (`isCoachView`), not the server role, so the
+// top mode bar can flip the whole shell: CoachGuard keeps the trainee view out
+// of /coach/*; TraineeGuard keeps the coach view out of trainee-only surfaces
+// (/my-coach*, /join). RoleHome makes "/" land each view on its own home: coach
+// view → /coach command center, trainee view → personal Dashboard. A coach in
+// trainee view sees their own personal training; /me ("האימונים שלי") also
+// reaches it directly and never redirects.
 // ============================================================================
 
 function CoachGuard({ children }: { children: ReactNode }) {
-  const { isCoach, loading } = useCoach();
+  const { isCoachView, loading } = useCoach();
   if (loading) return <PageLoader />;
-  if (!isCoach) return <Navigate to="/" replace />;
+  if (!isCoachView) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
 function TraineeGuard({ children }: { children: ReactNode }) {
-  const { isCoach, loading } = useCoach();
+  const { isCoachView, loading } = useCoach();
   if (loading) return <PageLoader />;
-  if (isCoach) return <Navigate to="/coach" replace />;
+  if (isCoachView) return <Navigate to="/coach" replace />;
   return <>{children}</>;
 }
 
 function RoleHome() {
-  const { isCoach, loading } = useCoach();
+  const { isCoachView, loading } = useCoach();
   if (loading) return <PageLoader />;
-  if (isCoach) return <Navigate to="/coach" replace />;
+  if (isCoachView) return <Navigate to="/coach" replace />;
   return (
     <PageErrorBoundary pageLabel="הדשבורד">
       <Dashboard />
@@ -678,6 +679,10 @@ function AppShell() {
               <div className="sr-only" aria-live="polite" aria-atomic="true">
                 {liveAnnouncement}
               </div>
+              {/* App-level mode switch (מתאמן ⟷ מאמן). Self-hides when the user
+                  can't switch and during an active workout. Sits above <main>
+                  as a flex sibling, so it stays pinned while content scrolls. */}
+              {!isWorkoutActive && <ViewModeBar />}
               {/* Scroll/focus container — IS the <main> landmark. Pages that
                 previously rendered their own <main> now use <div> to avoid
                 nested-main invalid HTML (Dashboard, coach/_shared). */}

@@ -34,6 +34,7 @@ export default function CoachGroups() {
   } = useAsyncData<ClientGroup[]>(() => listGroups(), []);
   const { data: clients } = useAsyncData<CoachClient[]>(() => listClients('active'), []);
   const [name, setName] = useState('');
+  const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<ClientGroup | null>(null);
   const [memberCounts, setMemberCounts] = useState<Map<string, number>>(new Map());
 
@@ -49,10 +50,18 @@ export default function CoachGroups() {
   };
 
   const create = async () => {
-    if (!name.trim()) return;
-    await createGroup(name);
-    setName('');
-    reload();
+    if (!name.trim() || creating) return;
+    setCreating(true);
+    try {
+      await createGroup(name);
+      setName('');
+      reload();
+      showToast('הקבוצה נוצרה', 'success');
+    } catch {
+      showToast('יצירת הקבוצה נכשלה', 'error');
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -64,10 +73,21 @@ export default function CoachGroups() {
               label="שם הקבוצה"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void create();
+                }
+              }}
               placeholder="למשל: מתאמני בוקר"
             />
           </div>
-          <Button variant="primary" onClick={create}>
+          <Button
+            variant="primary"
+            isLoading={creating}
+            disabled={!name.trim()}
+            onClick={create}
+          >
             צור
           </Button>
         </div>

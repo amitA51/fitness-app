@@ -49,6 +49,12 @@ export const createInvite = async (email?: string): Promise<CoachInvite> => {
       .select('*')
       .single();
     if (!error && data) return toInvite(data);
+    // Server-side seat enforcement (trg_enforce_invite_seat_limit): a full
+    // coach may not mint new pending codes. Surface a typed error the UI maps
+    // to a specific message instead of the generic create-failure toast.
+    if (error?.message?.includes('invite_seat_limit_reached')) {
+      throw new Error('seat_limit');
+    }
     if (error && error.code !== '23505') throw error; // 23505 = unique_violation
   }
   throw new Error('could_not_generate_invite_code');
@@ -84,6 +90,9 @@ export interface AcceptResult {
     | 'seat_limit'
     | 'already'
     | 'offline'
+    | 'server'
+    | 'rate_limited'
+    | 'unauthenticated'
     | 'unknown'
     | 'coaches_cannot_join';
   coachId?: string;
@@ -98,12 +107,21 @@ export const acceptInvite = async (code: string): Promise<AcceptResult> => {
   const normalized = code.trim().toUpperCase();
   if (!normalized) return { ok: false, error: 'invalid' };
 
+  // Offline guard before the round-trip so a known-offline accept doesn't
+  // collapse into the misleading 'קוד לא תקין'.
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return { ok: false, error: 'offline' };
+  }
+
   const { data, error } = await supabase.functions.invoke('coach-invite-accept', {
     body: { code: normalized },
   });
   if (error) {
     logger.db.error('acceptInvite failed', error);
-    return { ok: false, error: 'unknown' };
+    // A transport-level failure (network drop / non-2xx) is NOT an invalid code:
+    // map it to 'offline' when the connection is gone, otherwise 'server'.
+    const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    return { ok: false, error: isOffline ? 'offline' : 'server' };
   }
   const res = data as AcceptResult;
   return res?.ok

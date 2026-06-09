@@ -125,7 +125,7 @@ export default function LegalDocPage({ doc }: LegalDocPageProps) {
             className="mb-5"
             style={{
               background: 'var(--fs-surface-2)',
-              border: '1px solid var(--fs-warning, var(--fs-accent))',
+              border: '1px solid var(--fs-warn)',
               borderRadius: 'var(--radius-asymmetric)',
               padding: '12px 16px',
             }}

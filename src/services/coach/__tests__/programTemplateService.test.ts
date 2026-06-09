@@ -185,11 +185,12 @@ describe('saveProgramTemplate — insert', () => {
     expect(insertPayload.name).toBe('Full Body');
   });
 
-  it('throws on Supabase insert error', async () => {
+  it('throws a stable Hebrew error (never leaks the raw DB message) on Supabase insert error', async () => {
     mocks.mockSingle.mockResolvedValue({ data: null, error: { message: 'insert failed' } });
 
+    // The raw Supabase message stays in the logs; the UI-facing throw is Hebrew.
     await expect(saveProgramTemplate({ name: 'My Program', days: [sampleDay] })).rejects.toThrow(
-      'insert failed'
+      'שמירת התבנית נכשלה'
     );
   });
 });

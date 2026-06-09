@@ -3,6 +3,8 @@
 // Fresh Steel / Obsidian design system
 // ============================================================================
 
+import { X } from 'lucide-react';
+import type React from 'react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EmptyState from '../../components/ui/EmptyState';
@@ -41,6 +43,7 @@ function UnreadPill({ count }: { count: number }) {
         fontFamily: 'var(--font-mono)',
         fontSize: 10,
         fontWeight: 700,
+        fontVariantNumeric: 'tabular-nums',
         borderRadius: 999,
         lineHeight: 1,
         flexShrink: 0,
@@ -82,6 +85,64 @@ function PreviewMeta({ body, at }: { body: string | null; at: string | null }) {
 }
 
 // ---------------------------------------------------------------------------
+// Shared name-search — DRY between the personal and groups panels.
+// ---------------------------------------------------------------------------
+
+/** Case-insensitive substring match of `name` against a trimmed query. */
+function matchesQuery(name: string, query: string): boolean {
+  return name.toLowerCase().includes(query.trim().toLowerCase());
+}
+
+function ThreadSearch({
+  value,
+  onChange,
+  placeholder,
+  ariaLabel,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  ariaLabel: string;
+}) {
+  return (
+    <div style={{ position: 'relative', marginBottom: 12 }}>
+      <Input
+        type="text"
+        dir="rtl"
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={ariaLabel}
+      />
+      {value && (
+        <button
+          type="button"
+          aria-label="ניקוי החיפוש"
+          onClick={() => onChange('')}
+          style={{
+            position: 'absolute',
+            insetInlineEnd: 8,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 28,
+            height: 28,
+            background: 'none',
+            border: 'none',
+            color: 'var(--fs-muted)',
+            cursor: 'pointer',
+          }}
+        >
+          <X size={16} aria-hidden="true" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Tab bar
 // ---------------------------------------------------------------------------
 
@@ -90,7 +151,20 @@ type Tab = 'personal' | 'groups';
 const TAB_LABELS: Record<Tab, string> = { personal: 'אישי', groups: 'קבוצות' };
 const TABS: Tab[] = ['personal', 'groups'];
 
+const tabId = (t: Tab) => `coach-msgs-tab-${t}`;
+const panelId = (t: Tab) => `coach-msgs-panel-${t}`;
+
 function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
+  // Roving tabindex + ArrowLeft/Right per the WAI tabs pattern. In this RTL
+  // layout ArrowLeft moves to the NEXT tab and ArrowRight to the previous.
+  const onKeyDown = (e: React.KeyboardEvent, index: number) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const delta = e.key === 'ArrowLeft' ? 1 : -1;
+    const next = TABS[(index + delta + TABS.length) % TABS.length];
+    if (next) onChange(next);
+  };
+
   return (
     <div
       role="tablist"
@@ -102,15 +176,19 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
         borderBottom: '2px solid var(--fs-surface-2)',
       }}
     >
-      {TABS.map((tab) => {
+      {TABS.map((tab, index) => {
         const isActive = tab === active;
         return (
           <button
             key={tab}
+            id={tabId(tab)}
             role="tab"
             type="button"
             aria-selected={isActive}
+            aria-controls={panelId(tab)}
+            tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(tab)}
+            onKeyDown={(e) => onKeyDown(e, index)}
             style={{
               flex: 1,
               minHeight: 44,
@@ -151,26 +229,29 @@ function PersonalPanel() {
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
-    if (!search) return threads;
-    const q = search.toLowerCase();
-    return threads.filter((t) => t.displayName.toLowerCase().includes(q));
+    if (!search.trim()) return threads;
+    return threads.filter((t) => matchesQuery(t.displayName, search));
   }, [threads, search]);
 
   if (loading) return <ListSkeleton rows={4} />;
   if (error) return <SectionError onRetry={reload} />;
 
+  const hasQuery = search.trim().length > 0;
+
   return (
     <>
       {threads.length > 0 && (
-        <div style={{ marginBottom: 12 }}>
-          <Input
-            type="text"
-            dir="rtl"
-            placeholder="חיפוש לפי שם…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="חיפוש שיחה לפי שם מתאמן"
-          />
+        <ThreadSearch
+          value={search}
+          onChange={setSearch}
+          placeholder="חיפוש לפי שם…"
+          ariaLabel="חיפוש שיחה לפי שם מתאמן"
+        />
+      )}
+      {/* Announce the filtered result count to assistive tech while searching. */}
+      {hasQuery && (
+        <div role="status" aria-live="polite" className="sr-only">
+          {`נמצאו ${filtered.length} שיחות`}
         </div>
       )}
       {threads.length === 0 ? (
@@ -205,6 +286,12 @@ function GroupsPanel() {
 
   const loader = useMemo(() => () => listGroupThreads('coach'), []);
   const { data: groups, loading, error, reload } = useAsyncData<GroupThreadSummary[]>(loader, []);
+  const [search, setSearch] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return groups;
+    return groups.filter((g) => matchesQuery(g.name, search));
+  }, [groups, search]);
 
   if (loading) return <ListSkeleton rows={4} />;
   if (error) return <SectionError onRetry={reload} />;
@@ -219,17 +306,35 @@ function GroupsPanel() {
     );
   }
 
+  const hasQuery = search.trim().length > 0;
+
   return (
     <>
-      {groups.map((g) => (
-        <ListRow
-          key={g.groupId}
-          label={g.name}
-          metaNode={<PreviewMeta body={g.lastBody} at={g.lastAt} />}
-          onClick={() => navigate(`/coach/groups/${g.groupId}/chat`)}
-          trailing={<UnreadPill count={g.unread} />}
-        />
-      ))}
+      <ThreadSearch
+        value={search}
+        onChange={setSearch}
+        placeholder="חיפוש לפי שם קבוצה…"
+        ariaLabel="חיפוש קבוצה לפי שם"
+      />
+      {/* Announce the filtered result count to assistive tech while searching. */}
+      {hasQuery && (
+        <div role="status" aria-live="polite" className="sr-only">
+          {`נמצאו ${filtered.length} שיחות`}
+        </div>
+      )}
+      {filtered.length === 0 ? (
+        <EmptyState illustration="search" size="small" title="אין קבוצות תואמות לחיפוש" />
+      ) : (
+        filtered.map((g) => (
+          <ListRow
+            key={g.groupId}
+            label={g.name}
+            metaNode={<PreviewMeta body={g.lastBody} at={g.lastAt} />}
+            onClick={() => navigate(`/coach/groups/${g.groupId}/chat`)}
+            trailing={<UnreadPill count={g.unread} />}
+          />
+        ))
+      )}
     </>
   );
 }
@@ -244,7 +349,7 @@ export default function CoachMessages() {
   return (
     <CoachPage title="הודעות" subtitle="Messages">
       <TabBar active={tab} onChange={setTab} />
-      <div role="tabpanel" aria-label={TAB_LABELS[tab]}>
+      <div id={panelId(tab)} role="tabpanel" aria-labelledby={tabId(tab)} tabIndex={0}>
         {tab === 'personal' ? <PersonalPanel /> : <GroupsPanel />}
       </div>
     </CoachPage>
