@@ -6,7 +6,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { DUR, gsap, useGSAP } from '@/lib/gsap';
 import { fireSparks } from '@/lib/gsapSparks';
 import { AnimatePresence, m } from 'framer-motion';
-import { CheckCircle as CheckCircleIcon } from 'lucide-react';
+import { CheckCircle as CheckCircleIcon, Trophy } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { HABIT_HAPTIC_PATTERNS } from '../../hooks/useHaptics';
 import { calculateStreak } from '../../services/achievementService';
@@ -381,7 +381,12 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   // have staggered in, for any celebratory moment (PR, first-ever session, or a
   // streak milestone crossing). Upward fan (240-300°) is vertically symmetric,
   // so RTL-neutral. Reduced motion / nothing to celebrate: skipped.
-  const hasCelebration = prsCount > 0 || isFirstSession || streakMilestone !== null;
+  //
+  // A TRUE PR (prsCount > 0) is the one place lime celebration is earned: the
+  // burst recolors to --fs-signal (lime). First-session / streak crossings keep
+  // the default mint-family palette — lime stays exclusive to the PR moment.
+  const isPrCelebration = prsCount > 0;
+  const hasCelebration = isPrCelebration || isFirstSession || streakMilestone !== null;
   useGSAP(
     () => {
       if (reduced || !isOpen || !hasCelebration) return;
@@ -396,9 +401,17 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         originX = hr.left - cr.left + hr.width / 2;
         originY = hr.top - cr.top + hr.height / 2;
       }
+      // Resolve the lime token at runtime (no hardcoded hex) so the burst stays
+      // on-brand in both modes. Only the PR moment gets the lime palette.
+      let prColors: string[] | undefined;
+      if (isPrCelebration) {
+        const signal = getComputedStyle(cont).getPropertyValue('--fs-signal').trim();
+        if (signal) prColors = [signal, '#F5F1EB', signal];
+      }
       gsap.delayedCall(SPARKS_DELAY, () => {
         fireSparks(cont, {
           count: 18,
+          ...(prColors ? { colors: prColors } : {}),
           originX,
           originY,
           angleMin: 240,
@@ -410,7 +423,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         });
       });
     },
-    { scope: rootRef, dependencies: [isOpen, hasCelebration, reduced] }
+    { scope: rootRef, dependencies: [isOpen, hasCelebration, isPrCelebration, reduced] }
   );
 
   return (
@@ -500,6 +513,33 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 'אימון הושלם'
               )}
             </h2>
+
+            {/* Reduced-motion fallback for the earned-PR celebration: the lime
+                spark burst is suppressed under prefers-reduced-motion, so a
+                static lime (--fs-signal) badge stands in. Lime here is correct —
+                this is the PR celebration moment. */}
+            {prsCount > 0 && reduced && (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  marginTop: 12,
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  background: 'var(--fs-signal)',
+                  color: 'var(--fs-primary)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                <Trophy size={13} strokeWidth={2.5} aria-hidden="true" />
+                שיא חדש
+              </div>
+            )}
 
             {/* Subtitle */}
             <p
