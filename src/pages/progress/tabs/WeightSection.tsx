@@ -10,6 +10,7 @@ import { memo, useMemo } from 'react';
 import type { GlowAreaPoint } from '../../../components/charts';
 import type { BodyWeightEntry, WeightTrend } from '../../../services/bodyStatsService';
 import { zoneColor } from '../../../utils/zoneColor';
+import { ChartSummary } from '../components/ChartSummary';
 import { SectionCard } from '../components/SectionCard';
 import { TrendChartCard } from '../components/TrendChartCard';
 
@@ -75,30 +76,75 @@ export const WeightSection = memo(function WeightSection({
           >
             משקל נוכחי · CURRENT
           </div>
+          {/* Hero weight paired with a secondary "change this week" stat so the
+              number reads in context rather than alone. */}
           <div
             style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: 48,
-              color: 'var(--fs-ink)',
-              lineHeight: 0.9,
+              display: 'flex',
+              alignItems: 'flex-end',
+              justifyContent: 'space-between',
+              gap: 16,
               marginTop: 4,
-              direction: 'ltr',
-              textAlign: 'start',
             }}
           >
-            {latestWeight.weight}
-          </div>
-          <div
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              color: 'var(--fs-muted)',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-            }}
-          >
-            KG
+            <div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: 48,
+                  color: 'var(--fs-ink)',
+                  lineHeight: 0.9,
+                  direction: 'ltr',
+                  textAlign: 'start',
+                }}
+              >
+                {latestWeight.weight}
+              </div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  color: 'var(--fs-muted)',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                KG
+              </div>
+            </div>
+            {weightTrend && (
+              <div style={{ textAlign: 'end' }}>
+                <div
+                  className="kinetic-number"
+                  dir="ltr"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 800,
+                    fontSize: 18,
+                    lineHeight: 1,
+                    // Weight change is directional, not "good/bad" — keep it neutral
+                    // ink (a goal can be either way). Lime stays reserved for PRs.
+                    color: 'var(--fs-ink)',
+                  }}
+                >
+                  {weightTrend.change > 0 ? '+' : ''}
+                  {weightTrend.change}
+                </div>
+                <div
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    color: 'var(--fs-muted)',
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    marginTop: 4,
+                  }}
+                >
+                  {`שינוי · ${weightTrend.direction}`}
+                </div>
+              </div>
+            )}
           </div>
           {bmiCategory && (
             <div
@@ -141,39 +187,48 @@ export const WeightSection = memo(function WeightSection({
         </SectionCard>
       )}
 
-      {/* Trend data strip */}
+      {/* Trend data strip — the change-this-week stat now lives in the hero
+          (item: pair the big number with a secondary stat), so this strip shows
+          the complementary context: weekly average + the trailing window. */}
       {weightTrend && (
         <div className="data-strip">
           <div>
-            <div
-              className="val"
-              style={{
-                color: weightTrend.direction === 'ירידה' ? 'var(--fs-primary)' : 'var(--fs-ink)',
-              }}
-            >
-              {weightTrend.change > 0 ? '+' : ''}
-              {weightTrend.change}
+            <div className="val" style={{ direction: 'ltr', textAlign: 'start' }}>
+              {weightTrend.weeklyAvg}
               <em>KG</em>
             </div>
             <div className="lbl flex items-center gap-1.5">
               {weightTrend.direction === 'עלייה' && <TrendingUp size={11} aria-hidden="true" />}
               {weightTrend.direction === 'ירידה' && <TrendingDown size={11} aria-hidden="true" />}
               {weightTrend.direction === 'יציב' && <Minus size={11} aria-hidden="true" />}
-              {weightTrend.direction}
+              ממוצע שבועי
             </div>
           </div>
           <div>
-            <div className="val">
+            <div className="val" style={{ direction: 'ltr', textAlign: 'start' }}>
               30<em>D</em>
             </div>
-            <div className="lbl">TRAILING WINDOW</div>
+            <div className="lbl">חלון מעקב</div>
           </div>
         </div>
       )}
 
-      {/* Converged trend chart */}
+      {/* Converged trend chart — summary-first so the trend leads with meaning. */}
       {trendPoints.length >= 3 && (
-        <TrendChartCard title="מגמת משקל" data={trendPoints} ariaLabel="מגמת משקל הגוף לאורך זמן" />
+        <div>
+          <ChartSummary kicker={`מגמת משקל · ${trendPoints.length} מדידות`}>
+            {weightTrend
+              ? weightTrend.direction === 'יציב'
+                ? 'המשקל יציב לאורך התקופה האחרונה.'
+                : `המשקל במגמת ${weightTrend.direction} לאורך התקופה האחרונה.`
+              : 'מעקב אחר מגמת המשקל לאורך זמן.'}
+          </ChartSummary>
+          <TrendChartCard
+            title="מגמת משקל"
+            data={trendPoints}
+            ariaLabel="מגמת משקל הגוף לאורך זמן"
+          />
+        </div>
       )}
 
       {/* Add weight action */}

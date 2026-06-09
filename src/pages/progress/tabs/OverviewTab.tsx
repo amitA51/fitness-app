@@ -1,13 +1,26 @@
 import { Flame, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConsistencyScore } from '../../../components/insights/ConsistencyScore';
 import { MuscleBalanceInsight } from '../../../components/insights/MuscleBalanceInsight';
 import { MuscleDistribution } from '../../../components/insights/MuscleDistribution';
+import { VerdictLine, VerdictNumber } from '../../../components/insights/VerdictLine';
+import { HeroStat } from '../../../components/ui/HeroStat';
+import { useCountUp } from '../../../hooks/useCountUp';
 import { useWorkoutStreak } from '../../../hooks/useWorkoutStreak';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
 import { formatVolume } from '../../../utils/dateUtils';
-import { buildPRBoard, recentPRs, summarizeWeeklyVolume } from '../progressMetrics';
+import { zoneColor } from '../../../utils/zoneColor';
+import {
+  buildPRBoard,
+  isRecentPR,
+  recentPRs,
+  type StatDelta,
+  summarizeWeeklyVolume,
+  weeklyCountDelta,
+  weeklyVolumeDelta,
+  weekVerdict,
+} from '../progressMetrics';
 
 const cardStyle: React.CSSProperties = {
   background: 'var(--fs-surface)',
@@ -32,23 +45,60 @@ const railStyle: React.CSSProperties = {
   borderEndStartRadius: '16px',
 };
 
-const labelStyle: React.CSSProperties = {
-  fontFamily: 'var(--font-mono)',
-  fontSize: 8,
-  letterSpacing: '0.12em',
-  color: 'var(--fs-muted)',
-  marginTop: 4,
-  textTransform: 'uppercase',
-};
+// First-reveal count-up tween whose tweened text is written to its own node.
+// Style-less so it inherits the surrounding HeroStat number treatment; the hook
+// snaps to the final value under prefers-reduced-motion. Used as a HeroStat value.
+function CountUpValue({
+  value,
+  delay = 0,
+  format,
+}: {
+  value: number;
+  delay?: number;
+  format?: (v: number) => string;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useCountUp(ref, value, { delay, ...(format ? { format } : {}) });
+  return (
+    <span ref={ref} dir="ltr">
+      {format ? format(value) : value}
+    </span>
+  );
+}
 
-const valueStyle: React.CSSProperties = {
-  fontFamily: 'var(--font-mono)',
-  fontWeight: 800,
-  fontSize: 24,
-  color: 'var(--fs-ink)',
-  lineHeight: 1,
-  fontVariantNumeric: 'tabular-nums',
-};
+// Mono "vs last week" delta chip. Color comes from the zone vocabulary
+// (up=good/accent, down=attention/warn, flat=neutral/muted) — never lime.
+// The chip owns the sign; `format` receives the absolute magnitude.
+function DeltaChip({ delta, format }: { delta: StatDelta; format: (v: number) => string }) {
+  if (!delta.hasPrev) return null;
+  const color = zoneColor(delta.zone);
+  const up = delta.diff > 0;
+  const flat = delta.diff === 0;
+  const sign = flat ? '' : up ? '+' : '−';
+  return (
+    <span
+      className="mt-1 inline-flex items-center gap-1"
+      style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '0.04em',
+        color,
+      }}
+    >
+      {!flat &&
+        (up ? (
+          <TrendingUp size={11} aria-hidden="true" />
+        ) : (
+          <TrendingDown size={11} aria-hidden="true" />
+        ))}
+      <span dir="ltr">
+        {sign}
+        {format(Math.abs(delta.diff))}
+      </span>
+    </span>
+  );
+}
 
 export const OverviewTab = memo(function OverviewTab({
   sessions,
@@ -66,6 +116,10 @@ export const OverviewTab = memo(function OverviewTab({
 
   const board = useMemo(() => buildPRBoard(prs), [prs]);
   const latestPRs = useMemo(() => recentPRs(prs, 2), [prs]);
+
+  const verdict = useMemo(() => weekVerdict(weekly, streak.current), [weekly, streak.current]);
+  const countDelta = useMemo(() => weeklyCountDelta(weekly), [weekly]);
+  const volumeDelta = useMemo(() => weeklyVolumeDelta(weekly), [weekly]);
 
   if (sessions.length === 0) {
     return (
@@ -123,11 +177,18 @@ export const OverviewTab = memo(function OverviewTab({
         </span>
       </div>
 
-      {/* Streak + weekly volume hero */}
+      {/* Verdict line — the week's takeaway leads, with the driving number tinted. */}
+      <VerdictLine kicker="סיכום השבוע">
+        {verdict.lead}
+        <VerdictNumber value={verdict.count} zone={verdict.zone} />
+        {verdict.tail}
+      </VerdictLine>
+
+      {/* Weekly-review card: verdict headline + 3-up hero stats with WoW deltas. */}
       <div style={cardStyle}>
         <div aria-hidden="true" style={railStyle} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-          <Flame size={16} style={{ color: 'var(--fs-accent)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <Flame size={16} style={{ color: zoneColor(verdict.zone) }} aria-hidden="true" />
           <span
             style={{
               fontFamily: 'var(--font-mono)',
@@ -140,41 +201,42 @@ export const OverviewTab = memo(function OverviewTab({
             השבוע האחרון
           </span>
         </div>
+
+        <p
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 20,
+            letterSpacing: '-0.01em',
+            lineHeight: 1.2,
+            color: 'var(--fs-ink)',
+            margin: '0 0 14px',
+          }}
+        >
+          {verdict.headline}
+        </p>
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          <div>
-            <div style={valueStyle}>{streak.current}</div>
-            <div style={labelStyle}>רצף ימים</div>
+          <div style={{ minWidth: 0 }}>
+            <HeroStat value={<CountUpValue value={weekly.count} />} label="אימונים" size={30} />
+            <DeltaChip delta={countDelta} format={String} />
           </div>
-          <div>
-            <div style={valueStyle}>{weekly.count}</div>
-            <div style={labelStyle}>אימונים</div>
+          <div style={{ minWidth: 0 }}>
+            <HeroStat
+              value={<CountUpValue value={weekly.volume} delay={0.06} format={formatVolume} />}
+              label='נפח (ק"ג)'
+              size={30}
+            />
+            <DeltaChip delta={volumeDelta} format={formatVolume} />
           </div>
-          <div>
-            <div style={valueStyle}>{formatVolume(weekly.volume)}</div>
-            <div style={labelStyle}>נפח (ק"ג)</div>
+          <div style={{ minWidth: 0 }}>
+            <HeroStat
+              value={<CountUpValue value={streak.current} delay={0.12} />}
+              label="רצף ימים"
+              size={30}
+            />
           </div>
         </div>
-
-        {/* Week-over-week volume delta */}
-        {weekly.changePct !== null && (
-          <div
-            className="mt-4 inline-flex items-center gap-1.5"
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              background: weekly.changePct >= 0 ? 'var(--fs-signal)' : 'var(--fs-surface-2)',
-              color: weekly.changePct >= 0 ? 'var(--fs-primary)' : 'var(--fs-ink)',
-              padding: '4px 10px',
-              borderRadius: 8,
-            }}
-          >
-            {weekly.changePct >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-            {weekly.changePct > 0 ? '+' : ''}
-            {weekly.changePct}% מול שבוע קודם
-          </div>
-        )}
       </div>
 
       {/* Recent PRs — pulled from the same prService source as the Strength board */}
@@ -198,6 +260,7 @@ export const OverviewTab = memo(function OverviewTab({
           <div style={{ display: 'grid', gap: 6 }}>
             {latestPRs.map((pr) => {
               const boardEntry = board.find((b) => b.exerciseName === pr.exerciseName);
+              const fresh = isRecentPR(pr);
               return (
                 <div
                   key={pr.id}
@@ -205,32 +268,63 @@ export const OverviewTab = memo(function OverviewTab({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '8px 12px',
+                    gap: 12,
+                    padding: '10px 12px',
                     background: 'var(--fs-surface-2)',
                     borderRadius: 10,
+                    // Trailing-edge accent: in RTL the visual trailing edge is the
+                    // inline-end (left). Anchors the row without a full rail.
+                    borderInlineEnd: '2px solid var(--fs-accent)',
                   }}
                 >
+                  {/* Exercise name demoted: small, medium weight, muted. */}
                   <span
                     style={{
                       fontFamily: 'var(--font-hebrew)',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: 'var(--fs-ink)',
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: 'var(--fs-muted)',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
+                      minWidth: 0,
                     }}
                   >
                     {pr.exerciseName.split('|')[0]?.trim() || pr.exerciseName}
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexShrink: 0 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: 5,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {/* Lime dot ONLY when the PR was earned recently (celebration). */}
+                    {fresh && (
+                      <span
+                        aria-label="שיא חדש"
+                        style={{
+                          alignSelf: 'center',
+                          width: 7,
+                          height: 7,
+                          borderRadius: '50%',
+                          background: 'var(--fs-signal)',
+                          marginInlineEnd: 2,
+                        }}
+                      />
+                    )}
+                    {/* Weight is the anchor — hero-like display number, LTR. */}
                     <span
+                      className="kinetic-number"
+                      dir="ltr"
                       style={{
                         fontFamily: 'var(--font-display)',
-                        fontWeight: 800,
-                        fontSize: 16,
+                        fontWeight: 900,
+                        fontSize: 22,
+                        lineHeight: 1,
+                        letterSpacing: '-0.02em',
                         color: 'var(--fs-ink)',
-                        direction: 'ltr',
                       }}
                     >
                       {pr.weight}

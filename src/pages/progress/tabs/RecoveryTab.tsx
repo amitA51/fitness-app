@@ -1,12 +1,42 @@
 import { m } from 'framer-motion';
 import { Activity, Battery, Dumbbell, Heart, Moon, Plus, Wind } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useRef } from 'react';
+import { VerdictLine, VerdictNumber } from '../../../components/insights/VerdictLine';
+import { useCountUp } from '../../../hooks/useCountUp';
 import { getLegacyRecoveryScore } from '../../../services/bodyStatsService';
 import type { RecoveryLog } from '../../../services/bodyStatsService';
+import { type Zone, zoneColor } from '../../../utils/zoneColor';
 import { ChapterBreak } from '../components/ChapterBreak';
 import { RecoveryBar } from '../components/RecoveryBar';
 import { SectionCard } from '../components/SectionCard';
 import type { WeeklyRecoveryAverage } from '../types';
+
+// Count-up for the recovery score, synced to the SVG ring draw (1.2s ease-out).
+// Style-less: inherits the surrounding number treatment; snaps under reduced motion.
+function ScoreCountUp({ value, color }: { value: number; color: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useCountUp(ref, value, { duration: 1.2 });
+  return (
+    <div
+      ref={ref}
+      className="text-3xl font-black leading-none kinetic-number"
+      dir="ltr"
+      style={{ color }}
+    >
+      {value}
+    </div>
+  );
+}
+
+// 0–100 recovery score → zone for a plain-Hebrew, gender-safe takeaway.
+const recoveryZone = (score: number): Zone =>
+  score >= 70 ? 'good' : score >= 45 ? 'neutral' : 'attention';
+
+const recoveryTakeaway = (score: number): string => {
+  if (score >= 70) return ' — הגוף מוכן לאימון אינטנסיבי.';
+  if (score >= 45) return ' — אפשר להתאמן, אך כדאי לשמור על עומס מתון.';
+  return ' — שווה לתת לגוף עוד יום מנוחה לפני אימון כבד.';
+};
 
 export const RecoveryTab = memo(function RecoveryTab({
   todayRecovery,
@@ -29,6 +59,15 @@ export const RecoveryTab = memo(function RecoveryTab({
   return (
     <div className="space-y-4">
       <ChapterBreak title="ריקאברי" />
+
+      {/* Verdict line — recovery readiness leads, score tinted by its zone. */}
+      {recoveryScore && (
+        <VerdictLine kicker="מצב היום">
+          ציון הריקאברי שלך עומד על{' '}
+          <VerdictNumber value={recoveryScore.score} zone={recoveryZone(recoveryScore.score)} />
+          {recoveryTakeaway(recoveryScore.score)}
+        </VerdictLine>
+      )}
 
       {/* Recovery score */}
       <SectionCard style={{ padding: 20 }}>
@@ -73,9 +112,7 @@ export const RecoveryTab = memo(function RecoveryTab({
                   style={{ backgroundColor: `${scoreColor}18` }}
                 />
                 <div className="relative z-10 text-center">
-                  <div className="text-3xl font-black leading-none" style={{ color: scoreColor }}>
-                    {recoveryScore.score}
-                  </div>
+                  <ScoreCountUp value={recoveryScore.score} color={scoreColor} />
                   <div className="text-[11px] mt-1 font-mono" style={{ color: 'var(--fs-muted)' }}>
                     {recoveryScore.label}
                   </div>
@@ -193,10 +230,17 @@ export const RecoveryTab = memo(function RecoveryTab({
             <Activity size={14} />
             ממוצע שבועי
           </h3>
-          <div className="data-strip">
+          {/* 2×2 strip (CSS .data-strip), value-as-anchor. Icon colors are
+              semantic: sleep=accent, soreness=warn, energy/stress=neutral —
+              never lime (--fs-signal is PR-celebration only). On very narrow
+              screens it collapses to a single readable column. */}
+          <div
+            className="data-strip"
+            style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))' }}
+          >
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Moon size={12} style={{ color: 'var(--fs-heading)' }} />
+                <Moon size={12} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
                 <span className="eyebrow">SLEEP</span>
               </div>
               <div className="val">
@@ -207,7 +251,7 @@ export const RecoveryTab = memo(function RecoveryTab({
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Battery size={12} style={{ color: 'var(--fs-heading)' }} />
+                <Battery size={12} style={{ color: zoneColor('neutral') }} aria-hidden="true" />
                 <span className="eyebrow">ENERGY</span>
               </div>
               <div className="val">
@@ -218,7 +262,7 @@ export const RecoveryTab = memo(function RecoveryTab({
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Dumbbell size={12} style={{ color: 'var(--fs-heading)' }} />
+                <Dumbbell size={12} style={{ color: 'var(--fs-warn)' }} aria-hidden="true" />
                 <span className="eyebrow">SORENESS</span>
               </div>
               <div className="val">
@@ -229,7 +273,7 @@ export const RecoveryTab = memo(function RecoveryTab({
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Wind size={12} style={{ color: 'var(--fs-heading)' }} />
+                <Wind size={12} style={{ color: zoneColor('neutral') }} aria-hidden="true" />
                 <span className="eyebrow">STRESS</span>
               </div>
               <div className="val">

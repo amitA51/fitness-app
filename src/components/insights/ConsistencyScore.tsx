@@ -72,6 +72,20 @@ export const ConsistencyScore = memo(function ConsistencyScore({
       className="magnetic-card glass-surface fs-accent-rail"
       style={{ padding: '16px 18px' }}
     >
+      {/* Identity strip — distinguishes this card from its siblings
+          (MuscleDistribution / MuscleBalanceInsight) while keeping them a family.
+          Sharp 0 radius, accent for consistency. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          insetInline: 0,
+          top: 0,
+          height: 3,
+          borderRadius: 0,
+          background: 'var(--fs-accent)',
+        }}
+      />
       {/* Top row: consistency percentage + label */}
       <div
         style={{

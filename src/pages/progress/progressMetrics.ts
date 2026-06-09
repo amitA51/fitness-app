@@ -7,6 +7,7 @@
 
 import type { PersonalRecord, WorkoutSession } from '../../types';
 import { oneRepMax, setVolume } from '../../utils/workoutMath';
+import type { Zone } from '../../utils/zoneColor';
 import type { ExerciseStrengthCurve, StrengthDataPoint } from './types';
 
 const DAY_MS = 86400000;
@@ -20,6 +21,8 @@ export interface WeeklyVolumeSummary {
   timeMin: number;
   /** Volume in the previous 7-day window (days 7..14 ago). */
   prevVolume: number;
+  /** Completed-session count in the previous 7-day window (days 7..14 ago). */
+  prevCount: number;
   /** Week-over-week volume change as a whole-number percent, or null when no prior data. */
   changePct: number | null;
 }
@@ -61,6 +64,7 @@ export function summarizeWeeklyVolume(
   let count = 0;
   let durationSec = 0;
   let prevVolume = 0;
+  let prevCount = 0;
 
   for (const s of completedSessions) {
     const t = new Date(s.startTime).getTime();
@@ -71,12 +75,13 @@ export function summarizeWeeklyVolume(
       count += 1;
     } else if (t >= twoWeeksAgo) {
       prevVolume += s.totalVolume || 0;
+      prevCount += 1;
     }
   }
 
   const changePct = prevVolume > 0 ? Math.round(((volume - prevVolume) / prevVolume) * 100) : null;
 
-  return { volume, count, timeMin: Math.round(durationSec / 60), prevVolume, changePct };
+  return { volume, count, timeMin: Math.round(durationSec / 60), prevVolume, prevCount, changePct };
 }
 
 /**
@@ -188,4 +193,113 @@ export function buildStrengthCurves(completedSessions: WorkoutSession[]): Exerci
   }
 
   return result.sort((a, b) => b.data.length - a.data.length);
+}
+
+// ============================================================================
+// Verdict + delta helpers — turn the weekly numbers into a stated "so what".
+// ============================================================================
+
+/** A whole-number delta vs the previous window, with the zone that grades it. */
+export interface StatDelta {
+  /** Signed delta (this window minus previous). */
+  diff: number;
+  /** good when up, attention when down, neutral when flat or no prior data. */
+  zone: Zone;
+  /** True when there was a previous window to compare against. */
+  hasPrev: boolean;
+}
+
+/** Grade a raw "more is better" delta into a zone (up=good, down=attention, flat=neutral). */
+const gradeDelta = (diff: number, hasPrev: boolean): Zone => {
+  if (!hasPrev || diff === 0) return 'neutral';
+  return diff > 0 ? 'good' : 'attention';
+};
+
+/** Week-over-week workout-count delta. */
+export function weeklyCountDelta(weekly: WeeklyVolumeSummary): StatDelta {
+  const hasPrev = weekly.prevCount > 0;
+  const diff = weekly.count - weekly.prevCount;
+  return { diff, zone: gradeDelta(diff, hasPrev), hasPrev };
+}
+
+/** Week-over-week volume delta (absolute kg, not percent). */
+export function weeklyVolumeDelta(weekly: WeeklyVolumeSummary): StatDelta {
+  const hasPrev = weekly.prevVolume > 0;
+  const diff = weekly.volume - weekly.prevVolume;
+  return { diff, zone: gradeDelta(diff, hasPrev), hasPrev };
+}
+
+export interface WeekVerdict {
+  /** The protagonist figure for the verdict line (workout count this week). */
+  count: number;
+  /** Zone that tints the protagonist number. */
+  zone: Zone;
+  /** Short Bricolage headline for the weekly-review card (e.g. "שבוע חזק"). */
+  headline: string;
+  /** Hebrew text BEFORE the inline count number (e.g. "השלמת "). */
+  lead: string;
+  /** Hebrew text AFTER the count number — carries the actual takeaway. */
+  tail: string;
+  /** Full plain-text sentence (lead + count + tail) — used by the verdict line. */
+  sentence: string;
+}
+
+/**
+ * Compose the week's one-line takeaway from the volume summary + current streak.
+ * Pure + deterministic so the Overview verdict line never drifts from the stats.
+ * `lead` / `tail` wrap the inline count so the VerdictLine can tint just the number;
+ * `headline` is a short punchy label for the weekly-review card (distinct copy).
+ */
+export function weekVerdict(weekly: WeeklyVolumeSummary, streakDays: number): WeekVerdict {
+  const { count } = weekly;
+
+  if (count === 0) {
+    const tail = ' אימונים השבוע — אימון אחד מחזיר אותך למסלול.';
+    return {
+      count,
+      zone: 'attention',
+      headline: 'בחזרה למסלול',
+      lead: '',
+      tail,
+      sentence: `0${tail}`,
+    };
+  }
+
+  const noun = count === 1 ? 'אימון' : 'אימונים';
+  const volChange = weekly.changePct;
+  let zone: Zone;
+  let headline: string;
+  let tail: string;
+
+  if (volChange !== null && volChange >= 5) {
+    zone = 'good';
+    headline = 'שבוע חזק';
+    tail = ` ${noun} השבוע, והנפח עלה מול השבוע הקודם — שבוע חזק.`;
+  } else if (volChange !== null && volChange <= -10) {
+    zone = 'attention';
+    headline = 'כדאי להעלות הילוך';
+    tail = ` ${noun} השבוע, אבל הנפח ירד — שווה להעלות עומס באימון הבא.`;
+  } else if (count >= 3) {
+    zone = 'good';
+    headline = 'קצב יציב';
+    tail = ` ${noun} השבוע — קצב יציב ששומר על ההתקדמות.`;
+  } else {
+    zone = 'neutral';
+    headline = 'עוד אימון אחד';
+    tail = ` ${noun} השבוע — עוד אימון אחד יקפיץ את הקצב.`;
+  }
+
+  if (streakDays >= 3) {
+    tail += ` רצף של ${streakDays} ימים פעיל.`;
+  }
+
+  const lead = 'השלמת ';
+  return { count, zone, headline, lead, tail, sentence: `${lead}${count}${tail}` };
+}
+
+/** True when the PR's date falls within the trailing `days` window (default 7). */
+export function isRecentPR(pr: PersonalRecord, days = 7, now: number = Date.now()): boolean {
+  const t = new Date(pr.date).getTime();
+  if (Number.isNaN(t)) return false;
+  return now - t <= days * DAY_MS;
 }

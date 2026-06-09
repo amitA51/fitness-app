@@ -4,9 +4,13 @@ import {
   buildPRBoard,
   buildStrengthCurves,
   buildVolumeTrend,
+  isRecentPR,
   onlyCompleted,
   recentPRs,
   summarizeWeeklyVolume,
+  weeklyCountDelta,
+  weeklyVolumeDelta,
+  weekVerdict,
 } from '../progressMetrics';
 
 // ---------------------------------------------------------------------------
@@ -273,5 +277,98 @@ describe('buildStrengthCurves', () => {
 
     // Assert
     expect(curves).toHaveLength(0);
+  });
+});
+
+describe('summarizeWeeklyVolume — prevCount', () => {
+  it('counts sessions in the prior 7-day window', () => {
+    // Arrange — one this week, two in the prior window
+    const sessions = [
+      mkSession('this', '2026-05-13T10:00:00.000Z', 8000),
+      mkSession('p1', '2026-05-06T10:00:00.000Z', 2000),
+      mkSession('p2', '2026-05-05T10:00:00.000Z', 2000),
+    ];
+
+    // Act
+    const summary = summarizeWeeklyVolume(sessions, NOW);
+
+    // Assert
+    expect(summary.count).toBe(1);
+    expect(summary.prevCount).toBe(2);
+  });
+});
+
+describe('weeklyCountDelta / weeklyVolumeDelta', () => {
+  it('grades an increase as good and a decrease as attention', () => {
+    // Arrange — this week 3 sessions / 8000kg, prev 1 session / 4000kg
+    const sessions = [
+      mkSession('t1', '2026-05-14T10:00:00.000Z', 3000),
+      mkSession('t2', '2026-05-13T10:00:00.000Z', 3000),
+      mkSession('t3', '2026-05-12T10:00:00.000Z', 2000),
+      mkSession('p1', '2026-05-06T10:00:00.000Z', 4000),
+    ];
+    const summary = summarizeWeeklyVolume(sessions, NOW);
+
+    // Act
+    const countDelta = weeklyCountDelta(summary);
+    const volDelta = weeklyVolumeDelta(summary);
+
+    // Assert
+    expect(countDelta.diff).toBe(2);
+    expect(countDelta.zone).toBe('good');
+    expect(volDelta.diff).toBe(4000);
+    expect(volDelta.zone).toBe('good');
+  });
+
+  it('is neutral when there is no prior window', () => {
+    // Arrange
+    const summary = summarizeWeeklyVolume(
+      [mkSession('t1', '2026-05-14T10:00:00.000Z', 3000)],
+      NOW
+    );
+
+    // Act + Assert
+    expect(weeklyCountDelta(summary).hasPrev).toBe(false);
+    expect(weeklyCountDelta(summary).zone).toBe('neutral');
+  });
+});
+
+describe('weekVerdict', () => {
+  it('flags an empty week as attention', () => {
+    // Arrange
+    const summary = summarizeWeeklyVolume([], NOW);
+
+    // Act
+    const verdict = weekVerdict(summary, 0);
+
+    // Assert
+    expect(verdict.count).toBe(0);
+    expect(verdict.zone).toBe('attention');
+  });
+
+  it('reads a rising-volume week as good and mentions an active streak', () => {
+    // Arrange — this week 8000 vs prev 4000 (+100%), 3 sessions
+    const sessions = [
+      mkSession('t1', '2026-05-14T10:00:00.000Z', 3000),
+      mkSession('t2', '2026-05-13T10:00:00.000Z', 3000),
+      mkSession('t3', '2026-05-12T10:00:00.000Z', 2000),
+      mkSession('p1', '2026-05-06T10:00:00.000Z', 4000),
+    ];
+    const summary = summarizeWeeklyVolume(sessions, NOW);
+
+    // Act
+    const verdict = weekVerdict(summary, 4);
+
+    // Assert
+    expect(verdict.zone).toBe('good');
+    expect(verdict.sentence).toContain('4');
+  });
+});
+
+describe('isRecentPR', () => {
+  it('returns true within the window and false outside it', () => {
+    // Arrange + Act + Assert
+    expect(isRecentPR(mkPR('Bench Press', 100, 5, '2026-05-13'), 7, NOW)).toBe(true);
+    expect(isRecentPR(mkPR('Bench Press', 100, 5, '2026-05-01'), 7, NOW)).toBe(false);
   });
 });

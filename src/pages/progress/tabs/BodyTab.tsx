@@ -5,6 +5,7 @@
 // control. Each sub-area keeps all of its original functionality (weight hero +
 // BMI + trend, measurements table + diffs) — only regrouped.
 
+import { Scale } from 'lucide-react';
 import { memo, useState } from 'react';
 import type {
   BodyMeasurement,
@@ -12,6 +13,7 @@ import type {
   WeightTrend,
 } from '../../../services/bodyStatsService';
 import { ChapterBreak } from '../components/ChapterBreak';
+import { emptyStateCardStyle } from '../components/emptyStateCard';
 import { type SegmentOption, SegmentedControl } from '../components/SegmentedControl';
 import type { BodySubTab } from '../types';
 import { MeasurementsSection } from './MeasurementsSection';
@@ -44,6 +46,38 @@ export const BodyTab = memo(function BodyTab({
   onAddMeasurement: () => void;
 }) {
   const [sub, setSub] = useState<BodySubTab>('weight');
+
+  // Composed empty state (parity with Overview/Recovery) when there is no body
+  // data at all — weight nor measurements — rather than two bare sub-sections.
+  const hasNoBodyData =
+    !latestWeight &&
+    weightEntries.length === 0 &&
+    !latestMeasurement &&
+    measurements.length === 0;
+
+  if (hasNoBodyData) {
+    return (
+      <div className="space-y-4">
+        <ChapterBreak title="גוף" />
+        <div style={emptyStateCardStyle}>
+          <div className="flex flex-col items-center py-10 text-center gap-3">
+            <Scale size={32} style={{ color: 'var(--fs-muted)' }} aria-hidden="true" />
+            <p style={{ fontSize: 14, color: 'var(--fs-muted)' }}>
+              עדיין אין נתוני גוף — תיעוד המשקל הראשון יתחיל את המעקב.
+            </p>
+            <button
+              type="button"
+              onClick={onAddWeight}
+              className="btn-primary"
+              style={{ minHeight: 44 }}
+            >
+              הוסף משקל
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

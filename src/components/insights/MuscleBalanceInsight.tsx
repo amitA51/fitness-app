@@ -51,6 +51,19 @@ export const MuscleBalanceInsight = memo(function MuscleBalanceInsight({
       className="magnetic-card glass-surface fs-accent-rail"
       style={{ padding: '16px 18px' }}
     >
+      {/* Identity strip — warn marks the "needs attention" card, distinct from
+          ConsistencyScore (accent) and MuscleDistribution (accent-2). */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          insetInline: 0,
+          top: 0,
+          height: 3,
+          borderRadius: 0,
+          background: 'var(--fs-warn)',
+        }}
+      />
       <div
         style={{
           display: 'flex',

@@ -48,8 +48,10 @@ const computeWeeklyMuscles = (sessions: WorkoutSession[]): MuscleDatum[] => {
     .slice(0, TOP_N);
 };
 
+// Rank fade: lead = accent, runner-up = accent-2, rest = muted. Never lime
+// (--fs-signal is reserved for PR celebration — using it to rank bars is a slop tell).
 const barColor = (i: number): string =>
-  i === 0 ? 'var(--fs-accent)' : i === 1 ? 'var(--fs-accent-2)' : 'var(--fs-signal)';
+  i === 0 ? 'var(--fs-accent)' : i === 1 ? 'var(--fs-accent-2)' : 'var(--fs-muted)';
 
 export const MuscleDistribution = memo(function MuscleDistribution({
   sessions,
@@ -59,6 +61,8 @@ export const MuscleDistribution = memo(function MuscleDistribution({
   if (data.length === 0) return null;
 
   const maxSets = data[0]?.sets || 1;
+  const lead = data[0];
+  const totalSets = data.reduce((sum, d) => sum + d.sets, 0);
 
   return (
     <Card
@@ -68,6 +72,56 @@ export const MuscleDistribution = memo(function MuscleDistribution({
       className="magnetic-card glass-surface fs-accent-rail"
       style={{ padding: '16px 18px' }}
     >
+      {/* Identity strip — accent-2 (teal) sets this card apart from
+          ConsistencyScore (accent) and MuscleBalanceInsight (warn). */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          insetInline: 0,
+          top: 0,
+          height: 3,
+          borderRadius: 0,
+          background: 'var(--fs-accent-2)',
+        }}
+      />
+
+      {/* Summary-first: mono kicker + one-line takeaway so the chart leads with
+          meaning rather than raw bars. Gender-safe phrasing (noun, no verb). */}
+      <span
+        style={{
+          display: 'block',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: '0.16em',
+          textTransform: 'uppercase',
+          color: 'var(--fs-muted)',
+          marginBottom: 4,
+        }}
+      >
+        חלוקת נפח · השבוע
+      </span>
+      {lead && (
+        <p
+          style={{
+            fontSize: 13,
+            lineHeight: 1.5,
+            color: 'var(--fs-ink)',
+            margin: '0 0 12px',
+          }}
+        >
+          <strong style={{ fontWeight: 700 }}>{lead.muscle}</strong> מוביל עם{' '}
+          <span className="kinetic-number" dir="ltr" style={{ fontWeight: 700 }}>
+            {lead.sets}
+          </span>{' '}
+          מתוך{' '}
+          <span className="kinetic-number" dir="ltr" style={{ fontWeight: 700 }}>
+            {totalSets}
+          </span>{' '}
+          סטים השבוע.
+        </p>
+      )}
+
       <div style={{ display: 'grid', gap: 8 }}>
         {data.map((item, i) => {
           const pct = Math.round((item.sets / maxSets) * 100);
