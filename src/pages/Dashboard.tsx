@@ -4,7 +4,7 @@
  * Deep analytics (consistency, muscle distribution, full history) live in Progress.
  */
 
-import { ArrowLeft, Users } from 'lucide-react';
+import { ArrowLeft, UserPlus, Users } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ActivityRings } from '../components/charts';
@@ -21,11 +21,14 @@ import { WorkoutStreak } from '../components/dashboard/WorkoutStreak';
 import { CoachMark } from '../components/guidance/CoachMark';
 import { WorkoutHistory } from '../components/workout/history/WorkoutHistory';
 import { Z_INDEX } from '../constants/zIndex';
+import { useCoach } from '../contexts/CoachContext';
 import { useData } from '../contexts/DataContext';
 import { useFitnessInsights } from '../hooks/fitness/useFitnessInsights';
 import { useCountUp } from '../hooks/useCountUp';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { listMyCoaches } from '../services/coach/relationshipService';
 import { onWorkoutSaved } from '../services/dataEvents';
+import { getCurrentUser } from '../services/supabaseAuth';
 import { getWorkoutTemplates } from '../services/workoutDb';
 import type { WorkoutTemplate } from '../types';
 import { getWeekStart } from '../utils/dateUtils';
@@ -464,6 +467,7 @@ export default function Dashboard() {
         <RecentPRBanner />
 
         {/* 8. Community discovery — invite into the social feed */}
+        <FindCoachCard />
         <CommunityCard />
 
         <div style={{ height: 24 }} />
@@ -548,6 +552,103 @@ const CommunityCard = memo(function CommunityCard() {
           aria-hidden="true"
           style={{ color: 'var(--fs-muted)', flexShrink: 0 }}
         />
+      </Link>
+    </section>
+  );
+});
+
+// ── FindCoachCard — discovery affordance for signed-in trainees with no coach ─
+// Joining is invite-code only (no coach search), so the copy points at the code
+// entry on /my-coach rather than promising a directory. Shown only when we can
+// CONFIRM the viewer is a signed-in trainee with zero active coaches; any
+// uncertainty (coach, guest, offline, lookup error) hides the card so it never
+// prompts someone who can't act on it.
+const FindCoachCard = memo(function FindCoachCard() {
+  const { isCoach, loading: roleLoading } = useCoach();
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (isCoach || roleLoading) {
+      setShow(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const user = await getCurrentUser();
+        if (!user) return; // guests can't accept an invite — don't prompt
+        const coaches = await listMyCoaches('active');
+        if (!cancelled) setShow(coaches.length === 0);
+      } catch {
+        // Offline / unconfigured / lookup error — stay hidden.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isCoach, roleLoading]);
+
+  if (!show) return null;
+
+  return (
+    <section style={{ marginTop: 24 }}>
+      <Link
+        to="/my-coach"
+        aria-label="התחברות למאמן"
+        className="magnetic-card focus-ring active:scale-[0.99]"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          padding: '18px 20px',
+          background: 'var(--fs-surface)',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: '22px 16px 22px 16px',
+          boxShadow: 'var(--shadow-card)',
+          textDecoration: 'none',
+          color: 'inherit',
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 48,
+            height: 48,
+            borderRadius: 14,
+            background: 'var(--fs-accent)',
+            color: 'var(--color-ink-on-accent)',
+            flexShrink: 0,
+          }}
+        >
+          <UserPlus size={24} />
+        </span>
+        <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 17,
+              color: 'var(--fs-ink)',
+              lineHeight: 1.2,
+            }}
+          >
+            התחברות למאמן
+          </span>
+          <span
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              color: 'var(--fs-muted)',
+              lineHeight: 1.4,
+            }}
+          >
+            יש לך קוד הזמנה ממאמן? התחבר כדי לקבל תוכניות ומעקב.
+          </span>
+        </span>
+        <ArrowLeft size={20} aria-hidden="true" style={{ color: 'var(--fs-muted)', flexShrink: 0 }} />
       </Link>
     </section>
   );
