@@ -9,6 +9,7 @@
 
 import { memo, useMemo } from 'react';
 import type { WorkoutSession } from '../../types';
+import { pctToZone, zoneColor } from '../../utils/zoneColor';
 import { Card } from '../ui/Card';
 
 export interface ConsistencyScoreProps {
@@ -17,8 +18,6 @@ export interface ConsistencyScoreProps {
 }
 
 const WEEK_MS = 7 * 86400000;
-const PCT_STRONG = 75;
-const PCT_OK = 50;
 
 interface ConsistencyData {
   /** Number of the last 4 weeks with at least one session. */
@@ -51,8 +50,9 @@ const computeConsistency = (sessions: WorkoutSession[]): ConsistencyData => {
   return { weeksActive, totalSessions, consistencyPct, weekCounts };
 };
 
-const pctColor = (pct: number): string =>
-  pct >= PCT_STRONG ? 'var(--fs-accent)' : pct >= PCT_OK ? 'var(--fs-signal)' : 'var(--fs-warn)';
+// Zone-graded color: >=75 good (accent) / >=50 neutral (muted) / else attention (warn).
+// Mid-tier is muted, NOT lime — --fs-signal is reserved for PR celebration.
+const pctColor = (pct: number): string => zoneColor(pctToZone(pct));
 
 const weekLabel = (i: number): string =>
   i === 3 ? 'השבוע' : i === 2 ? 'שבוע שעבר' : `לפני ${3 - i} שבועות`;

@@ -9,6 +9,7 @@ import { Minus, Plus, Scale, TrendingDown, TrendingUp } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import type { GlowAreaPoint } from '../../../components/charts';
 import type { BodyWeightEntry, WeightTrend } from '../../../services/bodyStatsService';
+import { zoneColor } from '../../../utils/zoneColor';
 import { SectionCard } from '../components/SectionCard';
 import { TrendChartCard } from '../components/TrendChartCard';
 
@@ -53,8 +54,10 @@ export const WeightSection = memo(function WeightSection({
               fontSize: 9,
               letterSpacing: '0.18em',
               textTransform: 'uppercase',
-              background: 'var(--fs-signal)',
-              color: 'var(--fs-heading)',
+              // Neutral data label — graded via the zone vocabulary, not lime.
+              // (--fs-signal is reserved for PR celebration.)
+              background: zoneColor('neutral'),
+              color: 'var(--color-ink-on-dark)',
               padding: '3px 8px',
             }}
           >
@@ -105,8 +108,10 @@ export const WeightSection = memo(function WeightSection({
                 fontSize: 11,
                 letterSpacing: '0.18em',
                 textTransform: 'uppercase',
+                // Use the category's own semantic color (set in getBMICategory),
+                // not lime — --fs-signal is reserved for PR celebration.
                 background: 'var(--fs-primary)',
-                color: 'var(--fs-signal)',
+                color: bmiCategory.color,
                 padding: '4px 10px',
               }}
             >

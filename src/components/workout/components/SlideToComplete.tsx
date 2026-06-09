@@ -13,7 +13,7 @@ import { memo, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import { DUR, EASE, gsap, useGSAP } from '../../../lib/gsap';
 import { fireSparks } from '../../../lib/gsapSparks';
-import { triggerHaptic } from '../../../utils/haptics';
+import { triggerHaptic, triggerHapticEffect } from '../../../utils/haptics';
 
 interface SlideToCompleteProps {
   label: string;
@@ -43,6 +43,9 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
   const [isComplete, setIsComplete] = useState(false);
   const [isFlinging, setIsFlinging] = useState(false);
   const [finishTick, setFinishTick] = useState(0);
+  // Screen-reader announcement fired once when the slider crosses the commit
+  // threshold. Empty between crosses so re-entering re-announces.
+  const [thresholdAnnounce, setThresholdAnnounce] = useState('');
 
   const prefersReducedMotion = useReducedMotion();
 
@@ -164,7 +167,13 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       const prevRatio = maxOffsetRef.current > 0 ? prev / maxOffsetRef.current : 0;
       const nextRatio = maxOffsetRef.current > 0 ? next / maxOffsetRef.current : 0;
       if (nextRatio >= THRESHOLD && prevRatio < THRESHOLD) {
-        triggerHaptic('medium');
+        // One-shot at the cross into the committed zone: firmer impact haptic
+        // + a polite SR announcement so non-visual users know they can release.
+        triggerHapticEffect('impact', 'medium');
+        setThresholdAnnounce('עברת את נקודת האישור');
+      } else if (nextRatio < THRESHOLD && prevRatio >= THRESHOLD) {
+        // Dropped back below the threshold — clear so the next cross re-announces.
+        setThresholdAnnounce('');
       }
       return next;
     });
@@ -183,6 +192,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       finish();
     } else {
       setOffset(0);
+      setThresholdAnnounce('');
     }
   };
 
@@ -233,6 +243,11 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     >
       <span id={instructionId} className="sr-only">
         ניתן לגרור עד סוף המסילה, או ללחוץ Enter או רווח כדי לסמן את הסט כבוצע.
+      </span>
+      {/* Polite SR feedback at the commit-threshold cross (visual users get the
+          haptic + fill cues instead). */}
+      <span aria-live="polite" className="sr-only">
+        {thresholdAnnounce}
       </span>
       {/* Accent fill — trails behind the thumb with opacity */}
       <div

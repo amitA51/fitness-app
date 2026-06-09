@@ -31,18 +31,25 @@ export const RING_DRAW_DURATION = 0.55;
 /** Start delay (seconds) for ring index `i`, outer (0) → inner. */
 export const ringDelay = (i: number): number => i * RING_STAGGER;
 
-function clampPct(value: number, max: number): number {
+/** True percent, unclamped — for aria + over-achievement overflow. */
+function truePct(value: number, max: number): number {
   if (max <= 0) return 0;
   const pct = (value / max) * 100;
-  if (Number.isNaN(pct)) return 0;
-  if (pct < 0) return 0;
-  if (pct > 100) return 100;
+  if (Number.isNaN(pct) || pct < 0) return 0;
   return pct;
 }
 
 function progressClass(variant: RingVariant | undefined): string {
   if (!variant || variant === 'accent') return 'ring-progress';
   return `ring-progress ${variant}`;
+}
+
+function variantColor(variant: RingVariant | undefined): string {
+  return variant === 'signal'
+    ? 'var(--fs-signal)'
+    : variant === 'warn'
+      ? 'var(--fs-warn)'
+      : 'var(--fs-accent)';
 }
 
 function glowColor(el: Element): string {
@@ -156,7 +163,7 @@ export const ActivityRings = memo(function ActivityRings({
       }}
       role="img"
       aria-label={rings
-        .map((r) => `${r.label} ${Math.round(clampPct(r.value, r.max))}%`)
+        .map((r) => `${r.label} ${Math.round(truePct(r.value, r.max))}%`)
         .join(', ')}
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
@@ -164,11 +171,17 @@ export const ActivityRings = memo(function ActivityRings({
           const radius = (size - strokeWidth) / 2 - i * ringStep;
           if (radius <= 0) return null;
           const circumference = 2 * Math.PI * radius;
-          const pct = clampPct(ring.value, ring.max);
-          const dashOffset = circumference * (1 - pct / 100);
+          const tPct = truePct(ring.value, ring.max);
+          const basePct = Math.min(100, tPct);
+          const overPct = Math.min(100, Math.max(0, tPct - 100));
+          const dashOffset = circumference * (1 - basePct / 100);
+          const overflowOffset = circumference * (1 - overPct / 100);
+          // Tip sits at the arc's end (−90° start + basePct of a full turn).
+          const tipAngle = -90 + (basePct / 100) * 360;
+          const color = variantColor(ring.variant);
           return (
             <g key={`${ring.label}-${i}`}>
-              <title>{`${ring.label}: ${Math.round(pct)}%`}</title>
+              <title>{`${ring.label}: ${Math.round(tPct)}%`}</title>
               <circle
                 className="ring-track"
                 cx={cx}
@@ -188,11 +201,42 @@ export const ActivityRings = memo(function ActivityRings({
                 strokeDashoffset={dashOffset}
                 transform={`rotate(-90 ${cx} ${cy})`}
                 data-target-offset={dashOffset}
-                data-goal-met={pct >= 100 ? '1' : '0'}
+                data-goal-met={basePct >= 100 ? '1' : '0'}
                 // Disable the CSS stroke-dashoffset transition so GSAP owns the
                 // draw and the two don't fight over the same property.
                 style={{ transition: 'none' }}
               />
+              {/* Over-achievement: a brighter second-lap overlay on the same
+                  radius (concentric rings leave no room to inset). */}
+              {overPct > 0 && (
+                <circle
+                  className="ring-overflow"
+                  cx={cx}
+                  cy={cy}
+                  r={radius}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={Math.max(3, strokeWidth - 2)}
+                  strokeLinecap="round"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={overflowOffset}
+                  transform={`rotate(-90 ${cx} ${cy})`}
+                  style={{ filter: `drop-shadow(0 0 9px ${color})`, transition: 'none' }}
+                />
+              )}
+              {/* Leading-edge tip dot — the premium-gauge cue. Static position at
+                  the arc end; reduced-motion safe. */}
+              {basePct > 0 && (
+                <g transform={`rotate(${tipAngle} ${cx} ${cy})`}>
+                  <circle
+                    cx={cx + radius}
+                    cy={cy}
+                    r={strokeWidth / 2}
+                    fill={color}
+                    style={{ filter: `drop-shadow(0 0 6px ${color})` }}
+                  />
+                </g>
+              )}
             </g>
           );
         })}

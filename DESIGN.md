@@ -38,6 +38,18 @@ Editorial Minimalism × Data-Dense Pro, with a brutalist-editorial masthead. The
 
 Semantic: `--color-success #2f8f58` · `--color-error #b83228` · `--color-ink-on-accent #071412` · `--color-ink-on-dark #ffffff` · `--color-ink-on-error` (`#ffffff` light / `#071412` dark — error red is dark in light mode and bright in dark mode). Accent as channels: `--fs-accent-rgb: 67,199,165` for `rgba()` tints.
 
+### Zone-color scale (status grading)
+
+Any "how good is this value" surface (consistency %, adherence, status badges) grades onto **exactly three zones** via `src/utils/zoneColor.ts` — keep grading coherent app-wide, never invent a fourth bucket:
+
+| Zone | Token | Meaning |
+|------|-------|---------|
+| `good` | `var(--fs-accent)` | on track / strong |
+| `neutral` | `var(--fs-muted)` | mid / acceptable, no opinion |
+| `attention` | `var(--fs-warn)` | below target / needs attention |
+
+`pctToZone(pct, goodAt = 75, neutralAt = 50)` buckets a 0–100 value. **`--fs-signal` (lime) is intentionally NOT in this scale** — lime is reserved exclusively for PR celebration, so a "mid/ok = lime" grade is an anti-slop violation. Mid-tier is muted, never lime.
+
 ## Color — Dark (Obsidian) — `html.dark`
 
 Philosophy: near-black, **zero color tint on surfaces** — all personality from the accent.
