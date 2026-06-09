@@ -143,7 +143,10 @@ export async function syncWaterEntryToCloud(userId: string, entry: WaterEntry): 
       date: entry.date,
       amount_ml: entry.amountMl,
       created_at: entry.createdAt,
-      deleted_at: entry.deletedAt ?? null,
+      // Only write deleted_at when actually deleting. A live save must NOT send
+      // deleted_at: null — a PostgREST upsert would clear a tombstone set on
+      // another device and resurrect a row deleted there. (See supabaseSync.ts.)
+      ...(entry.deletedAt ? { deleted_at: entry.deletedAt } : {}),
     },
     { onConflict: 'id' }
   );
