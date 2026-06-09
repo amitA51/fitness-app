@@ -54,7 +54,12 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return result === 'granted';
 }
 
-export async function showNotification(title: string, body: string, icon?: string): Promise<void> {
+export async function showNotification(
+  title: string,
+  body: string,
+  icon?: string,
+  tag?: string
+): Promise<void> {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
   const options: NotificationOptions = {
@@ -62,6 +67,9 @@ export async function showNotification(title: string, body: string, icon?: strin
     icon: icon || '/pwa-192x192.png',
     dir: 'rtl',
     lang: 'he',
+    // A shared tag lets this local notification coalesce with a server Web Push
+    // for the same event (the OS replaces a same-tag notification).
+    ...(tag ? { tag } : {}),
   };
 
   // Prefer the service-worker path: `new Notification()` is deprecated and

@@ -2,9 +2,10 @@
 // COACH PLATFORM — Reminder service
 // ============================================================================
 // Coach schedules reminders; the trainee's client materializes due ones into
-// the existing local notification system on app open / while active. Reaching
-// a trainee when the app is CLOSED requires Web Push (see pushService + the
-// coach-push-send edge function).
+// the existing local notification system on app open / while active. Closed-app
+// delivery is handled server-side by the `reminders-dispatch` edge function
+// (pg_cron, once a minute) — the shared per-reminder-per-day `tag` lets the two
+// coalesce so an open app doesn't double-notify.
 
 import type { Reminder, ReminderSchedule } from '../../types/coach';
 import { logger } from '../../utils/logger';
@@ -109,11 +110,19 @@ export const materializeDueReminders = async (now: Date = new Date()): Promise<n
     fired = {};
   }
 
+  // Per-reminder-per-day tag: shared with the server-side reminders-dispatch
+  // push payload so the OS coalesces the two into a single notification when
+  // the app happens to be open at the scheduled minute. Uses the LOCAL date
+  // (isReminderDue matches on local time, and the dispatcher uses Israel date),
+  // so the two tags line up rather than diverging across the UTC midnight.
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  const localDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
   let count = 0;
   for (const r of reminders) {
     if (!isReminderDue(r, now)) continue;
     if (fired[r.id] === stamp) continue;
-    await showNotification(r.title, r.body ?? '');
+    await showNotification(r.title, r.body ?? '', undefined, `reminder:${r.id}:${localDate}`);
     fired[r.id] = stamp;
     count++;
   }
