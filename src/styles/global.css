@@ -58,8 +58,11 @@ body {
   position: absolute;
   top: 12px;
   inset-inline-start: 12px;
-  background: var(--fs-primary);
-  color: var(--fs-signal);
+  /* Action-accent chip with its paired ink (AA in both light and dark —
+     ~8.9:1 / 11:1). The previous --fs-signal (mustard) on --fs-primary failed
+     contrast against the near-black masthead in dark mode. */
+  background: var(--fs-accent);
+  color: var(--color-ink-on-accent);
   padding: 0.5rem 1rem;
   z-index: 110;
   font-family: var(--font-display);
