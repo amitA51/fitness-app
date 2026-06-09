@@ -1,24 +1,21 @@
+import { RingProgress } from '@/components/charts/RingProgress';
+import { VerdictLine, VerdictNumber } from '@/components/insights/VerdictLine';
 import { useCountUp } from '@/hooks/useCountUp';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { DUR, EASE, formatThousands, gsap, useGSAP } from '@/lib/gsap';
+import { formatThousands } from '@/lib/gsap';
 import { SlidersHorizontal } from 'lucide-react';
-import { memo, useEffect, useRef } from 'react';
+import { memo, useRef } from 'react';
 
 interface CalorieHeroProps {
   calories: number;
   goal: number;
+  /** Clamped 0–100 percentage (display only — true over/under is derived here). */
   calPct: number;
   coachTarget: boolean;
   onEditGoals: () => void;
 }
 
-// Ring geometry. Radial → RTL-neutral (no x-mirroring needed). The ring is
-// rotated -90deg so progress sweeps from 12 o'clock; strokeDashoffset is
-// hand-rolled (no DrawSVG) and locked to the count-up via identical timing.
 const RING_SIZE = 184;
 const RING_STROKE = 10;
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 export const CalorieHero = memo(function CalorieHero({
   calories,
@@ -27,66 +24,31 @@ export const CalorieHero = memo(function CalorieHero({
   coachTarget,
   onEditGoals,
 }: CalorieHeroProps) {
-  const reduced = useReducedMotion();
-  const rootRef = useRef<HTMLDivElement>(null);
   const numberRef = useRef<HTMLSpanElement>(null);
-  const ringRef = useRef<SVGCircleElement>(null);
 
-  // Count FROM the previously displayed value (re-tweens on each meal log),
-  // else 0 on first mount. Plain useEffect runs AFTER useCountUp's layout
-  // effect, so `from` is read at render time as the prior committed value.
+  // calPct arrives pre-clamped to 100. RingProgress wants the TRUE percentage so
+  // its over-achievement overlay can render past 100; derive it from raw values.
+  const consumed = calories || 0;
+  const truePct = goal > 0 ? Math.round((consumed / goal) * 100) : 0;
+  const isOver = consumed > goal;
+  const remaining = goal - consumed;
+
+  // Zone semantics for calories: under-budget = good (accent), OVER = attention
+  // (warn). "near" (≥90% but not over) reads as neutral. Never lime — hitting a
+  // calorie target is not a PR. The ring variant maps good/neutral → accent
+  // (RingProgress has no 'neutral'); only an overshoot escalates to warn.
+  const ringVariant = isOver ? 'warn' : 'accent';
+
+  // Count FROM the previously displayed value (re-tweens on each meal log).
   const prevCaloriesRef = useRef(0);
-  // calPct arrives pre-clamped to 100, so derive the over/under state from the
-  // raw calories vs goal instead — used for the ring color and the remaining
-  // / over-budget line below.
-  const isOver = (calories || 0) > goal;
-  const remaining = goal - (calories || 0);
-  const fraction = Math.min(Math.max(calPct, 0), 100) / 100;
-  const targetOffset = RING_CIRCUMFERENCE * (1 - fraction);
-
-  // Number count-up — same DUR.slow as the ring so they finish together.
-  useCountUp(numberRef, calories, {
-    duration: DUR.slow,
-    ease: EASE.out,
+  useCountUp(numberRef, consumed, {
     from: prevCaloriesRef.current,
     format: formatThousands,
   });
-
-  // Ring draw — synchronized with the count-up (identical duration/ease/start).
-  useGSAP(
-    () => {
-      const ring = ringRef.current;
-      if (!ring) return;
-
-      if (reduced) {
-        // Reduced motion: snap to final, no draw.
-        gsap.set(ring, { strokeDashoffset: targetOffset });
-        return;
-      }
-
-      // Animate from current fill → target so re-tweens grow smoothly (first
-      // mount starts from the empty attribute fallback = full circumference).
-      gsap.to(ring, {
-        strokeDashoffset: targetOffset,
-        duration: DUR.slow,
-        ease: EASE.out,
-      });
-    },
-    { dependencies: [targetOffset, reduced], scope: rootRef }
-  );
-
-  // Remember this render's value for the next re-tween's `from`.
-  useEffect(() => {
-    prevCaloriesRef.current = calories;
-  }, [calories]);
-
-  const ariaValue = Math.round(Math.min(Math.max(calPct, 0), 100));
+  prevCaloriesRef.current = consumed;
 
   return (
-    <div
-      ref={rootRef}
-      className="block-hero section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in"
-    >
+    <div className="block-hero section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in">
       <span className="ribbon">{calPct}% מהיעד</span>
       <button
         type="button"
@@ -114,83 +76,54 @@ export const CalorieHero = memo(function CalorieHero({
       </button>
       <div className="label">נצרך היום</div>
 
-      {/* Circular progress ring wrapping the kcal count-up. role="img" (not
-          progressbar) — it's a non-interactive visual; the percentage is voiced
-          via aria-label, matching the ActivityRings chart pattern. */}
-      <div
-        className="relative mx-auto mt-2 flex items-center justify-center"
-        style={{ width: RING_SIZE, height: RING_SIZE }}
-        role="img"
-        aria-label={`${ariaValue}% מהיעד הקלורי`}
-      >
-        <svg
-          width={RING_SIZE}
-          height={RING_SIZE}
-          viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-          style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}
-          aria-hidden="true"
-        >
-          {/* Track */}
-          <circle
-            cx={RING_SIZE / 2}
-            cy={RING_SIZE / 2}
-            r={RING_RADIUS}
-            fill="none"
-            stroke="var(--fs-surface-2)"
-            strokeWidth={RING_STROKE}
-          />
-          {/* Progress arc — strokeDashoffset is GSAP-owned (inline style wins
-              over these attributes, which serve as SSR/first-paint fallback). */}
-          <circle
-            ref={ringRef}
-            cx={RING_SIZE / 2}
-            cy={RING_SIZE / 2}
-            r={RING_RADIUS}
-            fill="none"
-            stroke={isOver ? 'var(--fs-warn)' : 'var(--fs-accent)'}
-            strokeWidth={RING_STROKE}
-            strokeLinecap="round"
-            strokeDasharray={RING_CIRCUMFERENCE}
-            strokeDashoffset={RING_CIRCUMFERENCE}
-            style={{ transition: 'stroke 0.3s ease' }}
-          />
-        </svg>
-
-        {/* Centered kcal count-up + sub. dir=ltr keeps "2,400" from bidi-flip. */}
-        <div className="relative flex flex-col items-center justify-center">
-          <div
-            dir="ltr"
-            className="number kinetic-number large"
-            style={{ fontVariantNumeric: 'tabular-nums' }}
-          >
-            <span ref={numberRef}>{formatThousands(calories || 0)}</span>
-          </div>
-          {/* dir=ltr: in the RTL page this line bidi-flipped to "KCAL 2500 /". */}
-          <div className="sub" dir="ltr">
-            / {formatThousands(goal)} KCAL
-          </div>
-        </div>
+      {/* Premium calorie gauge. Pass the TRUE percentage so an overshoot draws
+          RingProgress's over-achievement overlay (in warn) instead of silently
+          capping at a full accent ring. The kcal protagonist count-up lives in
+          the ring center; aria voices the real % on the ring's role="img". */}
+      <div className="mx-auto mt-2" style={{ width: RING_SIZE }}>
+        <RingProgress
+          value={truePct}
+          size={RING_SIZE}
+          strokeWidth={RING_STROKE}
+          variant={ringVariant}
+          ariaLabel={`${truePct}% מהיעד הקלורי`}
+          centerContent={
+            <div className="relative flex flex-col items-center justify-center">
+              <span
+                ref={numberRef}
+                dir="ltr"
+                className="number kinetic-number large"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
+              >
+                {formatThousands(consumed)}
+              </span>
+              {/* dir=ltr: in the RTL page this line bidi-flipped to "KCAL 2500 /". */}
+              <span className="sub" dir="ltr">
+                / {formatThousands(goal)} KCAL
+              </span>
+            </div>
+          }
+        />
       </div>
 
-      {/* Remaining vs over-budget calories. The Hebrew label stays RTL; only the
-          number is dir=ltr + tabular so it doesn't bidi-flip. Warn color signals
-          the overshoot. */}
-      <div
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 12,
-          letterSpacing: '0.06em',
-          fontWeight: 600,
-          color: isOver ? 'var(--fs-warn)' : 'var(--fs-muted)',
-          marginTop: 'var(--space-2)',
-        }}
+      {/* Daily takeaway — the stated "so what". Tone is carried only by the
+          number's zone: remaining = good (accent), overshoot = attention (warn).
+          Gender-neutral phrasing ("נותרו" / "חריגה") so it reads correctly for
+          every user. */}
+      <VerdictLine
+        kicker={isOver ? 'מעל היעד' : 'נותרו להיום'}
+        className="mt-3 text-center"
       >
-        {isOver ? 'חריגה של ' : 'נותרו '}
-        <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>
-          {Math.abs(remaining)}
-        </span>{' '}
-        קק״ל
-      </div>
+        {isOver ? (
+          <>
+            חריגה של <VerdictNumber value={Math.abs(remaining)} zone="attention" /> קק״ל מהיעד
+          </>
+        ) : (
+          <>
+            נותרו <VerdictNumber value={remaining} zone="good" /> קק״ל להיום
+          </>
+        )}
+      </VerdictLine>
 
       {coachTarget && (
         <span className="chip mt-2" style={{ fontSize: '11px', color: 'var(--fs-accent)' }}>

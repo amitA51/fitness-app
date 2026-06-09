@@ -1,6 +1,7 @@
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { DUR, EASE, gsap, useGSAP } from '@/lib/gsap';
 import { fireSparks } from '@/lib/gsapSparks';
+import { zoneColor } from '@/utils/zoneColor';
 import { Droplets, Minus, Plus } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from '../../components/ui/GlobalToast';
@@ -98,6 +99,9 @@ export const WaterTracker = memo(function WaterTracker({
   const pct = goalMl > 0 ? Math.min(Math.round((totalMl / goalMl) * 100), 100) : 0;
   const glasses = glassMl > 0 ? Math.round(totalMl / glassMl) : 0;
   const goalGlasses = glassMl > 0 ? Math.round(goalMl / glassMl) : 0;
+  // Hitting the daily hydration goal is on-track, NOT a PR — grade it with the
+  // 'good' zone (accent), never --fs-signal (lime, reserved for PR celebration).
+  const goalReachedColor = zoneColor('good');
 
   // Water level fills smoothly to the current amount. Increases (a fresh add)
   // get a satisfying overshoot rise; everything else (mount, date change,
@@ -257,7 +261,7 @@ export const WaterTracker = memo(function WaterTracker({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 12,
                 letterSpacing: '0.12em',
-                color: pct >= 100 ? 'var(--fs-accent)' : 'var(--fs-ink)',
+                color: pct >= 100 ? goalReachedColor : 'var(--fs-ink)',
                 fontWeight: 600,
                 fontVariantNumeric: 'tabular-nums',
                 display: 'inline-block',
@@ -286,7 +290,10 @@ export const WaterTracker = memo(function WaterTracker({
             style={{
               height: '100%',
               width: 0,
-              background: pct >= 100 ? 'var(--fs-signal)' : undefined,
+              // Goal reached → 'good' (accent), not lime. The default
+              // .fs-progress-fill is already accent, so this is a no-op visually
+              // but makes the on-track semantics explicit and lime-free.
+              background: pct >= 100 ? goalReachedColor : undefined,
             }}
           />
         </div>

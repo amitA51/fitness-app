@@ -1,6 +1,7 @@
+import { useCountUp } from '@/hooks/useCountUp';
 import { m } from 'framer-motion';
 import { Check } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useRef } from 'react';
 import { Sheet } from '../../../components/ui/Sheet';
 import { MACRO_COLORS } from '../../../constants/nutrition';
 import { calcFoodMacros } from '../../../services/nutritionService';
@@ -54,6 +55,13 @@ export const AddMealModal = memo(function AddMealModal({
 
   const hasFoods = selectedFoods.length > 0;
 
+  // Count-up the running calorie total in the save CTA, re-tweening from the
+  // previous total each time a food/serving changes. Reduced-motion snaps.
+  const totalRef = useRef<HTMLSpanElement>(null);
+  const prevTotalRef = useRef(0);
+  useCountUp(totalRef, totalMacros.calories, { from: prevTotalRef.current, pop: true });
+  prevTotalRef.current = totalMacros.calories;
+
   return (
     <Sheet
       isOpen={isOpen}
@@ -80,7 +88,16 @@ export const AddMealModal = memo(function AddMealModal({
           }}
           whileTap={{ scale: hasFoods ? 0.98 : 1 }}
         >
-          שמור ארוחה {hasFoods && `(${totalMacros.calories} קל׳)`}
+          שמור ארוחה{' '}
+          {hasFoods && (
+            <>
+              (
+              <span ref={totalRef} dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {totalMacros.calories}
+              </span>{' '}
+              קל׳)
+            </>
+          )}
         </m.button>
       }
     >

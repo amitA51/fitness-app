@@ -1,6 +1,7 @@
 import { useCountUp } from '@/hooks/useCountUp';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { DUR, EASE, gsap, useGSAP } from '@/lib/gsap';
+import { zoneColor } from '@/utils/zoneColor';
 import { Beef, Droplets, Wheat } from 'lucide-react';
 import { memo, useMemo, useRef } from 'react';
 import type { MacroNutrients } from '../../../types';
@@ -121,10 +122,13 @@ export const MacroStrip = memo(function MacroStrip({
       }}
     >
       {macroStrip.map((m, i) => {
-        // Over-budget: the bar fill stays visually clamped (pct caps at 100),
-        // but the gram value crossing the goal is surfaced by warn-coloring the
-        // number and the fill so the overshoot isn't invisible.
+        // Zone semantics: on-track (at/under goal) = good (accent), OVER = attention
+        // (warn) — never lime. The bar fill stays visually clamped (pct caps at
+        // 100), but crossing the goal escalates the fill + number to warn so the
+        // overshoot isn't invisible. zoneColor is the single status vocabulary.
         const isOver = m.cur > m.goal;
+        const zone = isOver ? 'attention' : 'good';
+        const tone = zoneColor(zone);
         return (
           <div
             key={m.label}
@@ -182,16 +186,21 @@ export const MacroStrip = memo(function MacroStrip({
                   height: '100%',
                   transformOrigin: 'right center',
                   transform: 'scaleX(0)',
-                  background: isOver ? 'var(--fs-warn)' : undefined,
+                  // Token-bar carries the zone grade: on-track = good (accent,
+                  // the .fs-progress-fill default), over = attention (warn).
+                  background: isOver ? tone : undefined,
                 }}
               />
             </div>
             <div
               className="mt-1"
+              dir="ltr"
               style={{
                 fontFamily: 'var(--font-hebrew)',
                 fontSize: '11px',
-                color: isOver ? 'var(--fs-warn)' : 'var(--fs-muted)',
+                textAlign: 'start',
+                color: isOver ? tone : 'var(--fs-muted)',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               {m.cur}/{m.goal}

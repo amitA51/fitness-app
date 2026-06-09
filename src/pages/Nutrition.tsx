@@ -109,7 +109,11 @@ export default function NutritionPage() {
             lineHeight: 1.4,
           }}
         >
-          {todayLabel} · {todayMacros.calories || 0}/{macroGoals.calories} קל׳
+          {todayLabel} ·{' '}
+          <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {todayMacros.calories || 0}/{macroGoals.calories}
+          </span>{' '}
+          קל׳
         </p>
         <h1
           style={{
@@ -266,6 +270,7 @@ export default function NutritionPage() {
                 onAddFood={handleAddFood}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                isLoading={isLoading}
               />
             </m.div>
           )}
