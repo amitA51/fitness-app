@@ -1,6 +1,8 @@
+import { m } from 'framer-motion';
 import { Settings } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { greeting } from '../../utils/dateUtils';
 import { safeJsonParse } from '../../utils/safeJson';
 import { parseUserProfile } from '../../utils/validation';
@@ -28,6 +30,7 @@ export const DashboardHeader = memo(function DashboardHeader({
   );
 
   const currentGreeting = useMemo(() => greeting(), []);
+  const reduced = useReducedMotion();
 
   return (
     <header
@@ -41,10 +44,31 @@ export const DashboardHeader = memo(function DashboardHeader({
         top: 0,
         zIndex: 20,
         background: 'var(--fs-bg)',
-        borderBottom: '2px solid var(--fs-accent)',
       }}
       aria-label="כותרת לוח הבקרה"
     >
+      {/* Gradient underline — replaces the flat 2px accent border with a
+          mint→teal sweep + soft accent shadow. Horizontal gradient reads
+          identically in RTL/LTR. Gentle scaleX fade-in from the start edge;
+          snaps in under reduced-motion. */}
+      <m.span
+        aria-hidden="true"
+        initial={reduced ? false : { opacity: 0, scaleX: 0 }}
+        animate={{ opacity: 1, scaleX: 1 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          position: 'absolute',
+          insetInlineStart: 0,
+          insetInlineEnd: 0,
+          bottom: 0,
+          height: 2,
+          // Symmetric wipe origin so the entrance is identical in RTL and LTR
+          // (logical transform-origin keywords aren't valid CSS).
+          transformOrigin: 'center',
+          background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
+          boxShadow: '0 1px 6px color-mix(in srgb, var(--fs-accent) 40%, transparent)',
+        }}
+      />
       <div className="flex-1 min-w-0">
         <p
           style={{

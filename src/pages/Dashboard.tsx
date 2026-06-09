@@ -8,7 +8,7 @@ import { ArrowLeft, UserPlus, Users } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ActivityRings } from '../components/charts';
-import { RING_DRAW_DURATION, ringDelay } from '../components/charts/ActivityRings';
+import { RING_DRAW_DURATION, RING_STAGGER, ringDelay } from '../components/charts/ActivityRings';
 import { CoachBriefCard } from '../components/dashboard/CoachBriefCard';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { ForecastNudge } from '../components/dashboard/ForecastNudge';
@@ -19,6 +19,7 @@ import { TodaysWorkoutCard } from '../components/dashboard/TodaysWorkoutCard';
 import { WeeklyGrid } from '../components/dashboard/WeeklyGrid';
 import { WorkoutStreak } from '../components/dashboard/WorkoutStreak';
 import { CoachMark } from '../components/guidance/CoachMark';
+import { Stagger, StaggerItem } from '../components/motion/Stagger';
 import { WorkoutHistory } from '../components/workout/history/WorkoutHistory';
 import { Z_INDEX } from '../constants/zIndex';
 import { useCoach } from '../contexts/CoachContext';
@@ -294,7 +295,7 @@ export default function Dashboard() {
         <button
           type="button"
           onClick={openStartSheet}
-          className="accent-glow magnetic-card"
+          className="magnetic-card active:scale-[0.98]"
           aria-haspopup="dialog"
           aria-expanded={isStartSheetOpen}
           aria-label="התחל אימון"
@@ -304,10 +305,15 @@ export default function Dashboard() {
             justifyContent: 'space-between',
             width: '100%',
             padding: '20px 24px',
-            background: 'linear-gradient(135deg, var(--fs-accent), var(--fs-accent-2))',
+            // Sharper mint→teal stop: mint holds to 55% then transitions to the
+            // accent-2 so the gradient reads as a deliberate two-tone, not a wash.
+            background:
+              'linear-gradient(135deg, var(--fs-accent) 0%, var(--fs-accent) 42%, var(--fs-accent-2) 100%)',
             border: '2px solid var(--fs-accent)',
             borderRadius: 'var(--radius-asymmetric)',
             cursor: 'pointer',
+            // Near-black ink (#071412 in both modes) passes AA on both the mint
+            // and the teal end of the gradient.
             color: 'var(--color-ink-on-accent)',
             fontFamily: 'var(--font-display)',
             fontWeight: 900,
@@ -315,7 +321,10 @@ export default function Dashboard() {
             textAlign: 'right',
             lineHeight: 1,
             letterSpacing: '-0.01em',
-            boxShadow: 'var(--shadow-card)',
+            // Lifted depth + a subtle inset top highlight so the surface reads as
+            // a raised, tactile slab rather than a flat fill.
+            boxShadow:
+              '0 12px 24px color-mix(in srgb, var(--fs-accent) 32%, transparent), inset 0 1px 0 color-mix(in srgb, #ffffff 28%, transparent)',
             position: 'relative',
             overflow: 'hidden',
           }}
@@ -390,9 +399,9 @@ export default function Dashboard() {
               >
                 סיכום שבועי
               </span>
-              <div style={{ display: 'grid', gap: 6 }}>
+              <Stagger stagger={RING_STAGGER} style={{ display: 'grid', gap: 6 }}>
+                <StaggerItem key={`accent-${refreshTick}`}>
                 <BentoRow
-                  key={`accent-${refreshTick}`}
                   dot="accent"
                   label="אימונים"
                   value={weekData.workoutsThisWeek}
@@ -400,8 +409,9 @@ export default function Dashboard() {
                   ltr
                   delay={ringDelay(0)}
                 />
+                </StaggerItem>
+                <StaggerItem key={`signal-${refreshTick}`}>
                 <BentoRow
-                  key={`signal-${refreshTick}`}
                   dot="signal"
                   label="נפח"
                   value={weekData.volume}
@@ -411,8 +421,9 @@ export default function Dashboard() {
                   delay={ringDelay(1)}
                   sub={volDelta !== '—' ? volDelta : undefined}
                 />
+                </StaggerItem>
+                <StaggerItem key={`warn-${refreshTick}`}>
                 <BentoRow
-                  key={`warn-${refreshTick}`}
                   dot="warn"
                   label="זמן"
                   value={weekData.totalMinutes}
@@ -420,7 +431,8 @@ export default function Dashboard() {
                   ltr
                   delay={ringDelay(2)}
                 />
-              </div>
+                </StaggerItem>
+              </Stagger>
             </div>
           </section>
         )}
@@ -743,7 +755,9 @@ const BentoRow = memo(function BentoRow({
     dot === 'signal' ? 'var(--fs-signal)' : dot === 'warn' ? 'var(--fs-warn)' : 'var(--fs-accent)';
 
   const numberRef = useRef<HTMLSpanElement>(null);
-  useCountUp(numberRef, value, { delay, duration: RING_DRAW_DURATION, format });
+  // pop: a back.out scale settle the instant the count finishes — lands together
+  // with the matching ring's goal-met pulse. useCountUp guards reduced-motion.
+  useCountUp(numberRef, value, { delay, duration: RING_DRAW_DURATION, format, pop: true });
 
   const fallback = format ? format(value) : String(Math.round(value));
   const numberSpan = (

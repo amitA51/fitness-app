@@ -1,6 +1,8 @@
+import { TrendingDown, Zap } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { forecastProgress, getMuscleGroupDaysSince } from '../../services/analyticsService';
 import type { WorkoutSession } from '../../types';
+import { FadeIn } from '../motion/FadeIn';
 
 interface ForecastNudgeProps {
   sessions: WorkoutSession[];
@@ -34,6 +36,8 @@ export const ForecastNudge = memo(function ForecastNudge({ sessions }: ForecastN
         // in RTL).
         label: `${muscleHe} ממתין · ${overdue.daysSince} ימים`,
         sub: 'מומלץ לאימון',
+        // Action-prompt tone — a muscle is ready to train again.
+        tone: 'action' as const,
       };
     }
 
@@ -48,6 +52,8 @@ export const ForecastNudge = memo(function ForecastNudge({ sessions }: ForecastN
       return {
         label: `נפח יורד · ${weeklyDropPct}%`,
         sub: `ב-${weeksAnalyzed} שבועות אחרונים`,
+        // Decline tone — volume trending down.
+        tone: 'decline' as const,
       };
     }
 
@@ -56,28 +62,39 @@ export const ForecastNudge = memo(function ForecastNudge({ sessions }: ForecastN
 
   if (!nudge) return null;
 
+  const isDecline = nudge.tone === 'decline';
+  // Action → accent (mint); decline → warn. Never lime (PR-only).
+  const iconColor = isDecline ? 'var(--fs-warn)' : 'var(--fs-accent)';
+  const Icon = isDecline ? TrendingDown : Zap;
+
   return (
-    <div
-      role="note"
-      className="magnetic-card glass-surface fs-accent-rail scrim-noise fade-rise-in"
-      style={{
-        margin: '16px 0',
-        padding: '10px 14px',
-        border: '1px solid var(--fs-surface-2)',
-        borderRadius: '22px 16px 22px 16px',
-        fontFamily: 'var(--font-mono)',
-        fontSize: 11,
-        letterSpacing: '0.16em',
-        textTransform: 'uppercase',
-        color: 'var(--fs-ink)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: 12,
-      }}
-    >
-      <span>{nudge.label}</span>
-      <span style={{ color: 'var(--fs-muted)', fontSize: 10 }}>{nudge.sub}</span>
-    </div>
+    // Gentle fade + rise entrance (opacity/y only — RTL-safe, no x offset).
+    // FadeIn snaps in under prefers-reduced-motion.
+    <FadeIn style={{ margin: '16px 0' }}>
+      <div
+        role="note"
+        className="magnetic-card glass-surface fs-accent-rail scrim-noise"
+        style={{
+          padding: '10px 14px',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: '22px 16px 22px 16px',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 11,
+          letterSpacing: '0.16em',
+          textTransform: 'uppercase',
+          color: 'var(--fs-ink)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <Icon size={15} aria-hidden="true" style={{ color: iconColor, flexShrink: 0 }} />
+          {nudge.label}
+        </span>
+        <span style={{ color: 'var(--fs-muted)', fontSize: 10, flexShrink: 0 }}>{nudge.sub}</span>
+      </div>
+    </FadeIn>
   );
 });

@@ -1,9 +1,22 @@
+import { m } from 'framer-motion';
 import { memo, useEffect, useState } from 'react';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { getAllPRs } from '../../services/prService';
 import type { PersonalRecord } from '../../types';
 
+const isToday = (iso: string): boolean => {
+  const d = new Date(iso);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+};
+
 export const RecentPRBanner = memo(function RecentPRBanner() {
   const [recentPRs, setRecentPRs] = useState<PersonalRecord[]>([]);
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     let mounted = true;
@@ -29,6 +42,11 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
   }, []);
 
   if (recentPRs.length === 0) return null;
+
+  // A fresh PR earned today earns a single celebratory pulse on mount — not a
+  // continuously breathing/blinking dot. Lime (--fs-signal) is legitimate here
+  // (PR celebration). Older PRs in the 7-day window show a static dot.
+  const earnedToday = recentPRs.some((pr) => isToday(pr.date));
 
   return (
     <div
@@ -64,7 +82,19 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
             fontWeight: 600,
           }}
         >
-          <span className="breathing-dot signal" aria-hidden />
+          <m.span
+            aria-hidden
+            initial={reduced || !earnedToday ? false : { scale: 1 }}
+            animate={reduced || !earnedToday ? undefined : { scale: [1, 1.2, 1] }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], times: [0, 0.5, 1] }}
+            style={{
+              display: 'inline-block',
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: 'var(--fs-signal)',
+            }}
+          />
           שיאים אישיים
         </span>
         <span

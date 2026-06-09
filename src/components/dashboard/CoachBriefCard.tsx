@@ -9,7 +9,9 @@
 // Voice follows VISION.md: factual, no emoji, numbers as the focal point.
 // ============================================================================
 
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { useCountUp } from '../../hooks/useCountUp';
+import { DUR } from '../../lib/gsap';
 import {
   type CoachBrief,
   type CoachBriefFacts,
@@ -19,7 +21,11 @@ import {
 } from '../../services/ai/coachBrief';
 import { type RecoveryLog, getRecoveryLogsByDateRange } from '../../services/bodyStatsService';
 import type { WorkoutSession } from '../../types';
+import { formatThousands } from '../../utils/formatThousands';
 import { logger } from '../../utils/logger';
+import { type Zone, zoneColor } from '../../utils/zoneColor';
+import { HeroStat } from '../ui/HeroStat';
+import { VerdictLine } from '../insights/VerdictLine';
 
 interface CoachBriefCardProps {
   sessions: WorkoutSession[];
@@ -33,11 +39,14 @@ const REC_LABEL: Record<CoachBriefFacts['recommendation'], string> = {
   rest: 'מנוחה',
 };
 
-const REC_COLOR: Record<CoachBriefFacts['recommendation'], string> = {
-  push: 'var(--fs-accent)',
-  maintain: 'var(--fs-ink)',
-  deload: 'var(--fs-warn, #d97706)',
-  rest: 'var(--fs-warn, #d97706)',
+// Recommendation → grading zone (the single 3-state vocabulary). push reads as
+// "on track / strong" (good), maintain is no-opinion (neutral), and deload/rest
+// flag "needs attention" (attention=warn). Never --fs-signal: lime is PR-only.
+const REC_ZONE: Record<CoachBriefFacts['recommendation'], Zone> = {
+  push: 'good',
+  maintain: 'neutral',
+  deload: 'attention',
+  rest: 'attention',
 };
 
 const dateKey = (d: Date): string =>
@@ -85,6 +94,18 @@ export const CoachBriefCard = memo(function CoachBriefCard({
     };
   }, [kind, sessions, recoveryLogs]);
 
+  // Count-up cascade for the hero figure. Each ref targets only its own layout's
+  // number node; the inactive layout's ref is null and useCountUp no-ops safely.
+  // Reduced-motion is handled inside useCountUp (snaps to the final value).
+  const readinessRef = useRef<HTMLSpanElement>(null);
+  const volumeRef = useRef<HTMLSpanElement>(null);
+  useCountUp(readinessRef, facts.readinessScore, { duration: DUR.count, pop: true });
+  useCountUp(volumeRef, facts.weeklyVolume, {
+    duration: DUR.count,
+    delay: 0.1,
+    format: formatThousands,
+  });
+
   if (sessions.length === 0) return null;
 
   // Sparse / first-week guard (RN coherence): with too little history the
@@ -126,21 +147,16 @@ export const CoachBriefCard = memo(function CoachBriefCard({
 
       {kind === 'daily-readiness' ? (
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 6 }}>
-          <span
-            dir="ltr"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 56,
-              fontWeight: 800,
-              lineHeight: 1,
-              color: 'var(--fs-ink)',
-            }}
-          >
-            {facts.readinessScore}
-          </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fs-muted)' }}>
-            /100
-          </span>
+          {/* HeroStat is the protagonist number; the count-up writes into the
+              inner span via readinessRef. unit carries the /100 scale. */}
+          <HeroStat
+            value={<span ref={readinessRef}>{facts.readinessScore}</span>}
+            label="מוכנות"
+            unit="/100"
+            size={56}
+          />
+          {/* Recommendation badge — color comes from the 3-state zone scale
+              (push=good/maintain=neutral/deload+rest=attention), never lime. */}
           <span
             style={{
               marginInlineStart: 'auto',
@@ -149,7 +165,7 @@ export const CoachBriefCard = memo(function CoachBriefCard({
               fontWeight: 700,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: REC_COLOR[facts.recommendation],
+              color: zoneColor(REC_ZONE[facts.recommendation]),
             }}
           >
             {REC_LABEL[facts.recommendation]}
@@ -157,29 +173,20 @@ export const CoachBriefCard = memo(function CoachBriefCard({
         </div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 6 }}>
-          <span
-            dir="ltr"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 44,
-              fontWeight: 800,
-              lineHeight: 1,
-              color: 'var(--fs-ink)',
-            }}
-          >
-            {facts.weeklyVolume.toLocaleString()}
-          </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fs-muted)' }}>
-            ק"ג
-          </span>
+          <HeroStat
+            value={<span ref={volumeRef}>{facts.weeklyVolume.toLocaleString()}</span>}
+            label="נפח שבועי"
+            unit={'ק"ג'}
+            size={44}
+          />
+          {/* Volume delta — accent when up, attention(warn) when down. */}
           <span
             dir="ltr"
             style={{
               marginInlineStart: 'auto',
               fontFamily: 'var(--font-mono)',
               fontSize: 12,
-              color:
-                facts.volumeChangePercent >= 0 ? 'var(--fs-accent)' : 'var(--fs-warn, #d97706)',
+              color: zoneColor(facts.volumeChangePercent >= 0 ? 'good' : 'attention'),
             }}
           >
             {sign}
@@ -188,18 +195,10 @@ export const CoachBriefCard = memo(function CoachBriefCard({
         </div>
       )}
 
-      <p
-        style={{
-          margin: '6px 0 0',
-          fontFamily: 'var(--font-body)',
-          fontSize: 13,
-          lineHeight: 1.5,
-          color: 'var(--fs-ink)',
-          minHeight: 19,
-        }}
-      >
+      {/* Takeaway as a stated verdict ("so what"), not a loose caption. */}
+      <VerdictLine kicker={kind === 'weekly-review' ? 'מה זה אומר' : 'ההמלצה'}>
         {detail || <span style={{ color: 'var(--fs-muted)' }}>מחשב…</span>}
-      </p>
+      </VerdictLine>
 
       {brief && (
         <div

@@ -2,6 +2,7 @@ import { ChevronLeft, Dumbbell, LayoutList, RotateCcw } from 'lucide-react';
 import { type ReactNode, memo } from 'react';
 import { useIsRTL } from '../../hooks/useIsRTL';
 import type { WorkoutTemplate } from '../../types';
+import { Stagger, StaggerItem } from '../motion/Stagger';
 import { Sheet } from '../ui/Sheet';
 
 interface StartWorkoutSheetProps {
@@ -37,7 +38,7 @@ const StartOption = memo(function StartOption({
     <button
       type="button"
       onClick={onClick}
-      className="focus-ring magnetic-card"
+      className="focus-ring magnetic-card active:scale-[0.98]"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -47,10 +48,12 @@ const StartOption = memo(function StartOption({
         padding: '14px 16px',
         textAlign: 'start',
         cursor: 'pointer',
+        // The "continue last" (accent/selected) row gets a stronger ~20% accent
+        // wash + a 2px accent border so it reads as the pre-selected default.
         background: accent
-          ? 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))'
+          ? 'color-mix(in srgb, var(--fs-accent) 20%, var(--fs-surface))'
           : 'var(--fs-surface)',
-        border: `1px solid ${accent ? 'var(--fs-accent)' : 'var(--fs-surface-2)'}`,
+        border: accent ? '2px solid var(--fs-accent)' : '1px solid var(--fs-surface-2)',
         borderRadius: 'var(--radius-asymmetric)',
         color: 'var(--fs-ink)',
       }}
@@ -128,29 +131,37 @@ export const StartWorkoutSheet = memo(function StartWorkoutSheet({
 }: StartWorkoutSheetProps) {
   return (
     <Sheet isOpen={isOpen} onClose={onClose} title="התחל אימון">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Options enter in a quick stagger when the sheet opens; snaps in under
+          prefers-reduced-motion. */}
+      <Stagger stagger={0.06} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {lastUsedTemplate && (
-          <StartOption
-            accent
-            icon={<RotateCcw size={20} aria-hidden="true" />}
-            title={`המשך · ${lastUsedTemplate.name}`}
-            subtitle="התבנית האחרונה שלך"
-            onClick={onContinueLast}
-          />
+          <StaggerItem>
+            <StartOption
+              accent
+              icon={<RotateCcw size={20} aria-hidden="true" />}
+              title={`המשך · ${lastUsedTemplate.name}`}
+              subtitle="התבנית האחרונה שלך"
+              onClick={onContinueLast}
+            />
+          </StaggerItem>
         )}
-        <StartOption
-          icon={<LayoutList size={20} aria-hidden="true" />}
-          title="בחר תבנית"
-          subtitle="התחל מתוך ספריית התבניות"
-          onClick={onPickTemplate}
-        />
-        <StartOption
-          icon={<Dumbbell size={20} aria-hidden="true" />}
-          title="אימון ריק"
-          subtitle="הוסף תרגילים תוך כדי"
-          onClick={onEmptyWorkout}
-        />
-      </div>
+        <StaggerItem>
+          <StartOption
+            icon={<LayoutList size={20} aria-hidden="true" />}
+            title="בחר תבנית"
+            subtitle="התחל מתוך ספריית התבניות"
+            onClick={onPickTemplate}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <StartOption
+            icon={<Dumbbell size={20} aria-hidden="true" />}
+            title="אימון ריק"
+            subtitle="הוסף תרגילים תוך כדי"
+            onClick={onEmptyWorkout}
+          />
+        </StaggerItem>
+      </Stagger>
     </Sheet>
   );
 });

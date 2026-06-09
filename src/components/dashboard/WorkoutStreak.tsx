@@ -1,7 +1,8 @@
 import { memo, useEffect, useRef } from 'react';
 import { useCountUp } from '../../hooks/useCountUp';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { useWorkoutStreak } from '../../hooks/useWorkoutStreak';
-import { DUR } from '../../lib/gsap';
+import { DUR, EASE, gsap, useGSAP } from '../../lib/gsap';
 import type { WorkoutSession } from '../../types';
 import { logger } from '../../utils/logger';
 
@@ -62,6 +63,31 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
   // a static streak doesn't re-roll the best number either.
   useCountUp(bestRef, streak.best, { duration: DUR.base, enabled: shouldAnimate });
 
+  // One-shot accent glow on the hero number the moment the streak grows. Fires
+  // once after the count settles, then clears. Reduced-motion: never runs (the
+  // number simply sits at its final value).
+  const reduced = useReducedMotion();
+  useGSAP(
+    () => {
+      const el = currentRef.current;
+      if (!el || reduced || !shouldAnimate) return;
+      gsap.fromTo(
+        el,
+        { filter: 'drop-shadow(0 0 0 transparent)' },
+        {
+          filter: 'drop-shadow(0 0 10px color-mix(in srgb, var(--fs-accent) 70%, transparent))',
+          duration: DUR.base,
+          delay: DUR.base,
+          ease: EASE.out,
+          yoyo: true,
+          repeat: 1,
+          onComplete: () => gsap.set(el, { clearProps: 'filter' }),
+        }
+      );
+    },
+    { dependencies: [shouldAnimate, reduced], scope: currentRef }
+  );
+
   if (streak.current === 0) return null;
 
   return (
@@ -83,12 +109,21 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
         textTransform: 'uppercase',
       }}
     >
-      <span style={{ fontWeight: 600 }}>
+      <span style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'baseline', gap: 4 }}>
         <span
           ref={currentRef}
           className="kinetic-number"
           dir="ltr"
-          style={{ display: 'inline-block', fontVariantNumeric: 'tabular-nums' }}
+          style={{
+            display: 'inline-block',
+            fontFamily: 'var(--font-display)',
+            // Hero streak digit — dominant over the surrounding mono label.
+            fontSize: 'clamp(20px, 5vw, 28px)',
+            fontWeight: 900,
+            lineHeight: 1,
+            letterSpacing: '-0.02em',
+            fontVariantNumeric: 'tabular-nums',
+          }}
         >
           {streak.current}
         </span>{' '}
