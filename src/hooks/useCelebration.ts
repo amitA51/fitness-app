@@ -22,7 +22,7 @@ export const useCelebration = (options: CelebrationOptions = {}): CelebrationRes
   const { onCelebrate } = options;
   const [currentPR, setCurrentPR] = useState<PersonalRecord | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     return () => {

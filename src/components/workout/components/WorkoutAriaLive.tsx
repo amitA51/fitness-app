@@ -5,7 +5,7 @@
 // Throttled to one announcement per ANNOUNCE_THROTTLE_MS to avoid drowning
 // the SR queue when multiple state changes fire in the same tick.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactElement, useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkoutDerived, useWorkoutState } from '../core/WorkoutContext';
 
 const ANNOUNCE_THROTTLE_MS = 800;
@@ -17,7 +17,7 @@ const MESSAGES = {
   PR: (exerciseName: string) => (exerciseName ? `שיא חדש! ${exerciseName}` : 'שיא חדש!'),
 } as const;
 
-function WorkoutAriaLive(): JSX.Element {
+function WorkoutAriaLive(): ReactElement {
   const state = useWorkoutState();
   const derived = useWorkoutDerived();
   const [message, setMessage] = useState<string>('');

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PageErrorBoundary } from '../PageErrorBoundary';
@@ -14,7 +15,7 @@ afterEach(() => {
   errorSpy.mockRestore();
 });
 
-function Bomb(): JSX.Element {
+function Bomb(): ReactElement {
   throw new Error('kaboom');
 }
 

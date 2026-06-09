@@ -142,7 +142,7 @@ interface ComposerProps {
   onCommentAdded: (postId: string) => void;
   /** Surfaced as a toast by the host when the hourly comment limit is hit. */
   onRateLimited: () => void;
-  textareaRef: React.RefObject<HTMLTextAreaElement>;
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 function CommentComposer({

@@ -37,7 +37,7 @@ interface CountUpOptions {
  * Re-runs whenever `value` changes.
  */
 export function useCountUp(
-  ref: RefObject<HTMLElement>,
+  ref: RefObject<HTMLElement | null>,
   value: number,
   options: CountUpOptions = {}
 ): void {

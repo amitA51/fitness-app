@@ -20,11 +20,11 @@ export function useFocusTrap(
   containerRef: React.RefObject<HTMLElement | null>,
   options?: FocusTrapOptions
 ): void;
-export function useFocusTrap(isActive?: boolean): { containerRef: React.RefObject<HTMLDivElement> };
+export function useFocusTrap(isActive?: boolean): { containerRef: React.RefObject<HTMLDivElement | null> };
 export function useFocusTrap(
   refOrActive?: React.RefObject<HTMLElement | null> | boolean,
   options?: FocusTrapOptions
-): undefined | { containerRef: React.RefObject<HTMLDivElement> } {
+): undefined | { containerRef: React.RefObject<HTMLDivElement | null> } {
   const isLegacyMode = typeof refOrActive === 'boolean' || refOrActive === undefined;
 
   // Always allocate the internal ref (unconditional hook call).
@@ -44,7 +44,7 @@ export function useFocusTrap(
   } = isLegacyMode ? {} : options || {};
 
   const originalOverflowRef = useRef<string>('');
-  const autoFocusTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const autoFocusTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (!isActive || !containerRef.current) return;
