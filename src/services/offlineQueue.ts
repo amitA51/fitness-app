@@ -251,7 +251,7 @@ async function getSyncFn(type: MutationType, payload: unknown, userId: string) {
     deleteCloudNutritionLog,
     syncUserSetting,
     syncAIConversation,
-    deleteCloudAIConversation,
+    softDeleteCloudAIConversation,
   } = await loadSupabaseSync();
 
   switch (type) {
@@ -300,7 +300,8 @@ async function getSyncFn(type: MutationType, payload: unknown, userId: string) {
     case 'ai:update':
       return () => syncAIConversation(userId, payload as Parameters<typeof syncAIConversation>[1]);
     case 'ai:delete':
-      return () => deleteCloudAIConversation(userId, payload as string);
+      // Soft-delete so the tombstone propagates (mirrors deleteConversation).
+      return () => softDeleteCloudAIConversation(userId, payload as string);
     case 'water:create':
       return async () => {
         const { syncWaterEntryToCloud } = await import('./waterService');
@@ -567,13 +568,18 @@ function setupOnlineListener() {
   if (typeof window === 'undefined') return;
 
   window.addEventListener('online', async () => {
-    logger.sync.info('Network back online, processing queue');
-    const result = await processQueue();
-    if (result.success > 0 || result.failed > 0) {
-      logger.sync.info('Queue processing complete', result);
-    }
-    if (result.failed > 0) {
-      await notify('חלק מהשינויים לא הסתנכרנו — ננסה שוב אוטומטית', 'error');
+    try {
+      logger.sync.info('Network back online, processing queue');
+      const result = await processQueue();
+      if (result.success > 0 || result.failed > 0) {
+        logger.sync.info('Queue processing complete', result);
+      }
+      if (result.failed > 0) {
+        await notify('חלק מהשינויים לא הסתנכרנו — ננסה שוב אוטומטית', 'error');
+      }
+    } catch (err) {
+      // An async event listener that rejects becomes an unhandled rejection.
+      logger.sync.error('Online-handler queue processing failed', err);
     }
   });
 
@@ -590,26 +596,34 @@ export function initOfflineSync() {
   setupOnlineListener();
 
   // Process any pending mutations on startup
-  processQueue().then((result) => {
-    if (result.success > 0) {
-      logger.sync.info('Processed queued mutations on startup', result);
-    }
-    if (result.failed > 0) {
-      void notify('חלק מהשינויים לא הסתנכרנו — ננסה שוב אוטומטית', 'error');
-    }
-  });
+  processQueue()
+    .then((result) => {
+      if (result.success > 0) {
+        logger.sync.info('Processed queued mutations on startup', result);
+      }
+      if (result.failed > 0) {
+        void notify('חלק מהשינויים לא הסתנכרנו — ננסה שוב אוטומטית', 'error');
+      }
+    })
+    .catch((err) => logger.sync.error('Startup queue processing failed', err));
 
   // DA-9: Periodic retry every 90s when online and queue has items
   setInterval(async () => {
-    if (!navigator.onLine) return;
-    const depth = await getQueueDepth();
-    if (depth === 0) return;
-    const result = await processQueue();
-    if (result.success > 0 || result.failed > 0) {
-      logger.sync.info('Periodic queue retry', result);
-    }
-    if (result.failed > 0) {
-      await notify('חלק מהשינויים לא הסתנכרנו — ננסה שוב אוטומטית', 'error');
+    // An async setInterval callback that rejects becomes an unhandled
+    // rejection — keep the whole body inside a try/catch.
+    try {
+      if (!navigator.onLine) return;
+      const depth = await getQueueDepth();
+      if (depth === 0) return;
+      const result = await processQueue();
+      if (result.success > 0 || result.failed > 0) {
+        logger.sync.info('Periodic queue retry', result);
+      }
+      if (result.failed > 0) {
+        await notify('חלק מהשינויים לא הסתנכרנו — ננסה שוב אוטומטית', 'error');
+      }
+    } catch (err) {
+      logger.sync.error('Periodic queue retry failed', err);
     }
   }, 90_000);
 }

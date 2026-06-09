@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useRef } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import type { WorkoutGoal } from '../../types';
 
 interface WorkoutGoalSelectorProps {
@@ -15,13 +16,10 @@ const GOALS: Array<{ id: WorkoutGoal; label: string; description: string }> = [
 ];
 
 export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSelectorProps) {
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [onClose]);
+  const panelRef = useRef<HTMLDivElement>(null);
+  // Trap Tab focus within the dialog, close on Escape, lock background scroll —
+  // previously Tab could walk out to the page behind this modal.
+  useFocusTrap(panelRef, { isOpen: true, onClose, closeOnEscape: true, lockScroll: true });
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: modal backdrop dismiss; keyboard users use Close button or Escape
@@ -35,6 +33,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
       }}
     >
       <div
+        ref={panelRef}
         className="w-full max-w-md overflow-hidden"
         style={{
           background: 'var(--fs-surface)',

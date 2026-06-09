@@ -19,6 +19,7 @@ import { getWorkoutTemplates } from '../../../services/workoutDb';
 import type { WorkoutTemplate } from '../../../types';
 import { greeting } from '../../../utils/dateUtils';
 import { triggerHaptic } from '../../../utils/haptics';
+import { logger } from '../../../utils/logger';
 import { HE_NOUNS, pluralizeHe } from '../../../utils/pluralizeHe';
 
 const NOISE_TEXTURE_SVG = `data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E`;
@@ -152,8 +153,11 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
           }
           setWorkoutStreak(streak);
         }
-      } catch {
-        // silently handle
+      } catch (err) {
+        // These stats are decorative — the screen still renders the start CTA
+        // and degrades to the "first workout" state. Log (don't swallow) so the
+        // failure is diagnosable instead of disappearing.
+        logger.workout?.warn?.('PreWorkoutScreen: failed to load history stats', err);
       }
     };
 
@@ -361,7 +365,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     fontFamily: 'var(--font-display)',
                     fontWeight: 900,
                     fontSize: 36,
-                    color: '#FFFFFF',
+                    color: 'var(--color-ink-on-dark)',
                     lineHeight: 0.9,
                     letterSpacing: '-0.02em',
                     direction: 'ltr',
@@ -395,7 +399,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     fontFamily: 'var(--font-display)',
                     fontWeight: 900,
                     fontSize: 36,
-                    color: workoutStreak > 0 ? 'var(--fs-accent)' : '#FFFFFF',
+                    color: workoutStreak > 0 ? 'var(--fs-accent)' : 'var(--color-ink-on-dark)',
                     lineHeight: 0.9,
                     letterSpacing: '-0.02em',
                     direction: 'ltr',
@@ -429,7 +433,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-display)',
                   fontWeight: 800,
                   fontSize: 20,
-                  color: '#FFFFFF',
+                  color: 'var(--color-ink-on-dark)',
                   lineHeight: 1.05,
                   marginTop: 12,
                 }}
@@ -534,7 +538,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                       fontFamily: 'var(--font-display)',
                       fontWeight: 800,
                       fontSize: 20,
-                      color: '#FFFFFF',
+                      color: 'var(--color-ink-on-dark)',
                       lineHeight: 1.05,
                       letterSpacing: '-0.01em',
                     }}

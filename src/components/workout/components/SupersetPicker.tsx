@@ -204,7 +204,7 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
                       justifyContent: 'center',
                       background: isSelected ? 'var(--fs-accent)' : 'transparent',
                       border: isSelected ? 'none' : '2px solid var(--fs-steel)',
-                      color: '#FFFFFF',
+                      color: 'var(--color-ink-on-accent)',
                     }}
                   >
                     {isSelected && <Check size={16} strokeWidth={3} />}

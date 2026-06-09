@@ -203,8 +203,11 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
           if (saved) {
             const parsed = safeJsonParse<Record<string, unknown>>(saved);
             if (parsed) {
-              parsed._completed = true;
-              localStorage.setItem('active_workout_v3_state', JSON.stringify(parsed));
+              // Immutable update — never mutate the parsed object in place.
+              localStorage.setItem(
+                'active_workout_v3_state',
+                JSON.stringify({ ...parsed, _completed: true })
+              );
             }
           }
           localStorage.removeItem('active_workout_v3_state');
@@ -264,7 +267,7 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
             0
           ),
           caloriesBurned: null,
-          goalType: workoutSettings.defaultWorkoutGoal as string,
+          goalType: workoutSettings.defaultWorkoutGoal ?? 'general',
           exercises: workoutExercises,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -289,8 +292,11 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
           if (saved) {
             const parsed = safeJsonParse<Record<string, unknown>>(saved);
             if (parsed) {
-              parsed._completed = true;
-              localStorage.setItem('active_workout_v3_state', JSON.stringify(parsed));
+              // Immutable update — never mutate the parsed object in place.
+              localStorage.setItem(
+                'active_workout_v3_state',
+                JSON.stringify({ ...parsed, _completed: true })
+              );
             }
           }
         } catch {

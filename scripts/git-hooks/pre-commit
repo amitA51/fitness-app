@@ -1,0 +1,50 @@
+#!/bin/sh
+# ============================================================================
+# SparkOS pre-commit secret guard (dependency-free, gitleaks-aware).
+#
+# Blocks committing env files and high-confidence secrets. Runs gitleaks too
+# when it is installed, but never REQUIRES it — so it works on a fresh clone.
+#
+# Install:  cp scripts/git-hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# Bypass (only if you are SURE it is a false positive):  git commit --no-verify
+# ============================================================================
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+
+block=0
+
+# 1) Never commit real env files — only .env.example is allowed.
+for f in $staged; do
+  case "$f" in
+    .env | .env.*)
+      [ "$f" = ".env.example" ] && continue
+      echo "BLOCKED: refusing to commit env file '$f' (may contain secrets)."
+      block=1
+      ;;
+  esac
+done
+
+# 2) Built-in high-confidence secret scan on staged content (no external deps).
+patterns='(sk-[A-Za-z0-9]{20,})|(-----BEGIN[A-Z ]*PRIVATE KEY-----)|(service_role[^A-Za-z0-9]{0,40}eyJ)|(SUPABASE_SERVICE_ROLE_KEY[[:space:]]*=)'
+for f in $staged; do
+  [ -f "$f" ] || continue
+  if git show ":$f" 2>/dev/null | grep -Eq "$patterns"; then
+    echo "BLOCKED: '$f' appears to contain a secret (api key / private key / service_role)."
+    block=1
+  fi
+done
+
+# 3) gitleaks (defense-in-depth) if it happens to be installed.
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact --no-banner || block=1
+fi
+
+if [ "$block" -ne 0 ]; then
+  echo ""
+  echo "Commit aborted by the pre-commit secret guard."
+  echo "Keep secrets in gitignored env files or Supabase Secrets — never in git."
+  echo "False positive? Re-run with: git commit --no-verify"
+  exit 1
+fi
+exit 0

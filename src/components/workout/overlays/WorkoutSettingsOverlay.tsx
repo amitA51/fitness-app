@@ -152,7 +152,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                   fontSize: 22,
                   fontWeight: 900,
                   letterSpacing: '-0.01em',
-                  color: '#FFFFFF',
+                  color: 'var(--color-ink-on-dark)',
                   lineHeight: 1,
                   marginTop: 4,
                 }}
@@ -173,7 +173,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                 background: 'rgba(255,255,255,0.12)',
                 border: 'none',
                 borderRadius: 0,
-                color: '#FFFFFF',
+                color: 'var(--color-ink-on-dark)',
                 cursor: 'pointer',
               }}
             >

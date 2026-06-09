@@ -14,11 +14,14 @@ export function AssignBox({ clientId }: { clientId: string }) {
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
-  const [busy, setBusy] = useState(false);
+  // Separate in-flight flags so sending a note doesn't show the nutrition-target
+  // button as loading (and vice versa) — they are independent actions.
+  const [busyNote, setBusyNote] = useState(false);
+  const [busyTarget, setBusyTarget] = useState(false);
 
   const sendNote = async () => {
     if (!note.trim()) return;
-    setBusy(true);
+    setBusyNote(true);
     try {
       await createAssignment({
         kind: 'note',
@@ -31,14 +34,14 @@ export function AssignBox({ clientId }: { clientId: string }) {
     } catch {
       showToast('השליחה נכשלה', 'error');
     } finally {
-      setBusy(false);
+      setBusyNote(false);
     }
   };
 
   const sendTarget = async () => {
     const kcal = Number(calories);
     if (!kcal) return;
-    setBusy(true);
+    setBusyTarget(true);
     try {
       const payload: Record<string, number> = { calories: kcal };
       const p = Number(protein);
@@ -61,7 +64,7 @@ export function AssignBox({ clientId }: { clientId: string }) {
     } catch {
       showToast('השליחה נכשלה', 'error');
     } finally {
-      setBusy(false);
+      setBusyTarget(false);
     }
   };
 
@@ -76,7 +79,7 @@ export function AssignBox({ clientId }: { clientId: string }) {
           aria-label="המלצה למתאמן"
         />
       </div>
-      <Button variant="primary" fullWidth isLoading={busy} onClick={sendNote}>
+      <Button variant="primary" fullWidth isLoading={busyNote} onClick={sendNote}>
         שלח המלצה
       </Button>
       <div className="mt-3">
@@ -180,7 +183,7 @@ export function AssignBox({ clientId }: { clientId: string }) {
             />
           </div>
         </div>
-        <Button variant="secondary" fullWidth isLoading={busy} onClick={sendTarget}>
+        <Button variant="secondary" fullWidth isLoading={busyTarget} onClick={sendTarget}>
           שייך יעד תזונה
         </Button>
       </div>

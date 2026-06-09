@@ -4,6 +4,9 @@
 
 import { generateId } from '../../utils/id';
 import { STORES, dbDelete, dbGet, dbGetAll, dbPut } from '../indexedDBCore';
+import { getCurrentUser } from '../supabaseAuth';
+import { softDeleteCloudAIConversation } from '../supabaseSync';
+import { syncWithRetry } from '../syncEngine';
 import { type ChatMessage, getAIProvider } from './core';
 
 export interface Conversation {
@@ -107,5 +110,16 @@ export async function deleteConversation(id: string): Promise<void> {
   const current = localStorage.getItem(CURRENT_CONVERSATION_KEY);
   if (current === id) {
     localStorage.removeItem(CURRENT_CONVERSATION_KEY);
+  }
+
+  // Propagate as a cloud soft-delete (tombstone). Without this the conversation
+  // was only removed locally — it resurrected on the next pull and never
+  // reached the user's other devices. Offline-safe via the mutation queue.
+  const user = await getCurrentUser();
+  if (user) {
+    syncWithRetry(() => softDeleteCloudAIConversation(user.id, id), `deleteConversation:${id}`, 3, {
+      type: 'ai:delete',
+      payload: id,
+    });
   }
 }

@@ -70,8 +70,11 @@ export function useWorkoutSave({
         try {
           const parsed = safeJsonParse<Record<string, unknown>>(saved);
           if (parsed) {
-            parsed._completed = true;
-            localStorage.setItem('active_workout_v3_state', JSON.stringify(parsed));
+            // Immutable update — never mutate the parsed object in place.
+            localStorage.setItem(
+              'active_workout_v3_state',
+              JSON.stringify({ ...parsed, _completed: true })
+            );
           }
         } catch {
           // If parsing fails, just remove it
@@ -94,7 +97,7 @@ export function useWorkoutSave({
       startTimestamp: state.startTimestamp,
       totalPausedTime: state.totalPausedTime,
       itemId: item?.id || `workout_${Date.now()}`,
-      goalType: workoutSettings.defaultWorkoutGoal as string,
+      goalType: workoutSettings.defaultWorkoutGoal ?? 'general',
     });
 
     if (!buildResult) {
@@ -136,8 +139,11 @@ export function useWorkoutSave({
         try {
           const parsed = safeJsonParse<Record<string, unknown>>(saved);
           if (parsed) {
-            parsed._completed = true;
-            localStorage.setItem('active_workout_v3_state', JSON.stringify(parsed));
+            // Immutable update — never mutate the parsed object in place.
+            localStorage.setItem(
+              'active_workout_v3_state',
+              JSON.stringify({ ...parsed, _completed: true })
+            );
           }
         } catch {
           // If parsing fails, continue anyway

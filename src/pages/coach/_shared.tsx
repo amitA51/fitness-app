@@ -308,10 +308,16 @@ export function InlineEmpty({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Minimal data-loading hook: runs `fn` on mount + when `reload` is called. */
+/**
+ * Minimal data-loading hook: runs `fn` on mount, when `reload` is called, and
+ * whenever any value in `deps` changes. Pass `deps` for a parameterised fetch
+ * (e.g. a date range) so changing an input actually re-fetches instead of
+ * showing stale data from the first render.
+ */
 export function useAsyncData<T>(
   fn: () => Promise<T>,
-  initial: T
+  initial: T,
+  deps: readonly unknown[] = []
 ): { data: T; loading: boolean; error: string | null; reload: () => void } {
   const [data, setData] = useState<T>(initial);
   const [loading, setLoading] = useState(true);
@@ -320,7 +326,7 @@ export function useAsyncData<T>(
 
   const reload = useCallback(() => setTick((t) => t + 1), []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fn is captured per-render by callers; reload is driven by the tick counter
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fn is captured per-render by callers; refetch is driven by the tick counter and the caller-supplied deps
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -338,7 +344,7 @@ export function useAsyncData<T>(
     return () => {
       cancelled = true;
     };
-  }, [tick]);
+  }, [tick, ...deps]);
 
   return { data, loading, error, reload };
 }

@@ -13,6 +13,8 @@ export interface BodyWeightEntry {
   weight: number;
   notes?: string;
   createdAt: string;
+  /** Bumped on every edit so last-writer-wins doesn't collapse to createdAt. */
+  updatedAt?: string;
 }
 
 export interface BodyMeasurement {
@@ -27,12 +29,16 @@ export interface BodyMeasurement {
   bodyFat?: number;
   notes?: string;
   createdAt: string;
+  /** Bumped on every edit so last-writer-wins doesn't collapse to createdAt. */
+  updatedAt?: string;
 }
 
 export interface RecoveryLog {
   id: string;
   date: string; // YYYY-MM-DD
   createdAt: string; // ISO timestamp
+  /** Bumped on every edit so last-writer-wins doesn't collapse to createdAt. */
+  updatedAt?: string;
 
   // Sleep
   sleepHours: number;
@@ -87,10 +93,12 @@ export async function addBodyWeight(
     throw new ValidationError('Body weight must be greater than 0 and less than 700 kg.');
   }
 
+  const now = new Date().toISOString();
   const newEntry: BodyWeightEntry = {
     ...entry,
     id: generateId('bw'),
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
   };
   await dbPut(STORES.BODY_WEIGHT, newEntry);
 
@@ -119,13 +127,17 @@ export async function addBodyWeight(
 }
 
 export async function updateBodyWeight(entry: BodyWeightEntry): Promise<void> {
-  await dbPut(STORES.BODY_WEIGHT, entry);
+  // Stamp a fresh updatedAt so this edit beats the prior version under LWW
+  // merge — without it the merge falls back to createdAt and the later edit
+  // is silently discarded under two-device contention.
+  const updated: BodyWeightEntry = { ...entry, updatedAt: new Date().toISOString() };
+  await dbPut(STORES.BODY_WEIGHT, updated);
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(() => syncBodyWeight(user.id, entry), `updateBodyWeight:${entry.id}`, 3, {
+    syncWithRetry(() => syncBodyWeight(user.id, updated), `updateBodyWeight:${updated.id}`, 3, {
       type: 'bodyweight:create',
-      payload: entry,
+      payload: updated,
     });
   }
 }
@@ -200,10 +212,12 @@ export function getBMICategory(bmi: number): { label: string; color: string } {
 export async function addBodyMeasurement(
   entry: Omit<BodyMeasurement, 'id' | 'createdAt'>
 ): Promise<BodyMeasurement> {
+  const now = new Date().toISOString();
   const newEntry: BodyMeasurement = {
     ...entry,
     id: generateId('bm'),
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
   };
   await dbPut(BODY_MEASUREMENTS_STORE, newEntry);
 
@@ -225,6 +239,7 @@ export async function addBodyMeasurement(
           },
           notes: newEntry.notes,
           createdAt: newEntry.createdAt,
+          updatedAt: newEntry.updatedAt,
         }),
       `addBodyMeasurement:${newEntry.id}`,
       3,
@@ -270,6 +285,9 @@ export async function addRecoveryLog(
     ...entry,
     id: canonicalLog?.id ?? generateId('rec'),
     createdAt: canonicalLog?.createdAt ?? new Date().toISOString(),
+    // Re-logging the same day reuses the canonical id+createdAt, so a fresh
+    // updatedAt is what lets the newer entry win LWW on another device.
+    updatedAt: new Date().toISOString(),
     overallScore: score.overall,
   };
   await dbPut(STORES.RECOVERY_LOGS, newEntry);
@@ -294,6 +312,7 @@ export async function addRecoveryLog(
           sessionId: newEntry.sessionId,
           notes: newEntry.notes,
           createdAt: newEntry.createdAt,
+          updatedAt: newEntry.updatedAt,
         }),
       `addRecoveryLog:${newEntry.id}`
     );
@@ -310,27 +329,30 @@ export async function addRecoveryLog(
 }
 
 export async function updateRecoveryLog(entry: RecoveryLog): Promise<void> {
-  await dbPut(STORES.RECOVERY_LOGS, entry);
+  // Fresh updatedAt so the edit wins LWW instead of collapsing to createdAt.
+  const updated: RecoveryLog = { ...entry, updatedAt: new Date().toISOString() };
+  await dbPut(STORES.RECOVERY_LOGS, updated);
 
   const user = await getCurrentUser();
   if (user) {
     syncWithRetry(
       () =>
         syncRecoveryLog(user.id, {
-          id: entry.id,
-          date: entry.date,
-          sleepHours: entry.sleepHours,
-          sleepQuality: entry.sleepQuality,
-          sorenessLevel: entry.sorenessLevel,
-          energyLevel: entry.energyLevel,
-          stressLevel: entry.stressLevel,
-          tightAreas: entry.tightAreas,
-          overallScore: entry.overallScore,
-          sessionId: entry.sessionId,
-          notes: entry.notes,
-          createdAt: entry.createdAt,
+          id: updated.id,
+          date: updated.date,
+          sleepHours: updated.sleepHours,
+          sleepQuality: updated.sleepQuality,
+          sorenessLevel: updated.sorenessLevel,
+          energyLevel: updated.energyLevel,
+          stressLevel: updated.stressLevel,
+          tightAreas: updated.tightAreas,
+          overallScore: updated.overallScore,
+          sessionId: updated.sessionId,
+          notes: updated.notes,
+          createdAt: updated.createdAt,
+          updatedAt: updated.updatedAt,
         }),
-      `updateRecoveryLog:${entry.id}`
+      `updateRecoveryLog:${updated.id}`
     );
   }
 }

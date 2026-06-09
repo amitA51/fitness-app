@@ -315,14 +315,20 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
     exportWorkoutHistoryCSV([session as WorkoutSession]);
   }, [session]);
 
-  // Persist rating when user selects one
+  // Persist rating when the user selects one. Trigger ONLY on the rating change
+  // (read the latest session through a ref) — depending on the whole `session`
+  // object re-ran this on every parent re-render, re-saving the session and
+  // churning a needless cloud sync each time.
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
   useEffect(() => {
-    if (!workoutRating || !session.id) return;
-    const updated = { ...session, rating: workoutRating } as WorkoutSession;
+    const current = sessionRef.current;
+    if (!workoutRating || !current.id) return;
+    const updated = { ...current, rating: workoutRating } as WorkoutSession;
     saveWorkoutSession(updated).catch((err) => {
       logger.workout.warn('Failed to save workout rating', err);
     });
-  }, [workoutRating, session]);
+  }, [workoutRating]);
 
   const handleShare = useCallback(async () => {
     if (navigator.share) {
@@ -462,7 +468,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 900,
                 fontSize: 48,
-                color: '#FFFFFF',
+                color: 'var(--color-ink-on-dark)',
                 lineHeight: 0.88,
                 letterSpacing: '-0.02em',
                 direction: 'ltr',

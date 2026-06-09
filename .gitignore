@@ -4,10 +4,10 @@ node_modules/
 # Build output
 dist/
 
-# Environment
+# Environment — never commit real env files; only .env.example is allowed.
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 
 # Netlify
 .netlify
@@ -30,6 +30,13 @@ everything-claude-code/
 .codegraph/
 plugins/
 skills-lock.json
+.playwright-mcp/
+
+# Playwright E2E artifacts (reports, test-results, browser cache)
+playwright-report/
+test-results/
+/playwright/.cache/
+e2e/.last-run.json
 
 # graphify — commit graphify-out/ (graph.json, graph.html, GRAPH_REPORT.md) for the
 # team, but keep these local-only: manifest is mtime-based (breaks after clone),

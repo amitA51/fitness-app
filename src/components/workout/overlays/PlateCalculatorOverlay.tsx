@@ -69,11 +69,12 @@ const PlateCalculatorOverlay = memo<PlateCalculatorOverlayProps>(
     if (!isOpen) return null;
 
     return (
-      <ModalOverlay isOpen={isOpen} onClose={onClose}>
+      <ModalOverlay isOpen={isOpen} onClose={onClose} ariaLabel="מחשבון פלטות">
+        {/* No role="dialog" here: ModalOverlay already renders the dialog
+            (role + aria-modal + focus trap). A nested dialog confuses screen
+            readers — the accessible name now rides on ModalOverlay's ariaLabel. */}
         <div
           dir="rtl"
-          role="dialog"
-          aria-label="מחשבון פלטות"
           style={{
             background: 'var(--fs-surface)',
             border: '1px solid var(--fs-steel)',

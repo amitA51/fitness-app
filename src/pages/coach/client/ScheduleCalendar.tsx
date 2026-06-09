@@ -218,7 +218,8 @@ function TemplatePickerSheet({
     reload,
   } = useAsyncData<WorkoutTemplate[]>(
     () => (isOpen ? getClientTemplates(clientId) : Promise.resolve([])),
-    []
+    [],
+    [isOpen, clientId]
   );
 
   return (
@@ -359,7 +360,11 @@ export function ScheduleCalendar({ clientId }: { clientId: string }) {
     loading,
     error,
     reload,
-  } = useAsyncData<ScheduledWorkout[]>(() => getClientSchedule(clientId, fromDate, toDate), []);
+  } = useAsyncData<ScheduledWorkout[]>(
+    () => getClientSchedule(clientId, fromDate, toDate),
+    [],
+    [clientId, fromDate, toDate]
+  );
 
   const itemsByDate = useMemo(() => {
     const map = new Map<string, ScheduledWorkout[]>();

@@ -20,7 +20,7 @@ vi.mock('../supabaseSync', () => ({
   deleteCloudNutritionLog: vi.fn(),
   syncUserSetting: vi.fn(),
   syncAIConversation: vi.fn(),
-  deleteCloudAIConversation: vi.fn(),
+  softDeleteCloudAIConversation: vi.fn(),
 }));
 
 import { getQueueDepth, processQueue, queueMutation } from '../offlineQueue';

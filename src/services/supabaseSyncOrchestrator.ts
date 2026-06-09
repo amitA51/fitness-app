@@ -64,6 +64,8 @@ export interface SyncResult {
   success: boolean;
   error?: string;
   syncedItems?: number;
+  /** Records that failed to push (a rejected upsert batch). >0 means silent data loss was avoided. */
+  failedItems?: number;
   counts?: {
     templates?: number;
     sessions?: number;
@@ -183,8 +185,9 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
       items: T[],
       mapFn: (item: T) => Record<string, unknown>,
       onConflict?: string
-    ): Promise<number> {
+    ): Promise<{ synced: number; failed: number }> {
       let synced = 0;
+      let failed = 0;
       const batches: T[][] = [];
       for (let i = 0; i < items.length; i += BATCH_SIZE) {
         batches.push(items.slice(i, i + BATCH_SIZE));
@@ -201,14 +204,39 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
             return batch.length;
           })
         );
-        for (const r of results) {
-          if (r.status === 'fulfilled') synced += r.value;
-        }
+        // A rejected batch is silent data loss: those records never reached the
+        // cloud. Count them and log each rejection so the push failure surfaces
+        // instead of being swallowed (the count rides up into SyncResult below).
+        results.forEach((r, idx) => {
+          if (r.status === 'fulfilled') {
+            synced += r.value;
+          } else {
+            const lost = chunk[idx]?.length ?? 0;
+            failed += lost;
+            logger.sync.error(
+              `batchUpsert ${table}: batch failed, ${lost} record(s) not pushed`,
+              r.reason
+            );
+          }
+        });
       }
-      return synced;
+      return { synced, failed };
     }
 
+    // Records lost to a rejected upsert batch, accumulated across all tables.
+    // A non-zero total means the push was partial — never report it as success.
+    let failedItems = 0;
     const pushResults = await Promise.allSettled([
+      // NOTE: deleted_at is intentionally OMITTED from every bulk-push mapper.
+      // Verified empirically against this project's PostgREST (2026-06-09): a
+      // partial upsert does NOT null omitted columns on the ON CONFLICT UPDATE
+      // branch — it leaves them untouched, so omitting deleted_at PRESERVES a
+      // remote tombstone. Local records never carry a deletedAt (the cloud
+      // merges hard-delete tombstoned rows), so sending `deleted_at: x.deletedAt
+      // ?? null` would always send null and CLEAR remote tombstones on a blind
+      // push — resurrecting records that were deleted on another device. Omission
+      // is the correct, safe behavior. (CODE-AUDIT-2026-06-08 item #1 mis-modeled
+      // the upsert semantics; do not "fix" this by adding deleted_at here.)
       batchUpsert('workout_templates', localTemplates, (t) => ({
         id: t.id,
         user_id: userId,
@@ -217,8 +245,9 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
         exercises: t.exercises,
         created_at: t.createdAt || new Date().toISOString(),
         updated_at: t.updatedAt || new Date().toISOString(),
-      })).then((n) => {
-        counts.templates = n;
+      })).then((res) => {
+        counts.templates = res.synced;
+        failedItems += res.failed;
       }),
 
       batchUpsert('workout_sessions', localSessions, (s) => ({
@@ -234,8 +263,9 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
         notes: s.notes || null,
         created_at: s.startTime,
         updated_at: s.updatedAt || s.startTime || new Date().toISOString(),
-      })).then((n) => {
-        counts.sessions = n;
+      })).then((res) => {
+        counts.sessions = res.synced;
+        failedItems += res.failed;
       }),
 
       batchUpsert('personal_exercises', localExercises, (e) => ({
@@ -254,8 +284,9 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
         last_used: e.lastUsed || null,
         created_at: e.createdAt || new Date().toISOString(),
         updated_at: e.updatedAt || e.createdAt || new Date().toISOString(),
-      })).then((n) => {
-        counts.exercises = n;
+      })).then((res) => {
+        counts.exercises = res.synced;
+        failedItems += res.failed;
       }),
 
       batchUpsert('body_weight', localBodyWeight, (b) => ({
@@ -265,8 +296,9 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
         date: b.date,
         created_at: b.createdAt ?? new Date().toISOString(),
         updated_at: b.updatedAt ?? b.createdAt ?? new Date().toISOString(),
-      })).then((n) => {
-        counts.bodyWeight = n;
+      })).then((res) => {
+        counts.bodyWeight = res.synced;
+        failedItems += res.failed;
       }),
 
       batchUpsert('body_measurements', localBodyMeasurements, (m) => ({
@@ -277,8 +309,9 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
         notes: m.notes || null,
         created_at: m.createdAt || new Date().toISOString(),
         updated_at: m.updatedAt ?? m.createdAt ?? new Date().toISOString(),
-      })).then((n) => {
-        counts.bodyMeasurements = n;
+      })).then((res) => {
+        counts.bodyMeasurements = res.synced;
+        failedItems += res.failed;
       }),
 
       batchUpsert('personal_records', localPersonalRecords, (r) => ({
@@ -292,8 +325,9 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
         record_type: r.recordType,
         created_at: r.createdAt || new Date().toISOString(),
         updated_at: r.updatedAt ?? r.createdAt ?? new Date().toISOString(),
-      })).then((n) => {
-        counts.personalRecords = n;
+      })).then((res) => {
+        counts.personalRecords = res.synced;
+        failedItems += res.failed;
       }),
 
       batchUpsert('recovery_logs', localRecoveryLogs, (l) => ({
@@ -311,8 +345,9 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
         notes: l.notes || null,
         created_at: l.createdAt || new Date().toISOString(),
         updated_at: l.updatedAt ?? l.createdAt ?? new Date().toISOString(),
-      })).then((n) => {
-        counts.recoveryLogs = n;
+      })).then((res) => {
+        counts.recoveryLogs = res.synced;
+        failedItems += res.failed;
       }),
 
       batchUpsert('nutrition_logs', localNutritionLogs, (l) => ({
@@ -327,8 +362,9 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
         notes: l.notes || null,
         created_at: l.createdAt || new Date().toISOString(),
         updated_at: l.updatedAt ?? l.createdAt ?? new Date().toISOString(),
-      })).then((n) => {
-        counts.nutritionLogs = n;
+      })).then((res) => {
+        counts.nutritionLogs = res.synced;
+        failedItems += res.failed;
       }),
 
       batchUpsert(
@@ -343,8 +379,9 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
           updated_at: s.updatedAt || new Date().toISOString(),
         }),
         'user_id,key'
-      ).then((n) => {
-        counts.userSettings = n;
+      ).then((res) => {
+        counts.userSettings = res.synced;
+        failedItems += res.failed;
       }),
 
       batchUpsert('ai_conversations', localAIConversations, (c) => ({
@@ -355,8 +392,9 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
         context: c.context || {},
         created_at: c.createdAt || new Date().toISOString(),
         updated_at: c.updatedAt || c.createdAt || new Date().toISOString(),
-      })).then((n) => {
-        counts.aiConversations = n;
+      })).then((res) => {
+        counts.aiConversations = res.synced;
+        failedItems += res.failed;
       }),
 
       batchUpsert(
@@ -370,7 +408,9 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
           created_at: w.createdAt,
         }),
         'id'
-      ).then(() => {}),
+      ).then((res) => {
+        failedItems += res.failed;
+      }),
     ]);
 
     const pushFailed = pushResults.filter((r) => r.status === 'rejected');
@@ -383,13 +423,25 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
 
     const totalSynced = Object.values(counts).reduce((sum, count) => sum + count, 0);
 
-    logger.sync.info('Pushed all data to cloud', { userId, counts });
+    logger.sync.info('Pushed all data to cloud', { userId, counts, failedItems });
+
+    // A partial push (operation rejected OR any batch lost records) is NOT a
+    // success — reporting it as such would let callers believe the cloud
+    // mirrors local state when records were silently dropped.
+    const pushErrorParts: string[] = [];
+    if (pushFailed.length > 0) {
+      pushErrorParts.push(`${pushFailed.length} push operations failed`);
+    }
+    if (failedItems > 0) {
+      pushErrorParts.push(`${failedItems} record(s) failed to push`);
+    }
 
     return {
-      success: pushFailed.length === 0,
+      success: pushFailed.length === 0 && failedItems === 0,
       syncedItems: totalSynced,
+      failedItems,
       counts,
-      ...(pushFailed.length > 0 && { error: `${pushFailed.length} push operations failed` }),
+      ...(pushErrorParts.length > 0 && { error: pushErrorParts.join('; ') }),
     };
   } catch (error) {
     logger.sync.error('Error syncing all data', error);

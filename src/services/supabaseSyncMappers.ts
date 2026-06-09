@@ -197,6 +197,7 @@ export interface UserSetting {
   value: unknown;
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string | null;
 }
 
 export interface AIMessage {
@@ -214,6 +215,7 @@ export interface AIConversation {
   context?: Record<string, unknown>;
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string | null;
 }
 
 // ==================== ROW -> CANONICAL MAPPERS ====================

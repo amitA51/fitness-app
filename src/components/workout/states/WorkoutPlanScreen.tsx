@@ -211,7 +211,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
               fontFamily: 'var(--font-display)',
               fontWeight: 900,
               fontSize: 34,
-              color: '#FFFFFF',
+              color: 'var(--color-ink-on-dark)',
               lineHeight: 0.92,
               letterSpacing: '-0.02em',
             }}

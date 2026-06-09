@@ -3,63 +3,22 @@
  * SPARKOS Fitness App - Cloud Sync with Supabase
  */
 
-import type { RealtimeChannel } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { logger } from '../utils/logger';
+import { fetchAllPages } from './supabaseSyncPagination';
 import type {
-  AIConversation,
   BodyMeasurement,
   BodyWeightEntry,
   NutritionLog,
   PersonalExercise,
   PersonalRecordRow,
   RecoveryLog,
-  UserSetting,
   WorkoutSession,
   WorkoutTemplate,
 } from './supabaseSyncMappers';
 
 // Row interfaces and row->canonical mappers live in ./supabaseSyncMappers.
-
-// ==================== SYNC HELPERS ====================
-
-// Page size for keyset/range pagination. Supabase caps a single response at
-// ~1000 rows; without paging, history beyond this was silently truncated.
-const PAGE_SIZE = 1000;
-
-/**
- * Pull every row of a query via range pagination, looping until a short page
- * (< PAGE_SIZE) is returned. The `build` callback receives a [from, to] window
- * and must apply `.range(from, to)` to the query.
- *
- * Throws on any page error so callers can distinguish a genuine fetch failure
- * from a legitimately empty result set (see DA fix #2). Tombstoned rows are
- * intentionally NOT filtered here: the tombstone-aware merges rely on receiving
- * `deleted_at` rows to propagate deletions on pull (see DA fix #1). With full
- * pagination there is no fixed row budget for tombstones to exhaust.
- */
-async function fetchAllPages<T>(
-  label: string,
-  build: (
-    from: number,
-    to: number
-  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
-): Promise<T[]> {
-  const all: T[] = [];
-  let from = 0;
-  for (;;) {
-    const to = from + PAGE_SIZE - 1;
-    const { data, error } = await build(from, to);
-    if (error) {
-      throw new Error(`fetch ${label} failed: ${error.message}`);
-    }
-    const page = data ?? [];
-    all.push(...page);
-    if (page.length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
-  }
-  return all;
-}
+// The range-pagination helper (fetchAllPages) lives in ./supabaseSyncPagination.
 
 // ==================== WORKOUT TEMPLATES ====================
 
@@ -77,7 +36,11 @@ export const syncWorkoutTemplate = async (
     exercises: template.exercises,
     created_at: template.createdAt || new Date().toISOString(),
     updated_at: template.updatedAt || new Date().toISOString(),
-    deleted_at: template.deletedAt || null,
+    // Only write deleted_at when actually deleting. A live save must NOT send
+    // deleted_at: null — a PostgREST upsert would clear a tombstone set on
+    // another device (verified 2026-06-09), resurrecting the record. Omitting
+    // the column preserves the remote tombstone on the conflict-UPDATE branch.
+    ...(template.deletedAt ? { deleted_at: template.deletedAt } : {}),
   });
 
   if (error) {
@@ -145,7 +108,8 @@ export const syncWorkoutSession = async (
     notes: session.notes || null,
     created_at: session.startTime,
     updated_at: session.updatedAt || session.startTime || new Date().toISOString(),
-    deleted_at: session.deletedAt || null,
+    // Only write deleted_at when deleting — see syncWorkoutTemplate.
+    ...(session.deletedAt ? { deleted_at: session.deletedAt } : {}),
   });
 
   if (error) {
@@ -223,7 +187,8 @@ export const syncPersonalExercise = async (
     last_used: exercise.lastUsed || null,
     created_at: exercise.createdAt || new Date().toISOString(),
     updated_at: exercise.updatedAt || exercise.createdAt || new Date().toISOString(),
-    deleted_at: exercise.deletedAt || null,
+    // Only write deleted_at when deleting — see syncWorkoutTemplate.
+    ...(exercise.deletedAt ? { deleted_at: exercise.deletedAt } : {}),
   });
 
   if (error) {
@@ -292,7 +257,8 @@ export const syncBodyWeight = async (userId: string, entry: BodyWeightEntry): Pr
     date: entry.date,
     created_at: entry.createdAt ?? new Date().toISOString(),
     updated_at: entry.updatedAt ?? entry.createdAt ?? new Date().toISOString(),
-    deleted_at: entry.deletedAt || null,
+    // Only write deleted_at when deleting — see syncWorkoutTemplate.
+    ...(entry.deletedAt ? { deleted_at: entry.deletedAt } : {}),
   });
 
   if (error) {
@@ -350,7 +316,8 @@ export const syncBodyMeasurement = async (
     notes: measurement.notes || null,
     created_at: measurement.createdAt || new Date().toISOString(),
     updated_at: measurement.updatedAt ?? measurement.createdAt ?? new Date().toISOString(),
-    deleted_at: measurement.deletedAt || null,
+    // Only write deleted_at when deleting — see syncWorkoutTemplate.
+    ...(measurement.deletedAt ? { deleted_at: measurement.deletedAt } : {}),
   });
 
   if (error) {
@@ -416,7 +383,8 @@ export const syncPersonalRecord = async (
     record_type: record.recordType,
     created_at: record.createdAt || new Date().toISOString(),
     updated_at: record.updatedAt ?? record.createdAt ?? new Date().toISOString(),
-    deleted_at: record.deletedAt || null,
+    // Only write deleted_at when deleting — see syncWorkoutTemplate.
+    ...(record.deletedAt ? { deleted_at: record.deletedAt } : {}),
   });
 
   if (error) {
@@ -488,7 +456,8 @@ export const syncRecoveryLog = async (userId: string, log: RecoveryLog): Promise
     notes: log.notes || null,
     created_at: log.createdAt || new Date().toISOString(),
     updated_at: log.updatedAt ?? log.createdAt ?? new Date().toISOString(),
-    deleted_at: log.deletedAt || null,
+    // Only write deleted_at when deleting — see syncWorkoutTemplate.
+    ...(log.deletedAt ? { deleted_at: log.deletedAt } : {}),
   });
 
   if (error) {
@@ -561,7 +530,8 @@ export const syncNutritionLog = async (userId: string, log: NutritionLog): Promi
     notes: log.notes || null,
     created_at: log.createdAt || new Date().toISOString(),
     updated_at: log.updatedAt ?? log.createdAt ?? new Date().toISOString(),
-    deleted_at: log.deletedAt || null,
+    // Only write deleted_at when deleting — see syncWorkoutTemplate.
+    ...(log.deletedAt ? { deleted_at: log.deletedAt } : {}),
   });
 
   if (error) {
@@ -614,251 +584,17 @@ export const deleteCloudNutritionLog = async (userId: string, id: string): Promi
   }
 };
 
-// ==================== USER SETTINGS ====================
-
-export const syncUserSetting = async (userId: string, setting: UserSetting): Promise<void> => {
-  if (!isSupabaseConfigured() || !supabase) return;
-
-  const { error } = await supabase.from('user_settings').upsert(
-    {
-      id: setting.id || `${userId}:${setting.key}`,
-      user_id: userId,
-      key: setting.key,
-      value: setting.value,
-      created_at: setting.createdAt || new Date().toISOString(),
-      updated_at: setting.updatedAt || new Date().toISOString(),
-    },
-    { onConflict: 'user_id,key' }
-  );
-
-  if (error) {
-    logger.sync.error('Error syncing user setting', error);
-    throw error;
-  }
-};
-
-export const fetchUserSettings = async (userId: string): Promise<UserSetting[]> => {
-  if (!isSupabaseConfigured() || !supabase) return [];
-
-  const data = await fetchAllPages('user_settings', (from, to) =>
-    supabase!
-      .from('user_settings')
-      .select('id, key, value, created_at, updated_at')
-      .eq('user_id', userId)
-      .range(from, to)
-  );
-
-  return data.map((row) => ({
-    id: row.id,
-    key: row.key,
-    value: row.value,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }));
-};
-
-export const deleteCloudUserSetting = async (userId: string, id: string): Promise<void> => {
-  if (!isSupabaseConfigured() || !supabase) return;
-
-  // INTENTIONAL hard delete (no tombstone). Unlike sessions/templates/water,
-  // user_settings rows are keyed by (user_id, key) and treated as upsert-only
-  // state — a setting is overwritten via `syncUserSetting`, not deleted, during
-  // normal use. There is therefore no local delete path that needs to propagate
-  // to other devices, and the `UserSetting` shape carries no `deletedAt`.
-  // mergeUserSettingsFromCloud already routes through the tombstone-aware
-  // generic merge, so if a `deleted_at` column is added server-side later, a
-  // soft-delete here would propagate without further merge changes.
-  const { error } = await supabase
-    .from('user_settings')
-    .delete()
-    .eq('id', id)
-    .eq('user_id', userId);
-
-  if (error) {
-    logger.sync.error('Error deleting cloud user setting', error);
-    throw error;
-  }
-};
-
-// ==================== AI CONVERSATIONS ====================
-
-export const syncAIConversation = async (
-  userId: string,
-  conversation: AIConversation
-): Promise<void> => {
-  if (!isSupabaseConfigured() || !supabase) return;
-
-  const { error } = await supabase.from('ai_conversations').upsert({
-    id: conversation.id,
-    user_id: userId,
-    title: conversation.title || null,
-    messages: conversation.messages,
-    context: conversation.context || {},
-    created_at: conversation.createdAt || new Date().toISOString(),
-    updated_at: conversation.updatedAt || conversation.createdAt || new Date().toISOString(),
-  });
-
-  if (error) {
-    logger.sync.error('Error syncing AI conversation', error);
-    throw error;
-  }
-};
-
-export const fetchAIConversations = async (userId: string): Promise<AIConversation[]> => {
-  if (!isSupabaseConfigured() || !supabase) return [];
-
-  const data = await fetchAllPages('ai_conversations', (from, to) =>
-    supabase!
-      .from('ai_conversations')
-      .select('id, title, messages, context, created_at, updated_at')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false })
-      .range(from, to)
-  );
-
-  return data.map((row) => ({
-    id: row.id,
-    title: row.title,
-    messages: row.messages || [],
-    context: row.context || {},
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }));
-};
-
-export const deleteCloudAIConversation = async (userId: string, id: string): Promise<void> => {
-  if (!isSupabaseConfigured() || !supabase) return;
-
-  const { error } = await supabase
-    .from('ai_conversations')
-    .delete()
-    .eq('id', id)
-    .eq('user_id', userId);
-
-  if (error) {
-    logger.sync.error('Error deleting cloud AI conversation', error);
-    throw error;
-  }
-};
+// ==================== USER SETTINGS & AI CONVERSATIONS ====================
+// syncUserSetting / fetchUserSettings / deleteCloudUserSetting and
+// syncAIConversation / fetchAIConversations / deleteCloudAIConversation /
+// softDeleteCloudAIConversation were extracted to ./supabaseMiscSync and are
+// re-exported here for backward compatibility.
+export * from './supabaseMiscSync';
 
 // ==================== REAL-TIME SYNC ====================
-
-type RealtimeCallback = (payload: unknown) => void;
-const realtimeChannels: Map<string, RealtimeChannel> = new Map();
-
-export const subscribeToWorkoutTemplates = (
-  userId: string,
-  onInsert: RealtimeCallback,
-  onUpdate: RealtimeCallback,
-  onDelete: RealtimeCallback
-): (() => void) => {
-  if (!isSupabaseConfigured() || !supabase) return () => {};
-
-  const channelName = `workout_templates:${userId}`;
-
-  if (realtimeChannels.has(channelName)) {
-    realtimeChannels.get(channelName)?.unsubscribe();
-  }
-
-  const channel = supabase
-    .channel(channelName)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'workout_templates',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => onInsert(payload)
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'workout_templates',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => onUpdate(payload)
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'workout_templates',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => onDelete(payload)
-    )
-    .subscribe();
-
-  realtimeChannels.set(channelName, channel);
-
-  return () => {
-    channel.unsubscribe();
-    realtimeChannels.delete(channelName);
-  };
-};
-
-export const subscribeToWorkoutSessions = (
-  userId: string,
-  onInsert: RealtimeCallback,
-  onUpdate: RealtimeCallback,
-  onDelete: RealtimeCallback
-): (() => void) => {
-  if (!isSupabaseConfigured() || !supabase) return () => {};
-
-  const channelName = `workout_sessions:${userId}`;
-
-  if (realtimeChannels.has(channelName)) {
-    realtimeChannels.get(channelName)?.unsubscribe();
-  }
-
-  const channel = supabase
-    .channel(channelName)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'workout_sessions',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => onInsert(payload)
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'workout_sessions',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => onUpdate(payload)
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'workout_sessions',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => onDelete(payload)
-    )
-    .subscribe();
-
-  realtimeChannels.set(channelName, channel);
-
-  return () => {
-    channel.unsubscribe();
-    realtimeChannels.delete(channelName);
-  };
-};
-
-// ==================== FULL SYNC ====================
+// subscribeToWorkoutTemplates / subscribeToWorkoutSessions were extracted to
+// ./supabaseRealtime and are re-exported here for backward compatibility.
+export * from './supabaseRealtime';
 
 // ==================== FULL SYNC ORCHESTRATION ====================
 // syncAllData / pullAllData / testConnection were extracted to
