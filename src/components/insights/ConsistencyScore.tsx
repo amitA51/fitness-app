@@ -93,6 +93,7 @@ export const ConsistencyScore = memo(function ConsistencyScore({
         </span>
         <span
           className="kinetic-number"
+          dir="ltr"
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 20,

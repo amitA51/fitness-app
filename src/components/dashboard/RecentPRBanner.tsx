@@ -110,7 +110,7 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
                 letterSpacing: '-0.01em',
               }}
             >
-              <span className="kinetic-number">
+              <span className="kinetic-number" dir="ltr">
                 {pr.weight}×{pr.reps}
               </span>
               <span

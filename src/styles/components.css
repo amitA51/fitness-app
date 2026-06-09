@@ -1175,10 +1175,6 @@ textarea {
   letter-spacing: -0.01em;
   display: inline-flex;
   align-items: baseline;
-  /* Numbers are Latin glyphs and must read left-to-right even inside the RTL
-     layout (IS 5568 / mixed-bidi). Forcing direction here covers every
-     .kinetic-number so individual spans don't each need dir="ltr". */
-  direction: ltr;
   transition: color var(--duration-fast) var(--ease-premium);
 }
 

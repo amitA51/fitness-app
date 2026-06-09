@@ -35,7 +35,9 @@ export function Greeting({ weekNumber }: GreetingProps) {
       <div>
         <div className="kicker" style={MONO_STYLE}>
           {today} · {todayFull} · שבוע{' '}
-          <span className="kinetic-number">{String(weekNumber).padStart(2, '0')}</span>
+          <span className="kinetic-number" dir="ltr">
+            {String(weekNumber).padStart(2, '0')}
+          </span>
         </div>
         <h1
           style={{

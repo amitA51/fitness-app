@@ -57,6 +57,7 @@ export const AnimatedBar = memo(function AnimatedBar({
           {showValue && (
             <span
               className="kinetic-number"
+              dir="ltr"
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 11,

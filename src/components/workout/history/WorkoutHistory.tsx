@@ -348,7 +348,7 @@ const SessionRow = memo(function SessionRow({
           >
             {exercises.length} תרגילים
             <span style={{ color: 'var(--fs-surface-2)', margin: '0 4px' }}>·</span>
-            <span style={{ color: 'var(--fs-accent)' }} className="kinetic-number">
+            <span style={{ color: 'var(--fs-accent)' }} className="kinetic-number" dir="ltr">
               {formatVolume(session.totalVolume || 0)}
             </span>{' '}
             ק"ג
@@ -468,6 +468,7 @@ const StatCard = memo(function StatCard({
       </div>
       <div
         className="kinetic-number"
+        dir="ltr"
         style={{
           fontFamily: 'var(--font-display)',
           fontWeight: 800,

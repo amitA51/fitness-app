@@ -87,6 +87,7 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
         <span
           ref={currentRef}
           className="kinetic-number"
+          dir="ltr"
           style={{ display: 'inline-block', fontVariantNumeric: 'tabular-nums' }}
         >
           {streak.current}
@@ -112,6 +113,7 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
           <span
             ref={bestRef}
             className="kinetic-number"
+            dir="ltr"
             style={{ fontVariantNumeric: 'tabular-nums' }}
           >
             {streak.best}
