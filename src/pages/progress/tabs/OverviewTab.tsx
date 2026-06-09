@@ -2,6 +2,7 @@ import { Flame, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConsistencyScore } from '../../../components/insights/ConsistencyScore';
+import { MuscleBalanceInsight } from '../../../components/insights/MuscleBalanceInsight';
 import { MuscleDistribution } from '../../../components/insights/MuscleDistribution';
 import { useWorkoutStreak } from '../../../hooks/useWorkoutStreak';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
@@ -271,6 +272,7 @@ export const OverviewTab = memo(function OverviewTab({
           insights belong to Progress now; each self-hides when there is no data. */}
       <ConsistencyScore sessions={sessions} />
       <MuscleDistribution sessions={sessions} />
+      <MuscleBalanceInsight sessions={sessions} />
     </div>
   );
 });
