@@ -5,7 +5,6 @@
  * merge/replace helpers.
  */
 
-import { getBUILT_IN_EXERCISES } from '../data/builtInExercises';
 import { NotFoundError } from '../errors';
 import type { CreatePersonalExerciseInput, PersonalExercise } from '../types';
 import { generateId } from '../utils/id';
@@ -29,6 +28,10 @@ const loadAndSeedBuiltIns = async (): Promise<PersonalExercise[]> => {
   const exercises = await dbGetAll<PersonalExercise>(STORES.PERSONAL_EXERCISES);
 
   const now = new Date().toISOString();
+  // Lazy-load the ~38KB built-in catalog: it's only needed when seeding the
+  // personal-exercise store, so it stays out of the initial bundle and ships as
+  // its own chunk fetched on first exercise-DB read.
+  const { getBUILT_IN_EXERCISES } = await import('../data/builtInExercises');
   const builtIn = getBUILT_IN_EXERCISES(now);
   const existingNames = new Set(exercises.map((e) => e.name));
   const missingBuiltIns = builtIn.filter((b) => !existingNames.has(b.name));
