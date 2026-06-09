@@ -3,7 +3,7 @@
 // (CoachHome) and the full roster page (CoachClients).
 // ============================================================================
 
-import { MessageSquare, UserPlus } from 'lucide-react';
+import { Check, MessageSquare, UserPlus } from 'lucide-react';
 import type React from 'react';
 import { type ClientOverviewRow, clientStatusMeta } from '../../services/coach';
 import { ListRow, formatDate } from './_shared';
@@ -63,27 +63,55 @@ export function StatusChip({ label, color }: { label: string; color: string }) {
   );
 }
 
+/**
+ * A command-center overview stat. `indicator` adds a small status glyph beside
+ * the number: a pulse-free dot for "due today" and a check for "trained today",
+ * tinted to the stat's own color so it reads as one unit. The dot is static
+ * (no blinking) per the anti-slop no-animated-status-dot rule.
+ */
 export function OverviewStat({
   label,
   value,
   color,
-}: { label: string; value: number; color?: string }) {
+  indicator,
+}: {
+  label: string;
+  value: number;
+  color?: string;
+  indicator?: 'due' | 'trained';
+}) {
+  const tone = color ?? 'var(--fs-heading)';
   return (
     <div
-      className="px-3 py-3"
-      style={{ background: 'var(--fs-surface)', border: '1px solid var(--fs-surface-2)' }}
+      className="px-4 py-4"
+      style={{
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        boxShadow: 'var(--shadow-card)',
+      }}
     >
-      <div
-        style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: 24,
-          fontWeight: 700,
-          fontVariantNumeric: 'tabular-nums',
-          color: color ?? 'var(--fs-heading)',
-          lineHeight: 1,
-        }}
-      >
-        <span dir="ltr">{value}</span>
+      <div className="flex items-center gap-2">
+        <div
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 24,
+            fontWeight: 700,
+            fontVariantNumeric: 'tabular-nums',
+            color: tone,
+            lineHeight: 1,
+          }}
+        >
+          <span dir="ltr">{value}</span>
+        </div>
+        {indicator === 'due' && value > 0 && (
+          <span
+            aria-hidden="true"
+            style={{ width: 8, height: 8, borderRadius: 999, background: tone, flexShrink: 0 }}
+          />
+        )}
+        {indicator === 'trained' && value > 0 && (
+          <Check size={14} strokeWidth={3} style={{ color: tone, flexShrink: 0 }} aria-hidden="true" />
+        )}
       </div>
       <div
         style={{

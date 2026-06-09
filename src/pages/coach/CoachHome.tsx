@@ -4,13 +4,24 @@
 // roster lives on /coach/clients (CoachClients).
 // ============================================================================
 
-import { ChevronLeft, MessageSquare, UserPlus, Users } from 'lucide-react';
+import {
+  Check,
+  ChevronLeft,
+  Dumbbell,
+  LineChart,
+  MessageSquare,
+  UserPlus,
+  Users,
+} from 'lucide-react';
+import { m } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FadeIn } from '../../components/motion/FadeIn';
 import { Button } from '../../components/ui/Button';
-import EmptyState from '../../components/ui/EmptyState';
 import { useCoach } from '../../contexts/CoachContext';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { useUnreadMessages } from '../../hooks/useUnreadMessages';
+import { triggerHapticIntensity } from '../../utils/haptics';
 import {
   type ClientOverviewRow,
   type TodayScheduleCount,
@@ -164,28 +175,13 @@ export default function CoachHome() {
           <SectionError onRetry={reload} />
         </Section>
       ) : rows.length === 0 ? (
-        <EmptyState
-          illustration="generic"
-          title="עדיין אין מתאמנים מחוברים"
-          description="ההזמנה הראשונה לוקחת פחות מדקה — שלח קוד הזמנה למתאמן."
-          action={{ label: 'הזמנת מתאמן', onClick: () => navigate('/coach/invites') }}
-        />
+        <CoachEmptyState onInvite={() => navigate('/coach/invites')} />
       ) : (
         <>
           {/* דורשים טיפול היום */}
           <Section title="דורשים טיפול היום">
             {attentionRows.length === 0 ? (
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 13,
-                  color: 'var(--fs-muted)',
-                  margin: 0,
-                  padding: '6px 0',
-                }}
-              >
-                כל המתאמנים פעילים ✓
-              </p>
+              <AllActiveState />
             ) : (
               attentionRows.map((row) => (
                 <AttentionRowWithSignals
@@ -204,8 +200,18 @@ export default function CoachHome() {
           {/* Aggregate overview */}
           <Section title="סקירה כללית">
             <div className="grid grid-cols-3 gap-2">
-              <OverviewStat label="אמורים להתאמן היום" value={dueToday} color="var(--fs-accent)" />
-              <OverviewStat label="כבר התאמנו" value={trainedToday} />
+              <OverviewStat
+                label="אמורים להתאמן היום"
+                value={dueToday}
+                color="var(--fs-accent)"
+                indicator="due"
+              />
+              <OverviewStat
+                label="כבר התאמנו"
+                value={trainedToday}
+                color="var(--fs-accent)"
+                indicator="trained"
+              />
               <OverviewStat
                 label="דורשים תשומת לב"
                 value={summary.needsAttention}
@@ -231,6 +237,199 @@ export default function CoachHome() {
         </>
       )}
     </CoachPage>
+  );
+}
+
+// ── Coach empty state ──────────────────────────────────────────────────────────
+// A composed "ראשית" (getting-started) lockup for a coach with zero clients:
+// three numbered steps that show HOW the platform works, then a prominent
+// invite CTA. Replaces the generic EmptyState so the first-run screen guides
+// instead of just stating emptiness. FadeIn honors prefers-reduced-motion.
+
+const ONBOARD_STEPS: readonly { icon: React.ReactNode; title: string; body: string }[] = [
+  {
+    icon: <UserPlus size={18} aria-hidden="true" />,
+    title: 'הזמינו מתאמן',
+    body: 'שלחו קוד הזמנה — ההצטרפות לוקחת פחות מדקה.',
+  },
+  {
+    icon: <Dumbbell size={18} aria-hidden="true" />,
+    title: 'בנו תוכנית',
+    body: 'הרכיבו תוכנית אימון או יעד תזונה ושייכו אותם למתאמן.',
+  },
+  {
+    icon: <LineChart size={18} aria-hidden="true" />,
+    title: 'עקבו אחר ההתקדמות',
+    body: 'צ׳ק-אינים, אימונים ומדדים מתעדכנים אצלכם בזמן אמת.',
+  },
+];
+
+function CoachEmptyState({ onInvite }: { onInvite: () => void }) {
+  return (
+    <Section>
+      <FadeIn>
+        <div
+          style={{
+            padding: '20px 16px',
+            background: 'var(--fs-surface)',
+            border: '1px solid var(--fs-surface-2)',
+            boxShadow: 'var(--shadow-card)',
+            marginBottom: 12,
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 22,
+              fontWeight: 800,
+              letterSpacing: '-0.01em',
+              color: 'var(--fs-heading)',
+              margin: 0,
+            }}
+          >
+            ראשית — שלושה צעדים
+          </h2>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              color: 'var(--fs-muted)',
+              lineHeight: 1.6,
+              margin: '6px 0 18px',
+            }}
+          >
+            עדיין אין מתאמנים מחוברים. כך מתחילים לנהל את המאמנת או המאמן שבכם.
+          </p>
+
+          <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 14 }}>
+            {ONBOARD_STEPS.map((step, i) => (
+              <li key={step.title} className="flex items-start gap-3">
+                <span
+                  aria-hidden="true"
+                  style={{
+                    flexShrink: 0,
+                    width: 36,
+                    height: 36,
+                    borderRadius: 999,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'var(--fs-primary)',
+                    color: 'var(--fs-accent)',
+                  }}
+                >
+                  {step.icon}
+                </span>
+                <div className="min-w-0">
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: 6,
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: 'var(--fs-ink)',
+                    }}
+                  >
+                    <span
+                      dir="ltr"
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: 'var(--fs-muted)',
+                      }}
+                    >
+                      {i + 1}
+                    </span>
+                    {step.title}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 13,
+                      color: 'var(--fs-muted)',
+                      lineHeight: 1.55,
+                      marginTop: 2,
+                    }}
+                  >
+                    {step.body}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </FadeIn>
+
+      <Button
+        variant="primary"
+        fullWidth
+        icon={<UserPlus size={18} aria-hidden="true" />}
+        onClick={onInvite}
+        style={{ minHeight: 48 }}
+      >
+        הזמנת מתאמן
+      </Button>
+    </Section>
+  );
+}
+
+// ── All-active state ────────────────────────────────────────────────────────────
+// Shown when no client needs attention. A SOFT, NON-blinking affirmation — a
+// calm accent-tinted disc + check, not an animated "live" dot. Honors
+// prefers-reduced-motion via the FadeIn primitive (renders instantly when set).
+function AllActiveState() {
+  return (
+    <FadeIn
+      className="flex items-center gap-3"
+      style={{
+        padding: '14px 16px',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        boxShadow: 'var(--shadow-card)',
+      }}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          flexShrink: 0,
+          width: 32,
+          height: 32,
+          borderRadius: 999,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'color-mix(in srgb, var(--fs-accent) 16%, transparent)',
+          color: 'var(--fs-accent)',
+        }}
+      >
+        <Check size={18} strokeWidth={3} />
+      </span>
+      <div className="min-w-0">
+        <div
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 14,
+            fontWeight: 600,
+            color: 'var(--fs-ink)',
+          }}
+        >
+          כל המתאמנים על המסלול
+        </div>
+        <div
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            color: 'var(--fs-muted)',
+            marginTop: 2,
+          }}
+        >
+          אין מי שדורש טיפול כרגע
+        </div>
+      </div>
+    </FadeIn>
   );
 }
 
@@ -264,6 +463,53 @@ function SignalChip({
         lineHeight: 1.4,
       }}
     >
+      {label}
+    </span>
+  );
+}
+
+// ── Win chip ───────────────────────────────────────────────────────────────────
+// A trained-today WIN is a legit celebration: the chip goes --fs-signal (lime),
+// the check icon scale-pops once on appear, and a light haptic fires on mobile.
+// prefers-reduced-motion: no pop, no entrance — the lime chip still renders.
+function WinChip({ label }: { label: string }) {
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    if (reduced) return;
+    triggerHapticIntensity('light');
+  }, [reduced]);
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        fontFamily: 'var(--font-mono)',
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '0.04em',
+        color: 'var(--fs-signal)',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-signal)',
+        borderRadius: 999,
+        padding: '2px 8px',
+        lineHeight: 1.4,
+      }}
+    >
+      {reduced ? (
+        <Check size={11} strokeWidth={3} aria-hidden="true" />
+      ) : (
+        <m.span
+          initial={{ scale: 0.4, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 520, damping: 16 }}
+          style={{ display: 'inline-flex' }}
+        >
+          <Check size={11} strokeWidth={3} aria-hidden="true" />
+        </m.span>
+      )}
       {label}
     </span>
   );
@@ -314,7 +560,7 @@ function RowSignalChips({
         </span>
       )}
       {trainedToday ? (
-        <SignalChip label="התאמן ✓" color="var(--fs-accent)" background="var(--fs-surface)" />
+        <WinChip label="התאמן" />
       ) : dueToday ? (
         <SignalChip label="מתאמן היום" color="var(--fs-muted)" background="var(--fs-surface)" />
       ) : null}

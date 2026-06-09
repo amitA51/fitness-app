@@ -2,16 +2,20 @@
 // MESSAGE THREAD — async coach<->client conversation (shared by both roles)
 // ============================================================================
 
-import { Send } from 'lucide-react';
+import { m } from 'framer-motion';
+import { Check, CheckCheck, Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { EASE_OUT } from '../../components/motion/easings';
 import { Button } from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
 import { showToast } from '../../components/ui/GlobalToast';
 import { useAuth } from '../../contexts/AuthContext';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { getThread, markThreadRead, sendMessage, subscribeToThread } from '../../services/coach';
 import type { Message } from '../../types/coach';
 import { CoachPage, ListSkeleton } from './_shared';
+import { TypingDots } from './TypingDots';
 
 export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' }) {
   const { otherId = '' } = useParams<{ otherId: string }>();
@@ -27,6 +31,7 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
   const [error, setError] = useState(false);
   const [liveAnnouncement, setLiveAnnouncement] = useState('');
   const endRef = useRef<HTMLDivElement | null>(null);
+  const reduced = useReducedMotion();
 
   const load = async () => {
     setError(false);
@@ -114,37 +119,18 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
             description="כתבו את ההודעה הראשונה."
           />
         ) : (
-          messages.map((m) => {
-            const mine = m.senderId === me;
-            return (
-              <div
-                key={m.id}
-                role="article"
-                aria-label={mine ? 'הודעה שנשלחה' : 'הודעה שהתקבלה'}
-                style={{
-                  // Logical alignment: `margin-inline-start:auto` pushes a flex
-                  // item to the inline-END (right in RTL) for MY messages;
-                  // `margin-inline-end:auto` pushes received ones to inline-START.
-                  marginInlineStart: mine ? 'auto' : 0,
-                  marginInlineEnd: mine ? 0 : 'auto',
-                  maxWidth: '80%',
-                  background: mine ? 'var(--fs-primary)' : 'var(--fs-surface)',
-                  color: mine ? 'var(--fs-accent)' : 'var(--fs-ink)',
-                  border: '1px solid var(--fs-surface-2)',
-                  padding: '8px 12px',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 14,
-                  textAlign: 'start',
-                }}
-              >
-                {/* dir="auto" lets each bubble resolve its own base direction
-                    for user-generated content that may be Hebrew or English. */}
-                <span dir="auto" style={{ display: 'block', textAlign: 'start' }}>
-                  {m.body}
-                </span>
+          <>
+            {messages.map((msg) => (
+              <Bubble key={msg.id} message={msg} mine={msg.senderId === me} reduced={reduced} />
+            ))}
+            {/* "Delivering" indicator on my in-flight send — backed by real
+                `sending` state, aligned to the inline-end like my bubbles. */}
+            {sending && (
+              <div style={{ marginInlineStart: 'auto', marginInlineEnd: 0 }}>
+                <TypingDots />
               </div>
-            );
-          })
+            )}
+          </>
         )}
         <div ref={endRef} />
       </div>
@@ -198,5 +184,78 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
         </Button>
       </div>
     </CoachPage>
+  );
+}
+
+// ── Bubble ──────────────────────────────────────────────────────────────────────
+// One message bubble with a mount entrance (opacity:0,y:8 → settled). My own
+// bubbles carry a read receipt: a single check = delivered, a double check
+// (accent) = read, derived from the existing `readAt` field. prefers-reduced-
+// motion renders instantly with no transform.
+
+function Bubble({ message, mine, reduced }: { message: Message; mine: boolean; reduced: boolean }) {
+  const read = message.readAt !== null;
+  const bubbleStyle = {
+    // Logical alignment: `margin-inline-start:auto` pushes a flex item to the
+    // inline-END (right in RTL) for MY messages; `margin-inline-end:auto`
+    // pushes received ones to inline-START.
+    marginInlineStart: mine ? 'auto' : 0,
+    marginInlineEnd: mine ? 0 : 'auto',
+    maxWidth: '80%',
+    background: mine ? 'var(--fs-primary)' : 'var(--fs-surface)',
+    color: mine ? 'var(--fs-accent)' : 'var(--fs-ink)',
+    border: '1px solid var(--fs-surface-2)',
+    padding: '8px 12px',
+    fontFamily: 'var(--font-body)',
+    fontSize: 14,
+    textAlign: 'start' as const,
+  };
+
+  const inner = (
+    <>
+      {/* dir="auto" lets each bubble resolve its own base direction for
+          user-generated content that may be Hebrew or English. */}
+      <span dir="auto" style={{ display: 'block', textAlign: 'start' }}>
+        {message.body}
+      </span>
+      {mine && (
+        <span
+          aria-label={read ? 'נקרא' : 'נשלח'}
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-start',
+            marginTop: 3,
+            color: read ? 'var(--fs-accent)' : 'var(--fs-muted)',
+          }}
+        >
+          {read ? (
+            <CheckCheck size={13} strokeWidth={2.5} aria-hidden="true" />
+          ) : (
+            <Check size={13} strokeWidth={2.5} aria-hidden="true" />
+          )}
+        </span>
+      )}
+    </>
+  );
+
+  if (reduced) {
+    return (
+      <div role="article" aria-label={mine ? 'הודעה שנשלחה' : 'הודעה שהתקבלה'} style={bubbleStyle}>
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <m.div
+      role="article"
+      aria-label={mine ? 'הודעה שנשלחה' : 'הודעה שהתקבלה'}
+      style={bubbleStyle}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: EASE_OUT }}
+    >
+      {inner}
+    </m.div>
   );
 }

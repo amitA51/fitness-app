@@ -5,12 +5,15 @@
 // group participants: sender names float above received bubbles, resolved once
 // after load and lazily for live arrivals from previously-unseen senders.
 
+import { m } from 'framer-motion';
 import { Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { EASE_OUT } from '../../components/motion/easings';
 import { Button } from '../../components/ui/Button';
 import { showToast } from '../../components/ui/GlobalToast';
 import { useAuth } from '../../contexts/AuthContext';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import {
   getGroupThread,
   listGroupThreads,
@@ -21,6 +24,7 @@ import { getProfilesByIds } from '../../services/coach/profileService';
 import { subscribeToGroupThread } from '../../services/coach/realtime';
 import type { GroupMessage } from '../../types/coach';
 import { CoachPage, ListSkeleton, SectionError } from './_shared';
+import { TypingDots } from './TypingDots';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -48,6 +52,7 @@ export default function GroupThread({ viewer }: Props) {
   const [error, setError] = useState(false);
   const [liveAnnouncement, setLiveAnnouncement] = useState('');
   const endRef = useRef<HTMLDivElement | null>(null);
+  const reduced = useReducedMotion();
   // Debounce markRead on incoming realtime messages: avoid hammering the DB
   // for a burst of arriving messages in a short window.
   const markReadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -205,62 +210,89 @@ export default function GroupThread({ viewer }: Props) {
             אין הודעות עדיין — אפשר לפתוח את השיחה
           </div>
         ) : (
-          messages.map((m) => {
-            const mine = m.senderId === me;
-            const senderLabel = !mine ? (senderNames.get(m.senderId) ?? 'משתתף') : null;
+          <>
+            {messages.map((msg) => {
+              const mine = msg.senderId === me;
+              const senderLabel = !mine ? (senderNames.get(msg.senderId) ?? 'משתתף') : null;
 
-            return (
-              <div
-                key={m.id}
-                role="article"
-                aria-label={mine ? 'הודעה שנשלחה' : `הודעה מ${senderLabel}`}
-                style={{
-                  // Logical alignment: inline-start auto → inline-END for mine
-                  // (right in RTL); inline-end auto → inline-START for received.
-                  marginInlineStart: mine ? 'auto' : 0,
-                  marginInlineEnd: mine ? 0 : 'auto',
-                  maxWidth: '80%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 2,
-                }}
-              >
-                {/* Sender name label — only for messages not sent by me. */}
-                {senderLabel !== null && (
-                  <span
-                    aria-hidden="true"
+              const itemStyle = {
+                // Logical alignment: inline-start auto → inline-END for mine
+                // (right in RTL); inline-end auto → inline-START for received.
+                marginInlineStart: mine ? 'auto' : 0,
+                marginInlineEnd: mine ? 0 : 'auto',
+                maxWidth: '80%',
+                display: 'flex',
+                flexDirection: 'column' as const,
+                gap: 2,
+              };
+
+              const inner = (
+                <>
+                  {/* Sender name label — only for messages not sent by me. */}
+                  {senderLabel !== null && (
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 10,
+                        color: 'var(--fs-muted)',
+                        paddingInlineStart: 4,
+                        display: 'block',
+                      }}
+                    >
+                      <bdi>{senderLabel}</bdi>
+                    </span>
+                  )}
+
+                  {/* Bubble */}
+                  <div
                     style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 10,
-                      color: 'var(--fs-muted)',
-                      paddingInlineStart: 4,
-                      display: 'block',
+                      background: mine ? 'var(--fs-primary)' : 'var(--fs-surface)',
+                      color: mine ? 'var(--fs-accent)' : 'var(--fs-ink)',
+                      border: '1px solid var(--fs-surface-2)',
+                      padding: '8px 12px',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 14,
+                      textAlign: 'start',
                     }}
                   >
-                    <bdi>{senderLabel}</bdi>
-                  </span>
-                )}
+                    {/* dir="auto" resolves base direction per-bubble for mixed Hebrew/English content. */}
+                    <span dir="auto" style={{ display: 'block', textAlign: 'start' }}>
+                      {msg.body}
+                    </span>
+                  </div>
+                </>
+              );
 
-                {/* Bubble */}
-                <div
-                  style={{
-                    background: mine ? 'var(--fs-primary)' : 'var(--fs-surface)',
-                    color: mine ? 'var(--fs-accent)' : 'var(--fs-ink)',
-                    border: '1px solid var(--fs-surface-2)',
-                    padding: '8px 12px',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 14,
-                    textAlign: 'start',
-                  }}
-                >
-                  {/* dir="auto" resolves base direction per-bubble for mixed Hebrew/English content. */}
-                  <span dir="auto" style={{ display: 'block', textAlign: 'start' }}>
-                    {m.body}
-                  </span>
+              const ariaLabel = mine ? 'הודעה שנשלחה' : `הודעה מ${senderLabel}`;
+
+              // Mount entrance (opacity:0,y:8 → settled); static under reduced-motion.
+              // Group messages have no per-message read state, so no read receipt.
+              return reduced ? (
+                <div key={msg.id} role="article" aria-label={ariaLabel} style={itemStyle}>
+                  {inner}
                 </div>
+              ) : (
+                <m.div
+                  key={msg.id}
+                  role="article"
+                  aria-label={ariaLabel}
+                  style={itemStyle}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.28, ease: EASE_OUT }}
+                >
+                  {inner}
+                </m.div>
+              );
+            })}
+            {/* "Delivering" indicator on my in-flight send — backed by `sending`. */}
+            {sending && (
+              <div style={{ marginInlineStart: 'auto', marginInlineEnd: 0 }}>
+                <TypingDots />
               </div>
-            );
-          })
+            )}
+          </>
         )}
         <div ref={endRef} />
       </div>

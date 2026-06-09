@@ -2,8 +2,8 @@
 // MY COACH — trainee view: assignments inbox, coaches, consent management
 // ============================================================================
 
-import { ImagePlus, MessageSquare, Play, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Check, ImagePlus, MessageSquare, Play, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
@@ -13,6 +13,7 @@ import { Textarea } from '../components/ui/Textarea';
 import { useAuth } from '../contexts/AuthContext';
 import { syncTemplatesFromCloud } from '../hooks/useCloudTemplateReflection';
 import {
+  type ProgramDayRef,
   disconnectCoach,
   listMyAssignments,
   listMyCoaches,
@@ -41,6 +42,64 @@ const KIND_LABEL: Record<Assignment['kind'], string> = {
   announcement: 'הודעה',
 };
 
+// Trailing-edge rail color, keyed by assignment kind. Reuses existing semantic
+// tokens only — NEVER --fs-signal (reserved for PR/celebration) and NEVER a new
+// hue. program=action accent, nutrition=warn, note/announcement=muted.
+const KIND_RAIL: Record<Assignment['kind'], string> = {
+  program: 'var(--fs-accent)',
+  nutrition_target: 'var(--fs-warn)',
+  note: 'var(--fs-muted)',
+  announcement: 'var(--fs-muted)',
+};
+
+const ACK_STORAGE_KEY = 'mycoach:ackedAssignments';
+
+/**
+ * Local-only "handled" state for assignment cards. The trainee cannot write to
+ * the coach-owned assignments row (RLS allows SELECT only), so a true server
+ * status change is out of scope here — this persists a per-assignment
+ * acknowledgement in localStorage so the trainee can mark items they've acted
+ * on, surviving reloads without a backend dependency.
+ */
+function useLocalAck(): {
+  isAcked: (id: string) => boolean;
+  toggleAck: (id: string) => void;
+} {
+  const [acked, setAcked] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(ACK_STORAGE_KEY);
+      return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      return new Set();
+    }
+  });
+
+  const persist = useCallback((next: Set<string>) => {
+    try {
+      localStorage.setItem(ACK_STORAGE_KEY, JSON.stringify([...next]));
+    } catch {
+      // Storage unavailable (private mode / quota) — keep in-memory state only.
+    }
+  }, []);
+
+  const toggleAck = useCallback(
+    (id: string) => {
+      setAcked((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
+  const isAcked = useCallback((id: string) => acked.has(id), [acked]);
+
+  return { isAcked, toggleAck };
+}
+
 export default function MyCoach() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -63,6 +122,12 @@ export default function MyCoach() {
   const [code, setCode] = useState('');
   const { busy, accept } = useAcceptInvite();
   const [startingId, setStartingId] = useState<string | null>(null);
+  const { isAcked, toggleAck } = useLocalAck();
+
+  // coachId → display name, for stamping the sending coach on each card.
+  const coachNameById = new Map(
+    coaches.map((c) => [c.coachId, c.coachProfile?.displayName ?? 'מאמן'])
+  );
 
   // Live inbox: reflect coach actions (program/note/announcement) the moment they land.
   useEffect(() => {
@@ -269,103 +334,237 @@ export default function MyCoach() {
             description="כשהמאמן ישלח תוכנית או המלצה, היא תופיע כאן."
           />
         ) : (
-          assignments.map((a) => {
-            // Resolve program days: for a group program each member sees ONLY
-            // their own per-member templates (payload.memberDays[myId]); direct
-            // programs fall back to the flat payload.days. Malformed refs filtered.
-            const days = resolveProgramDays(a, user?.id ?? '');
-
-            const hasMultiDays = days.length > 0;
-
-            // Build compact macro meta line for nutrition_target rows.
-            const macroMeta =
-              a.kind === 'nutrition_target' ? (
-                <span
-                  style={{
-                    display: 'block',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 12,
-                    color: 'var(--fs-muted)',
-                    marginTop: 2,
-                  }}
-                >
-                  {typeof a.payload.calories === 'number' && (
-                    <>
-                      {'קלוריות: '}
-                      <span dir="ltr">{a.payload.calories}</span>
-                    </>
-                  )}
-                  {typeof a.payload.protein === 'number' && (
-                    <>
-                      {' · חלבון: '}
-                      <span dir="ltr">{a.payload.protein}</span>
-                      {' גרם'}
-                    </>
-                  )}
-                  {typeof a.payload.carbs === 'number' && (
-                    <>
-                      {' · פחמימות: '}
-                      <span dir="ltr">{a.payload.carbs}</span>
-                      {' גרם'}
-                    </>
-                  )}
-                  {typeof a.payload.fat === 'number' && (
-                    <>
-                      {' · שומן: '}
-                      <span dir="ltr">{a.payload.fat}</span>
-                      {' גרם'}
-                    </>
-                  )}
-                </span>
-              ) : null;
-
-            return (
-              <ListRow
-                key={a.id}
-                label={a.title || KIND_LABEL[a.kind]}
-                meta={`${KIND_LABEL[a.kind]} · ${formatDate(a.createdAt)}${
-                  typeof a.payload.text === 'string' ? ` · ${a.payload.text}` : ''
-                }${a.kind !== 'nutrition_target' && typeof a.payload.calories === 'number' ? ` · ${a.payload.calories} קל'` : ''}`}
-                metaNode={macroMeta ?? undefined}
-                trailing={
-                  a.kind === 'program' ? (
-                    hasMultiDays ? (
-                      // Multi-day program: one start button per day, stacked vertically.
-                      <div className="flex flex-col gap-1">
-                        {days.map((day) => (
-                          <Button
-                            key={day.templateId}
-                            variant="primary"
-                            size="sm"
-                            icon={<Play size={14} aria-hidden="true" />}
-                            isLoading={startingId === a.id}
-                            onClick={() => startProgram(a, day.templateId)}
-                            style={{ minHeight: 44, width: '100%', justifyContent: 'flex-start' }}
-                          >
-                            <bdi>{day.name}</bdi>
-                          </Button>
-                        ))}
-                      </div>
-                    ) : a.templateId ? (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        icon={<Play size={14} aria-hidden="true" />}
-                        isLoading={startingId === a.id}
-                        onClick={() => startProgram(a)}
-                        style={{ minHeight: 44 }}
-                      >
-                        התחל אימון
-                      </Button>
-                    ) : undefined
-                  ) : undefined
-                }
-              />
-            );
-          })
+          assignments.map((a) => (
+            <AssignmentCard
+              key={a.id}
+              assignment={a}
+              coachName={coachNameById.get(a.coachId) ?? 'מאמן'}
+              days={resolveProgramDays(a, user?.id ?? '')}
+              starting={startingId === a.id}
+              acked={isAcked(a.id)}
+              onStart={(templateId) => startProgram(a, templateId)}
+              onToggleAck={() => toggleAck(a.id)}
+            />
+          ))
         )}
       </Section>
     </CoachPage>
+  );
+}
+
+// ── Assignment card ──────────────────────────────────────────────────────────
+// A coach assignment rendered as a card: a trailing-edge (inline-end) accent
+// rail color-coded by kind, the sending coach's name in mono, a prominent Play
+// affordance for programs, and a local mark-complete toggle. The rail sits on
+// the inline-END edge so it lands correctly in the RTL layout.
+
+interface AssignmentCardProps {
+  assignment: Assignment;
+  coachName: string;
+  days: ProgramDayRef[];
+  starting: boolean;
+  acked: boolean;
+  onStart: (templateId?: string) => void;
+  onToggleAck: () => void;
+}
+
+function AssignmentCard({
+  assignment: a,
+  coachName,
+  days,
+  starting,
+  acked,
+  onStart,
+  onToggleAck,
+}: AssignmentCardProps) {
+  const hasMultiDays = days.length > 0;
+  const isProgram = a.kind === 'program';
+  const title = a.title || KIND_LABEL[a.kind];
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        boxShadow: 'var(--shadow-card)',
+        padding: '14px 16px',
+        // Leave room so content never sits under the rail (rail is on inline-end).
+        paddingInlineEnd: 20,
+        marginBottom: 8,
+        opacity: acked ? 0.6 : 1,
+        transition: 'opacity 150ms ease',
+      }}
+    >
+      {/* Trailing-edge accent rail — inline-END edge, color-coded by kind. */}
+      <span
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          insetInlineEnd: 0,
+          top: 0,
+          bottom: 0,
+          width: 3,
+          background: KIND_RAIL[a.kind],
+        }}
+      />
+
+      <div className="flex items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <div
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 15,
+              fontWeight: 700,
+              color: 'var(--fs-ink)',
+              textDecoration: acked ? 'line-through' : 'none',
+            }}
+          >
+            <bdi>{title}</bdi>
+          </div>
+
+          {/* kind + date in mono; coach name stamped in mono. */}
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              color: 'var(--fs-muted)',
+              marginTop: 3,
+            }}
+          >
+            {KIND_LABEL[a.kind]} · {formatDate(a.createdAt)}
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              color: 'var(--fs-muted)',
+              marginTop: 2,
+            }}
+          >
+            מאת <bdi>{coachName}</bdi>
+          </div>
+
+          {/* Free-text note body for note/announcement kinds. */}
+          {typeof a.payload.text === 'string' && a.payload.text.trim() !== '' && (
+            <p
+              dir="auto"
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                color: 'var(--fs-ink)',
+                lineHeight: 1.55,
+                margin: '8px 0 0',
+              }}
+            >
+              {a.payload.text}
+            </p>
+          )}
+
+          {/* Macro line for nutrition targets. */}
+          {a.kind === 'nutrition_target' && <MacroLine payload={a.payload} />}
+        </div>
+
+        {/* Mark-complete toggle (local acknowledgement). */}
+        <button
+          type="button"
+          onClick={onToggleAck}
+          aria-label={acked ? `בטל סימון "טופל" עבור ${title}` : `סמן את "${title}" כטופל`}
+          aria-pressed={acked}
+          className="shrink-0 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
+          style={{
+            width: 36,
+            height: 36,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 999,
+            cursor: 'pointer',
+            background: acked ? 'var(--fs-primary)' : 'var(--fs-surface)',
+            color: acked ? 'var(--fs-accent)' : 'var(--fs-muted)',
+            border: `1px solid ${acked ? 'var(--fs-accent)' : 'var(--fs-surface-2)'}`,
+          }}
+        >
+          <Check size={16} strokeWidth={acked ? 3 : 2} aria-hidden="true" />
+        </button>
+      </div>
+
+      {/* Prominent Play affordance for programs. */}
+      {isProgram &&
+        (hasMultiDays ? (
+          <div className="flex flex-col gap-1.5" style={{ marginTop: 12 }}>
+            {days.map((day) => (
+              <Button
+                key={day.templateId}
+                variant="primary"
+                size="sm"
+                fullWidth
+                icon={<Play size={15} aria-hidden="true" />}
+                isLoading={starting}
+                onClick={() => onStart(day.templateId)}
+                style={{ minHeight: 44, justifyContent: 'flex-start' }}
+              >
+                <bdi>{day.name}</bdi>
+              </Button>
+            ))}
+          </div>
+        ) : a.templateId ? (
+          <Button
+            variant="primary"
+            fullWidth
+            icon={<Play size={16} aria-hidden="true" />}
+            isLoading={starting}
+            onClick={() => onStart()}
+            style={{ minHeight: 44, marginTop: 12 }}
+          >
+            התחל אימון
+          </Button>
+        ) : null)}
+    </div>
+  );
+}
+
+/** Compact macro meta line for nutrition_target cards (numbers stay LTR). */
+function MacroLine({ payload }: { payload: Record<string, unknown> }) {
+  const { calories, protein, carbs, fat } = payload;
+  return (
+    <span
+      style={{
+        display: 'block',
+        fontFamily: 'var(--font-mono)',
+        fontSize: 12,
+        color: 'var(--fs-muted)',
+        marginTop: 8,
+      }}
+    >
+      {typeof calories === 'number' && (
+        <>
+          {'קלוריות: '}
+          <span dir="ltr">{calories}</span>
+        </>
+      )}
+      {typeof protein === 'number' && (
+        <>
+          {' · חלבון: '}
+          <span dir="ltr">{protein}</span>
+          {' גרם'}
+        </>
+      )}
+      {typeof carbs === 'number' && (
+        <>
+          {' · פחמימות: '}
+          <span dir="ltr">{carbs}</span>
+          {' גרם'}
+        </>
+      )}
+      {typeof fat === 'number' && (
+        <>
+          {' · שומן: '}
+          <span dir="ltr">{fat}</span>
+          {' גרם'}
+        </>
+      )}
+    </span>
   );
 }
 
