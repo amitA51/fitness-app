@@ -42,6 +42,16 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: React.ReactNode;
   arrowIcon?: boolean;
   isLoading?: boolean;
+  /**
+   * Additive loading flag (default false). Behaves like `isLoading` but is the
+   * preferred name for new call sites: shows a Loader2 spinner, disables the
+   * button, and locks min-height so the layout can't collapse. Reduced-motion
+   * renders the spinner static. Backward-compatible: when omitted the button
+   * is unchanged.
+   */
+  loading?: boolean;
+  /** Optional label shown next to the spinner while loading (e.g. "שומר…"). */
+  loadingLabel?: React.ReactNode;
   fullWidth?: boolean;
 }
 
@@ -260,31 +270,36 @@ export const Button: React.FC<ButtonProps> = ({
   icon,
   arrowIcon = false,
   isLoading = false,
+  loading = false,
+  loadingLabel,
   fullWidth = false,
   className = '',
   disabled,
   style,
   ...props
 }) => {
+  // `loading` is the new, preferred prop; `isLoading` is kept for the existing
+  // call sites. Either being true puts the button in its busy state.
+  const busy = loading || isLoading;
+
   // --- Editorial family (former AnnualButton) ---------------------------------
   if (isEditorialVariant(variant)) {
     const decorClass = variant === 'editorial' ? 'start-workout-btn accent-glow' : '';
     return (
       <button
         type="button"
-        disabled={disabled || isLoading}
-        className={`${EDITORIAL_BASE} ${decorClass} ${fullWidth ? 'w-full' : ''} ${className}`}
-        style={{ ...editorialStyles[variant], ...style }}
+        disabled={disabled || busy}
+        aria-busy={busy || undefined}
+        className={`${EDITORIAL_BASE} active:scale-[0.96] motion-reduce:active:scale-100 ${decorClass} ${fullWidth ? 'w-full' : ''} ${className}`}
+        // Lock the rendered height so swapping in the spinner can't collapse the
+        // button; EDITORIAL_BASE is h-[52px] so we mirror that as the floor.
+        style={{ minHeight: 52, ...editorialStyles[variant], ...style }}
         {...props}
       >
-        {isLoading ? (
-          <Loader2
-            size={18}
-            className="animate-spin"
-            style={{ animation: 'spin 1s linear infinite' }}
-          />
+        {busy ? (
+          <Loader2 size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
         ) : null}
-        {children}
+        {busy ? (loadingLabel ?? children) : children}
       </button>
     );
   }
@@ -294,33 +309,31 @@ export const Button: React.FC<ButtonProps> = ({
     return (
       <button
         type="button"
-        disabled={disabled || isLoading}
-        className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2${className ? ` ${className}` : ''}`}
+        disabled={disabled || busy}
+        aria-busy={busy || undefined}
+        className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 active:scale-[0.96] motion-reduce:active:scale-100${className ? ` ${className}` : ''}`}
         style={{
           ...FS_BASE_STYLE,
-          cursor: disabled || isLoading ? 'not-allowed' : 'pointer',
+          cursor: disabled || busy ? 'not-allowed' : 'pointer',
           ...fsStyles[variant],
           ...style,
         }}
         {...props}
       >
-        {isLoading ? (
-          <Loader2
-            size={18}
-            className="animate-spin"
-            style={{ animation: 'spin 1s linear infinite' }}
-          />
+        {busy ? (
+          <Loader2 size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
         ) : null}
-        {children}
+        {busy ? (loadingLabel ?? children) : children}
       </button>
     );
   }
 
   return (
     <m.button
-      disabled={disabled || isLoading}
-      whileHover={{ scale: disabled || isLoading ? 1 : 1.01 }}
-      whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
+      disabled={disabled || busy}
+      aria-busy={busy || undefined}
+      whileHover={{ scale: disabled || busy ? 1 : 1.01 }}
+      whileTap={{ scale: disabled || busy ? 1 : 0.96 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={`
         relative inline-flex items-center justify-center cursor-pointer
@@ -373,14 +386,20 @@ export const Button: React.FC<ButtonProps> = ({
         keyof import('framer-motion').MotionProps
       >)}
     >
-      {isLoading ? (
-        // Spinner inherits currentColor; sharp edges via border-current
-        <span className="w-[18px] h-[18px] border-2 border-current border-t-transparent rounded-full animate-spin" />
+      {busy ? (
+        <>
+          {/* Spinner inherits currentColor; sharp edges via border-current */}
+          <span
+            className="w-[18px] h-[18px] border-2 border-current border-t-transparent rounded-full animate-spin motion-reduce:animate-none"
+            aria-hidden="true"
+          />
+          {loadingLabel ? <span className="ms-1.5">{loadingLabel}</span> : null}
+        </>
       ) : (
         <>
           {icon && <span className={children ? 'me-1.5' : ''}>{icon}</span>}
 
-          {!isLoading && children}
+          {children}
 
           {/* Button-in-Button Arrow Pattern */}
           {arrowIcon && (

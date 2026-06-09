@@ -9,10 +9,13 @@
 // Design system: Fresh Steel / Obsidian (var(--fs-*) tokens only).
 // ============================================================================
 
+import { m } from 'framer-motion';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAgeGate } from '../../contexts/AgeGateContext';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { computeAge } from '../../services/ageGate';
+import { Button } from '../ui/Button';
 
 const PUBLIC_ALLOWLIST = /^\/(legal\/|accessibility)/;
 
@@ -53,6 +56,7 @@ const BODY_STYLE: React.CSSProperties = {
 export function AgeGate({ children }: { children: ReactNode }) {
   const { loading, needsBirthDate, blockedUnderAge, submit } = useAgeGate();
   const location = useLocation();
+  const reducedMotion = useReducedMotion();
   const [dob, setDob] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -158,7 +162,10 @@ export function AgeGate({ children }: { children: ReactNode }) {
           dir="ltr"
           value={dob}
           max={todayISO}
+          placeholder="DD/MM/YYYY"
+          aria-describedby="age-gate-dob-hint"
           onChange={(e) => setDob(e.target.value)}
+          className="focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_var(--fs-accent)]"
           style={{
             width: '100%',
             padding: '12px 14px',
@@ -171,14 +178,32 @@ export function AgeGate({ children }: { children: ReactNode }) {
             textAlign: 'left',
           }}
         />
+        <p
+          id="age-gate-dob-hint"
+          style={{ ...BODY_STYLE, fontSize: 12, color: 'var(--fs-muted)', margin: '6px 0 0' }}
+        >
+          בפורמט{' '}
+          <span dir="ltr" className="kinetic-number">
+            יום/חודש/שנה
+          </span>
+        </p>
 
         {previewAge !== null && previewAge >= 0 && (
-          <p style={{ ...BODY_STYLE, fontSize: 13, color: 'var(--fs-muted)', marginTop: 8 }}>
+          <m.p
+            key={previewAge}
+            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
+            animate={
+              reducedMotion
+                ? { opacity: 1 }
+                : { opacity: 1, scale: [0.9, 1.08, 1], transition: { duration: 0.4 } }
+            }
+            style={{ ...BODY_STYLE, fontSize: 13, color: 'var(--fs-muted)', marginTop: 8 }}
+          >
             גיל:{' '}
-            <span dir="ltr" className="kinetic-number">
+            <span dir="ltr" className="kinetic-number" style={{ color: 'var(--fs-ink)', fontWeight: 600 }}>
               {previewAge}
             </span>
-          </p>
+          </m.p>
         )}
 
         {error && (
@@ -195,27 +220,25 @@ export function AgeGate({ children }: { children: ReactNode }) {
           </p>
         )}
 
-        <button
+        <Button
+          variant="editorial"
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="active:scale-[0.98]"
+          loading={submitting}
+          loadingLabel="שומר…"
+          fullWidth
+          className="focus-visible:outline-[var(--fs-accent)]"
           style={{
-            width: '100%',
             marginTop: 20,
-            padding: '14px 16px',
-            borderRadius: 'var(--radius-asymmetric)',
-            border: 'none',
-            background: canSubmit ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
-            color: canSubmit ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
-            fontFamily: 'var(--font-body)',
-            fontSize: 16,
-            fontWeight: 700,
-            cursor: canSubmit ? 'pointer' : 'not-allowed',
+            // Keep the established mint-fill CTA look; editorial's navy fill is
+            // overridden here so the age gate matches the rest of the flow.
+            background: canSubmit || submitting ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+            color: canSubmit || submitting ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
           }}
         >
-          {submitting ? 'שומר…' : 'המשך'}
-        </button>
+          המשך
+        </Button>
       </div>
     </div>
   );

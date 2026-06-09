@@ -73,7 +73,8 @@ export default function LoginPage() {
         דלג לתוכן
       </a>
 
-      {/* Live signal indicator */}
+      {/* Brand lockup. Static accent dot — NOT an animated/lime "live" status
+          dot (anti-slop: no blinking live indicators; lime is PR-only). */}
       <div
         className="absolute z-20 flex items-center gap-2"
         style={{
@@ -88,8 +89,16 @@ export default function LoginPage() {
         }}
         aria-hidden="true"
       >
-        <span className="breathing-dot signal" />
-        SparkOS LIVE
+        <span
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: 'var(--fs-accent)',
+            flexShrink: 0,
+          }}
+        />
+        SparkOS
       </div>
 
       {/* Masthead */}

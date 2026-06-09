@@ -44,6 +44,34 @@ export function CompleteStep({ data }: CompleteStepProps) {
         <Check size={56} strokeWidth={3} />
       </m.div>
 
+      {/* Role pill — clear coach vs trainee separation. Uses primary + accent
+          only (never --fs-signal: this is identity, not a PR celebration). */}
+      <m.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.3 }}
+        className="inline-flex items-center gap-2 mb-5"
+        style={{
+          background: 'var(--fs-primary)',
+          color: 'var(--fs-accent)',
+          borderRadius: '999px',
+          padding: '6px 14px',
+        }}
+      >
+        {isCoach ? <Users size={15} aria-hidden="true" /> : <Target size={15} aria-hidden="true" />}
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            fontWeight: 600,
+            letterSpacing: '0.16em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {isCoach ? 'מאמן' : 'מתאמן'}
+        </span>
+      </m.div>
+
       <m.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

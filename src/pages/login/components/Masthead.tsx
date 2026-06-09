@@ -3,8 +3,10 @@
  */
 
 import { m } from 'framer-motion';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 
 export function Masthead() {
+  const reducedMotion = useReducedMotion();
   return (
     <m.div
       initial={{ opacity: 0, y: -20 }}
@@ -14,6 +16,7 @@ export function Masthead() {
       style={{
         background: 'var(--fs-bg)',
         borderBottom: '2px solid var(--fs-accent)',
+        boxShadow: 'var(--shadow-glow-accent)',
       }}
     >
       {/* FS Brand Mark */}
@@ -41,19 +44,25 @@ export function Masthead() {
         </div>
       </div>
 
-      {/* Tagline */}
-      <p
-        className="leading-snug fade-rise-in"
+      {/* Tagline — focal word "התקדמות" carries the mint accent */}
+      <m.p
+        initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 1.02 }}
+        animate={
+          reducedMotion
+            ? { opacity: 1 }
+            : { opacity: 1, scale: 1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
+        }
+        className="leading-snug"
         style={{
           fontFamily: '"Bricolage Grotesque", var(--font-display)',
-          fontWeight: 600,
-          fontSize: '22px',
+          fontWeight: 800,
+          fontSize: '30px',
           color: 'var(--fs-ink)',
-          letterSpacing: '-0.01em',
+          letterSpacing: '-0.02em',
         }}
       >
-        כתוב סטים. תראה התקדמות.
-      </p>
+        כתוב סטים. תראה <span style={{ color: 'var(--fs-accent)' }}>התקדמות</span>.
+      </m.p>
 
       {/* Brief description */}
       <p

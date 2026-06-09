@@ -3,7 +3,7 @@
  */
 
 import { m } from 'framer-motion';
-import { ChevronRight, Lock, User } from 'lucide-react';
+import { ChevronLeft, Lock, User } from 'lucide-react';
 import { useState } from 'react';
 import { signInWithGoogle } from '../../../services/supabaseAuth';
 import { slideFromRight, staggerItem } from '../animations';
@@ -24,7 +24,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
         initial="initial"
         animate="animate"
         onClick={onSignIn}
-        className="text-right group glass-surface scale-pop-in"
+        className="text-right group glass-surface scale-pop-in transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100"
         style={{
           cursor: 'pointer',
           background: 'var(--fs-surface)',
@@ -68,37 +68,38 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             </div>
           </div>
           <div
-            className="w-10 h-10 flex items-center justify-center transition-transform group-hover:-translate-x-1"
+            className="w-10 h-10 flex items-center justify-center transition-transform group-hover:-translate-x-1 motion-reduce:group-hover:translate-x-0"
             style={{ background: 'var(--fs-surface-2)', borderRadius: 0 }}
           >
-            <ChevronRight size={18} style={{ color: 'var(--fs-ink)' }} aria-hidden="true" />
+            <ChevronLeft size={18} style={{ color: 'var(--fs-ink)' }} aria-hidden="true" />
           </div>
         </div>
       </m.button>
 
-      {/* Sign Up Card */}
+      {/* Sign Up Card — primary path, full accent treatment */}
       <m.button
         variants={staggerItem}
         initial="initial"
         animate="animate"
         onClick={onSignUp}
-        className="text-right group glass-surface scale-pop-in"
+        className="text-right group scale-pop-in transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.94] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100"
         style={{
           cursor: 'pointer',
-          background: 'var(--fs-surface)',
-          border: '1px solid var(--fs-surface-2)',
+          background: 'var(--fs-accent)',
+          border: '1px solid var(--fs-accent)',
           borderRadius: '22px 16px 22px 16px',
           padding: '20px',
           minHeight: '72px',
+          boxShadow: 'var(--shadow-glow-accent)',
         }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div
               className="w-12 h-12 flex items-center justify-center"
-              style={{ background: 'var(--fs-accent)', borderRadius: 0 }}
+              style={{ background: 'var(--fs-primary)', borderRadius: 0 }}
             >
-              <User size={20} style={{ color: 'var(--color-ink-on-accent)' }} aria-hidden="true" />
+              <User size={20} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
             </div>
             <div>
               <h3
@@ -107,7 +108,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
                   fontFamily: 'var(--font-body)',
                   fontWeight: 700,
                   fontSize: '18px',
-                  color: 'var(--fs-ink)',
+                  color: 'var(--color-ink-on-accent)',
                 }}
               >
                 הרשמה
@@ -116,7 +117,8 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: '10px',
-                  color: 'var(--fs-muted)',
+                  color: 'var(--color-ink-on-accent)',
+                  opacity: 0.7,
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                 }}
@@ -126,10 +128,10 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             </div>
           </div>
           <div
-            className="w-10 h-10 flex items-center justify-center transition-transform group-hover:-translate-x-1"
-            style={{ background: 'var(--fs-surface-2)', borderRadius: 0 }}
+            className="w-10 h-10 flex items-center justify-center transition-transform group-hover:-translate-x-1 motion-reduce:group-hover:translate-x-0"
+            style={{ background: 'var(--fs-primary)', borderRadius: 0 }}
           >
-            <ChevronRight size={18} style={{ color: 'var(--fs-ink)' }} aria-hidden="true" />
+            <ChevronLeft size={18} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
           </div>
         </div>
       </m.button>

@@ -3,7 +3,7 @@
  */
 
 import { m } from 'framer-motion';
-import { AlertCircle, ArrowLeft, Mail } from 'lucide-react';
+import { AlertCircle, ArrowLeft, LogIn, Mail } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnnualInput } from '../../../components/ui/AnnualInput';
 import { AnnualPasswordInput } from '../../../components/ui/AnnualPasswordInput';
@@ -107,6 +107,16 @@ export function SignInStep({
           className="flex flex-col gap-6 px-5 py-6 flex-1"
         >
           <m.div variants={staggerItem}>
+            {/* Icon-in-colored-box with spring scale — shared confirmation motif */}
+            <m.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
+              className="w-14 h-14 flex items-center justify-center mb-4"
+              style={{ background: 'var(--fs-accent)', borderRadius: '22px 16px 22px 16px' }}
+            >
+              <LogIn size={26} style={{ color: 'var(--color-ink-on-accent)' }} aria-hidden="true" />
+            </m.div>
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
@@ -184,28 +194,32 @@ export function SignInStep({
             </button>
           </m.div>
 
-          {/* General error */}
+          {/* General error — warm surface card with a trailing-edge accent bar */}
           {generalError && (
             <m.div
               variants={staggerItem}
               role="alert"
               className="p-4 flex items-start gap-3"
               style={{
-                background: 'var(--color-error-muted)',
+                background: 'var(--fs-surface)',
                 border: '1px solid var(--color-error)',
-                borderRadius: 0,
+                // Trailing edge in RTL is the inline-end (left); a thicker error
+                // bar there gives the alert warmth without the sharp box look.
+                borderInlineEndWidth: '4px',
+                borderRadius: 'var(--radius-asymmetric)',
               }}
             >
               <AlertCircle
-                size={16}
-                style={{ color: 'var(--color-error)', flexShrink: 0, marginTop: '2px' }}
+                size={18}
+                style={{ color: 'var(--color-error)', flexShrink: 0, marginTop: '1px' }}
+                aria-hidden="true"
               />
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: '14px',
-                  color: 'var(--color-error)',
-                  lineHeight: 1.4,
+                  color: 'var(--color-error-fg)',
+                  lineHeight: 1.5,
                 }}
               >
                 {generalError}
