@@ -133,17 +133,52 @@ const NumpadButton = memo<{
   disabled?: boolean;
   label?: string;
 }>(({ value, onInput, onDelete, variant = 'number', disabled = false, label }) => {
-  const handleClick = useCallback(() => {
+  const shouldReduceMotion = useReducedMotion();
+  // True once pointerDown has already fired the per-press haptic for this press
+  // (touch/pen), so the follow-up click doesn't double-buzz.
+  const buzzedOnDownRef = useRef(false);
+
+  const emit = useCallback(() => {
     if (disabled || value === null) return;
-    // Single soft tap is owned here. The parent handleInput/handleDelete used to
-    // ALSO fire triggerHaptic, double-buzzing every keypress — they no longer do.
-    triggerHaptic('light');
     if (value === '⌫') {
       onDelete();
     } else {
       onInput(String(value));
     }
   }, [value, onInput, onDelete, disabled]);
+
+  // Per-digit feedback fires on pointerDown for the snappiest feel, BUT only for
+  // touch/pen — a mouse gets neither the tap haptic nor the press-scale (both
+  // suppressed when pointerType === 'mouse'). The value emit still happens on
+  // click so keyboard/AT activation (detail === 0, no pointer event) works.
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLButtonElement>) => {
+      if (disabled || value === null || e.pointerType === 'mouse') return;
+      // Single soft tap is owned here. The parent handleInput/handleDelete do NOT
+      // also fire a haptic, so each keypress buzzes exactly once.
+      triggerHaptic('light');
+      buzzedOnDownRef.current = true;
+      if (shouldReduceMotion) return;
+      e.currentTarget.style.transform = 'scale(0.92)';
+    },
+    [value, disabled, shouldReduceMotion]
+  );
+
+  const releasePress = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.transform = '';
+  }, []);
+
+  const handleClick = useCallback(() => {
+    if (disabled || value === null) return;
+    // Touch/pen already buzzed on pointerDown — consume that flag and skip.
+    // Mouse and keyboard/AT (no preceding pointerdown buzz) buzz here instead.
+    if (buzzedOnDownRef.current) {
+      buzzedOnDownRef.current = false;
+    } else {
+      triggerHaptic('light');
+    }
+    emit();
+  }, [emit, value, disabled]);
 
   if (value === null) {
     return <div className="w-20 h-20" />;
@@ -185,11 +220,15 @@ const NumpadButton = memo<{
         : '';
 
   return (
-    <m.button
-      whileTap={{ scale: 0.95 }}
+    <button
+      type="button"
+      onPointerDown={handlePointerDown}
+      onPointerUp={releasePress}
+      onPointerLeave={releasePress}
+      onPointerCancel={releasePress}
       onClick={handleClick}
       disabled={disabled}
-      className={`relative flex items-center justify-center transition-all duration-150${extraClass}`}
+      className={`relative flex items-center justify-center transition-transform duration-100${extraClass}`}
       style={{
         ...baseStyle,
         ...variantStyle[variant],
@@ -199,7 +238,7 @@ const NumpadButton = memo<{
       aria-label={getAriaLabel()}
     >
       {value}
-    </m.button>
+    </button>
   );
 });
 

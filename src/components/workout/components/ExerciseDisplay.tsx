@@ -24,6 +24,7 @@ import NotesBottomSheet from './NotesBottomSheet';
 import RPEPicker from './RPEPicker';
 import SetEditBottomSheet from './SetEditBottomSheet';
 import SetInputCard from './SetInputCard';
+import { SetProgress } from './SetProgress';
 import SetTechniquePills from './SetTechniquePills';
 
 // ============================================================
@@ -111,6 +112,15 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
 
     const totalSets = useMemo(() => exercise.sets?.length || 0, [exercise.sets]);
 
+    // Warmup set indices for the progress spine (muted accent tint).
+    const warmupIndices = useMemo(() => {
+      const set = new Set<number>();
+      (exercise.sets || []).forEach((s, i) => {
+        if (s.isWarmup) set.add(i);
+      });
+      return set;
+    }, [exercise.sets]);
+
     // Exercise is "done" when it has planned sets and every one is completed.
     // In this state there is no real active set (displaySetIndex points at the
     // virtual slot past the end), so we swap the input cards for a clear
@@ -140,6 +150,11 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
       () => onUpdateSet('weight', Math.max(0, (currentSet.weight || 0) - weightIncrement)),
       [currentSet.weight, onUpdateSet, weightIncrement]
     );
+    const handleCommitGhostWeight = useCallback(
+      (v: number) => onUpdateSet('weight', v),
+      [onUpdateSet]
+    );
+    const handleCommitGhostReps = useCallback((v: number) => onUpdateSet('reps', v), [onUpdateSet]);
 
     return (
       <div
@@ -218,55 +233,13 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               )}
             </div>
 
-            {/* Row 2: Set dots + label */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ display: 'flex', gap: 5, direction: 'ltr' }}>
-                {(exercise.sets || []).map((set, i) => {
-                  const isCompleted = !!set.completedAt;
-                  const isCurrent = !isCompleted && i === completedSetsCount;
-                  return (
-                    <div
-                      key={set.id || i}
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        background: isCompleted
-                          ? 'var(--fs-accent)'
-                          : isCurrent
-                            ? 'var(--fs-accent-2)'
-                            : 'var(--fs-surface-2)',
-                        border: isCompleted
-                          ? '1.5px solid var(--fs-accent)'
-                          : isCurrent
-                            ? '1.5px solid var(--fs-accent-2)'
-                            : '1.5px solid var(--fs-steel)',
-                        boxShadow: isCurrent
-                          ? '0 0 8px color-mix(in srgb, var(--fs-accent-2) 50%, transparent)'
-                          : 'none',
-                        transform: isCurrent ? 'scale(1.25)' : 'none',
-                        transition:
-                          'background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease',
-                      }}
-                    />
-                  );
-                })}
-              </div>
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  color: 'var(--fs-muted)',
-                  letterSpacing: '0.06em',
-                  fontWeight: 600,
-                  direction: 'ltr',
-                }}
-              >
-                {isExerciseComplete
-                  ? `הושלם · ${totalSets}/${totalSets}`
-                  : `סט ${completedSetsCount + 1} / ${totalSets}`}
-              </span>
-            </div>
+            {/* Row 2: Segmented set-progress spine + "סט X מתוך Y" label */}
+            <SetProgress
+              current={completedSetsCount}
+              total={totalSets}
+              completed={completedSetsCount}
+              warmupIndices={warmupIndices}
+            />
           </div>
         </div>
 
@@ -417,6 +390,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   onTap={handleWeightTap}
                   onIncrement={handleIncrementWeight}
                   onDecrement={handleDecrementWeight}
+                  onCommitGhost={handleCommitGhostWeight}
                   showButtons={enableQuickWeightButtons}
                 />
                 <SetInputCard
@@ -428,6 +402,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   onTap={handleRepsTap}
                   onIncrement={handleIncrementReps}
                   onDecrement={handleDecrementReps}
+                  onCommitGhost={handleCommitGhostReps}
                   showButtons={enableQuickRepsButtons}
                 />
               </div>

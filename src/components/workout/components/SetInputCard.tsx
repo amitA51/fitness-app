@@ -1,17 +1,23 @@
 // SetInputCard - Fresh Steel v2 Stepper Design
-// Layout: label (top) → value → ghost badge → stepper row → step hint
+// Layout: label (top) → value → ghost commit button → stepper row → step hint
 // border-radius via --radius-asymmetric · radial gradient bg · accent plus / surface-2 minus
 //
 // A11y: the value area is a real <button> (opens the numpad), and the +/-
-// steppers are sibling <button>s — no nested-interactive markup. RTL-aware via
-// useIsRTL(): the stepper mirrors (− right / + left) so increment stays on the
-// leading edge. Honors prefers-reduced-motion for the value-change flash.
+// steppers are sibling <button>s — no nested-interactive markup. The "previous
+// value" ghost is its OWN <button> rendered as a sibling (NOT nested inside the
+// value <button>), so committing the previous value is one tap with valid
+// markup. RTL-aware via useIsRTL(): the stepper mirrors (− right / + left) so
+// increment stays on the leading edge. Honors prefers-reduced-motion for the
+// value-change flash and the kinetic number snap (useNumberSnap is a no-op when
+// reduced).
 
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { ChevronUp } from 'lucide-react';
 import type React from 'react';
 import { memo, useCallback } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import { useIsRTL } from '../../../hooks/useIsRTL';
+import { useNumberSnap } from '../../../hooks/useNumberSnap';
 
 // ============================================================
 // TYPES
@@ -29,6 +35,8 @@ interface SetInputCardProps {
   onTap: () => void;
   onIncrement: () => void;
   onDecrement: () => void;
+  /** Commit the previous (ghost) value into this field — wired to the tappable ghost. */
+  onCommitGhost?: (value: number) => void;
   showButtons?: boolean;
 }
 
@@ -47,6 +55,7 @@ const SetInputCard = memo<SetInputCardProps>(
     onTap,
     onIncrement,
     onDecrement,
+    onCommitGhost,
     showButtons = true,
   }) => {
     const displayValue = value || (showGhost ? ghostValue : 0) || 0;
@@ -54,6 +63,10 @@ const SetInputCard = memo<SetInputCardProps>(
     const isRTL = useIsRTL();
     const haptics = useHapticFeedback();
     const prefersReduced = useReducedMotion() ?? false;
+    // Kinetic snap: the value display pops (scale 1→1.08→1) on every +/- change.
+    // The hook fires only on change (never on mount) and is a no-op under
+    // prefers-reduced-motion, so no extra guard is needed here.
+    const valueSnapRef = useNumberSnap(displayValue);
 
     const flashKey = value > 0 ? value : null;
 
@@ -61,6 +74,14 @@ const SetInputCard = memo<SetInputCardProps>(
       haptics.impact('medium');
       onTap();
     }, [onTap, haptics]);
+
+    // Commit the previous value into the active field — a light tick (the value
+    // is provisional until the set is completed, so this is a tap, not success).
+    const handleCommitGhost = useCallback(() => {
+      if (ghostValue === undefined) return;
+      haptics.tap();
+      onCommitGhost?.(ghostValue);
+    }, [ghostValue, onCommitGhost, haptics]);
 
     const handleIncrement = useCallback(() => {
       haptics.tap();
@@ -238,12 +259,14 @@ const SetInputCard = memo<SetInputCardProps>(
             }}
           >
             <span
+              ref={valueSnapRef as React.RefObject<HTMLSpanElement>}
               className="kinetic-number"
               style={{
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
                 fontSize: 'clamp(34px, 10vw, 42px)',
                 lineHeight: 1,
+                display: 'inline-block',
                 color: isGhostValue
                   ? 'color-mix(in srgb, var(--fs-muted) 56%, transparent)'
                   : 'var(--fs-ink)',
@@ -265,24 +288,48 @@ const SetInputCard = memo<SetInputCardProps>(
               </span>
             )}
           </div>
-
-          {/* 3. Ghost badge (when value=0 and previous exists) */}
-          {showGhost && ghostValue && !value && (
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                color: 'color-mix(in srgb, var(--fs-accent) 70%, var(--fs-muted))',
-                background: 'color-mix(in srgb, var(--fs-accent) 10%, transparent)',
-                padding: '2px 7px',
-                borderRadius: 5,
-                direction: 'ltr',
-              }}
-            >
-              קודם {ghostValue}
-            </span>
-          )}
         </button>
+
+        {/* 3. Ghost commit — a real <button> SIBLING of the value button (never
+            nested), so tapping it commits the previous value into this field in
+            one tap. Accent ~15% fill, weight 600, chevron affordance. */}
+        {showGhost && ghostValue && !value && (
+          <button
+            type="button"
+            onClick={handleCommitGhost}
+            aria-label={`השתמש בערך הקודם ${ghostValue}`}
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              marginTop: 2,
+              padding: '3px 9px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 600,
+              color: 'var(--fs-accent-2)',
+              background: 'color-mix(in srgb, var(--fs-accent) 15%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--fs-accent) 30%, transparent)',
+              borderRadius: 6,
+              cursor: 'pointer',
+              transition: prefersReduced ? 'none' : 'transform 100ms ease',
+            }}
+            onPointerDown={(e) => {
+              if (prefersReduced) return;
+              (e.currentTarget as HTMLElement).style.transform = 'scale(0.95)';
+            }}
+            onPointerUp={(e) => {
+              (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+            }}
+            onPointerLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+            }}
+          >
+            <ChevronUp size={11} strokeWidth={2.5} aria-hidden />
+            <span dir="ltr">קודם {ghostValue}</span>
+          </button>
+        )}
 
         {/* 4. Stepper row */}
         {showButtons && (
@@ -315,19 +362,20 @@ const SetInputCard = memo<SetInputCardProps>(
           </span>
         )}
 
-        {/* Flash effect on value change (suppressed when reduced-motion) */}
+        {/* Brief accent-2 color flash on value change (suppressed when
+            reduced-motion) — pairs with the kinetic number snap above. */}
         <AnimatePresence>
           {flashKey !== null && !prefersReduced && (
             <m.div
               key={flashKey}
-              initial={{ opacity: 0.15 }}
+              initial={{ opacity: 0.18 }}
               animate={{ opacity: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'var(--fs-accent)',
+                background: 'var(--fs-accent-2)',
                 pointerEvents: 'none',
               }}
             />

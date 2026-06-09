@@ -287,6 +287,16 @@ export const WorkoutContent: React.FC<{
     return undefined;
   }, [derived.activeSetIndex]);
 
+  // Planned weight/reps for the upcoming set — rendered as a dir="ltr" numeric
+  // chip in the rest timer so the user previews exactly what's next. Read from
+  // the active set; 0 means "not yet planned" and the chip is omitted.
+  const nextSetTargets = useMemo(() => {
+    if (derived.activeSetIndex < 0) return undefined;
+    const nextSet = derived.currentExercise?.sets?.[derived.activeSetIndex];
+    if (!nextSet) return undefined;
+    return { weight: nextSet.weight ?? 0, reps: nextSet.reps ?? 0 };
+  }, [derived.activeSetIndex, derived.currentExercise]);
+
   // PR info for current exercise
   const prInfo = useMemo(() => {
     if (!derived.currentExercise) return '';
@@ -550,6 +560,8 @@ export const WorkoutContent: React.FC<{
           onSkipRest={handleSkipRest}
           onAddRestTime={handleAddRestTime}
           nextSetHint={nextSetHint}
+          nextSetWeight={nextSetTargets?.weight}
+          nextSetReps={nextSetTargets?.reps}
         />
 
         {/* Middle: exercise card (pinned) + scrollable content */}

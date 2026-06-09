@@ -16,6 +16,10 @@ interface WorkoutHeaderSectionProps {
   onSkipRest: () => void;
   onAddRestTime: (seconds: number) => void;
   nextSetHint: string | undefined;
+  /** Planned weight (kg) for the upcoming set — shown as a dir="ltr" chip. 0/undefined hides it. */
+  nextSetWeight?: number;
+  /** Planned reps for the upcoming set — shown as a dir="ltr" chip. 0/undefined hides it. */
+  nextSetReps?: number;
 }
 
 const WorkoutHeaderSection: React.FC<WorkoutHeaderSectionProps> = ({
@@ -32,6 +36,8 @@ const WorkoutHeaderSection: React.FC<WorkoutHeaderSectionProps> = ({
   onSkipRest,
   onAddRestTime,
   nextSetHint,
+  nextSetWeight,
+  nextSetReps,
 }) => (
   <div className="flex-shrink-0">
     <WorkoutHeader
@@ -53,6 +59,8 @@ const WorkoutHeaderSection: React.FC<WorkoutHeaderSectionProps> = ({
         onSkip={onSkipRest}
         onAddTime={onAddRestTime}
         nextSetHint={nextSetHint}
+        nextSetWeight={nextSetWeight}
+        nextSetReps={nextSetReps}
         isPaused={isPaused}
       />
     )}

@@ -1,7 +1,14 @@
 // InlineRestTimer - Fresh Steel compact rest timer
 // Accent progress ring · surface-2 bg · compact layout
+//
+// Final-5s urgency: the ring thickens (7→9px), recolors to --fs-warn, pulses
+// faster and gains a --fs-warn radial glow; heavy impact haptics fire at the
+// 3/2/1 marks and a success haptic at 0. ALL escalation (pulse, glow, haptics)
+// is gated by prefers-reduced-motion — when reduced, only the color and the
+// number change, with no pulse, glow, or haptic escalation.
 
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
+import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import { triggerHaptic } from '../../../utils/haptics';
 import { useRestTimer } from '../hooks/useWorkoutTimer';
 
@@ -11,6 +18,10 @@ interface InlineRestTimerProps {
   onSkip: () => void;
   onAddTime: (seconds: number) => void;
   nextSetHint?: string;
+  /** Planned weight (kg) for the upcoming set — shown as a dir="ltr" chip. */
+  nextSetWeight?: number;
+  /** Planned reps for the upcoming set — shown as a dir="ltr" chip. */
+  nextSetReps?: number;
   /** Freeze the countdown while the workout is paused. */
   isPaused?: boolean;
 }
@@ -33,14 +44,51 @@ const usePrefersReducedMotion = (): boolean => {
 };
 
 const InlineRestTimer = memo<InlineRestTimerProps>(
-  ({ active, endTime, onSkip, onAddTime, nextSetHint, isPaused = false }) => {
+  ({
+    active,
+    endTime,
+    onSkip,
+    onAddTime,
+    nextSetHint,
+    nextSetWeight = 0,
+    nextSetReps = 0,
+    isPaused = false,
+  }) => {
     const { formatted, progress, timeLeft } = useRestTimer(endTime, active, isPaused);
     const prefersReduced = usePrefersReducedMotion();
+    const haptics = useHapticFeedback();
+
+    const isFinalCountdown = active && timeLeft <= 5 && timeLeft > 0;
+
+    // Per-second escalation: heavy impact at the 3/2/1 marks, a success pulse at
+    // 0. Watch the integer second (timeLeft ticks at 100ms) and fire once per
+    // whole-second transition. Fully suppressed under prefers-reduced-motion —
+    // reduced users get only the color/number change, no haptic escalation.
+    const lastSecondRef = useRef<number | null>(null);
+    useEffect(() => {
+      if (!active || isPaused || prefersReduced) {
+        lastSecondRef.current = null;
+        return;
+      }
+      const sec = Math.ceil(timeLeft);
+      if (sec === lastSecondRef.current) return;
+      const prev = lastSecondRef.current;
+      lastSecondRef.current = sec;
+      // Only react to a genuine downward tick (skip the initial mount seed and
+      // any upward jump from +15s, which would otherwise misfire the buzz).
+      if (prev === null || sec >= prev) return;
+      if (sec === 3 || sec === 2 || sec === 1) {
+        haptics.impact('heavy');
+      } else if (sec === 0) {
+        haptics.success();
+      }
+    }, [timeLeft, active, isPaused, prefersReduced, haptics]);
 
     if (!active) return null;
 
     const size = 52;
-    const stroke = 7;
+    // Final-5s urgency thickens the ring (7→9px) so it reads at a glance.
+    const stroke = isFinalCountdown ? 9 : 7;
     const radius = (size - stroke) / 2;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference * (1 - Math.min(1, Math.max(0, progress / 100)));
@@ -55,9 +103,6 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
       onSkip();
     };
 
-    const isFinalCountdown = timeLeft <= 5 && timeLeft > 0;
-    const isCritical = timeLeft <= 3 && timeLeft > 0;
-
     return (
       <div
         role="status"
@@ -71,9 +116,22 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
           justifyContent: 'space-between',
           gap: 12,
           padding: '10px 16px',
-          background:
-            'linear-gradient(180deg, var(--fs-surface) 0%, color-mix(in srgb, var(--fs-accent) 5%, var(--fs-surface)) 100%)',
-          borderBottom: '2px solid var(--fs-accent)',
+          // Final-5s: warn-tinted bg + warn bottom border. The radial GLOW only
+          // appears when motion is allowed (it pulses); reduced-motion users get
+          // the warn color shift but no glow/pulse.
+          background: isFinalCountdown
+            ? 'linear-gradient(180deg, var(--fs-surface) 0%, color-mix(in srgb, var(--fs-warn) 9%, var(--fs-surface)) 100%)'
+            : 'linear-gradient(180deg, var(--fs-surface) 0%, color-mix(in srgb, var(--fs-accent) 5%, var(--fs-surface)) 100%)',
+          borderBottom: isFinalCountdown
+            ? '2px solid var(--fs-warn)'
+            : '2px solid var(--fs-accent)',
+          // Radial warn glow only when motion is allowed; the breathing dot
+          // below carries the (faster) pulse, so no extra container keyframe.
+          boxShadow:
+            isFinalCountdown && !prefersReduced
+              ? '0 0 18px color-mix(in srgb, var(--fs-warn) 45%, transparent)'
+              : undefined,
+          transition: prefersReduced ? 'none' : 'background 0.3s ease, box-shadow 0.3s ease',
           flexShrink: 0,
         }}
       >
@@ -93,8 +151,10 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
               fill="var(--fs-rubber)"
               strokeWidth={stroke}
             />
+            {/* Final-5s: ring recolors to --fs-warn (.warn) — NOT .signal, which
+                is reserved for PR celebration. Stroke also thickens (7→9px). */}
             <circle
-              className={`ring-progress${isCritical ? ' signal' : ''}`}
+              className={`ring-progress${isFinalCountdown ? ' warn' : ''}`}
               cx={size / 2}
               cy={size / 2}
               r={radius}
@@ -104,19 +164,24 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
               strokeDashoffset={offset}
               strokeLinecap="round"
               style={{
-                transition: prefersReduced ? 'none' : 'stroke-dashoffset 0.3s linear',
+                transition: prefersReduced
+                  ? 'none'
+                  : 'stroke-dashoffset 0.3s linear, stroke 0.3s ease, stroke-width 0.3s ease',
               }}
             />
           </svg>
 
           <div>
             <div
+              dir="ltr"
               style={{
                 fontFamily: 'var(--font-display)',
                 fontWeight: 900,
                 fontSize: 28,
                 lineHeight: 1,
-                color: isCritical ? 'var(--fs-warn)' : 'var(--fs-ink)',
+                // Final-5s recolors the number to --fs-warn (color/number change
+                // is the reduced-motion-safe part of the urgency cue).
+                color: isFinalCountdown ? 'var(--fs-warn)' : 'var(--fs-ink)',
                 fontVariantNumeric: 'tabular-nums',
                 letterSpacing: '-0.01em',
                 display: 'inline-flex',
@@ -126,10 +191,13 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
               }}
             >
               {isFinalCountdown && (
+                // .warn (not .signal — lime is PR-only). Faster pulse in the
+                // final 5s; reduced-motion disables the pulse via the existing
+                // @media rule on .breathing-dot.
                 <span
-                  className={`breathing-dot${isCritical ? ' signal' : ''}`}
+                  className="breathing-dot warn"
                   aria-hidden="true"
-                  style={{ animation: prefersReduced ? 'none' : undefined }}
+                  style={{ animationDuration: prefersReduced ? undefined : '0.6s' }}
                 />
               )}
               {formatted}
@@ -143,9 +211,28 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                 textTransform: 'uppercase',
                 marginTop: 2,
                 fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
               }}
             >
-              {nextSetHint || 'מנוחה'}
+              <span>{nextSetHint || 'מנוחה'}</span>
+              {/* Rich next-set target chip: "{weight}ק״ג · {reps}", numbers
+                  dir="ltr". Shown only when the upcoming set is planned. */}
+              {(nextSetWeight > 0 || nextSetReps > 0) && (
+                <span
+                  dir="ltr"
+                  style={{
+                    color: 'var(--fs-ink)',
+                    fontWeight: 800,
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  {nextSetWeight > 0 ? `${nextSetWeight}ק״ג` : ''}
+                  {nextSetWeight > 0 && nextSetReps > 0 ? ' · ' : ''}
+                  {nextSetReps > 0 ? `${nextSetReps}` : ''}
+                </span>
+              )}
             </div>
           </div>
         </div>
