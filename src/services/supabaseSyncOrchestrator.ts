@@ -7,7 +7,9 @@
  */
 
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { isUuid } from '../utils/id';
 import { logger } from '../utils/logger';
+import { normalizeLegacyLocalIds } from './idNormalization';
 import { STORES } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 import {
@@ -116,6 +118,11 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
   if (!isSupabaseConfigured() || !supabase) {
     return { success: false, error: 'Supabase not configured' };
   }
+
+  // One-time legacy-id repair BEFORE reading the stores: records minted with
+  // prefixed ids (session_<ts>, meal-…, bw-…, …) can never pass the cloud's
+  // uuid columns — every push 400s (22P02) forever. Never throws (logs inside).
+  await normalizeLegacyLocalIds();
 
   try {
     const { dbGetAll } = await import('./indexedDBCore');
@@ -317,7 +324,10 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
       batchUpsert('personal_records', localPersonalRecords, (r) => ({
         id: r.id,
         user_id: userId,
-        exercise_id: r.exerciseId,
+        // Cloud column is uuid (FK -> personal_exercises). Local identity is
+        // the normalized exercise NAME — see syncPersonalRecord in
+        // supabaseSync.ts. A name string here 22P02s the WHOLE batch.
+        exercise_id: isUuid(r.exerciseId) ? r.exerciseId : null,
         exercise_name: r.exerciseName,
         weight: r.weight,
         reps: r.reps,
@@ -468,6 +478,11 @@ const pullAllDataImpl = async (): Promise<SyncResult> => {
   if (!isSupabaseConfigured() || !supabase) {
     return { success: false, error: 'Supabase not configured' };
   }
+
+  // Same one-time legacy-id repair as the push path — pull is the first sync
+  // entry point on sign-in (AuthContext auto-pull), so this guarantees the
+  // pass runs before any later push. Never throws (logs inside).
+  await normalizeLegacyLocalIds();
 
   try {
     // Fetch each store independently: a single failed fetch must not discard

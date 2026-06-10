@@ -140,7 +140,9 @@ export const materializeDueReminders = async (now: Date = new Date()): Promise<n
   // reminders can collide on a single minute and serial awaits would stagger them.
   const due = reminders.filter((r) => isReminderDue(r, now) && fired[r.id] !== stamp);
   await Promise.all(
-    due.map((r) => showNotification(r.title, r.body ?? '', undefined, `reminder:${r.id}:${localDate}`))
+    due.map((r) =>
+      showNotification(r.title, r.body ?? '', undefined, `reminder:${r.id}:${localDate}`)
+    )
   );
   for (const r of due) {
     fired[r.id] = stamp;

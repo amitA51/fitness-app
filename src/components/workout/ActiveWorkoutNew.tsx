@@ -585,10 +585,7 @@ export const WorkoutContent: React.FC<{
           --fs-signal). Visual only: WorkoutAriaLive owns the SR announcement.
           Honors the user's celebration-intensity setting ('off' hides it). */}
       {(workoutSettings.prCelebrationIntensity ?? 'full') !== 'off' && (
-        <PRCelebrationBanner
-          pr={state.showPRCelebration}
-          onDismiss={handleDismissPRCelebration}
-        />
+        <PRCelebrationBanner pr={state.showPRCelebration} onDismiss={handleDismissPRCelebration} />
       )}
 
       {/* Restored-draft vs requested-template conflict */}

@@ -2,10 +2,7 @@ import { logger } from '../../../utils/logger';
 import { resolveActiveSet } from './setHelpers';
 import { exerciseReducer } from './workoutReducerExerciseHandlers';
 // Workout Reducer - Sliced reducer pattern for better maintainability
-import {
-  DEFAULT_SUPERSET_ROUND_REST,
-  SUPERSET_TRANSITION_REST,
-} from './workoutReducerHelpers';
+import { DEFAULT_SUPERSET_ROUND_REST, SUPERSET_TRANSITION_REST } from './workoutReducerHelpers';
 import { setReducer } from './workoutReducerSetHandlers';
 import { timerReducer } from './workoutReducerTimerHandlers';
 import { dataReducer, modalReducer, uiReducer } from './workoutReducerUiHandlers';

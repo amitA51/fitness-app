@@ -25,7 +25,12 @@ vi.mock('../supabaseSync', () => ({
 }));
 
 import { showToast } from '../../components/ui/GlobalToast';
-import { getQueueDepth, notifyRetriableFailures, processQueue, queueMutation } from '../offlineQueue';
+import {
+  getQueueDepth,
+  notifyRetriableFailures,
+  processQueue,
+  queueMutation,
+} from '../offlineQueue';
 import { getCurrentUser } from '../supabaseAuth';
 import { syncWorkoutSession } from '../supabaseSync';
 

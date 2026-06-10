@@ -43,8 +43,8 @@ import { listAudit } from '../auditService';
 import { listCheckIns, listCoachNotes } from '../checkInService';
 import { getGroupMemberIds, listGroups } from '../groupService';
 import { listInvites } from '../inviteService';
-import { listCoachReminders } from '../reminderService';
 import { getSeatUsage, listClients } from '../relationshipService';
+import { listCoachReminders } from '../reminderService';
 
 const DB_ERROR = { message: 'db boom' };
 

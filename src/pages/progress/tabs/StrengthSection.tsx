@@ -5,7 +5,8 @@
 // clearly delineated, individually-headed cards instead of one long scroll:
 //   1. PR board (e1RM leaderboard)
 //   2. Exercise analysis — selector chips + the converged GlowAreaChart curve
-//   3. Per-exercise top-weight history
+//   3. Weekly volume forecast for the selected exercise (ForecastChart)
+//   4. Per-exercise top-weight history
 // The hand-rolled SVG line chart is gone; trends use the shared GlowAreaChart
 // (the single chart style across Progress). PR math is the e1RM definition from
 // progressMetrics, shared with Overview — no duplicate sparkline logic.
@@ -14,6 +15,7 @@ import { Dumbbell, TrendingDown, TrendingUp } from 'lucide-react';
 import type React from 'react';
 import { memo, useEffect, useMemo, useState } from 'react';
 import { GlowAreaChart, type GlowAreaPoint } from '../../../components/charts';
+import ForecastChart from '../../../components/workout/ForecastChart';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
 import { SectionCard } from '../components/SectionCard';
 import { buildPRBoard, buildStrengthCurves } from '../progressMetrics';
@@ -288,7 +290,18 @@ export const StrengthSection = memo(function StrengthSection({
         </SectionCard>
       )}
 
-      {/* ── Section 3: Per-exercise top-weight history ───────────────────── */}
+      {/* ── Section 3: Weekly volume forecast for the selected exercise ───── */}
+      {/* Follows the SAME chip selection as the analysis card — no second
+          selector. Weekly actuals + a clearly-labeled next-week projection. */}
+      {activeCurve && (
+        <ForecastChart
+          sessions={sessions}
+          exerciseName={activeCurve.exerciseName}
+          exerciseLabel={exerciseLabel(activeCurve.exerciseName)}
+        />
+      )}
+
+      {/* ── Section 4: Per-exercise top-weight history ───────────────────── */}
       {activeCurve && activeCurve.data.length > 0 && (
         <SectionCard rail={false} style={{ padding: '16px 20px' }}>
           <h3 style={{ ...cardHeader, marginBottom: 12 }}>

@@ -33,6 +33,18 @@ vi.mock('../../syncEngine', () => ({
 
 vi.mock('../core', () => ({ getAIProvider: vi.fn() }));
 
+describe('createConversation — UUID ids', () => {
+  it('mints a UUID conversation id (cloud ai_conversations.id is uuid — 22P02 on conv- ids)', async () => {
+    const { createConversation } = await import('../chat');
+
+    const conversation = await createConversation();
+
+    expect(conversation.id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    );
+  });
+});
+
 describe('deleteConversation — cloud soft-delete propagation', () => {
   it('soft-deletes the conversation in the cloud after removing it locally', async () => {
     const { deleteConversation } = await import('../chat');

@@ -4,8 +4,8 @@
  */
 
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { isUuid } from '../utils/id';
 import { logger } from '../utils/logger';
-import { fetchAllPages } from './supabaseSyncPagination';
 import type {
   BodyMeasurement,
   BodyWeightEntry,
@@ -16,6 +16,7 @@ import type {
   WorkoutSession,
   WorkoutTemplate,
 } from './supabaseSyncMappers';
+import { fetchAllPages } from './supabaseSyncPagination';
 
 // Row interfaces and row->canonical mappers live in ./supabaseSyncMappers.
 // The range-pagination helper (fetchAllPages) lives in ./supabaseSyncPagination.
@@ -387,7 +388,12 @@ export const syncPersonalRecord = async (
   const { error } = await supabase.from('personal_records').upsert({
     id: record.id,
     user_id: userId,
-    exercise_id: record.exerciseId,
+    // Local PR identity is the NORMALIZED EXERCISE NAME (see prService.
+    // stableExerciseKey), but the cloud column is uuid with an FK to
+    // personal_exercises(id). Pushing the name string 400s with 22P02, so we
+    // only forward a value that is actually UUID-shaped (legacy rows) and null
+    // everything else — name identity rides in exercise_name, which syncs.
+    exercise_id: isUuid(record.exerciseId) ? record.exerciseId : null,
     exercise_name: record.exerciseName,
     weight: record.weight,
     reps: record.reps,
@@ -419,9 +425,20 @@ export const fetchPersonalRecords = async (userId: string): Promise<PersonalReco
       .range(from, to)
   );
 
+  // Local PR identity is the normalized exercise name (mirrors prService.
+  // stableExerciseKey — duplicated here because prService imports this module,
+  // so importing it back would create a cycle). Cloud exercise_id is uuid|null
+  // and no longer carries identity; deriving the local key from exercise_name
+  // keeps the `exerciseId` IDB index lookups working for rows pulled with a
+  // null (or legacy-uuid) exercise_id.
+  const localExerciseKey = (row: { exercise_id?: string | null; exercise_name?: string | null; id: string }): string =>
+    (row.exercise_name ?? '').trim().replace(/\s+/g, ' ').toLowerCase() ||
+    row.exercise_id ||
+    row.id;
+
   return data.map((row) => ({
     id: row.id,
-    exerciseId: row.exercise_id,
+    exerciseId: localExerciseKey(row),
     exerciseName: row.exercise_name,
     weight: row.weight,
     reps: row.reps,

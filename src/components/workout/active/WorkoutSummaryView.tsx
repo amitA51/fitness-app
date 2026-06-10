@@ -1,8 +1,8 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { showToast } from '../../../components/ui/GlobalToast';
 import { createWorkoutTemplate } from '../../../services/dataService';
-import { logger } from '../../../utils/logger';
 import type { WorkoutExercise, WorkoutSession } from '../../../types';
+import { logger } from '../../../utils/logger';
 
 // Lazy loaded
 const WorkoutSummary = React.lazy(() => import('../WorkoutSummary'));

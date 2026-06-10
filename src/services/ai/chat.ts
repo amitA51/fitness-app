@@ -25,7 +25,9 @@ const MAX_HISTORY_MESSAGES = 20;
 
 export async function createConversation(title = 'שיחה חדשה'): Promise<Conversation> {
   const conversation: Conversation = {
-    id: generateId('conv', 5),
+    // UUID — cloud ai_conversations.id is uuid; PostgREST rejects `conv-...`
+    // ids with 22P02, so the bulk push silently dropped these conversations.
+    id: crypto.randomUUID?.() || generateId('conv', 5),
     title,
     messages: [],
     createdAt: new Date().toISOString(),

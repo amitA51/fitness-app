@@ -1,10 +1,10 @@
 import {
+  DEFAULT_SUPERSET_ROUND_REST,
+  SUPERSET_TRANSITION_REST,
   calculateRestTime,
   createEmptySet,
   createNextSet,
-  DEFAULT_SUPERSET_ROUND_REST,
   getActiveSetIndex,
-  SUPERSET_TRANSITION_REST,
 } from './workoutReducerHelpers';
 import type { WorkoutAction, WorkoutState } from './workoutTypes';
 

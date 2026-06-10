@@ -116,7 +116,10 @@ export async function addFoodFromPreset(
 
   const totalMacros = calcMacroTotals(foods);
   const mealEntry: MealEntry = {
-    id: generateId('meal'),
+    // Entry id must be a UUID: cloud nutrition_logs.id is uuid and PostgREST
+    // rejects `meal-...` ids with 22P02. Inner meal ids live inside the jsonb
+    // `meals` column, so they may keep the prefixed format.
+    id: crypto.randomUUID?.() || generateId('meal'),
     date,
     name: preset.name,
     meals: [
@@ -176,7 +179,8 @@ export async function addFoodFromPreset(
 export async function addMealEntry(entry: Omit<MealEntry, 'id' | 'createdAt'>): Promise<MealEntry> {
   const newEntry: MealEntry = {
     ...entry,
-    id: generateId('meal'),
+    // UUID — cloud nutrition_logs.id is uuid (see addFoodFromPreset).
+    id: crypto.randomUUID?.() || generateId('meal'),
     createdAt: new Date().toISOString(),
   };
   await dbPut(STORES.NUTRITION_LOGS, newEntry);
@@ -366,7 +370,8 @@ export function createQuickMeal(
   const firstFood = foods[0]?.name ?? MEAL_TYPE_LABELS[mealType];
   const name = foods.length > 1 ? `${firstFood} +${foods.length - 1}` : firstFood;
   return {
-    id: generateId('meal'),
+    // UUID — cloud nutrition_logs.id is uuid (see addFoodFromPreset).
+    id: crypto.randomUUID?.() || generateId('meal'),
     date,
     name,
     meals: [

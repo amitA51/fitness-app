@@ -3,6 +3,7 @@
 
 import type { ActiveExercise, WorkoutExercise, WorkoutSession } from '../types';
 import { toLocalDateStr } from '../utils/dateUtils';
+import { generateId } from '../utils/id';
 import { setVolume } from '../utils/workoutMath';
 
 export interface BuildSessionInput {
@@ -66,7 +67,9 @@ export function buildWorkoutSession(input: BuildSessionInput): BuildSessionResul
   const endTimeISO = new Date(now).toISOString();
 
   const session: WorkoutSession = {
-    id: `session_${now}`,
+    // UUID, never a prefixed string — cloud workout_sessions.id is uuid and
+    // PostgREST rejects `session_<ts>` ids with 22P02 (sync silently dropped).
+    id: crypto.randomUUID?.() || generateId('session'),
     userId: 'local_user',
     workoutItemId: itemId,
     startTime: new Date(startTimestamp).toISOString(),

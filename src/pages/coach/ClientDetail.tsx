@@ -6,7 +6,7 @@
 // rendering lives in the five tab components under ./client/tabs/.
 
 import { m } from 'framer-motion';
-import { MessageSquare } from 'lucide-react';
+import { FileText, MessageSquare } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -60,16 +60,27 @@ export default function ClientDetail() {
       title={name}
       subtitle={subtitle}
       actions={
-        <Button
-          variant="primary"
-          size="icon"
-          aria-label="שליחת הודעה למתאמן"
-          onClick={() => navigate(`/coach/messages/${id}`)}
-          className="shrink-0"
-          style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)' }}
-        >
-          <MessageSquare size={18} aria-hidden="true" />
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="secondary"
+            size="sm"
+            aria-label="דוח התקדמות למתאמן"
+            onClick={() => navigate(`/coach/clients/${id}/report`)}
+            className="whitespace-nowrap"
+          >
+            <FileText size={16} aria-hidden="true" />
+            דוח התקדמות
+          </Button>
+          <Button
+            variant="primary"
+            size="icon"
+            aria-label="שליחת הודעה למתאמן"
+            onClick={() => navigate(`/coach/messages/${id}`)}
+            style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)' }}
+          >
+            <MessageSquare size={18} aria-hidden="true" />
+          </Button>
+        </div>
       }
     >
       <div className="mb-5">

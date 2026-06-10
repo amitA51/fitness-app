@@ -8,7 +8,7 @@
 
 import { ChevronRight } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { SkeletonBox } from '../../components/ui/SkeletonLoader';
@@ -320,35 +320,58 @@ export function useAsyncData<T>(
   fn: () => Promise<T>,
   initial: T,
   deps: readonly unknown[] = []
-): { data: T; loading: boolean; error: string | null; reload: () => void } {
+): {
+  data: T;
+  loading: boolean;
+  error: string | null;
+  reload: () => void;
+  /**
+   * Background refetch: updates `data` without flipping `loading` (no skeleton
+   * flash). A failed silent refresh keeps the last good data and does NOT set
+   * `error` — used by realtime-driven refreshes that must degrade gracefully.
+   */
+  refreshSilent: () => void;
+} {
   const [data, setData] = useState<T>(initial);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const silentRef = useRef(false);
 
-  const reload = useCallback(() => setTick((t) => t + 1), []);
+  const reload = useCallback(() => {
+    silentRef.current = false;
+    setTick((t) => t + 1);
+  }, []);
+  const refreshSilent = useCallback(() => {
+    silentRef.current = true;
+    setTick((t) => t + 1);
+  }, []);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fn is captured per-render by callers; refetch is driven by the tick counter and the caller-supplied deps
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    const silent = silentRef.current;
+    silentRef.current = false;
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     fn()
       .then((res) => {
         if (!cancelled) setData(res);
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'error');
+        if (!cancelled && !silent) setError(err instanceof Error ? err.message : 'error');
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && !silent) setLoading(false);
       });
     return () => {
       cancelled = true;
     };
   }, [tick, ...deps]);
 
-  return { data, loading, error, reload };
+  return { data, loading, error, reload, refreshSilent };
 }
 
 export const formatDate = (iso?: string | null): string => {

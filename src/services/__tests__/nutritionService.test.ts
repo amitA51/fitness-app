@@ -99,6 +99,12 @@ describe('nutritionService pure logic', () => {
       expect(entry.date).toBe(pastDay);
     });
 
+    it('mints a UUID entry id (cloud nutrition_logs.id is uuid — 22P02 on meal- ids)', () => {
+      const entry = createQuickMeal('lunch', [makeFood()], '2026-05-25');
+
+      expect(entry.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    });
+
     it('names the entry after its foods rather than the meal-type label', () => {
       // Arrange
       const foods = [makeFood({ name: 'חזה עוף' }), makeFood({ id: 'f2', name: 'אורז' })];

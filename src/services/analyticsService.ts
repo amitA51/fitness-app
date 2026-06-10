@@ -6,9 +6,6 @@
 // `./analytics/` and are re-exported here so existing imports from
 // `.../analyticsService` keep working unchanged.
 
-// Summary, volume history, frequency, muscle-group distribution
-export * from './analytics/summary';
-
 // Weekly volume, muscle balance, forecast, exercise progress
 export * from './analytics/volumeMetrics';
 

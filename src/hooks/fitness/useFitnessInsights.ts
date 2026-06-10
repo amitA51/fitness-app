@@ -47,6 +47,8 @@ export interface FitnessInsightsData {
   exerciseNames: string[];
   selectedExerciseProgress: StrengthProgressPoint[];
   selectedExerciseDelta: ProgressDelta[] | null;
+  /** Week-over-week volume deltas for ALL exercises (locally aggregated). */
+  weekOverWeekDeltas: ProgressDelta[];
 
   aiInsight: string | null;
   aiInsightLoading: boolean;
@@ -118,6 +120,7 @@ export function useFitnessInsights(externalSessions?: WorkoutSession[]): Fitness
       allPRs: aggregated.allPRs as PersonalRecord[],
       recentPRs: aggregated.recentPRs as PersonalRecord[],
       exerciseNames: aggregated.exerciseNames as string[],
+      weekOverWeekDeltas: aggregated.allDeltas as ProgressDelta[],
     }),
     [aggregated]
   );

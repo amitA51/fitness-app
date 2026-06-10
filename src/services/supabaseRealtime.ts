@@ -24,8 +24,12 @@ export const subscribeToWorkoutTemplates = (
 
   const channelName = `workout_templates:${userId}`;
 
-  if (realtimeChannels.has(channelName)) {
-    realtimeChannels.get(channelName)?.unsubscribe();
+  // removeChannel (not channel.unsubscribe) — unsubscribe alone leaves the
+  // channel in the client registry, accumulating on every resubscribe.
+  const existingTemplatesChannel = realtimeChannels.get(channelName);
+  if (existingTemplatesChannel) {
+    void supabase.removeChannel(existingTemplatesChannel);
+    realtimeChannels.delete(channelName);
   }
 
   const channel = supabase
@@ -65,7 +69,7 @@ export const subscribeToWorkoutTemplates = (
   realtimeChannels.set(channelName, channel);
 
   return () => {
-    channel.unsubscribe();
+    void supabase?.removeChannel(channel);
     realtimeChannels.delete(channelName);
   };
 };
@@ -80,8 +84,12 @@ export const subscribeToWorkoutSessions = (
 
   const channelName = `workout_sessions:${userId}`;
 
-  if (realtimeChannels.has(channelName)) {
-    realtimeChannels.get(channelName)?.unsubscribe();
+  // removeChannel (not channel.unsubscribe) — unsubscribe alone leaves the
+  // channel in the client registry, accumulating on every resubscribe.
+  const existingSessionsChannel = realtimeChannels.get(channelName);
+  if (existingSessionsChannel) {
+    void supabase.removeChannel(existingSessionsChannel);
+    realtimeChannels.delete(channelName);
   }
 
   const channel = supabase
@@ -121,7 +129,7 @@ export const subscribeToWorkoutSessions = (
   realtimeChannels.set(channelName, channel);
 
   return () => {
-    channel.unsubscribe();
+    void supabase?.removeChannel(channel);
     realtimeChannels.delete(channelName);
   };
 };

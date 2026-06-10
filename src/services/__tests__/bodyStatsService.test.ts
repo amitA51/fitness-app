@@ -64,6 +64,12 @@ describe('bodyStatsService recovery logs', () => {
     expect(saved.overallScore).toBe(calculateRecoveryScore(saved).overall);
   });
 
+  it('mints a UUID id for new recovery logs (cloud recovery_logs.id is uuid)', async () => {
+    const saved = await addRecoveryLog(recoveryInput('2026-04-27'));
+
+    expect(saved.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+  });
+
   it('updates the canonical log instead of duplicating the same date', async () => {
     const first = await addRecoveryLog(recoveryInput('2026-04-26', { energyLevel: 2 }));
     const second = await addRecoveryLog(recoveryInput('2026-04-26', { energyLevel: 5 }));
@@ -157,9 +163,7 @@ describe('bodyStatsService cloud-delete wiring (tombstones + offline queue)', ()
 
     await addRecoveryLog(recoveryInput('2026-04-28', { energyLevel: 5 }));
 
-    const call = mockSyncWithRetry.mock.calls.find(
-      (c) => c[1] === 'deleteRecoveryLog:rec-dup-old'
-    );
+    const call = mockSyncWithRetry.mock.calls.find((c) => c[1] === 'deleteRecoveryLog:rec-dup-old');
     expect(call).toBeDefined();
     expect(call![3]).toEqual({ type: 'recovery:delete', payload: 'rec-dup-old' });
     await (call![0] as () => Promise<void>)();

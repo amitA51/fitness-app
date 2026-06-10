@@ -61,9 +61,7 @@ export function NotesBox({ clientId }: { clientId: string }) {
         ) : notes.length === 0 ? (
           <InlineEmpty>אין הערות</InlineEmpty>
         ) : (
-          notes.map((n) => (
-            <ListRow key={n.id} label={n.body} meta={formatDate(n.createdAt)} />
-          ))
+          notes.map((n) => <ListRow key={n.id} label={n.body} meta={formatDate(n.createdAt)} />)
         )}
       </div>
     </Section>

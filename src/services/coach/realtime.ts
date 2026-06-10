@@ -125,6 +125,117 @@ export function subscribeToGroupThread(
   }
 }
 
+/**
+ * Hub-level: subscribe to ALL newly inserted 1:1 messages addressed to this
+ * coach (any client). Lets the messages hub refresh previews/unread badges
+ * live instead of waiting for the next poll. Filters on `coach_id` — one
+ * realtime filter, mirroring subscribeToThread's single-filter approach.
+ */
+export function subscribeToCoachClientMessages(coachId: string, onActivity: () => void): Unsubscribe {
+  if (!isSupabaseConfigured() || !supabase || !coachId) return () => {};
+
+  try {
+    const channel = supabase
+      .channel(`rt:messages:inbox:${coachId}:${++channelSeq}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `coach_id=eq.${coachId}`,
+        },
+        () => onActivity()
+      )
+      .subscribe();
+
+    return () => {
+      void supabase?.removeChannel(channel);
+    };
+  } catch {
+    // Realtime is an enhancement; the caller's poll/initial fetch still works.
+    return () => {};
+  }
+}
+
+/**
+ * Hub-level: subscribe to newly inserted group messages across ALL of the
+ * viewer's groups. `group_messages` has no coach_id column and the group set
+ * is dynamic, so no server-side filter is possible here — we subscribe broadly
+ * and rely on RLS (WALRUS) to deliver only rows the signed-in user may read,
+ * i.e. messages in their own groups.
+ */
+export function subscribeToCoachGroupMessages(onActivity: () => void): Unsubscribe {
+  if (!isSupabaseConfigured() || !supabase) return () => {};
+
+  try {
+    const channel = supabase
+      .channel(`rt:group_messages:inbox:${++channelSeq}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'group_messages' },
+        () => onActivity()
+      )
+      .subscribe();
+
+    return () => {
+      void supabase?.removeChannel(channel);
+    };
+  } catch {
+    // Realtime is an enhancement; the caller's poll/initial fetch still works.
+    return () => {};
+  }
+}
+
+/** Minimum spacing between summary refreshes triggered by realtime events. */
+export const INBOX_REFRESH_MIN_INTERVAL_MS = 1_000;
+
+export interface ThrottledRefresh {
+  /** Invoke `fn` now if the interval elapsed, otherwise schedule one trailing call. */
+  run: () => void;
+  /** Drop any pending trailing call (use on unmount). */
+  cancel: () => void;
+}
+
+/**
+ * Leading + trailing throttle for realtime-driven refreshes: the first event
+ * fires immediately, a burst collapses into at most one call per
+ * `intervalMs`, and the last event in a burst is never lost (trailing call).
+ * Pure timer logic — exported for tests.
+ */
+export function createThrottledRefresh(
+  fn: () => void,
+  intervalMs: number = INBOX_REFRESH_MIN_INTERVAL_MS
+): ThrottledRefresh {
+  let lastRun = 0;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  const invoke = () => {
+    lastRun = Date.now();
+    fn();
+  };
+
+  return {
+    run: () => {
+      const elapsed = Date.now() - lastRun;
+      if (elapsed >= intervalMs) {
+        invoke();
+      } else if (timer === null) {
+        timer = setTimeout(() => {
+          timer = null;
+          invoke();
+        }, intervalMs - elapsed);
+      }
+    },
+    cancel: () => {
+      if (timer !== null) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    },
+  };
+}
+
 export function subscribeToAssignments(clientId: string, onChange: () => void): Unsubscribe {
   if (!isSupabaseConfigured() || !supabase || !clientId) return () => {};
 

@@ -102,7 +102,8 @@ export async function addBodyWeight(
   const now = new Date().toISOString();
   const newEntry: BodyWeightEntry = {
     ...entry,
-    id: generateId('bw'),
+    // UUID — cloud body_weight.id is uuid; PostgREST rejects `bw-...` (22P02).
+    id: crypto.randomUUID?.() || generateId('bw'),
     createdAt: now,
     updatedAt: now,
   };
@@ -220,7 +221,8 @@ export async function addBodyMeasurement(
   const now = new Date().toISOString();
   const newEntry: BodyMeasurement = {
     ...entry,
-    id: generateId('bm'),
+    // UUID — cloud body_measurements.id is uuid (22P02 on prefixed ids).
+    id: crypto.randomUUID?.() || generateId('bm'),
     createdAt: now,
     updatedAt: now,
   };
@@ -291,7 +293,8 @@ export async function addRecoveryLog(
 
   const newEntry: RecoveryLog = {
     ...entry,
-    id: canonicalLog?.id ?? generateId('rec'),
+    // UUID — cloud recovery_logs.id is uuid (22P02 on prefixed ids).
+    id: canonicalLog?.id ?? (crypto.randomUUID?.() || generateId('rec')),
     createdAt: canonicalLog?.createdAt ?? new Date().toISOString(),
     // Re-logging the same day reuses the canonical id+createdAt, so a fresh
     // updatedAt is what lets the newer entry win LWW on another device.

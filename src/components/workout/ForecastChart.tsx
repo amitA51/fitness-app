@@ -1,229 +1,199 @@
-// ForecastChart - Fresh Steel / Obsidian design language
-// Primary · accent · surface · Bricolage Grotesque display + IBM Plex Mono
+// ForecastChart — Fresh Steel / Obsidian design language
+// Weekly volume history + next-week projection for ONE exercise (controlled by
+// the parent's exercise selection — no second selector on the screen).
+// The series is weekly on both sides: actuals are the same ISO-week buckets the
+// regression runs on, and the appended "תחזית" point is the predicted volume
+// for the NEXT week — same scale by construction (see forecastSeries.ts).
 
-import { m } from 'framer-motion';
+import { LineChart } from 'lucide-react';
 import type React from 'react';
-import { memo, useMemo, useState } from 'react';
-import {
-  calculateStrengthProgression,
-  forecastProgress,
-  getAllExerciseNames,
-} from '../../services/analyticsService';
+import { memo, useMemo } from 'react';
 import type { WorkoutSession } from '../../types';
-import { GlowAreaChart, type GlowAreaPoint } from '../charts';
+import { logger } from '../../utils/logger';
+import { GlowAreaChart } from '../charts';
+import { buildForecastSeries, MIN_SESSIONS_FOR_FORECAST } from './forecastSeries';
 
 interface ForecastChartProps {
   sessions: WorkoutSession[];
+  /** Raw exerciseName as it appears on sessions (parent-controlled selection). */
+  exerciseName: string | null;
+  /** Short display label for headings/aria (e.g. name without equipment suffix). */
+  exerciseLabel?: string;
+  isLoading?: boolean;
 }
 
-const ForecastChart: React.FC<ForecastChartProps> = ({ sessions }) => {
-  const [selectedExercise, setSelectedExercise] = useState<string>('');
+const cardStyle: React.CSSProperties = {
+  background: 'var(--fs-surface)',
+  borderRadius: 'var(--radius-asymmetric)',
+  border: '1px solid var(--fs-surface-2)',
+  boxShadow: 'var(--shadow-card)',
+  padding: '16px 20px',
+};
 
-  const exerciseNames = useMemo(() => {
-    return getAllExerciseNames(sessions);
-  }, [sessions]);
+const headerStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-mono)',
+  fontSize: 10,
+  letterSpacing: '0.15em',
+  color: 'var(--fs-muted)',
+  textTransform: 'uppercase',
+  marginBottom: 12,
+};
 
-  const progressionData = useMemo(() => {
-    if (!selectedExercise || sessions.length === 0) return null;
-
-    const exerciseId = findExerciseId(sessions, selectedExercise);
-    if (!exerciseId) return null;
-
-    const progression = calculateStrengthProgression(sessions, exerciseId);
-    const forecast = forecastProgress(sessions, exerciseId);
-
-    return { progression, forecast };
-  }, [selectedExercise, sessions]);
-
-  const forecastData = useMemo<GlowAreaPoint[]>(() => {
-    if (!progressionData || progressionData.progression.length === 0) return [];
-    const points: GlowAreaPoint[] = progressionData.progression.map((p) => ({
-      x: formatShortDate(p.date),
-      y: p.volume,
-    }));
-    if (progressionData.forecast && progressionData.forecast.predicted > 0 && points.length > 0) {
-      points.push({ x: 'תחזית', y: progressionData.forecast.predicted });
+const ForecastChart: React.FC<ForecastChartProps> = ({
+  sessions,
+  exerciseName,
+  exerciseLabel,
+  isLoading,
+}) => {
+  const series = useMemo(() => {
+    try {
+      return buildForecastSeries(sessions, exerciseName);
+    } catch (e) {
+      logger.analytics.error('Failed to build forecast series', e);
+      return null; // null = computation error (distinct from empty data)
     }
-    return points;
-  }, [progressionData]);
+  }, [sessions, exerciseName]);
 
-  const hasChartData = forecastData.length >= 2;
+  if (!exerciseName) return null;
+
+  const label = exerciseLabel || exerciseName;
+
+  // Loading — skeleton matching the chart card shape.
+  if (isLoading) {
+    return (
+      <div style={cardStyle} aria-hidden="true">
+        <div style={headerStyle}>תחזית נפח שבועי</div>
+        <div
+          className="animate-pulse"
+          style={{ height: 150, borderRadius: 12, background: 'var(--fs-surface-2)' }}
+        />
+      </div>
+    );
+  }
+
+  // Error — explicit, with the recovery path (data recomputes on refresh).
+  if (series === null) {
+    return (
+      <div style={cardStyle}>
+        <h3 style={headerStyle}>תחזית נפח שבועי</h3>
+        <p
+          role="alert"
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 13,
+            color: 'var(--fs-muted)',
+            textAlign: 'center',
+            padding: '20px 0',
+          }}
+        >
+          לא הצלחנו לחשב את התחזית. רעננו את העמוד ונסו שוב.
+        </p>
+      </div>
+    );
+  }
+
+  // Empty — composed guidance: how many more sessions until the forecast shows.
+  if (series.points.length < 2 || !series.forecast) {
+    const remaining = Math.max(1, MIN_SESSIONS_FOR_FORECAST - series.sessionCount);
+    return (
+      <div style={cardStyle}>
+        <h3 style={headerStyle}>תחזית נפח שבועי · {label}</h3>
+        <div className="flex flex-col items-center text-center gap-2" style={{ padding: '16px 0' }}>
+          <LineChart size={28} style={{ color: 'var(--fs-muted)' }} aria-hidden="true" />
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--fs-ink)' }}>
+            התחזית נבנית מ־
+            <span className="kinetic-number" dir="ltr">
+              {MIN_SESSIONS_FOR_FORECAST}
+            </span>{' '}
+            אימונים לפחות עם התרגיל הזה
+          </p>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--fs-muted)' }}>
+            {remaining === 1 ? (
+              'עוד אימון אחד והתחזית תופיע כאן'
+            ) : (
+              <>
+                עוד{' '}
+                <span className="kinetic-number" dir="ltr">
+                  {remaining}
+                </span>{' '}
+                אימונים והתחזית תופיע כאן
+              </>
+            )}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const { forecast } = series;
 
   return (
-    <m.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4 }}
-      className="magnetic-card"
-      style={{
-        background: 'var(--fs-bg)',
-        border: '2px solid var(--fs-primary)',
-        padding: 20,
-        borderRadius: '22px 16px 22px 16px',
-      }}
-    >
+    <div style={cardStyle}>
+      <h3 style={headerStyle}>תחזית נפח שבועי · {label}</h3>
+
+      <GlowAreaChart
+        data={series.points}
+        accent="var(--fs-accent)"
+        accent2="var(--fs-accent-2)"
+        xAxis
+        ariaLabel={`נפח שבועי ותחזית לשבוע הבא עבור ${label}`}
+      />
+
+      {/* Forecast read-out */}
       <div
         style={{
+          marginTop: 12,
+          paddingTop: 12,
+          borderTop: '1px solid var(--fs-surface-2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 16,
+          flexWrap: 'wrap',
+          gap: 8,
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: 'var(--fs-muted)' }}>תחזית לשבוע הבא:</span>
+          <span
+            className="kinetic-number"
+            dir="ltr"
+            style={{ fontWeight: 700, color: 'var(--fs-heading)' }}
+          >
+            {forecast.predicted.toLocaleString()}
+          </span>
+          <span style={{ color: 'var(--fs-muted)' }}>ק״ג</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span
             style={{
-              width: 10,
-              height: 10,
-              background: 'var(--fs-accent)',
-            }}
-          />
-          <h3
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: 14,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: 'var(--fs-heading)',
+              color:
+                forecast.trend === 'increasing'
+                  ? 'var(--color-success-fg)'
+                  : forecast.trend === 'decreasing'
+                    ? 'var(--color-error-fg)'
+                    : 'var(--fs-muted)',
             }}
           >
-            חיזוי התקדמות לפי תרגיל
-          </h3>
+            {forecast.trend === 'increasing'
+              ? '↑ בעלייה'
+              : forecast.trend === 'decreasing'
+                ? '↓ בירידה'
+                : '→ יציב'}
+          </span>
+          <span style={{ color: 'var(--fs-muted)' }}>
+            <span className="kinetic-number" dir="ltr">
+              {Math.round(forecast.confidence * 100)}%
+            </span>{' '}
+            ביטחון
+          </span>
         </div>
       </div>
-
-      {/* Exercise Selector */}
-      <div style={{ marginBottom: 16 }}>
-        <select
-          value={selectedExercise}
-          onChange={(e) => setSelectedExercise(e.target.value)}
-          style={{
-            width: '100%',
-            background: 'var(--fs-surface-2)',
-            border: '2px solid var(--fs-primary)',
-            padding: '12px 16px',
-            fontFamily: 'var(--font-display)',
-            fontSize: 14,
-            color: 'var(--fs-heading)',
-            cursor: 'pointer',
-            appearance: 'none',
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230b293b' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`,
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'left 12px center',
-            paddingLeft: 36,
-          }}
-        >
-          <option value="" style={{ background: 'var(--fs-surface)' }}>
-            בחר תרגיל...
-          </option>
-          {exerciseNames.map((name) => (
-            <option key={name} value={name} style={{ background: 'var(--fs-surface)' }}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Chart */}
-      {selectedExercise && progressionData && hasChartData && (
-        <div style={{ position: 'relative' }}>
-          <GlowAreaChart
-            data={forecastData}
-            accent="var(--fs-accent)"
-            accent2="var(--fs-accent-2)"
-            xAxis
-            ariaLabel={`תחזית התקדמות עבור ${selectedExercise}`}
-          />
-
-          {/* Forecast info */}
-          {progressionData.forecast && (
-            <div
-              style={{
-                marginTop: 12,
-                paddingTop: 12,
-                borderTop: '2px solid var(--fs-surface-2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: 'var(--fs-muted)' }}>חיזוי:</span>
-                <span
-                  style={{
-                    fontWeight: 700,
-                    color: 'var(--fs-heading)',
-                  }}
-                >
-                  {progressionData.forecast.predicted.toLocaleString()} ק״ג
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span
-                  style={{
-                    color:
-                      progressionData.forecast.trend === 'increasing'
-                        ? 'var(--color-success-fg)'
-                        : progressionData.forecast.trend === 'decreasing'
-                          ? 'var(--color-error-fg)'
-                          : 'var(--fs-muted)',
-                  }}
-                >
-                  {progressionData.forecast.trend === 'increasing'
-                    ? '↑ בעלייה'
-                    : progressionData.forecast.trend === 'decreasing'
-                      ? '↓ בירידה'
-                      : '→ יציב'}
-                </span>
-                <span style={{ color: 'var(--fs-muted)' }}>
-                  {Math.round(progressionData.forecast.confidence * 100)}% ביטחון
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Empty state */}
-      {selectedExercise && (!progressionData || !hasChartData) && (
-        <div
-          style={{
-            textAlign: 'center',
-            paddingTop: 32,
-            paddingBottom: 32,
-            fontFamily: 'var(--font-body)',
-            fontSize: 14,
-            color: 'var(--fs-muted)',
-          }}
-        >
-          אין מספיק נתונים לתרגיל זה
-        </div>
-      )}
-    </m.div>
+    </div>
   );
 };
-
-function formatShortDate(iso: string): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
-  return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
-}
-
-function findExerciseId(sessions: WorkoutSession[], exerciseName: string): string | null {
-  for (const session of sessions) {
-    for (const exercise of session.exercises) {
-      if (exercise.exerciseName === exerciseName) {
-        return exercise.exerciseId;
-      }
-    }
-  }
-  return null;
-}
 
 export default memo(ForecastChart);

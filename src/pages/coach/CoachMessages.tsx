@@ -5,12 +5,18 @@
 
 import { X } from 'lucide-react';
 import type React from 'react';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EmptyState from '../../components/ui/EmptyState';
 import { Input } from '../../components/ui/Input';
+import { useAuth } from '../../contexts/AuthContext';
 import { listGroupThreads } from '../../services/coach/groupMessageService';
 import { type ClientThreadSummary, listClientThreads } from '../../services/coach/messageService';
+import {
+  createThrottledRefresh,
+  subscribeToCoachClientMessages,
+  subscribeToCoachGroupMessages,
+} from '../../services/coach/realtime';
 import type { GroupThreadSummary } from '../../types/coach';
 import {
   CoachPage,
@@ -20,6 +26,35 @@ import {
   formatDate,
   useAsyncData,
 } from './_shared';
+
+// ---------------------------------------------------------------------------
+// Realtime → summaries glue
+// ---------------------------------------------------------------------------
+
+/**
+ * Refresh the thread summaries silently (no skeleton flash) whenever inbox
+ * activity arrives over realtime, throttled to at most one refresh per second,
+ * and nudge the BottomNav unread badge via the existing `coach:unread-refresh`
+ * event so it updates in step instead of waiting for its 30s poll.
+ * Realtime being unavailable (offline/unconfigured) is harmless: the subscribe
+ * helpers no-op and the existing one-shot fetch + retry path is unchanged.
+ */
+function useInboxRealtime(
+  subscribe: (onActivity: () => void) => () => void,
+  refreshSilent: () => void
+) {
+  useEffect(() => {
+    const throttled = createThrottledRefresh(() => {
+      refreshSilent();
+      window.dispatchEvent(new Event('coach:unread-refresh'));
+    });
+    const unsubscribe = subscribe(throttled.run);
+    return () => {
+      throttled.cancel();
+      unsubscribe();
+    };
+  }, [subscribe, refreshSilent]);
+}
 
 // ---------------------------------------------------------------------------
 // Shared sub-components
@@ -220,13 +255,24 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
 
 function PersonalPanel() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const coachId = user?.id ?? '';
   const {
     data: threads,
     loading,
     error,
     reload,
+    refreshSilent,
   } = useAsyncData<ClientThreadSummary[]>(listClientThreads, []);
   const [search, setSearch] = useState('');
+
+  // Live previews/unread: any INSERT into `messages` for this coach re-runs
+  // the cheap RPC-backed summary fetch (throttled, silent).
+  const subscribe = useCallback(
+    (onActivity: () => void) => subscribeToCoachClientMessages(coachId, onActivity),
+    [coachId]
+  );
+  useInboxRealtime(subscribe, refreshSilent);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return threads;
@@ -285,8 +331,18 @@ function GroupsPanel() {
   const navigate = useNavigate();
 
   const loader = useMemo(() => () => listGroupThreads('coach'), []);
-  const { data: groups, loading, error, reload } = useAsyncData<GroupThreadSummary[]>(loader, []);
+  const {
+    data: groups,
+    loading,
+    error,
+    reload,
+    refreshSilent,
+  } = useAsyncData<GroupThreadSummary[]>(loader, []);
   const [search, setSearch] = useState('');
+
+  // Live previews/unread: group_messages INSERTs (RLS-scoped to the coach's
+  // groups) re-run the summary fetch (throttled, silent).
+  useInboxRealtime(subscribeToCoachGroupMessages, refreshSilent);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return groups;

@@ -41,6 +41,11 @@ vi.mock('../../utils/logger', () => ({
 
 describe('syncAllData concurrency guard', () => {
   it('coalesces concurrent calls — underlying work runs only once', async () => {
+    // Skip the one-time legacy-id normalization pass (it has its own suite,
+    // idNormalization.test.ts) so the dbGetAll count below isolates the
+    // concurrency guard.
+    localStorage.setItem('sparkos_legacy_id_normalization_v1', 'done');
+
     const { syncAllData } = await import('../supabaseSync');
 
     // Call twice concurrently

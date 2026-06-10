@@ -76,6 +76,7 @@ const CoachGroups = lazy(() => import('./pages/coach/CoachGroups'));
 const CoachMessages = lazy(() => import('./pages/coach/CoachMessages'));
 const MessageThread = lazy(() => import('./pages/coach/MessageThread'));
 const ClientDetail = lazy(() => import('./pages/coach/ClientDetail'));
+const ClientReport = lazy(() => import('./pages/coach/ClientReport'));
 const GroupThread = lazy(() => import('./pages/coach/GroupThread'));
 const MyCoach = lazy(() => import('./pages/MyCoach'));
 const JoinPage = lazy(() => import('./pages/JoinPage'));
@@ -446,6 +447,16 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
           <CoachGuard>
             <PageErrorBoundary pageLabel="מתאמן">
               <ClientDetail />
+            </PageErrorBoundary>
+          </CoachGuard>
+        }
+      />
+      <Route
+        path="/coach/clients/:id/report"
+        element={
+          <CoachGuard>
+            <PageErrorBoundary pageLabel="דוח התקדמות">
+              <ClientReport />
             </PageErrorBoundary>
           </CoachGuard>
         }

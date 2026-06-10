@@ -25,10 +25,7 @@ export type { PersonalRecord };
 
 /** Canonical, comparison-safe form of an exercise name. */
 export const normalizeExerciseName = (name: string | null | undefined): string =>
-  (name ?? '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .toLowerCase();
+  (name ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 
 /**
  * Stable PR identity for an exercise-like object: the normalized name,

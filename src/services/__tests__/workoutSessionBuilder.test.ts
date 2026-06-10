@@ -48,6 +48,21 @@ describe('buildWorkoutSession', () => {
     expect(buildWorkoutSession(baseInput)).toBeNull();
   });
 
+  it('mints a UUID session id (cloud workout_sessions.id is uuid — 22P02 on prefixed ids)', () => {
+    const result = buildWorkoutSession({
+      ...baseInput,
+      exercises: [
+        makeExercise({
+          sets: [makeSet({ isCompleted: true, completedAt: '2024-01-01T00:00:00Z' })],
+        }),
+      ],
+    });
+
+    expect(result!.session.id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    );
+  });
+
   it('builds a session from exercises with completed sets', () => {
     const exercises: ActiveExercise[] = [
       makeExercise({

@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { useIsRTL } from '../../hooks/useIsRTL';
 import type { WorkoutSession } from '../../types';
-import { DAYS, getWeekEnd, getWeekStart, HEBREW_DAYS } from '../../utils/dateUtils';
+import { DAYS, HEBREW_DAYS, getWeekEnd, getWeekStart } from '../../utils/dateUtils';
 import { RingProgress } from '../charts';
 
 interface WeeklyGridProps {

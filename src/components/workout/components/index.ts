@@ -33,8 +33,6 @@ export { SetProgress } from './SetProgress';
 export { StatsGrid } from './StatsGrid';
 export { SummaryExerciseList } from './SummaryExerciseList';
 export { PRHighlights } from './PRHighlights';
-export { default as MuscleRadarChart } from './MuscleRadarChart';
-export { default as TrendLineOverlay } from './TrendLineOverlay';
 
 // Handlers & hooks
 export { default as WorkoutAriaLive } from './WorkoutAriaLive';

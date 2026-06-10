@@ -12,6 +12,8 @@ import { RING_DRAW_DURATION, RING_STAGGER, ringDelay } from '../components/chart
 import { CoachBriefCard } from '../components/dashboard/CoachBriefCard';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { ForecastNudge } from '../components/dashboard/ForecastNudge';
+import { InsightCard } from '../components/dashboard/InsightCard';
+import { pickDashboardInsight } from '../components/dashboard/insightPicker';
 import { RecentPRBanner } from '../components/dashboard/RecentPRBanner';
 import { StartWorkoutSheet } from '../components/dashboard/StartWorkoutSheet';
 import { TemplateStrip } from '../components/dashboard/TemplateQuickStart';
@@ -33,9 +35,9 @@ import { getCurrentUser } from '../services/supabaseAuth';
 import { getWorkoutTemplates } from '../services/workoutDb';
 import type { WorkoutTemplate } from '../types';
 import { getWeekStart } from '../utils/dateUtils';
-import { zoneColor } from '../utils/zoneColor';
 import { formatThousands } from '../utils/formatThousands';
 import { logger } from '../utils/logger';
+import { zoneColor } from '../utils/zoneColor';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -47,7 +49,15 @@ export default function Dashboard() {
   const [refreshTick, setRefreshTick] = useState(0);
 
   const { sessions: dataContextSessions, refreshData, loading: dataLoading } = useData();
-  const { workoutSessions } = useFitnessInsights(dataContextSessions);
+  const { workoutSessions, weekOverWeekDeltas, muscleGroups, currentStreak } =
+    useFitnessInsights(dataContextSessions);
+
+  // One locally-computed insight (progression → neglected muscle → streak).
+  // Pure math over the already-aggregated insights — no AI calls here.
+  const dashboardInsight = useMemo(
+    () => pickDashboardInsight({ weekOverWeekDeltas, muscleGroups, currentStreak }),
+    [weekOverWeekDeltas, muscleGroups, currentStreak]
+  );
 
   const { isPulling, isRefreshing, pullDistance, threshold, handlers } = usePullToRefresh({
     onRefresh: async () => {
@@ -402,39 +412,39 @@ export default function Dashboard() {
               </span>
               <Stagger stagger={RING_STAGGER} style={{ display: 'grid', gap: 6 }}>
                 <StaggerItem key={`accent-${refreshTick}`}>
-                <BentoRow
-                  dot="accent"
-                  label="אימונים"
-                  value={weekData.workoutsThisWeek}
-                  suffix=" / 4"
-                  ltr
-                  delay={ringDelay(0)}
-                />
+                  <BentoRow
+                    dot="accent"
+                    label="אימונים"
+                    value={weekData.workoutsThisWeek}
+                    suffix=" / 4"
+                    ltr
+                    delay={ringDelay(0)}
+                  />
                 </StaggerItem>
                 <StaggerItem key={`signal-${refreshTick}`}>
-                <BentoRow
-                  dot="signal"
-                  label="נפח"
-                  value={weekData.volume}
-                  format={formatThousands}
-                  ltr
-                  suffix={' ק״ג'}
-                  delay={ringDelay(1)}
-                  sub={volDelta !== '—' ? volDelta : undefined}
-                  // Zone-color the WoW delta: a drop is not a win — demote it to
-                  // neutral/muted instead of celebrating it in accent.
-                  subColor={zoneColor(weekData.volDeltaPct < 0 ? 'neutral' : 'good')}
-                />
+                  <BentoRow
+                    dot="signal"
+                    label="נפח"
+                    value={weekData.volume}
+                    format={formatThousands}
+                    ltr
+                    suffix={' ק״ג'}
+                    delay={ringDelay(1)}
+                    sub={volDelta !== '—' ? volDelta : undefined}
+                    // Zone-color the WoW delta: a drop is not a win — demote it to
+                    // neutral/muted instead of celebrating it in accent.
+                    subColor={zoneColor(weekData.volDeltaPct < 0 ? 'neutral' : 'good')}
+                  />
                 </StaggerItem>
                 <StaggerItem key={`warn-${refreshTick}`}>
-                <BentoRow
-                  dot="warn"
-                  label="זמן"
-                  value={weekData.totalMinutes}
-                  suffix="′ / 240′"
-                  ltr
-                  delay={ringDelay(2)}
-                />
+                  <BentoRow
+                    dot="warn"
+                    label="זמן"
+                    value={weekData.totalMinutes}
+                    suffix="′ / 240′"
+                    ltr
+                    delay={ringDelay(2)}
+                  />
                 </StaggerItem>
               </Stagger>
             </div>
@@ -443,6 +453,9 @@ export default function Dashboard() {
 
         {/* Weekly review — math-grounded AI recap beneath the weekly rings */}
         <CoachBriefCard sessions={workoutSessions} kind="weekly-review" />
+
+        {/* Smart insight — single locally-computed highlight from useFitnessInsights */}
+        <InsightCard insight={dashboardInsight} />
 
         {/* 4. Templates — quick strip + library affordance */}
         {sortedTemplates.length > 0 && (
@@ -664,7 +677,11 @@ const FindCoachCard = memo(function FindCoachCard() {
             יש לך קוד הזמנה ממאמן? התחבר כדי לקבל תוכניות ומעקב.
           </span>
         </span>
-        <ArrowLeft size={20} aria-hidden="true" style={{ color: 'var(--fs-muted)', flexShrink: 0 }} />
+        <ArrowLeft
+          size={20}
+          aria-hidden="true"
+          style={{ color: 'var(--fs-muted)', flexShrink: 0 }}
+        />
       </Link>
     </section>
   );
@@ -832,9 +849,7 @@ const BentoRow = memo(function BentoRow({
         }}
       >
         {valueGroup}
-        {sub && (
-          <span style={{ color: subColor ?? 'var(--fs-accent)', fontSize: 10 }}>{sub}</span>
-        )}
+        {sub && <span style={{ color: subColor ?? 'var(--fs-accent)', fontSize: 10 }}>{sub}</span>}
       </span>
     </div>
   );

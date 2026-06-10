@@ -8,6 +8,7 @@ import { createWorkoutTemplate, saveWorkoutSession } from '../../../services/dat
 import type { PersonalItem, WorkoutExercise, WorkoutSession } from '../../../types';
 import { todayStr } from '../../../utils/dateUtils';
 import { triggerHaptic } from '../../../utils/haptics';
+import { generateId } from '../../../utils/id';
 import { safeJsonParse } from '../../../utils/safeJson';
 import { setVolume } from '../../../utils/workoutMath';
 import { useWorkoutDerived, useWorkoutDispatch, useWorkoutState } from '../core/WorkoutContext';
@@ -249,7 +250,9 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
         }));
 
         const session: WorkoutSession = {
-          id: `session_${Date.now()}`,
+          // UUID, never a prefixed string — cloud workout_sessions.id is uuid
+          // and PostgREST rejects `session_<ts>` ids with 22P02.
+          id: crypto.randomUUID?.() || generateId('session'),
           userId: 'local_user',
           workoutItemId: item?.id || `workout_${Date.now()}`,
           startTime: new Date(state.startTimestamp).toISOString(),

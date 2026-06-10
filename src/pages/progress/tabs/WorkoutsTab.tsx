@@ -16,11 +16,11 @@ import { useNavigate } from 'react-router-dom';
 import PRHistoryTab from '../../../components/workout/PRHistoryTab';
 import { WorkoutHistory } from '../../../components/workout/history/WorkoutHistory';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
-import { ChartSummary, ChartSummaryNumber } from '../components/ChartSummary';
 import { ChapterBreak } from '../components/ChapterBreak';
-import { emptyStateCardStyle } from '../components/emptyStateCard';
+import { ChartSummary, ChartSummaryNumber } from '../components/ChartSummary';
 import { type SegmentOption, SegmentedControl } from '../components/SegmentedControl';
 import { TrendChartCard } from '../components/TrendChartCard';
+import { emptyStateCardStyle } from '../components/emptyStateCard';
 import { buildVolumeTrend } from '../progressMetrics';
 import type { WorkoutsSubTab } from '../types';
 import { StrengthSection } from './StrengthSection';
@@ -38,7 +38,11 @@ function volumeTrendSummary(data: { y: number }[]): {
     return { pct, zone: 'good', sentence: 'נפח האימונים במגמת עלייה לאורך התקופה.' };
   }
   if (pct <= -5) {
-    return { pct, zone: 'attention', sentence: 'נפח האימונים ירד לאורך התקופה — שווה לחזק את העומס.' };
+    return {
+      pct,
+      zone: 'attention',
+      sentence: 'נפח האימונים ירד לאורך התקופה — שווה לחזק את העומס.',
+    };
   }
   return { pct, zone: 'neutral', sentence: 'נפח האימונים יציב לאורך התקופה.' };
 }

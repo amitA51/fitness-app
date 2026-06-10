@@ -5,7 +5,7 @@
 import type { WorkoutSession } from '../../types';
 import { todayStr } from '../../utils/dateUtils';
 import { completedSetsVolume, oneRepMax } from '../../utils/workoutMath';
-import { computeSessionVolume, formatLocalDateStr, parseLocalDate } from './shared';
+import { computeSessionVolume, parseLocalDate } from './shared';
 
 // ============================================================================
 // Additional exports for useFitnessInsights hook
@@ -81,60 +81,6 @@ export const getMuscleGroupDaysSince = (sessions: WorkoutSession[]): MuscleGroup
       (parseLocalDate(today).getTime() - parseLocalDate(date).getTime()) / (1000 * 60 * 60 * 24)
     ),
   }));
-};
-
-export const getWeekOverWeekProgress = (sessions: WorkoutSession[]): ProgressDelta[] => {
-  const now = new Date();
-  const thisWeekStart = new Date(now);
-  thisWeekStart.setDate(now.getDate() - 7);
-  const lastWeekStart = new Date(thisWeekStart);
-  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
-
-  const thisWeekStartStr = formatLocalDateStr(thisWeekStart);
-  const lastWeekStartStr = formatLocalDateStr(lastWeekStart);
-  const thisWeek = sessions.filter((s) => s.status === 'completed' && s.date >= thisWeekStartStr);
-  const lastWeek = sessions.filter(
-    (s) => s.status === 'completed' && s.date >= lastWeekStartStr && s.date < thisWeekStartStr
-  );
-
-  const computeExerciseVolume = (
-    list: WorkoutSession[]
-  ): Map<string, { name: string; volume: number }> => {
-    const map = new Map<string, { name: string; volume: number }>();
-    for (const session of list) {
-      for (const exercise of session.exercises) {
-        const vol = completedSetsVolume(exercise.sets);
-        const existing = map.get(exercise.exerciseId);
-        map.set(exercise.exerciseId, {
-          name: exercise.exerciseName,
-          volume: (existing?.volume || 0) + vol,
-        });
-      }
-    }
-    return map;
-  };
-
-  const thisWeekVolumes = computeExerciseVolume(thisWeek);
-  const lastWeekVolumes = computeExerciseVolume(lastWeek);
-
-  const allExercises = new Set([...thisWeekVolumes.keys(), ...lastWeekVolumes.keys()]);
-
-  return Array.from(allExercises).map((id) => {
-    const current = thisWeekVolumes.get(id);
-    const previous = lastWeekVolumes.get(id);
-    const currentVolume = current?.volume || 0;
-    const previousVolume = previous?.volume || 0;
-    return {
-      exerciseName: current?.name || previous?.name || 'Unknown',
-      exerciseId: id,
-      currentVolume,
-      previousVolume,
-      change:
-        previousVolume > 0
-          ? Math.round(((currentVolume - previousVolume) / previousVolume) * 100)
-          : 0,
-    };
-  });
 };
 
 export const getAllExerciseNames = (sessions: WorkoutSession[]): string[] => {

@@ -499,7 +499,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   </span>
                   <br />
                   <span style={{ fontSize: 24, color: 'rgba(var(--text-on-navy-rgb), 0.7)' }}>
-                    שיאים חדשים
+                    {prsCount === 1 ? 'שיא חדש' : 'שיאים חדשים'}
                   </span>
                 </>
               ) : (
@@ -769,7 +769,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                             fontVariantNumeric: 'tabular-nums',
                           }}
                         >
-                          {ex.bestSet.weight}kg × {ex.bestSet.reps}
+                          {ex.bestSet.weight} ק״ג × {ex.bestSet.reps}
                         </span>
                       )}
                     </div>
