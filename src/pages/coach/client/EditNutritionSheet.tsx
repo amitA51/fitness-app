@@ -57,7 +57,10 @@ export function EditNutritionSheet({
   const [carbs, setCarbs] = useState(numStr(initial?.carbs));
   const [fat, setFat] = useState(numStr(initial?.fat));
   const [notes, setNotes] = useState(initial?.notes ?? '');
-  const [error, setError] = useState<string | null>(null);
+  // Per-field errors so each message renders under ITS field — a date error
+  // under the calories input points the coach at the wrong control.
+  const [dateError, setDateError] = useState<string | null>(null);
+  const [caloriesError, setCaloriesError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -68,20 +71,18 @@ export function EditNutritionSheet({
     setCarbs(numStr(initial?.carbs));
     setFat(numStr(initial?.fat));
     setNotes(initial?.notes ?? '');
-    setError(null);
+    setDateError(null);
+    setCaloriesError(null);
   }, [isOpen, initial]);
 
   const save = async () => {
     const kcal = Number(calories);
-    if (!date) {
-      setError('יש לבחור תאריך');
-      return;
-    }
-    if (!Number.isFinite(kcal) || kcal <= 0) {
-      setError('יש להזין כמות קלוריות תקינה');
-      return;
-    }
-    setError(null);
+    const nextDateError = !date ? 'יש לבחור תאריך' : null;
+    const nextCaloriesError =
+      !Number.isFinite(kcal) || kcal <= 0 ? 'יש להזין כמות קלוריות תקינה' : null;
+    setDateError(nextDateError);
+    setCaloriesError(nextCaloriesError);
+    if (nextDateError || nextCaloriesError) return;
     setBusy(true);
     try {
       const res = await upsertClientNutritionLog(clientId, {
@@ -123,6 +124,7 @@ export function EditNutritionSheet({
           dir="ltr"
           value={date}
           max={todayStr()}
+          error={dateError ?? undefined}
           onChange={(e) => setDate(e.target.value)}
         />
         <Input
@@ -132,7 +134,7 @@ export function EditNutritionSheet({
           dir="ltr"
           unit="קק&quot;ל"
           value={calories}
-          error={error ?? undefined}
+          error={caloriesError ?? undefined}
           onChange={(e) => setCalories(e.target.value)}
         />
         <div className="grid grid-cols-3 gap-2">

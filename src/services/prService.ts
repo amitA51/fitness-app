@@ -6,12 +6,44 @@ import type { PersonalRecord, WorkoutSession } from '../types';
 import { logger } from '../utils/logger';
 import { safeJsonParseOr } from '../utils/safeJson';
 import { oneRepMax, setVolume } from '../utils/workoutMath';
-import { STORES, dbDelete, dbGetAll, dbPut, initDB } from './indexedDBCore';
+import { STORES, dbDelete, dbGet, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
-import { deleteCloudPersonalRecord, syncPersonalRecord } from './supabaseSync';
+import { syncPersonalRecord } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
 
 export type { PersonalRecord };
+
+// ============================================================================
+// Stable Exercise Identity
+// ============================================================================
+// Active-workout exercise ids are RANDOM per session (the exercise selector and
+// the template loader mint fresh UUIDs every workout), so PR identity must
+// never key on them — baselines would never match and every workout would
+// "break" the same records again. The stable identity is the normalized
+// exercise NAME — the same way ghost values resolve previous sets
+// (usePreviousData matches sessions by exerciseName).
+
+/** Canonical, comparison-safe form of an exercise name. */
+export const normalizeExerciseName = (name: string | null | undefined): string =>
+  (name ?? '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+
+/**
+ * Stable PR identity for an exercise-like object: the normalized name,
+ * falling back to exerciseId/id only when the exercise has no usable name.
+ */
+export const stableExerciseKey = (exercise: {
+  exerciseName?: string | null;
+  name?: string | null;
+  exerciseId?: string | null;
+  id?: string | null;
+}): string =>
+  normalizeExerciseName(exercise.exerciseName ?? exercise.name) ||
+  exercise.exerciseId ||
+  exercise.id ||
+  '';
 
 // ============================================================================
 // IndexedDB PR Operations
@@ -120,17 +152,49 @@ export const getAllPRs = async (): Promise<PersonalRecord[]> => {
   return dbGetAll<PersonalRecord>(STORES.PERSONAL_RECORDS);
 };
 
-// Delete a PR
+// Delete a PR. Cloud-side this is a SOFT delete (tombstone): we upsert the row
+// with `deleted_at` stamped instead of physically deleting it. A hard delete
+// gets resurrected by the next full push from any other device that still
+// holds the record; the tombstone survives pushes (live saves never send
+// deleted_at — see syncPersonalRecord) and propagates the deletion on pull
+// (mergeGenericRecords removes tombstoned rows locally). Same pattern as
+// deleteCloudWaterEntry in waterService.
 export const deletePR = async (prId: string): Promise<void> => {
+  // Read the record BEFORE deleting it locally — the tombstone upsert needs
+  // the row's fields (and the same payload doubles as the offline-queue
+  // fallback, which replays through syncPersonalRecord).
+  let existing: PersonalRecord | null = null;
+  try {
+    existing = (await dbGet<PersonalRecord>(STORES.PERSONAL_RECORDS, prId)) ?? null;
+  } catch {
+    existing = null;
+  }
+
   await dbDelete(STORES.PERSONAL_RECORDS, prId);
 
   const user = await getCurrentUser();
-  if (user) {
-    syncWithRetry(() => deleteCloudPersonalRecord(user.id, prId), `deletePR:${prId}`, 3, {
-      type: 'record:delete',
-      payload: prId,
-    });
-  }
+  if (!user) return;
+
+  const deletedAt = new Date().toISOString();
+  const tombstone = {
+    id: prId,
+    exerciseId: existing?.exerciseId ?? '',
+    exerciseName: existing?.exerciseName ?? '',
+    weight: existing?.weight ?? 0,
+    reps: existing?.reps ?? 0,
+    date: existing?.date ?? deletedAt,
+    recordType: existing?.type ?? ('weight' as const),
+    updatedAt: deletedAt,
+    deletedAt,
+  };
+
+  syncWithRetry(() => syncPersonalRecord(user.id, tombstone), `deletePR:${prId}`, 3, {
+    // record:create replays through syncPersonalRecord, which writes
+    // deleted_at when present — NOT record:delete, whose replay would
+    // physically delete the cloud row and reintroduce the resurrection bug.
+    type: 'record:create',
+    payload: tombstone,
+  });
 };
 
 // Internal: diff a completed set against an in-memory list of existing PRs
@@ -229,7 +293,9 @@ export const checkForNewPR = async (
   for (const pr of newPRs) {
     await savePR(pr);
     import('./notificationService')
-      .then(({ showPRNotification }) => {
+      .then(({ getNotificationConfig, showPRNotification }) => {
+        // Honor the user's PR-notification toggle (Settings → notifications).
+        if (!getNotificationConfig().prNotificationEnabled) return;
         showPRNotification(exerciseName, pr.type);
       })
       .catch((err) => {
@@ -257,7 +323,8 @@ export interface BatchedPRChecker {
     exerciseId: string,
     exerciseName: string,
     weight: number,
-    reps: number
+    reps: number,
+    date?: string
   ) => Promise<PersonalRecord | null>;
 }
 
@@ -268,7 +335,8 @@ export const createBatchedPRChecker = async (exerciseIds: string[]): Promise<Bat
     exerciseId: string,
     exerciseName: string,
     weight: number,
-    reps: number
+    reps: number,
+    date?: string
   ): Promise<PersonalRecord | null> => {
     if (weight <= 0 || reps <= 0) return null;
 
@@ -284,7 +352,8 @@ export const createBatchedPRChecker = async (exerciseIds: string[]): Promise<Bat
       exerciseName,
       weight,
       reps,
-      existingPRs
+      existingPRs,
+      date
     );
 
     if (newPRs.length > 0) {
@@ -297,6 +366,40 @@ export const createBatchedPRChecker = async (exerciseIds: string[]): Promise<Bat
   };
 
   return { checkSet };
+};
+
+// Persist every genuine PR from a finished session — called from the workout
+// save-success path (useWorkoutSave). Identity is stableExerciseKey (normalized
+// name), so the baseline read here matches the PRs written by previous
+// sessions even though every workout mints fresh random exercise ids.
+//
+// Idempotent: a retry/re-finish diffs against the records the first run
+// already saved, and an equal value is never strictly greater — so re-running
+// over the same session cannot duplicate PRs.
+export const persistSessionPRs = async (session: WorkoutSession): Promise<PersonalRecord[]> => {
+  const exercises = session.exercises ?? [];
+  const keys = exercises.map((ex) => stableExerciseKey(ex)).filter(Boolean);
+  if (keys.length === 0) return [];
+
+  const checker = await createBatchedPRChecker(keys);
+  const newPRs: PersonalRecord[] = [];
+
+  for (const exercise of exercises) {
+    const key = stableExerciseKey(exercise);
+    if (!key) continue;
+    const displayName = exercise.exerciseName || exercise.name || 'Unknown';
+    for (const set of exercise.sets ?? []) {
+      // Warmup sets never set records; only completed working sets count.
+      if (!set.completedAt || set.isWarmup) continue;
+      const weight = set.weight || 0;
+      const reps = set.reps || 0;
+      if (weight <= 0 || reps <= 0) continue;
+      const pr = await checker.checkSet(key, displayName, weight, reps, set.completedAt);
+      if (pr) newPRs.push(pr);
+    }
+  }
+
+  return newPRs;
 };
 
 // ============================================================================
@@ -377,7 +480,10 @@ export const getExerciseByName = (
 // PR Calculation Functions
 // ============================================================================
 
-// Calculate PRs from workout history
+// Calculate PRs from workout history.
+// Keys are `${stableExerciseKey}-weight|volume` — i.e. the NORMALIZED EXERCISE
+// NAME, not the per-session random exercise id. This is what makes baselines
+// from previous sessions actually match the current workout's exercises.
 export const calculatePRsFromHistory = (
   sessions: WorkoutSession[]
 ): Map<string, PersonalRecord> => {
@@ -388,7 +494,8 @@ export const calculatePRsFromHistory = (
       exercise.sets?.forEach((set) => {
         if (!set.completedAt || set.isWarmup) return;
 
-        const key = exercise.exerciseId || exercise.id;
+        const key = stableExerciseKey(exercise);
+        if (!key) return;
         const volume = setVolume(set);
 
         // Check weight PR
@@ -449,6 +556,58 @@ export const isNewPR = (
     isWeightPR: !currentWeightPR || weight > currentWeightPR.weight,
     isVolumePR: !currentVolumePR || weight * reps > (currentVolumePR.value ?? 0),
   };
+};
+
+// Single source of truth for "is this set a new PR, and of which type?".
+// Used by BOTH the live in-workout detector (usePersonalRecords) and the
+// summary count (countSessionPRs) so the two can never disagree.
+// First match wins: weight → volume → reps (reps only at ≥85% of the weight
+// PR, preventing trivial rep floods at low load).
+export const detectNewPRType = (
+  exerciseKey: string,
+  weight: number,
+  reps: number,
+  existingPRs: Map<string, PersonalRecord>
+): 'weight' | 'volume' | 'reps' | null => {
+  if (weight <= 0 || reps <= 0) return null;
+
+  const { isWeightPR, isVolumePR } = isNewPR(exerciseKey, weight, reps, existingPRs);
+  if (isWeightPR) return 'weight';
+  if (isVolumePR) return 'volume';
+
+  const weightPR = existingPRs.get(`${exerciseKey}-weight`);
+  const repsThreshold = (weightPR?.weight || 0) * 0.85;
+  if (weight >= repsThreshold && reps > (weightPR?.reps || 0)) return 'reps';
+
+  return null;
+};
+
+// Count the exercises in a finished session that broke at least one PR against
+// the given baseline map (history BEFORE the session). The summary headline
+// number. Warmup sets and uncompleted sets never count.
+export const countSessionPRs = (
+  exercises: WorkoutSession['exercises'],
+  basePrMap: Map<string, PersonalRecord>
+): { count: number; prNames: Set<string> } => {
+  let count = 0;
+  const prNames = new Set<string>();
+
+  for (const exercise of exercises ?? []) {
+    const key = stableExerciseKey(exercise);
+    if (!key) continue;
+    const hasNewPR = (exercise.sets ?? []).some(
+      (set) =>
+        !!set.completedAt &&
+        !set.isWarmup &&
+        detectNewPRType(key, set.weight || 0, set.reps || 0, basePrMap) !== null
+    );
+    if (hasNewPR) {
+      count += 1;
+      prNames.add(exercise.name ?? '');
+    }
+  }
+
+  return { count, prNames };
 };
 
 // Get display text for a PR

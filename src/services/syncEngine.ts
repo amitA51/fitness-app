@@ -9,6 +9,7 @@
 import { isSupabaseConfigured } from '../lib/supabase';
 import { logger } from '../utils/logger';
 import { reportError } from './errorReporter';
+import { isRetriableError } from './offlineQueue';
 
 export interface SyncResult {
   success: boolean;
@@ -38,6 +39,15 @@ const tryExecuteSync = async (
       await syncFn();
       return { success: true };
     } catch (err) {
+      // Permanent errors (4xx, Postgres/PostgREST codes) will never succeed on
+      // retry — short-circuit straight to the failure path instead of burning
+      // a full backoff cycle. Shares offlineQueue's classifier so the engine
+      // and the queue agree on what "retriable" means.
+      if (!isRetriableError(err)) {
+        logger.sync.error('Non-retriable sync error, not retrying', err);
+        return { success: false, error: String(err) };
+      }
+
       const isLastAttempt = attempt === maxRetries - 1;
 
       if (!isLastAttempt) {

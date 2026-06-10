@@ -55,8 +55,8 @@ export interface ClientData {
   reloadNutrition: () => void;
   reloadWeights: () => void;
   // Per-domain load state so the Nutrition/Metrics lists can show their own
-  // loading/error/empty cycle (a failed fetch is otherwise indistinguishable
-  // from "no data", since the underlying reads swallow failures to []).
+  // loading/error/empty cycle (the reads run with throwOnError so a failed
+  // fetch is distinguishable from "no data").
   nutritionLoading: boolean;
   nutritionError: string | null;
   weightsLoading: boolean;
@@ -74,15 +74,34 @@ export interface ClientData {
  * reloads independent so an edit sheet refreshes only its slice.
  */
 export function useClientData(clientId: string): ClientData {
-  const linkQ = useAsyncData(() => getClientLink(clientId), null);
-  const analyticsQ = useAsyncData(() => getClientAnalytics(clientId), null);
-  const sessionsQ = useAsyncData(() => getClientSessions(clientId, RECENT_SESSIONS_LIMIT), []);
-  const weightsQ = useAsyncData(() => getClientBodyWeight(clientId), []);
-  const measurementsQ = useAsyncData(() => getClientMeasurements(clientId), []);
-  const prsQ = useAsyncData(() => getClientPRs(clientId), []);
-  const nutritionQ = useAsyncData(() => getClientNutrition(clientId, NUTRITION_DAYS), []);
-  const checkInsQ = useAsyncData(() => listCheckIns(clientId), []);
-  const assignmentsQ = useAsyncData(() => listCoachAssignments(clientId), []);
+  // `[clientId]` deps everywhere: navigating between clients must re-fetch
+  // instead of showing the previous client's data. throwOnError on the
+  // per-domain readers so nutritionError/weightsError/… actually fire.
+  const linkQ = useAsyncData(() => getClientLink(clientId), null, [clientId]);
+  const analyticsQ = useAsyncData(() => getClientAnalytics(clientId), null, [clientId]);
+  const sessionsQ = useAsyncData(
+    () => getClientSessions(clientId, RECENT_SESSIONS_LIMIT),
+    [],
+    [clientId]
+  );
+  const weightsQ = useAsyncData(
+    () => getClientBodyWeight(clientId, { throwOnError: true }),
+    [],
+    [clientId]
+  );
+  const measurementsQ = useAsyncData(
+    () => getClientMeasurements(clientId, { throwOnError: true }),
+    [],
+    [clientId]
+  );
+  const prsQ = useAsyncData(() => getClientPRs(clientId, { throwOnError: true }), [], [clientId]);
+  const nutritionQ = useAsyncData(
+    () => getClientNutrition(clientId, NUTRITION_DAYS, { throwOnError: true }),
+    [],
+    [clientId]
+  );
+  const checkInsQ = useAsyncData(() => listCheckIns(clientId), [], [clientId]);
+  const assignmentsQ = useAsyncData(() => listCoachAssignments(clientId), [], [clientId]);
 
   const reload = () => {
     linkQ.reload();

@@ -15,6 +15,8 @@ import { WorkoutProvider } from './core/WorkoutProvider';
 
 // Components
 import { ExerciseDisplay, ProgressBar } from './components';
+import DraftConflictDialog from './components/DraftConflictDialog';
+import PRCelebrationBanner from './components/PRCelebrationBanner';
 import SupersetPicker from './components/SupersetPicker';
 // Aria-live announcer for screen readers (set complete, rest start/end, PRs)
 import WorkoutAriaLive from './components/WorkoutAriaLive';
@@ -158,6 +160,28 @@ export const WorkoutContent: React.FC<{
   // Local state
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [finishIntent, setFinishIntent] = useState<'finish' | 'cancel'>('finish');
+
+  // Draft-vs-template conflict: the user explicitly asked to start a template
+  // but a restored unfinished draft already populated the reducer (the
+  // template-load effect bails when exercises exist). Captured ONCE at mount —
+  // the user must choose between resuming the draft and starting fresh,
+  // instead of the draft silently hijacking the requested program.
+  const [showDraftConflict, setShowDraftConflict] = useState(
+    () => !!initialTemplateId && state.exercises.length > 0
+  );
+  const handleResumeDraft = useCallback(() => setShowDraftConflict(false), []);
+  const handleStartNewFromTemplate = useCallback(() => {
+    // Discard the draft in place; with exercises empty again, the
+    // template-load effect in useWorkoutEffects fires and loads the program.
+    dispatch({ type: 'RESET_ACTIVE_WORKOUT' });
+    setShowDraftConflict(false);
+  }, [dispatch]);
+
+  // PR celebration dismiss (auto-fired by the banner after ~2.5s).
+  const handleDismissPRCelebration = useCallback(
+    () => dispatch({ type: 'HIDE_PR_CELEBRATION' }),
+    [dispatch]
+  );
 
   // Optional pre-workout planning table. `planningMode` gates a full-screen
   // planning step; `planDraft` holds the exercises picked in the selector that
@@ -308,14 +332,26 @@ export const WorkoutContent: React.FC<{
   // Workout stats for confirm dialog
   const workoutStats = useMemo(() => {
     const elapsed = Math.floor((Date.now() - state.startTimestamp - state.totalPausedTime) / 1000);
+    // Non-warmup sets with data entered but never checked — the session
+    // builder silently drops them, so the confirm dialog warns first.
+    const pendingSets = state.exercises.reduce(
+      (sum, ex) =>
+        sum +
+        (ex.sets ?? []).filter(
+          (s) => !s.completedAt && !s.isWarmup && ((s.weight ?? 0) > 0 || (s.reps ?? 0) > 0)
+        ).length,
+      0
+    );
     return {
       completedSets: derived.completedSetsCount,
       totalVolume: derived.totalVolume,
       duration: formatTime(elapsed),
+      pendingSets,
     };
   }, [
     state.startTimestamp,
     state.totalPausedTime,
+    state.exercises,
     derived.completedSetsCount,
     derived.totalVolume,
   ]);
@@ -338,6 +374,7 @@ export const WorkoutContent: React.FC<{
     handleEditSetInList,
     handleDeleteSet,
     handleRenameExercise,
+    handleTogglePause,
     handleFinishRequest,
     handleDiscardRequest,
     handleChangeExercise,
@@ -378,6 +415,7 @@ export const WorkoutContent: React.FC<{
   } = useWorkoutHandlers({
     currentExerciseIndex: state.currentExerciseIndex,
     exercisesLength: state.exercises.length,
+    exercises: state.exercises,
     personalExerciseLibrary,
     workoutSettings,
     currentExerciseName,
@@ -543,6 +581,23 @@ export const WorkoutContent: React.FC<{
       {/* Screen-reader announcements for workout events */}
       <WorkoutAriaLive />
 
+      {/* PR celebration — compact lime banner (the one earned use of
+          --fs-signal). Visual only: WorkoutAriaLive owns the SR announcement.
+          Honors the user's celebration-intensity setting ('off' hides it). */}
+      {(workoutSettings.prCelebrationIntensity ?? 'full') !== 'off' && (
+        <PRCelebrationBanner
+          pr={state.showPRCelebration}
+          onDismiss={handleDismissPRCelebration}
+        />
+      )}
+
+      {/* Restored-draft vs requested-template conflict */}
+      <DraftConflictDialog
+        isOpen={showDraftConflict}
+        onResume={handleResumeDraft}
+        onStartNew={handleStartNewFromTemplate}
+      />
+
       {/* Main Content - Fresh Steel Compact Layout */}
       <div className="relative z-10 flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Header (pinned) */}
@@ -554,6 +609,7 @@ export const WorkoutContent: React.FC<{
           onDiscard={handleDiscardRequest}
           onOpenSettings={handleOpenSettings}
           onOpenTutorial={handleOpenTutorial}
+          onTogglePause={handleTogglePause}
           isSaving={isSaving}
           restTimerActive={state.restTimer.active}
           restTimerEndTime={state.restTimer.endTime}

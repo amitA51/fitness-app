@@ -93,7 +93,9 @@ export const getClientsActivity = async (
     .order('start_time', { ascending: false });
   if (error) {
     logger.db.error('getClientsActivity failed', error);
-    return grouped;
+    // A failed roster-activity read must surface as an error — returning an
+    // empty map would render the whole roster as "all calm".
+    throw new Error(error.message);
   }
   for (const id of clientIds) grouped[id] = [];
   for (const r of data ?? []) {
@@ -136,7 +138,10 @@ export const getClientTemplates = async (clientId: string): Promise<WorkoutTempl
   );
 };
 
-export const getClientBodyWeight = async (clientId: string): Promise<BodyWeightEntry[]> => {
+export const getClientBodyWeight = async (
+  clientId: string,
+  opts?: { throwOnError?: boolean }
+): Promise<BodyWeightEntry[]> => {
   const supabase = requireClient();
   // body_weight has a `notes` column (migration 20260608000500) that
   // upsertClientBodyWeight writes, so it is selected and mapped here.
@@ -149,6 +154,7 @@ export const getClientBodyWeight = async (clientId: string): Promise<BodyWeightE
     .limit(500);
   if (error) {
     logger.db.error('getClientBodyWeight failed', error);
+    if (opts?.throwOnError) throw new Error(error.message);
     return [];
   }
   return (data ?? []).map((r) =>
@@ -162,7 +168,10 @@ export const getClientBodyWeight = async (clientId: string): Promise<BodyWeightE
   );
 };
 
-export const getClientPRs = async (clientId: string): Promise<PersonalRecordRow[]> => {
+export const getClientPRs = async (
+  clientId: string,
+  opts?: { throwOnError?: boolean }
+): Promise<PersonalRecordRow[]> => {
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('personal_records')
@@ -175,6 +184,7 @@ export const getClientPRs = async (clientId: string): Promise<PersonalRecordRow[
     .limit(500);
   if (error) {
     logger.db.error('getClientPRs failed', error);
+    if (opts?.throwOnError) throw new Error(error.message);
     return [];
   }
   return (data ?? []).map((r) => ({
@@ -222,7 +232,10 @@ export const getClientNutrition = async (
   }));
 };
 
-export const getClientMeasurements = async (clientId: string): Promise<BodyMeasurement[]> => {
+export const getClientMeasurements = async (
+  clientId: string,
+  opts?: { throwOnError?: boolean }
+): Promise<BodyMeasurement[]> => {
   const supabase = requireClient();
   const { data, error } = await supabase
     .from('body_measurements')
@@ -233,6 +246,7 @@ export const getClientMeasurements = async (clientId: string): Promise<BodyMeasu
     .limit(500);
   if (error) {
     logger.db.error('getClientMeasurements failed', error);
+    if (opts?.throwOnError) throw new Error(error.message);
     return [];
   }
   return (data ?? []).map((r) => ({
@@ -472,6 +486,7 @@ export const upsertClientBodyWeight = async (
   entry: ClientBodyWeightInput
 ): Promise<{ error: string | null; id?: string }> => {
   const supabase = requireClient();
+  const isCreate = !entry.id;
   const id = entry.id ?? crypto.randomUUID();
   const now = new Date().toISOString();
   const { error } = await auditedWrite({
@@ -486,9 +501,10 @@ export const upsertClientBodyWeight = async (
         weight: entry.weight,
         date: entry.date,
         notes: entry.notes || null,
-        created_at: now,
         updated_at: now,
         updated_by: coachId,
+        // Create-only: on UPDATE this would reset the row's original created_at.
+        ...(isCreate && { created_at: now }),
       }),
   });
   return error ? { error } : { error: null, id };

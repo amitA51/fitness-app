@@ -11,6 +11,8 @@ interface CalorieHeroProps {
   /** Clamped 0–100 percentage (display only — true over/under is derived here). */
   calPct: number;
   coachTarget: boolean;
+  /** False when a past day is being viewed — copy drops the "היום" framing. */
+  isToday: boolean;
   onEditGoals: () => void;
 }
 
@@ -22,6 +24,7 @@ export const CalorieHero = memo(function CalorieHero({
   goal,
   calPct,
   coachTarget,
+  isToday,
   onEditGoals,
 }: CalorieHeroProps) {
   const numberRef = useRef<HTMLSpanElement>(null);
@@ -74,7 +77,8 @@ export const CalorieHero = memo(function CalorieHero({
         <SlidersHorizontal size={13} aria-hidden="true" />
         ערוך יעדים
       </button>
-      <div className="label">נצרך היום</div>
+      {/* On a past day "נצרך היום"/"נותרו להיום" is a lie — drop the today framing. */}
+      <div className="label">{isToday ? 'נצרך היום' : 'נצרך'}</div>
 
       {/* Premium calorie gauge. Pass the TRUE percentage so an overshoot draws
           RingProgress's over-achievement overlay (in warn) instead of silently
@@ -111,7 +115,7 @@ export const CalorieHero = memo(function CalorieHero({
           Gender-neutral phrasing ("נותרו" / "חריגה") so it reads correctly for
           every user. */}
       <VerdictLine
-        kicker={isOver ? 'מעל היעד' : 'נותרו להיום'}
+        kicker={isOver ? 'מעל היעד' : isToday ? 'נותרו להיום' : 'נותרו'}
         className="mt-3 text-center"
       >
         {isOver ? (
@@ -120,7 +124,7 @@ export const CalorieHero = memo(function CalorieHero({
           </>
         ) : (
           <>
-            נותרו <VerdictNumber value={remaining} zone="good" /> קק״ל להיום
+            נותרו <VerdictNumber value={remaining} zone="good" /> קק״ל{isToday ? ' להיום' : ''}
           </>
         )}
       </VerdictLine>

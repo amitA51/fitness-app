@@ -33,6 +33,7 @@ import { getCurrentUser } from '../services/supabaseAuth';
 import { getWorkoutTemplates } from '../services/workoutDb';
 import type { WorkoutTemplate } from '../types';
 import { getWeekStart } from '../utils/dateUtils';
+import { zoneColor } from '../utils/zoneColor';
 import { formatThousands } from '../utils/formatThousands';
 import { logger } from '../utils/logger';
 
@@ -420,6 +421,9 @@ export default function Dashboard() {
                   suffix={' ק״ג'}
                   delay={ringDelay(1)}
                   sub={volDelta !== '—' ? volDelta : undefined}
+                  // Zone-color the WoW delta: a drop is not a win — demote it to
+                  // neutral/muted instead of celebrating it in accent.
+                  subColor={zoneColor(weekData.volDeltaPct < 0 ? 'neutral' : 'good')}
                 />
                 </StaggerItem>
                 <StaggerItem key={`warn-${refreshTick}`}>
@@ -738,6 +742,7 @@ const BentoRow = memo(function BentoRow({
   value,
   suffix,
   sub,
+  subColor,
   delay,
   format,
   ltr,
@@ -747,6 +752,8 @@ const BentoRow = memo(function BentoRow({
   value: number;
   suffix?: string;
   sub?: string;
+  /** Zone color for the sub chip (defaults to accent for positive trends). */
+  subColor?: string;
   delay: number;
   format?: (value: number) => string;
   ltr?: boolean;
@@ -825,7 +832,9 @@ const BentoRow = memo(function BentoRow({
         }}
       >
         {valueGroup}
-        {sub && <span style={{ color: 'var(--fs-accent)', fontSize: 10 }}>{sub}</span>}
+        {sub && (
+          <span style={{ color: subColor ?? 'var(--fs-accent)', fontSize: 10 }}>{sub}</span>
+        )}
       </span>
     </div>
   );

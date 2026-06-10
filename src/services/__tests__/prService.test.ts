@@ -1,11 +1,17 @@
-import { describe, expect, it, vi } from 'vitest';
-import type { WorkoutSession } from '../../types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PersonalRecord, WorkoutSession } from '../../types';
 import {
   calculateEst1RM,
   calculatePRsFromHistory,
+  countSessionPRs,
+  deletePR,
+  detectNewPRType,
   diffSetAgainstPRs,
   getBestPRs,
   isNewPR,
+  normalizeExerciseName,
+  persistSessionPRs,
+  stableExerciseKey,
 } from '../prService';
 
 describe('calculateEst1RM (Epley)', () => {
@@ -70,32 +76,175 @@ describe('isNewPR', () => {
       updatedAt: '2026-01-01T11:00:00Z',
     }) as WorkoutSession;
 
+  // calculatePRsFromHistory now keys by the NORMALIZED EXERCISE NAME
+  // (stableExerciseKey), so lookups use 'bench press' — not the random
+  // per-session exercise id.
   it('returns false for both when set does not beat existing PRs', () => {
     const prMap = calculatePRsFromHistory([makeSession('bench-1', [{ weight: 100, reps: 5 }])]);
-    const result = isNewPR('bench-1', 90, 5, prMap);
+    const result = isNewPR('bench press', 90, 5, prMap);
     expect(result.isWeightPR).toBe(false);
     expect(result.isVolumePR).toBe(false);
   });
 
   it('returns isWeightPR true when weight exceeds existing PR', () => {
     const prMap = calculatePRsFromHistory([makeSession('bench-1', [{ weight: 100, reps: 5 }])]);
-    const result = isNewPR('bench-1', 110, 5, prMap);
+    const result = isNewPR('bench press', 110, 5, prMap);
     expect(result.isWeightPR).toBe(true);
   });
 
   it('returns isVolumePR true when volume exceeds existing PR', () => {
     // Existing: 100*5 = 500 volume. New: 90*7 = 630 > 500
     const prMap = calculatePRsFromHistory([makeSession('bench-1', [{ weight: 100, reps: 5 }])]);
-    const result = isNewPR('bench-1', 90, 7, prMap);
+    const result = isNewPR('bench press', 90, 7, prMap);
     expect(result.isWeightPR).toBe(false);
     expect(result.isVolumePR).toBe(true);
   });
 
   it('returns both true for a new exercise with no history', () => {
     const prMap = calculatePRsFromHistory([makeSession('bench-1', [{ weight: 100, reps: 5 }])]);
-    const result = isNewPR('squat-1', 60, 8, prMap);
+    const result = isNewPR('squat', 60, 8, prMap);
     expect(result.isWeightPR).toBe(true);
     expect(result.isVolumePR).toBe(true);
+  });
+});
+
+describe('stable PR identity (normalized exercise name)', () => {
+  it('normalizeExerciseName trims, collapses whitespace, and lowercases', () => {
+    expect(normalizeExerciseName('  Bench   Press ')).toBe('bench press');
+    expect(normalizeExerciseName(undefined)).toBe('');
+    expect(normalizeExerciseName(null)).toBe('');
+  });
+
+  it('stableExerciseKey prefers the normalized name and falls back to ids', () => {
+    expect(stableExerciseKey({ exerciseName: 'Bench Press', exerciseId: 'rnd-1' })).toBe(
+      'bench press'
+    );
+    expect(stableExerciseKey({ name: 'Squat' })).toBe('squat');
+    expect(stableExerciseKey({ exerciseName: '  ', exerciseId: 'rnd-2', id: 'x' })).toBe('rnd-2');
+    expect(stableExerciseKey({})).toBe('');
+  });
+
+  it('merges sessions whose exercise ids differ but names match into ONE baseline', () => {
+    // Two sessions of the same exercise — each with a fresh random id, exactly
+    // what the active workout produces. The old id-keyed map produced two
+    // unrelated entries, so the baseline never matched and every workout
+    // "broke" the record again.
+    const makeNamedSession = (id: string, sessionId: string, weight: number): WorkoutSession =>
+      ({
+        id: sessionId,
+        date: '2026-01-01',
+        startTime: '2026-01-01T10:00:00Z',
+        endTime: null,
+        exercises: [
+          {
+            id: `we-${id}`,
+            exerciseId: id,
+            exerciseName: 'Bench Press',
+            targetMuscle: 'chest',
+            sets: [
+              {
+                id: 'set-1',
+                setNumber: 1,
+                weight,
+                reps: 5,
+                rpe: null,
+                isWarmup: false,
+                isCompleted: true,
+                notes: '',
+                completedAt: '2026-01-01T10:05:00Z',
+              },
+            ],
+            notes: '',
+            restSeconds: 90,
+            isCompleted: true,
+            order: 0,
+          },
+        ],
+        duration: 3600,
+        status: 'completed',
+        templateId: null,
+        notes: '',
+        rating: null,
+        totalVolume: 0,
+        caloriesBurned: null,
+        createdAt: '2026-01-01T10:00:00Z',
+        updatedAt: '2026-01-01T11:00:00Z',
+      }) as WorkoutSession;
+
+    const prMap = calculatePRsFromHistory([
+      makeNamedSession('random-uuid-1', 's1', 100),
+      makeNamedSession('random-uuid-2', 's2', 110),
+    ]);
+
+    // One weight entry, keyed by the normalized name, holding the best weight.
+    const weightKeys = [...prMap.keys()].filter((k) => k.endsWith('-weight'));
+    expect(weightKeys).toEqual(['bench press-weight']);
+    expect(prMap.get('bench press-weight')?.weight).toBe(110);
+
+    // A set below the cross-session best is NOT a new PR.
+    expect(isNewPR('bench press', 105, 5, prMap).isWeightPR).toBe(false);
+  });
+});
+
+describe('detectNewPRType (shared live-detector/summary rules)', () => {
+  // Baseline history: weight PR 100x5 and a separate high-volume set 90x10
+  // (volume 900) on the same exercise.
+  const baseline = (): Map<string, PersonalRecord> =>
+    calculatePRsFromHistory([
+      {
+        id: 's1',
+        date: '2026-01-01',
+        startTime: '2026-01-01T10:00:00Z',
+        exercises: [
+          {
+            id: 'we-1',
+            exerciseId: 'rnd',
+            exerciseName: 'Bench Press',
+            sets: [
+              {
+                id: 'set-1',
+                setNumber: 1,
+                weight: 100,
+                reps: 5,
+                isWarmup: false,
+                isCompleted: true,
+                completedAt: '2026-01-01T10:05:00Z',
+              },
+              {
+                id: 'set-2',
+                setNumber: 2,
+                weight: 90,
+                reps: 10,
+                isWarmup: false,
+                isCompleted: true,
+                completedAt: '2026-01-01T10:10:00Z',
+              },
+            ],
+          },
+        ],
+      } as unknown as WorkoutSession,
+    ]);
+
+  it('detects weight, volume, and reps PRs with first-match-wins ordering', () => {
+    const prMap = baseline();
+    expect(detectNewPRType('bench press', 110, 5, prMap)).toBe('weight'); // > 100
+    expect(detectNewPRType('bench press', 95, 10, prMap)).toBe('volume'); // 950 > 900
+    // 90x6: weight 90 < 100, volume 540 < 900, but ≥85% of the weight PR
+    // (85kg) with 6 > 5 reps → reps PR.
+    expect(detectNewPRType('bench press', 90, 6, prMap)).toBe('reps');
+    expect(detectNewPRType('bench press', 95, 5, prMap)).toBeNull(); // beats nothing
+  });
+
+  it('reps PR requires ≥85% of the weight PR load (no low-load rep floods)', () => {
+    const prMap = baseline();
+    // 80kg is below the 85kg threshold — more reps alone don't count.
+    expect(detectNewPRType('bench press', 80, 7, prMap)).toBeNull();
+  });
+
+  it('returns null for zero/invalid values', () => {
+    const prMap = baseline();
+    expect(detectNewPRType('bench press', 0, 10, prMap)).toBeNull();
+    expect(detectNewPRType('bench press', 100, 0, prMap)).toBeNull();
   });
 });
 
@@ -104,6 +253,7 @@ vi.mock('../indexedDBCore', () => ({
   STORES: { PERSONAL_RECORDS: 'personal_records' },
   initDB: vi.fn(),
   dbPut: vi.fn(),
+  dbGet: vi.fn(),
   dbGetAll: vi.fn(),
   dbDelete: vi.fn(),
   syncWithRetry: vi.fn(),
@@ -112,9 +262,42 @@ vi.mock('../indexedDBCore', () => ({
 // Mock supabaseAuth and supabaseSync to avoid side-effects
 vi.mock('../supabaseAuth', () => ({ getCurrentUser: vi.fn().mockResolvedValue(null) }));
 vi.mock('../supabaseSync', () => ({
-  syncPersonalRecord: vi.fn(),
+  syncPersonalRecord: vi.fn().mockResolvedValue(undefined),
   deleteCloudPersonalRecord: vi.fn(),
 }));
+vi.mock('../syncEngine', () => ({
+  syncWithRetry: vi.fn().mockResolvedValue(true),
+}));
+
+/**
+ * Minimal mock IDBDatabase whose every index.getAll() resolves with the given
+ * records — enough for getPRsForExercise / getPRsForMultipleExercises.
+ */
+const makeMockDB = (records: unknown[]): unknown => ({
+  transaction: () => {
+    const store = {
+      index: () => ({
+        getAll: () => {
+          const req = {
+            result: records,
+            onsuccess: null as (() => void) | null,
+            onerror: null,
+          };
+          setTimeout(() => req.onsuccess?.(), 0);
+          return req;
+        },
+      }),
+    };
+    const tx = {
+      objectStore: () => store,
+      oncomplete: null as (() => void) | null,
+      onerror: null,
+      onabort: null,
+    };
+    setTimeout(() => tx.oncomplete?.(), 0);
+    return tx;
+  },
+});
 
 describe('getBestPRs', () => {
   it('picks the higher-value volume PR even when weight*reps would rank differently', async () => {
@@ -230,7 +413,8 @@ describe('diffSetAgainstPRs date parameter', () => {
     } as WorkoutSession;
 
     const prMap = calculatePRsFromHistory([session]);
-    const weightPR = prMap.get('ex-date-weight');
+    // Map keys are name-based (stableExerciseKey), not exercise-id based.
+    const weightPR = prMap.get('deadlift-weight');
     expect(weightPR).toBeDefined();
     expect(weightPR!.date).toBe('2025-06-15');
   });
@@ -273,5 +457,318 @@ describe('diffSetAgainstPRs captures multiple PR types simultaneously', () => {
     expect(result.nextPRs.length).toBe(existingPRs.length + result.newPRs.length);
     // backward compat: newPR is the first one
     expect(result.newPR).toBe(result.newPRs[0]);
+  });
+});
+
+// ============================================================
+// countSessionPRs (summary headline number)
+// ============================================================
+describe('countSessionPRs', () => {
+  const mkSet = (overrides: Record<string, unknown>) => ({
+    id: 'set',
+    setNumber: 1,
+    weight: 100,
+    reps: 5,
+    rpe: null,
+    isWarmup: false,
+    isCompleted: true,
+    notes: '',
+    completedAt: '2026-02-01T10:00:00Z',
+    ...overrides,
+  });
+
+  const baseline = (): Map<string, PersonalRecord> =>
+    calculatePRsFromHistory([
+      {
+        id: 's1',
+        date: '2026-01-01',
+        startTime: '2026-01-01T10:00:00Z',
+        exercises: [
+          {
+            id: 'we-1',
+            exerciseId: 'rnd-old',
+            exerciseName: 'Bench Press',
+            name: 'Bench Press',
+            sets: [mkSet({ completedAt: '2026-01-01T10:05:00Z' })], // 100x5
+          },
+        ],
+      } as unknown as WorkoutSession,
+    ]);
+
+  it('does NOT count warmup sets, even when they beat the record', () => {
+    const exercises = [
+      {
+        id: 'we-2',
+        exerciseId: 'rnd-new',
+        exerciseName: 'Bench Press',
+        name: 'Bench Press',
+        sets: [
+          mkSet({ weight: 120, isWarmup: true }), // beats 100 but is warmup
+          mkSet({ weight: 95 }), // working set, no PR
+        ],
+      },
+    ] as unknown as WorkoutSession['exercises'];
+
+    const { count, prNames } = countSessionPRs(exercises, baseline());
+    expect(count).toBe(0);
+    expect(prNames.size).toBe(0);
+  });
+
+  it('does NOT count uncompleted sets', () => {
+    const exercises = [
+      {
+        id: 'we-2',
+        exerciseId: 'rnd-new',
+        exerciseName: 'Bench Press',
+        name: 'Bench Press',
+        sets: [mkSet({ weight: 200, completedAt: null })],
+      },
+    ] as unknown as WorkoutSession['exercises'];
+
+    expect(countSessionPRs(exercises, baseline()).count).toBe(0);
+  });
+
+  it('counts a genuine working-set PR once per exercise, keyed by name', () => {
+    const exercises = [
+      {
+        id: 'we-2',
+        exerciseId: 'completely-different-random-id',
+        exerciseName: 'Bench Press',
+        name: 'Bench Press',
+        sets: [mkSet({ weight: 110 }), mkSet({ weight: 112 })], // two PR sets → one exercise
+      },
+    ] as unknown as WorkoutSession['exercises'];
+
+    const { count, prNames } = countSessionPRs(exercises, baseline());
+    expect(count).toBe(1);
+    expect(prNames.has('Bench Press')).toBe(true);
+  });
+
+  it('returns 0 when nothing beats the baseline (no more PR-every-workout)', () => {
+    const exercises = [
+      {
+        id: 'we-2',
+        exerciseId: 'rnd-new',
+        exerciseName: 'Bench Press',
+        name: 'Bench Press',
+        sets: [mkSet({ weight: 100 })], // ties the record — not a PR
+      },
+    ] as unknown as WorkoutSession['exercises'];
+
+    expect(countSessionPRs(exercises, baseline()).count).toBe(0);
+  });
+});
+
+// ============================================================
+// persistSessionPRs (finish-flow batch persistence)
+// ============================================================
+describe('persistSessionPRs', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mkSession = (sets: Record<string, unknown>[]): WorkoutSession => {
+    return {
+      id: 'session-x',
+      date: '2026-02-01',
+      startTime: '2026-02-01T10:00:00Z',
+      exercises: [
+        {
+          id: 'we-1',
+          exerciseId: 'fresh-random-uuid',
+          exerciseName: 'Bench Press',
+          name: 'Bench Press',
+          sets: sets.map((s, i) => ({
+            id: `set-${i}`,
+            setNumber: i + 1,
+            rpe: null,
+            isWarmup: false,
+            isCompleted: true,
+            notes: '',
+            completedAt: '2026-02-01T10:05:00Z',
+            ...s,
+          })),
+        },
+      ],
+    } as unknown as WorkoutSession;
+  };
+
+  const primeStore = async (records: unknown[]) => {
+    const { initDB } = await import('../indexedDBCore');
+    vi.mocked(initDB).mockResolvedValue(makeMockDB(records) as IDBDatabase);
+  };
+
+  it('persists genuine PRs keyed by the stable (name) identity, skipping warmup and uncompleted sets', async () => {
+    // Existing store baseline: weight 90, volume 450 — keyed by the name key.
+    await primeStore([
+      {
+        id: 'pr-w',
+        exerciseId: 'bench press',
+        exerciseName: 'Bench Press',
+        date: '2026-01-01',
+        weight: 90,
+        reps: 5,
+        type: 'weight',
+        maxWeight: 90,
+      },
+      {
+        id: 'pr-v',
+        exerciseId: 'bench press',
+        exerciseName: 'Bench Press',
+        date: '2026-01-01',
+        weight: 90,
+        reps: 5,
+        type: 'volume',
+        maxWeight: 90,
+      },
+      {
+        id: 'pr-r',
+        exerciseId: 'bench press',
+        exerciseName: 'Bench Press',
+        date: '2026-01-01',
+        weight: 90,
+        reps: 5,
+        type: 'reps',
+        maxWeight: 90,
+      },
+    ]);
+
+    const session = mkSession([
+      { weight: 130, reps: 5, isWarmup: true }, // warmup — must be ignored
+      { weight: 100, reps: 5 }, // working set — weight + volume PR
+      { weight: 140, reps: 5, completedAt: null }, // unchecked — must be ignored
+    ]);
+
+    const { dbPut } = await import('../indexedDBCore');
+    const newPRs = await persistSessionPRs(session);
+
+    // The working set broke weight (100>90) and volume (500>450).
+    expect(vi.mocked(dbPut)).toHaveBeenCalled();
+    const savedRecords = vi.mocked(dbPut).mock.calls.map(([, rec]) => rec) as PersonalRecord[];
+    expect(savedRecords.length).toBe(2);
+    expect(savedRecords.map((r) => r.type).sort()).toEqual(['volume', 'weight']);
+    // Identity: every saved PR keys on the normalized name, not the random id.
+    for (const rec of savedRecords) {
+      expect(rec.exerciseId).toBe('bench press');
+      expect(rec.weight).toBe(100); // never the warmup 130 or unchecked 140
+      expect(rec.date).toBe('2026-02-01T10:05:00Z'); // set completion time
+    }
+    expect(newPRs.length).toBeGreaterThan(0);
+  });
+
+  it('is idempotent: re-running over a session whose PRs are already stored writes nothing', async () => {
+    // Store already holds exactly what the session would produce.
+    await primeStore([
+      {
+        id: 'pr-w',
+        exerciseId: 'bench press',
+        exerciseName: 'Bench Press',
+        date: '2026-02-01',
+        weight: 100,
+        reps: 5,
+        type: 'weight',
+        maxWeight: 100,
+      },
+      {
+        id: 'pr-v',
+        exerciseId: 'bench press',
+        exerciseName: 'Bench Press',
+        date: '2026-02-01',
+        weight: 100,
+        reps: 5,
+        type: 'volume',
+        maxWeight: 100,
+      },
+      {
+        id: 'pr-r',
+        exerciseId: 'bench press',
+        exerciseName: 'Bench Press',
+        date: '2026-02-01',
+        weight: 100,
+        reps: 5,
+        type: 'reps',
+        maxWeight: 100,
+      },
+    ]);
+
+    const session = mkSession([{ weight: 100, reps: 5 }]);
+
+    const { dbPut } = await import('../indexedDBCore');
+    const newPRs = await persistSessionPRs(session);
+
+    expect(newPRs).toEqual([]);
+    expect(vi.mocked(dbPut)).not.toHaveBeenCalled();
+  });
+});
+
+// ============================================================
+// deletePR — cloud tombstone (soft delete), never a physical delete
+// ============================================================
+describe('deletePR (soft delete)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('removes locally and pushes a deleted_at tombstone (not a physical cloud delete)', async () => {
+    const { dbGet, dbDelete } = await import('../indexedDBCore');
+    const { getCurrentUser } = await import('../supabaseAuth');
+    const { syncPersonalRecord, deleteCloudPersonalRecord } = await import('../supabaseSync');
+    const { syncWithRetry } = await import('../syncEngine');
+
+    vi.mocked(dbGet).mockResolvedValue({
+      id: 'pr-1',
+      exerciseId: 'bench press',
+      exerciseName: 'Bench Press',
+      date: '2026-01-01',
+      weight: 100,
+      reps: 5,
+      type: 'weight',
+    } as PersonalRecord);
+    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1' } as never);
+    // Execute the sync fn that deletePR hands to syncWithRetry.
+    vi.mocked(syncWithRetry).mockImplementation(async (fn: () => Promise<void>) => {
+      await fn();
+      return true;
+    });
+
+    await deletePR('pr-1');
+
+    // Local removal still physical (pull-merge removes tombstoned rows anyway).
+    expect(vi.mocked(dbDelete)).toHaveBeenCalledWith('personal_records', 'pr-1');
+
+    // Cloud: tombstone upsert via syncPersonalRecord with deletedAt stamped.
+    expect(vi.mocked(syncPersonalRecord)).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({
+        id: 'pr-1',
+        exerciseName: 'Bench Press',
+        deletedAt: expect.any(String),
+      })
+    );
+    // NEVER the physical cloud delete (that's what other devices resurrect).
+    expect(vi.mocked(deleteCloudPersonalRecord)).not.toHaveBeenCalled();
+
+    // Offline-queue fallback replays as record:create (upsert with deleted_at),
+    // not record:delete.
+    const queueArg = vi.mocked(syncWithRetry).mock.calls[0]?.[3] as {
+      type: string;
+      payload: { deletedAt?: string };
+    };
+    expect(queueArg.type).toBe('record:create');
+    expect(queueArg.payload.deletedAt).toEqual(expect.any(String));
+  });
+
+  it('skips cloud sync entirely for guests', async () => {
+    const { dbGet, dbDelete } = await import('../indexedDBCore');
+    const { getCurrentUser } = await import('../supabaseAuth');
+    const { syncWithRetry } = await import('../syncEngine');
+
+    vi.mocked(dbGet).mockResolvedValue(undefined as never);
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
+
+    await deletePR('pr-2');
+
+    expect(vi.mocked(dbDelete)).toHaveBeenCalledWith('personal_records', 'pr-2');
+    expect(vi.mocked(syncWithRetry)).not.toHaveBeenCalled();
   });
 });

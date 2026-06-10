@@ -16,7 +16,7 @@ import {
   saveWorkoutSession,
 } from '../../services/dataService';
 import { exportWorkoutHistoryCSV } from '../../services/exportService';
-import { calculatePRsFromHistory, isNewPR } from '../../services/prService';
+import { calculatePRsFromHistory, countSessionPRs } from '../../services/prService';
 import type { WorkoutSession } from '../../types';
 import { triggerHapticEffect, vibratePattern } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
@@ -221,18 +221,11 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           : allSessions;
 
         const basePrMap = calculatePRsFromHistory(historyBefore);
-        let count = 0;
-        const prNames = new Set<string>();
-
-        session.exercises?.forEach((ex) => {
-          const hasNewPr = ex.sets?.some(
-            (set) => isNewPR(ex.exerciseId || ex.id, set.weight, set.reps, basePrMap).isWeightPR
-          );
-          if (hasNewPr) {
-            count += 1;
-            prNames.add(ex.name ?? '');
-          }
-        });
+        // Shared counter (prService.countSessionPRs): name-keyed identity,
+        // warmup + uncompleted sets excluded, and the SAME weight/volume/reps
+        // rules as the live in-workout detector — the headline can no longer
+        // shout "N שיאים חדשים" for ordinary sets.
+        const { count, prNames } = countSessionPRs(session.exercises ?? [], basePrMap);
 
         if (!cancelled) {
           setPrsCount(count);

@@ -9,14 +9,22 @@ import { InlineEmpty, ListRow, ListSkeleton, Section, SectionError, formatDate }
 // Hebrew label maps — fall back to the raw value if unknown
 const ACTION_LABEL: Record<string, string> = {
   insert: 'הוספה',
+  create: 'יצירה',
   update: 'עדכון',
   delete: 'מחיקה',
   select: 'צפייה',
+  schedule_workout: 'שיבוץ אימון',
+  schedule_program_week: 'שיבוץ שבוע תוכנית',
+  update_scheduled_workout: 'עדכון שיבוץ',
+  delete_scheduled_workout: 'ביטול שיבוץ',
 };
 
 const TABLE_LABEL: Record<string, string> = {
   workout_templates: 'תוכנית אימון',
+  workout_sessions: 'אימונים',
+  workout_schedule: 'לוח אימונים',
   nutrition_logs: 'יומן תזונה',
+  body_weight: 'משקל גוף',
   assignments: 'שיוך',
   coach_notes: 'הערת מאמן',
   reminders: 'תזכורת',

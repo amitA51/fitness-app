@@ -199,5 +199,25 @@ export const dataReducer = (draft: WorkoutState, action: WorkoutAction): void =>
       // stops persisting + clears the saved snapshot so it can't be restored.
       draft.finalized = true;
       break;
+
+    case 'RESET_ACTIVE_WORKOUT':
+      // Discard the current (restored) draft IN PLACE and start fresh — used
+      // when a requested template start collides with a stale draft and the
+      // user chose "התחל חדש". Unlike FINALIZE_WORKOUT, the session continues:
+      // the provider keeps persisting (now-empty) state, and the template-load
+      // effect fires because exercises is empty again.
+      draft.exercises = [];
+      draft.currentExerciseIndex = 0;
+      draft.supersetGroups = [];
+      draft.startTimestamp = Date.now();
+      draft.totalPausedTime = 0;
+      draft.lastPauseTimestamp = null;
+      draft.isPaused = false;
+      draft.restTimer = { active: false, endTime: null, totalTime: 0, timeLeft: 0 };
+      draft.lastDeletedSet = null;
+      draft.pendingHaptic = null;
+      draft.showConfetti = false;
+      draft.showPRCelebration = null;
+      break;
   }
 };

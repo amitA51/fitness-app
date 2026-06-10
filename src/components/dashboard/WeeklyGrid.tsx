@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { useIsRTL } from '../../hooks/useIsRTL';
 import type { WorkoutSession } from '../../types';
-import { DAYS, getWeekEnd, getWeekStart } from '../../utils/dateUtils';
+import { DAYS, getWeekEnd, getWeekStart, HEBREW_DAYS } from '../../utils/dateUtils';
 import { RingProgress } from '../charts';
 
 interface WeeklyGridProps {
@@ -44,6 +44,7 @@ export const WeeklyGrid = memo(function WeeklyGrid({
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       return {
         letter: DAYS[d.getDay()],
+        dayName: HEBREW_DAYS[d.getDay()],
         active: done.has(dateStr),
         isToday: dateStr === today,
         date: d,
@@ -202,9 +203,19 @@ export const WeeklyGrid = memo(function WeeklyGrid({
           if (day.active) classes.push('done');
           if (day.isToday) classes.push('today');
 
+          // State is conveyed visually by color only — voice it for screen
+          // readers: "יום ראשון — אימון הושלם" / "ללא אימון", plus "היום".
+          const ariaLabel = [
+            `יום ${day.dayName}`,
+            ...(day.isToday ? ['היום'] : []),
+            day.active ? 'אימון הושלם' : 'ללא אימון',
+          ].join(' — ');
+
           return (
             <div
               key={day.date.toISOString().split('T')[0]}
+              role="img"
+              aria-label={ariaLabel}
               className={classes.join(' ')}
               style={{
                 // width: 100% pins the cell to its track so aspect-ratio derives

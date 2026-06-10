@@ -82,12 +82,7 @@ export default function CoachGroups() {
               placeholder="למשל: מתאמני בוקר"
             />
           </div>
-          <Button
-            variant="primary"
-            isLoading={creating}
-            disabled={!name.trim()}
-            onClick={create}
-          >
+          <Button variant="primary" isLoading={creating} disabled={!name.trim()} onClick={create}>
             צור
           </Button>
         </div>
@@ -186,16 +181,39 @@ function GroupEditor({
   onDeleted: () => void;
 }) {
   const [members, setMembers] = useState<Set<string>>(new Set());
+  // Membership load state: saving an all-unchecked editor after a FAILED read
+  // would call the atomic set_group_members RPC with an empty set and silently
+  // wipe every member — so the save path stays disabled until 'ready'.
+  const [membersState, setMembersState] = useState<'loading' | 'error' | 'ready'>('loading');
+  const [membersTick, setMembersTick] = useState(0);
   const [announcement, setAnnouncement] = useState('');
-  const [busy, setBusy] = useState(false);
+  // Per-action busy flags — a shared flag made "save members" render the
+  // broadcast button as loading too.
+  const [savingMembers, setSavingMembers] = useState(false);
+  const [broadcasting, setBroadcasting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [programOpen, setProgramOpen] = useState(false);
 
   const allClientIds = clients.map((c) => c.clientId);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: membersTick is a retry counter that forces a refetch
   useEffect(() => {
-    void getGroupMemberIds(group.id).then((ids) => setMembers(new Set(ids)));
-  }, [group.id]);
+    let cancelled = false;
+    setMembersState('loading');
+    getGroupMemberIds(group.id)
+      .then((ids) => {
+        if (cancelled) return;
+        setMembers(new Set(ids));
+        setMembersState('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setMembersState('error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [group.id, membersTick]);
 
   const toggle = (clientId: string) => {
     setMembers((prev) => {
@@ -210,16 +228,25 @@ function GroupEditor({
   };
 
   const saveMembers = async () => {
-    setBusy(true);
-    const { error } = await setGroupMembers(group.id, [...members]);
-    setBusy(false);
-    showToast(error ? 'שמירת חברי הקבוצה נכשלה' : 'חברי הקבוצה נשמרו', error ? 'error' : 'success');
-    if (!error) onSaved();
+    if (membersState !== 'ready' || savingMembers) return;
+    setSavingMembers(true);
+    try {
+      const { error } = await setGroupMembers(group.id, [...members]);
+      showToast(
+        error ? 'שמירת חברי הקבוצה נכשלה' : 'חברי הקבוצה נשמרו',
+        error ? 'error' : 'success'
+      );
+      if (!error) onSaved();
+    } catch {
+      showToast('שמירת חברי הקבוצה נכשלה', 'error');
+    } finally {
+      setSavingMembers(false);
+    }
   };
 
   const broadcast = async () => {
     if (!announcement.trim()) return;
-    setBusy(true);
+    setBroadcasting(true);
     try {
       await createAssignment({
         kind: 'announcement',
@@ -232,14 +259,27 @@ function GroupEditor({
     } catch {
       showToast('השליחה נכשלה', 'error');
     } finally {
-      setBusy(false);
+      setBroadcasting(false);
     }
   };
 
   const confirmDeleteGroup = async () => {
-    await deleteGroup(group.id);
-    setConfirmDelete(false);
-    onDeleted();
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      const { error } = await deleteGroup(group.id);
+      if (error) {
+        // Keep the dialog open so the coach can retry or cancel.
+        showToast('מחיקת הקבוצה נכשלה', 'error');
+        return;
+      }
+      setConfirmDelete(false);
+      onDeleted();
+    } catch {
+      showToast('מחיקת הקבוצה נכשלה', 'error');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -247,6 +287,10 @@ function GroupEditor({
       <div className="mb-3">
         {clients.length === 0 ? (
           <EmptyState illustration="generic" size="small" title="אין מתאמנים פעילים להוספה" />
+        ) : membersState === 'loading' ? (
+          <ListSkeleton rows={3} />
+        ) : membersState === 'error' ? (
+          <SectionError onRetry={() => setMembersTick((t) => t + 1)} />
         ) : (
           <>
             <div className="flex gap-4 mb-2">
@@ -294,7 +338,13 @@ function GroupEditor({
           </>
         )}
       </div>
-      <Button variant="primary" fullWidth isLoading={busy} onClick={saveMembers}>
+      <Button
+        variant="primary"
+        fullWidth
+        isLoading={savingMembers}
+        disabled={membersState !== 'ready'}
+        onClick={saveMembers}
+      >
         שמור חברים
       </Button>
 
@@ -308,7 +358,7 @@ function GroupEditor({
             aria-label="הודעה לקבוצה"
           />
         </div>
-        <Button variant="secondary" fullWidth isLoading={busy} onClick={broadcast}>
+        <Button variant="secondary" fullWidth isLoading={broadcasting} onClick={broadcast}>
           שלח הודעה לקבוצה
         </Button>
       </div>

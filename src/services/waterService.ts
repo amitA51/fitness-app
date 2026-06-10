@@ -12,6 +12,7 @@ import { safeJsonParse, writeJsonStorage } from '../utils/safeJson';
 import { STORES, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { queueMutation } from './offlineQueue';
 import { getCurrentUser } from './supabaseAuth';
+import { fetchAllPages } from './supabaseSyncPagination';
 
 export interface WaterEntry {
   id: string;
@@ -175,17 +176,19 @@ export async function deleteCloudWaterEntry(userId: string, id: string): Promise
 
 export async function fetchWaterLogs(userId: string): Promise<WaterEntry[]> {
   if (!isSupabaseConfigured() || !supabase) return [];
-  const { data, error } = await supabase
-    .from('water_logs')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-  // Distinguish a fetch error from a legitimately empty result: throw so the
-  // puller marks the pull as failed instead of silently treating it as empty.
-  if (error) {
-    throw new Error(`fetch water_logs failed: ${error.message}`);
-  }
-  return (data || []).map((row) => ({
+  // Range-paginated like every other synced table — a single query silently
+  // truncates at the Supabase ~1000-row cap. fetchAllPages also throws on a
+  // page error so the puller can distinguish a genuine fetch failure from a
+  // legitimately empty result.
+  const data = await fetchAllPages('water_logs', (from, to) =>
+    supabase!
+      .from('water_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(from, to)
+  );
+  return data.map((row) => ({
     id: row.id,
     date: row.date,
     amountMl: row.amount_ml,

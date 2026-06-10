@@ -10,10 +10,16 @@
 import { ChevronDown, ChevronUp, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../../components/ui/Button';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { showToast } from '../../components/ui/GlobalToast';
 import { Input } from '../../components/ui/Input';
 import { Sheet } from '../../components/ui/Sheet';
-import { assignProgramToGroup, createAssignment, upsertClientTemplate } from '../../services/coach';
+import {
+  assignProgramToGroup,
+  createAssignment,
+  scheduleProgramWeek,
+  upsertClientTemplate,
+} from '../../services/coach';
 import {
   listProgramTemplates,
   saveProgramTemplate,
@@ -41,8 +47,36 @@ const DEFAULT_SETS = '3';
 const DEFAULT_REPS = '10';
 /** Floor applied when a raw sets/reps field is blank or non-positive at build time. */
 const MIN_COUNT = 1;
+/** Scheduling step bounds — how many consecutive weeks a program may be placed for. */
+const MIN_SCHEDULE_WEEKS = 1;
+const MAX_SCHEDULE_WEEKS = 12;
+const DEFAULT_SCHEDULE_WEEKS = '4';
+const DAYS_PER_WEEK = 7;
 
 const freshDays = (): ProgramDay[] => [{ name: 'יום A', exercises: [] }];
+
+/** Build a local YYYY-MM-DD string without UTC conversion (avoids timezone bug). */
+const toLocalDateStr = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+/** Add `days` whole days to a YYYY-MM-DD string (local calendar math). */
+const addDaysStr = (dateStr: string, days: number): string => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const base = new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
+  base.setDate(base.getDate() + days);
+  return toLocalDateStr(base);
+};
+
+/** The next Sunday strictly after today — the default week-start for scheduling. */
+const nextSundayStr = (now: Date = new Date()): string => {
+  const d = new Date(now);
+  d.setDate(d.getDate() + ((DAYS_PER_WEEK - d.getDay()) % DAYS_PER_WEEK || DAYS_PER_WEEK));
+  return toLocalDateStr(d);
+};
 
 /** Coerce a raw sets/reps string to a positive integer, falling back to a floor. */
 const toCount = (raw: string): number => {
@@ -84,6 +118,26 @@ export default function ProgramBuilder({
   // Index of the day to mark/scroll when validation fails (spatial cue), else null.
   const [invalidDayIdx, setInvalidDayIdx] = useState<number | null>(null);
   const dayRefs = useRef<(HTMLElement | null)[]>([]);
+  // Unsaved-edit tracking: true after any user edit since the last open /
+  // template load / library save — gates Esc/backdrop close behind a confirm.
+  const [dirty, setDirty] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
+  // Library template the current content was loaded from (or last saved as) —
+  // re-saving updates it in place instead of minting a duplicate row.
+  const [loadedTemplateId, setLoadedTemplateId] = useState<string | null>(null);
+  // Stable per-open template ids keyed by day index: a retried assign upserts
+  // the SAME workout_templates rows instead of duplicating orphans per attempt.
+  const dayTemplateIdsRef = useRef<string[]>([]);
+  // Post-assign scheduling step (client mode): once the assignment row exists,
+  // offer to place the program's days on the trainee's calendar.
+  const [scheduleStep, setScheduleStep] = useState<{
+    assignmentId: string;
+    dayRefs: { templateId: string; name: string }[];
+  } | null>(null);
+  const [weekStart, setWeekStart] = useState('');
+  const [weeksCount, setWeeksCount] = useState(DEFAULT_SCHEDULE_WEEKS);
+  const [scheduleError, setScheduleError] = useState('');
+  const [scheduling, setScheduling] = useState(false);
 
   // Fresh form each time the sheet opens — matches the previous unmount-on-close
   // behaviour now that the component stays mounted for enter/exit animations.
@@ -95,6 +149,14 @@ export default function ProgramBuilder({
       setLibraryError(false);
       setTemplatesError(false);
       setInvalidDayIdx(null);
+      setDirty(false);
+      setConfirmClose(false);
+      setLoadedTemplateId(null);
+      dayTemplateIdsRef.current = [];
+      setScheduleStep(null);
+      setWeekStart(nextSundayStr());
+      setWeeksCount(DEFAULT_SCHEDULE_WEEKS);
+      setScheduleError('');
     }
   }, [isOpen]);
 
@@ -173,21 +235,25 @@ export default function ProgramBuilder({
 
   const addDay = () => {
     setSubmitError('');
+    setDirty(true);
     setDays((d) => [...d, { name: `יום ${String.fromCharCode(65 + d.length)}`, exercises: [] }]);
   };
 
   const removeDay = (i: number) => {
     setSubmitError('');
+    setDirty(true);
     setDays((d) => d.filter((_, idx) => idx !== i));
   };
 
   const moveDay = (i: number, dir: -1 | 1) => {
     setSubmitError('');
+    setDirty(true);
     setDays((d) => swap(d, i, i + dir));
   };
 
   const moveExercise = (dayIdx: number, exIdx: number, dir: -1 | 1) => {
     setSubmitError('');
+    setDirty(true);
     setDays((d) =>
       d.map((day, idx) =>
         idx === dayIdx ? { ...day, exercises: swap(day.exercises, exIdx, exIdx + dir) } : day
@@ -198,12 +264,14 @@ export default function ProgramBuilder({
   const updateDayName = (i: number, name: string) => {
     setSubmitError('');
     setInvalidDayIdx(null);
+    setDirty(true);
     setDays((d) => d.map((day, idx) => (idx === i ? { ...day, name } : day)));
   };
 
   const addExercise = (dayIdx: number) => {
     setSubmitError('');
     setInvalidDayIdx(null);
+    setDirty(true);
     setDays((d) =>
       d.map((day, idx) =>
         idx === dayIdx
@@ -227,6 +295,7 @@ export default function ProgramBuilder({
 
   const removeExercise = (dayIdx: number, exIdx: number) => {
     setSubmitError('');
+    setDirty(true);
     setDays((d) =>
       d.map((day, idx) =>
         idx === dayIdx ? { ...day, exercises: day.exercises.filter((_, ei) => ei !== exIdx) } : day
@@ -237,6 +306,7 @@ export default function ProgramBuilder({
   const updateExercise = (dayIdx: number, exIdx: number, patch: Partial<ProgramExercise>) => {
     setSubmitError('');
     setInvalidDayIdx(null);
+    setDirty(true);
     setDays((d) =>
       d.map((day, di) =>
         di === dayIdx
@@ -260,7 +330,18 @@ export default function ProgramBuilder({
     });
   };
 
-  const buildTemplate = (day: ProgramDay): WorkoutTemplate => {
+  // Stable template id for a day, minted once per sheet-open. Retrying a failed
+  // assign reuses the same ids so the per-day upserts overwrite the earlier
+  // partial rows instead of accumulating orphaned duplicates on the trainee.
+  const templateIdForDay = (dayIdx: number): string => {
+    const existing = dayTemplateIdsRef.current[dayIdx];
+    if (existing) return existing;
+    const id = crypto.randomUUID();
+    dayTemplateIdsRef.current[dayIdx] = id;
+    return id;
+  };
+
+  const buildTemplate = (day: ProgramDay, stableId?: string): WorkoutTemplate => {
     // Drop blank-name rows so empty, unstartable exercises never reach the trainee.
     const named = (day.exercises ?? []).filter((ex) => ex.exerciseName.trim().length > 0);
     const exercises: WorkoutTemplateExercise[] = named.map((ex, i) => {
@@ -281,7 +362,7 @@ export default function ProgramBuilder({
       };
     });
     return {
-      id: crypto.randomUUID(),
+      id: stableId ?? crypto.randomUUID(),
       name: day.name,
       description: programName || '',
       exercises,
@@ -312,10 +393,14 @@ export default function ProgramBuilder({
     setInvalidDayIdx(null);
     setBusy(true);
     try {
-      // Persist one runnable template per day…
+      // Persist one runnable template per day… (stable per-open ids — see
+      // templateIdForDay — so a retry after a mid-loop failure upserts the
+      // same rows instead of leaving days 1..k orphaned and minting new ids)
       const programDayRefs: { templateId: string; name: string }[] = [];
-      for (const day of days) {
-        const tpl = buildTemplate(day);
+      for (let dayIdx = 0; dayIdx < days.length; dayIdx++) {
+        const day = days[dayIdx];
+        if (!day) continue;
+        const tpl = buildTemplate(day, templateIdForDay(dayIdx));
         // upsertClientTemplate returns {error} and never throws — a swallowed
         // failure would show a false success while the trainee's program points
         // at templates that were never persisted.
@@ -326,7 +411,7 @@ export default function ProgramBuilder({
       // …but surface the whole week as ONE program assignment so the trainee
       // sees a structured plan, not N independent "התחל אימון" rows. templateId
       // points at the first day for backward-compatible single-start fallback.
-      await createAssignment({
+      const assignment = await createAssignment({
         kind: 'program',
         title: programName || 'תוכנית אימון',
         templateId: programDayRefs[0]?.templateId ?? null,
@@ -334,7 +419,8 @@ export default function ProgramBuilder({
         payload: { programName: programName || 'תוכנית אימון', days: programDayRefs },
       });
       showToast('התוכנית שויכה', 'success');
-      onClose();
+      // Don't close yet — offer the optional calendar-scheduling step.
+      setScheduleStep({ assignmentId: assignment.id, dayRefs: programDayRefs });
     } catch {
       showToast('שיוך התוכנית נכשל', 'error');
     } finally {
@@ -401,10 +487,15 @@ export default function ProgramBuilder({
   const handleSaveToLibrary = async () => {
     setSavingTemplate(true);
     try {
-      await saveProgramTemplate({
+      // Re-saving a loaded (or previously saved) template updates it in place
+      // instead of silently creating a duplicate row with the same name.
+      const saved = await saveProgramTemplate({
+        ...(loadedTemplateId ? { id: loadedTemplateId } : {}),
         name: programName.trim() || 'תוכנית ללא שם',
         days: toTemplateDays(),
       });
+      setLoadedTemplateId(saved.id);
+      setDirty(false);
       showToast('התבנית נשמרה בספרייה', 'success');
       // Refresh local templates list so the picker stays in sync.
       const updated = await listProgramTemplates();
@@ -438,66 +529,227 @@ export default function ProgramBuilder({
     setProgramName(tpl.name);
     setSubmitError('');
     setInvalidDayIdx(null);
+    // Loaded content mirrors a saved row — re-save updates it; not dirty yet.
+    setLoadedTemplateId(tpl.id);
+    setDirty(false);
     // Reset select back to placeholder.
     e.target.value = '';
   };
 
-  return (
-    <Sheet
-      isOpen={isOpen}
-      onClose={onClose}
-      title="בניית תוכנית"
-      footer={
-        <>
-          {submitError && (
-            <div
-              role="alert"
-              style={{
-                color: 'var(--fs-warn)',
-                fontFamily: 'var(--font-body)',
-                fontSize: 13,
-                marginBottom: 8,
-              }}
-            >
-              {submitError}
-            </div>
-          )}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button
-              variant={clientId || groupId ? 'secondary' : 'primary'}
-              fullWidth
-              isLoading={savingTemplate}
-              onClick={handleSaveToLibrary}
-              disabled={!canSaveLibrary || busy || savingTemplate}
-            >
-              שמור בספרייה
-            </Button>
-            {clientId && (
-              <Button
-                variant="primary"
-                fullWidth
-                isLoading={busy}
-                onClick={handleAssign}
-                disabled={!canAssign || busy || savingTemplate}
-              >
-                שייך תוכנית
-              </Button>
-            )}
-            {groupId && (
-              <Button
-                variant="primary"
-                fullWidth
-                isLoading={busy}
-                onClick={handleAssignGroup}
-                disabled={!canAssign || busy || savingTemplate}
-              >
-                שייך לקבוצה
-              </Button>
-            )}
-          </div>
-        </>
+  // ── Post-assign scheduling step (client mode) ─────────────────────────────
+  // Places day i of the program on weekday i (week starts at the picked date,
+  // default next Sunday), repeated for the chosen number of weeks. Each week is
+  // scheduled separately so a partial failure is reported, and the underlying
+  // upsert conflict key keeps retries idempotent.
+  const handleSchedule = async () => {
+    if (!clientId || !scheduleStep) return;
+    const weeks = Math.floor(Number(weeksCount));
+    if (!Number.isFinite(weeks) || weeks < MIN_SCHEDULE_WEEKS || weeks > MAX_SCHEDULE_WEEKS) {
+      setScheduleError('מספר השבועות חייב להיות בין 1 ל-12');
+      return;
+    }
+    if (!weekStart) {
+      setScheduleError('יש לבחור תאריך התחלה');
+      return;
+    }
+    setScheduleError('');
+    setScheduling(true);
+    try {
+      const dayMap = scheduleStep.dayRefs.map((d, i) => ({
+        templateId: d.templateId,
+        name: d.name,
+        weekday: i,
+      }));
+      let failedWeeks = 0;
+      for (let w = 0; w < weeks; w++) {
+        const { error } = await scheduleProgramWeek(clientId, {
+          assignmentId: scheduleStep.assignmentId,
+          weekStart: addDaysStr(weekStart, w * DAYS_PER_WEEK),
+          dayMap,
+          weeks: 1,
+        });
+        if (error) failedWeeks++;
       }
-    >
+      if (failedWeeks === 0) {
+        showToast('התוכנית שובצה ביומן המתאמן', 'success');
+        onClose();
+      } else if (failedWeeks < weeks) {
+        // Numbers render LTR inside the RTL string via embedded markers.
+        showToast(`שובצו ⁨${weeks - failedWeeks}⁩ מתוך ⁨${weeks}⁩ שבועות`, 'success');
+        onClose();
+      } else {
+        setScheduleError('השיבוץ ליומן נכשל. אפשר לנסות שוב או לדלג.');
+      }
+    } finally {
+      setScheduling(false);
+    }
+  };
+
+  // Close gating: a built-but-unsaved program must not vanish on Esc/backdrop.
+  // After the assign succeeded (scheduleStep) everything is persisted — closing
+  // just skips the optional scheduling step.
+  const hasBuiltContent = programName.trim().length > 0 || days.some((d) => d.exercises.length > 0);
+  const requestClose = () => {
+    if (scheduleStep) {
+      onClose();
+      return;
+    }
+    if (dirty && hasBuiltContent) {
+      setConfirmClose(true);
+      return;
+    }
+    onClose();
+  };
+
+  const builderFooter = (
+    <>
+      {submitError && (
+        <div
+          role="alert"
+          style={{
+            color: 'var(--fs-warn)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 13,
+            marginBottom: 8,
+          }}
+        >
+          {submitError}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Button
+          variant={clientId || groupId ? 'secondary' : 'primary'}
+          fullWidth
+          isLoading={savingTemplate}
+          onClick={handleSaveToLibrary}
+          disabled={!canSaveLibrary || busy || savingTemplate}
+        >
+          שמור בספרייה
+        </Button>
+        {clientId && (
+          <Button
+            variant="primary"
+            fullWidth
+            isLoading={busy}
+            onClick={handleAssign}
+            disabled={!canAssign || busy || savingTemplate}
+          >
+            שייך תוכנית
+          </Button>
+        )}
+        {groupId && (
+          <Button
+            variant="primary"
+            fullWidth
+            isLoading={busy}
+            onClick={handleAssignGroup}
+            disabled={!canAssign || busy || savingTemplate}
+          >
+            שייך לקבוצה
+          </Button>
+        )}
+      </div>
+    </>
+  );
+
+  const scheduleFooter = (
+    <>
+      {scheduleError && (
+        <div
+          role="alert"
+          style={{
+            color: 'var(--fs-warn)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 13,
+            marginBottom: 8,
+          }}
+        >
+          {scheduleError}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Button variant="secondary" fullWidth onClick={onClose} disabled={scheduling}>
+          דילוג
+        </Button>
+        <Button variant="primary" fullWidth isLoading={scheduling} onClick={handleSchedule}>
+          שיבוץ ליומן
+        </Button>
+      </div>
+    </>
+  );
+
+  // Compact post-assign step: optional placement of the assigned program on the
+  // trainee's calendar via scheduleProgramWeek (which no other UI calls today).
+  const scheduleBody = scheduleStep && (
+    <section aria-label="שיבוץ ליומן המתאמן">
+      <h3
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 11,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          color: 'var(--fs-muted)',
+          marginBottom: 10,
+        }}
+      >
+        שיבוץ ליומן המתאמן
+      </h3>
+      <p
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 14,
+          color: 'var(--fs-ink)',
+          lineHeight: 1.6,
+          marginBottom: 16,
+        }}
+      >
+        התוכנית שויכה. אפשר לשבץ את ימי התוכנית ביומן המתאמן — כל יום בתורו, החל מתאריך ההתחלה, למשך
+        מספר השבועות שנבחר.
+      </p>
+      <div className="flex gap-2 mb-4">
+        <div className="flex-1">
+          <Input
+            label="תאריך התחלה"
+            type="date"
+            dir="ltr"
+            value={weekStart}
+            onChange={(e) => {
+              setWeekStart(e.target.value);
+              setScheduleError('');
+            }}
+          />
+        </div>
+        <div style={{ width: 96 }} className="shrink-0">
+          <Input
+            label="שבועות"
+            type="number"
+            inputMode="numeric"
+            dir="ltr"
+            min={MIN_SCHEDULE_WEEKS}
+            max={MAX_SCHEDULE_WEEKS}
+            value={weeksCount}
+            onChange={(e) => {
+              setWeeksCount(e.target.value);
+              setScheduleError('');
+            }}
+          />
+        </div>
+      </div>
+      <p
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 12,
+          color: 'var(--fs-muted)',
+          margin: 0,
+        }}
+      >
+        אפשר לדלג — התוכנית כבר שויכה למתאמן.
+      </p>
+    </section>
+  );
+
+  const builderBody = (
+    <>
       <datalist id="coach-exercise-library">
         {library.map((ex) => (
           <option key={ex.id} value={ex.name ?? ''}>
@@ -565,7 +817,10 @@ export default function ProgramBuilder({
         <Input
           label="שם התוכנית"
           value={programName}
-          onChange={(e) => setProgramName(e.target.value)}
+          onChange={(e) => {
+            setProgramName(e.target.value);
+            setDirty(true);
+          }}
           placeholder="אופציונלי"
         />
       </div>
@@ -749,6 +1004,34 @@ export default function ProgramBuilder({
       >
         הוסף יום
       </Button>
-    </Sheet>
+    </>
+  );
+
+  return (
+    <>
+      <Sheet
+        isOpen={isOpen}
+        onClose={requestClose}
+        title={scheduleStep ? 'שיבוץ ליומן' : 'בניית תוכנית'}
+        footer={scheduleStep ? scheduleFooter : builderFooter}
+      >
+        {scheduleStep ? scheduleBody : builderBody}
+      </Sheet>
+
+      {/* Dirty-close guard — a built program must not be discarded by Esc/backdrop. */}
+      <ConfirmDialog
+        isOpen={confirmClose}
+        variant="warning"
+        title="סגירה ללא שמירה"
+        description="לסגור בלי לשמור? התוכנית שנבנתה תימחק."
+        confirmLabel="סגירה"
+        cancelLabel="חזרה"
+        onConfirm={() => {
+          setConfirmClose(false);
+          onClose();
+        }}
+        onCancel={() => setConfirmClose(false)}
+      />
+    </>
   );
 }

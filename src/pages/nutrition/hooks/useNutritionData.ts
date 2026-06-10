@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { showToast } from '../../../components/ui/GlobalToast';
+import { parseLocalDate } from '../../../services/analytics/shared';
 import { listMyAssignments } from '../../../services/coach';
 import {
   DEFAULT_MACRO_GOALS,
@@ -20,6 +21,7 @@ import { toLocalDateStr, todayStr } from '../../../utils/dateUtils';
 import { triggerHapticEffect } from '../../../utils/haptics';
 import { logger } from '../../../utils/logger';
 import { safeJsonParse } from '../../../utils/safeJson';
+import { recordRecentFoods } from '../recentFoods';
 import { useSearchFoods } from './useSearchFoods';
 
 export function useNutritionData() {
@@ -45,16 +47,26 @@ export function useNutritionData() {
   // True only until the first day-load resolves, so the calorie/macro/journal
   // surfaces can show skeletons on initial mount instead of flashing zeros.
   const [isLoading, setIsLoading] = useState(true);
+  // True when the last day-load failed — the page swaps the skeleton for an
+  // explicit error + retry instead of staying stuck on a permanent skeleton.
+  const [loadError, setLoadError] = useState(false);
 
   const loadData = useCallback(async () => {
-    const dateToUse = isToday ? todayStr() : selectedDate;
-    const entries = await getMealEntriesByDate(dateToUse);
-    setTodayEntries(entries);
-    const macros = await getDailyMacros(dateToUse);
-    setTodayMacros(macros);
-    const summary = await getWeeklyNutritionSummary();
-    setWeeklySummary(summary);
-    setIsLoading(false);
+    try {
+      const dateToUse = isToday ? todayStr() : selectedDate;
+      const entries = await getMealEntriesByDate(dateToUse);
+      setTodayEntries(entries);
+      const macros = await getDailyMacros(dateToUse);
+      setTodayMacros(macros);
+      const summary = await getWeeklyNutritionSummary();
+      setWeeklySummary(summary);
+      setLoadError(false);
+    } catch (error) {
+      logger.ui.error('Failed to load nutrition data', error);
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
+    }
   }, [selectedDate, isToday]);
 
   const loadWaterHistory = useCallback(async () => {
@@ -98,6 +110,9 @@ export function useNutritionData() {
     );
     try {
       await addMealEntry(entry);
+      // Remember what was logged so the modal's "אחרונים" shelf can offer
+      // repeat meals without a search next time.
+      recordRecentFoods(selectedFoods.map((f) => f.id));
       triggerHapticEffect('success', 'light');
       showToast('הארוחה נשמרה');
       setShowAddMeal(false);
@@ -115,7 +130,13 @@ export function useNutritionData() {
       // Snapshot the full entry before deleting so the undo action can re-insert
       // it. The journal passes only the id, so we look it up in the loaded day.
       const removed = todayEntries.find((e) => e.id === id);
-      await deleteMealEntry(id);
+      try {
+        await deleteMealEntry(id);
+      } catch (error) {
+        logger.ui.error('Failed to delete meal entry', error);
+        showToast('מחיקת הארוחה נכשלה', { variant: 'error' });
+        return;
+      }
       triggerHapticEffect('tap', 'light');
       loadData();
       if (!removed) return;
@@ -146,23 +167,36 @@ export function useNutritionData() {
   const handleQuickPreset = useCallback(
     async (preset: MealPreset, mealType: MealType) => {
       const dateToUse = isToday ? todayStr() : selectedDate;
-      const entry = await addFoodFromPreset(preset.id, mealType, dateToUse);
-      if (entry) {
+      // Success/error feedback mirrors handleSaveMeal — previously a failed or
+      // missing preset silently no-oped and the user couldn't tell anything ran.
+      try {
+        const entry = await addFoodFromPreset(preset.id, mealType, dateToUse);
+        if (!entry) {
+          showToast('הוספת הארוחה נכשלה', { variant: 'error' });
+          return;
+        }
+        triggerHapticEffect('success', 'light');
+        showToast('הארוחה נשמרה');
         loadData();
+      } catch (error) {
+        logger.ui.error('Failed to add meal from preset', error);
+        showToast('הוספת הארוחה נכשלה', { variant: 'error' });
       }
     },
     [selectedDate, isToday, loadData]
   );
 
   const goBack = useCallback(() => {
-    const d = new Date(selectedDate);
+    // parseLocalDate, not new Date('YYYY-MM-DD'): the latter parses as UTC
+    // midnight and shifts the calendar day for users ahead of UTC (Israel).
+    const d = parseLocalDate(selectedDate);
     d.setDate(d.getDate() - 1);
     setSelectedDate(toLocalDateStr(d));
     setIsToday(false);
   }, [selectedDate]);
 
   const goForward = useCallback(() => {
-    const d = new Date(selectedDate);
+    const d = parseLocalDate(selectedDate);
     d.setDate(d.getDate() + 1);
     const today = todayStr();
     const newDate = toLocalDateStr(d);
@@ -262,13 +296,17 @@ export function useNutritionData() {
           )[0];
         if (cancelled || !target) return;
         const p = target.payload;
-        const cal = typeof p.calories === 'number' ? p.calories : 0;
+        const cal = typeof p.calories === 'number' && p.calories > 0 ? p.calories : 0;
         if (!cal) return;
+        // Require > 0 (not just typeof): a 0 macro target would zero the goal
+        // and divide-by-zero the percentage math downstream.
+        const pickTarget = (v: unknown, fallback: number) =>
+          typeof v === 'number' && v > 0 ? v : fallback;
         setMacroGoals((prev) => ({
           calories: cal,
-          protein: typeof p.protein === 'number' ? p.protein : prev.protein,
-          carbs: typeof p.carbs === 'number' ? p.carbs : prev.carbs,
-          fat: typeof p.fat === 'number' ? p.fat : prev.fat,
+          protein: pickTarget(p.protein, prev.protein),
+          carbs: pickTarget(p.carbs, prev.carbs),
+          fat: pickTarget(p.fat, prev.fat),
         }));
         setCoachTarget(true);
       } catch {
@@ -294,6 +332,8 @@ export function useNutritionData() {
     macroGoals,
     coachTarget,
     isLoading,
+    loadError,
+    retryLoad: loadData,
     selectedDate,
     isToday,
     waterHistory,

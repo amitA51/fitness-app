@@ -8,6 +8,9 @@ import { useWorkoutDispatch } from '../core/WorkoutContext';
 interface UseWorkoutHandlersOptions {
   currentExerciseIndex: number;
   exercisesLength: number;
+  /** Live exercises array — used by handleDeleteSet to mirror the reducer's
+   *  last-set guard before dispatching (so the undo toast never lies). */
+  exercises: Exercise[];
   personalExerciseLibrary: Array<{
     name?: string;
     muscleGroup?: string;
@@ -26,6 +29,7 @@ interface UseWorkoutHandlersOptions {
 export function useWorkoutHandlers({
   currentExerciseIndex,
   exercisesLength,
+  exercises,
   personalExerciseLibrary,
   workoutSettings,
   currentExerciseName,
@@ -130,20 +134,32 @@ export function useWorkoutHandlers({
 
   const handleDeleteSet = useCallback(
     (exerciseIndex: number, setIndex: number) => {
-      dispatch({ type: 'DELETE_SET', payload: { exerciseIndex, setIndex } });
+      // Mirror the reducer's guard: the last remaining set can't be deleted.
+      // Refusing HERE (no dispatch, no undo toast) keeps the toast honest —
+      // previously an unconditional 'הסט נמחק' offered a 'בטל' that could
+      // resurrect an OLDER deletion's snapshot.
+      const targetSets = exercises[exerciseIndex]?.sets ?? [];
+      if (targetSets.length <= 1 || !targetSets[setIndex]) {
+        showToast('אי אפשר למחוק את הסט היחיד בתרגיל', { variant: 'info' });
+        return;
+      }
+
+      // Token ties this delete to ITS undo: a stale toast's 'בטל' after a
+      // newer deletion is a no-op instead of restoring the wrong set.
+      const token = `del-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      dispatch({ type: 'DELETE_SET', payload: { exerciseIndex, setIndex, token } });
       triggerHaptic('light');
       // A mis-tap on the trash icon shouldn't destroy logged data — offer a
-      // one-deep undo. RESTORE_DELETED_SET is a safe no-op if nothing was
-      // actually deleted (e.g. the reducer refused to remove the last set).
+      // one-deep undo scoped to this deletion.
       showToast('הסט נמחק', {
         duration: 5000,
         action: {
           label: 'בטל',
-          onClick: () => dispatch({ type: 'RESTORE_DELETED_SET' }),
+          onClick: () => dispatch({ type: 'RESTORE_DELETED_SET', payload: { token } }),
         },
       });
     },
-    [dispatch]
+    [dispatch, exercises]
   );
 
   const handleRenameExercise = useCallback(
@@ -165,6 +181,13 @@ export function useWorkoutHandlers({
     },
     [dispatch, currentExerciseIndex, personalExerciseLibrary]
   );
+
+  // Pause/resume the whole workout (duration timer freezes; an active rest
+  // timer is frozen/thawed by the TOGGLE_PAUSE reducer).
+  const handleTogglePause = useCallback(() => {
+    triggerHaptic('light');
+    dispatch({ type: 'TOGGLE_PAUSE' });
+  }, [dispatch]);
 
   const handleFinishRequest = useCallback(() => {
     triggerHaptic('light');
@@ -397,6 +420,7 @@ export function useWorkoutHandlers({
     handleEditSetInList,
     handleDeleteSet,
     handleRenameExercise,
+    handleTogglePause,
     handleFinishRequest,
     handleDiscardRequest,
     handleChangeExercise,

@@ -37,6 +37,13 @@ describe('isReminderDue', () => {
     expect(isReminderDue(mkReminder({ time: '08:00', date: '2026-06-01' }), at(8, 0))).toBe(false);
   });
 
+  it('matches the one-off date against the LOCAL date, not UTC', () => {
+    // 00:30 local — in any timezone ahead of UTC (e.g. Asia/Jerusalem) the UTC
+    // date is still "yesterday", so a UTC compare would never fire this slot.
+    const now = new Date(2026, 5, 1, 0, 30, 0); // 2026-06-01 00:30 local
+    expect(isReminderDue(mkReminder({ time: '00:30', date: '2026-06-01' }), now)).toBe(true);
+  });
+
   it('never fires without a time', () => {
     expect(isReminderDue(mkReminder({}), at(8, 0))).toBe(false);
   });

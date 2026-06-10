@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../lib/supabase', () => ({ isSupabaseConfigured: vi.fn(() => true) }));
 vi.mock('../errorReporter', () => ({ reportError: vi.fn() }));
-vi.mock('../offlineQueue', () => ({ queueMutation: vi.fn() }));
+// Keep the real isRetriableError classifier (syncEngine now imports it) and
+// only stub the queue write.
+vi.mock('../offlineQueue', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../offlineQueue')>()),
+  queueMutation: vi.fn(),
+}));
 
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { queueMutation } from '../offlineQueue';
@@ -55,6 +60,27 @@ describe('syncWithRetry', () => {
     expect(result).toBe(false);
     expect(syncFn).toHaveBeenCalledTimes(2);
     expect(mockQueueMutation).toHaveBeenCalledWith('session:create', { id: 'x' });
+  });
+
+  it('short-circuits non-retriable errors (4xx) without retrying', async () => {
+    const syncFn = vi.fn().mockRejectedValue({ status: 400, message: 'Bad Request' });
+    const queue = { type: 'session:create' as const, payload: { id: 'x' } };
+
+    // No timer advancement needed — a permanent error must skip backoff.
+    const result = await syncWithRetry(syncFn, 'test-permanent', 3, queue);
+
+    expect(result).toBe(false);
+    expect(syncFn).toHaveBeenCalledTimes(1);
+    expect(mockQueueMutation).toHaveBeenCalledWith('session:create', { id: 'x' });
+  });
+
+  it('short-circuits Postgres-coded errors (22007) without retrying', async () => {
+    const syncFn = vi.fn().mockRejectedValue({ code: '22007', message: 'invalid timestamp' });
+
+    const result = await syncWithRetry(syncFn, 'test-pgcode', 3);
+
+    expect(result).toBe(false);
+    expect(syncFn).toHaveBeenCalledTimes(1);
   });
 
   it('returns false immediately when supabase is not configured', async () => {

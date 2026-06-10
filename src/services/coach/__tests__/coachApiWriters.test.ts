@@ -301,6 +301,24 @@ describe('upsertClientBodyWeight', () => {
       expect.objectContaining({ tableName: 'body_weight' })
     );
   });
+
+  it('sends created_at only on CREATE (new row, no id)', async () => {
+    await upsertClientBodyWeight(CLIENT_ID, { date: '2026-06-03', weight: 81.5 });
+
+    const row = lastUpsertPayload();
+    expect(typeof row.created_at).toBe('string');
+    expect(writeAuditSpy).toHaveBeenCalledWith(expect.objectContaining({ action: 'create' }));
+  });
+
+  it('omits created_at on UPDATE (existing id) so an edit never resets it', async () => {
+    await upsertClientBodyWeight(CLIENT_ID, { id: 'bw-1', date: '2026-06-03', weight: 82 });
+
+    const row = lastUpsertPayload();
+    expect(row).not.toHaveProperty('created_at');
+    expect(writeAuditSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'update', rowId: 'bw-1' })
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------

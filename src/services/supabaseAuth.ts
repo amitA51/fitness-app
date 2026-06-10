@@ -44,6 +44,10 @@ const USER_SCOPED_LS_KEYS: readonly string[] = [
   // the next account on a shared device (it would promote/misroute them).
   'pending_coach_intent',
   'cached_role',
+  // Coach view state + reminder dedup (CoachContext.tsx / coach reminderService)
+  // — also user-scoped, must not leak across accounts on a shared device.
+  'view_mode',
+  'coach_reminders_fired',
 ];
 
 /**
@@ -286,7 +290,31 @@ const clearUserScopedLocalData = async (): Promise<void> => {
   }
 };
 
+/**
+ * Best-effort: flush pending offline mutations to the cloud before the local
+ * wipe (data-loss guard), then clear the queue so leftover entries can never
+ * replay into the next account on this device.
+ */
+const flushAndClearMutationQueue = async (): Promise<void> => {
+  try {
+    const { getQueueDepth, processQueue, clearMutationQueue } = await import('./offlineQueue');
+    if (typeof navigator === 'undefined' || navigator.onLine) {
+      const depth = await getQueueDepth();
+      if (depth > 0) {
+        await processQueue();
+      }
+    }
+    await clearMutationQueue();
+  } catch (err) {
+    logger.app.warn('signOut cleanup: offline-queue flush/clear failed', err);
+  }
+};
+
 export const signOut = async (): Promise<void> => {
+  // Flush BEFORE wiping local stores: signing out must not silently discard
+  // changes that never reached the cloud.
+  await flushAndClearMutationQueue();
+
   if (!isSupabaseConfigured() || !supabase) {
     // Even when Supabase is not configured, still clear any local data
     // so a manual sign-out from offline mode behaves predictably.

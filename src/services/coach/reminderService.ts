@@ -59,7 +59,8 @@ export const listCoachReminders = async (clientId?: string): Promise<Reminder[]>
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) {
     logger.db.error('listCoachReminders failed', error);
-    return [];
+    // Throw so the reminders box shows its error state, not a fake empty list.
+    throw new Error(error.message);
   }
   return (data ?? []).map(toReminder);
 };
@@ -85,6 +86,16 @@ export const listMyReminders = async (): Promise<Reminder[]> => {
 
 const FIRED_KEY = 'coach_reminders_fired';
 
+const pad = (n: number): string => String(n).padStart(2, '0');
+
+/**
+ * Local YYYY-MM-DD for `d`. Hour/minute matching is LOCAL, so the one-off
+ * `date` match must be too — toISOString() (UTC) makes a 00:00–02:59 reminder
+ * in Asia/Jerusalem compare against yesterday's date and never fire.
+ */
+const toLocalDateString = (d: Date): string =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
 /** Is `reminder` due within the current minute for `now`? */
 export const isReminderDue = (reminder: Reminder, now: Date): boolean => {
   const { time, days, date } = reminder.schedule ?? {};
@@ -94,7 +105,7 @@ export const isReminderDue = (reminder: Reminder, now: Date): boolean => {
   // never fire; reject any non-integer hour/minute rather than miss the slot.
   if (!Number.isInteger(h) || !Number.isInteger(m)) return false;
   if (now.getHours() !== h || now.getMinutes() !== m) return false;
-  if (date && date !== now.toISOString().slice(0, 10)) return false;
+  if (date && date !== toLocalDateString(now)) return false;
   if (days && days.length > 0 && !days.includes(now.getDay())) return false;
   return true;
 };
@@ -123,8 +134,7 @@ export const materializeDueReminders = async (now: Date = new Date()): Promise<n
   // the app happens to be open at the scheduled minute. Uses the LOCAL date
   // (isReminderDue matches on local time, and the dispatcher uses Israel date),
   // so the two tags line up rather than diverging across the UTC midnight.
-  const pad = (n: number): string => String(n).padStart(2, '0');
-  const localDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const localDate = toLocalDateString(now);
 
   // Collect everything due-this-minute first, then fire in parallel — several
   // reminders can collide on a single minute and serial awaits would stagger them.

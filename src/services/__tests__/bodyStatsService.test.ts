@@ -12,14 +12,26 @@ vi.mock('../supabaseSync', () => ({
   syncRecoveryLog: vi.fn(),
 }));
 
+// Stub the retry engine so sync wiring (tags + offline-queue descriptors) can
+// be asserted without real backoff timers or a configured Supabase.
+vi.mock('../syncEngine', () => ({ syncWithRetry: vi.fn(() => Promise.resolve(true)) }));
+
 import {
   type RecoveryLog,
   addRecoveryLog,
   calculateRecoveryScore,
+  deleteBodyWeight,
+  deleteRecoveryLog,
   getRecoveryLogsByDateRange,
   getTodayRecoveryLog,
 } from '../bodyStatsService';
 import { STORES, clearDatabase, dbPut } from '../indexedDBCore';
+import { getCurrentUser } from '../supabaseAuth';
+import { deleteCloudBodyWeight, deleteCloudRecoveryLog } from '../supabaseSync';
+import { syncWithRetry } from '../syncEngine';
+
+const mockGetCurrentUser = vi.mocked(getCurrentUser);
+const mockSyncWithRetry = vi.mocked(syncWithRetry);
 
 const recoveryInput = (
   date: string,
@@ -79,5 +91,78 @@ describe('bodyStatsService recovery logs', () => {
     const today = await getTodayRecoveryLog(new Date('2026-04-26T20:00:00.000Z'));
 
     expect(today?.id).toBe('rec-new');
+  });
+});
+
+describe('bodyStatsService cloud-delete wiring (tombstones + offline queue)', () => {
+  const signIn = () => mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as never);
+  const signOutMock = () => mockGetCurrentUser.mockResolvedValue(null);
+
+  afterEach(() => {
+    signOutMock();
+    mockSyncWithRetry.mockClear();
+  });
+
+  it('deleteBodyWeight soft-deletes via deleteCloudBodyWeight with a bodyweight:delete descriptor', async () => {
+    signIn();
+
+    await deleteBodyWeight('bw-1');
+
+    const call = mockSyncWithRetry.mock.calls.find((c) => c[1] === 'deleteBodyWeight:bw-1');
+    expect(call).toBeDefined();
+    expect(call![2]).toBe(3);
+    expect(call![3]).toEqual({ type: 'bodyweight:delete', payload: 'bw-1' });
+    // The sync fn must be the targeted UPDATE helper, not an empty-date upsert.
+    await (call![0] as () => Promise<void>)();
+    expect(vi.mocked(deleteCloudBodyWeight)).toHaveBeenCalledWith('user-1', 'bw-1');
+  });
+
+  it('deleteRecoveryLog soft-deletes via deleteCloudRecoveryLog with a recovery:delete descriptor', async () => {
+    signIn();
+
+    await deleteRecoveryLog('rec-1');
+
+    const call = mockSyncWithRetry.mock.calls.find((c) => c[1] === 'deleteRecoveryLog:rec-1');
+    expect(call).toBeDefined();
+    expect(call![3]).toEqual({ type: 'recovery:delete', payload: 'rec-1' });
+    await (call![0] as () => Promise<void>)();
+    expect(vi.mocked(deleteCloudRecoveryLog)).toHaveBeenCalledWith('user-1', 'rec-1');
+  });
+
+  it('addRecoveryLog passes a recovery:create descriptor so offline failures are queued', async () => {
+    signIn();
+
+    const saved = await addRecoveryLog(recoveryInput('2026-04-27'));
+
+    const call = mockSyncWithRetry.mock.calls.find((c) => c[1] === `addRecoveryLog:${saved.id}`);
+    expect(call).toBeDefined();
+    expect(call![3]).toMatchObject({
+      type: 'recovery:create',
+      payload: expect.objectContaining({ id: saved.id, date: '2026-04-27' }),
+    });
+  });
+
+  it('addRecoveryLog queues recovery:delete descriptors for same-day duplicate cleanup', async () => {
+    await dbPut<RecoveryLog>(STORES.RECOVERY_LOGS, {
+      ...recoveryInput('2026-04-28'),
+      id: 'rec-dup-old',
+      createdAt: '2026-04-28T06:00:00.000Z',
+    });
+    await dbPut<RecoveryLog>(STORES.RECOVERY_LOGS, {
+      ...recoveryInput('2026-04-28'),
+      id: 'rec-dup-new',
+      createdAt: '2026-04-28T18:00:00.000Z',
+    });
+    signIn();
+
+    await addRecoveryLog(recoveryInput('2026-04-28', { energyLevel: 5 }));
+
+    const call = mockSyncWithRetry.mock.calls.find(
+      (c) => c[1] === 'deleteRecoveryLog:rec-dup-old'
+    );
+    expect(call).toBeDefined();
+    expect(call![3]).toEqual({ type: 'recovery:delete', payload: 'rec-dup-old' });
+    await (call![0] as () => Promise<void>)();
+    expect(vi.mocked(deleteCloudRecoveryLog)).toHaveBeenCalledWith('user-1', 'rec-dup-old');
   });
 });

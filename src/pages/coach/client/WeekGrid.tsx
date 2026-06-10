@@ -4,9 +4,8 @@
 // ============================================================================
 
 import { SkeletonBox } from '../../../components/ui/SkeletonLoader';
-import { getClientWeekAdherence } from '../../../services/coach/coachAnalytics';
 import type { DayAdherence } from '../../../services/coach/coachAnalytics';
-import { InlineEmpty, SectionError, useAsyncData } from '../_shared';
+import { InlineEmpty, SectionError } from '../_shared';
 
 // 0 = Sunday … 6 = Saturday
 const WEEKDAY_LETTER: Record<number, string> = {
@@ -86,16 +85,17 @@ function GridSkeleton() {
 
 // ---- main component ---------------------------------------------------------
 
-export function WeekGrid({ clientId }: { clientId: string }) {
-  const {
-    data: days,
-    loading,
-    error,
-    reload,
-  } = useAsyncData<DayAdherence[]>(() => getClientWeekAdherence(clientId), []);
+export interface WeekGridProps {
+  /** Week-adherence data fetched ONCE by the parent (shared with StreakStrip). */
+  days: DayAdherence[];
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+}
 
+export function WeekGrid({ days, loading, error, onRetry }: WeekGridProps) {
   if (loading) return <GridSkeleton />;
-  if (error) return <SectionError onRetry={reload} />;
+  if (error) return <SectionError onRetry={onRetry} />;
   if (days.length === 0) return <InlineEmpty>אין נתוני שבוע.</InlineEmpty>;
 
   const summaryLine = buildSummaryLine(days);

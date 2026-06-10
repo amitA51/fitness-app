@@ -41,11 +41,13 @@ export const listProgramTemplates = async (): Promise<CoachProgramTemplate[]> =>
 };
 
 // ---------------------------------------------------------------------------
-// Save (insert)
+// Save (insert / update-in-place)
 // ---------------------------------------------------------------------------
 
 /**
- * Insert a new program template for the current coach.
+ * Save a program template for the current coach. Without `id` this inserts a
+ * new row; with `id` it upserts that row in place — re-saving a template the
+ * coach loaded into the builder must NOT mint a duplicate with the same name.
  * Throws a plain Error with a user-visible message when:
  *   - name is empty / whitespace-only
  *   - days array is empty
@@ -53,6 +55,8 @@ export const listProgramTemplates = async (): Promise<CoachProgramTemplate[]> =>
  *   - the current user cannot be resolved
  */
 export const saveProgramTemplate = async (input: {
+  /** Existing template id to update in place; omit to insert a new template. */
+  id?: string;
   name: string;
   description?: string;
   days: ProgramTemplateDay[];
@@ -70,16 +74,22 @@ export const saveProgramTemplate = async (input: {
     throw new Error('unauthenticated');
   }
 
-  const { data, error } = await db
-    .from('coach_program_templates')
-    .insert({
-      coach_id: user.id,
-      name: input.name.trim(),
-      description: input.description?.trim() ?? null,
-      days: input.days,
-    })
-    .select()
-    .single();
+  const row = {
+    coach_id: user.id,
+    name: input.name.trim(),
+    description: input.description?.trim() ?? null,
+    days: input.days,
+  };
+
+  // Upsert by id when re-saving a loaded template (RLS scopes both paths to
+  // the owning coach); plain insert otherwise.
+  const query = input.id
+    ? db
+        .from('coach_program_templates')
+        .upsert({ ...row, id: input.id, updated_at: new Date().toISOString() })
+    : db.from('coach_program_templates').insert(row);
+
+  const { data, error } = await query.select().single();
 
   if (error) {
     // Keep the raw Supabase message in the log only — never leak an English DB

@@ -22,6 +22,7 @@ export const AddWeightModal = memo(function AddWeightModal({
   const [weight, setWeight] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const weightId = useId();
 
   // Fresh form on every open (parity with the former mount-on-open behavior).
@@ -30,16 +31,25 @@ export const AddWeightModal = memo(function AddWeightModal({
       setWeight('');
       setNotes('');
       setSaving(false);
+      setError(null);
     }
   }, [isOpen]);
 
-  const canSave = !!weight && !saving;
+  // Mirror bodyStatsService validation (0 < weight < 700) so invalid input
+  // (e.g. "-5") disables the CTA instead of throwing at save time.
+  const parsedWeight = Number.parseFloat(weight);
+  const isValidWeight = Number.isFinite(parsedWeight) && parsedWeight > 0 && parsedWeight < 700;
+  const canSave = !!weight && isValidWeight && !saving;
 
   const handleSave = async () => {
     if (!canSave) return;
     setSaving(true);
+    setError(null);
     try {
-      await onSave(Number.parseFloat(weight), notes);
+      await onSave(parsedWeight, notes);
+    } catch {
+      // Inline, below the input — the sheet stays open so the value isn't lost.
+      setError('שמירת המשקל נכשלה. נסו שוב.');
     } finally {
       setSaving(false);
     }
@@ -101,6 +111,32 @@ export const AddWeightModal = memo(function AddWeightModal({
           >
             ק״ג
           </div>
+          {!!weight && !isValidWeight && (
+            <p
+              role="alert"
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                color: 'var(--color-error)',
+                marginTop: 8,
+              }}
+            >
+              יש להזין משקל בין 0 ל-700 ק״ג
+            </p>
+          )}
+          {error && (
+            <p
+              role="alert"
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                color: 'var(--color-error)',
+                marginTop: 8,
+              }}
+            >
+              {error}
+            </p>
+          )}
         </div>
         <input
           type="text"

@@ -1,6 +1,7 @@
 import { m } from 'framer-motion';
 import { Droplets } from 'lucide-react';
 import { memo } from 'react';
+import { parseLocalDate } from '../../../services/analytics/shared';
 import { getGlassSize, getWaterGoal } from '../../../services/waterService';
 
 interface WaterHistoryChartProps {
@@ -34,7 +35,8 @@ export const WaterHistoryChart = memo(function WaterHistoryChart({
         <div className="h-28 flex items-end gap-2" role="img" aria-label="היסטוריית שתייה - 7 ימים">
           {waterHistory.map((entry, i) => {
             const maxMl = goalMl;
-            const heightPct = Math.max(4, (entry.total / maxMl) * 100);
+            // Clamp to 100: a past-goal day must not overflow the h-28 container.
+            const heightPct = Math.min(100, Math.max(4, (entry.total / maxMl) * 100));
             const isLast = i === waterHistory.length - 1;
             return (
               <div key={entry.date} className="flex-1 flex flex-col items-center gap-1.5">
@@ -67,7 +69,9 @@ export const WaterHistoryChart = memo(function WaterHistoryChart({
                     color: 'var(--fs-muted)',
                   }}
                 >
-                  {new Date(entry.date).toLocaleDateString('he-IL', { day: 'numeric' })}
+                  {/* parseLocalDate: new Date('YYYY-MM-DD') is UTC midnight and
+                      shifts the day label for users ahead of UTC (Israel). */}
+                  {parseLocalDate(entry.date).toLocaleDateString('he-IL', { day: 'numeric' })}
                 </span>
               </div>
             );

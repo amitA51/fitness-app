@@ -58,16 +58,22 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
     if (body === '' && composerRef.current) composerRef.current.style.height = 'auto';
   }, [body]);
 
-  const load = async () => {
+  // `isStale` lets the mount/param-change effect cancel an in-flight load:
+  // switching thread A→B must not let a slow A response overwrite B's messages
+  // (or markThreadRead stamp the wrong thread). Defaults to never-stale for
+  // direct calls (retry button).
+  const load = async (isStale: () => boolean = () => false) => {
     setError(false);
     try {
       const page = await getThreadPage(coachId, clientId);
+      if (isStale()) return;
       setMessages(page.messages);
       setHasMore(page.hasMore);
       setLoading(false);
       await markThreadRead(coachId, clientId);
       window.dispatchEvent(new Event('coach:unread-refresh'));
     } catch {
+      if (isStale()) return;
       // Network/RLS failure: surface a retry instead of an endless skeleton.
       setError(true);
       setLoading(false);
@@ -109,7 +115,12 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-load only when the thread participants change
   useEffect(() => {
-    if (coachId && clientId) void load();
+    if (!coachId || !clientId) return;
+    let cancelled = false;
+    void load(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [coachId, clientId]);
 
   // Live-append messages as they arrive; mark them read since the thread is open.

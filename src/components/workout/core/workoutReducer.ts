@@ -104,6 +104,7 @@ const DATA_ACTIONS = new Set([
   'SET_PREVIOUS_DATA',
   'CLEAR_PENDING_HAPTIC',
   'FINALIZE_WORKOUT',
+  'RESET_ACTIVE_WORKOUT',
 ]);
 
 // ============================================================

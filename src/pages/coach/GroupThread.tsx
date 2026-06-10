@@ -77,6 +77,10 @@ export default function GroupThread({ viewer }: Props) {
   // Debounce markRead on incoming realtime messages: avoid hammering the DB
   // for a burst of arriving messages in a short window.
   const markReadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Sender ids whose names were already requested — checked OUTSIDE the
+  // setSenderNames updater so a live arrival never fires resolveNames from
+  // within a state updater (which double-fires under StrictMode).
+  const knownSendersRef = useRef<Set<string>>(new Set());
 
   // -------------------------------------------------------------------------
   // Resolve sender display names for a set of ids.
@@ -96,7 +100,11 @@ export default function GroupThread({ viewer }: Props) {
   // -------------------------------------------------------------------------
   // Load: fetch thread + group name + resolve initial sender names.
   // -------------------------------------------------------------------------
-  const load = async () => {
+  // `isStale` lets the mount/param-change effect cancel an in-flight load:
+  // switching group A→B must not let a slow A response overwrite B's messages
+  // (or markGroupThreadRead stamp the wrong thread). Defaults to never-stale
+  // for direct calls (retry button).
+  const load = async (isStale: () => boolean = () => false) => {
     setError(false);
     try {
       // Fetch messages and group name in parallel.
@@ -104,6 +112,7 @@ export default function GroupThread({ viewer }: Props) {
         getGroupThreadPage(groupId),
         listGroupThreads(viewer),
       ]);
+      if (isStale()) return;
       const msgs = page.messages;
 
       setMessages(msgs);
@@ -117,12 +126,14 @@ export default function GroupThread({ viewer }: Props) {
       // Resolve all distinct sender names in one call (exclude self — we
       // never show a name label above our own bubbles).
       const distinctSenderIds = [...new Set(msgs.map((m) => m.senderId).filter((id) => id !== me))];
+      knownSendersRef.current = new Set(distinctSenderIds);
       void resolveNames(distinctSenderIds);
 
       // Mark read + dispatch badge refresh.
       await markGroupThreadRead(groupId, viewer);
       window.dispatchEvent(new Event('coach:unread-refresh'));
     } catch {
+      if (isStale()) return;
       setError(true);
       setLoading(false);
     }
@@ -130,7 +141,12 @@ export default function GroupThread({ viewer }: Props) {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-load only when groupId or viewer changes
   useEffect(() => {
-    if (groupId) void load();
+    if (!groupId) return;
+    let cancelled = false;
+    void load(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [groupId, viewer]);
 
   // Prepend the previous page, preserving the reader's scroll position (the
@@ -178,13 +194,12 @@ export default function GroupThread({ viewer }: Props) {
       if (m.senderId !== me) {
         setLiveAnnouncement('הודעה חדשה התקבלה');
 
-        // Lazily resolve unknown sender names.
-        setSenderNames((prev) => {
-          if (!prev.has(m.senderId)) {
-            void resolveNames([m.senderId]);
-          }
-          return prev;
-        });
+        // Lazily resolve unknown sender names (ref check, NOT inside a state
+        // updater — updaters must stay pure and re-run under StrictMode).
+        if (!knownSendersRef.current.has(m.senderId)) {
+          knownSendersRef.current.add(m.senderId);
+          void resolveNames([m.senderId]);
+        }
 
         // Debounced markRead: at most one DB write per 1.5 s burst.
         if (markReadTimerRef.current !== null) clearTimeout(markReadTimerRef.current);

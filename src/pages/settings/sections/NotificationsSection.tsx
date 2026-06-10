@@ -31,19 +31,13 @@ export function NotificationsSection({
     <div className="mb-7">
       <SectionLabel trailing={<SavedIndicator saved={notificationsSaved} />}>התראות</SectionLabel>
       <SettingsCard>
+        {/* Gates the missed-workout alert (checkMissedWorkouts). The nutrition-
+            reminder toggle was removed — no scheduler exists, so it did nothing. */}
         <SettingsRow icon={<Bell size={15} />} label="תזכורת אימון" divider={true}>
           <SettingsToggle
             checked={notificationConfig.workoutReminderEnabled}
             onChange={() => toggleNotification('workoutReminderEnabled')}
             label="תזכורת אימון"
-          />
-        </SettingsRow>
-
-        <SettingsRow icon={<Bell size={15} />} label="תזכורת תזונה" divider={true}>
-          <SettingsToggle
-            checked={notificationConfig.nutritionReminderEnabled}
-            onChange={() => toggleNotification('nutritionReminderEnabled')}
-            label="תזכורת תזונה"
           />
         </SettingsRow>
 

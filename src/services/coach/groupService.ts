@@ -18,7 +18,8 @@ export const listGroups = async (): Promise<ClientGroup[]> => {
     .order('created_at', { ascending: false });
   if (error) {
     logger.db.error('listGroups failed', error);
-    return [];
+    // Throw so callers' error states fire instead of a fake "no groups" empty.
+    throw new Error(error.message);
   }
   return (data ?? []).map(toGroup);
 };
@@ -50,7 +51,9 @@ export const getGroupMemberIds = async (groupId: string): Promise<string[]> => {
     .eq('group_id', groupId);
   if (error) {
     logger.db.error('getGroupMemberIds failed', error);
-    return [];
+    // Throw — a silent [] here makes the group editor look empty and a save
+    // would then wipe the real membership.
+    throw new Error(error.message);
   }
   return (data ?? []).map((r: { client_id: string }) => r.client_id);
 };

@@ -216,7 +216,8 @@ export const listCheckIns = async (userId: string, limit = 30): Promise<CheckIn[
     .limit(limit);
   if (error) {
     logger.db.error('listCheckIns failed', error);
-    return [];
+    // Throw so callers' error states fire instead of a fake "no check-ins".
+    throw new Error(error.message);
   }
   return (data ?? []).map(toCheckIn);
 };
@@ -271,7 +272,8 @@ export const listCoachNotes = async (clientId: string): Promise<CoachNote[]> => 
     .order('created_at', { ascending: false });
   if (error) {
     logger.db.error('listCoachNotes failed', error);
-    return [];
+    // Throw so the notes box shows its error state, not a fake "no notes".
+    throw new Error(error.message);
   }
   return (data ?? []).map(toCoachNote);
 };

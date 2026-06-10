@@ -1259,6 +1259,77 @@ describe('workoutReducer', () => {
       expect(next.exercises[0]?.sets).toHaveLength(1);
       expect(next.lastDeletedSet).toBeNull();
     });
+
+    it('stores the delete token in the snapshot and restores on a matching token', () => {
+      const state = createInitialState([twoSets()], 0, mkSettings());
+      const deleted = apply(state, {
+        type: 'DELETE_SET',
+        payload: { exerciseIndex: 0, setIndex: 0, token: 'tok-1' },
+      });
+      expect(deleted.lastDeletedSet?.token).toBe('tok-1');
+
+      const restored = apply(deleted, {
+        type: 'RESTORE_DELETED_SET',
+        payload: { token: 'tok-1' },
+      });
+      expect(restored.exercises[0]?.sets?.map((s) => s.id)).toEqual(['set-1', 'set-2']);
+      expect(restored.lastDeletedSet).toBeNull();
+    });
+
+    it('refuses to restore when the undo token belongs to an older deletion', () => {
+      // Delete set-1 (token A), then set-2 of the restored... simulate two
+      // sequential deletes: the second overwrites the snapshot. An undo from
+      // the FIRST toast (token A) must NOT resurrect the second snapshot.
+      const state = createInitialState([twoSets()], 0, mkSettings());
+      const afterFirst = apply(state, {
+        type: 'DELETE_SET',
+        payload: { exerciseIndex: 0, setIndex: 0, token: 'tok-A' },
+      });
+      // Add a set so a second delete is allowed (last-set guard), then delete it.
+      const withExtra = apply(afterFirst, { type: 'ADD_SET' });
+      const afterSecond = apply(withExtra, {
+        type: 'DELETE_SET',
+        payload: { exerciseIndex: 0, setIndex: 0, token: 'tok-B' },
+      });
+      expect(afterSecond.lastDeletedSet?.token).toBe('tok-B');
+      const setsBefore = afterSecond.exercises[0]?.sets?.length;
+
+      // Stale undo (token A) — no-op, snapshot intact.
+      const staleUndo = apply(afterSecond, {
+        type: 'RESTORE_DELETED_SET',
+        payload: { token: 'tok-A' },
+      });
+      expect(staleUndo.exercises[0]?.sets?.length).toBe(setsBefore);
+      expect(staleUndo.lastDeletedSet?.token).toBe('tok-B');
+    });
+  });
+
+  // ============================================================
+  // RESET_ACTIVE_WORKOUT (discard restored draft, start fresh)
+  // ============================================================
+  describe('RESET_ACTIVE_WORKOUT', () => {
+    it('clears the draft in place and resets timing without finalizing', () => {
+      const state = structuredClone(baseState);
+      state.startTimestamp = Date.now() - 60 * 60 * 1000; // stale: an hour ago
+      state.totalPausedTime = 120_000;
+      state.isPaused = true;
+      state.lastPauseTimestamp = Date.now() - 1000;
+      state.restTimer = { active: true, endTime: Date.now() + 30000, totalTime: 60, timeLeft: 30 };
+
+      const next = apply(state, { type: 'RESET_ACTIVE_WORKOUT' });
+
+      expect(next.exercises).toEqual([]);
+      expect(next.currentExerciseIndex).toBe(0);
+      expect(next.supersetGroups).toEqual([]);
+      expect(next.startTimestamp).toBe(Date.now());
+      expect(next.totalPausedTime).toBe(0);
+      expect(next.isPaused).toBe(false);
+      expect(next.lastPauseTimestamp).toBeNull();
+      expect(next.restTimer.active).toBe(false);
+      expect(next.lastDeletedSet).toBeNull();
+      // NOT finalized — the session continues with the new template.
+      expect(next.finalized).toBe(false);
+    });
   });
 
   // ============================================================

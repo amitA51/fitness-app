@@ -26,7 +26,13 @@ export interface WorkoutFlowOverlaysProps {
   // Confirm exit
   showFinishConfirm: boolean;
   finishIntent: 'finish' | 'cancel';
-  workoutStats: { completedSets: number; totalVolume: number; duration: string };
+  workoutStats: {
+    completedSets: number;
+    totalVolume: number;
+    duration: string;
+    /** Non-warmup sets with weight/reps entered but not checked — they will NOT be saved. */
+    pendingSets?: number;
+  };
   onConfirmFinish: () => void;
   onCancelFinish: () => void;
   onCooldownFromFinish: () => void;

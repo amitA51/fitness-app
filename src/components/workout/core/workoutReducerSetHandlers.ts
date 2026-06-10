@@ -312,14 +312,16 @@ export const setReducer = (draft: WorkoutState, action: WorkoutAction): void => 
     }
 
     case 'DELETE_SET': {
-      const { exerciseIndex, setIndex } = action.payload;
+      const { exerciseIndex, setIndex, token } = action.payload;
       const targetExercise = draft.exercises[exerciseIndex];
       if (!targetExercise) return;
       const targetSets = targetExercise.sets ?? [];
       const removed = targetSets[setIndex];
       if (!removed) return;
 
-      // Don't allow deleting the last set
+      // Don't allow deleting the last set. Refusal leaves lastDeletedSet
+      // untouched — callers must not offer an undo for a delete that never
+      // happened (the handler mirrors this guard before dispatching).
       if (targetSets.length <= 1) return;
 
       // Snapshot before removal so RESTORE_DELETED_SET can re-insert it at the
@@ -329,6 +331,7 @@ export const setReducer = (draft: WorkoutState, action: WorkoutAction): void => 
         exerciseId: targetExercise.id ?? String(exerciseIndex),
         setIndex,
         set: { ...removed },
+        token: token ?? null,
       };
 
       targetSets.splice(setIndex, 1);
@@ -338,6 +341,11 @@ export const setReducer = (draft: WorkoutState, action: WorkoutAction): void => 
     case 'RESTORE_DELETED_SET': {
       const snapshot = draft.lastDeletedSet;
       if (!snapshot) return;
+
+      // Token mismatch: the undo belongs to an OLDER deletion whose snapshot
+      // was already overwritten — restoring would resurrect the wrong set.
+      const requestedToken = action.payload?.token;
+      if (requestedToken && snapshot.token && requestedToken !== snapshot.token) return;
 
       // Resolve the exercise by its stable id, falling back to the recorded
       // index if the id can't be matched (e.g. legacy exercises without ids).

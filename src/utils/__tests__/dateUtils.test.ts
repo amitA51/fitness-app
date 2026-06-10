@@ -122,20 +122,34 @@ describe('formatDateISO', () => {
   });
 });
 
-describe('getWeekStart', () => {
-  it('returns Monday for a Sunday input', () => {
+describe('getWeekStart (Sunday-based, Israeli week)', () => {
+  it('returns the same day for a Sunday input — a Sunday workout opens the new week', () => {
     // 2024-03-17 is a Sunday
     const result = getWeekStart(new Date(2024, 2, 17));
-    // Sunday getDay()=0 triggers the -6 branch -> Monday March 11
-    expect(result.getDay()).toBe(1); // Monday
-    expect(result.getDate()).toBe(11);
+    expect(result.getDay()).toBe(0); // Sunday
+    expect(result.getDate()).toBe(17);
   });
 
-  it('returns Monday for a midweek (Wednesday) input', () => {
+  it('returns the previous Sunday for a midweek (Wednesday) input', () => {
     // 2024-03-13 is a Wednesday
     const result = getWeekStart(new Date(2024, 2, 13));
-    expect(result.getDay()).toBe(1); // Monday
-    expect(result.getDate()).toBe(11);
+    expect(result.getDay()).toBe(0); // Sunday
+    expect(result.getDate()).toBe(10);
+  });
+
+  it('returns the previous Sunday for a Saturday input (end of the Israeli week)', () => {
+    // 2024-03-16 is a Saturday
+    const result = getWeekStart(new Date(2024, 2, 16));
+    expect(result.getDay()).toBe(0); // Sunday
+    expect(result.getDate()).toBe(10);
+  });
+
+  it('normalizes the result to local midnight so same-day sessions are included', () => {
+    const result = getWeekStart(new Date(2024, 2, 17, 18, 45, 30));
+    expect(result.getHours()).toBe(0);
+    expect(result.getMinutes()).toBe(0);
+    expect(result.getSeconds()).toBe(0);
+    expect(result.getMilliseconds()).toBe(0);
   });
 });
 

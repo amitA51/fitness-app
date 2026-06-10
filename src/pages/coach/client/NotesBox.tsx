@@ -16,7 +16,12 @@ import {
 } from '../_shared';
 
 export function NotesBox({ clientId }: { clientId: string }) {
-  const { data: notes, loading, error, reload } = useAsyncData(() => listCoachNotes(clientId), []);
+  const {
+    data: notes,
+    loading,
+    error,
+    reload,
+  } = useAsyncData(() => listCoachNotes(clientId), [], [clientId]);
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
   const canAdd = body.trim().length > 0;

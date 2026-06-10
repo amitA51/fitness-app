@@ -10,6 +10,8 @@ interface WorkoutHeaderSectionProps {
   onDiscard: () => void;
   onOpenSettings: () => void;
   onOpenTutorial: () => void;
+  /** Pause/resume the workout (freezes the duration + rest timers). */
+  onTogglePause: () => void;
   isSaving: boolean;
   restTimerActive: boolean;
   restTimerEndTime: number | null;
@@ -30,6 +32,7 @@ const WorkoutHeaderSection: React.FC<WorkoutHeaderSectionProps> = ({
   onDiscard,
   onOpenSettings,
   onOpenTutorial,
+  onTogglePause,
   isSaving,
   restTimerActive,
   restTimerEndTime,
@@ -48,6 +51,7 @@ const WorkoutHeaderSection: React.FC<WorkoutHeaderSectionProps> = ({
       onDiscard={onDiscard}
       onOpenSettings={onOpenSettings}
       onOpenTutorial={onOpenTutorial}
+      onTogglePause={onTogglePause}
       isSaving={isSaving}
     />
 

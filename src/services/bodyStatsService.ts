@@ -2,7 +2,13 @@ import { ValidationError } from '../errors';
 import { generateId } from '../utils/id';
 import { STORES, dbDelete, dbGetAll, dbGetByRange, dbPut } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
-import { syncBodyMeasurement, syncBodyWeight, syncRecoveryLog } from './supabaseSync';
+import {
+  deleteCloudBodyWeight,
+  deleteCloudRecoveryLog,
+  syncBodyMeasurement,
+  syncBodyWeight,
+  syncRecoveryLog,
+} from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
 
 const BODY_MEASUREMENTS_STORE = 'body_measurements';
@@ -147,13 +153,12 @@ export async function deleteBodyWeight(id: string): Promise<void> {
 
   const user = await getCurrentUser();
   if (user) {
-    const now = new Date().toISOString();
-    syncWithRetry(
-      () => syncBodyWeight(user.id, { id, weight: 0, date: '', deletedAt: now, updatedAt: now }),
-      `deleteBodyWeight:${id}`,
-      3,
-      { type: 'bodyweight:delete', payload: id }
-    );
+    // Targeted soft-delete UPDATE (house pattern) — the previous tombstone
+    // upsert sent date: '' which Postgres rejected (22007), losing the delete.
+    syncWithRetry(() => deleteCloudBodyWeight(user.id, id), `deleteBodyWeight:${id}`, 3, {
+      type: 'bodyweight:delete',
+      payload: id,
+    });
   }
 }
 
@@ -223,27 +228,30 @@ export async function addBodyMeasurement(
 
   const user = await getCurrentUser();
   if (user) {
+    // The queue replays the payload straight into syncBodyMeasurement, so the
+    // descriptor must carry the mapper shape (nested `measurements`), not the
+    // flat local entry — a flat payload replayed as `measurements: undefined`.
+    const syncPayload = {
+      id: newEntry.id,
+      date: newEntry.date,
+      measurements: {
+        chest: newEntry.chest,
+        waist: newEntry.waist,
+        hips: newEntry.hips,
+        arms: newEntry.arms,
+        thighs: newEntry.thighs,
+        neck: newEntry.neck,
+        bodyFat: newEntry.bodyFat,
+      },
+      notes: newEntry.notes,
+      createdAt: newEntry.createdAt,
+      updatedAt: newEntry.updatedAt,
+    };
     syncWithRetry(
-      () =>
-        syncBodyMeasurement(user.id, {
-          id: newEntry.id,
-          date: newEntry.date,
-          measurements: {
-            chest: newEntry.chest,
-            waist: newEntry.waist,
-            hips: newEntry.hips,
-            arms: newEntry.arms,
-            thighs: newEntry.thighs,
-            neck: newEntry.neck,
-            bodyFat: newEntry.bodyFat,
-          },
-          notes: newEntry.notes,
-          createdAt: newEntry.createdAt,
-          updatedAt: newEntry.updatedAt,
-        }),
+      () => syncBodyMeasurement(user.id, syncPayload),
       `addBodyMeasurement:${newEntry.id}`,
       3,
-      { type: 'measurement:create', payload: newEntry }
+      { type: 'measurement:create', payload: syncPayload }
     );
   }
 
@@ -297,30 +305,33 @@ export async function addRecoveryLog(
 
   const user = await getCurrentUser();
   if (user) {
-    syncWithRetry(
-      () =>
-        syncRecoveryLog(user.id, {
-          id: newEntry.id,
-          date: newEntry.date,
-          sleepHours: newEntry.sleepHours,
-          sleepQuality: newEntry.sleepQuality,
-          sorenessLevel: newEntry.sorenessLevel,
-          energyLevel: newEntry.energyLevel,
-          stressLevel: newEntry.stressLevel,
-          tightAreas: newEntry.tightAreas,
-          overallScore: newEntry.overallScore,
-          sessionId: newEntry.sessionId,
-          notes: newEntry.notes,
-          createdAt: newEntry.createdAt,
-          updatedAt: newEntry.updatedAt,
-        }),
-      `addRecoveryLog:${newEntry.id}`
-    );
+    const syncPayload = {
+      id: newEntry.id,
+      date: newEntry.date,
+      sleepHours: newEntry.sleepHours,
+      sleepQuality: newEntry.sleepQuality,
+      sorenessLevel: newEntry.sorenessLevel,
+      energyLevel: newEntry.energyLevel,
+      stressLevel: newEntry.stressLevel,
+      tightAreas: newEntry.tightAreas,
+      overallScore: newEntry.overallScore,
+      sessionId: newEntry.sessionId,
+      notes: newEntry.notes,
+      createdAt: newEntry.createdAt,
+      updatedAt: newEntry.updatedAt,
+    };
+    syncWithRetry(() => syncRecoveryLog(user.id, syncPayload), `addRecoveryLog:${newEntry.id}`, 3, {
+      type: 'recovery:create',
+      payload: syncPayload,
+    });
     duplicateLogs.forEach((log) => {
-      const now = new Date().toISOString();
+      // Targeted soft-delete UPDATE (house pattern) — the previous tombstone
+      // upsert sent date: '' which Postgres rejected (22007), losing the delete.
       syncWithRetry(
-        () => syncRecoveryLog(user.id, { id: log.id, date: '', deletedAt: now, updatedAt: now }),
-        `deleteRecoveryLog:${log.id}`
+        () => deleteCloudRecoveryLog(user.id, log.id),
+        `deleteRecoveryLog:${log.id}`,
+        3,
+        { type: 'recovery:delete', payload: log.id }
       );
     });
   }
@@ -335,24 +346,26 @@ export async function updateRecoveryLog(entry: RecoveryLog): Promise<void> {
 
   const user = await getCurrentUser();
   if (user) {
+    const syncPayload = {
+      id: updated.id,
+      date: updated.date,
+      sleepHours: updated.sleepHours,
+      sleepQuality: updated.sleepQuality,
+      sorenessLevel: updated.sorenessLevel,
+      energyLevel: updated.energyLevel,
+      stressLevel: updated.stressLevel,
+      tightAreas: updated.tightAreas,
+      overallScore: updated.overallScore,
+      sessionId: updated.sessionId,
+      notes: updated.notes,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+    };
     syncWithRetry(
-      () =>
-        syncRecoveryLog(user.id, {
-          id: updated.id,
-          date: updated.date,
-          sleepHours: updated.sleepHours,
-          sleepQuality: updated.sleepQuality,
-          sorenessLevel: updated.sorenessLevel,
-          energyLevel: updated.energyLevel,
-          stressLevel: updated.stressLevel,
-          tightAreas: updated.tightAreas,
-          overallScore: updated.overallScore,
-          sessionId: updated.sessionId,
-          notes: updated.notes,
-          createdAt: updated.createdAt,
-          updatedAt: updated.updatedAt,
-        }),
-      `updateRecoveryLog:${updated.id}`
+      () => syncRecoveryLog(user.id, syncPayload),
+      `updateRecoveryLog:${updated.id}`,
+      3,
+      { type: 'recovery:create', payload: syncPayload }
     );
   }
 }
@@ -362,11 +375,12 @@ export async function deleteRecoveryLog(id: string): Promise<void> {
 
   const user = await getCurrentUser();
   if (user) {
-    const now = new Date().toISOString();
-    syncWithRetry(
-      () => syncRecoveryLog(user.id, { id, date: '', deletedAt: now, updatedAt: now }),
-      `deleteRecoveryLog:${id}`
-    );
+    // Targeted soft-delete UPDATE (house pattern) — the previous tombstone
+    // upsert sent date: '' which Postgres rejected (22007), losing the delete.
+    syncWithRetry(() => deleteCloudRecoveryLog(user.id, id), `deleteRecoveryLog:${id}`, 3, {
+      type: 'recovery:delete',
+      payload: id,
+    });
   }
 }
 

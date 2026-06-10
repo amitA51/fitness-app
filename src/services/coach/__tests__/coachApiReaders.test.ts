@@ -128,3 +128,32 @@ describe('coachApi reads exclude tombstoned (soft-deleted) rows', () => {
     expect(out[0]?.updatedAt).toBe('y');
   });
 });
+
+describe('coachApi readers surface failures instead of fake empties', () => {
+  it('getClientsActivity throws on a db error (no fake "all calm" map)', async () => {
+    mocks.state.error = { message: 'activity boom' };
+    await expect(getClientsActivity([CLIENT_ID])).rejects.toThrow('activity boom');
+  });
+
+  it('getClientBodyWeight throws with throwOnError and returns [] without it', async () => {
+    mocks.state.error = { message: 'weights boom' };
+    await expect(getClientBodyWeight(CLIENT_ID, { throwOnError: true })).rejects.toThrow(
+      'weights boom'
+    );
+    await expect(getClientBodyWeight(CLIENT_ID)).resolves.toEqual([]);
+  });
+
+  it('getClientPRs throws with throwOnError and returns [] without it', async () => {
+    mocks.state.error = { message: 'prs boom' };
+    await expect(getClientPRs(CLIENT_ID, { throwOnError: true })).rejects.toThrow('prs boom');
+    await expect(getClientPRs(CLIENT_ID)).resolves.toEqual([]);
+  });
+
+  it('getClientMeasurements throws with throwOnError and returns [] without it', async () => {
+    mocks.state.error = { message: 'measurements boom' };
+    await expect(getClientMeasurements(CLIENT_ID, { throwOnError: true })).rejects.toThrow(
+      'measurements boom'
+    );
+    await expect(getClientMeasurements(CLIENT_ID)).resolves.toEqual([]);
+  });
+});

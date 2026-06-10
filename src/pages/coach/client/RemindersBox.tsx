@@ -79,7 +79,7 @@ export function RemindersBox({ clientId }: { clientId: string }) {
     loading,
     error,
     reload,
-  } = useAsyncData(() => listCoachReminders(clientId), [] as Reminder[]);
+  } = useAsyncData(() => listCoachReminders(clientId), [] as Reminder[], [clientId]);
 
   // Form state
   const [title, setTitle] = useState('');

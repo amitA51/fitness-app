@@ -46,6 +46,14 @@ interface EditableExercise {
 
 const blankSet = (): EditableSet => ({ id: generateId('set'), reps: '', weight: '' });
 
+/**
+ * Local-noon ISO timestamp for a picked YYYY-MM-DD date. UTC midnight
+ * (`${date}T00:00:00.000Z`) is a FUTURE instant for an Israel coach logging
+ * "today" before 02:00, rendering nonsense like "לפני -1 ימים"; local noon
+ * stays inside the picked calendar day in any reasonable timezone.
+ */
+const localNoonIso = (dateStr: string): string => new Date(`${dateStr}T12:00:00`).toISOString();
+
 const toEditableExercises = (session?: WorkoutSession): EditableExercise[] =>
   (session?.exercises ?? []).map((ex) => ({
     id: ex.id || generateId('ex'),
@@ -175,8 +183,8 @@ export function EditSessionSheet({
       const patch: Partial<WorkoutSession> = {
         notes: title.trim(),
         date,
-        startTime: `${date}T00:00:00.000Z`,
-        endTime: `${date}T00:00:00.000Z`,
+        startTime: localNoonIso(date),
+        endTime: localNoonIso(date),
         duration: Number.isFinite(durationSeconds) ? durationSeconds : 0,
         exercises: builtExercises,
       };

@@ -1,8 +1,9 @@
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
-import { BookOpen, Clock, Plus, Search } from 'lucide-react';
+import { BookOpen, Clock, CloudOff, Plus, Search } from 'lucide-react';
 import type React from 'react';
 import { useMemo } from 'react';
 import { CoachMark } from '../components/guidance/CoachMark';
+import { parseLocalDate } from '../services/analytics/shared';
 import { WaterTracker } from '../components/nutrition/WaterTracker';
 import { SkeletonBox } from '../components/ui/SkeletonLoader';
 import { AddMealModal } from './nutrition/components/AddMealModal';
@@ -27,6 +28,8 @@ export default function NutritionPage() {
     macroGoals,
     coachTarget,
     isLoading,
+    loadError,
+    retryLoad,
     selectedDate,
     isToday,
     waterHistory,
@@ -69,15 +72,17 @@ export default function NutritionPage() {
     []
   );
 
-  const todayLabel = useMemo(
-    () =>
-      new Date().toLocaleDateString('he-IL', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-      }),
-    []
-  );
+  // Header date follows the VIEWED day — showing today's date over a past
+  // day's numbers misattributes them. parseLocalDate avoids the UTC shift of
+  // new Date('YYYY-MM-DD') for users ahead of UTC (Israel).
+  const dayLabel = useMemo(() => {
+    const d = isToday ? new Date() : parseLocalDate(selectedDate);
+    return d.toLocaleDateString('he-IL', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
+  }, [isToday, selectedDate]);
 
   return (
     <div
@@ -109,7 +114,7 @@ export default function NutritionPage() {
             lineHeight: 1.4,
           }}
         >
-          {todayLabel} ·{' '}
+          {dayLabel} ·{' '}
           <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>
             {todayMacros.calories || 0}/{macroGoals.calories}
           </span>{' '}
@@ -146,6 +151,34 @@ export default function NutritionPage() {
             <SkeletonBox height={96} />
           </div>
         </div>
+      ) : loadError ? (
+        // Load failure used to leave a permanent skeleton — show an explicit
+        // error with a retry path instead.
+        <div className="px-5 mt-4">
+          <div
+            style={{
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--fs-surface-2)',
+              borderRadius: '22px 16px 22px 16px',
+              padding: 16,
+            }}
+          >
+            <div className="flex flex-col items-center py-8 text-center gap-3">
+              <CloudOff size={28} style={{ color: 'var(--fs-muted)' }} aria-hidden="true" />
+              <p style={{ fontSize: 14, color: 'var(--fs-muted)', margin: 0 }}>
+                טעינת נתוני התזונה נכשלה
+              </p>
+              <button
+                type="button"
+                onClick={() => retryLoad()}
+                className="btn-primary"
+                style={{ minHeight: 44 }}
+              >
+                נסו שוב
+              </button>
+            </div>
+          </div>
+        </div>
       ) : (
         <>
           <CalorieHero
@@ -153,6 +186,7 @@ export default function NutritionPage() {
             goal={macroGoals.calories}
             calPct={calPct}
             coachTarget={coachTarget}
+            isToday={isToday}
             onEditGoals={() => setShowGoalsEditor(true)}
           />
 
@@ -246,7 +280,9 @@ export default function NutritionPage() {
             >
               {isLoading ? (
                 <MealLogSkeleton />
-              ) : todayEntries.length === 0 ? (
+              ) : loadError ? null : todayEntries.length === 0 ? (
+                // On loadError the journal stays blank — the error card above
+                // owns the message; an "אין ארוחות עדיין" empty state would lie.
                 <EmptyMealState onAdd={() => setShowAddMeal(true)} />
               ) : (
                 <GroupedMealLog entries={todayEntries} onDelete={handleDeleteEntry} />

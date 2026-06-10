@@ -18,6 +18,8 @@ interface ConfirmExitOverlayProps {
     completedSets: number;
     totalVolume: number;
     duration: string;
+    /** Non-warmup sets with weight/reps entered but not checked — they will NOT be saved. */
+    pendingSets?: number;
   };
   onConfirm: () => void;
   onCancel: () => void;
@@ -257,6 +259,38 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                     זמן
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Unfinished-sets warning: filled-but-unchecked sets are silently
+                dropped by the session builder — say so BEFORE the user saves. */}
+            {isFinishing && (workoutStats.pendingSets ?? 0) > 0 && (
+              <div
+                className="p-3 mb-4"
+                style={{
+                  backgroundColor: 'var(--color-warning-muted)',
+                  border: '1px solid var(--fs-warn)',
+                  borderRadius: 0,
+                }}
+              >
+                <p
+                  className="text-center"
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '13px',
+                    color: 'var(--fs-warn)',
+                    fontWeight: 600,
+                  }}
+                >
+                  {workoutStats.pendingSets === 1 ? (
+                    'יש לך סט אחד שמולא אך לא הושלם — הוא לא יישמר'
+                  ) : (
+                    <>
+                      יש לך <span dir="ltr">{workoutStats.pendingSets}</span> סטים שמולאו אך לא
+                      הושלמו — הם לא יישמרו
+                    </>
+                  )}
+                </p>
               </div>
             )}
 

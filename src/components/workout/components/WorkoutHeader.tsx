@@ -2,7 +2,7 @@
 // Brand icon (FS mark), workout name, settings/menu button, timer
 // No AI Coach button
 
-import { Check, MoreHorizontal, Settings, Trash2 } from 'lucide-react';
+import { Check, MoreHorizontal, Pause, Play, Settings, Trash2 } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { triggerHaptic } from '../../../utils/haptics';
 import { useWorkoutTimer } from '../hooks/useWorkoutTimer';
@@ -20,6 +20,7 @@ interface WorkoutHeaderProps {
   onOpenSettings: () => void;
   onOpenTutorial: () => void;
   onOpenAICoach?: () => void;
+  onTogglePause?: () => void;
   isSaving?: boolean;
 }
 
@@ -54,8 +55,9 @@ const MonoTimer = memo<{
           width: 8,
           height: 8,
           borderRadius: '50%',
-          background: 'var(--fs-accent)',
-          animation: 'pulse-dot 2s infinite ease-in-out',
+          // Paused: amber, static. Running: mint with the live pulse.
+          background: isPaused ? 'var(--fs-warn)' : 'var(--fs-accent)',
+          animation: isPaused ? 'none' : 'pulse-dot 2s infinite ease-in-out',
           flexShrink: 0,
         }}
       />
@@ -216,6 +218,7 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
     onDiscard,
     onOpenSettings,
     onOpenTutorial,
+    onTogglePause,
     isSaving = false,
   }) => {
     const handleFinish = useCallback(() => {
@@ -271,7 +274,7 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
                 display: 'block',
               }}
             >
-              אימון פעיל
+              {isPaused ? 'אימון מושהה' : 'אימון פעיל'}
             </span>
             <MonoTimer
               startTimestamp={startTimestamp}
@@ -283,6 +286,40 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
 
         {/* Right: actions */}
         <div className="flex items-center gap-1.5">
+          {onTogglePause && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePause();
+              }}
+              aria-label={isPaused ? 'המשך אימון' : 'השהיית אימון'}
+              aria-pressed={isPaused}
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1"
+              style={{
+                width: 42,
+                height: 42,
+                minWidth: 42,
+                minHeight: 42,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '12px 8px 12px 8px',
+                // Paused state is unmissable: amber fill + play glyph.
+                background: isPaused ? 'var(--fs-warn)' : 'var(--fs-surface-2)',
+                border: isPaused ? '1px solid var(--fs-warn)' : '1px solid var(--fs-steel)',
+                color: isPaused ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
+                cursor: 'pointer',
+              }}
+            >
+              {isPaused ? (
+                <Play size={18} strokeWidth={2.25} />
+              ) : (
+                <Pause size={18} strokeWidth={2.25} />
+              )}
+            </button>
+          )}
+
           <OverflowMenu
             onOpenSettings={onOpenSettings}
             onOpenTutorial={onOpenTutorial}

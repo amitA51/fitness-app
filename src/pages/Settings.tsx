@@ -1,6 +1,7 @@
 import { Crown } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { SectionLabel } from '../components/ui/SettingsSectionLabel';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { deleteAllUserData } from '../services/settingsService';
@@ -40,6 +41,7 @@ export default function Settings() {
   const state = useSettingsState();
   const cloudSync = useCloudSync();
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   // The cloud-sync section reports "connected" only when BOTH the backend is
   // reachable AND the user is actually signed in — a reachable Supabase with no
@@ -49,7 +51,7 @@ export default function Settings() {
 
   // ── Handlers that bridge state + services ──────────────────────────────────
 
-  const handleSignOut = async () => {
+  const performSignOut = async () => {
     try {
       await signOut();
     } catch (err) {
@@ -57,6 +59,27 @@ export default function Settings() {
     }
     state.setAuthEmail(null);
     window.location.reload();
+  };
+
+  const handleSignOut = async () => {
+    // Data-loss guard: signOut wipes local stores, so unsynced mutations
+    // would be lost. Try to flush the offline queue first; if entries remain
+    // (flush failed or we're offline), warn before proceeding.
+    try {
+      const { getQueueDepth, processQueue } = await import('../services/offlineQueue');
+      let depth = await getQueueDepth();
+      if (depth > 0 && navigator.onLine) {
+        await processQueue();
+        depth = await getQueueDepth();
+      }
+      if (depth > 0) {
+        setShowSignOutConfirm(true);
+        return;
+      }
+    } catch (err) {
+      logger.app.warn('handleSignOut: offline-queue check failed', err);
+    }
+    await performSignOut();
   };
 
   const handleDeleteAllData = async () => {
@@ -234,6 +257,20 @@ export default function Settings() {
 
         <DataAboutSection />
       </div>
+
+      <ConfirmDialog
+        isOpen={showSignOutConfirm}
+        variant="warning"
+        title="התנתקות מהחשבון"
+        description="יש שינויים שטרם סונכרנו לענן — להתנתק בכל זאת? שינויים שלא סונכרנו יימחקו."
+        confirmLabel="התנתקות"
+        cancelLabel="ביטול"
+        onConfirm={() => {
+          setShowSignOutConfirm(false);
+          void performSignOut();
+        }}
+        onCancel={() => setShowSignOutConfirm(false)}
+      />
     </div>
   );
 }

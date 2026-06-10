@@ -71,7 +71,8 @@ export const listInvites = async (): Promise<CoachInvite[]> => {
     .order('created_at', { ascending: false });
   if (error) {
     logger.db.error('listInvites failed', error);
-    return [];
+    // Throw so the invites screen shows its error state, not a fake empty list.
+    throw new Error(error.message);
   }
   return (data ?? []).map(toInvite);
 };

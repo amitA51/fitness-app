@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // ── Supabase auth mock ───────────────────────────────────────────────────────
 // Each method is an independent spy so individual tests can drive success/error.
 // vi.hoisted lets these spies exist before the hoisted vi.mock factory runs.
-const { authMock, dbClearSpy } = vi.hoisted(() => ({
+const { authMock, dbClearSpy, queueMock } = vi.hoisted(() => ({
   authMock: {
     signUp: vi.fn(),
     signInWithPassword: vi.fn(),
@@ -24,12 +24,21 @@ const { authMock, dbClearSpy } = vi.hoisted(() => ({
     onAuthStateChange: vi.fn(),
   },
   dbClearSpy: vi.fn(async (_store?: string) => {}),
+  queueMock: {
+    getQueueDepth: vi.fn(async () => 0),
+    processQueue: vi.fn(async () => ({ success: 0, failed: 0 })),
+    clearMutationQueue: vi.fn(async () => {}),
+  },
 }));
 
 vi.mock('../../lib/supabase', () => ({
   isSupabaseConfigured: vi.fn(() => true),
   supabase: { auth: authMock },
 }));
+
+// signOut flushes + clears the offline mutation queue (data-loss + cross-account
+// guards) — stub the queue so we can assert the calls and their ordering.
+vi.mock('../offlineQueue', () => queueMock);
 
 // ── IndexedDB mock ───────────────────────────────────────────────────────────
 // STORES must include every key referenced by USER_SCOPED_STORES in the SUT.
@@ -84,6 +93,9 @@ beforeEach(() => {
   authMock.signUp.mockResolvedValue({ data: { user: fakeUser }, error: null });
   authMock.signInWithPassword.mockResolvedValue({ data: { user: fakeUser }, error: null });
   authMock.signInWithOAuth.mockResolvedValue({ error: null });
+  queueMock.getQueueDepth.mockResolvedValue(0);
+  queueMock.processQueue.mockResolvedValue({ success: 0, failed: 0 });
+  queueMock.clearMutationQueue.mockResolvedValue(undefined);
 });
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -307,6 +319,54 @@ describe('signOut — local data wipe', () => {
   it('swallows a thrown supabase signOut without rejecting', async () => {
     authMock.signOut.mockRejectedValue(new Error('network down'));
     await expect(signOut()).resolves.toBeUndefined();
+  });
+
+  it('removes coach view/role/reminder localStorage keys', async () => {
+    localStorage.setItem('view_mode', 'coach');
+    localStorage.setItem('cached_role', 'coach');
+    localStorage.setItem('coach_reminders_fired', '["r1"]');
+
+    await signOut();
+
+    expect(localStorage.getItem('view_mode')).toBeNull();
+    expect(localStorage.getItem('cached_role')).toBeNull();
+    expect(localStorage.getItem('coach_reminders_fired')).toBeNull();
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+describe('signOut — offline mutation queue', () => {
+  it('flushes pending mutations BEFORE wiping local data when the queue is non-empty', async () => {
+    queueMock.getQueueDepth.mockResolvedValue(2);
+
+    await signOut();
+
+    expect(queueMock.processQueue).toHaveBeenCalledTimes(1);
+    // Flush must happen before the local wipe, or the data is already gone.
+    const flushOrder = queueMock.processQueue.mock.invocationCallOrder[0]!;
+    const firstWipeOrder = dbClearSpy.mock.invocationCallOrder[0]!;
+    expect(flushOrder).toBeLessThan(firstWipeOrder);
+  });
+
+  it('skips the flush when the queue is empty', async () => {
+    queueMock.getQueueDepth.mockResolvedValue(0);
+
+    await signOut();
+
+    expect(queueMock.processQueue).not.toHaveBeenCalled();
+  });
+
+  it('always clears the mutation queue so entries cannot replay into the next account', async () => {
+    await signOut();
+    expect(queueMock.clearMutationQueue).toHaveBeenCalledTimes(1);
+  });
+
+  it('still signs out when the queue flush throws', async () => {
+    queueMock.getQueueDepth.mockRejectedValue(new Error('idb broken'));
+
+    await expect(signOut()).resolves.toBeUndefined();
+    expect(dbClearSpy).toHaveBeenCalled();
+    expect(authMock.signOut).toHaveBeenCalledTimes(1);
   });
 });
 

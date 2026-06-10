@@ -8,12 +8,14 @@ const mocks = vi.hoisted(() => {
   const mockSingle = vi.fn();
   const mockSelectAfterInsert = vi.fn(() => ({ single: mockSingle }));
   const mockInsert = vi.fn(() => ({ select: mockSelectAfterInsert }));
+  const mockUpsert = vi.fn(() => ({ select: mockSelectAfterInsert }));
   const mockEq = vi.fn();
   const mockDelete = vi.fn(() => ({ eq: mockEq }));
   const mockSelect = vi.fn(() => ({ order: mockOrder }));
   const mockFrom = vi.fn((_table: string) => ({
     select: mockSelect,
     insert: mockInsert,
+    upsert: mockUpsert,
     delete: mockDelete,
   }));
 
@@ -22,6 +24,7 @@ const mocks = vi.hoisted(() => {
     mockSingle,
     mockSelectAfterInsert,
     mockInsert,
+    mockUpsert,
     mockEq,
     mockDelete,
     mockSelect,
@@ -192,6 +195,56 @@ describe('saveProgramTemplate — insert', () => {
     await expect(saveProgramTemplate({ name: 'My Program', days: [sampleDay] })).rejects.toThrow(
       'שמירת התבנית נכשלה'
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// saveProgramTemplate — update-in-place (upsert by id)
+// ---------------------------------------------------------------------------
+
+describe('saveProgramTemplate — update-in-place', () => {
+  it('upserts by id instead of inserting when id is provided', async () => {
+    mocks.mockSingle.mockResolvedValue({ data: dbRow, error: null });
+
+    const result = await saveProgramTemplate({
+      id: 'tpl-1',
+      name: 'Full Body',
+      days: [sampleDay],
+    });
+
+    expect(mocks.mockInsert).not.toHaveBeenCalled();
+    expect(mocks.mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'tpl-1',
+        coach_id: 'coach-abc',
+        name: 'Full Body',
+        days: [sampleDay],
+      })
+    );
+    expect(result.id).toBe('tpl-1');
+  });
+
+  it('inserts (and never upserts) when no id is provided', async () => {
+    mocks.mockSingle.mockResolvedValue({ data: dbRow, error: null });
+
+    await saveProgramTemplate({ name: 'Full Body', days: [sampleDay] });
+
+    expect(mocks.mockUpsert).not.toHaveBeenCalled();
+    expect(mocks.mockInsert).toHaveBeenCalledTimes(1);
+    // The insert payload must not carry an id key — the DB generates it.
+    const insertPayload = (mocks.mockInsert.mock.calls as unknown as unknown[][])[0]?.[0] as Record<
+      string,
+      unknown
+    >;
+    expect(insertPayload).not.toHaveProperty('id');
+  });
+
+  it('throws the stable Hebrew error on upsert failure', async () => {
+    mocks.mockSingle.mockResolvedValue({ data: null, error: { message: 'upsert failed' } });
+
+    await expect(
+      saveProgramTemplate({ id: 'tpl-1', name: 'My Program', days: [sampleDay] })
+    ).rejects.toThrow('שמירת התבנית נכשלה');
   });
 });
 

@@ -58,6 +58,8 @@ export interface ProgressData {
   recoveryHistory: RecoveryLog[];
   weeklyRecovery: WeeklyRecoveryAverage;
   isLoading: boolean;
+  /** True when the last load failed — the page shows an explicit error + retry. */
+  loadError: boolean;
   reload: () => Promise<void>;
 }
 
@@ -76,6 +78,7 @@ export function useProgressData(): ProgressData {
   const [recoveryHistory, setRecoveryHistory] = useState<RecoveryLog[]>([]);
   const [weeklyRecovery, setWeeklyRecovery] = useState<WeeklyRecoveryAverage>(EMPTY_WEEKLY);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const reload = useCallback(async () => {
     const today = todayStr();
@@ -107,10 +110,13 @@ export function useProgressData(): ProgressData {
       setSessions(loadedSessions);
       setPRs(allPRs);
       setRecoveryHistory(recHistory);
+      setLoadError(false);
     } catch (error) {
-      // Surface the failure through the project logger rather than swallowing it.
-      // State keeps its last-good values so the screen degrades gracefully.
+      // Surface the failure to BOTH the logger and the UI: without an exposed
+      // error flag the page rendered the "first workout" empty state to users
+      // who actually have data. State keeps its last-good values.
       logger.analytics.error('Failed to load progress data', error);
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -133,6 +139,7 @@ export function useProgressData(): ProgressData {
     recoveryHistory,
     weeklyRecovery,
     isLoading,
+    loadError,
     reload,
   };
 }

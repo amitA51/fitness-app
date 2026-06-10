@@ -7,16 +7,28 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Supabase mock ────────────────────────────────────────────────────────────
 const mockUpsert = vi.fn();
+// fetchWaterLogs query-builder chain: select → eq → order → range (thenable).
+const mockRange = vi.fn();
+type SelectBuilder = {
+  eq: (...args: unknown[]) => SelectBuilder;
+  order: (...args: unknown[]) => SelectBuilder;
+  range: typeof mockRange;
+};
+const selectBuilder: SelectBuilder = {
+  eq: vi.fn(() => selectBuilder),
+  order: vi.fn(() => selectBuilder),
+  range: mockRange,
+};
 
 vi.mock('../../lib/supabase', () => ({
   isSupabaseConfigured: vi.fn(() => true),
   supabase: {
-    from: vi.fn(() => ({ upsert: mockUpsert })),
+    from: vi.fn(() => ({ upsert: mockUpsert, select: vi.fn(() => selectBuilder) })),
   },
 }));
 
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
-import { type WaterEntry, syncWaterEntryToCloud } from '../waterService';
+import { type WaterEntry, fetchWaterLogs, syncWaterEntryToCloud } from '../waterService';
 
 const mockIsConfigured = vi.mocked(isSupabaseConfigured);
 
@@ -100,5 +112,48 @@ describe('syncWaterEntryToCloud — tombstone resurrection guard', () => {
     await expect(syncWaterEntryToCloud('user-1', makeEntry())).rejects.toThrow(
       'water sync failed: duplicate key'
     );
+  });
+});
+
+describe('fetchWaterLogs — range pagination', () => {
+  const makeRow = (i: number) => ({
+    id: `w-${i}`,
+    date: '2026-06-09',
+    amount_ml: 100,
+    created_at: '2026-06-09T08:00:00.000Z',
+    deleted_at: null,
+  });
+
+  it('pages past the ~1000-row response cap instead of truncating', async () => {
+    // Arrange — a full first page (1000 rows) followed by a short page.
+    const page1 = Array.from({ length: 1000 }, (_, i) => makeRow(i));
+    const page2 = [makeRow(1000)];
+    mockRange
+      .mockResolvedValueOnce({ data: page1, error: null })
+      .mockResolvedValueOnce({ data: page2, error: null });
+
+    // Act
+    const rows = await fetchWaterLogs('user-1');
+
+    // Assert
+    expect(rows).toHaveLength(1001);
+    expect(mockRange).toHaveBeenNthCalledWith(1, 0, 999);
+    expect(mockRange).toHaveBeenNthCalledWith(2, 1000, 1999);
+    expect(rows[1000]).toMatchObject({ id: 'w-1000', amountMl: 100 });
+  });
+
+  it('stops after a single short page', async () => {
+    mockRange.mockResolvedValueOnce({ data: [makeRow(0)], error: null });
+
+    const rows = await fetchWaterLogs('user-1');
+
+    expect(rows).toHaveLength(1);
+    expect(mockRange).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws on a page error so the puller can mark the pull as failed', async () => {
+    mockRange.mockResolvedValueOnce({ data: null, error: { message: 'boom' } });
+
+    await expect(fetchWaterLogs('user-1')).rejects.toThrow('fetch water_logs failed: boom');
   });
 });

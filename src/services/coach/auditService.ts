@@ -66,7 +66,8 @@ export const listAudit = async (subjectUserId: string, limit = 50): Promise<Audi
     .limit(limit);
   if (error) {
     logger.db.error('listAudit failed', error);
-    return [];
+    // Throw so the audit box shows its error state, not a fake "no actions".
+    throw new Error(error.message);
   }
   return (data ?? []).map(toAuditEntry);
 };

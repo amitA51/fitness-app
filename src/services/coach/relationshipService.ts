@@ -83,7 +83,7 @@ export const getSeatUsage = async (): Promise<{ used: number; limit: number; ful
   const user = await getCurrentUser();
   if (!user) return { used: 0, limit: 0, full: true };
 
-  const [{ count }, sub] = await Promise.all([
+  const [countRes, sub] = await Promise.all([
     supabase
       .from('coach_clients')
       .select('id', { count: 'exact', head: true })
@@ -91,7 +91,12 @@ export const getSeatUsage = async (): Promise<{ used: number; limit: number; ful
       .eq('status', 'active'),
     getMySubscription(),
   ]);
-  const used = count ?? 0;
+  if (countRes.error) {
+    logger.db.error('getSeatUsage failed', countRes.error);
+    // A failed count must not read as 0 seats used / not-full.
+    throw new Error(countRes.error.message);
+  }
+  const used = countRes.count ?? 0;
   const limit = sub?.seatLimit ?? 1;
   return { used, limit, full: used >= limit };
 };
@@ -111,7 +116,9 @@ export const listClients = async (
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) {
     logger.db.error('listClients failed', error);
-    return [];
+    // Throw so the UI shows its error state — an empty roster on failure
+    // renders the misleading "אין מתאמנים" onboarding instead.
+    throw new Error(error.message);
   }
   return (data ?? []).map(toCoachClient);
 };

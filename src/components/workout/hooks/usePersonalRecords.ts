@@ -5,7 +5,8 @@ import {
   type PersonalRecord,
   calculateEst1RM,
   calculatePRsFromHistory,
-  isNewPR as checkIsNewPR,
+  detectNewPRType,
+  stableExerciseKey,
 } from '../../../services/prService';
 import type { Exercise, WorkoutSet } from '../../../types';
 import { useWorkoutDispatch } from '../core/WorkoutContext';
@@ -18,11 +19,24 @@ interface UsePersonalRecordsReturn {
 
 /**
  * Resolves the stable exercise identifier used by calculatePRsFromHistory.
- * That function keys on `exercise.exerciseId || exercise.id` (WorkoutExercise).
- * The hook receives Exercise[] which has `id` (required) and optional `exerciseId`.
- * We mirror the same resolution order so map lookups match history keys.
+ * Identity is the NORMALIZED EXERCISE NAME (stableExerciseKey), never the
+ * per-session random exercise id — ids are regenerated every workout, so
+ * keying on them made every exercise look like a brand-new PR every session.
  */
-const resolveExerciseKey = (exercise: Exercise): string => exercise.exerciseId || exercise.id;
+const resolveExerciseKey = (exercise: Exercise): string => stableExerciseKey(exercise);
+
+/**
+ * Signature of an exercise's last completed WORKING set, for per-exercise
+ * dedup. Warmup sets are excluded — they never set records (same rule as the
+ * summary count and finish-time persistence).
+ */
+const lastCompletedSetKey = (exercise: Exercise): string | null => {
+  if (!exercise || !Array.isArray(exercise.sets)) return null;
+  const completedSets = exercise.sets.filter((s) => s.completedAt && !s.isWarmup);
+  const lastSet = completedSets[completedSets.length - 1];
+  if (!lastSet) return null;
+  return `${completedSets.length}-${lastSet.weight ?? 0}-${lastSet.reps ?? 0}-${lastSet.completedAt ?? ''}`;
+};
 
 /**
  * Hook for Personal Records tracking
@@ -38,6 +52,9 @@ export function usePersonalRecords(
 ): UsePersonalRecordsReturn {
   const dispatch = useWorkoutDispatch();
   const [prMap, setPRMap] = useState<Map<string, PersonalRecord>>(() => new Map());
+  // Detection is gated until history has loaded: running against a still-empty
+  // prMap would flag every restored set as a "new PR".
+  const [historyLoaded, setHistoryLoaded] = useState(false);
 
   // Track the last completed-set key we've already checked PER EXERCISE id.
   // Keyed on the stable exercise id (not the array index) so a superset
@@ -47,6 +64,21 @@ export function usePersonalRecords(
   // completed set changes.
   const seenSetKeyByExerciseRef = useRef<Map<string, string>>(new Map());
 
+  // Seed the dedup map from the exercises present at MOUNT. A restored draft
+  // arrives with already-completed sets — those were celebrated when they
+  // happened (and may be stale by hours); re-announcing them on restore is a
+  // false positive. Only sets completed AFTER mount can celebrate.
+  const seededRef = useRef(false);
+  if (!seededRef.current) {
+    seededRef.current = true;
+    for (const exercise of exercises) {
+      const setKey = lastCompletedSetKey(exercise);
+      if (setKey) {
+        seenSetKeyByExerciseRef.current.set(resolveExerciseKey(exercise), setKey);
+      }
+    }
+  }
+
   // Load PRs from history on mount
   useEffect(() => {
     const loadPRs = async () => {
@@ -55,23 +87,24 @@ export function usePersonalRecords(
         setPRMap(calculatePRsFromHistory(sessions));
       } catch {
         // Silently handle PR loading errors
+      } finally {
+        // Unblock detection even when history failed to load — for a brand-new
+        // user an empty baseline is correct (their first sets ARE first PRs).
+        setHistoryLoaded(true);
       }
     };
     loadPRs();
   }, []);
 
-  // Get PR for specific exercise — callers pass exerciseName for display,
-  // but we need the composite key. Look up weight PR by default.
+  // Get PR for specific exercise — callers pass exerciseName for display;
+  // the composite key is the normalized name. Weight PR is the primary record.
   const getPRForExercise = useCallback(
     (exerciseName: string): PersonalRecord | undefined => {
-      // Find the exercise object to resolve its stable id
-      const exercise = exercises.find((e) => (e.name ?? e.exerciseName) === exerciseName);
-      if (!exercise) return undefined;
-      const key = resolveExerciseKey(exercise);
-      // Return weight PR as the primary record (matches prior behavior)
+      const key = stableExerciseKey({ name: exerciseName });
+      if (!key) return undefined;
       return prMap.get(`${key}-weight`) ?? prMap.get(`${key}-volume`);
     },
-    [prMap, exercises]
+    [prMap]
   );
 
   // Check if a set is a new PR (weight, volume, or reps — first match wins).
@@ -81,31 +114,17 @@ export function usePersonalRecords(
       const reps = set.reps || 0;
       if (weight <= 0 || reps <= 0) return null;
 
-      // Resolve the stable id that matches calculatePRsFromHistory keys
-      const exercise = exercises.find((e) => (e.name ?? e.exerciseName) === exerciseName);
-      if (!exercise) return null;
-      const exerciseId = resolveExerciseKey(exercise);
+      // Resolve the stable name-based key that matches calculatePRsFromHistory
+      const exerciseKey = stableExerciseKey({ name: exerciseName });
+      if (!exerciseKey) return null;
 
-      // isNewPR expects keys like `${exerciseId}-weight` / `${exerciseId}-volume`
-      const diff = checkIsNewPR(exerciseId, weight, reps, prMap);
-
-      // Reps PR threshold: weight >= 85% of current weight PR
-      const existingWeightPR = prMap.get(`${exerciseId}-weight`);
-      const existingWeight = existingWeightPR?.weight || 0;
-      const repsThreshold = existingWeight * 0.85;
-      const existingReps = existingWeightPR?.reps || 0;
-      const isRepsPR = weight >= repsThreshold && reps > existingReps;
-
-      type PRType = 'weight' | 'volume' | 'reps';
-      let prType: PRType | null = null;
-      if (diff.isWeightPR) prType = 'weight';
-      else if (diff.isVolumePR) prType = 'volume';
-      else if (isRepsPR) prType = 'reps';
+      // Shared detector — the same rules the summary count uses.
+      const prType = detectNewPRType(exerciseKey, weight, reps, prMap);
       if (!prType) return null;
 
       const newPR: PersonalRecord = {
-        id: `pr-${exerciseId}-${prType}-${Date.now()}`,
-        exerciseId,
+        id: `pr-${exerciseKey}-${prType}-${Date.now()}`,
+        exerciseId: exerciseKey,
         exerciseName,
         maxWeight: weight,
         maxReps: reps,
@@ -120,14 +139,14 @@ export function usePersonalRecords(
       // Update prMap using the correct composite keys
       setPRMap((prev) => {
         const next = new Map(prev);
-        const mapKey = `${exerciseId}-${prType}`;
+        const mapKey = `${exerciseKey}-${prType}`;
         next.set(mapKey, newPR);
         return next;
       });
 
       return newPR;
     },
-    [prMap, exercises]
+    [prMap]
   );
 
   // Auto-detect PRs when sets are completed.
@@ -139,26 +158,28 @@ export function usePersonalRecords(
   // just completed on the previous member (silently swallowing superset PRs).
   // Per-exercise-id dedup ensures each newly-completed set fires at most one
   // celebration and that an auto-advance never skips the just-finished set.
+  //
+  // Gated on historyLoaded: until the PR baseline is in, nothing is marked
+  // seen and nothing celebrates — when the gate opens the effect re-runs and
+  // diffs any interim completions against the real baseline.
   useEffect(() => {
+    if (!historyLoaded) return;
     try {
       for (const exercise of exercises) {
-        if (!exercise || !Array.isArray(exercise.sets)) continue;
+        const lastSetKey = lastCompletedSetKey(exercise);
+        if (!lastSetKey) continue;
 
-        const completedSets = exercise.sets.filter((s) => s.completedAt);
-        const completedCount = completedSets.length;
-        if (completedCount === 0) continue;
-
-        const lastSet = completedSets[completedCount - 1];
+        const completedSets = (exercise.sets ?? []).filter((s) => s.completedAt && !s.isWarmup);
+        const lastSet = completedSets[completedSets.length - 1];
         if (!lastSet) continue;
 
         const exerciseKey = resolveExerciseKey(exercise);
-        const lastSetKey = `${completedCount}-${lastSet.weight ?? 0}-${lastSet.reps ?? 0}-${lastSet.completedAt ?? ''}`;
 
         // Skip if this exercise's last completed set is unchanged since last run.
         if (seenSetKeyByExerciseRef.current.get(exerciseKey) === lastSetKey) continue;
         seenSetKeyByExerciseRef.current.set(exerciseKey, lastSetKey);
 
-        // Use exerciseName for the checkForNewPR call (it resolves the id internally)
+        // Use exerciseName for the checkForNewPR call (it resolves the key internally)
         const name = exercise.name ?? exercise.exerciseName ?? '';
         const newPR = checkForNewPR(name, lastSet);
         if (newPR) {
@@ -168,7 +189,7 @@ export function usePersonalRecords(
     } catch {
       // Silently handle PR detection errors
     }
-  }, [exercises, checkForNewPR, dispatch]);
+  }, [exercises, checkForNewPR, dispatch, historyLoaded]);
 
   return {
     prMap,

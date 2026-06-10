@@ -1,7 +1,8 @@
 import { AnimatePresence, m } from 'framer-motion';
-import { Activity, Heart, LayoutGrid, User } from 'lucide-react';
+import { Activity, CloudOff, Heart, LayoutGrid, User } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useMemo, useState } from 'react';
+import { showToast } from '../components/ui/GlobalToast';
 import {
   addBodyMeasurement,
   addBodyWeight,
@@ -57,8 +58,19 @@ export default function ProgressPage() {
     recoveryHistory,
     weeklyRecovery,
     isLoading,
+    loadError,
     reload,
   } = useProgressData();
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const handleRetry = useCallback(async () => {
+    setIsRetrying(true);
+    try {
+      await reload();
+    } finally {
+      setIsRetrying(false);
+    }
+  }, [reload]);
 
   const [showAddWeight, setShowAddWeight] = useState(false);
   const [showAddMeasurement, setShowAddMeasurement] = useState(false);
@@ -102,19 +114,29 @@ export default function ProgressPage() {
   );
   const handleSaveMeasurement = useCallback(
     async (m: Omit<BodyMeasurement, 'id' | 'createdAt'>) => {
-      await addBodyMeasurement(m);
-      triggerHapticEffect('success');
-      setShowAddMeasurement(false);
-      reload();
+      // Catch here (not in the modal): a thrown save previously surfaced as an
+      // unhandled rejection with a stuck-open sheet and zero user feedback.
+      try {
+        await addBodyMeasurement(m);
+        triggerHapticEffect('success');
+        setShowAddMeasurement(false);
+        reload();
+      } catch {
+        showToast('שמירת ההיקפים נכשלה. נסו שוב.', { variant: 'error' });
+      }
     },
     [reload]
   );
   const handleSaveRecovery = useCallback(
     async (r: Omit<RecoveryLog, 'id' | 'createdAt'>) => {
-      await addRecoveryLog(r);
-      triggerHapticEffect('success');
-      setShowAddRecovery(false);
-      reload();
+      try {
+        await addRecoveryLog(r);
+        triggerHapticEffect('success');
+        setShowAddRecovery(false);
+        reload();
+      } catch {
+        showToast('שמירת דיווח הריקאברי נכשלה. נסו שוב.', { variant: 'error' });
+      }
     },
     [reload]
   );
@@ -242,6 +264,34 @@ export default function ProgressPage() {
       <div className="px-5">
         {isLoading ? (
           <ProgressSkeleton />
+        ) : loadError ? (
+          // Explicit load-failure state. Without it, users WITH data saw the
+          // "complete your first workout" empty state after a failed load.
+          <div
+            style={{
+              background: 'var(--fs-surface)',
+              borderRadius: '22px 16px 22px 16px',
+              border: '1px solid var(--fs-surface-2)',
+              padding: 16,
+              marginTop: 16,
+            }}
+          >
+            <div className="flex flex-col items-center py-10 text-center gap-3">
+              <CloudOff size={32} style={{ color: 'var(--fs-muted)' }} aria-hidden="true" />
+              <p style={{ fontSize: 14, color: 'var(--fs-muted)', margin: 0 }}>
+                טעינת נתוני ההתקדמות נכשלה
+              </p>
+              <button
+                type="button"
+                onClick={handleRetry}
+                disabled={isRetrying}
+                className="btn-primary"
+                style={{ minHeight: 44, opacity: isRetrying ? 0.6 : 1 }}
+              >
+                {isRetrying ? 'טוען…' : 'נסו שוב'}
+              </button>
+            </div>
+          </div>
         ) : (
           <AnimatePresence mode="sync">
             {activeTab === 'overview' && (

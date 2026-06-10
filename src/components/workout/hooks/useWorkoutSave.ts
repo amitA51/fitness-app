@@ -6,13 +6,16 @@
 import type React from 'react';
 import { useCallback, useRef, useState } from 'react';
 
+import { showToast } from '../../../components/ui/GlobalToast';
 import { saveWorkoutSession } from '../../../services/dataService';
+import { persistSessionPRs } from '../../../services/prService';
 import { buildWorkoutSession } from '../../../services/workoutSessionBuilder';
 import type { PersonalItem, WorkoutSession, WorkoutSettings } from '../../../types';
 import { triggerHaptic } from '../../../utils/haptics';
 import { logger } from '../../../utils/logger';
 import { safeJsonParse } from '../../../utils/safeJson';
 import type { WorkoutAction, WorkoutState } from '../core/workoutTypes';
+import { clearPreviousDataCache } from './usePreviousData';
 
 interface UseWorkoutSaveParams {
   state: WorkoutState;
@@ -56,6 +59,10 @@ export function useWorkoutSave({
   const [isSaving, setIsSaving] = useState(false);
   const isSavingRef = useRef(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // Latest confirm-finish handler, for the error-toast retry action (the
+  // callback identity changes across renders; the toast closure must not
+  // capture a stale one).
+  const retryFinishRef = useRef<(() => Promise<void>) | null>(null);
 
   const handleConfirmFinish = useCallback(async () => {
     // Guard against double-tap while a save is already in-flight
@@ -64,22 +71,8 @@ export function useWorkoutSave({
       setShowFinishConfirm(false);
       setSaveError(null);
 
-      // Mark as completed in localStorage to prevent restore
-      const saved = localStorage.getItem('active_workout_v3_state');
-      if (saved) {
-        try {
-          const parsed = safeJsonParse<Record<string, unknown>>(saved);
-          if (parsed) {
-            // Immutable update — never mutate the parsed object in place.
-            localStorage.setItem(
-              'active_workout_v3_state',
-              JSON.stringify({ ...parsed, _completed: true })
-            );
-          }
-        } catch {
-          // If parsing fails, just remove it
-        }
-      }
+      // Discard the persisted draft so it can't be restored. (A `_completed`
+      // marker write here would be pointless — the key is removed immediately.)
       localStorage.removeItem('active_workout_v3_state');
 
       // Stop the provider from re-persisting this (now discarded) workout on
@@ -107,9 +100,11 @@ export function useWorkoutSave({
       return;
     }
 
-    // Now we can close the overlay and proceed
-    triggerHaptic('success');
-    setShowFinishConfirm(false);
+    // The confirm overlay stays OPEN until the save resolves: it owns the
+    // isSaving spinner and is the only renderer of saveError. Closing it
+    // before the await meant a failed save surfaced its error into an
+    // unmounted component — the user saw nothing and assumed the workout
+    // was saved.
     setSaveError(null);
 
     setIsSaving(true);
@@ -158,6 +153,24 @@ export function useWorkoutSave({
       // the workout to localStorage on unmount and it reappears as "active" next time.
       dispatch({ type: 'FINALIZE_WORKOUT' });
 
+      // Save landed — NOW close the confirm overlay and celebrate.
+      triggerHaptic('success');
+      setShowFinishConfirm(false);
+
+      // Persist genuine PRs from this session into the personal_records store
+      // (cloud-synced inside savePR). Identity is the normalized exercise name
+      // and the checker diffs against existing records, so a retry can't
+      // duplicate. Never blocks or fails the save.
+      try {
+        await persistSessionPRs(session);
+      } catch (prError) {
+        logger.workout?.warn?.('Failed to persist session PRs (non-fatal)', prError);
+      }
+
+      // Ghost values cache previous-session sets for up to 5 minutes — drop it
+      // so the workout just saved becomes the "previous" data immediately.
+      clearPreviousDataCache();
+
       setCompletedSession(session);
       setShowSummary(true);
 
@@ -178,6 +191,20 @@ export function useWorkoutSave({
       // Show user-friendly error message via UI instead of console
       const errorMessage = e instanceof Error ? e.message : 'שגיאה לא ידועה';
       setSaveError(`שגיאה בשמירת האימון: ${errorMessage}`);
+      // The overlay (still mounted) renders saveError — but the user may
+      // backdrop-dismiss it. A toast with a retry action makes the failure
+      // impossible to miss either way. The retry re-runs the latest
+      // confirm-finish via ref (this callback is recreated across renders).
+      showToast('שמירת האימון נכשלה', {
+        variant: 'error',
+        duration: 8000,
+        action: {
+          label: 'נסה שוב',
+          onClick: () => {
+            void retryFinishRef.current?.();
+          },
+        },
+      });
     } finally {
       setIsSaving(false);
       isSavingRef.current = false;
@@ -191,6 +218,10 @@ export function useWorkoutSave({
     item?.id,
     setShowFinishConfirm,
   ]);
+
+  // Keep the retry ref pointing at the latest handler (render-phase assignment,
+  // same pattern as sessionRef in WorkoutSummary).
+  retryFinishRef.current = handleConfirmFinish;
 
   return {
     showSummary,

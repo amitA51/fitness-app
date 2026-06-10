@@ -1,7 +1,12 @@
+/**
+ * Returns the start of the calendar week containing `d`, at local midnight.
+ * Weeks start on SUNDAY (יום ראשון) — the Israeli week — so a Sunday workout
+ * counts toward the new week, not the previous one.
+ */
 export const getWeekStart = (d: Date) => {
   const t = new Date(d);
-  const day = t.getDay();
-  t.setDate(t.getDate() - day + (day === 0 ? -6 : 1));
+  t.setDate(t.getDate() - t.getDay());
+  t.setHours(0, 0, 0, 0);
   return t;
 };
 

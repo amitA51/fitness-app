@@ -84,8 +84,14 @@ export interface WorkoutState {
   // === Undo Buffer (one-deep) ===
   // Snapshot of the most recently deleted set so DELETE_SET can be undone via
   // RESTORE_DELETED_SET (re-inserted at its original index). One-deep only —
-  // each delete overwrites the prior snapshot; restore clears it.
-  lastDeletedSet: { exerciseId: string; setIndex: number; set: WorkoutSet } | null;
+  // each delete overwrites the prior snapshot; restore clears it. `token`
+  // identifies the deletion so a stale undo can't restore a different one.
+  lastDeletedSet: {
+    exerciseId: string;
+    setIndex: number;
+    set: WorkoutSet;
+    token?: string | null;
+  } | null;
 
   // === Haptic Trigger ===
   pendingHaptic: 'REST_END' | 'SET_COMPLETE' | null;
@@ -143,8 +149,11 @@ export type SetAction =
         updates: Partial<{ weight: number; reps: number }>;
       };
     }
-  | { type: 'DELETE_SET'; payload: { exerciseIndex: number; setIndex: number } }
-  | { type: 'RESTORE_DELETED_SET' };
+  // `token` ties a delete to its undo toast: RESTORE_DELETED_SET with a token
+  // only restores the snapshot of THAT deletion (a stale toast can no longer
+  // resurrect a newer deletion's snapshot).
+  | { type: 'DELETE_SET'; payload: { exerciseIndex: number; setIndex: number; token?: string } }
+  | { type: 'RESTORE_DELETED_SET'; payload?: { token?: string } };
 
 // --- Timer Actions ---
 export type TimerAction =
@@ -192,7 +201,10 @@ export type DataAction =
   | { type: 'UPDATE_SETTINGS'; payload: Partial<AppSettings['workoutSettings']> }
   | { type: 'SET_PREVIOUS_DATA'; payload: WorkoutSet[] | null }
   | { type: 'CLEAR_PENDING_HAPTIC' }
-  | { type: 'FINALIZE_WORKOUT' };
+  | { type: 'FINALIZE_WORKOUT' }
+  // Discard the current (restored) draft in place and start over fresh —
+  // used when the user chose "התחל חדש" over resuming a stale draft.
+  | { type: 'RESET_ACTIVE_WORKOUT' };
 
 // Combined Action Type
 export type WorkoutAction =

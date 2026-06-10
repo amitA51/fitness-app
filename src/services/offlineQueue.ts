@@ -40,6 +40,12 @@ interface QueuedMutation {
   id: string;
   type: MutationType;
   payload: unknown;
+  // Owner of the mutation, stamped at enqueue time. processQueue drops entries
+  // whose owner is not the currently signed-in user so a queued write can never
+  // replay into another account on a shared device. Optional for backward
+  // compat with rows written before this field existed (legacy rows are
+  // treated as belonging to the current user).
+  userId?: string;
   timestamp: number;
   // Monotonic sequence assigned at enqueue time. Two mutations enqueued within
   // the same millisecond share a timestamp, so timestamp alone cannot preserve
@@ -66,8 +72,11 @@ const NON_RETRIABLE_STATUS = new Set<number>([400, 401, 403, 404, 409, 422]);
  * Returns false for 4xx-ish errors that will never succeed on retry.
  * Default: treat unknown errors as retriable — we'd rather retry than
  * silently drop a user's data.
+ *
+ * Exported so syncEngine shares the same classification and can short-circuit
+ * permanent errors instead of burning a full backoff cycle on them.
  */
-function isRetriableError(err: unknown): boolean {
+export function isRetriableError(err: unknown): boolean {
   if (err == null) return true;
 
   const anyErr = err as {
@@ -367,6 +376,18 @@ function getDedupKey(type: MutationType, payload: unknown): string | null {
  */
 export async function queueMutation(type: MutationType, payload: unknown): Promise<void> {
   const dedupKey = getDedupKey(type, payload);
+
+  // Stamp the owner so the entry can never replay into another account on a
+  // shared device. Best-effort: if auth lookup fails we leave it unset and the
+  // entry is treated as belonging to whichever user is signed in at replay.
+  let userId: string | undefined;
+  try {
+    const { getCurrentUser } = await import('./supabaseAuth');
+    userId = (await getCurrentUser())?.id;
+  } catch {
+    // Auth unavailable — enqueue unowned rather than lose the mutation.
+  }
+
   const db = await openQueueDB();
 
   return new Promise<void>((resolve, reject) => {
@@ -379,6 +400,7 @@ export async function queueMutation(type: MutationType, payload: unknown): Promi
         id: queueId,
         type,
         payload,
+        userId,
         timestamp: Date.now(),
         seq: nextSeq(),
         retryCount: 0,
@@ -431,6 +453,22 @@ async function notify(text: string, variant: 'error' | 'info'): Promise<void> {
   }
 }
 
+// True while a retriable-failure episode is ongoing. The "some changes didn't
+// sync" toast fires once per episode instead of on every 90s periodic pass;
+// the flag resets when a pass completes with no failures (queue drained or
+// the retries finally succeeded), so a NEW episode toasts again.
+let retriableFailureNotified = false;
+
+/**
+ * Debounced user-facing notice for retriable sync failures. Shared by the
+ * startup / back-online / periodic queue passes. Exported for tests.
+ */
+export async function notifyRetriableFailures(): Promise<void> {
+  if (retriableFailureNotified) return;
+  retriableFailureNotified = true;
+  await notify('חלק מהשינויים לא הסתנכרנו — ננסה שוב אוטומטית', 'error');
+}
+
 // ── Queue processing guard ──────────────────────────────────────────────────
 let isProcessing = false;
 
@@ -457,16 +495,20 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
   }
 
   const mutations = await getAllMutations();
-  if (mutations.length === 0) return { success: 0, failed: 0 };
+  if (mutations.length === 0) {
+    // Empty queue — any failure episode is over.
+    retriableFailureNotified = false;
+    return { success: 0, failed: 0 };
+  }
 
   logger.sync.info(`Processing ${mutations.length} queued mutations`);
 
   let success = 0;
   let failed = 0;
-  // True once any mutation is permanently dropped in this pass (4xx or max
-  // retries). Debounced to a single toast per run so a burst of drops can't
-  // spam the user.
-  let droppedPermanently = false;
+  // Number of mutations permanently dropped in this pass (4xx or max retries).
+  // Reported as a single, correctly-pluralized toast per run so a burst of
+  // drops can't spam the user.
+  let droppedCount = 0;
 
   // Track dedup keys we've already successfully synced in this pass. If a
   // later queued entry targets the same record we can drop it — the latest
@@ -474,6 +516,18 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
   const processedKeys = new Set<string>();
 
   for (const mutation of mutations) {
+    // Cross-account guard: an entry stamped with a different owner must never
+    // replay into the current user's account — drop it. Legacy entries with no
+    // userId are treated as the current user's (we are signed in here).
+    if (mutation.userId && mutation.userId !== user.id) {
+      logger.sync.warn('Dropping queued mutation owned by another user', {
+        type: mutation.type,
+        id: mutation.id,
+      });
+      await deleteMutation(mutation.id);
+      continue;
+    }
+
     const dedupKey = getDedupKey(mutation.type, mutation.payload);
     if (dedupKey && processedKeys.has(dedupKey)) {
       logger.sync.info('Skipping already-synced record in this pass', {
@@ -508,7 +562,7 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
           error: errMsg,
         });
         await deleteMutation(mutation.id);
-        droppedPermanently = true;
+        droppedCount++;
         failed++;
         continue;
       }
@@ -523,7 +577,7 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
           errors: mutation.lastError,
         });
         await deleteMutation(mutation.id);
-        droppedPermanently = true;
+        droppedCount++;
       } else {
         await putMutation(mutation);
         logger.sync.warn('Mutation failed, will retry', {
@@ -537,10 +591,19 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
     }
   }
 
-  // One toast per run if anything was permanently dropped — debounced so a
-  // burst of drops in a single pass doesn't spam the user.
-  if (droppedPermanently) {
-    await notify('שינוי אחד לא נשמר בענן', 'error');
+  // One toast per run if anything was permanently dropped — correctly
+  // pluralized so a multi-drop pass doesn't claim "one change".
+  if (droppedCount > 0) {
+    await notify(
+      droppedCount === 1 ? 'שינוי אחד לא נשמר בענן' : `${droppedCount} שינויים לא נשמרו בענן`,
+      'error'
+    );
+  }
+
+  // A clean pass (nothing left failing) ends the retriable-failure episode,
+  // re-arming the debounced notice for the next one.
+  if (failed === 0) {
+    retriableFailureNotified = false;
   }
 
   return { success, failed };
@@ -559,6 +622,7 @@ export async function getQueueDepth(): Promise<number> {
  */
 export async function clearMutationQueue(): Promise<void> {
   await clearQueue();
+  retriableFailureNotified = false;
   logger.sync.info('Cleared mutation queue');
 }
 
@@ -575,7 +639,7 @@ function setupOnlineListener() {
         logger.sync.info('Queue processing complete', result);
       }
       if (result.failed > 0) {
-        await notify('חלק מהשינויים לא הסתנכרנו — ננסה שוב אוטומטית', 'error');
+        await notifyRetriableFailures();
       }
     } catch (err) {
       // An async event listener that rejects becomes an unhandled rejection.
@@ -602,7 +666,7 @@ export function initOfflineSync() {
         logger.sync.info('Processed queued mutations on startup', result);
       }
       if (result.failed > 0) {
-        void notify('חלק מהשינויים לא הסתנכרנו — ננסה שוב אוטומטית', 'error');
+        void notifyRetriableFailures();
       }
     })
     .catch((err) => logger.sync.error('Startup queue processing failed', err));
@@ -620,7 +684,7 @@ export function initOfflineSync() {
         logger.sync.info('Periodic queue retry', result);
       }
       if (result.failed > 0) {
-        await notify('חלק מהשינויים לא הסתנכרנו — ננסה שוב אוטומטית', 'error');
+        await notifyRetriableFailures();
       }
     } catch (err) {
       logger.sync.error('Periodic queue retry failed', err);

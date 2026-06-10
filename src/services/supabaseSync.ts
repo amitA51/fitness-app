@@ -148,12 +148,19 @@ export const fetchWorkoutSessions = async (userId: string): Promise<WorkoutSessi
   }));
 };
 
+/**
+ * Soft-delete a cloud workout session by stamping `deleted_at` (the house
+ * pattern — see deleteCloudWaterEntry). A targeted UPDATE never touches the
+ * other columns, so it cannot trip NOT NULL / timestamp validation the way an
+ * empty-field tombstone upsert did, and the tombstone-aware merge propagates
+ * the deletion to other devices instead of resurrecting the row.
+ */
 export const deleteCloudWorkoutSession = async (userId: string, id: string): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
   const { error } = await supabase
     .from('workout_sessions')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
     .eq('user_id', userId);
 
@@ -289,10 +296,15 @@ export const fetchBodyWeight = async (userId: string): Promise<BodyWeightEntry[]
   }));
 };
 
+/** Soft-delete (tombstone) — see deleteCloudWorkoutSession. */
 export const deleteCloudBodyWeight = async (userId: string, id: string): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
-  const { error } = await supabase.from('body_weight').delete().eq('id', id).eq('user_id', userId);
+  const { error } = await supabase
+    .from('body_weight')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', userId);
 
   if (error) {
     logger.sync.error('Error deleting cloud body weight', error);
@@ -498,12 +510,13 @@ export const fetchRecoveryLogs = async (userId: string): Promise<RecoveryLog[]> 
   }));
 };
 
+/** Soft-delete (tombstone) — see deleteCloudWorkoutSession. */
 export const deleteCloudRecoveryLog = async (userId: string, id: string): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
   const { error } = await supabase
     .from('recovery_logs')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
     .eq('user_id', userId);
 
@@ -569,12 +582,13 @@ export const fetchNutritionLogs = async (userId: string): Promise<NutritionLog[]
   }));
 };
 
+/** Soft-delete (tombstone) — see deleteCloudWorkoutSession. */
 export const deleteCloudNutritionLog = async (userId: string, id: string): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
   const { error } = await supabase
     .from('nutrition_logs')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
     .eq('user_id', userId);
 

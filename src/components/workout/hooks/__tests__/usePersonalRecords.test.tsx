@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import type React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -76,16 +76,22 @@ describe('usePersonalRecords · superset PR detection (finding [6])', () => {
     });
   });
 
-  it('does not re-fire for the same completed set on a subsequent render', async () => {
-    const exA = mkExercise('A', [
-      mkSet({ id: 'a1', weight: 100, reps: 5, completedAt: '2026-06-05T10:00:00.000Z' }),
-    ]);
+  it('fires once for a set completed after mount and does not re-fire on re-render', async () => {
+    const exA = mkExercise('A', [mkSet({ id: 'a1', completedAt: null })]);
 
     const { rerender } = renderHook(
       ({ exercises, idx }: { exercises: Exercise[]; idx: number }) =>
         usePersonalRecords(exercises, idx),
       { wrapper, initialProps: { exercises: [exA], idx: 0 } }
     );
+
+    // Let the (empty) history load settle.
+    await waitFor(() => expect(dispatch).not.toHaveBeenCalled());
+
+    const exACompleted = mkExercise('A', [
+      mkSet({ id: 'a1', weight: 100, reps: 5, completedAt: '2026-06-05T10:00:00.000Z' }),
+    ]);
+    rerender({ exercises: [exACompleted], idx: 0 });
 
     await waitFor(() =>
       expect(dispatch).toHaveBeenCalledWith(
@@ -95,8 +101,70 @@ describe('usePersonalRecords · superset PR detection (finding [6])', () => {
     const callsAfterFirst = dispatch.mock.calls.length;
 
     // Re-render with the SAME completed set — must not celebrate again.
-    rerender({ exercises: [exA], idx: 0 });
+    rerender({ exercises: [exACompleted], idx: 0 });
     await Promise.resolve();
     expect(dispatch.mock.calls.length).toBe(callsAfterFirst);
+  });
+});
+
+describe('usePersonalRecords · restored-draft seeding (no stale re-celebration)', () => {
+  beforeEach(() => {
+    dispatch.mockClear();
+  });
+
+  it('never celebrates sets that were ALREADY completed at mount (restored draft)', async () => {
+    // A restored draft arrives with completed sets from hours ago — they were
+    // celebrated when they happened; re-announcing on restore is a lie.
+    const restored = mkExercise('A', [
+      mkSet({ id: 'a1', weight: 100, reps: 5, completedAt: '2026-06-05T08:00:00.000Z' }),
+      mkSet({ id: 'a2', weight: 105, reps: 5, completedAt: '2026-06-05T08:05:00.000Z' }),
+    ]);
+
+    renderHook(
+      ({ exercises, idx }: { exercises: Exercise[]; idx: number }) =>
+        usePersonalRecords(exercises, idx),
+      { wrapper, initialProps: { exercises: [restored], idx: 0 } }
+    );
+
+    // Give the history load + detection effect time to run.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(dispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'SHOW_PR_CELEBRATION' })
+    );
+  });
+
+  it('still celebrates a NEW set completed after a restored mount', async () => {
+    const restored = mkExercise('A', [
+      mkSet({ id: 'a1', weight: 100, reps: 5, completedAt: '2026-06-05T08:00:00.000Z' }),
+    ]);
+
+    const { rerender } = renderHook(
+      ({ exercises, idx }: { exercises: Exercise[]; idx: number }) =>
+        usePersonalRecords(exercises, idx),
+      { wrapper, initialProps: { exercises: [restored], idx: 0 } }
+    );
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(dispatch).not.toHaveBeenCalled();
+
+    // A genuinely new completion AFTER mount.
+    const withNewSet = mkExercise('A', [
+      mkSet({ id: 'a1', weight: 100, reps: 5, completedAt: '2026-06-05T08:00:00.000Z' }),
+      mkSet({ id: 'a2', weight: 110, reps: 5, completedAt: '2026-06-05T10:00:00.000Z' }),
+    ]);
+    rerender({ exercises: [withNewSet], idx: 0 });
+
+    await waitFor(() =>
+      expect(dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'SHOW_PR_CELEBRATION',
+          payload: expect.objectContaining({ exerciseName: 'A' }),
+        })
+      )
+    );
   });
 });

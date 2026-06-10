@@ -3,35 +3,13 @@
  * Composes pure functions from utils/tdee and services/indexedDBCore
  * so the UI just calls settingsService without embedding logic.
  */
+import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import type { WorkoutSession } from '../types';
 import { logger } from '../utils/logger';
 import { calculateTDEE, getMacroGoalsForGoal } from '../utils/tdee';
 import { exportWorkoutHistoryCSV } from './exportService';
 import { STORES, dbClear, dbGetAll } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
-import {
-  deleteCloudAIConversation,
-  deleteCloudBodyMeasurement,
-  deleteCloudBodyWeight,
-  deleteCloudNutritionLog,
-  deleteCloudPersonalExercise,
-  deleteCloudPersonalRecord,
-  deleteCloudRecoveryLog,
-  deleteCloudUserSetting,
-  deleteCloudWorkoutSession,
-  deleteCloudWorkoutTemplate,
-  fetchAIConversations,
-  fetchBodyMeasurements,
-  fetchBodyWeight,
-  fetchNutritionLogs,
-  fetchPersonalExercises,
-  fetchPersonalRecords,
-  fetchRecoveryLogs,
-  fetchUserSettings,
-  fetchWorkoutSessions,
-  fetchWorkoutTemplates,
-} from './supabaseSync';
-import { deleteCloudWaterEntry, fetchWaterLogs } from './waterService';
 
 // ─── TDEE / Macro orchestration ─────────────────────────────────────────────
 
@@ -71,62 +49,47 @@ const SETTINGS_LOCALSTORAGE_KEYS = [
   'last_sync_time',
 ] as const;
 
+/** Every cloud table holding rows owned by a single user (keyed by user_id). */
+const USER_DATA_TABLES = [
+  'workout_templates',
+  'workout_sessions',
+  'personal_exercises',
+  'body_weight',
+  'body_measurements',
+  'personal_records',
+  'recovery_logs',
+  'nutrition_logs',
+  'user_settings',
+  'ai_conversations',
+  'water_logs',
+] as const;
+
 /**
  * Delete every cloud row owned by `userId` across all synced tables.
  *
  * "Delete all my data" must purge the cloud copy too — otherwise a signed-in
  * user's data silently re-downloads on the next sign-in (AuthContext auto-pulls)
- * and the privacy promise is broken. Each table is fetched then its rows are
- * deleted by id via the existing per-record cloud-delete helpers. Failures are
- * collected and rethrown so the caller can surface an error rather than report
- * a false success.
+ * and the privacy promise is broken. One bulk `DELETE ... WHERE user_id = ?`
+ * per table (instead of fetch-all + N per-row deletes, which was an N+1 storm
+ * and silently truncated at the fetch page size). Failures are collected and
+ * rethrown so the caller can surface an error rather than report a false
+ * success.
  */
 async function deleteAllCloudData(userId: string): Promise<void> {
-  const [
-    templates,
-    sessions,
-    exercises,
-    bodyWeight,
-    bodyMeasurements,
-    personalRecords,
-    recoveryLogs,
-    nutritionLogs,
-    userSettings,
-    aiConversations,
-    waterLogs,
-  ] = await Promise.all([
-    fetchWorkoutTemplates(userId),
-    fetchWorkoutSessions(userId),
-    fetchPersonalExercises(userId),
-    fetchBodyWeight(userId),
-    fetchBodyMeasurements(userId),
-    fetchPersonalRecords(userId),
-    fetchRecoveryLogs(userId),
-    fetchNutritionLogs(userId),
-    fetchUserSettings(userId),
-    fetchAIConversations(userId),
-    fetchWaterLogs(userId),
-  ]);
+  if (!isSupabaseConfigured() || !supabase) return;
 
-  const deletions: Promise<void>[] = [
-    ...templates.map((r) => deleteCloudWorkoutTemplate(userId, r.id)),
-    ...sessions.map((r) => deleteCloudWorkoutSession(userId, r.id)),
-    ...exercises.map((r) => deleteCloudPersonalExercise(userId, r.id)),
-    ...bodyWeight.map((r) => deleteCloudBodyWeight(userId, r.id)),
-    ...bodyMeasurements.map((r) => deleteCloudBodyMeasurement(userId, r.id)),
-    ...personalRecords.map((r) => deleteCloudPersonalRecord(userId, r.id)),
-    ...recoveryLogs.map((r) => deleteCloudRecoveryLog(userId, r.id)),
-    ...nutritionLogs.map((r) => deleteCloudNutritionLog(userId, r.id)),
-    ...userSettings.map((r) => (r.id ? deleteCloudUserSetting(userId, r.id) : Promise.resolve())),
-    ...aiConversations.map((r) => deleteCloudAIConversation(userId, r.id)),
-    ...waterLogs.map((r) => deleteCloudWaterEntry(userId, r.id)),
-  ];
-
-  const results = await Promise.allSettled(deletions);
+  const results = await Promise.allSettled(
+    USER_DATA_TABLES.map(async (table) => {
+      const { error } = await supabase!.from(table).delete().eq('user_id', userId);
+      if (error) {
+        throw new Error(`delete ${table} failed: ${error.message}`);
+      }
+    })
+  );
   const failed = results.filter((r) => r.status === 'rejected');
   if (failed.length > 0) {
-    logger.app.error(`deleteAllCloudData: ${failed.length} cloud deletions failed`);
-    throw new Error(`Failed to delete ${failed.length} cloud records`);
+    logger.app.error(`deleteAllCloudData: ${failed.length} cloud table purges failed`);
+    throw new Error(`Failed to delete cloud data from ${failed.length} tables`);
   }
 }
 
@@ -137,6 +100,15 @@ export async function deleteAllUserData(): Promise<void> {
   const user = await getCurrentUser();
   if (user) {
     await deleteAllCloudData(user.id);
+  }
+
+  // Drop any queued offline mutations — a later replay must not re-create
+  // data the user just asked to erase.
+  try {
+    const { clearMutationQueue } = await import('./offlineQueue');
+    await clearMutationQueue();
+  } catch (err) {
+    logger.app.warn('deleteAllUserData: failed to clear offline mutation queue', err);
   }
 
   const allStores = Object.values(STORES);

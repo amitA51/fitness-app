@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { isSupabaseConfigured } from '../../../lib/supabase';
+import { logger } from '../../../utils/logger';
 
 const LAST_SYNC_KEY = 'last_sync_time';
 
@@ -71,7 +72,10 @@ export function useCloudSync() {
         setLastSyncTime(now);
         setSyncMessage(`הועלו ${result.syncedItems} פריטים!`);
       } else {
-        setSyncMessage(result.error || 'שגיאה בהעלאה');
+        // Raw error strings are internal English (e.g. "fetch failed: ...") —
+        // log them for debugging, show the user friendly Hebrew.
+        logger.sync.error('Sync to cloud failed', result.error);
+        setSyncMessage('שגיאה בהעלאה לענן — נסו שוב');
       }
     } catch {
       setSyncMessage('שגיאה בהעלאה');
@@ -98,7 +102,8 @@ export function useCloudSync() {
         setLastSyncTime(now);
         setSyncMessage(`התקבלו ${result.syncedItems} פריטים!`);
       } else {
-        setSyncMessage(result.error || 'שגיאה בטעינה');
+        logger.sync.error('Pull from cloud failed', result.error);
+        setSyncMessage('שגיאה בטעינה מהענן — נסו שוב');
       }
     } catch {
       setSyncMessage('שגיאה בטעינה');
@@ -120,7 +125,8 @@ export function useCloudSync() {
       const { syncAllData, pullAllData } = await import('../../../services/supabaseSync');
       const syncResult = await syncAllData();
       if (!syncResult.success) {
-        setSyncMessage(syncResult.error || 'שגיאה בסנכרון');
+        logger.sync.error('Sync-all (upload phase) failed', syncResult.error);
+        setSyncMessage('שגיאה בסנכרון — נסו שוב');
         return;
       }
       const pullResult = await pullAllData();
@@ -131,7 +137,8 @@ export function useCloudSync() {
         const totalItems = (syncResult.syncedItems || 0) + (pullResult.syncedItems || 0);
         setSyncMessage(`סנכרון הושלם: ${totalItems} פריטים`);
       } else {
-        setSyncMessage(pullResult.error || 'שגיאה בסנכרון');
+        logger.sync.error('Sync-all (pull phase) failed', pullResult.error);
+        setSyncMessage('שגיאה בסנכרון — נסו שוב');
       }
     } catch {
       setSyncMessage('שגיאה בסנכרון');

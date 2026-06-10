@@ -30,7 +30,7 @@ export function AssignmentsBox({ clientId }: { clientId: string }) {
     loading,
     error,
     reload,
-  } = useAsyncData<Assignment[]>(() => listCoachAssignments(clientId), []);
+  } = useAsyncData<Assignment[]>(() => listCoachAssignments(clientId), [], [clientId]);
   const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
 
   const active = assignments.filter((a) => a.status === 'active');

@@ -121,6 +121,9 @@ export function checkMissedWorkouts(lastWorkoutDate: string | null): void {
   if (!lastWorkoutDate) return;
 
   const config = getNotificationConfig();
+  // The Settings "תזכורת אימון" toggle gates this alert — it used to fire
+  // unconditionally from main.tsx, making the toggle a no-op.
+  if (!config.workoutReminderEnabled) return;
   const last = new Date(lastWorkoutDate);
   const now = new Date();
   const diffDays = Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));

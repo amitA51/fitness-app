@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { memo } from 'react';
+import { parseLocalDate } from '../../../services/analytics/shared';
 
 interface DateNavigatorProps {
   isToday: boolean;
@@ -34,9 +35,11 @@ export const DateNavigator = memo(function DateNavigator({
             color: 'var(--fs-ink)',
           }}
         >
+          {/* parseLocalDate: new Date('YYYY-MM-DD') is UTC midnight and shifts
+              the displayed weekday/date for users ahead of UTC (Israel). */}
           {isToday
             ? 'היום'
-            : new Date(selectedDate).toLocaleDateString('he-IL', {
+            : parseLocalDate(selectedDate).toLocaleDateString('he-IL', {
                 weekday: 'long',
                 day: 'numeric',
                 month: 'short',

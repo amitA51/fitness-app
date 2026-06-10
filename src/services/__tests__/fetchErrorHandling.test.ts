@@ -64,13 +64,17 @@ describe('fetch error distinction', () => {
   it('fetchWaterLogs throws on error instead of swallowing it', async () => {
     vi.resetModules();
 
+    // fetchWaterLogs is now range-paginated like the other tables, so the
+    // chain ends at .range() rather than .order().
     vi.doMock('../../lib/supabase', () => ({
       isSupabaseConfigured: () => true,
       supabase: {
         from: () => ({
           select: () => ({
             eq: () => ({
-              order: async () => ({ data: null, error: { message: 'water boom' } }),
+              order: () => ({
+                range: async () => ({ data: null, error: { message: 'water boom' } }),
+              }),
             }),
           }),
         }),

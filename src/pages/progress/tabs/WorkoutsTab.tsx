@@ -13,6 +13,7 @@
 import { Dumbbell } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PRHistoryTab from '../../../components/workout/PRHistoryTab';
 import { WorkoutHistory } from '../../../components/workout/history/WorkoutHistory';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
 import { ChartSummary, ChartSummaryNumber } from '../components/ChartSummary';
@@ -134,8 +135,12 @@ export const WorkoutsTab = memo(function WorkoutsTab({
           id="workouts-sub-panel-strength"
           role="tabpanel"
           aria-labelledby="workouts-sub-tab-strength"
+          className="space-y-4"
         >
           <StrengthSection sessions={sessions} prs={prs} />
+          {/* Full per-exercise PR history (grouped, latest-first) — complements
+              the PR board above with the complete record list. */}
+          <PRHistoryTab />
         </div>
       )}
     </div>

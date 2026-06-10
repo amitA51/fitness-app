@@ -37,17 +37,18 @@ function lastActivityLabel(analytics: ClientAnalytics | null): string {
   return `לפני ${analytics.daysSinceActivity} ימים`;
 }
 
-/** Adherence streaks rendered as OverviewStat-style cells. */
-function StreakStrip({ clientId }: { clientId: string }) {
-  const {
-    data: days,
-    loading,
-    error,
-    reload,
-  } = useAsyncData<DayAdherence[]>(() => getClientWeekAdherence(clientId), []);
+interface StreakStripProps {
+  /** Week-adherence data fetched ONCE by OverviewTab (shared with WeekGrid). */
+  days: DayAdherence[];
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+}
 
+/** Adherence streaks rendered as OverviewStat-style cells. */
+function StreakStrip({ days, loading, error, onRetry }: StreakStripProps) {
   if (loading) return null; // WeekGrid above already shows the loading state for this window.
-  if (error) return <SectionError onRetry={reload} />;
+  if (error) return <SectionError onRetry={onRetry} />;
   if (days.length === 0) return <InlineEmpty>אין נתוני רצף.</InlineEmpty>;
 
   const streaks = computeStreaks(days);
@@ -69,6 +70,15 @@ export function OverviewTab({
 }: OverviewTabProps) {
   const [confirmPause, setConfirmPause] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  // ONE week-adherence fetch shared by WeekGrid + StreakStrip (it aggregates
+  // 4 queries — running it twice doubled the load). `[clientId]` re-fetches
+  // when navigating between clients.
+  const adherenceQ = useAsyncData<DayAdherence[]>(
+    () => getClientWeekAdherence(clientId),
+    [],
+    [clientId]
+  );
 
   const pause = async () => {
     if (!link) return;
@@ -103,11 +113,21 @@ export function OverviewTab({
       </Section>
 
       <Section title="השבוע במבט-על">
-        <WeekGrid clientId={clientId} />
+        <WeekGrid
+          days={adherenceQ.data}
+          loading={adherenceQ.loading}
+          error={adherenceQ.error}
+          onRetry={adherenceQ.reload}
+        />
       </Section>
 
       <Section title="רצפים">
-        <StreakStrip clientId={clientId} />
+        <StreakStrip
+          days={adherenceQ.data}
+          loading={adherenceQ.loading}
+          error={adherenceQ.error}
+          onRetry={adherenceQ.reload}
+        />
       </Section>
 
       {link && link.status === 'active' && (

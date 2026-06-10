@@ -10,7 +10,7 @@ import { safeTimestamp } from './cloudMerge';
 import { emitWorkoutSaved } from './dataEvents';
 import { STORES, dbDelete, dbGetAll, dbPut, initDB } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
-import { syncWorkoutSession } from './supabaseSync';
+import { deleteCloudWorkoutSession, syncWorkoutSession } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
 
 /**
@@ -183,20 +183,15 @@ export const replaceWorkoutSessionsFromCloud = async (
  */
 export const deleteWorkoutSession = async (sessionId: string): Promise<void> => {
   if (!sessionId) throw new ValidationError('Session ID is required for deletion.');
-  const now = new Date().toISOString();
   await dbDelete(STORES.WORKOUT_SESSIONS, sessionId);
 
   const user = await getCurrentUser();
   if (user) {
+    // Targeted soft-delete UPDATE (house pattern). The previous tombstone
+    // upsert sent startTime: '' which Postgres rejected (22007), dropping the
+    // tombstone and letting other devices resurrect the session.
     syncWithRetry(
-      () =>
-        syncWorkoutSession(user.id, {
-          id: sessionId,
-          startTime: '',
-          exercises: [],
-          deletedAt: now,
-          updatedAt: now,
-        }),
+      () => deleteCloudWorkoutSession(user.id, sessionId),
       `deleteWorkoutSession:${sessionId}`,
       3,
       { type: 'session:delete', payload: sessionId }
