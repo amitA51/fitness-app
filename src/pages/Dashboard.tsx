@@ -4,7 +4,18 @@
  * Deep analytics (consistency, muscle distribution, full history) live in Progress.
  */
 
-import { ArrowLeft, UserPlus, Users } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ChevronLeft,
+  Coffee,
+  Dumbbell,
+  RefreshCw,
+  Sparkles,
+  UserPlus,
+  Users,
+  Zap,
+} from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ActivityRings } from '../components/charts';
@@ -13,31 +24,122 @@ import { CoachBriefCard } from '../components/dashboard/CoachBriefCard';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { ForecastNudge } from '../components/dashboard/ForecastNudge';
 import { InsightCard } from '../components/dashboard/InsightCard';
-import { pickDashboardInsight } from '../components/dashboard/insightPicker';
 import { RecentPRBanner } from '../components/dashboard/RecentPRBanner';
 import { StartWorkoutSheet } from '../components/dashboard/StartWorkoutSheet';
 import { TemplateStrip } from '../components/dashboard/TemplateQuickStart';
 import { TodaysWorkoutCard } from '../components/dashboard/TodaysWorkoutCard';
 import { WeeklyGrid } from '../components/dashboard/WeeklyGrid';
 import { WorkoutStreak } from '../components/dashboard/WorkoutStreak';
+import { pickDashboardInsight } from '../components/dashboard/insightPicker';
 import { CoachMark } from '../components/guidance/CoachMark';
+import { FadeIn } from '../components/motion/FadeIn';
 import { Stagger, StaggerItem } from '../components/motion/Stagger';
+import { SkeletonBox } from '../components/ui/SkeletonLoader';
 import { WorkoutHistory } from '../components/workout/history/WorkoutHistory';
+import { translateMuscle } from '../constants/muscleNames';
 import { Z_INDEX } from '../constants/zIndex';
 import { useCoach } from '../contexts/CoachContext';
 import { useData } from '../contexts/DataContext';
 import { useFitnessInsights } from '../hooks/fitness/useFitnessInsights';
 import { useCountUp } from '../hooks/useCountUp';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { buildCoachFacts } from '../services/ai/coachBrief';
+import { getMuscleGroupDaysSince } from '../services/analyticsService';
 import { listMyCoaches } from '../services/coach/relationshipService';
+import { getTodaysScheduledWorkouts } from '../services/coach/scheduleService';
 import { onWorkoutSaved } from '../services/dataEvents';
 import { getCurrentUser } from '../services/supabaseAuth';
 import { getWorkoutTemplates } from '../services/workoutDb';
-import type { WorkoutTemplate } from '../types';
+import type { WorkoutSession, WorkoutTemplate } from '../types';
 import { getWeekStart } from '../utils/dateUtils';
 import { formatThousands } from '../utils/formatThousands';
 import { logger } from '../utils/logger';
 import { zoneColor } from '../utils/zoneColor';
+
+// ── Ring-goal baselines ──────────────────────────────────────────────────────
+// When the user has <2 weeks of history we can't derive a personal baseline, so
+// fall back to these sensible defaults (mirror the previous hardcoded maxima).
+const DEFAULT_WEEKLY_WORKOUT_GOAL = 4;
+const DEFAULT_WEEKLY_VOLUME_GOAL = 8000;
+const DEFAULT_WEEKLY_MINUTES_GOAL = 240;
+/** Trailing window (weeks) used to derive personal ring goals. */
+const BASELINE_WEEKS = 4;
+/** Min distinct active weeks before we trust a personal baseline. */
+const MIN_BASELINE_WEEKS = 2;
+/** Clamp range for the per-user weekly-workout goal. */
+const WORKOUT_GOAL_MIN = 3;
+const WORKOUT_GOAL_MAX = 6;
+/** |WoW volume change| below this (%) reads as flat ("no change"), not a delta. */
+const FLAT_DELTA_PCT = 0.5;
+/** A major muscle is "overdue" for the focus line from this many days. */
+const FOCUS_OVERDUE_DAYS = 5;
+/** Major muscles the focus line treats as overdue-worthy (mirrors ForecastNudge). */
+const FOCUS_MAJOR_MUSCLES: ReadonlySet<string> = new Set(['Chest', 'Back', 'Legs']);
+
+interface RingGoals {
+  workouts: number;
+  volume: number;
+  minutes: number;
+}
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(Math.max(value, min), max);
+
+const median = (values: number[]): number => {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? Math.round(((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2)
+    : (sorted[mid] ?? 0);
+};
+
+/**
+ * Derive per-user ring goals from the trailing BASELINE_WEEKS of completed
+ * sessions (excluding the current in-progress week). Goals reflect the user's
+ * own rhythm: workouts = clamped avg sessions/wk, volume + minutes = trailing
+ * weekly medians. Falls back to named defaults when history is too thin.
+ */
+function deriveRingGoals(
+  completed: ReadonlyArray<{ startTime: string; totalVolume?: number; duration?: number }>,
+  currentWeekStart: Date
+): RingGoals {
+  const counts: number[] = [];
+  const volumes: number[] = [];
+  const minutes: number[] = [];
+
+  for (let i = 1; i <= BASELINE_WEEKS; i++) {
+    const weekStart = new Date(currentWeekStart);
+    weekStart.setDate(weekStart.getDate() - i * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    const weekSessions = completed.filter((s) => {
+      const d = new Date(s.startTime);
+      return d >= weekStart && d < weekEnd;
+    });
+    if (weekSessions.length === 0) continue;
+
+    counts.push(weekSessions.length);
+    volumes.push(weekSessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0));
+    minutes.push(Math.round(weekSessions.reduce((sum, s) => sum + (s.duration || 0), 0) / 60));
+  }
+
+  if (counts.length < MIN_BASELINE_WEEKS) {
+    return {
+      workouts: DEFAULT_WEEKLY_WORKOUT_GOAL,
+      volume: DEFAULT_WEEKLY_VOLUME_GOAL,
+      minutes: DEFAULT_WEEKLY_MINUTES_GOAL,
+    };
+  }
+
+  const avgSessions = counts.reduce((a, b) => a + b, 0) / counts.length;
+  return {
+    workouts: clamp(Math.round(avgSessions), WORKOUT_GOAL_MIN, WORKOUT_GOAL_MAX),
+    volume: Math.max(median(volumes), 1),
+    minutes: Math.max(median(minutes), 1),
+  };
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -47,16 +149,38 @@ export default function Dashboard() {
   // Bumped after a pull-to-refresh so the memo'd rings + legend count-ups replay
   // the cascade in lockstep even when the underlying values are unchanged.
   const [refreshTick, setRefreshTick] = useState(0);
+  // Top-priority focus tier: when the trainee has a coach-scheduled workout
+  // today, TodaysWorkoutCard is the imperative target and TodayFocusLine steps
+  // aside. Reused cheap fetch; failures stay false (no line suppression).
+  const [hasCoachWorkoutToday, setHasCoachWorkoutToday] = useState(false);
+  // First-load skeleton gate: only show the page skeleton on the very first
+  // mount-load, never on pull-to-refresh (which keeps the populated page).
+  const hasLoadedOnce = useRef(false);
 
   const { sessions: dataContextSessions, refreshData, loading: dataLoading } = useData();
-  const { workoutSessions, weekOverWeekDeltas, muscleGroups, currentStreak } =
-    useFitnessInsights(dataContextSessions);
+  const {
+    workoutSessions,
+    weekOverWeekDeltas,
+    muscleGroups,
+    currentStreak,
+    workoutsThisMonth,
+    totalWorkouts,
+    error: insightsError,
+  } = useFitnessInsights(dataContextSessions);
 
-  // One locally-computed insight (progression → neglected muscle → streak).
-  // Pure math over the already-aggregated insights — no AI calls here.
+  // One locally-computed insight (progression → neglected muscle → streak →
+  // always-fillable fallback). Pure math over the already-aggregated insights —
+  // no AI calls here.
   const dashboardInsight = useMemo(
-    () => pickDashboardInsight({ weekOverWeekDeltas, muscleGroups, currentStreak }),
-    [weekOverWeekDeltas, muscleGroups, currentStreak]
+    () =>
+      pickDashboardInsight({
+        weekOverWeekDeltas,
+        muscleGroups,
+        currentStreak,
+        workoutsThisMonth,
+        totalWorkouts,
+      }),
+    [weekOverWeekDeltas, muscleGroups, currentStreak, workoutsThisMonth, totalWorkouts]
   );
 
   const { isPulling, isRefreshing, pullDistance, threshold, handlers } = usePullToRefresh({
@@ -85,12 +209,45 @@ export default function Dashboard() {
     return onWorkoutSaved(load);
   }, []);
 
+  // Mark the first successful data load so the skeleton only shows on the very
+  // first mount, not on subsequent pull-to-refreshes.
+  useEffect(() => {
+    if (!dataLoading) hasLoadedOnce.current = true;
+  }, [dataLoading]);
+
+  // Cheap reuse of today's schedule to gate the focus line's top tier. Errors
+  // are non-fatal (leave the flag false). Refreshes when a workout is saved.
+  useEffect(() => {
+    let active = true;
+    async function check() {
+      try {
+        const rows = await getTodaysScheduledWorkouts();
+        if (active) setHasCoachWorkoutToday(rows.length > 0);
+      } catch (err) {
+        if (active) setHasCoachWorkoutToday(false);
+        logger.db.warn('Dashboard focus-line schedule check failed (non-fatal)', err);
+      }
+    }
+    check();
+    const unsubscribe = onWorkoutSaved(check);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+
   // Single source of completed sessions — all derived calcs feed from this so
   // we don't re-filter the same array in several memos.
   const completedSessions = useMemo(
     () => workoutSessions.filter((s) => s.status === 'completed'),
     [workoutSessions]
   );
+
+  // Zero-session trainees get a composed first-run hero instead of the stack of
+  // self-hidden cards (avoids the empty-calendar / duplicate "start" collision).
+  const hasAnySession = completedSessions.length > 0;
+  // Show the dashboard-shaped skeleton only on the first mount-load.
+  const showSkeleton = dataLoading && !hasLoadedOnce.current;
 
   const sortedTemplates = useMemo(() => {
     return [...templates.filter((t) => t.isFavorite), ...templates.filter((t) => !t.isFavorite)];
@@ -173,6 +330,9 @@ export default function Dashboard() {
         volume,
         avgDurationMin,
         totalMinutes,
+        // Keep "no prior data" distinct from "no change": hasPrevWeek lets the
+        // chip say "שבוע ראשון" instead of conflating both as a dash.
+        hasPrevWeek: prevVolume > 0,
         volDeltaPct: prevVolume > 0 ? ((volume - prevVolume) / prevVolume) * 100 : 0,
       };
     },
@@ -182,6 +342,13 @@ export default function Dashboard() {
   const weekData = useMemo(
     () => getWeekData(selectedWeekOffset),
     [getWeekData, selectedWeekOffset]
+  );
+
+  // Per-user ring goals from the trailing baseline (independent of the selected
+  // week so the targets stay stable while paging history).
+  const ringGoals = useMemo(
+    () => deriveRingGoals(completedSessions, getWeekStart(new Date())),
+    [completedSessions]
   );
 
   const hasSessionToday = useMemo(() => {
@@ -198,36 +365,60 @@ export default function Dashboard() {
   const handleNavigate = useCallback((path: string) => navigate(path), [navigate]);
   const goToTemplates = useCallback(() => navigate('/templates'), [navigate]);
 
-  // Format helpers
-  const volDelta = useMemo(() => {
-    if (!Number.isFinite(weekData.volDeltaPct) || weekData.volDeltaPct === 0) return '—';
+  // Weekly volume WoW chip. Distinguishes three honest cases instead of dressing
+  // a ~0% change as "+0.0%" or conflating "no prior data" with "no change":
+  //   • no prior week's volume → "שבוע ראשון" (neutral, no comparison)
+  //   • |Δ| < FLAT_DELTA_PCT     → "ללא שינוי" (flat, neutral)
+  //   • otherwise               → signed percentage (good up / neutral down)
+  const volDeltaChip = useMemo(() => {
+    if (!weekData.hasPrevWeek || !Number.isFinite(weekData.volDeltaPct)) {
+      // No prior week to compare against — say so rather than show a dash that
+      // looks like "no change".
+      return { text: 'אין השוואה', zone: 'neutral' as const };
+    }
+    if (Math.abs(weekData.volDeltaPct) < FLAT_DELTA_PCT) {
+      return { text: 'ללא שינוי', zone: 'neutral' as const };
+    }
     const sign = weekData.volDeltaPct > 0 ? '+' : '';
-    return `${sign}${weekData.volDeltaPct.toFixed(1)}%`;
-  }, [weekData.volDeltaPct]);
+    return {
+      text: `${sign}${weekData.volDeltaPct.toFixed(1)}%`,
+      // A drop is not a win — demote it to neutral instead of celebrating it.
+      zone: weekData.volDeltaPct < 0 ? ('neutral' as const) : ('good' as const),
+    };
+  }, [weekData.hasPrevWeek, weekData.volDeltaPct]);
 
   // Stabilise rings array so ActivityRings (memo'd) doesn't re-render on parent re-renders.
   const heroRings = useMemo(
     () => [
       {
         value: weekData.workoutsThisWeek,
-        max: 4,
+        max: ringGoals.workouts,
         label: 'אימונים',
         variant: 'accent' as const,
       },
       {
         value: weekData.volume,
-        max: Math.max(weekData.volume, 8000),
+        // Cap at the personal goal but never below the actual week (a record week
+        // still fills the ring instead of overflowing it).
+        max: Math.max(weekData.volume, ringGoals.volume),
         label: 'נפח',
         variant: 'signal' as const,
       },
       {
         value: weekData.totalMinutes,
-        max: 240,
+        max: Math.max(weekData.totalMinutes, ringGoals.minutes),
         label: 'דקות',
         variant: 'warn' as const,
       },
     ],
-    [weekData.workoutsThisWeek, weekData.volume, weekData.totalMinutes]
+    [
+      weekData.workoutsThisWeek,
+      weekData.volume,
+      weekData.totalMinutes,
+      ringGoals.workouts,
+      ringGoals.volume,
+      ringGoals.minutes,
+    ]
   );
 
   return (
@@ -369,20 +560,64 @@ export default function Dashboard() {
           </CoachMark>
         </div>
 
+        {/* Today focus line — the single imperative "what to do today". Top tier
+            (coach-scheduled) defers to TodaysWorkoutCard below. */}
+        <TodayFocusLine sessions={workoutSessions} hasCoachWorkoutToday={hasCoachWorkoutToday} />
+
         {/* Coach-scheduled workout for today (invisible for guests / when empty) */}
         <TodaysWorkoutCard />
 
-        {/* Workout streak */}
-        <div style={{ marginTop: 16 }}>
-          <WorkoutStreak sessions={workoutSessions} />
-        </div>
+        {/* First load: dashboard-shaped skeleton so the page doesn't flash empty
+            then pop. Header + CTA above stay visible. */}
+        {showSkeleton ? (
+          <DashboardSkeleton />
+        ) : insightsError && !hasAnySession ? (
+          /* Load failed and we have nothing to show — surface the error with a
+             retry instead of a misleading "no workouts yet" first-run hero. */
+          <InsightErrorChip message={insightsError} onRetry={refreshData} />
+        ) : !hasAnySession ? (
+          /* Zero-session trainees: one composed first-run hero instead of the
+             stack of self-hidden cards (WeeklyGrid + empty history hidden). */
+          <FirstRunHero onStart={openStartSheet} />
+        ) : (
+          <>
+            {/* Workout streak */}
+            <div style={{ marginTop: 16 }}>
+              <WorkoutStreak sessions={workoutSessions} />
+            </div>
 
-        {/* 2. Forecast nudge — moved up so it isn't missed at the bottom */}
-        <ForecastNudge sessions={workoutSessions} />
+            {/* Daily readiness — the "now" protagonist, paired with the focus line */}
+            <CoachBriefCard sessions={workoutSessions} kind="daily-readiness" />
 
-        {/* Daily readiness — math-grounded AI coach note (readiness + load recommendation) */}
-        <CoachBriefCard sessions={workoutSessions} kind="daily-readiness" />
+            {/* 2. Forecast nudge — moved up so it isn't missed at the bottom */}
+            <ForecastNudge sessions={workoutSessions} />
 
+            {/* useFitnessInsights error (with data still present) — surface it
+                with a retry instead of rendering nothing (was never read). */}
+            {insightsError && <InsightErrorChip message={insightsError} onRetry={refreshData} />}
+
+            {renderPopulatedBody()}
+          </>
+        )}
+
+        <StartWorkoutSheet
+          isOpen={isStartSheetOpen}
+          onClose={closeStartSheet}
+          lastUsedTemplate={lastUsedTemplate}
+          onContinueLast={handleContinueLast}
+          onPickTemplate={handlePickTemplate}
+          onEmptyWorkout={handleEmptyWorkout}
+        />
+      </div>
+    </div>
+  );
+
+  // The full populated body (rings + insight + templates + calendar + history +
+  // discovery). Extracted so the zero-session / loading branches above stay
+  // readable. Closes over the component's memos/handlers.
+  function renderPopulatedBody() {
+    return (
+      <>
         {/* 3. Hero bento — weekly activity rings (the glanceable summary) */}
         {(weekData.workoutsThisWeek > 0 || weekData.volume > 0) && (
           <section
@@ -416,7 +651,7 @@ export default function Dashboard() {
                     dot="accent"
                     label="אימונים"
                     value={weekData.workoutsThisWeek}
-                    suffix=" / 4"
+                    suffix={` / ${ringGoals.workouts}`}
                     ltr
                     delay={ringDelay(0)}
                   />
@@ -430,10 +665,10 @@ export default function Dashboard() {
                     ltr
                     suffix={' ק״ג'}
                     delay={ringDelay(1)}
-                    sub={volDelta !== '—' ? volDelta : undefined}
+                    sub={volDeltaChip.text}
                     // Zone-color the WoW delta: a drop is not a win — demote it to
                     // neutral/muted instead of celebrating it in accent.
-                    subColor={zoneColor(weekData.volDeltaPct < 0 ? 'neutral' : 'good')}
+                    subColor={zoneColor(volDeltaChip.zone)}
                   />
                 </StaggerItem>
                 <StaggerItem key={`warn-${refreshTick}`}>
@@ -441,18 +676,18 @@ export default function Dashboard() {
                     dot="warn"
                     label="זמן"
                     value={weekData.totalMinutes}
-                    suffix="′ / 240′"
+                    suffix={`′ / ${ringGoals.minutes}′`}
                     ltr
                     delay={ringDelay(2)}
                   />
                 </StaggerItem>
               </Stagger>
+              {/* Weekly review merged in as the rings' verdict/caption line
+                  instead of a second standalone twin card (compact mode). */}
+              <CoachBriefCard sessions={workoutSessions} kind="weekly-review" compact />
             </div>
           </section>
         )}
-
-        {/* Weekly review — math-grounded AI recap beneath the weekly rings */}
-        <CoachBriefCard sessions={workoutSessions} kind="weekly-review" />
 
         {/* Smart insight — single locally-computed highlight from useFitnessInsights */}
         <InsightCard insight={dashboardInsight} />
@@ -500,19 +735,356 @@ export default function Dashboard() {
         <CommunityCard />
 
         <div style={{ height: 24 }} />
-      </div>
+      </>
+    );
+  }
+}
 
-      <StartWorkoutSheet
-        isOpen={isStartSheetOpen}
-        onClose={closeStartSheet}
-        lastUsedTemplate={lastUsedTemplate}
-        onContinueLast={handleContinueLast}
-        onPickTemplate={handlePickTemplate}
-        onEmptyWorkout={handleEmptyWorkout}
+// ── TodayFocusLine — one imperative "what to do today" line under the CTA ─────
+// Resolves the single highest-priority already-computed signal into one Hebrew
+// sentence + tap target, placed before TodaysWorkoutCard. Priority:
+//   coach-scheduled (defers to TodaysWorkoutCard, renders nothing) → overdue
+//   major muscle → readiness 'push' → rest day. No new metrics: overdue +
+//   readiness are derived synchronously from sessions already in scope; the
+//   coach-scheduled flag is a cheap reuse of getTodaysScheduledWorkouts.
+interface FocusResolution {
+  text: string;
+  to: string;
+  Icon: typeof Zap;
+  iconColor: string;
+}
+
+function resolveFocus(sessions: WorkoutSession[]): FocusResolution | null {
+  // 1. Overdue major muscle — the strongest local "train this" signal.
+  const overdue = getMuscleGroupDaysSince(sessions)
+    .filter((m) => FOCUS_MAJOR_MUSCLES.has(m.muscle) && m.daysSince >= FOCUS_OVERDUE_DAYS)
+    .sort((a, b) => b.daysSince - a.daysSince)[0];
+  if (overdue) {
+    return {
+      text: `אימנו ${translateMuscle(overdue.muscle)} — ${overdue.daysSince} ימים בלי`,
+      to: '/templates',
+      Icon: Zap,
+      iconColor: 'var(--fs-accent)',
+    };
+  }
+
+  // 2. Readiness recommendation — push reads as "go harder today".
+  const facts = buildCoachFacts({ sessions });
+  if (facts.recommendation === 'push') {
+    return {
+      text: 'המוכנות גבוהה — נצלו את היום והעלו עומס',
+      to: '/templates',
+      Icon: Zap,
+      iconColor: 'var(--fs-accent)',
+    };
+  }
+  if (facts.recommendation === 'rest' || facts.recommendation === 'deload') {
+    // 3. Rest day — an imperative to recover, not to train.
+    return {
+      text: 'יום מנוחה — תנו לגוף להתאושש',
+      to: '/progress',
+      Icon: Coffee,
+      iconColor: 'var(--fs-muted)',
+    };
+  }
+
+  return null;
+}
+
+const TodayFocusLine = memo(function TodayFocusLine({
+  sessions,
+  hasCoachWorkoutToday,
+}: {
+  sessions: WorkoutSession[];
+  hasCoachWorkoutToday: boolean;
+}) {
+  const focus = useMemo(() => resolveFocus(sessions), [sessions]);
+
+  // A coach-scheduled workout is the top tier — but TodaysWorkoutCard (directly
+  // below) is the real imperative target, so the line steps aside to avoid a
+  // duplicate. With no sessions there's nothing to compute either.
+  if (hasCoachWorkoutToday || !focus || sessions.length === 0) return null;
+
+  const { text, to, Icon, iconColor } = focus;
+  return (
+    <FadeIn style={{ marginTop: 12 }}>
+      <Link
+        to={to}
+        className="magnetic-card focus-ring active:scale-[0.99]"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '12px 16px',
+          background: 'var(--fs-surface)',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: '22px 16px 22px 16px',
+          boxShadow: 'var(--shadow-card)',
+          textDecoration: 'none',
+          color: 'inherit',
+        }}
+      >
+        <Icon size={18} aria-hidden="true" style={{ color: iconColor, flexShrink: 0 }} />
+        <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: 'var(--fs-muted)',
+            }}
+          >
+            היום
+          </span>
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: 15,
+              lineHeight: 1.25,
+              color: 'var(--fs-ink)',
+            }}
+          >
+            {text}
+          </span>
+        </span>
+        <ArrowLeft
+          size={18}
+          aria-hidden="true"
+          style={{ color: 'var(--fs-muted)', flexShrink: 0, marginInlineStart: 'auto' }}
+        />
+      </Link>
+    </FadeIn>
+  );
+});
+
+// ── InsightErrorChip — compact inline error for the insight/rings cluster ─────
+// Surfaces useFitnessInsights.error (previously never read) with a retry that
+// re-runs refreshData() instead of silently rendering nothing.
+const InsightErrorChip = memo(function InsightErrorChip({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      role="alert"
+      style={{
+        marginTop: 16,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '12px 16px',
+        background: 'var(--fs-surface)',
+        border: '1px solid var(--fs-surface-2)',
+        borderRadius: '22px 16px 22px 16px',
+        boxShadow: 'var(--shadow-card)',
+      }}
+    >
+      <AlertTriangle
+        size={18}
+        aria-hidden="true"
+        style={{ color: 'var(--fs-warn)', flexShrink: 0 }}
       />
+      <span
+        style={{
+          flex: 1,
+          minWidth: 0,
+          fontFamily: 'var(--font-body)',
+          fontSize: 13,
+          color: 'var(--fs-ink)',
+          lineHeight: 1.3,
+        }}
+      >
+        {message}
+      </span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="focus-ring active:scale-[0.98]"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          flexShrink: 0,
+          minHeight: 44,
+          padding: '8px 12px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          color: 'var(--fs-accent-2)',
+        }}
+      >
+        <RefreshCw size={14} aria-hidden="true" />
+        נסו שוב
+      </button>
     </div>
   );
-}
+});
+
+// ── FirstRunHero — composed zero-session guidance (replaces the self-hidden
+// card stack for brand-new users) ────────────────────────────────────────────
+const FirstRunHero = memo(function FirstRunHero({ onStart }: { onStart: () => void }) {
+  return (
+    <FadeIn style={{ marginTop: 16 }}>
+      <section
+        aria-label="התחלה מהירה"
+        className="magnetic-card glass-surface scrim-noise"
+        style={{
+          padding: '24px 20px',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: '24px 16px 24px 16px',
+          display: 'grid',
+          gap: 14,
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 48,
+            height: 48,
+            borderRadius: 14,
+            background: 'var(--fs-accent)',
+            color: 'var(--color-ink-on-accent)',
+          }}
+        >
+          <Sparkles size={24} />
+        </span>
+        <h2
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 900,
+            fontSize: 22,
+            lineHeight: 1.15,
+            letterSpacing: '-0.01em',
+            color: 'var(--fs-ink)',
+            margin: 0,
+          }}
+        >
+          האימון הראשון שלכם מתחיל כאן
+        </h2>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 14,
+            lineHeight: 1.5,
+            color: 'var(--fs-muted)',
+            margin: 0,
+          }}
+        >
+          בחרו תרגילים, והאפליקציה תנחה אתכם דרך הסטים. אחרי האימון הראשון יופיעו כאן הטבעות,
+          התובנות והרצף שלכם.
+        </p>
+        <button
+          type="button"
+          onClick={onStart}
+          className="active:scale-[0.98] focus-ring"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            width: '100%',
+            minHeight: 52,
+            padding: '14px 20px',
+            background: 'var(--fs-accent)',
+            border: '2px solid var(--fs-accent)',
+            borderRadius: 'var(--radius-asymmetric)',
+            cursor: 'pointer',
+            color: 'var(--color-ink-on-accent)',
+            fontFamily: 'var(--font-display)',
+            fontWeight: 900,
+            fontSize: 17,
+          }}
+        >
+          <Dumbbell size={18} aria-hidden="true" />
+          התחילו אימון
+        </button>
+        <Link
+          to="/my-coach"
+          className="focus-ring"
+          style={{
+            textAlign: 'center',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--fs-accent-2)',
+            textDecoration: 'none',
+            minHeight: 44,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+          }}
+        >
+          יש לכם קוד מאמן?
+          <ChevronLeft size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
+        </Link>
+      </section>
+    </FadeIn>
+  );
+});
+
+// ── DashboardSkeleton — first-load placeholder matching the page shape ────────
+// Compact rings-shaped block + streak bar + history rows so the first paint
+// doesn't flash empty then pop. Header + CTA stay visible above this. Built only
+// from SkeletonBox (premium-shimmer); reduced-motion is handled by the shimmer.
+const DashboardSkeleton = memo(function DashboardSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="טוען את לוח הבית"
+      style={{ marginTop: 20, display: 'grid', gap: 16 }}
+    >
+      {/* Rings-shaped block: ~156px circle + 3 legend bars */}
+      <div
+        className="glass-surface"
+        style={{
+          padding: '20px 20px 24px',
+          borderRadius: '24px 16px 24px 16px',
+          border: '1px solid var(--fs-surface-2)',
+          display: 'grid',
+          gridTemplateColumns: 'auto minmax(0, 1fr)',
+          gap: 18,
+          alignItems: 'center',
+        }}
+      >
+        <SkeletonBox width={156} height={156} borderRadius="full" />
+        <div style={{ minWidth: 0, display: 'grid', gap: 10 }}>
+          <SkeletonBox height={14} width="50%" />
+          <SkeletonBox height={12} width="100%" />
+          <SkeletonBox height={12} width="100%" />
+          <SkeletonBox height={12} width="80%" />
+        </div>
+      </div>
+
+      {/* Streak bar */}
+      <SkeletonBox height={64} borderRadius="var(--radius-asymmetric)" />
+
+      {/* 2-3 history rows */}
+      {Array.from({ length: 3 }).map((_, i) => (
+        <SkeletonBox
+          // biome-ignore lint/suspicious/noArrayIndexKey: fixed-count skeleton placeholders, never reordered
+          key={i}
+          height={82}
+          borderRadius="var(--radius-asymmetric)"
+        />
+      ))}
+    </div>
+  );
+});
 
 // ── CommunityCard — discovery affordance into the social feed ────────────────
 // Links to /community via react-router. Matches the dashboard card idiom
@@ -735,6 +1307,7 @@ const SectionTitle = memo(function SectionTitle({
             minHeight: 44,
             display: 'inline-flex',
             alignItems: 'center',
+            gap: 4,
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             letterSpacing: '0.14em',
@@ -742,7 +1315,8 @@ const SectionTitle = memo(function SectionTitle({
             color: 'var(--fs-accent-2)',
           }}
         >
-          {action.label} →
+          {action.label}
+          <ChevronLeft size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
         </button>
       )}
     </div>

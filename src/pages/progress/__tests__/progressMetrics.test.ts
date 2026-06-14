@@ -1,16 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PersonalRecord, WorkoutExercise, WorkoutSession, WorkoutSet } from '../../../types';
 import {
+  DEFAULT_RANGE,
+  RANGE_DAYS,
   buildPRBoard,
   buildStrengthCurves,
   buildVolumeTrend,
   isRecentPR,
   onlyCompleted,
   recentPRs,
+  sliceByRangeDays,
   summarizeWeeklyVolume,
+  weekVerdict,
   weeklyCountDelta,
   weeklyVolumeDelta,
-  weekVerdict,
 } from '../progressMetrics';
 
 // ---------------------------------------------------------------------------
@@ -322,10 +325,7 @@ describe('weeklyCountDelta / weeklyVolumeDelta', () => {
 
   it('is neutral when there is no prior window', () => {
     // Arrange
-    const summary = summarizeWeeklyVolume(
-      [mkSession('t1', '2026-05-14T10:00:00.000Z', 3000)],
-      NOW
-    );
+    const summary = summarizeWeeklyVolume([mkSession('t1', '2026-05-14T10:00:00.000Z', 3000)], NOW);
 
     // Act + Assert
     expect(weeklyCountDelta(summary).hasPrev).toBe(false);
@@ -370,5 +370,47 @@ describe('isRecentPR', () => {
     // Arrange + Act + Assert
     expect(isRecentPR(mkPR('Bench Press', 100, 5, '2026-05-13'), 7, NOW)).toBe(true);
     expect(isRecentPR(mkPR('Bench Press', 100, 5, '2026-05-01'), 7, NOW)).toBe(false);
+  });
+});
+
+describe('sliceByRangeDays', () => {
+  const items = [
+    { date: '2026-05-14', v: 1 }, // 1 day ago
+    { date: '2026-05-10', v: 2 }, // 5 days ago
+    { date: '2026-04-20', v: 3 }, // ~25 days ago (within 30)
+    { date: '2026-03-10', v: 4 }, // ~66 days ago (within 90, outside 30)
+  ];
+
+  it('keeps only items within the trailing window', () => {
+    // Act — a 7-day window keeps the two most recent
+    const week = sliceByRangeDays(items, RANGE_DAYS.W, (i) => i.date, NOW);
+
+    // Assert
+    expect(week.map((i) => i.v)).toEqual([1, 2]);
+  });
+
+  it('widens with the range key', () => {
+    // Act
+    const month = sliceByRangeDays(items, RANGE_DAYS.M, (i) => i.date, NOW);
+    const quarter = sliceByRangeDays(items, RANGE_DAYS['3M'], (i) => i.date, NOW);
+
+    // Assert — 30 days picks up the 25-day-old item, 90 days picks up all
+    expect(month.map((i) => i.v)).toEqual([1, 2, 3]);
+    expect(quarter.map((i) => i.v)).toEqual([1, 2, 3, 4]);
+  });
+
+  it('drops items with unparseable dates', () => {
+    // Arrange
+    const withBad = [...items, { date: 'not-a-date', v: 99 }];
+
+    // Act
+    const week = sliceByRangeDays(withBad, RANGE_DAYS.W, (i) => i.date, NOW);
+
+    // Assert
+    expect(week.some((i) => i.v === 99)).toBe(false);
+  });
+
+  it('exposes a sensible default range that is a known key', () => {
+    expect(RANGE_DAYS[DEFAULT_RANGE]).toBeGreaterThan(0);
   });
 });

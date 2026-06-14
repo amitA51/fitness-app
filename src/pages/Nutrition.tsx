@@ -54,6 +54,7 @@ export default function NutritionPage() {
     fatPct,
     handleSaveMeal,
     handleDeleteEntry,
+    handleRepeatEntry,
     handleQuickPreset,
     goBack,
     goForward,
@@ -285,7 +286,11 @@ export default function NutritionPage() {
                 // owns the message; an "אין ארוחות עדיין" empty state would lie.
                 <EmptyMealState onAdd={() => setShowAddMeal(true)} />
               ) : (
-                <GroupedMealLog entries={todayEntries} onDelete={handleDeleteEntry} />
+                <GroupedMealLog
+                  entries={todayEntries}
+                  onDelete={handleDeleteEntry}
+                  onRepeat={handleRepeatEntry}
+                />
               )}
             </m.div>
           )}

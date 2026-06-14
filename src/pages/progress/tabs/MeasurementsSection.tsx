@@ -76,13 +76,18 @@ export const MeasurementsSection = memo(function MeasurementsSection({
                   </span>
                   <div className="flex items-center gap-3">
                     {diff !== null && diff !== 0 && (
+                      // A measurement change is directional, not "good/bad" — a
+                      // waist drop is good, a biceps drop is not, so we never
+                      // grade it. Neutral ink on the inset surface (matching
+                      // WeightSection's deliberate neutral change). Lime stays
+                      // reserved for PR celebration.
                       <span
                         style={{
                           fontFamily: 'var(--font-mono)',
                           fontSize: 11,
                           letterSpacing: '0.12em',
-                          color: diff < 0 ? 'var(--fs-primary)' : 'var(--fs-signal)',
-                          background: diff < 0 ? 'var(--fs-signal)' : 'var(--fs-primary)',
+                          color: 'var(--fs-muted)',
+                          background: 'var(--fs-surface-2)',
                           padding: '2px 8px',
                           direction: 'ltr',
                         }}

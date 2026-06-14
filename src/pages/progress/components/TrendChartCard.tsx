@@ -19,6 +19,8 @@ interface TrendChartCardProps {
   icon?: React.ReactNode;
   height?: number;
   ariaLabel?: string;
+  /** Unit suffix shown in the scrub callout (e.g. "kg"). */
+  valueUnit?: string;
 }
 
 export const TrendChartCard = memo(function TrendChartCard({
@@ -28,6 +30,7 @@ export const TrendChartCard = memo(function TrendChartCard({
   icon,
   height = 170,
   ariaLabel,
+  valueUnit,
 }: TrendChartCardProps) {
   return (
     <div
@@ -61,7 +64,14 @@ export const TrendChartCard = memo(function TrendChartCard({
           </span>
         )}
       </div>
-      <GlowAreaChart data={data} height={height} xAxis ariaLabel={ariaLabel ?? title} />
+      <GlowAreaChart
+        data={data}
+        height={height}
+        xAxis
+        interactive
+        valueUnit={valueUnit}
+        ariaLabel={ariaLabel ?? title}
+      />
     </div>
   );
 });

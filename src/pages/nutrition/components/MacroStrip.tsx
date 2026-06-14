@@ -205,6 +205,25 @@ export const MacroStrip = memo(function MacroStrip({
             >
               {m.cur}/{m.goal}
             </div>
+            {/* Grams-remaining verdict — mirrors CalorieHero's tense. Tone is
+                carried only by the number's zone: remaining = neutral muted (no
+                opinion until the goal lands), overshoot = attention (warn). The
+                Hebrew label is RTL; the inline number renders dir="ltr". */}
+            <div
+              className="mt-0.5"
+              style={{
+                fontFamily: 'var(--font-hebrew)',
+                fontSize: '11px',
+                textAlign: 'start',
+                color: isOver ? tone : 'var(--fs-muted)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {isOver ? 'חריגה ' : 'נותרו '}
+              <span dir="ltr">
+                {Math.round(isOver ? m.cur - m.goal : Math.max(0, m.goal - m.cur))}ג׳
+              </span>
+            </div>
           </div>
         );
       })}

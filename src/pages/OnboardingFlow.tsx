@@ -12,14 +12,15 @@
  */
 
 import { AnimatePresence, MotionConfig, m } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Dumbbell, Home, MapPin, Sparkles } from 'lucide-react';
 // RTL direction note: in Hebrew, "forward/next" points LEFT and "back" points
 // RIGHT. Back button uses ChevronRight; the next/finish CTA uses ChevronLeft.
-import { useId, useState } from 'react';
+import { type ReactNode, useCallback, useId, useState } from 'react';
 
+import { postOnboardingDestination, setPostOnboardingPath } from '../appOnboarding';
 import { Button } from '../components/ui/Button';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
-import { ProgressDots } from './onboarding/components/ProgressDots';
+import { ProgressDots, StepHeader } from './onboarding/components/ProgressDots';
 import { CompleteStep } from './onboarding/steps/CompleteStep';
 import { ExperienceStep } from './onboarding/steps/ExperienceStep';
 import { GoalsStep } from './onboarding/steps/GoalsStep';
@@ -27,7 +28,7 @@ import { PreferencesStep } from './onboarding/steps/PreferencesStep';
 import { ProfileStep } from './onboarding/steps/ProfileStep';
 import { RoleStep } from './onboarding/steps/RoleStep';
 import { WelcomeStep } from './onboarding/steps/WelcomeStep';
-import type { OnboardingProps } from './onboarding/types';
+import type { EquipmentAccess, OnboardingData, OnboardingProps } from './onboarding/types';
 import { useOnboardingWizard } from './onboarding/useOnboardingWizard';
 
 // Re-export types for consumers
@@ -55,6 +56,19 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
 
   const hint = validationHint();
   const isLastInteractiveStep = currentStep === activeSteps.length - 2;
+  const isCompleteStep = stepId === 'complete';
+
+  // Finish from the completion screen. `toFirstAction` pre-seeds the deep-link
+  // route so the app mounts straight into the user's highest-intent next step
+  // (workout / invite flow); the quiet "go home" path skips that and lands on
+  // the default home. Both then run the wizard finish (onComplete → onboardingDone).
+  const handleFinish = useCallback(
+    (toFirstAction: boolean) => {
+      if (toFirstAction) setPostOnboardingPath(postOnboardingDestination(data));
+      goNext();
+    },
+    [data, goNext]
+  );
 
   // Steps render by id — the list itself is role-derived (coaches skip the
   // trainee-only goals/experience/preferences steps).
@@ -70,10 +84,12 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
         return <GoalsStep data={data} onChange={updateData} />;
       case 'experience':
         return <ExperienceStep data={data} onChange={updateData} />;
+      case 'equipment':
+        return <EquipmentStep data={data} onChange={updateData} />;
       case 'preferences':
         return <PreferencesStep data={data} onChange={updateData} />;
       case 'complete':
-        return <CompleteStep data={data} />;
+        return <CompleteStep data={data} onFinish={handleFinish} />;
       default:
         return null;
     }
@@ -139,8 +155,9 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
           <ProgressDots currentStep={currentStep - 1} totalSteps={activeSteps.length - 2} />
         )}
 
-        {/* Navigation - thumb zone optimized */}
-        {currentStep > 0 && (
+        {/* Navigation - thumb zone optimized. Hidden on the completion step,
+            which owns its own first-action CTA (no dead-end "next"). */}
+        {currentStep > 0 && !isCompleteStep && (
           <div
             className="px-4 pb-4 pt-2"
             style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
@@ -215,5 +232,140 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
         onCancel={() => setShowSkipConfirm(false)}
       />
     </MotionConfig>
+  );
+}
+
+// ============================================================================
+// EquipmentStep — captures OnboardingData.equipment (consumed downstream by the
+// intelligence profile in services/intelligence/profile.ts). Mirrors RoleStep's
+// 4-card selection pattern. Trainee-only (coaches skip personal steps).
+// ============================================================================
+
+interface EquipmentOption {
+  value: EquipmentAccess;
+  title: string;
+  description: string;
+  icon: ReactNode;
+}
+
+const EQUIPMENT_OPTIONS: EquipmentOption[] = [
+  {
+    value: 'gym',
+    title: 'חדר כושר',
+    description: 'גישה מלאה למשקולות, מכונות וכבלים',
+    icon: <Dumbbell size={24} />,
+  },
+  {
+    value: 'home_full',
+    title: 'בית מאובזר',
+    description: 'משקולות, מוט ומתקן ביתי',
+    icon: <Home size={24} />,
+  },
+  {
+    value: 'home_minimal',
+    title: 'ציוד בסיסי',
+    description: 'דאמבלים, גומיות או קטלבל בודד',
+    icon: <Sparkles size={24} />,
+  },
+  {
+    value: 'bodyweight',
+    title: 'משקל גוף',
+    description: 'ללא ציוד — תרגילי משקל גוף בלבד',
+    icon: <MapPin size={24} />,
+  },
+];
+
+function EquipmentStep({
+  data,
+  onChange,
+}: { data: OnboardingData; onChange: (updates: Partial<OnboardingData>) => void }) {
+  return (
+    <m.div
+      // RTL-forward: in Hebrew the next step arrives from the inline-start (left),
+      // so a forward step should enter from a negative x and exit to positive x.
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      className="flex flex-col h-full"
+    >
+      <StepHeader
+        title="איפה מתאמנים?"
+        subtitle="נתאים את התרגילים לציוד שיש לכם"
+        icon={<Dumbbell size={24} />}
+      />
+
+      <div className="flex-1 px-4 space-y-4 overflow-y-auto pb-4">
+        {EQUIPMENT_OPTIONS.map((option) => {
+          const isSelected = data.equipment === option.value;
+          return (
+            <m.button
+              key={option.value}
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onChange({ equipment: option.value })}
+              aria-pressed={isSelected}
+              className={`w-full p-4 transition-all flex items-center gap-4 text-right template-card magnetic-card ${
+                isSelected ? 'accent-glow' : ''
+              }`}
+              style={{
+                background: isSelected ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                border: isSelected ? '2px solid var(--fs-accent)' : '1px solid var(--fs-surface-2)',
+                borderRadius: '22px 16px 22px 16px',
+              }}
+            >
+              <div
+                className="w-12 h-12 flex items-center justify-center shrink-0"
+                style={{
+                  background: isSelected ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+                  borderRadius: 0,
+                }}
+              >
+                <span style={{ color: isSelected ? 'var(--fs-accent)' : 'var(--fs-muted)' }}>
+                  {option.icon}
+                </span>
+              </div>
+              <div className="flex-1">
+                <p
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 600,
+                    fontSize: '16px',
+                    // Selected card fills with --fs-accent; --fs-ink is near-white
+                    // in dark mode and fails AA on mint — use on-accent ink.
+                    color: isSelected ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
+                  }}
+                >
+                  {option.title}
+                </p>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '14px',
+                    color: isSelected ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                    marginTop: '2px',
+                  }}
+                >
+                  {option.description}
+                </p>
+              </div>
+              {isSelected && (
+                <m.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="w-7 h-7 flex items-center justify-center shrink-0"
+                  style={{
+                    background: 'var(--fs-primary)',
+                    color: 'var(--fs-accent)',
+                    borderRadius: 0,
+                  }}
+                >
+                  <Check size={16} strokeWidth={3} />
+                </m.div>
+              )}
+            </m.button>
+          );
+        })}
+      </div>
+    </m.div>
   );
 }

@@ -27,27 +27,17 @@ interface FeatureRow {
   proValue: string;
 }
 
+// Order leads with genuinely-shipping differentiators (advanced progress, cloud
+// sync, unlimited templates, data export, progress photos). The AI coach is not
+// yet wired (the chat endpoint returns 503), so its row is honestly future-tense
+// ("בקרוב") and sits last instead of headlining a feature that does not exist.
 const FEATURE_ROWS: FeatureRow[] = [
-  {
-    key: 'ai_coach',
-    label: 'מאמן AI',
-    description: 'תוכנית אימון מותאמת אישית מבוססת AI',
-    freeValue: null,
-    proValue: 'גישה מלאה',
-  },
   {
     key: 'advanced_progress',
     label: 'מעקב התקדמות מתקדם',
     description: 'גרפים, מגמות וניתוח ביצועים לאורך זמן',
     freeValue: 'בסיסי',
     proValue: 'מלא',
-  },
-  {
-    key: 'progress_photos',
-    label: 'תמונות התקדמות',
-    description: 'תיעוד חזותי של השינוי הגופני',
-    freeValue: null,
-    proValue: 'ללא הגבלה',
   },
   {
     key: 'cloud_sync',
@@ -57,6 +47,13 @@ const FEATURE_ROWS: FeatureRow[] = [
     proValue: 'כל המכשירים',
   },
   {
+    key: 'unlimited_templates',
+    label: 'תבניות אימון',
+    description: 'שמירת תוכניות אימון מותאמות אישית',
+    freeValue: 'עד 3',
+    proValue: 'ללא הגבלה',
+  },
+  {
     key: 'data_export',
     label: 'ייצוא נתונים',
     description: 'ייצוא האימונים שלך ל-CSV ו-JSON',
@@ -64,11 +61,18 @@ const FEATURE_ROWS: FeatureRow[] = [
     proValue: 'CSV ו-JSON',
   },
   {
-    key: 'unlimited_templates',
-    label: 'תבניות אימון',
-    description: 'שמירת תוכניות אימון מותאמות אישית',
-    freeValue: 'עד 3',
+    key: 'progress_photos',
+    label: 'תמונות התקדמות',
+    description: 'תיעוד חזותי של השינוי הגופני',
+    freeValue: null,
     proValue: 'ללא הגבלה',
+  },
+  {
+    key: 'ai_coach',
+    label: 'מאמן AI',
+    description: 'תוכנית אימון מותאמת אישית מבוססת AI',
+    freeValue: null,
+    proValue: 'בקרוב',
   },
 ];
 

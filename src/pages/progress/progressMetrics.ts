@@ -12,6 +12,38 @@ import type { ExerciseStrengthCurve, StrengthDataPoint } from './types';
 
 const DAY_MS = 86400000;
 
+/** Selectable trend windows for the per-chart range control, in days. */
+export const RANGE_DAYS = {
+  W: 7,
+  M: 30,
+  '3M': 90,
+  '6M': 180,
+  Y: 365,
+} as const;
+
+export type RangeKey = keyof typeof RANGE_DAYS;
+
+/** Default range for a freshly opened trend chart. */
+export const DEFAULT_RANGE: RangeKey = 'M';
+
+/**
+ * Keep only the items whose date falls within the trailing `days` window.
+ * `getDate` extracts a parseable date string from each item; malformed dates are
+ * dropped. Pure + `now`-injectable so the date math is unit-testable.
+ */
+export function sliceByRangeDays<T>(
+  items: T[],
+  days: number,
+  getDate: (item: T) => string,
+  now: number = Date.now()
+): T[] {
+  const cutoff = now - days * DAY_MS;
+  return items.filter((item) => {
+    const t = new Date(getDate(item)).getTime();
+    return !Number.isNaN(t) && t >= cutoff;
+  });
+}
+
 export interface WeeklyVolumeSummary {
   /** Completed-session volume in the trailing 7 days. */
   volume: number;

@@ -33,9 +33,11 @@ const ROLE_OPTIONS: RoleOption[] = [
 export function RoleStep({ data, onChange }: RoleStepProps) {
   return (
     <m.div
-      initial={{ opacity: 0, x: 20 }}
+      // RTL-forward: the next step arrives from the inline-start (left) since
+      // ChevronLeft is "forward" — enter from negative x, exit to positive x.
+      initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
+      exit={{ opacity: 0, x: 20 }}
       className="flex flex-col h-full"
     >
       <StepHeader title="מי אתה?" subtitle="האם אתה מאמן או מתאמן?" icon={<Users size={24} />} />

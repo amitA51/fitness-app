@@ -12,6 +12,51 @@ interface WorkoutSummaryViewProps {
   onExit: () => void;
 }
 
+// Maps the completed session into a createWorkoutTemplate payload. Shared by the
+// "save as template" and "חזרו על האימון" (do it again) actions so the two can
+// never drift. `isFavorite` surfaces the template in the PreWorkoutScreen
+// "התבניות שלך" row — exactly where the repeat affordance wants the user to land
+// next time. Mirrors buildTemplatePayload in the useWorkoutFinish overlay path.
+const buildTemplatePayload = (
+  completedSession: WorkoutSession,
+  isFavorite: boolean
+): Parameters<typeof createWorkoutTemplate>[0] => ({
+  name: completedSession.exercises?.[0]?.name || 'My Workout',
+  description: '',
+  exercises: (completedSession.exercises || []).map((ex: WorkoutExercise, idx: number) => ({
+    id: ex.id || `ex_${idx}`,
+    exerciseId: ex.exerciseId || ex.id || `exercise_${idx}`,
+    exerciseName: ex.exerciseName || ex.name || 'Unknown',
+    targetMuscle: ex.muscleGroup || ex.targetMuscle || 'Other',
+    targetSets: ex.sets?.length || 4,
+    targetReps: 10,
+    targetWeight: null,
+    restSeconds: ex.targetRestTime || ex.restSeconds || 90,
+    order: idx,
+    notes: '',
+    name: ex.name,
+    muscleGroup: ex.muscleGroup,
+    targetRestTime: ex.targetRestTime,
+    tempo: ex.tempo,
+    sets: ex.sets?.map((s: { reps: number; weight: number }) => ({
+      reps: s.reps,
+      weight: s.weight,
+    })),
+  })),
+  muscleGroups: Array.from(
+    new Set(
+      (completedSession.exercises || [])
+        .map((e: WorkoutExercise) => e.muscleGroup)
+        .filter(Boolean) as string[]
+    )
+  ),
+  isBuiltin: false,
+  updatedAt: new Date().toISOString(),
+  lastUsed: null,
+  timesUsed: 0,
+  isFavorite,
+});
+
 const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({ completedSession, onExit }) => {
   // Once a template was saved, the action is hidden — repeat taps were
   // silently creating duplicate templates.
@@ -22,43 +67,7 @@ const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({ completedSessio
     if (savingRef.current || templateSaved) return;
     savingRef.current = true;
     try {
-      const defaultName = completedSession.exercises?.[0]?.name || 'My Workout';
-      await createWorkoutTemplate({
-        name: defaultName,
-        description: '',
-        exercises: (completedSession.exercises || []).map((ex: WorkoutExercise, idx: number) => ({
-          id: ex.id || `ex_${idx}`,
-          exerciseId: ex.exerciseId || ex.id || `exercise_${idx}`,
-          exerciseName: ex.exerciseName || ex.name || 'Unknown',
-          targetMuscle: ex.muscleGroup || ex.targetMuscle || 'Other',
-          targetSets: ex.sets?.length || 4,
-          targetReps: 10,
-          targetWeight: null,
-          restSeconds: ex.targetRestTime || ex.restSeconds || 90,
-          order: idx,
-          notes: '',
-          name: ex.name,
-          muscleGroup: ex.muscleGroup,
-          targetRestTime: ex.targetRestTime,
-          tempo: ex.tempo,
-          sets: ex.sets?.map((s: { reps: number; weight: number }) => ({
-            reps: s.reps,
-            weight: s.weight,
-          })),
-        })),
-        muscleGroups: Array.from(
-          new Set(
-            (completedSession.exercises || [])
-              .map((e: WorkoutExercise) => e.muscleGroup)
-              .filter(Boolean) as string[]
-          )
-        ),
-        isBuiltin: false,
-        updatedAt: new Date().toISOString(),
-        lastUsed: null,
-        timesUsed: 0,
-        isFavorite: false,
-      });
+      await createWorkoutTemplate(buildTemplatePayload(completedSession, false));
       setTemplateSaved(true);
       showToast('התבנית נשמרה', 'success');
     } catch (err) {
@@ -68,6 +77,16 @@ const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({ completedSessio
       savingRef.current = false;
     }
   }, [completedSession, templateSaved]);
+
+  // "חזרו על האימון" — pre-seed the next session as a FAVORITE template
+  // (best-effort, fire and forget) so it surfaces in the PreWorkoutScreen
+  // "התבניות שלך" row. WorkoutSummary.handleRepeat already runs onClose() right
+  // after this, and onClose clears the active-workout draft + calls onExit — so
+  // we must NOT exit here (that would double-fire). Mirrors the onRepeatWorkout
+  // handler in the useWorkoutFinish overlay path, minus the redundant onExit.
+  const handleRepeatWorkout = useCallback(() => {
+    createWorkoutTemplate(buildTemplatePayload(completedSession, true)).catch(() => {});
+  }, [completedSession]);
 
   return (
     <React.Suspense
@@ -97,6 +116,7 @@ const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({ completedSessio
           onExit();
         }}
         onSaveAsTemplate={templateSaved ? undefined : handleSaveAsTemplate}
+        onRepeatWorkout={handleRepeatWorkout}
       />
     </React.Suspense>
   );

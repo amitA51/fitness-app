@@ -90,6 +90,50 @@ export const sendMessage = async (
   return { error: error?.message ?? null };
 };
 
+/** Outcome of a bulk-nudge send: which clients succeeded vs failed. */
+export interface BulkSendResult {
+  sent: string[];
+  failed: { clientId: string; error: string }[];
+}
+
+/** Hard cap on a single bulk-nudge to avoid a runaway fan-out of inserts. */
+export const BULK_NUDGE_MAX = 30;
+
+/**
+ * Send the SAME message to several clients (a roster "nudge"). The current user
+ * is the coach side of every thread. Runs the inserts concurrently and reports
+ * per-client success/failure so the UI can surface a partial-failure summary —
+ * one failed client never aborts the rest. No new endpoint: reuses sendMessage.
+ */
+export const sendBulkMessage = async (
+  clientIds: readonly string[],
+  body: string
+): Promise<BulkSendResult> => {
+  const trimmed = body.trim();
+  const result: BulkSendResult = { sent: [], failed: [] };
+  if (!trimmed) {
+    for (const clientId of clientIds) result.failed.push({ clientId, error: 'empty' });
+    return result;
+  }
+  const user = await getCurrentUser();
+  if (!user) {
+    for (const clientId of clientIds) result.failed.push({ clientId, error: 'unauthenticated' });
+    return result;
+  }
+  const targets = clientIds.slice(0, BULK_NUDGE_MAX);
+  const outcomes = await Promise.all(
+    targets.map(async (clientId) => {
+      const { error } = await sendMessage(user.id, clientId, trimmed);
+      return { clientId, error };
+    })
+  );
+  for (const o of outcomes) {
+    if (o.error) result.failed.push({ clientId: o.clientId, error: o.error });
+    else result.sent.push(o.clientId);
+  }
+  return result;
+};
+
 /** Mark all messages in a thread that were NOT sent by me as read. */
 export const markThreadRead = async (coachId: string, clientId: string): Promise<void> => {
   const supabase = requireClient();

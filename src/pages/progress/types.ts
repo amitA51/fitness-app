@@ -10,7 +10,7 @@ export type ProgressTab = 'overview' | 'workouts' | 'body' | 'recovery';
 export type WorkoutsSubTab = 'history' | 'strength';
 
 /** Secondary segmented control inside the Body tab. */
-export type BodySubTab = 'weight' | 'measurements';
+export type BodySubTab = 'weight' | 'measurements' | 'photos';
 
 export interface WeeklyRecoveryAverage {
   avgSleep: number;

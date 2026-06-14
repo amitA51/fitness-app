@@ -17,7 +17,7 @@
 // ============================================================================
 
 import { Dumbbell, type LucideIcon, Users } from 'lucide-react';
-import { type KeyboardEvent, useCallback, useRef, useState } from 'react';
+import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCoach } from '../../contexts/CoachContext';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -50,14 +50,27 @@ export function ViewModeBar() {
   // raw stored choice — so the toggle can't desync from what's on screen.
   const activeMode: ViewMode = isCoachView ? 'coach' : 'trainee';
 
+  // Announce the mode change reactively off the RENDERED view, so the teleport
+  // gets a spoken confirmation no matter what triggered the flip (this control,
+  // a guard redirect, or a deep link) instead of a silent context swap. Skips
+  // the initial mount so it only fires on an actual change.
+  const didMountRef = useRef(false);
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+    setAnnouncement(isCoachView ? 'עברת לתצוגת מאמן' : 'עברת לתצוגת מתאמן');
+  }, [isCoachView]);
+
   const select = useCallback(
     (segment: Segment) => {
       if (segment.mode === activeMode) return;
       if (!reduced) triggerHapticIntensity('medium');
       // setViewMode flips the local view synchronously (the await only covers the
-      // lazy coach-mode enable), so the shell swaps immediately.
+      // lazy coach-mode enable), so the shell swaps immediately. The aria-live
+      // announcement is driven reactively off isCoachView (effect above).
       void setViewMode(segment.mode);
-      setAnnouncement(`תצוגת ${segment.label} פעילה`);
       navigate(segment.home);
     },
     [activeMode, reduced, setViewMode, navigate]

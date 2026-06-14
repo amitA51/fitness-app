@@ -10,10 +10,7 @@
 //   3. Streak nudge — lowest, because WorkoutStreak already shows the number;
 //      this only adds a "keep it up" framing for real streaks (≥3 days).
 
-import type {
-  MuscleGroupLastTrained,
-  ProgressDelta,
-} from '../../services/analyticsService';
+import type { MuscleGroupLastTrained, ProgressDelta } from '../../services/analyticsService';
 
 /** Minimum week-over-week volume gain (%) worth celebrating. */
 export const MIN_PROGRESSION_PCT = 10;
@@ -23,25 +20,31 @@ export const MIN_STREAK_DAYS = 3;
 export const NEGLECT_MIN_DAYS = 7;
 /** …and stops being a useful nudge past this (stale guilt, not insight). */
 export const NEGLECT_MAX_DAYS = 30;
+/** Distinct muscle groups trained this month to read as a "balanced split". */
+export const BALANCED_SPLIT_MIN_MUSCLES = 3;
 
 // ForecastNudge (sibling dashboard card) already surfaces these when overdue —
 // excluding them keeps the two cards from saying the same thing.
-const MUSCLES_COVERED_BY_FORECAST_NUDGE: ReadonlySet<string> = new Set([
-  'Chest',
-  'Back',
-  'Legs',
-]);
+const MUSCLES_COVERED_BY_FORECAST_NUDGE: ReadonlySet<string> = new Set(['Chest', 'Back', 'Legs']);
 
 export type DashboardInsight =
   | { kind: 'progression'; exerciseName: string; changePct: number }
   | { kind: 'neglected'; muscle: string; daysSince: number }
-  | { kind: 'streak'; days: number };
+  | { kind: 'streak'; days: number }
+  // Fallback tier — always-fillable affirmations over already-aggregated data so
+  // the insight slot is never dark while real workouts exist.
+  | { kind: 'consistency'; workoutsThisMonth: number }
+  | { kind: 'balanced'; muscleCount: number };
 
 export interface InsightPickerInput {
   /** Week-over-week per-exercise volume deltas (aggregated locally). */
   weekOverWeekDeltas: readonly ProgressDelta[];
   muscleGroups: readonly MuscleGroupLastTrained[];
   currentStreak: number;
+  /** Completed workouts this calendar month (already aggregated). */
+  workoutsThisMonth: number;
+  /** Total completed workouts ever — used only to gate true zero-data. */
+  totalWorkouts: number;
 }
 
 export function pickDashboardInsight(input: InsightPickerInput): DashboardInsight | null {
@@ -79,5 +82,26 @@ export function pickDashboardInsight(input: InsightPickerInput): DashboardInsigh
     return { kind: 'streak', days: input.currentStreak };
   }
 
-  return null;
+  // ── Fallback tier — the three rare thresholds above all missed, but real
+  // workouts still exist. Fill the slot with a useful affirmation instead of
+  // going dark; only true zero-data (no workouts ever) returns null.
+  if (input.totalWorkouts <= 0) return null;
+
+  // 4. Consistency this month — concrete and motivating when ≥1 logged.
+  if (input.workoutsThisMonth > 0) {
+    return { kind: 'consistency', workoutsThisMonth: input.workoutsThisMonth };
+  }
+
+  // 5. Balanced split — affirm a well-rounded muscle spread when enough distinct
+  //    groups were trained recently (within the same neglect window we track).
+  const trainedMuscleCount = input.muscleGroups.filter(
+    (m) => m.daysSince <= NEGLECT_MAX_DAYS
+  ).length;
+  if (trainedMuscleCount >= BALANCED_SPLIT_MIN_MUSCLES) {
+    return { kind: 'balanced', muscleCount: trainedMuscleCount };
+  }
+
+  // Has past workouts but none this month and a thin recent split — fall back to
+  // the consistency frame on the lifetime count so the slot still says something.
+  return { kind: 'consistency', workoutsThisMonth: input.workoutsThisMonth };
 }

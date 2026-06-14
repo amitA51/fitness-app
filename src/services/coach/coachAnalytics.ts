@@ -216,17 +216,31 @@ export async function getClientAnalytics(
   return computeClientAnalytics(sessions, inactiveDays);
 }
 
-/** Display label + Fresh-Steel color token for a status level. */
-export function clientStatusMeta(level: ClientStatusLevel): { label: string; color: string } {
+/**
+ * Severity shape of a status dot — a NON-color cue so at_risk and inactive (both
+ * --fs-warn) stay distinguishable at a glance: `filled` = inactive (graver),
+ * `ring` = at_risk, `none` = no dot. Mirrors WeekGrid's scheduled-indicator
+ * filled-vs-ring pattern.
+ */
+export type StatusDotShape = 'filled' | 'ring' | 'none';
+
+/** Display label + Fresh-Steel color token + dot shape for a status level. */
+export function clientStatusMeta(level: ClientStatusLevel): {
+  label: string;
+  color: string;
+  dot: StatusDotShape;
+} {
   switch (level) {
     case 'active':
-      return { label: 'פעיל', color: 'var(--fs-accent)' };
+      return { label: 'פעיל', color: 'var(--fs-accent)', dot: 'filled' };
     case 'at_risk':
-      return { label: 'בסיכון', color: 'var(--fs-warn)' };
+      // Same warn family as inactive, but a hollow ring marks the lighter tier.
+      return { label: 'בסיכון', color: 'var(--fs-warn)', dot: 'ring' };
     case 'inactive':
-      return { label: 'לא פעיל', color: 'var(--fs-warn)' };
+      // Graver tier — a solid filled dot reads heavier than the at_risk ring.
+      return { label: 'לא פעיל', color: 'var(--fs-warn)', dot: 'filled' };
     default:
-      return { label: 'חדש', color: 'var(--fs-muted)' };
+      return { label: 'חדש', color: 'var(--fs-muted)', dot: 'none' };
   }
 }
 
@@ -268,7 +282,7 @@ export async function getClientsOverview(
 }
 
 /** Higher rank = needs more attention (sorts to the top). */
-function attentionRank(a: ClientAnalytics): number {
+export function attentionRank(a: ClientAnalytics): number {
   const base =
     a.level === 'inactive' ? 3000 : a.level === 'at_risk' ? 2000 : a.level === 'new' ? 1000 : 0;
   return base + (a.daysSinceActivity ?? 0);

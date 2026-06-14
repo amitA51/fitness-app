@@ -117,7 +117,7 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
                 direction: 'ltr',
               }}
             >
-              {bestSet.weight}kg × {bestSet.reps}
+              {bestSet.weight} ק״ג × {bestSet.reps}
             </span>
           )}
         </div>

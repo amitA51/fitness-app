@@ -73,12 +73,13 @@ export const STEPS: OnboardingStep[] = [
   { id: 'profile', title: 'פרופיל אישי', subtitle: 'ספר לנו על עצמך' },
   { id: 'goals', title: 'מטרות כושר', subtitle: 'מה המטרות שלך?' },
   { id: 'experience', title: 'ניסיון', subtitle: 'רמת האימון שלך' },
+  { id: 'equipment', title: 'ציוד', subtitle: 'איפה אתה מתאמן?' },
   { id: 'preferences', title: 'העדפות', subtitle: 'התאם אישית' },
   { id: 'complete', title: 'מוכן!', subtitle: 'בואו נתחיל' },
 ];
 
 /** Step ids that only make sense for a trainee's personal training profile. */
-const TRAINEE_ONLY_STEP_IDS = new Set(['goals', 'experience', 'preferences']);
+const TRAINEE_ONLY_STEP_IDS = new Set(['goals', 'experience', 'equipment', 'preferences']);
 
 /**
  * The wizard steps for a given role. Coaches get a short flow (welcome → role

@@ -2,7 +2,9 @@
 // This is CRITICAL for fixing the button responsiveness issue
 
 import { useEffect, useRef, useState } from 'react';
+import { webPlatform } from '../../../platform/web';
 import { playDing } from '../../../utils/audio';
+import { HAPTIC_PATTERNS } from '../../../utils/haptics';
 import { useWorkoutDispatch, useWorkoutSettingsRaw } from '../core/WorkoutContext';
 
 /**
@@ -78,7 +80,10 @@ export function useRestTimer(
   // When true the countdown is frozen: the last computed timeLeft is held and
   // no ding / SYNC_REST_TIMER fires. Pause is also encoded upstream as a
   // negative endTime; this param lets callers freeze without re-encoding.
-  isPaused = false
+  isPaused = false,
+  // Body text for the screen-off rest-end notification (next-set hint + target).
+  // Undefined falls back to a generic body.
+  nextSetBody?: string
 ): {
   timeLeft: number;
   formatted: string;
@@ -97,6 +102,82 @@ export function useRestTimer(
   // already enforced inside playDing()/playBeep(); this adds the rest-specific
   // opt-out so a user who silenced only the rest timer doesn't hear the ding.
   const restTimerSoundEnabled = workoutSettings.restTimerSound !== false;
+  const restTimerVibrateEnabled = workoutSettings.restTimerVibrate !== false;
+  // Latest next-set body kept in a ref so the screen-off scheduler reads it
+  // without re-subscribing the visibility effect every time the hint changes.
+  const nextSetBodyRef = useRef<string | undefined>(nextSetBody);
+  nextSetBodyRef.current = nextSetBody;
+
+  // ── SCREEN-OFF REST-END NOTIFICATION ──────────────────────────────────────
+  // When rest is running and the document goes hidden (screen off / app
+  // backgrounded), schedule a one-shot OS notification at endTime so the user
+  // is cued to start the next set even with the screen off. The foreground
+  // ding/haptic above never fires while hidden, so this is the only screen-off
+  // cue. Permission is prompted contextually on the FIRST background during an
+  // active rest (never on load), and only when the rest-timer sound or vibrate
+  // setting is on. Cleared on visibility return and whenever the timer is
+  // skipped/extended (endTime changes) or cleared (active=false).
+  const offTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const promptedRef = useRef(false);
+  useEffect(() => {
+    // Only arm for a live, unpaused countdown with a real future endTime.
+    if (!active || isPaused || !endTime || endTime <= 0) return;
+    // Respect the same opt-outs as the foreground cue: if the user silenced
+    // both the rest sound AND vibration, don't nag with a notification either.
+    if (!restTimerSoundEnabled && !restTimerVibrateEnabled) return;
+
+    const clearScheduled = () => {
+      if (offTimerRef.current) {
+        clearTimeout(offTimerRef.current);
+        offTimerRef.current = null;
+      }
+    };
+
+    const onHidden = (hidden: boolean) => {
+      if (hidden) {
+        // Contextual permission prompt: first time we background during rest.
+        if (!webPlatform.hasNotificationPermission()) {
+          if (!promptedRef.current) {
+            promptedRef.current = true;
+            void webPlatform.requestNotificationPermission();
+          }
+          return; // Can't schedule until/unless granted; next rest will retry.
+        }
+        const remaining = endTime - Date.now();
+        if (remaining <= 0) return;
+        clearScheduled();
+        offTimerRef.current = setTimeout(() => {
+          webPlatform.showRestEndNotification(
+            nextSetBodyRef.current || 'הגיע הזמן לסט הבא',
+            restTimerVibrateEnabled ? [...HAPTIC_PATTERNS.REST_END] : undefined
+          );
+          offTimerRef.current = null;
+        }, remaining);
+      } else {
+        // Returned to the app — cancel the pending fire and dismiss any shown one.
+        clearScheduled();
+        webPlatform.clearRestEndNotification();
+      }
+    };
+
+    const removeVisibility = webPlatform.onVisibilityChange(onHidden);
+    // Already backgrounded when this effect (re)arms — e.g. endTime changed via
+    // +15/-15 or a sync/realtime merge while the document is hidden. onHidden
+    // only fires on the NEXT visibility transition, so without this the cue is
+    // silently lost. Schedule immediately. Idempotent: onHidden clears any prior
+    // pending fire first, and the notification shares the 'rest-end' tag, so a
+    // real hide transition that follows replaces rather than duplicates.
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+      onHidden(true);
+    }
+    return () => {
+      removeVisibility();
+      clearScheduled();
+      // Skip / +15 / -15 changes endTime → this cleanup runs → drop any stale
+      // shown/pending notification so it can't fire for the previous duration.
+      webPlatform.clearRestEndNotification();
+    };
+  }, [active, isPaused, endTime, restTimerSoundEnabled, restTimerVibrateEnabled]);
 
   useEffect(() => {
     if (!active || !endTime) {

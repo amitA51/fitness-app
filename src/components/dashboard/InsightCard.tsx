@@ -7,8 +7,8 @@
 // dir="ltr" inside the RTL layout; entrance respects prefers-reduced-motion
 // via FadeIn.
 
-import { CalendarClock, Flame, TrendingUp } from 'lucide-react';
-import { memo, type ReactNode } from 'react';
+import { Activity, CalendarCheck, CalendarClock, Flame, TrendingUp } from 'lucide-react';
+import { type ReactNode, memo } from 'react';
 import { translateMuscle } from '../../constants/muscleNames';
 import { FadeIn } from '../motion/FadeIn';
 import type { DashboardInsight } from './insightPicker';
@@ -65,6 +65,31 @@ export const InsightCard = memo(function InsightCard({ insight }: InsightCardPro
         </>
       );
       sub = 'שמרו על הקצב';
+      break;
+    case 'consistency':
+      icon = <CalendarCheck size={18} aria-hidden="true" style={{ color: 'var(--fs-accent)' }} />;
+      headline = (
+        <>
+          <span className="kinetic-number" dir="ltr">
+            {insight.workoutsThisMonth}
+          </span>{' '}
+          אימונים החודש
+        </>
+      );
+      sub = 'כל אימון נספר';
+      break;
+    case 'balanced':
+      icon = <Activity size={18} aria-hidden="true" style={{ color: 'var(--fs-accent)' }} />;
+      headline = (
+        <>
+          פיזור מאוזן על{' '}
+          <span className="kinetic-number" dir="ltr">
+            {insight.muscleCount}
+          </span>{' '}
+          קבוצות שריר
+        </>
+      );
+      sub = 'אימון גוף מלא';
       break;
   }
 

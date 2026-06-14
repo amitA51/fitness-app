@@ -410,7 +410,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                       type="text"
                       value={exerciseSearch}
                       onChange={(e) => setExerciseSearch(e.target.value)}
-                      placeholder="חפש תרגיל..."
+                      placeholder="חפשו תרגיל…"
                       aria-label="חפש תרגיל"
                       autoFocus
                       style={{

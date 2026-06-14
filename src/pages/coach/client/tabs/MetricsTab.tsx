@@ -10,8 +10,16 @@ import { GradientSparkline } from '../../../../components/charts';
 import { Button } from '../../../../components/ui/Button';
 import type { BodyMeasurement, PersonalRecordRow } from '../../../../services/supabaseSyncMappers';
 import type { BodyWeightEntry } from '../../../../types';
+import { HE_NOUNS, pluralizeHe } from '../../../../utils/pluralizeHe';
 import { TrendChartCard } from '../../../progress/components/TrendChartCard';
-import { InlineEmpty, ListRow, ListSkeleton, Section, SectionError, formatDate } from '../../_shared';
+import {
+  InlineEmpty,
+  ListRow,
+  ListSkeleton,
+  Section,
+  SectionError,
+  formatDate,
+} from '../../_shared';
 import { RowIconBtn } from '../../rosterPrimitives';
 import { type EditBodyWeightInitial, EditBodyWeightSheet } from '../EditBodyWeightSheet';
 import { PhotoTimeline } from '../PhotoTimeline';
@@ -152,7 +160,7 @@ export function MetricsTab({
           <TrendChartCard
             title="משקל גוף"
             data={weightPoints}
-            meta={`${weightPoints.length} מדידות`}
+            meta={pluralizeHe(weightPoints.length, HE_NOUNS.measurement)}
             icon={<Scale size={14} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />}
             ariaLabel="מגמת משקל גוף"
           />
@@ -206,7 +214,7 @@ export function MetricsTab({
               <ListRow
                 key={pr.id}
                 label={pr.exerciseName}
-                meta={`${pr.weight} ק"ג × ${pr.reps} · ${formatDate(pr.date)}`}
+                meta={`⁦${pr.weight} ק"ג × ${pr.reps}⁩ · ${formatDate(pr.date)}`}
               />
             ))
         )}

@@ -88,6 +88,45 @@ const FinishOverlayComponent: React.FC<{
   </Suspense>
 );
 
+// Maps a completed session into a createWorkoutTemplate payload. Shared by the
+// "save as template" and "do it again" actions so the two can never drift.
+// `isFavorite` surfaces the template in the PreWorkoutScreen "התבניות שלך" row,
+// which is exactly where the repeat affordance wants the user to land next time.
+const buildTemplatePayload = (
+  completedSession: WorkoutSession,
+  isFavorite: boolean
+): Parameters<typeof createWorkoutTemplate>[0] => ({
+  name: completedSession.exercises?.[0]?.name || 'My Workout',
+  description: '',
+  exercises: (completedSession.exercises || []).map((ex, idx) => ({
+    id: ex.id || `ex_${idx}`,
+    exerciseId: ex.exerciseId || ex.id || `exercise_${idx}`,
+    exerciseName: ex.exerciseName || ex.name || 'Unknown',
+    targetMuscle: ex.muscleGroup || ex.targetMuscle || 'Other',
+    targetSets: ex.sets?.length || 4,
+    targetReps: 10,
+    targetWeight: null,
+    restSeconds: ex.targetRestTime || ex.restSeconds || 90,
+    order: idx,
+    notes: '',
+    name: ex.name,
+    muscleGroup: ex.muscleGroup,
+    targetRestTime: ex.targetRestTime,
+    tempo: ex.tempo,
+    sets: ex.sets?.map((s) => ({ reps: s.reps, weight: s.weight })),
+  })),
+  muscleGroups: Array.from(
+    new Set(
+      (completedSession.exercises || []).map((e) => e.muscleGroup).filter(Boolean) as string[]
+    )
+  ),
+  isBuiltin: false,
+  updatedAt: new Date().toISOString(),
+  lastUsed: null,
+  timesUsed: 0,
+  isFavorite,
+});
+
 const SummaryOverlayComponent: React.FC<{
   onExit: () => void;
   completedSession: WorkoutSession | null;
@@ -114,40 +153,14 @@ const SummaryOverlayComponent: React.FC<{
           onExit();
         }}
         onSaveAsTemplate={async () => {
-          const defaultName = completedSession.exercises?.[0]?.name || 'My Workout';
-          await createWorkoutTemplate({
-            name: defaultName,
-            description: '',
-            exercises: (completedSession.exercises || []).map((ex, idx) => ({
-              id: ex.id || `ex_${idx}`,
-              exerciseId: ex.exerciseId || ex.id || `exercise_${idx}`,
-              exerciseName: ex.exerciseName || ex.name || 'Unknown',
-              targetMuscle: ex.muscleGroup || ex.targetMuscle || 'Other',
-              targetSets: ex.sets?.length || 4,
-              targetReps: 10,
-              targetWeight: null,
-              restSeconds: ex.targetRestTime || ex.restSeconds || 90,
-              order: idx,
-              notes: '',
-              name: ex.name,
-              muscleGroup: ex.muscleGroup,
-              targetRestTime: ex.targetRestTime,
-              tempo: ex.tempo,
-              sets: ex.sets?.map((s) => ({ reps: s.reps, weight: s.weight })),
-            })),
-            muscleGroups: Array.from(
-              new Set(
-                (completedSession.exercises || [])
-                  .map((e) => e.muscleGroup)
-                  .filter(Boolean) as string[]
-              )
-            ),
-            isBuiltin: false,
-            updatedAt: new Date().toISOString(),
-            lastUsed: null,
-            timesUsed: 0,
-            isFavorite: false,
-          });
+          await createWorkoutTemplate(buildTemplatePayload(completedSession, false));
+        }}
+        onRepeatWorkout={() => {
+          // Pre-seed the next session as a favorite template (best-effort, fire
+          // and forget) so it surfaces in the PreWorkoutScreen "התבניות שלך"
+          // row, then exit back to the start flow.
+          createWorkoutTemplate(buildTemplatePayload(completedSession, true)).catch(() => {});
+          onExit();
         }}
       />
     </Suspense>

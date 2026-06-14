@@ -27,6 +27,13 @@ const RECENT_SESSIONS_LIMIT = 20;
 interface DataContextValue {
   sessions: WorkoutSession[];
   loading: boolean;
+  /**
+   * True only until the FIRST load settles (success or error). Lets consumers
+   * (e.g. the Dashboard) show a route-shaped skeleton on the genuine cold load
+   * without flashing it on every subsequent refresh — `loading` flips on each
+   * refresh, this latches off after the first resolve.
+   */
+  isFirstLoad: boolean;
   error: string | null;
   refreshData: () => Promise<void>;
 }
@@ -48,6 +55,7 @@ interface DataProviderProps {
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const initialLoadRef = useRef(false);
 
@@ -86,6 +94,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         await loadData();
       } finally {
         setLoading(false);
+        // Latch the cold-load flag off once — never flips back on for refreshes.
+        setIsFirstLoad(false);
       }
     })();
   }, [loadData]);
@@ -94,10 +104,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     () => ({
       sessions,
       loading,
+      isFirstLoad,
       error,
       refreshData,
     }),
-    [sessions, loading, error, refreshData]
+    [sessions, loading, isFirstLoad, error, refreshData]
   );
 
   return <DataContext.Provider value={contextValue}>{children}</DataContext.Provider>;

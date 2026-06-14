@@ -8,9 +8,9 @@
 // coach readers (read-only); the coach-notes block is print-only ephemeral
 // text and is intentionally NOT persisted.
 
-import { ChevronRight, Printer } from 'lucide-react';
+import { ChevronRight, Printer, Share2 } from 'lucide-react';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import {
@@ -26,15 +26,16 @@ import {
 } from '../../services/coach';
 import type { NutritionLog, PersonalRecordRow } from '../../services/supabaseSyncMappers';
 import type { BodyWeightEntry, WorkoutSession } from '../../types';
-import { formatDate, InlineEmpty, ListSkeleton, SectionError, useAsyncData } from './_shared';
+import { InlineEmpty, ListSkeleton, SectionError, formatDate, useAsyncData } from './_shared';
 import {
+  type ReportRange,
   buildReportRange,
+  buildShareSummary,
   computeNutritionSummary,
   computeTrainingSummary,
   computeWeightTrend,
   filterPRsInRange,
   findCalorieTarget,
-  type ReportRange,
   sparklinePoints,
 } from './client/reportMetrics';
 
@@ -106,6 +107,37 @@ export default function ClientReport() {
 
   const range = buildReportRange(REPORT_DAYS);
 
+  // Web Share text — built from the SAME pure aggregates the report renders, so
+  // the WhatsApp message and the printout never disagree. Memoized on the data.
+  const shareText = useMemo(() => {
+    if (!q.data) return null;
+    const training = computeTrainingSummary(q.data.sessions, range);
+    const weightTrend = computeWeightTrend(q.data.weights, range);
+    const prsInRange = filterPRsInRange(q.data.prs, range);
+    const nutrition = computeNutritionSummary(q.data.nutrition, range, q.data.calorieTarget);
+    return buildShareSummary({
+      clientName: q.data.clientName,
+      days: REPORT_DAYS,
+      training,
+      weightTrend,
+      prCount: prsInRange.length,
+      nutrition,
+    });
+  }, [q.data, range]);
+
+  // Feature-detect Web Share (mobile/PWA) — the button stays hidden on desktop
+  // where navigator.share is unavailable, so we never show a dead control.
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  const handleShare = async () => {
+    if (!shareText || !canShare) return;
+    try {
+      await navigator.share({ title: `דוח התקדמות — ${clientName ?? ''}`.trim(), text: shareText });
+    } catch {
+      // User-cancelled or share failed — non-fatal, nothing to surface.
+    }
+  };
+
   return (
     <div
       dir="rtl"
@@ -131,6 +163,18 @@ export default function ClientReport() {
           <ChevronRight size={20} aria-hidden="true" />
         </Button>
         <div className="flex-1 min-w-0" />
+        {canShare && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleShare}
+            className="shrink-0 whitespace-nowrap"
+            disabled={q.loading || q.data === null}
+          >
+            <Share2 size={16} aria-hidden="true" />
+            שיתוף
+          </Button>
+        )}
         <Button
           variant="primary"
           size="sm"
@@ -202,7 +246,10 @@ function ReportBody({
           <bdi>{data.clientName}</bdi>
         </h1>
         <p style={metaTextStyle}>
-          תקופה: <bdi dir="ltr">{formatDate(range.from)} – {formatDate(range.to)}</bdi>
+          תקופה:{' '}
+          <bdi dir="ltr">
+            {formatDate(range.from)} – {formatDate(range.to)}
+          </bdi>
         </p>
         {data.coachName && (
           <p style={metaTextStyle}>
@@ -321,7 +368,9 @@ function ReportBody({
             <Stat label="ימי תיעוד" value={String(nutrition.daysLogged)} />
             <Stat
               label="ממוצע קק״ל ביום"
-              value={nutrition.avgCalories === null ? '—' : nutrition.avgCalories.toLocaleString('he-IL')}
+              value={
+                nutrition.avgCalories === null ? '—' : nutrition.avgCalories.toLocaleString('he-IL')
+              }
             />
             <Stat
               label="יעד קק״ל"
@@ -336,7 +385,10 @@ function ReportBody({
       </ReportSection>
 
       {/* Coach notes — typed for this printout only, never persisted. */}
-      <ReportSection title="הערות המאמן" className={notes.trim() === '' ? 'report-notes-empty' : ''}>
+      <ReportSection
+        title="הערות המאמן"
+        className={notes.trim() === '' ? 'report-notes-empty' : ''}
+      >
         <div className="report-notes-input">
           <label
             htmlFor="report-coach-notes"

@@ -10,9 +10,9 @@ import { describe, expect, it } from 'vitest';
 import { forecastProgress } from '../../services/analyticsService';
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../../types';
 import {
-  buildForecastSeries,
   FORECAST_POINT_LABEL,
   MIN_SESSIONS_FOR_FORECAST,
+  buildForecastSeries,
 } from './forecastSeries';
 
 const set = (id: string, weight: number, reps: number): WorkoutSet => ({

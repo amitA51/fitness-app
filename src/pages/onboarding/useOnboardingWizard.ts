@@ -84,6 +84,10 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
         return data.primaryGoal === '' ? 'בחר מטרה עיקרית כדי להמשיך' : null;
       case 'experience':
         return data.experienceLevel === '' ? 'בחר רמת ניסיון כדי להמשיך' : null;
+      case 'equipment':
+        return data.equipment === undefined || data.equipment === ''
+          ? 'בחר את הציוד הזמין כדי להמשיך'
+          : null;
       case 'preferences':
         return data.preferredTime === '' ? 'בחר שעת אימון מועדפת כדי להמשיך' : null;
       default:

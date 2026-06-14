@@ -3,8 +3,8 @@
 // ============================================================================
 
 import { m } from 'framer-motion';
-import { Check, CheckCheck, Send } from 'lucide-react';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Check, CheckCheck, Plus, Send } from 'lucide-react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { EASE_OUT } from '../../components/motion/easings';
 import { Button } from '../../components/ui/Button';
@@ -27,6 +27,35 @@ import { formatDayLabel, formatTime, isSameLocalDay } from './messageTime';
 function autoGrow(el: HTMLTextAreaElement): void {
   el.style.height = 'auto';
   el.style.height = `${el.scrollHeight}px`;
+}
+
+// ── Quick-reply chips (coach view) ──────────────────────────────────────────────
+// Seeded Hebrew phrases the coach taps to INSERT into the composer (never auto-
+// send). Coach-added custom phrases persist in localStorage. One consistent
+// register — gender-neutral plural, matching the app voice.
+const SEED_QUICK_REPLIES: readonly string[] = [
+  'כל הכבוד!',
+  'איך הרגשתם באימון?',
+  'תזכרו לשתות מספיק מים היום',
+  'נתראה באימון הבא',
+  'איך התזונה היום?',
+  'יש לי שאלה אליכם — נדבר?',
+];
+
+const QUICK_REPLY_STORAGE_KEY = 'coach:quick-replies';
+/** Cap stored custom phrases so the strip stays scannable and storage bounded. */
+const MAX_CUSTOM_REPLIES = 12;
+
+/** Read the coach's saved custom quick-replies (best-effort; [] on any failure). */
+function loadCustomReplies(): string[] {
+  try {
+    const raw = localStorage.getItem(QUICK_REPLY_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
 }
 
 export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' }) {
@@ -52,6 +81,41 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
   // "load earlier" must keep the user anchored, not yank them to the newest.
   const prependingRef = useRef(false);
   const reduced = useReducedMotion();
+
+  // Coach-only quick-reply phrases (seeded + custom-from-localStorage). Loaded
+  // once on mount; new phrases persist immediately. Trainees never see these.
+  const [customReplies, setCustomReplies] = useState<string[]>(() =>
+    viewer === 'coach' ? loadCustomReplies() : []
+  );
+
+  // Insert a phrase into the composer (append with a separating space when the
+  // field already has text) — NEVER auto-send. Re-grows + focuses the textarea.
+  const insertQuickReply = useCallback((phrase: string) => {
+    setBody((prev) => (prev.trim() ? `${prev.trimEnd()} ${phrase}` : phrase));
+    const el = composerRef.current;
+    if (el) {
+      requestAnimationFrame(() => {
+        autoGrow(el);
+        el.focus();
+      });
+    }
+  }, []);
+
+  // Persist a new custom phrase (de-duped, capped). Best-effort write.
+  const addCustomReply = useCallback((phrase: string) => {
+    const trimmed = phrase.trim();
+    if (!trimmed) return;
+    setCustomReplies((prev) => {
+      if (prev.includes(trimmed) || SEED_QUICK_REPLIES.includes(trimmed)) return prev;
+      const next = [trimmed, ...prev].slice(0, MAX_CUSTOM_REPLIES);
+      try {
+        localStorage.setItem(QUICK_REPLY_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Storage unavailable (private mode / quota) — keep the in-session list.
+      }
+      return next;
+    });
+  }, []);
 
   // Collapse the auto-grown composer back to one row after a successful send.
   useEffect(() => {
@@ -293,6 +357,13 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
             שליחת ההודעה נכשלה. בדקו את החיבור ונסו שוב.
           </div>
         )}
+        {viewer === 'coach' && (
+          <QuickReplyBar
+            replies={[...SEED_QUICK_REPLIES, ...customReplies]}
+            onInsert={insertQuickReply}
+            onAdd={addCustomReply}
+          />
+        )}
         <div className="flex gap-2 items-end">
           {/* Compact chat composer — auto-grows up to a few rows on input; the
               form <Textarea> (88px min) is intentionally not used here. Enter
@@ -343,6 +414,111 @@ export default function MessageThread({ viewer }: { viewer: 'coach' | 'trainee' 
         </div>
       </div>
     </CoachPage>
+  );
+}
+
+// ── QuickReplyBar ───────────────────────────────────────────────────────────────
+// Horizontally-scrollable row of tap-to-insert phrase chips (coach view only).
+// Mono-label chips mirror the CoachClients tag chips: --fs-surface-2 border,
+// active:scale-[0.98], 44px hit target, dir="auto" for mixed Hebrew/emoji. A
+// trailing "+" chip reveals an inline input to save a new phrase to localStorage.
+
+function QuickReplyBar({
+  replies,
+  onInsert,
+  onAdd,
+}: {
+  replies: string[];
+  onInsert: (phrase: string) => void;
+  onAdd: (phrase: string) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState('');
+  const addInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (adding) addInputRef.current?.focus();
+  }, [adding]);
+
+  const commitAdd = () => {
+    const trimmed = draft.trim();
+    if (trimmed) onAdd(trimmed);
+    setDraft('');
+    setAdding(false);
+  };
+
+  const chipStyle: React.CSSProperties = {
+    flexShrink: 0,
+    padding: '0 12px',
+    minHeight: 44,
+    fontFamily: 'var(--font-mono)',
+    fontSize: 11,
+    fontWeight: 600,
+    borderRadius: 999,
+    border: '1px solid var(--fs-surface-2)',
+    background: 'var(--fs-surface)',
+    color: 'var(--fs-ink)',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  };
+
+  return (
+    <div
+      className="flex items-center gap-2 mb-2"
+      style={{ overflowX: 'auto', overflowY: 'hidden', paddingBottom: 2 }}
+    >
+      {replies.map((phrase) => (
+        <button
+          key={phrase}
+          type="button"
+          dir="auto"
+          onClick={() => onInsert(phrase)}
+          aria-label={`הוספת "${phrase}" להודעה`}
+          className="active:scale-[0.98] inline-flex items-center"
+          style={chipStyle}
+        >
+          {phrase}
+        </button>
+      ))}
+      {adding ? (
+        <input
+          ref={addInputRef}
+          type="text"
+          dir="auto"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commitAdd}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              commitAdd();
+            } else if (e.key === 'Escape') {
+              setDraft('');
+              setAdding(false);
+            }
+          }}
+          placeholder="ביטוי חדש…"
+          aria-label="ביטוי מהיר חדש"
+          className="flex-shrink-0"
+          style={{
+            ...chipStyle,
+            minWidth: 140,
+            cursor: 'text',
+            color: 'var(--fs-ink)',
+          }}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          aria-label="הוספת ביטוי מהיר"
+          className="active:scale-[0.98] inline-flex items-center justify-center"
+          style={{ ...chipStyle, padding: 0, width: 44, color: 'var(--fs-accent)' }}
+        >
+          <Plus size={16} aria-hidden="true" />
+        </button>
+      )}
+    </div>
   );
 }
 

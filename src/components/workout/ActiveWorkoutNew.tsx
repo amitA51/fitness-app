@@ -326,7 +326,7 @@ export const WorkoutContent: React.FC<{
     if (!derived.currentExercise) return '';
     const pr = getPRForExercise(derived.currentExercise.name ?? '');
     if (!pr) return '';
-    return `PR: ${pr.maxWeight}kg`;
+    return `PR: ${pr.maxWeight} ק״ג`;
   }, [derived.currentExercise, getPRForExercise]);
 
   // Workout stats for confirm dialog
@@ -424,6 +424,13 @@ export const WorkoutContent: React.FC<{
     setSaveError,
     pendingTimeouts,
   });
+
+  // "התחל סט הבא" from the rest timer: skip rest AND open the weight entry for
+  // the next set in one tap, removing the skip-then-find-input step.
+  const handleStartNextSet = useCallback(() => {
+    handleSkipRest();
+    handleOpenNumpad('weight');
+  }, [handleSkipRest, handleOpenNumpad]);
 
   // Horizontal swipe navigation between exercises (pointer-based, RTL-aware).
   const { handleSwipePointerDown, handleSwipePointerMove, handleSwipePointerEnd } =
@@ -612,6 +619,7 @@ export const WorkoutContent: React.FC<{
           restTimerEndTime={state.restTimer.endTime}
           onSkipRest={handleSkipRest}
           onAddRestTime={handleAddRestTime}
+          onStartNextSet={handleStartNextSet}
           nextSetHint={nextSetHint}
           nextSetWeight={nextSetTargets?.weight}
           nextSetReps={nextSetTargets?.reps}

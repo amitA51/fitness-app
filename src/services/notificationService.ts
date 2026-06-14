@@ -90,6 +90,57 @@ export async function showNotification(
   }
 }
 
+/**
+ * Rest-end notification, shown ONLY while the document is hidden (screen off /
+ * app backgrounded). Routes through the service worker so it survives on iOS and
+ * coalesces with any same-tag push via `tag: 'rest-end'`. `renotify` re-alerts
+ * even when a previous rest-end notification is still on screen. Caller is
+ * responsible for permission gating and for closing it on return/skip.
+ */
+export async function showRestEndNotification(body: string, vibrate?: number[]): Promise<void> {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  const options: NotificationOptions & { renotify?: boolean } = {
+    body,
+    icon: '/pwa-192x192.png',
+    dir: 'rtl',
+    lang: 'he',
+    tag: 'rest-end',
+    renotify: true,
+    ...(vibrate && vibrate.length > 0 ? { vibrate } : {}),
+  };
+
+  try {
+    const registration = await navigator.serviceWorker?.getRegistration();
+    if (registration) {
+      await registration.showNotification('המנוחה הסתיימה', options);
+      return;
+    }
+  } catch {
+    // Fall through to the constructor fallback below.
+  }
+
+  if ('Notification' in window) {
+    new Notification('המנוחה הסתיימה', options);
+  }
+}
+
+/**
+ * Close any on-screen rest-end notification (e.g. when the user returns to the
+ * tab or skips/extends rest before the timer fired). Best-effort: silently
+ * no-ops without a service worker or notification support.
+ */
+export async function closeRestEndNotification(): Promise<void> {
+  try {
+    const registration = await navigator.serviceWorker?.getRegistration();
+    if (!registration) return;
+    const open = await registration.getNotifications({ tag: 'rest-end' });
+    for (const n of open) n.close();
+  } catch {
+    // Notifications API unavailable — nothing to close.
+  }
+}
+
 export function showWorkoutReminder(): void {
   void showNotification('זמן לאימון', 'האימון המתוכנן ממתין.').catch((err) => {
     logger.app.warn('Failed to show workout reminder notification', err);

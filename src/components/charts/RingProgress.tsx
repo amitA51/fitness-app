@@ -8,6 +8,13 @@ interface RingProgressProps {
   size?: number;
   strokeWidth?: number;
   variant?: RingVariant;
+  /**
+   * Explicit stroke color override (any tokenized CSS color). When set it wins
+   * over `variant` — used by graded surfaces (e.g. the recovery score) whose
+   * color scale is finer than the accent/signal/warn variants. The variant still
+   * supplies the companion CSS class for the dash transition.
+   */
+  color?: string;
   label?: string;
   centerContent?: ReactNode;
   ariaLabel?: string;
@@ -31,6 +38,7 @@ export const RingProgress = memo(function RingProgress({
   size = 120,
   strokeWidth = 10,
   variant = 'accent',
+  color: colorOverride,
   label,
   centerContent,
   ariaLabel,
@@ -52,7 +60,15 @@ export const RingProgress = memo(function RingProgress({
   const insetDashOffset = insetCircumference * (1 - overPct / 100);
 
   const progressClassName = variant === 'accent' ? 'ring-progress' : `ring-progress ${variant}`;
-  const color = variantColor(variant);
+  const color = colorOverride ?? variantColor(variant);
+  // When an explicit color is given it must override the class stroke too, so the
+  // arc, glow and tip all read in the same graded color.
+  const strokeOverrideStyle: CSSProperties | undefined = colorOverride
+    ? {
+        stroke: colorOverride,
+        filter: `drop-shadow(0 0 6px color-mix(in srgb, ${colorOverride} 40%, transparent))`,
+      }
+    : undefined;
 
   // Leading-edge tip dot: the signature "premium gauge" cue. Sits at the end of
   // the drawn arc (angle = -90° start + basePct of a full turn) and carries the
@@ -83,9 +99,20 @@ export const RingProgress = memo(function RingProgress({
   const defaultCenterFontSize = Math.max(14, Math.round(size * 0.22));
 
   return (
-    <div style={wrapperStyle} role="img" aria-label={ariaLabel ?? label ?? `${Math.round(trueValue)}%`}>
+    <div
+      style={wrapperStyle}
+      role="img"
+      aria-label={ariaLabel ?? label ?? `${Math.round(trueValue)}%`}
+    >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
-        <circle className="ring-track" cx={cx} cy={cy} r={radius} fill="none" strokeWidth={strokeWidth} />
+        <circle
+          className="ring-track"
+          cx={cx}
+          cy={cy}
+          r={radius}
+          fill="none"
+          strokeWidth={strokeWidth}
+        />
         <circle
           className={progressClassName}
           cx={cx}
@@ -96,6 +123,7 @@ export const RingProgress = memo(function RingProgress({
           strokeDasharray={circumference}
           strokeDashoffset={dashOffset}
           transform={`rotate(-90 ${cx} ${cy})`}
+          style={strokeOverrideStyle}
         />
         {/* Over-achievement remainder, drawn inside the base ring with extra glow. */}
         {overPct > 0 && insetRadius > 0 && (
@@ -109,7 +137,10 @@ export const RingProgress = memo(function RingProgress({
             strokeDasharray={insetCircumference}
             strokeDashoffset={insetDashOffset}
             transform={`rotate(-90 ${cx} ${cy})`}
-            style={{ filter: `drop-shadow(0 0 8px ${color})` }}
+            style={{
+              ...(colorOverride ? { stroke: colorOverride } : null),
+              filter: `drop-shadow(0 0 8px ${color})`,
+            }}
           />
         )}
         {showTip && (
@@ -128,7 +159,10 @@ export const RingProgress = memo(function RingProgress({
         {centerContent !== undefined ? (
           centerContent
         ) : (
-          <span className="kinetic-number large" style={{ fontSize: defaultCenterFontSize, lineHeight: 1 }}>
+          <span
+            className="kinetic-number large"
+            style={{ fontSize: defaultCenterFontSize, lineHeight: 1 }}
+          >
             {Math.round(trueValue)}%
           </span>
         )}

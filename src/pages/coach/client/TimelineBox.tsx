@@ -8,6 +8,7 @@ import { ClipboardCheck, Dumbbell, Send } from 'lucide-react';
 import type { CheckIn } from '../../../services/coach/checkInService';
 import type { WorkoutSession } from '../../../types';
 import type { Assignment } from '../../../types/coach';
+import { HE_NOUNS, pluralizeHe } from '../../../utils/pluralizeHe';
 import { InlineEmpty, formatDate } from '../_shared';
 
 const MAX_ITEMS = 15;
@@ -55,7 +56,7 @@ function buildTimeline(
     // The coach note becomes the row heading (see EventRow), so keep it OUT of the
     // meta line to avoid showing the same text twice.
     if (volume > 0) parts.push(`${volume} ק"ג נפח`);
-    if (s.exercises.length > 0) parts.push(`${s.exercises.length} תרגילים`);
+    if (s.exercises.length > 0) parts.push(pluralizeHe(s.exercises.length, HE_NOUNS.exercise));
     events.push({
       kind: 'session',
       ts,

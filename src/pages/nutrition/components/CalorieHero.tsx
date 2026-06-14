@@ -42,11 +42,14 @@ export const CalorieHero = memo(function CalorieHero({
   // (RingProgress has no 'neutral'); only an overshoot escalates to warn.
   const ringVariant = isOver ? 'warn' : 'accent';
 
-  // Count FROM the previously displayed value (re-tweens on each meal log).
+  // Count FROM the previously displayed value (re-tweens on each meal log). A
+  // small scale-pop on settle rewards each new log; useCountUp's pop honors
+  // prefers-reduced-motion (snaps to final value, no pop).
   const prevCaloriesRef = useRef(0);
   useCountUp(numberRef, consumed, {
     from: prevCaloriesRef.current,
     format: formatThousands,
+    pop: true,
   });
   prevCaloriesRef.current = consumed;
 

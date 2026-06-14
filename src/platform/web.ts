@@ -17,6 +17,16 @@ export interface PlatformAdapter {
   // Audio
   playRestEndSound(): void;
   setSoundEnabled(enabled: boolean): void;
+
+  // Notifications (screen-off rest-end cue)
+  /** True when the OS has already granted notification permission. */
+  hasNotificationPermission(): boolean;
+  /** Prompt for notification permission. Resolves true when granted. */
+  requestNotificationPermission(): Promise<boolean>;
+  /** Show the screen-off "rest ended" notification (no-op without permission). */
+  showRestEndNotification(body: string, vibrate?: number[]): void;
+  /** Dismiss any on-screen rest-end notification (return / skip / add time). */
+  clearRestEndNotification(): void;
 }
 
 export const webPlatform: PlatformAdapter = {
@@ -80,5 +90,34 @@ export const webPlatform: PlatformAdapter = {
 
   setSoundEnabled(enabled) {
     import('../utils/audio').then((m) => m.setSoundEnabled(enabled)).catch(() => {});
+  },
+
+  hasNotificationPermission() {
+    try {
+      return typeof Notification !== 'undefined' && Notification.permission === 'granted';
+    } catch {
+      return false;
+    }
+  },
+
+  async requestNotificationPermission() {
+    try {
+      const m = await import('../services/notificationService');
+      return await m.requestNotificationPermission();
+    } catch {
+      return false;
+    }
+  },
+
+  showRestEndNotification(body, vibrate) {
+    import('../services/notificationService')
+      .then((m) => m.showRestEndNotification(body, vibrate))
+      .catch(() => {});
+  },
+
+  clearRestEndNotification() {
+    import('../services/notificationService')
+      .then((m) => m.closeRestEndNotification())
+      .catch(() => {});
   },
 };

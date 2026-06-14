@@ -1,5 +1,5 @@
 import { m } from 'framer-motion';
-import { Award, ChevronLeft, Target, TrendingUp } from 'lucide-react';
+import { Award, ChevronLeft } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 
 export function WelcomeStep({ onNext }: { onNext: () => void }) {
@@ -45,18 +45,22 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
           SparkOS
         </m.h1>
 
+        {/* Brand promise — same voice as the login Masthead ("כתוב סטים. תראה
+            התקדמות.") rather than the generic "אפליקציית הכושר שלך". */}
         <m.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
           style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: '16px',
-            color: 'var(--fs-muted)',
+            fontFamily: '"Bricolage Grotesque", var(--font-display)',
+            fontWeight: 800,
+            fontSize: '20px',
+            color: 'var(--fs-ink)',
+            letterSpacing: '-0.02em',
             marginTop: '8px',
           }}
         >
-          אפליקציית הכושר שלך
+          כתבו סטים. ראו <span style={{ color: 'var(--fs-accent)' }}>התקדמות</span>.
         </m.p>
 
         <m.p
@@ -68,47 +72,44 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
             fontSize: '14px',
             color: 'var(--fs-muted)',
             maxWidth: '280px',
-            marginTop: '4px',
+            marginTop: '8px',
+            lineHeight: 1.5,
           }}
         >
-          בואו נתחיל לבנות את תוכנית האימונים המושלמת עבורך
+          רשמו כל אימון וצפו במשקלים, בנפח ובשיאים מטפסים עם הזמן.
         </m.p>
 
-        {/* Feature Highlights */}
+        {/* One concrete proof point instead of three vague chips — names the
+            real mechanic (auto-detected PRs) rather than generic "מעקב/שיאים". */}
         <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.65 }}
-          className="flex gap-8 mt-12"
+          className="flex items-center gap-3 mt-12 px-4 py-3"
+          style={{
+            background: 'var(--fs-surface)',
+            border: '1px solid var(--fs-surface-2)',
+            borderRadius: '22px 16px 22px 16px',
+            maxWidth: '320px',
+          }}
         >
-          {[
-            { icon: <Target size={22} />, label: 'יעדים' },
-            { icon: <TrendingUp size={22} />, label: 'מעקב' },
-            { icon: <Award size={22} />, label: 'שיאים' },
-          ].map((item) => (
-            <div key={item.label} className="flex flex-col items-center gap-3">
-              <div
-                className="w-14 h-14 flex items-center justify-center"
-                style={{
-                  background: 'var(--fs-surface)',
-                  border: '1px solid var(--fs-surface-2)',
-                  borderRadius: 0,
-                  color: 'var(--fs-accent)',
-                }}
-              >
-                {item.icon}
-              </div>
-              <span
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '14px',
-                  color: 'var(--fs-muted)',
-                }}
-              >
-                {item.label}
-              </span>
-            </div>
-          ))}
+          <div
+            className="w-10 h-10 flex items-center justify-center shrink-0"
+            style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)', borderRadius: 0 }}
+          >
+            <Award size={20} aria-hidden="true" />
+          </div>
+          <span
+            className="text-right"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '14px',
+              color: 'var(--fs-ink)',
+              lineHeight: 1.4,
+            }}
+          >
+            שיא אישי חדש מזוהה אוטומטית בכל פעם שאתם משתפרים.
+          </span>
         </m.div>
       </div>
 

@@ -6,7 +6,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { DUR, gsap, useGSAP } from '@/lib/gsap';
 import { fireSparks } from '@/lib/gsapSparks';
 import { AnimatePresence, m } from 'framer-motion';
-import { CheckCircle as CheckCircleIcon, Trophy } from 'lucide-react';
+import { CheckCircle as CheckCircleIcon, RotateCcw, Trophy } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { HABIT_HAPTIC_PATTERNS } from '../../hooks/useHaptics';
 import { calculateStreak } from '../../services/achievementService';
@@ -32,6 +32,12 @@ interface WorkoutSummaryProps {
   session: Partial<WorkoutSession>;
   onClose: () => void;
   onSaveAsTemplate?: () => void;
+  /**
+   * "חזרו על האימון" — repeat this session as a starting template, closing the
+   * retention loop. When provided, a secondary footer action invokes it and
+   * then closes the summary. Omitted ⇒ the action isn't rendered.
+   */
+  onRepeatWorkout?: () => void;
 }
 
 // ============================================================
@@ -108,6 +114,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   session,
   onClose,
   onSaveAsTemplate,
+  onRepeatWorkout,
 }) => {
   const [view, setView] = useState<'overview' | 'details'>('overview');
   const [prsCount, setPrsCount] = useState<number>(0);
@@ -308,6 +315,14 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
     exportWorkoutHistoryCSV([session as WorkoutSession]);
   }, [session]);
 
+  // "חזור על האימון" — fire the repeat handler, then close the summary so the
+  // user lands back in the start flow with this session pre-seeded.
+  const handleRepeat = useCallback(() => {
+    triggerHapticEffect('success');
+    onRepeatWorkout?.();
+    onClose();
+  }, [onRepeatWorkout, onClose]);
+
   // Persist rating when the user selects one. Trigger ONLY on the rating change
   // (read the latest session through a ref) — depending on the whole `session`
   // object re-ran this on every parent re-render, re-saving the session and
@@ -324,17 +339,38 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   }, [workoutRating]);
 
   const handleShare = useCallback(async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'סיכום אימון',
-          text: `אימון · ${formatDuration(stats.durationSec)} · ${stats.totalVolume.toLocaleString()} ק"ג · ${pluralizeHe(stats.totalSets, HE_NOUNS.set)}`,
-        });
-      } catch (err) {
-        logger.workout.warn('Failed to send workout completion notification', err);
+    if (!navigator.share) return;
+    // Lead with the WIN when there is one — a PR count, a streak milestone, or
+    // the session's standout best-set — instead of a bare receipt line. The
+    // receipt (duration · volume · sets) always follows so the share still
+    // carries the full numbers.
+    const receipt = `אימון · ${formatDuration(stats.durationSec)} · ${stats.totalVolume.toLocaleString()} ק"ג · ${pluralizeHe(stats.totalSets, HE_NOUNS.set)}`;
+
+    let headline: string | null = null;
+    if (prsCount > 0) {
+      headline = `${prsCount} ${prsCount === 1 ? 'שיא חדש' : 'שיאים חדשים'}`;
+    } else if (streakMilestone !== null) {
+      headline = `${streakMilestone} ימי אימון ברצף`;
+    } else {
+      // Standout best-set from a PR exercise, else the heaviest best-set logged.
+      const top =
+        stats.exerciseStats.find((ex) => ex.name && prExercises.has(ex.name) && ex.bestSet) ??
+        stats.exerciseStats
+          .filter((ex) => ex.bestSet)
+          .sort((a, b) => (b.bestSet?.weight ?? 0) - (a.bestSet?.weight ?? 0))[0];
+      if (top?.bestSet && top.name) {
+        headline = `${top.name} · ${top.bestSet.weight} ק"ג × ${top.bestSet.reps}`;
       }
     }
-  }, [stats]);
+
+    const text = headline ? `${headline}\n${receipt}` : receipt;
+    try {
+      await navigator.share({ title: 'סיכום אימון', text });
+    } catch (err) {
+      // User-cancelled shares also reject here; log at warn for diagnosability.
+      logger.workout.warn('Failed to share workout summary', err);
+    }
+  }, [stats, prsCount, prExercises, streakMilestone]);
 
   // Hero count-up: the giant PR number in the masthead rolls up and lands with
   // a settle pop as the screen settles. RAF-driven (no React re-render) and
@@ -827,6 +863,38 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           >
             סיום
           </button>
+
+          {/* "Do it again" — repeat this session as a starting template, closing
+              the retention loop. Secondary weight so "סיום" stays the primary. */}
+          {onRepeatWorkout && (
+            <button
+              type="button"
+              onClick={handleRepeat}
+              className="active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fs-accent)]"
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '12px 16px',
+                background: 'var(--fs-surface)',
+                color: 'var(--fs-ink)',
+                border: '2px solid var(--fs-accent)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 13,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                transition: reduced ? 'none' : 'transform 120ms ease',
+                minHeight: 48,
+              }}
+            >
+              <RotateCcw size={15} strokeWidth={2.5} aria-hidden="true" />
+              חזרו על האימון
+            </button>
+          )}
 
           {/* Secondary actions */}
           <div className="flex gap-2">

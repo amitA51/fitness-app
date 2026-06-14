@@ -21,6 +21,10 @@ export const HE_NOUNS = {
   set: { one: 'סט', many: 'סטים', oneWord: 'אחד' },
   week: { one: 'שבוע', many: 'שבועות', oneWord: 'אחד' },
   day: { one: 'יום', many: 'ימים', oneWord: 'אחד' },
+  workout: { one: 'אימון', many: 'אימונים', oneWord: 'אחד' },
+  client: { one: 'מתאמן', many: 'מתאמנים', oneWord: 'אחד' },
+  // Feminine — "מדידה אחת", not "מדידה אחד".
+  measurement: { one: 'מדידה', many: 'מדידות', oneWord: 'אחת' },
 } as const satisfies Record<string, HeNounForms>;
 
 /**

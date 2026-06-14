@@ -26,9 +26,11 @@ export function ProfileStep({ data, onChange }: ProfileStepProps) {
 
   return (
     <m.div
-      initial={{ opacity: 0, x: 20 }}
+      // RTL-forward: the next step arrives from the inline-start (left) since
+      // ChevronLeft is "forward" — enter from negative x, exit to positive x.
+      initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
+      exit={{ opacity: 0, x: 20 }}
       className="flex flex-col h-full"
     >
       <StepHeader
@@ -63,16 +65,16 @@ export function ProfileStep({ data, onChange }: ProfileStepProps) {
           <div className="flex gap-3">
             {(
               [
-                { value: 'male', label: 'זכר', icon: '' },
-                { value: 'female', label: 'נקבה', icon: '' },
-                { value: 'other', label: 'אחר', icon: '' },
+                { value: 'male', label: 'זכר' },
+                { value: 'female', label: 'נקבה' },
+                { value: 'other', label: 'אחר' },
               ] as const
             ).map((opt) => (
               <button
                 key={opt.value}
                 type="button"
                 onClick={() => onChange({ gender: opt.value })}
-                className="flex-1 min-h-[56px] transition-all flex flex-col items-center justify-center gap-1"
+                className="flex-1 min-h-[56px] transition-all flex items-center justify-center"
                 style={{
                   background: data.gender === opt.value ? 'var(--fs-accent)' : 'var(--fs-surface)',
                   border:
@@ -86,7 +88,6 @@ export function ProfileStep({ data, onChange }: ProfileStepProps) {
                   fontSize: '16px',
                 }}
               >
-                <span className="text-2xl">{opt.icon}</span>
                 <span>{opt.label}</span>
               </button>
             ))}

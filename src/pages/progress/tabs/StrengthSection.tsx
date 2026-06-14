@@ -17,10 +17,59 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { GlowAreaChart, type GlowAreaPoint } from '../../../components/charts';
 import ForecastChart from '../../../components/workout/ForecastChart';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
+import { zoneColor } from '../../../utils/zoneColor';
 import { SectionCard } from '../components/SectionCard';
 import { buildPRBoard, buildStrengthCurves } from '../progressMetrics';
+import type { StrengthDataPoint } from '../types';
 
 const exerciseLabel = (raw: string): string => raw.split('|')[0]?.trim() || raw;
+
+/** One history row: a data point plus its delta vs the chronologically previous point. */
+interface HistoryRow {
+  point: StrengthDataPoint;
+  /** Signed change vs the previous (older) tracked weight, or null for the first. */
+  diff: number | null;
+}
+
+/** A month bucket of history rows, newest month first, newest row first within. */
+interface HistoryMonth {
+  /** Mono uppercase month label, e.g. "מאי 2026". */
+  label: string;
+  rows: HistoryRow[];
+}
+
+/**
+ * Group the most-recent `limit` history points into month buckets (newest first),
+ * each row carrying its delta vs the chronologically previous point. Replaces the
+ * flat 10-row divide-y list (the ui-preflight long-list smell) with real grouping.
+ */
+function groupHistoryByMonth(data: StrengthDataPoint[], limit: number): HistoryMonth[] {
+  const recentNewestFirst = [...data].reverse().slice(0, limit);
+  const months: HistoryMonth[] = [];
+  for (let i = 0; i < recentNewestFirst.length; i++) {
+    const point = recentNewestFirst[i]!;
+    // The chronologically previous (older) point in the full series.
+    const olderIdx = data.length - 1 - i - 1;
+    const olderPoint = data[olderIdx];
+    const diff = olderPoint ? point.value - olderPoint.value : null;
+    const d = new Date(point.date);
+    const label = Number.isNaN(d.getTime())
+      ? '—'
+      : d.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
+    const bucket = months[months.length - 1];
+    if (bucket && bucket.label === label) {
+      bucket.rows.push({ point, diff });
+    } else {
+      months.push({ label, rows: [{ point, diff }] });
+    }
+  }
+  return months;
+}
+
+/** PR board rows shown before the "הצג הכל" expander appears. */
+const PR_BOARD_COLLAPSED = 6;
+/** Most-recent per-exercise history rows to render. */
+const HISTORY_ROWS = 10;
 
 const cardHeader: React.CSSProperties = {
   fontFamily: 'var(--font-mono)',
@@ -41,6 +90,10 @@ export const StrengthSection = memo(function StrengthSection({
   const curves = useMemo(() => buildStrengthCurves(sessions), [sessions]);
   const prBoard = useMemo(() => buildPRBoard(prs), [prs]);
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
+  const [showAllPRs, setShowAllPRs] = useState(false);
+
+  const visiblePRs = showAllPRs ? prBoard : prBoard.slice(0, PR_BOARD_COLLAPSED);
+  const hiddenPRCount = prBoard.length - PR_BOARD_COLLAPSED;
 
   useEffect(() => {
     setSelectedExercise((prev) => prev ?? (curves.length > 0 ? curves[0]!.exerciseName : null));
@@ -59,6 +112,11 @@ export const StrengthSection = memo(function StrengthSection({
             y: point.value,
           }))
         : [],
+    [activeCurve]
+  );
+
+  const historyMonths = useMemo<HistoryMonth[]>(
+    () => (activeCurve ? groupHistoryByMonth(activeCurve.data, HISTORY_ROWS) : []),
     [activeCurve]
   );
 
@@ -89,9 +147,14 @@ export const StrengthSection = memo(function StrengthSection({
       {/* ── Section 1: PR leaderboard (e1RM) ─────────────────────────────── */}
       {prBoard.length > 0 && (
         <SectionCard rail={false} style={{ padding: '16px 20px' }}>
-          <h3 style={{ ...cardHeader, marginBottom: 12 }}>לוח שיאים · PR BOARD (1RM)</h3>
+          <div className="flex items-baseline justify-between gap-2" style={{ marginBottom: 12 }}>
+            <h3 style={cardHeader}>לוח שיאים · PR BOARD (1RM)</h3>
+            <span style={{ ...cardHeader, fontSize: 9 }} dir="ltr">
+              {prBoard.length}
+            </span>
+          </div>
           <div style={{ display: 'grid', gap: 6 }}>
-            {prBoard.slice(0, 6).map((entry, i) => (
+            {visiblePRs.map((entry, i) => (
               <div
                 key={entry.exerciseName}
                 style={{
@@ -171,6 +234,37 @@ export const StrengthSection = memo(function StrengthSection({
               </div>
             ))}
           </div>
+          {hiddenPRCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAllPRs((v) => !v)}
+              className="active:scale-[0.98] motion-reduce:active:scale-100"
+              aria-expanded={showAllPRs}
+              style={{
+                marginTop: 10,
+                width: '100%',
+                minHeight: 44,
+                background: 'transparent',
+                border: '1px solid var(--fs-surface-2)',
+                borderRadius: 10,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--fs-accent)',
+              }}
+            >
+              {showAllPRs ? (
+                'הצג פחות'
+              ) : (
+                <>
+                  הצג הכל · <span dir="ltr">+{hiddenPRCount}</span>
+                </>
+              )}
+            </button>
+          )}
         </SectionCard>
       )}
 
@@ -179,14 +273,21 @@ export const StrengthSection = memo(function StrengthSection({
         <SectionCard rail={false} style={{ padding: '16px 20px' }}>
           <h3 style={{ ...cardHeader, marginBottom: 12 }}>ניתוח תרגיל · עקומת כוח</h3>
 
-          {/* Exercise selector */}
+          {/* Exercise selector — horizontally scrollable so EVERY tracked
+              exercise is reachable (was capped at 8 with no overflow path),
+              matching the Progress tab-bar scroll pattern. */}
           <div
-            className="flex gap-2 flex-wrap"
+            className="flex gap-2 overflow-x-auto"
             role="tablist"
             aria-label="בחירת תרגיל"
-            style={{ marginBottom: 16 }}
+            style={{
+              marginBottom: 16,
+              paddingBottom: 4,
+              scrollbarWidth: 'none',
+              WebkitOverflowScrolling: 'touch',
+            }}
           >
-            {curves.slice(0, 8).map((curve) => {
+            {curves.map((curve) => {
               const active = selectedExercise === curve.exerciseName;
               return (
                 <button
@@ -195,12 +296,12 @@ export const StrengthSection = memo(function StrengthSection({
                   role="tab"
                   aria-selected={active}
                   onClick={() => setSelectedExercise(curve.exerciseName)}
-                  className="chip"
+                  className="chip shrink-0"
                   style={{
                     minHeight: 44,
-                    background: active ? 'var(--fs-signal)' : 'var(--fs-surface-2)',
-                    color: active ? 'var(--fs-primary)' : 'var(--fs-ink)',
-                    borderColor: active ? 'var(--fs-primary)' : 'transparent',
+                    background: active ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+                    color: active ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
+                    borderColor: active ? 'var(--fs-accent)' : 'transparent',
                     borderWidth: 1,
                     borderStyle: 'solid',
                   }}
@@ -246,31 +347,39 @@ export const StrengthSection = memo(function StrengthSection({
                 KG
               </span>
             </div>
-            {activeCurve.change !== 0 && (
-              <div
-                className="inline-flex items-center gap-1.5"
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  background: activeCurve.change > 0 ? 'var(--fs-signal)' : 'var(--fs-primary)',
-                  color: activeCurve.change > 0 ? 'var(--fs-primary)' : 'var(--fs-signal)',
-                  padding: '4px 10px',
-                  borderRadius: 8,
-                  direction: 'ltr',
-                }}
-              >
-                {activeCurve.change > 0 ? (
-                  <TrendingUp size={11} aria-hidden="true" />
-                ) : (
-                  <TrendingDown size={11} aria-hidden="true" />
-                )}
-                {activeCurve.change > 0 ? '+' : ''}
-                {activeCurve.change}KG ({activeCurve.changePct > 0 ? '+' : ''}
-                {activeCurve.changePct}%)
-              </div>
-            )}
+            {activeCurve.change !== 0 &&
+              (() => {
+                // Strength gain is genuinely directional toward the goal, so the
+                // change chip is zone-graded (up=accent / down=warn) — never lime,
+                // which stays reserved for PR celebration. Zone-colored text on a
+                // matching subtle tint keeps AA in both themes.
+                const zc = zoneColor(activeCurve.change > 0 ? 'good' : 'attention');
+                return (
+                  <div
+                    className="inline-flex items-center gap-1.5"
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 11,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      background: `color-mix(in srgb, ${zc} 16%, var(--fs-surface))`,
+                      color: zc,
+                      padding: '4px 10px',
+                      borderRadius: 8,
+                      direction: 'ltr',
+                    }}
+                  >
+                    {activeCurve.change > 0 ? (
+                      <TrendingUp size={11} aria-hidden="true" />
+                    ) : (
+                      <TrendingDown size={11} aria-hidden="true" />
+                    )}
+                    {activeCurve.change > 0 ? '+' : ''}
+                    {activeCurve.change}KG ({activeCurve.changePct > 0 ? '+' : ''}
+                    {activeCurve.changePct}%)
+                  </div>
+                );
+              })()}
           </div>
 
           {/* Converged trend chart */}
@@ -280,6 +389,8 @@ export const StrengthSection = memo(function StrengthSection({
               height={170}
               xAxis
               yAxis
+              interactive
+              valueUnit="kg"
               ariaLabel={`עקומת כוח ל${exerciseLabel(activeCurve.exerciseName)}`}
             />
           ) : (
@@ -307,60 +418,66 @@ export const StrengthSection = memo(function StrengthSection({
           <h3 style={{ ...cardHeader, marginBottom: 12 }}>
             היסטוריית משקל · {exerciseLabel(activeCurve.exerciseName)}
           </h3>
-          <div className="space-y-1">
-            {activeCurve.data
-              .slice()
-              .reverse()
-              .slice(0, 10)
-              .map((point, i) => {
-                const prevPoint = activeCurve.data[activeCurve.data.length - 1 - i - 1];
-                const diff = prevPoint ? point.value - prevPoint.value : null;
-                return (
-                  <div
-                    key={point.date}
-                    className="flex items-center justify-between py-2.5"
-                    style={{ borderBottom: '1px solid var(--fs-surface-2)' }}
-                  >
-                    <span style={{ color: 'var(--fs-muted)', fontSize: 13 }}>
-                      {new Date(point.date).toLocaleDateString('he-IL', {
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                    </span>
-                    <div className="flex items-center gap-3">
-                      {diff !== null && diff !== 0 && (
+          {/* Month-grouped instead of 10 flat divide-y rows (the ui-preflight
+              long-list smell): a mono month kicker leads each bucket, rows sit on
+              an inset surface (no per-row hairline). Strength gain is genuinely
+              directional toward the goal, so the delta is zone-graded
+              (up=accent / down=warn) — never lime, which stays PR-only. */}
+          <div className="space-y-4">
+            {historyMonths.map((month) => (
+              <div key={month.label}>
+                <div style={{ ...cardHeader, fontSize: 9, marginBottom: 6 }}>{month.label}</div>
+                <div style={{ display: 'grid', gap: 4 }}>
+                  {month.rows.map(({ point, diff }) => (
+                    <div
+                      key={point.date}
+                      className="flex items-center justify-between"
+                      style={{
+                        background: 'var(--fs-surface-2)',
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                      }}
+                    >
+                      <span style={{ color: 'var(--fs-muted)', fontSize: 13 }}>
+                        {new Date(point.date).toLocaleDateString('he-IL', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        {diff !== null && diff !== 0 && (
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: 11,
+                              color: zoneColor(diff > 0 ? 'good' : 'attention'),
+                              direction: 'ltr',
+                            }}
+                          >
+                            {diff > 0 ? '+' : ''}
+                            {diff}
+                          </span>
+                        )}
                         <span
                           style={{
-                            fontFamily: 'var(--font-mono)',
-                            fontSize: 11,
-                            color: diff > 0 ? 'var(--fs-signal)' : 'var(--fs-primary)',
-                            background: diff > 0 ? 'var(--fs-primary)' : 'var(--fs-signal)',
-                            padding: '2px 8px',
+                            fontFamily: 'var(--font-display)',
+                            fontWeight: 800,
+                            fontSize: 18,
+                            color: 'var(--fs-ink)',
                             direction: 'ltr',
                           }}
                         >
-                          {diff > 0 ? '+' : ''}
-                          {diff}
+                          {point.value}
                         </span>
-                      )}
-                      <span
-                        style={{
-                          fontFamily: 'var(--font-display)',
-                          fontWeight: 800,
-                          fontSize: 18,
-                          color: 'var(--fs-ink)',
-                          direction: 'ltr',
-                        }}
-                      >
-                        {point.value}
-                      </span>
-                      <span className="eyebrow" style={{ color: 'var(--fs-muted)' }}>
-                        KG
-                      </span>
+                        <span className="eyebrow" style={{ color: 'var(--fs-muted)' }}>
+                          KG
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </SectionCard>
       )}

@@ -17,6 +17,8 @@ interface WorkoutHeaderSectionProps {
   restTimerEndTime: number | null;
   onSkipRest: () => void;
   onAddRestTime: (seconds: number) => void;
+  /** Skip rest AND jump to entering the next set's weight. */
+  onStartNextSet?: () => void;
   nextSetHint: string | undefined;
   /** Planned weight (kg) for the upcoming set — shown as a dir="ltr" chip. 0/undefined hides it. */
   nextSetWeight?: number;
@@ -38,6 +40,7 @@ const WorkoutHeaderSection: React.FC<WorkoutHeaderSectionProps> = ({
   restTimerEndTime,
   onSkipRest,
   onAddRestTime,
+  onStartNextSet,
   nextSetHint,
   nextSetWeight,
   nextSetReps,
@@ -62,6 +65,7 @@ const WorkoutHeaderSection: React.FC<WorkoutHeaderSectionProps> = ({
         endTime={restTimerEndTime}
         onSkip={onSkipRest}
         onAddTime={onAddRestTime}
+        onStartNextSet={onStartNextSet}
         nextSetHint={nextSetHint}
         nextSetWeight={nextSetWeight}
         nextSetReps={nextSetReps}

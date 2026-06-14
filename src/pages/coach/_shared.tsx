@@ -9,9 +9,28 @@
 import { ChevronRight } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { SkeletonBox } from '../../components/ui/SkeletonLoader';
+
+/**
+ * Resolve the logical PARENT path for a deep coach/trainee leaf, used as the
+ * back target on a COLD entry (deep-link / push notification) where there is no
+ * in-app history to pop. Pure + exported so it can be unit-tested in isolation.
+ *
+ *   /coach/messages/:otherId        → /coach/messages
+ *   /coach/clients/:id[/report]     → /coach/clients
+ *   /coach/groups/:groupId/chat     → /coach   (groups list lives under the home tab)
+ *   /coach/invites, /coach/groups   → /coach
+ *   /my-coach/messages|groups/...   → /my-coach (trainee side of the shared shell)
+ *   anything else                   → /coach
+ */
+export function resolveCoachBackTarget(pathname: string): string {
+  if (pathname.startsWith('/my-coach')) return '/my-coach';
+  if (pathname.startsWith('/coach/messages')) return '/coach/messages';
+  if (pathname.startsWith('/coach/clients')) return '/coach/clients';
+  return '/coach';
+}
 
 export function CoachPage({
   title,
@@ -32,7 +51,22 @@ export function CoachPage({
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
-  const back = onBack ?? (() => navigate(-1));
+  const location = useLocation();
+  // onBack wins. Otherwise: pop in-app history when it exists, but on a COLD
+  // entry (deep-link / push tap as the FIRST navigation) there is nothing to pop
+  // — React Router stores a numeric `idx` in history.state; idx 0 (or null on a
+  // browser that never set it) means this is the first entry, so navigate(-1)
+  // would strand the user. Route to the logical parent instead.
+  const back =
+    onBack ??
+    (() => {
+      const idx = (window.history.state as { idx?: number } | null)?.idx;
+      if (idx && idx > 0) {
+        navigate(-1);
+        return;
+      }
+      navigate(resolveCoachBackTarget(location.pathname));
+    });
   return (
     <div
       dir="rtl"

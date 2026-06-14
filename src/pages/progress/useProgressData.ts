@@ -32,10 +32,18 @@ import { toLocalDateStr, todayStr } from '../../utils/dateUtils';
 import { logger } from '../../utils/logger';
 import type { WeeklyRecoveryAverage } from './types';
 
-/** Uniform load window for body/recovery range queries (days). */
-const WINDOW_DAYS = 30;
-/** How many recent workout sessions to pull for all session-derived metrics. */
-const SESSION_LIMIT = 100;
+/**
+ * Uniform load window for body/recovery range queries (days). Widened from 30 to
+ * a full year so the per-chart time-range control (W/M/3M/6M/Y) can slice the
+ * already-loaded arrays by date instead of triggering a re-fetch per range.
+ */
+const WINDOW_DAYS = 365;
+/**
+ * How many recent workout sessions to pull for all session-derived metrics.
+ * Raised alongside WINDOW_DAYS so a year-long volume trend isn't truncated by the
+ * session cap before the date slice runs.
+ */
+const SESSION_LIMIT = 400;
 
 const EMPTY_WEEKLY: WeeklyRecoveryAverage = {
   avgSleep: 0,
