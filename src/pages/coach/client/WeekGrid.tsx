@@ -20,6 +20,14 @@ const WEEKDAY_LETTER: Record<number, string> = {
 
 // ---- helpers ----------------------------------------------------------------
 
+/** Local YYYY-MM-DD for `d` (no UTC conversion — keeps the day boundary local). */
+function toLocalDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function calBarHeight(day: DayAdherence): number {
   if (day.calories == null) return 0;
   if (day.targetCalories == null || day.targetCalories <= 0) return 40; // fixed height when no target
@@ -31,7 +39,7 @@ function calBarColor(day: DayAdherence): string {
   return day.calories > day.targetCalories ? 'var(--fs-warn)' : 'var(--fs-primary)';
 }
 
-function buildAriaLabel(days: DayAdherence[]): string {
+function buildAriaLabel(days: DayAdherence[], todayKey: string): string {
   const workoutDays = days.filter((d) => d.sessions > 0).length;
   const hasTarget = days.some((d) => d.targetCalories != null);
   const onTargetDays = hasTarget
@@ -45,6 +53,9 @@ function buildAriaLabel(days: DayAdherence[]): string {
   if (onTargetDays !== null) label += `, עמידה ביעד קלורי ${onTargetDays} ימים`;
   if (scheduledTotal > 0)
     label += `, ${completedScheduled} מתוך ${scheduledTotal} אימונים מתוכננים בוצעו`;
+  const todaySessions = days.find((d) => d.date === todayKey)?.sessions;
+  if (todaySessions != null)
+    label += `, היום ${todaySessions > 0 ? `${todaySessions} אימונים` : 'ללא אימון'}`;
   return label;
 }
 
@@ -99,13 +110,14 @@ export function WeekGrid({ days, loading, error, onRetry }: WeekGridProps) {
   if (days.length === 0) return <InlineEmpty>אין נתוני שבוע.</InlineEmpty>;
 
   const summaryLine = buildSummaryLine(days);
+  const todayKey = toLocalDateKey(new Date());
 
   return (
     <div>
       {/* Visual grid — aria-hidden; the wrapper role="img" carries the summary */}
       <div
         role="img"
-        aria-label={buildAriaLabel(days)}
+        aria-label={buildAriaLabel(days, todayKey)}
         className="flex gap-1.5"
         style={{ direction: 'rtl' }}
       >
@@ -115,6 +127,10 @@ export function WeekGrid({ days, loading, error, onRetry }: WeekGridProps) {
           const barColor = calBarColor(day);
           const hasScheduled = day.scheduled > 0;
           const scheduledDone = hasScheduled && day.completedScheduled >= day.scheduled;
+          // Anchor the current column with a NON-color cue: a bold heading-tone
+          // day-letter (vs muted) over a thin accent baseline rule — perceivable
+          // without relying on color alone.
+          const isToday = day.date === todayKey;
 
           return (
             <div
@@ -123,14 +139,17 @@ export function WeekGrid({ days, loading, error, onRetry }: WeekGridProps) {
               className="flex-1 flex flex-col items-center gap-1"
               style={{ minWidth: 0 }}
             >
-              {/* Day letter */}
+              {/* Day letter — bold heading tone over an accent baseline for today */}
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
                   letterSpacing: '0.06em',
-                  color: 'var(--fs-muted)',
-                  lineHeight: 1,
+                  fontWeight: isToday ? 700 : 400,
+                  color: isToday ? 'var(--fs-heading)' : 'var(--fs-muted)',
+                  lineHeight: 1.4,
+                  borderBottom: isToday ? '2px solid var(--fs-accent)' : '2px solid transparent',
+                  paddingBottom: 1,
                 }}
               >
                 {WEEKDAY_LETTER[day.weekday] ?? '?'}

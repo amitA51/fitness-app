@@ -71,7 +71,7 @@ const TasksIllustration: React.FC<{ idPrefix: string }> = ({ idPrefix }) => (
     <circle cx="100" cy="145" r="20" fill={`url(#${idPrefix}-tasksGradient)`} />
     <path
       d="M92 145l6 6 12-12"
-      stroke="white"
+      stroke="var(--color-ink-on-dark)"
       strokeWidth="3"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -102,7 +102,7 @@ const HabitsIllustration: React.FC<{ idPrefix: string }> = ({ idPrefix }) => (
     <circle cx="100" cy="45" r="25" fill={`url(#${idPrefix}-habitsGradient)`} />
     <path
       d="M100 30v15M100 55l10-10M100 55l-10-10"
-      stroke="white"
+      stroke="var(--color-ink-on-accent)"
       strokeWidth="2.5"
       strokeLinecap="round"
       fill="none"
@@ -143,7 +143,7 @@ const FeedIllustration: React.FC<{ idPrefix: string }> = ({ idPrefix }) => (
     <circle cx="60" cy="60" r="18" fill={`url(#${idPrefix}-feedGradient)`} />
     <path
       d="M55 60l3 3 7-7"
-      stroke="white"
+      stroke="var(--color-ink-on-accent)"
       strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -274,7 +274,7 @@ const NotesIllustration: React.FC<{ idPrefix: string }> = ({ idPrefix }) => (
     <circle cx="145" cy="160" r="18" fill={`url(#${idPrefix}-notesGradient)`} />
     <path
       d="M140 160l-10-10M150 160l10-10"
-      stroke="white"
+      stroke="var(--color-ink-on-accent)"
       strokeWidth="2.5"
       strokeLinecap="round"
       fill="none"
@@ -307,7 +307,7 @@ const WorkoutIllustration: React.FC<{ idPrefix: string }> = ({ idPrefix }) => (
     <circle cx="100" cy="155" r="25" fill={`url(#${idPrefix}-workoutGradient)`} />
     <path
       d="M90 155h20M100 145v20"
-      stroke="white"
+      stroke="var(--color-ink-on-accent)"
       strokeWidth="3"
       strokeLinecap="round"
       fill="none"
@@ -335,7 +335,7 @@ const SuccessIllustration: React.FC<{ idPrefix: string }> = ({ idPrefix }) => (
     <circle cx="100" cy="100" r="40" fill={`url(#${idPrefix}-successGradient)`} />
     <path
       d="M80 100l15 15 30-30"
-      stroke="white"
+      stroke="var(--color-ink-on-accent)"
       strokeWidth="6"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -374,7 +374,7 @@ const ErrorIllustration: React.FC<{ idPrefix: string }> = ({ idPrefix }) => (
     <circle cx="100" cy="100" r="40" fill={`url(#${idPrefix}-errorGradient)`} />
     <path
       d="M85 85l30 30M115 85l-30 30"
-      stroke="white"
+      stroke="var(--color-ink-on-accent)"
       strokeWidth="6"
       strokeLinecap="round"
       fill="none"
@@ -406,7 +406,7 @@ const GenericIllustration: React.FC<{ idPrefix: string }> = ({ idPrefix }) => (
     <circle cx="140" cy="110" r="22" fill={`url(#${idPrefix}-genericGradient)`} />
     <path
       d="M135 110h10M140 105v10"
-      stroke="white"
+      stroke="var(--color-ink-on-dark)"
       strokeWidth="2.5"
       strokeLinecap="round"
       fill="none"

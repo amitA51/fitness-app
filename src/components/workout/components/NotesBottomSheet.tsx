@@ -141,7 +141,7 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
             ref={textAreaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="כתוב הערה..."
+            placeholder="כתבו הערה…"
             rows={3}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {

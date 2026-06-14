@@ -1176,6 +1176,14 @@ textarea {
   display: inline-flex;
   align-items: baseline;
   transition: color var(--duration-fast) var(--ease-premium);
+  /* Self-protecting against bidi reorder: in the RTL layout a number adjacent to
+     Hebrew (or carrying units / a +/- sign / decimals) could have its digits or
+     sign visually reordered. Forcing LTR + an isolation boundary makes every
+     .kinetic-number render its digits left-to-right and shields the surrounding
+     Hebrew from them — killing the digit-reorder bug class at the source so call
+     sites no longer each need a dir="ltr" wrapper. */
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 .kinetic-number.large {

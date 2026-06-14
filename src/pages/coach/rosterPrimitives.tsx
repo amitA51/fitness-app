@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import {
   type ClientOverviewRow,
+  type StatusDotShape,
   type TodayScheduleCount,
   clientStatusMeta,
   getRecentCheckInFlags,
@@ -113,7 +114,38 @@ export function RowIconBtn({
   );
 }
 
-export function StatusChip({ label, color }: { label: string; color: string }) {
+/**
+ * Severity dot — a NON-color cue distinguishing same-color status tiers:
+ * `filled` = graver (inactive/active), `ring` = lighter (at_risk), `none` = no
+ * dot. Mirrors WeekGrid's filled-vs-ring scheduled indicator. aria-hidden — the
+ * tier is exposed to assistive tech via the row's sr-only / chip label text.
+ */
+function StatusDot({
+  shape,
+  color,
+  size = 7,
+}: { shape: StatusDotShape; color: string; size?: number }) {
+  if (shape === 'none') return null;
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 999,
+        flexShrink: 0,
+        background: shape === 'filled' ? color : 'transparent',
+        border: shape === 'ring' ? `1.5px solid ${color}` : 'none',
+      }}
+    />
+  );
+}
+
+export function StatusChip({
+  label,
+  color,
+  dot = 'filled',
+}: { label: string; color: string; dot?: StatusDotShape }) {
   return (
     <span
       style={{
@@ -127,10 +159,7 @@ export function StatusChip({ label, color }: { label: string; color: string }) {
         color,
       }}
     >
-      <span
-        style={{ width: 7, height: 7, borderRadius: 999, background: color }}
-        aria-hidden="true"
-      />
+      <StatusDot shape={dot} color={color} />
       {label}
     </span>
   );
@@ -282,7 +311,7 @@ export function AttentionRow({
   onMessage,
 }: { row: ClientOverviewRow; onOpenClient: () => void; onMessage: () => void }) {
   const name = row.client.clientProfile?.displayName ?? 'מתאמן';
-  const { color, label: statusLabel } = clientStatusMeta(row.analytics.level);
+  const { color, label: statusLabel, dot } = clientStatusMeta(row.analytics.level);
   const days = row.analytics.daysSinceActivity;
   // Gender-neutral phrasing; number stays LTR inside RTL layout.
   const meta =
@@ -305,10 +334,7 @@ export function AttentionRow({
         minHeight: 56,
       }}
     >
-      <span
-        aria-hidden="true"
-        style={{ flexShrink: 0, width: 8, height: 8, borderRadius: 999, background: color }}
-      />
+      <StatusDot shape={dot} color={color} size={8} />
       <div className="flex-1 min-w-0">
         <div
           style={{

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { showToast } from '../../../components/ui/GlobalToast';
 import { parseLocalDate } from '../../../services/analytics/shared';
 import { listMyAssignments } from '../../../services/coach';
@@ -51,6 +51,17 @@ export function useNutritionData() {
   // explicit error + retry instead of staying stuck on a permanent skeleton.
   const [loadError, setLoadError] = useState(false);
 
+  // Per-day latch for the one-time "hit your calorie goal" celebration. Keyed by
+  // date so it fires at most once per day, never re-firing on edit/reload: the
+  // FIRST observation of a day silently latches if it already opened at/over
+  // goal (a reload of an already-met day must not celebrate); only a live
+  // under→over crossing within the session fires the haptic + toast.
+  const goalCelebrationRef = useRef<{ date: string; seen: boolean; celebrated: boolean }>({
+    date: '',
+    seen: false,
+    celebrated: false,
+  });
+
   const loadData = useCallback(async () => {
     try {
       const dateToUse = isToday ? todayStr() : selectedDate;
@@ -97,6 +108,29 @@ export function useNutritionData() {
     return () => window.removeEventListener('water-updated', loadWaterHistory);
   }, [loadData, loadWaterHistory]);
 
+  // One-time daily-goal celebration. Fires only on a live under→over crossing of
+  // the calorie goal for the day in view; the first observation of a day that
+  // already opened at/over goal silently latches so a reload never celebrates.
+  useEffect(() => {
+    const activeDate = isToday ? todayStr() : selectedDate;
+    const goalCal = macroGoals.calories;
+    if (goalCal <= 0) return; // no goal → nothing to cross.
+    const reached = todayMacros.calories >= goalCal;
+    const latch = goalCelebrationRef.current;
+
+    if (latch.date !== activeDate) {
+      // First observation of this day: latch as "already celebrated" when it
+      // opened at/over goal, so neither this load nor a later edit re-fires.
+      goalCelebrationRef.current = { date: activeDate, seen: true, celebrated: reached };
+      return;
+    }
+    if (!reached || latch.celebrated) return;
+
+    goalCelebrationRef.current = { ...latch, celebrated: true };
+    triggerHapticEffect('success');
+    showToast('הגעת ליעד הקלורי היומי');
+  }, [todayMacros.calories, macroGoals.calories, selectedDate, isToday]);
+
   const handleSaveMeal = useCallback(async () => {
     if (selectedFoods.length === 0) return;
     // createQuickMeal already sums macros via calcMacroTotals (one source of
@@ -113,7 +147,9 @@ export function useNutritionData() {
       // Remember what was logged so the modal's "אחרונים" shelf can offer
       // repeat meals without a search next time.
       recordRecentFoods(selectedFoods.map((f) => f.id));
-      triggerHapticEffect('success', 'light');
+      // Medium success haptic (was light): logging a meal should feel as
+      // rewarding as logging water, which already uses the medium default.
+      triggerHapticEffect('success');
       showToast('הארוחה נשמרה');
       setShowAddMeal(false);
       setSelectedFoods([]);
@@ -162,6 +198,29 @@ export function useNutritionData() {
       });
     },
     [loadData, todayEntries]
+  );
+
+  const handleRepeatEntry = useCallback(
+    async (id: string) => {
+      // Re-log a saved entry onto the day being viewed. Reuses the proven undo
+      // re-create path: addMealEntry strips id/createdAt and re-stamps fresh
+      // ones, so the copy carries identical name/meals/macros, re-dated to the
+      // open day (retroactive logging stays on the viewed day, not today).
+      const entry = todayEntries.find((e) => e.id === id);
+      if (!entry) return;
+      const dateToUse = isToday ? todayStr() : selectedDate;
+      const { id: _id, createdAt: _createdAt, ...fields } = entry;
+      try {
+        await addMealEntry({ ...fields, date: dateToUse });
+        triggerHapticEffect('success', 'light');
+        showToast('הארוחה נרשמה שוב');
+        loadData();
+      } catch (error) {
+        logger.ui.error('Failed to repeat meal entry', error);
+        showToast('רישום הארוחה נכשל', { variant: 'error' });
+      }
+    },
+    [todayEntries, selectedDate, isToday, loadData]
   );
 
   const handleQuickPreset = useCallback(
@@ -358,6 +417,7 @@ export function useNutritionData() {
     fatPct,
     handleSaveMeal,
     handleDeleteEntry,
+    handleRepeatEntry,
     handleQuickPreset,
     goBack,
     goForward,

@@ -38,6 +38,9 @@ import {
   useRosterSignals,
 } from './rosterPrimitives';
 
+/** Max rows shown in the "awaiting reply" triage bucket on the home screen. */
+const AWAITING_REPLY_CAP = 3;
+
 export default function CoachHome() {
   const navigate = useNavigate();
   const { coachProfile, loading: coachLoading } = useCoach();
@@ -68,6 +71,21 @@ export default function CoachHome() {
         .filter((r) => r.analytics.level === 'at_risk' || r.analytics.level === 'inactive')
         .slice(0, 3),
     [rows]
+  );
+
+  // "Awaiting reply" bucket: clients with unread messages waiting on the coach —
+  // ranked ABOVE the staleness list because answering is the highest-frequency
+  // triage action. Reuses the already-fetched unread signal (no new query),
+  // sorted by unread desc and capped at 3. A client can also be in the staleness
+  // list below — each bucket answers a different question.
+  const awaitingReplyRows = useMemo(
+    () =>
+      rows
+        .map((r) => ({ row: r, unread: signals.unreadByClient[r.client.clientId] ?? 0 }))
+        .filter((x) => x.unread > 0)
+        .sort((a, b) => b.unread - a.unread)
+        .slice(0, AWAITING_REPLY_CAP),
+    [rows, signals.unreadByClient]
   );
 
   // "Planned for today" = full scheduled-today denominator (still-planned OR
@@ -167,6 +185,27 @@ export default function CoachHome() {
         <CoachEmptyState onInvite={() => navigate('/coach/invites')} />
       ) : (
         <>
+          {/* ממתינים לתשובה — answering a message is the highest-frequency triage
+              action, so this bucket sits ABOVE the staleness list. Hidden while
+              the unread signal is in flight (so it never flashes then collapses)
+              and when nobody is waiting. */}
+          {!signalsLoading && awaitingReplyRows.length > 0 && (
+            <Section title="ממתינים לתשובה">
+              {awaitingReplyRows.map(({ row, unread }) => (
+                <AttentionRowWithSignals
+                  key={`reply-${row.client.id}`}
+                  row={row}
+                  unread={unread}
+                  hasRecentCheckIn={signals.recentCheckIns.has(row.client.clientId)}
+                  today={signals.scheduledToday[row.client.clientId]}
+                  signalsLoading={signalsLoading}
+                  onOpenClient={() => navigate(`/coach/clients/${row.client.clientId}`)}
+                  onMessage={() => navigate(`/coach/messages/${row.client.clientId}`)}
+                />
+              ))}
+            </Section>
+          )}
+
           {/* דורשים טיפול היום */}
           <Section title="דורשים טיפול היום">
             {attentionRows.length === 0 ? (

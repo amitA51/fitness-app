@@ -24,17 +24,24 @@ import type { WorkoutSession } from '../../types';
 import { formatThousands } from '../../utils/formatThousands';
 import { logger } from '../../utils/logger';
 import { type Zone, zoneColor } from '../../utils/zoneColor';
-import { HeroStat } from '../ui/HeroStat';
 import { VerdictLine } from '../insights/VerdictLine';
+import { HeroStat } from '../ui/HeroStat';
 
 interface CoachBriefCardProps {
   sessions: WorkoutSession[];
   kind: CoachBriefKind;
+  /**
+   * Compact mode strips the standalone card chrome (and the hero number) and
+   * renders just the verdict line + source caption, so the brief can be embedded
+   * as a caption beneath another surface (e.g. the weekly rings) instead of a
+   * second twin card. Default false = full standalone card.
+   */
+  compact?: boolean;
 }
 
 const REC_LABEL: Record<CoachBriefFacts['recommendation'], string> = {
-  push: 'העלה עומס',
-  maintain: 'שמור עומס',
+  push: 'העלו עומס',
+  maintain: 'שמרו עומס',
   deload: 'דלואד',
   rest: 'מנוחה',
 };
@@ -55,6 +62,7 @@ const dateKey = (d: Date): string =>
 export const CoachBriefCard = memo(function CoachBriefCard({
   sessions,
   kind,
+  compact = false,
 }: CoachBriefCardProps) {
   const [recoveryLogs, setRecoveryLogs] = useState<RecoveryLog[]>([]);
   const [brief, setBrief] = useState<CoachBrief | null>(null);
@@ -115,10 +123,50 @@ export const CoachBriefCard = memo(function CoachBriefCard({
   // we lead with the partial-data frame instead of that prose, so the message
   // matches the thin data. The hero score itself stays (it's a computed fact).
   const isSparse = kind === 'daily-readiness' && facts.confidence === 'low';
+  // Synchronous math-template fallback so the verdict line never sticks on a
+  // permanent "מחשב…": the AI prose only *replaces* this once it resolves. Built
+  // from deterministic facts (recommendation + weekly volume change), never the
+  // model. generateCoachBrief never throws, so this is the pre-resolve and the
+  // failure path both.
+  const factDetail =
+    kind === 'weekly-review'
+      ? `נפח שבועי ${facts.weeklyVolume.toLocaleString()} ק"ג, שינוי ${facts.volumeChangePercent >= 0 ? '+' : ''}${facts.volumeChangePercent}% מהשבוע שעבר.`
+      : `מוכנות ${facts.readinessScore}/100 — ${REC_LABEL[facts.recommendation]}.`;
   const detail = isSparse
     ? 'עוד מעט נתונים — אספנו מעט אימונים. המשך לתעד כדי שההמלצה היומית תהיה מדויקת.'
-    : (brief?.detail ?? '');
+    : (brief?.detail ?? factDetail);
   const sign = facts.volumeChangePercent >= 0 ? '+' : '';
+
+  // Source caption — fall back to "חישוב מתמטי" before the AI prose resolves so
+  // the line is honest about its origin during loading.
+  const sourceCaption = (
+    <div
+      style={{
+        marginTop: 10,
+        fontFamily: 'var(--font-mono)',
+        fontSize: 9,
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+        color: 'var(--fs-muted)',
+      }}
+    >
+      {brief?.source === 'ai' ? 'AI · מבוסס נתונים' : 'חישוב מתמטי'}
+      {facts.confidence !== 'high' && ` · ביטחון ${facts.confidence === 'low' ? 'נמוך' : 'בינוני'}`}
+    </div>
+  );
+
+  // Compact mode: just the verdict + source caption, no card chrome / hero
+  // number — for embedding beneath the weekly rings instead of a twin card.
+  if (compact) {
+    return (
+      <div style={{ marginTop: 12 }}>
+        <VerdictLine kicker={kind === 'weekly-review' ? 'מה זה אומר' : 'ההמלצה'}>
+          {detail}
+        </VerdictLine>
+        {sourceCaption}
+      </div>
+    );
+  }
 
   return (
     <section
@@ -195,27 +243,14 @@ export const CoachBriefCard = memo(function CoachBriefCard({
         </div>
       )}
 
-      {/* Takeaway as a stated verdict ("so what"), not a loose caption. */}
+      {/* Takeaway as a stated verdict ("so what"), not a loose caption. The
+          deterministic math-template fills it instantly; AI prose replaces it
+          once it resolves — it never sticks on a permanent spinner. */}
       <VerdictLine kicker={kind === 'weekly-review' ? 'מה זה אומר' : 'ההמלצה'}>
-        {detail || <span style={{ color: 'var(--fs-muted)' }}>מחשב…</span>}
+        {detail}
       </VerdictLine>
 
-      {brief && (
-        <div
-          style={{
-            marginTop: 10,
-            fontFamily: 'var(--font-mono)',
-            fontSize: 9,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--fs-muted)',
-          }}
-        >
-          {brief.source === 'ai' ? 'AI · מבוסס נתונים' : 'חישוב מתמטי'}
-          {facts.confidence !== 'high' &&
-            ` · ביטחון ${facts.confidence === 'low' ? 'נמוך' : 'בינוני'}`}
-        </div>
-      )}
+      {sourceCaption}
     </section>
   );
 });

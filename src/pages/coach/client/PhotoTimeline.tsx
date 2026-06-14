@@ -12,7 +12,7 @@ import { getPhotoUrls, listCheckIns } from '../../../services/coach/checkInServi
 import { InlineEmpty, Section, SectionError, formatDate } from '../_shared';
 
 /** One photo flattened out of its check-in, carrying the check-in's date. */
-interface TimelinePhoto {
+export interface TimelinePhoto {
   ref: PhotoRef;
   date: string;
   /** Stable key — the storage path is unique per photo. */
@@ -20,7 +20,9 @@ interface TimelinePhoto {
 }
 
 /** Flatten check-ins (already newest-first) into a photo list, newest-first. */
-function flattenPhotos(checkIns: Array<{ date: string; photos: PhotoRef[] }>): TimelinePhoto[] {
+export function flattenPhotos(
+  checkIns: Array<{ date: string; photos: PhotoRef[] }>
+): TimelinePhoto[] {
   return checkIns.flatMap((ci) => ci.photos.map((ref) => ({ ref, date: ci.date, key: ref.path })));
 }
 
@@ -32,7 +34,7 @@ interface PhotoCardProps {
   onActivate: () => void;
 }
 
-function PhotoCard({ photo, url, selectable, selected, onActivate }: PhotoCardProps) {
+export function PhotoCard({ photo, url, selectable, selected, onActivate }: PhotoCardProps) {
   return (
     <button
       type="button"
@@ -90,7 +92,7 @@ interface LightboxProps {
   onClose: () => void;
 }
 
-function Lightbox({ photo, url, onClose }: LightboxProps) {
+export function Lightbox({ photo, url, onClose }: LightboxProps) {
   return (
     <ModalOverlay
       isOpen

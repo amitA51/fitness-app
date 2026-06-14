@@ -21,7 +21,9 @@ import {
   isValidBarcode,
   lookupBarcodeFood,
 } from '../../../services/barcodeFood';
+import { calcFoodMacros } from '../../../services/nutritionService';
 import type { FoodItem } from '../../../types';
+import { cacheScannedFood, getCachedScannedFood } from '../recentFoods';
 import { MacroGrid } from './shared/MacroGrid';
 
 /** Frame-sampling cadence for BarcodeDetector.detect. */
@@ -73,15 +75,45 @@ export const BarcodeScanner = memo(function BarcodeScanner({
     const seq = ++lookupSeqRef.current;
     setLastCode(code);
     setPhase('lookup');
+
+    const showCached = (cached: FoodItem): boolean => {
+      if (seq !== lookupSeqRef.current) return true; // stale; nothing to render.
+      setFood(cached);
+      setServings(1);
+      setPhase('found');
+      return true;
+    };
+
+    // Offline-first: serve a previously scanned product from cache without a
+    // round-trip. Only when truly offline — online we prefer fresh OFF data.
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    if (offline) {
+      const cached = getCachedScannedFood(code);
+      if (cached) {
+        showCached(cached);
+        return;
+      }
+    }
+
     const result = await lookupBarcodeFood(code);
     if (seq !== lookupSeqRef.current) return;
     if (result.status === 'found') {
+      // Persist so re-scans short-circuit and the product shows in "אחרונים".
+      cacheScannedFood(code, result.food);
       setFood(result.food);
       setServings(1);
       setPhase('found');
-    } else {
-      setPhase(result.status === 'not-found' ? 'not-found' : 'error');
+      return;
     }
+    // Network/HTTP error: fall back to a cached copy if we have one.
+    if (result.status === 'error') {
+      const cached = getCachedScannedFood(code);
+      if (cached) {
+        showCached(cached);
+        return;
+      }
+    }
+    setPhase(result.status === 'not-found' ? 'not-found' : 'error');
   }, []);
 
   // Camera lifecycle — runs only while the sheet is open in the scan phase.
@@ -304,8 +336,17 @@ export const BarcodeScanner = memo(function BarcodeScanner({
                   {food.brand}
                 </p>
               )}
-              <p style={{ ...KICKER_STYLE, margin: '10px 0 6px' }}>ל־100 גרם</p>
-              <MacroGrid macros={food} variant="inline" />
+              {/* Serving-aware: scale the displayed macros by the chosen
+                  servings via calcFoodMacros (same helper the Add sheet uses)
+                  so the user confirms the REAL numbers before adding, not a
+                  static per-100g readout. One serving = 100g (OFF mapping). */}
+              <p style={{ ...KICKER_STYLE, margin: '10px 0 6px' }}>
+                <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {Math.round(servings * 100)}
+                </span>{' '}
+                גרם
+              </p>
+              <MacroGrid macros={calcFoodMacros({ ...food, servings })} variant="inline" />
             </div>
 
             {/* Serving amount — same 0.5-step granularity as the Add sheet. */}

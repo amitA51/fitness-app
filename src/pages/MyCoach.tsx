@@ -4,7 +4,7 @@
 
 import { Check, ImagePlus, MessageSquare, Play, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
@@ -102,9 +102,15 @@ function useLocalAck(): {
   return { isAcked, toggleAck };
 }
 
+// Hash the bottom-nav "הודעות" entry appends when a trainee has multiple
+// coaches — scroll the coaches list into view so they can pick a thread.
+const COACHES_LIST_ANCHOR = 'coaches';
+
 export default function MyCoach() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  const coachesAnchorRef = useRef<HTMLDivElement>(null);
   const {
     data: coaches,
     loading: coachesLoading,
@@ -137,6 +143,20 @@ export default function MyCoach() {
     if (!user?.id) return;
     return subscribeToAssignments(user.id, reloadAssignments);
   }, [user?.id, reloadAssignments]);
+
+  // Deep-linked from the bottom-nav chat entry (#coaches): once the coaches list
+  // has rendered, bring it into view so the trainee can pick a thread. Honors
+  // reduced-motion via the smooth/auto split.
+  useEffect(() => {
+    if (location.hash !== `#${COACHES_LIST_ANCHOR}`) return;
+    if (coachesLoading) return;
+    const el = coachesAnchorRef.current;
+    if (!el) return;
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
+  }, [location.hash, coachesLoading]);
 
   // Start a coach-assigned program: ensure the referenced template is synced
   // into the local-first store, then enter the existing ActiveWorkout flow.
@@ -210,48 +230,50 @@ export default function MyCoach() {
         </div>
       </Section>
 
-      <Section title="המאמנים שלי">
-        {coachesLoading ? (
-          <ListSkeleton rows={2} />
-        ) : coachesError ? (
-          <SectionError onRetry={reload} />
-        ) : coaches.length === 0 ? (
-          <EmptyState
-            illustration="generic"
-            title="עדיין לא התחברת למאמן"
-            description="הזן קוד הזמנה למעלה כדי להתחבר למאמן."
-          />
-        ) : (
-          coaches.map((c) => (
-            <ListRow
-              key={c.id}
-              label={c.coachProfile?.displayName ?? 'מאמן'}
-              meta={`מחובר מאז ${formatDate(c.consentAt ?? c.createdAt)}`}
-              trailing={
-                <div className="flex gap-2 items-center">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="שלח הודעה למאמן"
-                    onClick={() => navigate(`/my-coach/messages/${c.coachId}`)}
-                    className="shrink-0"
-                  >
-                    <MessageSquare size={15} aria-hidden="true" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    style={{ color: 'var(--fs-muted)' }}
-                    onClick={() => setDisconnectId(c.id)}
-                  >
-                    נתק
-                  </Button>
-                </div>
-              }
+      <div id={COACHES_LIST_ANCHOR} ref={coachesAnchorRef} style={{ scrollMarginTop: 16 }}>
+        <Section title="המאמנים שלי">
+          {coachesLoading ? (
+            <ListSkeleton rows={2} />
+          ) : coachesError ? (
+            <SectionError onRetry={reload} />
+          ) : coaches.length === 0 ? (
+            <EmptyState
+              illustration="generic"
+              title="עדיין לא התחברת למאמן"
+              description="הזן קוד הזמנה למעלה כדי להתחבר למאמן."
             />
-          ))
-        )}
-      </Section>
+          ) : (
+            coaches.map((c) => (
+              <ListRow
+                key={c.id}
+                label={c.coachProfile?.displayName ?? 'מאמן'}
+                meta={`מחובר מאז ${formatDate(c.consentAt ?? c.createdAt)}`}
+                trailing={
+                  <div className="flex gap-2 items-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="שלח הודעה למאמן"
+                      onClick={() => navigate(`/my-coach/messages/${c.coachId}`)}
+                      className="shrink-0"
+                    >
+                      <MessageSquare size={15} aria-hidden="true" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      style={{ color: 'var(--fs-muted)' }}
+                      onClick={() => setDisconnectId(c.id)}
+                    >
+                      נתק
+                    </Button>
+                  </div>
+                }
+              />
+            ))
+          )}
+        </Section>
+      </div>
 
       {/* הקבוצות שלי — show only when groups exist; invisible to non-grouped trainees */}
       {groupsLoading && coaches.length > 0 ? (

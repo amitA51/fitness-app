@@ -1,13 +1,30 @@
 import { m } from 'framer-motion';
-import { Calendar, Check, ClipboardList, Clock, Target, UserPlus, Users } from 'lucide-react';
+import {
+  Calendar,
+  Check,
+  ChevronLeft,
+  ClipboardList,
+  Clock,
+  Dumbbell,
+  Target,
+  UserPlus,
+  Users,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
+import { Button } from '../../../components/ui/Button';
 import type { OnboardingData } from '../types';
 
 interface CompleteStepProps {
   data: OnboardingData;
+  /**
+   * Finish onboarding. `toFirstAction=true` deep-links into the user's highest-
+   * intent next step (trainee → workout flow, coach → invite flow); the quiet
+   * secondary path finishes onto the default home instead.
+   */
+  onFinish: (toFirstAction: boolean) => void;
 }
 
-export function CompleteStep({ data }: CompleteStepProps) {
+export function CompleteStep({ data, onFinish }: CompleteStepProps) {
   const isCoach = data.role === 'coach';
   const getGoalLabel = (goal: string) => {
     const labels: Record<string, string> = {
@@ -25,7 +42,8 @@ export function CompleteStep({ data }: CompleteStepProps) {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="flex flex-col h-full items-center justify-center text-center px-6 py-8"
+      className="flex flex-col h-full items-center justify-center text-center px-6 py-8 overflow-y-auto"
+      style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
     >
       {/* Success Animation */}
       <m.div
@@ -114,20 +132,22 @@ export function CompleteStep({ data }: CompleteStepProps) {
       >
         {isCoach && (
           <>
+            {/* First step is a real action — taps deep-link into the invite flow. */}
             <CoachNextCard
               icon={<UserPlus size={22} />}
               kicker="צעד ראשון"
-              label="הזמן מתאמנים עם קוד הזמנה"
+              label="הזמינו מתאמנים עם קוד הזמנה"
+              onClick={() => onFinish(true)}
             />
             <CoachNextCard
               icon={<ClipboardList size={22} />}
               kicker="צעד שני"
-              label="בנה תוכנית אימון בספרייה"
+              label="בנו תוכנית אימון בספרייה"
             />
             <CoachNextCard
               icon={<Users size={22} />}
               kicker="צעד שלישי"
-              label="עקוב אחרי הביצועים בזמן אמת"
+              label="עקבו אחרי הביצועים בזמן אמת"
             />
           </>
         )}
@@ -268,25 +288,73 @@ export function CompleteStep({ data }: CompleteStepProps) {
           </div>
         )}
       </m.div>
+
+      {/* First-action CTA — onboarding ends in a real next step, not a dead-end
+          recap. Trainee → start their first workout; coach → invite trainees.
+          The quiet secondary just enters the home screen. */}
+      <m.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7 }}
+        className="w-full mt-8 space-y-3"
+      >
+        <Button
+          variant="editorial"
+          onClick={() => onFinish(true)}
+          fullWidth
+          style={{ minHeight: '56px' }}
+        >
+          {isCoach ? (
+            <>
+              <UserPlus size={20} aria-hidden="true" />
+              הזמינו מתאמן ראשון
+            </>
+          ) : (
+            <>
+              <Dumbbell size={20} aria-hidden="true" />
+              התחילו אימון ראשון
+            </>
+          )}
+          <ChevronLeft size={22} aria-hidden="true" />
+        </Button>
+
+        <button
+          type="button"
+          onClick={() => onFinish(false)}
+          className="w-full active:scale-[0.98] transition-transform"
+          style={{
+            minHeight: '44px',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '12px',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--fs-muted)',
+          }}
+        >
+          כניסה למסך הבית
+        </button>
+      </m.div>
     </m.div>
   );
 }
 
-/** "What's next" card for the coach completion screen. */
+/**
+ * "What's next" card for the coach completion screen. When `onClick` is given
+ * it renders as a real button (the first step deep-links into the invite flow);
+ * otherwise it's a static guidance card.
+ */
 function CoachNextCard({
   icon,
   kicker,
   label,
-}: { icon: ReactNode; kicker: string; label: string }) {
-  return (
-    <div
-      className="p-4 flex items-center gap-4"
-      style={{
-        background: 'var(--fs-surface)',
-        border: '1px solid var(--fs-surface-2)',
-        borderRadius: '22px 16px 22px 16px',
-      }}
-    >
+  onClick,
+}: { icon: ReactNode; kicker: string; label: string; onClick?: () => void }) {
+  const isInteractive = typeof onClick === 'function';
+  const inner = (
+    <>
       <div
         className="w-12 h-12 flex items-center justify-center shrink-0"
         style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)', borderRadius: 0 }}
@@ -316,6 +384,38 @@ function CoachNextCard({
           {label}
         </p>
       </div>
+      {isInteractive && (
+        <ChevronLeft
+          size={20}
+          aria-hidden="true"
+          style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
+        />
+      )}
+    </>
+  );
+
+  const sharedStyle = {
+    background: 'var(--fs-surface)',
+    border: '1px solid var(--fs-surface-2)',
+    borderRadius: '22px 16px 22px 16px',
+  } as const;
+
+  if (isInteractive) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="w-full p-4 flex items-center gap-4 text-right active:scale-[0.98] transition-transform"
+        style={{ ...sharedStyle, cursor: 'pointer' }}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <div className="p-4 flex items-center gap-4" style={sharedStyle}>
+      {inner}
     </div>
   );
 }

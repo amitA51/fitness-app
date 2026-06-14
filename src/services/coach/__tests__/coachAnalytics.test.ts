@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { CoachClient } from '../../../types/coach';
 import {
   type ClientOverviewRow,
+  attentionRank,
+  clientStatusMeta,
   computeClientAnalytics,
   computeWeekAdherence,
   summarizeRoster,
@@ -261,5 +263,45 @@ describe('summarizeRoster', () => {
       needsAttention: 0,
       awaitingFirst: 0,
     });
+  });
+});
+
+describe('clientStatusMeta — non-color severity cue', () => {
+  it('distinguishes inactive (filled) from at_risk (ring) within the warn family', () => {
+    const inactive = clientStatusMeta('inactive');
+    const atRisk = clientStatusMeta('at_risk');
+
+    // Same warn color (no 4th color), but a different DOT SHAPE carries severity.
+    expect(inactive.color).toBe('var(--fs-warn)');
+    expect(atRisk.color).toBe('var(--fs-warn)');
+    expect(inactive.dot).toBe('filled');
+    expect(atRisk.dot).toBe('ring');
+  });
+
+  it('marks active as a filled accent dot and new as no dot', () => {
+    expect(clientStatusMeta('active')).toMatchObject({ color: 'var(--fs-accent)', dot: 'filled' });
+    expect(clientStatusMeta('new').dot).toBe('none');
+  });
+});
+
+describe('attentionRank', () => {
+  const make = (level: ClientOverviewRow['analytics']['level'], daysSinceActivity: number | null) =>
+    ({
+      lastActivity: null,
+      daysSinceActivity,
+      sessionsLast7: 0,
+      sessionsPrev7: 0,
+      volumeByWeek: [0, 0, 0, 0],
+      level,
+    }) as ClientOverviewRow['analytics'];
+
+  it('ranks inactive above at_risk above new above active', () => {
+    expect(attentionRank(make('inactive', 0))).toBeGreaterThan(attentionRank(make('at_risk', 0)));
+    expect(attentionRank(make('at_risk', 0))).toBeGreaterThan(attentionRank(make('new', 0)));
+    expect(attentionRank(make('new', 0))).toBeGreaterThan(attentionRank(make('active', 0)));
+  });
+
+  it('breaks ties within a level by days since activity (staler floats up)', () => {
+    expect(attentionRank(make('inactive', 20))).toBeGreaterThan(attentionRank(make('inactive', 8)));
   });
 });

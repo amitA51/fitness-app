@@ -203,6 +203,28 @@ export const signUp = async (
   return { user: data.user, error: null };
 };
 
+/**
+ * Re-send the sign-up confirmation email for an address that already signed up
+ * but never confirmed. Wraps Supabase's `auth.resend({ type: 'signup' })`.
+ * Returns a localized error string on failure, or null on success.
+ */
+export const resendSignUpConfirmation = async (
+  email: string
+): Promise<{ error: string | null }> => {
+  if (!isSupabaseConfigured() || !supabase) {
+    return { error: 'Supabase not configured' };
+  }
+
+  const { error } = await supabase.auth.resend({ type: 'signup', email });
+
+  if (error) {
+    logger.auth.warn('Resend sign-up confirmation error', error);
+    return { error: error.message };
+  }
+
+  return { error: null };
+};
+
 export const signIn = async (
   email: string,
   password: string

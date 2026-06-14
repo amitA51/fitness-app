@@ -21,6 +21,7 @@ const { authMock, dbClearSpy, queueMock } = vi.hoisted(() => ({
     getUser: vi.fn(),
     updateUser: vi.fn(),
     resetPasswordForEmail: vi.fn(),
+    resend: vi.fn(),
     onAuthStateChange: vi.fn(),
   },
   dbClearSpy: vi.fn(async (_store?: string) => {}),
@@ -67,6 +68,7 @@ import {
   getSession,
   isAuthenticated,
   onAuthStateChange,
+  resendSignUpConfirmation,
   resetPassword,
   signIn,
   signInWithGoogle,
@@ -90,6 +92,7 @@ beforeEach(() => {
   authMock.signOut.mockResolvedValue({ error: null });
   authMock.updateUser.mockResolvedValue({ error: null });
   authMock.resetPasswordForEmail.mockResolvedValue({ error: null });
+  authMock.resend.mockResolvedValue({ error: null });
   authMock.signUp.mockResolvedValue({ data: { user: fakeUser }, error: null });
   authMock.signInWithPassword.mockResolvedValue({ data: { user: fakeUser }, error: null });
   authMock.signInWithOAuth.mockResolvedValue({ error: null });
@@ -124,6 +127,13 @@ describe('not-configured short circuits', () => {
     expect(await resetPassword('a@b.com')).toEqual({ error: 'Supabase not configured' });
   });
 
+  it('resendSignUpConfirmation returns the not-configured error', async () => {
+    expect(await resendSignUpConfirmation('a@b.com')).toEqual({
+      error: 'Supabase not configured',
+    });
+    expect(authMock.resend).not.toHaveBeenCalled();
+  });
+
   it('updatePassword returns the not-configured error', async () => {
     expect(await updatePassword('Valid1234')).toEqual({ error: 'Supabase not configured' });
   });
@@ -145,6 +155,21 @@ describe('not-configured short circuits', () => {
     expect(typeof unsub).toBe('function');
     expect(() => unsub()).not.toThrow();
     expect(authMock.onAuthStateChange).not.toHaveBeenCalled();
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+describe('resendSignUpConfirmation', () => {
+  it('calls Supabase resend with the signup type and returns no error on success', async () => {
+    const result = await resendSignUpConfirmation('a@b.com');
+    expect(authMock.resend).toHaveBeenCalledWith({ type: 'signup', email: 'a@b.com' });
+    expect(result).toEqual({ error: null });
+  });
+
+  it('surfaces the Supabase error message on failure', async () => {
+    authMock.resend.mockResolvedValueOnce({ error: { message: 'rate limited' } });
+    const result = await resendSignUpConfirmation('a@b.com');
+    expect(result).toEqual({ error: 'rate limited' });
   });
 });
 

@@ -95,9 +95,7 @@ describe('normalizeLegacyLocalIds', () => {
     }
 
     // Data preserved through the rewrite.
-    expect(sessions.map((s) => s.totalVolume as number).sort((a, b) => a - b)).toEqual([
-      999, 1234,
-    ]);
+    expect(sessions.map((s) => s.totalVolume as number).sort((a, b) => a - b)).toEqual([999, 1234]);
     expect(nutrition[0]?.name).toBe('חזה עוף');
     expect(bodyWeight[0]?.weight).toBe(82.5);
     expect(measurements[0]?.waist).toBe(84);
@@ -139,9 +137,7 @@ describe('normalizeLegacyLocalIds', () => {
     await normalizeLegacyLocalIds();
     expect(localStorage.getItem(ID_NORMALIZATION_FLAG)).not.toBeNull();
 
-    const firstPass = (await dbGetAll<AnyRecord>(STORES.WORKOUT_SESSIONS))
-      .map((s) => s.id)
-      .sort();
+    const firstPass = (await dbGetAll<AnyRecord>(STORES.WORKOUT_SESSIONS)).map((s) => s.id).sort();
 
     // Second run with the flag set — no-op.
     await normalizeLegacyLocalIds();
@@ -149,9 +145,7 @@ describe('normalizeLegacyLocalIds', () => {
     localStorage.removeItem(ID_NORMALIZATION_FLAG);
     await normalizeLegacyLocalIds();
 
-    const thirdPass = (await dbGetAll<AnyRecord>(STORES.WORKOUT_SESSIONS))
-      .map((s) => s.id)
-      .sort();
+    const thirdPass = (await dbGetAll<AnyRecord>(STORES.WORKOUT_SESSIONS)).map((s) => s.id).sort();
     expect(thirdPass).toEqual(firstPass);
   });
 

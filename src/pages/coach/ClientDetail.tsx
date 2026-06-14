@@ -114,6 +114,8 @@ export default function ClientDetail() {
               link={data.link}
               analytics={data.analytics}
               latestWeight={latestWeight}
+              weights={data.weights}
+              onMessage={() => navigate(`/coach/messages/${id}`)}
               onPaused={() => navigate('/coach')}
             />
           )}

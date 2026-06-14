@@ -8,6 +8,7 @@ import { AnimatePresence, type Variants, m } from 'framer-motion';
 import { Dumbbell as DumbbellIcon } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
+import { calculateStreak } from '../../../services/achievementService';
 import {
   type LastWorkoutSummary,
   type MuscleGroupLastTrained,
@@ -120,39 +121,11 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
         const lastSummary = getLastWorkoutSummary(sessions);
         setLastWorkout(lastSummary);
 
-        // Calculate streak
-        if (sessions.length > 0) {
-          const sortedSessions = sessions
-            .filter((s) => s.status === 'completed')
-            .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
-          let streak = 0;
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          for (let i = 0; i < sortedSessions.length; i++) {
-            const sessionDate = new Date(sortedSessions[i]?.startTime ?? 0);
-            sessionDate.setHours(0, 0, 0, 0);
-            const daysDiff = Math.floor(
-              (today.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24)
-            );
-            if (i === 0 && daysDiff <= 1) {
-              streak = 1;
-              const checkDate = new Date(today);
-              checkDate.setDate(checkDate.getDate() - 1);
-              for (let j = 1; j < sortedSessions.length; j++) {
-                const prevDate = new Date(sortedSessions[j]?.startTime ?? 0);
-                prevDate.setHours(0, 0, 0, 0);
-                const prevDiff = Math.floor(
-                  (checkDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24)
-                );
-                if (prevDiff === 0) {
-                  streak++;
-                  checkDate.setDate(checkDate.getDate() - 1);
-                } else break;
-              }
-            } else break;
-          }
-          setWorkoutStreak(streak);
-        }
+        // Streak — use the canonical calculateStreak so the pre-workout
+        // masthead agrees with the summary milestone shown one screen earlier.
+        // (Previously a ~30-line hand-rolled loop here could disagree.)
+        const completed = sessions.filter((s) => s.status === 'completed');
+        setWorkoutStreak(calculateStreak(completed).currentStreak);
       } catch (err) {
         // These stats are decorative — the screen still renders the start CTA
         // and degrades to the "first workout" state. Log (don't swallow) so the

@@ -4,11 +4,11 @@
 
 import { m } from 'framer-motion';
 import { AlertCircle, ArrowLeft, Mail, MailOpen, User, UserPlus } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AnnualInput } from '../../../components/ui/AnnualInput';
 import { AnnualPasswordInput } from '../../../components/ui/AnnualPasswordInput';
 import { Button } from '../../../components/ui/Button';
-import { signUp } from '../../../services/supabaseAuth';
+import { resendSignUpConfirmation, signUp } from '../../../services/supabaseAuth';
 import { logger } from '../../../utils/logger';
 import { pageVariants, slideFromRight, staggerContainer, staggerItem } from '../animations';
 import { GhostLink } from '../components/GhostLink';
@@ -18,6 +18,10 @@ interface SignUpStepProps {
   onBack: () => void;
   isSupabaseConfigured: boolean;
 }
+
+// Resend throttle: block repeat taps for a short window after a successful send.
+const RESEND_COOLDOWN_SECONDS = 30;
+const RESEND_TICK_MS = 1000;
 
 export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
   const [form, setForm] = useState<SignUpFormData>({
@@ -32,6 +36,10 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState('');
   const [confirmSent, setConfirmSent] = useState(false);
+  // Resend recovery for the confirm dead-end: a short cooldown throttles repeat
+  // taps; `resendStatus` drives an aria-live confirmation/error line.
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
   const validate = useCallback((): boolean => {
     const newErrors: ValidationErrors = {};
@@ -92,6 +100,28 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
     },
     [form, validate, isSupabaseConfigured]
   );
+
+  // Tick the resend cooldown down to zero. One interval per active cooldown.
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, RESEND_TICK_MS);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleResend = useCallback(async () => {
+    if (resendCooldown > 0 || resendStatus === 'sending') return;
+    setResendStatus('sending');
+    const { error } = await resendSignUpConfirmation(form.email.trim());
+    if (error) {
+      logger.auth.warn('Resend confirmation failed', error);
+      setResendStatus('error');
+      return;
+    }
+    setResendStatus('sent');
+    setResendCooldown(RESEND_COOLDOWN_SECONDS);
+  }, [form.email, resendCooldown, resendStatus]);
 
   if (confirmSent) {
     return (
@@ -172,14 +202,58 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           יש ללחוץ על הקישור בדוא"ל כדי להפעיל את החשבון
         </m.p>
 
+        {/* Resend recovery — for an email that never arrived. aria-live so the
+            screen reader announces the confirmation/error without a visual jump. */}
         <m.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-8"
+          transition={{ delay: 0.45 }}
+          className="mt-8 w-full flex flex-col items-center gap-3"
         >
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={resendCooldown > 0 || resendStatus === 'sending'}
+            className="active:scale-[0.98] transition-transform disabled:active:scale-100"
+            style={{
+              minHeight: '44px',
+              paddingInline: '8px',
+              background: 'none',
+              border: 'none',
+              cursor: resendCooldown > 0 || resendStatus === 'sending' ? 'default' : 'pointer',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '12px',
+              letterSpacing: '0.08em',
+              color: resendCooldown > 0 ? 'var(--fs-muted)' : 'var(--fs-accent)',
+              opacity: resendStatus === 'sending' ? 0.6 : 1,
+            }}
+          >
+            {resendStatus === 'sending'
+              ? 'שולחים…'
+              : resendCooldown > 0
+                ? `שליחה חוזרת בעוד ${resendCooldown} שנ׳`
+                : 'לא קיבלתם? שלחו שוב'}
+          </button>
+
+          <p
+            aria-live="polite"
+            className="min-h-[18px]"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
+              color: resendStatus === 'error' ? 'var(--color-error)' : 'var(--fs-muted)',
+              margin: 0,
+            }}
+          >
+            {resendStatus === 'sent'
+              ? 'הקישור נשלח שוב'
+              : resendStatus === 'error'
+                ? 'השליחה נכשלה. נסו שוב בעוד רגע.'
+                : ''}
+          </p>
+
           <Button variant="editorial-secondary" type="button" onClick={onBack} fullWidth={false}>
-            חזרה להתחברות
+            חזרה
           </Button>
         </m.div>
       </m.div>
@@ -316,6 +390,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               error={errors.password}
               autoComplete="new-password"
               enterKeyHint="next"
+              showStrength
             />
           </m.div>
 

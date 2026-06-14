@@ -45,7 +45,9 @@ interface RecoveryLogRecord extends IdRecord {
 
 const safeGetFlag = (): boolean => {
   try {
-    return typeof localStorage !== 'undefined' && localStorage.getItem(ID_NORMALIZATION_FLAG) !== null;
+    return (
+      typeof localStorage !== 'undefined' && localStorage.getItem(ID_NORMALIZATION_FLAG) !== null
+    );
   } catch {
     return false;
   }

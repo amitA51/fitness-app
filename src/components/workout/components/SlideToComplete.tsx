@@ -25,6 +25,16 @@ const THUMB_SIZE = 60;
 const TRACK_HEIGHT = 68;
 const TRACK_PAD = 4;
 const THRESHOLD = 0.75;
+// Tap-and-hold quick-complete: a stationary press fills the track over this many
+// ms (with a haptic ramp) and then locks in via the same finish() path as a
+// slide. Opt-in — a slide still completes instantly; this only triggers when the
+// pointer stays put long enough to start the hold ramp.
+const HOLD_FILL_MS = 450;
+// Movement (px) past which a press is treated as a slide, not a hold — cancels
+// the hold ramp so a real drag never double-fires.
+const HOLD_MOVE_TOLERANCE = 8;
+// Haptic ramp ticks during the hold fill (fraction of progress → light buzz).
+const HOLD_HAPTIC_MARKS = [0.33, 0.66] as const;
 
 const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disabled }) => {
   const trackRef = useRef<HTMLButtonElement>(null);
@@ -36,6 +46,18 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
   const maxOffsetRef = useRef(0);
   const flingFromRef = useRef(0);
   const finishTickRef = useRef(0);
+  // Tap-and-hold quick-complete bookkeeping: the rAF id driving the fill, the
+  // hold start timestamp, and which haptic ramp marks have already fired.
+  const holdRafRef = useRef<number | null>(null);
+  const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdStartRef = useRef(0);
+  const holdHapticIdxRef = useRef(0);
+  const isHoldingRef = useRef(false);
+  // Re-entrancy guard for finish(): set synchronously the first time a commit
+  // locks in, so a second trigger in the SAME gesture (e.g. the rAF hold ramp
+  // auto-completes, then the still-pressed pointer lifts) can't fire onComplete
+  // twice. Cleared when the slider resets to idle.
+  const finishedRef = useRef(false);
   const instructionId = useId();
 
   const [offset, setOffset] = useState(0);
@@ -65,6 +87,15 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
   }, [recalcMax]);
 
   const finish = useCallback(() => {
+    // Re-entrancy guard: a single commit must call onComplete exactly once. The
+    // hold ramp can auto-complete while the pointer is still down, and the later
+    // pointerUp would otherwise re-enter finish() (offset is still ~max), firing
+    // onComplete a second time and advancing two sets from one gesture.
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    // The press is over once a commit locks in; clear the drag flag so a later
+    // pointerUp from the same gesture bails on its `if (!isDragging) return`.
+    setIsDragging(false);
     // No haptic here: the set-complete buzz is owned by the COMPLETE_SET reducer
     // (fired once in WorkoutProvider). The slider's own spark+check animation is
     // its visual confirmation, so self-buzzing would double/triple the vibration.
@@ -74,6 +105,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       onComplete();
       setOffset(0);
       setIsComplete(false);
+      finishedRef.current = false;
       return;
     }
     // Hand the thumb transform off to GSAP: remember where the drag ended, flag
@@ -84,6 +116,76 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     finishTickRef.current += 1;
     setFinishTick(finishTickRef.current);
   }, [onComplete, prefersReducedMotion, offset]);
+
+  // Cancel an in-progress hold fill (early release or drag). Resets the thumb
+  // back to the rail and clears the ramp bookkeeping (rAF for the animated fill,
+  // or the timeout used under reduced motion).
+  const cancelHold = useCallback(() => {
+    if (holdRafRef.current !== null) {
+      cancelAnimationFrame(holdRafRef.current);
+      holdRafRef.current = null;
+    }
+    if (holdTimeoutRef.current !== null) {
+      clearTimeout(holdTimeoutRef.current);
+      holdTimeoutRef.current = null;
+    }
+    if (!isHoldingRef.current) return;
+    isHoldingRef.current = false;
+    holdHapticIdxRef.current = 0;
+    setOffset(0);
+    setThresholdAnnounce('');
+  }, []);
+
+  // Begin the tap-and-hold quick-complete ramp. Drives `offset` from 0 → max
+  // over HOLD_FILL_MS with a light haptic at each ramp mark, then locks in via
+  // the SAME finish() path as a slide. Under reduced motion finish() completes
+  // instantly anyway; we still gate the visual ramp here for a calm fill.
+  const startHold = useCallback(() => {
+    recalcMax();
+    if (maxOffsetRef.current <= 0) return;
+    isHoldingRef.current = true;
+    holdStartRef.current = performance.now();
+    holdHapticIdxRef.current = 0;
+    setThresholdAnnounce('');
+
+    // Reduced motion: keep the HOLD requirement (still NOT a single tap) but
+    // skip the animated fill — wait out HOLD_FILL_MS then complete. Releasing
+    // early still cancels via cancelHold().
+    if (prefersReducedMotion) {
+      holdTimeoutRef.current = setTimeout(() => {
+        holdTimeoutRef.current = null;
+        isHoldingRef.current = false;
+        finish();
+      }, HOLD_FILL_MS);
+      return;
+    }
+
+    const step = () => {
+      const elapsed = performance.now() - holdStartRef.current;
+      const ratio = Math.min(1, elapsed / HOLD_FILL_MS);
+      setOffset(maxOffsetRef.current * ratio);
+
+      // Light haptic ramp at the configured marks (once each).
+      const nextMark = HOLD_HAPTIC_MARKS[holdHapticIdxRef.current];
+      if (nextMark !== undefined && ratio >= nextMark) {
+        holdHapticIdxRef.current += 1;
+        triggerHaptic('light');
+      }
+
+      if (ratio >= 1) {
+        holdRafRef.current = null;
+        isHoldingRef.current = false;
+        holdHapticIdxRef.current = 0;
+        finish();
+        return;
+      }
+      holdRafRef.current = requestAnimationFrame(step);
+    };
+    holdRafRef.current = requestAnimationFrame(step);
+  }, [recalcMax, finish]);
+
+  // Tear down any pending hold rAF on unmount.
+  useEffect(() => () => cancelHold(), [cancelHold]);
 
   // GSAP fling + spark stamp, fired when finishTick advances (after the render
   // that sets isFlinging, so the React transform is already off the thumb).
@@ -139,6 +241,8 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
           setOffset(0);
           setIsComplete(false);
           setIsFlinging(false);
+          // Re-arm for the next set: the commit's cosmetic tail has played out.
+          finishedRef.current = false;
         });
     },
     { dependencies: [finishTick], scope: trackRef }
@@ -157,11 +261,23 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
     setIsDragging(true);
     triggerHaptic('light');
     e.currentTarget.setPointerCapture(e.pointerId);
+    // Start the tap-and-hold ramp in parallel: if the pointer stays put it fills
+    // and completes; the first real movement past tolerance cancels it (slide).
+    startHold();
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    // Hold-cancel is checked off the synchronous ref BEFORE the isDragging
+    // (state) guard: any meaningful movement means this is a slide, not a hold,
+    // so abort the ramp so the two inputs never both complete the set.
+    if (isHoldingRef.current && Math.abs(e.clientX - startXRef.current) > HOLD_MOVE_TOLERANCE) {
+      cancelHold();
+    }
     if (!isDragging) return;
     const delta = (e.clientX - startXRef.current) * sign;
+    // While the hold ramp owns `offset`, don't let small in-tolerance jitter
+    // from the same press fight it — the ramp drives the fill until cancelled.
+    if (isHoldingRef.current) return;
     setOffset((prev) => {
       const next = Math.max(0, Math.min(maxOffsetRef.current, startOffsetRef.current + delta));
       const prevRatio = maxOffsetRef.current > 0 ? prev / maxOffsetRef.current : 0;
@@ -187,6 +303,13 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       // pointer may already be released
     }
     setIsDragging(false);
+    // A hold released before the ramp completed is a cancel — never a partial
+    // commit. cancelHold() resets the fill; if the ramp already locked in,
+    // isHoldingRef is false and this no-ops.
+    if (isHoldingRef.current) {
+      cancelHold();
+      return;
+    }
     const ratio = maxOffsetRef.current > 0 ? offset / maxOffsetRef.current : 0;
     if (ratio >= THRESHOLD) {
       finish();
@@ -242,7 +365,8 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       }}
     >
       <span id={instructionId} className="sr-only">
-        ניתן לגרור עד סוף המסילה, או ללחוץ Enter או רווח כדי לסמן את הסט כבוצע.
+        ניתן לגרור עד סוף המסילה, ללחוץ ולהחזיק לסימון מהיר, או ללחוץ Enter או רווח כדי לסמן את הסט
+        כבוצע.
       </span>
       {/* Polite SR feedback at the commit-threshold cross (visual users get the
           haptic + fill cues instead). */}

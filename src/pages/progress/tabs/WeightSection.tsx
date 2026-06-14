@@ -6,13 +6,34 @@
 // BMI badge, and the trailing-window strip are preserved.
 
 import { Minus, Plus, Scale, TrendingDown, TrendingUp } from 'lucide-react';
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import type { GlowAreaPoint } from '../../../components/charts';
 import type { BodyWeightEntry, WeightTrend } from '../../../services/bodyStatsService';
 import { zoneColor } from '../../../utils/zoneColor';
 import { ChartSummary } from '../components/ChartSummary';
 import { SectionCard } from '../components/SectionCard';
+import { type SegmentOption, SegmentedControl } from '../components/SegmentedControl';
 import { TrendChartCard } from '../components/TrendChartCard';
+import { DEFAULT_RANGE, RANGE_DAYS, type RangeKey, sliceByRangeDays } from '../progressMetrics';
+
+// Range options for the trend control. Labels are mono kickers (W/M/3M/6M/Y),
+// rendered LTR so the Latin shorthand reads correctly inside the RTL layout.
+const RANGE_OPTIONS: readonly SegmentOption<RangeKey>[] = [
+  { key: 'W', label: 'W' },
+  { key: 'M', label: 'M' },
+  { key: '3M', label: '3M' },
+  { key: '6M', label: '6M' },
+  { key: 'Y', label: 'Y' },
+];
+
+// Hebrew window names for the trend kicker, one per range.
+const RANGE_LABEL_HE: Record<RangeKey, string> = {
+  W: 'שבוע',
+  M: 'חודש',
+  '3M': '3 חודשים',
+  '6M': '6 חודשים',
+  Y: 'שנה',
+};
 
 export const WeightSection = memo(function WeightSection({
   latestWeight,
@@ -29,11 +50,14 @@ export const WeightSection = memo(function WeightSection({
   weightEntries: BodyWeightEntry[];
   onAdd: () => void;
 }) {
+  const [range, setRange] = useState<RangeKey>(DEFAULT_RANGE);
+
+  // Slice the already-loaded entries by the selected date window (no re-fetch),
+  // then sort + map to chart points. Replaces the fixed slice(-14) count.
   const trendPoints = useMemo<GlowAreaPoint[]>(
     () =>
-      [...weightEntries]
+      sliceByRangeDays(weightEntries, RANGE_DAYS[range], (e) => e.date)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .slice(-14)
         .map((entry) => ({
           x: new Date(entry.date).toLocaleDateString('he-IL', {
             day: 'numeric',
@@ -41,7 +65,7 @@ export const WeightSection = memo(function WeightSection({
           }),
           y: entry.weight,
         })),
-    [weightEntries]
+    [weightEntries, range]
   );
 
   return (
@@ -206,28 +230,61 @@ export const WeightSection = memo(function WeightSection({
           </div>
           <div>
             <div className="val" style={{ direction: 'ltr', textAlign: 'start' }}>
-              30<em>D</em>
+              {RANGE_DAYS[range]}
+              <em>D</em>
             </div>
             <div className="lbl">חלון מעקב</div>
           </div>
         </div>
       )}
 
-      {/* Converged trend chart — summary-first so the trend leads with meaning. */}
-      {trendPoints.length >= 3 && (
-        <div>
-          <ChartSummary kicker={`מגמת משקל · ${trendPoints.length} מדידות`}>
-            {weightTrend
-              ? weightTrend.direction === 'יציב'
-                ? 'המשקל יציב לאורך התקופה האחרונה.'
-                : `המשקל במגמת ${weightTrend.direction} לאורך התקופה האחרונה.`
-              : 'מעקב אחר מגמת המשקל לאורך זמן.'}
-          </ChartSummary>
-          <TrendChartCard
-            title="מגמת משקל"
-            data={trendPoints}
-            ariaLabel="מגמת משקל הגוף לאורך זמן"
+      {/* Converged trend chart — range control + summary-first so the trend
+          leads with meaning. The control slices the already-loaded entries by
+          date; the chart needs ≥3 points in the chosen window. */}
+      {weightEntries.length >= 2 && (
+        <div className="space-y-3">
+          <SegmentedControl
+            options={RANGE_OPTIONS}
+            value={range}
+            onChange={setRange}
+            ariaLabel="טווח זמן למגמת המשקל"
+            idPrefix="weight-range"
           />
+          {trendPoints.length >= 3 ? (
+            <div>
+              <ChartSummary
+                kicker={`מגמת משקל · ${RANGE_LABEL_HE[range]} · ${trendPoints.length} מדידות`}
+              >
+                {weightTrend
+                  ? weightTrend.direction === 'יציב'
+                    ? 'המשקל יציב לאורך התקופה האחרונה.'
+                    : `המשקל במגמת ${weightTrend.direction} לאורך התקופה האחרונה.`
+                  : 'מעקב אחר מגמת המשקל לאורך זמן.'}
+              </ChartSummary>
+              <TrendChartCard
+                title="מגמת משקל"
+                data={trendPoints}
+                valueUnit="kg"
+                ariaLabel="מגמת משקל הגוף לאורך זמן"
+              />
+            </div>
+          ) : (
+            <SectionCard rail={false} style={{ padding: 20 }}>
+              <p
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'var(--fs-muted)',
+                  textAlign: 'center',
+                  margin: 0,
+                }}
+              >
+                אין מספיק מדידות בטווח הזה — בחרו טווח רחב יותר
+              </p>
+            </SectionCard>
+          )}
         </div>
       )}
 

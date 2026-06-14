@@ -347,6 +347,21 @@ export const AddMealModal = memo(function AddMealModal({
                   onAddFood={onAddFood}
                 />
               ))}
+              {/* Truncation footer — without it a hidden 21st+ match reads as
+                  "food not in library". Honesty fix; numbers render dir="ltr". */}
+              {foods.length > 20 && (
+                <p style={{ ...LIST_KICKER_STYLE, textAlign: 'center', margin: '8px 2px 2px' }}>
+                  מציג{' '}
+                  <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    20
+                  </span>{' '}
+                  מתוך{' '}
+                  <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {foods.length}
+                  </span>{' '}
+                  — חדדו את החיפוש
+                </p>
+              )}
             </div>
           )}
         </div>

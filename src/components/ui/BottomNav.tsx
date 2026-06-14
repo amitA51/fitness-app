@@ -16,6 +16,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCoach } from '../../contexts/CoachContext';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { useUnreadMessages } from '../../hooks/useUnreadMessages';
+import { listMyCoaches } from '../../services/coach';
+import type { CoachClient } from '../../types/coach';
+import { triggerHapticEffect } from '../../utils/haptics';
 import { prefetchRoute } from '../../utils/routePrefetch';
 import { Sheet } from './Sheet';
 
@@ -71,7 +74,12 @@ const COACH_MAIN_TABS: readonly NavDestination[] = [
   { path: '/coach/programs', label: 'תוכניות', icon: ClipboardList },
 ] as const;
 
-const TRAINEE_MORE_PATHS: readonly string[] = ['/my-coach', '/community', '/settings'];
+const TRAINEE_MORE_PATHS: readonly string[] = [
+  '/my-coach',
+  '/templates',
+  '/community',
+  '/settings',
+];
 // While a coach is in personal-training mode (/me and the shared personal
 // surfaces), the "עוד" tab reads as active — those screens live in its sheet.
 const COACH_MORE_PATHS: readonly string[] = [
@@ -88,6 +96,41 @@ const COACH_MORE_PATHS: readonly string[] = [
 /** Whether `pathname` matches a nav destination (exact for "/", prefix otherwise). */
 function matchesPath(pathname: string, path: string): boolean {
   return path === '/' ? pathname === path : pathname === path || pathname.startsWith(`${path}/`);
+}
+
+// Hash anchor MyCoach scrolls to when a trainee with multiple coaches taps the
+// "הודעות" entry — lands them on the coaches list so they can pick a thread.
+const COACHES_LIST_HASH = '#coaches';
+
+/**
+ * Resolve the trainee's chat deep-link target from their active coaches:
+ *   • exactly one  → straight into that 1-to-1 thread
+ *   • two or more  → MyCoach scrolled to the coaches list (pick a coach there)
+ *   • none / error → null, so the chat entry is omitted entirely (no coach to
+ *                    message yet — "המאמן שלי" already covers the connect path)
+ * Trainee-only, fetched once on mount; coach view never calls it.
+ */
+function useTraineeChatTarget(enabled: boolean): string | null {
+  const [coaches, setCoaches] = useState<CoachClient[]>([]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    let active = true;
+    listMyCoaches('active')
+      .then((list) => {
+        if (active) setCoaches(list);
+      })
+      .catch(() => {
+        /* offline / pre-migration — chat entry stays hidden below */
+      });
+    return () => {
+      active = false;
+    };
+  }, [enabled]);
+
+  if (coaches.length === 1 && coaches[0]) return `/my-coach/messages/${coaches[0].coachId}`;
+  if (coaches.length > 1) return `/my-coach${COACHES_LIST_HASH}`;
+  return null;
 }
 
 // ── Shared inner visual — always-on icon/label cluster ───────────────────────
@@ -199,6 +242,17 @@ function BottomNav() {
 
   const mainTabs = isCoachView ? COACH_MAIN_TABS : TRAINEE_MAIN_TABS;
   const morePaths = isCoachView ? COACH_MORE_PATHS : TRAINEE_MORE_PATHS;
+
+  // Trainee chat deep-link target (resolved from active coaches). Coaches reach
+  // chat via the dedicated הודעות tab, so this only fetches in the trainee view.
+  const traineeChatTarget = useTraineeChatTarget(!isCoachView);
+
+  // One very-light tick on tab selection — routed through the canonical
+  // selection effect so the Settings haptics toggle gates it; reduced-motion
+  // skips this non-essential micro-interaction.
+  const tapHaptic = useCallback(() => {
+    if (!reduced) triggerHapticEffect('selection');
+  }, [reduced]);
 
   const isMoreActive = useMemo(
     () => morePaths.some((p) => matchesPath(location.pathname, p)),
@@ -326,18 +380,27 @@ function BottomNav() {
       isCoachView
         ? [
             { path: '/me', label: 'האימונים שלי', icon: Dumbbell },
+            { path: '/templates', label: 'תבניות', icon: ClipboardList },
             { path: '/community', label: 'קהילה', icon: Users },
             { path: '/settings', label: 'הגדרות', icon: Settings },
           ]
         : [
             { path: '/my-coach', label: 'המאמן שלי', icon: UserCog },
+            // Chat parity for trainees: deep-links into the (single) coach thread
+            // or the coaches list when there are several; carries the unread
+            // badge. Omitted entirely when there's no coach to message yet.
+            ...(traineeChatTarget
+              ? [{ path: traineeChatTarget, label: 'הודעות', icon: MessageSquare }]
+              : []),
+            { path: '/templates', label: 'תבניות', icon: ClipboardList },
             { path: '/community', label: 'קהילה', icon: Users },
             { path: '/settings', label: 'הגדרות', icon: Settings },
           ],
-    [isCoachView]
+    [isCoachView, traineeChatTarget]
   );
 
   const handleMoreNavigate = (path: string) => {
+    tapHaptic();
     setMoreOpen(false);
     navigate(path);
   };
@@ -394,6 +457,7 @@ function BottomNav() {
                   onTouchStart={() => prefetchRoute(path)}
                   onMouseEnter={() => prefetchRoute(path)}
                   onClick={(e) => {
+                    tapHaptic();
                     if (!isActive) return;
                     e.preventDefault();
                     scrollToTop();
@@ -401,6 +465,7 @@ function BottomNav() {
                   onKeyDown={(e) => {
                     if (e.key !== 'Enter' && e.key !== ' ') return;
                     e.preventDefault();
+                    tapHaptic();
                     const linkEl = e.currentTarget as HTMLAnchorElement;
                     if (!isActive) linkEl.click();
                     else scrollToTop();
@@ -418,7 +483,10 @@ function BottomNav() {
           <li className="flex-1 h-full">
             <button
               type="button"
-              onClick={() => setMoreOpen(true)}
+              onClick={() => {
+                tapHaptic();
+                setMoreOpen(true);
+              }}
               aria-haspopup="dialog"
               aria-expanded={moreOpen}
               aria-current={isMoreActive ? 'page' : undefined}
@@ -440,7 +508,9 @@ function BottomNav() {
         <ul className="flex flex-col gap-2">
           {moreItems.map(({ path, label, icon: Icon }) => {
             const isActive = matchesPath(location.pathname, path);
-            const showBadge = path === '/my-coach' && unread > 0;
+            // The unread badge rides the dedicated הודעות entry (its deep-link
+            // path varies, so key off the label, not a fixed path).
+            const showBadge = label === 'הודעות' && unread > 0;
             return (
               <li key={path}>
                 <Link

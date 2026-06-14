@@ -50,10 +50,27 @@ describe('computeClientAnalytics', () => {
 });
 
 describe('clientStatusMeta', () => {
-  it('returns correct Hebrew labels and colors', () => {
-    expect(clientStatusMeta('active')).toEqual({ label: 'פעיל', color: 'var(--fs-accent)' });
-    expect(clientStatusMeta('at_risk')).toEqual({ label: 'בסיכון', color: 'var(--fs-warn)' });
-    expect(clientStatusMeta('inactive')).toEqual({ label: 'לא פעיל', color: 'var(--fs-warn)' });
-    expect(clientStatusMeta('new')).toEqual({ label: 'חדש', color: 'var(--fs-muted)' });
+  it('returns correct Hebrew labels, colors, and severity dot shapes', () => {
+    expect(clientStatusMeta('active')).toEqual({
+      label: 'פעיל',
+      color: 'var(--fs-accent)',
+      dot: 'filled',
+    });
+    // at_risk and inactive share the warn color; the dot SHAPE carries severity.
+    expect(clientStatusMeta('at_risk')).toEqual({
+      label: 'בסיכון',
+      color: 'var(--fs-warn)',
+      dot: 'ring',
+    });
+    expect(clientStatusMeta('inactive')).toEqual({
+      label: 'לא פעיל',
+      color: 'var(--fs-warn)',
+      dot: 'filled',
+    });
+    expect(clientStatusMeta('new')).toEqual({
+      label: 'חדש',
+      color: 'var(--fs-muted)',
+      dot: 'none',
+    });
   });
 });

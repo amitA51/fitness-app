@@ -1,5 +1,5 @@
 import { m } from 'framer-motion';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, Moon, Sun, Sunrise } from 'lucide-react';
 import { MobileToggle } from '../components/MobileToggle';
 import { StepHeader } from '../components/ProgressDots';
 import type { OnboardingData } from '../types';
@@ -12,9 +12,11 @@ interface PreferencesStepProps {
 export function PreferencesStep({ data, onChange }: PreferencesStepProps) {
   return (
     <m.div
-      initial={{ opacity: 0, x: 20 }}
+      // RTL-forward: the next step arrives from the inline-start (left) since
+      // ChevronLeft is "forward" — enter from negative x, exit to positive x.
+      initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
+      exit={{ opacity: 0, x: 20 }}
       className="flex flex-col h-full"
     >
       <StepHeader
@@ -108,34 +110,36 @@ export function PreferencesStep({ data, onChange }: PreferencesStepProps) {
           <div className="flex gap-3">
             {(
               [
-                { value: 'morning', label: 'בוקר', icon: '' },
-                { value: 'afternoon', label: 'צהריים', icon: '' },
-                { value: 'evening', label: 'ערב', icon: '' },
+                { value: 'morning', label: 'בוקר', icon: Sunrise },
+                { value: 'afternoon', label: 'צהריים', icon: Sun },
+                { value: 'evening', label: 'ערב', icon: Moon },
               ] as const
-            ).map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => onChange({ preferredTime: opt.value })}
-                className="flex-1 min-h-[56px] transition-all flex flex-col items-center justify-center gap-1"
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: data.preferredTime === opt.value ? 700 : 500,
-                  fontSize: '14px',
-                  background:
-                    data.preferredTime === opt.value ? 'var(--fs-accent)' : 'var(--fs-surface)',
-                  border:
-                    data.preferredTime === opt.value
+            ).map((opt) => {
+              const isSelected = data.preferredTime === opt.value;
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => onChange({ preferredTime: opt.value })}
+                  className="flex-1 min-h-[56px] transition-all flex flex-col items-center justify-center gap-1"
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: isSelected ? 700 : 500,
+                    fontSize: '14px',
+                    background: isSelected ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                    border: isSelected
                       ? '2px solid var(--fs-accent)'
                       : '1px solid var(--fs-surface-2)',
-                  borderRadius: '22px 16px 22px 16px',
-                  color: data.preferredTime === opt.value ? 'var(--fs-primary)' : 'var(--fs-muted)',
-                }}
-              >
-                <span className="text-2xl">{opt.icon}</span>
-                <span>{opt.label}</span>
-              </button>
-            ))}
+                    borderRadius: '22px 16px 22px 16px',
+                    color: isSelected ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                  }}
+                >
+                  <Icon size={20} aria-hidden="true" />
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 

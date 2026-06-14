@@ -14,7 +14,11 @@ export const MACRO_COLORS: Record<'calories' | 'protein' | 'carbs' | 'fat', stri
   calories: 'var(--fs-warn)',
   protein: 'var(--fs-accent)',
   carbs: 'var(--fs-accent-2)',
-  fat: 'var(--fs-signal)',
+  // Muted, not lime: --fs-signal is reserved for PR celebration (DESIGN.md
+  // anti-slop rule). Fat carries no good/bad valence, so it grades to the
+  // neutral ink-secondary token, which passes AA on --fs-surface-2 in both
+  // light (#4d5c5a on #dbe6e3) and dark (#8c8c8c on #1a1a1a).
+  fat: 'var(--fs-muted)',
 };
 
 /**

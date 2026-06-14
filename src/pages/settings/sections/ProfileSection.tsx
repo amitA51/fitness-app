@@ -59,7 +59,7 @@ export function ProfileSection({ profile, updateProfile, commitProfile, profileS
               type="text"
               value={profile.name}
               onChange={(e) => updateProfile({ ...profile, name: e.target.value })}
-              placeholder="הכנס שם..."
+              placeholder="הזינו שם…"
               aria-label="שם"
               style={{
                 width: '144px',

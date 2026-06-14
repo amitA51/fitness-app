@@ -483,7 +483,7 @@ export default function GroupThread({ viewer }: Props) {
               }
             }}
             rows={1}
-            placeholder="כתוב הודעה…"
+            placeholder="כתבו הודעה…"
             aria-label="כתיבת הודעה"
             className="flex-1 px-3 py-2"
             style={{

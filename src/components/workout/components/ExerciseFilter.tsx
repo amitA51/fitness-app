@@ -111,7 +111,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
             setShowSuggestions(true);
           }}
           onFocus={() => searchQuery.length >= 2 && setShowSuggestions(suggestions.length > 0)}
-          placeholder="חיפוש תרגיל..."
+          placeholder="חיפוש תרגיל…"
           className="w-full"
           style={{
             background: 'var(--fs-surface)',

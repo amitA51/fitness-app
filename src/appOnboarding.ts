@@ -5,6 +5,38 @@ import { safeJsonParse } from './utils/safeJson';
 // HELPER FUNCTIONS (defined outside App — no hooks)
 // ============================================================================
 
+// First-action deep links chosen from the data just collected. Trainees land on
+// the workout flow (their highest-intent next step); coaches land on the invite
+// flow (their first real action is bringing trainees in). Routes already exist
+// in the app router — this only decides which one to open.
+const TRAINEE_FIRST_ACTION = '/workout';
+const COACH_FIRST_ACTION = '/coach/invites';
+
+/**
+ * The route a freshly-onboarded user should land on so onboarding ends in a
+ * real first action instead of a static recap. Coaches → invite flow; everyone
+ * else → workout flow.
+ */
+export function postOnboardingDestination(data: OnboardingData): string {
+  return data.role === 'coach' ? COACH_FIRST_ACTION : TRAINEE_FIRST_ACTION;
+}
+
+/**
+ * Pre-seed the browser path so that when the app's BrowserRouter mounts (right
+ * after onboarding flips `onboardingDone`), it reads this location and lands on
+ * the user's first action. Best-effort: a History API failure simply leaves the
+ * default landing route, never blocking the finish.
+ */
+export function setPostOnboardingPath(path: string): void {
+  try {
+    if (typeof window !== 'undefined' && window.history?.replaceState) {
+      window.history.replaceState(null, '', path);
+    }
+  } catch {
+    /* best-effort — fall back to the default landing route */
+  }
+}
+
 export function getWeightGoalFromOnboarding(goal: string): string {
   switch (goal) {
     case 'strength':

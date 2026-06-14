@@ -28,8 +28,7 @@ interface BestSet {
   volume: number;
 }
 
-const fmtVol = (v: number): string =>
-  v >= 1000 ? `${(v / 1000).toFixed(1)}K ק״ג` : `${Math.round(v)} ק״ג`;
+const fmtVol = (v: number): string => `${Math.round(v).toLocaleString('he-IL')} ק״ג`;
 
 const fmtDuration = (sec: number): string => {
   if (sec < 3600) return `${Math.floor(sec / 60)} דק'`;
@@ -271,8 +270,10 @@ const WorkoutComparisonInner: React.FC<WorkoutComparisonProps> = ({
               const diff = curVol - prevVol;
               const tone: DeltaTone = diff > 0 ? 'positive' : diff < 0 ? 'negative' : 'neutral';
               const curTxt = row.curBest ? `${row.curBest.weight} ק״ג × ${row.curBest.reps}` : '—';
+              // Isolate the LTR weight×reps run (FSI…PDI) so the neutral × keeps
+              // the digits in order inside the otherwise-Hebrew chip label.
               const prevTxt = row.prevBest
-                ? `${row.prevBest.weight} ק״ג × ${row.prevBest.reps}`
+                ? `⁦${row.prevBest.weight} ק״ג × ${row.prevBest.reps}⁩`
                 : '—';
               return (
                 <li key={row.id} className="flex items-center justify-between py-2">
@@ -280,7 +281,9 @@ const WorkoutComparisonInner: React.FC<WorkoutComparisonProps> = ({
                     {row.name}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs font-semibold text-[var(--color-text)]">{curTxt}</span>
+                    <span dir="ltr" className="text-xs font-semibold text-[var(--color-text)]">
+                      {curTxt}
+                    </span>
                     <DeltaChip
                       label={row.prevBest ? `קודם ${prevTxt}` : null}
                       tone={tone}

@@ -1,6 +1,7 @@
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { DUR, EASE, gsap, useGSAP } from '@/lib/gsap';
-import { memo, useId, useMemo, useRef } from 'react';
+import type React from 'react';
+import { memo, useCallback, useId, useMemo, useRef, useState } from 'react';
 
 export interface GlowAreaPoint {
   x: string | number;
@@ -15,6 +16,15 @@ interface GlowAreaChartProps {
   xAxis?: boolean;
   yAxis?: boolean;
   ariaLabel?: string;
+  /**
+   * Tap / scrub to inspect: on pointer move, hit-test to the nearest data point
+   * and surface a vertical guide + dot + a tokenized callout (x label + y value).
+   * The animated guide is skipped under reduced motion. Default false so every
+   * existing static caller is unchanged.
+   */
+  interactive?: boolean;
+  /** Optional unit suffix appended to the inspected y value in the callout (e.g. "kg"). */
+  valueUnit?: string;
 }
 
 interface XY {
@@ -98,6 +108,8 @@ export const GlowAreaChart = memo(function GlowAreaChart({
   xAxis = false,
   yAxis = false,
   ariaLabel,
+  interactive = false,
+  valueUnit,
 }: GlowAreaChartProps) {
   const reactId = useId();
   const gradientId = `glow-grad-${reactId}`;
@@ -121,8 +133,50 @@ export const GlowAreaChart = memo(function GlowAreaChart({
   const yMax = ys.length > 0 ? Math.max(...ys) : 0;
   const lastPoint = points.length > 0 ? points[points.length - 1]! : null;
 
+  // Scrub-to-inspect: index of the data point under the pointer (null = idle).
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const reduced = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  // Map a clientX to the nearest data index using the SVG's own box (handles the
+  // non-uniform preserveAspectRatio stretch). No-op when there is nothing to hit.
+  const hitTest = useCallback(
+    (clientX: number) => {
+      const el = svgRef.current;
+      if (!el || data.length === 0) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0) return;
+      const fracView = ((clientX - rect.left) / rect.width) * VIEW_WIDTH;
+      let nearest = 0;
+      let best = Number.POSITIVE_INFINITY;
+      for (let i = 0; i < points.length; i++) {
+        const dx = Math.abs(points[i]!.x - fracView);
+        if (dx < best) {
+          best = dx;
+          nearest = i;
+        }
+      }
+      setActiveIdx(nearest);
+    },
+    [data.length, points]
+  );
+
+  const clearHit = useCallback(() => setActiveIdx(null), []);
+
+  // Resolve the active point's geometry + label into the values the overlay needs.
+  const active = useMemo(() => {
+    if (activeIdx === null) return null;
+    const pt = points[activeIdx];
+    const datum = data[activeIdx];
+    if (!pt || !datum) return null;
+    return {
+      leftPct: (pt.x / VIEW_WIDTH) * 100,
+      topPct: (pt.y / height) * 100,
+      label: String(datum.x),
+      value: datum.y,
+    };
+  }, [activeIdx, points, data, height]);
   const linePathRef = useRef<SVGPathElement>(null);
   const areaPathRef = useRef<SVGPathElement>(null);
   const gridRef = useRef<SVGGElement>(null);
@@ -212,6 +266,18 @@ export const GlowAreaChart = memo(function GlowAreaChart({
     { scope: rootRef, dependencies: [linePath, reduced] }
   );
 
+  const pointerHandlers = interactive
+    ? {
+        onPointerDown: (e: React.PointerEvent) => hitTest(e.clientX),
+        onPointerMove: (e: React.PointerEvent) => {
+          if (e.buttons > 0 || e.pointerType === 'mouse') hitTest(e.clientX);
+        },
+        onPointerLeave: clearHit,
+        onPointerUp: clearHit,
+        onPointerCancel: clearHit,
+      }
+    : {};
+
   return (
     <div
       ref={rootRef}
@@ -221,9 +287,12 @@ export const GlowAreaChart = memo(function GlowAreaChart({
         width: '100%',
         padding: '14px 12px 10px',
         borderRadius: '22px 16px 22px 16px',
+        touchAction: interactive ? 'pan-y' : undefined,
       }}
+      {...pointerHandlers}
     >
       <svg
+        ref={svgRef}
         width="100%"
         height={height}
         viewBox={`0 0 ${VIEW_WIDTH} ${height}`}
@@ -294,6 +363,23 @@ export const GlowAreaChart = memo(function GlowAreaChart({
             }}
           />
         )}
+        {/* Scrub guide — a vertical rule under the inspected point. The SVG x
+            stretches with the container (preserveAspectRatio="none") so it tracks
+            the HTML overlay dot. The animated transition is dropped under reduced
+            motion via the global reduced-motion rule + the no-transition guard. */}
+        {active && (
+          <line
+            x1={points[activeIdx as number]!.x}
+            x2={points[activeIdx as number]!.x}
+            y1={PAD_TOP}
+            y2={bottomY}
+            stroke={accent}
+            strokeWidth={1}
+            strokeOpacity={0.5}
+            strokeDasharray="2 3"
+            style={reduced ? undefined : { transition: 'all 0.12s var(--ease-out, ease-out)' }}
+          />
+        )}
         <g ref={axisRef}>
           {yAxis && data.length > 0 && (
             <g>
@@ -342,6 +428,55 @@ export const GlowAreaChart = memo(function GlowAreaChart({
             })}
         </g>
       </svg>
+      {/* Inspect overlay — HTML (not SVG) so the dot stays a true circle and the
+          mono callout renders with correct dir="ltr" digits despite the non-
+          uniform SVG stretch. Purely positional → reduced-motion-safe. */}
+      {interactive && active && (
+        <div aria-hidden="true" style={{ position: 'absolute', inset: '14px 12px 10px' }}>
+          {/* Dot */}
+          <span
+            style={{
+              position: 'absolute',
+              left: `${active.leftPct}%`,
+              top: `${active.topPct}%`,
+              width: 9,
+              height: 9,
+              transform: 'translate(-50%, -50%)',
+              borderRadius: '9999px',
+              background: accent,
+              boxShadow: `0 0 6px color-mix(in srgb, ${accent} 70%, transparent)`,
+            }}
+          />
+          {/* Callout bubble — clamped horizontally so it never clips the card. */}
+          <div
+            dir="ltr"
+            style={{
+              position: 'absolute',
+              left: `clamp(0%, ${active.leftPct}%, 100%)`,
+              top: 0,
+              transform: `translateX(${active.leftPct > 65 ? '-100%' : active.leftPct < 35 ? '0%' : '-50%'})`,
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--fs-surface-2)',
+              borderRadius: 8,
+              boxShadow: 'var(--shadow-card)',
+              padding: '4px 8px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              lineHeight: 1.4,
+              color: 'var(--fs-ink)',
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
+            }}
+          >
+            <span style={{ color: 'var(--fs-muted)' }}>{active.label}</span>
+            <br />
+            <span style={{ fontWeight: 700 }}>
+              {Math.round(active.value)}
+              {valueUnit ? ` ${valueUnit}` : ''}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 });

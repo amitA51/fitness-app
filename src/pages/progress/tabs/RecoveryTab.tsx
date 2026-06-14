@@ -1,6 +1,6 @@
-import { m } from 'framer-motion';
 import { Activity, Battery, Dumbbell, Heart, Moon, Plus, Wind } from 'lucide-react';
 import { memo, useRef } from 'react';
+import { RingProgress } from '../../../components/charts';
 import { VerdictLine, VerdictNumber } from '../../../components/insights/VerdictLine';
 import { useCountUp } from '../../../hooks/useCountUp';
 import { getLegacyRecoveryScore } from '../../../services/bodyStatsService';
@@ -101,50 +101,29 @@ export const RecoveryTab = memo(function RecoveryTab({
         {recoveryScore ? (
           <div>
             <div className="flex items-center gap-6 mb-5">
-              {/* CSS circle score */}
-              <div className="relative w-28 h-28 flex-shrink-0 flex items-center justify-center">
-                <div
-                  className="absolute inset-0 rounded-full"
-                  style={{ background: 'var(--fs-surface-2)' }}
+              {/* Shared RingProgress primitive — inherits the premium gauge (track,
+                  arc, leading tip, reduced-motion-safe dash transition) instead of
+                  the former hand-rolled strokeDasharray math. The score color comes
+                  from the recovery scale, the count-up lives in centerContent. */}
+              <div className="flex-shrink-0">
+                <RingProgress
+                  value={scorePct}
+                  size={112}
+                  strokeWidth={6}
+                  color={scoreColor}
+                  ariaLabel={`ציון ריקאברי: ${scorePct}%`}
+                  centerContent={
+                    <div className="text-center">
+                      <ScoreCountUp value={recoveryScore.score} color={scoreColor} />
+                      <div
+                        className="text-[11px] mt-1 font-mono"
+                        style={{ color: 'var(--fs-muted)' }}
+                      >
+                        {recoveryScore.label}
+                      </div>
+                    </div>
+                  }
                 />
-                <div
-                  className="absolute inset-2 rounded-full"
-                  style={{ backgroundColor: `${scoreColor}18` }}
-                />
-                <div className="relative z-10 text-center">
-                  <ScoreCountUp value={recoveryScore.score} color={scoreColor} />
-                  <div className="text-[11px] mt-1 font-mono" style={{ color: 'var(--fs-muted)' }}>
-                    {recoveryScore.label}
-                  </div>
-                </div>
-                <svg
-                  className="absolute inset-0 w-full h-full -rotate-90"
-                  viewBox="0 0 112 112"
-                  aria-label={`ציון ריקאברי: ${scorePct}%`}
-                  role="img"
-                >
-                  <circle
-                    cx="56"
-                    cy="56"
-                    r="50"
-                    fill="none"
-                    stroke="var(--fs-surface-2)"
-                    strokeWidth="6"
-                  />
-                  <m.circle
-                    cx="56"
-                    cy="56"
-                    r="50"
-                    fill="none"
-                    stroke={scoreColor}
-                    strokeWidth="6"
-                    strokeLinecap="round"
-                    strokeDasharray={`${scorePct * 3.14} ${314 - scorePct * 3.14}`}
-                    initial={{ strokeDasharray: `0 ${2 * Math.PI * 50}` }}
-                    animate={{ strokeDasharray: `${scorePct * 3.14} ${314 - scorePct * 3.14}` }}
-                    transition={{ duration: 1.2, ease: 'easeOut' }}
-                  />
-                </svg>
               </div>
 
               <div className="flex-1 space-y-3">
@@ -164,7 +143,9 @@ export const RecoveryTab = memo(function RecoveryTab({
                   label="אנרגיה"
                   value={recoveryScore.energyScore}
                   max={25}
-                  color="var(--fs-signal)"
+                  // Neutral accent — siblings use accent/warn/neutral and lime
+                  // (--fs-signal) is reserved for PR celebration, not a metric bar.
+                  color="var(--fs-accent)"
                 />
                 <RecoveryBar
                   label="לחץ"

@@ -1,4 +1,5 @@
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { Unlink } from 'lucide-react';
 import {
   type ReactNode,
   Suspense,
@@ -18,9 +19,10 @@ import {
   Routes,
   useLocation,
   useNavigate,
+  useNavigationType,
   useParams,
 } from 'react-router-dom';
-import { PageLoader } from './AppPageLoader';
+import { PageLoader, type PageLoaderVariant } from './AppPageLoader';
 import {
   getActivityLevelFromOnboarding,
   getWeightGoalFromOnboarding,
@@ -112,6 +114,43 @@ const ROUTER_FUTURE = {
   v7_startTransition: true,
   v7_relativeSplatPath: true,
 } as const;
+
+// Map a path to the lazy-fallback silhouette family so the loading shape is
+// continuous with the page that's about to mount: detail/thread screens open
+// with a hero block; list/roster screens open with stacked rows.
+const DETAIL_PREFIXES = ['/detail', '/workout/', '/coach/clients/', '/u/'] as const;
+const LIST_PREFIXES = [
+  '/progress',
+  '/templates',
+  '/community',
+  '/coach/clients',
+  '/coach/messages',
+  '/coach/programs',
+  '/coach/groups',
+  '/coach/invites',
+  '/my-coach',
+] as const;
+
+export function pageLoaderVariant(pathname: string): PageLoaderVariant {
+  if (DETAIL_PREFIXES.some((p) => pathname.startsWith(p))) return 'detail';
+  if (LIST_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return 'list';
+  return 'default';
+}
+
+// Directional route transition: the incoming page slides a short distance along
+// the INLINE axis so list-to-detail flows read as one moving surface. The offset is
+// physical (framer animates `x`), so we flip its sign for RTL — and again for a
+// back ("POP") navigation — so "forward" always enters from the inline-end and
+// "back" from the inline-start, regardless of writing direction.
+const ROUTE_SLIDE_PX = 24;
+
+export function routeSlideOffset(isBack: boolean): number {
+  const rtl = typeof document !== 'undefined' && document.dir === 'rtl';
+  // Forward in LTR enters from the right (+x); RTL mirrors it (−x). Back inverts.
+  const forwardSign = rtl ? -1 : 1;
+  const sign = isBack ? -forwardSign : forwardSign;
+  return sign * ROUTE_SLIDE_PX;
+}
 
 // ----------------------------------------------------------------------------
 // AppRouter — consumes auth context to decide which top-level screen to show.
@@ -560,8 +599,61 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
           </PageErrorBoundary>
         }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
+  );
+}
+
+// ============================================================================
+// NotFound — visible signal for broken/expired deep links (vs. a silent bounce
+// home that hides the breakage from users and QA). Tokenized, RTL, both modes.
+// ============================================================================
+
+function NotFound() {
+  const navigate = useNavigate();
+  return (
+    <div
+      dir="rtl"
+      lang="he"
+      role="alert"
+      className="min-h-screen min-h-[100dvh] flex flex-col items-center justify-center text-center"
+      style={{ background: 'var(--fs-bg)', padding: '24px 20px', gap: 20 }}
+    >
+      <Unlink size={56} strokeWidth={1.5} aria-hidden="true" style={{ color: 'var(--fs-muted)' }} />
+      <div style={{ maxWidth: 320 }}>
+        <h1
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 24,
+            letterSpacing: '-0.01em',
+            color: 'var(--fs-ink)',
+            margin: 0,
+          }}
+        >
+          הקישור לא נמצא או פג תוקפו
+        </h1>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 15,
+            lineHeight: 1.6,
+            color: 'var(--fs-muted)',
+            margin: '10px 0 0',
+          }}
+        >
+          ייתכן שהדף הוסר, השתנה, או שהקישור ששותף איתך אינו תקין יותר.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => navigate('/')}
+        className="start-workout-btn active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
+        style={{ minHeight: 48, paddingInline: 28 }}
+      >
+        חזרה לבית
+      </button>
+    </div>
   );
 }
 
@@ -571,7 +663,10 @@ const MemoizedBottomNav = memo(BottomNav);
 // Separate component to render the main app content
 function AppShell() {
   const location = useLocation();
+  const navigationType = useNavigationType();
   const reduceMotion = useReducedMotion() ?? false;
+  // A browser/in-app "back" is a POP; PUSH/REPLACE read as forward.
+  const slideX = useMemo(() => routeSlideOffset(navigationType === 'POP'), [navigationType]);
   // Reflect coach edits to trainee-owned data live (pull-on-mount + realtime
   // merge). Self-guards for guests / unconfigured Supabase.
   useCloudDataReflection();
@@ -710,20 +805,23 @@ function AppShell() {
                   }),
                 }}
               >
-                <Suspense fallback={<PageLoader />}>
+                <Suspense fallback={<PageLoader variant={pageLoaderVariant(location.pathname)} />}>
                   {reduceMotion ? (
                     <AppRoutes location={location} />
                   ) : (
                     <AnimatePresence mode="wait" initial={false}>
                       <m.div
                         key={location.pathname}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                        // Directional slide along the inline axis (sign-aware for
+                        // RTL + forward/back) so list-to-detail flows feel like one
+                        // moving surface rather than a flat crossfade.
+                        initial={{ opacity: 0, x: slideX }}
+                        animate={{ opacity: 1, x: 0 }}
                         // Instant exit (mode="wait" proceeds immediately) so the
-                        // outgoing route doesn't fade to a blank gap before the new
-                        // one mounts — the incoming page just fades in.
+                        // outgoing route doesn't slide to a blank gap before the new
+                        // one mounts — the incoming page just slides in.
                         exit={{ opacity: 0, transition: { duration: 0 } }}
-                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                       >
                         <AppRoutes location={location} />
                       </m.div>

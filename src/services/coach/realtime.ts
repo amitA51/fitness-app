@@ -131,7 +131,10 @@ export function subscribeToGroupThread(
  * live instead of waiting for the next poll. Filters on `coach_id` — one
  * realtime filter, mirroring subscribeToThread's single-filter approach.
  */
-export function subscribeToCoachClientMessages(coachId: string, onActivity: () => void): Unsubscribe {
+export function subscribeToCoachClientMessages(
+  coachId: string,
+  onActivity: () => void
+): Unsubscribe {
   if (!isSupabaseConfigured() || !supabase || !coachId) return () => {};
 
   try {
@@ -171,10 +174,8 @@ export function subscribeToCoachGroupMessages(onActivity: () => void): Unsubscri
   try {
     const channel = supabase
       .channel(`rt:group_messages:inbox:${++channelSeq}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'group_messages' },
-        () => onActivity()
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages' }, () =>
+        onActivity()
       )
       .subscribe();
 

@@ -1,4 +1,4 @@
-import { Flame, Plus, Trash2 } from 'lucide-react';
+import { CopyPlus, Flame, Plus, Trash2 } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { SkeletonBox } from '../../../components/ui/SkeletonLoader';
 import { MEAL_TYPE_ORDER, normalizeMealType } from '../../../constants/nutrition';
@@ -70,7 +70,14 @@ export const EmptyMealState = memo(function EmptyMealState({ onAdd }: { onAdd: (
 export const MealEntryCard = memo(function MealEntryCard({
   entry,
   onDelete,
-}: { entry: MealEntry; onDelete: (id: string) => void }) {
+  onRepeat,
+}: {
+  entry: MealEntry;
+  onDelete: (id: string) => void;
+  /** Optional one-tap re-log of this entry onto the open day. Renders the
+   *  re-log control only when wired by the parent (backward compatible). */
+  onRepeat?: (id: string) => void;
+}) {
   // Eyebrow shows the logging time; the meal-type label lives on the group
   // header in GroupedMealLog, so repeating it here would be redundant.
   const time = entry.meals[0]?.time ?? '';
@@ -91,15 +98,28 @@ export const MealEntryCard = memo(function MealEntryCard({
         <span className="eyebrow" style={{ color: 'var(--fs-accent)' }}>
           {time}
         </span>
-        <button
-          type="button"
-          onClick={() => onDelete(entry.id)}
-          className="w-12 h-12 flex items-center justify-center transition-colors"
-          style={{ color: 'var(--fs-muted)' }}
-          aria-label="מחק ארוחה"
-        >
-          <Trash2 size={14} />
-        </button>
+        <div className="flex items-center" style={{ marginInlineEnd: -8 }}>
+          {onRepeat && (
+            <button
+              type="button"
+              onClick={() => onRepeat(entry.id)}
+              className="w-12 h-12 flex items-center justify-center transition-colors active:scale-[0.92]"
+              style={{ color: 'var(--fs-muted)' }}
+              aria-label="רשמו שוב"
+            >
+              <CopyPlus size={14} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onDelete(entry.id)}
+            className="w-12 h-12 flex items-center justify-center transition-colors active:scale-[0.92]"
+            style={{ color: 'var(--fs-muted)' }}
+            aria-label="מחק ארוחה"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
 
       <h4
@@ -198,7 +218,13 @@ export const MealEntryCard = memo(function MealEntryCard({
 export const GroupedMealLog = memo(function GroupedMealLog({
   entries,
   onDelete,
-}: { entries: MealEntry[]; onDelete: (id: string) => void }) {
+  onRepeat,
+}: {
+  entries: MealEntry[];
+  onDelete: (id: string) => void;
+  /** Optional re-log handler, forwarded to each entry card. */
+  onRepeat?: (id: string) => void;
+}) {
   const groups = useMemo(() => {
     const byType = new Map<MealType, MealEntry[]>();
     for (const entry of entries) {
@@ -251,7 +277,7 @@ export const GroupedMealLog = memo(function GroupedMealLog({
               </span>
             </div>
             {group.entries.map((entry) => (
-              <MealEntryCard key={entry.id} entry={entry} onDelete={onDelete} />
+              <MealEntryCard key={entry.id} entry={entry} onDelete={onDelete} onRepeat={onRepeat} />
             ))}
           </section>
         );

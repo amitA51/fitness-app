@@ -46,7 +46,7 @@ export function NotesBox({ clientId }: { clientId: string }) {
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={2}
-          placeholder="הערה פרטית (רק אתה רואה)…"
+          placeholder="הערה פרטית (רק אתם רואים)…"
           aria-label="הערה פרטית"
         />
       </div>

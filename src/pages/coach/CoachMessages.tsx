@@ -89,9 +89,17 @@ function UnreadPill({ count }: { count: number }) {
   );
 }
 
-function PreviewMeta({ body, at }: { body: string | null; at: string | null }) {
+function PreviewMeta({
+  body,
+  at,
+  unread = 0,
+}: { body: string | null; at: string | null; unread?: number }) {
   const preview = body ? body.slice(0, 60) : null;
   const date = formatDate(at);
+  // Inbound cue: with unread messages the last preview is THEM waiting on a
+  // reply — mark it "הם:" in accent so the coach scans waiting-vs-replied rather
+  // than just recency. No unread ⇒ no marker.
+  const isInbound = unread > 0 && preview !== null;
   return (
     <div
       style={{
@@ -109,6 +117,11 @@ function PreviewMeta({ body, at }: { body: string | null; at: string | null }) {
           dir="auto"
           style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}
         >
+          {isInbound && (
+            <span style={{ color: 'var(--fs-accent)', fontWeight: 700, marginInlineEnd: 4 }}>
+              הם:
+            </span>
+          )}
           {preview}
         </span>
       ) : (
@@ -313,7 +326,7 @@ function PersonalPanel() {
           <ListRow
             key={t.clientId}
             label={t.displayName}
-            metaNode={<PreviewMeta body={t.lastBody} at={t.lastAt} />}
+            metaNode={<PreviewMeta body={t.lastBody} at={t.lastAt} unread={t.unread} />}
             onClick={() => navigate(`/coach/messages/${t.clientId}`)}
             trailing={<UnreadPill count={t.unread} />}
           />
@@ -385,7 +398,7 @@ function GroupsPanel() {
           <ListRow
             key={g.groupId}
             label={g.name}
-            metaNode={<PreviewMeta body={g.lastBody} at={g.lastAt} />}
+            metaNode={<PreviewMeta body={g.lastBody} at={g.lastAt} unread={g.unread} />}
             onClick={() => navigate(`/coach/groups/${g.groupId}/chat`)}
             trailing={<UnreadPill count={g.unread} />}
           />

@@ -3,11 +3,9 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest';
-import type {
-  MuscleGroupLastTrained,
-  ProgressDelta,
-} from '../../services/analyticsService';
+import type { MuscleGroupLastTrained, ProgressDelta } from '../../services/analyticsService';
 import {
+  BALANCED_SPLIT_MIN_MUSCLES,
   MIN_PROGRESSION_PCT,
   MIN_STREAK_DAYS,
   NEGLECT_MAX_DAYS,
@@ -34,13 +32,22 @@ const muscle = (name: string, daysSince: number): MuscleGroupLastTrained => ({
   daysSince,
 });
 
-const base = { weekOverWeekDeltas: [], muscleGroups: [], currentStreak: 0 };
+// Zero-data baseline: no workouts ever, so the fallback tier stays off and the
+// existing threshold-miss cases still resolve to null. Tiered tests override.
+const base = {
+  weekOverWeekDeltas: [],
+  muscleGroups: [],
+  currentStreak: 0,
+  workoutsThisMonth: 0,
+  totalWorkouts: 0,
+};
 
 describe('pickDashboardInsight', () => {
   it('returns null when nothing crosses a threshold', () => {
     expect(pickDashboardInsight(base)).toBeNull();
     expect(
       pickDashboardInsight({
+        ...base,
         weekOverWeekDeltas: [delta('Bench Press', 1000, 950, MIN_PROGRESSION_PCT - 1)],
         muscleGroups: [muscle('Shoulders', NEGLECT_MIN_DAYS - 1)],
         currentStreak: MIN_STREAK_DAYS - 1,
@@ -50,6 +57,7 @@ describe('pickDashboardInsight', () => {
 
   it('picks the HIGHEST qualifying progression first, over everything else', () => {
     const result = pickDashboardInsight({
+      ...base,
       weekOverWeekDeltas: [
         delta('Bench Press', 1100, 1000, 10),
         delta('Squat', 1500, 1200, 25),
@@ -98,7 +106,45 @@ describe('pickDashboardInsight', () => {
   });
 
   it('falls back to the streak nudge last', () => {
-    const result = pickDashboardInsight({ ...base, currentStreak: MIN_STREAK_DAYS });
+    const result = pickDashboardInsight({
+      ...base,
+      totalWorkouts: 10,
+      currentStreak: MIN_STREAK_DAYS,
+    });
     expect(result).toEqual({ kind: 'streak', days: MIN_STREAK_DAYS });
+  });
+
+  it('stays null on true zero-data (no workouts ever)', () => {
+    expect(pickDashboardInsight({ ...base, totalWorkouts: 0, workoutsThisMonth: 0 })).toBeNull();
+  });
+
+  it('fills the slot with this-month consistency when all thresholds miss', () => {
+    const result = pickDashboardInsight({ ...base, totalWorkouts: 8, workoutsThisMonth: 5 });
+    expect(result).toEqual({ kind: 'consistency', workoutsThisMonth: 5 });
+  });
+
+  it('affirms a balanced split when no workouts this month but a recent spread exists', () => {
+    // Muscles trained recently (below the neglect window) so tier-2 stays off,
+    // yet still count toward the balanced spread (within NEGLECT_MAX_DAYS).
+    const recent = NEGLECT_MIN_DAYS - 1;
+    const result = pickDashboardInsight({
+      ...base,
+      totalWorkouts: 12,
+      workoutsThisMonth: 0,
+      muscleGroups: [muscle('Shoulders', recent), muscle('Arms', recent), muscle('Core', recent)],
+    });
+    expect(result).toEqual({ kind: 'balanced', muscleCount: BALANCED_SPLIT_MIN_MUSCLES });
+  });
+
+  it('falls back to lifetime consistency when month is empty and split is thin', () => {
+    const result = pickDashboardInsight({
+      ...base,
+      totalWorkouts: 3,
+      workoutsThisMonth: 0,
+      // Single recently-trained muscle: too few for a balanced split, not stale
+      // enough to be neglected.
+      muscleGroups: [muscle('Arms', NEGLECT_MIN_DAYS - 1)],
+    });
+    expect(result).toEqual({ kind: 'consistency', workoutsThisMonth: 0 });
   });
 });

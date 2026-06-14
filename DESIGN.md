@@ -13,7 +13,7 @@
 **Fresh Steel** (light) / **Obsidian** (dark). Disciplined · Athletic · Data-driven · Direct · Energetic. Lineage: Apple Fitness+, Nike Training Club, Spotify — not a generic SaaS look.
 
 - **Platform:** mobile-first PWA. Hard width cap `--max-width: 480px`.
-- **Direction:** RTL-first (Hebrew UI). Numbers and stat values render LTR (`dir="ltr"`).
+- **Direction:** RTL-first (Hebrew UI). Numbers and stat values render LTR — via `.kinetic-number` (now bidi-isolated by default, see Typography) or an explicit `dir="ltr"` on raw numbers.
 - **Character:** editorial masthead (solid primary block) + oversized display numerals + uppercase mono micro-labels. A two-accent system (mint action + lime signal), sharp asymmetric corners, generous negative space.
 
 ## Aesthetic family
@@ -74,7 +74,7 @@ Loaded in `src/styles/typography.css` via Google Fonts.
 - `--font-display` = **"Bricolage Grotesque"** (600/700/800) — headings & numbers. Headings are `text-transform: uppercase`, `letter-spacing: -0.02em`.
 - `--font-body` = **"Assistant"** (400/600/700/800) — body & Hebrew.
 - `--font-mono` = **"IBM Plex Mono"** (500/600/700) — micro-labels, captions, kickers; uppercase, wide tracking (`0.12em`–`0.28em`).
-- Numbers use `.kinetic-number` (`tabular-nums`, `lnum`) so digits don't jitter.
+- Numbers use `.kinetic-number` (`tabular-nums`, `lnum`) so digits don't jitter. **`.kinetic-number` is now self-protecting against bidi reorder** — it sets `direction: ltr; unicode-bidi: isolate;`, so any number carrying the class renders its digits/sign LTR and is isolated from surrounding Hebrew without a per-site `dir="ltr"` wrapper. (A raw number NOT in this class still needs `dir="ltr"`.)
 
 Scale (`--text-*`): hero 120 · xl 88 · lg 48 · display 36 · sm 24 · title 20 · headline 18 · body-lg 17 · body 15 · body-sm 13 · label 11 · caption 10.
 

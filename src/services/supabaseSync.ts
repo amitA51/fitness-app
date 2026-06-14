@@ -431,7 +431,11 @@ export const fetchPersonalRecords = async (userId: string): Promise<PersonalReco
   // and no longer carries identity; deriving the local key from exercise_name
   // keeps the `exerciseId` IDB index lookups working for rows pulled with a
   // null (or legacy-uuid) exercise_id.
-  const localExerciseKey = (row: { exercise_id?: string | null; exercise_name?: string | null; id: string }): string =>
+  const localExerciseKey = (row: {
+    exercise_id?: string | null;
+    exercise_name?: string | null;
+    id: string;
+  }): string =>
     (row.exercise_name ?? '').trim().replace(/\s+/g, ' ').toLowerCase() ||
     row.exercise_id ||
     row.id;

@@ -2,7 +2,11 @@ import { Crown } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
-import { SectionLabel } from '../components/ui/SettingsSectionLabel';
+import {
+  SectionLabel,
+  type SettingsJumpItem,
+  SettingsJumpNav,
+} from '../components/ui/SettingsSectionLabel';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { deleteAllUserData } from '../services/settingsService';
 import { signOut } from '../services/supabaseAuth';
@@ -36,6 +40,24 @@ import { HEADER_SUBTITLE_STYLE, HEADER_TITLE_STYLE } from './settings/types';
 // "nutrition_goals" key + "settings-updated" event); coach/role lives in
 // onboarding + the coach panel — neither is duplicated here.
 // ============================================================================
+
+// Sticky jump-nav config. Each chip anchors to a section group below; the
+// matching wrapper gets `scrollMarginTop` so it lands clear of the sticky
+// header + chip row instead of underneath them.
+const JUMP_ITEMS: readonly SettingsJumpItem[] = [
+  { id: 'set-account', label: 'חשבון' },
+  { id: 'set-profile', label: 'פרופיל' },
+  { id: 'set-display', label: 'תצוגה' },
+  { id: 'set-workout', label: 'אימון' },
+  { id: 'set-notifications', label: 'התראות' },
+  { id: 'set-data', label: 'נתונים' },
+];
+
+// Sticky header height estimate (subtitle + title + vertical padding). The chip
+// nav sticks just below it; section anchors clear both via scroll-margin-top.
+const SETTINGS_HEADER_OFFSET = 92;
+const SETTINGS_JUMP_NAV_HEIGHT = 44;
+const SECTION_SCROLL_MARGIN = SETTINGS_HEADER_OFFSET + SETTINGS_JUMP_NAV_HEIGHT;
 
 export default function Settings() {
   const state = useSettingsState();
@@ -119,6 +141,10 @@ export default function Settings() {
         <h1 style={HEADER_TITLE_STYLE}>הגדרות</h1>
       </header>
 
+      <div className="px-4">
+        <SettingsJumpNav items={JUMP_ITEMS} top={SETTINGS_HEADER_OFFSET} />
+      </div>
+
       <div className="px-4 pt-5">
         <p
           style={{
@@ -131,7 +157,9 @@ export default function Settings() {
           חשבון, פרופיל, תצוגה, אימון, התראות ונתונים במקום אחד.
         </p>
 
-        <AccountSection authEmail={state.authEmail} onSignOut={handleSignOut} />
+        <div id="set-account" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
+          <AccountSection authEmail={state.authEmail} onSignOut={handleSignOut} />
+        </div>
 
         <Link
           to="/paywall"
@@ -174,80 +202,90 @@ export default function Settings() {
           />
         </Link>
 
-        <ProfileSection
-          profile={state.profile}
-          updateProfile={state.updateProfile}
-          commitProfile={state.commitProfile}
-          profileSaved={state.profileSaved}
-        />
+        <div id="set-profile" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
+          <ProfileSection
+            profile={state.profile}
+            updateProfile={state.updateProfile}
+            commitProfile={state.commitProfile}
+            profileSaved={state.profileSaved}
+          />
 
-        <ProfileEditSection />
+          <ProfileEditSection />
+        </div>
 
-        <ThemeSection />
+        <div id="set-display" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
+          <ThemeSection />
 
-        <DateTimeSection />
+          <DateTimeSection />
 
-        <GuidanceSection />
+          <GuidanceSection />
+        </div>
 
-        <WorkoutPrefsSection
-          workoutPrefs={state.workoutPrefs}
-          commitWorkout={state.commitWorkout}
-          workoutSaved={state.workoutSaved}
-        />
+        <div id="set-workout" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
+          <WorkoutPrefsSection
+            workoutPrefs={state.workoutPrefs}
+            commitWorkout={state.commitWorkout}
+            workoutSaved={state.workoutSaved}
+          />
 
-        <CoachSection />
+          <CoachSection />
+        </div>
 
-        <NotificationsSection
-          notificationConfig={state.notificationConfig}
-          toggleNotification={state.toggleNotification}
-          notificationsSaved={state.notificationsSaved}
-          pushEnabled={state.pushEnabled}
-          togglePush={state.togglePush}
-        />
+        <div id="set-notifications" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
+          <NotificationsSection
+            notificationConfig={state.notificationConfig}
+            toggleNotification={state.toggleNotification}
+            notificationsSaved={state.notificationsSaved}
+            pushEnabled={state.pushEnabled}
+            togglePush={state.togglePush}
+          />
+        </div>
 
         {/* 06 · Privacy & data — export, cloud sync and the delete danger-zone */}
-        <SectionLabel>פרטיות ונתונים</SectionLabel>
+        <div id="set-data" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
+          <SectionLabel>פרטיות ונתונים</SectionLabel>
 
-        <ExportSection
-          weeklyReport={state.weeklyReport}
-          setWeeklyReport={state.setWeeklyReport}
-          copiedReport={state.copiedReport}
-          setCopiedReport={state.setCopiedReport}
-        />
-
-        {isSupabaseConfigured() && (
-          <CloudSyncSection
-            cloudConnected={cloudConnected}
-            isSyncingUp={cloudSync.isSyncingUp}
-            isSyncingDown={cloudSync.isSyncingDown}
-            isSyncingAll={cloudSync.isSyncingAll}
-            syncMessage={cloudSync.syncMessage}
-            pendingSyncCount={cloudSync.pendingSyncCount}
-            lastSyncTime={cloudSync.lastSyncTime}
-            onSyncToCloud={cloudSync.handleSyncToCloud}
-            onPullFromCloud={cloudSync.handlePullFromCloud}
-            onSyncAll={cloudSync.handleSyncAll}
+          <ExportSection
+            weeklyReport={state.weeklyReport}
+            setWeeklyReport={state.setWeeklyReport}
+            copiedReport={state.copiedReport}
+            setCopiedReport={state.setCopiedReport}
           />
-        )}
 
-        <DangerZoneSection onDeleteAll={handleDeleteAllData} />
+          {isSupabaseConfigured() && (
+            <CloudSyncSection
+              cloudConnected={cloudConnected}
+              isSyncingUp={cloudSync.isSyncingUp}
+              isSyncingDown={cloudSync.isSyncingDown}
+              isSyncingAll={cloudSync.isSyncingAll}
+              syncMessage={cloudSync.syncMessage}
+              pendingSyncCount={cloudSync.pendingSyncCount}
+              lastSyncTime={cloudSync.lastSyncTime}
+              onSyncToCloud={cloudSync.handleSyncToCloud}
+              onPullFromCloud={cloudSync.handlePullFromCloud}
+              onSyncAll={cloudSync.handleSyncAll}
+            />
+          )}
 
-        {deleteError && (
-          <p
-            role="alert"
-            style={{
-              fontFamily: 'var(--font-hebrew)',
-              fontSize: '14px',
-              color: 'var(--color-error)',
-              marginTop: '-12px',
-              marginBottom: '20px',
-              paddingInline: '4px',
-              lineHeight: 1.5,
-            }}
-          >
-            {deleteError}
-          </p>
-        )}
+          <DangerZoneSection onDeleteAll={handleDeleteAllData} />
+
+          {deleteError && (
+            <p
+              role="alert"
+              style={{
+                fontFamily: 'var(--font-hebrew)',
+                fontSize: '14px',
+                color: 'var(--color-error)',
+                marginTop: '-12px',
+                marginBottom: '20px',
+                paddingInline: '4px',
+                lineHeight: 1.5,
+              }}
+            >
+              {deleteError}
+            </p>
+          )}
+        </div>
 
         {/* Legal & privacy hub — terms, privacy, accessibility + tracking consent */}
         <SectionLabel>משפטי ופרטיות</SectionLabel>

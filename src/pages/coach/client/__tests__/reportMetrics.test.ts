@@ -4,6 +4,7 @@ import type { BodyWeightEntry, WorkoutSession } from '../../../../types';
 import type { Assignment } from '../../../../types/coach';
 import {
   buildReportRange,
+  buildShareSummary,
   computeNutritionSummary,
   computeTrainingSummary,
   computeWeightTrend,
@@ -100,10 +101,7 @@ describe('computeWeightTrend', () => {
 describe('filterPRsInRange', () => {
   it('keeps only in-range PRs, preserving order', () => {
     const rows = [pr('2026-06-05'), pr('2026-05-20'), pr('2026-03-01')];
-    expect(filterPRsInRange(rows, RANGE).map((r) => r.date)).toEqual([
-      '2026-06-05',
-      '2026-05-20',
-    ]);
+    expect(filterPRsInRange(rows, RANGE).map((r) => r.date)).toEqual(['2026-06-05', '2026-05-20']);
   });
 });
 
@@ -167,5 +165,54 @@ describe('sparklinePoints', () => {
 
   it('returns an empty string for an empty series', () => {
     expect(sparklinePoints([], 104, 48)).toBe('');
+  });
+});
+
+describe('buildShareSummary', () => {
+  it('includes only the meaningful lines and leads with name + window', () => {
+    const text = buildShareSummary({
+      clientName: 'דנה',
+      days: 30,
+      training: { sessionCount: 12, totalVolume: 48000 },
+      weightTrend: { startWeight: 70, endWeight: 68, delta: -2, values: [70, 68] },
+      prCount: 3,
+      nutrition: { daysLogged: 20, avgCalories: 2100, targetCalories: 2000 },
+    });
+
+    const lines = text.split('\n');
+    expect(lines[0]).toBe('סיכום 30 ימים — דנה');
+    expect(text).toContain('אימונים: 12');
+    expect(text).toContain('שיאים אישיים: 3');
+    // Negative delta keeps its sign (no leading +).
+    expect(text).toContain('שינוי משקל: -2');
+  });
+
+  it('omits empty sections (no weight trend, no PRs, no nutrition)', () => {
+    const text = buildShareSummary({
+      clientName: 'יואב',
+      days: 30,
+      training: { sessionCount: 0, totalVolume: 0 },
+      weightTrend: null,
+      prCount: 0,
+      nutrition: { daysLogged: 0, avgCalories: null, targetCalories: null },
+    });
+
+    expect(text).toContain('אימונים: 0');
+    expect(text).not.toContain('שינוי משקל');
+    expect(text).not.toContain('שיאים אישיים');
+    expect(text).not.toContain('תיעוד תזונה');
+    expect(text).not.toContain('נפח כולל');
+  });
+
+  it('prefixes a positive weight delta with +', () => {
+    const text = buildShareSummary({
+      clientName: 'נועה',
+      days: 30,
+      training: { sessionCount: 5, totalVolume: 1000 },
+      weightTrend: { startWeight: 60, endWeight: 62, delta: 2, values: [60, 62] },
+      prCount: 0,
+      nutrition: { daysLogged: 0, avgCalories: null, targetCalories: null },
+    });
+    expect(text).toContain('שינוי משקל: +2');
   });
 });

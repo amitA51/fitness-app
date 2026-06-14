@@ -143,6 +143,43 @@ export function findCalorieTarget(assignments: readonly Assignment[]): number | 
   return null;
 }
 
+// ---- Share summary -----------------------------------------------------------
+
+/** Inputs for the concise share/WhatsApp summary (all already computed). */
+export interface ShareSummaryInput {
+  clientName: string;
+  days: number;
+  training: TrainingSummary;
+  weightTrend: WeightTrend | null;
+  prCount: number;
+  nutrition: NutritionSummary;
+}
+
+/**
+ * Build a concise Hebrew share text (WhatsApp-grade) from the already-computed
+ * report aggregates. Numbers are plain digits (the receiving app renders them);
+ * only meaningful lines are included so an empty section never adds noise. Pure.
+ */
+export function buildShareSummary(input: ShareSummaryInput): string {
+  const { clientName, days, training, weightTrend, prCount, nutrition } = input;
+  const lines: string[] = [`סיכום ${days} ימים — ${clientName}`];
+  lines.push(`אימונים: ${training.sessionCount}`);
+  if (training.totalVolume > 0) {
+    lines.push(`נפח כולל: ${Math.round(training.totalVolume).toLocaleString('he-IL')} ק"ג`);
+  }
+  if (weightTrend) {
+    const sign = weightTrend.delta > 0 ? '+' : '';
+    lines.push(`שינוי משקל: ${sign}${weightTrend.delta} ק"ג`);
+  }
+  if (prCount > 0) lines.push(`שיאים אישיים: ${prCount}`);
+  if (nutrition.daysLogged > 0) {
+    const avg =
+      nutrition.avgCalories === null ? '—' : nutrition.avgCalories.toLocaleString('he-IL');
+    lines.push(`תיעוד תזונה: ${nutrition.daysLogged} ימים · ממוצע ${avg} קק"ל`);
+  }
+  return lines.join('\n');
+}
+
 // ---- Sparkline ----------------------------------------------------------------
 
 const round1 = (n: number): number => Math.round(n * 10) / 10;

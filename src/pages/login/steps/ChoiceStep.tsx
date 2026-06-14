@@ -3,9 +3,10 @@
  */
 
 import { m } from 'framer-motion';
-import { ChevronLeft, Lock, User } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronLeft, Lock, ShieldAlert, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { signInWithGoogle } from '../../../services/supabaseAuth';
+import { logger } from '../../../utils/logger';
 import { slideFromRight, staggerItem } from '../animations';
 
 interface ChoiceStepProps {
@@ -16,8 +17,62 @@ interface ChoiceStepProps {
 
 export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
   const [oauthError, setOauthError] = useState('');
+  // Data-safety nudge: if local workout data already exists (a guest who built
+  // up real data), surface a one-line banner pointing at Sign-Up so the data
+  // gets a home before it can be lost. Best-effort — never blocks the screen.
+  const [hasLocalData, setHasLocalData] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    import('../../../services/sessionDb')
+      .then(({ getAllWorkoutSessions }) => getAllWorkoutSessions())
+      .then((sessions) => {
+        if (!cancelled) setHasLocalData(sessions.length > 0);
+      })
+      .catch((err) => {
+        logger.app.warn('ChoiceStep: local session check failed', err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <m.div key="choice" {...slideFromRight} className="flex flex-col gap-6 px-5 py-8">
+      {/* Guest data-safety conversion nudge */}
+      {hasLocalData && (
+        <m.button
+          variants={staggerItem}
+          initial="initial"
+          animate="animate"
+          type="button"
+          onClick={onSignUp}
+          className="flex items-center gap-3 text-right active:scale-[0.98] transition-transform"
+          style={{
+            background: 'var(--fs-surface)',
+            border: '1px solid var(--fs-accent)',
+            borderInlineStartWidth: '4px',
+            borderRadius: '22px 16px 22px 16px',
+            padding: '12px 14px',
+            cursor: 'pointer',
+          }}
+        >
+          <ShieldAlert
+            size={18}
+            style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
+            aria-hidden="true"
+          />
+          <span
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
+              color: 'var(--fs-ink)',
+              lineHeight: 1.4,
+            }}
+          >
+            אתם מתאמנים כאורח. צרו חשבון כדי לשמור את הנתונים שלכם.
+          </span>
+        </m.button>
+      )}
       {/* Sign In Card */}
       <m.button
         variants={staggerItem}
@@ -153,26 +208,26 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
         <div className="flex-1" style={{ height: '1px', background: 'var(--fs-surface-2)' }} />
       </div>
 
-      {/* Guest Button */}
+      {/* Guest Button — quieter than the accent Sign-Up card so the data-safe
+          path stays the clear primary choice (muted border + body font). */}
       <m.button
         variants={staggerItem}
         initial="initial"
         animate="animate"
         onClick={onGuest}
-        className="w-full h-14 flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-[0.98]"
+        className="w-full h-12 flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-[0.98]"
         style={{
-          background: 'var(--fs-surface)',
-          border: '1px solid var(--fs-primary)',
+          background: 'transparent',
+          border: '1px solid var(--fs-surface-2)',
           borderRadius: '22px 16px 22px 16px',
-          fontFamily: 'var(--font-display)',
-          fontWeight: 800,
-          fontSize: '15px',
-          textTransform: 'uppercase',
-          color: 'var(--fs-heading)',
+          fontFamily: 'var(--font-body)',
+          fontWeight: 600,
+          fontSize: '14px',
+          color: 'var(--fs-muted)',
           cursor: 'pointer',
         }}
       >
-        התחל כאורח
+        המשיכו כאורח
       </m.button>
 
       {/* Google OAuth */}
