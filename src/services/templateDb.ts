@@ -28,7 +28,9 @@ const isTombstoned = (record: unknown): boolean =>
  */
 export const getWorkoutTemplates = async (): Promise<WorkoutTemplate[]> => {
   const templates = await dbGetAll<WorkoutTemplate>(STORES.WORKOUT_TEMPLATES);
-  return (templates || []).filter((t) => !isTombstoned(t));
+  // Exclude tombstoned templates and app-managed hidden program-day templates
+  // (the latter are still reachable by id via getWorkoutTemplate for the runner).
+  return (templates || []).filter((t) => !isTombstoned(t) && !t.isProgramHidden);
 };
 
 /**
@@ -146,6 +148,9 @@ export const loadWorkoutFromTemplate = async (templateId: string): Promise<Perso
     tempo: ex.tempo,
     targetRestTime: ex.targetRestTime ?? ex.restSeconds,
     notes: ex.notes,
+    // Carry rich program metadata (RPE target, intensity technique, substitutions,
+    // coaching notes) into the active workout so the runner can surface it.
+    programExtras: ex.programExtras,
     sets: (ex.sets ?? []).map((s) => createWorkoutSet({ reps: s.reps, weight: s.weight })),
   }));
 

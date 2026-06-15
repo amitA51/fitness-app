@@ -25,6 +25,12 @@ interface UseWorkoutSaveParams {
   setShowFinishConfirm: (open: boolean) => void;
   item: PersonalItem;
   onExit: () => void;
+  /**
+   * Template id this workout was started from (undefined for free workouts).
+   * Used to attribute a completed session to the built-in program day so the
+   * 12-week pointer only advances for a genuine program workout.
+   */
+  templateId?: string;
 }
 
 interface UseWorkoutSaveReturn {
@@ -53,6 +59,7 @@ export function useWorkoutSave({
   setShowFinishConfirm,
   item,
   onExit,
+  templateId,
 }: UseWorkoutSaveParams): UseWorkoutSaveReturn {
   const [showSummary, setShowSummary] = useState(false);
   const [completedSession, setCompletedSession] = useState<WorkoutSession | null>(null);
@@ -187,6 +194,22 @@ export function useWorkoutSave({
           })
         )
         .catch(() => undefined);
+
+      // Best-effort: advance the built-in 12-week program if this completed
+      // session corresponds to a program day the trainee started. Dynamic import
+      // keeps the program service out of the workout bundle; never blocks the save.
+      void import('../../../services/programService')
+        .then(({ reconcileProgramOnSessionSave }) =>
+          reconcileProgramOnSessionSave({
+            startTime: session.startTime,
+            status: session.status,
+            id: session.id,
+            // session.templateId is always null from the builder, so attribute
+            // via the template the runner was launched from instead.
+            templateId: templateId ?? session.templateId ?? null,
+          })
+        )
+        .catch(() => undefined);
     } catch (e) {
       // Show user-friendly error message via UI instead of console
       const errorMessage = e instanceof Error ? e.message : 'שגיאה לא ידועה';
@@ -217,6 +240,7 @@ export function useWorkoutSave({
     onExit,
     item?.id,
     setShowFinishConfirm,
+    templateId,
   ]);
 
   // Keep the retry ref pointing at the latest handler (render-phase assignment,

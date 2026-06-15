@@ -19,6 +19,11 @@ tsconfig.tsbuildinfo
 temp_debug.txt
 everything-claude-code/
 
+# Program source materials — large binaries, not for git (the parsed data lives
+# in src/data/bbtProgram.generated.ts + program_extracted.json instead).
+857318004_The_Bodybuilding_Transformation_System_Intermediate_Advanced.pdf
+sparkos video/
+
 # AI assistant tools, skills & scratch
 .kiro/
 .cursor/

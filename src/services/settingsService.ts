@@ -136,14 +136,24 @@ export async function exportFullBackup(): Promise<void> {
     dbGetAll(STORES.PERSONAL_EXERCISES),
     dbGetAll(STORES.PERSONAL_RECORDS),
   ]);
+  // Drop the internal program-day scratch template (isProgramHidden) so it never
+  // lands in a user backup and gets reintroduced (possibly stale) on restore.
+  const userTemplates = (templates as Array<{ isProgramHidden?: boolean }>).filter(
+    (t) => !t.isProgramHidden
+  );
   const backup = {
     version: '1.0.0',
     exportDate: new Date().toISOString(),
-    data: { sessions, templates, personalExercises, personalRecords },
+    data: { sessions, templates: userTemplates, personalExercises, personalRecords },
     settings: {
       userProfile: localStorage.getItem('user_profile'),
       workoutPrefs: localStorage.getItem('workout_prefs'),
       nutritionGoals: localStorage.getItem('nutrition_goals'),
+      // The built-in 12-week program tracks progress only in localStorage (no
+      // cloud sync yet); capture it so a manual backup preserves the commitment.
+      // Key mirrors PROGRESS_KEY in programService.ts (kept as a literal to avoid
+      // pulling the large generated program data into the settings bundle).
+      programProgress: localStorage.getItem('bbt_program_progress_v1'),
     },
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });

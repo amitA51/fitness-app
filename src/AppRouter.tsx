@@ -67,6 +67,7 @@ const OnboardingFlow = lazy(() => import('./pages/OnboardingFlow'));
 const Progress = lazy(() => import('./pages/Progress'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Templates = lazy(() => import('./pages/Templates'));
+const Program = lazy(() => import('./pages/Program'));
 const WorkoutDetail = lazy(() => import('./pages/WorkoutDetail'));
 
 // Coach platform pages
@@ -121,6 +122,7 @@ const ROUTER_FUTURE = {
 const DETAIL_PREFIXES = ['/detail', '/workout/', '/coach/clients/', '/u/'] as const;
 const LIST_PREFIXES = [
   '/progress',
+  '/program',
   '/templates',
   '/community',
   '/coach/clients',
@@ -391,6 +393,14 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
         element={
           <PageErrorBoundary pageLabel="התבניות">
             <Templates />
+          </PageErrorBoundary>
+        }
+      />
+      <Route
+        path="/program"
+        element={
+          <PageErrorBoundary pageLabel="התוכנית שלי">
+            <Program />
           </PageErrorBoundary>
         }
       />

@@ -214,6 +214,7 @@ export const WorkoutContent: React.FC<{
       setShowFinishConfirm,
       item,
       onExit,
+      templateId: initialTemplateId,
     });
 
   // ── Back-button guard ─────────────────────────────────────────────────

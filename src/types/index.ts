@@ -90,6 +90,12 @@ export interface WorkoutTemplate {
   // Additional fields
   muscleGroups?: string[];
   isBuiltin?: boolean;
+  /**
+   * Hidden, app-managed template (e.g. the generated current-day of a structured
+   * program). Excluded from the user-facing template list and last-used picker,
+   * but still loadable by id so the workout runner can start from it.
+   */
+  isProgramHidden?: boolean;
 }
 
 export interface WorkoutTemplateExercise {
@@ -109,6 +115,8 @@ export interface WorkoutTemplateExercise {
   targetRestTime?: number;
   tempo?: string;
   sets?: { reps: number; weight: number }[];
+  /** Rich program metadata (RPE target, intensity technique, substitutions, notes). */
+  programExtras?: ProgramExtras;
 }
 
 // ============================================================================

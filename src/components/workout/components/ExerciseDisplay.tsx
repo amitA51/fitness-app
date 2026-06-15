@@ -13,9 +13,9 @@ import {
   Star,
   Unlink,
 } from 'lucide-react';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { type CSSProperties, memo, useCallback, useMemo, useState } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
-import type { Exercise, RpeTag, SetTechnique, WorkoutSet } from '../../../types';
+import type { Exercise, ProgramExtras, RpeTag, SetTechnique, WorkoutSet } from '../../../types';
 import type { SupersetGroup } from '../core/workoutTypes';
 import { usePreviousSetData } from '../hooks/usePreviousSetData';
 import ActionChip from './ActionChip';
@@ -60,6 +60,80 @@ interface ExerciseDisplayProps {
   onRemoveSuperset?: (exerciseId: string) => void;
   onToggleTechnique?: (technique: SetTechnique, value: boolean) => void;
   onOpenPlateCalc?: () => void;
+}
+
+// ============================================================
+// PROGRAM COACHING ROW
+// Surfaces the structured-program cues (intensity technique, RPE target, coaching
+// note) inline on the live card. Without this they are invisible during the set
+// they apply to: intensityTechnique is rendered nowhere else, and rpeTarget is
+// otherwise only seen after tapping the RPE picker. Reuses the prInfo mono-pill
+// idiom (color-mix tokens, dir-isolated numerals) — tokens only, no hardcoded hex.
+// ============================================================
+
+const coachPillBase: CSSProperties = {
+  padding: '3px 9px',
+  borderRadius: 8,
+  fontFamily: 'var(--font-mono)',
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: '0.04em',
+  background: 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))',
+  border: '1px solid color-mix(in srgb, var(--fs-accent) 25%, transparent)',
+  color: 'var(--fs-accent-2)',
+};
+
+const coachPillStrong: CSSProperties = {
+  ...coachPillBase,
+  background: 'color-mix(in srgb, var(--fs-accent) 22%, var(--fs-surface))',
+  border: '1px solid color-mix(in srgb, var(--fs-accent) 40%, transparent)',
+};
+
+function ProgramCoachingRow({ extras, rpeUnset }: { extras: ProgramExtras; rpeUnset: boolean }) {
+  const { rpeTarget, intensityTechnique, notes } = extras;
+  const showRpe = typeof rpeTarget === 'number' && rpeUnset;
+  const hasPills = Boolean(intensityTechnique) || showRpe;
+  if (!hasPills && !notes) return null;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+      {hasPills && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {intensityTechnique && (
+            <span style={coachPillStrong}>סט אחרון · {intensityTechnique}</span>
+          )}
+          {showRpe && (
+            <span style={coachPillBase}>
+              יעד <bdi dir="ltr">RPE {rpeTarget}</bdi>
+            </span>
+          )}
+        </div>
+      )}
+      {notes && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 6,
+            alignItems: 'flex-start',
+            color: 'var(--fs-muted)',
+            fontSize: 12,
+            lineHeight: 1.35,
+          }}
+        >
+          <FileText size={13} aria-hidden style={{ flexShrink: 0, marginTop: 2 }} />
+          <span
+            style={{
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {notes}
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ============================================================
@@ -232,6 +306,15 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                 </span>
               )}
             </div>
+
+            {/* Program coaching cues — visible during the set they apply to,
+                not hidden behind a tap. Cleared once the exercise is done. */}
+            {exercise.programExtras && !isExerciseComplete && (
+              <ProgramCoachingRow
+                extras={exercise.programExtras}
+                rpeUnset={currentSet.rpe == null}
+              />
+            )}
 
             {/* Row 2: Segmented set-progress spine + "סט X מתוך Y" label */}
             <SetProgress
