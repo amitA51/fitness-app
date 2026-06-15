@@ -10,6 +10,10 @@ export function ProgressDots({ currentStep, totalSteps }: ProgressDotsProps) {
   return (
     <div
       className="flex items-center justify-center gap-2 py-4"
+      // direction:ltr so the step progression fills left→right (step 1 → N),
+      // matching SetProgress and the program progress bar. Under the page's RTL
+      // the dots would otherwise advance right→left and read as backwards.
+      style={{ direction: 'ltr' }}
       role="progressbar"
       aria-valuemin={1}
       aria-valuemax={totalSteps}
