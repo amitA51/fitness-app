@@ -2,7 +2,7 @@
 // Extracted verbatim from WarmupCooldownFlow.tsx (pure structural split, no behavior change).
 
 import { m } from 'framer-motion';
-import React from 'react';
+import type React from 'react';
 import { type RoutineItem, formatTime } from './warmupCooldownData';
 
 interface SelectionStepProps {

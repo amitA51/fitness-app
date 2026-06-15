@@ -162,9 +162,7 @@ export const ActivityRings = memo(function ActivityRings({
         justifyContent: 'center',
       }}
       role="img"
-      aria-label={rings
-        .map((r) => `${r.label} ${Math.round(truePct(r.value, r.max))}%`)
-        .join(', ')}
+      aria-label={rings.map((r) => `${r.label} ${Math.round(truePct(r.value, r.max))}%`).join(', ')}
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
         {rings.map((ring, i) => {

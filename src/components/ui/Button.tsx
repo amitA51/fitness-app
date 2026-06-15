@@ -297,7 +297,11 @@ export const Button: React.FC<ButtonProps> = ({
         {...props}
       >
         {busy ? (
-          <Loader2 size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+          <Loader2
+            size={18}
+            className="animate-spin motion-reduce:animate-none"
+            aria-hidden="true"
+          />
         ) : null}
         {busy ? (loadingLabel ?? children) : children}
       </button>
@@ -321,7 +325,11 @@ export const Button: React.FC<ButtonProps> = ({
         {...props}
       >
         {busy ? (
-          <Loader2 size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+          <Loader2
+            size={18}
+            className="animate-spin motion-reduce:animate-none"
+            aria-hidden="true"
+          />
         ) : null}
         {busy ? (loadingLabel ?? children) : children}
       </button>

@@ -200,7 +200,11 @@ export function AgeGate({ children }: { children: ReactNode }) {
             style={{ ...BODY_STYLE, fontSize: 13, color: 'var(--fs-muted)', marginTop: 8 }}
           >
             גיל:{' '}
-            <span dir="ltr" className="kinetic-number" style={{ color: 'var(--fs-ink)', fontWeight: 600 }}>
+            <span
+              dir="ltr"
+              className="kinetic-number"
+              style={{ color: 'var(--fs-ink)', fontWeight: 600 }}
+            >
               {previewAge}
             </span>
           </m.p>

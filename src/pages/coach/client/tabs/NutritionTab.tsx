@@ -9,7 +9,14 @@ import { useState } from 'react';
 import { Button } from '../../../../components/ui/Button';
 import type { NutritionLog } from '../../../../services/supabaseSyncMappers';
 import type { Assignment } from '../../../../types/coach';
-import { InlineEmpty, ListRow, ListSkeleton, Section, SectionError, formatDate } from '../../_shared';
+import {
+  InlineEmpty,
+  ListRow,
+  ListSkeleton,
+  Section,
+  SectionError,
+  formatDate,
+} from '../../_shared';
 import { RowIconBtn } from '../../rosterPrimitives';
 import { type EditNutritionInitial, EditNutritionSheet } from '../EditNutritionSheet';
 
@@ -111,7 +118,9 @@ export function NutritionTab({
             key={n.id}
             label={formatDate(n.date)}
             metaNode={
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fs-muted)' }}>
+              <div
+                style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fs-muted)' }}
+              >
                 <bdi dir="ltr">{n.calories ?? 0}</bdi> קק"ל · חלבון{' '}
                 <bdi dir="ltr">{n.protein ?? 0}</bdi> ג׳ · פחמ׳ <bdi dir="ltr">{n.carbs ?? 0}</bdi>{' '}
                 ג׳ · שומן <bdi dir="ltr">{n.fat ?? 0}</bdi> ג׳

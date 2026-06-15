@@ -88,7 +88,11 @@ export default function CoachPrograms() {
                 label={tpl.name}
                 metaNode={
                   <div
-                    style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fs-muted)' }}
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 11,
+                      color: 'var(--fs-muted)',
+                    }}
                   >
                     {dayCount === 1 ? (
                       'יום אחד'

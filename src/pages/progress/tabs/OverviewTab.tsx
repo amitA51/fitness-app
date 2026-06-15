@@ -12,14 +12,14 @@ import type { PersonalRecord, WorkoutSession } from '../../../types';
 import { formatVolume } from '../../../utils/dateUtils';
 import { zoneColor } from '../../../utils/zoneColor';
 import {
+  type StatDelta,
   buildPRBoard,
   isRecentPR,
   recentPRs,
-  type StatDelta,
   summarizeWeeklyVolume,
+  weekVerdict,
   weeklyCountDelta,
   weeklyVolumeDelta,
-  weekVerdict,
 } from '../progressMetrics';
 
 const cardStyle: React.CSSProperties = {
