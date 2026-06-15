@@ -125,10 +125,29 @@ export interface WorkoutTemplateExercise {
 
 export interface ProgramExtras {
   rpeTarget?: number;
+  /** Seconds used by the rest timer — the LOW end of the PDF range (shorter default). */
   restTime?: number;
   intensityTechnique?: string;
   alternatives?: string[];
   notes?: string;
+  // Verbatim-from-PDF presentation fields so the UI never re-parses strings:
+  /** Rep range, e.g. "8-10" (render LTR/bdi). */
+  repRange?: string;
+  /** Human rest range in Hebrew, e.g. "3–5 דק'" (already formatted with en-dash). */
+  restRange?: string;
+  /** Low end of the rest range, in seconds (timer target). */
+  restSecondsMin?: number;
+  /** High end of the rest range, in seconds. */
+  restSecondsMax?: number;
+  /** Resolved count of warmup sets prescribed by the program. */
+  warmupSets?: number;
+  /** Early-set RPE cue, e.g. "~6-7". */
+  earlyRpe?: string;
+  /** Last-set RPE cue, e.g. "~7-8". */
+  lastRpe?: string;
+  /** The PDF's freeform coaching cue (tempo/pause/setup), kept separate from the
+   *  auto-composed `notes` so the UI can format it on its own line. */
+  coachingNote?: string;
   [key: string]: unknown;
 }
 

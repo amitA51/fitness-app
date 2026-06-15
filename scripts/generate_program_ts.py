@@ -150,7 +150,11 @@ def classify_muscle(name):
         return "Legs"
     if any(k in n for k in ["squat", "lunge", "leg press", "leg extension", "calf", "hip ad", "hip abduction",
                             "adduction", "abduction", "step-up", "sissy", "glute", "hack", "copenhagen",
-                            "band walk", "nordic", "leg curl", "rdl", "deadlift"]):
+                            "band walk", "nordic", "leg curl", "rdl", "deadlift",
+                            # Posterior-chain hip-hinge movements (e.g. "45° Hyperextension"):
+                            # map to Legs like the rest of the posterior chain (RDL, Glute-Ham
+                            # Raise, Cable Pull-Through) instead of falling through to "Other".
+                            "hyperextension", "hyper-extension", "back extension", "good morning", "reverse hyper"]):
         return "Legs"
     if any(k in n for k in ["triceps", "skull", "pressdown", "kickback", "katana"]) or n == "bench dip":
         return "Triceps"
@@ -174,8 +178,12 @@ def rest_seconds(rest):
     if not m:
         return 90
     nums = [int(x) for x in m]
-    avg = sum(nums) / len(nums)
-    return int(round(avg * 60))
+    # The LOW end of the range is the timer target (shorter default rest),
+    # matching parseRestRange(...).min used by the runtime rest timer. "sec"
+    # ranges are already in seconds; everything else is minutes.
+    is_sec = ("sec" in rest.lower()) and ("min" not in rest.lower())
+    unit = 1 if is_sec else 60
+    return int(nums[0] * unit)
 
 
 def low_reps(reps):

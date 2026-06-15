@@ -20,12 +20,14 @@ import { BBT_PROGRAM, type BbtDay } from '../data/bbtProgram.generated';
 import {
   TRAINING_DAYS,
   type TrainingDay,
+  enDashRange,
   getBlockForWeek,
   getExerciseOptions,
   getProgramDay,
   getProgress,
   getSwaps,
   resetProgram,
+  restRangeHe,
   setSwap,
   startProgram,
   startProgramDay,
@@ -178,6 +180,10 @@ export default function Program() {
               borderRadius: 999,
               background: 'var(--fs-surface-2)',
               overflow: 'hidden',
+              // Fill grows left→right (week 1 → 12), matching the SetProgress
+              // spine. Without this, the RTL page fills the bar from the right,
+              // which reads as "backwards" for a forward-time progression.
+              direction: 'ltr',
             }}
           >
             <m.div
@@ -248,7 +254,10 @@ export default function Program() {
                   {first}–{last}
                 </bdi>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {/* direction:ltr so the numeric week progression reads 1→12
+                  left→right. Under the page's RTL the digits would otherwise
+                  flow right→left and scan as "end to beginning". */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, direction: 'ltr' }}>
                 {b.weeks.map((w) => {
                   const active = w === selectedWeek;
                   const isCurrent = w === progress.currentWeek;
@@ -568,7 +577,7 @@ function DayCard({
                       }}
                     >
                       <bdi dir="ltr">
-                        {ex.workingSets}×{ex.reps}
+                        {ex.workingSets}×{enDashRange(ex.reps)}
                       </bdi>
                     </span>
                   </div>
@@ -590,7 +599,7 @@ function DayCard({
                       </bdi>
                     </Tag>
                     <Tag>
-                      מנוחה <bdi dir="ltr">{ex.rest}</bdi>
+                      מנוחה <bdi dir="ltr">{restRangeHe(ex.rest)}</bdi>
                     </Tag>
                     {ex.techniqueHe ? <Tag accent>{ex.techniqueHe}</Tag> : null}
                   </div>

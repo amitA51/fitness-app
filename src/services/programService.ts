@@ -148,6 +148,50 @@ export const getCurrentPosition = (): { week: number; dayType: TrainingDay } => 
 
 const bilingual = (he: string, en: string): string => (he && he !== en ? `${he} | ${en}` : en);
 
+// ---------------------------------------------------------------------------
+// Prescription parsing helpers — turn the PDF's free-text rep/rest/warmup
+// strings into structured values so the runner UI never re-parses strings.
+// Exported where another surface (the Program day card) must speak the same
+// prescription language (en-dash ranges, Hebrew units).
+// ---------------------------------------------------------------------------
+
+/** Normalize an ASCII hyphen range to a typographic en-dash: "8-10" → "8–10". */
+export const enDashRange = (s: string): string => s.replace(/\s*-\s*/g, '–');
+
+/**
+ * "3-5 min" / "90-120 sec" / "2 min" → { min, max } in seconds.
+ * Defaults to minutes when no unit is present. The LOW end becomes the timer
+ * target (shorter default rest), the HIGH end is shown as the range ceiling.
+ */
+export const parseRestRange = (rest: string): { min: number; max: number } => {
+  const isSec = /sec|שנ/i.test(rest) && !/min|דק/i.test(rest);
+  const nums = (rest.match(/\d+(?:\.\d+)?/g) ?? []).map(Number);
+  const unit = isSec ? 1 : 60; // default minutes
+  const lo = (nums[0] ?? 1.5) * unit;
+  const hi = (nums[1] ?? nums[0] ?? 2) * unit;
+  return { min: Math.round(lo), max: Math.round(hi) };
+};
+
+/** "2-3" / "2" → a sensible warmup count (low end, capped at 4). */
+export const parseWarmupCount = (s: string): number => {
+  const n = (s.match(/\d+/g) ?? []).map(Number);
+  return Math.min(4, Math.max(0, n[0] ?? 0));
+};
+
+/**
+ * "3-5 min" → "3–5 דק'", "90-120 sec" → "90–120 שנ'", "2 min" → "2 דק'".
+ * Returns the numeric body (en-dashed) plus the Hebrew unit, WITHOUT a leading
+ * "מנוחה" label — callers add the label so the digits can be bidi-isolated.
+ */
+export const restRangeHe = (rest: string): string => {
+  const isSec = /sec|שנ/i.test(rest) && !/min|דק/i.test(rest);
+  const unitHe = isSec ? "שנ'" : "דק'";
+  const nums = rest.match(/\d+(?:\.\d+)?/g) ?? [];
+  if (nums.length === 0) return rest;
+  const body = nums.length >= 2 ? `${nums[0]}–${nums[1]}` : `${nums[0]}`;
+  return `${body} ${unitHe}`;
+};
+
 const buildCoachingNote = (ex: BbtExercise): string => {
   const parts: string[] = [];
   parts.push(`טווח חזרות ${ex.reps} · RPE ${ex.earlyRpe}→${ex.lastRpe}`);
@@ -239,6 +283,10 @@ export const buildTemplateForDay = (
     const name = stored && options.some((o) => o.label === stored) ? stored : originalLabel;
     const alternatives = options.map((o) => o.label).filter((l) => l !== name);
     const note = buildCoachingNote(ex);
+    // Rest now defaults to the LOW end of the PDF range (shorter default rest);
+    // the full range is surfaced separately so the UI can show "3–5 דק'".
+    const restR = parseRestRange(ex.rest);
+    const warmupCount = parseWarmupCount(ex.warmupSets);
     return {
       id: `bbt-w${day.week}-${day.dayType}-${ex.order}`,
       exerciseId: englishOf(name),
@@ -249,16 +297,27 @@ export const buildTemplateForDay = (
       targetSets: ex.workingSets,
       targetReps: ex.targetReps,
       targetWeight: null,
-      restSeconds: ex.restSeconds,
-      targetRestTime: ex.restSeconds,
+      // Low end on the fallback path too (useWorkoutEffects / calculateRestTime
+      // read these), so the timer is shorter even when programExtras is bypassed.
+      restSeconds: restR.min,
+      targetRestTime: restR.min,
       order: i,
       notes: note,
       programExtras: {
         rpeTarget: ex.rpeTarget ?? undefined,
-        restTime: ex.restSeconds,
+        restTime: restR.min,
         intensityTechnique: ex.techniqueHe || undefined,
         alternatives,
         notes: note,
+        // Verbatim-from-PDF presentation fields (the UI prefers these):
+        repRange: enDashRange(ex.reps),
+        restRange: restRangeHe(ex.rest),
+        restSecondsMin: restR.min,
+        restSecondsMax: restR.max,
+        warmupSets: warmupCount,
+        earlyRpe: ex.earlyRpe || undefined,
+        lastRpe: ex.lastRpe || undefined,
+        coachingNote: ex.notes || undefined,
       },
       sets: Array.from({ length: Math.max(1, ex.workingSets) }, () => ({
         reps: ex.targetReps,

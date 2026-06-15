@@ -2,12 +2,16 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   PROGRAM_DAY_TEMPLATE_ID,
   TRAINING_DAYS,
+  enDashRange,
   getExerciseOptions,
   getProgramDay,
   getProgress,
   getSwaps,
+  parseRestRange,
+  parseWarmupCount,
   reconcileProgramOnSessionSave,
   resetProgram,
+  restRangeHe,
   setSwap,
   startProgram,
   startProgramDay,
@@ -222,5 +226,64 @@ describe('programService substitutions', () => {
     expect(Object.keys(getSwaps())).toHaveLength(1);
     resetProgram();
     expect(Object.keys(getSwaps())).toHaveLength(0);
+  });
+});
+
+describe('programService prescription parsing helpers', () => {
+  it('enDashRange converts an ASCII hyphen range to an en-dash', () => {
+    expect(enDashRange('8-10')).toBe('8–10');
+    expect(enDashRange('6 - 8')).toBe('6–8');
+    expect(enDashRange('12')).toBe('12'); // single value untouched
+  });
+
+  it('parseRestRange returns {min,max} seconds, defaulting to minutes', () => {
+    expect(parseRestRange('3-5 min')).toEqual({ min: 180, max: 300 });
+    expect(parseRestRange('1-2 min')).toEqual({ min: 60, max: 120 });
+    expect(parseRestRange('2 min')).toEqual({ min: 120, max: 120 });
+    expect(parseRestRange('90-120 sec')).toEqual({ min: 90, max: 120 });
+  });
+
+  it('parseWarmupCount takes the low end, capped at 4', () => {
+    expect(parseWarmupCount('2-3')).toBe(2);
+    expect(parseWarmupCount('1-2')).toBe(1);
+    expect(parseWarmupCount('0')).toBe(0);
+    expect(parseWarmupCount('5-6')).toBe(4); // capped
+    expect(parseWarmupCount('')).toBe(0);
+  });
+
+  it('restRangeHe formats the numeric range with an en-dash and Hebrew unit', () => {
+    expect(restRangeHe('3-5 min')).toBe("3–5 דק'");
+    expect(restRangeHe('2 min')).toBe("2 דק'");
+    expect(restRangeHe('90-120 sec')).toBe("90–120 שנ'");
+  });
+});
+
+describe('programService prescription fields', () => {
+  beforeEach(() => {
+    resetProgram();
+    localStorage.clear();
+  });
+
+  it('populates the structured prescription fields with LOW-end rest', async () => {
+    startProgram();
+    await startProgramDay(1, 'Upper');
+    const tmpl = await getWorkoutTemplate(PROGRAM_DAY_TEMPLATE_ID);
+    const first = tmpl?.exercises[0];
+    expect(first).toBeDefined();
+    const pe = first?.programExtras;
+    // 45° Incline Barbell Press — reps "6-8", rest "3-5 min", warmup "2-3".
+    expect(pe?.repRange).toBe('6–8');
+    expect(pe?.restRange).toBe("3–5 דק'");
+    expect(pe?.restSecondsMin).toBe(180);
+    expect(pe?.restSecondsMax).toBe(300);
+    expect(pe?.warmupSets).toBe(2);
+    expect(pe?.earlyRpe).toBe('~6-7');
+    expect(pe?.lastRpe).toBe('~7-8');
+    expect(typeof pe?.coachingNote).toBe('string');
+    expect((pe?.coachingNote as string).length).toBeGreaterThan(0);
+    // The rest timer target + fallback fields now use the LOW end (shorter rest).
+    expect(pe?.restTime).toBe(180);
+    expect(first?.restSeconds).toBe(180);
+    expect(first?.targetRestTime).toBe(180);
   });
 });
