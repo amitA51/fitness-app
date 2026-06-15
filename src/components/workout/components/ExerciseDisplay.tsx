@@ -60,15 +60,19 @@ interface ExerciseDisplayProps {
   onRemoveSuperset?: (exerciseId: string) => void;
   onToggleTechnique?: (technique: SetTechnique, value: boolean) => void;
   onOpenPlateCalc?: () => void;
+  /** Swap the live exercise's movement for a chosen alternative (bilingual label). */
+  onSwapExercise?: (exerciseId: string, newName: string) => void;
 }
 
 // ============================================================
-// PROGRAM COACHING ROW
-// Surfaces the structured-program cues (intensity technique, RPE target, coaching
-// note) inline on the live card. Without this they are invisible during the set
-// they apply to: intensityTechnique is rendered nowhere else, and rpeTarget is
-// otherwise only seen after tapping the RPE picker. Reuses the prInfo mono-pill
-// idiom (color-mix tokens, dir-isolated numerals) — tokens only, no hardcoded hex.
+// PRESCRIPTION BLOCK
+// Surfaces the program's full prescription under the exercise title so a program
+// day reads like the PDF: rep range, RPE arrow, rest range, warmup count, the
+// last-set intensity technique, and the freeform coaching cue. Pulls structured
+// fields straight from programExtras (no string re-parsing). Reuses the prInfo
+// mono-pill idiom (color-mix accent tints, var(--font-mono)); numerics/ranges
+// are bidi-isolated (<bdi dir="ltr">) for correct RTL/Hebrew rendering. Collapses
+// gracefully when fields are absent (regular, non-program templates).
 // ============================================================
 
 const coachPillBase: CSSProperties = {
@@ -89,26 +93,71 @@ const coachPillStrong: CSSProperties = {
   border: '1px solid color-mix(in srgb, var(--fs-accent) 40%, transparent)',
 };
 
-function ProgramCoachingRow({ extras, rpeUnset }: { extras: ProgramExtras; rpeUnset: boolean }) {
-  const { rpeTarget, intensityTechnique, notes } = extras;
-  const showRpe = typeof rpeTarget === 'number' && rpeUnset;
-  const hasPills = Boolean(intensityTechnique) || showRpe;
-  if (!hasPills && !notes) return null;
+// One mono prescription pill: an optional Hebrew micro-label plus a bidi-isolated
+// value (numbers/ranges/arrows render LTR inside the RTL card).
+function PrescPill({
+  label,
+  value,
+  strong = false,
+}: {
+  label?: string;
+  value: string;
+  strong?: boolean;
+}) {
+  return (
+    <span style={strong ? coachPillStrong : coachPillBase}>
+      {label ? `${label} ` : ''}
+      <bdi dir="ltr">{value}</bdi>
+    </span>
+  );
+}
+
+function PrescriptionBlock({ extras }: { extras: ProgramExtras }) {
+  const {
+    repRange,
+    earlyRpe,
+    lastRpe,
+    rpeTarget,
+    restRange,
+    warmupSets,
+    intensityTechnique,
+    coachingNote,
+    notes,
+  } = extras;
+
+  // RPE: prefer the PDF's early→last arrow; fall back to the numeric last-set
+  // target. Matches the Program day-card language so the two surfaces agree.
+  const rpeText =
+    earlyRpe && lastRpe
+      ? `RPE ${earlyRpe}→${lastRpe}`
+      : typeof rpeTarget === 'number'
+        ? `RPE ${rpeTarget}`
+        : null;
+
+  const hasWarmup = typeof warmupSets === 'number' && warmupSets > 0;
+  // Prefer the freeform PDF cue (tempo/pause/setup). For non-program templates
+  // (no rep range) fall back to the legacy composed note so coach-authored
+  // templates keep their guidance; for program days `coachingNote` is the cue
+  // and the structured pills already carry the rep/RPE/rest/warmup summary.
+  const note = coachingNote || (repRange ? undefined : notes);
+
+  const hasPills = Boolean(repRange || rpeText || restRange || hasWarmup || intensityTechnique);
+  if (!hasPills && !note) return null;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
       {hasPills && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {repRange && <PrescPill label="חזרות" value={repRange} />}
+          {rpeText && <PrescPill value={rpeText} />}
+          {restRange && <PrescPill label="מנוחה" value={restRange} />}
+          {hasWarmup && <PrescPill label="חימום" value={`×${warmupSets}`} />}
           {intensityTechnique && (
             <span style={coachPillStrong}>סט אחרון · {intensityTechnique}</span>
           )}
-          {showRpe && (
-            <span style={coachPillBase}>
-              יעד <bdi dir="ltr">RPE {rpeTarget}</bdi>
-            </span>
-          )}
         </div>
       )}
-      {notes && (
+      {note && (
         <div
           style={{
             display: 'flex',
@@ -128,7 +177,7 @@ function ProgramCoachingRow({ extras, rpeUnset }: { extras: ProgramExtras; rpeUn
               overflow: 'hidden',
             }}
           >
-            {notes}
+            {note}
           </span>
         </div>
       )}
@@ -165,6 +214,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     onRemoveSuperset,
     onToggleTechnique,
     onOpenPlateCalc,
+    onSwapExercise,
   }) => {
     const [showSetEditor, setShowSetEditor] = useState(false);
     const [showRPEPicker, setShowRPEPicker] = useState(false);
@@ -194,6 +244,34 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
       });
       return set;
     }, [exercise.sets]);
+
+    // Working-set-aware tallies for the progress label and the done-panel count.
+    // Warmups are a separate ramp-up phase, so they must not inflate the working
+    // "סט X מתוך Y". Regular templates have no warmups, so these equal the totals.
+    const { workingTotal, workingCompleted, warmupTotal, warmupCompleted } = useMemo(() => {
+      const sets = exercise.sets || [];
+      let wTotal = 0;
+      let wDone = 0;
+      let uTotal = 0;
+      let uDone = 0;
+      for (const s of sets) {
+        if (s.isWarmup) {
+          uTotal++;
+          if (s.completedAt) uDone++;
+        } else {
+          wTotal++;
+          if (s.completedAt) wDone++;
+        }
+      }
+      return {
+        workingTotal: wTotal,
+        workingCompleted: wDone,
+        warmupTotal: uTotal,
+        warmupCompleted: uDone,
+      };
+    }, [exercise.sets]);
+
+    const activeIsWarmup = exercise.sets?.[displaySetIndex]?.isWarmup ?? false;
 
     // Exercise is "done" when it has planned sets and every one is completed.
     // In this state there is no real active set (displaySetIndex points at the
@@ -307,21 +385,24 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               )}
             </div>
 
-            {/* Program coaching cues — visible during the set they apply to,
+            {/* Program prescription — visible during the sets it applies to,
                 not hidden behind a tap. Cleared once the exercise is done. */}
             {exercise.programExtras && !isExerciseComplete && (
-              <ProgramCoachingRow
-                extras={exercise.programExtras}
-                rpeUnset={currentSet.rpe == null}
-              />
+              <PrescriptionBlock extras={exercise.programExtras} />
             )}
 
-            {/* Row 2: Segmented set-progress spine + "סט X מתוך Y" label */}
+            {/* Row 2: Segmented set-progress spine + working-set "סט X מתוך Y"
+                label (warmups shown as a distinct "חימום" phase). */}
             <SetProgress
-              current={completedSetsCount}
+              current={displaySetIndex}
               total={totalSets}
               completed={completedSetsCount}
               warmupIndices={warmupIndices}
+              workingTotal={workingTotal}
+              workingCompleted={workingCompleted}
+              warmupTotal={warmupTotal}
+              warmupCompleted={warmupCompleted}
+              activeIsWarmup={activeIsWarmup}
             />
           </div>
         </div>
@@ -388,7 +469,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   direction: 'ltr',
                 }}
               >
-                {completedSetsCount} / {totalSets} סטים
+                {workingCompleted} / {workingTotal} סטים
               </div>
               <div style={{ display: 'flex', gap: 10, width: '100%', marginTop: 2 }}>
                 {onAddSet && (
@@ -657,7 +738,8 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             {/* Row 2: Secondary actions */}
             {(completedSetsCount > 0 ||
               onCreateSuperset ||
-              (exercise.programExtras?.alternatives &&
+              (workingCompleted === 0 &&
+                exercise.programExtras?.alternatives &&
                 exercise.programExtras.alternatives.length > 0)) && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 {completedSetsCount > 0 && onEditSet && (
@@ -668,7 +750,12 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                     ariaLabel="עריכת סטים שהושלמו"
                   />
                 )}
-                {exercise.programExtras?.alternatives &&
+                {/* Hidden once a working set is logged: swapping then would
+                    re-attribute that set to a different movement (the reducer
+                    refuses it too). Warmups don't block — swap is still offered
+                    during the warmup phase. */}
+                {workingCompleted === 0 &&
+                  exercise.programExtras?.alternatives &&
                   exercise.programExtras.alternatives.length > 0 && (
                     <ActionChip
                       icon={<RotateCcw size={14} strokeWidth={2.5} />}
@@ -749,6 +836,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             isOpen={showAlternatives}
             alternatives={exercise.programExtras.alternatives}
             exerciseName={exercise.name || ''}
+            onSelect={onSwapExercise ? (alt) => onSwapExercise(exercise.id, alt) : undefined}
             onClose={() => setShowAlternatives(false)}
           />
         )}

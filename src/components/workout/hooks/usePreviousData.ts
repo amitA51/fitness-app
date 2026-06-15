@@ -146,6 +146,13 @@ export function usePreviousData(exerciseName: string | undefined): UsePreviousDa
       return;
     }
 
+    // No fresh cache for this name (e.g. the user just SWAPPED to a new movement
+    // mid-workout): clear any prior name's data so the previous-set badge and
+    // ghost values don't briefly show the swapped-OUT exercise's numbers while
+    // the async fetch for the new name is in flight.
+    setPreviousSets(null);
+    hasCachedData.current = false;
+
     const isCancelled = { current: false };
 
     // Only show loading if we don't have cached data

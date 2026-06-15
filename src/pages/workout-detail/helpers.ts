@@ -55,7 +55,9 @@ export function buildShareText(session: WorkoutSession): string {
   const date = formatHebrewDate(session.date || session.startTime);
   const duration = formatDuration(session.duration);
   const volume = formatVolume(session.totalVolume);
-  const { totalSets, totalReps } = computeSessionStats(session);
+  // Warmups are ramp-ups, not working sets — exclude them from the shared tally
+  // so it agrees with the live summary and the workout-detail screen.
+  const { totalSets, totalReps } = computeSessionStats(session, { excludeWarmup: true });
 
   const exerciseLines = session.exercises
     .map((ex) => {

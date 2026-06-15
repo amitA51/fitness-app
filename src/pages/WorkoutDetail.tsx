@@ -138,7 +138,9 @@ export default function WorkoutDetail() {
     );
   }
 
-  const { totalSets, totalReps } = computeSessionStats(session);
+  // Exclude warmups from the displayed set/rep tally — warmups are ramp-ups,
+  // not working sets (matches the live summary and the runner's working count).
+  const { totalSets, totalReps } = computeSessionStats(session, { excludeWarmup: true });
 
   return (
     <div

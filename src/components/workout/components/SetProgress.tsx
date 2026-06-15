@@ -4,7 +4,7 @@
 // (numbers dir="ltr"). Replaces the old per-set dots; tokenized for both light
 // (Fresh Steel) and dark (Obsidian) modes — no hardcoded colors.
 
-import { memo } from 'react';
+import { type ReactNode, memo } from 'react';
 
 // ============================================================
 // COMPONENT
@@ -13,22 +13,87 @@ import { memo } from 'react';
 export interface SetProgressProps {
   /** Index of the active set (0-based). */
   current: number;
-  /** Total planned sets. */
+  /** Total planned sets (warmup + working) — sizes the spine. */
   total: number;
-  /** Count of completed sets. */
+  /** Count of completed sets (warmup + working) — fills the spine. */
   completed: number;
   /** Indices that are warmup sets — rendered in a muted accent tint. */
   warmupIndices?: Set<number>;
+  // Working-set-aware label data. When supplied, the "סט X מתוך Y" label counts
+  // WORKING sets only (warmups are shown as a separate "חימום" phase) so warmups
+  // never distort the working tally. Omitting these falls back to the plain
+  // all-sets label (regular, non-program templates).
+  /** Number of working (non-warmup) sets. */
+  workingTotal?: number;
+  /** Completed working (non-warmup) sets. */
+  workingCompleted?: number;
+  /** Total warmup sets. */
+  warmupTotal?: number;
+  /** Completed warmup sets. */
+  warmupCompleted?: number;
+  /** Whether the currently active set is a warmup. */
+  activeIsWarmup?: boolean;
 }
 
 export const SetProgress = memo<SetProgressProps>(
-  ({ current, total, completed, warmupIndices }) => {
+  ({
+    current,
+    total,
+    completed,
+    warmupIndices,
+    workingTotal,
+    workingCompleted,
+    warmupTotal,
+    warmupCompleted,
+    activeIsWarmup,
+  }) => {
     if (total <= 0) return null;
 
     // Label: completed → "הושלם", otherwise the 1-based position of the active
     // set. Clamp so a virtual index past the end still reads as the last set.
     const isComplete = completed >= total;
     const activePosition = Math.min(current + 1, total);
+
+    // Working-set-aware label: counts working sets only, with warmups shown as a
+    // distinct "חימום" phase. Falls back to the plain all-sets label when no
+    // working counts are supplied.
+    const hasWorking = typeof workingTotal === 'number';
+    let label: ReactNode;
+    if (hasWorking) {
+      if (isComplete) {
+        label = (
+          <>
+            הושלם · <span dir="ltr">{`${workingTotal}/${workingTotal}`}</span>
+          </>
+        );
+      } else if (activeIsWarmup) {
+        const pos = Math.min((warmupCompleted ?? 0) + 1, warmupTotal ?? 0);
+        label = (
+          <>
+            חימום · <span dir="ltr">{pos}</span> מתוך <span dir="ltr">{warmupTotal}</span>
+          </>
+        );
+      } else {
+        const pos = Math.min((workingCompleted ?? 0) + 1, workingTotal ?? 0);
+        label = (
+          <>
+            סט <span dir="ltr">{pos}</span> מתוך <span dir="ltr">{workingTotal}</span>
+          </>
+        );
+      }
+    } else if (isComplete) {
+      label = (
+        <>
+          הושלם · <span dir="ltr">{`${total}/${total}`}</span>
+        </>
+      );
+    } else {
+      label = (
+        <>
+          סט <span dir="ltr">{activePosition}</span> מתוך <span dir="ltr">{total}</span>
+        </>
+      );
+    }
 
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
@@ -87,15 +152,7 @@ export const SetProgress = memo<SetProgressProps>(
             whiteSpace: 'nowrap',
           }}
         >
-          {isComplete ? (
-            <>
-              הושלם · <span dir="ltr">{`${total}/${total}`}</span>
-            </>
-          ) : (
-            <>
-              סט <span dir="ltr">{activePosition}</span> מתוך <span dir="ltr">{total}</span>
-            </>
-          )}
+          {label}
         </span>
       </div>
     );
