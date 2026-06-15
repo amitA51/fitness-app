@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { showToast } from '../../../components/ui/GlobalToast';
-import { getWorkoutTemplates } from '../../../services/dataService';
+import { getWorkoutTemplate } from '../../../services/dataService';
 import type { Exercise, WorkoutSettings } from '../../../types';
 import { createWorkoutSet } from '../../../types';
 import { triggerHaptic } from '../../../utils/haptics';
@@ -90,20 +90,32 @@ export function useWorkoutEffects({
 
     const loadTemplate = async () => {
       try {
-        const templates = await getWorkoutTemplates();
-        const template = templates.find((t) => t.id === initialTemplateId);
+        // Look up by id directly: program-day templates are hidden from the list
+        // getter, so a list+find would miss them. The by-id getter returns them.
+        const template = await getWorkoutTemplate(initialTemplateId);
         if (template?.exercises && template.exercises.length > 0) {
           triggerHaptic('success');
           for (const ex of template.exercises) {
+            // Structured-program exercises carry programExtras (RPE target,
+            // intensity technique, substitutions, coaching notes) and a target
+            // set/rep prescription — preserve them so the runner shows the plan.
+            // Regular templates keep their original single empty-set behavior.
+            const isProgram = !!ex.programExtras;
+            const setCount = isProgram ? Math.max(1, ex.targetSets ?? ex.sets?.length ?? 1) : 1;
+            const reps = isProgram ? (ex.targetReps ?? 0) : 0;
             const exercise: Exercise = {
               id:
                 typeof crypto !== 'undefined' && 'randomUUID' in crypto
                   ? `ex-${crypto.randomUUID()}`
                   : `ex-${Date.now()}-${Math.random().toString(16).slice(2)}`,
               name: ex.name || ex.exerciseName || 'Unknown',
+              exerciseName: ex.exerciseName || ex.name,
               muscleGroup: ex.muscleGroup,
-              targetRestTime: ex.targetRestTime || 90,
-              sets: [createWorkoutSet({ reps: 0, weight: 0 })],
+              targetMuscle: ex.targetMuscle,
+              targetRestTime: ex.targetRestTime || ex.restSeconds || 90,
+              notes: isProgram ? ex.notes : undefined,
+              programExtras: ex.programExtras,
+              sets: Array.from({ length: setCount }, () => createWorkoutSet({ reps, weight: 0 })),
             };
             dispatch({ type: 'ADD_EXERCISE', payload: exercise });
           }

@@ -99,19 +99,17 @@ describe('SlideToComplete', () => {
 describe('SlideToComplete tap-and-hold quick-complete (reduced motion)', () => {
   // jsdom returns width 0 for getBoundingClientRect, which would make the hold
   // ramp bail (maxOffset <= 0). Stub a real track width so the hold can arm.
-  const rectSpy = vi
-    .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-    .mockReturnValue({
-      width: 300,
-      height: 68,
-      top: 0,
-      left: 0,
-      right: 300,
-      bottom: 68,
-      x: 0,
-      y: 0,
-      toJSON: () => ({}),
-    } as DOMRect);
+  const rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+    width: 300,
+    height: 68,
+    top: 0,
+    left: 0,
+    right: 300,
+    bottom: 68,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  } as DOMRect);
 
   afterEach(() => {
     vi.useRealTimers();
@@ -193,19 +191,17 @@ describe('SlideToComplete tap-and-hold quick-complete (default / animated motion
     mockReducedMotion = true;
   });
   beforeEach(() => {
-    rectSpy = vi
-      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-      .mockReturnValue({
-        width: 300,
-        height: 68,
-        top: 0,
-        left: 0,
-        right: 300,
-        bottom: 68,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      } as DOMRect);
+    rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 300,
+      height: 68,
+      top: 0,
+      left: 0,
+      right: 300,
+      bottom: 68,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
   });
   afterEach(() => {
     rectSpy.mockRestore();

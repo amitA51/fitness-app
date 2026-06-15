@@ -45,11 +45,7 @@ export function useNumberSnap(value: number): RefObject<HTMLElement | null> {
 
       gsap
         .timeline()
-        .fromTo(
-          el,
-          { scale: 1 },
-          { scale: 1.08, duration: DUR.micro / 2, ease: EASE.out }
-        )
+        .fromTo(el, { scale: 1 }, { scale: 1.08, duration: DUR.micro / 2, ease: EASE.out })
         .to(el, { scale: 1, duration: DUR.micro, ease: EASE.pop });
     },
     { dependencies: [value], scope: ref }

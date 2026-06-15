@@ -39,6 +39,8 @@ export interface WorkoutTemplate {
   isFavorite?: boolean;
   muscleGroups?: string[];
   isBuiltin?: boolean;
+  /** Internal program-day scratch template — excluded from cloud push/backup. */
+  isProgramHidden?: boolean;
 }
 
 export interface WorkoutSession {

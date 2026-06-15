@@ -153,7 +153,14 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
     }
     const unwrapRead = <T>(r: PromiseSettledResult<unknown> | undefined): T[] =>
       r && r.status === 'fulfilled' ? (r.value as T[]) : [];
-    const localTemplates = unwrapRead<WorkoutTemplate>(readResults[0]);
+    // Exclude the internal program-day scratch template (fixed non-UUID id,
+    // isProgramHidden): pushing it burns a row every sync, conflicts LWW on a
+    // fixed id, and — since WORKOUT_TEMPLATES ids are NOT uuid-normalized — a
+    // uuid id column would 22P02-reject the whole 50-row batch, blocking the
+    // user's real templates. It is regenerated on demand by startProgramDay.
+    const localTemplates = unwrapRead<WorkoutTemplate>(readResults[0]).filter(
+      (t) => !t.isProgramHidden
+    );
     const localSessions = unwrapRead<WorkoutSession>(readResults[1]);
     const localExercises = unwrapRead<PersonalExercise>(readResults[2]);
     const localBodyWeight = unwrapRead<BodyWeightEntry>(readResults[3]);

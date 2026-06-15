@@ -56,7 +56,12 @@ const NoSearchResults = memo(function NoSearchResults() {
     >
       <div
         className="flex items-center justify-center mb-3"
-        style={{ width: 52, height: 52, background: 'var(--fs-surface-2)', color: 'var(--fs-muted)' }}
+        style={{
+          width: 52,
+          height: 52,
+          background: 'var(--fs-surface-2)',
+          color: 'var(--fs-muted)',
+        }}
       >
         <SearchX size={24} aria-hidden="true" />
       </div>
@@ -79,7 +84,12 @@ const SearchPrompt = memo(function SearchPrompt() {
     >
       <div
         className="flex items-center justify-center mb-3"
-        style={{ width: 52, height: 52, background: 'var(--fs-surface-2)', color: 'var(--fs-accent)' }}
+        style={{
+          width: 52,
+          height: 52,
+          background: 'var(--fs-surface-2)',
+          color: 'var(--fs-accent)',
+        }}
       >
         <UtensilsCrossed size={24} aria-hidden="true" />
       </div>

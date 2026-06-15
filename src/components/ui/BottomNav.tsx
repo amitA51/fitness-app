@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   ClipboardList,
   Dumbbell,
   LayoutDashboard,
@@ -76,6 +77,7 @@ const COACH_MAIN_TABS: readonly NavDestination[] = [
 
 const TRAINEE_MORE_PATHS: readonly string[] = [
   '/my-coach',
+  '/program',
   '/templates',
   '/community',
   '/settings',
@@ -87,6 +89,7 @@ const COACH_MORE_PATHS: readonly string[] = [
   '/workout',
   '/progress',
   '/nutrition',
+  '/program',
   '/templates',
   '/detail',
   '/community',
@@ -380,11 +383,13 @@ function BottomNav() {
       isCoachView
         ? [
             { path: '/me', label: 'האימונים שלי', icon: Dumbbell },
+            { path: '/program', label: 'התוכנית שלי', icon: CalendarDays },
             { path: '/templates', label: 'תבניות', icon: ClipboardList },
             { path: '/community', label: 'קהילה', icon: Users },
             { path: '/settings', label: 'הגדרות', icon: Settings },
           ]
         : [
+            { path: '/program', label: 'התוכנית שלי', icon: CalendarDays },
             { path: '/my-coach', label: 'המאמן שלי', icon: UserCog },
             // Chat parity for trainees: deep-links into the (single) coach thread
             // or the coaches list when there are several; carries the unread
