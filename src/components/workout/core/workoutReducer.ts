@@ -42,6 +42,7 @@ const EXERCISE_ACTIONS = new Set([
   'SET_EXERCISES',
   'CREATE_SUPERSET',
   'REMOVE_SUPERSET',
+  'SWAP_EXERCISE',
 ]);
 
 const SET_ACTIONS = new Set([

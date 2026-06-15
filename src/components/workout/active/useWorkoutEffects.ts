@@ -103,6 +103,18 @@ export function useWorkoutEffects({
             const isProgram = !!ex.programExtras;
             const setCount = isProgram ? Math.max(1, ex.targetSets ?? ex.sets?.length ?? 1) : 1;
             const reps = isProgram ? (ex.targetReps ?? 0) : 0;
+            // Structured-program exercises prepend the PDF's prescribed warmup
+            // set(s) before the working sets: [ ...warmups (isWarmup), ...working ].
+            // Warmups carry no target reps/weight (they're ramp-ups) and are
+            // excluded from working-set tallies, PR detection, and volume. Regular
+            // templates keep their original single working-set-only behavior.
+            const warmupCount = isProgram ? (ex.programExtras?.warmupSets ?? 0) : 0;
+            const workingSets = Array.from({ length: setCount }, () =>
+              createWorkoutSet({ reps, weight: 0 })
+            );
+            const warmupSets = Array.from({ length: warmupCount }, () =>
+              createWorkoutSet({ reps: 0, weight: 0, isWarmup: true })
+            );
             const exercise: Exercise = {
               id:
                 typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -115,7 +127,7 @@ export function useWorkoutEffects({
               targetRestTime: ex.targetRestTime || ex.restSeconds || 90,
               notes: isProgram ? ex.notes : undefined,
               programExtras: ex.programExtras,
-              sets: Array.from({ length: setCount }, () => createWorkoutSet({ reps, weight: 0 })),
+              sets: [...warmupSets, ...workingSets],
             };
             dispatch({ type: 'ADD_EXERCISE', payload: exercise });
           }

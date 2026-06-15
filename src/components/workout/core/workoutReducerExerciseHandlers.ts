@@ -1,6 +1,16 @@
 import { DEFAULT_SUPERSET_ROUND_REST } from './workoutReducerHelpers';
 import type { SupersetGroup, WorkoutAction, WorkoutState } from './workoutTypes';
 
+/**
+ * English (canonical) side of a bilingual "Hebrew | English" label, used as the
+ * exercise identity for PR/ghost lookups. Mirrors programService.englishOf but
+ * inlined to keep the reducer free of the program-data import graph.
+ */
+const englishOfLabel = (label: string): string => {
+  const idx = label.lastIndexOf('|');
+  return idx >= 0 ? label.slice(idx + 1).trim() : label.trim();
+};
+
 // ============================================================
 // EXERCISE SLICE
 // ============================================================
@@ -120,6 +130,47 @@ export const exerciseReducer = (draft: WorkoutState, action: WorkoutAction): voi
     case 'REMOVE_SUPERSET': {
       const { exerciseId } = action.payload;
       draft.supersetGroups = draft.supersetGroups.filter((g) => !g.exercises.includes(exerciseId));
+      break;
+    }
+
+    case 'SWAP_EXERCISE': {
+      // Replace the live exercise's MOVEMENT only. The prescription (sets, reps,
+      // RPE target, rest, technique, notes, programExtras) is preserved — just
+      // the name/identity changes — so a swap mid-workout keeps the plan intact.
+      const { exerciseId, newName } = action.payload;
+      const idx = draft.exercises.findIndex((e) => e.id === exerciseId);
+      if (idx === -1) return;
+      const exercise = draft.exercises[idx];
+      if (!exercise) return;
+
+      const previousName = exercise.name ?? exercise.exerciseName ?? '';
+      const trimmed = newName.trim();
+      if (!trimmed || trimmed === previousName) return;
+
+      // A logged WORKING set belongs to the ORIGINAL movement. Renaming now would
+      // re-attribute that set — and any PR / ghost-seed it drives, which key on
+      // exerciseName — to the new exercise, silently corrupting history. Refuse
+      // the swap once a working set is logged. Warmups are movement-agnostic
+      // ramp-ups, so they don't block it. (The UI also hides the "חלופות" chip
+      // after the first working set, so this is the defense-in-depth guard.)
+      const hasLoggedWorkingSet = (exercise.sets ?? []).some((s) => s.completedAt && !s.isWarmup);
+      if (hasLoggedWorkingSet) return;
+
+      // Rebuild the alternatives list: drop the chosen movement and add the
+      // previous one back to the FRONT, so the user can always swap back. The
+      // list is de-duplicated and stripped of empties; order is otherwise kept.
+      const prevAlternatives = exercise.programExtras?.alternatives ?? [];
+      const nextAlternatives = [
+        previousName,
+        ...prevAlternatives.filter((a) => a !== trimmed && a !== previousName),
+      ].filter((a) => a.length > 0);
+
+      exercise.name = trimmed;
+      exercise.exerciseName = trimmed;
+      exercise.exerciseId = englishOfLabel(trimmed);
+      if (exercise.programExtras) {
+        exercise.programExtras.alternatives = nextAlternatives;
+      }
       break;
     }
   }

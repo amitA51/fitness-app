@@ -433,6 +433,18 @@ export const WorkoutContent: React.FC<{
     handleOpenNumpad('weight');
   }, [handleSkipRest, handleOpenNumpad]);
 
+  // Mid-workout movement swap — replace the live exercise with a chosen
+  // alternative from its "חלופות" sheet. Session-scoped: only the live exercise
+  // changes (the persistent, next-time swap stays the Program-page swap). The
+  // reducer keeps the prescription intact and re-lists the previous movement as
+  // an alternative so the user can swap back. Selection haptic fires in the sheet.
+  const handleSwapExercise = useCallback(
+    (exerciseId: string, newName: string) => {
+      dispatch({ type: 'SWAP_EXERCISE', payload: { exerciseId, newName } });
+    },
+    [dispatch]
+  );
+
   // Horizontal swipe navigation between exercises (pointer-based, RTL-aware).
   const { handleSwipePointerDown, handleSwipePointerMove, handleSwipePointerEnd } =
     useSwipeNavigation({
@@ -663,6 +675,7 @@ export const WorkoutContent: React.FC<{
             onRemoveSuperset={handleRemoveSuperset}
             onToggleTechnique={handleToggleTechnique}
             onOpenPlateCalc={handleOpenPlateCalc}
+            onSwapExercise={handleSwapExercise}
           />
         </div>
 

@@ -58,6 +58,34 @@ export const setReducer = (draft: WorkoutState, action: WorkoutAction): void => 
       currentSet.completedAt = new Date().toISOString();
       currentSet.isCompleted = true;
 
+      // --- CARRY WEIGHT FORWARD ---
+      // Sets in an exercise usually share a weight, so pre-fill the next
+      // still-empty set with what was just logged — the user only adjusts what
+      // changed instead of retyping. Rules:
+      //   • only seed an UNTOUCHED set (weight 0, not completed) — never clobber
+      //     a value the user already entered or a set they already logged;
+      //   • carry like-for-like (working→working, warmup→warmup): warmups are
+      //     lighter ramp-ups, so a working weight must not leak into a warmup or
+      //     vice-versa;
+      //   • only the immediate next matching set — it cascades naturally as each
+      //     subsequent set is completed.
+      // (ADD_SET already seeds newly-appended sets via createNextSet; this covers
+      // the pre-existing template/program sets.)
+      if ((currentSet.weight ?? 0) > 0 || (currentSet.reps ?? 0) > 0) {
+        for (let i = activeIdx + 1; i < sets.length; i++) {
+          const nextSet = sets[i];
+          if (!nextSet || nextSet.completedAt) continue;
+          if ((nextSet.isWarmup ?? false) !== (currentSet.isWarmup ?? false)) continue;
+          if ((nextSet.weight ?? 0) === 0 && (currentSet.weight ?? 0) > 0) {
+            nextSet.weight = currentSet.weight;
+          }
+          if ((nextSet.reps ?? 0) === 0 && (currentSet.reps ?? 0) > 0) {
+            nextSet.reps = currentSet.reps;
+          }
+          break;
+        }
+      }
+
       // --- SUPERSET MEMBERSHIP / ROUND TRANSITION (computed BEFORE auto-add) ---
       // Round-robin model (the just-completed set is already marked above):
       //   • Find the next group exercise (after this one, wrapping) that still

@@ -1370,4 +1370,207 @@ describe('workoutReducer', () => {
       expect(next.numpad.isOpen).toBe(false);
     });
   });
+
+  // ============================================================
+  // SWAP_EXERCISE — mid-workout movement swap (Task 1)
+  // ============================================================
+  describe('SWAP_EXERCISE', () => {
+    const ORIG = 'לחיצת מוט בשיפוע 45° | 45° Incline Barbell Press';
+    const ALT1 = 'לחיצת משקולות בשיפוע 45° | 45° Incline DB Press';
+    const ALT2 = 'לחיצת חזה במכונה בשיפוע 45° | 45° Incline Machine Press';
+    const mkProgramEx = (): Exercise =>
+      mkExercise({
+        id: 'ex-1',
+        name: ORIG,
+        exerciseName: ORIG,
+        exerciseId: '45° Incline Barbell Press',
+        programExtras: { rpeTarget: 8, restTime: 180, alternatives: [ALT1, ALT2] },
+      });
+
+    it('replaces the movement name + exerciseId, preserving sets and prescription', () => {
+      const state = createInitialState([mkProgramEx()], 0, mkSettings());
+      const next = apply(state, {
+        type: 'SWAP_EXERCISE',
+        payload: { exerciseId: 'ex-1', newName: ALT1 },
+      });
+      const ex = next.exercises[0]!;
+      expect(ex.name).toBe(ALT1);
+      expect(ex.exerciseName).toBe(ALT1);
+      expect(ex.exerciseId).toBe('45° Incline DB Press'); // English side of the label
+      // Prescription untouched — only the movement changed.
+      expect(ex.programExtras?.rpeTarget).toBe(8);
+      expect(ex.programExtras?.restTime).toBe(180);
+      expect(ex.sets).toHaveLength(1);
+    });
+
+    it('moves the previous movement into alternatives and removes the chosen one (swap-back)', () => {
+      const state = createInitialState([mkProgramEx()], 0, mkSettings());
+      const next = apply(state, {
+        type: 'SWAP_EXERCISE',
+        payload: { exerciseId: 'ex-1', newName: ALT1 },
+      });
+      const alts = next.exercises[0]!.programExtras!.alternatives!;
+      expect(alts).toContain(ORIG); // previous movement is now an alternative
+      expect(alts).not.toContain(ALT1); // chosen movement removed from the list
+      expect(alts).toContain(ALT2); // the other alternative is preserved
+      expect(alts[0]).toBe(ORIG); // previous movement added to the FRONT
+    });
+
+    it('supports swapping back to the original', () => {
+      const state = createInitialState([mkProgramEx()], 0, mkSettings());
+      let next = apply(state, {
+        type: 'SWAP_EXERCISE',
+        payload: { exerciseId: 'ex-1', newName: ALT1 },
+      });
+      next = apply(next, { type: 'SWAP_EXERCISE', payload: { exerciseId: 'ex-1', newName: ORIG } });
+      expect(next.exercises[0]!.name).toBe(ORIG);
+      expect(next.exercises[0]!.exerciseId).toBe('45° Incline Barbell Press');
+      expect(next.exercises[0]!.programExtras!.alternatives).toContain(ALT1);
+    });
+
+    it('is a no-op for an unknown exercise id', () => {
+      const state = createInitialState([mkProgramEx()], 0, mkSettings());
+      const next = apply(state, {
+        type: 'SWAP_EXERCISE',
+        payload: { exerciseId: 'ghost', newName: ALT1 },
+      });
+      expect(next.exercises[0]!.name).toBe(ORIG);
+    });
+
+    it('is a no-op when swapping to the same movement', () => {
+      const state = createInitialState([mkProgramEx()], 0, mkSettings());
+      const next = apply(state, {
+        type: 'SWAP_EXERCISE',
+        payload: { exerciseId: 'ex-1', newName: ORIG },
+      });
+      expect(next.exercises[0]!.name).toBe(ORIG);
+      expect(next.exercises[0]!.programExtras!.alternatives).toEqual([ALT1, ALT2]);
+    });
+
+    it('refuses the swap once a working set is already logged (no history mis-attribution)', () => {
+      const ex = mkProgramEx();
+      ex.sets![0]!.completedAt = new Date().toISOString();
+      ex.sets![0]!.isCompleted = true;
+      const state = createInitialState([ex], 0, mkSettings());
+      const next = apply(state, {
+        type: 'SWAP_EXERCISE',
+        payload: { exerciseId: 'ex-1', newName: ALT1 },
+      });
+      // Movement unchanged — the logged set still belongs to the original.
+      expect(next.exercises[0]!.name).toBe(ORIG);
+      expect(next.exercises[0]!.exerciseId).toBe('45° Incline Barbell Press');
+    });
+
+    it('still allows the swap when only a warmup has been completed', () => {
+      const ex = mkProgramEx();
+      ex.sets = [
+        {
+          id: 'w1',
+          setNumber: 1,
+          reps: 0,
+          weight: 0,
+          rpe: null,
+          isWarmup: true,
+          isCompleted: true,
+          notes: '',
+          completedAt: new Date().toISOString(),
+        },
+        {
+          id: 's1',
+          setNumber: 2,
+          reps: 8,
+          weight: 0,
+          rpe: null,
+          isWarmup: false,
+          isCompleted: false,
+          notes: '',
+          completedAt: null,
+        },
+      ];
+      const state = createInitialState([ex], 0, mkSettings());
+      const next = apply(state, {
+        type: 'SWAP_EXERCISE',
+        payload: { exerciseId: 'ex-1', newName: ALT1 },
+      });
+      expect(next.exercises[0]!.name).toBe(ALT1);
+    });
+  });
+
+  // ============================================================
+  // COMPLETE_SET — carry weight forward (Task 5)
+  // ============================================================
+  describe('COMPLETE_SET — carry weight forward', () => {
+    type TestSet = NonNullable<Exercise['sets']>[number];
+    const mkSet = (overrides: Partial<TestSet> & { id: string; setNumber: number }): TestSet =>
+      ({
+        reps: 8,
+        weight: 0,
+        rpe: null,
+        isWarmup: false,
+        isCompleted: false,
+        notes: '',
+        completedAt: null,
+        ...overrides,
+      }) as TestSet;
+
+    const mkEmptyWorking = (count: number): Exercise =>
+      mkExercise({
+        id: 'ex-1',
+        name: 'Bench',
+        sets: Array.from({ length: count }, (_, i) => mkSet({ id: `s${i + 1}`, setNumber: i + 1 })),
+      });
+
+    it('pre-fills the next empty set with the just-completed weight (not marked complete)', () => {
+      const state = createInitialState([mkEmptyWorking(3)], 0, mkSettings({ autoAddSets: false }));
+      let s = apply(state, { type: 'UPDATE_SET', payload: { field: 'weight', value: 60 } });
+      s = apply(s, { type: 'COMPLETE_SET' });
+      const sets = s.exercises[0]!.sets!;
+      expect(sets[1]!.weight).toBe(60);
+      expect(sets[1]!.completedAt).toBeNull();
+      // Only the immediate next set is seeded — it cascades as each completes.
+      expect(sets[2]!.weight).toBe(0);
+    });
+
+    it('does not overwrite a weight the user already entered on the next set', () => {
+      const ex = mkEmptyWorking(2);
+      ex.sets![1]!.weight = 100; // user pre-typed set 2
+      const state = createInitialState([ex], 0, mkSettings({ autoAddSets: false }));
+      let s = apply(state, { type: 'UPDATE_SET', payload: { field: 'weight', value: 60 } });
+      s = apply(s, { type: 'COMPLETE_SET' });
+      expect(s.exercises[0]!.sets![1]!.weight).toBe(100);
+    });
+
+    it('does not leak a working weight into a warmup set', () => {
+      const ex = mkExercise({
+        id: 'ex-1',
+        name: 'Bench',
+        sets: [
+          mkSet({ id: 'w1', setNumber: 1, isWarmup: true, reps: 0 }),
+          mkSet({ id: 's1', setNumber: 2, isWarmup: false }),
+        ],
+      });
+      // Complete the warmup with a light weight; the working set must stay empty.
+      const state = createInitialState([ex], 0, mkSettings({ autoAddSets: false }));
+      let s = apply(state, { type: 'UPDATE_SET', payload: { field: 'weight', value: 20 } });
+      s = apply(s, { type: 'COMPLETE_SET' });
+      expect(s.exercises[0]!.sets![1]!.weight).toBe(0);
+    });
+
+    it('carries warmup→warmup but stops at the working boundary', () => {
+      const ex = mkExercise({
+        id: 'ex-1',
+        name: 'Bench',
+        sets: [
+          mkSet({ id: 'w1', setNumber: 1, isWarmup: true, reps: 0 }),
+          mkSet({ id: 'w2', setNumber: 2, isWarmup: true, reps: 0 }),
+          mkSet({ id: 's1', setNumber: 3, isWarmup: false }),
+        ],
+      });
+      const state = createInitialState([ex], 0, mkSettings({ autoAddSets: false }));
+      let s = apply(state, { type: 'UPDATE_SET', payload: { field: 'weight', value: 20 } });
+      s = apply(s, { type: 'COMPLETE_SET' });
+      expect(s.exercises[0]!.sets![1]!.weight).toBe(20); // next warmup seeded
+      expect(s.exercises[0]!.sets![2]!.weight).toBe(0); // working set untouched
+    });
+  });
 });

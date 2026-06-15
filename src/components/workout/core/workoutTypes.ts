@@ -129,7 +129,11 @@ export type ExerciseAction =
       };
     }
   | { type: 'CREATE_SUPERSET'; payload: { exerciseIds: string[]; restBetweenRounds?: number } }
-  | { type: 'REMOVE_SUPERSET'; payload: { exerciseId: string } };
+  | { type: 'REMOVE_SUPERSET'; payload: { exerciseId: string } }
+  // Mid-workout movement swap: replace the live exercise's movement with a
+  // chosen alternative (bilingual "Hebrew | English" label), keeping its sets,
+  // RPE, rest, technique and notes — only the movement changes. Session-scoped.
+  | { type: 'SWAP_EXERCISE'; payload: { exerciseId: string; newName: string } };
 
 // --- Set Actions ---
 export type SetAction =
