@@ -38,6 +38,30 @@ function getAudioContext(): AudioContext | null {
   return _audioCtx;
 }
 
+/**
+ * Warm up / resume the shared AudioContext from inside a user gesture.
+ *
+ * Mobile browsers (iOS Safari, Chrome Android) start an AudioContext in the
+ * "suspended" state and only allow it to resume during a user interaction. If
+ * the first beep is a rest-timer countdown — which fires from a `setInterval`,
+ * NOT a tap — it is silently dropped because the context never resumed. Calling
+ * this on an early workout gesture (e.g. completing the first set) means later
+ * timer-driven beeps actually play, and through whatever output the OS has
+ * active (built-in speaker, wired, or Bluetooth headphones).
+ *
+ * Safe to call repeatedly; it's a no-op once the context is running.
+ */
+export const unlockAudio = (): void => {
+  try {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+  } catch {
+    // Audio simply stays locked; non-fatal.
+  }
+};
+
 // Play a beep sound
 export const playBeep = (frequency = 800, duration = 200): void => {
   if (!_soundEnabled) return;

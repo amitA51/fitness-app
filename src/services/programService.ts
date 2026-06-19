@@ -315,6 +315,10 @@ export const buildTemplateForDay = (
         restSecondsMin: restR.min,
         restSecondsMax: restR.max,
         warmupSets: warmupCount,
+        // Keep the plan's verbatim warmup prescription (e.g. "2–3") so the UI
+        // shows the real range, while warmupSets is the concrete count created.
+        warmupRange: ex.warmupSets ? enDashRange(ex.warmupSets) : undefined,
+        workingSets: ex.workingSets,
         earlyRpe: ex.earlyRpe || undefined,
         lastRpe: ex.lastRpe || undefined,
         coachingNote: ex.notes || undefined,

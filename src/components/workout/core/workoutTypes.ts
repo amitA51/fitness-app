@@ -4,6 +4,7 @@ import type {
   ActiveExercise,
   AppSettings,
   RpeTag,
+  SetSegment,
   SetTechnique,
   WorkoutSession,
   WorkoutSet,
@@ -140,6 +141,12 @@ export type SetAction =
   | { type: 'UPDATE_SET'; payload: { field: 'weight' | 'reps'; value: number } }
   | { type: 'COMPLETE_SET' }
   | { type: 'ADD_SET' }
+  // Skip the active set (e.g. a warmup the user opts out of): mark it completed
+  // + skipped, no rest timer, no volume. Advances to the next set.
+  | { type: 'SKIP_SET' }
+  // Replace the per-weight legs of a set (drop set / weight changed mid-set).
+  // Empty array clears segments back to the plain weight×reps model.
+  | { type: 'UPDATE_SET_SEGMENTS'; payload: { setIndex: number; segments: SetSegment[] } }
   | { type: 'UNDO_LAST_SET' }
   | { type: 'UPDATE_SET_NOTES'; payload: string | undefined }
   | { type: 'UPDATE_SET_RPE'; payload: number | undefined }

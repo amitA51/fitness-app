@@ -66,9 +66,12 @@ export const calculateRestTime = (
     programExtras?: { restTime?: unknown };
   },
   supersetShortRest: number | null,
-  isDropSet: boolean
+  isDropSet: boolean,
+  // Warmup sets are light ramp-ups — they shouldn't trigger a working-set rest
+  // countdown. Treated like drop sets: no rest timer after a warmup.
+  isWarmup = false
 ): number => {
-  if (isDropSet) return 0;
+  if (isDropSet || isWarmup) return 0;
 
   let restTime = settings?.defaultRestTime ?? DEFAULT_WORKOUT_SETTINGS.defaultRestTime;
 

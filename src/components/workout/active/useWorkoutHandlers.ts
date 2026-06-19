@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { showToast } from '../../../components/ui/GlobalToast';
 import type { Exercise, WorkoutSettings } from '../../../types';
-import { playSuccess } from '../../../utils/audio';
+import { playSuccess, unlockAudio } from '../../../utils/audio';
 import { triggerHaptic } from '../../../utils/haptics';
 import { useWorkoutDispatch } from '../core/WorkoutContext';
 
@@ -49,6 +49,10 @@ export function useWorkoutHandlers({
   );
 
   const handleCompleteSet = useCallback(() => {
+    // Completing a set is a user gesture — use it to warm the AudioContext so the
+    // rest-timer countdown beeps that follow (fired from a timer, not a tap)
+    // actually play on mobile and route to the active output / headphones.
+    unlockAudio();
     // Haptic confirmation is owned by the COMPLETE_SET reducer (pendingHaptic),
     // fired exactly once in WorkoutProvider. Firing it here too — on top of the
     // slider's own finish() — produced a 2-3x stutter buzz per set. Audio stays.
@@ -73,6 +77,21 @@ export function useWorkoutHandlers({
     triggerHaptic('medium');
     dispatch({ type: 'UNDO_LAST_SET' });
   }, [dispatch]);
+
+  // Skip the active set (used for warmup sets the user opts out of). Marks it
+  // done+skipped and advances — no rest timer, no logged volume.
+  const handleSkipSet = useCallback(() => {
+    triggerHaptic('light');
+    dispatch({ type: 'SKIP_SET' });
+  }, [dispatch]);
+
+  // Replace the per-weight legs of a set (drop set / weight changed mid-set).
+  const handleUpdateSetSegments = useCallback(
+    (setIndex: number, segments: import('../../../types').SetSegment[]) => {
+      dispatch({ type: 'UPDATE_SET_SEGMENTS', payload: { setIndex, segments } });
+    },
+    [dispatch]
+  );
 
   const handleUpdateRPE = useCallback(
     (rpe: number | null) => {
@@ -410,6 +429,8 @@ export function useWorkoutHandlers({
     handleAddSet,
     handleOpenNumpad,
     handleUndoSet,
+    handleSkipSet,
+    handleUpdateSetSegments,
     handleUpdateRPE,
     handleUpdateRpeTag,
     handleToggleTechnique,

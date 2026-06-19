@@ -4,10 +4,19 @@
 // Single source of truth for set/exercise/session volume so the formula
 // (and its warmup-exclusion + null-guard rules) lives in one place.
 
+interface VolumeSegment {
+  weight?: number;
+  reps?: number;
+}
+
 interface VolumeSet {
   weight?: number;
   reps?: number;
   isWarmup?: boolean;
+  /** Deliberately-skipped sets contribute 0 volume. */
+  skipped?: boolean;
+  /** Per-weight legs (drop set). When present, volume = Σ over the legs. */
+  segments?: VolumeSegment[];
 }
 
 interface VolumeExercise {
@@ -23,13 +32,21 @@ interface VolumeSession {
  * weight/reps are treated as 0.
  */
 export const setVolume = (set: VolumeSet): number => {
-  if (set.isWarmup) return 0;
-  const w = set.weight;
-  const r = set.reps;
-  // Guard against negative / NaN / Infinity so bad input can't poison totals.
-  const weight = typeof w === 'number' && Number.isFinite(w) && w > 0 ? w : 0;
-  const reps = typeof r === 'number' && Number.isFinite(r) && r > 0 ? r : 0;
-  return weight * reps;
+  if (set.isWarmup || set.skipped) return 0;
+
+  // Sanitize a single weight/reps pair into a non-negative finite product.
+  const legVolume = (w?: number, r?: number): number => {
+    const weight = typeof w === 'number' && Number.isFinite(w) && w > 0 ? w : 0;
+    const reps = typeof r === 'number' && Number.isFinite(r) && r > 0 ? r : 0;
+    return weight * reps;
+  };
+
+  // Drop set / mid-set weight changes: volume is the sum of each leg.
+  if (Array.isArray(set.segments) && set.segments.length > 0) {
+    return set.segments.reduce((sum, seg) => sum + legVolume(seg.weight, seg.reps), 0);
+  }
+
+  return legVolume(set.weight, set.reps);
 };
 
 /** Total working-set volume across an exercise's sets. */

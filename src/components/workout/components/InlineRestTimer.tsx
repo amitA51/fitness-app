@@ -10,6 +10,7 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import { triggerHaptic } from '../../../utils/haptics';
+import { useWorkoutSettings } from '../hooks/useWorkoutSettings';
 import { useRestTimer } from '../hooks/useWorkoutTimer';
 
 interface InlineRestTimerProps {
@@ -80,9 +81,17 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
       return parts.length > 0 ? parts.join(' · ') : undefined;
     })();
 
-    const { formatted, progress, timeLeft } = useRestTimer(endTime, active, isPaused, notifyBody);
+    const { formatted, progress, timeLeft, totalTime } = useRestTimer(
+      endTime,
+      active,
+      isPaused,
+      notifyBody
+    );
     const prefersReduced = usePrefersReducedMotion();
     const haptics = useHapticFeedback();
+    // Audio cues honor voiceCountdownEnabled / countdownBeepEnabled inside these
+    // helpers, so we can call them unconditionally and let settings gate output.
+    const { announceCountdown, announceReady } = useWorkoutSettings();
 
     const isFinalCountdown = active && timeLeft <= 5 && timeLeft > 0;
 
@@ -109,6 +118,31 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
         haptics.success();
       }
     }, [timeLeft, active, isPaused, prefersReduced, haptics]);
+
+    // ── COUNTDOWN AUDIO ───────────────────────────────────────────────────
+    // Per-second beeps/voice as rest winds down, then a "get ready" cue exactly
+    // when the timer hits 0 — i.e. precise audio right before the next set
+    // begins. Independent of prefers-reduced-motion (it's audio, not motion) and
+    // independent of the haptics effect so silencing one never mutes the other.
+    // The integer-second ref ensures each cue fires once per whole-second tick.
+    const lastAudioSecondRef = useRef<number | null>(null);
+    useEffect(() => {
+      if (!active || isPaused) {
+        lastAudioSecondRef.current = null;
+        return;
+      }
+      const sec = Math.ceil(timeLeft);
+      if (sec === lastAudioSecondRef.current) return;
+      const prev = lastAudioSecondRef.current;
+      lastAudioSecondRef.current = sec;
+      // Only react to a genuine downward tick (skip mount seed + +15s jumps).
+      if (prev === null || sec >= prev) return;
+      if (sec > 0 && sec <= 10) {
+        announceCountdown(sec, totalTime || sec);
+      } else if (sec === 0) {
+        announceReady();
+      }
+    }, [timeLeft, active, isPaused, totalTime, announceCountdown, announceReady]);
 
     if (!active) return null;
 

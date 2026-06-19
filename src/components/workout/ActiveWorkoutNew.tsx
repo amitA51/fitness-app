@@ -365,6 +365,8 @@ export const WorkoutContent: React.FC<{
     handleAddSet,
     handleOpenNumpad,
     handleUndoSet,
+    handleSkipSet,
+    handleUpdateSetSegments,
     handleUpdateRPE,
     handleUpdateRpeTag,
     handleToggleTechnique,
@@ -665,6 +667,8 @@ export const WorkoutContent: React.FC<{
             onUpdateRpeTag={handleUpdateRpeTag}
             onUpdateNotes={handleUpdateNotes}
             onUndo={handleUndoSet}
+            onSkipSet={handleSkipSet}
+            onUpdateSetSegments={handleUpdateSetSegments}
             showGhostValues={showGhostValues}
             showVolumePreview={showVolumePreview}
             enableQuickWeightButtons={enableQuickWeightButtons}
@@ -676,6 +680,7 @@ export const WorkoutContent: React.FC<{
             onToggleTechnique={handleToggleTechnique}
             onOpenPlateCalc={handleOpenPlateCalc}
             onSwapExercise={handleSwapExercise}
+            onOpenAICoach={handleOpenTutorial}
           />
         </div>
 

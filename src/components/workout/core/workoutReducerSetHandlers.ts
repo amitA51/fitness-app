@@ -199,7 +199,8 @@ export const setReducer = (draft: WorkoutState, action: WorkoutAction): void => 
           settings,
           exercise,
           supersetShortRest,
-          currentSet.isDropSet ?? false
+          currentSet.isDropSet ?? false,
+          currentSet.isWarmup ?? false
         );
 
         if (restTime > 0) {
@@ -237,6 +238,54 @@ export const setReducer = (draft: WorkoutState, action: WorkoutAction): void => 
       newSet.completedAt = null;
       sets.push(newSet);
       exercise.sets = sets;
+      break;
+    }
+
+    case 'SKIP_SET': {
+      if (!exercise) return;
+      const sets = exercise.sets ?? [];
+      const activeIdx = getActiveSetIndex(sets);
+      const target = sets[activeIdx];
+      if (!target) return;
+
+      // Mark it done + skipped so the flow advances past it, but it carries no
+      // logged data. setVolume()/stats treat `skipped` as 0, and we never start
+      // a rest timer here — skipping a warmup should move straight on.
+      target.isCompleted = true;
+      target.completedAt = new Date().toISOString();
+      target.skipped = true;
+      target.weight = 0;
+      target.reps = 0;
+
+      if (exercise.sets) exercise.sets = sets;
+      break;
+    }
+
+    case 'UPDATE_SET_SEGMENTS': {
+      if (!exercise) return;
+      const { setIndex, segments } = action.payload;
+      const sets = exercise.sets ?? [];
+      const target = sets[setIndex];
+      if (!target) return;
+
+      if (segments.length === 0) {
+        // Clearing segments returns the set to the plain weight×reps model.
+        target.segments = undefined;
+      } else {
+        // Sanitize each leg to non-negative finite numbers.
+        const clean = segments.map((s) => ({
+          weight: Number.isFinite(s.weight) && s.weight > 0 ? s.weight : 0,
+          reps: Number.isFinite(s.reps) && s.reps > 0 ? s.reps : 0,
+        }));
+        target.segments = clean;
+        // Mirror the first (heaviest) leg onto the top-level fields so legacy
+        // single-pair displays still render a sensible value.
+        const first = clean[0]!;
+        target.weight = first.weight;
+        target.reps = first.reps;
+        // A multi-weight set is conceptually a drop set.
+        if (clean.length > 1) target.isDropSet = true;
+      }
       break;
     }
 

@@ -7,19 +7,30 @@ import {
   ChevronLeft,
   Edit,
   FileText,
+  Layers,
   Link2,
   Plus,
   RotateCcw,
+  SkipForward,
   Star,
   Unlink,
 } from 'lucide-react';
 import { type CSSProperties, memo, useCallback, useMemo, useState } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
-import type { Exercise, ProgramExtras, RpeTag, SetTechnique, WorkoutSet } from '../../../types';
+import type {
+  Exercise,
+  ProgramExtras,
+  RpeTag,
+  SetSegment,
+  SetTechnique,
+  WorkoutSet,
+} from '../../../types';
 import type { SupersetGroup } from '../core/workoutTypes';
 import { usePreviousSetData } from '../hooks/usePreviousSetData';
 import ActionChip from './ActionChip';
 import AlternativesSheet from './AlternativesSheet';
+import DropSetSheet from './DropSetSheet';
+import ExerciseNoteBar from './ExerciseNoteBar';
 import NotesBottomSheet from './NotesBottomSheet';
 import RPEPicker from './RPEPicker';
 import SetEditBottomSheet from './SetEditBottomSheet';
@@ -49,6 +60,10 @@ interface ExerciseDisplayProps {
   onUpdateRPE?: (rpe: number | null) => void;
   onUpdateRpeTag?: (tag: RpeTag | null) => void;
   onUndo?: () => void;
+  /** Skip the active set (warmup opt-out): no rest, no logged volume. */
+  onSkipSet?: () => void;
+  /** Replace the per-weight legs of a set (drop set / weight changed mid-set). */
+  onUpdateSetSegments?: (setIndex: number, segments: SetSegment[]) => void;
   showGhostValues?: boolean;
   enableQuickWeightButtons?: boolean;
   enableQuickRepsButtons?: boolean;
@@ -62,6 +77,8 @@ interface ExerciseDisplayProps {
   onOpenPlateCalc?: () => void;
   /** Swap the live exercise's movement for a chosen alternative (bilingual label). */
   onSwapExercise?: (exerciseId: string, newName: string) => void;
+  /** Open the AI coach / exercise guide (surfaced beside the note at the top). */
+  onOpenAICoach?: () => void;
 }
 
 // ============================================================
@@ -120,6 +137,8 @@ function PrescriptionBlock({ extras }: { extras: ProgramExtras }) {
     rpeTarget,
     restRange,
     warmupSets,
+    warmupRange,
+    workingSets,
     intensityTechnique,
     coachingNote,
     notes,
@@ -135,13 +154,19 @@ function PrescriptionBlock({ extras }: { extras: ProgramExtras }) {
         : null;
 
   const hasWarmup = typeof warmupSets === 'number' && warmupSets > 0;
+  // Prefer the plan's verbatim warmup prescription (e.g. "2–3") over the flat
+  // resolved count so the pill reads exactly like the program.
+  const warmupValue = warmupRange && warmupRange.length > 0 ? warmupRange : `×${warmupSets}`;
+  const hasWorkingSets = typeof workingSets === 'number' && workingSets > 0;
   // Prefer the freeform PDF cue (tempo/pause/setup). For non-program templates
   // (no rep range) fall back to the legacy composed note so coach-authored
   // templates keep their guidance; for program days `coachingNote` is the cue
   // and the structured pills already carry the rep/RPE/rest/warmup summary.
   const note = coachingNote || (repRange ? undefined : notes);
 
-  const hasPills = Boolean(repRange || rpeText || restRange || hasWarmup || intensityTechnique);
+  const hasPills = Boolean(
+    repRange || rpeText || restRange || hasWarmup || hasWorkingSets || intensityTechnique
+  );
   if (!hasPills && !note) return null;
 
   return (
@@ -151,7 +176,8 @@ function PrescriptionBlock({ extras }: { extras: ProgramExtras }) {
           {repRange && <PrescPill label="חזרות" value={repRange} />}
           {rpeText && <PrescPill value={rpeText} />}
           {restRange && <PrescPill label="מנוחה" value={restRange} />}
-          {hasWarmup && <PrescPill label="חימום" value={`×${warmupSets}`} />}
+          {hasWorkingSets && <PrescPill label="סטים" value={`×${workingSets}`} />}
+          {hasWarmup && <PrescPill label="חימום" value={warmupValue} />}
           {intensityTechnique && (
             <span style={coachPillStrong}>סט אחרון · {intensityTechnique}</span>
           )}
@@ -205,6 +231,8 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     onUpdateRPE,
     onUpdateRpeTag,
     onUndo,
+    onSkipSet,
+    onUpdateSetSegments,
     showGhostValues = true,
     enableQuickWeightButtons = true,
     enableQuickRepsButtons = true,
@@ -215,11 +243,13 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     onToggleTechnique,
     onOpenPlateCalc,
     onSwapExercise,
+    onOpenAICoach,
   }) => {
     const [showSetEditor, setShowSetEditor] = useState(false);
     const [showRPEPicker, setShowRPEPicker] = useState(false);
     const [showNotesSheet, setShowNotesSheet] = useState(false);
     const [showAlternatives, setShowAlternatives] = useState(false);
+    const [showDropSetSheet, setShowDropSetSheet] = useState(false);
     const haptics = useHapticFeedback();
 
     const { previousSet, showGhostWeight, showGhostReps } = usePreviousSetData(
@@ -407,6 +437,15 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           </div>
         </div>
 
+        {/* ── NOTE + AI STRIP (pinned, top) ── */}
+        {onUpdateNotes && (
+          <ExerciseNoteBar
+            note={currentSet.notes || ''}
+            onEdit={() => setShowNotesSheet(true)}
+            onOpenAI={onOpenAICoach}
+          />
+        )}
+
         {/* ── SCROLLABLE CONTENT (spec §5) ── */}
         <div
           style={{
@@ -537,6 +576,45 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               {/* 5A: Technique pills */}
               {onToggleTechnique && (
                 <SetTechniquePills set={currentSet} onToggle={onToggleTechnique} />
+              )}
+
+              {/* Skip-warmup affordance — only while the active set is a warmup.
+                  Warmups don't need to be logged rep-for-rep, so offer a one-tap
+                  skip that advances without starting a rest timer. */}
+              {activeIsWarmup && onSkipSet && (
+                <>
+                  <div style={{ height: 10, flexShrink: 0 }} />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptics.impact('light');
+                      onSkipSet();
+                    }}
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-[0.98]"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      width: '100%',
+                      minHeight: 44,
+                      borderRadius: 12,
+                      background: 'color-mix(in srgb, var(--fs-accent) 10%, var(--fs-surface))',
+                      border:
+                        '1px dashed color-mix(in srgb, var(--fs-accent) 45%, var(--fs-steel))',
+                      color: 'var(--fs-accent-2)',
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 800,
+                      fontSize: 13,
+                      letterSpacing: '0.04em',
+                      cursor: 'pointer',
+                    }}
+                    aria-label="דלג על סט החימום"
+                  >
+                    <SkipForward size={15} strokeWidth={2.5} />
+                    דלג על סט החימום
+                  </button>
+                </>
               )}
 
               {/* Gap after pills */}
@@ -716,13 +794,17 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   ariaLabel="מחשבון פלטות"
                 />
               )}
-              {onUpdateNotes && (
+              {/* Note: per-set notes are now edited from the pinned note+AI bar
+                  at the top of the surface, so the old "הערות" tool chip is gone. */}
+              {/* Drop set legs — log each weight×reps within this set (e.g.
+                  60×8 → 50×6 → 40×4). Offered once the set is marked a drop set. */}
+              {onUpdateSetSegments && currentSet.isDropSet && (
                 <ActionChip
-                  icon={<FileText size={14} strokeWidth={2.5} />}
-                  label="הערות"
-                  onClick={() => setShowNotesSheet(true)}
-                  ariaLabel="הערות לסט"
-                  dot={!!currentSet.notes}
+                  icon={<Layers size={14} strokeWidth={2.5} />}
+                  label="מקטעי דרופ"
+                  onClick={() => setShowDropSetSheet(true)}
+                  ariaLabel="עריכת מקטעי דרופ-סט"
+                  dot={!!(currentSet.segments && currentSet.segments.length > 0)}
                 />
               )}
               <div style={{ flex: 1 }} />
@@ -828,6 +910,18 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             setIndex={displaySetIndex}
             onSave={onUpdateNotes}
             onClose={() => setShowNotesSheet(false)}
+          />
+        )}
+
+        {onUpdateSetSegments && (
+          <DropSetSheet
+            isOpen={showDropSetSheet}
+            set={currentSet}
+            setIndex={displaySetIndex}
+            exerciseName={exercise.name || ''}
+            weightIncrement={weightIncrement}
+            onSave={(segments) => onUpdateSetSegments(displaySetIndex, segments)}
+            onClose={() => setShowDropSetSheet(false)}
           />
         )}
 

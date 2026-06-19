@@ -14,6 +14,7 @@
 import { AnimatePresence, type PanInfo, m } from 'framer-motion';
 import { X as CloseIcon } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
+import { useSettings } from '../../../contexts/SettingsContext';
 import type { WorkoutSettings } from '../../../types';
 import { ModalOverlay } from '../../ui/ModalOverlay';
 import { DEFAULT_WORKOUT_SETTINGS } from '../hooks/useWorkoutSettings';
@@ -50,6 +51,11 @@ interface WorkoutSettingsOverlayProps {
 const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
   ({ isOpen, settings, onClose, onUpdateSetting }) => {
     const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+
+    // Dark mode is an app-level setting (toggles the `.dark` class on <html> via
+    // SettingsContext), not a workout-scoped one — so it's wired straight to the
+    // global settings store rather than through onUpdateSetting.
+    const { settings: appSettings, updateSettings } = useSettings();
 
     const handleDragEnd = (_: unknown, info: PanInfo) => {
       if (info.offset.y > 100) onClose();
@@ -204,6 +210,14 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                   <GoalSelector
                     value={(get('defaultWorkoutGoal') as string | undefined) || 'general'}
                     onChange={(v) => onUpdateSetting('defaultWorkoutGoal', v)}
+                  />
+                  <Divider />
+                  <SectionHeader title="תצוגה" />
+                  <Toggle
+                    label="מצב כהה"
+                    description="ערכת צבעים כהה לכל האפליקציה"
+                    value={appSettings.darkMode ?? false}
+                    onChange={(v) => updateSettings({ darkMode: v })}
                   />
                   <Divider />
                   <SectionHeader title="התנהגות" />
