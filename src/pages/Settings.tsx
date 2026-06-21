@@ -2,6 +2,7 @@ import { Crown } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import PageHeader from '../components/ui/PageHeader';
 import {
   SectionLabel,
   type SettingsJumpItem,
@@ -28,7 +29,6 @@ import { ProfileEditSection } from './settings/sections/ProfileEditSection';
 import { ProfileSection } from './settings/sections/ProfileSection';
 import { ThemeSection } from './settings/sections/ThemeSection';
 import { WorkoutPrefsSection } from './settings/sections/WorkoutPrefsSection';
-import { HEADER_SUBTITLE_STYLE, HEADER_TITLE_STYLE } from './settings/types';
 
 // ============================================================================
 // MAIN SETTINGS PAGE (thin orchestrator)
@@ -49,8 +49,10 @@ const JUMP_ITEMS: readonly SettingsJumpItem[] = [
   { id: 'set-profile', label: 'פרופיל' },
   { id: 'set-display', label: 'תצוגה' },
   { id: 'set-workout', label: 'אימון' },
+  { id: 'set-coach', label: 'מאמן' },
   { id: 'set-notifications', label: 'התראות' },
   { id: 'set-data', label: 'נתונים' },
+  { id: 'set-legal', label: 'משפטי' },
 ];
 
 // Sticky header height estimate (subtitle + title + vertical padding). The chip
@@ -123,23 +125,10 @@ export default function Settings() {
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
-      {/* Header */}
-      <header
-        style={{
-          paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
-          paddingLeft: 'max(20px, env(safe-area-inset-left, 20px))',
-          paddingRight: 'max(20px, env(safe-area-inset-right, 20px))',
-          paddingBottom: 16,
-          position: 'sticky',
-          top: 0,
-          zIndex: 20,
-          background: 'var(--fs-bg)',
-          borderBottom: '2px solid var(--fs-accent)',
-        }}
-      >
-        <p style={HEADER_SUBTITLE_STYLE}>התאמות אישיות וסנכרון</p>
-        <h1 style={HEADER_TITLE_STYLE}>הגדרות</h1>
-      </header>
+      {/* Header — shared PageHeader SSOT. Renders the same ~92px box (safe-area
+          padding + 13/26 eyebrow+title + 2px accent border) the hand-rolled
+          header did, so SETTINGS_HEADER_OFFSET/SECTION_SCROLL_MARGIN stay valid. */}
+      <PageHeader title="הגדרות" eyebrow="התאמות אישיות וסנכרון" />
 
       <div className="px-4">
         <SettingsJumpNav items={JUMP_ITEMS} top={SETTINGS_HEADER_OFFSET} />
@@ -227,7 +216,12 @@ export default function Settings() {
             commitWorkout={state.commitWorkout}
             workoutSaved={state.workoutSaved}
           />
+        </div>
 
+        {/* Coach / role is account-level (become-a-coach flips the whole app
+            shell, or edits the business profile) — its own anchor so it stops
+            hiding under the "אימון" prefs chip. */}
+        <div id="set-coach" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
           <CoachSection />
         </div>
 
@@ -267,6 +261,19 @@ export default function Settings() {
             />
           )}
 
+          {/* Quarantine separator — detaches the destructive zone from the
+              normal export/sync cards so it doesn't read as just another card.
+              Kept ABOVE DangerZoneSection so the deleteError negative-margin
+              hug below stays intact. */}
+          <div
+            aria-hidden="true"
+            style={{
+              height: 1,
+              background: 'var(--fs-surface-2)',
+              margin: '4px 0 24px',
+            }}
+          />
+
           <DangerZoneSection onDeleteAll={handleDeleteAllData} />
 
           {deleteError && (
@@ -287,13 +294,16 @@ export default function Settings() {
           )}
         </div>
 
-        {/* Legal & privacy hub — terms, privacy, accessibility + tracking consent */}
-        <SectionLabel>משפטי ופרטיות</SectionLabel>
-        <LegalLinksSection />
+        {/* Legal & privacy hub — terms, privacy, accessibility + tracking
+            consent + blocked users. Now jump-nav reachable (was scroll-only). */}
+        <div id="set-legal" style={{ scrollMarginTop: SECTION_SCROLL_MARGIN }}>
+          <SectionLabel>משפטי ופרטיות</SectionLabel>
+          <LegalLinksSection />
 
-        <BlockedUsersSection />
+          <BlockedUsersSection />
 
-        <DataAboutSection />
+          <DataAboutSection />
+        </div>
       </div>
 
       <ConfirmDialog

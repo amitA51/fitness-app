@@ -104,27 +104,6 @@ export const AUTOSAVE_DEBOUNCE_MS = 500;
 /** How long the subtle "נשמר" saved-indicator stays visible after a write. */
 export const SAVED_FLASH_MS = 1500;
 
-// ─── Static styles ──────────────────────────────────────────────────────────
-
-export const HEADER_SUBTITLE_STYLE = {
-  fontFamily: 'var(--font-body)',
-  fontSize: 13,
-  fontWeight: 500,
-  color: 'var(--fs-muted)',
-  margin: 0,
-  lineHeight: 1.4,
-} as const;
-
-export const HEADER_TITLE_STYLE = {
-  fontFamily: 'var(--font-display)',
-  fontWeight: 800,
-  fontSize: 26,
-  lineHeight: 1.15,
-  letterSpacing: '-0.01em',
-  color: 'var(--fs-ink)',
-  margin: '4px 0 0',
-} as const;
-
 // ─── Storage helpers ────────────────────────────────────────────────────────
 
 export function loadFromStorage<T>(key: string, fallback: T): T {

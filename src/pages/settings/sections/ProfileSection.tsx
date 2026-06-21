@@ -1,5 +1,4 @@
 import { Cake, Ruler, Scale, Target, User, Users, Zap } from 'lucide-react';
-import { ProfileAvatar } from '../../../components/ui/ProfileAvatar';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
 import { NumberInput } from '../../../components/ui/SettingsNumberInput';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
@@ -23,19 +22,11 @@ interface Props {
 export function ProfileSection({ profile, updateProfile, commitProfile, profileSaved }: Props) {
   return (
     <div className="mb-7">
-      <SectionLabel trailing={<SavedIndicator saved={profileSaved} />}>פרופיל</SectionLabel>
-
-      {/* Avatar card */}
-      <div
-        className="mb-3"
-        style={{
-          borderRadius: '22px 16px 22px 16px',
-          overflow: 'hidden',
-          boxShadow: 'var(--shadow-card)',
-        }}
-      >
-        <ProfileAvatar name={profile.name} />
-      </div>
+      {/* "פרטים אישיים" (private metrics), distinct from the public-facing
+          "פרופיל ציבורי" editor below — the two used to both read "פרופיל" with
+          their own avatars, reading as a duplicate. The editable avatar now
+          lives only in the public editor; this card is metrics-only. */}
+      <SectionLabel trailing={<SavedIndicator saved={profileSaved} />}>פרטים אישיים</SectionLabel>
 
       <SettingsCard>
         {/* Name */}
