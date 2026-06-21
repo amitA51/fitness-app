@@ -65,7 +65,9 @@ export const MealPresetCard = memo(function MealPresetCard({
             fontFamily: 'var(--font-display)',
             fontWeight: 700,
             fontSize: '14px',
-            color: 'var(--fs-warn)',
+            // Neutral ink — a preset's calorie total is informational, not a
+            // warning. --fs-warn is reserved for the over-goal/attention state.
+            color: 'var(--fs-ink)',
           }}
         >
           {totalCal} קל׳

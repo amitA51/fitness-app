@@ -113,7 +113,9 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
           max={5}
           step={1}
           unit=""
-          color="var(--fs-signal)"
+          // Neutral accent — lime (--fs-signal) is reserved for PR celebration,
+          // not a routine metric slider (matches RecoveryTab's energy bar).
+          color="var(--fs-accent)"
           labels={['מותש', 'נמוכה', 'בסדר', 'טובה', 'מלא אנרגיה']}
         />
         <SliderInput

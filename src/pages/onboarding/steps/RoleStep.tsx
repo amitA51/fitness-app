@@ -78,7 +78,10 @@ export function RoleStep({ data, onChange }: RoleStepProps) {
                     fontFamily: 'var(--font-body)',
                     fontWeight: 600,
                     fontSize: '16px',
-                    color: 'var(--fs-ink)',
+                    // On the mint selected card --fs-ink is near-white in dark
+                    // mode and fails AA — use the near-black on-accent ink (the
+                    // same token Goals/Equipment already use for selected text).
+                    color: isSelected ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
                   }}
                 >
                   {option.title}
