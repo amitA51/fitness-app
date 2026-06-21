@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import PageHeader from '../../components/ui/PageHeader';
 import {
   getPublicProfile,
   getUserAchievements,
@@ -45,7 +46,6 @@ import {
 } from '../../services/profile/profileService';
 import type { Achievement, ProfilePublic } from '../../services/profile/types';
 import { getInitials } from '../../utils/getInitials';
-import PageHeader from '../../components/ui/PageHeader';
 
 // ── Badge icon resolver ───────────────────────────────────────────────────
 // Achievement.icon is a free-form string from the catalog; the service defaults
