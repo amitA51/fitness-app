@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CommentSheet } from '../../components/community/CommentSheet';
 import { PostCard } from '../../components/community/PostCard';
 import { PostComposer, type PostSubmitResult } from '../../components/community/PostComposer';
+import PageHeader from '../../components/ui/PageHeader';
 import {
   blockUser,
   createPost,
@@ -352,30 +353,7 @@ export default function CommunityFeed() {
       }}
     >
       {/* Sticky header */}
-      <header
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 20,
-          background: 'var(--fs-bg)',
-          borderBottom: '2px solid var(--fs-accent)',
-          padding:
-            'max(16px, env(safe-area-inset-top, 16px)) max(20px, env(safe-area-inset-right, 20px)) 14px max(20px, env(safe-area-inset-left, 20px))',
-        }}
-      >
-        <h1
-          style={{
-            margin: 0,
-            fontFamily: 'var(--font-display)',
-            fontWeight: 900,
-            fontSize: 22,
-            letterSpacing: '-0.01em',
-            color: 'var(--fs-ink)',
-          }}
-        >
-          קהילה
-        </h1>
-      </header>
+      <PageHeader title="קהילה" />
 
       {/* Content */}
       <main

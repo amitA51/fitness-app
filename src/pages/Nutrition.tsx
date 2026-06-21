@@ -4,6 +4,7 @@ import type React from 'react';
 import { useMemo } from 'react';
 import { CoachMark } from '../components/guidance/CoachMark';
 import { WaterTracker } from '../components/nutrition/WaterTracker';
+import PageHeader from '../components/ui/PageHeader';
 import { SkeletonBox } from '../components/ui/SkeletonLoader';
 import { AddMealModal } from './nutrition/components/AddMealModal';
 import { CalorieHero } from './nutrition/components/CalorieHero';
@@ -78,48 +79,17 @@ export default function NutritionPage() {
       dir="rtl"
     >
       {/* Header */}
-      <header
-        style={{
-          paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
-          paddingInlineStart: 'max(20px, env(safe-area-inset-left, 20px))',
-          paddingInlineEnd: 'max(20px, env(safe-area-inset-right, 20px))',
-          paddingBottom: 16,
-          position: 'sticky',
-          top: 0,
-          zIndex: 20,
-          background: 'var(--fs-bg)',
-          borderBottom: '2px solid var(--fs-accent)',
-        }}
-      >
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 13,
-            fontWeight: 500,
-            color: 'var(--fs-muted)',
-            margin: 0,
-            lineHeight: 1.4,
-          }}
-        >
-          <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>
-            {todayMacros.calories || 0}/{macroGoals.calories}
-          </span>{' '}
-          קל׳
-        </p>
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            fontSize: 26,
-            lineHeight: 1.15,
-            letterSpacing: '-0.01em',
-            color: 'var(--fs-ink)',
-            margin: '4px 0 0',
-          }}
-        >
-          תזונה
-        </h1>
-      </header>
+      <PageHeader
+        title="תזונה"
+        eyebrow={
+          <>
+            <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {todayMacros.calories || 0}/{macroGoals.calories}
+            </span>{' '}
+            קל׳
+          </>
+        }
+      />
 
       {/* Day axis — the control that scopes every number below it, placed first
           so the viewed day frames the calorie/macro/meal data (not after it). */}

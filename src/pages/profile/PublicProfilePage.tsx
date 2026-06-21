@@ -45,6 +45,7 @@ import {
 } from '../../services/profile/profileService';
 import type { Achievement, ProfilePublic } from '../../services/profile/types';
 import { getInitials } from '../../utils/getInitials';
+import PageHeader from '../../components/ui/PageHeader';
 
 // ── Badge icon resolver ───────────────────────────────────────────────────
 // Achievement.icon is a free-form string from the catalog; the service defaults
@@ -76,25 +77,6 @@ const getBadgeIcon = (name: string): LucideIcon => BADGE_ICONS[name] ?? Award;
 type LoadState = 'loading' | 'error' | 'ready';
 
 // ── Shared chrome (mirrors AccessibilityStatement page idiom) ───────────────
-const PAGE_SUBTITLE_STYLE: React.CSSProperties = {
-  fontFamily: 'var(--font-body)',
-  fontSize: 13,
-  fontWeight: 500,
-  color: 'var(--fs-muted)',
-  margin: 0,
-  lineHeight: 1.4,
-};
-
-const PAGE_TITLE_STYLE: React.CSSProperties = {
-  fontFamily: 'var(--font-display)',
-  fontWeight: 800,
-  fontSize: 26,
-  lineHeight: 1.15,
-  letterSpacing: '-0.01em',
-  color: 'var(--fs-ink)',
-  margin: '4px 0 0',
-};
-
 const SECTION_HEADING_STYLE: React.CSSProperties = {
   fontFamily: 'var(--font-display)',
   fontWeight: 700,
@@ -119,22 +101,7 @@ function PageShell({ title, children }: { title: string; children: React.ReactNo
       dir="rtl"
       lang="he"
     >
-      <header
-        style={{
-          paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
-          paddingInlineStart: 'max(20px, env(safe-area-inset-right, 20px))',
-          paddingInlineEnd: 'max(20px, env(safe-area-inset-left, 20px))',
-          paddingBottom: 16,
-          position: 'sticky',
-          top: 0,
-          zIndex: 20,
-          background: 'var(--fs-bg)',
-          borderBottom: '2px solid var(--fs-accent)',
-        }}
-      >
-        <p style={PAGE_SUBTITLE_STYLE}>SparkOS Fitness</p>
-        <h1 style={PAGE_TITLE_STYLE}>{title}</h1>
-      </header>
+      <PageHeader title={title} eyebrow="SparkOS Fitness" />
       <main className="px-5 pt-6">{children}</main>
     </div>
   );
