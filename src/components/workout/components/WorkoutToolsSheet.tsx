@@ -101,7 +101,9 @@ const WorkoutToolsSheet = memo<WorkoutToolsSheetProps>(
               </span>
 
               {/* Label + caption */}
-              <span style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
+              <span
+                style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}
+              >
                 <span
                   style={{
                     fontFamily: 'var(--font-display)',

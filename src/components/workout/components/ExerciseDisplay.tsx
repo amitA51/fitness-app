@@ -349,7 +349,9 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     if (onOpenPlateCalc) {
       tools.push({
         id: 'plates',
-        icon: <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 800 }}>ק״ג</span>,
+        icon: (
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 800 }}>ק״ג</span>
+        ),
         label: 'מחשבון פלטות',
         caption: 'איך להעמיס את המוט למשקל היעד',
         onSelect: onOpenPlateCalc,
