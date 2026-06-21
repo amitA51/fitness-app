@@ -1,5 +1,7 @@
 import { CopyPlus, Flame, Plus, Trash2 } from 'lucide-react';
 import { memo, useMemo } from 'react';
+import { Card } from '../../../components/ui/Card';
+import EmptyState from '../../../components/ui/EmptyState';
 import { SkeletonBox } from '../../../components/ui/SkeletonLoader';
 import { MEAL_TYPE_ORDER, normalizeMealType } from '../../../constants/nutrition';
 import {
@@ -11,59 +13,16 @@ import type { MealEntry, MealType } from '../../../types';
 
 export const EmptyMealState = memo(function EmptyMealState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div
-        className="w-16 h-16 flex items-center justify-center mb-4"
-        style={{ background: 'var(--fs-surface-2)', color: 'var(--fs-accent)' }}
-      >
-        <Flame size={26} />
-      </div>
-      <h3
-        className="mb-2"
-        style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: '22px',
-          fontWeight: 800,
-          color: 'var(--fs-ink)',
-          textTransform: 'uppercase',
-        }}
-      >
-        עדיין לא תועדו ארוחות
-      </h3>
-      <p
-        className="mb-5"
-        style={{
-          color: 'var(--fs-muted)',
-          fontFamily: 'var(--font-body)',
-          fontSize: '13px',
-          lineHeight: 1.5,
-          maxWidth: '28ch',
-        }}
-      >
-        הוסיפו את הארוחה הראשונה של היום כדי לעקוב אחר הקלוריות והמאקרו
-      </p>
-      <button
-        type="button"
-        onClick={onAdd}
-        className="accent-glow flex items-center justify-center gap-2"
-        style={{
-          minHeight: 48,
-          padding: '12px 24px',
-          background: 'var(--fs-primary)',
-          color: 'var(--fs-accent)',
-          border: 'none',
-          borderRadius: 0,
-          cursor: 'pointer',
-          fontFamily: 'var(--font-display)',
-          fontWeight: 800,
-          fontSize: 14,
-          textTransform: 'uppercase',
-        }}
-      >
-        <Plus size={15} aria-hidden="true" />
-        הוסף ארוחה
-      </button>
-    </div>
+    <EmptyState
+      icon={<Flame size={48} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />}
+      title="עדיין לא תועדו ארוחות"
+      description="הוסיפו את הארוחה הראשונה של היום כדי לעקוב אחר הקלוריות והמאקרו"
+      action={{
+        label: 'הוסף ארוחה',
+        onClick: onAdd,
+        icon: <Plus size={15} aria-hidden="true" />,
+      }}
+    />
   );
 });
 
@@ -82,18 +41,7 @@ export const MealEntryCard = memo(function MealEntryCard({
   // header in GroupedMealLog, so repeating it here would be redundant.
   const time = entry.meals[0]?.time ?? '';
   return (
-    <div
-      className="magnetic-card glass-surface"
-      style={{
-        background: 'var(--fs-surface)',
-        border: '1px solid var(--fs-surface-2)',
-        borderRadius: '22px 16px 22px 16px',
-        padding: '20px',
-        position: 'relative',
-        overflow: 'hidden',
-        boxShadow: 'var(--shadow-card)',
-      }}
-    >
+    <Card variant="elevated" asymmetric className="magnetic-card" style={{ padding: 20 }}>
       <div className="flex items-start justify-between mb-2">
         <span className="eyebrow" style={{ color: 'var(--fs-accent)' }}>
           {time}
@@ -198,7 +146,7 @@ export const MealEntryCard = memo(function MealEntryCard({
           </>
         )}
       </div>
-    </div>
+    </Card>
   );
 });
 

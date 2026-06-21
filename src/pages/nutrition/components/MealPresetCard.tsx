@@ -1,5 +1,6 @@
 import { Sparkles } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
+import { Card } from '../../../components/ui/Card';
 import { getFoodLibrary } from '../../../services/nutritionService';
 import type { MealPreset } from '../../../services/nutritionService';
 import type { MealType } from '../../../types';
@@ -24,18 +25,7 @@ export const MealPresetCard = memo(function MealPresetCard({
     [preset.meals]
   );
   return (
-    <div
-      className="magnetic-card glass-surface"
-      style={{
-        background: 'var(--fs-surface)',
-        border: '1px solid var(--fs-surface-2)',
-        borderRadius: '22px 16px 22px 16px',
-        padding: '20px',
-        position: 'relative',
-        overflow: 'hidden',
-        boxShadow: 'var(--shadow-card)',
-      }}
-    >
+    <Card variant="elevated" asymmetric className="magnetic-card" style={{ padding: 20 }}>
       <div className="flex items-start justify-between mb-3">
         <div>
           <h4
@@ -126,6 +116,6 @@ export const MealPresetCard = memo(function MealPresetCard({
           הוסף מהיר
         </button>
       )}
-    </div>
+    </Card>
   );
 });

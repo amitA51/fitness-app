@@ -4,6 +4,7 @@ import type React from 'react';
 import { useMemo } from 'react';
 import { CoachMark } from '../components/guidance/CoachMark';
 import { WaterTracker } from '../components/nutrition/WaterTracker';
+import { Card } from '../components/ui/Card';
 import PageHeader from '../components/ui/PageHeader';
 import { SkeletonBox } from '../components/ui/SkeletonLoader';
 import { AddMealModal } from './nutrition/components/AddMealModal';
@@ -120,14 +121,7 @@ export default function NutritionPage() {
         // Load failure used to leave a permanent skeleton — show an explicit
         // error with a retry path instead.
         <div className="px-5 mt-4">
-          <div
-            style={{
-              background: 'var(--fs-surface)',
-              border: '1px solid var(--fs-surface-2)',
-              borderRadius: '22px 16px 22px 16px',
-              padding: 16,
-            }}
-          >
+          <Card variant="elevated" asymmetric style={{ padding: 16 }}>
             <div className="flex flex-col items-center py-8 text-center gap-3">
               <CloudOff size={28} style={{ color: 'var(--fs-muted)' }} aria-hidden="true" />
               <p style={{ fontSize: 14, color: 'var(--fs-muted)', margin: 0 }}>
@@ -142,7 +136,7 @@ export default function NutritionPage() {
                 נסו שוב
               </button>
             </div>
-          </div>
+          </Card>
         </div>
       ) : (
         <>
