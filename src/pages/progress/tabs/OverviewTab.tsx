@@ -11,6 +11,7 @@ import { useWorkoutStreak } from '../../../hooks/useWorkoutStreak';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
 import { formatVolume } from '../../../utils/dateUtils';
 import { zoneColor } from '../../../utils/zoneColor';
+import { SectionCard } from '../components/SectionCard';
 import {
   type StatDelta,
   buildPRBoard,
@@ -21,29 +22,6 @@ import {
   weeklyCountDelta,
   weeklyVolumeDelta,
 } from '../progressMetrics';
-
-const cardStyle: React.CSSProperties = {
-  background: 'var(--fs-surface)',
-  borderRadius: '22px 16px 22px 16px',
-  border: '1px solid var(--fs-surface-2)',
-  boxShadow: 'var(--shadow-card)',
-  padding: '16px',
-  position: 'relative',
-  overflow: 'hidden',
-};
-
-const railStyle: React.CSSProperties = {
-  position: 'absolute',
-  // Logical inline-start so the accent rail sits on the correct (right) edge in
-  // the RTL layout — was physically pinned to the left, mirroring SectionCard.
-  insetInlineStart: 0,
-  top: 0,
-  bottom: 0,
-  width: 4,
-  background: 'var(--fs-accent)',
-  borderStartStartRadius: '22px',
-  borderEndStartRadius: '16px',
-};
 
 // First-reveal count-up tween whose tweened text is written to its own node.
 // Style-less so it inherits the surrounding HeroStat number treatment; the hook
@@ -138,7 +116,7 @@ export const OverviewTab = memo(function OverviewTab({
             סקירה
           </span>
         </div>
-        <div style={cardStyle}>
+        <SectionCard rail={false}>
           <div className="flex flex-col items-center py-10 text-center gap-3">
             <Trophy size={32} style={{ color: 'var(--fs-muted)' }} />
             <p style={{ fontSize: 14, color: 'var(--fs-muted)' }}>
@@ -154,7 +132,7 @@ export const OverviewTab = memo(function OverviewTab({
               התחל אימון
             </button>
           </div>
-        </div>
+        </SectionCard>
       </div>
     );
   }
@@ -185,8 +163,7 @@ export const OverviewTab = memo(function OverviewTab({
       </VerdictLine>
 
       {/* Weekly-review card: verdict headline + 3-up hero stats with WoW deltas. */}
-      <div style={cardStyle}>
-        <div aria-hidden="true" style={railStyle} />
+      <SectionCard>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <Flame size={16} style={{ color: zoneColor(verdict.zone) }} aria-hidden="true" />
           <span
@@ -237,12 +214,11 @@ export const OverviewTab = memo(function OverviewTab({
             />
           </div>
         </div>
-      </div>
+      </SectionCard>
 
       {/* Recent PRs — pulled from the same prService source as the Strength board */}
       {latestPRs.length > 0 && (
-        <div style={cardStyle}>
-          <div aria-hidden="true" style={railStyle} />
+        <SectionCard>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <Trophy size={14} style={{ color: 'var(--fs-accent)' }} />
             <span
@@ -359,7 +335,7 @@ export const OverviewTab = memo(function OverviewTab({
               );
             })}
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* Consistency + muscle distribution — migrated from the Dashboard. These

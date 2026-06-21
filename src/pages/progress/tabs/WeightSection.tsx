@@ -211,11 +211,11 @@ export const WeightSection = memo(function WeightSection({
         </SectionCard>
       )}
 
-      {/* Trend data strip — the change-this-week stat now lives in the hero
-          (item: pair the big number with a secondary stat), so this strip shows
-          the complementary context: weekly average + the trailing window. */}
+      {/* Trend data strip — change-this-week lives in the hero, and the trailing
+          window is already explicit in the range control + chart kicker below, so
+          this strip is now a single complementary stat: the weekly average. */}
       {weightTrend && (
-        <div className="data-strip">
+        <div className="data-strip" style={{ gridTemplateColumns: '1fr' }}>
           <div>
             <div className="val" style={{ direction: 'ltr', textAlign: 'start' }}>
               {weightTrend.weeklyAvg}
@@ -227,13 +227,6 @@ export const WeightSection = memo(function WeightSection({
               {weightTrend.direction === 'יציב' && <Minus size={11} aria-hidden="true" />}
               ממוצע שבועי
             </div>
-          </div>
-          <div>
-            <div className="val" style={{ direction: 'ltr', textAlign: 'start' }}>
-              {RANGE_DAYS[range]}
-              <em>D</em>
-            </div>
-            <div className="lbl">חלון מעקב</div>
           </div>
         </div>
       )}
