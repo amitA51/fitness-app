@@ -69,7 +69,7 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
     <Sheet
       isOpen={isOpen}
       onClose={onClose}
-      title="דיווח ריקאברי"
+      title="דיווח התאוששות"
       footer={<SaveButton onClick={handleSave} disabled={saving} saving={saving} label="שמור" />}
     >
       <div className="space-y-6">

@@ -58,12 +58,12 @@ export const RecoveryTab = memo(function RecoveryTab({
 
   return (
     <div className="space-y-4">
-      <ChapterBreak title="ריקאברי" />
+      <ChapterBreak title="התאוששות" />
 
       {/* Verdict line — recovery readiness leads, score tinted by its zone. */}
       {recoveryScore && (
         <VerdictLine kicker="מצב היום">
-          ציון הריקאברי שלך עומד על{' '}
+          ציון ההתאוששות שלך עומד על{' '}
           <VerdictNumber value={recoveryScore.score} zone={recoveryZone(recoveryScore.score)} />
           {recoveryTakeaway(recoveryScore.score)}
         </VerdictLine>
@@ -82,7 +82,7 @@ export const RecoveryTab = memo(function RecoveryTab({
               textTransform: 'uppercase',
             }}
           >
-            ציון ריקאברי
+            ציון התאוששות
           </h2>
           <button
             type="button"
@@ -111,7 +111,7 @@ export const RecoveryTab = memo(function RecoveryTab({
                   size={112}
                   strokeWidth={6}
                   color={scoreColor}
-                  ariaLabel={`ציון ריקאברי: ${scorePct}%`}
+                  ariaLabel={`ציון התאוששות: ${scorePct}%`}
                   centerContent={
                     <div className="text-center">
                       <ScoreCountUp value={recoveryScore.score} color={scoreColor} />
@@ -280,7 +280,7 @@ export const RecoveryTab = memo(function RecoveryTab({
               textTransform: 'uppercase',
             }}
           >
-            היסטוריית ריקאברי
+            היסטוריית התאוששות
           </h3>
           <div className="space-y-1">
             {history

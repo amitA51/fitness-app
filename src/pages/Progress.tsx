@@ -135,7 +135,7 @@ export default function ProgressPage() {
         setShowAddRecovery(false);
         reload();
       } catch {
-        showToast('שמירת דיווח הריקאברי נכשלה. נסו שוב.', { variant: 'error' });
+        showToast('שמירת דיווח ההתאוששות נכשלה. נסו שוב.', { variant: 'error' });
       }
     },
     [reload]
