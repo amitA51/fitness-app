@@ -17,6 +17,7 @@ import {
   type CoachBriefFacts,
   type CoachBriefKind,
   buildCoachFacts,
+  deterministicProse,
   generateCoachBrief,
 } from '../../services/ai/coachBrief';
 import { type RecoveryLog, getRecoveryLogsByDateRange } from '../../services/bodyStatsService';
@@ -128,10 +129,12 @@ export const CoachBriefCard = memo(function CoachBriefCard({
   // from deterministic facts (recommendation + weekly volume change), never the
   // model. generateCoachBrief never throws, so this is the pre-resolve and the
   // failure path both.
-  const factDetail =
-    kind === 'weekly-review'
-      ? `נפח שבועי ${facts.weeklyVolume.toLocaleString()} ק"ג, שינוי ${facts.volumeChangePercent >= 0 ? '+' : ''}${facts.volumeChangePercent}% מהשבוע שעבר.`
-      : `מוכנות ${facts.readinessScore}/100 — ${REC_LABEL[facts.recommendation]}.`;
+  // Reuse the service's canonical fallback prose. It's QUALITATIVE (the volume
+  // number lives in the headline, not the detail) so the verdict line explains
+  // what the week/day means instead of restating the figure the rings + bento
+  // row already show right above it — and the pre-resolve and AI-failure paths
+  // now read identically to the deterministic source of truth.
+  const factDetail = deterministicProse(kind, facts).detail;
   const detail = isSparse
     ? 'עוד מעט נתונים — אספנו מעט אימונים. המשך לתעד כדי שההמלצה היומית תהיה מדויקת.'
     : (brief?.detail ?? factDetail);

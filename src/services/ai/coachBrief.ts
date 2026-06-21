@@ -113,8 +113,10 @@ export function buildCoachFacts(input: CoachBriefInput): CoachBriefFacts {
 }
 
 /** Deterministic, math-consistent prose used as the fallback (and as the LLM's
- * grounding reference). Never contradicts `facts`. */
-function deterministicProse(
+ * grounding reference). Never contradicts `facts`. Exported so the card's
+ * pre-resolve / AI-failure fallback reuses this exact qualitative prose instead
+ * of re-deriving a number-restating caption. */
+export function deterministicProse(
   kind: CoachBriefKind,
   f: CoachBriefFacts
 ): {
