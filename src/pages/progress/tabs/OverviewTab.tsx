@@ -11,6 +11,7 @@ import { useWorkoutStreak } from '../../../hooks/useWorkoutStreak';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
 import { formatVolume } from '../../../utils/dateUtils';
 import { zoneColor } from '../../../utils/zoneColor';
+import { ChapterBreak } from '../components/ChapterBreak';
 import { SectionCard } from '../components/SectionCard';
 import {
   type StatDelta,
@@ -102,20 +103,7 @@ export const OverviewTab = memo(function OverviewTab({
   if (sessions.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-          <span className="left" />
-          <span
-            className="right"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 700,
-              fontSize: 16,
-              color: 'var(--color-ink-on-dark)',
-            }}
-          >
-            סקירה
-          </span>
-        </div>
+        <ChapterBreak title="סקירה" />
         <SectionCard rail={false}>
           <div className="flex flex-col items-center py-10 text-center gap-3">
             <Trophy size={32} style={{ color: 'var(--fs-muted)' }} />
@@ -139,21 +127,7 @@ export const OverviewTab = memo(function OverviewTab({
 
   return (
     <div className="space-y-4">
-      {/* Chapter break */}
-      <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-        <span className="left" />
-        <span
-          className="right"
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 700,
-            fontSize: 16,
-            color: 'var(--color-ink-on-dark)',
-          }}
-        >
-          סקירה
-        </span>
-      </div>
+      <ChapterBreak title="סקירה" />
 
       {/* Verdict line — the week's takeaway leads, with the driving number tinted. */}
       <VerdictLine kicker="סיכום השבוע">
