@@ -103,7 +103,7 @@ export default function Templates() {
               <m.button
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setShowCreateModal(true)}
-                className="btn-primary start-workout-btn accent-glow w-full flex items-center justify-center gap-2"
+                className="btn-primary w-full flex items-center justify-center gap-2"
                 aria-label="צור תבנית חדשה"
               >
                 <Plus size={18} />
