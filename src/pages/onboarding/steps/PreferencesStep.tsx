@@ -184,9 +184,7 @@ export function PreferencesStep({ data, onChange }: PreferencesStepProps) {
                   background:
                     data.restBetweenSets === sec ? 'var(--fs-accent)' : 'var(--fs-surface)',
                   color:
-                    data.restBetweenSets === sec
-                      ? 'var(--color-ink-on-accent)'
-                      : 'var(--fs-muted)',
+                    data.restBetweenSets === sec ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
                   border:
                     data.restBetweenSets === sec
                       ? '2px solid var(--fs-accent)'
