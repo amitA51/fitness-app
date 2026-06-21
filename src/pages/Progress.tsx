@@ -4,6 +4,7 @@ import type React from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { showToast } from '../components/ui/GlobalToast';
+import PageHeader from '../components/ui/PageHeader';
 import {
   addBodyMeasurement,
   addBodyWeight,
@@ -165,39 +166,13 @@ export default function ProgressPage() {
       style={{ background: 'var(--fs-bg)' }}
       dir="rtl"
     >
-      {/* Header */}
-      <header
-        className="masthead sticky top-0 z-20"
-        style={{
-          paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
-          background: 'var(--fs-bg)',
-        }}
-      >
-        <div
-          className="kicker"
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '11px',
-            letterSpacing: '0.22em',
-            color: 'var(--fs-accent-2)',
-            textTransform: 'uppercase',
-          }}
-        >
-          {todayLabel}
-        </div>
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            fontSize: 'clamp(44px, 12vw, 72px)',
-            lineHeight: 0.9,
-            marginTop: '8px',
-            color: 'var(--fs-ink)',
-          }}
-        >
-          התקדמות
-        </h1>
-      </header>
+      {/* Header — shared PageHeader SSOT (flattens the old bespoke masthead to the
+          standard 26px title + 2px accent divider for cross-tab consistency). The
+          date kicker becomes the eyebrow; its numbers render dir="ltr". */}
+      <PageHeader
+        title="התקדמות"
+        eyebrow={<span dir="ltr">{todayLabel}</span>}
+      />
 
       {/* Editorial Tab Bar — four primary sections */}
       <FadeIn className="px-5 pt-4 pb-2">
