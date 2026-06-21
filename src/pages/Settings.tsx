@@ -130,11 +130,11 @@ export default function Settings() {
           header did, so SETTINGS_HEADER_OFFSET/SECTION_SCROLL_MARGIN stay valid. */}
       <PageHeader title="הגדרות" eyebrow="התאמות אישיות וסנכרון" />
 
-      <div className="px-4">
+      <div className="px-5">
         <SettingsJumpNav items={JUMP_ITEMS} top={SETTINGS_HEADER_OFFSET} />
       </div>
 
-      <div className="px-4 pt-5">
+      <div className="px-5 pt-5">
         <p
           style={{
             fontFamily: 'var(--font-hebrew)',

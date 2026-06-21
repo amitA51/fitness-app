@@ -31,8 +31,9 @@ export function SettingsJumpNav({
         // Hairline under the chip row so it reads as a band, not floating chips.
         borderBottom: '1px solid var(--fs-surface-2)',
         // Bleed to the screen edges so the scroll feels full-width.
-        marginInline: '-16px',
-        paddingInline: '16px',
+        // Matches the page gutter (px-5 = 20px) so the chip row reaches both edges.
+        marginInline: '-20px',
+        paddingInline: '20px',
         paddingBlock: '10px',
       }}
     >
