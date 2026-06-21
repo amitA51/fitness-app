@@ -23,6 +23,8 @@ import {
 import { useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { WorkoutComparison } from '../components/fitness/WorkoutComparison';
+import { Card } from '../components/ui/Card';
+import EmptyState from '../components/ui/EmptyState';
 import {
   formatDuration,
   formatHebrewDate,
@@ -31,6 +33,7 @@ import {
 } from '../utils/dateUtils';
 import { logger } from '../utils/logger';
 import { computeSessionStats } from '../utils/workoutMath';
+import { SectionCard } from './progress/components/SectionCard';
 import { DetailSkeleton } from './workout-detail/DetailSkeleton';
 import { ExerciseCard } from './workout-detail/ExerciseCard';
 import { MuscleBreakdown } from './workout-detail/MuscleBreakdown';
@@ -90,60 +93,12 @@ export default function WorkoutDetail() {
           padding: 24,
         }}
       >
-        <div
-          style={{
-            width: 80,
-            height: 80,
-            borderRadius: '50%',
-            background: 'var(--fs-surface-2)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 24,
-          }}
-        >
-          <Dumbbell size={36} style={{ color: 'var(--fs-muted)' }} />
-        </div>
-        <h2
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            fontSize: 22,
-            color: 'var(--fs-ink)',
-            marginBottom: 8,
-          }}
-        >
-          {error || 'האימון לא נמצא'}
-        </h2>
-        <p
-          style={{
-            fontSize: 14,
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--fs-muted)',
-            marginBottom: 24,
-            textAlign: 'center',
-          }}
-        >
-          לא ניתן לטעון את פרטי האימון
-        </p>
-        <button
-          type="button"
-          onClick={() => navigate('/')}
-          style={{
-            minHeight: 48,
-            padding: '12px 24px',
-            background: 'var(--fs-primary)',
-            color: 'var(--color-ink-on-dark)',
-            borderRadius: 14,
-            fontFamily: 'var(--font-mono)',
-            fontWeight: 600,
-            fontSize: 14,
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          חזרה לבית
-        </button>
+        <EmptyState
+          illustration="error"
+          title={error || 'האימון לא נמצא'}
+          description="לא ניתן לטעון את פרטי האימון"
+          action={{ label: 'חזרה לבית', onClick: () => navigate('/') }}
+        />
       </div>
     );
   }
@@ -218,70 +173,51 @@ export default function WorkoutDetail() {
         <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{
-            background: 'var(--fs-surface)',
-            borderRadius: '22px 16px 22px 16px',
-            border: '1px solid var(--color-border)',
-            boxShadow: 'var(--shadow-card)',
-            padding: 16,
-            marginBottom: 16,
-            position: 'relative',
-            overflow: 'hidden',
-          }}
+          style={{ marginBottom: 16 }}
         >
-          <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 4,
-              background: 'var(--fs-accent)',
-              borderTopLeftRadius: '22px',
-              borderBottomLeftRadius: '16px',
-            }}
-          />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Clock size={14} style={{ color: 'var(--fs-accent-2)' }} />
+          <SectionCard style={{ border: '1px solid var(--color-border)' }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock size={14} style={{ color: 'var(--fs-accent-2)' }} />
+                <span
+                  style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}
+                >
+                  שעת התחלה
+                </span>
+              </div>
               <span
-                style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}
+                style={{
+                  fontSize: 12,
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 600,
+                  color: 'var(--fs-ink)',
+                }}
               >
-                שעת התחלה
+                {formatHebrewTime(session.startTime)}
               </span>
             </div>
-            <span
-              style={{
-                fontSize: 12,
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 600,
-                color: 'var(--fs-ink)',
-              }}
-            >
-              {formatHebrewTime(session.startTime)}
-            </span>
-          </div>
-          <div style={{ height: 1, background: 'var(--color-separator)', margin: '8px 0' }} />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Clock size={14} style={{ color: 'var(--fs-accent)' }} />
+            <div style={{ height: 1, background: 'var(--color-separator)', margin: '8px 0' }} />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock size={14} style={{ color: 'var(--fs-accent)' }} />
+                <span
+                  style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}
+                >
+                  שעת סיום
+                </span>
+              </div>
               <span
-                style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}
+                style={{
+                  fontSize: 12,
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 600,
+                  color: 'var(--fs-ink)',
+                }}
               >
-                שעת סיום
+                {session.endTime ? formatHebrewTime(session.endTime) : '—'}
               </span>
             </div>
-            <span
-              style={{
-                fontSize: 12,
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 600,
-                color: 'var(--fs-ink)',
-              }}
-            >
-              {session.endTime ? formatHebrewTime(session.endTime) : '—'}
-            </span>
-          </div>
+          </SectionCard>
         </m.div>
 
         {/* Stats Grid */}
@@ -407,59 +343,58 @@ export default function WorkoutDetail() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          style={{
-            background: 'var(--fs-surface)',
-            borderRadius: '22px 16px 22px 16px',
-            border: '1px solid var(--color-border)',
-            boxShadow: 'var(--shadow-card)',
-            padding: 16,
-            marginBottom: 24,
-            position: 'relative',
-            overflow: 'hidden',
-          }}
+          style={{ marginBottom: 24 }}
         >
-          <div
-            style={{
-              position: 'absolute',
-              insetInlineStart: 0,
-              top: 0,
-              bottom: 0,
-              width: 4,
-              background: 'var(--fs-signal)',
-              borderStartStartRadius: '22px',
-              borderEndStartRadius: '16px',
-            }}
-          />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            <Sparkles size={12} style={{ color: 'var(--fs-signal)' }} />
-            <span
+          <Card
+            variant="elevated"
+            asymmetric
+            style={{ padding: 16, border: '1px solid var(--color-border)' }}
+          >
+            {/* Signal (lime) rail — reserved for the auto-insight / next-time
+              celebration accent; kept hand-rolled since Card cannot tint a rail. */}
+            <div
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 8,
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
-                color: 'var(--fs-muted)',
+                position: 'absolute',
+                insetInlineStart: 0,
+                top: 0,
+                bottom: 0,
+                width: 4,
+                background: 'var(--fs-signal)',
+                borderStartStartRadius: '22px',
+                borderEndStartRadius: '16px',
+              }}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <Sparkles size={12} style={{ color: 'var(--fs-signal)' }} />
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 8,
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  color: 'var(--fs-muted)',
+                }}
+              >
+                תובנה אוטומטית
+              </span>
+            </div>
+            <p
+              style={{
+                fontFamily: 'var(--font-hebrew)',
+                fontSize: 13,
+                lineHeight: 1.6,
+                color: 'var(--fs-ink)',
               }}
             >
-              תובנה אוטומטית
-            </span>
-          </div>
-          <p
-            style={{
-              fontFamily: 'var(--font-hebrew)',
-              fontSize: 13,
-              lineHeight: 1.6,
-              color: 'var(--fs-ink)',
-            }}
-          >
-            {previousSession
-              ? `האימון הקודם היה עם נפח של ${formatVolume(previousSession.totalVolume)} ק"ג. ${
-                  session.totalVolume > previousSession.totalVolume
-                    ? `שיפור של ${formatVolume(session.totalVolume - previousSession.totalVolume)} ק"ג!`
-                    : 'נסה להוסיף סט או להעלות משקל בפעם הבאה.'
-                }`
-              : 'המשך לעקוב אחר ההתקדמות שלך לאורך זמן.'}
-          </p>
+              {previousSession
+                ? `האימון הקודם היה עם נפח של ${formatVolume(previousSession.totalVolume)} ק"ג. ${
+                    session.totalVolume > previousSession.totalVolume
+                      ? `שיפור של ${formatVolume(session.totalVolume - previousSession.totalVolume)} ק"ג!`
+                      : 'נסה להוסיף סט או להעלות משקל בפעם הבאה.'
+                  }`
+                : 'המשך לעקוב אחר ההתקדמות שלך לאורך זמן.'}
+            </p>
+          </Card>
         </m.div>
 
         {/* Notes Section */}
@@ -468,49 +403,30 @@ export default function WorkoutDetail() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
-            style={{
-              background: 'var(--fs-surface)',
-              borderRadius: '22px 16px 22px 16px',
-              border: '1px solid var(--color-border)',
-              boxShadow: 'var(--shadow-card)',
-              padding: 16,
-              marginBottom: 24,
-              position: 'relative',
-              overflow: 'hidden',
-            }}
+            style={{ marginBottom: 24 }}
           >
-            <div
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 4,
-                background: 'var(--fs-accent)',
-                borderTopLeftRadius: '22px',
-                borderBottomLeftRadius: '16px',
-              }}
-            />
-            <h3
-              style={{
-                fontSize: 11,
-                fontFamily: 'var(--font-mono)',
-                color: 'var(--fs-muted)',
-                marginBottom: 8,
-              }}
-            >
-              הערות
-            </h3>
-            <p
-              style={{
-                fontSize: 13,
-                fontFamily: 'var(--font-hebrew)',
-                color: 'var(--fs-ink)',
-                lineHeight: 1.6,
-              }}
-            >
-              {session.notes}
-            </p>
+            <SectionCard style={{ border: '1px solid var(--color-border)' }}>
+              <h3
+                style={{
+                  fontSize: 11,
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--fs-muted)',
+                  marginBottom: 8,
+                }}
+              >
+                הערות
+              </h3>
+              <p
+                style={{
+                  fontSize: 13,
+                  fontFamily: 'var(--font-hebrew)',
+                  color: 'var(--fs-ink)',
+                  lineHeight: 1.6,
+                }}
+              >
+                {session.notes}
+              </p>
+            </SectionCard>
           </m.div>
         )}
 
