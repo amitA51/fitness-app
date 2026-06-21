@@ -380,7 +380,6 @@ export function useNutritionData() {
   const filteredFoods = useSearchFoods(searchQuery);
   const presets = useMemo(() => getMealPresets(), []);
 
-  const calPct = Math.min(Math.round((todayMacros.calories / macroGoals.calories) * 100), 100);
   const proteinPct = Math.min(Math.round((todayMacros.protein / macroGoals.protein) * 100), 100);
   const carbsPct = Math.min(Math.round((todayMacros.carbs / macroGoals.carbs) * 100), 100);
   const fatPct = Math.min(Math.round((todayMacros.fat / macroGoals.fat) * 100), 100);
@@ -411,7 +410,6 @@ export function useNutritionData() {
     setActiveTab,
     filteredFoods,
     presets,
-    calPct,
     proteinPct,
     carbsPct,
     fatPct,
