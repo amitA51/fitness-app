@@ -6,8 +6,8 @@
 
 import { m } from 'framer-motion';
 import { Trophy } from 'lucide-react';
-import type { WorkoutExercise } from '../../types';
 import { Card } from '../../components/ui/Card';
+import type { WorkoutExercise } from '../../types';
 import { formatVolume } from '../../utils/dateUtils';
 import { completedSetsVolume, computeSessionStats, setVolume } from '../../utils/workoutMath';
 import { MUSCLE_COLOR } from './helpers';

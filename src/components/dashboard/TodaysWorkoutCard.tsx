@@ -26,7 +26,12 @@ import { SkeletonBox } from '../ui/SkeletonLoader';
 
 function CardShell({ children }: { children: React.ReactNode }) {
   return (
-    <Card asymmetric role="region" aria-label="האימון של היום" style={{ marginTop: 20, padding: 20 }}>
+    <Card
+      asymmetric
+      role="region"
+      aria-label="האימון של היום"
+      style={{ marginTop: 20, padding: 20 }}
+    >
       <h2
         style={{
           fontFamily: 'var(--font-display)',
