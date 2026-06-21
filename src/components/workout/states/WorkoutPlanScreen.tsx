@@ -481,8 +481,14 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
           style={{
             gap: 12,
             padding: '18px 24px',
-            background: 'var(--fs-primary)',
-            color: 'var(--fs-accent)',
+            // Mint-forward primary, matching the PreWorkoutScreen start CTA one
+            // tap earlier — the start flow used to invert (mint there, navy-fill
+            // here), reading as two different buttons for the same intent. Solid
+            // mint (not the gradient .start-workout-btn class) keeps the sharp
+            // radius-0 footer aesthetic; "mint = advance the workout" now holds
+            // across pre-workout → plan → the active finish action.
+            background: 'var(--fs-accent)',
+            color: 'var(--color-ink-on-accent)',
             fontFamily: 'var(--font-display)',
             fontWeight: 800,
             fontSize: 16,
