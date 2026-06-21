@@ -14,6 +14,7 @@ import {
   SkipForward,
   Star,
   Unlink,
+  Wrench,
 } from 'lucide-react';
 import { type CSSProperties, memo, useCallback, useMemo, useState } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
@@ -37,6 +38,7 @@ import SetEditBottomSheet from './SetEditBottomSheet';
 import SetInputCard from './SetInputCard';
 import { SetProgress } from './SetProgress';
 import SetTechniquePills from './SetTechniquePills';
+import WorkoutToolsSheet, { type WorkoutTool } from './WorkoutToolsSheet';
 
 // ============================================================
 // TYPES
@@ -250,6 +252,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     const [showNotesSheet, setShowNotesSheet] = useState(false);
     const [showAlternatives, setShowAlternatives] = useState(false);
     const [showDropSetSheet, setShowDropSetSheet] = useState(false);
+    const [showToolsSheet, setShowToolsSheet] = useState(false);
     const haptics = useHapticFeedback();
 
     const { previousSet, showGhostWeight, showGhostReps } = usePreviousSetData(
@@ -337,6 +340,85 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
       [onUpdateSet]
     );
     const handleCommitGhostReps = useCallback((v: number) => onUpdateSet('reps', v), [onUpdateSet]);
+
+    // Occasional tools — pulled out of the always-on panel into the כלים sheet so
+    // the live set surface keeps only the per-set actions inline. Each entry is
+    // gated by the same condition that used to guard its chip; the sheet trigger
+    // only renders when at least one applies, so it never opens empty.
+    const tools: WorkoutTool[] = [];
+    if (onOpenPlateCalc) {
+      tools.push({
+        id: 'plates',
+        icon: <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 800 }}>ק״ג</span>,
+        label: 'מחשבון פלטות',
+        caption: 'איך להעמיס את המוט למשקל היעד',
+        onSelect: onOpenPlateCalc,
+      });
+    }
+    if (completedSetsCount > 0 && onEditSet) {
+      tools.push({
+        id: 'edit-sets',
+        icon: <Edit size={18} strokeWidth={2.2} />,
+        label: 'עריכת סטים',
+        caption: 'תיקון משקל או חזרות בסטים שהושלמו',
+        onSelect: () => setShowSetEditor(true),
+      });
+    }
+    if (onUpdateSetSegments && currentSet.isDropSet) {
+      tools.push({
+        id: 'drop-segments',
+        icon: <Layers size={18} strokeWidth={2.2} />,
+        label: 'מקטעי דרופ-סט',
+        caption: 'רישום כל ירידת משקל בתוך הסט',
+        onSelect: () => setShowDropSetSheet(true),
+        dot: !!(currentSet.segments && currentSet.segments.length > 0),
+      });
+    }
+    if (
+      workingCompleted === 0 &&
+      exercise.programExtras?.alternatives &&
+      exercise.programExtras.alternatives.length > 0
+    ) {
+      tools.push({
+        id: 'alternatives',
+        icon: <RotateCcw size={18} strokeWidth={2.2} />,
+        label: 'תרגילים חלופיים',
+        caption: 'החלפת התרגיל בתנועה דומה',
+        onSelect: () => setShowAlternatives(true),
+      });
+    }
+    if (isInSuperset && onRemoveSuperset) {
+      tools.push({
+        id: 'superset-remove',
+        icon: <Unlink size={18} strokeWidth={2.2} />,
+        label: 'בטל סופרסט',
+        caption: 'הפרדת התרגיל מהסופרסט',
+        active: true,
+        onSelect: () => {
+          haptics.impact('medium');
+          onRemoveSuperset(exercise.id);
+        },
+      });
+    } else if (onCreateSuperset) {
+      tools.push({
+        id: 'superset-create',
+        icon: <Link2 size={18} strokeWidth={2.2} />,
+        label: 'צור סופרסט',
+        caption: 'שילוב עם התרגיל הבא ללא מנוחה',
+        onSelect: () => {
+          haptics.impact('medium');
+          onCreateSuperset(exercise.id);
+        },
+      });
+    }
+
+    // Inline per-set chips: RPE + add-set are meaningful only during an active
+    // set; once the exercise is complete the done-panel already offers add-set,
+    // and the only live actions are the כלים sheet (edit/superset/plates) + undo.
+    const showRpeChip = !isExerciseComplete && !!onUpdateRPE;
+    const showInlineAddSet = !isExerciseComplete && !!onAddSet;
+    const showUndoChip = completedSetsCount > 0 && !!onUndo;
+    const hasActionRow = showRpeChip || showInlineAddSet || tools.length > 0 || showUndoChip;
 
     return (
       <div
@@ -712,56 +794,23 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             </>
           )}
 
-          {/* 5D: Action group (tools) */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 6,
-              padding: '10px 12px',
-              background: 'var(--fs-surface)',
-              border: '1px solid var(--fs-steel)',
-              borderRadius: 16,
-            }}
-          >
-            <div
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 8,
-                fontWeight: 700,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: 'var(--fs-muted)',
-                paddingBottom: 4,
-                borderBottom: '1px solid var(--fs-surface-2)',
-              }}
-            >
-              כלים
-            </div>
-
-            {/* Row 1: Primary actions — horizontal scroll so the full tool set
-                stays reachable at 360–390px without clipping or orphan wraps. */}
+          {/* 5D: Per-set actions — RPE + add-set sit inline (used every set);
+              the occasional tools (plates, edit, drop legs, alternatives,
+              superset) live one tap away in the כלים sheet so the live surface
+              stays uncluttered. Undo trails as a quick safety affordance. */}
+          {hasActionRow && (
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
+                marginTop: 8,
+                flexShrink: 0,
                 overflowX: 'auto',
                 scrollbarWidth: 'none',
               }}
             >
-              {onAddSet && (
-                <ActionChip
-                  icon={<Plus size={14} strokeWidth={2.5} />}
-                  label="הוסף סט"
-                  onClick={() => {
-                    haptics.impact('light');
-                    onAddSet();
-                  }}
-                  ariaLabel="הוסף סט לתרגיל"
-                />
-              )}
-              {onUpdateRPE && (
+              {showRpeChip && (
                 <ActionChip
                   icon={
                     <Star
@@ -776,106 +825,45 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   ariaLabel="בחר RPE"
                 />
               )}
-              {onOpenPlateCalc && (
+              {showInlineAddSet && (
                 <ActionChip
-                  icon={
-                    <span
-                      style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 9,
-                        fontWeight: 800,
-                      }}
-                    >
-                      ק״ג
-                    </span>
-                  }
-                  label="פלטות"
-                  onClick={onOpenPlateCalc}
-                  ariaLabel="מחשבון פלטות"
+                  icon={<Plus size={14} strokeWidth={2.5} />}
+                  label="הוסף סט"
+                  onClick={() => {
+                    haptics.impact('light');
+                    onAddSet?.();
+                  }}
+                  ariaLabel="הוסף סט לתרגיל"
                 />
               )}
-              {/* Note: per-set notes are now edited from the pinned note+AI bar
-                  at the top of the surface, so the old "הערות" tool chip is gone. */}
-              {/* Drop set legs — log each weight×reps within this set (e.g.
-                  60×8 → 50×6 → 40×4). Offered once the set is marked a drop set. */}
-              {onUpdateSetSegments && currentSet.isDropSet && (
+              {tools.length > 0 && (
                 <ActionChip
-                  icon={<Layers size={14} strokeWidth={2.5} />}
-                  label="מקטעי דרופ"
-                  onClick={() => setShowDropSetSheet(true)}
-                  ariaLabel="עריכת מקטעי דרופ-סט"
-                  dot={!!(currentSet.segments && currentSet.segments.length > 0)}
+                  icon={<Wrench size={14} strokeWidth={2.5} />}
+                  label="כלים"
+                  onClick={() => setShowToolsSheet(true)}
+                  ariaLabel="כלים נוספים לתרגיל"
                 />
               )}
               <div style={{ flex: 1 }} />
-              {completedSetsCount > 0 && onUndo && (
+              {showUndoChip && (
                 <ActionChip
                   icon={<RotateCcw size={14} strokeWidth={2.5} />}
-                  onClick={onUndo}
+                  onClick={() => onUndo?.()}
                   ariaLabel="בטל סט אחרון"
                 />
               )}
             </div>
-
-            {/* Row 2: Secondary actions */}
-            {(completedSetsCount > 0 ||
-              onCreateSuperset ||
-              (workingCompleted === 0 &&
-                exercise.programExtras?.alternatives &&
-                exercise.programExtras.alternatives.length > 0)) && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                {completedSetsCount > 0 && onEditSet && (
-                  <ActionChip
-                    icon={<Edit size={14} strokeWidth={2.5} />}
-                    label="עריכת סטים"
-                    onClick={() => setShowSetEditor(true)}
-                    ariaLabel="עריכת סטים שהושלמו"
-                  />
-                )}
-                {/* Hidden once a working set is logged: swapping then would
-                    re-attribute that set to a different movement (the reducer
-                    refuses it too). Warmups don't block — swap is still offered
-                    during the warmup phase. */}
-                {workingCompleted === 0 &&
-                  exercise.programExtras?.alternatives &&
-                  exercise.programExtras.alternatives.length > 0 && (
-                    <ActionChip
-                      icon={<RotateCcw size={14} strokeWidth={2.5} />}
-                      label="חלופות"
-                      onClick={() => setShowAlternatives(true)}
-                      ariaLabel="תרגילים חלופיים"
-                    />
-                  )}
-                {isInSuperset && onRemoveSuperset ? (
-                  <ActionChip
-                    icon={<Unlink size={14} strokeWidth={2.5} />}
-                    label="בטל סופרסט"
-                    onClick={() => {
-                      haptics.impact('medium');
-                      onRemoveSuperset(exercise.id);
-                    }}
-                    active
-                    ariaLabel="בטל סופרסט"
-                  />
-                ) : (
-                  onCreateSuperset && (
-                    <ActionChip
-                      icon={<Link2 size={14} strokeWidth={2.5} />}
-                      label="סופרסט"
-                      onClick={() => {
-                        haptics.impact('medium');
-                        onCreateSuperset(exercise.id);
-                      }}
-                      ariaLabel="צור סופרסט"
-                    />
-                  )
-                )}
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         {/* ── BOTTOM SHEETS (portals, not layout) ── */}
+        <WorkoutToolsSheet
+          isOpen={showToolsSheet}
+          onClose={() => setShowToolsSheet(false)}
+          exerciseName={exercise.name || ''}
+          tools={tools}
+        />
+
         {onEditSet && (
           <SetEditBottomSheet
             isOpen={showSetEditor}
