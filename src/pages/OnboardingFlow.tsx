@@ -107,19 +107,9 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
         }}
         dir="rtl"
       >
-        {/* Progress bar at top — premium track */}
-        {currentStep > 0 && currentStep < activeSteps.length - 1 && (
-          <div className="w-full fs-progress-track" style={{ height: '4px' }}>
-            <m.div
-              className="h-full fs-progress-fill"
-              initial={{ width: 0 }}
-              animate={{
-                width: `${((currentStep - 1) / (activeSteps.length - 2)) * 100}%`,
-              }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-            />
-          </div>
-        )}
+        {/* Progress is shown once — the labeled step dots at the bottom (which
+            carry the role=progressbar a11y + a clearer "step N of M" read). A
+            redundant top fill-bar used to duplicate the same value here. */}
 
         {/* Skip Button - safe area aware */}
         {currentStep > 0 && currentStep < activeSteps.length - 1 && (
@@ -140,7 +130,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
                 minWidth: '44px',
               }}
             >
-              דלג
+              דלגו
             </button>
           </div>
         )}
@@ -220,8 +210,8 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
         isOpen={showSkipConfirm}
         variant="warning"
         title="לדלג על ההגדרה?"
-        description="בטוח שברצונך לדלג? תוכל להשלים זאת בהגדרות מאוחר יותר."
-        confirmLabel="דלג"
+        description="בטוחים שתרצו לדלג? אפשר להשלים זאת בהגדרות מאוחר יותר."
+        confirmLabel="דלגו"
         cancelLabel="המשך הגדרה"
         onConfirm={() => {
           setShowSkipConfirm(false);

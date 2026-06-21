@@ -90,7 +90,13 @@ export function ExperienceStep({ data, onChange }: ExperienceStepProps) {
                   fontFamily: 'var(--font-body)',
                   fontWeight: 600,
                   fontSize: '16px',
-                  color: 'var(--fs-ink)',
+                  // Selected card fills with --fs-accent; --fs-ink is near-white
+                  // in dark mode and fails AA on mint — use on-accent ink, like
+                  // the Role/Goals/Equipment cards. This step was the one holdout.
+                  color:
+                    data.experienceLevel === level.value
+                      ? 'var(--color-ink-on-accent)'
+                      : 'var(--fs-ink)',
                 }}
               >
                 {level.title}
@@ -151,8 +157,12 @@ export function ExperienceStep({ data, onChange }: ExperienceStepProps) {
                   fontSize: '20px',
                   background:
                     data.preferredWorkoutDays === day ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                  // Unify selected-text-on-accent to the purpose-built on-accent
+                  // ink token (was --fs-primary) — one convention across the flow.
                   color:
-                    data.preferredWorkoutDays === day ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                    data.preferredWorkoutDays === day
+                      ? 'var(--color-ink-on-accent)'
+                      : 'var(--fs-muted)',
                   border:
                     data.preferredWorkoutDays === day
                       ? '2px solid var(--fs-accent)'

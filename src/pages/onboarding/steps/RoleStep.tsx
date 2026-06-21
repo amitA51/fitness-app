@@ -19,13 +19,13 @@ const ROLE_OPTIONS: RoleOption[] = [
   {
     value: 'trainee',
     title: 'מתאמן',
-    description: 'בנה תוכניות, עקוב אחר אימונים והתקדמות',
+    description: 'בנו תוכניות, עקבו אחר אימונים והתקדמות',
     icon: <Dumbbell size={24} />,
   },
   {
     value: 'coach',
     title: 'מאמן',
-    description: 'נהל מתאמנים, שלח תוכניות ויעדים ועקוב אחריהם',
+    description: 'נהלו מתאמנים, שלחו תוכניות ויעדים ועקבו אחריהם',
     icon: <UserCog size={24} />,
   },
 ];
@@ -40,7 +40,7 @@ export function RoleStep({ data, onChange }: RoleStepProps) {
       exit={{ opacity: 0, x: 20 }}
       className="flex flex-col h-full"
     >
-      <StepHeader title="מי אתה?" subtitle="האם אתה מאמן או מתאמן?" icon={<Users size={24} />} />
+      <StepHeader title="מי אתם?" subtitle="מאמנים או מתאמנים?" icon={<Users size={24} />} />
 
       <div className="flex-1 px-4 space-y-4 overflow-y-auto pb-4">
         {ROLE_OPTIONS.map((option) => {

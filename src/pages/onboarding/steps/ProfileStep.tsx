@@ -44,7 +44,7 @@ export function ProfileStep({ data, onChange }: ProfileStepProps) {
           type="text"
           value={data.name}
           onChange={(val) => onChange({ name: val as string })}
-          placeholder="הכנס את שמך"
+          placeholder="השם שלכם"
           label="שם"
         />
 
@@ -82,7 +82,10 @@ export function ProfileStep({ data, onChange }: ProfileStepProps) {
                       ? '2px solid var(--fs-accent)'
                       : '1px solid var(--fs-surface-2)',
                   borderRadius: '22px 16px 22px 16px',
-                  color: data.gender === opt.value ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                  // Selected-text-on-accent unified to the on-accent ink token
+                  // (was --fs-primary) to match the card selectors across the flow.
+                  color:
+                    data.gender === opt.value ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
                   fontFamily: 'var(--font-body)',
                   fontWeight: data.gender === opt.value ? 700 : 500,
                   fontSize: '16px',

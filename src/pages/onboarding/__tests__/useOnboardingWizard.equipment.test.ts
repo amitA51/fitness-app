@@ -32,7 +32,7 @@ describe('useOnboardingWizard — equipment gate', () => {
     seedAtEquipmentStep('');
     const { result } = renderHook(() => useOnboardingWizard(vi.fn()));
     expect(result.current.canProceed()).toBe(false);
-    expect(result.current.validationHint()).toBe('בחר את הציוד הזמין כדי להמשיך');
+    expect(result.current.validationHint()).toBe('בחרו את הציוד הזמין כדי להמשיך');
   });
 
   it('clears the gate once a value is selected', () => {

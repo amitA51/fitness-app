@@ -72,7 +72,9 @@ export function StepHeader({ title, subtitle, icon }: StepHeaderProps) {
           fontWeight: 800,
           fontSize: '26px',
           color: 'var(--fs-ink)',
-          textTransform: 'uppercase',
+          // No textTransform:uppercase — a no-op on Hebrew glyphs and a Latin-
+          // display leftover; it would only ever uppercase an interpolated Latin
+          // name, which is more correct left as typed.
           letterSpacing: '-0.02em',
           marginBottom: '8px',
         }}

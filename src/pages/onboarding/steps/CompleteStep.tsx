@@ -100,11 +100,12 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
           fontSize: '32px',
           color: 'var(--fs-ink)',
           letterSpacing: '-0.02em',
-          textTransform: 'uppercase',
+          // No uppercase — a no-op on the Hebrew, and it would wrongly upper-case
+          // the user's interpolated name. Leave the name as typed.
         }}
       >
         {data.name ? `${data.name}, ` : ''}
-        {isCoach ? 'מרכז המאמן מוכן!' : 'מוכן לאימון!'}
+        {isCoach ? 'מרכז המאמן מוכן!' : 'מוכנים לאימון!'}
       </m.h1>
 
       <m.p
@@ -119,7 +120,7 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
         }}
       >
         {isCoach
-          ? 'נהל מתאמנים, שלח תוכניות ויעדים ועקוב אחרי ההתקדמות שלהם — הכל ממקום אחד.'
+          ? 'נהלו מתאמנים, שלחו תוכניות ויעדים ועקבו אחרי ההתקדמות שלהם — הכל ממקום אחד.'
           : 'הפרופיל שלך הוגדר. בואו נתחיל!'}
       </m.p>
 

@@ -132,7 +132,8 @@ export function PreferencesStep({ data, onChange }: PreferencesStepProps) {
                       ? '2px solid var(--fs-accent)'
                       : '1px solid var(--fs-surface-2)',
                     borderRadius: '22px 16px 22px 16px',
-                    color: isSelected ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                    // Unified selected-text-on-accent token across the flow.
+                    color: isSelected ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
                   }}
                 >
                   <Icon size={20} aria-hidden="true" />
@@ -182,7 +183,10 @@ export function PreferencesStep({ data, onChange }: PreferencesStepProps) {
                   fontSize: '14px',
                   background:
                     data.restBetweenSets === sec ? 'var(--fs-accent)' : 'var(--fs-surface)',
-                  color: data.restBetweenSets === sec ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                  color:
+                    data.restBetweenSets === sec
+                      ? 'var(--color-ink-on-accent)'
+                      : 'var(--fs-muted)',
                   border:
                     data.restBetweenSets === sec
                       ? '2px solid var(--fs-accent)'

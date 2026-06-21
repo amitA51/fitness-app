@@ -53,7 +53,7 @@ export function GoalsStep({ data, onChange }: GoalsStepProps) {
     >
       <StepHeader
         title="מה המטרה שלך?"
-        subtitle="בחר את המטרה העיקרית שלך"
+        subtitle="בחרו את המטרה העיקרית"
         icon={<Target size={24} />}
       />
 

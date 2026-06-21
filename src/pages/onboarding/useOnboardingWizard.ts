@@ -66,30 +66,30 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
   const validationHint = useCallback((): string | null => {
     switch (stepId) {
       case 'role':
-        return data.role === undefined || data.role === '' ? 'בחר תפקיד כדי להמשיך' : null;
+        return data.role === undefined || data.role === '' ? 'בחרו תפקיד כדי להמשיך' : null;
       case 'profile':
-        if (data.name.trim().length === 0) return 'הזן את שמך כדי להמשיך';
-        if (data.gender === '') return 'בחר מגדר כדי להמשיך';
-        if (data.age === '') return 'הזן את גילך כדי להמשיך';
+        if (data.name.trim().length === 0) return 'הזינו את שמכם כדי להמשיך';
+        if (data.gender === '') return 'בחרו מגדר כדי להמשיך';
+        if (data.age === '') return 'הזינו את גילכם כדי להמשיך';
         // Range gates: min/max on the inputs were decorative, so age 5 or weight
         // 999 passed silently and poisoned every downstream AI/program calc.
         // Height & weight stay optional but, when entered, must be sane.
-        if (data.age < 10 || data.age > 100) return 'הזן גיל בין 10 ל-100';
+        if (data.age < 10 || data.age > 100) return 'הזינו גיל בין 10 ל-100';
         if (data.height !== '' && (data.height < 100 || data.height > 250))
-          return 'הזן גובה בין 100 ל-250 ס״מ';
+          return 'הזינו גובה בין 100 ל-250 ס״מ';
         if (data.weight !== '' && (data.weight < 30 || data.weight > 300))
-          return 'הזן משקל בין 30 ל-300 ק״ג';
+          return 'הזינו משקל בין 30 ל-300 ק״ג';
         return null;
       case 'goals':
-        return data.primaryGoal === '' ? 'בחר מטרה עיקרית כדי להמשיך' : null;
+        return data.primaryGoal === '' ? 'בחרו מטרה עיקרית כדי להמשיך' : null;
       case 'experience':
-        return data.experienceLevel === '' ? 'בחר רמת ניסיון כדי להמשיך' : null;
+        return data.experienceLevel === '' ? 'בחרו רמת ניסיון כדי להמשיך' : null;
       case 'equipment':
         return data.equipment === undefined || data.equipment === ''
-          ? 'בחר את הציוד הזמין כדי להמשיך'
+          ? 'בחרו את הציוד הזמין כדי להמשיך'
           : null;
       case 'preferences':
-        return data.preferredTime === '' ? 'בחר שעת אימון מועדפת כדי להמשיך' : null;
+        return data.preferredTime === '' ? 'בחרו שעת אימון מועדפת כדי להמשיך' : null;
       default:
         return null;
     }
