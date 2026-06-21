@@ -18,9 +18,9 @@ import { WorkoutHistory } from '../../../components/workout/history/WorkoutHisto
 import type { PersonalRecord, WorkoutSession } from '../../../types';
 import { ChapterBreak } from '../components/ChapterBreak';
 import { ChartSummary, ChartSummaryNumber } from '../components/ChartSummary';
+import { SectionCard } from '../components/SectionCard';
 import { type SegmentOption, SegmentedControl } from '../components/SegmentedControl';
 import { TrendChartCard } from '../components/TrendChartCard';
-import { emptyStateCardStyle } from '../components/emptyStateCard';
 import {
   DEFAULT_RANGE,
   RANGE_DAYS,
@@ -102,7 +102,7 @@ export const WorkoutsTab = memo(function WorkoutsTab({
     return (
       <div className="space-y-4">
         <ChapterBreak title="אימונים" />
-        <div style={emptyStateCardStyle}>
+        <SectionCard rail={false}>
           <div className="flex flex-col items-center py-10 text-center gap-3">
             <Dumbbell size={32} style={{ color: 'var(--fs-muted)' }} aria-hidden="true" />
             <p style={{ fontSize: 14, color: 'var(--fs-muted)' }}>
@@ -117,7 +117,7 @@ export const WorkoutsTab = memo(function WorkoutsTab({
               התחל אימון
             </button>
           </div>
-        </div>
+        </SectionCard>
       </div>
     );
   }

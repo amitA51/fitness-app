@@ -36,7 +36,6 @@ import {
 import { ChapterBreak } from '../components/ChapterBreak';
 import { SectionCard } from '../components/SectionCard';
 import { type SegmentOption, SegmentedControl } from '../components/SegmentedControl';
-import { emptyStateCardStyle } from '../components/emptyStateCard';
 import type { BodySubTab } from '../types';
 import { MeasurementsSection } from './MeasurementsSection';
 import { WeightSection } from './WeightSection';
@@ -382,7 +381,7 @@ export const BodyTab = memo(function BodyTab({
           ariaLabel="תצוגת גוף"
           idPrefix="body-sub"
         />
-        <div style={emptyStateCardStyle}>
+        <SectionCard rail={false}>
           <div className="flex flex-col items-center py-10 text-center gap-3">
             <Scale size={32} style={{ color: 'var(--fs-muted)' }} aria-hidden="true" />
             <p style={{ fontSize: 14, color: 'var(--fs-muted)' }}>
@@ -397,7 +396,7 @@ export const BodyTab = memo(function BodyTab({
               הוסף משקל
             </button>
           </div>
-        </div>
+        </SectionCard>
       </div>
     );
   }
