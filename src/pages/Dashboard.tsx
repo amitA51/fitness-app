@@ -13,7 +13,6 @@ import {
   RefreshCw,
   Sparkles,
   UserPlus,
-  Users,
   Zap,
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -22,7 +21,6 @@ import { ActivityRings } from '../components/charts';
 import { RING_DRAW_DURATION, RING_STAGGER, ringDelay } from '../components/charts/ActivityRings';
 import { CoachBriefCard } from '../components/dashboard/CoachBriefCard';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
-import { ForecastNudge } from '../components/dashboard/ForecastNudge';
 import { InsightCard } from '../components/dashboard/InsightCard';
 import { RecentPRBanner } from '../components/dashboard/RecentPRBanner';
 import { StartWorkoutSheet } from '../components/dashboard/StartWorkoutSheet';
@@ -73,7 +71,7 @@ const WORKOUT_GOAL_MAX = 6;
 const FLAT_DELTA_PCT = 0.5;
 /** A major muscle is "overdue" for the focus line from this many days. */
 const FOCUS_OVERDUE_DAYS = 5;
-/** Major muscles the focus line treats as overdue-worthy (mirrors ForecastNudge). */
+/** Major compound groups the focus line treats as overdue-worthy. */
 const FOCUS_MAJOR_MUSCLES: ReadonlySet<string> = new Set(['Chest', 'Back', 'Legs']);
 
 interface RingGoals {
@@ -580,24 +578,7 @@ export default function Dashboard() {
              stack of self-hidden cards (WeeklyGrid + empty history hidden). */
           <FirstRunHero onStart={openStartSheet} />
         ) : (
-          <>
-            {/* Workout streak */}
-            <div style={{ marginTop: 16 }}>
-              <WorkoutStreak sessions={workoutSessions} />
-            </div>
-
-            {/* Daily readiness — the "now" protagonist, paired with the focus line */}
-            <CoachBriefCard sessions={workoutSessions} kind="daily-readiness" />
-
-            {/* 2. Forecast nudge — moved up so it isn't missed at the bottom */}
-            <ForecastNudge sessions={workoutSessions} />
-
-            {/* useFitnessInsights error (with data still present) — surface it
-                with a retry instead of rendering nothing (was never read). */}
-            {insightsError && <InsightErrorChip message={insightsError} onRetry={refreshData} />}
-
-            {renderPopulatedBody()}
-          </>
+          renderPopulatedBody()
         )}
 
         <StartWorkoutSheet
@@ -618,7 +599,8 @@ export default function Dashboard() {
   function renderPopulatedBody() {
     return (
       <>
-        {/* 3. Hero bento — weekly activity rings (the glanceable summary) */}
+        {/* 1. Hero — weekly activity rings: the single glanceable "this week"
+            summary, promoted to the top so the eye lands on it first. */}
         {(weekData.workoutsThisWeek > 0 || weekData.volume > 0) && (
           <section
             className="section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in"
@@ -689,7 +671,19 @@ export default function Dashboard() {
           </section>
         )}
 
-        {/* Smart insight — single locally-computed highlight from useFitnessInsights */}
+        {/* useFitnessInsights error (data still present) — surface it with a
+            retry instead of rendering nothing. */}
+        {insightsError && <InsightErrorChip message={insightsError} onRetry={refreshData} />}
+
+        {/* 2. Today's readiness — the "now" protagonist. */}
+        <CoachBriefCard sessions={workoutSessions} kind="daily-readiness" />
+
+        {/* 3. Streak — quiet supporting status, demoted below the hero. */}
+        <div style={{ marginTop: 16 }}>
+          <WorkoutStreak sessions={workoutSessions} />
+        </div>
+
+        {/* 4. One smart insight — the single trend line. */}
         <InsightCard insight={dashboardInsight} />
 
         {/* 4. Templates — quick strip + library affordance */}
@@ -730,9 +724,8 @@ export default function Dashboard() {
         {/* 7. PR highlights (compact) */}
         <RecentPRBanner />
 
-        {/* 8. Community discovery — invite into the social feed */}
+        {/* Connect-a-coach prompt — self-hides once the trainee has a coach. */}
         <FindCoachCard />
-        <CommunityCard />
 
         <div style={{ height: 24 }} />
       </>
@@ -1083,78 +1076,6 @@ const DashboardSkeleton = memo(function DashboardSkeleton() {
         />
       ))}
     </div>
-  );
-});
-
-// ── CommunityCard — discovery affordance into the social feed ────────────────
-// Links to /community via react-router. Matches the dashboard card idiom
-// (surface, asymmetric radius, card shadow). Tokens only; reads in both modes.
-const CommunityCard = memo(function CommunityCard() {
-  return (
-    <section style={{ marginTop: 24 }}>
-      <Link
-        to="/community"
-        aria-label="הצטרפו לקהילה"
-        className="magnetic-card focus-ring active:scale-[0.99]"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-          padding: '18px 20px',
-          background: 'var(--fs-surface)',
-          border: '1px solid var(--fs-surface-2)',
-          borderRadius: '22px 16px 22px 16px',
-          boxShadow: 'var(--shadow-card)',
-          textDecoration: 'none',
-          color: 'inherit',
-        }}
-      >
-        <span
-          aria-hidden="true"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 48,
-            height: 48,
-            borderRadius: 14,
-            background: 'var(--fs-accent)',
-            color: 'var(--color-ink-on-accent)',
-            flexShrink: 0,
-          }}
-        >
-          <Users size={24} />
-        </span>
-        <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-          <span
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: 17,
-              color: 'var(--fs-ink)',
-              lineHeight: 1.2,
-            }}
-          >
-            הצטרפו לקהילה
-          </span>
-          <span
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 13,
-              color: 'var(--fs-muted)',
-              lineHeight: 1.4,
-            }}
-          >
-            שתפו, עקבו והתחברו עם מתאמנים אחרים.
-          </span>
-        </span>
-        <ArrowLeft
-          size={20}
-          aria-hidden="true"
-          style={{ color: 'var(--fs-muted)', flexShrink: 0 }}
-        />
-      </Link>
-    </section>
   );
 });
 
