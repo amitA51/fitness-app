@@ -89,12 +89,12 @@ describe('pickDashboardInsight', () => {
     expect(result).toEqual({ kind: 'neglected', muscle: 'Arms', daysSince: 14 });
   });
 
-  it('excludes major muscles that ForecastNudge already covers', () => {
+  it('surfaces a neglected MAJOR muscle (no ForecastNudge to defer to)', () => {
     const result = pickDashboardInsight({
       ...base,
       muscleGroups: [muscle('Chest', 12), muscle('Back', 20), muscle('Legs', 9)],
     });
-    expect(result).toBeNull();
+    expect(result).toEqual({ kind: 'neglected', muscle: 'Back', daysSince: 20 });
   });
 
   it('ignores stale neglect beyond the max window', () => {

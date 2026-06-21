@@ -8,12 +8,10 @@ import {
   AlertTriangle,
   ArrowLeft,
   ChevronLeft,
-  Coffee,
   Dumbbell,
   RefreshCw,
   Sparkles,
   UserPlus,
-  Zap,
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -35,21 +33,17 @@ import { Stagger, StaggerItem } from '../components/motion/Stagger';
 import { Card } from '../components/ui/Card';
 import { SkeletonBox } from '../components/ui/SkeletonLoader';
 import { WorkoutHistory } from '../components/workout/history/WorkoutHistory';
-import { translateMuscle } from '../constants/muscleNames';
 import { Z_INDEX } from '../constants/zIndex';
 import { useCoach } from '../contexts/CoachContext';
 import { useData } from '../contexts/DataContext';
 import { useFitnessInsights } from '../hooks/fitness/useFitnessInsights';
 import { useCountUp } from '../hooks/useCountUp';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
-import { buildCoachFacts } from '../services/ai/coachBrief';
-import { getMuscleGroupDaysSince } from '../services/analyticsService';
 import { listMyCoaches } from '../services/coach/relationshipService';
-import { getTodaysScheduledWorkouts } from '../services/coach/scheduleService';
 import { onWorkoutSaved } from '../services/dataEvents';
 import { getCurrentUser } from '../services/supabaseAuth';
 import { getWorkoutTemplates } from '../services/workoutDb';
-import type { WorkoutSession, WorkoutTemplate } from '../types';
+import type { WorkoutTemplate } from '../types';
 import { getWeekStart } from '../utils/dateUtils';
 import { formatThousands } from '../utils/formatThousands';
 import { logger } from '../utils/logger';
@@ -70,10 +64,6 @@ const WORKOUT_GOAL_MIN = 3;
 const WORKOUT_GOAL_MAX = 6;
 /** |WoW volume change| below this (%) reads as flat ("no change"), not a delta. */
 const FLAT_DELTA_PCT = 0.5;
-/** A major muscle is "overdue" for the focus line from this many days. */
-const FOCUS_OVERDUE_DAYS = 5;
-/** Major compound groups the focus line treats as overdue-worthy. */
-const FOCUS_MAJOR_MUSCLES: ReadonlySet<string> = new Set(['Chest', 'Back', 'Legs']);
 
 interface RingGoals {
   workouts: number;
@@ -148,10 +138,6 @@ export default function Dashboard() {
   // Bumped after a pull-to-refresh so the memo'd rings + legend count-ups replay
   // the cascade in lockstep even when the underlying values are unchanged.
   const [refreshTick, setRefreshTick] = useState(0);
-  // Top-priority focus tier: when the trainee has a coach-scheduled workout
-  // today, TodaysWorkoutCard is the imperative target and TodayFocusLine steps
-  // aside. Reused cheap fetch; failures stay false (no line suppression).
-  const [hasCoachWorkoutToday, setHasCoachWorkoutToday] = useState(false);
   // First-load skeleton gate: only show the page skeleton on the very first
   // mount-load, never on pull-to-refresh (which keeps the populated page).
   const hasLoadedOnce = useRef(false);
@@ -213,27 +199,6 @@ export default function Dashboard() {
   useEffect(() => {
     if (!dataLoading) hasLoadedOnce.current = true;
   }, [dataLoading]);
-
-  // Cheap reuse of today's schedule to gate the focus line's top tier. Errors
-  // are non-fatal (leave the flag false). Refreshes when a workout is saved.
-  useEffect(() => {
-    let active = true;
-    async function check() {
-      try {
-        const rows = await getTodaysScheduledWorkouts();
-        if (active) setHasCoachWorkoutToday(rows.length > 0);
-      } catch (err) {
-        if (active) setHasCoachWorkoutToday(false);
-        logger.db.warn('Dashboard focus-line schedule check failed (non-fatal)', err);
-      }
-    }
-    check();
-    const unsubscribe = onWorkoutSaved(check);
-    return () => {
-      active = false;
-      unsubscribe();
-    };
-  }, []);
 
   // Single source of completed sessions — all derived calcs feed from this so
   // we don't re-filter the same array in several memos.
@@ -559,10 +524,6 @@ export default function Dashboard() {
           </CoachMark>
         </div>
 
-        {/* Today focus line — the single imperative "what to do today". Top tier
-            (coach-scheduled) defers to TodaysWorkoutCard below. */}
-        <TodayFocusLine sessions={workoutSessions} hasCoachWorkoutToday={hasCoachWorkoutToday} />
-
         {/* Coach-scheduled workout for today (invisible for guests / when empty) */}
         <TodaysWorkoutCard />
 
@@ -725,125 +686,6 @@ export default function Dashboard() {
     );
   }
 }
-
-// ── TodayFocusLine — one imperative "what to do today" line under the CTA ─────
-// Resolves the single highest-priority already-computed signal into one Hebrew
-// sentence + tap target, placed before TodaysWorkoutCard. Priority:
-//   coach-scheduled (defers to TodaysWorkoutCard, renders nothing) → overdue
-//   major muscle → readiness 'push' → rest day. No new metrics: overdue +
-//   readiness are derived synchronously from sessions already in scope; the
-//   coach-scheduled flag is a cheap reuse of getTodaysScheduledWorkouts.
-interface FocusResolution {
-  text: string;
-  to: string;
-  Icon: typeof Zap;
-  iconColor: string;
-}
-
-function resolveFocus(sessions: WorkoutSession[]): FocusResolution | null {
-  // 1. Overdue major muscle — the strongest local "train this" signal.
-  const overdue = getMuscleGroupDaysSince(sessions)
-    .filter((m) => FOCUS_MAJOR_MUSCLES.has(m.muscle) && m.daysSince >= FOCUS_OVERDUE_DAYS)
-    .sort((a, b) => b.daysSince - a.daysSince)[0];
-  if (overdue) {
-    return {
-      text: `אימנו ${translateMuscle(overdue.muscle)} — ${overdue.daysSince} ימים בלי`,
-      to: '/templates',
-      Icon: Zap,
-      iconColor: 'var(--fs-accent)',
-    };
-  }
-
-  // 2. Readiness recommendation — push reads as "go harder today".
-  const facts = buildCoachFacts({ sessions });
-  if (facts.recommendation === 'push') {
-    return {
-      text: 'המוכנות גבוהה — נצלו את היום והעלו עומס',
-      to: '/templates',
-      Icon: Zap,
-      iconColor: 'var(--fs-accent)',
-    };
-  }
-  if (facts.recommendation === 'rest' || facts.recommendation === 'deload') {
-    // 3. Rest day — an imperative to recover, not to train.
-    return {
-      text: 'יום מנוחה — תנו לגוף להתאושש',
-      to: '/progress',
-      Icon: Coffee,
-      iconColor: 'var(--fs-muted)',
-    };
-  }
-
-  return null;
-}
-
-const TodayFocusLine = memo(function TodayFocusLine({
-  sessions,
-  hasCoachWorkoutToday,
-}: {
-  sessions: WorkoutSession[];
-  hasCoachWorkoutToday: boolean;
-}) {
-  const focus = useMemo(() => resolveFocus(sessions), [sessions]);
-
-  // A coach-scheduled workout is the top tier — but TodaysWorkoutCard (directly
-  // below) is the real imperative target, so the line steps aside to avoid a
-  // duplicate. With no sessions there's nothing to compute either.
-  if (hasCoachWorkoutToday || !focus || sessions.length === 0) return null;
-
-  const { text, to, Icon, iconColor } = focus;
-  return (
-    <FadeIn style={{ marginTop: 12 }}>
-      <Link
-        to={to}
-        className="magnetic-card focus-ring active:scale-[0.99]"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          padding: '12px 16px',
-          background: 'var(--fs-surface)',
-          border: '1px solid var(--fs-surface-2)',
-          borderRadius: '22px 16px 22px 16px',
-          boxShadow: 'var(--shadow-card)',
-          textDecoration: 'none',
-          color: 'inherit',
-        }}
-      >
-        <Icon size={18} aria-hidden="true" style={{ color: iconColor, flexShrink: 0 }} />
-        <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              color: 'var(--fs-muted)',
-            }}
-          >
-            היום
-          </span>
-          <span
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 700,
-              fontSize: 15,
-              lineHeight: 1.25,
-              color: 'var(--fs-ink)',
-            }}
-          >
-            {text}
-          </span>
-        </span>
-        <ArrowLeft
-          size={18}
-          aria-hidden="true"
-          style={{ color: 'var(--fs-muted)', flexShrink: 0, marginInlineStart: 'auto' }}
-        />
-      </Link>
-    </FadeIn>
-  );
-});
 
 // ── InsightErrorChip — compact inline error for the insight/rings cluster ─────
 // Surfaces useFitnessInsights.error (previously never read) with a retry that

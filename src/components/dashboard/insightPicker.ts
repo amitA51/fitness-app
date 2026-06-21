@@ -5,8 +5,9 @@
 // Priority is chosen to NOT duplicate sibling dashboard surfaces:
 //   1. Positive exercise progression (week-over-week volume) — nothing else on
 //      the dashboard surfaces per-exercise progression.
-//   2. Neglected NON-major muscle — ForecastNudge already covers overdue
-//      Chest/Back/Legs, so those are excluded here.
+//   2. Most-neglected muscle (any group, including Chest/Back/Legs) within the
+//      useful window — this insight is the only dashboard surface that calls out
+//      an overdue muscle.
 //   3. Streak nudge — lowest, because WorkoutStreak already shows the number;
 //      this only adds a "keep it up" framing for real streaks (≥3 days).
 
@@ -22,10 +23,6 @@ export const NEGLECT_MIN_DAYS = 7;
 export const NEGLECT_MAX_DAYS = 30;
 /** Distinct muscle groups trained this month to read as a "balanced split". */
 export const BALANCED_SPLIT_MIN_MUSCLES = 3;
-
-// ForecastNudge (sibling dashboard card) already surfaces these when overdue —
-// excluding them keeps the two cards from saying the same thing.
-const MUSCLES_COVERED_BY_FORECAST_NUDGE: ReadonlySet<string> = new Set(['Chest', 'Back', 'Legs']);
 
 export type DashboardInsight =
   | { kind: 'progression'; exerciseName: string; changePct: number }
@@ -61,14 +58,9 @@ export function pickDashboardInsight(input: InsightPickerInput): DashboardInsigh
     };
   }
 
-  // 2. Most-neglected non-major muscle within the useful window.
+  // 2. Most-neglected muscle (any group) within the useful window.
   const neglected = input.muscleGroups
-    .filter(
-      (m) =>
-        m.daysSince >= NEGLECT_MIN_DAYS &&
-        m.daysSince <= NEGLECT_MAX_DAYS &&
-        !MUSCLES_COVERED_BY_FORECAST_NUDGE.has(m.muscle)
-    )
+    .filter((m) => m.daysSince >= NEGLECT_MIN_DAYS && m.daysSince <= NEGLECT_MAX_DAYS)
     .reduce<MuscleGroupLastTrained | null>(
       (worst, m) => (!worst || m.daysSince > worst.daysSince ? m : worst),
       null
