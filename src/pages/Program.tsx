@@ -15,6 +15,7 @@ import { m, useReducedMotion } from 'framer-motion';
 import { Check, ChevronDown, Dumbbell, PartyPopper, Play, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Stagger, StaggerItem } from '../components/motion/Stagger';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { BBT_PROGRAM, type BbtDay } from '../data/bbtProgram.generated';
 import {
@@ -120,6 +121,8 @@ export default function Program() {
       className="pb-[96px]"
       style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)', minHeight: '100dvh' }}
     >
+      <Stagger>
+      <StaggerItem>
       {/* Editorial masthead — mono kicker + display title */}
       <header
         style={{
@@ -199,7 +202,9 @@ export default function Program() {
           </div>
         </div>
       </header>
+      </StaggerItem>
 
+      <StaggerItem>
       {/* Continue / current-day hero */}
       {progress.status === 'active' ? (
         <ContinueCard
@@ -229,7 +234,9 @@ export default function Program() {
           סיימת את כל {BBT_PROGRAM.totalWeeks} השבועות! כל הכבוד.
         </div>
       )}
+      </StaggerItem>
 
+      <StaggerItem>
       {/* Week selector — grouped by mesocycle block */}
       <section
         style={{ padding: '10px 20px 0', display: 'flex', flexDirection: 'column', gap: 14 }}
@@ -295,7 +302,9 @@ export default function Program() {
           );
         })}
       </section>
+      </StaggerItem>
 
+      <StaggerItem>
       {/* Days of the selected week */}
       <section
         style={{ padding: '14px 20px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}
@@ -323,6 +332,8 @@ export default function Program() {
           );
         })}
       </section>
+      </StaggerItem>
+      </Stagger>
 
       {/* Reset */}
       <div style={{ padding: '8px 20px 16px', display: 'flex', justifyContent: 'center' }}>

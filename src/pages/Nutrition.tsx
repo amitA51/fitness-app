@@ -3,6 +3,8 @@ import { BookOpen, Clock, CloudOff, Plus, Search } from 'lucide-react';
 import type React from 'react';
 import { useMemo } from 'react';
 import { CoachMark } from '../components/guidance/CoachMark';
+import { FadeIn } from '../components/motion/FadeIn';
+import { Stagger, StaggerItem } from '../components/motion/Stagger';
 import { WaterTracker } from '../components/nutrition/WaterTracker';
 import { Card } from '../components/ui/Card';
 import PageHeader from '../components/ui/PageHeader';
@@ -139,23 +141,27 @@ export default function NutritionPage() {
           </Card>
         </div>
       ) : (
-        <>
-          <CalorieHero
-            calories={todayMacros.calories}
-            goal={macroGoals.calories}
-            coachTarget={coachTarget}
-            isToday={isToday}
-            onEditGoals={() => setShowGoalsEditor(true)}
-          />
+        <Stagger>
+          <StaggerItem>
+            <CalorieHero
+              calories={todayMacros.calories}
+              goal={macroGoals.calories}
+              coachTarget={coachTarget}
+              isToday={isToday}
+              onEditGoals={() => setShowGoalsEditor(true)}
+            />
+          </StaggerItem>
 
-          <MacroStrip
-            todayMacros={todayMacros}
-            macroGoals={macroGoals}
-            proteinPct={proteinPct}
-            carbsPct={carbsPct}
-            fatPct={fatPct}
-          />
-        </>
+          <StaggerItem>
+            <MacroStrip
+              todayMacros={todayMacros}
+              macroGoals={macroGoals}
+              proteinPct={proteinPct}
+              carbsPct={carbsPct}
+              fatPct={fatPct}
+            />
+          </StaggerItem>
+        </Stagger>
       )}
 
       <WaterTracker selectedDate={selectedDate} isToday={isToday} />
@@ -278,9 +284,13 @@ export default function NutritionPage() {
         </AnimatePresence>
       </div>
 
-      <NutritionTrendChart summary={weeklySummary} calorieGoal={macroGoals.calories} />
+      <FadeIn>
+        <NutritionTrendChart summary={weeklySummary} calorieGoal={macroGoals.calories} />
+      </FadeIn>
 
-      <WaterHistoryChart waterHistory={waterHistory} />
+      <FadeIn>
+        <WaterHistoryChart waterHistory={waterHistory} />
+      </FadeIn>
 
       {/* FAB */}
       <m.button

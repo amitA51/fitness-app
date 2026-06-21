@@ -14,6 +14,7 @@ import type { BodyMeasurement, RecoveryLog } from '../services/bodyStatsService'
 import { todayStr } from '../utils/dateUtils';
 import { triggerHapticEffect } from '../utils/haptics';
 import { safeJsonParse } from '../utils/safeJson';
+import { FadeIn } from '../components/motion/FadeIn';
 import { ProgressSkeleton } from './progress/components/ProgressSkeleton';
 import { AddMeasurementModal } from './progress/modals/AddMeasurementModal';
 import { AddRecoveryModal } from './progress/modals/AddRecoveryModal';
@@ -192,7 +193,7 @@ export default function ProgressPage() {
       </header>
 
       {/* Editorial Tab Bar — four primary sections */}
-      <div className="px-5 pt-4 pb-2">
+      <FadeIn className="px-5 pt-4 pb-2">
         <div
           className="flex gap-1 overflow-x-auto"
           style={{
@@ -258,7 +259,7 @@ export default function ProgressPage() {
             </button>
           ))}
         </div>
-      </div>
+      </FadeIn>
 
       {/* Tab Content — exactly ONE logical section visible at a time */}
       <div className="px-5">
