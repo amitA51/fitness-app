@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { showToast } from '../../../components/ui/GlobalToast';
 import { createWorkoutTemplate } from '../../../services/dataService';
 import type { WorkoutExercise, WorkoutSession } from '../../../types';
@@ -58,6 +59,7 @@ const buildTemplatePayload = (
 });
 
 const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({ completedSession, onExit }) => {
+  const navigate = useNavigate();
   // Once a template was saved, the action is hidden — repeat taps were
   // silently creating duplicate templates.
   const [templateSaved, setTemplateSaved] = useState(false);
@@ -114,6 +116,13 @@ const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({ completedSessio
         onClose={() => {
           localStorage.removeItem('active_workout_v3_state');
           onExit();
+        }}
+        onViewProgress={() => {
+          // Same draft cleanup as onClose, but land on the trend the session
+          // just moved (Progress → Workouts) instead of going home, closing the
+          // workout → progress loop at its teachable moment.
+          localStorage.removeItem('active_workout_v3_state');
+          navigate('/progress', { state: { tab: 'workouts' } });
         }}
         onSaveAsTemplate={templateSaved ? undefined : handleSaveAsTemplate}
         onRepeatWorkout={handleRepeatWorkout}

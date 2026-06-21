@@ -38,6 +38,13 @@ interface WorkoutSummaryProps {
    * then closes the summary. Omitted ⇒ the action isn't rendered.
    */
   onRepeatWorkout?: () => void;
+  /**
+   * Forward loop-closer — "צפו בהתקדמות" → Progress (Workouts tab). When
+   * provided it becomes the PRIMARY footer action and "סיום" demotes to a quiet
+   * exit-to-home, so finishing a workout lands the user on the trend it just
+   * moved instead of back on the Dashboard "start another workout" CTA.
+   */
+  onViewProgress?: () => void;
 }
 
 // ============================================================
@@ -109,12 +116,57 @@ const crossedMilestone = (before: number, after: number): number | null => {
   return crossed;
 };
 
+// Primary footer action — the single mint-fill CTA. Extracted so the summary
+// can swap which action is primary (סיום vs the forward "צפו בהתקדמות") without
+// duplicating the press-feedback styling.
+function PrimaryAction({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fs-accent)]"
+      onPointerDown={(e) => {
+        e.preventDefault();
+        e.currentTarget.style.background = 'var(--color-primary-hover)';
+      }}
+      onPointerUp={(e) => {
+        e.currentTarget.style.background = 'var(--fs-accent)';
+      }}
+      onPointerLeave={(e) => {
+        e.currentTarget.style.background = 'var(--fs-accent)';
+      }}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px 24px',
+        background: 'var(--fs-accent)',
+        // ink-on-accent: --fs-heading resolves near-white in dark and fails AA.
+        color: 'var(--color-ink-on-accent)',
+        border: 'none',
+        cursor: 'pointer',
+        fontFamily: 'var(--font-display)',
+        fontWeight: 800,
+        fontSize: 14,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        transition: 'background 150ms',
+        minHeight: 52,
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   isOpen,
   session,
   onClose,
   onSaveAsTemplate,
   onRepeatWorkout,
+  onViewProgress,
 }) => {
   const [view, setView] = useState<'overview' | 'details'>('overview');
   const [prsCount, setPrsCount] = useState<number>(0);
@@ -825,44 +877,36 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             flexShrink: 0,
           }}
         >
-          {/* Main action */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fs-accent)]"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              e.currentTarget.style.background = 'var(--color-primary-hover)';
-            }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '16px 24px',
-              background: 'var(--fs-accent)',
-              // ink-on-accent: --fs-heading resolves near-white in dark and
-              // fails AA on the mint fill.
-              color: 'var(--color-ink-on-accent)',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: 14,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              transition: 'background 150ms',
-              minHeight: 52,
-            }}
-            onPointerUp={(e) => {
-              e.currentTarget.style.background = 'var(--fs-accent)';
-            }}
-            onPointerLeave={(e) => {
-              e.currentTarget.style.background = 'var(--fs-accent)';
-            }}
-          >
-            סיום
-          </button>
+          {/* Main action — when a forward path exists, lead with "צפו
+              בהתקדמות" (finish → see it land in Progress) and demote סיום to a
+              quiet exit-to-home; otherwise סיום stays the single mint primary. */}
+          {onViewProgress ? (
+            <>
+              <PrimaryAction label="צפו בהתקדמות" onClick={onViewProgress} />
+              <button
+                type="button"
+                onClick={onClose}
+                className="active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fs-accent)]"
+                style={{
+                  width: '100%',
+                  padding: '10px 16px',
+                  background: 'transparent',
+                  color: 'var(--fs-ink)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                סיום
+              </button>
+            </>
+          ) : (
+            <PrimaryAction label="סיום" onClick={onClose} />
+          )}
 
           {/* "Do it again" — repeat this session as a starting template, closing
               the retention loop. Secondary weight so "סיום" stays the primary. */}

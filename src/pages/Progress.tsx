@@ -2,6 +2,7 @@ import { AnimatePresence, m } from 'framer-motion';
 import { Activity, CloudOff, Heart, LayoutGrid, User } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { showToast } from '../components/ui/GlobalToast';
 import {
   addBodyMeasurement,
@@ -45,7 +46,13 @@ const motionProps = {
 };
 
 export default function ProgressPage() {
-  const [activeTab, setActiveTab] = useState<ProgressTab>('overview');
+  // A forward navigation (e.g. finishing a workout) can request a starting tab
+  // via location state; fall back to the overview for a normal visit.
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<ProgressTab>(() => {
+    const requested = (location.state as { tab?: string } | null)?.tab;
+    return TABS.some((t) => t.key === requested) ? (requested as ProgressTab) : 'overview';
+  });
   const {
     sessions,
     prs,
