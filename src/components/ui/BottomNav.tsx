@@ -45,8 +45,10 @@ const EASE = { popHard: 'back.out(3)', slide: 'power3.inOut' } as const;
 // Trainee tabs: בית /, אימון /workout, התקדמות /progress, תזונה /nutrition.
 // Coach tabs:   בית /coach, מתאמנים /coach/clients, הודעות /coach/messages,
 //               תוכניות /coach/programs (the coach IS the primary experience).
-// The "עוד" sheet per role — trainee: המאמן שלי + הגדרות; coach: האימונים שלי
-// (/me, the personal-training secondary mode) + הגדרות.
+// The "עוד" sheet is grouped into labeled sections (האימון שלי / מאמן וקהילה /
+// חשבון), each row carrying a mono subtitle. The coach view swaps in האימונים
+// שלי (/me, the personal-training secondary mode); the trainee view adds המאמן
+// שלי + (conditionally) הודעות.
 // Unread badge: trainee on "עוד"; coach directly on the הודעות tab.
 //
 // Motion (GSAP): a single shared underlay pill flows between tab slots as the
@@ -59,6 +61,14 @@ interface NavDestination {
   path: string;
   label: string;
   icon: LucideIcon;
+  /** One-line mono disambiguator shown under the label in the "עוד" sheet. */
+  subtitle?: string;
+}
+
+/** A labeled group of destinations in the "עוד" sheet (kicker + its rows). */
+interface NavGroup {
+  kicker: string;
+  items: NavDestination[];
 }
 
 const TRAINEE_MAIN_TABS: readonly NavDestination[] = [
@@ -378,28 +388,100 @@ function BottomNav() {
       });
   }, [reduced]);
 
-  const moreItems = useMemo<NavDestination[]>(
+  // The "עוד" sheet, grouped into labeled sections so the eye can triage
+  // "my training" vs "coach & community" vs "account" instead of scanning one
+  // flat list of six unrelated destinations. Each planning row carries a
+  // one-line mono subtitle that disambiguates the otherwise look-alike surfaces
+  // (the built-in structured program vs the user's own reusable templates).
+  const moreGroups = useMemo<NavGroup[]>(
     () =>
       isCoachView
         ? [
-            { path: '/me', label: 'האימונים שלי', icon: Dumbbell },
-            { path: '/program', label: 'התוכנית שלי', icon: CalendarDays },
-            { path: '/templates', label: 'תבניות', icon: ClipboardList },
-            { path: '/community', label: 'קהילה', icon: Users },
-            { path: '/settings', label: 'הגדרות', icon: Settings },
+            {
+              kicker: 'האימון שלי',
+              items: [
+                {
+                  path: '/me',
+                  label: 'האימונים שלי',
+                  icon: Dumbbell,
+                  subtitle: 'האימון האישי שלך',
+                },
+                {
+                  path: '/program',
+                  label: 'תוכנית האימון',
+                  icon: CalendarDays,
+                  subtitle: 'תוכנית מובנית · 12 שבועות',
+                },
+                {
+                  path: '/templates',
+                  label: 'תבניות',
+                  icon: ClipboardList,
+                  subtitle: 'אימונים שיצרת לשימוש חוזר',
+                },
+              ],
+            },
+            {
+              kicker: 'קהילה',
+              items: [
+                {
+                  path: '/community',
+                  label: 'קהילה',
+                  icon: Users,
+                  subtitle: 'שיתוף ומעקב עם מתאמנים',
+                },
+              ],
+            },
+            { kicker: 'חשבון', items: [{ path: '/settings', label: 'הגדרות', icon: Settings }] },
           ]
         : [
-            { path: '/program', label: 'התוכנית שלי', icon: CalendarDays },
-            { path: '/my-coach', label: 'המאמן שלי', icon: UserCog },
-            // Chat parity for trainees: deep-links into the (single) coach thread
-            // or the coaches list when there are several; carries the unread
-            // badge. Omitted entirely when there's no coach to message yet.
-            ...(traineeChatTarget
-              ? [{ path: traineeChatTarget, label: 'הודעות', icon: MessageSquare }]
-              : []),
-            { path: '/templates', label: 'תבניות', icon: ClipboardList },
-            { path: '/community', label: 'קהילה', icon: Users },
-            { path: '/settings', label: 'הגדרות', icon: Settings },
+            {
+              kicker: 'האימון שלי',
+              items: [
+                {
+                  path: '/program',
+                  label: 'תוכנית האימון',
+                  icon: CalendarDays,
+                  subtitle: 'תוכנית מובנית · 12 שבועות',
+                },
+                {
+                  path: '/templates',
+                  label: 'תבניות',
+                  icon: ClipboardList,
+                  subtitle: 'אימונים שיצרת לשימוש חוזר',
+                },
+              ],
+            },
+            {
+              kicker: 'מאמן וקהילה',
+              items: [
+                {
+                  path: '/my-coach',
+                  label: 'המאמן שלי',
+                  icon: UserCog,
+                  subtitle: 'חיבור, תוכניות ומעקב',
+                },
+                // Chat parity for trainees: deep-links into the (single) coach
+                // thread or the coaches list when there are several; carries the
+                // unread badge. Omitted when there's no coach to message yet.
+                ...(traineeChatTarget
+                  ? [
+                      {
+                        path: traineeChatTarget,
+                        label: 'הודעות',
+                        icon: MessageSquare,
+                        subtitle: 'שיחה עם המאמן',
+                      },
+                    ]
+                  : []),
+                {
+                  path: '/community',
+                  label: 'קהילה',
+                  icon: Users,
+                  subtitle: 'שיתוף ומעקב עם מתאמנים',
+                },
+              ],
+            },
+            { kicker: 'חשבון', items: [{ path: '/settings', label: 'הגדרות', icon: Settings }] },
           ],
     [isCoachView, traineeChatTarget]
   );
@@ -513,56 +595,98 @@ function BottomNav() {
       </nav>
 
       <Sheet isOpen={moreOpen} onClose={() => setMoreOpen(false)} title="עוד">
-        <ul className="flex flex-col gap-2">
-          {moreItems.map(({ path, label, icon: Icon }) => {
-            const isActive = matchesPath(location.pathname, path);
-            // The unread badge rides the dedicated הודעות entry (its deep-link
-            // path varies, so key off the label, not a fixed path).
-            const showBadge = label === 'הודעות' && unread > 0;
-            return (
-              <li key={path}>
-                <Link
-                  to={path}
-                  aria-current={isActive ? 'page' : undefined}
-                  aria-label={showBadge ? `${label} (${unread} הודעות שלא נקראו)` : label}
-                  onTouchStart={() => prefetchRoute(path)}
-                  onMouseEnter={() => prefetchRoute(path)}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleMoreNavigate(path);
-                  }}
-                  className="flex items-center gap-3 w-full min-h-[52px] px-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
-                  style={{
-                    background: isActive ? 'var(--fs-overlay-active)' : 'var(--fs-overlay-hover)',
-                    border: '1px solid var(--fs-surface-2)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--fs-ink)',
-                  }}
-                >
-                  <span className="relative inline-flex shrink-0">
-                    <Icon
-                      size={22}
-                      strokeWidth={1.8}
-                      aria-hidden="true"
-                      style={{ color: isActive ? 'var(--fs-accent)' : 'var(--fs-muted)' }}
-                    />
-                    {showBadge && <Badge count={unread} />}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 'var(--text-body-lg)',
-                      fontWeight: 600,
-                      textAlign: 'start',
-                    }}
-                  >
-                    {label}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="flex flex-col gap-5">
+          {moreGroups.map((group) => (
+            <div key={group.kicker} className="flex flex-col gap-2">
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  color: 'var(--fs-muted)',
+                  paddingInlineStart: 4,
+                }}
+              >
+                {group.kicker}
+              </span>
+              <ul className="flex flex-col gap-2">
+                {group.items.map(({ path, label, icon: Icon, subtitle }) => {
+                  const isActive = matchesPath(location.pathname, path);
+                  // The unread badge rides the dedicated הודעות entry (its
+                  // deep-link path varies, so key off the label, not a fixed path).
+                  const showBadge = label === 'הודעות' && unread > 0;
+                  return (
+                    <li key={path}>
+                      <Link
+                        to={path}
+                        aria-current={isActive ? 'page' : undefined}
+                        aria-label={showBadge ? `${label} (${unread} הודעות שלא נקראו)` : label}
+                        onTouchStart={() => prefetchRoute(path)}
+                        onMouseEnter={() => prefetchRoute(path)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleMoreNavigate(path);
+                        }}
+                        className="flex items-center gap-3 w-full min-h-[52px] px-4 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
+                        style={{
+                          background: isActive
+                            ? 'var(--fs-overlay-active)'
+                            : 'var(--fs-overlay-hover)',
+                          border: '1px solid var(--fs-surface-2)',
+                          borderRadius: 'var(--radius-md)',
+                          color: 'var(--fs-ink)',
+                        }}
+                      >
+                        <span className="relative inline-flex shrink-0">
+                          <Icon
+                            size={22}
+                            strokeWidth={1.8}
+                            aria-hidden="true"
+                            style={{ color: isActive ? 'var(--fs-accent)' : 'var(--fs-muted)' }}
+                          />
+                          {showBadge && <Badge count={unread} />}
+                        </span>
+                        <span
+                          className="min-w-0"
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 2,
+                            textAlign: 'start',
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-body)',
+                              fontSize: 'var(--text-body-lg)',
+                              fontWeight: 600,
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            {label}
+                          </span>
+                          {subtitle && (
+                            <span
+                              style={{
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: 11,
+                                color: 'var(--fs-muted)',
+                                lineHeight: 1.3,
+                              }}
+                            >
+                              {subtitle}
+                            </span>
+                          )}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
       </Sheet>
     </>
   );

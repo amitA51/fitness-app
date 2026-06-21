@@ -22,7 +22,7 @@ const PATH_LABEL_MAP: Array<[RegExp, string]> = [
   [/^\/workout/, 'אימון'],
   [/^\/nutrition/, 'תזונה'],
   [/^\/progress/, 'התקדמות'],
-  [/^\/program/, 'התוכנית שלי'],
+  [/^\/program/, 'תוכנית האימון'],
   [/^\/templates/, 'תבניות'],
   [/^\/detail/, 'פרטי אימון'],
   [/^\/settings/, 'הגדרות'],

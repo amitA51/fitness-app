@@ -399,7 +399,7 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
       <Route
         path="/program"
         element={
-          <PageErrorBoundary pageLabel="התוכנית שלי">
+          <PageErrorBoundary pageLabel="תוכנית האימון">
             <Program />
           </PageErrorBoundary>
         }
