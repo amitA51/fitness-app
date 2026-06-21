@@ -5,7 +5,6 @@ import { useMemo } from 'react';
 import { CoachMark } from '../components/guidance/CoachMark';
 import { WaterTracker } from '../components/nutrition/WaterTracker';
 import { SkeletonBox } from '../components/ui/SkeletonLoader';
-import { parseLocalDate } from '../services/analytics/shared';
 import { AddMealModal } from './nutrition/components/AddMealModal';
 import { CalorieHero } from './nutrition/components/CalorieHero';
 import { DateNavigator } from './nutrition/components/DateNavigator';
@@ -48,7 +47,6 @@ export default function NutritionPage() {
     setActiveTab,
     filteredFoods,
     presets,
-    calPct,
     proteinPct,
     carbsPct,
     fatPct,
@@ -72,18 +70,6 @@ export default function NutritionPage() {
     ],
     []
   );
-
-  // Header date follows the VIEWED day — showing today's date over a past
-  // day's numbers misattributes them. parseLocalDate avoids the UTC shift of
-  // new Date('YYYY-MM-DD') for users ahead of UTC (Israel).
-  const dayLabel = useMemo(() => {
-    const d = isToday ? new Date() : parseLocalDate(selectedDate);
-    return d.toLocaleDateString('he-IL', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    });
-  }, [isToday, selectedDate]);
 
   return (
     <div
@@ -115,7 +101,6 @@ export default function NutritionPage() {
             lineHeight: 1.4,
           }}
         >
-          {dayLabel} ·{' '}
           <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>
             {todayMacros.calories || 0}/{macroGoals.calories}
           </span>{' '}
@@ -135,6 +120,15 @@ export default function NutritionPage() {
           תזונה
         </h1>
       </header>
+
+      {/* Day axis — the control that scopes every number below it, placed first
+          so the viewed day frames the calorie/macro/meal data (not after it). */}
+      <DateNavigator
+        isToday={isToday}
+        selectedDate={selectedDate}
+        goBack={goBack}
+        goForward={goForward}
+      />
 
       {/* First-visit hint at the top of the nutrition body */}
       <div className="px-5 pt-4">
@@ -185,7 +179,6 @@ export default function NutritionPage() {
           <CalorieHero
             calories={todayMacros.calories}
             goal={macroGoals.calories}
-            calPct={calPct}
             coachTarget={coachTarget}
             isToday={isToday}
             onEditGoals={() => setShowGoalsEditor(true)}
@@ -203,27 +196,8 @@ export default function NutritionPage() {
 
       <WaterTracker selectedDate={selectedDate} isToday={isToday} />
 
-      {/* Section heading */}
-      <h2
-        className="mt-5 px-5"
-        style={{
-          fontFamily: 'var(--font-display)',
-          fontWeight: 700,
-          fontSize: 18,
-          color: 'var(--fs-ink)',
-        }}
-      >
-        ארוחות
-      </h2>
-
-      <DateNavigator
-        isToday={isToday}
-        selectedDate={selectedDate}
-        goBack={goBack}
-        goForward={goForward}
-      />
-
-      {/* Editorial Tab Bar */}
+      {/* Editorial Tab Bar — self-labeling (יומן / מזון / ארוחות), so no extra
+          umbrella heading above it. */}
       <div className="px-5 pt-4 pb-3">
         <div
           className="flex gap-1"

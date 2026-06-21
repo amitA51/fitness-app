@@ -8,8 +8,6 @@ import { memo, useRef } from 'react';
 interface CalorieHeroProps {
   calories: number;
   goal: number;
-  /** Clamped 0–100 percentage (display only — true over/under is derived here). */
-  calPct: number;
   coachTarget: boolean;
   /** False when a past day is being viewed — copy drops the "היום" framing. */
   isToday: boolean;
@@ -22,15 +20,14 @@ const RING_STROKE = 10;
 export const CalorieHero = memo(function CalorieHero({
   calories,
   goal,
-  calPct,
   coachTarget,
   isToday,
   onEditGoals,
 }: CalorieHeroProps) {
   const numberRef = useRef<HTMLSpanElement>(null);
 
-  // calPct arrives pre-clamped to 100. RingProgress wants the TRUE percentage so
-  // its over-achievement overlay can render past 100; derive it from raw values.
+  // RingProgress wants the TRUE percentage so its over-achievement overlay can
+  // render past 100; derive it from the raw consumed/goal values.
   const consumed = calories || 0;
   const truePct = goal > 0 ? Math.round((consumed / goal) * 100) : 0;
   const isOver = consumed > goal;
@@ -55,7 +52,6 @@ export const CalorieHero = memo(function CalorieHero({
 
   return (
     <div className="block-hero section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in">
-      <span className="ribbon">{calPct}% מהיעד</span>
       <button
         type="button"
         onClick={onEditGoals}
