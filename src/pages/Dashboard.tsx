@@ -32,6 +32,7 @@ import { pickDashboardInsight } from '../components/dashboard/insightPicker';
 import { CoachMark } from '../components/guidance/CoachMark';
 import { FadeIn } from '../components/motion/FadeIn';
 import { Stagger, StaggerItem } from '../components/motion/Stagger';
+import { Card } from '../components/ui/Card';
 import { SkeletonBox } from '../components/ui/SkeletonLoader';
 import { WorkoutHistory } from '../components/workout/history/WorkoutHistory';
 import { translateMuscle } from '../constants/muscleNames';
@@ -697,22 +698,14 @@ export default function Dashboard() {
         {/* 5. Weekly calendar */}
         <section style={{ marginTop: 24 }}>
           <SectionTitle text="יומן אימונים" />
-          <div
-            style={{
-              background: 'var(--fs-surface)',
-              borderRadius: '22px 16px 22px 16px',
-              border: '1px solid var(--fs-surface-2)',
-              padding: 20,
-              boxShadow: 'var(--shadow-card)',
-            }}
-          >
+          <Card asymmetric style={{ padding: 20 }}>
             <WeeklyGrid
               sessions={workoutSessions}
               weekOffset={selectedWeekOffset}
               onPrevWeek={goToPrevWeek}
               onNextWeek={goToNextWeek}
             />
-          </div>
+          </Card>
         </section>
 
         {/* 6. Recent workouts — unified compact history */}

@@ -21,23 +21,12 @@ import {
 import { getCurrentUser } from '../../services/supabaseAuth';
 import { logger } from '../../utils/logger';
 import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
 import { SkeletonBox } from '../ui/SkeletonLoader';
-
-const CARD_RADIUS = '22px 16px 22px 16px';
 
 function CardShell({ children }: { children: React.ReactNode }) {
   return (
-    <section
-      aria-label="האימון של היום"
-      style={{
-        marginTop: 20,
-        background: 'var(--fs-surface)',
-        borderRadius: CARD_RADIUS,
-        border: '1px solid var(--fs-surface-2)',
-        padding: 20,
-        boxShadow: 'var(--shadow-card)',
-      }}
-    >
+    <Card asymmetric role="region" aria-label="האימון של היום" style={{ marginTop: 20, padding: 20 }}>
       <h2
         style={{
           fontFamily: 'var(--font-display)',
@@ -51,7 +40,7 @@ function CardShell({ children }: { children: React.ReactNode }) {
         האימון של היום
       </h2>
       {children}
-    </section>
+    </Card>
   );
 }
 

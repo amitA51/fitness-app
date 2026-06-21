@@ -11,6 +11,7 @@ import { Activity, CalendarCheck, CalendarClock, Flame, TrendingUp } from 'lucid
 import { type ReactNode, memo } from 'react';
 import { translateMuscle } from '../../constants/muscleNames';
 import { FadeIn } from '../motion/FadeIn';
+import { Card } from '../ui/Card';
 import type { DashboardInsight } from './insightPicker';
 
 interface InsightCardProps {
@@ -95,19 +96,16 @@ export const InsightCard = memo(function InsightCard({ insight }: InsightCardPro
 
   return (
     <FadeIn style={{ marginTop: 16 }}>
-      <section
+      <Card
+        asymmetric
+        className="magnetic-card"
         role="note"
         aria-label="תובנת אימון"
-        className="magnetic-card"
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 12,
           padding: '14px 16px',
-          background: 'var(--fs-surface)',
-          border: '1px solid var(--fs-surface-2)',
-          borderRadius: '22px 16px 22px 16px',
-          boxShadow: 'var(--shadow-card)',
         }}
       >
         <span
@@ -152,7 +150,7 @@ export const InsightCard = memo(function InsightCard({ insight }: InsightCardPro
             {sub}
           </span>
         </span>
-      </section>
+      </Card>
     </FadeIn>
   );
 });
