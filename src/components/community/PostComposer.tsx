@@ -5,6 +5,7 @@
 
 import { Send } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
+import { Card } from '../ui/Card';
 
 const MAX_CHARS = 4000;
 
@@ -61,14 +62,11 @@ export function PostComposer({ onSubmit, disabled = false }: PostComposerProps) 
   );
 
   return (
-    <div
+    <Card
+      asymmetric
       dir="rtl"
       style={{
-        background: 'var(--fs-surface)',
-        borderRadius: 'var(--radius-asymmetric)',
-        border: '1px solid var(--fs-surface-2)',
-        boxShadow: 'var(--shadow-card)',
-        padding: '16px',
+        padding: 16,
         display: 'flex',
         flexDirection: 'column',
         gap: 8,
@@ -202,6 +200,6 @@ export function PostComposer({ onSubmit, disabled = false }: PostComposerProps) 
           )}
         </button>
       </div>
-    </div>
+    </Card>
   );
 }

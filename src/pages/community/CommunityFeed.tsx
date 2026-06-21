@@ -4,11 +4,11 @@
 // Fresh Steel / Obsidian. RTL Hebrew-first.
 // ============================================================================
 
-import { Users } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CommentSheet } from '../../components/community/CommentSheet';
 import { PostCard } from '../../components/community/PostCard';
 import { PostComposer, type PostSubmitResult } from '../../components/community/PostComposer';
+import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
 import {
   blockUser,
@@ -55,49 +55,6 @@ function PostSkeleton() {
         className="skeleton-pulse"
         style={{ width: '75%', height: 14, borderRadius: 6, background: 'var(--fs-surface-2)' }}
       />
-    </div>
-  );
-}
-
-// ── Empty state ───────────────────────────────────────────────────────────────
-function EmptyState() {
-  return (
-    <div
-      role="status"
-      aria-label="אין פוסטים עדיין"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 12,
-        padding: '48px 24px',
-        textAlign: 'center',
-      }}
-    >
-      <Users size={40} aria-hidden="true" style={{ color: 'var(--fs-muted)', opacity: 0.5 }} />
-      <p
-        style={{
-          margin: 0,
-          fontFamily: 'var(--font-display)',
-          fontWeight: 700,
-          fontSize: 18,
-          color: 'var(--fs-ink)',
-        }}
-      >
-        עדיין אין פוסטים
-      </p>
-      <p
-        style={{
-          margin: 0,
-          fontFamily: 'var(--font-body)',
-          fontSize: 14,
-          color: 'var(--fs-muted)',
-          maxWidth: 260,
-          lineHeight: 1.5,
-        }}
-      >
-        היו הראשונים לשתף — כתבו פוסט למעלה והתחילו את השיחה.
-      </p>
     </div>
   );
 }
@@ -382,7 +339,13 @@ export default function CommunityFeed() {
         ) : error ? (
           <ErrorState onRetry={load} />
         ) : visiblePosts.length === 0 ? (
-          <EmptyState />
+          <div role="status">
+            <EmptyState
+              illustration="feed"
+              title="עדיין אין פוסטים"
+              description="היו הראשונים לשתף — כתבו פוסט למעלה והתחילו את השיחה."
+            />
+          </div>
         ) : (
           <section
             aria-label="פוסטים בקהילה"
