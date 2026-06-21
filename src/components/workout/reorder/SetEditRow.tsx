@@ -408,6 +408,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
             <button
               type="button"
               onClick={handleDelete}
+              aria-label={deleteConfirm ? 'אישור מחיקת סט' : 'מחק סט'}
               style={{
                 width: 28,
                 height: 28,

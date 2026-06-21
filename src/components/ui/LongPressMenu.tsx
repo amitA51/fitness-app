@@ -212,7 +212,9 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
     // Use setTimeout to avoid immediate close on the same touch event
     const timeoutId = setTimeout(() => {
       document.addEventListener('click', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
+      // passive: the handler only closes the menu (no preventDefault), so the
+      // browser can keep touch-scrolling on the compositor instead of blocking.
+      document.addEventListener('touchstart', handleClickOutside, { passive: true });
     }, 0);
 
     return () => {

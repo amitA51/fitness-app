@@ -174,6 +174,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
           <button
             type="button"
             onClick={onClose}
+            aria-label="סגור"
             style={{
               width: 36,
               height: 36,

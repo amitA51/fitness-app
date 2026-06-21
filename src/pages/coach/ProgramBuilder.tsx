@@ -861,7 +861,14 @@ export default function ProgramBuilder({
             ref={(el) => {
               dayRefs.current[dayIdx] = el;
             }}
-            aria-invalid={isInvalid || undefined}
+            // aria-invalid is unsupported on a section/group, so screen readers
+            // ignored the flagged-day signal (and the red border alone fails
+            // WCAG 1.4.1). Convey day identity + invalid state through the
+            // group's accessible name instead.
+            role="group"
+            aria-label={`${day.name?.trim() || `יום ${dayIdx + 1}`}${
+              isInvalid ? ' — לא תקין: צריך שם ולפחות תרגיל אחד' : ''
+            }`}
             className="mb-5 p-4"
             style={{
               background: 'var(--fs-surface-2)',

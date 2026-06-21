@@ -195,6 +195,7 @@ const PhotoSection = memo(function PhotoSection() {
         type="file"
         accept="image/*"
         capture="environment"
+        aria-label="העלאת תמונת התקדמות"
         className="sr-only"
         onChange={(e) => {
           void handleFiles(e.target.files);

@@ -226,7 +226,8 @@ const VolumeComparisonBar = memo<{
             className="h-full w-full rounded-full"
             style={{
               background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
-              transformOrigin: 'left center',
+              // RTL: fill from the reading start (right).
+              transformOrigin: 'right center',
             }}
             initial={{ scaleX: 0 }}
             animate={{ scaleX: currentPercent / 100 }}
@@ -235,7 +236,7 @@ const VolumeComparisonBar = memo<{
           {targetPercent && (
             <div
               className="absolute top-0 bottom-0 w-0.5"
-              style={{ left: `${targetPercent}%`, background: 'var(--fs-text-on-dark)' }}
+              style={{ right: `${targetPercent}%`, background: 'var(--fs-text-on-dark)' }}
             />
           )}
         </div>
@@ -258,7 +259,7 @@ const VolumeComparisonBar = memo<{
         >
           <m.div
             className="h-full w-full rounded-full"
-            style={{ transformOrigin: 'left center', background: 'var(--fs-border-on-dark)' }}
+            style={{ transformOrigin: 'right center', background: 'var(--fs-border-on-dark)' }}
             initial={{ scaleX: 0 }}
             animate={{ scaleX: previousPercent / 100 }}
             transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.1 }}
@@ -534,7 +535,7 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
                   stats.progress >= 1
                     ? 'linear-gradient(90deg, var(--fs-signal), var(--fs-accent))'
                     : 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
-                transformOrigin: 'left center',
+                transformOrigin: 'right center',
               }}
               initial={{ scaleX: 0 }}
               animate={{ scaleX: Math.min(stats.progress, 1) }}

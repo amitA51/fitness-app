@@ -287,7 +287,9 @@ const VolumeBar = memo<{ current: number; target: number }>(({ current, target }
               ? 'linear-gradient(90deg, var(--fs-signal), var(--fs-accent))'
               : 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
             boxShadow: isComplete ? '0 0 12px var(--fs-signal)' : undefined,
-            transformOrigin: 'left center',
+            // RTL: volume fills from the reading start (right), like the app's
+            // other progress bars.
+            transformOrigin: 'right center',
           }}
           transition={{ type: 'spring', stiffness: 100, damping: 20 }}
         />

@@ -15,6 +15,19 @@ interface WorkoutBottomBarProps {
   supersetGroups?: SupersetGroup[];
 }
 
+// Pure helpers — hoisted to module scope so they aren't rebuilt on every
+// render (rebuilding them each tick wastes work and looks "new" to memoized
+// children). They close over nothing in the component.
+const isExerciseDone = (ex: Exercise | undefined): boolean => {
+  const total = ex?.sets?.length ?? 0;
+  const done = ex?.sets?.filter((s) => s.completedAt).length ?? 0;
+  return total > 0 && done >= total;
+};
+
+// Bidi-isolate the "N/M" run (LRI…PDI) so it renders AND is announced LTR
+// inside the RTL Hebrew label — mirrors SetProgress's <span dir="ltr">.
+const fmtCount = (pos: number, total: number) => `⁦${pos}/${total || 1}⁩`;
+
 const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
   exercises,
   currentExerciseIndex,
@@ -28,11 +41,6 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
   // not merely the positionally-next one — otherwise it can suggest an exercise
   // that's already fully done (or, on a 2/2 layout, nothing). When every later
   // exercise is complete the strip is hidden entirely.
-  const isExerciseDone = (ex: Exercise | undefined): boolean => {
-    const total = ex?.sets?.length ?? 0;
-    const done = ex?.sets?.filter((s) => s.completedAt).length ?? 0;
-    return total > 0 && done >= total;
-  };
   const nextEx =
     exercises.slice(currentExerciseIndex + 1).find((ex) => !isExerciseDone(ex)) ?? null;
 
@@ -62,9 +70,6 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
   const isExerciseComplete = curTotalSets > 0 && curCompletedSets >= curTotalSets;
   // The active set is the first not-yet-completed set (warmups come first).
   const activeIsWarmup = curSets.find((s) => !s.completedAt)?.isWarmup ?? false;
-  // Bidi-isolate the "N/M" run (LRI…PDI) so it renders AND is announced LTR
-  // inside the RTL Hebrew label — mirrors SetProgress's <span dir="ltr">.
-  const fmtCount = (pos: number, total: number) => `⁦${pos}/${total || 1}⁩`;
   let completeLabel: string;
   if (isExerciseComplete) {
     completeLabel = 'התרגיל הושלם';

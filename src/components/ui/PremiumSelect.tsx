@@ -40,7 +40,9 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
+    // passive: handler only closes the dropdown (no preventDefault), so touch
+    // scrolling stays on the compositor.
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);

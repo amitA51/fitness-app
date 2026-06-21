@@ -446,7 +446,10 @@ function BottomNav() {
               boxShadow: 'var(--nav-pill-shadow)',
               opacity: 0,
               pointerEvents: 'none',
-              willChange: 'transform, width, height',
+              // Only hint the compositable property. width/height are layout —
+              // will-change can't composite them, so listing them just keeps an
+              // extra promoted layer alive permanently for no gain.
+              willChange: 'transform',
             }}
           />
 

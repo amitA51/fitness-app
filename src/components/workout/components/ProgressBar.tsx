@@ -41,13 +41,13 @@ ProgressParticle.displayName = 'ProgressParticle';
 // MAIN COMPONENT
 // ============================================================
 
+// Milestone positions (static — hoisted so the array isn't rebuilt each render).
+const MILESTONES = [25, 50, 75, 100];
+
 const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }) => {
   const shouldReduce = useReducedMotion();
   // Clamp progress between 0-100
   const clampedProgress = Math.min(100, Math.max(0, progress));
-
-  // Milestone positions
-  const milestones = [25, 50, 75, 100];
 
   return (
     <div
@@ -59,10 +59,12 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
 
       {/* Progress Fill */}
       <m.div
-        className="absolute top-0 left-0 h-full w-full shadow-[0_0_15px_var(--fs-accent)]"
+        className="absolute top-0 right-0 h-full w-full shadow-[0_0_15px_var(--fs-accent)]"
         style={{
           background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
-          transformOrigin: 'left center',
+          // RTL: the fill grows from the reading start (right) toward the left,
+          // matching the app's other progress fills (MacroStrip, AnimatedBar).
+          transformOrigin: 'right center',
         }}
         initial={{ scaleX: 0 }}
         animate={{ scaleX: clampedProgress / 100 }}
@@ -93,7 +95,7 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
         {/* Leading edge glow */}
         {!shouldReduce && (
           <m.div
-            className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full accent-glow"
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full accent-glow"
             style={{
               background:
                 'radial-gradient(circle, color-mix(in srgb, var(--fs-accent) 80%, transparent) 0%, transparent 70%)',
@@ -113,14 +115,14 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
 
       {/* Milestone Markers */}
       {showMilestones &&
-        milestones.map((milestone) => (
+        MILESTONES.map((milestone) => (
           <div
             key={milestone}
             className={`
                         absolute top-0 bottom-0 w-[2px]
                         ${clampedProgress >= milestone ? 'bg-white/50' : 'bg-white/10'}
                     `}
-            style={{ left: `${milestone}%` }}
+            style={{ right: `${milestone}%` }}
           >
             {/* Completion indicator */}
             <AnimatePresence>

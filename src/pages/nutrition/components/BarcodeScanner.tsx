@@ -201,6 +201,7 @@ export const BarcodeScanner = memo(function BarcodeScanner({
                     ref={videoRef}
                     muted
                     playsInline
+                    aria-label="תצוגת מצלמה לסריקת ברקוד"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                   {/* Scan-line hint over the preview */}
