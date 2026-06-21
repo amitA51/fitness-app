@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { showToast } from '../../../components/ui/GlobalToast';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
+import { SectionLabel } from '../../../components/ui/SettingsSectionLabel';
 import {
   copyToClipboard,
   generateWeeklyReport,
@@ -149,7 +150,7 @@ export function ExportSection({
 
   return (
     <div className="mb-7">
-      <p className="section-title mb-3 px-1">ייצוא ושיתוף</p>
+      <SectionLabel>ייצוא ושיתוף</SectionLabel>
       <SettingsCard>
         <div className="flex flex-col">
           <ExportRow

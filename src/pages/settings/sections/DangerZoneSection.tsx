@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
+import { SectionLabel } from '../../../components/ui/SettingsSectionLabel';
 
 interface Props {
   onDeleteAll: () => void;
@@ -25,10 +26,7 @@ export function DangerZoneSection({ onDeleteAll }: Props) {
 
   return (
     <div className="mb-7">
-      {/* color-error, not fs-warn — the orange is 2.5:1 on the light bg */}
-      <p className="section-title mb-3 px-1" style={{ color: 'var(--color-error)' }}>
-        אזור מסוכן
-      </p>
+      <SectionLabel tone="danger">אזור מסוכן</SectionLabel>
       <SettingsCard>
         <div className="px-4 py-4">
           <p

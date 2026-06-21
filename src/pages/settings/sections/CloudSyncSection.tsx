@@ -1,6 +1,7 @@
 import { Check, Cloud, CloudOff, Download, RefreshCw, Upload } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
+import { SectionLabel } from '../../../components/ui/SettingsSectionLabel';
 import { Divider } from '../components/Divider';
 import { IconBox } from '../components/IconBox';
 
@@ -34,7 +35,7 @@ export function CloudSyncSection({
 
   return (
     <div className="mb-7">
-      <p className="section-title mb-3 px-1">סנכרון ענן</p>
+      <SectionLabel>סנכרון ענן</SectionLabel>
       <SettingsCard>
         {/* Connection Status Row */}
         <div className="flex items-center gap-3 ps-4 pe-4 py-3.5 min-h-[52px]">

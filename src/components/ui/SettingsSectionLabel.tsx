@@ -82,9 +82,12 @@ export function SettingsJumpNav({
 export function SectionLabel({
   children,
   trailing,
+  tone = 'default',
 }: {
   children: React.ReactNode;
   trailing?: React.ReactNode;
+  /** 'danger' tints the heading with --color-error for danger-zone sections. */
+  tone?: 'default' | 'danger';
 }) {
   return (
     <div className="mb-3 px-1 flex items-center justify-between gap-3">
@@ -93,7 +96,7 @@ export function SectionLabel({
           fontFamily: 'var(--font-display)',
           fontWeight: 700,
           fontSize: 16,
-          color: 'var(--fs-ink)',
+          color: tone === 'danger' ? 'var(--color-error)' : 'var(--fs-ink)',
           margin: 0,
         }}
       >
