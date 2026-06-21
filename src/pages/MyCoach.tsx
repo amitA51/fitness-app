@@ -203,6 +203,38 @@ export default function MyCoach() {
     showToast('המאמן נותק', 'success');
   };
 
+  const isConnected = coaches.length > 0;
+
+  // Connect-a-coach is the hero for a trainee with NO coach yet; once connected
+  // it's a rare "add another" action, so it drops to the bottom and the page
+  // leads with the recurring surfaces (coaches, weekly check-in) instead.
+  const connectSection = (
+    <Section title={isConnected ? 'חיבור למאמן נוסף' : 'חיבור למאמן'}>
+      <div className="flex gap-2 items-end">
+        <div className="flex-1">
+          <Input
+            label="קוד הזמנה"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                void connect();
+              }
+            }}
+            placeholder="ABC123"
+            dir="ltr"
+            aria-label="קוד הזמנה"
+            style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.12em' }}
+          />
+        </div>
+        <Button variant="primary" isLoading={busy} disabled={!code.trim()} onClick={connect}>
+          התחבר
+        </Button>
+      </div>
+    </Section>
+  );
+
   return (
     <CoachPage
       title="המאמן שלי"
@@ -216,30 +248,8 @@ export default function MyCoach() {
         else navigate('/');
       }}
     >
-      <Section title="חיבור למאמן">
-        <div className="flex gap-2 items-end">
-          <div className="flex-1">
-            <Input
-              label="קוד הזמנה"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  void connect();
-                }
-              }}
-              placeholder="ABC123"
-              dir="ltr"
-              aria-label="קוד הזמנה"
-              style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.12em' }}
-            />
-          </div>
-          <Button variant="primary" isLoading={busy} disabled={!code.trim()} onClick={connect}>
-            התחבר
-          </Button>
-        </div>
-      </Section>
+      {/* New trainee: connect is the hero, up top. Connected: see bottom. */}
+      {!isConnected && connectSection}
 
       <div id={COACHES_LIST_ANCHOR} ref={coachesAnchorRef} style={{ scrollMarginTop: 16 }}>
         <Section title="המאמנים שלי">
@@ -396,6 +406,9 @@ export default function MyCoach() {
           ))
         )}
       </Section>
+
+      {/* Demoted "add another coach" — only once the trainee already has one. */}
+      {isConnected && connectSection}
 
       <ConfirmDialog
         isOpen={disconnectId !== null}
