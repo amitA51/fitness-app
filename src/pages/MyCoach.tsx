@@ -204,7 +204,18 @@ export default function MyCoach() {
   };
 
   return (
-    <CoachPage title="המאמן שלי" subtitle="My Coach" onBack={() => navigate('/')}>
+    <CoachPage
+      title="המאמן שלי"
+      subtitle="My Coach"
+      onBack={() => {
+        // Return to where the user came from (usually the screen that opened the
+        // "עוד" sheet) by popping in-app history; fall back to home only on a
+        // cold deep-link entry where there's nothing to pop.
+        const idx = (window.history.state as { idx?: number } | null)?.idx;
+        if (idx && idx > 0) navigate(-1);
+        else navigate('/');
+      }}
+    >
       <Section title="חיבור למאמן">
         <div className="flex gap-2 items-end">
           <div className="flex-1">

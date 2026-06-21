@@ -63,6 +63,16 @@ export default function WorkoutDetail() {
     }
   }, [session]);
 
+  // Back returns to where the user came from — this screen is only reached from
+  // the history list / calendar, so pop in-app history to land back there (with
+  // scroll position intact). On a cold entry (deep link / push tap as the first
+  // navigation) there's nothing to pop, so fall back to home. Mirrors CoachPage.
+  const handleBack = useCallback(() => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx;
+    if (idx && idx > 0) navigate(-1);
+    else navigate('/');
+  }, [navigate]);
+
   if (loading) {
     return <DetailSkeleton />;
   }
@@ -159,8 +169,8 @@ export default function WorkoutDetail() {
         <div className="flex items-center gap-3 px-4 py-4">
           <button
             type="button"
-            onClick={() => navigate('/')}
-            aria-label="חזרה לבית"
+            onClick={handleBack}
+            aria-label="חזרה"
             style={{
               width: 44,
               height: 44,
@@ -513,7 +523,7 @@ export default function WorkoutDetail() {
         >
           <button
             type="button"
-            onClick={() => navigate('/')}
+            onClick={handleBack}
             className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fs-accent)]"
             style={{
               flex: 1,
@@ -534,7 +544,7 @@ export default function WorkoutDetail() {
             }}
           >
             <ArrowLeft size={14} />
-            חזרה לבית
+            חזרה
           </button>
           <button
             type="button"
