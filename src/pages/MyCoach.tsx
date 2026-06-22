@@ -16,6 +16,7 @@ import { syncTemplatesFromCloud } from '../hooks/useCloudTemplateReflection';
 import {
   type ProgramDayRef,
   disconnectCoach,
+  listCheckIns,
   listMyAssignments,
   listMyCoaches,
   resolveProgramDays,
@@ -26,6 +27,8 @@ import {
 } from '../services/coach';
 import { listGroupThreads } from '../services/coach/groupMessageService';
 import type { Assignment, GroupThreadSummary } from '../types/coach';
+import { getWeekStart, toLocalDateStr } from '../utils/dateUtils';
+import { VerdictLine, VerdictNumber } from '../components/insights/VerdictLine';
 import {
   CoachPage,
   ListRow,
@@ -250,6 +253,18 @@ export default function MyCoach() {
     >
       {/* New trainee: connect is the hero, up top. Connected: see bottom. */}
       {!isConnected && connectSection}
+
+      {/* Additive status lead — for a connected trainee, a one-line "so what":
+          did this week's check-in go in yet, framed against the active coach. It
+          summarizes state that's already actionable in the form below, so a
+          loading/error/no-coach case simply renders nothing (never a false
+          status). user.id is the same id listMyCoaches filtered on. */}
+      {isConnected && user?.id && (
+        <CheckInStatusLead
+          userId={user.id}
+          coachName={coaches[0]?.coachProfile?.displayName ?? 'המאמן שלך'}
+        />
+      )}
 
       <div id={COACHES_LIST_ANCHOR} ref={coachesAnchorRef} style={{ scrollMarginTop: 16 }}>
         <Section title="המאמנים שלי">
@@ -637,6 +652,61 @@ function MacroLine({ payload }: { payload: Record<string, unknown> }) {
         </>
       )}
     </span>
+  );
+}
+
+// ── Weekly check-in status lead ──────────────────────────────────────────────
+// An additive "so what" line at the top of the connected-trainee view: it states
+// whether THIS week's check-in is already in, derived from the trainee's own
+// check-in history (listCheckIns) compared against the current Sunday-start week.
+// Copy is plain, gender-neutral plural Hebrew (the app's default voice — cf.
+// "העלו עומס"); the driving count renders as a tinted LTR VerdictNumber. Tone is
+// carried only by the number's zone, never lime. It NEVER fabricates a status:
+// while loading or on error it renders nothing, leaving the check-in form below
+// as the single source of truth.
+
+interface CheckInStatusLeadProps {
+  userId: string;
+  coachName: string;
+}
+
+function CheckInStatusLead({ userId, coachName }: CheckInStatusLeadProps) {
+  const { data: checkIns, loading, error } = useAsyncData(() => listCheckIns(userId), []);
+
+  // Silent until we have real data — additive, never a false status above the page.
+  if (loading || error) return null;
+
+  // Current week boundary as a local YYYY-MM-DD string. CheckIn.date is also a
+  // local YYYY-MM-DD, so a lexicographic compare is an exact, timezone-safe
+  // "is this date in the current (Sunday-start) week?" test — no Date parsing.
+  const weekStartStr = toLocalDateStr(getWeekStart(new Date()));
+  const submittedThisWeek = checkIns.filter((c) => c.date >= weekStartStr).length;
+
+  // State 1 — done this week: at least one check-in dated within the current week.
+  if (submittedThisWeek > 0) {
+    return (
+      <VerdictLine kicker="צ׳ק-אין שבועי" className="mb-6">
+        שלחתם השבוע <VerdictNumber value={submittedThisWeek} zone="good" />{' '}
+        {submittedThisWeek === 1 ? 'צ׳ק-אין' : 'צ׳ק-אינים'} אל <bdi>{coachName}</bdi>. אפשר להוסיף
+        עוד עדכון בכל רגע.
+      </VerdictLine>
+    );
+  }
+
+  // State 2 — has history but nothing this week: gentle nudge, attention zone.
+  if (checkIns.length > 0) {
+    return (
+      <VerdictLine kicker="צ׳ק-אין שבועי" className="mb-6">
+        עדיין לא שלחתם צ׳ק-אין השבוע. עדכנו את <bdi>{coachName}</bdi> כדי שהמעקב יישאר מדויק.
+      </VerdictLine>
+    );
+  }
+
+  // State 3 — no check-ins at all: first-time framing, neutral zone (no judgment).
+  return (
+    <VerdictLine kicker="צ׳ק-אין שבועי" className="mb-6">
+      טרם שלחתם צ׳ק-אין. הצ׳ק-אין הראשון נותן ל<bdi>{coachName}</bdi> תמונת מצב להתאמת התוכנית.
+    </VerdictLine>
   );
 }
 
