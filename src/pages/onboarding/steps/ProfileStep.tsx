@@ -44,7 +44,7 @@ export function ProfileStep({ data, onChange }: ProfileStepProps) {
           type="text"
           value={data.name}
           onChange={(val) => onChange({ name: val as string })}
-          placeholder="השם שלכם"
+          placeholder="השם שלך"
           label="שם"
         />
 
