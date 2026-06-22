@@ -718,6 +718,46 @@ interface StagedPhoto {
   url: string;
 }
 
+/** A 1–5 rating row (mood / energy) — five ≥44×44 single-select buttons.
+ *  Module-level (not nested in CheckInForm) so typing in the form's inputs
+ *  doesn't remount the buttons on every keystroke. */
+function RatingSelector({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number | null;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="flex gap-2 mb-3" role="group" aria-label={label}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange(n)}
+          aria-label={`${label} ${n} מתוך 5`}
+          aria-pressed={value === n}
+          className="flex-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-0"
+          style={{
+            minWidth: 44,
+            minHeight: 44,
+            background: value === n ? 'var(--fs-primary)' : 'var(--fs-surface)',
+            color: value === n ? 'var(--fs-accent)' : 'var(--fs-muted)',
+            border: '1px solid var(--fs-surface-2)',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          {n}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function CheckInForm() {
   const [weight, setWeight] = useState('');
   const [mood, setMood] = useState<number | null>(null);
@@ -820,56 +860,9 @@ function CheckInForm() {
           unit='ק"ג'
         />
       </div>
-      {/* Mood: 5 buttons, each ≥44×44 (flex-1 row keeps them tappable + aligned). */}
-      <div className="flex gap-2 mb-3" role="group" aria-label="מצב רוח">
-        {[1, 2, 3, 4, 5].map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setMood(m)}
-            aria-label={`מצב רוח ${m} מתוך 5`}
-            aria-pressed={mood === m}
-            className="flex-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-0"
-            style={{
-              minWidth: 44,
-              minHeight: 44,
-              background: mood === m ? 'var(--fs-primary)' : 'var(--fs-surface)',
-              color: mood === m ? 'var(--fs-accent)' : 'var(--fs-muted)',
-              border: '1px solid var(--fs-surface-2)',
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            {m}
-          </button>
-        ))}
-      </div>
-      {/* Energy: identical pattern to mood selector above. */}
-      <div className="flex gap-2 mb-3" role="group" aria-label="אנרגיה">
-        {[1, 2, 3, 4, 5].map((e) => (
-          <button
-            key={e}
-            type="button"
-            onClick={() => setEnergy(e)}
-            aria-label={`אנרגיה ${e} מתוך 5`}
-            aria-pressed={energy === e}
-            className="flex-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-0"
-            style={{
-              minWidth: 44,
-              minHeight: 44,
-              background: energy === e ? 'var(--fs-primary)' : 'var(--fs-surface)',
-              color: energy === e ? 'var(--fs-accent)' : 'var(--fs-muted)',
-              border: '1px solid var(--fs-surface-2)',
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            {e}
-          </button>
-        ))}
-      </div>
+      {/* Mood + energy: two identical 1–5 selectors (see RatingSelector). */}
+      <RatingSelector label="מצב רוח" value={mood} onChange={setMood} />
+      <RatingSelector label="אנרגיה" value={energy} onChange={setEnergy} />
       <div className="mb-3">
         <Textarea
           label="הערות"

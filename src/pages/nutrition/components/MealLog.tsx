@@ -129,11 +129,6 @@ export const MealEntryCard = memo(function MealEntryCard({
           fontVariantNumeric: 'tabular-nums',
         }}
       >
-        <span className="flex items-center gap-1">
-          <Flame size={11} />
-          {entry.totalMacros.calories}
-        </span>
-        <span style={{ color: 'var(--fs-muted)' }}>·</span>
         <span>P {entry.totalMacros.protein}G</span>
         <span style={{ color: 'var(--fs-muted)' }}>·</span>
         <span>C {entry.totalMacros.carbs}G</span>

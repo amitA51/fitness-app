@@ -29,10 +29,11 @@ function CardShell({ children }: { children: React.ReactNode }) {
     <Card
       asymmetric
       role="region"
-      aria-label="האימון של היום"
+      aria-labelledby="todays-workout-title"
       style={{ marginTop: 20, padding: 20 }}
     >
       <h2
+        id="todays-workout-title"
         style={{
           fontFamily: 'var(--font-display)',
           fontWeight: 700,

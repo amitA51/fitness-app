@@ -475,8 +475,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 direction: 'ltr',
               }}
             >
-              אימון אחרון {lastWorkoutLabel.timeLabel} ·{' '}
-              {pluralizeHe(lastWorkoutLabel.exercises, HE_NOUNS.exercise)}
+              אימון אחרון {lastWorkoutLabel.timeLabel}
             </div>
           )}
         </div>
