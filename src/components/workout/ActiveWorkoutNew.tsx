@@ -7,6 +7,14 @@ import type { ActiveExercise, PersonalItem, WorkoutSettings } from '../../types'
 
 import { syncTemplatesFromCloud } from '../../hooks/useCloudTemplateReflection';
 import { listMyAssignments } from '../../services/coach';
+import {
+  TRAINING_DAYS,
+  getBlockForWeek,
+  getProgramDay,
+  getProgress,
+  startProgramDay,
+} from '../../services/programService';
+import { ensurePersistentStorage } from '../../services/storagePersistence';
 import { logger } from '../../utils/logger';
 
 import { useWorkoutDerived, useWorkoutDispatch, useWorkoutState } from './core/WorkoutContext';
@@ -139,6 +147,16 @@ export const WorkoutContent: React.FC<{
   } | null>(null);
   const [startingCoachProgram, setStartingCoachProgram] = useState(false);
 
+  // Inline built-in-program injection: if the trainee has started the self-guided
+  // 12-week program, surface its CURRENT day as an entry on the pre-workout
+  // screen. Read-only from localStorage progress (never enrolls). Stays null for
+  // trainees who haven't started the program, so the entry simply isn't shown.
+  const [programDay, setProgramDay] = useState<{
+    title: string;
+    subtitle: string;
+  } | null>(null);
+  const [startingProgram, setStartingProgram] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -155,6 +173,22 @@ export const WorkoutContent: React.FC<{
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    // Synchronous localStorage read — no enrollment side effect (getProgress,
+    // not startProgram). Only active programs get an entry; not-started and
+    // completed stay off the workout-start surface (they live on the Dashboard).
+    const progress = getProgress();
+    if (!progress || progress.status !== 'active') return;
+    const dayType = TRAINING_DAYS[progress.currentDayIndex] ?? 'Upper';
+    const day = getProgramDay(progress.currentWeek, dayType);
+    if (!day) return;
+    const block = getBlockForWeek(progress.currentWeek);
+    setProgramDay({
+      title: `שבוע ${progress.currentWeek} · ${day.dayHe}`,
+      subtitle: `${day.exercises.length} תרגילים · ${block.nameHe}`,
+    });
   }, []);
 
   // Local state
@@ -471,6 +505,24 @@ export const WorkoutContent: React.FC<{
     }
   };
 
+  // Materialize the built-in program's current day into the hidden runner
+  // template and navigate to it. Mirrors Program.tsx's handleStart so both entry
+  // points behave identically (same progress pointer, same reconcile-on-save).
+  const handleStartProgram = async () => {
+    if (!programDay || startingProgram) return;
+    setStartingProgram(true);
+    // Best-effort durability ask before a multi-week commitment; never blocks.
+    void ensurePersistentStorage();
+    try {
+      const id = await startProgramDay();
+      if (id) navigate(`/workout/${id}`);
+      else setStartingProgram(false);
+    } catch (err) {
+      logger.workout?.error?.('failed to start program day', err);
+      setStartingProgram(false);
+    }
+  };
+
   // If showing summary
   if (showSummary && completedSession) {
     return <WorkoutSummaryView completedSession={completedSession} onExit={onExit} />;
@@ -526,6 +578,11 @@ export const WorkoutContent: React.FC<{
           hasCoachProgram={!!coachProgram}
           isStartingCoachProgram={startingCoachProgram}
           onStartCoachProgram={handleStartCoachProgram}
+          hasProgram={!!programDay}
+          programTitle={programDay?.title ?? null}
+          programSubtitle={programDay?.subtitle ?? null}
+          isStartingProgram={startingProgram}
+          onStartProgram={handleStartProgram}
           onStartWorkout={() => {
             // Mark that the welcome screen was shown. Clear any stuck flow modals
             // (goal/warmup can linger on if a prior session left them set) so the

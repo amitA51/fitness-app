@@ -20,6 +20,7 @@ import { RING_DRAW_DURATION, RING_STAGGER, ringDelay } from '../components/chart
 import { CoachBriefCard } from '../components/dashboard/CoachBriefCard';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { InsightCard } from '../components/dashboard/InsightCard';
+import { ProgramCard } from '../components/dashboard/ProgramCard';
 import { RecentPRBanner } from '../components/dashboard/RecentPRBanner';
 import { StartWorkoutSheet } from '../components/dashboard/StartWorkoutSheet';
 import { TemplateStrip } from '../components/dashboard/TemplateQuickStart';
@@ -639,6 +640,11 @@ export default function Dashboard() {
 
         {/* 2. Today's readiness — the "now" protagonist. */}
         <CoachBriefCard sessions={workoutSessions} kind="daily-readiness" />
+
+        {/* 2b. Built-in 12-week program — surfaces the self-guided plan on home
+            (active/continue, not-started invite, or completed). Self-managed
+            states; reads progress without enrolling. */}
+        <ProgramCard />
 
         {/* 3. Streak — quiet supporting status, demoted below the hero. */}
         <div style={{ marginTop: 16 }}>

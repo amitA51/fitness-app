@@ -81,6 +81,16 @@ interface PreWorkoutScreenProps {
   isStartingCoachProgram?: boolean;
   /** Start the coach-assigned program. */
   onStartCoachProgram?: () => void;
+  /** Built-in 12-week program: the trainee has started it (kind === 'program'). */
+  hasProgram?: boolean;
+  /** Title of the built-in program's current day (week · day label). */
+  programTitle?: string | null;
+  /** One-line context for the program day (e.g. block · exercise count). */
+  programSubtitle?: string | null;
+  /** True while the program day is being materialized + started. */
+  isStartingProgram?: boolean;
+  /** Start the built-in program's current day. */
+  onStartProgram?: () => void;
 }
 
 interface PreWorkoutScreenFC extends React.FC<PreWorkoutScreenProps> {
@@ -96,6 +106,11 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
   coachProgramTitle = null,
   isStartingCoachProgram = false,
   onStartCoachProgram,
+  hasProgram = false,
+  programTitle = null,
+  programSubtitle = null,
+  isStartingProgram = false,
+  onStartProgram,
 }) => {
   const [favoriteTemplates, setFavoriteTemplates] = useState<WorkoutTemplate[]>([]);
   const [recentMuscles, setRecentMuscles] = useState<MuscleGroupLastTrained[]>([]);
@@ -519,6 +534,77 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     {isStartingCoachProgram ? 'טוען…' : coachProgramTitle || 'תוכנית אימון'}
                   </p>
                 </div>
+              </button>
+            </m.div>
+          )}
+
+          {/* Built-in 12-week program — inline entry to the self-guided plan.
+              Tapping it materializes the current program day and starts it.
+              Same explicit initial/animate as the coach block: it mounts after
+              the container's entrance settled, so without its own variants it
+              would ship stuck at "hidden" (invisible). */}
+          {hasProgram && onStartProgram && (
+            <m.div
+              key="program"
+              variants={itemVariants}
+              initial="hidden"
+              animate="visible"
+              className="mb-5"
+            >
+              <button
+                type="button"
+                onClick={onStartProgram}
+                disabled={isStartingProgram}
+                className="w-full relative focus-ring fs-accent-rail"
+                style={{
+                  background: 'var(--fs-surface)',
+                  border: '1px solid var(--fs-surface-2)',
+                  borderRadius: '20px 14px 20px 14px',
+                  padding: '18px 20px',
+                  textAlign: 'right',
+                  cursor: isStartingProgram ? 'wait' : 'pointer',
+                  opacity: isStartingProgram ? 0.7 : 1,
+                }}
+                aria-label={`התחל את היום הנוכחי בתוכנית האימון: ${programTitle || 'תוכנית אימון'}`}
+              >
+                <p
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    letterSpacing: '0.18em',
+                    color: 'var(--fs-accent-2)',
+                    textTransform: 'uppercase',
+                    marginBottom: 6,
+                  }}
+                >
+                  תוכנית האימון
+                </p>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: 18,
+                    color: 'var(--fs-heading)',
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  {isStartingProgram ? 'טוען…' : programTitle || 'תוכנית אימון'}
+                </p>
+                {programSubtitle && !isStartingProgram && (
+                  <p
+                    className="mt-1"
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      letterSpacing: '0.12em',
+                      color: 'var(--fs-muted)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {programSubtitle}
+                  </p>
+                )}
               </button>
             </m.div>
           )}
