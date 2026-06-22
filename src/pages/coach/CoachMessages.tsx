@@ -388,7 +388,7 @@ function GroupsPanel() {
       {/* Announce the filtered result count to assistive tech while searching. */}
       {hasQuery && (
         <div role="status" aria-live="polite" className="sr-only">
-          {`נמצאו ${filtered.length} שיחות`}
+          {`נמצאו ${filtered.length} קבוצות`}
         </div>
       )}
       {filtered.length === 0 ? (
