@@ -5,6 +5,7 @@
 import { Check, ImagePlus, MessageSquare, Play, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { VerdictLine, VerdictNumber } from '../components/insights/VerdictLine';
 import { Button } from '../components/ui/Button';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
@@ -28,7 +29,6 @@ import {
 import { listGroupThreads } from '../services/coach/groupMessageService';
 import type { Assignment, GroupThreadSummary } from '../types/coach';
 import { getWeekStart, toLocalDateStr } from '../utils/dateUtils';
-import { VerdictLine, VerdictNumber } from '../components/insights/VerdictLine';
 import {
   CoachPage,
   ListRow,

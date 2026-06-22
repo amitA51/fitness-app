@@ -246,7 +246,14 @@ export function ProgramCard() {
       style={{ marginTop: 16, padding: 18 }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            gap: 8,
+          }}
+        >
           {kicker('האימון הבא שלך')}
           <span
             style={{
