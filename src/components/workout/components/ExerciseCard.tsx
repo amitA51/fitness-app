@@ -209,6 +209,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
           {!isSelectionMode && onDelete && (
             <button
               type="button"
+              className="active:scale-[0.92]"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(exercise, e);
@@ -224,7 +225,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                 border: 'none',
                 cursor: 'pointer',
                 color: 'var(--fs-muted)',
-                transition: 'color 150ms',
+                transition: 'color 150ms, transform 150ms',
                 flexShrink: 0,
               }}
               aria-label={`מחק ${exercise.name}`}

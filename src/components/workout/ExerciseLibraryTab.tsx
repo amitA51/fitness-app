@@ -212,6 +212,7 @@ const AddExerciseButton: React.FC<AddExerciseButtonProps> = ({ onClick }) => (
   <button
     onClick={onClick}
     type="button"
+    className="active:scale-[0.98]"
     style={{
       width: '100%',
       display: 'flex',

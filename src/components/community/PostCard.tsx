@@ -201,7 +201,7 @@ function PostCardComponent({ post, onLike, onReport, onBlock, onCommentOpen }: P
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((o) => !o)}
-            className="focus-ring"
+            className="focus-ring active:scale-[0.92]"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -213,7 +213,7 @@ function PostCardComponent({ post, onLike, onReport, onBlock, onCommentOpen }: P
               background: 'none',
               cursor: 'pointer',
               color: 'var(--fs-muted)',
-              transition: 'background 0.12s',
+              transition: 'background 0.12s, transform 0.1s',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--fs-surface-2)';
@@ -379,7 +379,7 @@ function PostCardComponent({ post, onLike, onReport, onBlock, onCommentOpen }: P
           disabled={likePending}
           aria-label={post.likedByMe ? 'בטל לייק' : 'לייק'}
           aria-pressed={post.likedByMe}
-          className="focus-ring"
+          className="focus-ring active:scale-[0.93]"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -392,12 +392,6 @@ function PostCardComponent({ post, onLike, onReport, onBlock, onCommentOpen }: P
             color: post.likedByMe ? 'var(--fs-accent)' : 'var(--fs-muted)',
             transition: 'color 0.15s, transform 0.1s',
             minHeight: 44,
-          }}
-          onMouseDown={(e) => {
-            e.currentTarget.style.transform = 'scale(0.93)';
-          }}
-          onMouseUp={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
           }}
         >
           <Heart size={18} aria-hidden="true" fill={post.likedByMe ? 'var(--fs-accent)' : 'none'} />
@@ -419,7 +413,7 @@ function PostCardComponent({ post, onLike, onReport, onBlock, onCommentOpen }: P
           type="button"
           onClick={() => onCommentOpen(post.id)}
           aria-label={`תגובות (${post.commentCount})`}
-          className="focus-ring"
+          className="focus-ring active:scale-[0.93]"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -430,6 +424,7 @@ function PostCardComponent({ post, onLike, onReport, onBlock, onCommentOpen }: P
             background: 'none',
             cursor: 'pointer',
             color: 'var(--fs-muted)',
+            transition: 'transform 0.1s',
             minHeight: 44,
           }}
         >
