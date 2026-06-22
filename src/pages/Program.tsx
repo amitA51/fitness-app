@@ -122,217 +122,217 @@ export default function Program() {
       style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)', minHeight: '100dvh' }}
     >
       <Stagger>
-      <StaggerItem>
-      {/* Editorial masthead — mono kicker + display title */}
-      <header
-        style={{
-          padding: 'max(20px, env(safe-area-inset-top, 20px)) 20px 8px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 6,
-        }}
-      >
-        <div
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 11,
-            letterSpacing: '0.22em',
-            textTransform: 'uppercase',
-            color: 'var(--fs-accent-2)',
-          }}
-        >
-          {BBT_PROGRAM.level} · {BBT_PROGRAM.totalWeeks} שבועות
-        </div>
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            fontSize: 'clamp(30px, 8.5vw, 46px)',
-            lineHeight: 0.95,
-            letterSpacing: '-0.02em',
-            margin: 0,
-          }}
-        >
-          {BBT_PROGRAM.titleHe}
-        </h1>
-        <p style={{ color: 'var(--fs-muted)', fontSize: 14, margin: '2px 0 0' }}>
-          5 אימונים בשבוע · התקדמות מודרכת לפי RPE
-        </p>
-        {/* Progress bar */}
-        <div style={{ marginTop: 10 }}>
-          <div
+        <StaggerItem>
+          {/* Editorial masthead — mono kicker + display title */}
+          <header
             style={{
+              padding: 'max(20px, env(safe-area-inset-top, 20px)) 20px 8px',
               display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: 12,
-              color: 'var(--fs-muted)',
-              marginBottom: 4,
+              flexDirection: 'column',
+              gap: 6,
             }}
           >
-            <span>
-              <bdi dir="ltr">
-                {completedSet.size}/{TOTAL_DAYS}
-              </bdi>{' '}
-              אימונים הושלמו
-            </span>
-            <span dir="ltr">{pct}%</span>
-          </div>
-          <div
-            style={{
-              height: 8,
-              borderRadius: 999,
-              background: 'var(--fs-surface-2)',
-              overflow: 'hidden',
-              // Fill grows left→right (week 1 → 12), matching the SetProgress
-              // spine. Without this, the RTL page fills the bar from the right,
-              // which reads as "backwards" for a forward-time progression.
-              direction: 'ltr',
-            }}
-          >
-            <m.div
-              initial={reduceMotion ? false : { width: 0 }}
-              animate={{ width: `${pct}%` }}
-              transition={reduceMotion ? { duration: 0 } : { duration: 0.5, ease: EASE_OUT }}
+            <div
               style={{
-                height: '100%',
-                background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
-                borderRadius: 999,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+                color: 'var(--fs-accent-2)',
               }}
-            />
-          </div>
-        </div>
-      </header>
-      </StaggerItem>
-
-      <StaggerItem>
-      {/* Continue / current-day hero */}
-      {progress.status === 'active' ? (
-        <ContinueCard
-          week={progress.currentWeek}
-          dayType={currentDayType}
-          starting={starting}
-          onStart={() => handleStart(progress.currentWeek, currentDayType)}
-        />
-      ) : (
-        <div
-          style={{
-            margin: '12px 20px',
-            padding: 20,
-            borderRadius: 18,
-            background: 'var(--fs-signal)',
-            color: 'var(--color-ink-on-accent)',
-            textAlign: 'center',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 10,
-            boxShadow: 'var(--shadow-glow-signal)',
-          }}
-        >
-          <PartyPopper size={20} aria-hidden />
-          סיימת את כל {BBT_PROGRAM.totalWeeks} השבועות! כל הכבוד.
-        </div>
-      )}
-      </StaggerItem>
-
-      <StaggerItem>
-      {/* Week selector — grouped by mesocycle block */}
-      <section
-        style={{ padding: '10px 20px 0', display: 'flex', flexDirection: 'column', gap: 14 }}
-      >
-        {BBT_PROGRAM.blocks.map((b) => {
-          const first = b.weeks[0];
-          const last = b.weeks[b.weeks.length - 1];
-          return (
-            <div key={b.name}>
+            >
+              {BBT_PROGRAM.level} · {BBT_PROGRAM.totalWeeks} שבועות
+            </div>
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 'clamp(30px, 8.5vw, 46px)',
+                lineHeight: 0.95,
+                letterSpacing: '-0.02em',
+                margin: 0,
+              }}
+            >
+              {BBT_PROGRAM.titleHe}
+            </h1>
+            <p style={{ color: 'var(--fs-muted)', fontSize: 14, margin: '2px 0 0' }}>
+              5 אימונים בשבוע · התקדמות מודרכת לפי RPE
+            </p>
+            {/* Progress bar */}
+            <div style={{ marginTop: 10 }}>
               <div
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: 12,
                   color: 'var(--fs-muted)',
-                  marginBottom: 8,
+                  marginBottom: 4,
                 }}
               >
-                {b.nameHe} · שבועות{' '}
-                <bdi dir="ltr">
-                  {first}–{last}
-                </bdi>
+                <span>
+                  <bdi dir="ltr">
+                    {completedSet.size}/{TOTAL_DAYS}
+                  </bdi>{' '}
+                  אימונים הושלמו
+                </span>
+                <span dir="ltr">{pct}%</span>
               </div>
-              {/* direction:ltr so the numeric week progression reads 1→12
-                  left→right. Under the page's RTL the digits would otherwise
-                  flow right→left and scan as "end to beginning". */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, direction: 'ltr' }}>
-                {b.weeks.map((w) => {
-                  const active = w === selectedWeek;
-                  const isCurrent = w === progress.currentWeek;
-                  return (
-                    <button
-                      key={w}
-                      type="button"
-                      onClick={() => {
-                        setSelectedWeek(w);
-                        setExpanded(null);
-                      }}
-                      style={{
-                        flex: '0 0 auto',
-                        minWidth: 48,
-                        height: 44,
-                        borderRadius: 12,
-                        border: isCurrent
-                          ? '2px solid var(--fs-accent)'
-                          : '1px solid var(--fs-surface-2)',
-                        background: active ? 'var(--fs-accent)' : 'transparent',
-                        color: active ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
-                        fontWeight: 700,
-                        fontSize: 14,
-                        cursor: 'pointer',
-                      }}
-                      aria-pressed={active}
-                      aria-label={`שבוע ${w}${isCurrent ? ' · השבוע הנוכחי' : ''}`}
-                    >
-                      <span dir="ltr">{w}</span>
-                    </button>
-                  );
-                })}
+              <div
+                style={{
+                  height: 8,
+                  borderRadius: 999,
+                  background: 'var(--fs-surface-2)',
+                  overflow: 'hidden',
+                  // Fill grows left→right (week 1 → 12), matching the SetProgress
+                  // spine. Without this, the RTL page fills the bar from the right,
+                  // which reads as "backwards" for a forward-time progression.
+                  direction: 'ltr',
+                }}
+              >
+                <m.div
+                  initial={reduceMotion ? false : { width: 0 }}
+                  animate={{ width: `${pct}%` }}
+                  transition={reduceMotion ? { duration: 0 } : { duration: 0.5, ease: EASE_OUT }}
+                  style={{
+                    height: '100%',
+                    background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
+                    borderRadius: 999,
+                  }}
+                />
               </div>
             </div>
-          );
-        })}
-      </section>
-      </StaggerItem>
+          </header>
+        </StaggerItem>
 
-      <StaggerItem>
-      {/* Days of the selected week */}
-      <section
-        style={{ padding: '14px 20px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}
-      >
-        <div style={{ color: 'var(--fs-muted)', fontSize: 13, marginBottom: 2 }}>
-          שבוע {selectedWeek} · {block.nameHe}
-        </div>
-        {TRAINING_DAYS.map((dt) => {
-          const day = getProgramDay(selectedWeek, dt);
-          if (!day) return null;
-          return (
-            <DayCard
-              key={dt}
-              day={day}
-              week={selectedWeek}
-              swaps={swaps}
-              done={isDone(selectedWeek, dt)}
-              isCurrent={selectedWeek === progress.currentWeek && dt === currentDayType}
-              expanded={expanded === dt}
+        <StaggerItem>
+          {/* Continue / current-day hero */}
+          {progress.status === 'active' ? (
+            <ContinueCard
+              week={progress.currentWeek}
+              dayType={currentDayType}
               starting={starting}
-              onToggle={() => setExpanded((e) => (e === dt ? null : dt))}
-              onStart={() => handleStart(selectedWeek, dt)}
-              onSwap={(order, choice) => handleSwap(selectedWeek, dt, order, choice)}
+              onStart={() => handleStart(progress.currentWeek, currentDayType)}
             />
-          );
-        })}
-      </section>
-      </StaggerItem>
+          ) : (
+            <div
+              style={{
+                margin: '12px 20px',
+                padding: 20,
+                borderRadius: 18,
+                background: 'var(--fs-signal)',
+                color: 'var(--color-ink-on-accent)',
+                textAlign: 'center',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                boxShadow: 'var(--shadow-glow-signal)',
+              }}
+            >
+              <PartyPopper size={20} aria-hidden />
+              סיימת את כל {BBT_PROGRAM.totalWeeks} השבועות! כל הכבוד.
+            </div>
+          )}
+        </StaggerItem>
+
+        <StaggerItem>
+          {/* Week selector — grouped by mesocycle block */}
+          <section
+            style={{ padding: '10px 20px 0', display: 'flex', flexDirection: 'column', gap: 14 }}
+          >
+            {BBT_PROGRAM.blocks.map((b) => {
+              const first = b.weeks[0];
+              const last = b.weeks[b.weeks.length - 1];
+              return (
+                <div key={b.name}>
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      letterSpacing: '0.18em',
+                      textTransform: 'uppercase',
+                      color: 'var(--fs-muted)',
+                      marginBottom: 8,
+                    }}
+                  >
+                    {b.nameHe} · שבועות{' '}
+                    <bdi dir="ltr">
+                      {first}–{last}
+                    </bdi>
+                  </div>
+                  {/* direction:ltr so the numeric week progression reads 1→12
+                  left→right. Under the page's RTL the digits would otherwise
+                  flow right→left and scan as "end to beginning". */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, direction: 'ltr' }}>
+                    {b.weeks.map((w) => {
+                      const active = w === selectedWeek;
+                      const isCurrent = w === progress.currentWeek;
+                      return (
+                        <button
+                          key={w}
+                          type="button"
+                          onClick={() => {
+                            setSelectedWeek(w);
+                            setExpanded(null);
+                          }}
+                          style={{
+                            flex: '0 0 auto',
+                            minWidth: 48,
+                            height: 44,
+                            borderRadius: 12,
+                            border: isCurrent
+                              ? '2px solid var(--fs-accent)'
+                              : '1px solid var(--fs-surface-2)',
+                            background: active ? 'var(--fs-accent)' : 'transparent',
+                            color: active ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
+                            fontWeight: 700,
+                            fontSize: 14,
+                            cursor: 'pointer',
+                          }}
+                          aria-pressed={active}
+                          aria-label={`שבוע ${w}${isCurrent ? ' · השבוע הנוכחי' : ''}`}
+                        >
+                          <span dir="ltr">{w}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </section>
+        </StaggerItem>
+
+        <StaggerItem>
+          {/* Days of the selected week */}
+          <section
+            style={{ padding: '14px 20px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}
+          >
+            <div style={{ color: 'var(--fs-muted)', fontSize: 13, marginBottom: 2 }}>
+              שבוע {selectedWeek} · {block.nameHe}
+            </div>
+            {TRAINING_DAYS.map((dt) => {
+              const day = getProgramDay(selectedWeek, dt);
+              if (!day) return null;
+              return (
+                <DayCard
+                  key={dt}
+                  day={day}
+                  week={selectedWeek}
+                  swaps={swaps}
+                  done={isDone(selectedWeek, dt)}
+                  isCurrent={selectedWeek === progress.currentWeek && dt === currentDayType}
+                  expanded={expanded === dt}
+                  starting={starting}
+                  onToggle={() => setExpanded((e) => (e === dt ? null : dt))}
+                  onStart={() => handleStart(selectedWeek, dt)}
+                  onSwap={(order, choice) => handleSwap(selectedWeek, dt, order, choice)}
+                />
+              );
+            })}
+          </section>
+        </StaggerItem>
       </Stagger>
 
       {/* Reset */}

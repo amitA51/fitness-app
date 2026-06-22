@@ -3,6 +3,7 @@ import { Activity, CloudOff, Heart, LayoutGrid, User } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { FadeIn } from '../components/motion/FadeIn';
 import { showToast } from '../components/ui/GlobalToast';
 import PageHeader from '../components/ui/PageHeader';
 import {
@@ -16,7 +17,6 @@ import type { BodyMeasurement, RecoveryLog } from '../services/bodyStatsService'
 import { todayStr } from '../utils/dateUtils';
 import { triggerHapticEffect } from '../utils/haptics';
 import { safeJsonParse } from '../utils/safeJson';
-import { FadeIn } from '../components/motion/FadeIn';
 import { ProgressSkeleton } from './progress/components/ProgressSkeleton';
 import { AddMeasurementModal } from './progress/modals/AddMeasurementModal';
 import { AddRecoveryModal } from './progress/modals/AddRecoveryModal';
@@ -169,10 +169,7 @@ export default function ProgressPage() {
       {/* Header — shared PageHeader SSOT (flattens the old bespoke masthead to the
           standard 26px title + 2px accent divider for cross-tab consistency). The
           date kicker becomes the eyebrow; its numbers render dir="ltr". */}
-      <PageHeader
-        title="התקדמות"
-        eyebrow={<span dir="ltr">{todayLabel}</span>}
-      />
+      <PageHeader title="התקדמות" eyebrow={<span dir="ltr">{todayLabel}</span>} />
 
       {/* Editorial Tab Bar — four primary sections */}
       <FadeIn className="px-5 pt-4 pb-2">
