@@ -21,6 +21,12 @@
 > - `b98a61d` refactor(workout) **E2**: בלוק ההצעה (לא-אינטראקטיבי אבל במילוי מנטה) → caption שקט מתחת לברכה. מנטה-מלאה רק על ה-CTA האמיתי.
 > - `8900e2a` feat(my-coach) **E1**: שורת-מצב צ'ק-אין שבועי בראש המסך המחובר (3 מצבים מ-listCheckIns). קיפול הטופס ל-Sheet נדחה (תמונות staged היו נמחקות ב-unmount).
 > **✅ כל ה-roadmap של iter-10 נשלח (9 קומיטים).** ⚠️ **QA ויזואלי ממתין (דפדפן, שני מצבים+RTL):** C1 (Progress 72→26), ProgramCard (5b1ee63), PreWorkout caption (b98a61d), MyCoach lead (8900e2a). אם משהו לא טוב — `git revert <hash>`. נדחו: AW-1 (QA מכשיר), MyCoach check-in→Sheet (צריך hoist של state התמונות), flat Card / .btn-primary dedup / מחיקת ForecastNudge.tsx (low-pri).
+> ### עדכון — Iter 11 (סשן חדש, "תמשיך מאיפה שהיינו")
+> אודיט איכות עדין (verify-first, `wf_26168c38-0aa`): 6 עדשות → **26 אומתו / 9 הופרכו**. נשלחו 2 באטצ'ים (tsc0 + 144 טסטי-אזור ירוקים):
+> - `d73f095` fix(motion): משוב-מגע (`active:scale`) על כפתורי הקהילה (לייק/תגובה/תפריט-יתר) + אימון (מחיקת תרגיל / "צור תרגיל"). הלייק זייף לחיצה עם `onMouseDown/Up` אימפרטיבי שהתעלם ממגע + `prefers-reduced-motion` → הוחלף בתבנית ה-`active:scale` הדקלרטיבית של הקוד (כמו MealLog). **delta נראה:** הכפתורים "מרגישים" לחיצה.
+> - `d9a6043` fix(onboarding): placeholder שם → `השם שלך` (יחיד ניטרלי-מגדר) במקום `השם שלכם` (רבים-זכר). מיישר לקול-היחיד של הצעד (`קצת עליך`/`אליך`). שלך יחיד = ניטרלי-מגדר באותיות; שלכם רבים = זכר.
+> ⚠️ **אשכול אישורי-מחיקה (#3/#5/#13) נדחה** — חיכוך מדורג **מכוון** (מחיקת ארוחה=undo מהיר, תבנית=double-tap inline, חשבון/מאמן=ConfirmDialog, איפוס-תוכנית=`warning`), לא חוסר-עקביות. שיטוח לאדום-מקסימלי יזיק לעיצוב. (הממצאים סתרו זה את זה = סימן מובהק ל-false-positive.)
+> backlog iter-11 לעתיד: #8 WorkoutHistory error-state · #17 Progress tab error · #12 CoachBrief formatter · token-hygiene #18/#22 · #26 CommentSheet disabled-contrast (opacity-40).
 - **אסטרטגיית git:** קומיט לכל באטץ' קוהרנטי · **לא לדחוף (no push)** — המשתמש סוקר מקומית.
 - **לוג מלא לפי איטרציה:** `~/.claude/.../memory/loop-ux-overhaul-2026-06-21.md` (פירוט מלא לכל החלטה).
 
