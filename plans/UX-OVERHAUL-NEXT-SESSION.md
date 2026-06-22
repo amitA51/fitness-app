@@ -36,6 +36,8 @@ This codebase is meticulous: across 11 iterations ~½ of agent findings were fal
 
 ## 3. THE WORK — 7 verified findings, 2 batches
 
+> ✅ **EXECUTED iter-12 (2026-06-22).** Re-verified all 7 against current code (`wf_b84c8824-55e`): **5 applied, 2 skipped.** Shipped `57ff944` (A1 subtitle dedup) + `3440072` (B2 RatingSelector / B3 PreWorkout caption / B5 TodaysWorkoutCard aria-labelledby / B6 MealLog footer calories). **A7 + A1-coach skipped as intentional craft** (the coach עוד-group genuinely holds only /community so its "קהילה" label rightly differs from the trainee's "מאמן וקהילה"; and coaching is the coach's primary surface, /me already in the labeled sheet group, no room for a 5th main tab). tsc0 / 1043 tests / 110 files green. See memory `loop-ux-overhaul-2026-06-21` iter-12.
+
 > All risk=low except where noted. Each fix is surgical; verify the cited lines before editing (line numbers from HEAD `04a03d9`).
 
 ### BATCH A — `BottomNav.tsx` IA + dedup (do as ONE careful batch; it touches nav)
@@ -97,6 +99,8 @@ Use **/browse** to check both light (Fresh Steel) + dark (Obsidian) + RTL for th
 7. After all 7 done + full `vitest run` green → consider a fresh `Workflow` discovery for the next layer (or stop and report).
 
 ## 8. Remaining backlog from iter-11 (lower priority, after §3)
+
+> ✅ **iter-12 (2026-06-22) cleared 3 of these** (`wf_05607169-24d` verify-first): **#8/#17** Dashboard silent-empty-on-error → InsightErrorChip + Hebrew msg + retry (`dc90004`); **#12** CoachBriefCard formatter flash → aligned to `formatThousands` (`dc90004`); **#18/#22** OnboardingFlow token hygiene (`3d0eaec`). **#26 SKIPPED** — verified the disabled CommentSheet send button already passes AA (~4.8:1 light / ~5.2:1 dark), so gray-on-surface is a legitimate disabled treatment, not a contrast defect; changing it = style churn. **#19 BodyTab PhotoSection** + **LongPressMenu** (unused) remain.
 
 - **#8/#17 error-state**: largely MOOT — Progress handles load errors page-level; only verify the **Dashboard compact WorkoutHistory** path doesn't silently show "אין אימונים" on load failure.
 - **#12** CoachBriefCard: static SSR `.toLocaleString()` vs animated counter formatter → align (low risk).
