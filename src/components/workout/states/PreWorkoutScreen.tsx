@@ -296,6 +296,26 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               >
                 {greetingText}
               </h1>
+              {/* Quiet guidance caption — demoted from a mint CTA-looking panel
+                  to a single muted line so it reads as a hint under the greeting,
+                  not a tappable button. The single mint fill is reserved for the
+                  real "התחל אימון" primary action below. Static masthead content
+                  (no per-child framer-motion variant), so no propagation trap. */}
+              {suggestion && (
+                <p
+                  className="mt-2"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 11,
+                    letterSpacing: '0.04em',
+                    color: 'rgba(255,255,255,0.55)',
+                    lineHeight: 1.3,
+                    textAlign: 'start',
+                  }}
+                >
+                  {suggestion.text}
+                </p>
+              )}
             </div>
           </div>
 
@@ -606,76 +626,6 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   </p>
                 )}
               </button>
-            </m.div>
-          )}
-
-          {/* Suggestion card */}
-          {suggestion && (
-            <m.div
-              key="suggestion"
-              variants={itemVariants}
-              initial="hidden"
-              animate="visible"
-              className="mb-5"
-            >
-              <div
-                className="relative"
-                style={{
-                  background: 'var(--fs-accent)',
-                  padding: '20px 20px',
-                }}
-              >
-                {/* Ribbon */}
-                <div
-                  className="absolute top-0 left-0 px-2 py-1"
-                  style={{
-                    background: 'var(--fs-primary)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 9,
-                    letterSpacing: '0.2em',
-                    color: 'var(--fs-accent)',
-                    textTransform: 'uppercase',
-                    fontWeight: 600,
-                  }}
-                >
-                  {suggestion.type === 'neglected'
-                    ? 'מומלץ'
-                    : suggestion.type === 'complement'
-                      ? 'משלים'
-                      : 'התחל'}
-                </div>
-
-                <div className="pt-3">
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-display)',
-                      fontWeight: 800,
-                      fontSize: 22,
-                      // ink-on-accent: --fs-heading goes near-white in dark and
-                      // fails AA on the mint suggestion block.
-                      color: 'var(--color-ink-on-accent)',
-                      lineHeight: 1,
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
-                    {suggestion.text}
-                  </p>
-                  <p
-                    className="mt-2"
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 10,
-                      letterSpacing: '0.12em',
-                      // Derive the muted secondary tone from ink-on-accent so it
-                      // stays legible on the mint fill in both themes.
-                      color: 'color-mix(in srgb, var(--color-ink-on-accent) 70%, transparent)',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {suggestion.subtext}
-                  </p>
-                </div>
-              </div>
             </m.div>
           )}
 
