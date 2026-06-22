@@ -143,7 +143,12 @@ export default function Dashboard() {
   // mount-load, never on pull-to-refresh (which keeps the populated page).
   const hasLoadedOnce = useRef(false);
 
-  const { sessions: dataContextSessions, refreshData, loading: dataLoading } = useData();
+  const {
+    sessions: dataContextSessions,
+    refreshData,
+    loading: dataLoading,
+    error: dataError,
+  } = useData();
   const {
     workoutSessions,
     weekOverWeekDeltas,
@@ -675,10 +680,19 @@ export default function Dashboard() {
           </Card>
         </section>
 
-        {/* 6. Recent workouts — unified compact history */}
+        {/* 6. Recent workouts — unified compact history. On a sessions-load
+            failure, surface the error + retry instead of a silent "אין אימונים"
+            (mirrors how Progress.tsx handles its load error). */}
         <section style={{ marginTop: 24 }}>
           <SectionTitle text="אימונים אחרונים" />
-          <WorkoutHistory sessions={workoutSessions} mode="compact" isLoading={dataLoading} />
+          {dataError ? (
+            <InsightErrorChip
+              message="לא הצלחנו לטעון את האימונים האחרונים"
+              onRetry={refreshData}
+            />
+          ) : (
+            <WorkoutHistory sessions={workoutSessions} mode="compact" isLoading={dataLoading} />
+          )}
         </section>
 
         {/* 7. PR highlights (compact) */}

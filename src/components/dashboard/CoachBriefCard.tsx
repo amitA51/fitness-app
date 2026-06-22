@@ -225,7 +225,7 @@ export const CoachBriefCard = memo(function CoachBriefCard({
       ) : (
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 6 }}>
           <HeroStat
-            value={<span ref={volumeRef}>{facts.weeklyVolume.toLocaleString()}</span>}
+            value={<span ref={volumeRef}>{formatThousands(facts.weeklyVolume)}</span>}
             label="נפח שבועי"
             unit={'ק"ג'}
             size={44}
