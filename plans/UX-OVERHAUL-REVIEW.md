@@ -16,7 +16,11 @@
 > - `e2eb05e` feat(workout): סגירת לולאה — סיכום-הסיום מוביל ל-Progress. **delta נראה:** ה-CTA הראשי במסך-הסיכום השתנה מ"סיום"(מנטה) ל"צפו בהתקדמות"(מנטה)→Progress, ו"סיום" ירד ל-ghost שקט→בית. מכוון.
 > - `0500752` refactor(dashboard) **B1** (החלטת המשתמש): נמחק `TodayFocusLine` (−160 שורות) — חזר על המלצת ה-readiness של CoachBriefCard; הוסרה ההדרה ב-insightPicker כך ש-InsightCard מכסה עכשיו Chest/Back/Legs. **delta נראה:** שורת "היום" מתחת ל-CTA נעלמה; הבית רזה יותר. ForecastNudge.tsx נשאר (dead code קיים).
 > - `bf37874` refactor(progress) **C1** (החלטת המשתמש): ה-masthead 72px של Progress → `<PageHeader>` 26px + קו-accent. **⚠️ delta נראה גדול + דורש QA ויזואלי בשני המצבים:** הכותרת ירדה 72→26, נוסף divider, ה-kicker→eyebrow. סטיקי נשמר. Dashboard לא נגענו (כבר 26px; הגרדיאנט = חתימת-בית מכוונת).
-> **גדולים שנותרו (החלטת טעם/IA, הכי טוב בסשן רענן):** A1/A2 (IA: tab אימון + /program קבור + "עוד" junk-drawer), E1 (MyCoach lead + check-in), E2 (PreWorkout 3 mint surfaces). ראו זיכרון `loop-ux-overhaul-2026-06-21.md`.
+> - `5b1ee63` feat(nav) **A1/A2** (additive): `/program` היה קבור ב"עוד" בלבד → **ProgramCard חדש** בבית (3 מצבים, קורא progress בלי לרשום) + כניסת "תוכנית האימון" ב-PreWorkoutScreen. **delta נראה:** כרטיס תוכנית חדש בבית; כניסת תוכנית במסך-האימון. (אימות הפריך re-route של טאב — /workout כבר landing.)
+> - `2709ed9` fix(nav) **A2**: badge הודעות לא-נקראו של מתאמן → אייקון `MessageSquare` במקום "…" גנרי. delta קטן.
+> - `b98a61d` refactor(workout) **E2**: בלוק ההצעה (לא-אינטראקטיבי אבל במילוי מנטה) → caption שקט מתחת לברכה. מנטה-מלאה רק על ה-CTA האמיתי.
+> - `8900e2a` feat(my-coach) **E1**: שורת-מצב צ'ק-אין שבועי בראש המסך המחובר (3 מצבים מ-listCheckIns). קיפול הטופס ל-Sheet נדחה (תמונות staged היו נמחקות ב-unmount).
+> **✅ כל ה-roadmap של iter-10 נשלח (9 קומיטים).** ⚠️ **QA ויזואלי ממתין (דפדפן, שני מצבים+RTL):** C1 (Progress 72→26), ProgramCard (5b1ee63), PreWorkout caption (b98a61d), MyCoach lead (8900e2a). אם משהו לא טוב — `git revert <hash>`. נדחו: AW-1 (QA מכשיר), MyCoach check-in→Sheet (צריך hoist של state התמונות), flat Card / .btn-primary dedup / מחיקת ForecastNudge.tsx (low-pri).
 - **אסטרטגיית git:** קומיט לכל באטץ' קוהרנטי · **לא לדחוף (no push)** — המשתמש סוקר מקומית.
 - **לוג מלא לפי איטרציה:** `~/.claude/.../memory/loop-ux-overhaul-2026-06-21.md` (פירוט מלא לכל החלטה).
 
