@@ -71,6 +71,11 @@ interface NavGroup {
   items: NavDestination[];
 }
 
+/** Shared "עוד"-sheet subtitles — defined once, referenced in both role groupings. */
+const PROGRAM_SUBTITLE = 'תוכנית מובנית · 12 שבועות';
+const TEMPLATES_SUBTITLE = 'אימונים שיצרת לשימוש חוזר';
+const COMMUNITY_SUBTITLE = 'שיתוף ומעקב עם מתאמנים';
+
 const TRAINEE_MAIN_TABS: readonly NavDestination[] = [
   { path: '/', label: 'בית', icon: LayoutDashboard },
   { path: '/workout', label: 'אימון', icon: Dumbbell },
@@ -410,13 +415,13 @@ function BottomNav() {
                   path: '/program',
                   label: 'תוכנית האימון',
                   icon: CalendarDays,
-                  subtitle: 'תוכנית מובנית · 12 שבועות',
+                  subtitle: PROGRAM_SUBTITLE,
                 },
                 {
                   path: '/templates',
                   label: 'תבניות',
                   icon: ClipboardList,
-                  subtitle: 'אימונים שיצרת לשימוש חוזר',
+                  subtitle: TEMPLATES_SUBTITLE,
                 },
               ],
             },
@@ -427,7 +432,7 @@ function BottomNav() {
                   path: '/community',
                   label: 'קהילה',
                   icon: Users,
-                  subtitle: 'שיתוף ומעקב עם מתאמנים',
+                  subtitle: COMMUNITY_SUBTITLE,
                 },
               ],
             },
@@ -441,13 +446,13 @@ function BottomNav() {
                   path: '/program',
                   label: 'תוכנית האימון',
                   icon: CalendarDays,
-                  subtitle: 'תוכנית מובנית · 12 שבועות',
+                  subtitle: PROGRAM_SUBTITLE,
                 },
                 {
                   path: '/templates',
                   label: 'תבניות',
                   icon: ClipboardList,
-                  subtitle: 'אימונים שיצרת לשימוש חוזר',
+                  subtitle: TEMPLATES_SUBTITLE,
                 },
               ],
             },
@@ -477,7 +482,7 @@ function BottomNav() {
                   path: '/community',
                   label: 'קהילה',
                   icon: Users,
-                  subtitle: 'שיתוף ומעקב עם מתאמנים',
+                  subtitle: COMMUNITY_SUBTITLE,
                 },
               ],
             },
