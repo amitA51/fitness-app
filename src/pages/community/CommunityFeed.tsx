@@ -317,7 +317,7 @@ export default function CommunityFeed() {
         style={{
           maxWidth: 640,
           margin: '0 auto',
-          padding: '16px 16px 0',
+          padding: '16px 20px 0',
           display: 'flex',
           flexDirection: 'column',
           gap: 12,

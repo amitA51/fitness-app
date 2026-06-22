@@ -165,6 +165,7 @@ export function PostComposer({ onSubmit, disabled = false }: PostComposerProps) 
           onClick={handleSubmit}
           disabled={!canSubmit}
           aria-label="שלח פוסט"
+          className="active:scale-[0.98]"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -180,12 +181,6 @@ export function PostComposer({ onSubmit, disabled = false }: PostComposerProps) 
             fontWeight: 700,
             transition: 'background 0.15s, transform 0.1s',
             minHeight: 44,
-          }}
-          onMouseDown={(e) => {
-            if (canSubmit) e.currentTarget.style.transform = 'scale(0.98)';
-          }}
-          onMouseUp={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
           }}
         >
           {submitting ? (

@@ -287,7 +287,7 @@ function CommentComposer({
           onClick={handleSubmit}
           disabled={!canSubmit}
           aria-label="שליחת תגובה"
-          className="focus-ring"
+          className="focus-ring active:scale-[0.93]"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -301,12 +301,6 @@ function CommentComposer({
             cursor: canSubmit ? 'pointer' : 'not-allowed',
             transition: 'background 0.15s, color 0.15s, transform 0.1s',
             flexShrink: 0,
-          }}
-          onMouseDown={(e) => {
-            if (canSubmit) e.currentTarget.style.transform = 'scale(0.93)';
-          }}
-          onMouseUp={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
           }}
         >
           <Send size={18} aria-hidden="true" />
