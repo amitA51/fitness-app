@@ -162,7 +162,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
                   animate={{ opacity: 1, y: 0 }}
                   style={{
                     fontFamily: 'var(--font-mono)',
-                    fontSize: '11px',
+                    fontSize: 'var(--text-label)',
                     letterSpacing: '0.08em',
                     color: 'var(--fs-muted)',
                     textAlign: 'center',
@@ -183,7 +183,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
                     width: 64,
                     height: 64,
                     minHeight: 64,
-                    borderRadius: '22px 16px 22px 16px',
+                    borderRadius: 'var(--radius-asymmetric)',
                   }}
                 >
                   <ChevronRight size={28} aria-hidden="true" />
@@ -300,7 +300,7 @@ function EquipmentStep({
               style={{
                 background: isSelected ? 'var(--fs-accent)' : 'var(--fs-surface)',
                 border: isSelected ? '2px solid var(--fs-accent)' : '1px solid var(--fs-surface-2)',
-                borderRadius: '22px 16px 22px 16px',
+                borderRadius: 'var(--radius-asymmetric)',
               }}
             >
               <div
