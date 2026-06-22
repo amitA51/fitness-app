@@ -584,7 +584,7 @@ function BottomNav() {
               className={TAB_CLASS}
             >
               <TabVisual
-                icon={MoreHorizontal}
+                icon={!isCoachView && unread > 0 ? MessageSquare : MoreHorizontal}
                 label="עוד"
                 isActive={isMoreActive}
                 badgeCount={isCoachView ? 0 : unread}
