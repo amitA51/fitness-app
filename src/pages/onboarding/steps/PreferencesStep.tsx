@@ -192,7 +192,7 @@ export function PreferencesStep({ data, onChange }: PreferencesStepProps) {
                   borderRadius: 0,
                 }}
               >
-                {sec}ש
+                {sec} שנ׳
               </button>
             ))}
           </div>
