@@ -468,64 +468,64 @@ export default function Dashboard() {
             the zero-session first run, where the FirstRunHero below already
             carries the start action (avoids two stacked identical mint CTAs). */}
         {!showFirstRunHero && (
-        <button
-          type="button"
-          onClick={openStartSheet}
-          className="magnetic-card active:scale-[0.98]"
-          aria-haspopup="dialog"
-          aria-expanded={isStartSheetOpen}
-          aria-label="התחל אימון"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-            padding: '20px 24px',
-            // Sharper mint→teal stop: mint holds to 55% then transitions to the
-            // accent-2 so the gradient reads as a deliberate two-tone, not a wash.
-            background:
-              'linear-gradient(135deg, var(--fs-accent) 0%, var(--fs-accent) 42%, var(--fs-accent-2) 100%)',
-            border: '2px solid var(--fs-accent)',
-            borderRadius: 'var(--radius-asymmetric)',
-            cursor: 'pointer',
-            // Near-black ink (#071412 in both modes) passes AA on both the mint
-            // and the teal end of the gradient.
-            color: 'var(--color-ink-on-accent)',
-            fontFamily: 'var(--font-display)',
-            fontWeight: 900,
-            fontSize: 24,
-            textAlign: 'right',
-            lineHeight: 1,
-            letterSpacing: '-0.01em',
-            // Lifted depth + a subtle inset top highlight so the surface reads as
-            // a raised, tactile slab rather than a flat fill.
-            boxShadow:
-              '0 12px 24px color-mix(in srgb, var(--fs-accent) 32%, transparent), inset 0 1px 0 color-mix(in srgb, #ffffff 28%, transparent)',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          <span
-            aria-hidden="true"
+          <button
+            type="button"
+            onClick={openStartSheet}
+            className="magnetic-card active:scale-[0.98]"
+            aria-haspopup="dialog"
+            aria-expanded={isStartSheetOpen}
+            aria-label="התחל אימון"
             style={{
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              width: 44,
-              height: 44,
-              borderRadius: '50%',
-              // Primary (navy / near-black) pill on the mint gradient: reads in
-              // both modes. The previous accent-on-accent pill vanished in light
-              // and put light ink on bright mint in dark (contrast fail).
-              background: 'var(--fs-primary)',
-              color: 'var(--color-ink-on-dark)',
-              flexShrink: 0,
+              justifyContent: 'space-between',
+              width: '100%',
+              padding: '20px 24px',
+              // Sharper mint→teal stop: mint holds to 55% then transitions to the
+              // accent-2 so the gradient reads as a deliberate two-tone, not a wash.
+              background:
+                'linear-gradient(135deg, var(--fs-accent) 0%, var(--fs-accent) 42%, var(--fs-accent-2) 100%)',
+              border: '2px solid var(--fs-accent)',
+              borderRadius: 'var(--radius-asymmetric)',
+              cursor: 'pointer',
+              // Near-black ink (#071412 in both modes) passes AA on both the mint
+              // and the teal end of the gradient.
+              color: 'var(--color-ink-on-accent)',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 900,
+              fontSize: 24,
+              textAlign: 'right',
+              lineHeight: 1,
+              letterSpacing: '-0.01em',
+              // Lifted depth + a subtle inset top highlight so the surface reads as
+              // a raised, tactile slab rather than a flat fill.
+              boxShadow:
+                '0 12px 24px color-mix(in srgb, var(--fs-accent) 32%, transparent), inset 0 1px 0 color-mix(in srgb, #ffffff 28%, transparent)',
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
-            <ArrowLeft size={22} aria-hidden="true" />
-          </span>
-          <span>התחל אימון</span>
-        </button>
+            <span
+              aria-hidden="true"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                // Primary (navy / near-black) pill on the mint gradient: reads in
+                // both modes. The previous accent-on-accent pill vanished in light
+                // and put light ink on bright mint in dark (contrast fail).
+                background: 'var(--fs-primary)',
+                color: 'var(--color-ink-on-dark)',
+                flexShrink: 0,
+              }}
+            >
+              <ArrowLeft size={22} aria-hidden="true" />
+            </span>
+            <span>התחל אימון</span>
+          </button>
         )}
 
         {/* First-visit hint under the primary CTA — returning users only. The
