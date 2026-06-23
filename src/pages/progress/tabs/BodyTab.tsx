@@ -319,9 +319,31 @@ const PhotoSection = memo(function PhotoSection() {
           ))}
         </div>
         {error && (
-          <p style={{ fontSize: 12, color: 'var(--color-error)', marginTop: 8 }} role="alert">
-            {error}
-          </p>
+          <div
+            className="flex items-center justify-between gap-3 flex-wrap"
+            style={{ marginTop: 8 }}
+            role="alert"
+          >
+            <p style={{ fontSize: 12, color: 'var(--color-error)', margin: 0 }}>{error}</p>
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="active:scale-[0.98] motion-reduce:active:scale-100"
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--fs-link)',
+                textDecoration: 'underline',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              רענון
+            </button>
+          </div>
         )}
       </SectionCard>
 
