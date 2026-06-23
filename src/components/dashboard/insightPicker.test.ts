@@ -105,13 +105,14 @@ describe('pickDashboardInsight', () => {
     expect(result).toBeNull();
   });
 
-  it('falls back to the streak nudge last', () => {
+  it('never surfaces a streak insight (it would duplicate WorkoutStreak) — falls through to consistency', () => {
     const result = pickDashboardInsight({
       ...base,
       totalWorkouts: 10,
+      workoutsThisMonth: 4,
       currentStreak: MIN_STREAK_DAYS,
     });
-    expect(result).toEqual({ kind: 'streak', days: MIN_STREAK_DAYS });
+    expect(result).toEqual({ kind: 'consistency', workoutsThisMonth: 4 });
   });
 
   it('stays null on true zero-data (no workouts ever)', () => {

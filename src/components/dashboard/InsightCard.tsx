@@ -2,12 +2,12 @@
 // InsightCard — one compact, locally-computed insight on the dashboard.
 // ============================================================================
 // Fresh Steel / Obsidian. Renders the single insight chosen by
-// pickDashboardInsight (progression → neglected muscle → streak). Pure math
+// pickDashboardInsight (progression → neglected muscle → fallbacks). Pure math
 // from useFitnessInsights — no AI calls on dashboard load. Numbers render
 // dir="ltr" inside the RTL layout; entrance respects prefers-reduced-motion
 // via FadeIn.
 
-import { Activity, CalendarCheck, CalendarClock, Flame, TrendingUp } from 'lucide-react';
+import { Activity, CalendarCheck, CalendarClock, TrendingUp } from 'lucide-react';
 import { type ReactNode, memo } from 'react';
 import { translateMuscle } from '../../constants/muscleNames';
 import { FadeIn } from '../motion/FadeIn';
@@ -53,19 +53,6 @@ export const InsightCard = memo(function InsightCard({ insight }: InsightCardPro
         </>
       );
       sub = 'שווה לשלב באימון הקרוב';
-      break;
-    case 'streak':
-      icon = <Flame size={18} aria-hidden="true" style={{ color: 'var(--fs-accent)' }} />;
-      headline = (
-        <>
-          רצף של{' '}
-          <span className="kinetic-number" dir="ltr">
-            {insight.days}
-          </span>{' '}
-          ימי אימון
-        </>
-      );
-      sub = 'שמרו על הקצב';
       break;
     case 'consistency':
       icon = <CalendarCheck size={18} aria-hidden="true" style={{ color: 'var(--fs-accent)' }} />;
