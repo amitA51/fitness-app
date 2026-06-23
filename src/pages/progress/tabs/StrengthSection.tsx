@@ -287,7 +287,7 @@ export const StrengthSection = memo(function StrengthSection({
               WebkitOverflowScrolling: 'touch',
             }}
           >
-            {curves.map((curve) => {
+            {curves.map((curve, index) => {
               const active = selectedExercise === curve.exerciseName;
               return (
                 <button
@@ -296,6 +296,23 @@ export const StrengthSection = memo(function StrengthSection({
                   role="tab"
                   aria-selected={active}
                   onClick={() => setSelectedExercise(curve.exerciseName)}
+                  tabIndex={active ? 0 : -1}
+                  onKeyDown={(e) => {
+                    // Roving tabindex + RTL arrow nav (ArrowLeft = next), matching
+                    // every other tablist in the app (SegmentedControl / CoachMessages).
+                    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                    e.preventDefault();
+                    const nextIdx =
+                      (index + (e.key === 'ArrowLeft' ? 1 : -1) + curves.length) % curves.length;
+                    const next = curves[nextIdx];
+                    if (!next) return;
+                    setSelectedExercise(next.exerciseName);
+                    const btns =
+                      e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
+                        '[role="tab"]'
+                      );
+                    btns?.[nextIdx]?.focus();
+                  }}
                   className="chip shrink-0"
                   style={{
                     minHeight: 44,
