@@ -174,31 +174,29 @@ export default function Dashboard() {
     [weekOverWeekDeltas, muscleGroups, currentStreak, workoutsThisMonth, totalWorkouts]
   );
 
+  const [templatesError, setTemplatesError] = useState(false);
+  const loadTemplates = useCallback(async () => {
+    try {
+      setTemplates(await getWorkoutTemplates());
+      setTemplatesError(false);
+    } catch (err) {
+      logger.workout.warn('Failed to load templates on dashboard', err);
+      setTemplatesError(true);
+    }
+  }, []);
+
   const { isPulling, isRefreshing, pullDistance, threshold, handlers } = usePullToRefresh({
     onRefresh: async () => {
-      await Promise.all([
-        refreshData(),
-        getWorkoutTemplates()
-          .then(setTemplates)
-          .catch((err) => logger.workout.warn('Failed to refresh templates', err)),
-      ]);
+      await Promise.all([refreshData(), loadTemplates()]);
       setRefreshTick((tick) => tick + 1);
     },
     threshold: 80,
   });
 
   useEffect(() => {
-    async function load() {
-      try {
-        const rawTemplates = await getWorkoutTemplates();
-        setTemplates(rawTemplates);
-      } catch (err) {
-        logger.workout.warn('Failed to load templates on dashboard', err);
-      }
-    }
-    load();
-    return onWorkoutSaved(load);
-  }, []);
+    loadTemplates();
+    return onWorkoutSaved(loadTemplates);
+  }, [loadTemplates]);
 
   // Mark the first successful data load so the skeleton only shows on the very
   // first mount, not on subsequent pull-to-refreshes.
@@ -664,13 +662,20 @@ export default function Dashboard() {
         {/* 4. One smart insight — the single trend line. */}
         <InsightCard insight={dashboardInsight} />
 
-        {/* 4. Templates — quick strip + library affordance */}
-        {sortedTemplates.length > 0 && (
+        {/* 4. Templates — quick strip + library affordance. On a load failure,
+            surface the error + retry instead of silently vanishing into the
+            "no templates" empty (mirrors the recent-workouts pattern below). */}
+        {templatesError ? (
+          <section style={{ marginTop: 24 }}>
+            <SectionTitle text="תבניות" action={{ label: 'כל התבניות', onClick: goToTemplates }} />
+            <InsightErrorChip message="לא הצלחנו לטעון את התבניות" onRetry={loadTemplates} />
+          </section>
+        ) : sortedTemplates.length > 0 ? (
           <section style={{ marginTop: 24 }}>
             <SectionTitle text="תבניות" action={{ label: 'כל התבניות', onClick: goToTemplates }} />
             <TemplateStrip templates={sortedTemplates} onNavigate={handleNavigate} />
           </section>
-        )}
+        ) : null}
 
         {/* 5. Weekly calendar */}
         <section style={{ marginTop: 24 }}>
