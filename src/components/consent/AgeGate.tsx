@@ -97,7 +97,7 @@ export function AgeGate({ children }: { children: ReactNode }) {
             <a
               href="mailto:pgishonim@gmail.com"
               dir="ltr"
-              style={{ color: 'var(--fs-accent)', textDecoration: 'underline' }}
+              style={{ color: 'var(--fs-link)', textDecoration: 'underline' }}
             >
               pgishonim@gmail.com
             </a>

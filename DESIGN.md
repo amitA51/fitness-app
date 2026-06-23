@@ -32,6 +32,7 @@ Editorial Minimalism × Data-Dense Pro, with a brutalist-editorial masthead. The
 | `--fs-primary` | `#16292d` | masthead block, primary button bg, headings |
 | `--fs-accent` | `#43c7a5` | **action** mint — CTAs, focus, +button, progress |
 | `--fs-accent-2` | `#2c7f91` | deep teal — secondary accents |
+| `--fs-link` | `#1d6575` | inline text links (legal/body) — darkened teal, AA on every light surface (mint fails) |
 | `--fs-signal` | `#e2fb70` | **signal** lime — PRs, highlights, celebration only |
 | `--fs-warn` | `#e26e3f` | warnings |
 | `--fs-steel` `--fs-plate` `--fs-rubber` | `#b9c8c6` `#d7e0de` `#0d1516` | equipment-metaphor neutrals |
@@ -63,6 +64,7 @@ Philosophy: near-black, **zero color tint on surfaces** — all personality from
 | `--fs-muted` | `#8c8c8c` |
 | `--fs-primary` | `#0a0a0a` |
 | `--fs-accent` | `#4ddcbb` (bright mint pops on black) |
+| `--fs-link` | `var(--fs-accent)` (mint clears AA ~11:1 on dark) |
 | `--fs-signal` | `#e2fb70` |
 
 In dark mode the primary button **inverts**: `--btn-primary-bg: var(--fs-accent)`, text `#071412`. OLED screens may force pure `#000000`.

@@ -20,6 +20,11 @@
   --fs-primary: #16292d;
   --fs-accent: #43c7a5;
   --fs-accent-2: #2c7f91;
+  /* Interactive text-link color. The brand mint (--fs-accent) is only ~2.1:1 on
+     white and fails WCAG AA as body text, so links use a darkened brand teal that
+     clears AA (≥4.5:1) on every light surface (#fff / #eef3f1 / #dbe6e3). Use for
+     inline anchors in running/legal copy. */
+  --fs-link: #1d6575;
   /* Accent as raw RGB channels — enables rgba(var(--fs-accent-rgb), <alpha>)
      for tinted fills/borders without hardcoding hex (e.g. water-reminder cyan). */
   --fs-accent-rgb: 67, 199, 165;
@@ -371,6 +376,8 @@ html.dark {
   --fs-primary: #0a0a0a;
   --fs-accent: #4ddcbb;
   --fs-accent-2: #38b5c9;
+  /* On dark surfaces the brand mint already clears AA (~11:1), so links reuse it. */
+  --fs-link: var(--fs-accent);
   --fs-accent-rgb: 77, 220, 187;
   --fs-signal: #e2fb70;
   --fs-warn: #ff8a65;

@@ -38,7 +38,7 @@ const LABEL_STYLE: React.CSSProperties = {
 };
 
 const LINK_STYLE: React.CSSProperties = {
-  color: 'var(--fs-accent)',
+  color: 'var(--fs-link)',
   textDecoration: 'underline',
   fontWeight: 600,
 };

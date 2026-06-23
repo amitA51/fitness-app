@@ -231,7 +231,7 @@ export default function AccessibilityStatement() {
               href="mailto:pgishonim@gmail.com"
               dir="ltr"
               style={{
-                color: 'var(--fs-accent)',
+                color: 'var(--fs-link)',
                 textDecoration: 'underline',
                 fontFamily: 'var(--font-body)',
               }}

@@ -81,7 +81,7 @@ export function CookieConsentBanner() {
             href="/legal/privacy"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: 'var(--fs-accent)', textDecoration: 'underline', fontWeight: 600 }}
+            style={{ color: 'var(--fs-link)', textDecoration: 'underline', fontWeight: 600 }}
           >
             מדיניות הפרטיות
           </a>
