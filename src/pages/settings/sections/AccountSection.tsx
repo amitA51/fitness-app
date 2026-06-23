@@ -22,7 +22,7 @@ export function AccountSection({ authEmail, onSignOut }: Props) {
       <SettingsCard>
         <SettingsRow
           icon={<User size={15} />}
-          label={authEmail ?? 'לא מחוברים לחשבון'}
+          label={authEmail ? 'מחובר/ת' : 'לא מחוברים לחשבון'}
           divider={!!authEmail}
         >
           {authEmail ? (
