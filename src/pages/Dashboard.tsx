@@ -216,6 +216,9 @@ export default function Dashboard() {
   const hasAnySession = completedSessions.length > 0;
   // Show the dashboard-shaped skeleton only on the first mount-load.
   const showSkeleton = dataLoading && !hasLoadedOnce.current;
+  // The zero-session first-run hero owns the start CTA + explanation; when it is
+  // showing, the masthead start CTA above would be a second identical mint button.
+  const showFirstRunHero = !showSkeleton && !insightsError && !hasAnySession;
 
   const sortedTemplates = useMemo(() => {
     return [...templates.filter((t) => t.isFavorite), ...templates.filter((t) => !t.isFavorite)];
@@ -461,7 +464,10 @@ export default function Dashboard() {
       <DashboardHeader hasSessionToday={hasSessionToday} />
 
       <div style={{ padding: '20px 20px 32px' }}>
-        {/* 1. Single primary CTA — opens the start-workout choice sheet */}
+        {/* 1. Primary CTA — opens the start-workout choice sheet. Suppressed on
+            the zero-session first run, where the FirstRunHero below already
+            carries the start action (avoids two stacked identical mint CTAs). */}
+        {!showFirstRunHero && (
         <button
           type="button"
           onClick={openStartSheet}
@@ -520,6 +526,7 @@ export default function Dashboard() {
           </span>
           <span>התחל אימון</span>
         </button>
+        )}
 
         {/* First-visit hint under the primary CTA — returning users only. The
             zero-session FirstRunHero below already leads with this same guidance
