@@ -141,11 +141,7 @@ export default function Dashboard() {
   // mount-load, never on pull-to-refresh (which keeps the populated page).
   const hasLoadedOnce = useRef(false);
 
-  const {
-    sessions: dataContextSessions,
-    refreshData,
-    loading: dataLoading,
-  } = useData();
+  const { sessions: dataContextSessions, refreshData, loading: dataLoading } = useData();
   const {
     workoutSessions,
     weekOverWeekDeltas,
