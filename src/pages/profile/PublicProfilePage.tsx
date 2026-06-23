@@ -37,7 +37,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/ui/PageHeader';
 import {
   getPublicProfile,
@@ -94,6 +94,16 @@ const CARD_STYLE: React.CSSProperties = {
 };
 
 function PageShell({ title, children }: { title: string; children: React.ReactNode }) {
+  const navigate = useNavigate();
+  // Mirror the app's back convention (MyCoach / WorkoutDetail / CoachPage): pop
+  // in-app history when there is somewhere to pop to, else fall back to the
+  // community feed — the list this profile is a detail of — so a cold deep-link
+  // to /u/:id is never a dead-end.
+  const goBack = () => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx;
+    if (idx && idx > 0) navigate(-1);
+    else navigate('/community');
+  };
   return (
     <div
       className="min-h-screen min-h-[100dvh] pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))] ambient-mesh ambient-mesh-soft"
@@ -101,7 +111,7 @@ function PageShell({ title, children }: { title: string; children: React.ReactNo
       dir="rtl"
       lang="he"
     >
-      <PageHeader title={title} eyebrow="SparkOS Fitness" />
+      <PageHeader title={title} eyebrow="SparkOS Fitness" onBack={goBack} />
       <main className="px-5 pt-6">{children}</main>
     </div>
   );
