@@ -2,7 +2,7 @@
 // This replaces the old 1295-line monolithic ActiveWorkout.tsx
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { ActiveExercise, PersonalItem, WorkoutSettings } from '../../types';
 
 import { syncTemplatesFromCloud } from '../../hooks/useCloudTemplateReflection';
@@ -95,6 +95,7 @@ export const WorkoutContent: React.FC<{
   const dispatch = useWorkoutDispatch();
   const derived = useWorkoutDerived();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Track whether the user started a fresh workout and wants the selector. This
   // intent is persisted in sessionStorage under a single namespaced key so it
@@ -136,6 +137,23 @@ export const WorkoutContent: React.FC<{
       setPreWorkoutScreenShown(false);
     }
   }, [derived.currentExercise, preWorkoutScreenShown, setPreWorkoutScreenShown]);
+
+  // Empty-start deep-link: the dashboard "אימון ריק" choice navigates here with
+  // { startEmpty: true } to skip the PreWorkout welcome and open the exercise
+  // selector directly — its label promises "add exercises as you go", so a second
+  // "התחל אימון" tap is friction. Mirrors PreWorkoutScreen.onStartWorkout exactly.
+  // One-shot on arrival; no-ops when a workout is already in progress; the nav
+  // state is cleared first so a later remount/back-nav can't re-open the selector.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot on arrival
+  useEffect(() => {
+    if (!(location.state as { startEmpty?: boolean } | null)?.startEmpty) return;
+    navigate(location.pathname, { replace: true, state: null });
+    if (derived.currentExercise) return;
+    dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'goal', isOpen: false } });
+    dispatch({ type: 'SET_MODAL_STATE', payload: { modal: 'warmup', isOpen: false } });
+    setPreWorkoutScreenShown(true);
+    dispatch({ type: 'OPEN_SELECTOR' });
+  }, []);
 
   // Inline coach injection for the workout surface: the most recent coach-assigned
   // program (kind === 'program' with a templateId). Sourced from Supabase, so it

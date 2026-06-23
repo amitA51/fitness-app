@@ -245,7 +245,9 @@ export default function Dashboard() {
 
   const handleEmptyWorkout = useCallback(() => {
     setIsStartSheetOpen(false);
-    navigate('/workout');
+    // Skip the PreWorkout welcome and land straight on the exercise selector —
+    // "אימון ריק" means "add exercises as you go", so a second start tap is friction.
+    navigate('/workout', { state: { startEmpty: true } });
   }, [navigate]);
 
   const goToPrevWeek = useCallback(() => {
