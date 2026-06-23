@@ -1,7 +1,7 @@
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { BookOpen, Clock, CloudOff, Plus, Search } from 'lucide-react';
 import type React from 'react';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { CoachMark } from '../components/guidance/CoachMark';
 import { FadeIn } from '../components/motion/FadeIn';
 import { Stagger, StaggerItem } from '../components/motion/Stagger';
@@ -65,6 +65,19 @@ export default function NutritionPage() {
     handleServingsChange,
     handleCloseModal,
   } = useNutritionData();
+
+  // Adding from the "מזון" library tab stages the food AND opens the meal sheet,
+  // so the user immediately SEES it land under "מזונות שנבחרו" with the running
+  // total + "שמור ארוחה" CTA — instead of a tap that silently fills an invisible
+  // basket (which the library's own "...להוסיף ליומן" prompt had promised). The
+  // sheet's own in-list add stays raw (handleAddFood) so it doesn't re-open.
+  const handleLibraryAdd = useCallback<typeof handleAddFood>(
+    (food) => {
+      handleAddFood(food);
+      setShowAddMeal(true);
+    },
+    [handleAddFood, setShowAddMeal]
+  );
 
   const TABS = useMemo<{ key: MealTab; label: string; icon: React.ReactNode }[]>(
     () => [
@@ -252,7 +265,7 @@ export default function NutritionPage() {
             >
               <FoodLibrary
                 foods={filteredFoods}
-                onAddFood={handleAddFood}
+                onAddFood={handleLibraryAdd}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 isLoading={isLoading}
