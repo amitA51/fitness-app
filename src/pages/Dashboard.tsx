@@ -21,7 +21,6 @@ import { CoachBriefCard } from '../components/dashboard/CoachBriefCard';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { InsightCard } from '../components/dashboard/InsightCard';
 import { ProgramCard } from '../components/dashboard/ProgramCard';
-import { RecentPRBanner } from '../components/dashboard/RecentPRBanner';
 import { StartWorkoutSheet } from '../components/dashboard/StartWorkoutSheet';
 import { TemplateStrip } from '../components/dashboard/TemplateQuickStart';
 import { TodaysWorkoutCard } from '../components/dashboard/TodaysWorkoutCard';
@@ -33,7 +32,6 @@ import { FadeIn } from '../components/motion/FadeIn';
 import { Stagger, StaggerItem } from '../components/motion/Stagger';
 import { Card } from '../components/ui/Card';
 import { SkeletonBox } from '../components/ui/SkeletonLoader';
-import { WorkoutHistory } from '../components/workout/history/WorkoutHistory';
 import { Z_INDEX } from '../constants/zIndex';
 import { useCoach } from '../contexts/CoachContext';
 import { useData } from '../contexts/DataContext';
@@ -147,7 +145,6 @@ export default function Dashboard() {
     sessions: dataContextSessions,
     refreshData,
     loading: dataLoading,
-    error: dataError,
   } = useData();
   const {
     workoutSessions,
@@ -697,23 +694,9 @@ export default function Dashboard() {
           </Card>
         </section>
 
-        {/* 7. Recent workouts — unified compact history. On a sessions-load
-            failure, surface the error + retry instead of a silent "אין אימונים"
-            (mirrors how Progress.tsx handles its load error). */}
-        <section style={{ marginTop: 24 }}>
-          <SectionTitle text="אימונים אחרונים" />
-          {dataError ? (
-            <InsightErrorChip
-              message="לא הצלחנו לטעון את האימונים האחרונים"
-              onRetry={refreshData}
-            />
-          ) : (
-            <WorkoutHistory sessions={workoutSessions} mode="compact" isLoading={dataLoading} />
-          )}
-        </section>
-
-        {/* 8. PR highlights (compact) */}
-        <RecentPRBanner />
+        {/* Full recent-workout history + PR board live on Progress (the home's
+            stated contract: lean entry + glanceable weekly, deep analytics in
+            Progress). The weekly calendar above already shows this week's rhythm. */}
 
         {/* Connect-a-coach prompt — self-hides once the trainee has a coach. */}
         <FindCoachCard />
