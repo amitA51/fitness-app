@@ -44,7 +44,7 @@ const KIND_LABEL: Record<Assignment['kind'], string> = {
   program: 'תוכנית אימון',
   nutrition_target: 'יעד תזונה',
   note: 'המלצה',
-  announcement: 'הודעה',
+  announcement: 'עדכון',
 };
 
 // Trailing-edge rail color, keyed by assignment kind. Reuses existing semantic

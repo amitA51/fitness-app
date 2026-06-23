@@ -255,7 +255,7 @@ function GroupEditor({
         groupId: group.id,
       });
       setAnnouncement('');
-      showToast('ההודעה נשלחה לקבוצה', 'success');
+      showToast('העדכון נשלח לקבוצה', 'success');
     } catch {
       showToast('השליחה נכשלה', 'error');
     } finally {
@@ -354,12 +354,12 @@ function GroupEditor({
             value={announcement}
             onChange={(e) => setAnnouncement(e.target.value)}
             rows={2}
-            placeholder="הודעה לכל חברי הקבוצה…"
-            aria-label="הודעה לקבוצה"
+            placeholder="עדכון לכל חברי הקבוצה…"
+            aria-label="עדכון לקבוצה"
           />
         </div>
         <Button variant="secondary" fullWidth isLoading={broadcasting} onClick={broadcast}>
-          שלח הודעה לקבוצה
+          שלח עדכון לקבוצה
         </Button>
       </div>
 
