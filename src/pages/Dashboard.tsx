@@ -523,12 +523,17 @@ export default function Dashboard() {
           <span>התחל אימון</span>
         </button>
 
-        {/* First-visit hint under the primary CTA */}
-        <div style={{ marginTop: 12 }}>
-          <CoachMark hintKey="hintDashboard" dismissLabel="הבנתי" dismissAriaLabel="הבנתי, סגירה">
-            מתחילים מכאן — בחרו תרגילים והאפליקציה תנחה אתכם דרך הסטים.
-          </CoachMark>
-        </div>
+        {/* First-visit hint under the primary CTA — returning users only. The
+            zero-session FirstRunHero below already leads with this same guidance
+            ("בחרו תרגילים…"), so showing both stacked the identical instruction
+            twice on the literal first-run home. Gate keeps one explainer per state. */}
+        {hasAnySession && (
+          <div style={{ marginTop: 12 }}>
+            <CoachMark hintKey="hintDashboard" dismissLabel="הבנתי" dismissAriaLabel="הבנתי, סגירה">
+              מתחילים מכאן — בחרו תרגילים והאפליקציה תנחה אתכם דרך הסטים.
+            </CoachMark>
+          </div>
+        )}
 
         {/* Coach-scheduled workout for today (invisible for guests / when empty) */}
         <TodaysWorkoutCard />
