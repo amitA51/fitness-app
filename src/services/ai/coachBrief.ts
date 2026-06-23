@@ -127,7 +127,8 @@ export function deterministicProse(
     const sign = f.volumeChangePercent >= 0 ? '+' : '';
     const headline = `נפח שבועי ${f.weeklyVolume.toLocaleString()} ק"ג · ${sign}${f.volumeChangePercent}% מהשבוע שעבר`;
     const bits: string[] = [];
-    if (f.streakDays > 0) bits.push(`רצף ${f.streakDays} ימים`);
+    // Streak is intentionally NOT restated here — the dedicated WorkoutStreak
+    // chip on the home owns that number; this caption stays qualitative.
     if (f.weakMuscles.length > 0)
       bits.push(`שרירים חלשים: ${f.weakMuscles.slice(0, 3).join(', ')}`);
     if (f.neglectedMuscles.length > 0)

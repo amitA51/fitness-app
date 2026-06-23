@@ -159,7 +159,7 @@ export default function Dashboard() {
     error: insightsError,
   } = useFitnessInsights(dataContextSessions);
 
-  // One locally-computed insight (progression → neglected muscle → streak →
+  // One locally-computed insight (progression → neglected muscle →
   // always-fillable fallback). Pure math over the already-aggregated insights —
   // no AI calls here.
   const dashboardInsight = useMemo(
@@ -669,7 +669,7 @@ export default function Dashboard() {
         {/* 4. One smart insight — the single trend line. */}
         <InsightCard insight={dashboardInsight} />
 
-        {/* 4. Templates — quick strip + library affordance. On a load failure,
+        {/* 5. Templates — quick strip + library affordance. On a load failure,
             surface the error + retry instead of silently vanishing into the
             "no templates" empty (mirrors the recent-workouts pattern below). */}
         {templatesError ? (
@@ -684,7 +684,7 @@ export default function Dashboard() {
           </section>
         ) : null}
 
-        {/* 5. Weekly calendar */}
+        {/* 6. Weekly calendar */}
         <section style={{ marginTop: 24 }}>
           <SectionTitle text="יומן אימונים" />
           <Card asymmetric style={{ padding: 20 }}>
@@ -697,7 +697,7 @@ export default function Dashboard() {
           </Card>
         </section>
 
-        {/* 6. Recent workouts — unified compact history. On a sessions-load
+        {/* 7. Recent workouts — unified compact history. On a sessions-load
             failure, surface the error + retry instead of a silent "אין אימונים"
             (mirrors how Progress.tsx handles its load error). */}
         <section style={{ marginTop: 24 }}>
@@ -712,7 +712,7 @@ export default function Dashboard() {
           )}
         </section>
 
-        {/* 7. PR highlights (compact) */}
+        {/* 8. PR highlights (compact) */}
         <RecentPRBanner />
 
         {/* Connect-a-coach prompt — self-hides once the trainee has a coach. */}
