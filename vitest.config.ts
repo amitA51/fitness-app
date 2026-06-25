@@ -37,17 +37,17 @@ export default defineConfig({
         '**/*.d.ts',
       ],
       // Global regression FLOOR, pinned just below the current measured actual
-      // (lines/stmts ~21.4%, branches ~65.1%, funcs ~38.9% over src/ only —
+      // (lines/stmts ~31.8%, branches ~69.7%, funcs ~43.3% over src/ only —
       // measured 2026-06-09 after adding supabaseAuth/entitlementService/waterSync
       // tests). The previous 25/25 values were never actually met (the gate was
       // red), so they enforced nothing. These pass today AND prevent regression.
       // RATCHET THEM UP as tests are added toward the project's 80% target
       // (see .claude/rules/common/testing.md) — never lower them.
       thresholds: {
-        statements: 20,
-        branches: 63,
-        functions: 37,
-        lines: 20,
+        statements: 31,
+        branches: 69,
+        functions: 43,
+        lines: 31,
         'src/components/workout/core/workoutReducer.ts': {
           statements: 60,
           branches: 55,
