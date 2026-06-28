@@ -1,7 +1,8 @@
-import { Copy, Download, FileJson, Share2 } from 'lucide-react';
+import { Copy, Download, FileJson, Share2, Upload } from 'lucide-react';
 import type React from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '../../../components/ui/Button';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { showToast } from '../../../components/ui/GlobalToast';
 import { SettingsCard } from '../../../components/ui/SettingsCard';
 import { SectionLabel } from '../../../components/ui/SettingsSectionLabel';
@@ -10,7 +11,11 @@ import {
   generateWeeklyReport,
   shareReport,
 } from '../../../services/exportService';
-import { exportFullBackup, exportWorkoutHistory } from '../../../services/settingsService';
+import {
+  exportFullBackup,
+  exportWorkoutHistory,
+  importFullBackup,
+} from '../../../services/settingsService';
 import { logger } from '../../../utils/logger';
 import { Divider } from '../components/Divider';
 import { IconBox } from '../components/IconBox';
@@ -85,6 +90,39 @@ export function ExportSection({
   // Tracks which action is mid-flight so we can disable its row and prevent
   // a double-fire (e.g. a second file download before the first resolves).
   const [busy, setBusy] = useState<'csv' | 'backup' | 'report' | null>(null);
+
+  // Restore-from-backup: a file is staged on pick, then confirmed before it
+  // merges into the local DB (it overwrites captured settings).
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingRestore, setPendingRestore] = useState<File | null>(null);
+  const [restoring, setRestoring] = useState(false);
+
+  const handleRestoreClick = () => fileInputRef.current?.click();
+
+  const handleRestorePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    e.target.value = ''; // let the same file be re-picked later
+    if (file) setPendingRestore(file);
+  };
+
+  const handleConfirmRestore = async () => {
+    const file = pendingRestore;
+    setPendingRestore(null);
+    if (!file) return;
+    setRestoring(true);
+    try {
+      const text = await file.text();
+      const result = await importFullBackup(text);
+      showToast(`השחזור הושלם · ${result.records} רשומות`);
+      // Reload so the restored records + settings hydrate everywhere.
+      setTimeout(() => window.location.reload(), 1200);
+    } catch (e) {
+      logger.app.error('Restore failed', e);
+      showToast(e instanceof Error ? e.message : 'השחזור נכשל', 'error');
+    } finally {
+      setRestoring(false);
+    }
+  };
 
   const handleExportCsv = async () => {
     if (busy) return;
@@ -174,6 +212,16 @@ export function ExportSection({
 
         <div className="flex flex-col">
           <ExportRow
+            icon={<Upload size={15} />}
+            label="שחזור מגיבוי (JSON)"
+            onClick={handleRestoreClick}
+            disabled={restoring}
+          />
+          <Divider />
+        </div>
+
+        <div className="flex flex-col">
+          <ExportRow
             icon={<Share2 size={15} />}
             label="דוח שבועי"
             onClick={handleWeeklyReport}
@@ -221,6 +269,23 @@ export function ExportSection({
           </div>
         )}
       </SettingsCard>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        onChange={handleRestorePick}
+        style={{ display: 'none' }}
+      />
+      <ConfirmDialog
+        isOpen={pendingRestore !== null}
+        onConfirm={handleConfirmRestore}
+        onCancel={() => setPendingRestore(null)}
+        title="שחזור מגיבוי"
+        description="הנתונים מהגיבוי ימוזגו אל המכשיר וההגדרות יוחלפו. נתונים קיימים לא יימחקו, והדף ייטען מחדש בסיום."
+        confirmLabel="שחזר"
+        variant="warning"
+      />
     </div>
   );
 }

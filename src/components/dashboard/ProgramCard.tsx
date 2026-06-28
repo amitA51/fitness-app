@@ -15,19 +15,16 @@
 import { ChevronLeft, Sparkles, Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BBT_PROGRAM } from '../../data/bbtProgram.generated';
-import {
-  TRAINING_DAYS,
-  getBlockForWeek,
-  getProgramDay,
-  getProgress,
-} from '../../services/programService';
 import { Card } from '../ui/Card';
 
-const TOTAL_DAYS = BBT_PROGRAM.totalWeeks * TRAINING_DAYS.length;
+// The 12-week program data (BBT_PROGRAM, ~350 KB of source) and programService are
+// loaded LAZILY (dynamic import in the effect below) so the Dashboard's first paint
+// never has to download them. ProgramCard is one card among many on the home screen;
+// its data streams in just after mount and swaps the skeleton for the real view.
 
 type ProgramView =
-  | { kind: 'not-started' }
+  | { kind: 'loading' }
+  | { kind: 'not-started'; totalWeeks: number; titleHe: string }
   | {
       kind: 'active';
       week: number;
@@ -35,14 +32,27 @@ type ProgramView =
       blockHe: string;
       exerciseCount: number;
       completedCount: number;
+      totalDays: number;
       pct: number;
     }
-  | { kind: 'completed' };
+  | { kind: 'completed'; totalWeeks: number };
 
-function readProgramView(): ProgramView {
+// Lazily pulls in the heavy program data + service, then derives the card's view.
+// The dynamic import resolves from the module cache on every call after the first,
+// so the focus/visibility refreshes below stay cheap.
+async function computeProgramView(): Promise<ProgramView> {
+  const [{ BBT_PROGRAM }, { TRAINING_DAYS, getBlockForWeek, getProgramDay, getProgress }] =
+    await Promise.all([
+      import('../../data/bbtProgram.generated'),
+      import('../../services/programService'),
+    ]);
+
+  const totalDays = BBT_PROGRAM.totalWeeks * TRAINING_DAYS.length;
   const progress = getProgress();
-  if (!progress) return { kind: 'not-started' };
-  if (progress.status === 'completed') return { kind: 'completed' };
+  if (!progress)
+    return { kind: 'not-started', totalWeeks: BBT_PROGRAM.totalWeeks, titleHe: BBT_PROGRAM.titleHe };
+  if (progress.status === 'completed')
+    return { kind: 'completed', totalWeeks: BBT_PROGRAM.totalWeeks };
 
   const dayType = TRAINING_DAYS[progress.currentDayIndex] ?? 'Upper';
   const day = getProgramDay(progress.currentWeek, dayType);
@@ -56,7 +66,8 @@ function readProgramView(): ProgramView {
     blockHe: block.nameHe,
     exerciseCount: day?.exercises.length ?? 0,
     completedCount,
-    pct: Math.round((completedCount / TOTAL_DAYS) * 100),
+    totalDays,
+    pct: Math.round((completedCount / totalDays) * 100),
   };
 }
 
@@ -76,23 +87,52 @@ const kicker = (text: string) => (
 
 export function ProgramCard() {
   const navigate = useNavigate();
-  const [view, setView] = useState<ProgramView>({ kind: 'not-started' });
+  const [view, setView] = useState<ProgramView>({ kind: 'loading' });
 
   useEffect(() => {
-    setView(readProgramView());
+    let active = true;
     // Re-read on return-to-tab: finishing a program day advances the pointer via
     // the save-flow reconcile, so the card should reflect it when the user comes
-    // back to the Dashboard.
-    const refresh = () => setView(readProgramView());
+    // back to the Dashboard. The dynamic import is cached, so refreshes are cheap.
+    const refresh = () => {
+      computeProgramView().then((next) => {
+        if (active) setView(next);
+      });
+    };
+    refresh();
     window.addEventListener('focus', refresh);
     document.addEventListener('visibilitychange', refresh);
     return () => {
+      active = false;
       window.removeEventListener('focus', refresh);
       document.removeEventListener('visibilitychange', refresh);
     };
   }, []);
 
   const goToProgram = () => navigate('/program');
+
+  // ── Loading (program data streams in just after mount) ──────────────────────
+  if (view.kind === 'loading') {
+    return (
+      <Card
+        asymmetric
+        role="region"
+        aria-label="תוכנית האימון"
+        aria-busy="true"
+        style={{ marginTop: 16, padding: 18 }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="skeleton" style={{ height: 12, width: '42%', borderRadius: 6 }} />
+          <div className="skeleton" style={{ height: 20, width: '68%', borderRadius: 6 }} />
+          <div className="skeleton" style={{ height: 6, width: '100%', borderRadius: 999 }} />
+          <div
+            className="skeleton"
+            style={{ height: 46, width: '100%', borderRadius: 'var(--radius-md)' }}
+          />
+        </div>
+      </Card>
+    );
+  }
 
   // ── Completed ─────────────────────────────────────────────────────────────
   if (view.kind === 'completed') {
@@ -132,7 +172,7 @@ export function ProgramCard() {
                 marginTop: 2,
               }}
             >
-              סיימת את כל {BBT_PROGRAM.totalWeeks} השבועות
+              סיימת את כל {view.totalWeeks} השבועות
             </div>
           </div>
           <button
@@ -204,7 +244,7 @@ export function ProgramCard() {
             <Sparkles size={24} />
           </span>
           <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-            {kicker(`${BBT_PROGRAM.totalWeeks} שבועות · 5 אימונים בשבוע`)}
+            {kicker(`${view.totalWeeks} שבועות · 5 אימונים בשבוע`)}
             <span
               style={{
                 fontFamily: 'var(--font-display)',
@@ -224,7 +264,7 @@ export function ProgramCard() {
                 lineHeight: 1.4,
               }}
             >
-              התקדמות מודרכת לפי RPE — התחילו את {BBT_PROGRAM.titleHe}.
+              התקדמות מודרכת לפי RPE — התחילו את {view.titleHe}.
             </span>
           </span>
           <ChevronLeft
@@ -264,7 +304,7 @@ export function ProgramCard() {
             }}
           >
             <bdi dir="ltr">
-              {view.completedCount}/{TOTAL_DAYS}
+              {view.completedCount}/{view.totalDays}
             </bdi>{' '}
             · <span dir="ltr">{view.pct}%</span>
           </span>

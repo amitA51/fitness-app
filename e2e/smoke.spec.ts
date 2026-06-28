@@ -46,9 +46,9 @@ test.describe('Smoke — unauthenticated landing', () => {
     await expect(tagline).toBeVisible({ timeout: 10_000 });
 
     // At least one login action button must be reachable.
-    // "התחל כאורח" (Start as Guest) is always visible regardless of whether
+    // "המשיכו כאורח" (Continue as Guest) is always visible regardless of whether
     // Supabase is configured — it is the safest stable CTA to assert on.
-    const guestButton = page.getByRole('button', { name: 'התחל כאורח' });
+    const guestButton = page.getByRole('button', { name: 'המשיכו כאורח' });
     await expect(guestButton).toBeVisible();
 
     // RTL invariant — the document direction must be rtl (set in Login page root).

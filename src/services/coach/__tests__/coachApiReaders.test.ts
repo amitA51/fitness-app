@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => {
       return builder;
     });
     // Make the chain awaitable: resolves to the Supabase { data, error } envelope.
+    // biome-ignore lint/suspicious/noThenProperty: mock of PostgREST's thenable query builder; production code awaits the chain.
     builder.then = (resolve: (v: { data: unknown; error: unknown }) => unknown) =>
       resolve({ data: state.rows, error: state.error });
     return builder;

@@ -6,7 +6,7 @@
  * Designed to be reusable in React Native (swap Sentry SDK import).
  */
 
-import * as Sentry from '@sentry/react';
+import { captureException } from '../lib/sentryLazy';
 
 export interface ErrorContext {
   service: string;
@@ -20,7 +20,7 @@ export interface ErrorContext {
  */
 export function reportError(error: unknown, ctx: ErrorContext): void {
   try {
-    Sentry.captureException(error, {
+    captureException(error, {
       tags: {
         service: ctx.service,
         action: ctx.action,

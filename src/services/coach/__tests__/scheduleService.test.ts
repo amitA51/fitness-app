@@ -44,6 +44,7 @@ const mocks = vi.hoisted(() => {
     });
     builder.single = vi.fn(() => Promise.resolve(nextResult()));
     // Make the builder awaitable.
+    // biome-ignore lint/suspicious/noThenProperty: mock of PostgREST's thenable query builder; production code awaits the chain.
     builder.then = (resolve: (v: unknown) => unknown) => resolve(nextResult());
     return builder;
   }

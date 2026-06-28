@@ -418,6 +418,7 @@ export default function CoachMessages() {
   return (
     <CoachPage title="הודעות" subtitle="Messages">
       <TabBar active={tab} onChange={setTab} />
+      {/* biome-ignore lint/a11y/noNoninteractiveTabindex: WAI-ARIA APG — a tabpanel with no intrinsically focusable children is given tabIndex=0 so keyboard users can reach and scroll its content. */}
       <div id={panelId(tab)} role="tabpanel" aria-labelledby={tabId(tab)} tabIndex={0}>
         {tab === 'personal' ? <PersonalPanel /> : <GroupsPanel />}
       </div>

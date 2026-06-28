@@ -22,6 +22,7 @@ interface FormData {
   name: string;
   muscleGroup: string;
   category: string;
+  equipment: string;
   tempo: string;
   tutorialText: string;
   defaultRestTime: number;
@@ -33,6 +34,7 @@ const getInitialFormData = (): FormData => ({
   name: '',
   muscleGroup: '',
   category: 'strength',
+  equipment: '',
   tempo: '',
   tutorialText: '',
   defaultRestTime: WORKOUT.DEFAULT_REST_TIME,
@@ -45,7 +47,7 @@ const formDataToExerciseInput = (formData: FormData): CreatePersonalExerciseInpu
     name: formData.name,
     targetMuscle: formData.muscleGroup || 'Other',
     secondaryMuscles: [],
-    equipment: '',
+    equipment: formData.equipment,
     instructions: '',
     videoUrl: null,
     imageUrl: null,
@@ -73,6 +75,7 @@ const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('all');
   const [selectedCategory] = useState<string>('all');
+  const [selectedEquipment, setSelectedEquipment] = useState<string>('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState<PersonalExercise | null>(null);
   const [formData, setFormData] = useState<FormData>(getInitialFormData);
@@ -134,10 +137,12 @@ const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
         const matchesMuscleGroup =
           selectedMuscleGroup === 'all' || ex.muscleGroup === selectedMuscleGroup;
         const matchesCategory = selectedCategory === 'all' || ex.category === selectedCategory;
-        return matchesSearch && matchesMuscleGroup && matchesCategory;
+        const matchesEquipment =
+          selectedEquipment === 'all' || ex.equipment === selectedEquipment;
+        return matchesSearch && matchesMuscleGroup && matchesCategory && matchesEquipment;
       })
       .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
-  }, [exercises, searchQuery, selectedMuscleGroup, selectedCategory]);
+  }, [exercises, searchQuery, selectedMuscleGroup, selectedCategory, selectedEquipment]);
 
   return (
     <div className="flex flex-col" style={{ flex: 1, background: 'transparent' }}>
@@ -146,6 +151,8 @@ const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
         onSearchChange={setSearchQuery}
         selectedMuscleGroup={selectedMuscleGroup}
         onMuscleGroupChange={setSelectedMuscleGroup}
+        selectedEquipment={selectedEquipment}
+        onEquipmentChange={setSelectedEquipment}
         exercises={exercises}
         onSuggestionSelect={onSelect}
       />

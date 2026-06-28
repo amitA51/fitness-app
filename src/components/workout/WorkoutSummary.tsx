@@ -23,6 +23,7 @@ import { logger } from '../../utils/logger';
 import { HE_NOUNS, pluralizeHe } from '../../utils/pluralizeHe';
 import { formatDuration } from '../../utils/workoutFormatters';
 import { computeSessionStats, setVolume } from '../../utils/workoutMath';
+import { MuscleMap } from '../fitness/MuscleMap';
 import { ModalOverlay } from '../ui/ModalOverlay';
 import { type ComparisonData, StatsGrid } from './components/StatsGrid';
 import { SummaryExerciseList } from './components/SummaryExerciseList';
@@ -186,6 +187,22 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   const headlineRef = useRef<HTMLSpanElement>(null);
 
   const stats = useMemo(() => computeStats(session), [session]);
+
+  // Unique primary muscles the session touched — drives the "muscles worked"
+  // recap map. WorkoutExercise carries no secondary muscles, so this is the
+  // primary set only (matching the workout-detail breakdown). Cardio / untagged
+  // sessions yield an empty set and the recap self-hides.
+  const workedMuscles = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (session.exercises ?? [])
+            .map((ex) => ex.targetMuscle || ex.muscleGroup || '')
+            .filter((m) => m.length > 0)
+        )
+      ),
+    [session]
+  );
 
   const dateLabel = useMemo(() => {
     return new Date().toLocaleDateString('he-IL', {
@@ -693,6 +710,37 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   comparison={comparison}
                   startDelay={STATS_START}
                 />
+
+                {/* Muscles worked — visual recap of the session. Self-hides for
+                    cardio / untagged sessions (empty muscle set). */}
+                {workedMuscles.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                      padding: '14px 16px',
+                      background: 'var(--fs-surface)',
+                      border: '1px solid var(--fs-surface-2)',
+                      borderRadius: '18px 12px 18px 12px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: '0.14em',
+                        color: 'var(--fs-muted)',
+                        textTransform: 'uppercase',
+                        textAlign: 'center',
+                      }}
+                    >
+                      שרירים שעבדת
+                    </span>
+                    <MuscleMap primary={workedMuscles} />
+                  </div>
+                )}
 
                 {/* Workout Rating */}
                 <div

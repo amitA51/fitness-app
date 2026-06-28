@@ -5,6 +5,8 @@
 
 import { m } from 'framer-motion';
 import { Activity } from 'lucide-react';
+import { MuscleMap } from '../../components/fitness/MuscleMap';
+import { translateMuscle } from '../../constants/muscleNames';
 import type { WorkoutExercise } from '../../types';
 import { formatVolume } from '../../utils/dateUtils';
 import { completedSetsVolume } from '../../utils/workoutMath';
@@ -46,6 +48,12 @@ export function MuscleBreakdown({ exercises, reduceMotion }: MuscleBreakdownProp
   const totalVolume = Object.values(muscleStats).reduce((sum, m) => sum + m.volume, 0);
   const sortedMuscles = Object.entries(muscleStats).sort((a, b) => b[1].volume - a[1].volume);
 
+  // Muscles this session worked — drives the body map (primary only; logged
+  // exercises don't carry secondary muscles).
+  const workedMuscles = exercises
+    .map((ex) => ex.targetMuscle || ex.muscleGroup)
+    .filter((value): value is string => Boolean(value));
+
   const getColor = (index: number): string =>
     BAR_COLORS[index % BAR_COLORS.length] ?? 'var(--fs-muted)';
 
@@ -73,6 +81,12 @@ export function MuscleBreakdown({ exercises, reduceMotion }: MuscleBreakdownProp
           פילוח שרירים
         </h3>
 
+        {workedMuscles.length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <MuscleMap primary={workedMuscles} />
+          </div>
+        )}
+
         {/* Volume bar chart */}
         <div className="space-y-3">
           {sortedMuscles.slice(0, 6).map(([muscle, stats], index) => {
@@ -83,7 +97,7 @@ export function MuscleBreakdown({ exercises, reduceMotion }: MuscleBreakdownProp
                   <span
                     style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--fs-ink)' }}
                   >
-                    {muscle}
+                    {translateMuscle(muscle)}
                   </span>
                   <span
                     style={{

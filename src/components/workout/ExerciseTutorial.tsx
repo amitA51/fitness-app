@@ -7,11 +7,16 @@ import { X as CloseIcon } from 'lucide-react';
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { logger } from '../../utils/logger';
+import { MuscleMap } from '../fitness/MuscleMap';
 
 interface ExerciseTutorialProps {
   isOpen: boolean;
   exerciseName: string;
   customNotes?: string;
+  /** Primary muscle (English catalog key or Hebrew) — drives the muscle map. */
+  primaryMuscle?: string;
+  /** Secondary muscles for the muscle map. */
+  secondaryMuscles?: string[];
   onClose: () => void;
 }
 
@@ -25,6 +30,8 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   isOpen,
   exerciseName,
   customNotes,
+  primaryMuscle,
+  secondaryMuscles,
   onClose,
 }) => {
   const [activeStep, setActiveStep] = useState(0);
@@ -304,6 +311,27 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
 
       {/* Main Content */}
       <div style={{ flex: 1, padding: '24px 20px' }}>
+        {(primaryMuscle || (secondaryMuscles?.length ?? 0) > 0) && (
+          <div style={{ marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid var(--color-border)' }}>
+            <p
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                letterSpacing: '0.15em',
+                color: 'var(--fs-muted)',
+                textTransform: 'uppercase',
+                textAlign: 'center',
+                marginBottom: 14,
+              }}
+            >
+              שרירים בעבודה
+            </p>
+            <MuscleMap
+              primary={primaryMuscle ? [primaryMuscle] : []}
+              secondary={secondaryMuscles ?? []}
+            />
+          </div>
+        )}
         {currentStep && (
           <m.div
             key={activeStep}

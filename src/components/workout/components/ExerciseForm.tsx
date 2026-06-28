@@ -6,12 +6,15 @@ import { Plus as AddIcon } from 'lucide-react';
 import type React from 'react';
 import { useId } from 'react';
 import { EXERCISE_CATEGORIES, MUSCLE_GROUPS, WORKOUT } from '../../../constants';
+import { EQUIPMENT_KEYS, translateEquipment } from '../../../constants/equipmentNames';
+import { translateMuscle } from '../../../constants/muscleNames';
 import type { PersonalExercise } from '../../../types';
 
 interface ExerciseFormData {
   name: string;
   muscleGroup: string;
   category: string;
+  equipment: string;
   tempo: string;
   tutorialText: string;
   defaultRestTime: number;
@@ -34,6 +37,16 @@ const categoryOptions = Object.entries(EXERCISE_CATEGORIES)
   .filter(([key]) => key !== 'ALL')
   .map(([, value]) => value);
 
+// Hebrew labels for the exercise categories (the stored values stay the English
+// keys — only the display is localized, matching the Hebrew-first app).
+const CATEGORY_LABELS: Record<string, string> = {
+  strength: 'כוח',
+  cardio: 'אירובי',
+  flexibility: 'גמישות',
+  warmup: 'חימום',
+  cooldown: 'צינון',
+};
+
 export const ExerciseForm: React.FC<ExerciseFormProps> = ({
   formData,
   onChange,
@@ -43,6 +56,7 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
   const nameId = useId();
   const muscleGroupId = useId();
   const categoryId = useId();
+  const equipmentId = useId();
   const setsId = useId();
   const restTimeId = useId();
   const tempoId = useId();
@@ -159,7 +173,7 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
             <option value="">בחר...</option>
             {muscleGroupOptions.map((g) => (
               <option key={g} value={g}>
-                {g}
+                {translateMuscle(g)}
               </option>
             ))}
           </select>
@@ -179,11 +193,31 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
             <option value="">בחר...</option>
             {categoryOptions.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {CATEGORY_LABELS[c] ?? c}
               </option>
             ))}
           </select>
         </div>
+      </div>
+
+      {/* Equipment */}
+      <div>
+        <label htmlFor={equipmentId} style={labelStyle}>
+          ציוד
+        </label>
+        <select
+          id={equipmentId}
+          value={formData.equipment}
+          onChange={(e) => updateField('equipment', e.target.value)}
+          style={{ ...inputStyle, appearance: 'none' }}
+        >
+          <option value="">בחר...</option>
+          {EQUIPMENT_KEYS.map((key) => (
+            <option key={key} value={key}>
+              {translateEquipment(key)}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Sets + Rest + Tempo */}

@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react';
+import { captureException } from '../lib/sentryLazy';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { logger } from '../utils/logger';
@@ -28,7 +28,7 @@ export class PageErrorBoundary extends Component<PageErrorBoundaryProps, PageErr
     });
 
     try {
-      Sentry.captureException(error, {
+      captureException(error, {
         contexts: {
           react: {
             componentStack: info.componentStack,

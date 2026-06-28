@@ -4,7 +4,7 @@ import {
   ChevronDown as ChevronDownIcon,
   ChevronUp as ChevronUpIcon,
   GripVertical as DragHandleIcon,
-  Trash as TrashIcon,
+  Trash2 as TrashIcon,
 } from 'lucide-react';
 import type React from 'react';
 import { memo } from 'react';

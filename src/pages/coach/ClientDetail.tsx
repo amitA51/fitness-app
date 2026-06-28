@@ -197,7 +197,6 @@ function TabPanel({
   };
 
   if (reduced) {
-    // biome-ignore lint/a11y/noNoninteractiveTabindex: WAI-ARIA tabpanel must be focusable
     return <div {...common}>{children}</div>;
   }
 

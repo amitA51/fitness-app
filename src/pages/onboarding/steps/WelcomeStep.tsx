@@ -60,7 +60,7 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
             marginTop: '8px',
           }}
         >
-          כתבו סטים. ראו <span style={{ color: 'var(--fs-accent)' }}>התקדמות</span>.
+          כתוב סטים. תראה <span style={{ color: 'var(--fs-accent)' }}>התקדמות</span>.
         </m.p>
 
         <m.p

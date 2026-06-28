@@ -8,7 +8,7 @@ import type { WorkoutSession } from '../types';
 import { logger } from '../utils/logger';
 import { calculateTDEE, getMacroGoalsForGoal } from '../utils/tdee';
 import { exportWorkoutHistoryCSV } from './exportService';
-import { STORES, dbClear, dbGetAll } from './indexedDBCore';
+import { STORES, dbClear, dbGetAll, dbPut } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
 
 // ─── TDEE / Macro orchestration ─────────────────────────────────────────────
@@ -129,33 +129,75 @@ export async function exportWorkoutHistory(): Promise<void> {
 
 // ─── JSON Backup orchestration ──────────────────────────────────────────────
 
-export async function exportFullBackup(): Promise<void> {
-  const [sessions, templates, personalExercises, personalRecords] = await Promise.all([
-    dbGetAll(STORES.WORKOUT_SESSIONS),
-    dbGetAll(STORES.WORKOUT_TEMPLATES),
-    dbGetAll(STORES.PERSONAL_EXERCISES),
-    dbGetAll(STORES.PERSONAL_RECORDS),
-  ]);
-  // Drop the internal program-day scratch template (isProgramHidden) so it never
-  // lands in a user backup and gets reintroduced (possibly stale) on restore.
-  const userTemplates = (templates as Array<{ isProgramHidden?: boolean }>).filter(
-    (t) => !t.isProgramHidden
-  );
-  const backup = {
-    version: '1.0.0',
+// ─── JSON Backup (full export + restore) ─────────────────────────────────────
+// Inspired by OutRun's "keep full control over your data": ONE portable JSON
+// file capturing every user-data store + the localStorage settings, with a
+// matching restore. The transient offline-sync queue (PENDING_SYNC) is plumbing,
+// not user data, so it is excluded; everything else round-trips.
+
+/** Backup `data` key → IndexedDB store. Single source of truth shared by BOTH
+ *  the export (reads these) and the restore (writes them) so they never drift. */
+const BACKUP_DATA_TO_STORE: Record<string, string> = {
+  sessions: STORES.WORKOUT_SESSIONS,
+  templates: STORES.WORKOUT_TEMPLATES,
+  personalExercises: STORES.PERSONAL_EXERCISES,
+  personalRecords: STORES.PERSONAL_RECORDS,
+  bodyWeight: STORES.BODY_WEIGHT,
+  bodyMeasurements: STORES.BODY_MEASUREMENTS,
+  nutritionLogs: STORES.NUTRITION_LOGS,
+  recoveryLogs: STORES.RECOVERY_LOGS,
+  waterLogs: STORES.WATER_LOGS,
+  personalItems: STORES.PERSONAL_ITEMS,
+  aiConversations: STORES.AI_CONVERSATIONS,
+  userSettings: STORES.USER_SETTINGS,
+};
+
+/** `settings` key → localStorage key (captured alongside the stores). */
+const BACKUP_SETTINGS_TO_LS: Record<string, string> = {
+  userProfile: 'user_profile',
+  workoutPrefs: 'workout_prefs',
+  nutritionGoals: 'nutrition_goals',
+  // The built-in 12-week program tracks progress only in localStorage (no cloud
+  // sync yet); capture it so a manual backup preserves the commitment. Mirrors
+  // PROGRESS_KEY in programService.ts (a literal, to avoid importing the large
+  // generated program data here).
+  programProgress: 'bbt_program_progress_v1',
+};
+
+export interface FullBackup {
+  version: string;
+  exportDate: string;
+  data: Record<string, unknown[]>;
+  settings: Record<string, string | null>;
+}
+
+/** Assemble the full backup object (pure of the download side-effect; testable). */
+export async function buildFullBackup(): Promise<FullBackup> {
+  const entries = Object.entries(BACKUP_DATA_TO_STORE);
+  const rowsPerStore = await Promise.all(entries.map(([, store]) => dbGetAll(store)));
+  const data: Record<string, unknown[]> = {};
+  entries.forEach(([key, store], i) => {
+    let rows = rowsPerStore[i] ?? [];
+    // Drop the internal program-day scratch template (isProgramHidden) so it
+    // never lands in a user backup and gets reintroduced (possibly stale).
+    if (store === STORES.WORKOUT_TEMPLATES) {
+      rows = (rows as Array<{ isProgramHidden?: boolean }>).filter((t) => !t.isProgramHidden);
+    }
+    data[key] = rows;
+  });
+  return {
+    version: '1.1.0',
     exportDate: new Date().toISOString(),
-    data: { sessions, templates: userTemplates, personalExercises, personalRecords },
-    settings: {
-      userProfile: localStorage.getItem('user_profile'),
-      workoutPrefs: localStorage.getItem('workout_prefs'),
-      nutritionGoals: localStorage.getItem('nutrition_goals'),
-      // The built-in 12-week program tracks progress only in localStorage (no
-      // cloud sync yet); capture it so a manual backup preserves the commitment.
-      // Key mirrors PROGRESS_KEY in programService.ts (kept as a literal to avoid
-      // pulling the large generated program data into the settings bundle).
-      programProgress: localStorage.getItem('bbt_program_progress_v1'),
-    },
+    data,
+    settings: Object.fromEntries(
+      Object.entries(BACKUP_SETTINGS_TO_LS).map(([key, lsKey]) => [key, localStorage.getItem(lsKey)])
+    ),
   };
+}
+
+/** Build a full backup and download it as a .json file. */
+export async function exportFullBackup(): Promise<void> {
+  const backup = await buildFullBackup();
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -165,4 +207,70 @@ export async function exportFullBackup(): Promise<void> {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ─── JSON Backup restore ────────────────────────────────────────────────────
+// Completes the round-trip for exportFullBackup above (data ownership). Merges
+// records by key (upsert — never wipes existing data) and overwrites the
+// captured localStorage settings. A backup you can't restore isn't really yours.
+
+export interface RestoreResult {
+  /** Records written across all data stores. */
+  records: number;
+  /** localStorage settings keys restored. */
+  settings: number;
+}
+
+interface BackupShape {
+  version?: string;
+  data?: Record<string, unknown>;
+  settings?: Record<string, unknown>;
+}
+
+/**
+ * Parse + restore a backup produced by {@link exportFullBackup}. Throws a
+ * user-facing Hebrew error for malformed JSON or a foreign (non-SparkOS) file.
+ */
+export async function importFullBackup(text: string): Promise<RestoreResult> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error('הקובץ אינו קובץ גיבוי תקין (JSON שגוי).');
+  }
+  const backup = parsed as BackupShape;
+  if (typeof backup !== 'object' || backup === null || typeof backup.data !== 'object' || backup.data === null) {
+    throw new Error('הקובץ אינו גיבוי של SparkOS.');
+  }
+
+  let records = 0;
+  for (const [key, store] of Object.entries(BACKUP_DATA_TO_STORE)) {
+    const rows = backup.data[key];
+    if (!Array.isArray(rows)) continue;
+    for (const row of rows) {
+      if (row && typeof row === 'object') {
+        try {
+          await dbPut(store, row as object);
+          records++;
+        } catch (err) {
+          logger.app.warn(`restore: failed to write a row to "${store}"`, err);
+        }
+      }
+    }
+  }
+
+  let settings = 0;
+  for (const [key, lsKey] of Object.entries(BACKUP_SETTINGS_TO_LS)) {
+    const value = backup.settings?.[key];
+    if (typeof value === 'string') {
+      try {
+        localStorage.setItem(lsKey, value);
+        settings++;
+      } catch (err) {
+        logger.app.warn(`restore: failed to set localStorage "${lsKey}"`, err);
+      }
+    }
+  }
+
+  return { records, settings };
 }

@@ -91,6 +91,8 @@ interface WorkoutOverlaysProps {
   showTutorial: boolean;
   tutorialExercise: string | null;
   tutorialCustomNotes?: string;
+  tutorialPrimaryMuscle?: string;
+  tutorialSecondaryMuscles?: string[];
   onCloseTutorial: () => void;
   onCloseAICoach: () => void;
 }
@@ -157,6 +159,8 @@ const WorkoutOverlays: React.FC<WorkoutOverlaysProps> = (props) => (
       showTutorial={props.showTutorial}
       tutorialExercise={props.tutorialExercise}
       tutorialCustomNotes={props.tutorialCustomNotes}
+      tutorialPrimaryMuscle={props.tutorialPrimaryMuscle}
+      tutorialSecondaryMuscles={props.tutorialSecondaryMuscles}
       onCloseTutorial={props.onCloseTutorial}
       onCloseAICoach={props.onCloseAICoach}
     />

@@ -6,7 +6,7 @@ import type React from 'react';
 import { memo, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { WorkoutSession } from '../../types';
-import { HEBREW_MONTHS } from '../../utils/dateUtils';
+import { HEBREW_MONTHS, todayStr } from '../../utils/dateUtils';
 
 interface WorkoutCalendarProps {
   sessions: WorkoutSession[];
@@ -143,7 +143,10 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
     };
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  // Local date (not a UTC ISO slice) so the "today" highlight matches how
+  // sessions store their `date` (todayStr) — otherwise it is off-by-one for
+  // users ahead of UTC (e.g. Israel) around midnight.
+  const today = todayStr();
   const currentMonthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
 
   // Monthly workout count

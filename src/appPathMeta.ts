@@ -17,7 +17,7 @@ const PATH_ACCENT_MAP: Array<[RegExp, PageAccent]> = [
 ];
 
 const PATH_LABEL_MAP: Array<[RegExp, string]> = [
-  [/^\/$/, 'דשבורד'],
+  [/^\/$/, 'בית'],
   [/^\/me$/, 'האימונים שלי'],
   [/^\/workout/, 'אימון'],
   [/^\/nutrition/, 'תזונה'],

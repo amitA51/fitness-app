@@ -14,6 +14,7 @@ import { Dumbbell } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PRHistoryTab from '../../../components/workout/PRHistoryTab';
+import WorkoutCalendar from '../../../components/workout/WorkoutCalendar';
 import { WorkoutHistory } from '../../../components/workout/history/WorkoutHistory';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
 import { ChapterBreak } from '../components/ChapterBreak';
@@ -188,6 +189,12 @@ export const WorkoutsTab = memo(function WorkoutsTab({
               </p>
             )}
           </div>
+
+          {/* Month calendar heatmap of training days — the wger-style workout
+              log, complementing the volume trend above and the detailed list
+              below. Each day click-throughs to that session's detail. */}
+          <WorkoutCalendar sessions={sessions} />
+
           <WorkoutHistory mode="full" sessions={sessions} isLoading={isLoading} />
         </div>
       ) : (

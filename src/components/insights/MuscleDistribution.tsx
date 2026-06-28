@@ -10,6 +10,7 @@ import { memo, useMemo } from 'react';
 import { muscleLabel } from '../../constants/muscleNames';
 import type { WorkoutSession } from '../../types';
 import { getWeekStart } from '../../utils/dateUtils';
+import { MuscleMap } from '../fitness/MuscleMap';
 import { Card } from '../ui/Card';
 
 export interface MuscleDistributionProps {
@@ -44,8 +45,7 @@ const computeWeeklyMuscles = (sessions: WorkoutSession[]): MuscleDatum[] => {
   return [...muscleMap.entries()]
     .map(([muscle, sets]) => ({ muscle, sets }))
     .filter((d) => d.sets > 0)
-    .sort((a, b) => b.sets - a.sets)
-    .slice(0, TOP_N);
+    .sort((a, b) => b.sets - a.sets);
 };
 
 // Rank fade: lead = accent, runner-up = accent-2, rest = muted. Never lime
@@ -60,6 +60,8 @@ export const MuscleDistribution = memo(function MuscleDistribution({
 
   if (data.length === 0) return null;
 
+  const top = data.slice(0, TOP_N);
+  const workedMuscles = data.map((d) => d.muscle);
   const maxSets = data[0]?.sets || 1;
   const lead = data[0];
   const totalSets = data.reduce((sum, d) => sum + d.sets, 0);
@@ -122,8 +124,12 @@ export const MuscleDistribution = memo(function MuscleDistribution({
         </p>
       )}
 
+      <div style={{ marginBottom: 14 }}>
+        <MuscleMap primary={workedMuscles} />
+      </div>
+
       <div style={{ display: 'grid', gap: 8 }}>
-        {data.map((item, i) => {
+        {top.map((item, i) => {
           const pct = Math.round((item.sets / maxSets) * 100);
           return (
             <div key={item.muscle}>

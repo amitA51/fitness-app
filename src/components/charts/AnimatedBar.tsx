@@ -69,6 +69,7 @@ export const AnimatedBar = memo(function AnimatedBar({
           )}
         </div>
       )}
+      {/* biome-ignore lint/a11y/useFocusableInteractive: a progressbar is a read-only status indicator (WAI-ARIA APG); making it focusable would add a non-actionable keyboard tab stop and harm focus order (WCAG 2.4.3). */}
       <div
         className={trackClassName}
         style={{ height, position: 'relative', overflow: 'hidden' }}

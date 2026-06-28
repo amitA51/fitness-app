@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => {
     builder.order = vi.fn(chain);
     builder.limit = vi.fn(chain);
     // Make the builder awaitable.
+    // biome-ignore lint/suspicious/noThenProperty: mock of PostgREST's thenable query builder; production code awaits the chain.
     builder.then = (resolve: (v: unknown) => unknown) => resolve(nextResult());
     return builder;
   }
@@ -156,6 +157,7 @@ describe('getRecentCheckInFlags', () => {
     chain.select = vi.fn(() => chain);
     chain.in = vi.fn(() => chain);
     chain.gte = gteSpy;
+    // biome-ignore lint/suspicious/noThenProperty: mock of PostgREST's thenable query builder; production code awaits the chain.
     chain.then = (resolve: (v: unknown) => unknown) =>
       resolve({ data: [{ user_id: 'c1' }], error: null });
     mocks.mockFrom.mockReturnValueOnce(chain as never);

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { RootErrorBoundary } from '../errors/RootErrorBoundary';
 
-vi.mock('@sentry/react', () => ({
+vi.mock('../lib/sentryLazy', () => ({
   captureException: vi.fn(),
 }));
 
@@ -37,8 +37,8 @@ describe('RootErrorBoundary', () => {
     consoleSpy.mockRestore();
   });
 
-  it('calls Sentry.captureException when error occurs', async () => {
-    const { captureException } = await import('@sentry/react');
+  it('calls captureException when error occurs', async () => {
+    const { captureException } = await import('../lib/sentryLazy');
     const ThrowError = () => {
       throw new Error('Sentry test error');
     };

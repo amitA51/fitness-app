@@ -182,7 +182,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       holdRafRef.current = requestAnimationFrame(step);
     };
     holdRafRef.current = requestAnimationFrame(step);
-  }, [recalcMax, finish]);
+  }, [recalcMax, finish, prefersReducedMotion]);
 
   // Tear down any pending hold rAF on unmount.
   useEffect(() => () => cancelHold(), [cancelHold]);

@@ -98,6 +98,7 @@ export const SetProgress = memo<SetProgressProps>(
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
         {/* Segmented spine */}
+        {/* biome-ignore lint/a11y/useFocusableInteractive: a progressbar is a read-only status indicator (WAI-ARIA APG); a keyboard tab stop here would be non-actionable and harm focus order (WCAG 2.4.3). */}
         <div
           style={{ display: 'flex', gap: 3, flex: 1, direction: 'ltr' }}
           role="progressbar"

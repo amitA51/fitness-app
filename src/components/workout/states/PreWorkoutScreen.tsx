@@ -796,7 +796,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 e.currentTarget.style.color = 'var(--fs-muted)';
                 e.currentTarget.style.borderColor = 'transparent';
               }}
-              aria-label="ביטול וחזרה לדשבורד"
+              aria-label="ביטול וחזרה לבית"
             >
               ביטול
             </button>

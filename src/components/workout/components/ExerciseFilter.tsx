@@ -6,6 +6,7 @@ import { Search as SearchIcon } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MUSCLE_GROUPS } from '../../../constants';
+import { EQUIPMENT_KEYS, translateEquipment } from '../../../constants/equipmentNames';
 import type { PersonalExercise } from '../../../types';
 import { CustomDumbbellIcon as DumbbellIcon } from '../../icons/CustomDumbbellIcon';
 
@@ -27,6 +28,9 @@ interface ExerciseFilterProps {
   onSearchChange: (query: string) => void;
   selectedMuscleGroup: string;
   onMuscleGroupChange: (group: string) => void;
+  /** Equipment filter — optional so non-library callers can omit the row. */
+  selectedEquipment?: string;
+  onEquipmentChange?: (equipment: string) => void;
   exercises?: PersonalExercise[];
   onSuggestionSelect?: (exercise: PersonalExercise) => void;
 }
@@ -36,6 +40,8 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
   onSearchChange,
   selectedMuscleGroup,
   onMuscleGroupChange,
+  selectedEquipment,
+  onEquipmentChange,
   exercises = [],
   onSuggestionSelect,
 }) => {
@@ -347,6 +353,58 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
           );
         })}
       </div>
+
+      {/* Equipment Pills — wger-style equipment filter. Rendered only when the
+          host wires onEquipmentChange (the library). Same pill treatment as the
+          muscle row; the leading "כל הציוד" + equipment terms keep the two rows
+          self-evident. */}
+      {onEquipmentChange && (
+        <div
+          className="no-scrollbar"
+          style={{
+            display: 'flex',
+            gap: 6,
+            overflowX: 'auto',
+            paddingBottom: 4,
+            marginTop: 8,
+            direction: 'rtl',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            maskImage: 'linear-gradient(to left, black 90%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to left, black 90%, transparent 100%)',
+          }}
+        >
+          {['all', ...EQUIPMENT_KEYS].map((eq) => {
+            const isActive = (selectedEquipment ?? 'all') === eq;
+            const label = eq === 'all' ? 'כל הציוד' : translateEquipment(eq);
+            return (
+              <button
+                type="button"
+                key={eq}
+                onClick={() => onEquipmentChange(eq)}
+                style={{
+                  padding: '6px 14px',
+                  background: isActive ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
+                  color: isActive ? 'var(--fs-surface)' : 'var(--fs-muted)',
+                  border: isActive ? 'none' : '1px solid var(--color-border)',
+                  borderRadius: 0,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  transition: 'all 150ms',
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

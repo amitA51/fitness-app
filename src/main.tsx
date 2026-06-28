@@ -2,7 +2,7 @@
 // SPARKOS FITNESS - Main Entry Point
 // ============================================================================
 
-import * as Sentry from '@sentry/react';
+import { loadSentry } from './lib/sentryLazy';
 import { LazyMotion, domMax } from 'framer-motion';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -25,25 +25,32 @@ import './styles/components.css';
 // user grants analytics consent (Consent-Mode pattern). Until then they stay
 // off; the local window error logging below still works.
 let analyticsStarted = false;
-function startAnalytics() {
+async function startAnalytics() {
   if (analyticsStarted) return;
   analyticsStarted = true;
 
   const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
   if (sentryDsn) {
-    Sentry.init({
-      dsn: sentryDsn,
-      environment: import.meta.env.MODE,
-      tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
-      sendDefaultPii: false,
-      beforeSend(event) {
-        if (event.extra?.data) {
-          event.extra.data = undefined;
-        }
-        return event;
-      },
-    });
-    logger.app.info('Sentry initialized (analytics consent granted)');
+    try {
+      // Fetch the Sentry SDK lazily now that consent is granted — it is kept
+      // out of the initial bundle (see lib/sentryLazy).
+      const Sentry = await loadSentry();
+      Sentry.init({
+        dsn: sentryDsn,
+        environment: import.meta.env.MODE,
+        tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
+        sendDefaultPii: false,
+        beforeSend(event) {
+          if (event.extra?.data) {
+            event.extra.data = undefined;
+          }
+          return event;
+        },
+      });
+      logger.app.info('Sentry initialized (analytics consent granted)');
+    } catch (e) {
+      logger.app.warn('Sentry failed to load; error reporting disabled', e);
+    }
   } else if (import.meta.env.PROD) {
     logger.app.warn('Sentry NOT initialized — error reporting disabled in production');
   }

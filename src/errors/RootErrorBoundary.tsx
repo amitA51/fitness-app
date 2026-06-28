@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react';
+import { captureException } from '../lib/sentryLazy';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { logger } from '../utils/logger';
@@ -26,7 +26,7 @@ export class RootErrorBoundary extends Component<Props, State> {
     });
 
     try {
-      Sentry.captureException(error, {
+      captureException(error, {
         contexts: {
           react: {
             componentStack: info.componentStack,

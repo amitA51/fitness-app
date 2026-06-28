@@ -331,7 +331,7 @@ function RoleHome() {
   if (loading) return <PageLoader />;
   if (isCoachView) return <Navigate to="/coach" replace />;
   return (
-    <PageErrorBoundary pageLabel="הדשבורד">
+    <PageErrorBoundary pageLabel="מסך הבית">
       <Dashboard />
     </PageErrorBoundary>
   );
@@ -351,7 +351,7 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
       <Route
         path="/me"
         element={
-          <PageErrorBoundary pageLabel="האימונים שלי">
+          <PageErrorBoundary pageLabel="אימונים שלי">
             <Dashboard />
           </PageErrorBoundary>
         }
@@ -391,7 +391,7 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
       <Route
         path="/templates"
         element={
-          <PageErrorBoundary pageLabel="התבניות">
+          <PageErrorBoundary pageLabel="תבניות">
             <Templates />
           </PageErrorBoundary>
         }
@@ -415,7 +415,7 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
       <Route
         path="/settings"
         element={
-          <PageErrorBoundary pageLabel="ההגדרות">
+          <PageErrorBoundary pageLabel="הגדרות">
             <Settings />
           </PageErrorBoundary>
         }
@@ -524,7 +524,7 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
         path="/my-coach"
         element={
           <TraineeGuard>
-            <PageErrorBoundary pageLabel="המאמן שלי">
+            <PageErrorBoundary pageLabel="מאמן שלי">
               <MyCoach />
             </PageErrorBoundary>
           </TraineeGuard>

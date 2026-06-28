@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => {
     builder.maybeSingle = vi.fn(() =>
       Promise.resolve(maybeSingleQueue.shift() ?? { data: null, error: null })
     );
+    // biome-ignore lint/suspicious/noThenProperty: mock of PostgREST's thenable query builder; production code awaits the chain.
     builder.then = (resolve: (v: unknown) => unknown) =>
       resolve(resultQueue.shift() ?? { data: [], error: null });
     return builder;

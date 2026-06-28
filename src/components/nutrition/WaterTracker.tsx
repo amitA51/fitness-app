@@ -63,6 +63,7 @@ export const WaterTracker = memo(function WaterTracker({
   }, [dateToShow, goalMl]);
 
   // A fresh day starts un-celebrated. loadTotal re-latches if it's already done.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: dateToShow is listed to intentionally re-run this latch reset when the shown day changes; the body only writes a ref.
   useEffect(() => {
     goalCelebratedRef.current = false;
   }, [dateToShow]);

@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react';
+import { addBreadcrumb } from '../lib/sentryLazy';
 import { type Metric, onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals';
 
 type MetricHandler = (metric: Metric) => void;
@@ -18,7 +18,7 @@ const logMetric: MetricHandler = (metric) => {
     );
   } else {
     // Production: send to Sentry as a breadcrumb + measurement on a transaction
-    Sentry.addBreadcrumb({
+    addBreadcrumb({
       category: 'web-vitals',
       message: `${metric.name}: ${metric.value.toFixed(2)} (${metric.rating})`,
       level: metric.rating === 'good' ? 'info' : 'warning',

@@ -197,7 +197,7 @@ const PlanSetRow = memo<PlanSetRowProps>(
             onRemove();
           }}
           disabled={!canRemove}
-          aria-label={`מחק סט ${index + 1}`}
+          aria-label={`הסר סט ${index + 1}`}
           className="flex items-center justify-center cursor-pointer focus-ring disabled:opacity-30 disabled:cursor-not-allowed"
           style={{
             width: 32,

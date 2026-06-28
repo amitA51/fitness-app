@@ -826,6 +826,10 @@ export const WorkoutContent: React.FC<{
         showTutorial={state.showTutorial}
         tutorialExercise={state.tutorialExercise}
         tutorialCustomNotes={derived.currentExercise?.programExtras?.notes as string | undefined}
+        tutorialPrimaryMuscle={
+          derived.currentExercise?.targetMuscle ?? derived.currentExercise?.muscleGroup
+        }
+        tutorialSecondaryMuscles={derived.currentExercise?.secondaryMuscles}
         onCloseTutorial={handleCloseTutorial}
         onCloseAICoach={handleCloseAICoach}
       />

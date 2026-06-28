@@ -327,7 +327,8 @@ body {
     text-transform: uppercase;
   }
 
-  .masthead h1 {
+  .masthead h1,
+  .masthead h2 {
     font-family: var(--font-display);
     font-weight: 900;
     line-height: 0.9;

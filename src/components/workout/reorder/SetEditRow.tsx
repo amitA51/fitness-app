@@ -1,4 +1,4 @@
-import { Check as CheckCheckIcon, Edit as EditIcon, Trash as TrashIcon } from 'lucide-react';
+import { Check as CheckCheckIcon, Edit as EditIcon, Trash2 as TrashIcon } from 'lucide-react';
 import type React from 'react';
 import { memo, useId, useState } from 'react';
 import type { WorkoutSet } from '../../../types';
@@ -316,8 +316,8 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '8px 12px',
-          background: isCompleted ? 'rgba(45,139,78,0.08)' : 'var(--fs-surface)',
-          border: `1px solid ${isCompleted ? '#2F8F58' : 'var(--fs-surface-2)'}`,
+          background: isCompleted ? 'var(--color-success-muted)' : 'var(--fs-surface)',
+          border: `1px solid ${isCompleted ? 'var(--color-success)' : 'var(--fs-surface-2)'}`,
           borderRadius: 0,
           cursor: 'pointer',
           direction: 'rtl',

@@ -3,7 +3,7 @@
  * Provides structured logging with level support and environment-based output
  */
 
-import * as Sentry from '@sentry/react';
+import { captureException } from '../lib/sentryLazy';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -62,7 +62,7 @@ const createLogger = (context: string) => {
         }
         try {
           const error = data instanceof Error ? data : new Error(`${context}: ${message}`);
-          Sentry.captureException(error, {
+          captureException(error, {
             level: 'error',
             extra: {
               context,

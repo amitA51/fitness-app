@@ -8,6 +8,7 @@ export interface ProgressDotsProps {
 
 export function ProgressDots({ currentStep, totalSteps }: ProgressDotsProps) {
   return (
+    // biome-ignore lint/a11y/useFocusableInteractive: a progressbar is a read-only status indicator (WAI-ARIA APG); a keyboard tab stop here would be non-actionable and harm focus order (WCAG 2.4.3).
     <div
       className="flex items-center justify-center gap-2 py-4"
       // direction:ltr so the step progression fills left→right (step 1 → N),

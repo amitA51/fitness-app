@@ -3,9 +3,11 @@
 // Sharp corners · IBM Plex Mono labels · Bricolage display.
 
 import { AnimatePresence, m } from 'framer-motion';
-import { Trash as TrashIcon } from 'lucide-react';
+import { Trash2 as TrashIcon } from 'lucide-react';
 import type React from 'react';
 import { memo } from 'react';
+import { translateEquipment } from '../../../constants/equipmentNames';
+import { translateMuscle } from '../../../constants/muscleNames';
 import type { PersonalExercise } from '../../../types';
 
 const hasHebrew = (text: string) => /[\u0590-\u05FF]/.test(text);
@@ -67,6 +69,9 @@ function renderExerciseName(name: string) {
 
 const ExerciseCard: React.FC<ExerciseCardProps> = memo(
   ({ exercise, isSelectionMode = false, isSelected = false, onClick, onDelete }) => {
+    // Hebrew-first chips: resolve the English catalog keys to Hebrew labels.
+    const muscleText = translateMuscle(exercise.muscleGroup);
+    const equipmentText = translateEquipment(exercise.equipment);
     return (
       <m.div
         key={exercise.id}
@@ -150,10 +155,10 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                 flexWrap: 'wrap',
                 gap: 6,
                 marginTop: 8,
-                direction: 'ltr',
+                direction: 'rtl',
               }}
             >
-              {exercise.muscleGroup && (
+              {muscleText && (
                 <span
                   style={{
                     fontFamily: 'var(--font-mono)',
@@ -169,7 +174,30 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                     borderRadius: 999,
                   }}
                 >
-                  {exercise.muscleGroup}
+                  {muscleText}
+                </span>
+              )}
+              {/* Equipment — secondary attribute, outlined to read distinct from
+                  the filled muscle chip (wger surfaces equipment per exercise). */}
+              {equipmentText && (
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 9,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    padding: '2px 8px',
+                    background: 'transparent',
+                    color: isSelected ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                    border: `1px solid ${
+                      isSelected
+                        ? 'color-mix(in srgb, var(--fs-primary) 30%, transparent)'
+                        : 'var(--fs-steel)'
+                    }`,
+                    borderRadius: 999,
+                  }}
+                >
+                  {equipmentText}
                 </span>
               )}
               <span

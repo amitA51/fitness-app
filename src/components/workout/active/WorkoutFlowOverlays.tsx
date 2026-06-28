@@ -78,6 +78,8 @@ export interface WorkoutFlowOverlaysProps {
   showTutorial: boolean;
   tutorialExercise: string | null;
   tutorialCustomNotes?: string;
+  tutorialPrimaryMuscle?: string;
+  tutorialSecondaryMuscles?: string[];
   onCloseTutorial: () => void;
   onCloseAICoach: () => void;
 }
@@ -121,6 +123,8 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
   showTutorial,
   tutorialExercise,
   tutorialCustomNotes,
+  tutorialPrimaryMuscle,
+  tutorialSecondaryMuscles,
   onCloseTutorial,
   onCloseAICoach,
 }) => (
@@ -218,6 +222,8 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
             isOpen={true}
             exerciseName={tutorialExercise}
             customNotes={tutorialCustomNotes}
+            primaryMuscle={tutorialPrimaryMuscle}
+            secondaryMuscles={tutorialSecondaryMuscles}
             onClose={onCloseTutorial}
           />
         </React.Suspense>
