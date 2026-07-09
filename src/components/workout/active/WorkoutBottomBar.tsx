@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import type { Exercise } from '../../../types';
 import { HE_NOUNS, pluralizeHe } from '../../../utils/pluralizeHe';
 import ExerciseNav from '../components/ExerciseNav';
@@ -41,8 +41,18 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
   // not merely the positionally-next one — otherwise it can suggest an exercise
   // that's already fully done (or, on a 2/2 layout, nothing). When every later
   // exercise is complete the strip is hidden entirely.
-  const nextEx =
-    exercises.slice(currentExerciseIndex + 1).find((ex) => !isExerciseDone(ex)) ?? null;
+  const nextIncompleteAfter = exercises
+    .slice(currentExerciseIndex + 1)
+    .find((ex) => !isExerciseDone(ex));
+  // Also allow jumping to an incomplete exercise *before* current (rare, but
+  // useful after reordering / skipping).
+  const nextIncompleteAny =
+    nextIncompleteAfter ??
+    exercises.find((ex, idx) => idx !== currentExerciseIndex && !isExerciseDone(ex)) ??
+    null;
+  const nextExIndex = nextIncompleteAny
+    ? exercises.findIndex((ex) => ex === nextIncompleteAny)
+    : -1;
 
   // Disable the slide-to-complete once every set of the current exercise is
   // done. Without this, a slide on a finished exercise would try to "complete"
@@ -82,6 +92,10 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
     completeLabel = `החלק לסיום סט ${fmtCount(pos, curWorkingTotal)}`;
   }
 
+  const goToNextExercise = useCallback(() => {
+    if (nextExIndex >= 0) onChangeExercise(nextExIndex);
+  }, [nextExIndex, onChangeExercise]);
+
   return (
     <div
       className="w-full flex-shrink-0"
@@ -94,13 +108,106 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
         gap: 8,
       }}
     >
-      {/* 6A: Slide to complete */}
+      {/* 6A: Primary action — either slide-to-complete, or a clear next-step
+          CTA when this exercise is already fully done. */}
       <div style={{ paddingTop: 8 }}>
-        <SlideToComplete
-          label={completeLabel}
-          onComplete={onCompleteSet}
-          disabled={isExerciseComplete}
-        />
+        {isExerciseComplete && nextIncompleteAny && nextExIndex >= 0 ? (
+          <button
+            type="button"
+            onClick={goToNextExercise}
+            className="focus-ring active:scale-[0.98]"
+            style={{
+              width: '100%',
+              minHeight: 60,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2,
+              padding: '12px 16px',
+              background:
+                'linear-gradient(135deg, var(--fs-accent) 0%, var(--fs-accent) 42%, var(--fs-accent-2) 100%)',
+              border: '2px solid var(--fs-accent)',
+              borderRadius: 999,
+              cursor: 'pointer',
+              color: 'var(--color-ink-on-accent)',
+              boxShadow:
+                '0 8px 18px color-mix(in srgb, var(--fs-accent) 28%, transparent)',
+            }}
+            aria-label={`המשך לתרגיל הבא: ${nextIncompleteAny.name}`}
+          >
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                opacity: 0.9,
+              }}
+            >
+              התרגיל הושלם · הבא
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 900,
+                fontSize: 17,
+                lineHeight: 1.15,
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {nextIncompleteAny.name}
+            </span>
+          </button>
+        ) : isExerciseComplete && !nextIncompleteAny ? (
+          <div
+            role="status"
+            style={{
+              width: '100%',
+              minHeight: 60,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4,
+              padding: '12px 16px',
+              background: 'var(--fs-surface)',
+              border: '1px solid var(--fs-surface-2)',
+              borderRadius: 999,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: 16,
+                color: 'var(--fs-ink)',
+              }}
+            >
+              כל התרגילים הושלמו 🎉
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                color: 'var(--fs-muted)',
+                letterSpacing: '0.04em',
+              }}
+            >
+              לחצו &quot;סיים&quot; למעלה כדי לשמור את האימון
+            </span>
+          </div>
+        ) : (
+          <SlideToComplete
+            label={completeLabel}
+            onComplete={onCompleteSet}
+            disabled={isExerciseComplete}
+          />
+        )}
       </div>
 
       {/* 6B: Nav row */}
@@ -113,8 +220,9 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
         supersetGroups={supersetGroups}
       />
 
-      {/* 6C: Next up strip */}
-      {nextEx && (
+      {/* 6C: Next up strip — only while still mid-exercise (when complete, the
+          big CTA above already owns "next"). */}
+      {!isExerciseComplete && nextIncompleteAfter && (
         <div
           style={{
             display: 'flex',
@@ -149,10 +257,9 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               flex: 1,
-              direction: 'ltr',
             }}
           >
-            {nextEx?.name || '—'}
+            {nextIncompleteAfter.name || '—'}
           </span>
           <span
             style={{
@@ -162,7 +269,7 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
               flexShrink: 0,
             }}
           >
-            {pluralizeHe(nextEx?.sets?.length || 0, HE_NOUNS.set)}
+            {pluralizeHe(nextIncompleteAfter.sets?.length || 0, HE_NOUNS.set)}
           </span>
         </div>
       )}

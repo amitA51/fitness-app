@@ -72,7 +72,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   onClose,
   onCreateNew,
   goal: _goal,
-  confirmLabel = 'התחל',
+  confirmLabel = 'הוסיפו לאימון',
   onPlanRequested,
 }) => {
   const [activeTab, setActiveTab] = useState<'exercises' | 'templates'>('exercises');
@@ -222,20 +222,19 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     textAlign: 'left',
                   }}
                 >
-                  בחר תרגילים
+                  בחרו תרגילים
                 </h1>
                 <p
                   className="mt-1"
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
-                    letterSpacing: '0.15em',
+                    letterSpacing: '0.08em',
                     color: 'var(--color-ink-on-dark)',
-                    opacity: 0.7,
-                    textTransform: 'uppercase',
+                    opacity: 0.75,
                   }}
                 >
-                  ספריית תרגילים
+                  סמנו תרגילים ולחצו הוסיפו לאימון
                 </p>
               </div>
               <button

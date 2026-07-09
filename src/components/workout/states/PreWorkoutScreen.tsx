@@ -8,6 +8,7 @@ import { AnimatePresence, type Variants, m } from 'framer-motion';
 import { Dumbbell as DumbbellIcon } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { calculateStreak } from '../../../services/achievementService';
 import {
   type LastWorkoutSummary,
@@ -112,6 +113,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
   isStartingProgram = false,
   onStartProgram,
 }) => {
+  const navigate = useNavigate();
   const [favoriteTemplates, setFavoriteTemplates] = useState<WorkoutTemplate[]>([]);
   const [recentMuscles, setRecentMuscles] = useState<MuscleGroupLastTrained[]>([]);
   const [lastWorkout, setLastWorkout] = useState<LastWorkoutSummary | null>(null);
@@ -457,7 +459,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   color: 'rgba(255,255,255,0.5)',
                 }}
               >
-                בואו נתחיל לבנות את ההיסטוריה שלך
+                3 צעדים: תבנית → סטים → סיום
               </div>
             </div>
           )}
@@ -725,7 +727,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
             </m.div>
           )}
 
-          {/* CTA Button */}
+          {/* CTA Block — clear primary + secondary paths */}
           <m.div
             key="cta"
             variants={itemVariants}
@@ -734,35 +736,74 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
             className="mt-auto"
             style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
           >
-            {/* Start Workout Button */}
+            {favoriteTemplates.length === 0 && (
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 13,
+                  lineHeight: 1.45,
+                  color: 'var(--fs-muted)',
+                  margin: '0 0 12px',
+                  textAlign: 'center',
+                }}
+              >
+                מומלץ לבחור תבנית מוכנה. אפשר גם להתחיל אימון ריק ולבחור תרגילים.
+              </p>
+            )}
+
             <button
               type="button"
-              onClick={handleStartWorkout}
+              onClick={() => {
+                triggerHaptic('medium');
+                navigate('/templates');
+              }}
               className="start-workout-btn accent-glow w-full focus-ring"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 12,
-                padding: '20px 24px',
-                // ink-on-accent: --fs-heading goes near-white in dark and
-                // fails on the mint gradient fill.
+                padding: '18px 24px',
                 color: 'var(--color-ink-on-accent)',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 18,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                minHeight: 60,
+                fontWeight: 900,
+                fontSize: 17,
+                letterSpacing: '0.02em',
+                minHeight: 58,
+                marginBottom: 10,
               }}
-              aria-label="התחל אימון"
+              aria-label="בחרו תבנית מוכנה"
             >
               <DumbbellIcon style={{ width: 20, height: 20, flexShrink: 0 }} />
-              התחל אימון
+              {favoriteTemplates.length > 0 ? 'עוד תבניות' : 'בחרו תבנית מוכנה'}
             </button>
 
-            {/* Cancel */}
+            <button
+              type="button"
+              onClick={handleStartWorkout}
+              className="w-full focus-ring"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '14px 20px',
+                background: 'var(--fs-surface)',
+                border: '1px solid var(--fs-surface-2)',
+                borderRadius: 'var(--radius-asymmetric)',
+                color: 'var(--fs-ink)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 700,
+                fontSize: 15,
+                minHeight: 50,
+              }}
+              aria-label="התחילו אימון ריק — בחירת תרגילים"
+            >
+              {hasHistory ? 'אימון ריק — בחרו תרגילים' : 'התחילו בלי תבנית'}
+            </button>
+
             <button
               type="button"
               onClick={handleCancel}
@@ -776,29 +817,16 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 color: 'var(--fs-muted)',
                 border: '2px solid transparent',
                 cursor: 'pointer',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 13,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                fontSize: 12,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                minHeight: 48,
-                transition: 'all 150ms',
-              }}
-              onPointerDown={(e) => {
-                e.currentTarget.style.color = 'var(--fs-primary)';
-                e.currentTarget.style.borderColor = 'var(--fs-primary)';
-              }}
-              onPointerUp={(e) => {
-                e.currentTarget.style.color = 'var(--fs-muted)';
-                e.currentTarget.style.borderColor = 'transparent';
-              }}
-              onPointerLeave={(e) => {
-                e.currentTarget.style.color = 'var(--fs-muted)';
-                e.currentTarget.style.borderColor = 'transparent';
+                minHeight: 44,
               }}
               aria-label="ביטול וחזרה לבית"
             >
-              ביטול
+              חזרה לבית
             </button>
           </m.div>
         </AnimatePresence>

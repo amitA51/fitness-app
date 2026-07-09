@@ -105,19 +105,48 @@ export const OverviewTab = memo(function OverviewTab({
       <div className="space-y-4">
         <ChapterBreak title="סקירה" />
         <SectionCard rail={false}>
-          <div className="flex flex-col items-center py-10 text-center gap-3">
-            <Trophy size={32} style={{ color: 'var(--fs-muted)' }} />
-            <p style={{ fontSize: 14, color: 'var(--fs-muted)' }}>
-              השלם אימון ראשון כדי לראות את הסקירה שלך
-            </p>
-            {/* Same recovery-path the recovery tab's empty state offers. */}
+          <div className="flex flex-col items-center py-10 text-center gap-4 px-2">
+            <Trophy size={36} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
+            <div style={{ display: 'grid', gap: 8, maxWidth: 280 }}>
+              <p
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: 'var(--fs-ink)',
+                  margin: 0,
+                }}
+              >
+                עדיין אין נתונים
+              </p>
+              <p style={{ fontSize: 14, color: 'var(--fs-muted)', margin: 0, lineHeight: 1.5 }}>
+                אחרי האימון הראשון יופיעו כאן סיכום שבועי, רצף, נפח ושיאים.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/templates')}
+              className="btn-primary"
+              style={{ minHeight: 48, paddingInline: 20 }}
+            >
+              בחרו תבנית והתחילו
+            </button>
             <button
               type="button"
               onClick={() => navigate('/workout')}
-              className="btn-primary"
-              style={{ minHeight: 44 }}
+              style={{
+                minHeight: 44,
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--fs-muted)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+              }}
             >
-              התחל אימון
+              או אימון ריק
             </button>
           </div>
         </SectionCard>

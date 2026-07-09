@@ -110,6 +110,17 @@ export const DashboardHeader = memo(function DashboardHeader({
           {currentGreeting}
           {userName ? `, ${userName}` : ''}
         </h1>
+        <p
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            letterSpacing: '0.06em',
+            color: 'var(--fs-muted)',
+            margin: '6px 0 0',
+          }}
+        >
+          {hasSessionToday ? 'יפה — אפשר להוסיף אימון נוסף אם בא לכם' : 'היום: התחילו אימון מהכפתור למטה'}
+        </p>
       </div>
       <Link
         to="/settings"

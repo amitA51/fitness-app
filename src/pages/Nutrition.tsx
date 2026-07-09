@@ -119,7 +119,7 @@ export default function NutritionPage() {
       {/* First-visit hint at the top of the nutrition body */}
       <div className="px-5 pt-4">
         <CoachMark hintKey="hintNutrition">
-          תעדו כאן ארוחות ומים — הנתונים מתעדכנים מיד בסיכום היומי.
+          לחצו &quot;הוסף ארוחה&quot; למטה — רשמו מה אכלתם. המים והקלוריות מתעדכנים מיד למעלה.
         </CoachMark>
       </div>
 

@@ -105,17 +105,22 @@ export const WorkoutsTab = memo(function WorkoutsTab({
         <ChapterBreak title="אימונים" />
         <SectionCard rail={false}>
           <div className="flex flex-col items-center py-10 text-center gap-3">
-            <Dumbbell size={32} style={{ color: 'var(--fs-muted)' }} aria-hidden="true" />
-            <p style={{ fontSize: 14, color: 'var(--fs-muted)' }}>
-              עדיין אין אימונים — האימון הראשון שלך יופיע כאן.
-            </p>
+            <Dumbbell size={36} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
+            <div style={{ display: 'grid', gap: 8, maxWidth: 280 }}>
+              <p style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: 'var(--fs-ink)', margin: 0 }}>
+                עדיין אין אימונים
+              </p>
+              <p style={{ fontSize: 14, color: 'var(--fs-muted)', margin: 0, lineHeight: 1.5 }}>
+                האימון הראשון יופיע כאן עם נפח, משך ותרגילים.
+              </p>
+            </div>
             <button
               type="button"
-              onClick={() => navigate('/workout')}
+              onClick={() => navigate('/templates')}
               className="btn-primary"
-              style={{ minHeight: 44 }}
+              style={{ minHeight: 48, paddingInline: 20 }}
             >
-              התחל אימון
+              בחרו תבנית והתחילו
             </button>
           </div>
         </SectionCard>

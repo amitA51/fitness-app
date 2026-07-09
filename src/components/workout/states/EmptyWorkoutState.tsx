@@ -1,8 +1,10 @@
 // EmptyWorkoutState - Fresh Steel / Obsidian
-// Dark masthead · surface body · Bricolage display + IBM Plex Mono labels.
+// Shown when the user is inside an empty workout (no exercises yet).
+// Priority: answer "what do I do now?" in under 3 seconds.
 
 import { m } from 'framer-motion';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { triggerHaptic } from '../../../utils/haptics';
 import { CoachMark } from '../../guidance/CoachMark';
 
@@ -15,169 +17,240 @@ interface EmptyWorkoutStateProps {
   onCancel: () => void;
 }
 
+const STEPS = [
+  { n: '1', text: 'הוסיפו תרגיל מהספרייה' },
+  { n: '2', text: 'הזינו משקל וחזרות' },
+  { n: '3', text: 'החליקו לסיום סט — מנוחה מתחילה' },
+] as const;
+
 const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
-  ({ oledMode: _oledMode, onAddExercise, onCancel }) => (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'var(--fs-bg)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-        zIndex: 9999,
-      }}
-      role="main"
-      aria-label="Empty workout state"
-    >
-      <m.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="glass-surface scrim-noise"
+  ({ oledMode: _oledMode, onAddExercise, onCancel }) => {
+    const navigate = useNavigate();
+
+    return (
+      <div
         style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'var(--fs-bg)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          maxWidth: 320,
-          padding: '0 16px',
-          textAlign: 'center',
+          justifyContent: 'center',
+          padding: 24,
+          zIndex: 9999,
         }}
+        role="main"
+        aria-label="אימון ריק — בחרו תרגיל"
       >
-        {/* Icon */}
         <m.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="section-spotlight"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="glass-surface scrim-noise"
           style={{
-            width: 96,
-            height: 96,
-            background: 'var(--fs-accent)',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 24,
-            border: '2px solid var(--fs-primary)',
-          }}
-        >
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M19 11H5M19 11C20.1046 11 21 11.8954 21 13V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V13C3 11.8954 3.89543 11 5 11M19 11V9C19 7.89543 18.1046 7 17 7M5 11V9C5 7.89543 5.89543 7 7 7M7 7V5C7 3.89543 7.89543 3 9 3H15C16.1046 3 17 3.89543 17 5V7M7 7H17"
-              stroke="var(--fs-primary)"
-              strokeWidth="2"
-              strokeLinecap="square"
-            />
-          </svg>
-        </m.div>
-
-        {/* Title */}
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 900,
-            fontSize: 28,
-            color: 'var(--fs-heading)',
-            textTransform: 'uppercase',
-            letterSpacing: '-0.01em',
-            marginBottom: 8,
-          }}
-        >
-          להתחיל
-        </h1>
-
-        {/* Subtitle */}
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 14,
-            color: 'var(--fs-muted)',
-            lineHeight: 1.6,
-            marginBottom: 16,
-          }}
-        >
-          בחר את התרגיל הראשון שלך כדי להתחיל את האימון
-        </p>
-
-        {/* First-visit hint about slide-to-complete + auto rest timer */}
-        <div style={{ width: '100%', marginBottom: 24, textAlign: 'start' }}>
-          <CoachMark hintKey="hintWorkout">
-            בסיום כל סט החליקו את הכפתור והמנוחה תתחיל אוטומטית.
-          </CoachMark>
-        </div>
-
-        {/* Add exercise button */}
-        <m.button
-          onClick={() => {
-            triggerHaptic('medium');
-            onAddExercise();
-          }}
-          whileTap={{ scale: 0.98 }}
-          className="start-workout-btn accent-glow"
-          style={{
+            maxWidth: 340,
             width: '100%',
-            minHeight: 56,
-            background: 'var(--fs-primary)',
-            color: 'var(--fs-accent)',
-            border: 'none',
-            fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            fontSize: 16,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            marginBottom: 16,
-            transition: 'background 150ms ease',
+            padding: '28px 20px',
+            textAlign: 'center',
+            borderRadius: '24px 16px 24px 16px',
+            border: '1px solid var(--fs-surface-2)',
           }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = 'var(--color-primary-hover)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = 'var(--fs-primary)';
-          }}
-          aria-label="בחר תרגיל להוספה"
         >
-          <span style={{ fontSize: 20 }}>+</span> בחר תרגיל
-        </m.button>
+          {/* Icon */}
+          <m.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="section-spotlight"
+            style={{
+              width: 80,
+              height: 80,
+              background: 'var(--fs-accent)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 20,
+              borderRadius: 18,
+              color: 'var(--color-ink-on-accent)',
+            }}
+          >
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M6.5 6.5h3v11h-3v-11zm8 0h3v11h-3v-11zM4 9h2.5v6H4V9zm13.5 0H20v6h-2.5V9zM9.5 11h5v2h-5v-2z"
+                fill="currentColor"
+              />
+            </svg>
+          </m.div>
 
-        {/* Cancel button */}
-        <button
-          type="button"
-          onClick={onCancel}
-          style={{
-            minHeight: 44,
-            padding: '0 16px',
-            background: 'transparent',
-            color: 'var(--fs-muted)',
-            border: '2px solid var(--fs-surface-2)',
-            fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            fontSize: 13,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            transition: 'all 150ms ease',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = 'var(--fs-primary)';
-            (e.currentTarget as HTMLElement).style.color = 'var(--fs-primary)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = 'var(--fs-surface-2)';
-            (e.currentTarget as HTMLElement).style.color = 'var(--fs-muted)';
-          }}
-          aria-label="ביטול האימון"
-        >
-          ביטול
-        </button>
-      </m.div>
-    </div>
-  )
+          <h1
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 900,
+              fontSize: 24,
+              color: 'var(--fs-heading)',
+              letterSpacing: '-0.01em',
+              marginBottom: 8,
+              lineHeight: 1.15,
+            }}
+          >
+            אין תרגילים עדיין
+          </h1>
+
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 14,
+              color: 'var(--fs-muted)',
+              lineHeight: 1.55,
+              marginBottom: 18,
+            }}
+          >
+            הוסיפו תרגיל ראשון כדי להתחיל לרשום סטים. אפשר גם לבחור תבנית מוכנה.
+          </p>
+
+          {/* Numbered mental model */}
+          <ol
+            style={{
+              listStyle: 'none',
+              margin: '0 0 20px',
+              padding: 0,
+              width: '100%',
+              display: 'grid',
+              gap: 10,
+              textAlign: 'start',
+            }}
+          >
+            {STEPS.map((step) => (
+              <li
+                key={step.n}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 999,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'var(--fs-primary)',
+                    color: 'var(--fs-accent)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  {step.n}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: 'var(--fs-ink)',
+                  }}
+                >
+                  {step.text}
+                </span>
+              </li>
+            ))}
+          </ol>
+
+          <div style={{ width: '100%', marginBottom: 16, textAlign: 'start' }}>
+            <CoachMark hintKey="hintWorkout">
+              אחרי כל סט — החליקו את הכפתור למטה. המנוחה תתחיל אוטומטית.
+            </CoachMark>
+          </div>
+
+          {/* Primary: add exercise */}
+          <m.button
+            onClick={() => {
+              triggerHaptic('medium');
+              onAddExercise();
+            }}
+            whileTap={{ scale: 0.98 }}
+            className="start-workout-btn accent-glow"
+            style={{
+              width: '100%',
+              minHeight: 56,
+              background: 'var(--fs-accent)',
+              color: 'var(--color-ink-on-accent)',
+              border: '2px solid var(--fs-accent)',
+              borderRadius: 'var(--radius-asymmetric)',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 900,
+              fontSize: 16,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              marginBottom: 10,
+            }}
+            aria-label="הוסיפו תרגיל ראשון"
+          >
+            <span style={{ fontSize: 22, lineHeight: 1 }}>+</span>
+            הוסיפו תרגיל ראשון
+          </m.button>
+
+          {/* Secondary: templates */}
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('light');
+              navigate('/templates');
+            }}
+            style={{
+              width: '100%',
+              minHeight: 48,
+              background: 'var(--fs-surface)',
+              color: 'var(--fs-ink)',
+              border: '1px solid var(--fs-surface-2)',
+              borderRadius: 'var(--radius-asymmetric)',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: 14,
+              cursor: 'pointer',
+              marginBottom: 12,
+            }}
+            aria-label="בחרו תבנית מוכנה"
+          >
+            בחרו תבנית מוכנה במקום
+          </button>
+
+          {/* Cancel */}
+          <button
+            type="button"
+            onClick={onCancel}
+            style={{
+              minHeight: 44,
+              padding: '0 16px',
+              background: 'transparent',
+              color: 'var(--fs-muted)',
+              border: 'none',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 12,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}
+            aria-label="ביטול האימון וחזרה"
+          >
+            ביטול וחזרה
+          </button>
+        </m.div>
+      </div>
+    );
+  }
 );
 
 EmptyWorkoutState.displayName = 'EmptyWorkoutState';
