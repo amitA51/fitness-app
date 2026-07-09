@@ -5,9 +5,12 @@
 import { m } from 'framer-motion';
 import { X as CloseIcon } from 'lucide-react';
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { translateEquipment } from '../../constants/equipmentNames';
+import { getExerciseImages } from '../../data/exerciseImages';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { logger } from '../../utils/logger';
 import { MuscleMap } from '../fitness/MuscleMap';
+import { splitInstructionSteps } from './instructionSteps';
 
 interface ExerciseTutorialProps {
   isOpen: boolean;
@@ -17,6 +20,10 @@ interface ExerciseTutorialProps {
   primaryMuscle?: string;
   /** Secondary muscles for the muscle map. */
   secondaryMuscles?: string[];
+  /** Equipment catalog key (e.g. "barbell") — shown as a Hebrew badge. */
+  equipment?: string;
+  /** The exercise's own execution cue — segmented into ordered steps. */
+  instructions?: string;
   onClose: () => void;
 }
 
@@ -32,9 +39,14 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   customNotes,
   primaryMuscle,
   secondaryMuscles,
+  equipment,
+  instructions,
   onClose,
 }) => {
   const [activeStep, setActiveStep] = useState(0);
+  // Track demo-image failures per index, so one broken frame hides only itself —
+  // the working frame stays visible instead of the whole demonstration block.
+  const [failedImgs, setFailedImgs] = useState<ReadonlySet<number>>(() => new Set());
   const [showContent, setShowContent] = useState(false);
   const [tutorialContent, setTutorialContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -94,22 +106,53 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
     []
   );
 
-  const currentExerciseSteps = exerciseTips[exerciseName] || tutorialSteps;
+  // The bilingual catalog name is "Hebrew | English"; curated tips are keyed by
+  // the English movement, so resolve that side for the lookup.
+  const englishName = useMemo(() => {
+    const idx = exerciseName.lastIndexOf('|');
+    return (idx >= 0 ? exerciseName.slice(idx + 1) : exerciseName).trim();
+  }, [exerciseName]);
+
+  // Prefer curated multi-step technique; otherwise segment the exercise's own
+  // cue into ordered steps (the "instruction_steps" idea applied to our Hebrew
+  // tutorialText); otherwise fall back to the generic three-beat outline so the
+  // carousel is never empty.
+  const currentExerciseSteps = useMemo<TutorialStep[]>(() => {
+    const curated = exerciseTips[englishName] ?? exerciseTips[exerciseName];
+    if (curated) return curated;
+    const segmented = splitInstructionSteps(instructions);
+    if (segmented.length > 0) return segmented.map((description) => ({ title: '', description }));
+    return tutorialSteps;
+  }, [englishName, exerciseName, exerciseTips, instructions, tutorialSteps]);
+
+  const equipmentLabel = translateEquipment(equipment);
+  const hasMuscleData = Boolean(primaryMuscle || (secondaryMuscles?.length ?? 0) > 0);
+  const demoImages = useMemo(() => getExerciseImages(exerciseName), [exerciseName]);
+  // The (up to two) frames that haven't failed to load — preserving each frame's
+  // original index so its alt text (start vs finish position) stays correct.
+  const visibleDemoImages = demoImages
+    .slice(0, 2)
+    .map((src, i) => ({ src, i }))
+    .filter(({ i }) => !failedImgs.has(i));
 
   useEffect(() => {
     if (exerciseName) {
       setActiveStep(0);
       setShowContent(false);
       setTutorialContent(null);
+      setFailedImgs(new Set());
     }
   }, [exerciseName]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
-      if (e.key === 'ArrowRight')
+      // RTL carousel: the "הבא" (next) button sits on the LEFT and the progress
+      // spine advances right-to-left, so ArrowLeft advances and ArrowRight goes
+      // back — matching the visual order (WAI-ARIA RTL convention).
+      if (e.key === 'ArrowLeft')
         setActiveStep((prev) => Math.min(prev + 1, currentExerciseSteps.length - 1));
-      else if (e.key === 'ArrowLeft') setActiveStep((prev) => Math.max(prev - 1, 0));
+      else if (e.key === 'ArrowRight') setActiveStep((prev) => Math.max(prev - 1, 0));
       else if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -299,7 +342,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             letterSpacing: '0.15em',
-            color: 'rgba(var(--text-on-navy-rgb),0.65)',
+            color: 'var(--fs-muted)',
             textTransform: 'uppercase',
             marginTop: 8,
             textAlign: 'center',
@@ -311,8 +354,24 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
 
       {/* Main Content */}
       <div style={{ flex: 1, padding: '24px 20px' }}>
-        {(primaryMuscle || (secondaryMuscles?.length ?? 0) > 0) && (
-          <div style={{ marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid var(--color-border)' }}>
+        {/* Persistent live region — announces each step on navigation. The visible
+            step content remounts per step (keyed by activeStep) so it wouldn't
+            announce on its own; this stable node updates its text instead. */}
+        <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          {currentStep
+            ? `שלב ${activeStep + 1} מתוך ${currentExerciseSteps.length}${
+                currentStep.title ? `: ${currentStep.title}` : ''
+              }. ${currentStep.description}`
+            : ''}
+        </p>
+        {visibleDemoImages.length > 0 && (
+          <div
+            style={{
+              marginBottom: 20,
+              paddingBottom: 18,
+              borderBottom: '1px solid var(--color-border)',
+            }}
+          >
             <p
               style={{
                 fontFamily: 'var(--font-mono)',
@@ -324,12 +383,103 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 marginBottom: 14,
               }}
             >
-              שרירים בעבודה
+              הדגמת תרגיל
             </p>
-            <MuscleMap
-              primary={primaryMuscle ? [primaryMuscle] : []}
-              secondary={secondaryMuscles ?? []}
-            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              {visibleDemoImages.map(({ src, i }) => (
+                <div
+                  key={src}
+                  style={{
+                    flex: 1,
+                    border: '1px solid var(--color-border)',
+                    background: 'var(--fs-surface)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <img
+                    src={src}
+                    alt={i === 0 ? `${exerciseName} — תנוחת התחלה` : `${exerciseName} — תנוחת סיום`}
+                    loading="lazy"
+                    onError={() => setFailedImgs((prev) => new Set(prev).add(i))}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      aspectRatio: '850 / 567',
+                      objectFit: 'cover',
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {(hasMuscleData || equipmentLabel) && (
+          <div
+            style={{
+              marginBottom: 20,
+              paddingBottom: 18,
+              borderBottom: '1px solid var(--color-border)',
+            }}
+          >
+            {hasMuscleData && (
+              <>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    letterSpacing: '0.15em',
+                    color: 'var(--fs-muted)',
+                    textTransform: 'uppercase',
+                    textAlign: 'center',
+                    marginBottom: 14,
+                  }}
+                >
+                  שרירים בעבודה
+                </p>
+                <MuscleMap
+                  primary={primaryMuscle ? [primaryMuscle] : []}
+                  secondary={secondaryMuscles ?? []}
+                />
+              </>
+            )}
+            {equipmentLabel && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  direction: 'rtl',
+                  marginTop: hasMuscleData ? 16 : 0,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    letterSpacing: '0.15em',
+                    color: 'var(--fs-muted)',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  ציוד
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 800,
+                    fontSize: 13,
+                    color: 'var(--fs-ink)',
+                    background: 'rgba(232,184,45,0.15)',
+                    border: '1px solid var(--fs-accent)',
+                    borderRadius: 0,
+                    padding: '4px 12px',
+                  }}
+                >
+                  {equipmentLabel}
+                </span>
+              </div>
+            )}
           </div>
         )}
         {currentStep && (
@@ -356,27 +506,30 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 {String(activeStep + 1).padStart(2, '0')}
               </div>
               <div>
-                <h3
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
-                    fontSize: 22,
-                    color: 'var(--fs-ink)',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  {currentStep.title}
-                </h3>
+                {currentStep.title && (
+                  <h3
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 800,
+                      fontSize: 22,
+                      color: 'var(--fs-ink)',
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {currentStep.title}
+                  </h3>
+                )}
                 <p
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     letterSpacing: '0.15em',
-                    color: 'rgba(var(--text-on-navy-rgb),0.65)',
+                    color: 'var(--fs-muted)',
                     textTransform: 'uppercase',
                   }}
                 >
                   שלב {activeStep + 1}
+                  {currentStep.title ? '' : ` מתוך ${currentExerciseSteps.length}`}
                 </p>
               </div>
             </div>

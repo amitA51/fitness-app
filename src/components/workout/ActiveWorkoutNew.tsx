@@ -20,6 +20,7 @@ import { logger } from '../../utils/logger';
 import { useWorkoutDerived, useWorkoutDispatch, useWorkoutState } from './core/WorkoutContext';
 // Core
 import { WorkoutProvider } from './core/WorkoutProvider';
+import type { SwapLibraryMeta } from './core/workoutTypes';
 
 // Components
 import { ExerciseDisplay, ProgressBar } from './components';
@@ -493,8 +494,8 @@ export const WorkoutContent: React.FC<{
   // reducer keeps the prescription intact and re-lists the previous movement as
   // an alternative so the user can swap back. Selection haptic fires in the sheet.
   const handleSwapExercise = useCallback(
-    (exerciseId: string, newName: string) => {
-      dispatch({ type: 'SWAP_EXERCISE', payload: { exerciseId, newName } });
+    (exerciseId: string, newName: string, libraryMeta?: SwapLibraryMeta) => {
+      dispatch({ type: 'SWAP_EXERCISE', payload: { exerciseId, newName, libraryMeta } });
     },
     [dispatch]
   );
@@ -830,6 +831,10 @@ export const WorkoutContent: React.FC<{
           derived.currentExercise?.targetMuscle ?? derived.currentExercise?.muscleGroup
         }
         tutorialSecondaryMuscles={derived.currentExercise?.secondaryMuscles}
+        tutorialEquipment={derived.currentExercise?.equipment}
+        tutorialInstructions={
+          derived.currentExercise?.tutorialText ?? derived.currentExercise?.instructions
+        }
         onCloseTutorial={handleCloseTutorial}
         onCloseAICoach={handleCloseAICoach}
       />

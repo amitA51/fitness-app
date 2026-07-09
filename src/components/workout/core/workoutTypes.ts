@@ -3,12 +3,28 @@ import type { PersonalRecord } from '../../../services/prService';
 import type {
   ActiveExercise,
   AppSettings,
+  Exercise,
   RpeTag,
   SetSegment,
   SetTechnique,
   WorkoutSession,
   WorkoutSet,
 } from '../../../types';
+
+/**
+ * Catalog metadata carried when swapping a live exercise to a LIBRARY movement,
+ * so the muscle map, equipment badge and tutorial follow the new movement. The
+ * prescription (sets/reps/RPE/rest/technique/notes) is preserved separately.
+ */
+export type SwapLibraryMeta = Pick<
+  Exercise,
+  | 'muscleGroup'
+  | 'targetMuscle'
+  | 'secondaryMuscles'
+  | 'equipment'
+  | 'tutorialText'
+  | 'instructions'
+>;
 
 // ============================================================
 // SUPERSET TYPES
@@ -134,7 +150,20 @@ export type ExerciseAction =
   // Mid-workout movement swap: replace the live exercise's movement with a
   // chosen alternative (bilingual "Hebrew | English" label), keeping its sets,
   // RPE, rest, technique and notes — only the movement changes. Session-scoped.
-  | { type: 'SWAP_EXERCISE'; payload: { exerciseId: string; newName: string } };
+  | {
+      type: 'SWAP_EXERCISE';
+      payload: {
+        exerciseId: string;
+        newName: string;
+        /** Set when swapping to a LIBRARY exercise — carries the chosen movement's
+            catalog metadata (muscle map, equipment badge, tutorial guidance) so the
+            live screens and analytics follow the new movement. Omitted for preset
+            (similar-movement) swaps, which keep the original targeting + guidance.
+            The prescription (sets, reps, RPE, rest, technique, notes) is preserved
+            either way — only the movement identity + its reference data change. */
+        libraryMeta?: SwapLibraryMeta;
+      };
+    };
 
 // --- Set Actions ---
 export type SetAction =

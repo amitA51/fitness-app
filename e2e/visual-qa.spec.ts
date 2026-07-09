@@ -563,3 +563,103 @@ test('capture progress workouts — calendar heatmap', async ({ page }) => {
   await page.waitForTimeout(600);
   await both(page, '45-progress-calendar');
 });
+
+
+test('capture exercise alternatives — choose from library', async ({ page }) => {
+  test.setTimeout(180_000);
+  await seedGuest(page);
+
+  await page.goto('/workout');
+  await page.waitForTimeout(2200);
+  const start = page
+    .getByRole('button', { name: /התחל את האימון|התחל אימון|התחילו אימון/ })
+    .first();
+  if (await start.isVisible().catch(() => false)) {
+    await start.click({ force: true }).catch(() => {});
+    await page.waitForTimeout(3000);
+  }
+
+  // Pick one exercise + confirm to reach the live set screen.
+  const card = page.getByText('בולגריאן ספליט סקוואט', { exact: false }).first();
+  if (await card.isVisible().catch(() => false)) {
+    await card.click({ force: true }).catch(() => {});
+    await page.waitForTimeout(300);
+  }
+  const confirm = page.getByRole('button', { name: /התחל עם|התחל \(/ }).first();
+  if (await confirm.isVisible().catch(() => false)) {
+    await confirm.click({ force: true }).catch(() => {});
+    await page.waitForTimeout(2500);
+  }
+  const goal = page
+    .getByText('כללי', { exact: true })
+    .or(page.getByText('כוח', { exact: true }))
+    .first();
+  if (await goal.isVisible().catch(() => false)) {
+    await goal.click({ force: true }).catch(() => {});
+    await page.waitForTimeout(2800);
+  }
+  const skipWarmup = page.getByRole('button', { name: /דלג על חימום/ }).first();
+  if (await skipWarmup.isVisible().catch(() => false)) {
+    await skipWarmup.click({ force: true }).catch(() => {});
+    await page.waitForTimeout(2500);
+  }
+
+  // Open the exercise tools sheet (כלים) → "תרגילים חלופיים" → AlternativesSheet.
+  const tools = page.getByRole('button', { name: 'כלים' }).first();
+  if (await tools.isVisible().catch(() => false)) {
+    await tools.click({ force: true }).catch(() => {});
+    await page.waitForTimeout(600);
+    const alt = page.getByText('תרגילים חלופיים').first();
+    if (await alt.isVisible().catch(() => false)) {
+      await alt.click({ force: true }).catch(() => {});
+      await page.waitForTimeout(900);
+      await both(page, '46-alternatives-sheet');
+
+      // Switch to the library picker (built-ins + custom).
+      const lib = page.getByRole('button', { name: /בחר מהספרייה/ }).first();
+      if (await lib.isVisible().catch(() => false)) {
+        await lib.click({ force: true }).catch(() => {});
+        await page.waitForTimeout(1200);
+        await both(page, '47-alternatives-library');
+      }
+    }
+  }
+});
+
+test('capture program warmup — skip-warmup-set button', async ({ page }) => {
+  test.setTimeout(180_000);
+  await seedGuest(page);
+
+  // Start a real program day (BBT) — its exercises carry warmup sets.
+  await page.goto('/program');
+  await page.waitForTimeout(2200);
+  const startDay = page.getByRole('button', { name: /התחל את האימון/ }).first();
+  if (await startDay.isVisible().catch(() => false)) {
+    await startDay.click({ force: true }).catch(() => {});
+    await page.waitForTimeout(3000);
+  }
+  // PreWorkoutScreen → commit the workout (a second "התחל את האימון").
+  const startWorkout = page.getByRole('button', { name: /התחל את האימון|התחל אימון/ }).first();
+  if (await startWorkout.isVisible().catch(() => false)) {
+    await startWorkout.click({ force: true }).catch(() => {});
+    await page.waitForTimeout(2800);
+  }
+  // Goal selector (if shown).
+  const goal = page
+    .getByText('כללי', { exact: true })
+    .or(page.getByText('כוח', { exact: true }))
+    .first();
+  if (await goal.isVisible().catch(() => false)) {
+    await goal.click({ force: true }).catch(() => {});
+    await page.waitForTimeout(2800);
+  }
+  // Skip the guided warmup ROUTINE to reach set-logging.
+  const skipWarmup = page.getByRole('button', { name: /דלג על חימום/ }).first();
+  if (await skipWarmup.isVisible().catch(() => false)) {
+    await skipWarmup.click({ force: true }).catch(() => {});
+    await page.waitForTimeout(2800);
+  }
+  // The first SET of a program exercise is a warmup ⇒ the per-set
+  // "דלג על סט החימום" affordance is shown (feature 1, already implemented).
+  await both(page, '48-program-warmup-skip');
+});

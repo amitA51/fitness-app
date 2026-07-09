@@ -28,6 +28,29 @@ const makeExerciseId = () =>
     ? `ex-${crypto.randomUUID()}`
     : `ex-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
+/**
+ * Map a picked library exercise into a fresh live-workout exercise, preserving
+ * the catalog metadata the live screens consume: muscle map (target + secondary
+ * muscles), the equipment badge, and the per-exercise tutorial steps. The prior
+ * mapping copied only name/muscleGroup, so the muscle map showed primary-only
+ * and the tutorial had no equipment or instructions to display. The session
+ * builder reads a fixed subset of fields, so carrying these extras enriches the
+ * live UI without changing the saved session shape.
+ */
+const fromLibraryExercise = (pe: PersonalExercise, sets: Exercise['sets']): Exercise => ({
+  id: makeExerciseId(),
+  name: pe.name,
+  muscleGroup: pe.muscleGroup,
+  targetMuscle: pe.targetMuscle,
+  secondaryMuscles: pe.secondaryMuscles,
+  equipment: pe.equipment,
+  tutorialText: pe.tutorialText,
+  instructions: pe.instructions,
+  tempo: pe.tempo,
+  targetRestTime: pe.defaultRestTime || 90,
+  sets,
+});
+
 interface ExerciseSelectorProps {
   isOpen: boolean;
   onSelect: (exercise: Exercise) => void;
@@ -82,16 +105,12 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     triggerHaptic('success');
 
     pendingExercises.forEach((personalExercise) => {
-      const exercise: Exercise = {
-        id: makeExerciseId(),
-        name: personalExercise.name,
-        muscleGroup: personalExercise.muscleGroup,
-        targetRestTime: personalExercise.defaultRestTime || 90,
-        // Start every picked exercise with a single set; the trainee adds more
-        // during the workout via "הוסף סט". The library no longer prescribes a
-        // default set count.
-        sets: [createWorkoutSet({ reps: 0, weight: 0 })],
-      };
+      // Start every picked exercise with a single set; the trainee adds more
+      // during the workout via "הוסף סט". The library no longer prescribes a
+      // default set count.
+      const exercise = fromLibraryExercise(personalExercise, [
+        createWorkoutSet({ reps: 0, weight: 0 }),
+      ]);
       dataService.incrementExerciseUse(personalExercise.id).catch(() => {});
       onSelect(exercise);
     });
@@ -108,13 +127,9 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     if (pendingExercises.length === 0 || !onPlanRequested) return;
     triggerHaptic('success');
 
-    const exercises: Exercise[] = pendingExercises.map((personalExercise) => ({
-      id: makeExerciseId(),
-      name: personalExercise.name,
-      muscleGroup: personalExercise.muscleGroup,
-      targetRestTime: personalExercise.defaultRestTime || 90,
-      sets: [],
-    }));
+    const exercises: Exercise[] = pendingExercises.map((personalExercise) =>
+      fromLibraryExercise(personalExercise, [])
+    );
     pendingExercises.forEach((personalExercise) => {
       dataService.incrementExerciseUse(personalExercise.id).catch(() => {});
     });

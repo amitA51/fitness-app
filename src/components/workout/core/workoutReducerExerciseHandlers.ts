@@ -137,7 +137,7 @@ export const exerciseReducer = (draft: WorkoutState, action: WorkoutAction): voi
       // Replace the live exercise's MOVEMENT only. The prescription (sets, reps,
       // RPE target, rest, technique, notes, programExtras) is preserved — just
       // the name/identity changes — so a swap mid-workout keeps the plan intact.
-      const { exerciseId, newName } = action.payload;
+      const { exerciseId, newName, libraryMeta } = action.payload;
       const idx = draft.exercises.findIndex((e) => e.id === exerciseId);
       if (idx === -1) return;
       const exercise = draft.exercises[idx];
@@ -168,6 +168,23 @@ export const exerciseReducer = (draft: WorkoutState, action: WorkoutAction): voi
       exercise.name = trimmed;
       exercise.exerciseName = trimmed;
       exercise.exerciseId = englishOfLabel(trimmed);
+      // A library swap carries the chosen movement's catalog metadata so the
+      // muscle map, equipment badge, tutorial steps and analytics follow the new
+      // movement. The new movement's reference data REPLACES the old wholesale —
+      // clearing a field the new movement lacks rather than leaving the prior
+      // movement's value stale (the muscle map's secondaries, the equipment badge
+      // and the tutorial instructions otherwise belong to the replaced movement).
+      // muscleGroup is the analytics/grouping anchor, so keep the old one only if
+      // the new movement somehow lacks it. Preset swaps omit libraryMeta and keep
+      // the original targeting + guidance entirely.
+      if (libraryMeta) {
+        if (libraryMeta.muscleGroup) exercise.muscleGroup = libraryMeta.muscleGroup;
+        exercise.targetMuscle = libraryMeta.targetMuscle;
+        exercise.secondaryMuscles = libraryMeta.secondaryMuscles;
+        exercise.equipment = libraryMeta.equipment;
+        exercise.tutorialText = libraryMeta.tutorialText;
+        exercise.instructions = libraryMeta.instructions;
+      }
       if (exercise.programExtras) {
         exercise.programExtras.alternatives = nextAlternatives;
       }

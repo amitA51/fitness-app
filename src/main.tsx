@@ -2,13 +2,13 @@
 // SPARKOS FITNESS - Main Entry Point
 // ============================================================================
 
-import { loadSentry } from './lib/sentryLazy';
 import { LazyMotion, domMax } from 'framer-motion';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { PWAUpdatePrompt } from './components/pwa/PWAUpdatePrompt';
 import { RootErrorBoundary } from './errors/RootErrorBoundary';
+import { loadSentry } from './lib/sentryLazy';
 import { initAI } from './services/ai/bootstrap';
 import { checkMissedWorkouts } from './services/notificationService';
 import { initOfflineSync } from './services/offlineQueue';
@@ -41,8 +41,16 @@ async function startAnalytics() {
         tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
         sendDefaultPii: false,
         beforeSend(event) {
+          // Scrub PII before anything leaves the device. Auth POST bodies can
+          // carry passwords/tokens; breadcrumb URLs embed magic-link / reset
+          // tokens in the query string; error messages may contain emails.
+          event.request = undefined;
+          event.breadcrumbs = undefined;
           if (event.extra?.data) {
             event.extra.data = undefined;
+          }
+          if (event.user) {
+            event.user = { id: event.user.id };
           }
           return event;
         },

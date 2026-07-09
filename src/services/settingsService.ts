@@ -190,7 +190,10 @@ export async function buildFullBackup(): Promise<FullBackup> {
     exportDate: new Date().toISOString(),
     data,
     settings: Object.fromEntries(
-      Object.entries(BACKUP_SETTINGS_TO_LS).map(([key, lsKey]) => [key, localStorage.getItem(lsKey)])
+      Object.entries(BACKUP_SETTINGS_TO_LS).map(([key, lsKey]) => [
+        key,
+        localStorage.getItem(lsKey),
+      ])
     ),
   };
 }
@@ -239,16 +242,36 @@ export async function importFullBackup(text: string): Promise<RestoreResult> {
     throw new Error('הקובץ אינו קובץ גיבוי תקין (JSON שגוי).');
   }
   const backup = parsed as BackupShape;
-  if (typeof backup !== 'object' || backup === null || typeof backup.data !== 'object' || backup.data === null) {
+  if (
+    typeof backup !== 'object' ||
+    backup === null ||
+    typeof backup.data !== 'object' ||
+    backup.data === null
+  ) {
     throw new Error('הקובץ אינו גיבוי של SparkOS.');
   }
+
+  // Hardening: a restored file is untrusted input (a user may be socially
+  // engineered into importing one). Bound what it can do — cap how many rows
+  // per store it may write (storage-exhaustion guard) and reject non-record
+  // shapes (arrays pass `typeof === 'object'`). Cross-user pollution is already
+  // prevented downstream: supabaseSync stamps user_id from the live session.
+  const MAX_ROWS_PER_STORE = 50_000;
+  const MAX_SETTING_BYTES = 256 * 1024;
 
   let records = 0;
   for (const [key, store] of Object.entries(BACKUP_DATA_TO_STORE)) {
     const rows = backup.data[key];
     if (!Array.isArray(rows)) continue;
+    if (rows.length > MAX_ROWS_PER_STORE) {
+      logger.app.warn(
+        `restore: "${store}" has ${rows.length} rows (> ${MAX_ROWS_PER_STORE}); skipping`
+      );
+      continue;
+    }
     for (const row of rows) {
-      if (row && typeof row === 'object') {
+      // Plain object only — exclude arrays/null which also report as 'object'.
+      if (row && typeof row === 'object' && !Array.isArray(row)) {
         try {
           await dbPut(store, row as object);
           records++;
@@ -262,7 +285,16 @@ export async function importFullBackup(text: string): Promise<RestoreResult> {
   let settings = 0;
   for (const [key, lsKey] of Object.entries(BACKUP_SETTINGS_TO_LS)) {
     const value = backup.settings?.[key];
-    if (typeof value === 'string') {
+    // Stored settings are JSON strings read back through safeJsonParse. Accept
+    // only strings that are size-bounded AND parse as JSON, so a crafted file
+    // cannot stuff arbitrary/oversized blobs into localStorage.
+    if (typeof value === 'string' && value.length <= MAX_SETTING_BYTES) {
+      try {
+        JSON.parse(value);
+      } catch {
+        logger.app.warn(`restore: setting "${lsKey}" is not valid JSON; skipping`);
+        continue;
+      }
       try {
         localStorage.setItem(lsKey, value);
         settings++;

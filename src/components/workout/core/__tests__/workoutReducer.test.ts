@@ -1403,6 +1403,114 @@ describe('workoutReducer', () => {
       expect(ex.sets).toHaveLength(1);
     });
 
+    it('carries the new movement metadata when a library swap supplies it', () => {
+      // Start on a Chest movement with its own muscle map, equipment + guidance,
+      // then swap to a Back movement from the library: every reference field must
+      // follow the new movement so the tutorial + muscle map are coherent.
+      const state = createInitialState(
+        [
+          mkExercise({
+            id: 'ex-1',
+            name: ORIG,
+            exerciseName: ORIG,
+            muscleGroup: 'Chest',
+            targetMuscle: 'Chest',
+            secondaryMuscles: ['Triceps', 'Shoulders'],
+            equipment: 'barbell',
+            tutorialText: 'הורד מוט לחזה, דחוף למעלה',
+            instructions: 'הורד מוט לחזה, דחוף למעלה',
+          }),
+        ],
+        0,
+        mkSettings()
+      );
+      const next = apply(state, {
+        type: 'SWAP_EXERCISE',
+        payload: {
+          exerciseId: 'ex-1',
+          newName: 'מתח | Pull Up',
+          libraryMeta: {
+            muscleGroup: 'Back',
+            targetMuscle: 'Back',
+            secondaryMuscles: ['Biceps'],
+            equipment: 'bodyweight',
+            tutorialText: 'משוך את הגוף עד שהסנטר מעל המוט',
+            instructions: 'משוך את הגוף עד שהסנטר מעל המוט',
+          },
+        },
+      });
+      const ex = next.exercises[0]!;
+      expect(ex.name).toBe('מתח | Pull Up');
+      expect(ex.muscleGroup).toBe('Back');
+      expect(ex.targetMuscle).toBe('Back');
+      // The stale Chest secondaries/equipment/guidance are REPLACED, not kept.
+      expect(ex.secondaryMuscles).toEqual(['Biceps']);
+      expect(ex.equipment).toBe('bodyweight');
+      expect(ex.tutorialText).toBe('משוך את הגוף עד שהסנטר מעל המוט');
+      expect(ex.instructions).toBe('משוך את הגוף עד שהסנטר מעל המוט');
+    });
+
+    it('clears stale reference fields when the new movement lacks them', () => {
+      // A library movement with no secondaries/equipment/guidance must clear the
+      // replaced movement's values rather than leave them showing on the tutorial.
+      const state = createInitialState(
+        [
+          mkExercise({
+            id: 'ex-1',
+            name: ORIG,
+            exerciseName: ORIG,
+            muscleGroup: 'Chest',
+            targetMuscle: 'Chest',
+            secondaryMuscles: ['Triceps'],
+            equipment: 'barbell',
+            tutorialText: 'הורד מוט לחזה',
+          }),
+        ],
+        0,
+        mkSettings()
+      );
+      const next = apply(state, {
+        type: 'SWAP_EXERCISE',
+        payload: {
+          exerciseId: 'ex-1',
+          newName: 'מכרעים | Lunges',
+          libraryMeta: { muscleGroup: 'Legs', targetMuscle: 'Quads' },
+        },
+      });
+      const ex = next.exercises[0]!;
+      expect(ex.muscleGroup).toBe('Legs');
+      expect(ex.targetMuscle).toBe('Quads');
+      expect(ex.secondaryMuscles).toBeUndefined();
+      expect(ex.equipment).toBeUndefined();
+      expect(ex.tutorialText).toBeUndefined();
+    });
+
+    it('preserves muscleGroup/targetMuscle for a preset swap (no muscle payload)', () => {
+      const state = createInitialState(
+        [
+          mkExercise({
+            id: 'ex-1',
+            name: ORIG,
+            exerciseName: ORIG,
+            exerciseId: '45° Incline Barbell Press',
+            muscleGroup: 'Chest',
+            targetMuscle: 'Chest',
+            programExtras: { rpeTarget: 8, restTime: 180, alternatives: [ALT1, ALT2] },
+          }),
+        ],
+        0,
+        mkSettings()
+      );
+      const next = apply(state, {
+        type: 'SWAP_EXERCISE',
+        payload: { exerciseId: 'ex-1', newName: ALT1 },
+      });
+      const ex = next.exercises[0]!;
+      expect(ex.name).toBe(ALT1);
+      expect(ex.muscleGroup).toBe('Chest');
+      expect(ex.targetMuscle).toBe('Chest');
+    });
+
     it('moves the previous movement into alternatives and removes the chosen one (swap-back)', () => {
       const state = createInitialState([mkProgramEx()], 0, mkSettings());
       const next = apply(state, {

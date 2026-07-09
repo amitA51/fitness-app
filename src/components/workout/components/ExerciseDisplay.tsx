@@ -26,7 +26,7 @@ import type {
   SetTechnique,
   WorkoutSet,
 } from '../../../types';
-import type { SupersetGroup } from '../core/workoutTypes';
+import type { SupersetGroup, SwapLibraryMeta } from '../core/workoutTypes';
 import { usePreviousSetData } from '../hooks/usePreviousSetData';
 import ActionChip from './ActionChip';
 import AlternativesSheet from './AlternativesSheet';
@@ -77,8 +77,11 @@ interface ExerciseDisplayProps {
   onRemoveSuperset?: (exerciseId: string) => void;
   onToggleTechnique?: (technique: SetTechnique, value: boolean) => void;
   onOpenPlateCalc?: () => void;
-  /** Swap the live exercise's movement for a chosen alternative (bilingual label). */
-  onSwapExercise?: (exerciseId: string, newName: string) => void;
+  /** Swap the live exercise's movement for a chosen alternative (bilingual label).
+      A library swap also passes the chosen movement's catalog metadata so the
+      muscle map, equipment badge and tutorial follow the new movement. Preset
+      swaps pass only the name and keep the original targeting. */
+  onSwapExercise?: (exerciseId: string, newName: string, libraryMeta?: SwapLibraryMeta) => void;
   /** Open the AI coach / exercise guide (surfaced beside the note at the top). */
   onOpenAICoach?: () => void;
 }
@@ -376,16 +379,13 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
         dot: !!(currentSet.segments && currentSet.segments.length > 0),
       });
     }
-    if (
-      workingCompleted === 0 &&
-      exercise.programExtras?.alternatives &&
-      exercise.programExtras.alternatives.length > 0
-    ) {
+    if (workingCompleted === 0 && onSwapExercise) {
+      const hasPresets = (exercise.programExtras?.alternatives?.length ?? 0) > 0;
       tools.push({
         id: 'alternatives',
         icon: <RotateCcw size={18} strokeWidth={2.2} />,
         label: 'תרגילים חלופיים',
-        caption: 'החלפת התרגיל בתנועה דומה',
+        caption: hasPresets ? 'החלפה בתנועה דומה או בתרגיל מהספרייה' : 'החלפה בתרגיל מהספרייה',
         onSelect: () => setShowAlternatives(true),
       });
     }
@@ -915,12 +915,22 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           />
         )}
 
-        {exercise.programExtras?.alternatives && exercise.programExtras.alternatives.length > 0 && (
+        {onSwapExercise && (
           <AlternativesSheet
             isOpen={showAlternatives}
-            alternatives={exercise.programExtras.alternatives}
+            alternatives={exercise.programExtras?.alternatives ?? []}
             exerciseName={exercise.name || ''}
-            onSelect={onSwapExercise ? (alt) => onSwapExercise(exercise.id, alt) : undefined}
+            onSelect={(alt) => onSwapExercise(exercise.id, alt)}
+            onSelectFromLibrary={(libEx) =>
+              onSwapExercise(exercise.id, libEx.name ?? '', {
+                muscleGroup: libEx.muscleGroup,
+                targetMuscle: libEx.targetMuscle,
+                secondaryMuscles: libEx.secondaryMuscles,
+                equipment: libEx.equipment,
+                tutorialText: libEx.tutorialText,
+                instructions: libEx.instructions,
+              })
+            }
             onClose={() => setShowAlternatives(false)}
           />
         )}
