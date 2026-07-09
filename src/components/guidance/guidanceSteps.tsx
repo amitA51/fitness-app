@@ -1,10 +1,11 @@
 // guidanceSteps — content for the first-use welcome sheet.
 //
-// Four paged steps, each with a Lucide icon, a Hebrew title and a Hebrew body.
-// Copy register is plural-imperative ("לחצו", "בחרו") to match the app standard
-// (e.g. Settings' "נסו שוב"). Icons are Lucide-only per the design rules.
+// Three paged steps focused on the single primary action ("start a workout"),
+// then secondary surfaces. Keep copy short, imperative, and concrete so new
+// users leave knowing exactly what to tap next.
+// Copy register is plural-imperative ("לחצו", "בחרו") to match the app standard.
 
-import { Dumbbell, TrendingUp, UtensilsCrossed } from 'lucide-react';
+import { Dumbbell, ListChecks, TrendingUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export interface GuidanceStep {
@@ -16,27 +17,22 @@ export interface GuidanceStep {
   body: string;
 }
 
-export const WELCOME_SHEET_TITLE = 'איך להשתמש באפליקציה';
+export const WELCOME_SHEET_TITLE = 'מה עושים כאן?';
 
 export const GUIDANCE_STEPS: readonly GuidanceStep[] = [
   {
     icon: Dumbbell,
-    title: 'ברוכים הבאים',
-    body: 'כאן תנהלו את האימונים, התזונה וההתקדמות שלכם — הכול במקום אחד. ננווט בקצרה על מה שאפשר לעשות.',
+    title: 'צעד 1 — התחילו אימון',
+    body: "במסך הבית לחצו על הכפתור הגדול 'התחל אימון'. מומלץ לבחור תבנית מוכנה — כבר יש בה תרגילים. אפשר גם להתחיל אימון ריק ולבחור תרגילים תוך כדי.",
   },
   {
-    icon: Dumbbell,
-    title: 'להתחיל אימון',
-    body: "לחצו על 'התחל אימון', בחרו תרגילים והזינו משקל וחזרות. לסיום סט החליקו את הכפתור — ואז יופעל טיימר מנוחה אוטומטי. בסיום האימון לחצו 'סיים'.",
-  },
-  {
-    icon: UtensilsCrossed,
-    title: 'תזונה ומים',
-    body: 'בעמוד התזונה תתעדו ארוחות ותעקבו אחרי קלוריות ומאקרו. מתחת לכך אפשר לעדכן כמה מים שתיתם במהלך היום.',
+    icon: ListChecks,
+    title: 'צעד 2 — סטים ומנוחה',
+    body: 'בכל תרגיל הזינו משקל וחזרות. בסיום סט החליקו/לחצו לסימון — ואז יופעל טיימר מנוחה. כשתסיימו את כל התרגילים לחצו סיים אימון.',
   },
   {
     icon: TrendingUp,
-    title: 'מעקב והתאמה אישית',
-    body: "בעמוד 'התקדמות' תראו גרפים, נפח ושיאים אישיים, ותעדכנו את משקל הגוף. דרך 'עוד' אפשר להתחבר למאמן עם קוד הזמנה, וכל ההגדרות נמצאות שם גם כן.",
+    title: 'צעד 3 — ראו התקדמות',
+    body: "אחרי האימון הראשון יופיעו במסך הבית הטבעות, הרצף והתובנות. בעמוד 'התקדמות' תראו היסטוריה ושיאים. זהו — פשוט להתחיל.",
   },
 ] as const;

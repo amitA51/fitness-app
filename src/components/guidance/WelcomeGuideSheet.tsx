@@ -93,7 +93,7 @@ export function WelcomeGuideSheet() {
           </Button>
         )}
         <Button variant="primary" onClick={goNext} fullWidth className="flex-1">
-          {isLast ? 'סיום' : 'הבא'}
+          {isLast ? 'הבנתי — בואו נתחיל' : 'הבא'}
           {!isLast && <ChevronLeft size={18} aria-hidden="true" />}
         </Button>
       </div>

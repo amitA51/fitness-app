@@ -121,7 +121,7 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
       >
         {isCoach
           ? 'נהלו מתאמנים, שלחו תוכניות ויעדים ועקבו אחרי ההתקדמות שלהם — הכל ממקום אחד.'
-          : 'הפרופיל שלך הוגדר. בואו נתחיל!'}
+          : 'הפרופיל הוגדר. בשלב הבא תבחרו תבנית אימון ותתחילו — זה לוקח דקה.'}
       </m.p>
 
       {/* Summary Cards — coach: what's next; trainee: profile recap */}
@@ -313,7 +313,7 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
           ) : (
             <>
               <Dumbbell size={20} aria-hidden="true" />
-              התחילו אימון ראשון
+              בואו נתחיל — אימון ראשון
             </>
           )}
           <ChevronLeft size={22} aria-hidden="true" />

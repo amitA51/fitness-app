@@ -392,13 +392,14 @@ export default function Dashboard() {
             className="magnetic-card active:scale-[0.98]"
             aria-haspopup="dialog"
             aria-expanded={isStartSheetOpen}
-            aria-label="התחל אימון"
+            aria-label={hasSessionToday ? 'אימון נוסף' : 'התחל אימון'}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               width: '100%',
-              padding: '20px 24px',
+              padding: '18px 22px',
+              minHeight: 72,
               // Sharper mint→teal stop: mint holds to 55% then transitions to the
               // accent-2 so the gradient reads as a deliberate two-tone, not a wash.
               background:
@@ -411,9 +412,9 @@ export default function Dashboard() {
               color: 'var(--color-ink-on-accent)',
               fontFamily: 'var(--font-display)',
               fontWeight: 900,
-              fontSize: 24,
+              fontSize: 22,
               textAlign: 'right',
-              lineHeight: 1,
+              lineHeight: 1.1,
               letterSpacing: '-0.01em',
               // Lifted depth + a subtle inset top highlight so the surface reads as
               // a raised, tactile slab rather than a flat fill.
@@ -442,18 +443,31 @@ export default function Dashboard() {
             >
               <ArrowLeft size={22} aria-hidden="true" />
             </span>
-            <span>התחל אימון</span>
+            <span style={{ display: 'grid', gap: 4, textAlign: 'right' }}>
+              <span>{hasSessionToday ? 'אימון נוסף' : 'התחל אימון'}</span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.06em',
+                  opacity: 0.85,
+                }}
+              >
+                {hasSessionToday ? 'לחצו לבחירת תבנית או אימון ריק' : 'תבנית מוכנה · או אימון ריק'}
+              </span>
+            </span>
           </button>
         )}
 
         {/* First-visit hint under the primary CTA — returning users only. The
-            zero-session FirstRunHero below already leads with this same guidance
-            ("בחרו תרגילים…"), so showing both stacked the identical instruction
-            twice on the literal first-run home. Gate keeps one explainer per state. */}
+            zero-session FirstRunHero below already leads with this same guidance,
+            so showing both stacked the identical instruction twice on first-run.
+            Gate keeps one explainer per state. */}
         {hasAnySession && (
           <div style={{ marginTop: 12 }}>
             <CoachMark hintKey="hintDashboard" dismissLabel="הבנתי" dismissAriaLabel="הבנתי, סגירה">
-              מתחילים מכאן — בחרו תרגילים והאפליקציה תנחה אתכם דרך הסטים.
+              לחצו על הכפתור למעלה — בחרו תבנית או אימון ריק, והאפליקציה תנחה אתכם בסטים.
             </CoachMark>
           </div>
         )}
@@ -472,7 +486,7 @@ export default function Dashboard() {
         ) : !hasAnySession ? (
           /* Zero-session trainees: one composed first-run hero instead of the
              stack of self-hidden cards (WeeklyGrid + empty history hidden). */
-          <FirstRunHero onStart={openStartSheet} />
+          <FirstRunHero onStartTemplate={goToTemplates} onStartEmpty={handleEmptyWorkout} />
         ) : (
           renderPopulatedBody()
         )}
@@ -699,19 +713,35 @@ const InsightErrorChip = memo(function InsightErrorChip({
 });
 
 // ── FirstRunHero — composed zero-session guidance (replaces the self-hidden
-// card stack for brand-new users) ────────────────────────────────────────────
-const FirstRunHero = memo(function FirstRunHero({ onStart }: { onStart: () => void }) {
+// card stack for brand-new users). Answers "what do I do now?" with numbered
+// steps + a recommended primary path (template library) and a secondary empty
+// start. ────────────────────────────────────────────────────────────────────
+const FIRST_RUN_STEPS = [
+  { n: '1', label: 'בחרו תבנית מוכנה (מומלץ)' },
+  { n: '2', label: 'הזינו משקל וחזרות בכל סט' },
+  { n: '3', label: 'סיימו — ותראו התקדמות כאן' },
+] as const;
+
+const FirstRunHero = memo(function FirstRunHero({
+  onStartTemplate,
+  onStartEmpty,
+}: {
+  /** Recommended path: open template library with ready exercises. */
+  onStartTemplate: () => void;
+  /** Secondary path: blank workout (add exercises as you go). */
+  onStartEmpty: () => void;
+}) {
   return (
     <FadeIn style={{ marginTop: 16 }}>
       <section
-        aria-label="התחלה מהירה"
+        aria-label="התחלה מהירה — האימון הראשון"
         className="magnetic-card glass-surface scrim-noise"
         style={{
           padding: '24px 20px',
           border: '1px solid var(--fs-surface-2)',
           borderRadius: '24px 16px 24px 16px',
           display: 'grid',
-          gap: 14,
+          gap: 16,
         }}
       >
         <span
@@ -729,34 +759,91 @@ const FirstRunHero = memo(function FirstRunHero({ onStart }: { onStart: () => vo
         >
           <Sparkles size={24} />
         </span>
-        <h2
+        <div style={{ display: 'grid', gap: 8 }}>
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 900,
+              fontSize: 22,
+              lineHeight: 1.15,
+              letterSpacing: '-0.01em',
+              color: 'var(--fs-ink)',
+              margin: 0,
+            }}
+          >
+            מה עושים עכשיו?
+          </h2>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 14,
+              lineHeight: 1.5,
+              color: 'var(--fs-muted)',
+              margin: 0,
+            }}
+          >
+            התחילו באימון ראשון — מומלץ תבנית מוכנה עם תרגילים. אחרי שתסיימו יופיעו כאן
+            הטבעות, הרצף והתובנות.
+          </p>
+        </div>
+
+        {/* Numbered steps — explicit mental model before any tap */}
+        <ol
           style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 900,
-            fontSize: 22,
-            lineHeight: 1.15,
-            letterSpacing: '-0.01em',
-            color: 'var(--fs-ink)',
+            listStyle: 'none',
             margin: 0,
+            padding: 0,
+            display: 'grid',
+            gap: 10,
           }}
         >
-          האימון הראשון שלכם מתחיל כאן
-        </h2>
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 14,
-            lineHeight: 1.5,
-            color: 'var(--fs-muted)',
-            margin: 0,
-          }}
-        >
-          בחרו תרגילים, והאפליקציה תנחה אתכם דרך הסטים. אחרי האימון הראשון יופיעו כאן הטבעות,
-          התובנות והרצף שלכם.
-        </p>
+          {FIRST_RUN_STEPS.map((step) => (
+            <li
+              key={step.n}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 28,
+                  height: 28,
+                  flexShrink: 0,
+                  borderRadius: 999,
+                  background: 'var(--fs-primary)',
+                  color: 'var(--fs-accent)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                {step.n}
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: 'var(--fs-ink)',
+                  lineHeight: 1.3,
+                }}
+              >
+                {step.label}
+              </span>
+            </li>
+          ))}
+        </ol>
+
+        {/* Primary: recommended template path */}
         <button
           type="button"
-          onClick={onStart}
+          onClick={onStartTemplate}
           className="active:scale-[0.98] focus-ring"
           style={{
             display: 'inline-flex',
@@ -764,9 +851,10 @@ const FirstRunHero = memo(function FirstRunHero({ onStart }: { onStart: () => vo
             justifyContent: 'center',
             gap: 10,
             width: '100%',
-            minHeight: 52,
+            minHeight: 56,
             padding: '14px 20px',
-            background: 'var(--fs-accent)',
+            background:
+              'linear-gradient(135deg, var(--fs-accent) 0%, var(--fs-accent) 42%, var(--fs-accent-2) 100%)',
             border: '2px solid var(--fs-accent)',
             borderRadius: 'var(--radius-asymmetric)',
             cursor: 'pointer',
@@ -774,11 +862,40 @@ const FirstRunHero = memo(function FirstRunHero({ onStart }: { onStart: () => vo
             fontFamily: 'var(--font-display)',
             fontWeight: 900,
             fontSize: 17,
+            boxShadow:
+              '0 12px 24px color-mix(in srgb, var(--fs-accent) 32%, transparent), inset 0 1px 0 color-mix(in srgb, #ffffff 28%, transparent)',
           }}
         >
           <Dumbbell size={18} aria-hidden="true" />
-          התחילו אימון
+          בחרו תבנית מוכנה
         </button>
+
+        {/* Secondary: empty workout */}
+        <button
+          type="button"
+          onClick={onStartEmpty}
+          className="active:scale-[0.98] focus-ring"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            width: '100%',
+            minHeight: 48,
+            padding: '12px 16px',
+            background: 'var(--fs-surface)',
+            border: '1px solid var(--fs-surface-2)',
+            borderRadius: 'var(--radius-asymmetric)',
+            cursor: 'pointer',
+            color: 'var(--fs-ink)',
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: 15,
+          }}
+        >
+          התחילו בלי תבנית
+        </button>
+
         <Link
           to="/my-coach"
           className="focus-ring"

@@ -1,4 +1,4 @@
-import { ChevronLeft, Dumbbell, LayoutList, RotateCcw } from 'lucide-react';
+import { ChevronLeft, Dumbbell, LayoutList, RotateCcw, Sparkles } from 'lucide-react';
 import { type ReactNode, memo } from 'react';
 import { useIsRTL } from '../../hooks/useIsRTL';
 import type { WorkoutTemplate } from '../../types';
@@ -22,6 +22,8 @@ interface StartOptionProps {
   icon: ReactNode;
   title: string;
   subtitle: string;
+  /** Optional badge above the title (e.g. "מומלץ"). */
+  badge?: string;
   accent?: boolean;
   onClick: () => void;
 }
@@ -30,6 +32,7 @@ const StartOption = memo(function StartOption({
   icon,
   title,
   subtitle,
+  badge,
   accent = false,
   onClick,
 }: StartOptionProps) {
@@ -48,8 +51,8 @@ const StartOption = memo(function StartOption({
         padding: '14px 16px',
         textAlign: 'start',
         cursor: 'pointer',
-        // The "continue last" (accent/selected) row gets a stronger ~20% accent
-        // wash + a 2px accent border so it reads as the pre-selected default.
+        // The recommended / accent row gets a stronger ~20% accent wash + a
+        // 2px accent border so it reads as the pre-selected default.
         background: accent
           ? 'color-mix(in srgb, var(--fs-accent) 20%, var(--fs-surface))'
           : 'var(--fs-surface)',
@@ -75,6 +78,20 @@ const StartOption = memo(function StartOption({
         {icon}
       </span>
       <span style={{ flex: 1, minWidth: 0, display: 'grid', gap: 2 }}>
+        {badge && (
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: accent ? 'var(--fs-accent)' : 'var(--fs-muted)',
+            }}
+          >
+            {badge}
+          </span>
+        )}
         <span
           style={{
             fontFamily: 'var(--font-display)',
@@ -120,6 +137,9 @@ const StartOption = memo(function StartOption({
  * The single entry point for starting a workout from the dashboard. Folds the
  * three former start affordances (primary CTA, "empty workout", "repeat last")
  * into one choice surface so the dashboard exposes exactly one primary CTA.
+ *
+ * First-run clarity: when there is no last-used template, "בחר תבנית" is the
+ * accent/recommended path (ready exercises). Empty workout is secondary.
  */
 export const StartWorkoutSheet = memo(function StartWorkoutSheet({
   isOpen,
@@ -129,8 +149,26 @@ export const StartWorkoutSheet = memo(function StartWorkoutSheet({
   onPickTemplate,
   onEmptyWorkout,
 }: StartWorkoutSheetProps) {
+  const hasLast = Boolean(lastUsedTemplate);
+
   return (
     <Sheet isOpen={isOpen} onClose={onClose} title="התחל אימון">
+      {/* Short orientation line — answers "what should I pick?" before options. */}
+      <p
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 13,
+          lineHeight: 1.45,
+          color: 'var(--fs-muted)',
+          margin: '0 0 14px',
+          textAlign: 'start',
+        }}
+      >
+        {hasLast
+          ? 'בחרו איך להתחיל — מומלץ להמשיך מהתבנית האחרונה.'
+          : 'מומלץ לבחור תבנית מוכנה עם תרגילים. אימון ריק מתאים אם אתם יודעים בדיוק מה תרצו.'}
+      </p>
+
       {/* Options enter in a quick stagger when the sheet opens; snaps in under
           prefers-reduced-motion. */}
       <Stagger stagger={0.06} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -138,18 +176,27 @@ export const StartWorkoutSheet = memo(function StartWorkoutSheet({
           <StaggerItem>
             <StartOption
               accent
+              badge="מומלץ"
               icon={<RotateCcw size={20} aria-hidden="true" />}
               title={`המשך · ${lastUsedTemplate.name}`}
-              subtitle="התבנית האחרונה שלך"
+              subtitle="התבנית האחרונה שלכם"
               onClick={onContinueLast}
             />
           </StaggerItem>
         )}
         <StaggerItem>
           <StartOption
-            icon={<LayoutList size={20} aria-hidden="true" />}
-            title="בחר תבנית"
-            subtitle="התחל מתוך ספריית התבניות"
+            accent={!hasLast}
+            badge={!hasLast ? 'מומלץ למתחילים' : undefined}
+            icon={
+              !hasLast ? (
+                <Sparkles size={20} aria-hidden="true" />
+              ) : (
+                <LayoutList size={20} aria-hidden="true" />
+              )
+            }
+            title="בחרו תבנית מוכנה"
+            subtitle="תרגילים מוכנים מראש — פשוט להתחיל"
             onClick={onPickTemplate}
           />
         </StaggerItem>
@@ -157,7 +204,7 @@ export const StartWorkoutSheet = memo(function StartWorkoutSheet({
           <StartOption
             icon={<Dumbbell size={20} aria-hidden="true" />}
             title="אימון ריק"
-            subtitle="הוסף תרגילים תוך כדי"
+            subtitle="הוסיפו תרגילים תוך כדי — למתקדמים"
             onClick={onEmptyWorkout}
           />
         </StaggerItem>

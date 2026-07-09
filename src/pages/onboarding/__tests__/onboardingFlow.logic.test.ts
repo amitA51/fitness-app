@@ -17,13 +17,13 @@ describe('postOnboardingDestination', () => {
     expect(postOnboardingDestination(base({ role: 'coach' }))).toBe('/coach/invites');
   });
 
-  it('routes a trainee to the workout flow', () => {
-    expect(postOnboardingDestination(base({ role: 'trainee' }))).toBe('/workout');
+  it('routes a trainee to home FirstRunHero (guided next step)', () => {
+    expect(postOnboardingDestination(base({ role: 'trainee' }))).toBe('/');
   });
 
-  it('defaults a role-less user (back-compat) to the workout flow', () => {
-    expect(postOnboardingDestination(base({ role: '' }))).toBe('/workout');
-    expect(postOnboardingDestination(base({ role: undefined }))).toBe('/workout');
+  it('defaults a role-less user (back-compat) to home FirstRunHero', () => {
+    expect(postOnboardingDestination(base({ role: '' }))).toBe('/');
+    expect(postOnboardingDestination(base({ role: undefined }))).toBe('/');
   });
 });
 

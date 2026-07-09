@@ -5,17 +5,17 @@ import { safeJsonParse } from './utils/safeJson';
 // HELPER FUNCTIONS (defined outside App — no hooks)
 // ============================================================================
 
-// First-action deep links chosen from the data just collected. Trainees land on
-// the workout flow (their highest-intent next step); coaches land on the invite
-// flow (their first real action is bringing trainees in). Routes already exist
-// in the app router — this only decides which one to open.
-const TRAINEE_FIRST_ACTION = '/workout';
+// First-action deep links chosen from the data just collected.
+// Trainees land on home (FirstRunHero) — a guided "what to do next" surface —
+// instead of a blank /workout which many users found confusing.
+// Coaches land on the invite flow (their first real action is bringing trainees).
+const TRAINEE_FIRST_ACTION = '/';
 const COACH_FIRST_ACTION = '/coach/invites';
 
 /**
  * The route a freshly-onboarded user should land on so onboarding ends in a
  * real first action instead of a static recap. Coaches → invite flow; everyone
- * else → workout flow.
+ * else → home FirstRunHero (clear next-step guidance).
  */
 export function postOnboardingDestination(data: OnboardingData): string {
   return data.role === 'coach' ? COACH_FIRST_ACTION : TRAINEE_FIRST_ACTION;

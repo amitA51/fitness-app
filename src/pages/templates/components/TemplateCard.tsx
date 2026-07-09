@@ -133,10 +133,10 @@ export const TemplateCard = memo(function TemplateCard({
           onClick={() => onStart(template.id)}
           className="btn-primary flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
           style={{ flex: 1, minHeight: '44px', padding: '12px 16px' }}
-          aria-label="התחל אימון"
+          aria-label={`התחל אימון: ${template.name}`}
         >
           <Play size={14} />
-          התחל
+          התחל אימון
         </m.button>
         <m.button
           whileTap={{ scale: isFavoriting ? 1 : 0.95 }}

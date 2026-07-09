@@ -58,8 +58,11 @@ export function TemplateList({
           >
             אין תבניות עדיין
           </p>
-          <p className="eyebrow mb-6" style={{ color: 'var(--fs-muted)' }}>
-            התחילו כאן
+          <p
+            className="eyebrow mb-3"
+            style={{ color: 'var(--fs-muted)', maxWidth: '28ch', lineHeight: 1.5 }}
+          >
+            תבנית = רשימת תרגילים מוכנה. צרו אחת עכשיו — ואז תוכלו להתחיל אימון בלחיצה.
           </p>
           <m.button
             whileTap={{ scale: 0.95 }}

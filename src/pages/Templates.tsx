@@ -96,6 +96,43 @@ export default function Templates() {
         />
 
         <div className="px-5 pt-5">
+          {/* First-run orientation when templates exist — answers "what do I do here?" */}
+          {templates.length > 0 && (
+            <m.div
+              variants={itemVariants}
+              className="mb-4"
+              style={{
+                padding: '14px 16px',
+                background: 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))',
+                border: '1px solid color-mix(in srgb, var(--fs-accent) 35%, var(--fs-surface-2))',
+                borderRadius: 'var(--radius-asymmetric)',
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: 15,
+                  color: 'var(--fs-ink)',
+                  margin: '0 0 4px',
+                }}
+              >
+                בחרו תבנית ולחצו &quot;התחל&quot;
+              </p>
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 13,
+                  lineHeight: 1.45,
+                  color: 'var(--fs-muted)',
+                  margin: 0,
+                }}
+              >
+                תבנית = רשימת תרגילים מוכנה. אחרי הלחיצה תעברו ישר לאימון.
+              </p>
+            </m.div>
+          )}
+
           {/* Primary CTA — hidden when the list is empty: the empty state below
               carries its own single "צור תבנית ראשונה" CTA (one label per intent). */}
           {templates.length > 0 && (
