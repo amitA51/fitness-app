@@ -10,34 +10,36 @@
 
 ## Identity
 
-**Apple Fitness+ × Fresh Steel.** Premium · Quiet · Cinematic · Singular action green · Hebrew-first.
+**Fresh Steel** (light) / **Obsidian** (dark). Disciplined · Athletic · Data-driven · Direct · Energetic.
+Shape language borrows Apple Fitness+ craft (glass chrome, continuous pill CTAs, quiet type) — **colors stay brand mint/teal**, not Apple system green.
 
 - **Platform:** mobile-first PWA. Hard width cap `--max-width: 480px`.
 - **Direction:** RTL-first (Hebrew UI). Numbers and stat values render LTR — via `.kinetic-number` or explicit `dir="ltr"`.
-- **Character:** vast neutral canvas, continuous corners, pill CTAs, glass chrome, restrained type (no forced uppercase on product chrome). Lineage: Apple Fitness+, Apple.com product UI — not brutalist editorial, not generic SaaS teal.
+- **Character:** mint action accent + navy primary, continuous corners, pill CTAs, glass nav, restrained type (no forced uppercase on product chrome).
 
 ## Aesthetic family
 
-Cinematic Minimalism × Consumer Fitness. One chromatic accent (system green) in a sea of neutrals. Personality comes from spacing, type optical sizing, and glass — not mesh grids or industrial plate textures.
+Editorial athletic × consumer fitness. The **mint/teal accent is a deliberate, tokenized brand decision**, not an AI default — declared once in `--fs-accent` and never hardcoded.
 
-## Color — Light
+## Color — Light (Fresh Steel)
 
 | Token | Value | Role |
 |-------|-------|------|
-| `--fs-bg` | `#f5f5f7` | page canvas (Apple light gray) |
+| `--fs-bg` | `#eef3f1` | page background (mint-tinted bone) |
 | `--fs-surface` | `#ffffff` | card / sheet surface |
-| `--fs-surface-2` | `#e8e8ed` | inset / secondary fill |
-| `--fs-ink` | `#1d1d1f` | primary text (Apple near-black) |
-| `--fs-muted` | `#6e6e73` | secondary text |
-| `--fs-primary` | `#1d1d1f` | dark primary fills |
-| `--fs-accent` | `#30d158` | **action** system green — CTAs, focus, progress |
-| `--fs-accent-2` | `#34c759` | green variant |
-| `--fs-link` | `#248a3d` | inline links (AA on light surfaces) |
-| `--fs-signal` | `#e2fb70` | **signal** lime — PRs / celebration only |
-| `--fs-warn` | `#ff9f0a` | warnings (Apple orange) |
+| `--fs-surface-2` | `#dbe6e3` | inset / secondary surface |
+| `--fs-ink` | `#132327` | primary text |
+| `--fs-muted` | `#4d5c5a` | secondary text (≥4.5:1 on bg) |
+| `--fs-primary` | `#16292d` | navy primary button bg, headings |
+| `--fs-accent` | `#43c7a5` | **action** mint — CTAs, focus, progress |
+| `--fs-accent-2` | `#2c7f91` | deep teal — secondary accents |
+| `--fs-link` | `#1d6575` | inline text links (AA on light surfaces) |
+| `--fs-signal` | `#e2fb70` | **signal** lime — PRs, celebration only |
+| `--fs-warn` | `#e26e3f` | warnings |
+| `--fs-steel` `--fs-plate` `--fs-rubber` | `#b9c8c6` `#d7e0de` `#0d1516` | equipment neutrals |
 
-Semantic: success `#30d158` · error `#ff3b30` · `--color-ink-on-accent #003d12` · `--color-ink-on-dark #ffffff`.
-Light primary button: dark fill + white ink. Accent RGB: `--fs-accent-rgb: 48, 209, 88`.
+Semantic: `--color-success #2f8f58` · `--color-error #b83228` · `--color-ink-on-accent #071412` · `--color-ink-on-dark #ffffff`.
+Light primary button: navy fill + mint ink. Accent RGB: `--fs-accent-rgb: 67, 199, 165`.
 
 ### Zone-color scale
 
@@ -54,22 +56,24 @@ Lime (`--fs-signal`) is **not** in this scale — PR celebration only.
 | Token | Value |
 |-------|-------|
 | `--fs-bg` | `#000000` |
-| `--fs-surface` | `#1c1c1e` |
-| `--fs-surface-2` | `#2c2c2e` |
-| `--fs-ink` | `#f5f5f7` |
-| `--fs-muted` | `#98989d` |
-| `--fs-accent` | `#30d158` |
+| `--fs-surface` | `#111111` |
+| `--fs-surface-2` | `#1a1a1a` |
+| `--fs-ink` | `#f0f0f0` |
+| `--fs-muted` | `#8c8c8c` |
+| `--fs-primary` | `#0a0a0a` |
+| `--fs-accent` | `#4ddcbb` (bright mint on black) |
 | `--fs-link` | `var(--fs-accent)` |
+| `--fs-signal` | `#e2fb70` |
 
-Dark primary button **inverts**: `--btn-primary-bg: var(--fs-accent)`, text `#003d12`.
+Dark primary button **inverts**: `--btn-primary-bg: var(--fs-accent)`, text `#071412`.
 
 ## Typography
 
-Loaded in `src/styles/typography.css` via Google Fonts (Hebrew-capable substitutes for SF Pro).
+Loaded in `src/styles/typography.css` via Google Fonts.
 
-- `--font-display` = **Bricolage Grotesque** (600/700) — display headlines. **No forced uppercase.**
-- `--font-body` = **Assistant** (400/600/700) — body & Hebrew. Tracking slightly tight (`-0.01em`).
-- `--font-mono` = **IBM Plex Mono** — micro labels only (kickers), not body captions.
+- `--font-display` = **Bricolage Grotesque** (600/700) — display headlines. **No forced uppercase on product chrome.**
+- `--font-body` = **Assistant** (400/600/700) — body & Hebrew.
+- `--font-mono` = **IBM Plex Mono** — sparse micro labels only.
 - Numbers use `.kinetic-number` (tabular + bidi isolate).
 
 Scale: hero 120 · xl 88 · lg 48 · display 36 · sm 24 · title 20 · headline 18 · body-lg 17 · body 15 · body-sm 13 · label 11 · caption 10.
@@ -77,17 +81,17 @@ Scale: hero 120 · xl 88 · lg 48 · display 36 · sm 24 · title 20 · headline
 ## Spacing · Radius · Shadow · Motion
 
 - **Spacing:** 4/8pt grid — `--space-1..24`.
-- **Radius:** continuous — `sm 6 / md 10 / lg 14 / xl 18 / 2xl 22`. `--radius-asymmetric` is now continuous `20px` (token name kept). CTAs use `--radius-full` / `--radius-pill`.
-- **Shadow:** soft diffused Apple product-card lift (`0 2px 8px / 0 8px 24px`). Prefer color steps over heavy borders.
+- **Radius:** continuous — `sm 6 / md 10 / lg 14 / xl 18 / 2xl 22`. `--radius-asymmetric` is continuous `20px` (token name kept for call sites). CTAs use `--radius-full`.
+- **Shadow:** soft diffused card lift. Prefer color steps over heavy borders.
 - **Motion:** `--ease-out: cubic-bezier(.16,1,.3,1)`. Always honor `prefers-reduced-motion`.
 
 ## Component primitives
 
-- `.start-workout-btn` `.primary-btn` `.icon-btn` — **pill** buttons; solid green CTA, no industrial dash decorations.
-- `.glass-surface` — elevated white/gray card (not true glass).
+- `.start-workout-btn` `.primary-btn` `.icon-btn` — **pill** buttons; solid mint CTA.
+- `.glass-surface` — elevated card (not true glass).
 - `.glass-nav` — true glass: `saturate(180%) blur(20px)`.
-- `.hero-card` — cinematic dark gradient block (no steel-plate texture).
-- `.kinetic-number` · `.focus-ring` · ambient mesh utilities (prefer clean solid bg).
+- `.hero-card` — cinematic dark block.
+- `.kinetic-number` · `.focus-ring`.
 
 ## Layout
 
@@ -95,16 +99,16 @@ Scale: hero 120 · xl 88 · lg 48 · display 36 · sm 24 · title 20 · headline
 
 ## Voice
 
-Hebrew-first, concise, confident. Sentence case in product chrome. Concrete action language ("התחל אימון", "בחרו תבנית"). No emoji in chrome. Numbers are heroes.
+Hebrew-first, concise, confident. Sentence case in product chrome. Concrete action language. No emoji in chrome. Numbers are heroes.
 
 ## Anti-slop guardrails (summary)
 
-1. Green accent is intentional system green — **never hardcode** `#30d158`; use `var(--fs-accent)`.
+1. The mint accent is intentional — **never hardcode** `#43c7a5`/`#4ddcbb`; use `var(--fs-accent)`.
 2. **No unowned third accent.** No decorative accent rails on every card.
 3. **Containers nest ≤ 2 levels.**
-4. Display font with explicit weight + tracking — never default to Inter/Roboto "by vibe".
+4. Display font with explicit weight + tracking — never default to Inter/Roboto.
 5. Lucide only for icons.
-6. No mesh/grid body noise in light mode — solid `#f5f5f7` canvas.
+6. Clean solid body canvas (no mesh/grid noise).
 7. No forced ALL-CAPS product chrome; mono kickers stay sparse.
 8. Reserve motion for meaningful moments.
 

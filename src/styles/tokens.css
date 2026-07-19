@@ -10,86 +10,86 @@
    ============================================================================ */
 
 :root {
-  /* Fresh Steel × Apple Fitness+ — cinematic neutrals, singular mint action.
-     Light canvas mirrors Apple's #f5f5f7; ink is near-black (#1d1d1f). */
-  --fs-bg: #f5f5f7;
+  /* Fresh Steel Core Palette — original brand colors.
+     Shape language (pill CTAs, glass chrome, continuous radii) is Apple-inspired;
+     chroma stays mint/teal Fresh Steel. */
+  --fs-bg: #eef3f1;
   --fs-surface: #ffffff;
-  --fs-surface-2: #e8e8ed;
-  --fs-ink: #1d1d1f;
-  --fs-muted: #6e6e73;
+  --fs-surface-2: #dbe6e3;
+  --fs-ink: #132327;
+  --fs-muted: #4d5c5a;
   --fs-ink-muted: var(--fs-muted);
-  --fs-primary: #1d1d1f;
-  --fs-accent: #30d158;
-  --fs-accent-2: #34c759;
-  /* Interactive text-link color. Brand green fails AA as body text on white;
-     darkened teal-green clears AA (≥4.5:1) on every light surface. */
-  --fs-link: #248a3d;
-  /* Accent as raw RGB channels — enables rgba(var(--fs-accent-rgb), <alpha>)
-     for tinted fills/borders without hardcoding hex (e.g. water-reminder cyan). */
-  --fs-accent-rgb: 48, 209, 88;
+  --fs-primary: #16292d;
+  --fs-accent: #43c7a5;
+  --fs-accent-2: #2c7f91;
+  /* Interactive text-link color. The brand mint (--fs-accent) is only ~2.1:1 on
+     white and fails WCAG AA as body text, so links use a darkened brand teal that
+     clears AA (≥4.5:1) on every light surface (#fff / #eef3f1 / #dbe6e3). */
+  --fs-link: #1d6575;
+  /* Accent as raw RGB channels — enables rgba(var(--fs-accent-rgb), <alpha>) */
+  --fs-accent-rgb: 67, 199, 165;
   --fs-signal: #e2fb70;
-  --fs-warn: #ff9f0a;
-  --fs-steel: #d2d2d7;
-  --fs-plate: #e8e8ed;
-  --fs-rubber: #1d1d1f;
+  --fs-warn: #e26e3f;
+  --fs-steel: #b9c8c6;
+  --fs-plate: #d7e0de;
+  --fs-rubber: #0d1516;
 
   /* Legacy Compat: map old variable names to Fresh Steel values */
   --bone: var(--fs-bg);
   --bone-deep: var(--fs-surface-2);
-  --bone-faint: #fafafa;
+  --bone-faint: #f6faf8;
   --navy: var(--fs-primary);
-  --navy-deep: #000000;
-  --navy-light: #2c2c2e;
+  --navy-deep: #0d1a1c;
+  --navy-light: #1c363b;
   --mustard: var(--fs-signal);
   --mustard-dark: #c9e045;
   --mustard-deep: #d8ed5c;
   --ink: var(--fs-ink);
   --stone: var(--fs-muted);
-  --stone-light: #8e8e93;
+  --stone-light: #5f6e6c;
 
   --color-on-mustard: var(--fs-primary);
 
-  /* Button-specific tokens — light: dark fill + white ink (Apple primary) */
+  /* Button-specific tokens — light: navy fill + mint ink (brand) */
   --btn-primary-bg: var(--fs-primary);
-  --btn-primary-text: #ffffff;
+  --btn-primary-text: var(--fs-accent);
 
-  --text-on-navy-rgb: 245, 245, 247;
-  --ink-rgb: 29, 29, 31;
-  --bone-rgb: 245, 245, 247;
+  --text-on-navy-rgb: 238, 243, 241;
+  --ink-rgb: 19, 35, 39;
+  --bone-rgb: 238, 243, 241;
 
-  --color-scrim: rgba(0, 0, 0, 0.48);
+  --color-scrim: rgba(13, 21, 22, 0.6);
 
   --color-primary: var(--fs-primary);
   --color-primary-hover: var(--navy-deep);
-  --color-primary-glow: rgba(29, 29, 31, 0.18);
-  --color-primary-subtle: rgba(29, 29, 31, 0.06);
+  --color-primary-glow: rgba(22, 41, 45, 0.25);
+  --color-primary-subtle: rgba(22, 41, 45, 0.08);
 
   --color-secondary: var(--fs-accent);
-  --color-secondary-hover: #28c84e;
-  --color-secondary-glow: rgba(48, 209, 88, 0.28);
-  --color-secondary-subtle: rgba(48, 209, 88, 0.14);
+  --color-secondary-hover: #35b392;
+  --color-secondary-glow: rgba(67, 199, 165, 0.3);
+  --color-secondary-subtle: rgba(67, 199, 165, 0.16);
 
   --color-accent: var(--fs-accent);
 
-  --color-success: #30d158;
-  --color-success-fg: #248a3d;
-  --color-success-muted: rgba(48, 209, 88, 0.12);
+  --color-success: #2f8f58;
+  --color-success-fg: #2f8f58;
+  --color-success-muted: rgba(47, 143, 88, 0.12);
   --color-warning: var(--fs-warn);
-  --color-warning-muted: rgba(255, 159, 10, 0.14);
-  --color-error: #ff3b30;
-  --color-error-fg: #d70015;
-  --color-error-muted: rgba(255, 59, 48, 0.12);
-  --fs-error: #ff3b30;
-  --color-check: #30d158;
-  --color-delete: #ff3b30;
-  --color-live: #30d158;
-  --color-toggle-on: #30d158;
+  --color-warning-muted: rgba(226, 110, 63, 0.12);
+  --color-error: #b83228;
+  --color-error-fg: #b83228;
+  --color-error-muted: rgba(184, 50, 40, 0.12);
+  --fs-error: #d23f3f;
+  --color-check: #2f8f58;
+  --color-delete: #b83228;
+  --color-live: #2f8f58;
+  --color-toggle-on: #34c759;
   /* Text token for headings on bg/surface only. NEVER on accent/primary fills —
      in dark it resolves near-white and fails on --fs-accent. Use --color-ink-on-* there. */
   --fs-heading: var(--fs-primary);
   --color-ink-on-dark: #ffffff;
-  /* Dark ink on bright green accent — AA on #30d158 */
-  --color-ink-on-accent: #003d12;
+  --color-ink-on-accent: #071412;
   /* Text on --color-error fills. Light error is dark (#b83228) → white ink;
      dark error is bright (#ff5449) → near-black ink. */
   --color-ink-on-error: #ffffff;
@@ -100,15 +100,15 @@
   --color-surface: var(--fs-surface);
   --color-surface-elevated: var(--fs-surface-2);
   --color-surface-input: var(--fs-surface);
-  --color-surface-hover: #f2f2f7;
+  --color-surface-hover: #f0f5f3;
 
   --color-text: var(--fs-ink);
   --color-text-secondary: var(--fs-muted);
   --color-text-muted: var(--stone-light);
 
-  --color-border: rgba(0, 0, 0, 0.08);
-  --color-border-strong: rgba(0, 0, 0, 0.16);
-  --color-separator: rgba(60, 60, 67, 0.12);
+  --color-border: rgba(19, 35, 39, 0.12);
+  --color-border-strong: var(--fs-primary);
+  --color-separator: var(--fs-surface-2);
 
   --accent-dashboard: var(--fs-accent);
   --accent-workout: var(--fs-accent);
@@ -119,24 +119,24 @@
   --accent-templates: var(--fs-accent);
   --accent-current: var(--fs-accent);
 
-  /* Body background — clean Apple canvas (no grid/mesh noise in light) */
+  /* Body background — clean canvas (no grid/mesh noise); brand tint stays via --fs-bg */
   --fs-body-overlay: transparent;
   --fs-grid-line: transparent;
   --fs-mesh-accent: transparent;
   --fs-mesh-signal: transparent;
 
   /* Preview Page Tokens for layout consistency */
-  --page-bg: #f5f5f7;
-  --page-ink: #1d1d1f;
-  --page-muted: #6e6e73;
-  --paper: rgba(255, 255, 255, 0.88);
-  --line: rgba(0, 0, 0, 0.08);
-  --line-strong: rgba(0, 0, 0, 0.16);
-  --shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --page-bg: #eff3ef;
+  --page-ink: #111816;
+  --page-muted: #65716d;
+  --paper: rgba(255, 255, 255, 0.76);
+  --line: rgba(17, 24, 22, 0.12);
+  --line-strong: rgba(17, 24, 22, 0.2);
+  --shadow: 0 24px 80px rgba(17, 24, 22, 0.13);
 
   /* Label tokens */
-  --label-secondary: #6e6e73;
-  --label-tertiary: #8e8e93;
+  --label-secondary: #7e7d78;
+  --label-tertiary: #a5a49f;
 
   /* Gray scale */
   --gray-100: #f5f1eb;
@@ -149,16 +149,16 @@
   --gray-800: #1a1a1a;
   --gray-900: #132018;
 
-  /* ── Bottom Nav tokens (light) — Apple glass bar ── */
-  --nav-bg: rgba(255, 255, 255, 0.72);
-  --nav-border: rgba(0, 0, 0, 0.06);
-  --nav-shadow: 0 -0.5px 0 rgba(0, 0, 0, 0.08), 0 -8px 32px rgba(0, 0, 0, 0.04);
-  --nav-icon-inactive: rgba(0, 0, 0, 0.48);
-  --nav-label-inactive: rgba(0, 0, 0, 0.48);
+  /* ── Bottom Nav tokens (light) — glass bar, brand navy pill ── */
+  --nav-bg: rgba(255, 255, 255, 0.78);
+  --nav-border: rgba(19, 35, 39, 0.08);
+  --nav-shadow: 0 -0.5px 0 rgba(19, 35, 39, 0.08), 0 -8px 28px rgba(19, 35, 39, 0.05);
+  --nav-icon-inactive: rgba(19, 35, 39, 0.6);
+  --nav-label-inactive: rgba(19, 35, 39, 0.66);
   --nav-pill-bg: var(--fs-primary);
   /* Pill bg is the dark --fs-primary here, so its ink is the on-dark token. */
   --nav-pill-text: var(--color-ink-on-dark);
-  --nav-pill-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  --nav-pill-shadow: 0 2px 8px rgba(22, 41, 45, 0.25);
 
   /* Premium motion */
   --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
@@ -167,27 +167,27 @@
   --duration-premium: 480ms;
   --duration-spring: 540ms;
 
-  /* Premium shadows — soft diffused (Apple product-card style) */
-  --shadow-glow-accent: 0 0 0 1px color-mix(in srgb, var(--fs-accent) 28%, transparent), 0 8px 28px
-    color-mix(in srgb, var(--fs-accent) 22%, transparent);
-  --shadow-glow-signal: 0 0 0 1px color-mix(in srgb, var(--fs-signal) 30%, transparent), 0 8px 28px
-    color-mix(in srgb, var(--fs-signal) 22%, transparent);
-  --shadow-deep: 0 24px 64px -20px rgba(0, 0, 0, 0.22), 0 8px 24px -8px rgba(0, 0, 0, 0.1);
-  --shadow-lift: 0 12px 40px -12px rgba(0, 0, 0, 0.16);
-  --shadow-glass: 0 8px 32px -8px rgba(0, 0, 0, 0.1), inset 0 0.5px 0 rgba(255, 255, 255, 0.7);
+  /* Premium shadows — soft diffused lift, brand-tinted glow */
+  --shadow-glow-accent: 0 0 0 1px color-mix(in srgb, var(--fs-accent) 35%, transparent), 0 8px 28px
+    color-mix(in srgb, var(--fs-accent) 28%, transparent);
+  --shadow-glow-signal: 0 0 0 1px color-mix(in srgb, var(--fs-signal) 35%, transparent), 0 8px 32px
+    color-mix(in srgb, var(--fs-signal) 32%, transparent);
+  --shadow-deep: 0 24px 60px -20px rgba(13, 21, 22, 0.28), 0 8px 24px -8px rgba(13, 21, 22, 0.14);
+  --shadow-lift: 0 14px 36px -14px rgba(13, 21, 22, 0.2);
+  --shadow-glass: 0 10px 32px -12px rgba(13, 21, 22, 0.14), inset 0 0.5px 0 rgba(255, 255, 255, 0.55);
 
   /* ── Adaptive surface effects (auto-swap light↔dark) ── */
-  --fs-surface-shine: rgba(255, 255, 255, 0.7);
-  --fs-surface-shine-strong: rgba(255, 255, 255, 0.85);
-  --fs-surface-shine-subtle: rgba(255, 255, 255, 0.35);
+  --fs-surface-shine: rgba(255, 255, 255, 0.58);
+  --fs-surface-shine-strong: rgba(255, 255, 255, 0.72);
+  --fs-surface-shine-subtle: rgba(255, 255, 255, 0.24);
   --fs-toggle-knob: #ffffff;
-  --fs-focus-ring: rgba(48, 209, 88, 0.35);
-  --fs-overlay-hover: rgba(0, 0, 0, 0.04);
-  --fs-overlay-active: rgba(0, 0, 0, 0.08);
-  --fs-shimmer-hi: rgba(255, 255, 255, 0.08);
+  --fs-focus-ring: rgba(67, 199, 165, 0.28);
+  --fs-overlay-hover: rgba(19, 35, 39, 0.04);
+  --fs-overlay-active: rgba(19, 35, 39, 0.08);
+  --fs-shimmer-hi: rgba(255, 255, 255, 0.06);
   --fs-shimmer-lo: rgba(255, 255, 255, 0.02);
   --fs-border-on-dark: rgba(255, 255, 255, 0.12);
-  --fs-text-on-dark: rgba(255, 255, 255, 0.88);
+  --fs-text-on-dark: rgba(255, 255, 255, 0.85);
 }
 
 /* ============================================================================
@@ -360,27 +360,29 @@ html.large-text {
 html.dark {
   color-scheme: dark;
 
-  /* ── OBSIDIAN — Apple Fitness+ dark
-     Pure black canvas, system gray surfaces, singular green action.
-     Depth: bg(#000) → surface(#1c1c1e) → surface-2(#2c2c2e)
+  /* ── OBSIDIAN — Premium Dark Palette ──
+     Near-black surfaces, ZERO color tint. Personality from mint accent.
+     Depth: bg(#000) → surface(#111) → surface-2(#1A1A1A)
+     Accent: bright mint #4DDCBB
      ============================================================ */
   --fs-bg: #000000;
-  --fs-surface: #1c1c1e;
-  --fs-surface-2: #2c2c2e;
-  --fs-ink: #f5f5f7;
-  --fs-muted: #98989d;
+  --fs-surface: #111111;
+  --fs-surface-2: #1a1a1a;
+  --fs-ink: #f0f0f0;
+  /* #8c8c8c, not #808080 — 808080 is 4.4:1 on surface-2 (#1a1a1a), just under AA */
+  --fs-muted: #8c8c8c;
   --fs-ink-muted: var(--fs-muted);
   --fs-primary: #0a0a0a;
-  --fs-accent: #30d158;
-  --fs-accent-2: #32d74b;
-  /* On dark surfaces the brand green clears AA; links reuse it. */
+  --fs-accent: #4ddcbb;
+  --fs-accent-2: #38b5c9;
+  /* On dark surfaces the brand mint already clears AA (~11:1), so links reuse it. */
   --fs-link: var(--fs-accent);
-  --fs-accent-rgb: 48, 209, 88;
+  --fs-accent-rgb: 77, 220, 187;
   --fs-signal: #e2fb70;
-  --fs-warn: #ff9f0a;
-  --fs-steel: #3a3a3c;
-  --fs-plate: #2c2c2e;
-  --fs-rubber: #000000;
+  --fs-warn: #ff8a65;
+  --fs-steel: #2a2a2a;
+  --fs-plate: #1a1a1a;
+  --fs-rubber: #050505;
 
   /* Legacy mapping */
   --bone: var(--fs-bg);
@@ -400,23 +402,23 @@ html.dark {
 
   /* Button-specific tokens */
   --btn-primary-bg: var(--fs-accent);
-  --btn-primary-text: #003d12;
+  --btn-primary-text: #071412;
 
-  --text-on-navy-rgb: 245, 245, 247;
-  --ink-rgb: 245, 245, 247;
+  --text-on-navy-rgb: 240, 240, 240;
+  --ink-rgb: 240, 240, 240;
   --bone-rgb: 0, 0, 0;
 
-  --color-scrim: rgba(0, 0, 0, 0.72);
+  --color-scrim: rgba(0, 0, 0, 0.8);
 
   --color-primary: var(--fs-primary);
   --color-primary-hover: #050505;
-  --color-primary-glow: rgba(48, 209, 88, 0.18);
-  --color-primary-subtle: rgba(48, 209, 88, 0.08);
+  --color-primary-glow: rgba(77, 220, 187, 0.15);
+  --color-primary-subtle: rgba(77, 220, 187, 0.06);
 
   --color-secondary: var(--fs-accent);
-  --color-secondary-hover: #28c84e;
-  --color-secondary-glow: rgba(48, 209, 88, 0.32);
-  --color-secondary-subtle: rgba(48, 209, 88, 0.16);
+  --color-secondary-hover: #3fc9a8;
+  --color-secondary-glow: rgba(77, 220, 187, 0.3);
+  --color-secondary-subtle: rgba(77, 220, 187, 0.14);
 
   --color-accent: var(--fs-accent);
 
@@ -424,66 +426,66 @@ html.dark {
   --color-surface: var(--fs-surface);
   --color-surface-elevated: var(--fs-surface-2);
   --color-surface-input: #0a0a0a;
-  --color-surface-hover: #3a3a3c;
+  --color-surface-hover: #222222;
 
   --color-text: var(--fs-ink);
   --color-text-secondary: var(--fs-muted);
   --color-text-muted: var(--stone-light);
 
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
-  --color-separator: rgba(84, 84, 88, 0.65);
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+  --color-separator: #1a1a1a;
 
-  --color-success: #30d158;
-  --color-success-fg: #30d158;
-  --color-success-muted: rgba(48, 209, 88, 0.16);
+  --color-success: #34d98c;
+  --color-success-fg: #34d98c;
+  --color-success-muted: rgba(52, 217, 140, 0.14);
   --color-warning: var(--fs-warn);
-  --color-warning-muted: rgba(255, 159, 10, 0.16);
-  --color-error: #ff453a;
-  --color-error-fg: #ff453a;
-  --color-error-muted: rgba(255, 69, 58, 0.16);
-  --fs-error: #ff453a;
-  --color-check: #30d158;
-  --color-delete: #ff453a;
-  --color-live: #30d158;
-  --color-toggle-on: #30d158;
+  --color-warning-muted: rgba(255, 138, 101, 0.14);
+  --color-error: #ff5449;
+  --color-error-fg: #ff5449;
+  --color-error-muted: rgba(255, 84, 73, 0.14);
+  --fs-error: #f07070;
+  --color-check: #34d98c;
+  --color-delete: #ff5449;
+  --color-live: #34d98c;
+  --color-toggle-on: #34d98c;
   --fs-heading: var(--fs-ink);
-  --color-ink-on-dark: #f5f5f7;
-  --color-ink-on-accent: #003d12;
-  /* Bright error needs dark ink — white fails AA here. */
-  --color-ink-on-error: #003d12;
+  --color-ink-on-dark: #f0f0f0;
+  --color-ink-on-accent: #071412;
+  /* Bright error (#ff5449) needs dark ink — white fails AA here. */
+  --color-ink-on-error: #071412;
   --color-drag-handle: rgba(255, 255, 255, 0.2);
   --color-bar-track: rgba(255, 255, 255, 0.08);
 
   /* ── Adaptive surface effects ── */
-  --fs-surface-shine: rgba(255, 255, 255, 0.04);
-  --fs-surface-shine-strong: rgba(255, 255, 255, 0.07);
+  --fs-surface-shine: rgba(255, 255, 255, 0.03);
+  --fs-surface-shine-strong: rgba(255, 255, 255, 0.05);
   --fs-surface-shine-subtle: rgba(255, 255, 255, 0.02);
   --fs-toggle-knob: #ffffff;
-  --fs-focus-ring: rgba(48, 209, 88, 0.4);
-  --fs-overlay-hover: rgba(255, 255, 255, 0.06);
-  --fs-overlay-active: rgba(255, 255, 255, 0.1);
+  --fs-focus-ring: rgba(77, 220, 187, 0.35);
+  --fs-overlay-hover: rgba(255, 255, 255, 0.04);
+  --fs-overlay-active: rgba(255, 255, 255, 0.07);
   --fs-shimmer-hi: rgba(255, 255, 255, 0.06);
   --fs-shimmer-lo: rgba(255, 255, 255, 0.02);
-  --fs-border-on-dark: rgba(255, 255, 255, 0.12);
-  --fs-text-on-dark: rgba(255, 255, 255, 0.9);
+  --fs-border-on-dark: rgba(255, 255, 255, 0.1);
+  --fs-text-on-dark: rgba(255, 255, 255, 0.85);
 
-  /* ── Bottom Nav tokens (dark) — Apple translucent bar ── */
-  --nav-bg: rgba(28, 28, 30, 0.78);
-  --nav-border: rgba(255, 255, 255, 0.08);
-  --nav-shadow: 0 -0.5px 0 rgba(255, 255, 255, 0.08), 0 -12px 40px rgba(0, 0, 0, 0.45);
-  --nav-icon-inactive: rgba(235, 235, 245, 0.55);
-  --nav-label-inactive: rgba(235, 235, 245, 0.55);
+  /* ── Bottom Nav tokens (dark) — glass bar, mint pill ── */
+  --nav-bg: rgba(17, 17, 17, 0.86);
+  --nav-border: rgba(255, 255, 255, 0.06);
+  --nav-shadow: 0 -0.5px 0 rgba(255, 255, 255, 0.06), 0 -12px 36px rgba(0, 0, 0, 0.45);
+  --nav-icon-inactive: rgba(240, 240, 240, 0.5);
+  --nav-label-inactive: rgba(240, 240, 240, 0.55);
   --nav-pill-bg: var(--fs-accent);
-  /* Pill bg is the green --fs-accent here, so its ink is the on-accent token. */
+  /* Pill bg is the mint --fs-accent here, so its ink is the on-accent token. */
   --nav-pill-text: var(--color-ink-on-accent);
-  --nav-pill-shadow: 0 2px 14px rgba(48, 209, 88, 0.35);
+  --nav-pill-shadow: 0 2px 12px rgba(77, 220, 187, 0.3);
 
   /* Glass — neutral dark glass, no green tint */
-  --cosmos-glass-bg: rgba(28, 28, 30, 0.86);
-  --cosmos-glass-border: rgba(255, 255, 255, 0.08);
-  --cosmos-glass-highlight: rgba(255, 255, 255, 0.04);
-  --surface-glass: rgba(28, 28, 30, 0.86);
+  --cosmos-glass-bg: rgba(17, 17, 17, 0.9);
+  --cosmos-glass-border: rgba(255, 255, 255, 0.06);
+  --cosmos-glass-highlight: rgba(255, 255, 255, 0.03);
+  --surface-glass: rgba(17, 17, 17, 0.9);
   --surface-input: var(--fs-surface);
   --gray-200: var(--fs-surface-2);
 
@@ -511,27 +513,27 @@ html.dark {
   /* Shadows — surface steps + soft lift */
   --elevation-0: none;
   --surface-0: #000000;
-  --elevation-1: 0 2px 12px rgba(0, 0, 0, 0.45);
-  --surface-1: #1c1c1e;
-  --elevation-2: 0 8px 28px rgba(0, 0, 0, 0.55);
-  --surface-2: #2c2c2e;
+  --elevation-1: 0 2px 12px rgba(0, 0, 0, 0.5);
+  --surface-1: #111111;
+  --elevation-2: 0 8px 28px rgba(0, 0, 0, 0.6);
+  --surface-2: #1a1a1a;
   --elevation-3: 0 16px 48px rgba(0, 0, 0, 0.7);
-  --surface-3: #3a3a3c;
-  --edge-highlight: inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
+  --surface-3: #222222;
+  --edge-highlight: inset 0 0.5px 0 rgba(255, 255, 255, 0.05);
 
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.45);
-  --shadow-elevated: 0 8px 28px rgba(0, 0, 0, 0.55);
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.5);
+  --shadow-elevated: 0 8px 28px rgba(0, 0, 0, 0.6);
   --shadow-navy: 0 16px 48px rgba(0, 0, 0, 0.7);
-  --shadow-button: 0 2px 12px rgba(0, 0, 0, 0.45);
-  --shadow-button-hover: 0 6px 20px rgba(0, 0, 0, 0.55);
+  --shadow-button: 0 2px 12px rgba(0, 0, 0, 0.5);
+  --shadow-button-hover: 0 6px 20px rgba(0, 0, 0, 0.6);
 
   /* Premium shadows — subtle inner highlight for glass-like edges */
-  --shadow-deep: 0 24px 64px -18px rgba(0, 0, 0, 0.8), inset 0 0.5px 0 rgba(255, 255, 255, 0.06);
-  --shadow-lift: 0 16px 40px -14px rgba(0, 0, 0, 0.65), inset 0 0.5px 0 rgba(255, 255, 255, 0.05);
-  --shadow-glass: 0 8px 28px -8px rgba(0, 0, 0, 0.55), inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
-  --shadow-inner: inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
+  --shadow-deep: 0 24px 64px -18px rgba(0, 0, 0, 0.8), inset 0 0.5px 0 rgba(255, 255, 255, 0.04);
+  --shadow-lift: 0 16px 40px -14px rgba(0, 0, 0, 0.65), inset 0 0.5px 0 rgba(255, 255, 255, 0.03);
+  --shadow-glass: 0 8px 28px -8px rgba(0, 0, 0, 0.55), inset 0 0.5px 0 rgba(255, 255, 255, 0.05);
+  --shadow-inner: inset 0 0.5px 0 rgba(255, 255, 255, 0.06);
 
-  /* Accent glow shadows — green pops on black */
-  --shadow-glow-accent: 0 0 0 1px rgba(48, 209, 88, 0.22), 0 0 28px rgba(48, 209, 88, 0.16);
+  /* Accent glow shadows — mint pops on black */
+  --shadow-glow-accent: 0 0 0 1px rgba(77, 220, 187, 0.18), 0 0 24px rgba(77, 220, 187, 0.1);
   --shadow-glow-signal: 0 0 0 1px rgba(226, 251, 112, 0.18), 0 0 24px rgba(226, 251, 112, 0.1);
 }
