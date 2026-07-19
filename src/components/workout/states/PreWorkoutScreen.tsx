@@ -757,22 +757,8 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 triggerHaptic('medium');
                 navigate('/templates');
               }}
-              className="start-workout-btn accent-glow w-full focus-ring"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 12,
-                padding: '18px 24px',
-                color: 'var(--color-ink-on-accent)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 900,
-                fontSize: 17,
-                letterSpacing: '0.02em',
-                minHeight: 58,
-                marginBottom: 10,
-              }}
+              className="start-workout-btn focus-ring"
+              style={{ marginBottom: 10 }}
               aria-label="בחרו תבנית מוכנה"
             >
               <DumbbellIcon style={{ width: 20, height: 20, flexShrink: 0 }} />
@@ -782,23 +768,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
             <button
               type="button"
               onClick={handleStartWorkout}
-              className="w-full focus-ring"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                padding: '14px 20px',
-                background: 'var(--fs-surface)',
-                border: '1px solid var(--fs-surface-2)',
-                borderRadius: 'var(--radius-asymmetric)',
-                color: 'var(--fs-ink)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 700,
-                fontSize: 15,
-                minHeight: 50,
-              }}
+              className="cta-secondary focus-ring"
               aria-label="התחילו אימון ריק — בחירת תרגילים"
             >
               {hasHistory ? 'אימון ריק — בחרו תרגילים' : 'התחילו בלי תבנית'}
@@ -807,23 +777,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
             <button
               type="button"
               onClick={handleCancel}
-              className="w-full mt-3 focus-ring"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '14px 24px',
-                background: 'transparent',
-                color: 'var(--fs-muted)',
-                border: '2px solid transparent',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 600,
-                fontSize: 12,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                minHeight: 44,
-              }}
+              className="cta-ghost w-full mt-2 focus-ring"
               aria-label="ביטול וחזרה לבית"
             >
               חזרה לבית

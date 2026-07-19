@@ -44,40 +44,40 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
         aria-label="אימון ריק — בחרו תרגיל"
       >
         <m.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="glass-surface scrim-noise"
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className="glass-surface"
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            maxWidth: 340,
+            maxWidth: 360,
             width: '100%',
-            padding: '28px 20px',
+            padding: '28px 22px',
             textAlign: 'center',
-            borderRadius: '24px 16px 24px 16px',
-            border: '1px solid var(--fs-surface-2)',
+            borderRadius: 'var(--radius-2xl)',
+            border: 'none',
+            boxShadow: 'var(--shadow-elevated)',
           }}
         >
-          {/* Icon */}
           <m.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="section-spotlight"
+            transition={{ delay: 0.08 }}
             style={{
-              width: 80,
-              height: 80,
-              background: 'var(--fs-accent)',
+              width: 64,
+              height: 64,
+              background: 'color-mix(in srgb, var(--fs-accent) 16%, transparent)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: 20,
-              borderRadius: 18,
-              color: 'var(--color-ink-on-accent)',
+              borderRadius: 9999,
+              color: 'var(--fs-accent)',
             }}
           >
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
                 d="M6.5 6.5h3v11h-3v-11zm8 0h3v11h-3v-11zM4 9h2.5v6H4V9zm13.5 0H20v6h-2.5V9zM9.5 11h5v2h-5v-2z"
                 fill="currentColor"
@@ -88,10 +88,10 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
           <h1
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 900,
-              fontSize: 24,
+              fontWeight: 600,
+              fontSize: 26,
               color: 'var(--fs-heading)',
-              letterSpacing: '-0.01em',
+              letterSpacing: '-0.022em',
               marginBottom: 8,
               lineHeight: 1.15,
             }}
@@ -102,24 +102,24 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
           <p
             style={{
               fontFamily: 'var(--font-body)',
-              fontSize: 14,
+              fontSize: 15,
               color: 'var(--fs-muted)',
-              lineHeight: 1.55,
+              lineHeight: 1.5,
+              letterSpacing: '-0.01em',
               marginBottom: 18,
             }}
           >
             הוסיפו תרגיל ראשון כדי להתחיל לרשום סטים. אפשר גם לבחור תבנית מוכנה.
           </p>
 
-          {/* Numbered mental model */}
           <ol
             style={{
               listStyle: 'none',
-              margin: '0 0 20px',
+              margin: '0 0 18px',
               padding: 0,
               width: '100%',
               display: 'grid',
-              gap: 10,
+              gap: 12,
               textAlign: 'start',
             }}
           >
@@ -141,11 +141,11 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: 'var(--fs-primary)',
-                    color: 'var(--fs-accent)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 12,
-                    fontWeight: 700,
+                    background: 'var(--fs-surface-2)',
+                    color: 'var(--fs-ink)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 13,
+                    fontWeight: 600,
                     flexShrink: 0,
                   }}
                 >
@@ -154,9 +154,10 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
                 <span
                   style={{
                     fontFamily: 'var(--font-body)',
-                    fontSize: 14,
-                    fontWeight: 600,
+                    fontSize: 15,
+                    fontWeight: 500,
                     color: 'var(--fs-ink)',
+                    letterSpacing: '-0.01em',
                   }}
                 >
                   {step.text}
@@ -171,78 +172,37 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
             </CoachMark>
           </div>
 
-          {/* Primary: add exercise */}
           <m.button
             onClick={() => {
               triggerHaptic('medium');
               onAddExercise();
             }}
             whileTap={{ scale: 0.98 }}
-            className="start-workout-btn accent-glow"
-            style={{
-              width: '100%',
-              minHeight: 56,
-              background: 'var(--fs-accent)',
-              color: 'var(--color-ink-on-accent)',
-              border: '2px solid var(--fs-accent)',
-              borderRadius: 'var(--radius-asymmetric)',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 900,
-              fontSize: 16,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              marginBottom: 10,
-            }}
+            className="start-workout-btn"
+            style={{ marginBottom: 10 }}
             aria-label="הוסיפו תרגיל ראשון"
           >
-            <span style={{ fontSize: 22, lineHeight: 1 }}>+</span>
+            <span style={{ fontSize: 22, lineHeight: 1, fontWeight: 500 }}>+</span>
             הוסיפו תרגיל ראשון
           </m.button>
 
-          {/* Secondary: templates */}
           <button
             type="button"
             onClick={() => {
               triggerHaptic('light');
               navigate('/templates');
             }}
-            style={{
-              width: '100%',
-              minHeight: 48,
-              background: 'var(--fs-surface)',
-              color: 'var(--fs-ink)',
-              border: '1px solid var(--fs-surface-2)',
-              borderRadius: 'var(--radius-asymmetric)',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 700,
-              fontSize: 14,
-              cursor: 'pointer',
-              marginBottom: 12,
-            }}
+            className="cta-secondary"
+            style={{ marginBottom: 8 }}
             aria-label="בחרו תבנית מוכנה"
           >
             בחרו תבנית מוכנה במקום
           </button>
 
-          {/* Cancel */}
           <button
             type="button"
             onClick={onCancel}
-            style={{
-              minHeight: 44,
-              padding: '0 16px',
-              background: 'transparent',
-              color: 'var(--fs-muted)',
-              border: 'none',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 12,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-            }}
+            className="cta-ghost"
             aria-label="ביטול האימון וחזרה"
           >
             ביטול וחזרה

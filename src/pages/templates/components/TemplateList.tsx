@@ -35,41 +35,54 @@ export function TemplateList({
       {!hasTemplates && (
         <m.div
           variants={itemVariants}
-          className="flex flex-col items-center justify-center py-20 text-center"
+          className="flex flex-col items-center justify-center py-16 text-center px-2"
         >
           <m.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ ...springTransition, delay: 0.2 }}
-            className="w-20 h-20 mb-6 flex items-center justify-center"
-            style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)' }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ ...springTransition, delay: 0.1 }}
+            className="w-16 h-16 mb-6 flex items-center justify-center"
+            style={{
+              background: 'color-mix(in srgb, var(--fs-accent) 16%, transparent)',
+              color: 'var(--fs-accent)',
+              borderRadius: 9999,
+            }}
           >
-            <Dumbbell size={36} />
+            <Dumbbell size={28} strokeWidth={1.75} />
           </m.div>
           <p
             style={{
               fontFamily: 'var(--font-display)',
-              fontSize: '28px',
-              fontWeight: 800,
+              fontSize: 26,
+              fontWeight: 600,
               color: 'var(--fs-ink)',
-              textTransform: 'uppercase',
-              marginBottom: '6px',
+              letterSpacing: '-0.022em',
+              marginBottom: 8,
+              lineHeight: 1.15,
             }}
           >
             אין תבניות עדיין
           </p>
           <p
-            className="eyebrow mb-3"
-            style={{ color: 'var(--fs-muted)', maxWidth: '28ch', lineHeight: 1.5 }}
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 15,
+              color: 'var(--fs-muted)',
+              maxWidth: '30ch',
+              lineHeight: 1.5,
+              letterSpacing: '-0.01em',
+              marginBottom: 20,
+            }}
           >
             תבנית = רשימת תרגילים מוכנה. צרו אחת עכשיו — ואז תוכלו להתחיל אימון בלחיצה.
           </p>
           <m.button
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ scale: 0.98 }}
             onClick={onCreateClick}
-            className="btn-primary flex items-center gap-2"
+            className="start-workout-btn"
+            style={{ maxWidth: 320 }}
           >
-            <Plus size={18} />
+            <Plus size={18} strokeWidth={2.25} />
             צור תבנית ראשונה
           </m.button>
         </m.div>

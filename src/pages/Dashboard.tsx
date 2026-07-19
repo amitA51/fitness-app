@@ -389,41 +389,36 @@ export default function Dashboard() {
           <button
             type="button"
             onClick={openStartSheet}
-            className="magnetic-card active:scale-[0.98]"
+            className="home-start-cta focus-ring"
             aria-haspopup="dialog"
             aria-expanded={isStartSheetOpen}
             aria-label={hasSessionToday ? 'אימון נוסף' : 'התחל אימון'}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              padding: '18px 22px',
-              minHeight: 72,
-              // Sharper mint→teal stop: mint holds to 55% then transitions to the
-              // accent-2 so the gradient reads as a deliberate two-tone, not a wash.
-              background:
-                'linear-gradient(135deg, var(--fs-accent) 0%, var(--fs-accent) 42%, var(--fs-accent-2) 100%)',
-              border: '2px solid var(--fs-accent)',
-              borderRadius: 'var(--radius-asymmetric)',
-              cursor: 'pointer',
-              // Near-black ink (#071412 in both modes) passes AA on both the mint
-              // and the teal end of the gradient.
-              color: 'var(--color-ink-on-accent)',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 900,
-              fontSize: 22,
-              textAlign: 'right',
-              lineHeight: 1.1,
-              letterSpacing: '-0.01em',
-              // Lifted depth + a subtle inset top highlight so the surface reads as
-              // a raised, tactile slab rather than a flat fill.
-              boxShadow:
-                '0 12px 24px color-mix(in srgb, var(--fs-accent) 32%, transparent), inset 0 1px 0 color-mix(in srgb, #ffffff 28%, transparent)',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
           >
+            <span style={{ display: 'grid', gap: 4, textAlign: 'start', minWidth: 0 }}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 700,
+                  fontSize: 20,
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.15,
+                }}
+              >
+                {hasSessionToday ? 'אימון נוסף' : 'התחל אימון'}
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  letterSpacing: '-0.01em',
+                  opacity: 0.88,
+                  lineHeight: 1.3,
+                }}
+              >
+                {hasSessionToday ? 'לחצו לבחירת תבנית או אימון ריק' : 'תבנית מוכנה · או אימון ריק'}
+              </span>
+            </span>
             <span
               aria-hidden="true"
               style={{
@@ -432,30 +427,13 @@ export default function Dashboard() {
                 justifyContent: 'center',
                 width: 44,
                 height: 44,
-                borderRadius: '50%',
-                // Primary (navy / near-black) pill on the mint gradient: reads in
-                // both modes. The previous accent-on-accent pill vanished in light
-                // and put light ink on bright mint in dark (contrast fail).
+                borderRadius: 9999,
                 background: 'var(--fs-primary)',
                 color: 'var(--color-ink-on-dark)',
                 flexShrink: 0,
               }}
             >
-              <ArrowLeft size={22} aria-hidden="true" />
-            </span>
-            <span style={{ display: 'grid', gap: 4, textAlign: 'right' }}>
-              <span>{hasSessionToday ? 'אימון נוסף' : 'התחל אימון'}</span>
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  fontWeight: 600,
-                  letterSpacing: '0.06em',
-                  opacity: 0.85,
-                }}
-              >
-                {hasSessionToday ? 'לחצו לבחירת תבנית או אימון ריק' : 'תבנית מוכנה · או אימון ריק'}
-              </span>
+              <ArrowLeft size={20} aria-hidden="true" />
             </span>
           </button>
         )}

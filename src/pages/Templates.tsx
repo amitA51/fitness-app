@@ -73,19 +73,18 @@ export default function Templates() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                minHeight: 44,
+                minHeight: 40,
                 padding: '0 14px',
                 flexShrink: 0,
-                background: 'var(--fs-surface)',
-                border: '1px solid var(--fs-surface-2)',
-                borderRadius: 'var(--radius-asymmetric)',
+                background: 'var(--fs-surface-2)',
+                border: 'none',
+                borderRadius: 9999,
                 cursor: isCleaning ? 'progress' : 'pointer',
                 color: 'var(--fs-ink)',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                fontWeight: 600,
+                letterSpacing: '-0.01em',
                 opacity: isCleaning ? 0.6 : 1,
               }}
             >
@@ -96,34 +95,27 @@ export default function Templates() {
         />
 
         <div className="px-5 pt-5">
-          {/* First-run orientation when templates exist — answers "what do I do here?" */}
+          {/* First-run orientation when templates exist */}
           {templates.length > 0 && (
-            <m.div
-              variants={itemVariants}
-              className="mb-4"
-              style={{
-                padding: '14px 16px',
-                background: 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))',
-                border: '1px solid color-mix(in srgb, var(--fs-accent) 35%, var(--fs-surface-2))',
-                borderRadius: 'var(--radius-asymmetric)',
-              }}
-            >
+            <m.div variants={itemVariants} className="mb-4 fs-tip-banner">
               <p
                 style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
-                  fontSize: 15,
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 600,
+                  fontSize: 16,
+                  letterSpacing: '-0.015em',
                   color: 'var(--fs-ink)',
                   margin: '0 0 4px',
                 }}
               >
-                בחרו תבנית ולחצו &quot;התחל&quot;
+                בחרו תבנית ולחצו &quot;התחל אימון&quot;
               </p>
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
-                  fontSize: 13,
+                  fontSize: 14,
                   lineHeight: 1.45,
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
                   margin: 0,
                 }}
@@ -133,17 +125,16 @@ export default function Templates() {
             </m.div>
           )}
 
-          {/* Primary CTA — hidden when the list is empty: the empty state below
-              carries its own single "צור תבנית ראשונה" CTA (one label per intent). */}
+          {/* Primary CTA — hidden when empty (empty state has its own CTA) */}
           {templates.length > 0 && (
             <m.div variants={itemVariants} className="mb-5">
               <m.button
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setShowCreateModal(true)}
-                className="btn-primary w-full flex items-center justify-center gap-2"
+                className="start-workout-btn"
                 aria-label="צור תבנית חדשה"
               >
-                <Plus size={18} />
+                <Plus size={18} strokeWidth={2.25} />
                 תבנית חדשה
               </m.button>
             </m.div>

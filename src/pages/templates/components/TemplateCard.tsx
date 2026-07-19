@@ -129,13 +129,13 @@ export const TemplateCard = memo(function TemplateCard({
         style={{ borderTop: '1px solid var(--fs-surface-2)' }}
       >
         <m.button
-          whileTap={{ scale: 0.95 }}
+          whileTap={{ scale: 0.97 }}
           onClick={() => onStart(template.id)}
-          className="btn-primary flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
-          style={{ flex: 1, minHeight: '44px', padding: '12px 16px' }}
+          className="start-workout-btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
+          style={{ flex: 1, minHeight: 48, fontSize: 15, boxShadow: '0 6px 18px color-mix(in srgb, var(--fs-accent) 24%, transparent)' }}
           aria-label={`התחל אימון: ${template.name}`}
         >
-          <Play size={14} />
+          <Play size={14} strokeWidth={2.5} />
           התחל אימון
         </m.button>
         <m.button

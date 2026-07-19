@@ -111,40 +111,39 @@ export const OverviewTab = memo(function OverviewTab({
               <p
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
-                  fontSize: 18,
+                  fontWeight: 600,
+                  fontSize: 22,
+                  letterSpacing: '-0.02em',
                   color: 'var(--fs-ink)',
                   margin: 0,
                 }}
               >
                 עדיין אין נתונים
               </p>
-              <p style={{ fontSize: 14, color: 'var(--fs-muted)', margin: 0, lineHeight: 1.5 }}>
+              <p
+                style={{
+                  fontSize: 15,
+                  color: 'var(--fs-muted)',
+                  margin: 0,
+                  lineHeight: 1.5,
+                  letterSpacing: '-0.01em',
+                }}
+              >
                 אחרי האימון הראשון יופיעו כאן סיכום שבועי, רצף, נפח ושיאים.
               </p>
             </div>
             <button
               type="button"
               onClick={() => navigate('/templates')}
-              className="btn-primary"
-              style={{ minHeight: 48, paddingInline: 20 }}
+              className="start-workout-btn"
+              style={{ maxWidth: 300 }}
             >
               בחרו תבנית והתחילו
             </button>
             <button
               type="button"
               onClick={() => navigate('/workout')}
-              style={{
-                minHeight: 44,
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--fs-muted)',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 12,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-              }}
+              className="cta-ghost"
             >
               או אימון ריק
             </button>

@@ -475,46 +475,34 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       </div>
 
       <h3
-        className="font-bold mb-2.5 text-lg"
+        className="font-semibold mb-2.5 text-lg"
         style={{
           fontFamily: 'var(--font-display)',
-          textTransform: 'uppercase',
+          fontWeight: 600,
           color: 'var(--fs-ink)',
-          letterSpacing: '-0.01em',
+          letterSpacing: '-0.02em',
+          lineHeight: 1.2,
         }}
       >
         {title}
       </h3>
 
       {description && (
-        <p className="max-w-xs mb-8 leading-relaxed text-sm" style={{ color: 'var(--fs-muted)' }}>
+        <p
+          className="max-w-xs mb-8 leading-relaxed text-[15px]"
+          style={{ color: 'var(--fs-muted)', letterSpacing: '-0.01em' }}
+        >
           {description}
         </p>
       )}
 
-      <div className="flex flex-col sm:flex-row items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-sm">
         {action && (
           <button
             type="button"
             onClick={action.onClick}
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-focus-ring)] focus-visible:ring-offset-2"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '14px 28px',
-              borderRadius: 0,
-              background: 'var(--fs-primary)',
-              color: 'var(--fs-accent)',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: '15px',
-              textTransform: 'uppercase',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              minHeight: 44,
-            }}
+            className="start-workout-btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-focus-ring)] focus-visible:ring-offset-2"
+            style={{ width: '100%' }}
           >
             {action.icon}
             {action.label}
@@ -525,20 +513,8 @@ const EmptyState: React.FC<EmptyStateProps> = ({
           <button
             type="button"
             onClick={secondaryAction.onClick}
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-focus-ring)] focus-visible:ring-offset-2"
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontWeight: 600,
-              fontSize: '14px',
-              padding: '10px 20px',
-              borderRadius: 0,
-              background: 'transparent',
-              color: 'var(--fs-muted)',
-              border: '1px solid var(--fs-surface-2)',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              minHeight: 44,
-            }}
+            className="cta-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-focus-ring)] focus-visible:ring-offset-2"
+            style={{ width: '100%' }}
           >
             {secondaryAction.label}
           </button>

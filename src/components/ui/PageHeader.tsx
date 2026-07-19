@@ -1,16 +1,7 @@
 // PageHeader — the canonical top-of-page header for standard screens.
 //
-// Until now every screen hand-rolled its own header. Five of them already shared
-// one idiom almost verbatim — sticky on var(--fs-bg), a 2px var(--fs-accent)
-// bottom border, safe-area-aware padding, an optional eyebrow line above a
-// Bricolage display title, and an optional trailing action — but drifted on the
-// details (title 26/800 vs 22/900, subtitle present or not, some dead-ended with
-// no back). This is the single source of truth they converge onto.
-//
-// Fresh Steel / Obsidian: all colors via tokens (both modes); numbers passed in
-// the eyebrow render dir="ltr" by the caller; icon-only actions/back carry a
-// Hebrew aria-label. The safe-area padding (max(20px, env(safe-area-inset-*)))
-// handles the PWA notch and was previously duplicated across every screen.
+// Sticky glass header, optional eyebrow, display title, optional back + action.
+// Fresh Steel / Obsidian tokens only; Hebrew aria-labels on icon controls.
 
 import { ChevronRight } from 'lucide-react';
 import { type CSSProperties, type ReactNode, memo } from 'react';
@@ -29,7 +20,7 @@ interface PageHeaderProps {
   backLabel?: string;
   /** Stick to the top of the scroll container (default true). */
   sticky?: boolean;
-  /** Divider treatment (default the brand 2px accent line). */
+  /** Divider treatment (default hairline separator). */
   divider?: 'accent' | 'none';
   /** Landmark aria-label (defaults to the title). */
   ariaLabel?: string;
@@ -38,10 +29,11 @@ interface PageHeaderProps {
 const eyebrowStyle: CSSProperties = {
   fontFamily: 'var(--font-body)',
   fontSize: 13,
-  fontWeight: 500,
+  fontWeight: 400,
   color: 'var(--fs-muted)',
   margin: 0,
-  lineHeight: 1.4,
+  lineHeight: 1.35,
+  letterSpacing: '-0.01em',
 };
 
 const PageHeader = memo<PageHeaderProps>(
@@ -57,10 +49,10 @@ const PageHeader = memo<PageHeaderProps>(
   }) => {
     const titleStyle: CSSProperties = {
       fontFamily: 'var(--font-display)',
-      fontWeight: 800,
-      fontSize: 26,
-      lineHeight: 1.15,
-      letterSpacing: '-0.01em',
+      fontWeight: 600,
+      fontSize: 28,
+      lineHeight: 1.12,
+      letterSpacing: '-0.022em',
       color: 'var(--fs-ink)',
       margin: eyebrow ? '4px 0 0' : 0,
     };
@@ -72,8 +64,12 @@ const PageHeader = memo<PageHeaderProps>(
           position: sticky ? 'sticky' : undefined,
           top: sticky ? 0 : undefined,
           zIndex: sticky ? 20 : undefined,
-          background: 'var(--fs-bg)',
-          borderBottom: divider === 'accent' ? '2px solid var(--fs-accent)' : undefined,
+          background: sticky
+            ? 'color-mix(in srgb, var(--fs-bg) 78%, transparent)'
+            : 'var(--fs-bg)',
+          backdropFilter: sticky ? 'saturate(180%) blur(20px)' : undefined,
+          WebkitBackdropFilter: sticky ? 'saturate(180%) blur(20px)' : undefined,
+          borderBottom: divider === 'accent' ? '0.5px solid var(--color-separator)' : undefined,
           paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
           paddingInlineStart: 'max(20px, env(safe-area-inset-left, 20px))',
           paddingInlineEnd: 'max(20px, env(safe-area-inset-right, 20px))',
@@ -94,9 +90,9 @@ const PageHeader = memo<PageHeaderProps>(
               style={{
                 width: 44,
                 height: 44,
-                borderRadius: 'var(--radius-md)',
-                color: 'var(--fs-muted)',
-                background: 'transparent',
+                borderRadius: 9999,
+                color: 'var(--fs-ink)',
+                background: 'var(--fs-surface-2)',
                 border: 'none',
                 cursor: 'pointer',
               }}

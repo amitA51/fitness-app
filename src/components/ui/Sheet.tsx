@@ -86,18 +86,19 @@ export const Sheet: React.FC<SheetProps> = ({
           />
         </div>
 
-        {/* Header — title + 44px close button */}
+        {/* Header — title + circular close */}
         <div
           className="flex items-center justify-between gap-3 px-5 pb-3 shrink-0"
-          style={{ borderBottom: '1px solid var(--fs-surface-2)' }}
+          style={{ borderBottom: '0.5px solid var(--color-separator)' }}
         >
           <h2
             id={titleId}
             data-sheet-drag-handle
-            className="font-bold"
             style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'var(--text-headline)',
+              fontWeight: 600,
+              fontSize: 20,
+              letterSpacing: '-0.02em',
               color: 'var(--fs-heading)',
               textAlign: 'start',
               margin: 0,
@@ -113,14 +114,16 @@ export const Sheet: React.FC<SheetProps> = ({
             aria-label="סגירה"
             className="inline-flex items-center justify-center shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--fs-muted)',
-              background: 'transparent',
+              width: 36,
+              height: 36,
+              borderRadius: 9999,
+              color: 'var(--fs-ink)',
+              background: 'var(--fs-surface-2)',
+              border: 'none',
+              cursor: 'pointer',
             }}
           >
-            <X size={20} aria-hidden="true" />
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 
