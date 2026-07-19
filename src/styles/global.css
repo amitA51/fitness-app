@@ -138,25 +138,27 @@ body {
     transform: scale(0.98);
   }
 
-  /* Button — Primary (navy) */
+  /* Button — Primary (mint pill — product chrome) */
   .btn-primary {
-    background-color: var(--fs-primary);
-    color: var(--fs-accent);
+    background-color: var(--fs-accent);
+    color: var(--color-ink-on-accent);
     border: none;
-    border-radius: 0;
-    padding: 22px 24px;
-    font-family: var(--font-display);
-    font-weight: var(--font-extrabold);
-    font-size: 1rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    border-radius: var(--radius-full);
+    padding: 14px 22px;
+    font-family: var(--font-body);
+    font-weight: var(--font-semibold);
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    text-transform: none;
     cursor: pointer;
-    transition: background-color var(--duration-fast) ease, transform var(--duration-fast) ease;
+    transition: filter var(--duration-fast) ease, transform var(--duration-fast) ease,
+      box-shadow var(--duration-fast) ease;
     min-height: 52px;
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--fs-accent) 26%, transparent);
   }
 
   .btn-primary:hover {
-    background-color: #1a1a1a;
+    filter: brightness(1.04);
   }
 
   .btn-primary:active {
@@ -169,25 +171,25 @@ body {
     transform: none;
   }
 
-  /* Button — Secondary (bone) */
+  /* Button — Secondary (outline pill) */
   .btn-secondary {
-    background-color: var(--fs-surface);
+    background-color: transparent;
     color: var(--fs-heading);
-    border: 2px solid var(--fs-heading);
-    border-radius: 0;
-    padding: 22px 24px;
-    font-family: var(--font-display);
-    font-weight: var(--font-extrabold);
-    font-size: 1rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-full);
+    padding: 14px 22px;
+    font-family: var(--font-body);
+    font-weight: var(--font-semibold);
+    font-size: 16px;
+    letter-spacing: -0.01em;
+    text-transform: none;
     cursor: pointer;
     transition: background-color var(--duration-base) ease, transform var(--duration-fast) ease;
-    min-height: 52px;
+    min-height: 50px;
   }
 
   .btn-secondary:hover {
-    background-color: var(--fs-surface-2);
+    background-color: var(--fs-overlay-hover);
   }
 
   .btn-secondary:active {
@@ -199,7 +201,7 @@ body {
     width: 100%;
     background-color: var(--color-surface-input);
     border: 1px solid var(--fs-surface-2);
-    border-radius: 0;
+    border-radius: var(--radius-md);
     padding: 12px 16px;
     color: var(--fs-ink);
     font-family: var(--font-body);
@@ -223,22 +225,22 @@ body {
     display: inline-flex;
     align-items: center;
     padding: 0.25rem 0.75rem;
-    border-radius: 0;
-    font-family: var(--font-mono);
-    font-size: 0.625rem;
+    border-radius: var(--radius-full);
+    font-family: var(--font-body);
+    font-size: 0.75rem;
     font-weight: var(--font-semibold);
-    text-transform: uppercase;
-    letter-spacing: 0.22em;
+    text-transform: none;
+    letter-spacing: -0.01em;
   }
 
   /* Section Title */
   .section-title {
-    font-family: var(--font-mono);
-    font-size: var(--text-label);
+    font-family: var(--font-body);
+    font-size: 15px;
     font-weight: var(--font-semibold);
     color: var(--color-text-secondary);
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    text-transform: none;
   }
 
   /* Eyebrow Label */

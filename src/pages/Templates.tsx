@@ -128,7 +128,7 @@ export default function Templates() {
               <m.button
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setShowCreateModal(true)}
-                className="start-workout-btn"
+                className="cta-secondary"
                 aria-label="צור תבנית חדשה"
               >
                 <Plus size={18} strokeWidth={2.25} />

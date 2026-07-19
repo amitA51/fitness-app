@@ -150,7 +150,12 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
         transition={{ ...springTransition, duration: 0.4 }}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg pt-3 pb-10 max-h-[90vh] overflow-y-auto"
-        style={{ background: 'var(--fs-surface)', borderTop: '1px solid var(--fs-surface-2)' }}
+        style={{
+          background: 'var(--fs-surface)',
+          borderTop: '0.5px solid var(--color-separator)',
+          borderTopLeftRadius: 'var(--radius-2xl)',
+          borderTopRightRadius: 'var(--radius-2xl)',
+        }}
       >
         {/* Drag Handle */}
         <div className="flex justify-center mb-5">
@@ -158,8 +163,8 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
             style={{
               width: '40px',
               height: '4px',
-              background: 'var(--fs-surface-2)',
-              borderRadius: 0,
+              background: 'var(--color-drag-handle)',
+              borderRadius: 999,
             }}
           />
         </div>
@@ -171,10 +176,10 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
               id={titleId}
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: '22px',
+                letterSpacing: '-0.02em',
                 color: 'var(--fs-ink)',
-                textTransform: 'uppercase',
               }}
             >
               תבנית חדשה
@@ -186,18 +191,18 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
               aria-label="סגור"
               className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
               style={{
-                width: '44px',
-                height: '44px',
+                width: '36px',
+                height: '36px',
                 background: 'var(--fs-surface-2)',
                 border: 'none',
-                borderRadius: 0,
+                borderRadius: 9999,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
               }}
             >
-              <X size={16} style={{ color: 'var(--fs-muted)' }} />
+              <X size={16} style={{ color: 'var(--fs-ink)' }} />
             </m.button>
           </div>
 
@@ -228,7 +233,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                   width: '100%',
                   background: 'var(--fs-surface-2)',
                   border: '1px solid var(--fs-surface-2)',
-                  borderRadius: 0,
+                  borderRadius: 12,
                   padding: '16px',
                   color: 'var(--fs-ink)',
                   fontFamily: 'var(--font-body)',
@@ -355,10 +360,9 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                   color: 'var(--fs-heading)',
                   fontFamily: 'var(--font-display)',
                   fontSize: '14px',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  background: 'transparent',
-                  borderRadius: 0,
+                  fontWeight: 600,
+                                    background: 'transparent',
+                  borderRadius: 12,
                   cursor: 'pointer',
                 }}
               >
@@ -386,10 +390,9 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                         style={{
                           fontFamily: 'var(--font-display)',
                           fontSize: '14px',
-                          fontWeight: 800,
+                          fontWeight: 600,
                           color: 'var(--fs-ink)',
-                          textTransform: 'uppercase',
-                        }}
+                                                  }}
                       >
                         בחר תרגיל
                       </span>
@@ -419,7 +422,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                         fontSize: '14px',
                         background: 'var(--fs-surface-2)',
                         border: '1px solid var(--fs-surface-2)',
-                        borderRadius: 0,
+                        borderRadius: 12,
                         color: 'var(--fs-ink)',
                         fontFamily: 'var(--font-body)',
                         outline: 'none',
@@ -460,7 +463,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                             transition: 'background 0.15s',
                             background: 'transparent',
                             border: 'none',
-                            borderRadius: 0,
+                            borderRadius: 12,
                             cursor: 'pointer',
                           }}
                           onMouseEnter={(e) => {
@@ -488,7 +491,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                   justifyContent: 'space-between',
                   padding: '12px 16px',
                   background: 'var(--fs-surface-2)',
-                  borderRadius: 0,
+                  borderRadius: 12,
                 }}
               >
                 <span
@@ -496,8 +499,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                     fontFamily: 'var(--font-mono)',
                     fontSize: '11px',
                     letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: 'var(--fs-muted)',
+                                        color: 'var(--fs-muted)',
                   }}
                 >
                   זמן משוער
@@ -505,7 +507,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                 <span
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: '18px',
                     color: 'var(--fs-accent)',
                   }}
@@ -519,20 +521,10 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
               type="submit"
               disabled={isSubmitting}
               whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+              className="start-workout-btn"
               style={{
-                width: '100%',
-                minHeight: '52px',
-                padding: '16px',
-                borderRadius: 0,
-                background: 'var(--fs-primary)',
-                color: 'var(--fs-accent)',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: '16px',
-                textTransform: 'uppercase',
-                border: 'none',
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
                 opacity: isSubmitting ? 0.5 : 1,
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
               }}
             >
               {isSubmitting ? (
@@ -540,9 +532,9 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                   style={{
                     width: '20px',
                     height: '20px',
-                    border: '2px solid var(--fs-surface-2)',
-                    borderTopColor: 'var(--fs-accent)',
-                    borderRadius: 0,
+                    border: '2px solid color-mix(in srgb, var(--color-ink-on-accent) 30%, transparent)',
+                    borderTopColor: 'var(--color-ink-on-accent)',
+                    borderRadius: 999,
                     display: 'inline-block',
                     animation: 'spin 0.8s linear infinite',
                   }}

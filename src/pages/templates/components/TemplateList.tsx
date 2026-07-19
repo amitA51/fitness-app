@@ -90,22 +90,11 @@ export function TemplateList({
 
       {/* Favorites Section */}
       {favorites.length > 0 && (
-        <m.div variants={itemVariants} className="mb-6">
-          <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-            <span className="left" />
-            <span
-              className="right"
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 700,
-                fontSize: 16,
-                color: 'var(--color-ink-on-dark)',
-              }}
-            >
-              מועדפים
-            </span>
+        <m.div variants={itemVariants} className="section-block mb-2">
+          <div className="section-heading">
+            <h2 className="section-heading-title">מועדפים</h2>
           </div>
-          <div className="flex flex-col gap-4 mt-4">
+          <div className="flex flex-col gap-3">
             {favorites.map((template, index) => (
               <TemplateCard
                 key={template.id}
@@ -125,24 +114,13 @@ export function TemplateList({
 
       {/* All Templates Section */}
       {regular.length > 0 && (
-        <m.div variants={itemVariants} className="mb-6">
+        <m.div variants={itemVariants} className="section-block mb-2">
           {favorites.length > 0 && (
-            <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-              <span className="left" />
-              <span
-                className="right"
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 700,
-                  fontSize: 16,
-                  color: 'var(--color-ink-on-dark)',
-                }}
-              >
-                כל התבניות
-              </span>
+            <div className="section-heading">
+              <h2 className="section-heading-title">כל התבניות</h2>
             </div>
           )}
-          <div className="flex flex-col gap-4 mt-4">
+          <div className="flex flex-col gap-3">
             {regular.map((template, index) => (
               <TemplateCard
                 key={template.id}

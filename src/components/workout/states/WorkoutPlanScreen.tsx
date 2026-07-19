@@ -468,34 +468,18 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
         className="flex-shrink-0 px-5 pt-3 flex flex-col"
         style={{
           gap: 8,
-          background: 'var(--fs-surface)',
-          borderTop: '2px solid var(--fs-surface-2)',
-          paddingBottom: 'env(safe-area-inset-bottom, 12px)',
+          background: 'color-mix(in srgb, var(--fs-surface) 92%, transparent)',
+          backdropFilter: 'saturate(180%) blur(16px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(16px)',
+          borderTop: '0.5px solid var(--color-separator)',
+          paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
         }}
       >
         <button
           type="button"
           onClick={handleStart}
           disabled={draft.length === 0}
-          className="w-full flex items-center justify-center cursor-pointer focus-ring disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{
-            gap: 12,
-            padding: '18px 24px',
-            // Mint-forward primary, matching the PreWorkoutScreen start CTA one
-            // tap earlier — the start flow used to invert (mint there, navy-fill
-            // here), reading as two different buttons for the same intent. Solid
-            // mint (not the gradient .start-workout-btn class) keeps the sharp
-            // radius-0 footer aesthetic; "mint = advance the workout" now holds
-            // across pre-workout → plan → the active finish action.
-            background: 'var(--fs-accent)',
-            color: 'var(--color-ink-on-accent)',
-            fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            fontSize: 16,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            minHeight: 56,
-          }}
+          className="start-workout-btn focus-ring disabled:opacity-40 disabled:cursor-not-allowed"
           aria-label="התחל את האימון עם התוכנית"
         >
           <DumbbellIcon style={{ width: 20, height: 20 }} />
@@ -508,19 +492,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
             triggerHaptic('light');
             onCancel();
           }}
-          className="w-full flex items-center justify-center cursor-pointer focus-ring"
-          style={{
-            gap: 6,
-            padding: '10px',
-            background: 'transparent',
-            color: 'var(--fs-muted)',
-            fontFamily: 'var(--font-display)',
-            fontWeight: 700,
-            fontSize: 12,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            minHeight: 40,
-          }}
+          className="cta-ghost w-full focus-ring"
           aria-label="חזרה לבחירת תרגילים"
         >
           <BackIcon style={{ width: 16, height: 16 }} />
