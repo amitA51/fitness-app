@@ -136,10 +136,9 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: '28px',
                 color: 'var(--fs-ink)',
-                textTransform: 'uppercase',
                 letterSpacing: '-0.02em',
                 lineHeight: 1.1,
               }}
@@ -182,7 +181,7 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
               style={{
                 background: 'var(--color-error-muted)',
                 border: '1px solid var(--color-error)',
-                borderRadius: 0,
+                borderRadius: 12,
               }}
             >
               <AlertCircle size={16} style={{ color: 'var(--color-error)', flexShrink: 0 }} />

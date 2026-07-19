@@ -83,8 +83,7 @@ const SECTION_HEADING_STYLE: React.CSSProperties = {
   fontSize: 16,
   letterSpacing: '-0.01em',
   color: 'var(--fs-ink)',
-  margin: '0 0 12px',
-  textTransform: 'uppercase' as const,
+  margin: '0 0 12px' as const,
 };
 
 const CARD_STYLE: React.CSSProperties = {
@@ -379,7 +378,7 @@ export default function PublicProfilePage() {
                 <span
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: 36,
                     lineHeight: 1,
                     letterSpacing: '-0.02em',
@@ -396,7 +395,7 @@ export default function PublicProfilePage() {
           <h2
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 22,
               color: 'var(--fs-ink)',
               margin: 0,

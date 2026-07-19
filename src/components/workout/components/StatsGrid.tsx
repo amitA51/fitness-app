@@ -109,9 +109,8 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.18em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
-              textTransform: 'uppercase',
             }}
           >
             {label}
@@ -120,7 +119,7 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
             dir="ltr"
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 18,
               color: 'var(--fs-heading)',
               letterSpacing: '-0.01em',
@@ -214,7 +213,7 @@ const StatCard: React.FC<StatCardProps> = memo(
         <div
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 900,
+            fontWeight: 700,
             fontSize: 24,
             color: 'var(--fs-heading)',
             letterSpacing: '-0.02em',
@@ -228,9 +227,8 @@ const StatCard: React.FC<StatCardProps> = memo(
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 9,
-            letterSpacing: '0.18em',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
-            textTransform: 'uppercase',
             marginTop: 6,
           }}
         >
@@ -389,7 +387,7 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
               <div
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 900,
+                  fontWeight: 700,
                   fontSize: 24,
                   color: prCount > 0 ? 'var(--fs-accent)' : 'var(--fs-muted)',
                   letterSpacing: '-0.02em',
@@ -403,9 +401,8 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
-                  letterSpacing: '0.18em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
-                  textTransform: 'uppercase',
                   marginTop: 6,
                 }}
               >
@@ -424,9 +421,8 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                letterSpacing: '0.18em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
-                textTransform: 'uppercase',
                 marginBottom: 8,
                 display: 'flex',
                 alignItems: 'center',

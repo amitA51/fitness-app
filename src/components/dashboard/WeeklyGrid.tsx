@@ -116,10 +116,9 @@ export const WeeklyGrid = memo(function WeeklyGrid({
           <span
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 15,
               color: 'var(--fs-ink)',
-              textTransform: 'uppercase',
               letterSpacing: '0.04em',
             }}
           >
@@ -130,8 +129,7 @@ export const WeeklyGrid = memo(function WeeklyGrid({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 background: 'var(--fs-accent)',
                 color: 'var(--color-ink-on-accent)',
                 padding: '2px 7px',

@@ -33,7 +33,7 @@ export function NumberInput({ value, onChange, min, max, placeholder, unit }: Nu
           fontSize: '14px',
           backgroundColor: 'var(--fs-surface)',
           border: '1px solid var(--fs-surface-2)',
-          borderRadius: 0,
+          borderRadius: 12,
           color: 'var(--fs-ink)',
         }}
       />
@@ -42,9 +42,8 @@ export function NumberInput({ value, onChange, min, max, placeholder, unit }: Nu
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
-            letterSpacing: '0.18em',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
-            textTransform: 'uppercase',
           }}
         >
           {unit}

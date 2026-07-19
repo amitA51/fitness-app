@@ -146,7 +146,7 @@ export default function WorkoutDetail() {
             <h1
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 18,
                 color: 'var(--fs-ink)',
               }}
@@ -308,7 +308,7 @@ export default function WorkoutDetail() {
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 18,
                 color: 'var(--fs-ink)',
                 display: 'flex',
@@ -370,8 +370,7 @@ export default function WorkoutDetail() {
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 8,
-                  letterSpacing: '0.2em',
-                  textTransform: 'uppercase',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
                 }}
               >

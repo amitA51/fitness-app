@@ -609,7 +609,7 @@ function BottomNav() {
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
                   fontWeight: 700,
-                  letterSpacing: '0.08em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
                   paddingInlineStart: 4,
                 }}

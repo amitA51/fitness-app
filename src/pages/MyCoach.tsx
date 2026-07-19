@@ -228,7 +228,7 @@ export default function MyCoach() {
             placeholder="ABC123"
             dir="ltr"
             aria-label="קוד הזמנה"
-            style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.12em' }}
+            style={{ fontFamily: 'var(--font-mono)', letterSpacing: '-0.01em' }}
           />
         </div>
         <Button variant="primary" isLoading={busy} disabled={!code.trim()} onClick={connect}>
@@ -881,10 +881,9 @@ function CheckInForm() {
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
-            letterSpacing: '0.22em',
+            letterSpacing: '-0.01em',
             fontWeight: 600,
             color: 'var(--fs-muted)',
-            textTransform: 'uppercase',
           }}
         >
           תמונות התקדמות

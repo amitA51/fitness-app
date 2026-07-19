@@ -30,7 +30,6 @@ const kickerStyle: React.CSSProperties = {
   fontSize: 10,
   letterSpacing: '0.15em',
   color: 'var(--fs-muted)',
-  textTransform: 'uppercase',
 };
 
 const cardStyle: React.CSSProperties = {
@@ -175,8 +174,7 @@ export default function PRHistoryTab() {
                   <div
                     style={{
                       fontSize: 9,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.08em',
+                      letterSpacing: '-0.01em',
                       color: 'var(--fs-muted)',
                       fontFamily: 'var(--font-mono)',
                       marginBottom: 4,

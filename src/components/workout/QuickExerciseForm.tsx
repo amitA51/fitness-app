@@ -98,9 +98,8 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
     display: 'block',
     fontFamily: 'var(--font-mono)',
     fontSize: 10,
-    letterSpacing: '0.18em',
+    letterSpacing: '-0.01em',
     color: 'var(--fs-muted)',
-    textTransform: 'uppercase',
     marginBottom: 6,
     fontWeight: 600,
   };
@@ -109,7 +108,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
     width: '100%',
     background: 'var(--fs-surface)',
     border: '2px solid var(--fs-primary)',
-    borderRadius: 0,
+    borderRadius: 12,
     padding: '12px 14px',
     fontFamily: 'var(--font-body)',
     fontSize: 15,
@@ -163,7 +162,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
           <h2
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 22,
               color: 'var(--fs-heading)',
               letterSpacing: '-0.01em',
@@ -183,7 +182,7 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
               justifyContent: 'center',
               background: 'var(--fs-surface-2)',
               border: '2px solid var(--fs-primary)',
-              borderRadius: 0,
+              borderRadius: 12,
               cursor: 'pointer',
             }}
           >
@@ -331,13 +330,12 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
                 background: formData.name.trim() ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
                 color: formData.name.trim() ? 'var(--fs-accent)' : 'var(--fs-muted)',
                 border: '2px solid var(--fs-primary)',
-                borderRadius: 0,
+                borderRadius: 12,
                 cursor: formData.name.trim() ? 'pointer' : 'not-allowed',
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 13,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 minHeight: 48,
               }}
             >
@@ -351,13 +349,12 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
                 background: 'transparent',
                 color: 'var(--fs-muted)',
                 border: '2px solid var(--fs-surface-2)',
-                borderRadius: 0,
+                borderRadius: 12,
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 13,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 minHeight: 48,
               }}
             >

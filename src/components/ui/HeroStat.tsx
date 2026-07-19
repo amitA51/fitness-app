@@ -39,7 +39,7 @@ export function HeroStat({ value, label, unit, zone, size = 40, align = 'start' 
           dir="ltr"
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 900,
+            fontWeight: 700,
             fontSize: size,
             lineHeight: 1,
             letterSpacing: '-0.02em',
@@ -65,8 +65,7 @@ export function HeroStat({ value, label, unit, zone, size = 40, align = 'start' 
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
-          letterSpacing: '0.14em',
-          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-muted)',
         }}
       >

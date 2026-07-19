@@ -110,7 +110,7 @@ export const AddMeasurementModal = memo(function AddMeasurementModal({
                 width: '100%',
                 background: 'var(--fs-surface-2)',
                 border: '1px solid var(--fs-surface-2)',
-                borderRadius: 0,
+                borderRadius: 12,
                 padding: '12px 16px',
                 color: 'var(--fs-ink)',
                 fontFamily: 'var(--font-body)',

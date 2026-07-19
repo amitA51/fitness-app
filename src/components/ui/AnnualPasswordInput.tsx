@@ -86,8 +86,7 @@ export const AnnualPasswordInput = memo(function AnnualPasswordInput({
           fontFamily: 'var(--font-mono)',
           fontSize: '11px',
           color: 'var(--fs-muted)',
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
         }}
       >
         {label}

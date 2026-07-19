@@ -145,8 +145,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '12px',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
             color: checked ? 'var(--fs-primary)' : 'var(--fs-muted)',
             fontWeight: 600,
           }}

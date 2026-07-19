@@ -82,7 +82,7 @@ const PRCelebrationBanner: React.FC<PRCelebrationBannerProps> = ({ pr, onDismiss
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
                   fontWeight: 700,
-                  letterSpacing: '0.22em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-signal)',
                 }}
               >
@@ -91,7 +91,7 @@ const PRCelebrationBanner: React.FC<PRCelebrationBannerProps> = ({ pr, onDismiss
               <div
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 900,
+                  fontWeight: 700,
                   fontSize: 15,
                   lineHeight: 1.15,
                   color: 'var(--color-ink-on-dark)',

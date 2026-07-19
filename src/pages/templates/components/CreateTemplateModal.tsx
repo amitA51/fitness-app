@@ -498,7 +498,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: '11px',
-                    letterSpacing: '0.12em',
+                    letterSpacing: '-0.01em',
                                         color: 'var(--fs-muted)',
                   }}
                 >

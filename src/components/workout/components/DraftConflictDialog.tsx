@@ -53,7 +53,7 @@ const DraftConflictDialog = memo<DraftConflictDialogProps>(({ isOpen, onResume, 
         style={{
           backgroundColor: 'var(--fs-surface)',
           border: '2px solid var(--fs-primary)',
-          borderRadius: 0,
+          borderRadius: 12,
           boxShadow: '0 12px 32px rgba(11,26,43,0.3)',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -70,7 +70,7 @@ const DraftConflictDialog = memo<DraftConflictDialogProps>(({ isOpen, onResume, 
               height: 48,
               backgroundColor: 'var(--fs-accent)',
               color: 'var(--color-ink-on-accent)',
-              borderRadius: 0,
+              borderRadius: 12,
             }}
           >
             <DumbbellIcon className="w-6 h-6" />
@@ -81,7 +81,7 @@ const DraftConflictDialog = memo<DraftConflictDialogProps>(({ isOpen, onResume, 
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '10px',
-                letterSpacing: '0.22em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-accent)',
                 fontWeight: 600,
               }}
@@ -93,7 +93,7 @@ const DraftConflictDialog = memo<DraftConflictDialogProps>(({ isOpen, onResume, 
               style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: '22px',
-                fontWeight: 900,
+                fontWeight: 700,
                 letterSpacing: '-0.01em',
                 color: 'var(--color-ink-on-dark)',
                 lineHeight: 0.95,

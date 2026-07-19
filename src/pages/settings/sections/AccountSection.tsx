@@ -30,7 +30,7 @@ export function AccountSection({ authEmail, onSignOut }: Props) {
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '12px',
-                letterSpacing: '0.08em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
               }}
             >

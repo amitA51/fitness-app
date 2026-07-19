@@ -306,7 +306,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
             <h3
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 18,
                 color: 'var(--color-ink-on-dark)',
                 letterSpacing: '-0.01em',
@@ -318,9 +318,8 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                letterSpacing: '0.12em',
+                letterSpacing: '-0.01em',
                 color: 'rgba(var(--text-on-navy-rgb),0.5)',
-                textTransform: 'uppercase',
               }}
             >
               {supersetMode ? `נבחרו ${selectedIds.length} · מינימום 2` : 'גרור כדי לשנות סדר'}
@@ -347,12 +346,11 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                       ? 'rgba(var(--text-on-navy-rgb),0.5)'
                       : 'var(--fs-primary)',
                   border: 'none',
-                  borderRadius: 0,
+                  borderRadius: 12,
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: 13,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
+                  letterSpacing: '-0.01em',
                   cursor: selectedIds.length < 2 ? 'not-allowed' : 'pointer',
                 }}
               >
@@ -378,11 +376,10 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                       background: 'rgba(var(--text-on-navy-rgb),0.1)',
                       color: 'var(--color-ink-on-dark)',
                       border: '1px solid rgba(var(--text-on-navy-rgb),0.25)',
-                      borderRadius: 0,
+                      borderRadius: 12,
                       fontFamily: 'var(--font-mono)',
                       fontSize: 11,
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
+                      letterSpacing: '-0.01em',
                       cursor: 'pointer',
                     }}
                   >
@@ -398,12 +395,11 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                     background: 'var(--fs-accent)',
                     color: 'var(--color-ink-on-accent)',
                     border: 'none',
-                    borderRadius: 0,
+                    borderRadius: 12,
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 13,
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
+                    letterSpacing: '-0.01em',
                     cursor: 'pointer',
                   }}
                 >
@@ -431,7 +427,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
                 justifyContent: 'center',
                 background: 'rgba(var(--text-on-navy-rgb),0.1)',
                 border: 'none',
-                borderRadius: 0,
+                borderRadius: 12,
                 cursor: 'pointer',
               }}
             >
@@ -494,7 +490,7 @@ const ExerciseReorder: React.FC<ExerciseReorderProps> = ({
               <p
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: 18,
                   color: 'var(--fs-heading)',
                 }}

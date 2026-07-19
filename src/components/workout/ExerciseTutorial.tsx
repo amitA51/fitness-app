@@ -240,9 +240,8 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.2em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-accent)',
-              textTransform: 'uppercase',
             }}
           >
             שלב {activeStep + 1}
@@ -251,7 +250,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             id="tutorial-title"
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 20,
               color: 'var(--fs-ink)',
               letterSpacing: '-0.01em',
@@ -271,7 +270,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             justifyContent: 'center',
             background: 'rgba(var(--text-on-navy-rgb),0.1)',
             border: 'none',
-            borderRadius: 0,
+            borderRadius: 12,
             cursor: 'pointer',
           }}
           aria-label="סגור"
@@ -288,7 +287,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             padding: '12px 16px',
             background: 'rgba(232,184,45,0.15)',
             border: '2px solid var(--fs-accent)',
-            borderRadius: 0,
+            borderRadius: 12,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, direction: 'rtl' }}>
@@ -296,9 +295,8 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
-                letterSpacing: '0.2em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-accent)',
-                textTransform: 'uppercase',
                 fontWeight: 600,
                 flexShrink: 0,
               }}
@@ -331,7 +329,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 height: 4,
                 background:
                   index <= activeStep ? 'var(--fs-accent)' : 'rgba(var(--text-on-navy-rgb),0.15)',
-                borderRadius: 0,
+                borderRadius: 12,
                 transition: 'background 300ms',
               }}
             />
@@ -343,7 +341,6 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             fontSize: 10,
             letterSpacing: '0.15em',
             color: 'var(--fs-muted)',
-            textTransform: 'uppercase',
             marginTop: 8,
             textAlign: 'center',
           }}
@@ -378,7 +375,6 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 fontSize: 10,
                 letterSpacing: '0.15em',
                 color: 'var(--fs-muted)',
-                textTransform: 'uppercase',
                 textAlign: 'center',
                 marginBottom: 14,
               }}
@@ -429,7 +425,6 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                     fontSize: 10,
                     letterSpacing: '0.15em',
                     color: 'var(--fs-muted)',
-                    textTransform: 'uppercase',
                     textAlign: 'center',
                     marginBottom: 14,
                   }}
@@ -459,7 +454,6 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                     fontSize: 10,
                     letterSpacing: '0.15em',
                     color: 'var(--fs-muted)',
-                    textTransform: 'uppercase',
                   }}
                 >
                   ציוד
@@ -467,12 +461,12 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 <span
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 13,
                     color: 'var(--fs-ink)',
                     background: 'rgba(232,184,45,0.15)',
                     border: '1px solid var(--fs-accent)',
-                    borderRadius: 0,
+                    borderRadius: 12,
                     padding: '4px 12px',
                   }}
                 >
@@ -494,7 +488,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
               <div
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 900,
+                  fontWeight: 700,
                   fontSize: 48,
                   color: 'var(--fs-accent)',
                   lineHeight: 0.9,
@@ -510,7 +504,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                   <h3
                     style={{
                       fontFamily: 'var(--font-display)',
-                      fontWeight: 800,
+                      fontWeight: 600,
                       fontSize: 22,
                       color: 'var(--fs-ink)',
                       letterSpacing: '-0.01em',
@@ -525,7 +519,6 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                     fontSize: 10,
                     letterSpacing: '0.15em',
                     color: 'var(--fs-muted)',
-                    textTransform: 'uppercase',
                   }}
                 >
                   שלב {activeStep + 1}
@@ -540,7 +533,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 padding: 20,
                 background: 'rgba(var(--text-on-navy-rgb),0.05)',
                 border: '2px solid rgba(var(--text-on-navy-rgb),0.1)',
-                borderRadius: 0,
+                borderRadius: 12,
               }}
             >
               <p
@@ -563,7 +556,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                     padding: '10px 14px',
                     background: 'rgba(232,184,45,0.15)',
                     border: '1px solid var(--fs-accent)',
-                    borderRadius: 0,
+                    borderRadius: 12,
                   }}
                 >
                   <p
@@ -572,7 +565,6 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                       fontSize: 10,
                       letterSpacing: '0.15em',
                       color: 'var(--fs-accent)',
-                      textTransform: 'uppercase',
                       fontWeight: 600,
                       marginBottom: 4,
                     }}
@@ -604,12 +596,11 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 background: showContent ? 'rgba(232,184,45,0.1)' : 'transparent',
                 color: 'var(--fs-accent)',
                 border: '2px solid var(--fs-accent)',
-                borderRadius: 0,
+                borderRadius: 12,
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 13,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 cursor: loading || showContent ? 'default' : 'pointer',
                 opacity: loading || showContent ? 0.7 : 1,
               }}
@@ -625,7 +616,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                   padding: 16,
                   background: 'rgba(var(--text-on-navy-rgb),0.05)',
                   border: '1px solid rgba(var(--text-on-navy-rgb),0.1)',
-                  borderRadius: 0,
+                  borderRadius: 12,
                   maxHeight: 200,
                   overflowY: 'auto',
                   fontFamily: 'var(--font-body)',
@@ -647,8 +638,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                   display: 'block',
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
-                  letterSpacing: '0.16em',
-                  textTransform: 'uppercase',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
                   marginBottom: 6,
                 }}
@@ -670,7 +660,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                     padding: '10px 12px',
                     background: 'rgba(var(--text-on-navy-rgb),0.06)',
                     border: '1px solid rgba(var(--text-on-navy-rgb),0.15)',
-                    borderRadius: 0,
+                    borderRadius: 12,
                     color: 'var(--fs-ink)',
                     fontFamily: 'var(--font-body)',
                     fontSize: 14,
@@ -685,9 +675,9 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                     background: 'var(--fs-accent)',
                     color: 'var(--color-ink-on-accent)',
                     border: 'none',
-                    borderRadius: 0,
+                    borderRadius: 12,
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 13,
                     cursor: asking || !question.trim() ? 'default' : 'pointer',
                     opacity: asking || !question.trim() ? 0.6 : 1,
@@ -744,14 +734,13 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             background: 'var(--fs-surface)',
             color: 'var(--fs-ink)',
             border: '2px solid var(--fs-steel)',
-            borderRadius: 0,
+            borderRadius: 12,
             cursor: activeStep === 0 ? 'not-allowed' : 'pointer',
             opacity: activeStep === 0 ? 0.4 : 1,
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 13,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
           }}
         >
           הקודם
@@ -768,13 +757,12 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
             background: 'var(--fs-accent)',
             color: 'var(--color-ink-on-accent)',
             border: '2px solid var(--fs-accent)',
-            borderRadius: 0,
+            borderRadius: 12,
             cursor: 'pointer',
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 13,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
           }}
         >
           {activeStep === currentExerciseSteps.length - 1 ? 'סיום' : 'הבא'}

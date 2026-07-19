@@ -44,7 +44,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '10px',
-              letterSpacing: '0.22em',
+              letterSpacing: '-0.01em',
               fontWeight: 600,
               color: 'var(--fs-muted)',
             }}
@@ -62,7 +62,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           className="input"
           style={{
             border: stateBorder,
-            borderRadius: 0,
+            borderRadius: 12,
             fontFamily: 'var(--font-body)',
             minHeight: 88,
             fontSize: 16,
@@ -84,7 +84,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '10px',
-              letterSpacing: '0.18em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-warn)',
               fontWeight: 600,
             }}
@@ -99,9 +99,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '10px',
-              letterSpacing: '0.18em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
-              textTransform: 'uppercase',
             }}
           >
             {helper}

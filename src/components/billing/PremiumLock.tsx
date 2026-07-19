@@ -103,7 +103,6 @@ function LockedOverlay({ compact }: LockedOverlayProps) {
             fontWeight: 700,
             letterSpacing: '0.1em',
             color: 'var(--fs-accent)',
-            textTransform: 'uppercase',
           }}
         >
           פרו

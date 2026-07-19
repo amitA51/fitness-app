@@ -228,7 +228,6 @@ export function OverviewStat({
           fontFamily: 'var(--font-mono)',
           fontSize: 9,
           letterSpacing: '0.06em',
-          textTransform: 'uppercase',
           color: 'var(--fs-muted)',
           marginTop: 6,
         }}
@@ -291,8 +290,7 @@ export function QuickLink({
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
         }}
       >
         {label}

@@ -209,9 +209,8 @@ export const ErrorWithRetry: React.FC<{
           background: 'var(--fs-primary)',
           color: 'var(--fs-accent)',
           fontFamily: 'var(--font-display)',
-          fontWeight: 800,
-          textTransform: 'uppercase',
-          borderRadius: 0,
+          fontWeight: 600,
+          borderRadius: 12,
           border: 'none',
           cursor: 'pointer',
         }}

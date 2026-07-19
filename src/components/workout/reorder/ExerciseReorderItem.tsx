@@ -71,7 +71,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
         dragControls={dragControls}
         style={{
           position: 'relative',
-          borderRadius: 0,
+          borderRadius: 12,
           overflow: 'hidden',
         }}
         whileDrag={{
@@ -118,7 +118,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
               cursor: 'grab',
               padding: 8,
               marginLeft: -8,
-              borderRadius: 0,
+              borderRadius: 12,
               background: 'transparent',
               border: 'none',
               touchAction: 'none',
@@ -134,7 +134,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
             style={{
               width: 32,
               height: 32,
-              borderRadius: 0,
+              borderRadius: 12,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -149,7 +149,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                   ? 'var(--fs-primary)'
                   : 'var(--fs-muted)',
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 14,
               flexShrink: 0,
               border: `2px solid ${isComplete ? 'var(--color-success)' : isActive ? 'var(--fs-primary)' : 'var(--fs-surface-2)'}`,
@@ -178,7 +178,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
             <div
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 14,
                 color: isActive ? 'var(--fs-primary)' : 'var(--fs-ink)',
                 overflow: 'hidden',
@@ -203,7 +203,6 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                   fontSize: 10,
                   letterSpacing: '0.1em',
                   color: isComplete ? 'var(--color-success)' : 'var(--fs-muted)',
-                  textTransform: 'uppercase',
                 }}
               >
                 {completedSets}/{totalSets} סטים
@@ -225,7 +224,6 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                       fontSize: 10,
                       letterSpacing: '0.1em',
                       color: 'var(--fs-muted)',
-                      textTransform: 'uppercase',
                     }}
                   >
                     {translateMuscle(exercise.muscleGroup)}
@@ -247,11 +245,10 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
-                      letterSpacing: '0.14em',
+                      letterSpacing: '-0.01em',
                       color: 'var(--fs-heading)',
                       background: 'var(--fs-accent)',
                       padding: '1px 6px',
-                      textTransform: 'uppercase',
                       fontWeight: 700,
                     }}
                   >
@@ -279,7 +276,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
               background: isExpanded ? 'var(--fs-accent)' : 'var(--fs-surface)',
               color: isExpanded ? 'var(--fs-primary)' : 'var(--fs-muted)',
               border: '2px solid var(--fs-primary)',
-              borderRadius: 0,
+              borderRadius: 12,
               cursor: 'pointer',
               flexShrink: 0,
             }}
@@ -309,7 +306,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
               background: isDeleteConfirm ? 'rgba(196,43,43,0.15)' : 'var(--fs-surface)',
               color: isDeleteConfirm ? 'var(--fs-warn)' : 'var(--fs-muted)',
               border: '2px solid var(--fs-primary)',
-              borderRadius: 0,
+              borderRadius: 12,
               cursor: 'pointer',
               flexShrink: 0,
             }}
@@ -362,7 +359,6 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                       fontSize: 10,
                       letterSpacing: '0.1em',
                       color: 'var(--fs-muted)',
-                      textTransform: 'uppercase',
                     }}
                   >
                     אין סטים בתרגיל זה
@@ -392,11 +388,10 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                 fontSize: 10,
                 letterSpacing: '0.15em',
                 color: 'var(--fs-warn)',
-                textTransform: 'uppercase',
                 background: 'rgba(196,43,43,0.12)',
                 padding: '4px 12px',
                 border: '1px solid var(--fs-warn)',
-                borderRadius: 0,
+                borderRadius: 12,
               }}
             >
               לחץ שוב למחיקה

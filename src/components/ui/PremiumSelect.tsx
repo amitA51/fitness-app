@@ -99,7 +99,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '10px',
-            letterSpacing: '0.22em',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
             fontWeight: 600,
           }}
@@ -124,7 +124,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
           minHeight: 48,
           backgroundColor: 'var(--fs-surface)',
           border: isOpen ? '2px solid var(--fs-primary)' : '1px solid var(--fs-surface-2)',
-          borderRadius: 0,
+          borderRadius: 12,
           color: 'var(--fs-ink)',
           fontFamily: 'var(--font-body)',
           fontSize: '15px',
@@ -174,7 +174,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
             style={{
               backgroundColor: 'var(--fs-bg)',
               border: '2px solid var(--fs-primary)',
-              borderRadius: 0,
+              borderRadius: 12,
               boxShadow: 'var(--shadow-card)',
             }}
           >
@@ -199,7 +199,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                     color: isSelected ? 'var(--fs-primary)' : 'var(--fs-ink)',
                     backgroundColor: isSelected ? 'var(--fs-surface-2)' : 'transparent',
                     fontWeight: isSelected ? 600 : 400,
-                    borderRadius: 0,
+                    borderRadius: 12,
                   }}
                   whileHover={{
                     backgroundColor: 'var(--fs-surface-2)',

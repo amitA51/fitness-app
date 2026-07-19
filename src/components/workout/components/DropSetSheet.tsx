@@ -32,7 +32,7 @@ const stepBtn: React.CSSProperties = {
   borderRadius: 10,
   cursor: 'pointer',
   fontFamily: 'var(--font-display)',
-  fontWeight: 800,
+  fontWeight: 600,
   fontSize: 18,
   color: 'var(--fs-ink)',
 };
@@ -46,7 +46,7 @@ const numberInput: React.CSSProperties = {
   borderRadius: 10,
   textAlign: 'center',
   fontFamily: 'var(--font-display)',
-  fontWeight: 800,
+  fontWeight: 600,
   fontSize: 17,
   color: 'var(--fs-heading)',
   outline: 'none',
@@ -56,9 +56,8 @@ const fieldLabel: React.CSSProperties = {
   display: 'block',
   fontFamily: 'var(--font-mono)',
   fontSize: 9,
-  letterSpacing: '0.14em',
+  letterSpacing: '-0.01em',
   color: 'var(--fs-muted)',
-  textTransform: 'uppercase',
   marginBottom: 4,
 };
 
@@ -134,9 +133,8 @@ const DropSetSheet = memo<DropSetSheetProps>(
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
-            letterSpacing: '0.12em',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
-            textTransform: 'uppercase',
             marginBottom: 12,
             textAlign: 'start',
           }}
@@ -174,7 +172,7 @@ const DropSetSheet = memo<DropSetSheetProps>(
                   color: 'var(--fs-accent-2)',
                   fontFamily: 'var(--font-mono)',
                   fontSize: 11,
-                  fontWeight: 800,
+                  fontWeight: 600,
                 }}
               >
                 {index + 1}
@@ -293,7 +291,7 @@ const DropSetSheet = memo<DropSetSheetProps>(
             border: '1px dashed color-mix(in srgb, var(--fs-accent) 45%, var(--fs-steel))',
             color: 'var(--fs-accent-2)',
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 13,
             cursor: 'pointer',
           }}
@@ -319,9 +317,8 @@ const DropSetSheet = memo<DropSetSheetProps>(
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               fontWeight: 700,
-              letterSpacing: '0.08em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
-              textTransform: 'uppercase',
             }}
           >
             נפח כולל
@@ -331,7 +328,7 @@ const DropSetSheet = memo<DropSetSheetProps>(
             style={{
               fontFamily: 'var(--font-display)',
               fontSize: 16,
-              fontWeight: 800,
+              fontWeight: 600,
               color: 'var(--fs-ink)',
             }}
           >

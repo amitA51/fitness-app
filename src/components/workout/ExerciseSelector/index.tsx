@@ -213,7 +213,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   className="uppercase"
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: 28,
                     color: 'var(--color-ink-on-dark)',
                     letterSpacing: '-0.01em',
@@ -229,7 +229,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
-                    letterSpacing: '0.08em',
+                    letterSpacing: '-0.01em',
                     color: 'var(--color-ink-on-dark)',
                     opacity: 0.75,
                   }}
@@ -244,7 +244,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 style={{
                   // Tint the BACKGROUND only — element-level opacity would ghost the icon too
                   background: 'rgba(var(--text-on-navy-rgb), 0.1)',
-                  borderRadius: 0,
+                  borderRadius: 12,
                 }}
                 aria-label="סגור"
               >
@@ -273,8 +273,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                       : 'rgba(var(--text-on-navy-rgb), 0.75)',
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.04em',
-                  textTransform: 'uppercase',
-                  borderRadius: 0,
+                  borderRadius: 12,
                 }}
               >
                 תרגילים
@@ -295,8 +294,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                       : 'rgba(var(--text-on-navy-rgb), 0.75)',
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.04em',
-                  textTransform: 'uppercase',
-                  borderRadius: 0,
+                  borderRadius: 12,
                 }}
               >
                 תבניות
@@ -345,13 +343,12 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 style={{
                   background: 'var(--fs-primary)',
                   color: 'var(--fs-accent)',
-                  borderRadius: 0,
+                  borderRadius: 12,
                   padding: '18px 24px',
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: 16,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
+                  letterSpacing: '-0.01em',
                   minHeight: 56,
                 }}
                 aria-label={`${confirmLabel} עם ${pluralizeHe(pendingExercises.length, HE_NOUNS.exercise)}`}
@@ -369,13 +366,12 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     background: 'transparent',
                     color: 'var(--fs-primary)',
                     border: '2px solid var(--fs-primary)',
-                    borderRadius: 0,
+                    borderRadius: 12,
                     padding: '12px 24px',
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 14,
                     letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
                     minHeight: 48,
                   }}
                   aria-label={`תכנן מראש ${pluralizeHe(pendingExercises.length, HE_NOUNS.exercise)} — סטים, משקל וחזרות`}
@@ -408,13 +404,12 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   // ink-on-accent: --fs-heading fails AA on the mint fill in dark.
                   color: 'var(--color-ink-on-accent)',
                   border: 'none',
-                  borderRadius: 0,
+                  borderRadius: 12,
                   padding: '14px 24px',
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: 14,
                   letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
                   minHeight: 48,
                 }}
               >
@@ -428,13 +423,12 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   background: 'transparent',
                   color: 'var(--fs-muted)',
                   border: '2px solid var(--fs-surface-2)',
-                  borderRadius: 0,
+                  borderRadius: 12,
                   padding: '12px 24px',
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: 13,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
+                  letterSpacing: '-0.01em',
                   minHeight: 44,
                 }}
               >

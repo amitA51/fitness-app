@@ -59,8 +59,7 @@ export function ProfileStep({ data, onChange, direction = 1 }: ProfileStepProps)
               fontFamily: 'var(--font-mono)',
               fontSize: '11px',
               color: 'var(--fs-muted)',
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
+              letterSpacing: '-0.01em',
             }}
           >
             מגדר

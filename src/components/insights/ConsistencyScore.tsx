@@ -82,7 +82,7 @@ export const ConsistencyScore = memo(function ConsistencyScore({
           insetInline: 0,
           top: 0,
           height: 3,
-          borderRadius: 0,
+          borderRadius: 12,
           background: 'var(--fs-accent)',
         }}
       />
@@ -111,7 +111,7 @@ export const ConsistencyScore = memo(function ConsistencyScore({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 20,
-            fontWeight: 800,
+            fontWeight: 600,
             color: pctColor(data.consistencyPct),
           }}
         >
@@ -139,7 +139,7 @@ export const ConsistencyScore = memo(function ConsistencyScore({
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 14,
-                  fontWeight: 800,
+                  fontWeight: 600,
                   color: count > 0 ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
                 }}
               >
@@ -185,7 +185,7 @@ export const ConsistencyScore = memo(function ConsistencyScore({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 12,
-            fontWeight: 800,
+            fontWeight: 600,
             color: 'var(--fs-ink)',
           }}
         >

@@ -82,9 +82,8 @@ export default function LoginPage() {
           insetInlineEnd: '16px',
           fontFamily: 'var(--font-mono)',
           fontSize: '10px',
-          letterSpacing: '0.22em',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-ink)',
-          textTransform: 'uppercase',
           pointerEvents: 'none',
         }}
         aria-hidden="true"
@@ -147,8 +146,7 @@ export default function LoginPage() {
             fontSize: '9px',
             // on-navy tint, not fs-muted — muted is 2.1:1 on the navy footer band
             color: 'rgba(var(--text-on-navy-rgb), 0.6)',
-            letterSpacing: '0.22em',
-            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
           }}
         >
           SPARKOS · יומן אימונים · 2026

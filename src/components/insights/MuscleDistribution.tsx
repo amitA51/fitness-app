@@ -83,7 +83,7 @@ export const MuscleDistribution = memo(function MuscleDistribution({
           insetInline: 0,
           top: 0,
           height: 3,
-          borderRadius: 0,
+          borderRadius: 12,
           background: 'var(--fs-accent-2)',
         }}
       />
@@ -95,8 +95,7 @@ export const MuscleDistribution = memo(function MuscleDistribution({
           display: 'block',
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
-          letterSpacing: '0.16em',
-          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-muted)',
           marginBottom: 4,
         }}
@@ -155,7 +154,7 @@ export const MuscleDistribution = memo(function MuscleDistribution({
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 11,
-                    fontWeight: 800,
+                    fontWeight: 600,
                     color: 'var(--fs-muted)',
                   }}
                 >

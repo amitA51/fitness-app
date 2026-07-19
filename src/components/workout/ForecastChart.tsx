@@ -35,7 +35,6 @@ const headerStyle: React.CSSProperties = {
   fontSize: 10,
   letterSpacing: '0.15em',
   color: 'var(--fs-muted)',
-  textTransform: 'uppercase',
   marginBottom: 12,
 };
 
@@ -152,8 +151,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
           gap: 8,
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

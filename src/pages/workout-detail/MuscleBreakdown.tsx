@@ -68,7 +68,7 @@ export function MuscleBreakdown({ exercises, reduceMotion }: MuscleBreakdownProp
         <h3
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 14,
             color: 'var(--fs-ink)',
             marginBottom: 16,

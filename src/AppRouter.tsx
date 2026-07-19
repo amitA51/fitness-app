@@ -634,7 +634,7 @@ function NotFound() {
         <h1
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 24,
             letterSpacing: '-0.01em',
             color: 'var(--fs-ink)',

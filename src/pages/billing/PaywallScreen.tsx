@@ -92,8 +92,7 @@ function PlanBadge({ variant }: { variant: 'free' | 'pro' }) {
         fontFamily: 'var(--font-mono)',
         fontSize: '11px',
         fontWeight: 700,
-        letterSpacing: '0.12em',
-        textTransform: 'uppercase',
+        letterSpacing: '-0.01em',
       }}
     >
       {isPro ? <Crown size={12} aria-hidden="true" /> : <Lock size={12} aria-hidden="true" />}
@@ -325,7 +324,7 @@ export default function PaywallScreen() {
         <h2
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 26,
             color: 'var(--fs-ink)',
             margin: 0,
@@ -374,7 +373,6 @@ export default function PaywallScreen() {
                   fontWeight: 700,
                   letterSpacing: '0.1em',
                   color: 'var(--fs-muted)',
-                  textTransform: 'uppercase',
                 }}
               >
                 תכונה

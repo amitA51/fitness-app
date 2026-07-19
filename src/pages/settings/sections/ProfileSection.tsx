@@ -59,7 +59,7 @@ export function ProfileSection({ profile, updateProfile, commitProfile, profileS
                 fontSize: '14px',
                 backgroundColor: 'var(--fs-surface)',
                 border: '1px solid var(--fs-surface-2)',
-                borderRadius: 0,
+                borderRadius: 12,
                 color: 'var(--fs-ink)',
                 fontFamily: 'var(--font-hebrew)',
                 outline: 'none',

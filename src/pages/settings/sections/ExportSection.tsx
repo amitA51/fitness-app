@@ -240,7 +240,7 @@ export function ExportSection({
                 background: 'var(--fs-surface-2)',
                 padding: '12px',
                 border: '1px solid var(--fs-primary)',
-                borderRadius: 0,
+                borderRadius: 12,
                 textAlign: 'start',
               }}
             >

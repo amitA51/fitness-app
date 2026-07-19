@@ -57,7 +57,7 @@ export function WorkoutPrefsSection({ workoutPrefs, commitWorkout, workoutSaved 
                     fontFamily: 'var(--font-mono)',
                     fontSize: '12px',
                     fontWeight: 600,
-                    borderRadius: 0,
+                    borderRadius: 12,
                     cursor: 'pointer',
                     border: '1px solid var(--fs-surface-2)',
                     transition: 'all 0.15s ease',

@@ -75,7 +75,7 @@ export function ExperienceStep({ data, onChange, direction = 1 }: ExperienceStep
                   data.experienceLevel === level.value
                     ? 'var(--fs-primary)'
                     : 'var(--fs-surface-2)',
-                borderRadius: 0,
+                borderRadius: 12,
               }}
             >
               <span
@@ -124,7 +124,7 @@ export function ExperienceStep({ data, onChange, direction = 1 }: ExperienceStep
                 style={{
                   background: 'var(--fs-primary)',
                   color: 'var(--fs-accent)',
-                  borderRadius: 0,
+                  borderRadius: 12,
                 }}
               >
                 <Check size={16} strokeWidth={3} />
@@ -140,8 +140,7 @@ export function ExperienceStep({ data, onChange, direction = 1 }: ExperienceStep
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '11px',
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
             }}
           >
@@ -156,7 +155,7 @@ export function ExperienceStep({ data, onChange, direction = 1 }: ExperienceStep
                 className="min-w-[52px] h-14 snap-center transition-all flex-shrink-0"
                 style={{
                   fontFamily: '"Bricolage Grotesque", var(--font-display)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: '20px',
                   background:
                     data.preferredWorkoutDays === day ? 'var(--fs-accent)' : 'var(--fs-surface)',
@@ -170,7 +169,7 @@ export function ExperienceStep({ data, onChange, direction = 1 }: ExperienceStep
                     data.preferredWorkoutDays === day
                       ? '2px solid var(--fs-accent)'
                       : '1px solid var(--fs-surface-2)',
-                  borderRadius: 0,
+                  borderRadius: 12,
                 }}
               >
                 {day}

@@ -56,7 +56,7 @@ export function SettingsToggle({
             inset: 0,
             background: checked ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
             border: '2px solid var(--fs-primary)',
-            borderRadius: 0,
+            borderRadius: 12,
             transition: 'background 150ms ease',
           }}
         />

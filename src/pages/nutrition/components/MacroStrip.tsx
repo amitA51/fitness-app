@@ -144,7 +144,7 @@ export const MacroStrip = memo(function MacroStrip({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '10px',
-                letterSpacing: '0.22em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
                               }}
             >

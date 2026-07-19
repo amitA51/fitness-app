@@ -312,7 +312,7 @@ function CoachEmptyState({ onInvite }: { onInvite: () => void }) {
             style={{
               fontFamily: 'var(--font-display)',
               fontSize: 22,
-              fontWeight: 800,
+              fontWeight: 600,
               letterSpacing: '-0.01em',
               color: 'var(--fs-heading)',
               margin: 0,

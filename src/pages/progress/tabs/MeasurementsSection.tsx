@@ -45,7 +45,6 @@ export const MeasurementsSection = memo(function MeasurementsSection({
             fontSize: 10,
             letterSpacing: '0.15em',
             color: 'var(--fs-muted)',
-            textTransform: 'uppercase',
             marginBottom: 16,
           }}
         >
@@ -85,7 +84,7 @@ export const MeasurementsSection = memo(function MeasurementsSection({
                         style={{
                           fontFamily: 'var(--font-mono)',
                           fontSize: 11,
-                          letterSpacing: '0.12em',
+                          letterSpacing: '-0.01em',
                           color: 'var(--fs-muted)',
                           background: 'var(--fs-surface-2)',
                           padding: '2px 8px',
@@ -99,7 +98,7 @@ export const MeasurementsSection = memo(function MeasurementsSection({
                     <span
                       style={{
                         fontFamily: 'var(--font-display)',
-                        fontWeight: 800,
+                        fontWeight: 600,
                         fontSize: 20,
                         color: 'var(--fs-ink)',
                         direction: 'ltr',

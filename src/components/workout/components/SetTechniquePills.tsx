@@ -86,7 +86,7 @@ const SetTechniquePills = memo<SetTechniquePillsProps>(({ set, onToggle }) => {
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             fontWeight: 700,
-            letterSpacing: '0.08em',
+            letterSpacing: '-0.01em',
             color: p.active ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
             cursor: 'pointer',
             transition: 'background 120ms ease, color 120ms ease',

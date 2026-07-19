@@ -56,8 +56,7 @@ export function SettingsJumpNav({
                 // for an interactive control).
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-ink)',
                 textDecoration: 'none',
               }}

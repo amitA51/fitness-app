@@ -232,7 +232,7 @@ export const OverviewTab = memo(function OverviewTab({
         <p
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 20,
             letterSpacing: '-0.01em',
             lineHeight: 1.2,
@@ -360,7 +360,7 @@ export const OverviewTab = memo(function OverviewTab({
                         fontSize: 9,
                         fontWeight: 700,
                         color: 'var(--fs-muted)',
-                        letterSpacing: '0.08em',
+                        letterSpacing: '-0.01em',
                       }}
                     >
                       ק"ג × {pr.reps}

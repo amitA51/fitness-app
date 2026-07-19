@@ -114,8 +114,7 @@ function BodyView({
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: 9,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-muted)',
         }}
       >

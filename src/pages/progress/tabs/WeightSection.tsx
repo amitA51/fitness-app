@@ -77,8 +77,7 @@ export const WeightSection = memo(function WeightSection({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 9,
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
+              letterSpacing: '-0.01em',
               // Neutral data label — graded via the zone vocabulary, not lime.
               // (--fs-signal is reserved for PR celebration.)
               background: zoneColor('neutral'),
@@ -92,10 +91,9 @@ export const WeightSection = memo(function WeightSection({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 9,
-              letterSpacing: '0.18em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
               marginTop: 12,
-              textTransform: 'uppercase',
             }}
           >
             משקל נוכחי · CURRENT
@@ -115,7 +113,7 @@ export const WeightSection = memo(function WeightSection({
               <div
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: 48,
                   color: 'var(--fs-ink)',
                   lineHeight: 0.9,
@@ -130,8 +128,7 @@ export const WeightSection = memo(function WeightSection({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
                   color: 'var(--fs-muted)',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
+                  letterSpacing: '-0.01em',
                 }}
               >
                 KG
@@ -144,7 +141,7 @@ export const WeightSection = memo(function WeightSection({
                   dir="ltr"
                   style={{
                     fontFamily: 'var(--font-mono)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 18,
                     lineHeight: 1,
                     // Weight change is directional, not "good/bad" — keep it neutral
@@ -160,8 +157,7 @@ export const WeightSection = memo(function WeightSection({
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
                     color: 'var(--fs-muted)',
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
+                    letterSpacing: '-0.01em',
                     marginTop: 4,
                   }}
                 >
@@ -176,8 +172,7 @@ export const WeightSection = memo(function WeightSection({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 11,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 // Use the category's own semantic color (set in getBMICategory),
                 // not lime — --fs-signal is reserved for PR celebration.
                 background: 'var(--fs-primary)',
@@ -197,9 +192,8 @@ export const WeightSection = memo(function WeightSection({
               style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: 18,
-                fontWeight: 800,
+                fontWeight: 600,
                 color: 'var(--fs-ink)',
-                textTransform: 'uppercase',
               }}
             >
               עדיין לא תועד משקל
@@ -268,7 +262,6 @@ export const WeightSection = memo(function WeightSection({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 11,
                   letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
                   color: 'var(--fs-muted)',
                   textAlign: 'center',
                   margin: 0,

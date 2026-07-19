@@ -62,11 +62,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="uppercase"
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '10px',
-              letterSpacing: '0.22em',
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              letterSpacing: '-0.01em',
               fontWeight: 600,
               color: 'var(--fs-muted)',
             }}
@@ -90,7 +89,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             `}
             style={{
               border: stateBorder,
-              borderRadius: 0,
+              borderRadius: 12,
               fontFamily: 'var(--font-body)',
               minHeight: 48,
               fontSize: 16,
@@ -122,7 +121,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 fontFamily: 'var(--font-mono)',
                 fontSize: '12px',
                 fontWeight: 600,
-                letterSpacing: '0.08em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
               }}
             >
@@ -131,7 +130,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
 
-        {/* Error Message — mono */}
+        {/* Error Message */}
         {error && (
           <m.span
             id={errorId}
@@ -139,11 +138,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className="uppercase"
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '10px',
-              letterSpacing: '0.18em',
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              letterSpacing: '-0.01em',
               color: 'var(--fs-warn)',
               fontWeight: 600,
             }}
@@ -152,16 +150,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           </m.span>
         )}
 
-        {/* Helper Text — mono, stone */}
+        {/* Helper Text */}
         {helper && !error && (
           <span
             id={helperId}
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '10px',
-              letterSpacing: '0.18em',
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
-              textTransform: 'uppercase',
             }}
           >
             {helper}

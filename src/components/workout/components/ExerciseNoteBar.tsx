@@ -44,7 +44,7 @@ const ExerciseNoteBar = memo<ExerciseNoteBarProps>(({ note, onEdit, onOpenAI }) 
         color: 'var(--color-ink-on-accent)',
         fontFamily: 'var(--font-mono)',
         fontSize: 11,
-        fontWeight: 800,
+        fontWeight: 600,
         letterSpacing: '0.04em',
         cursor: 'pointer',
       }}

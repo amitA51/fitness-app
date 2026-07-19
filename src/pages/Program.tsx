@@ -136,8 +136,7 @@ export default function Program() {
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 11,
-                letterSpacing: '0.22em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-accent-2)',
               }}
             >
@@ -146,7 +145,7 @@ export default function Program() {
             <h1
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 'clamp(30px, 8.5vw, 46px)',
                 lineHeight: 0.95,
                 letterSpacing: '-0.02em',
@@ -250,8 +249,7 @@ export default function Program() {
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
-                      letterSpacing: '0.18em',
-                      textTransform: 'uppercase',
+                      letterSpacing: '-0.01em',
                       color: 'var(--fs-muted)',
                       marginBottom: 8,
                     }}
@@ -405,8 +403,7 @@ function ContinueCard({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-accent-2)',
             marginBottom: 4,
           }}
@@ -620,8 +617,7 @@ function DayCard({
                         style={{
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9.5,
-                          letterSpacing: '0.14em',
-                          textTransform: 'uppercase',
+                          letterSpacing: '-0.01em',
                           color: 'var(--fs-muted)',
                           marginBottom: 5,
                         }}

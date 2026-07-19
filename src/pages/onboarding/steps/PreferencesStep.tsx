@@ -44,8 +44,7 @@ export function PreferencesStep({ data, onChange, direction = 1 }: PreferencesSt
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
               }}
             >
@@ -54,7 +53,7 @@ export function PreferencesStep({ data, onChange, direction = 1 }: PreferencesSt
             <span
               style={{
                 fontFamily: '"Bricolage Grotesque", var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: '24px',
                 color: 'var(--fs-accent)',
                 fontVariantNumeric: 'tabular-nums',
@@ -103,8 +102,7 @@ export function PreferencesStep({ data, onChange, direction = 1 }: PreferencesSt
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '11px',
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
             }}
           >
@@ -154,8 +152,7 @@ export function PreferencesStep({ data, onChange, direction = 1 }: PreferencesSt
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
               }}
             >
@@ -164,7 +161,7 @@ export function PreferencesStep({ data, onChange, direction = 1 }: PreferencesSt
             <span
               style={{
                 fontFamily: '"Bricolage Grotesque", var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: '24px',
                 color: 'var(--fs-accent)',
                 fontVariantNumeric: 'tabular-nums',
@@ -192,7 +189,7 @@ export function PreferencesStep({ data, onChange, direction = 1 }: PreferencesSt
                     data.restBetweenSets === sec
                       ? '2px solid var(--fs-accent)'
                       : '1px solid var(--fs-surface-2)',
-                  borderRadius: 0,
+                  borderRadius: 12,
                 }}
               >
                 {sec} שנ׳

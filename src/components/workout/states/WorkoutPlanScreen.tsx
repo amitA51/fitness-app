@@ -197,9 +197,8 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.2em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-accent)',
-              textTransform: 'uppercase',
               marginBottom: 6,
             }}
           >
@@ -209,7 +208,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
             className="uppercase"
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 900,
+              fontWeight: 700,
               fontSize: 34,
               color: 'var(--color-ink-on-dark)',
               lineHeight: 0.92,
@@ -289,7 +288,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
                           background: 'var(--fs-accent)',
                           color: 'var(--fs-primary)',
                           fontFamily: 'var(--font-display)',
-                          fontWeight: 900,
+                          fontWeight: 700,
                           fontSize: 13,
                           borderRadius: 6,
                         }}
@@ -302,7 +301,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
                           className="truncate"
                           style={{
                             fontFamily: 'var(--font-display)',
-                            fontWeight: 800,
+                            fontWeight: 600,
                             fontSize: 16,
                             color: 'var(--fs-heading)',
                             lineHeight: 1.1,
@@ -316,9 +315,8 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
                             style={{
                               fontFamily: 'var(--font-mono)',
                               fontSize: 9,
-                              letterSpacing: '0.12em',
+                              letterSpacing: '-0.01em',
                               color: 'var(--fs-muted)',
-                              textTransform: 'uppercase',
                             }}
                           >
                             {translateMuscle(ex.muscleGroup)}
@@ -346,9 +344,8 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: 9,
-                        letterSpacing: '0.14em',
+                        letterSpacing: '-0.01em',
                         color: 'var(--fs-muted)',
-                        textTransform: 'uppercase',
                       }}
                     >
                       משקל (ק"ג)
@@ -358,9 +355,8 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: 9,
-                        letterSpacing: '0.14em',
+                        letterSpacing: '-0.01em',
                         color: 'var(--fs-muted)',
-                        textTransform: 'uppercase',
                       }}
                     >
                       חזרות
@@ -399,7 +395,6 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
                         fontWeight: 700,
                         fontSize: 12,
                         letterSpacing: '0.04em',
-                        textTransform: 'uppercase',
                         borderRadius: 8,
                       }}
                     >
@@ -423,7 +418,6 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
                           fontWeight: 700,
                           fontSize: 12,
                           letterSpacing: '0.04em',
-                          textTransform: 'uppercase',
                           borderRadius: 8,
                         }}
                         aria-label={`מלא משקל וחזרות מהאימון הקודם עבור ${ex.name}`}
@@ -452,10 +446,9 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
             border: '2px dashed color-mix(in srgb, var(--fs-primary) 40%, transparent)',
             borderRadius: 'var(--radius-asymmetric, 14px)',
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 13,
             letterSpacing: '0.06em',
-            textTransform: 'uppercase',
           }}
         >
           <PlusIcon style={{ width: 16, height: 16 }} />

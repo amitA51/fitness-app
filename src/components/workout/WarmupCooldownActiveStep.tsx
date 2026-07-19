@@ -65,9 +65,8 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 11,
-            letterSpacing: '0.18em',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-accent)',
-            textTransform: 'uppercase',
           }}
         >
           {currentIndex + 1} / {totalItems}
@@ -75,11 +74,10 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
         <span
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 13,
             letterSpacing: '0.06em',
             color: 'rgba(var(--text-on-navy-rgb),0.5)',
-            textTransform: 'uppercase',
           }}
         >
           {title}
@@ -95,7 +93,6 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             letterSpacing: '0.15em',
-            textTransform: 'uppercase',
             padding: 0,
           }}
         >
@@ -116,9 +113,8 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
-            letterSpacing: '0.22em',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
-            textTransform: 'uppercase',
           }}
         >
           {type === 'warmup' ? 'תרגיל' : 'מתיחה'}
@@ -126,7 +122,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
         <h2
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 900,
+            fontWeight: 700,
             fontSize: 28,
             color: 'var(--fs-heading)',
             lineHeight: 1,
@@ -215,7 +211,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               animate={{ scale: 1 }}
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 900,
+                fontWeight: 700,
                 fontSize: 'clamp(48px, 14vw, 72px)',
                 color: isWarning ? 'var(--fs-warn)' : 'var(--fs-primary)',
                 letterSpacing: '-0.03em',
@@ -230,9 +226,8 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
-                  letterSpacing: '0.2em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
-                  textTransform: 'uppercase',
                   marginTop: 4,
                 }}
               >
@@ -244,9 +239,8 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
-                  letterSpacing: '0.2em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--color-success)',
-                  textTransform: 'uppercase',
                   marginTop: 4,
                 }}
               >
@@ -269,9 +263,8 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 9,
-            letterSpacing: '0.2em',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
-            textTransform: 'uppercase',
             textAlign: 'center',
             marginBottom: 12,
           }}
@@ -292,10 +285,10 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               background: 'var(--fs-surface-2)',
               color: currentIndex === 0 ? 'var(--fs-muted)' : 'var(--fs-primary)',
               border: '2px solid var(--fs-primary)',
-              borderRadius: 0,
+              borderRadius: 12,
               cursor: currentIndex === 0 ? 'not-allowed' : 'pointer',
               fontFamily: 'var(--font-display)',
-              fontWeight: 900,
+              fontWeight: 700,
               fontSize: 18,
               opacity: currentIndex === 0 ? 0.5 : 1,
               transition: 'all 150ms',
@@ -317,13 +310,12 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               background: 'var(--fs-primary)',
               color: 'var(--fs-accent)',
               border: 'none',
-              borderRadius: 0,
+              borderRadius: 12,
               cursor: 'pointer',
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 14,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
+              letterSpacing: '-0.01em',
               transition: 'background 150ms',
               minHeight: 52,
             }}

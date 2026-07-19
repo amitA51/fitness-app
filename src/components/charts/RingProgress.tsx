@@ -172,8 +172,7 @@ export const RingProgress = memo(function RingProgress({
               marginTop: 4,
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
             }}
           >

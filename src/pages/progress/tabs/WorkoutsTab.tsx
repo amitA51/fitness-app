@@ -107,7 +107,7 @@ export const WorkoutsTab = memo(function WorkoutsTab({
           <div className="flex flex-col items-center py-10 text-center gap-3">
             <Dumbbell size={36} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
             <div style={{ display: 'grid', gap: 8, maxWidth: 280 }}>
-              <p style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: 'var(--fs-ink)', margin: 0 }}>
+              <p style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 18, color: 'var(--fs-ink)', margin: 0 }}>
                 עדיין אין אימונים
               </p>
               <p style={{ fontSize: 14, color: 'var(--fs-muted)', margin: 0, lineHeight: 1.5 }}>
@@ -183,7 +183,6 @@ export const WorkoutsTab = memo(function WorkoutsTab({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 11,
                   letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
                   color: 'var(--fs-muted)',
                   textAlign: 'center',
                   padding: '12px 0',

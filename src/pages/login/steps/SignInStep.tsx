@@ -120,10 +120,9 @@ export function SignInStep({
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: '28px',
                 color: 'var(--fs-ink)',
-                textTransform: 'uppercase',
                 letterSpacing: '-0.02em',
                 lineHeight: 1.1,
               }}
@@ -135,8 +134,7 @@ export function SignInStep({
                 fontFamily: 'var(--font-mono)',
                 fontSize: '10px',
                 color: 'var(--fs-muted)',
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 marginTop: '6px',
               }}
             >
@@ -182,8 +180,7 @@ export function SignInStep({
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
                 color: 'var(--fs-muted)',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
@@ -235,15 +232,14 @@ export function SignInStep({
               style={{
                 background: 'var(--fs-accent)',
                 color: 'var(--color-ink-on-accent)',
-                borderRadius: 0,
+                borderRadius: 12,
               }}
             >
               <p
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: '11px',
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
+                  letterSpacing: '-0.01em',
                   lineHeight: 1.5,
                 }}
               >

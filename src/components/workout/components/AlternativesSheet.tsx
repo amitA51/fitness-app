@@ -171,7 +171,7 @@ const AlternativesSheet = memo<AlternativesSheetProps>(
                   borderRadius: 'var(--radius-asymmetric)',
                   color: 'var(--fs-accent-2)',
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: 13,
                   cursor: 'pointer',
                 }}

@@ -73,7 +73,7 @@ const AnimatedValue = memo<{ value: string; target: 'weight' | 'reps' | null }>(
           style={{
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(56px, 18vw, 96px)',
-            fontWeight: 900,
+            fontWeight: 700,
             lineHeight: 0.85,
             letterSpacing: '-0.03em',
             color: 'var(--fs-heading)',
@@ -109,7 +109,7 @@ const AnimatedValue = memo<{ value: string; target: 'weight' | 'reps' | null }>(
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '14px',
-            letterSpacing: '0.2em',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
           }}
           initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
@@ -190,10 +190,10 @@ const NumpadButton = memo<{
     minHeight: 72,
     width: 72,
     height: 72,
-    borderRadius: 0,
+    borderRadius: 12,
     border: '1px solid var(--fs-primary)',
     fontFamily: 'var(--font-display)',
-    fontWeight: 800,
+    fontWeight: 600,
     fontSize: variant === 'number' ? 32 : 20,
     letterSpacing: '-0.01em',
   };
@@ -284,7 +284,7 @@ const PresetButton = memo<{
             height: 8,
             backgroundColor: 'var(--fs-accent)',
             border: '1px solid var(--fs-primary)',
-            borderRadius: 0,
+            borderRadius: 12,
           }}
           animate={shouldReduceMotion ? {} : { scale: [1, 1.2, 1] }}
           transition={
@@ -330,7 +330,7 @@ const ValueStepper = memo<{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '12px',
                 fontWeight: 700,
-                borderRadius: 0,
+                borderRadius: 12,
               }}
               aria-label={`הפחת ${inc}`}
             >
@@ -345,7 +345,7 @@ const ValueStepper = memo<{
         style={{
           backgroundColor: 'var(--fs-surface-2)',
           border: '2px solid var(--fs-primary)',
-          borderRadius: 0,
+          borderRadius: 12,
         }}
       >
         <span
@@ -353,7 +353,7 @@ const ValueStepper = memo<{
           style={{
             fontFamily: 'var(--font-display)',
             fontSize: '18px',
-            fontWeight: 800,
+            fontWeight: 600,
             color: 'var(--fs-heading)',
           }}
         >
@@ -379,7 +379,7 @@ const ValueStepper = memo<{
               fontFamily: 'var(--font-mono)',
               fontSize: '12px',
               fontWeight: 700,
-              borderRadius: 0,
+              borderRadius: 12,
             }}
             aria-label={`הוסף ${inc}`}
           >
@@ -402,9 +402,9 @@ const GhostValue = memo<{ value: number; label: string; entryX?: number }>(
         className="flex items-center gap-2 px-3 py-1.5 uppercase"
         style={{
           backgroundColor: 'var(--fs-surface-2)',
-          borderRadius: 0,
+          borderRadius: 12,
           fontFamily: 'var(--font-mono)',
-          letterSpacing: '0.08em',
+          letterSpacing: '-0.01em',
         }}
         initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: entryX }}
         animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
@@ -612,7 +612,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: '10px',
-                  letterSpacing: '0.22em',
+                  letterSpacing: '-0.01em',
                   color: 'rgba(255,255,255,0.55)',
                   fontWeight: 600,
                 }}
@@ -800,12 +800,12 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                   style={{
                     minHeight: 56,
                     paddingInline: 24,
-                    borderRadius: 0,
+                    borderRadius: 12,
                     border: '2px solid var(--fs-primary)',
                     backgroundColor: 'var(--fs-surface-2)',
                     color: 'var(--fs-heading)',
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 18,
                     opacity: isConfirmDisabled ? 0.4 : 1,
                     cursor: isConfirmDisabled ? 'not-allowed' : 'pointer',

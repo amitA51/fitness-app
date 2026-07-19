@@ -10,8 +10,7 @@ export function Stat({ label, value, color }: { label: string; value: string; co
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-muted)',
         }}
       >

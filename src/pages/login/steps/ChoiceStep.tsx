@@ -93,7 +93,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
           <div className="flex items-center gap-4">
             <div
               className="w-12 h-12 flex items-center justify-center"
-              style={{ background: 'var(--fs-primary)', borderRadius: 0 }}
+              style={{ background: 'var(--fs-primary)', borderRadius: 12 }}
             >
               <Lock size={20} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
             </div>
@@ -114,8 +114,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
                   fontFamily: 'var(--font-mono)',
                   fontSize: '10px',
                   color: 'var(--fs-muted)',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
+                  letterSpacing: '-0.01em',
                 }}
               >
                 משתמש קיים
@@ -124,7 +123,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
           </div>
           <div
             className="w-10 h-10 flex items-center justify-center transition-transform group-hover:-translate-x-1 motion-reduce:group-hover:translate-x-0"
-            style={{ background: 'var(--fs-surface-2)', borderRadius: 0 }}
+            style={{ background: 'var(--fs-surface-2)', borderRadius: 12 }}
           >
             <ChevronLeft size={18} style={{ color: 'var(--fs-ink)' }} aria-hidden="true" />
           </div>
@@ -152,7 +151,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
           <div className="flex items-center gap-4">
             <div
               className="w-12 h-12 flex items-center justify-center"
-              style={{ background: 'var(--fs-primary)', borderRadius: 0 }}
+              style={{ background: 'var(--fs-primary)', borderRadius: 12 }}
             >
               <User size={20} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
             </div>
@@ -174,8 +173,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
                   fontSize: '10px',
                   color: 'var(--color-ink-on-accent)',
                   opacity: 0.7,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
+                  letterSpacing: '-0.01em',
                 }}
               >
                 יצירת חשבון חדש
@@ -184,7 +182,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
           </div>
           <div
             className="w-10 h-10 flex items-center justify-center transition-transform group-hover:-translate-x-1 motion-reduce:group-hover:translate-x-0"
-            style={{ background: 'var(--fs-primary)', borderRadius: 0 }}
+            style={{ background: 'var(--fs-primary)', borderRadius: 12 }}
           >
             <ChevronLeft size={18} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
           </div>
@@ -200,7 +198,6 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             fontSize: '10px',
             color: 'var(--fs-muted)',
             letterSpacing: '0.15em',
-            textTransform: 'uppercase',
           }}
         >
           או
@@ -252,9 +249,8 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
           border: '1px solid var(--fs-surface-2)',
           borderRadius: '22px 16px 22px 16px',
           fontFamily: 'var(--font-display)',
-          fontWeight: 800,
+          fontWeight: 600,
           fontSize: '15px',
-          textTransform: 'uppercase',
           color: 'var(--fs-ink)',
           cursor: 'pointer',
         }}

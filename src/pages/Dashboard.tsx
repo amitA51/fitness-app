@@ -639,8 +639,7 @@ const InsightErrorChip = memo(function InsightErrorChip({
           cursor: 'pointer',
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-accent-2)',
         }}
       >
@@ -1064,7 +1063,7 @@ const BentoRow = memo(function BentoRow({
           color: 'var(--fs-muted)',
           fontFamily: 'var(--font-mono)',
           fontSize: 11,
-          fontWeight: 800,
+          fontWeight: 600,
           letterSpacing: '0.04em',
         }}
       >
@@ -1082,7 +1081,7 @@ const BentoRow = memo(function BentoRow({
           color: 'var(--fs-ink)',
           fontFamily: 'var(--font-mono)',
           fontSize: 13,
-          fontWeight: 800,
+          fontWeight: 600,
           fontVariantNumeric: 'tabular-nums',
           minWidth: '3ch',
           textAlign: 'end',

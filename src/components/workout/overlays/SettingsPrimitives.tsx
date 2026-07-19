@@ -46,8 +46,7 @@ export const REST_TIME_OPTIONS = [30, 60, 90, 120, 180, 240];
 const labelStyle: React.CSSProperties = {
   fontFamily: 'var(--font-mono)',
   fontSize: 10,
-  letterSpacing: '0.18em',
-  textTransform: 'uppercase',
+  letterSpacing: '-0.01em',
   color: 'var(--fs-muted)',
   fontWeight: 700,
 };
@@ -159,7 +158,7 @@ export const ChipSelector = memo<{
             }}
             style={{
               padding: '8px 14px',
-              borderRadius: 0,
+              borderRadius: 12,
               border: '1.5px solid var(--fs-primary)',
               background: active ? 'var(--fs-accent)' : 'var(--fs-surface)',
               color: 'var(--fs-heading)',
@@ -167,7 +166,6 @@ export const ChipSelector = memo<{
               fontSize: 11,
               letterSpacing: '0.06em',
               fontWeight: 700,
-              textTransform: 'uppercase',
               cursor: 'pointer',
               transition: 'background-color 150ms ease',
             }}
@@ -227,7 +225,7 @@ export const SliderSetting = memo<{
           style={{
             fontFamily: 'var(--font-display)',
             fontSize: 18,
-            fontWeight: 800,
+            fontWeight: 600,
             color: 'var(--fs-heading)',
             letterSpacing: '-0.01em',
           }}
@@ -281,15 +279,14 @@ export const GoalSelector = memo<{ value: string; onChange: (v: string) => void 
               }}
               style={{
                 padding: '14px 16px',
-                borderRadius: 0,
+                borderRadius: 12,
                 background: active ? 'var(--fs-accent)' : 'var(--fs-surface)',
                 border: `1.5px solid ${active ? 'var(--fs-primary)' : 'var(--fs-steel)'}`,
                 fontFamily: 'var(--font-display)',
                 fontSize: 14,
-                fontWeight: 800,
+                fontWeight: 600,
                 color: 'var(--fs-heading)',
                 letterSpacing: '0.04em',
-                textTransform: 'uppercase',
                 textAlign: 'start',
                 cursor: 'pointer',
                 transition: 'background-color 150ms ease',
@@ -331,13 +328,13 @@ export const RestTimeSelector = memo<{ value: number; onChange: (v: number) => v
               }}
               style={{
                 padding: '14px 0',
-                borderRadius: 0,
+                borderRadius: 12,
                 background: active ? 'var(--fs-accent)' : 'var(--fs-surface)',
                 border: `1.5px solid ${active ? 'var(--fs-primary)' : 'var(--fs-steel)'}`,
                 color: 'var(--fs-heading)',
                 fontFamily: 'var(--font-display)',
                 fontSize: 16,
-                fontWeight: 800,
+                fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'background-color 150ms ease',
               }}
@@ -398,15 +395,14 @@ export const TabBar = memo<{
           style={{
             flexShrink: 0,
             padding: '10px 16px',
-            borderRadius: 0,
+            borderRadius: 12,
             background: active ? 'var(--fs-primary)' : 'var(--fs-surface)',
             color: active ? 'var(--fs-accent)' : 'var(--fs-muted)',
             border: `1px solid ${active ? 'var(--fs-primary)' : 'var(--fs-steel)'}`,
             fontFamily: 'var(--font-mono)',
             fontSize: 11,
             fontWeight: 700,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
             whiteSpace: 'nowrap',
             cursor: 'pointer',
             transition: 'background-color 150ms ease, color 150ms ease',

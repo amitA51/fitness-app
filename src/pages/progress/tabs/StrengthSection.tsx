@@ -76,7 +76,6 @@ const cardHeader: React.CSSProperties = {
   fontSize: 10,
   letterSpacing: '0.15em',
   color: 'var(--fs-muted)',
-  textTransform: 'uppercase',
 };
 
 export const StrengthSection = memo(function StrengthSection({
@@ -129,9 +128,8 @@ export const StrengthSection = memo(function StrengthSection({
             style={{
               fontFamily: 'var(--font-display)',
               fontSize: 18,
-              fontWeight: 800,
+              fontWeight: 600,
               color: 'var(--fs-ink)',
-              textTransform: 'uppercase',
             }}
           >
             אין נתוני כוח עדיין
@@ -175,7 +173,7 @@ export const StrengthSection = memo(function StrengthSection({
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
-                      fontWeight: 800,
+                      fontWeight: 600,
                       color: i === 0 ? 'var(--fs-accent)' : 'var(--fs-muted)',
                       width: 20,
                     }}
@@ -198,7 +196,7 @@ export const StrengthSection = memo(function StrengthSection({
                   <span
                     style={{
                       fontFamily: 'var(--font-display)',
-                      fontWeight: 800,
+                      fontWeight: 600,
                       fontSize: 18,
                       color: 'var(--fs-ink)',
                       direction: 'ltr',
@@ -212,7 +210,7 @@ export const StrengthSection = memo(function StrengthSection({
                       fontSize: 9,
                       fontWeight: 700,
                       color: 'var(--fs-muted)',
-                      letterSpacing: '0.08em',
+                      letterSpacing: '-0.01em',
                     }}
                   >
                     1RM
@@ -251,8 +249,7 @@ export const StrengthSection = memo(function StrengthSection({
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 fontWeight: 700,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-accent)',
               }}
             >
@@ -344,7 +341,7 @@ export const StrengthSection = memo(function StrengthSection({
             <div
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 44,
                 color: 'var(--fs-ink)',
                 lineHeight: 0.9,
@@ -358,7 +355,7 @@ export const StrengthSection = memo(function StrengthSection({
                   fontSize: 12,
                   color: 'var(--fs-muted)',
                   marginInlineStart: 6,
-                  letterSpacing: '0.12em',
+                  letterSpacing: '-0.01em',
                 }}
               >
                 KG
@@ -377,8 +374,7 @@ export const StrengthSection = memo(function StrengthSection({
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 11,
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
+                      letterSpacing: '-0.01em',
                       background: `color-mix(in srgb, ${zc} 16%, var(--fs-surface))`,
                       color: zc,
                       padding: '4px 10px',
@@ -478,7 +474,7 @@ export const StrengthSection = memo(function StrengthSection({
                         <span
                           style={{
                             fontFamily: 'var(--font-display)',
-                            fontWeight: 800,
+                            fontWeight: 600,
                             fontSize: 18,
                             color: 'var(--fs-ink)',
                             direction: 'ltr',

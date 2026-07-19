@@ -33,7 +33,7 @@ export const TemplateItem = memo(function TemplateItem({ template, onClick }: Te
           fontFamily: 'var(--font-mono)',
           fontSize: 9,
           color: 'var(--fs-accent)',
-          letterSpacing: '0.2em',
+          letterSpacing: '-0.01em',
           marginInlineStart: 4,
         }}
         aria-hidden="true"
@@ -46,7 +46,6 @@ export const TemplateItem = memo(function TemplateItem({ template, onClick }: Te
           fontWeight: 700,
           fontSize: 13,
           color: 'var(--fs-ink)',
-          textTransform: 'uppercase',
           letterSpacing: '0.04em',
           overflow: 'hidden',
           textOverflow: 'ellipsis',

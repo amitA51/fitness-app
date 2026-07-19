@@ -11,7 +11,6 @@ import {
   Users,
 } from 'lucide-react';
 import { type ReactNode, useEffect } from 'react';
-import { Button } from '../../../components/ui/Button';
 import { useHaptics } from '../../../hooks/useHaptics';
 import type { OnboardingData } from '../types';
 
@@ -25,12 +24,38 @@ interface CompleteStepProps {
   onFinish: (toFirstAction: boolean) => void;
 }
 
+const labelStyle = {
+  fontFamily: 'var(--font-body)',
+  fontSize: 12,
+  fontWeight: 600,
+  color: 'var(--fs-muted)',
+  letterSpacing: '-0.01em',
+} as const;
+
+const valueStyle = {
+  fontFamily: 'var(--font-body)',
+  fontWeight: 600,
+  fontSize: 16,
+  color: 'var(--fs-ink)',
+  letterSpacing: '-0.01em',
+} as const;
+
+const cardStyle = {
+  background: 'var(--fs-surface)',
+  border: '1px solid color-mix(in srgb, var(--color-border) 90%, transparent)',
+  borderRadius: 'var(--radius-2xl)',
+  boxShadow: 'var(--elevation-1)',
+} as const;
+
+const iconBoxStyle = {
+  background: 'color-mix(in srgb, var(--fs-accent) 14%, transparent)',
+  color: 'var(--fs-accent)',
+  borderRadius: 9999,
+} as const;
+
 export function CompleteStep({ data, onFinish }: CompleteStepProps) {
   const isCoach = data.role === 'coach';
 
-  // One success haptic, timed to land with the checkmark's spring settle
-  // (matches the 0.2s delay on the mark below). No-ops when the Settings
-  // haptics toggle is off — the hook already gates on it.
   const { hapticSuccess } = useHaptics();
   useEffect(() => {
     const t = setTimeout(hapticSuccess, 200);
@@ -56,7 +81,6 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
       className="flex flex-col h-full items-center justify-center text-center px-6 py-8 overflow-y-auto"
       style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
     >
-      {/* Success Animation */}
       <m.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
@@ -64,17 +88,13 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
         className="w-28 h-28 flex items-center justify-center mb-8"
         style={{
           background: 'var(--fs-accent)',
-          borderRadius: '22px 16px 22px 16px',
-          // ink-on-accent — fs-heading is near-white in dark mode and the
-          // check would disappear on the bright mint block
+          borderRadius: 'var(--radius-2xl)',
           color: 'var(--color-ink-on-accent)',
         }}
       >
         <Check size={56} strokeWidth={3} />
       </m.div>
 
-      {/* Role pill — clear coach vs trainee separation. Uses primary + accent
-          only (never --fs-signal: this is identity, not a PR celebration). */}
       <m.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
@@ -83,18 +103,17 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
         style={{
           background: 'var(--fs-primary)',
           color: 'var(--fs-accent)',
-          borderRadius: '999px',
+          borderRadius: 9999,
           padding: '6px 14px',
         }}
       >
         {isCoach ? <Users size={15} aria-hidden="true" /> : <Target size={15} aria-hidden="true" />}
         <span
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '11px',
+            fontFamily: 'var(--font-body)',
+            fontSize: 13,
             fontWeight: 600,
-            letterSpacing: '0.16em',
-            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
           }}
         >
           {isCoach ? 'מאמן' : 'מתאמן'}
@@ -107,12 +126,10 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
         transition={{ delay: 0.4 }}
         style={{
           fontFamily: 'var(--font-display)',
-          fontWeight: 800,
-          fontSize: '32px',
+          fontWeight: 700,
+          fontSize: 32,
           color: 'var(--fs-ink)',
           letterSpacing: '-0.02em',
-          // No uppercase — a no-op on the Hebrew, and it would wrongly upper-case
-          // the user's interpolated name. Leave the name as typed.
         }}
       >
         {data.name ? `${data.name}, ` : ''}
@@ -125,9 +142,11 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
         transition={{ delay: 0.5 }}
         style={{
           fontFamily: 'var(--font-body)',
-          fontSize: '15px',
+          fontSize: 15,
           color: 'var(--fs-muted)',
-          marginBottom: '32px',
+          marginBottom: 32,
+          letterSpacing: '-0.01em',
+          lineHeight: 1.5,
         }}
       >
         {isCoach
@@ -135,7 +154,6 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
           : 'הפרופיל הוגדר. בשלב הבא תבחרו תבנית אימון ותתחילו — זה לוקח דקה.'}
       </m.p>
 
-      {/* Summary Cards — coach: what's next; trainee: profile recap */}
       <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -144,7 +162,6 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
       >
         {isCoach && (
           <>
-            {/* First step is a real action — taps deep-link into the invite flow. */}
             <CoachNextCard
               icon={<UserPlus size={22} />}
               kicker="צעד ראשון"
@@ -164,90 +181,25 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
           </>
         )}
         {!isCoach && data.primaryGoal && (
-          <div
-            className="p-4 flex items-center gap-4"
-            style={{
-              background: 'var(--fs-surface)',
-              border: '1px solid var(--fs-surface-2)',
-              borderRadius: '22px 16px 22px 16px',
-            }}
-          >
-            <div
-              className="w-12 h-12 flex items-center justify-center shrink-0"
-              style={{
-                background: 'var(--fs-primary)',
-                color: 'var(--fs-accent)',
-                borderRadius: 0,
-              }}
-            >
+          <div className="p-4 flex items-center gap-4" style={cardStyle}>
+            <div className="w-12 h-12 flex items-center justify-center shrink-0" style={iconBoxStyle}>
               <Target size={22} />
             </div>
             <div className="text-right flex-1">
-              <p
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
-                  color: 'var(--fs-muted)',
-                  letterSpacing: '0.22em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                המטרה שלך
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: 700,
-                  fontSize: '16px',
-                  color: 'var(--fs-ink)',
-                }}
-              >
-                {getGoalLabel(data.primaryGoal)}
-              </p>
+              <p style={labelStyle}>המטרה שלך</p>
+              <p style={valueStyle}>{getGoalLabel(data.primaryGoal)}</p>
             </div>
           </div>
         )}
 
         {!isCoach && (
-          <div
-            className="p-4 flex items-center gap-4"
-            style={{
-              background: 'var(--fs-surface)',
-              border: '1px solid var(--fs-surface-2)',
-              borderRadius: '22px 16px 22px 16px',
-            }}
-          >
-            <div
-              className="w-12 h-12 flex items-center justify-center shrink-0"
-              style={{
-                background: 'var(--fs-primary)',
-                color: 'var(--fs-accent)',
-                borderRadius: 0,
-              }}
-            >
+          <div className="p-4 flex items-center gap-4" style={cardStyle}>
+            <div className="w-12 h-12 flex items-center justify-center shrink-0" style={iconBoxStyle}>
               <Calendar size={22} />
             </div>
             <div className="text-right flex-1">
-              <p
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
-                  color: 'var(--fs-muted)',
-                  letterSpacing: '0.22em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                תדירות אימונים
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: 700,
-                  fontSize: '16px',
-                  color: 'var(--fs-ink)',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
+              <p style={labelStyle}>תדירות אימונים</p>
+              <p style={{ ...valueStyle, fontVariantNumeric: 'tabular-nums' }}>
                 {data.preferredWorkoutDays} ימים בשבוע
               </p>
             </div>
@@ -255,45 +207,13 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
         )}
 
         {!isCoach && (
-          <div
-            className="p-4 flex items-center gap-4"
-            style={{
-              background: 'var(--fs-surface)',
-              border: '1px solid var(--fs-surface-2)',
-              borderRadius: '22px 16px 22px 16px',
-            }}
-          >
-            <div
-              className="w-12 h-12 flex items-center justify-center shrink-0"
-              style={{
-                background: 'var(--fs-primary)',
-                color: 'var(--fs-accent)',
-                borderRadius: 0,
-              }}
-            >
+          <div className="p-4 flex items-center gap-4" style={cardStyle}>
+            <div className="w-12 h-12 flex items-center justify-center shrink-0" style={iconBoxStyle}>
               <Clock size={22} />
             </div>
             <div className="text-right flex-1">
-              <p
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
-                  color: 'var(--fs-muted)',
-                  letterSpacing: '0.22em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                משך כל אימון
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: 700,
-                  fontSize: '16px',
-                  color: 'var(--fs-ink)',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
+              <p style={labelStyle}>משך כל אימון</p>
+              <p style={{ ...valueStyle, fontVariantNumeric: 'tabular-nums' }}>
                 {data.workoutDuration} דקות
               </p>
             </div>
@@ -301,20 +221,17 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
         )}
       </m.div>
 
-      {/* First-action CTA — onboarding ends in a real next step, not a dead-end
-          recap. Trainee → start their first workout; coach → invite trainees.
-          The quiet secondary just enters the home screen. */}
       <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
         className="w-full mt-8 space-y-3"
       >
-        <Button
-          variant="editorial"
+        <button
+          type="button"
           onClick={() => onFinish(true)}
-          fullWidth
-          style={{ minHeight: '56px' }}
+          className="start-workout-btn focus-ring"
+          style={{ minHeight: 56 }}
         >
           {isCoach ? (
             <>
@@ -328,24 +245,9 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
             </>
           )}
           <ChevronLeft size={22} aria-hidden="true" />
-        </Button>
+        </button>
 
-        <button
-          type="button"
-          onClick={() => onFinish(false)}
-          className="w-full active:scale-[0.98] transition-transform"
-          style={{
-            minHeight: '44px',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '12px',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'var(--fs-muted)',
-          }}
-        >
+        <button type="button" onClick={() => onFinish(false)} className="cta-ghost focus-ring w-full">
           כניסה למסך הבית
         </button>
       </m.div>
@@ -353,72 +255,40 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
   );
 }
 
-/**
- * "What's next" card for the coach completion screen. When `onClick` is given
- * it renders as a real button (the first step deep-links into the invite flow);
- * otherwise it's a static guidance card.
- */
 function CoachNextCard({
   icon,
   kicker,
   label,
   onClick,
-}: { icon: ReactNode; kicker: string; label: string; onClick?: () => void }) {
+}: {
+  icon: ReactNode;
+  kicker: string;
+  label: string;
+  onClick?: () => void;
+}) {
   const isInteractive = typeof onClick === 'function';
   const inner = (
     <>
-      <div
-        className="w-12 h-12 flex items-center justify-center shrink-0"
-        style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)', borderRadius: 0 }}
-      >
+      <div className="w-12 h-12 flex items-center justify-center shrink-0" style={iconBoxStyle}>
         {icon}
       </div>
       <div className="text-right flex-1">
-        <p
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            color: 'var(--fs-muted)',
-            letterSpacing: '0.22em',
-            textTransform: 'uppercase',
-          }}
-        >
-          {kicker}
-        </p>
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontWeight: 700,
-            fontSize: '16px',
-            color: 'var(--fs-ink)',
-          }}
-        >
-          {label}
-        </p>
+        <p style={labelStyle}>{kicker}</p>
+        <p style={valueStyle}>{label}</p>
       </div>
       {isInteractive && (
-        <ChevronLeft
-          size={20}
-          aria-hidden="true"
-          style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
-        />
+        <ChevronLeft size={20} aria-hidden="true" style={{ color: 'var(--fs-accent)', flexShrink: 0 }} />
       )}
     </>
   );
-
-  const sharedStyle = {
-    background: 'var(--fs-surface)',
-    border: '1px solid var(--fs-surface-2)',
-    borderRadius: '22px 16px 22px 16px',
-  } as const;
 
   if (isInteractive) {
     return (
       <button
         type="button"
         onClick={onClick}
-        className="w-full p-4 flex items-center gap-4 text-right active:scale-[0.98] transition-transform"
-        style={{ ...sharedStyle, cursor: 'pointer' }}
+        className="w-full p-4 flex items-center gap-4 text-right active:scale-[0.98] transition-transform focus-ring"
+        style={{ ...cardStyle, cursor: 'pointer' }}
       >
         {inner}
       </button>
@@ -426,7 +296,7 @@ function CoachNextCard({
   }
 
   return (
-    <div className="p-4 flex items-center gap-4" style={sharedStyle}>
+    <div className="p-4 flex items-center gap-4" style={cardStyle}>
       {inner}
     </div>
   );

@@ -264,7 +264,7 @@ export function ProfileEditSection() {
                 <span
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: 24,
                     lineHeight: 1,
                   }}

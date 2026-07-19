@@ -83,7 +83,7 @@ const TemplateRow = memo(function TemplateRow({
             className="line-clamp-1"
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 16,
               color: 'var(--fs-heading)',
               letterSpacing: '-0.01em',
@@ -167,7 +167,7 @@ export const EmbeddedTemplatePicker = memo(function EmbeddedTemplatePicker({
         <div
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 16,
             color: 'var(--fs-ink)',
             marginBottom: 6,

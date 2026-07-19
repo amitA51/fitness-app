@@ -68,7 +68,7 @@ export function RoleStep({ data, onChange, direction = 1 }: RoleStepProps) {
                 className="w-12 h-12 flex items-center justify-center shrink-0"
                 style={{
                   background: isSelected ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
-                  borderRadius: 0,
+                  borderRadius: 12,
                 }}
               >
                 <span style={{ color: isSelected ? 'var(--fs-accent)' : 'var(--fs-muted)' }}>
@@ -108,7 +108,7 @@ export function RoleStep({ data, onChange, direction = 1 }: RoleStepProps) {
                   style={{
                     background: 'var(--fs-primary)',
                     color: 'var(--fs-accent)',
-                    borderRadius: 0,
+                    borderRadius: 12,
                   }}
                 >
                   <Check size={16} strokeWidth={3} />

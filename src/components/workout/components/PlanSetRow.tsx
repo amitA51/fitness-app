@@ -90,7 +90,7 @@ const StepperField = memo<StepperFieldProps>(
           style={{
             width: 44,
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 18,
             color: value ? 'var(--fs-ink)' : 'color-mix(in srgb, var(--fs-muted) 55%, transparent)',
             border: 'none',

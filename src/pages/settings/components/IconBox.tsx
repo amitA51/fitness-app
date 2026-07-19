@@ -23,7 +23,7 @@ export function IconBox({ children, tone = 'surface' }: IconBoxProps) {
   return (
     <div
       className="w-8 h-8 shrink-0 flex items-center justify-center"
-      style={{ ...palette, borderRadius: 0 }}
+      style={{ ...palette, borderRadius: 12 }}
     >
       {children}
     </div>

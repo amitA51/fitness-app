@@ -73,9 +73,8 @@ export function CloudSyncSection({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '10px',
-                letterSpacing: '0.18em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-accent)',
-                textTransform: 'uppercase',
               }}
               aria-live="polite"
             >

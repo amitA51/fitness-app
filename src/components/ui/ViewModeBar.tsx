@@ -114,8 +114,7 @@ export function ViewModeBar() {
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
           fontWeight: 600,
-          letterSpacing: '0.14em',
-          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-muted)',
         }}
       >
@@ -167,8 +166,7 @@ export function ViewModeBar() {
                 fontFamily: 'var(--font-mono)',
                 fontSize: 11,
                 fontWeight: active ? 700 : 500,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 transition: reduced
                   ? 'none'
                   : 'color 0.18s ease, background 0.18s ease, transform 0.1s ease',

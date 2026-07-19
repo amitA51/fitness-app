@@ -116,7 +116,6 @@ export const InsightCard = memo(function InsightCard({ insight }: InsightCardPro
               fontFamily: 'var(--font-mono)',
               fontSize: 9,
               letterSpacing: '0.15em',
-              textTransform: 'uppercase',
               color: 'var(--fs-muted)',
             }}
           >

@@ -25,13 +25,13 @@ export function Masthead() {
           className="w-14 h-14 flex items-center justify-center"
           style={{
             background: 'var(--fs-accent)',
-            borderRadius: 0,
+            borderRadius: 12,
           }}
         >
           <span
             style={{
               fontFamily: '"Bricolage Grotesque", var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: '28px',
               // ink-on-accent, not fs-heading — fs-heading is near-white in dark
               // mode and vanishes on the bright mint accent block
@@ -55,7 +55,7 @@ export function Masthead() {
         className="leading-snug"
         style={{
           fontFamily: '"Bricolage Grotesque", var(--font-display)',
-          fontWeight: 800,
+          fontWeight: 600,
           fontSize: '30px',
           color: 'var(--fs-ink)',
           letterSpacing: '-0.02em',

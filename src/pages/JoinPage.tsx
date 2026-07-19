@@ -184,7 +184,7 @@ export default function JoinPage() {
             }}
           >
             קוד:{' '}
-            <bdi dir="ltr" style={{ letterSpacing: '0.12em' }}>
+            <bdi dir="ltr" style={{ letterSpacing: '-0.01em' }}>
               {code}
             </bdi>
           </p>

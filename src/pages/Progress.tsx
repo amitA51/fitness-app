@@ -219,7 +219,7 @@ export default function ProgressPage() {
                 justifyContent: 'center',
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                letterSpacing: '0.08em',
+                letterSpacing: '-0.01em',
                 fontWeight: activeTab === tab.key ? 700 : 400,
                 color: activeTab === tab.key ? 'var(--fs-ink)' : 'var(--fs-muted)',
                 background: 'none',
@@ -228,7 +228,6 @@ export default function ProgressPage() {
                   activeTab === tab.key ? '2px solid var(--fs-accent)' : '2px solid transparent',
                 cursor: 'pointer',
                 transition: 'color 0.15s, border-color 0.15s, transform 0.1s',
-                textTransform: 'uppercase',
                 marginBottom: -1,
                 whiteSpace: 'nowrap',
               }}

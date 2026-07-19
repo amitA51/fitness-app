@@ -37,7 +37,7 @@ const EYEBROW_STYLE: React.CSSProperties = {
 
 const TITLE_STYLE: React.CSSProperties = {
   fontFamily: 'var(--font-display)',
-  fontWeight: 800,
+  fontWeight: 600,
   fontSize: 24,
   lineHeight: 1.2,
   color: 'var(--fs-ink)',

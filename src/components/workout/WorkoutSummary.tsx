@@ -596,7 +596,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
                   fontWeight: 700,
-                  letterSpacing: '0.12em',
+                  letterSpacing: '-0.01em',
                                   }}
               >
                 <Trophy size={13} strokeWidth={2.5} aria-hidden="true" />
@@ -609,7 +609,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                letterSpacing: '0.18em',
+                letterSpacing: '-0.01em',
                 color: 'rgba(255,255,255,0.4)',
                                 marginTop: 8,
                 fontVariantNumeric: 'tabular-nums',
@@ -642,7 +642,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               }}
               className={`tab${view === v ? ' active' : ''}`}
               style={{
-                letterSpacing: '0.18em',
+                letterSpacing: '-0.01em',
                               }}
             >
               {v === 'overview' ? 'סקירה' : 'פרטים'}
@@ -693,7 +693,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                         fontFamily: 'var(--font-mono)',
                         fontSize: 10,
                         fontWeight: 700,
-                        letterSpacing: '0.14em',
+                        letterSpacing: '-0.01em',
                         color: 'var(--fs-muted)',
                                                 textAlign: 'center',
                       }}
@@ -722,7 +722,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
                       fontWeight: 700,
-                      letterSpacing: '0.14em',
+                      letterSpacing: '-0.01em',
                       color: 'var(--fs-muted)',
                                           }}
                   >

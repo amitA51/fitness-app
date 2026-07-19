@@ -261,7 +261,7 @@ export const WaterTracker = memo(function WaterTracker({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 12,
-                letterSpacing: '0.12em',
+                letterSpacing: '-0.01em',
                 color: pct >= 100 ? goalReachedColor : 'var(--fs-ink)',
                 fontWeight: 600,
                 fontVariantNumeric: 'tabular-nums',
@@ -275,7 +275,7 @@ export const WaterTracker = memo(function WaterTracker({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                letterSpacing: '0.08em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
                 fontWeight: 600,
               }}
@@ -305,7 +305,7 @@ export const WaterTracker = memo(function WaterTracker({
             style={{
               fontFamily: 'var(--font-body)',
               fontSize: 12,
-              letterSpacing: '0.12em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
               alignSelf: 'center',
                           }}

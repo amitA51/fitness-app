@@ -42,11 +42,10 @@ export function Greeting({ weekNumber }: GreetingProps) {
         <h1
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 900,
+            fontWeight: 700,
             fontSize: 'clamp(32px, 10vw, 64px)',
             lineHeight: 0.9,
             letterSpacing: '-0.02em',
-            textTransform: 'uppercase',
             color: 'var(--color-ink-on-dark)',
             marginTop: 8,
           }}

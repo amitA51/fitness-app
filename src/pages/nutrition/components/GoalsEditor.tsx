@@ -217,7 +217,7 @@ export const GoalsEditor = memo(function GoalsEditor({
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
-              letterSpacing: '0.16em',
+              letterSpacing: '-0.01em',
                             color: 'var(--fs-accent)',
               display: 'flex',
               alignItems: 'center',

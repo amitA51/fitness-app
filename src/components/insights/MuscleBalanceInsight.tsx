@@ -60,7 +60,7 @@ export const MuscleBalanceInsight = memo(function MuscleBalanceInsight({
           insetInline: 0,
           top: 0,
           height: 3,
-          borderRadius: 0,
+          borderRadius: 12,
           background: 'var(--fs-warn)',
         }}
       />
@@ -91,7 +91,7 @@ export const MuscleBalanceInsight = memo(function MuscleBalanceInsight({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 20,
-            fontWeight: 800,
+            fontWeight: 600,
             color: 'var(--fs-warn)',
           }}
         >

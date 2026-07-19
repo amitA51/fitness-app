@@ -149,7 +149,6 @@ export const CoachBriefCard = memo(function CoachBriefCard({
         fontFamily: 'var(--font-mono)',
         fontSize: 9,
         letterSpacing: '0.1em',
-        textTransform: 'uppercase',
         color: 'var(--fs-muted)',
       }}
     >
@@ -187,8 +186,7 @@ export const CoachBriefCard = memo(function CoachBriefCard({
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-muted)',
           marginBottom: 8,
         }}
@@ -214,8 +212,7 @@ export const CoachBriefCard = memo(function CoachBriefCard({
               fontFamily: 'var(--font-mono)',
               fontSize: 12,
               fontWeight: 700,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
+              letterSpacing: '-0.01em',
               color: zoneColor(REC_ZONE[facts.recommendation]),
             }}
           >

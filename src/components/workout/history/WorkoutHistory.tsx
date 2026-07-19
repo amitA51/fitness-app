@@ -313,8 +313,7 @@ const SessionRow = memo(function SessionRow({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
+              letterSpacing: '-0.01em',
               color: today ? 'var(--fs-accent)' : 'var(--fs-muted)',
               marginBottom: 3,
             }}
@@ -325,7 +324,7 @@ const SessionRow = memo(function SessionRow({
             className="line-clamp-1"
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 17,
               lineHeight: 1.15,
               color: 'var(--fs-heading)',
@@ -429,8 +428,7 @@ const SessionRow = memo(function SessionRow({
               borderRadius: 'var(--radius-md, 8px)',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-accent-2)',
               cursor: 'pointer',
               textAlign: 'center',
@@ -458,8 +456,7 @@ const StatCard = memo(function StatCard({
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: 9,
-          letterSpacing: '0.16em',
-          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-muted)',
           marginBottom: 8,
         }}
@@ -471,7 +468,7 @@ const StatCard = memo(function StatCard({
         dir="ltr"
         style={{
           fontFamily: 'var(--font-display)',
-          fontWeight: 800,
+          fontWeight: 600,
           fontSize: 26,
           lineHeight: 1,
           color: 'var(--fs-heading)',
@@ -498,7 +495,7 @@ const MonthHeader = memo(function MonthHeader({ label, count }: { label: string;
       <span
         style={{
           fontFamily: 'var(--font-display)',
-          fontWeight: 900,
+          fontWeight: 700,
           fontSize: 26,
           color: 'var(--fs-heading)',
           letterSpacing: '-0.02em',
@@ -510,10 +507,9 @@ const MonthHeader = memo(function MonthHeader({ label, count }: { label: string;
       <span
         style={{
           fontFamily: 'var(--font-display)',
-          fontWeight: 800,
+          fontWeight: 600,
           fontSize: 13,
           color: 'var(--fs-ink)',
-          textTransform: 'uppercase',
           letterSpacing: '0.04em',
         }}
       >
@@ -555,11 +551,10 @@ function EmptyState({ compact }: { compact: boolean }) {
         <p
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 900,
+            fontWeight: 700,
             fontSize: 26,
             lineHeight: 0.95,
             color: 'var(--fs-heading)',
-            textTransform: 'uppercase',
             letterSpacing: '-0.01em',
             marginBottom: 16,
           }}
@@ -583,10 +578,9 @@ function EmptyState({ compact }: { compact: boolean }) {
       <div
         style={{
           fontFamily: 'var(--font-display)',
-          fontWeight: 800,
+          fontWeight: 600,
           fontSize: 18,
           color: 'var(--fs-ink)',
-          textTransform: 'uppercase',
           marginBottom: 6,
         }}
       >
@@ -777,8 +771,7 @@ export const WorkoutHistory = memo(function WorkoutHistory({
                 minHeight: 44,
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
               }}
             >
@@ -796,8 +789,7 @@ export const WorkoutHistory = memo(function WorkoutHistory({
                 padding: '6px 0',
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-accent-2)',
               }}
             >

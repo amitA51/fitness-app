@@ -70,7 +70,7 @@ export function StepHeader({ title, subtitle, icon }: StepHeaderProps) {
       <h2
         style={{
           fontFamily: 'var(--font-display)',
-          fontWeight: 800,
+          fontWeight: 600,
           fontSize: '26px',
           color: 'var(--fs-ink)',
           // No textTransform:uppercase — a no-op on Hebrew glyphs and a Latin-

@@ -43,7 +43,7 @@ export function ExerciseCard({ exercise, index, reduceMotion }: ExerciseCardProp
               <h3
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: 16,
                   color: 'var(--fs-ink)',
                   letterSpacing: '0.02em',

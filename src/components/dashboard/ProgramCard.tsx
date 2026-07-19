@@ -76,8 +76,7 @@ const kicker = (text: string) => (
     style={{
       fontFamily: 'var(--font-mono)',
       fontSize: 10,
-      letterSpacing: '0.18em',
-      textTransform: 'uppercase',
+      letterSpacing: '-0.01em',
       color: 'var(--fs-accent-2)',
     }}
   >
@@ -165,7 +164,7 @@ export function ProgramCard() {
             <div
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 17,
                 color: 'var(--fs-ink)',
                 lineHeight: 1.2,
@@ -191,8 +190,7 @@ export function ProgramCard() {
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-accent-2)',
               flexShrink: 0,
             }}
@@ -248,7 +246,7 @@ export function ProgramCard() {
             <span
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 17,
                 color: 'var(--fs-ink)',
                 lineHeight: 1.2,
@@ -314,7 +312,7 @@ export function ProgramCard() {
           <div
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 18,
               color: 'var(--fs-ink)',
               lineHeight: 1.2,
@@ -367,7 +365,7 @@ export function ProgramCard() {
             cursor: 'pointer',
             color: 'var(--color-ink-on-accent)',
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 15,
           }}
         >

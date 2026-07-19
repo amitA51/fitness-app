@@ -85,7 +85,7 @@ export function GoalsStep({ data, onChange, direction = 1 }: GoalsStepProps) {
               style={{
                 background:
                   data.primaryGoal === goal.value ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
-                borderRadius: 0,
+                borderRadius: 12,
               }}
             >
               <span
@@ -132,7 +132,7 @@ export function GoalsStep({ data, onChange, direction = 1 }: GoalsStepProps) {
                 style={{
                   background: 'var(--fs-primary)',
                   color: 'var(--fs-accent)',
-                  borderRadius: 0,
+                  borderRadius: 12,
                 }}
               >
                 <Check size={16} strokeWidth={3} />

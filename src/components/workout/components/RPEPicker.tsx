@@ -94,7 +94,7 @@ const RPEPicker = memo<RPEPickerProps>(
             <div
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 18,
                 color: 'var(--fs-ink)',
               }}
@@ -120,7 +120,7 @@ const RPEPicker = memo<RPEPickerProps>(
                 fontSize: 10,
                 color: 'var(--fs-accent)',
                 fontWeight: 700,
-                letterSpacing: '0.08em',
+                letterSpacing: '-0.01em',
                 padding: '4px 10px',
                 background: 'var(--fs-surface-2)',
                 borderRadius: 'var(--radius-asymmetric)',
@@ -188,7 +188,7 @@ const RPEPicker = memo<RPEPickerProps>(
                 <span
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: 22,
                     lineHeight: 1,
                     color: isActive ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
@@ -201,8 +201,7 @@ const RPEPicker = memo<RPEPickerProps>(
                     fontFamily: 'var(--font-mono)',
                     fontSize: 8,
                     color: isActive ? 'rgba(255,255,255,0.85)' : 'var(--fs-muted)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
+                    letterSpacing: '-0.01em',
                   }}
                 >
                   {RPE_LABELS[rpe as keyof typeof RPE_LABELS]?.slice(0, 4) ?? ''}
@@ -218,9 +217,8 @@ const RPEPicker = memo<RPEPickerProps>(
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 9,
-              letterSpacing: '0.18em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
-              textTransform: 'uppercase',
               fontWeight: 700,
               display: 'block',
               marginBottom: 8,

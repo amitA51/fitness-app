@@ -1,6 +1,5 @@
 import { m } from 'framer-motion';
 import { Award, ChevronLeft } from 'lucide-react';
-import { Button } from '../../../components/ui/Button';
 
 export function WelcomeStep({ onNext }: { onNext: () => void }) {
   return (
@@ -20,7 +19,7 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
           <span
             style={{
               fontFamily: '"Bricolage Grotesque", var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: '56px',
               color: 'var(--fs-accent)',
               lineHeight: 1,
@@ -53,7 +52,7 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
           transition={{ delay: 0.45 }}
           style={{
             fontFamily: '"Bricolage Grotesque", var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: '20px',
             color: 'var(--fs-ink)',
             letterSpacing: '-0.02em',
@@ -95,7 +94,7 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
         >
           <div
             className="w-10 h-10 flex items-center justify-center shrink-0"
-            style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)', borderRadius: 0 }}
+            style={{ background: 'var(--fs-primary)', color: 'var(--fs-accent)', borderRadius: 12 }}
           >
             <Award size={20} aria-hidden="true" />
           </div>
@@ -119,11 +118,11 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
         transition={{ delay: 0.75 }}
         className="px-6 pb-8 pt-4"
       >
-        <Button variant="editorial" onClick={onNext} fullWidth style={{ minHeight: '56px' }}>
+        <button type="button" onClick={onNext} className="start-workout-btn focus-ring" style={{ minHeight: 56 }}>
           בואו נתחיל
           {/* forward = left in RTL */}
           <ChevronLeft size={24} aria-hidden="true" />
-        </Button>
+        </button>
       </m.div>
     </div>
   );

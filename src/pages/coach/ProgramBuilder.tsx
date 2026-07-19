@@ -686,8 +686,7 @@ export default function ProgramBuilder({
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: 11,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-muted)',
           marginBottom: 10,
         }}
@@ -799,7 +798,7 @@ export default function ProgramBuilder({
               fontFamily: 'var(--font-body)',
               fontSize: 14,
               padding: '0 12px',
-              borderRadius: 0,
+              borderRadius: 12,
               appearance: 'auto',
             }}
           >
@@ -832,7 +831,7 @@ export default function ProgramBuilder({
             fontSize: 12,
             marginBottom: 8,
             fontFamily: 'var(--font-mono)',
-            letterSpacing: '0.08em',
+            letterSpacing: '-0.01em',
           }}
         >
           טוען ספריית תרגילים…

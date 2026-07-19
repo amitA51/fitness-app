@@ -102,9 +102,8 @@ export function CoachPage({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 11,
-                letterSpacing: '0.08em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
-                textTransform: 'uppercase',
                 margin: 0,
               }}
             >
@@ -129,8 +128,7 @@ export function Section({ title, children }: { title?: string; children: React.R
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 11,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
             marginBottom: 10,
           }}

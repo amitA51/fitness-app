@@ -58,7 +58,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
             className="uppercase"
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 900,
+              fontWeight: 700,
               fontSize: 36,
               color: 'var(--color-ink-on-dark)',
               lineHeight: 0.9,
@@ -75,7 +75,6 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
               fontSize: 10,
               letterSpacing: '0.15em',
               color: 'rgba(var(--text-on-navy-rgb),0.7)',
-              textTransform: 'uppercase',
               marginTop: 8,
             }}
           >
@@ -100,7 +99,6 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                 fontSize: 11,
                 letterSpacing: '0.15em',
                 color: 'var(--fs-accent)',
-                textTransform: 'uppercase',
               }}
             >
               {formatTime(totalDuration)}
@@ -111,7 +109,6 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                 fontSize: 10,
                 letterSpacing: '0.15em',
                 color: 'rgba(var(--text-on-navy-rgb),0.7)',
-                textTransform: 'uppercase',
               }}
             >
               סה״כ
@@ -152,7 +149,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                   style={{
                     width: 22,
                     height: 22,
-                    borderRadius: 0,
+                    borderRadius: 12,
                     border: `2px solid ${item.selected ? 'var(--color-border-strong)' : 'var(--fs-muted)'}`,
                     background: item.selected ? 'var(--fs-accent)' : 'transparent',
                     display: 'flex',
@@ -176,7 +173,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                 <span
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 15,
                     // fs-ink, not fs-primary: selected-row text was #0a0a0a on
                     // #1a1a1a in dark mode (1.1:1 — the invisible-warmup bug)
@@ -225,10 +222,9 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
             border: 'none',
             cursor: 'pointer',
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 14,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
             opacity: activeItems.length === 0 ? 0.5 : 1,
             transition: 'all 150ms',
             minHeight: 52,
@@ -259,10 +255,9 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
             border: '2px solid var(--fs-muted)',
             cursor: 'pointer',
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 13,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
             transition: 'all 150ms',
             minHeight: 48,
           }}

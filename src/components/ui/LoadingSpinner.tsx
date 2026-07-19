@@ -328,7 +328,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
           className={`${sizeMap[size].text} font-medium uppercase`}
           style={{
             fontFamily: 'var(--font-mono)',
-            letterSpacing: '0.18em',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
           }}
         >

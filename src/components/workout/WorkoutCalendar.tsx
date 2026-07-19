@@ -187,10 +187,9 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
           <h3
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 14,
               letterSpacing: '0.06em',
-              textTransform: 'uppercase',
               color: 'var(--fs-heading)',
             }}
           >
@@ -234,10 +233,9 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
           <span
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 14,
               color: 'var(--fs-heading)',
-              textTransform: 'uppercase',
               letterSpacing: '0.04em',
               minWidth: 140,
               textAlign: 'center',
@@ -401,7 +399,6 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
           fontSize: 10,
           color: 'var(--fs-muted)',
           letterSpacing: '0.1em',
-          textTransform: 'uppercase',
         }}
       >
         <span>פחות</span>
@@ -450,8 +447,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
             fontFamily: 'var(--font-mono)',
             fontSize: 11,
             color: 'var(--fs-muted)',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
           }}
         >
           אימונים החודש
@@ -459,10 +455,9 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
         <span
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 14,
             color: 'var(--fs-heading)',
-            textTransform: 'uppercase',
             letterSpacing: '0.04em',
           }}
         >

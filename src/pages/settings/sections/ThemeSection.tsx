@@ -49,7 +49,7 @@ export function ThemeSection() {
               style={{
                 backgroundColor: 'var(--fs-primary)',
                 border: '2px solid var(--fs-primary)',
-                borderRadius: 0,
+                borderRadius: 12,
               }}
             >
               <Moon size={16} style={{ color: 'var(--fs-accent)' }} strokeWidth={2.5} />

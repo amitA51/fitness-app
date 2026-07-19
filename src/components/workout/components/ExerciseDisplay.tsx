@@ -466,7 +466,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               <span
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: 21,
                   color: 'var(--fs-heading)',
                   overflow: 'hidden',
@@ -576,7 +576,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               <div
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: 18,
                   color: 'var(--fs-heading)',
                 }}
@@ -644,7 +644,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                       border: 'none',
                       color: 'var(--color-ink-on-accent)',
                       fontFamily: 'var(--font-display)',
-                      fontWeight: 800,
+                      fontWeight: 600,
                       fontSize: 14,
                       cursor: 'pointer',
                     }}
@@ -688,7 +688,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                         '1px dashed color-mix(in srgb, var(--fs-accent) 45%, var(--fs-steel))',
                       color: 'var(--fs-accent-2)',
                       fontFamily: 'var(--font-display)',
-                      fontWeight: 800,
+                      fontWeight: 600,
                       fontSize: 13,
                       letterSpacing: '0.04em',
                       cursor: 'pointer',
@@ -760,7 +760,6 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                     fontWeight: 700,
                     color: 'var(--fs-accent)',
                     letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
                   }}
                 >
                   אימון קודם:
@@ -769,7 +768,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   style={{
                     fontFamily: 'var(--font-display)',
                     fontSize: 13,
-                    fontWeight: 800,
+                    fontWeight: 600,
                     color: 'var(--fs-ink)',
                     direction: 'ltr',
                   }}

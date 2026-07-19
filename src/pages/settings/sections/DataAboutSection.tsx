@@ -9,7 +9,7 @@ export function DataAboutSection() {
       style={{
         fontFamily: 'var(--font-mono)',
         fontSize: '11px',
-        letterSpacing: '0.14em',
+        letterSpacing: '-0.01em',
         color: 'var(--fs-muted)',
       }}
     >

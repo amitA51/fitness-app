@@ -122,7 +122,7 @@ export const MealEntryCard = memo(function MealEntryCard({
           borderTop: '1px solid var(--fs-surface-2)',
           fontFamily: 'var(--font-mono)',
           fontSize: '11px',
-          letterSpacing: '0.12em',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-heading)',
                     fontVariantNumeric: 'tabular-nums',
         }}

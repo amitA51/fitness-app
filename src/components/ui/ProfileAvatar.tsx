@@ -19,7 +19,7 @@ export function ProfileAvatar({ name }: { name: string }) {
           <span
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 900,
+              fontWeight: 700,
               fontSize: '32px',
               lineHeight: 1,
               letterSpacing: '-0.02em',
@@ -35,10 +35,9 @@ export function ProfileAvatar({ name }: { name: string }) {
         <p
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: '22px',
             color: 'var(--fs-ink)',
-            textTransform: 'uppercase',
           }}
         >
           {name.trim()}

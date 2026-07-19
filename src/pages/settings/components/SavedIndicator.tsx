@@ -28,9 +28,8 @@ export function SavedIndicator({ saved }: { saved: boolean }) {
               fontFamily: 'var(--font-mono)',
               fontSize: '11px',
               fontWeight: 600,
-              letterSpacing: '0.12em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-accent)',
-              textTransform: 'uppercase',
             }}
           >
             <Check size={13} aria-hidden="true" strokeWidth={3} />

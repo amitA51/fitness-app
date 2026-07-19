@@ -97,7 +97,7 @@ const PlateCalculatorOverlay = memo<PlateCalculatorOverlayProps>(
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 20,
                 letterSpacing: '-0.02em',
               }}
@@ -185,8 +185,7 @@ const PlateCalculatorOverlay = memo<PlateCalculatorOverlayProps>(
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
               }}
             >
@@ -195,7 +194,7 @@ const PlateCalculatorOverlay = memo<PlateCalculatorOverlayProps>(
             <span
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 28,
                 direction: 'ltr',
               }}
@@ -287,8 +286,7 @@ const FieldRow = memo<{ label: string; children: React.ReactNode }>(({ label, ch
         display: 'block',
         fontFamily: 'var(--font-mono)',
         fontSize: 10,
-        letterSpacing: '0.18em',
-        textTransform: 'uppercase',
+        letterSpacing: '-0.01em',
         color: 'var(--fs-muted)',
         marginBottom: 6,
       }}
@@ -317,7 +315,7 @@ const stepperBtn: React.CSSProperties = {
   border: '1px solid var(--fs-steel)',
   borderRadius: '12px 8px 12px 8px',
   fontFamily: 'var(--font-display)',
-  fontWeight: 800,
+  fontWeight: 600,
   fontSize: 22,
   color: 'var(--fs-ink)',
   cursor: 'pointer',
@@ -364,7 +362,7 @@ const NumericStepper = memo<NumericStepperProps>(
               border: 'none',
               outline: 'none',
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 22,
               color: 'var(--fs-ink)',
               direction: 'ltr',

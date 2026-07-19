@@ -57,7 +57,6 @@ export const TrendChartCard = memo(function TrendChartCard({
               fontSize: 10,
               letterSpacing: '0.1em',
               color: 'var(--fs-muted)',
-              textTransform: 'uppercase',
             }}
           >
             {meta}

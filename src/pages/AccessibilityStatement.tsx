@@ -23,7 +23,7 @@ const PAGE_SUBTITLE_STYLE: React.CSSProperties = {
 
 const PAGE_TITLE_STYLE: React.CSSProperties = {
   fontFamily: 'var(--font-display)',
-  fontWeight: 800,
+  fontWeight: 600,
   fontSize: 26,
   lineHeight: 1.15,
   letterSpacing: '-0.01em',
@@ -37,8 +37,7 @@ const SECTION_HEADING_STYLE: React.CSSProperties = {
   fontSize: 16,
   letterSpacing: '-0.01em',
   color: 'var(--fs-ink)',
-  margin: '0 0 10px',
-  textTransform: 'uppercase' as const,
+  margin: '0 0 10px' as const,
 };
 
 const BODY_TEXT_STYLE: React.CSSProperties = {

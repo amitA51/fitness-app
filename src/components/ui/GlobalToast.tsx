@@ -150,7 +150,7 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '10px',
-              letterSpacing: '0.22em',
+              letterSpacing: '-0.01em',
               color: style.accent,
               fontWeight: 600,
               marginBottom: 2,
@@ -193,8 +193,8 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
             style={{
               fontFamily: 'var(--font-mono)',
               color: style.accent,
-              letterSpacing: '0.08em',
-              borderRadius: 0,
+              letterSpacing: '-0.01em',
+              borderRadius: 12,
               minWidth: 44,
               minHeight: 44,
               display: 'inline-flex',
@@ -214,8 +214,8 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
           style={{
             fontFamily: 'var(--font-mono)',
             color: 'var(--fs-muted)',
-            letterSpacing: '0.08em',
-            borderRadius: 0,
+            letterSpacing: '-0.01em',
+            borderRadius: 12,
             minWidth: 44,
             minHeight: 44,
             display: 'inline-flex',

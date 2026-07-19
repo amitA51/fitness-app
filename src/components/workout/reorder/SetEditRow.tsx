@@ -80,7 +80,6 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
               fontSize: 10,
               letterSpacing: '0.15em',
               color: 'var(--fs-accent)',
-              textTransform: 'uppercase',
             }}
           >
             סט {setIndex + 1} — עריכה
@@ -95,7 +94,6 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                   fontSize: 9,
                   letterSpacing: '0.15em',
                   color: 'var(--fs-muted)',
-                  textTransform: 'uppercase',
                   display: 'block',
                   marginBottom: 4,
                 }}
@@ -115,10 +113,10 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                     height: 36,
                     background: 'var(--fs-surface)',
                     border: '2px solid var(--fs-primary)',
-                    borderRadius: 0,
+                    borderRadius: 12,
                     cursor: 'pointer',
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 16,
                     color: 'var(--fs-heading)',
                   }}
@@ -140,10 +138,10 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                     height: 36,
                     background: 'var(--fs-surface)',
                     border: '2px solid var(--fs-primary)',
-                    borderRadius: 0,
+                    borderRadius: 12,
                     textAlign: 'center',
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 16,
                     color: 'var(--fs-heading)',
                     outline: 'none',
@@ -162,10 +160,10 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                     height: 36,
                     background: 'var(--fs-primary)',
                     border: '2px solid var(--fs-primary)',
-                    borderRadius: 0,
+                    borderRadius: 12,
                     cursor: 'pointer',
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 16,
                     color: 'var(--fs-accent)',
                   }}
@@ -182,7 +180,6 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                   fontSize: 9,
                   letterSpacing: '0.15em',
                   color: 'var(--fs-muted)',
-                  textTransform: 'uppercase',
                   display: 'block',
                   marginBottom: 4,
                 }}
@@ -202,10 +199,10 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                     height: 36,
                     background: 'var(--fs-surface)',
                     border: '2px solid var(--fs-primary)',
-                    borderRadius: 0,
+                    borderRadius: 12,
                     cursor: 'pointer',
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 16,
                     color: 'var(--fs-heading)',
                   }}
@@ -227,10 +224,10 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                     height: 36,
                     background: 'var(--fs-surface)',
                     border: '2px solid var(--fs-primary)',
-                    borderRadius: 0,
+                    borderRadius: 12,
                     textAlign: 'center',
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 16,
                     color: 'var(--fs-heading)',
                     outline: 'none',
@@ -249,10 +246,10 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                     height: 36,
                     background: 'var(--fs-primary)',
                     border: '2px solid var(--fs-primary)',
-                    borderRadius: 0,
+                    borderRadius: 12,
                     cursor: 'pointer',
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 16,
                     color: 'var(--fs-accent)',
                   }}
@@ -272,13 +269,12 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                 padding: '10px 16px',
                 background: 'var(--fs-surface-2)',
                 border: '2px solid var(--fs-primary)',
-                borderRadius: 0,
+                borderRadius: 12,
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 12,
                 letterSpacing: '0.06em',
-                textTransform: 'uppercase',
                 color: 'var(--fs-heading)',
               }}
             >
@@ -292,13 +288,12 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                 padding: '10px 16px',
                 background: 'var(--fs-accent)',
                 border: '2px solid var(--fs-primary)',
-                borderRadius: 0,
+                borderRadius: 12,
                 cursor: 'pointer',
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 12,
                 letterSpacing: '0.06em',
-                textTransform: 'uppercase',
                 color: 'var(--fs-heading)',
               }}
             >
@@ -318,7 +313,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
           padding: '8px 12px',
           background: isCompleted ? 'var(--color-success-muted)' : 'var(--fs-surface)',
           border: `1px solid ${isCompleted ? 'var(--color-success)' : 'var(--fs-surface-2)'}`,
-          borderRadius: 0,
+          borderRadius: 12,
           cursor: 'pointer',
           direction: 'rtl',
         }}
@@ -339,7 +334,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
           <span
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 13,
               color: 'var(--fs-heading)',
             }}
@@ -353,7 +348,6 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                 fontSize: 9,
                 letterSpacing: '0.1em',
                 color: 'var(--fs-muted)',
-                textTransform: 'uppercase',
               }}
             >
               (טרם הושלם)
@@ -365,7 +359,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
           <span
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 15,
               color: 'var(--fs-heading)',
             }}
@@ -386,7 +380,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
           <span
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 15,
               color: 'var(--fs-heading)',
             }}
@@ -417,7 +411,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                 justifyContent: 'center',
                 background: deleteConfirm ? 'rgba(196,43,43,0.12)' : 'transparent',
                 border: 'none',
-                borderRadius: 0,
+                borderRadius: 12,
                 cursor: 'pointer',
               }}
             >

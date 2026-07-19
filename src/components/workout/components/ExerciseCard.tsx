@@ -28,7 +28,7 @@ interface ExerciseCardProps {
 
 const NAME_PRIMARY_STYLE: React.CSSProperties = {
   fontFamily: 'var(--font-display)',
-  fontWeight: 800,
+  fontWeight: 600,
   fontSize: 15,
   color: 'var(--fs-heading)',
   lineHeight: 1.1,
@@ -40,12 +40,11 @@ const NAME_SECONDARY_STYLE: React.CSSProperties = {
   fontSize: 10,
   letterSpacing: '0.1em',
   color: 'var(--fs-muted)',
-  textTransform: 'uppercase',
 };
 
 const NAME_SOLO_STYLE: React.CSSProperties = {
   fontFamily: 'var(--font-display)',
-  fontWeight: 800,
+  fontWeight: 600,
   fontSize: 15,
   color: 'var(--fs-heading)',
   lineHeight: 1.1,
@@ -113,7 +112,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
               height: 24,
               background: isSelected ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
               border: `2px solid ${isSelected ? 'var(--fs-primary)' : 'var(--fs-steel)'}`,
-              borderRadius: 0,
+              borderRadius: 12,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -163,8 +162,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
-                    letterSpacing: '0.18em',
-                    textTransform: 'uppercase',
+                    letterSpacing: '-0.01em',
                     padding: '2px 8px',
                     background: isSelected
                       ? 'color-mix(in srgb, var(--fs-primary) 15%, transparent)'
@@ -184,8 +182,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
-                    letterSpacing: '0.18em',
-                    textTransform: 'uppercase',
+                    letterSpacing: '-0.01em',
                     padding: '2px 8px',
                     background: 'transparent',
                     color: isSelected ? 'var(--fs-primary)' : 'var(--fs-muted)',
@@ -204,9 +201,8 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
-                  letterSpacing: '0.12em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
-                  textTransform: 'uppercase',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 3,

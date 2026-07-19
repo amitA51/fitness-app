@@ -79,7 +79,6 @@ export const RecoveryTab = memo(function RecoveryTab({
               fontSize: 10,
               letterSpacing: '0.15em',
               color: 'var(--fs-muted)',
-              textTransform: 'uppercase',
             }}
           >
             ציון התאוששות
@@ -205,7 +204,6 @@ export const RecoveryTab = memo(function RecoveryTab({
               fontSize: 10,
               letterSpacing: '0.15em',
               color: 'var(--fs-muted)',
-              textTransform: 'uppercase',
             }}
           >
             <Activity size={14} />
@@ -277,7 +275,6 @@ export const RecoveryTab = memo(function RecoveryTab({
               fontSize: 10,
               letterSpacing: '0.15em',
               color: 'var(--fs-muted)',
-              textTransform: 'uppercase',
             }}
           >
             היסטוריית התאוששות

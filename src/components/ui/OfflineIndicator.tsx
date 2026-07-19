@@ -100,7 +100,7 @@ export function OfflineIndicator() {
           className="font-mono uppercase transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
           style={{
             fontSize: '11px',
-            letterSpacing: '0.08em',
+            letterSpacing: '-0.01em',
             fontWeight: 600,
             color: 'var(--fs-accent)',
             background: 'transparent',

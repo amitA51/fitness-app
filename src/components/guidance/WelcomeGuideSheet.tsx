@@ -71,7 +71,7 @@ export function WelcomeGuideSheet() {
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 12,
-            letterSpacing: '0.08em',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
           }}
         >
@@ -135,7 +135,7 @@ export function WelcomeGuideSheet() {
         <h3
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 'var(--text-headline)',
             color: 'var(--fs-heading)',
             margin: 0,

@@ -122,7 +122,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
           style={{
             background: 'var(--fs-surface)',
             border: '2px solid var(--fs-primary)',
-            borderRadius: 0,
+            borderRadius: 12,
             padding: '12px 44px 12px 44px',
             fontFamily: 'var(--font-body)',
             fontSize: 16 /* 16px prevents iOS auto-zoom */,
@@ -142,7 +142,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
             className="absolute start-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center cursor-pointer"
             style={{
               background: 'var(--fs-surface-2)',
-              borderRadius: 0,
+              borderRadius: 12,
               color: 'var(--fs-muted)',
             }}
             aria-label="נקה חיפוש"
@@ -216,7 +216,7 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                   <div
                     style={{
                       fontFamily: 'var(--font-display)',
-                      fontWeight: 800,
+                      fontWeight: 600,
                       fontSize: 14,
                       color: 'var(--fs-heading)',
                       textAlign: 'right',
@@ -228,9 +228,8 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
-                      letterSpacing: '0.12em',
+                      letterSpacing: '-0.01em',
                       color: 'var(--fs-muted)',
-                      textTransform: 'uppercase',
                     }}
                   >
                     {MUSCLE_LABELS[exercise.muscleGroup ?? ''] || exercise.muscleGroup}
@@ -242,9 +241,8 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
-                    letterSpacing: '0.2em',
+                    letterSpacing: '-0.01em',
                     color: 'var(--fs-accent)',
-                    textTransform: 'uppercase',
                     fontWeight: 600,
                   }}
                 >
@@ -271,9 +269,8 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.2em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-accent)',
-              textTransform: 'uppercase',
               alignSelf: 'center',
               flexShrink: 0,
             }}
@@ -291,12 +288,11 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                 // ink-on-accent: --fs-heading fails AA on the mint fill in dark.
                 color: 'var(--color-ink-on-accent)',
                 border: 'none',
-                borderRadius: 0,
+                borderRadius: 12,
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 12,
                 letterSpacing: '0.04em',
-                textTransform: 'uppercase',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 flexShrink: 0,
@@ -336,12 +332,11 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                 background: isActive ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
                 color: isActive ? 'var(--fs-surface)' : 'var(--fs-muted)',
                 border: isActive ? 'none' : '1px solid var(--color-border)',
-                borderRadius: 0,
+                borderRadius: 12,
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
                 fontWeight: 600,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 flexShrink: 0,
@@ -387,12 +382,11 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                   background: isActive ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
                   color: isActive ? 'var(--fs-surface)' : 'var(--fs-muted)',
                   border: isActive ? 'none' : '1px solid var(--color-border)',
-                  borderRadius: 0,
+                  borderRadius: 12,
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
                   fontWeight: 600,
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
+                  letterSpacing: '-0.01em',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
                   flexShrink: 0,

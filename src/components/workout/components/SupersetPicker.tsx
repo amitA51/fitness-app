@@ -125,7 +125,7 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
                 className="uppercase flex items-center gap-2"
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 900,
+                  fontWeight: 700,
                   fontSize: 24,
                   color: 'var(--color-ink-on-dark)',
                   lineHeight: 1,
@@ -139,10 +139,9 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
-                  letterSpacing: '0.12em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--color-ink-on-dark)',
                   opacity: 0.5,
-                  textTransform: 'uppercase',
                 }}
               >
                 בחר תרגילים לקיבוץ
@@ -231,9 +230,8 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
                         fontFamily: 'var(--font-mono)',
                         fontSize: 9,
                         fontWeight: 700,
-                        letterSpacing: '0.08em',
+                        letterSpacing: '-0.01em',
                         color: 'var(--fs-accent-2)',
-                        textTransform: 'uppercase',
                       }}
                     >
                       בסיס
@@ -248,7 +246,6 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
                         fontWeight: 700,
                         letterSpacing: '0.06em',
                         color: 'var(--fs-muted)',
-                        textTransform: 'uppercase',
                       }}
                     >
                       בקבוצה אחרת
@@ -275,10 +272,9 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
               color: canConfirm ? 'var(--fs-accent)' : 'var(--fs-muted)',
               padding: '16px 24px',
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 15,
               letterSpacing: '0.06em',
-              textTransform: 'uppercase',
               minHeight: 52,
               cursor: canConfirm ? 'pointer' : 'not-allowed',
             }}
@@ -296,10 +292,9 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
               border: '2px solid var(--fs-surface-2)',
               padding: '12px 24px',
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 13,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
+              letterSpacing: '-0.01em',
               minHeight: 44,
             }}
           >

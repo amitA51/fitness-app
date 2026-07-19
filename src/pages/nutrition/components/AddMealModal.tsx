@@ -382,7 +382,7 @@ export const AddMealModal = memo(function AddMealModal({
 const LIST_KICKER_STYLE: CSSProperties = {
   fontFamily: 'var(--font-mono)',
   fontSize: '10px',
-  letterSpacing: '0.16em',
+  letterSpacing: '-0.01em',
     color: 'var(--fs-muted)',
   margin: '4px 2px 2px',
 };

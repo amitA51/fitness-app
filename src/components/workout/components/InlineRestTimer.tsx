@@ -270,7 +270,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                 dir="ltr"
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 900,
+                  fontWeight: 700,
                   fontSize: 28,
                   lineHeight: 1,
                   // Final-5s recolors the number to --fs-warn (color/number change
@@ -302,7 +302,6 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                   fontSize: 10,
                   letterSpacing: '0.1em',
                   color: 'var(--fs-accent)',
-                  textTransform: 'uppercase',
                   marginTop: 2,
                   fontWeight: 700,
                   display: 'flex',
@@ -318,7 +317,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                     dir="ltr"
                     style={{
                       color: 'var(--fs-ink)',
-                      fontWeight: 800,
+                      fontWeight: 600,
                       letterSpacing: '0.02em',
                     }}
                   >
@@ -406,7 +405,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                 borderRadius: 8,
                 fontFamily: 'var(--font-mono)',
                 fontSize: 11,
-                fontWeight: 800,
+                fontWeight: 600,
                 cursor: 'pointer',
               }}
             >
@@ -435,7 +434,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
               className="kinetic-number"
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 900,
+                fontWeight: 700,
                 fontSize: 72,
                 lineHeight: 1,
                 letterSpacing: '-0.02em',
@@ -459,9 +458,8 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
-                    letterSpacing: '0.18em',
+                    letterSpacing: '-0.01em',
                     color: 'var(--fs-muted)',
-                    textTransform: 'uppercase',
                   }}
                 >
                   {nextSetHint || 'הסט הבא'}
@@ -471,7 +469,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                   className="kinetic-number"
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 24,
                     color: 'var(--fs-ink)',
                     fontVariantNumeric: 'tabular-nums',
@@ -499,10 +497,9 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                 border: 'none',
                 borderRadius: 12,
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 15,
                 letterSpacing: '0.06em',
-                textTransform: 'uppercase',
                 cursor: 'pointer',
                 transition: prefersReduced ? 'none' : 'transform 120ms ease',
               }}

@@ -153,8 +153,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
               fontFamily: 'var(--font-mono)',
               fontSize: '11px',
               fontWeight: 600,
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
             }}
           >

@@ -351,7 +351,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
-                    letterSpacing: '0.22em',
+                    letterSpacing: '-0.01em',
                     color: 'rgba(255,255,255,0.5)',
                   }}
                 >
@@ -390,7 +390,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
-                    letterSpacing: '0.22em',
+                    letterSpacing: '-0.01em',
                     color: 'rgba(255,255,255,0.5)',
                   }}
                 >
@@ -419,7 +419,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
-                    letterSpacing: '0.22em',
+                    letterSpacing: '-0.01em',
                     color: 'rgba(255,255,255,0.5)',
                   }}
                 >
@@ -450,7 +450,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
-                  letterSpacing: '0.18em',
+                  letterSpacing: '-0.01em',
                   color: 'rgba(255,255,255,0.5)',
                 }}
               >
@@ -515,7 +515,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     background: 'var(--fs-accent)',
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
-                    letterSpacing: '0.2em',
+                    letterSpacing: '-0.01em',
                     color: 'var(--fs-primary)',
                                         fontWeight: 600,
                   }}
@@ -527,7 +527,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
-                      letterSpacing: '0.18em',
+                      letterSpacing: '-0.01em',
                       color: 'var(--fs-accent)',
                                             marginBottom: 6,
                     }}
@@ -584,7 +584,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
-                    letterSpacing: '0.18em',
+                    letterSpacing: '-0.01em',
                     color: 'var(--fs-accent-2)',
                                         marginBottom: 6,
                   }}
@@ -609,7 +609,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
-                      letterSpacing: '0.12em',
+                      letterSpacing: '-0.01em',
                       color: 'var(--fs-muted)',
                                           }}
                   >
@@ -634,7 +634,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
-                  letterSpacing: '0.2em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
                                   }}
               >

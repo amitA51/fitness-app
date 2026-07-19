@@ -89,9 +89,8 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
-            letterSpacing: '0.12em',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
-            textTransform: 'uppercase',
             marginBottom: 12,
             textAlign: 'start',
           }}
@@ -162,9 +161,8 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
-                letterSpacing: '0.12em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
-                textTransform: 'uppercase',
               }}
             >
               {text.length} תווים
@@ -173,9 +171,8 @@ const NotesBottomSheet = memo<NotesBottomSheetProps>(
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
-                letterSpacing: '0.12em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
-                textTransform: 'uppercase',
               }}
             >
               Enter לשמירה

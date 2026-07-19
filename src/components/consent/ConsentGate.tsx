@@ -85,7 +85,7 @@ export function ConsentGate({ children }: { children: ReactNode }) {
           tabIndex={-1}
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: 24,
             lineHeight: 1.2,
             color: 'var(--fs-ink)',

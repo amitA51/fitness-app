@@ -76,8 +76,7 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
             gap: 6,
             fontFamily: 'var(--font-mono)',
             fontSize: 9,
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-signal)',
             fontWeight: 600,
           }}
@@ -101,8 +100,7 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 8,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
           }}
         >
@@ -150,7 +148,6 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
                   fontWeight: 400,
                   color: 'var(--fs-muted)',
                   letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
                   marginInlineEnd: 4,
                 }}
               >

@@ -144,10 +144,9 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
-                  letterSpacing: '0.22em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-accent)',
                   fontWeight: 700,
-                  textTransform: 'uppercase',
                 }}
               >
                 הגדרות
@@ -156,7 +155,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontSize: 22,
-                  fontWeight: 900,
+                  fontWeight: 700,
                   letterSpacing: '-0.01em',
                   color: 'var(--color-ink-on-dark)',
                   lineHeight: 1,
@@ -178,7 +177,7 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                 justifyContent: 'center',
                 background: 'rgba(255,255,255,0.12)',
                 border: 'none',
-                borderRadius: 0,
+                borderRadius: 12,
                 color: 'var(--color-ink-on-dark)',
                 cursor: 'pointer',
               }}

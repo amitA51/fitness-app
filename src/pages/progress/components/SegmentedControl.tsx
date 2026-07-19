@@ -81,7 +81,6 @@ export const SegmentedControl = memo(function SegmentedControl<T extends string>
               fontSize: 11,
               fontWeight: active ? 700 : 500,
               letterSpacing: '0.1em',
-              textTransform: 'uppercase',
               transition: 'color 0.15s, background 0.15s, transform 0.1s',
             }}
           >

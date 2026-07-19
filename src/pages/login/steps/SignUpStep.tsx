@@ -146,10 +146,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           transition={{ delay: 0.2 }}
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: '28px',
             color: 'var(--fs-ink)',
-            textTransform: 'uppercase',
             letterSpacing: '-0.02em',
             marginBottom: '12px',
           }}
@@ -223,7 +222,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               cursor: resendCooldown > 0 || resendStatus === 'sending' ? 'default' : 'pointer',
               fontFamily: 'var(--font-mono)',
               fontSize: '12px',
-              letterSpacing: '0.08em',
+              letterSpacing: '-0.01em',
               color: resendCooldown > 0 ? 'var(--fs-muted)' : 'var(--fs-accent)',
               opacity: resendStatus === 'sending' ? 0.6 : 1,
             }}
@@ -295,10 +294,9 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: '28px',
                 color: 'var(--fs-ink)',
-                textTransform: 'uppercase',
                 letterSpacing: '-0.02em',
                 lineHeight: 1.1,
               }}
@@ -310,8 +308,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
                 fontFamily: 'var(--font-mono)',
                 fontSize: '10px',
                 color: 'var(--fs-muted)',
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
                 marginTop: '6px',
               }}
             >
@@ -327,7 +324,6 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
                 fontSize: '9px',
                 color: 'var(--fs-muted)',
                 letterSpacing: '0.28em',
-                textTransform: 'uppercase',
               }}
             >
               פרופיל
@@ -373,7 +369,6 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
                 fontSize: '9px',
                 color: 'var(--fs-muted)',
                 letterSpacing: '0.28em',
-                textTransform: 'uppercase',
               }}
             >
               אבטחה

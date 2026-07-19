@@ -40,7 +40,7 @@ export const SliderInput = memo(function SliderInput({
         </label>
         <span
           dir="ltr"
-          style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '16px', color }}
+          style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px', color }}
         >
           {valueText}
         </span>
@@ -54,7 +54,7 @@ export const SliderInput = memo(function SliderInput({
         value={value}
         onChange={(e) => onChange(Number.parseFloat(e.target.value))}
         className="w-full h-2 appearance-none cursor-pointer"
-        style={{ accentColor: color, borderRadius: 0 }}
+        style={{ accentColor: color, borderRadius: 12 }}
         aria-valuetext={valueText}
       />
       {labels && (

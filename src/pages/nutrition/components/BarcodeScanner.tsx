@@ -472,7 +472,7 @@ const LABEL_STYLE: CSSProperties = {
 const KICKER_STYLE: CSSProperties = {
   fontFamily: 'var(--font-mono)',
   fontSize: 10,
-  letterSpacing: '0.16em',
+  letterSpacing: '-0.01em',
     color: 'var(--fs-muted)',
 };
 

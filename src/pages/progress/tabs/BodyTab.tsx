@@ -57,7 +57,6 @@ const photoKicker: React.CSSProperties = {
   fontSize: 10,
   letterSpacing: '0.15em',
   color: 'var(--fs-muted)',
-  textTransform: 'uppercase',
 };
 
 /** "אז והיום" two-up compare — earliest vs latest, dir=rtl (earlier on the right). */

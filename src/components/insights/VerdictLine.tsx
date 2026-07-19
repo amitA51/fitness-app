@@ -26,8 +26,7 @@ export function VerdictLine({ kicker, children, className }: VerdictLineProps) {
           display: 'block',
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
-          letterSpacing: '0.16em',
-          textTransform: 'uppercase',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-muted)',
           marginBottom: 6,
         }}
@@ -47,7 +46,7 @@ interface VerdictNumberProps {
 /** The single tinted, LTR number inside a VerdictLine sentence. */
 export function VerdictNumber({ value, zone = 'good' }: VerdictNumberProps) {
   return (
-    <span className="kinetic-number" dir="ltr" style={{ fontWeight: 800, color: zoneColor(zone) }}>
+    <span className="kinetic-number" dir="ltr" style={{ fontWeight: 600, color: zoneColor(zone) }}>
       {value}
     </span>
   );
