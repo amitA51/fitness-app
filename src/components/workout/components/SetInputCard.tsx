@@ -105,12 +105,12 @@ const SetInputCard = memo<SetInputCardProps>(
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: 14,
+          borderRadius: 9999,
           background: 'var(--fs-surface-2)',
-          border: '1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))',
-          fontFamily: 'var(--font-display)',
-          fontWeight: 800,
-          fontSize: 20,
+          border: 'none',
+          fontFamily: 'var(--font-body)',
+          fontWeight: 600,
+          fontSize: 22,
           color: 'var(--fs-ink)',
           cursor: value <= 0 ? 'not-allowed' : 'pointer',
           opacity: value <= 0 ? 0.45 : 1,
@@ -143,15 +143,16 @@ const SetInputCard = memo<SetInputCardProps>(
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: 14,
+          borderRadius: 9999,
           background: 'var(--fs-accent)',
-          border: '1px solid color-mix(in srgb, var(--fs-primary) 16%, var(--fs-steel))',
-          fontFamily: 'var(--font-display)',
-          fontWeight: 800,
-          fontSize: 20,
+          border: 'none',
+          fontFamily: 'var(--font-body)',
+          fontWeight: 600,
+          fontSize: 22,
           color: 'var(--color-ink-on-accent)',
           cursor: 'pointer',
           transition: prefersReduced ? 'none' : 'transform 100ms ease',
+          boxShadow: '0 4px 14px color-mix(in srgb, var(--fs-accent) 24%, transparent)',
         }}
         onPointerDown={(e) => {
           if (prefersReduced) return;
@@ -191,16 +192,13 @@ const SetInputCard = memo<SetInputCardProps>(
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          background: `
-            radial-gradient(circle at 20px 20px, color-mix(in srgb, var(--fs-accent) 12%, transparent), transparent 30px),
-            linear-gradient(135deg, var(--fs-surface-shine-strong), transparent 54%),
-            var(--fs-surface)
-          `,
-          border: '1px solid var(--fs-steel)',
-          borderRadius: 'var(--radius-asymmetric)',
-          padding: '16px 12px 12px',
+          background: 'var(--fs-surface)',
+          border: '1px solid color-mix(in srgb, var(--color-border) 85%, transparent)',
+          borderRadius: 'var(--radius-2xl)',
+          boxShadow: 'var(--elevation-1)',
+          padding: '18px 14px 14px',
           overflow: 'hidden',
-          gap: 4,
+          gap: 6,
         }}
       >
         {/* Tap target — opens the numpad for this field. Real <button> so it's
@@ -237,13 +235,11 @@ const SetInputCard = memo<SetInputCardProps>(
           {/* 1. Label (top) */}
           <span
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
-              textTransform: 'uppercase',
-              letterSpacing: '0.18em',
-              fontWeight: 700,
-              // accent-2, not accent: 9px mint on the white card is 2.1:1
-              color: 'var(--fs-accent-2)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              letterSpacing: '-0.01em',
+              fontWeight: 600,
+              color: 'var(--fs-muted)',
             }}
           >
             {label}
@@ -263,9 +259,10 @@ const SetInputCard = memo<SetInputCardProps>(
               className="kinetic-number"
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 700,
                 fontSize: 'clamp(34px, 10vw, 42px)',
                 lineHeight: 1,
+                letterSpacing: '-0.03em',
                 display: 'inline-block',
                 color: isGhostValue
                   ? 'color-mix(in srgb, var(--fs-muted) 56%, transparent)'
@@ -277,11 +274,12 @@ const SetInputCard = memo<SetInputCardProps>(
             {unit && (
               <span
                 style={{
-                  marginInlineStart: 3,
-                  fontSize: 11,
-                  fontFamily: 'var(--font-mono)',
+                  marginInlineStart: 4,
+                  fontSize: 13,
+                  fontFamily: 'var(--font-body)',
                   color: 'var(--fs-muted)',
-                  fontWeight: 600,
+                  fontWeight: 500,
+                  letterSpacing: '-0.01em',
                 }}
               >
                 {unit}
@@ -290,9 +288,7 @@ const SetInputCard = memo<SetInputCardProps>(
           </div>
         </button>
 
-        {/* 3. Ghost commit — a real <button> SIBLING of the value button (never
-            nested), so tapping it commits the previous value into this field in
-            one tap. Accent ~15% fill, weight 600, chevron affordance. */}
+        {/* 3. Ghost commit */}
         {showGhost && ghostValue && !value && (
           <button
             type="button"
@@ -304,14 +300,15 @@ const SetInputCard = memo<SetInputCardProps>(
               alignItems: 'center',
               gap: 4,
               marginTop: 2,
-              padding: '3px 9px',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
+              padding: '6px 12px',
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
               fontWeight: 600,
+              letterSpacing: '-0.01em',
               color: 'var(--fs-accent-2)',
-              background: 'color-mix(in srgb, var(--fs-accent) 15%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--fs-accent) 30%, transparent)',
-              borderRadius: 6,
+              background: 'color-mix(in srgb, var(--fs-accent) 12%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--fs-accent) 24%, transparent)',
+              borderRadius: 9999,
               cursor: 'pointer',
               transition: prefersReduced ? 'none' : 'transform 100ms ease',
             }}
@@ -326,7 +323,7 @@ const SetInputCard = memo<SetInputCardProps>(
               (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
             }}
           >
-            <ChevronUp size={11} strokeWidth={2.5} aria-hidden />
+            <ChevronUp size={12} strokeWidth={2.5} aria-hidden />
             <span dir="ltr">קודם {ghostValue}</span>
           </button>
         )}
@@ -337,25 +334,25 @@ const SetInputCard = memo<SetInputCardProps>(
             style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              gap: 6,
+              gap: 8,
               width: '100%',
-              marginTop: 8,
+              marginTop: 10,
             }}
           >
             {stepperButtons}
           </div>
         )}
 
-        {/* 5. Step hint — keeps the stepper behavior explicit without adding chrome. */}
+        {/* 5. Step hint */}
         {showButtons && (
           <span
             style={{
               marginTop: 4,
-              fontFamily: 'var(--font-mono)',
-              fontSize: 8,
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
+              fontWeight: 500,
             }}
           >
             קפיצה {incrementAmount}

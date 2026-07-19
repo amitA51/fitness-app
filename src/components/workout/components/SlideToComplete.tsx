@@ -391,12 +391,11 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       <div
         className="absolute inset-0 flex items-center justify-center pointer-events-none"
         style={{
-          fontFamily: 'var(--font-mono)',
-          fontWeight: 700,
+          fontFamily: 'var(--font-body)',
+          fontWeight: 600,
           fontSize: 15,
-          letterSpacing: '0.10em',
-          textTransform: 'uppercase',
-          color: 'var(--fs-accent)',
+          letterSpacing: '-0.01em',
+          color: 'var(--color-ink-on-dark)',
           opacity: 1 - progress * 0.85,
           transition: isDragging ? 'none' : 'opacity 200ms ease',
           padding: `0 ${THUMB_SIZE + TRACK_PAD * 4}px`,

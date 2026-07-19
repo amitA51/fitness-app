@@ -98,21 +98,21 @@ interface ExerciseDisplayProps {
 // ============================================================
 
 const coachPillBase: CSSProperties = {
-  padding: '3px 9px',
-  borderRadius: 8,
-  fontFamily: 'var(--font-mono)',
-  fontSize: 10,
-  fontWeight: 700,
-  letterSpacing: '0.04em',
+  padding: '5px 11px',
+  borderRadius: 9999,
+  fontFamily: 'var(--font-body)',
+  fontSize: 12,
+  fontWeight: 600,
+  letterSpacing: '-0.01em',
   background: 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))',
-  border: '1px solid color-mix(in srgb, var(--fs-accent) 25%, transparent)',
+  border: '1px solid color-mix(in srgb, var(--fs-accent) 22%, transparent)',
   color: 'var(--fs-accent-2)',
 };
 
 const coachPillStrong: CSSProperties = {
   ...coachPillBase,
-  background: 'color-mix(in srgb, var(--fs-accent) 22%, var(--fs-surface))',
-  border: '1px solid color-mix(in srgb, var(--fs-accent) 40%, transparent)',
+  background: 'color-mix(in srgb, var(--fs-accent) 20%, var(--fs-surface))',
+  border: '1px solid color-mix(in srgb, var(--fs-accent) 36%, transparent)',
 };
 
 // One mono prescription pill: an optional Hebrew micro-label plus a bidi-isolated

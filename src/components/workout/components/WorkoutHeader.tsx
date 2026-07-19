@@ -43,7 +43,7 @@ const MonoTimer = memo<{
         gap: 6,
         background: 'color-mix(in srgb, var(--fs-accent) 10%, var(--fs-surface))',
         padding: '2px 12px 2px 10px',
-        borderRadius: 10,
+        borderRadius: 9999,
         border: '1px solid color-mix(in srgb, var(--fs-accent) 20%, transparent)',
         direction: 'ltr',
         lineHeight: 1.2,
@@ -64,12 +64,10 @@ const MonoTimer = memo<{
       <span
         className="tabular-nums kinetic-number"
         style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 26,
+          fontFamily: 'var(--font-body)',
+          fontSize: 22,
           fontWeight: 700,
-          letterSpacing: '0.06em',
-          // accent-2, not accent: mint on the light chip is ~1.9:1 (fails AA
-          // large-text 3:1); deep teal passes in both modes, dot keeps the mint
+          letterSpacing: '-0.02em',
           color: 'var(--fs-accent-2)',
         }}
       >
@@ -122,11 +120,11 @@ const OverflowMenu = memo<{
       style={{
         background: 'var(--fs-surface)',
         color: destructive ? 'var(--color-error)' : 'var(--fs-ink)',
-        fontFamily: 'var(--font-mono)',
-        fontSize: 11,
-        letterSpacing: '0.06em',
-        borderBottom: '1px solid var(--fs-surface-2)',
-        textTransform: 'uppercase',
+        fontFamily: 'var(--font-body)',
+        fontSize: 14,
+        fontWeight: 500,
+        letterSpacing: '-0.01em',
+        borderBottom: '0.5px solid var(--color-separator)',
       }}
     >
       <span style={{ color: destructive ? 'var(--color-error)' : 'var(--fs-accent)' }}>{icon}</span>
@@ -154,9 +152,9 @@ const OverflowMenu = memo<{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: '12px 8px 12px 8px',
+          borderRadius: 9999,
           background: 'var(--fs-surface-2)',
-          border: '1px solid var(--fs-steel)',
+          border: 'none',
           color: 'var(--fs-ink)',
           cursor: 'pointer',
         }}
@@ -173,9 +171,9 @@ const OverflowMenu = memo<{
             insetInlineEnd: 0,
             minWidth: 176,
             background: 'var(--fs-surface)',
-            border: '1px solid var(--fs-steel)',
-            borderRadius: '14px 10px 14px 10px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            border: '1px solid color-mix(in srgb, var(--color-border) 90%, transparent)',
+            borderRadius: 'var(--radius-2xl)',
+            boxShadow: 'var(--elevation-3, 0 8px 28px rgba(0,0,0,0.12))',
             overflow: 'hidden',
           }}
         >
@@ -236,21 +234,22 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
       <header
         className="flex items-center justify-between w-full gap-2"
         style={{
-          background: 'var(--fs-bg)',
+          background: 'color-mix(in srgb, var(--fs-bg) 82%, transparent)',
+          backdropFilter: 'saturate(180%) blur(18px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(18px)',
           padding: '12px 16px',
-          borderBottom: '2px solid var(--fs-accent)',
+          borderBottom: '0.5px solid var(--color-separator)',
         }}
       >
         {/* Left: Brand icon + workout label */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          {/* FS brand mark — compact */}
           <div
             className="fs-brand-icon"
             style={{
               width: 30,
               height: 30,
               borderRadius: '50%',
-              border: '3px solid var(--fs-steel)',
+              border: '2px solid color-mix(in srgb, var(--fs-steel) 70%, transparent)',
               background: `
                 radial-gradient(circle, var(--fs-accent) 0 26%, transparent 27%),
                 var(--fs-primary)
@@ -260,18 +259,17 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
             aria-hidden
           />
 
-          {/* Workout label + timer (exercise name lives in hero panel below) */}
           <div style={{ minWidth: 0 }}>
             <span
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 700,
-                fontSize: 9,
-                letterSpacing: '0.16em',
-                textTransform: 'uppercase',
+                fontFamily: 'var(--font-body)',
+                fontWeight: 600,
+                fontSize: 12,
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
                 lineHeight: 1.2,
                 display: 'block',
+                marginBottom: 4,
               }}
             >
               {isPaused ? 'אימון מושהה' : 'אימון פעיל'}
@@ -304,10 +302,9 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '12px 8px 12px 8px',
-                // Paused state is unmissable: amber fill + play glyph.
+                borderRadius: 9999,
                 background: isPaused ? 'var(--fs-warn)' : 'var(--fs-surface-2)',
-                border: isPaused ? '1px solid var(--fs-warn)' : '1px solid var(--fs-steel)',
+                border: 'none',
                 color: isPaused ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
                 cursor: 'pointer',
               }}
@@ -344,14 +341,13 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: '12px 8px 12px 8px',
+              borderRadius: 9999,
               background: 'var(--fs-accent)',
               border: 'none',
-              // ink-on-accent: --fs-heading resolves near-white in dark and
-              // fails AA on the mint fill.
               color: 'var(--color-ink-on-accent)',
               cursor: isSaving ? 'wait' : 'pointer',
               opacity: isSaving ? 0.6 : 1,
+              boxShadow: '0 4px 14px color-mix(in srgb, var(--fs-accent) 28%, transparent)',
             }}
           >
             <Check size={18} strokeWidth={3} />

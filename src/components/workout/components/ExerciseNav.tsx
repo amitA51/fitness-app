@@ -1,5 +1,5 @@
-// ExerciseNav - Fresh Steel v2 Compact Nav Row
-// Prev/Next arrows + center panel (set info · position) + list button + add exercise button
+// ExerciseNav — compact polished nav for active workout
+// Prev/Next pills + center status + list + add
 
 import {
   ChevronLeft as ChevronLeftIcon,
@@ -8,7 +8,7 @@ import {
   List,
   Plus,
 } from 'lucide-react';
-import { memo, useCallback, useEffect } from 'react';
+import { type CSSProperties, memo, useCallback, useEffect } from 'react';
 import type { Exercise } from '../../../types';
 import type { SupersetGroup } from '../core/workoutTypes';
 
@@ -21,6 +21,18 @@ interface ExerciseNavProps {
   supersetGroups?: SupersetGroup[];
 }
 
+const iconBtnBase: CSSProperties = {
+  width: 44,
+  height: 44,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderRadius: 9999,
+  border: 'none',
+  flexShrink: 0,
+  transition: 'transform 150ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms, background 150ms',
+};
+
 const ExerciseNav = memo<ExerciseNavProps>(
   ({ exercises, currentIndex, onChangeExercise, onOpenDrawer, onAddExercise, supersetGroups }) => {
     const canGoPrev = currentIndex > 0;
@@ -29,8 +41,6 @@ const ExerciseNav = memo<ExerciseNavProps>(
     const totalSets = currentExercise?.sets?.length || 0;
     const completedSets = currentExercise?.sets?.filter((s) => s.completedAt).length || 0;
 
-    // Superset membership of the current exercise (for the nav badge): which
-    // group it belongs to and its 1-based position within that group.
     const supersetGroup = currentExercise?.id
       ? supersetGroups?.find((g) => g.exercises.includes(currentExercise.id))
       : undefined;
@@ -49,8 +59,6 @@ const ExerciseNav = memo<ExerciseNavProps>(
     const handleKeyDown = useCallback(
       (e: KeyboardEvent) => {
         if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-        // Don't swap the exercise behind an open overlay (numpad, RPE sheet,
-        // reorder/superset) — arrow keys belong to the modal while it is up.
         if (document.querySelector('[role="dialog"],[aria-modal="true"]')) return;
         if (e.key === 'ArrowRight' && canGoPrev) {
           onChangeExercise(currentIndex - 1);
@@ -67,14 +75,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
     }, [handleKeyDown]);
 
     return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-        }}
-      >
-        {/* Prev arrow */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button
           type="button"
           onClick={(e) => {
@@ -85,39 +86,32 @@ const ExerciseNav = memo<ExerciseNavProps>(
           }}
           disabled={!canGoPrev}
           aria-label="תרגיל קודם"
-          className="active:scale-[0.93] transition-transform"
+          className="active:scale-[0.93] focus-ring"
           style={{
-            width: 42,
-            height: 42,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '12px 8px 12px 8px',
+            ...iconBtnBase,
             background: canGoPrev ? 'var(--fs-surface)' : 'var(--fs-surface-2)',
-            border: '1px solid var(--fs-steel)',
+            boxShadow: canGoPrev ? 'var(--elevation-1)' : 'none',
             color: canGoPrev ? 'var(--fs-ink)' : 'var(--fs-muted)',
             cursor: canGoPrev ? 'pointer' : 'not-allowed',
-            opacity: canGoPrev ? 1 : 0.3,
-            transition:
-              'background-color 150ms, color 150ms, transform 150ms cubic-bezier(0.4, 0, 0.2, 1)',
-            flexShrink: 0,
+            opacity: canGoPrev ? 1 : 0.35,
           }}
         >
-          <ChevronRightIcon size={16} strokeWidth={2.5} />
+          <ChevronRightIcon size={18} strokeWidth={2.25} />
         </button>
 
-        {/* Center panel */}
         <div
           style={{
             flex: 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            height: 42,
-            padding: '0 10px',
-            background: 'var(--fs-primary)',
-            borderRadius: '12px 8px 12px 8px',
+            minHeight: 44,
+            padding: '8px 12px',
+            background: 'var(--fs-surface)',
+            borderRadius: 9999,
             gap: 10,
+            boxShadow: 'var(--elevation-1)',
+            border: '1px solid color-mix(in srgb, var(--color-border) 80%, transparent)',
           }}
         >
           {supersetGroup && (
@@ -125,41 +119,40 @@ const ExerciseNav = memo<ExerciseNavProps>(
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 3,
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '0.04em',
-                color: 'var(--fs-accent)',
-                fontWeight: 800,
-                textTransform: 'uppercase',
+                gap: 4,
+                fontFamily: 'var(--font-body)',
+                fontSize: 12,
+                letterSpacing: '-0.01em',
+                color: 'var(--fs-accent-2)',
+                fontWeight: 600,
               }}
               aria-label={`סופרסט, תרגיל ${supersetPosition} מתוך ${supersetGroup.exercises.length}`}
             >
-              <Link2 size={11} strokeWidth={3} />
+              <Link2 size={12} strokeWidth={2.5} />
               {supersetPosition}/{supersetGroup.exercises.length}
             </span>
           )}
           {totalSets > 0 && (
             <span
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 12,
-                letterSpacing: '0.06em',
-                color: 'rgba(255,255,255,0.85)',
-                fontWeight: 700,
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                letterSpacing: '-0.01em',
+                color: 'var(--fs-ink)',
+                fontWeight: 600,
               }}
             >
               סט {completedSets}/{totalSets}
             </span>
           )}
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>·</span>
+          <span style={{ color: 'var(--fs-muted)', fontSize: 13 }}>·</span>
           <span
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: '0.06em',
-              color: 'rgba(255,255,255,0.45)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: '-0.01em',
+              color: 'var(--fs-muted)',
               direction: 'ltr',
             }}
           >
@@ -167,7 +160,6 @@ const ExerciseNav = memo<ExerciseNavProps>(
           </span>
         </div>
 
-        {/* Next arrow */}
         <button
           type="button"
           onClick={(e) => {
@@ -178,28 +170,19 @@ const ExerciseNav = memo<ExerciseNavProps>(
           }}
           disabled={!canGoNext}
           aria-label="תרגיל הבא"
-          className="active:scale-[0.93] transition-transform"
+          className="active:scale-[0.93] focus-ring"
           style={{
-            width: 42,
-            height: 42,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '12px 8px 12px 8px',
+            ...iconBtnBase,
             background: canGoNext ? 'var(--fs-surface)' : 'var(--fs-surface-2)',
-            border: '1px solid var(--fs-steel)',
+            boxShadow: canGoNext ? 'var(--elevation-1)' : 'none',
             color: canGoNext ? 'var(--fs-ink)' : 'var(--fs-muted)',
             cursor: canGoNext ? 'pointer' : 'not-allowed',
-            opacity: canGoNext ? 1 : 0.3,
-            transition:
-              'background-color 150ms, color 150ms, transform 150ms cubic-bezier(0.4, 0, 0.2, 1)',
-            flexShrink: 0,
+            opacity: canGoNext ? 1 : 0.35,
           }}
         >
-          <ChevronLeftIcon size={16} strokeWidth={2.5} />
+          <ChevronLeftIcon size={18} strokeWidth={2.25} />
         </button>
 
-        {/* List button */}
         <button
           type="button"
           onClick={(e) => {
@@ -207,25 +190,17 @@ const ExerciseNav = memo<ExerciseNavProps>(
             onOpenDrawer();
           }}
           aria-label="רשימת תרגילים"
-          className="active:scale-[0.93] transition-transform"
+          className="active:scale-[0.93] focus-ring"
           style={{
-            width: 42,
-            height: 42,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '12px 8px 12px 8px',
+            ...iconBtnBase,
             background: 'var(--fs-surface-2)',
-            border: '1px solid var(--fs-steel)',
             color: 'var(--fs-ink)',
             cursor: 'pointer',
-            flexShrink: 0,
           }}
         >
-          <List size={16} strokeWidth={2.5} />
+          <List size={17} strokeWidth={2.25} />
         </button>
 
-        {/* Add exercise button */}
         {onAddExercise && (
           <button
             type="button"
@@ -234,28 +209,13 @@ const ExerciseNav = memo<ExerciseNavProps>(
               onAddExercise();
             }}
             aria-label="הוסף תרגיל"
+            className="active:scale-[0.93] focus-ring"
             style={{
-              width: 42,
-              height: 42,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '12px 8px 12px 8px',
+              ...iconBtnBase,
               background: 'var(--fs-accent)',
-              border: '1px solid color-mix(in srgb, var(--fs-primary) 20%, var(--fs-steel))',
               color: 'var(--color-ink-on-accent)',
               cursor: 'pointer',
-              flexShrink: 0,
-              transition: 'transform 100ms ease',
-            }}
-            onPointerDown={(e) => {
-              (e.currentTarget as HTMLElement).style.transform = 'scale(0.93)';
-            }}
-            onPointerUp={(e) => {
-              (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-            }}
-            onPointerLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+              boxShadow: '0 6px 16px color-mix(in srgb, var(--fs-accent) 28%, transparent)',
             }}
           >
             <Plus size={18} strokeWidth={2.5} />
