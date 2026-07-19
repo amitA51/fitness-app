@@ -180,9 +180,10 @@ export const AddMealModal = memo(function AddMealModal({
                       {food.name}
                     </span>
                     <div className="flex items-center gap-2 mt-1.5">
-                      <button
+                      <m.button
                         type="button"
                         onClick={() => onServingsChange(food.id, -0.5)}
+                        whileTap={{ scale: 0.94 }}
                         style={{
                           width: '44px',
                           height: '44px',
@@ -200,7 +201,7 @@ export const AddMealModal = memo(function AddMealModal({
                         aria-label="הפחת חצי מנה"
                       >
                         −
-                      </button>
+                      </m.button>
                       <span
                         style={{
                           fontFamily: 'var(--font-mono)',
@@ -214,9 +215,10 @@ export const AddMealModal = memo(function AddMealModal({
                       >
                         {food.servings}
                       </span>
-                      <button
+                      <m.button
                         type="button"
                         onClick={() => onServingsChange(food.id, 0.5)}
+                        whileTap={{ scale: 0.94 }}
                         style={{
                           width: '44px',
                           height: '44px',
@@ -234,7 +236,7 @@ export const AddMealModal = memo(function AddMealModal({
                         aria-label="הוסף חצי מנה"
                       >
                         +
-                      </button>
+                      </m.button>
                     </div>
                   </div>
                   <div className="text-end">

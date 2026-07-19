@@ -185,6 +185,7 @@ const DropSetSheet = memo<DropSetSheetProps>(
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <button
                     type="button"
+                    className="transition-transform active:scale-[0.94]"
                     style={stepBtn}
                     aria-label="הפחת משקל"
                     onClick={() =>
@@ -208,6 +209,7 @@ const DropSetSheet = memo<DropSetSheetProps>(
                   />
                   <button
                     type="button"
+                    className="transition-transform active:scale-[0.94]"
                     style={stepBtn}
                     aria-label="הגדל משקל"
                     onClick={() =>
@@ -228,6 +230,7 @@ const DropSetSheet = memo<DropSetSheetProps>(
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <button
                     type="button"
+                    className="transition-transform active:scale-[0.94]"
                     style={stepBtn}
                     aria-label="הפחת חזרות"
                     onClick={() => updateLeg(index, 'reps', leg.reps - 1)}
@@ -244,6 +247,7 @@ const DropSetSheet = memo<DropSetSheetProps>(
                   />
                   <button
                     type="button"
+                    className="transition-transform active:scale-[0.94]"
                     style={stepBtn}
                     aria-label="הגדל חזרות"
                     onClick={() => updateLeg(index, 'reps', leg.reps + 1)}

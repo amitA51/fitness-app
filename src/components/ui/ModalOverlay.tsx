@@ -1,9 +1,17 @@
-import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import {
+  AnimatePresence,
+  animate,
+  m,
+  useDragControls,
+  useMotionValue,
+  useReducedMotion,
+} from 'framer-motion';
 import type React from 'react';
-import { useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Z_INDEX } from '../../constants/zIndex';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { triggerHapticEffect } from '../../utils/haptics';
 
 type ZLevel = 'default' | 'high' | 'ultra' | 'extreme';
 type BlurLevel = 'none' | 'sm' | 'md' | 'xl';
@@ -77,6 +85,14 @@ const blurPxMap: Record<BlurLevel, string | undefined> = {
   xl: 'blur(24px)',
 };
 
+// Apple's exponential-decay momentum projection (Designing Fluid Interfaces):
+// where a flick would come to rest, so a throw dismisses even from a small drag.
+// Module-scope pure function — stable across renders, no hook dependency needed.
+const projectMomentum = (velocity: number): number => {
+  const decel = 0.995;
+  return ((velocity / 1000) * decel) / (1 - decel);
+};
+
 /**
  * Reusable modal overlay component with consistent styling.
  *
@@ -134,6 +150,79 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
   const contentDuration = prefersReduced ? 0 : 0.42;
   const premiumEase: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
+  // ── Bottom-sheet drag-to-dismiss ─────────────────────────────────────────
+  // A grab-and-drag on the sheet handle (any element marked
+  // [data-sheet-drag-handle]) tracks the finger 1:1 downward, rubber-bands
+  // upward, and on release either projects momentum to dismiss or springs home
+  // carrying the release velocity — the native iOS sheet feel. The drag lives on
+  // an INNER layer so the outer layer's enter/exit slide stays framer-managed and
+  // the two transforms never fight; the scrollable body keeps `pan-y` so content
+  // still scrolls (only the handle initiates a drag). Interruptible by design:
+  // a new grab re-starts from the live transform. Skill §2/§3/§5/§6/§9/§13.
+  const dragControls = useDragControls();
+  const sheetY = useMotionValue(0);
+  const dismissArmedRef = useRef(false);
+
+  // Reset the drag offset before a fresh open so a prior drag-dismiss doesn't
+  // leave the sheet pre-offset on reopen. Layout effect → no painted flash.
+  useLayoutEffect(() => {
+    if (isOpen) {
+      sheetY.set(0);
+      dismissArmedRef.current = false;
+    }
+  }, [isOpen, sheetY]);
+
+  const measureSheetHeight = useCallback((): number => {
+    const measured = contentRef.current?.offsetHeight;
+    if (measured && measured > 0) return measured;
+    return typeof window !== 'undefined' ? window.innerHeight * 0.85 : 600;
+  }, []);
+
+  const startSheetDrag = useCallback(
+    (e: React.PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[data-sheet-drag-handle]')) {
+        dismissArmedRef.current = false;
+        dragControls.start(e);
+      }
+    },
+    [dragControls]
+  );
+
+  // One selection tick the moment the drag passes the dismiss threshold — the
+  // causal "release now to close" beat, fired on the crossing frame only (§13).
+  const handleSheetDrag = useCallback(() => {
+    if (!onClose) return;
+    const armed = sheetY.get() > measureSheetHeight() * 0.3;
+    if (armed !== dismissArmedRef.current) {
+      dismissArmedRef.current = armed;
+      if (armed) triggerHapticEffect('selection');
+    }
+  }, [onClose, sheetY, measureSheetHeight]);
+
+  const handleSheetDragEnd = useCallback(
+    (_e: unknown, info: { offset: { y: number }; velocity: { y: number } }) => {
+      const height = measureSheetHeight();
+      const projected = info.offset.y + projectMomentum(info.velocity.y);
+      if (onClose && (projected > height * 0.42 || info.velocity.y > 850)) {
+        // Exit animates the outer layer from its CURRENT presentation value, so
+        // the drag flows straight into the dismiss with no jump (§3).
+        onClose();
+        return;
+      }
+      // Snap home carrying the release velocity (§5); a whisper of settle because
+      // a flick preceded it (§4). Interrupted cleanly by the next grab.
+      animate(sheetY, 0, {
+        type: 'spring',
+        stiffness: 480,
+        damping: 40,
+        velocity: info.velocity.y,
+      });
+      dismissArmedRef.current = false;
+    },
+    [onClose, sheetY, measureSheetHeight]
+  );
+
   // Use focus trap for accessibility - trap focus on the content, not the backdrop
   useFocusTrap(contentRef, {
     isOpen: isOpen && trapFocus,
@@ -155,6 +244,21 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
   const isBottomSheet = variant === 'bottomSheet';
   const isFullscreen = variant === 'fullscreen';
   const isNone = variant === 'none';
+
+  // Bottom sheets enter/exit on a critically-damped spring (calm, no overshoot on
+  // a non-gesture open — §4); other variants keep the editorial ease. Reduced
+  // motion collapses to an instant cross-fade (§14). The drag adds its own
+  // velocity-aware spring on release (see handleSheetDragEnd).
+  const contentTransition = isBottomSheet
+    ? prefersReduced
+      ? { duration: 0 }
+      : {
+          type: 'spring' as const,
+          bounce: 0,
+          duration: Math.max(animationDuration, 0.45),
+          opacity: { duration: 0.3, ease: premiumEase },
+        }
+    : { duration: contentDuration, ease: premiumEase };
 
   // Position classes based on variant
   const positionClasses = isBottomSheet
@@ -225,10 +329,7 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
             initial={contentAnimation.initial}
             animate={contentAnimation.animate}
             exit={contentAnimation.exit}
-            transition={{
-              duration: isBottomSheet ? animationDuration : contentDuration,
-              ease: isBottomSheet ? [0.32, 0.72, 0, 1] : premiumEase,
-            }}
+            transition={contentTransition}
             className={`${useGlassContent ? 'glass-surface' : ''} ${
               isBottomSheet ? 'w-full max-w-lg' : isFullscreen ? 'w-full h-full' : ''
             }`.trim()}
@@ -246,7 +347,28 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
             aria-labelledby={ariaLabelledBy}
             aria-describedby={ariaDescribedBy}
           >
-            {children}
+            {isBottomSheet && !prefersReduced ? (
+              // Inner drag layer — 1:1 downward, rubber-band up, velocity handoff on
+              // release. Keeps `pan-y` so the sheet body still scrolls; only a
+              // [data-sheet-drag-handle] pointer-down (handle/title) starts a drag.
+              <m.div
+                className="w-full"
+                style={{ y: sheetY, touchAction: 'pan-y' }}
+                drag="y"
+                dragControls={dragControls}
+                dragListener={false}
+                dragConstraints={{ top: 0 }}
+                dragElastic={0.08}
+                dragMomentum={false}
+                onPointerDown={startSheetDrag}
+                onDrag={handleSheetDrag}
+                onDragEnd={handleSheetDragEnd}
+              >
+                {children}
+              </m.div>
+            ) : (
+              children
+            )}
           </m.div>
         </m.div>
       )}

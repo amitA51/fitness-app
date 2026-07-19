@@ -43,30 +43,25 @@ export const DashboardHeader = memo(function DashboardHeader({
         position: 'sticky',
         top: 0,
         zIndex: 20,
-        background: 'var(--fs-bg)',
+        background: 'color-mix(in srgb, var(--fs-bg) 78%, transparent)',
+        backdropFilter: 'saturate(180%) blur(20px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
       }}
       aria-label="כותרת לוח הבקרה"
     >
-      {/* Gradient underline — replaces the flat 2px accent border with a
-          mint→teal sweep + soft accent shadow. Horizontal gradient reads
-          identically in RTL/LTR. Gentle scaleX fade-in from the start edge;
-          snaps in under reduced-motion. */}
+      {/* Hairline bottom edge — Apple nav separator */}
       <m.span
         aria-hidden="true"
-        initial={reduced ? false : { opacity: 0, scaleX: 0 }}
-        animate={{ opacity: 1, scaleX: 1 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        initial={reduced ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         style={{
           position: 'absolute',
           insetInlineStart: 0,
           insetInlineEnd: 0,
           bottom: 0,
-          height: 2,
-          // Symmetric wipe origin so the entrance is identical in RTL and LTR
-          // (logical transform-origin keywords aren't valid CSS).
-          transformOrigin: 'center',
-          background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
-          boxShadow: '0 1px 6px color-mix(in srgb, var(--fs-accent) 40%, transparent)',
+          height: '0.5px',
+          background: 'var(--color-separator)',
         }}
       />
       <div className="flex-1 min-w-0">
@@ -74,10 +69,11 @@ export const DashboardHeader = memo(function DashboardHeader({
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: 13,
-            fontWeight: 500,
+            fontWeight: 400,
             color: 'var(--fs-muted)',
             margin: 0,
-            lineHeight: 1.4,
+            lineHeight: 1.35,
+            letterSpacing: '-0.01em',
           }}
         >
           {todayFull}
@@ -87,10 +83,10 @@ export const DashboardHeader = memo(function DashboardHeader({
               <span
                 style={{
                   color: 'var(--fs-accent)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                 }}
               >
-                ● פעיל היום
+                פעיל היום
               </span>
             </>
           )}
@@ -99,10 +95,10 @@ export const DashboardHeader = memo(function DashboardHeader({
         <h1
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
-            fontSize: 26,
-            lineHeight: 1.15,
-            letterSpacing: '-0.01em',
+            fontWeight: 600,
+            fontSize: 28,
+            lineHeight: 1.12,
+            letterSpacing: '-0.022em',
             color: 'var(--fs-ink)',
             margin: '4px 0 0',
           }}
@@ -112,9 +108,9 @@ export const DashboardHeader = memo(function DashboardHeader({
         </h1>
         <p
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 11,
-            letterSpacing: '0.06em',
+            fontFamily: 'var(--font-body)',
+            fontSize: 13,
+            letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
             margin: '6px 0 0',
           }}
@@ -127,12 +123,12 @@ export const DashboardHeader = memo(function DashboardHeader({
         aria-label="הגדרות"
         className="flex-shrink-0 flex items-center justify-center w-10 h-10 mt-1 transition-colors hover:opacity-80 active:scale-95"
         style={{
-          background: 'var(--fs-surface)',
-          borderRadius: '12px',
-          border: '1px solid var(--fs-surface-2)',
+          background: 'var(--fs-surface-2)',
+          borderRadius: 9999,
+          border: 'none',
         }}
       >
-        <Settings size={18} style={{ color: 'var(--fs-muted)' }} aria-hidden="true" />
+        <Settings size={18} style={{ color: 'var(--fs-ink)' }} aria-hidden="true" />
       </Link>
     </header>
   );

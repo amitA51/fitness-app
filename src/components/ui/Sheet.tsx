@@ -67,8 +67,15 @@ export const Sheet: React.FC<SheetProps> = ({
           maxHeight: '85vh',
         }}
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-1 shrink-0" aria-hidden="true">
+        {/* Drag handle — grab here (or the title) to drag the sheet down to
+            dismiss. `touch-action: none` lets the pointer drag win over scroll;
+            ModalOverlay reads the [data-sheet-drag-handle] marker to start it. */}
+        <div
+          data-sheet-drag-handle
+          className="flex justify-center pt-3 pb-2 shrink-0"
+          style={{ touchAction: 'none', cursor: 'grab' }}
+          aria-hidden="true"
+        >
           <div
             style={{
               width: 36,
@@ -86,6 +93,7 @@ export const Sheet: React.FC<SheetProps> = ({
         >
           <h2
             id={titleId}
+            data-sheet-drag-handle
             className="font-bold"
             style={{
               fontFamily: 'var(--font-display)',
@@ -93,6 +101,8 @@ export const Sheet: React.FC<SheetProps> = ({
               color: 'var(--fs-heading)',
               textAlign: 'start',
               margin: 0,
+              touchAction: 'none',
+              cursor: 'grab',
             }}
           >
             {title}

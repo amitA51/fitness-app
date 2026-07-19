@@ -1,4 +1,6 @@
 /** iOS-style toggle switch — 32px visual track centered in a ≥44px tap area */
+import { triggerHaptic } from '../../utils/haptics';
+
 interface SettingsToggleProps {
   checked: boolean;
   onChange: () => void;
@@ -20,7 +22,14 @@ export function SettingsToggle({
       aria-label={label}
       aria-checked={checked}
       aria-disabled={disabled || undefined}
-      onClick={disabled ? undefined : onChange}
+      onClick={
+        disabled
+          ? undefined
+          : () => {
+              triggerHaptic('light'); // meaningful snap on the deliberate toggle
+              onChange();
+            }
+      }
       className="focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:outline-none"
       style={{
         // Tap target ≥44×44 (a11y); the visual track inside stays ~32px tall.

@@ -188,11 +188,12 @@ const TabVisual = memo(function TabVisual({
         {badgeCount > 0 && <Badge count={badgeCount} />}
       </span>
       <span
-        className="font-mono text-[10px] leading-none uppercase transition-colors inline-flex items-center gap-1"
+        className="text-[10px] leading-none transition-colors inline-flex items-center gap-1"
         style={{
+          fontFamily: 'var(--font-body)',
           color: isActive ? 'var(--nav-pill-text)' : 'var(--nav-label-inactive)',
           fontWeight: isActive ? 600 : 500,
-          letterSpacing: '0.08em',
+          letterSpacing: '-0.01em',
         }}
       >
         {isActive && (
@@ -505,8 +506,8 @@ function BottomNav() {
         style={{
           contain: 'layout style paint',
           background: 'var(--nav-bg)',
-          backdropFilter: 'blur(20px) saturate(1.4)',
-          WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+          backdropFilter: 'saturate(180%) blur(20px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
           borderTop: '1px solid var(--nav-border)',
           boxShadow: 'var(--nav-shadow)',
         }}
@@ -633,7 +634,7 @@ function BottomNav() {
                           e.preventDefault();
                           handleMoreNavigate(path);
                         }}
-                        className="flex items-center gap-3 w-full min-h-[52px] px-4 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
+                        className="flex items-center gap-3 w-full min-h-[52px] px-4 py-2 transition-colors transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
                         style={{
                           background: isActive
                             ? 'var(--fs-overlay-active)'

@@ -114,10 +114,9 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
       if (action.isDisabled) return;
       hapticSuccess();
       closeMenu();
-      // Delay action slightly to let menu animate out
-      setTimeout(() => {
-        action.onClick();
-      }, 100);
+      // Fire synchronously — AnimatePresence still animates the menu out on
+      // unmount, so there's no need to defer the action (no artificial latency).
+      action.onClick();
     },
     [hapticSuccess, closeMenu]
   );
@@ -307,6 +306,9 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
                 style={{
                   left: menuPosition.x,
                   top: menuPosition.y,
+                  // Scale in/out from the top so the menu emanates from the
+                  // finger/anchor instead of ballooning from its own center.
+                  transformOrigin: 'top center',
                   background: 'color-mix(in srgb, var(--fs-surface) 95%, transparent)',
                   backdropFilter: 'blur(24px)',
                   WebkitBackdropFilter: 'blur(24px)',

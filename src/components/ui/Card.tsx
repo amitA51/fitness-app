@@ -23,7 +23,7 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: CardVariant;
   /** Adds hover-lift, press-scale, pointer cursor, and the magnetic-card feel. */
   interactive?: boolean;
-  /** Use the brand asymmetric radius (22/16/22/16) instead of the rounded default. */
+  /** Use the brand continuous card radius (token name kept for call-site compatibility). */
   asymmetric?: boolean;
   /** Remove the default internal padding (24px). */
   noPadding?: boolean;
@@ -33,17 +33,17 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 const variantStyle: Record<CardVariant, React.CSSProperties> = {
   elevated: {
     background: 'var(--fs-surface)',
-    border: '1px solid var(--fs-surface-2)',
+    border: '1px solid var(--color-border)',
     boxShadow: 'var(--shadow-card)',
   },
   sunken: {
     background: 'var(--fs-bg)',
-    border: '1px solid var(--fs-surface-2)',
+    border: '1px solid var(--color-border)',
     boxShadow: 'var(--shadow-inner)',
   },
   floating: {
     background: 'var(--fs-surface)',
-    border: '1px solid var(--fs-surface-2)',
+    border: '1px solid transparent',
     boxShadow: 'var(--shadow-elevated)',
   },
   // `glass` pulls its background/border/shadow from the .glass-surface class.

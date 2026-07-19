@@ -27,18 +27,14 @@ html {
 }
 
 body {
-  background: linear-gradient(135deg, var(--fs-body-overlay), transparent 44%),
-    repeating-linear-gradient(90deg, var(--fs-grid-line) 0 1px, transparent 1px 28px),
-    repeating-linear-gradient(0deg, var(--fs-grid-line) 0 1px, transparent 1px 28px),
-    radial-gradient(circle at 86% 10%, var(--fs-mesh-accent), transparent 34%),
-    radial-gradient(circle at 12% 18%, var(--fs-mesh-signal), transparent 30%), var(--fs-bg);
+  background: var(--fs-bg);
   color: var(--color-text);
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  line-height: 1.65;
+  line-height: 1.47;
 }
 
 .app-shell {
@@ -58,18 +54,16 @@ body {
   position: absolute;
   top: 12px;
   inset-inline-start: 12px;
-  /* Action-accent chip with its paired ink (AA in both light and dark —
-     ~8.9:1 / 11:1). The previous --fs-signal (mustard) on --fs-primary failed
-     contrast against the near-black masthead in dark mode. */
+  /* Action-accent chip with its paired ink (AA in both light and dark). */
   background: var(--fs-accent);
   color: var(--color-ink-on-accent);
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.1rem;
   z-index: 110;
-  font-family: var(--font-display);
-  font-weight: var(--font-extrabold);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-family: var(--font-body);
+  font-weight: var(--font-semibold);
+  letter-spacing: -0.01em;
   text-decoration: none;
+  border-radius: var(--radius-full);
   transform: translateY(-110%);
   transition: transform var(--duration-fast) ease;
 }
@@ -931,14 +925,14 @@ body {
   contain-intrinsic-size: auto 200px;
 }
 
-/* GPU acceleration for animated elements */
+/* GPU acceleration for animated elements — only genuinely-looping motion keeps a
+   standing compositor layer. One-shot entrance classes (.animate-stagger /
+   -slide-up / -fade-scale / -scale-in) were dropped: a permanent will-change pins
+   every revealed row to its own layer forever after its single animation ends,
+   which is dead memory across long lists (§3/§11). */
 .animate-shimmer,
 .animate-spin,
-.animate-float,
-.animate-stagger,
-.animate-slide-up,
-.animate-fade-scale,
-.animate-scale-in {
+.animate-float {
   will-change: transform, opacity;
 }
 

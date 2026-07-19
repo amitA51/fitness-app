@@ -94,6 +94,7 @@ export const WeeklyGrid = memo(function WeeklyGrid({
         <button
           type="button"
           onClick={onPrevWeek}
+          className="active:scale-[0.96] transition-transform"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -167,6 +168,7 @@ export const WeeklyGrid = memo(function WeeklyGrid({
             type="button"
             onClick={onNextWeek}
             disabled={weekOffset >= 0}
+            className="active:scale-[0.96] transition-transform"
             style={{
               display: 'flex',
               alignItems: 'center',

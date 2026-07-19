@@ -68,10 +68,10 @@ const variantStyles: Record<ButtonVariant, string> = {
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 
-  // Secondary — surface fill, border, adaptive text
+  // Secondary — surface fill, hairline border, adaptive text
   secondary: `
     bg-[var(--fs-surface)] text-[var(--fs-heading)]
-    border-2 border-[var(--color-border-strong)]
+    border border-[var(--color-border-strong)]
     hover:bg-[var(--fs-surface-2)]
     active:bg-[var(--fs-surface-2)]
     disabled:opacity-40 disabled:cursor-not-allowed
@@ -88,7 +88,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   // Glass — surface translucent, adaptive text
   glass: `
     bg-[var(--fs-surface)]/80 backdrop-blur-md text-[var(--fs-heading)]
-    border border-[var(--fs-surface-2)]
+    border border-[var(--color-border)]
     hover:bg-[var(--fs-surface-2)]
     active:bg-[var(--fs-surface-2)]
     disabled:opacity-40 disabled:cursor-not-allowed
@@ -104,8 +104,8 @@ const variantStyles: Record<ButtonVariant, string> = {
 
   // Pill — compact tag-style, adaptive text
   pill: `
-    bg-[var(--fs-surface)] text-[var(--fs-heading)]
-    border-2 border-[var(--color-border-strong)]
+    bg-[var(--fs-surface-2)] text-[var(--fs-heading)]
+    border border-transparent
     hover:bg-[var(--fs-accent)] hover:text-[var(--color-ink-on-accent)]
     active:bg-[var(--fs-accent)]
     disabled:opacity-40 disabled:cursor-not-allowed
@@ -151,30 +151,30 @@ const variantStyles: Record<ButtonVariant, string> = {
 type EditorialVariant = 'editorial' | 'editorial-secondary' | 'editorial-ghost';
 
 const EDITORIAL_BASE =
-  'h-[52px] px-6 text-base font-bold tracking-[0.04em] transition-all duration-150 ' +
+  'h-[52px] px-6 text-[17px] font-semibold tracking-[-0.01em] transition-all duration-150 ' +
   'focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 ' +
   'active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 ' +
   'inline-flex items-center justify-center gap-3 cursor-pointer';
 
 const EDITORIAL_SHARED_STYLE: React.CSSProperties = {
-  fontFamily: 'var(--font-display)',
-  fontWeight: 800,
-  textTransform: 'uppercase',
+  fontFamily: 'var(--font-body)',
+  fontWeight: 600,
+  textTransform: 'none',
 };
 
 const editorialStyles: Record<EditorialVariant, React.CSSProperties> = {
   editorial: {
     ...EDITORIAL_SHARED_STYLE,
-    background: 'var(--fs-primary)',
-    color: 'var(--fs-accent)',
-    borderRadius: 'var(--radius-asymmetric)',
+    background: 'var(--btn-primary-bg)',
+    color: 'var(--btn-primary-text)',
+    borderRadius: 'var(--radius-full)',
   },
   'editorial-secondary': {
     ...EDITORIAL_SHARED_STYLE,
     background: 'var(--fs-surface)',
     color: 'var(--fs-heading)',
-    border: '2px solid var(--fs-primary)',
-    borderRadius: 'var(--radius-asymmetric)',
+    border: '1px solid var(--color-border-strong)',
+    borderRadius: 'var(--radius-full)',
   },
   'editorial-ghost': {
     ...EDITORIAL_SHARED_STYLE,
@@ -197,13 +197,13 @@ const FS_BASE_STYLE: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   gap: 8,
-  borderRadius: 12,
-  padding: '12px 24px',
-  minHeight: 44,
-  fontFamily: 'var(--font-sans)',
-  fontSize: 15,
+  borderRadius: 9999,
+  padding: '12px 22px',
+  minHeight: 48,
+  fontFamily: 'var(--font-body)',
+  fontSize: 17,
   fontWeight: 600,
-  letterSpacing: '0.01em',
+  letterSpacing: '-0.01em',
   border: 'none',
   transition: 'filter 150ms ease, transform 150ms ease, box-shadow 150ms ease',
   userSelect: 'none',
@@ -211,15 +211,15 @@ const FS_BASE_STYLE: React.CSSProperties = {
 
 const fsStyles: Record<FsVariant, React.CSSProperties> = {
   'fs-primary': {
-    background: 'linear-gradient(135deg, var(--fs-accent), var(--fs-accent-2))',
+    background: 'var(--fs-accent)',
     color: 'var(--color-ink-on-accent)',
-    borderRadius: 'var(--radius-asymmetric)',
-    boxShadow: 'var(--shadow-button)',
+    borderRadius: 'var(--radius-full)',
+    boxShadow: '0 8px 24px color-mix(in srgb, var(--fs-accent) 28%, transparent)',
   },
   'fs-secondary': {
     background: 'transparent',
     color: 'var(--fs-ink)',
-    border: '1px solid var(--fs-primary)',
+    border: '1px solid var(--color-border-strong)',
   },
   'fs-ghost': {
     background: 'transparent',
@@ -345,7 +345,7 @@ export const Button: React.FC<ButtonProps> = ({
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={`
         relative inline-flex items-center justify-center cursor-pointer
-        font-[var(--font-display)] font-extrabold uppercase tracking-[0.08em]
+        font-[var(--font-body)] font-semibold tracking-[-0.01em]
         transition-colors duration-150
         focus-visible:outline-none
         focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]
@@ -360,8 +360,8 @@ export const Button: React.FC<ButtonProps> = ({
         ...(variant === 'card-action'
           ? {
               fontFamily: 'var(--font-body)',
-              fontWeight: 900,
-              borderRadius: 16,
+              fontWeight: 600,
+              borderRadius: 9999,
               minHeight: 50,
               background: 'var(--fs-surface)',
               color: 'var(--fs-heading)',
@@ -369,24 +369,24 @@ export const Button: React.FC<ButtonProps> = ({
           : variant === 'start'
             ? {
                 fontFamily: 'var(--font-body)',
-                fontWeight: 900,
-                borderRadius: 16,
-                minHeight: 58,
-                background:
-                  'linear-gradient(135deg, var(--fs-accent), color-mix(in srgb, var(--fs-accent-2) 42%, var(--fs-accent)))',
+                fontWeight: 600,
+                borderRadius: 9999,
+                minHeight: 56,
+                background: 'var(--fs-accent)',
                 color: 'var(--color-ink-on-accent)',
+                boxShadow: '0 8px 24px color-mix(in srgb, var(--fs-accent) 28%, transparent)',
               }
             : size === 'icon'
               ? {
-                  fontFamily: 'var(--font-display)',
-                  borderRadius: 15,
+                  fontFamily: 'var(--font-body)',
+                  borderRadius: 9999,
                   width: 44,
                   height: 44,
-                  background: 'var(--fs-surface)',
+                  background: 'var(--fs-surface-2)',
                   color: 'var(--fs-ink)',
-                  border: '1px solid var(--fs-surface-2)',
+                  border: 'none',
                 }
-              : { fontFamily: 'var(--font-display)', borderRadius: 0 }),
+              : { fontFamily: 'var(--font-body)', borderRadius: 9999 }),
         ...style,
       }}
       {...(props as Omit<
@@ -419,7 +419,7 @@ export const Button: React.FC<ButtonProps> = ({
               transition-transform duration-150
               group-hover:translate-x-0.5
             "
-              style={{ borderRadius: 0 }}
+              style={{ borderRadius: 9999 }}
             >
               <svg
                 width="12"

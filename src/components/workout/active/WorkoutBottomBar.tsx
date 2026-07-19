@@ -131,8 +131,7 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
               borderRadius: 999,
               cursor: 'pointer',
               color: 'var(--color-ink-on-accent)',
-              boxShadow:
-                '0 8px 18px color-mix(in srgb, var(--fs-accent) 28%, transparent)',
+              boxShadow: '0 8px 18px color-mix(in srgb, var(--fs-accent) 28%, transparent)',
             }}
             aria-label={`המשך לתרגיל הבא: ${nextIncompleteAny.name}`}
           >
@@ -188,7 +187,7 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
                 color: 'var(--fs-ink)',
               }}
             >
-              כל התרגילים הושלמו 🎉
+              כל התרגילים הושלמו
             </span>
             <span
               style={{

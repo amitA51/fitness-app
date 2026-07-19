@@ -6,9 +6,10 @@ import type { OnboardingData } from '../types';
 interface ExperienceStepProps {
   data: OnboardingData;
   onChange: (updates: Partial<OnboardingData>) => void;
+  direction?: number;
 }
 
-export function ExperienceStep({ data, onChange }: ExperienceStepProps) {
+export function ExperienceStep({ data, onChange, direction = 1 }: ExperienceStepProps) {
   const levels = [
     {
       value: 'beginner' as const,
@@ -34,9 +35,11 @@ export function ExperienceStep({ data, onChange }: ExperienceStepProps) {
     <m.div
       // RTL-forward: the next step arrives from the inline-start (left) since
       // ChevronLeft is "forward" — enter from negative x, exit to positive x.
-      initial={{ opacity: 0, x: -20 }}
+      // "back" (direction < 0) reverses it so the previous step slides in from
+      // the inline-end instead of the forward side.
+      initial={{ opacity: 0, x: direction >= 0 ? -20 : 20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
+      exit={{ opacity: 0, x: direction >= 0 ? 20 : -20 }}
       className="flex flex-col h-full"
     >
       <StepHeader

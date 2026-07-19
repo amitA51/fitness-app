@@ -10,8 +10,9 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { Button } from '../../../components/ui/Button';
+import { useHaptics } from '../../../hooks/useHaptics';
 import type { OnboardingData } from '../types';
 
 interface CompleteStepProps {
@@ -26,6 +27,16 @@ interface CompleteStepProps {
 
 export function CompleteStep({ data, onFinish }: CompleteStepProps) {
   const isCoach = data.role === 'coach';
+
+  // One success haptic, timed to land with the checkmark's spring settle
+  // (matches the 0.2s delay on the mark below). No-ops when the Settings
+  // haptics toggle is off — the hook already gates on it.
+  const { hapticSuccess } = useHaptics();
+  useEffect(() => {
+    const t = setTimeout(hapticSuccess, 200);
+    return () => clearTimeout(t);
+  }, [hapticSuccess]);
+
   const getGoalLabel = (goal: string) => {
     const labels: Record<string, string> = {
       strength: 'בניית כוח',

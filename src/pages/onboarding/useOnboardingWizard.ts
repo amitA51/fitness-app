@@ -15,6 +15,10 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
       return 0;
     }
   });
+  // Nav direction for the step transition: +1 = forward (next), -1 = back.
+  // Steps read this so a "back" tap reverses the slide instead of always
+  // sliding in from the forward (inline-start) side.
+  const [direction, setDirection] = useState(1);
   const [data, setData] = useState<OnboardingData>(() => {
     try {
       const saved = sessionStorage.getItem('onboarding_draft');
@@ -47,6 +51,7 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
   }, []);
 
   const goNext = useCallback(() => {
+    setDirection(1);
     if (safeStep < activeSteps.length - 1) {
       setCurrentStep(safeStep + 1);
     } else {
@@ -55,6 +60,7 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
   }, [safeStep, activeSteps.length, data, onComplete]);
 
   const goBack = useCallback(() => {
+    setDirection(-1);
     if (safeStep > 0) {
       setCurrentStep(safeStep - 1);
     }
@@ -102,6 +108,7 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
     stepId,
     activeSteps,
     data,
+    direction,
     updateData,
     goNext,
     goBack,

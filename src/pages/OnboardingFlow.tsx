@@ -45,6 +45,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
     stepId,
     activeSteps,
     data,
+    direction,
     updateData,
     goNext,
     goBack,
@@ -77,17 +78,17 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
       case 'welcome':
         return <WelcomeStep onNext={goNext} />;
       case 'role':
-        return <RoleStep data={data} onChange={updateData} />;
+        return <RoleStep data={data} onChange={updateData} direction={direction} />;
       case 'profile':
-        return <ProfileStep data={data} onChange={updateData} />;
+        return <ProfileStep data={data} onChange={updateData} direction={direction} />;
       case 'goals':
-        return <GoalsStep data={data} onChange={updateData} />;
+        return <GoalsStep data={data} onChange={updateData} direction={direction} />;
       case 'experience':
-        return <ExperienceStep data={data} onChange={updateData} />;
+        return <ExperienceStep data={data} onChange={updateData} direction={direction} />;
       case 'equipment':
-        return <EquipmentStep data={data} onChange={updateData} />;
+        return <EquipmentStep data={data} onChange={updateData} direction={direction} />;
       case 'preferences':
-        return <PreferencesStep data={data} onChange={updateData} />;
+        return <PreferencesStep data={data} onChange={updateData} direction={direction} />;
       case 'complete':
         return <CompleteStep data={data} onFinish={handleFinish} />;
       default:
@@ -268,14 +269,20 @@ const EQUIPMENT_OPTIONS: EquipmentOption[] = [
 function EquipmentStep({
   data,
   onChange,
-}: { data: OnboardingData; onChange: (updates: Partial<OnboardingData>) => void }) {
+  direction = 1,
+}: {
+  data: OnboardingData;
+  onChange: (updates: Partial<OnboardingData>) => void;
+  direction?: number;
+}) {
   return (
     <m.div
-      // RTL-forward: in Hebrew the next step arrives from the inline-start (left),
-      // so a forward step should enter from a negative x and exit to positive x.
-      initial={{ opacity: 0, x: -20 }}
+      // RTL-forward: in Hebrew the next step arrives from the inline-start (left).
+      // Forward (direction >= 0) enters from negative x / exits to positive x;
+      // "back" reverses it so the previous step slides in from the inline-end.
+      initial={{ opacity: 0, x: direction >= 0 ? -20 : 20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
+      exit={{ opacity: 0, x: direction >= 0 ? 20 : -20 }}
       className="flex flex-col h-full"
     >
       <StepHeader

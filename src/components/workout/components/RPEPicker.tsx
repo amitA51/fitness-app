@@ -232,9 +232,10 @@ const RPEPicker = memo<RPEPickerProps>(
             {RPE_TAGS.map((tag) => {
               const isActive = selectedTag === tag.value;
               return (
-                <button
+                <m.button
                   key={tag.value}
                   type="button"
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => handleTagSelect(tag.value)}
                   aria-pressed={isActive}
                   style={{
@@ -253,7 +254,7 @@ const RPEPicker = memo<RPEPickerProps>(
                   }}
                 >
                   {tag.label}
-                </button>
+                </m.button>
               );
             })}
           </div>

@@ -85,6 +85,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
           }}
           disabled={!canGoPrev}
           aria-label="תרגיל קודם"
+          className="active:scale-[0.93] transition-transform"
           style={{
             width: 42,
             height: 42,
@@ -97,7 +98,8 @@ const ExerciseNav = memo<ExerciseNavProps>(
             color: canGoPrev ? 'var(--fs-ink)' : 'var(--fs-muted)',
             cursor: canGoPrev ? 'pointer' : 'not-allowed',
             opacity: canGoPrev ? 1 : 0.3,
-            transition: 'background-color 150ms, color 150ms',
+            transition:
+              'background-color 150ms, color 150ms, transform 150ms cubic-bezier(0.4, 0, 0.2, 1)',
             flexShrink: 0,
           }}
         >
@@ -176,6 +178,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
           }}
           disabled={!canGoNext}
           aria-label="תרגיל הבא"
+          className="active:scale-[0.93] transition-transform"
           style={{
             width: 42,
             height: 42,
@@ -188,7 +191,8 @@ const ExerciseNav = memo<ExerciseNavProps>(
             color: canGoNext ? 'var(--fs-ink)' : 'var(--fs-muted)',
             cursor: canGoNext ? 'pointer' : 'not-allowed',
             opacity: canGoNext ? 1 : 0.3,
-            transition: 'background-color 150ms, color 150ms',
+            transition:
+              'background-color 150ms, color 150ms, transform 150ms cubic-bezier(0.4, 0, 0.2, 1)',
             flexShrink: 0,
           }}
         >
@@ -203,6 +207,7 @@ const ExerciseNav = memo<ExerciseNavProps>(
             onOpenDrawer();
           }}
           aria-label="רשימת תרגילים"
+          className="active:scale-[0.93] transition-transform"
           style={{
             width: 42,
             height: 42,

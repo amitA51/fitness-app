@@ -147,6 +147,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                           <button
                             type="button"
                             onClick={() => setTempWeight((w) => Math.max(0, w - 2.5))}
+                            className="transition-transform active:scale-[0.94]"
                             style={stepperButtonStyle(false)}
                             aria-label="הפחת משקל"
                           >
@@ -178,6 +179,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                           <button
                             type="button"
                             onClick={() => setTempWeight((w) => w + 2.5)}
+                            className="transition-transform active:scale-[0.94]"
                             style={stepperButtonStyle(true)}
                             aria-label="הגדל משקל"
                           >
@@ -207,6 +209,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                           <button
                             type="button"
                             onClick={() => setTempReps((r) => Math.max(0, r - 1))}
+                            className="transition-transform active:scale-[0.94]"
                             style={stepperButtonStyle(false)}
                             aria-label="הפחת חזרות"
                           >
@@ -237,6 +240,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                           <button
                             type="button"
                             onClick={() => setTempReps((r) => r + 1)}
+                            className="transition-transform active:scale-[0.94]"
                             style={stepperButtonStyle(true)}
                             aria-label="הגדל חזרות"
                           >
