@@ -45,54 +45,53 @@ export const TemplateCard = memo(function TemplateCard({
 
   return (
     <m.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ ...springTransition, delay: index * 0.06 }}
-      className="card-outlined template-card magnetic-card"
+      transition={{ ...springTransition, delay: index * 0.05 }}
+      className="template-card"
+      style={{ marginBottom: 14 }}
     >
       {/* Eyebrow row */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-1">
         <span
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            letterSpacing: '0.22em',
-            color: template.isFavorite ? 'var(--fs-accent)' : 'var(--fs-muted)',
-            textTransform: 'uppercase',
+            fontFamily: 'var(--font-body)',
+            fontSize: 12,
+            fontWeight: 500,
+            letterSpacing: '-0.01em',
+            color: template.isFavorite ? 'var(--fs-accent-2)' : 'var(--fs-muted)',
           }}
         >
-          №{String(index + 1).padStart(3, '0')} · {formatLastUsed(template.lastUsed)}
+          {formatLastUsed(template.lastUsed)}
         </span>
         {template.isFavorite && (
           <Star size={14} fill="var(--fs-accent)" style={{ color: 'var(--fs-accent)' }} />
         )}
       </div>
 
-      {/* Display title */}
+      {/* Title */}
       <h3
         style={{
           fontFamily: 'var(--font-display)',
-          fontWeight: 800,
-          fontSize: '28px',
-          lineHeight: 0.95,
+          fontWeight: 600,
+          fontSize: 22,
+          lineHeight: 1.15,
           color: 'var(--fs-ink)',
-          textTransform: 'uppercase',
-          letterSpacing: '-0.01em',
-          marginBottom: '8px',
+          letterSpacing: '-0.02em',
+          marginBottom: 6,
         }}
       >
         {template.name}
       </h3>
 
-      {/* Mono stats line */}
+      {/* Stats line */}
       <div
-        className="flex items-center gap-3 mb-4"
+        className="flex items-center gap-3 mb-3"
         style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: '12px',
-          color: 'var(--fs-heading)',
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
+          fontFamily: 'var(--font-body)',
+          fontSize: 13,
+          color: 'var(--fs-muted)',
+          letterSpacing: '-0.01em',
           fontVariantNumeric: 'tabular-nums',
         }}
       >

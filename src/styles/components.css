@@ -939,6 +939,84 @@ textarea {
   }
 }
 
+/* ── Page layout rhythm (8pt) ─────────────────────────────────────────────── */
+.page-shell {
+  width: 100%;
+  max-width: var(--max-width);
+  margin-inline: auto;
+  padding-inline: var(--content-padding);
+  padding-bottom: calc(var(--nav-height) + 28px + env(safe-area-inset-bottom, 0px));
+}
+
+.page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-stack-loose {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+}
+
+.section-heading h2,
+.section-heading .section-heading-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.2;
+  letter-spacing: -0.018em;
+  color: var(--fs-ink);
+  margin: 0;
+}
+
+.section-heading-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fs-link);
+}
+
+.fs-surface-card {
+  background: var(--fs-surface);
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--elevation-1);
+  padding: 20px;
+}
+
+.fs-surface-card-soft {
+  background: var(--fs-surface);
+  border: none;
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--elevation-1);
+  padding: 20px 20px 22px;
+}
+
 /* Square icon button — 44x44 with soft continuous radius */
 .icon-btn {
   display: grid;
@@ -1136,18 +1214,19 @@ textarea {
 .quick-card {
   position: relative;
   display: grid;
-  gap: 7px;
-  min-height: 104px;
-  padding: 11px;
-  border: 1px solid var(--fs-surface-2);
-  border-radius: 20px 14px 20px 14px;
-  background: linear-gradient(135deg, var(--fs-surface-shine), transparent 50%), var(--fs-surface);
+  gap: 10px;
+  min-height: 112px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 90%, transparent);
+  border-radius: var(--radius-2xl);
+  background: var(--fs-surface);
+  box-shadow: var(--elevation-1);
 }
 
 .template-card.active,
 .quick-card.active {
-  border-color: var(--fs-accent);
-  box-shadow: inset 0 0 0 1px var(--fs-accent);
+  border-color: color-mix(in srgb, var(--fs-accent) 55%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--fs-accent) 25%, transparent), var(--elevation-1);
 }
 
 /* Card containment helper (formerly a 4px side-stripe rail).

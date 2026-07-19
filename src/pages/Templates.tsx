@@ -46,7 +46,6 @@ export default function Templates() {
   return (
     <>
       <m.div
-        className="pb-[88px] ambient-mesh ambient-mesh-soft"
         style={{ background: 'var(--fs-bg)' }}
         dir="rtl"
         variants={containerVariants}
@@ -94,10 +93,9 @@ export default function Templates() {
           }
         />
 
-        <div className="px-5 pt-5">
-          {/* First-run orientation when templates exist */}
+        <div className="page-shell page-stack" style={{ paddingTop: 12 }}>
           {templates.length > 0 && (
-            <m.div variants={itemVariants} className="mb-4 fs-tip-banner">
+            <m.div variants={itemVariants} className="fs-tip-banner">
               <p
                 style={{
                   fontFamily: 'var(--font-body)',
@@ -125,9 +123,8 @@ export default function Templates() {
             </m.div>
           )}
 
-          {/* Primary CTA — hidden when empty (empty state has its own CTA) */}
           {templates.length > 0 && (
-            <m.div variants={itemVariants} className="mb-5">
+            <m.div variants={itemVariants}>
               <m.button
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setShowCreateModal(true)}

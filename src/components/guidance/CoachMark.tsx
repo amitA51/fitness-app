@@ -71,19 +71,26 @@ export function CoachMark({
         display: 'flex',
         alignItems: 'flex-start',
         gap: 'var(--space-3)',
-        padding: 'var(--space-3) var(--space-4)',
-        background: 'var(--fs-surface)',
-        border: '1px solid var(--fs-accent)',
-        borderRadius: 'var(--radius-asymmetric)',
-        boxShadow: 'var(--shadow-card)',
+        padding: '14px 16px',
+        background: 'color-mix(in srgb, var(--fs-accent) 10%, var(--fs-surface))',
+        border: '1px solid color-mix(in srgb, var(--fs-accent) 28%, transparent)',
+        borderRadius: 'var(--radius-2xl)',
+        boxShadow: 'none',
       }}
     >
       <span
         aria-hidden="true"
         className="shrink-0 inline-flex items-center justify-center"
-        style={{ width: 22, height: 22, color: 'var(--fs-accent)', marginTop: 2 }}
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 9999,
+          background: 'color-mix(in srgb, var(--fs-accent) 18%, transparent)',
+          color: 'var(--fs-accent)',
+          marginTop: 0,
+        }}
       >
-        <Lightbulb size={18} strokeWidth={2.2} aria-hidden="true" />
+        <Lightbulb size={16} strokeWidth={2.2} aria-hidden="true" />
       </span>
 
       <p
@@ -92,6 +99,7 @@ export function CoachMark({
           fontFamily: 'var(--font-body)',
           fontSize: 14,
           lineHeight: 1.5,
+          letterSpacing: '-0.01em',
           color: 'var(--fs-ink)',
           margin: 0,
           textAlign: 'start',
@@ -107,15 +115,17 @@ export function CoachMark({
           aria-label={dismissAriaLabel}
           className="shrink-0 inline-flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 active:scale-[0.96]"
           style={{
-            minHeight: 44,
-            padding: '0 var(--space-3)',
-            borderRadius: 'var(--radius-md)',
+            minHeight: 36,
+            padding: '0 14px',
+            borderRadius: 9999,
             background: 'var(--fs-accent)',
             color: 'var(--color-ink-on-accent)',
             fontFamily: 'var(--font-body)',
             fontSize: 13,
-            fontWeight: 700,
+            fontWeight: 600,
             whiteSpace: 'nowrap',
+            border: 'none',
+            cursor: 'pointer',
           }}
         >
           {dismissLabel}

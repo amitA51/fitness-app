@@ -350,6 +350,9 @@ html.large-text {
   --nav-height: 64px;
   --header-height: auto;
   --masthead-padding: 20px 24px;
+  /* Vertical rhythm between major home/list sections */
+  --section-gap: 28px;
+  --stack-gap: 20px;
 }
 
 /* ============================================================================

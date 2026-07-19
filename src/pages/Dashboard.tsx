@@ -31,7 +31,6 @@ import { deriveRingGoals } from '../components/dashboard/ringGoals';
 import { CoachMark } from '../components/guidance/CoachMark';
 import { FadeIn } from '../components/motion/FadeIn';
 import { Stagger, StaggerItem } from '../components/motion/Stagger';
-import { Card } from '../components/ui/Card';
 import { SkeletonBox } from '../components/ui/SkeletonLoader';
 import { Z_INDEX } from '../constants/zIndex';
 import { useCoach } from '../contexts/CoachContext';
@@ -381,93 +380,81 @@ export default function Dashboard() {
 
       <DashboardHeader hasSessionToday={hasSessionToday} />
 
-      <div style={{ padding: '20px 20px 32px' }}>
-        {/* 1. Primary CTA — opens the start-workout choice sheet. Suppressed on
-            the zero-session first run, where the FirstRunHero below already
-            carries the start action (avoids two stacked identical mint CTAs). */}
-        {!showFirstRunHero && (
-          <button
-            type="button"
-            onClick={openStartSheet}
-            className="home-start-cta focus-ring"
-            aria-haspopup="dialog"
-            aria-expanded={isStartSheetOpen}
-            aria-label={hasSessionToday ? 'אימון נוסף' : 'התחל אימון'}
-          >
-            <span style={{ display: 'grid', gap: 4, textAlign: 'start', minWidth: 0 }}>
-              <span
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: 700,
-                  fontSize: 20,
-                  letterSpacing: '-0.02em',
-                  lineHeight: 1.15,
-                }}
-              >
-                {hasSessionToday ? 'אימון נוסף' : 'התחל אימון'}
-              </span>
-              <span
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  letterSpacing: '-0.01em',
-                  opacity: 0.88,
-                  lineHeight: 1.3,
-                }}
-              >
-                {hasSessionToday ? 'לחצו לבחירת תבנית או אימון ריק' : 'תבנית מוכנה · או אימון ריק'}
-              </span>
-            </span>
-            <span
-              aria-hidden="true"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 44,
-                height: 44,
-                borderRadius: 9999,
-                background: 'var(--fs-primary)',
-                color: 'var(--color-ink-on-dark)',
-                flexShrink: 0,
-              }}
+      <div className="page-shell" style={{ paddingTop: 8 }}>
+        <div className="page-stack-loose">
+          {/* 1. Primary CTA — opens the start-workout choice sheet. Suppressed on
+              first-run (FirstRunHero owns the start action). */}
+          {!showFirstRunHero && (
+            <button
+              type="button"
+              onClick={openStartSheet}
+              className="home-start-cta focus-ring"
+              aria-haspopup="dialog"
+              aria-expanded={isStartSheetOpen}
+              aria-label={hasSessionToday ? 'אימון נוסף' : 'התחל אימון'}
             >
-              <ArrowLeft size={20} aria-hidden="true" />
-            </span>
-          </button>
-        )}
+              <span style={{ display: 'grid', gap: 4, textAlign: 'start', minWidth: 0 }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 700,
+                    fontSize: 20,
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.15,
+                  }}
+                >
+                  {hasSessionToday ? 'אימון נוסף' : 'התחל אימון'}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    letterSpacing: '-0.01em',
+                    opacity: 0.88,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {hasSessionToday ? 'לחצו לבחירת תבנית או אימון ריק' : 'תבנית מוכנה · או אימון ריק'}
+                </span>
+              </span>
+              <span
+                aria-hidden="true"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 44,
+                  height: 44,
+                  borderRadius: 9999,
+                  background: 'var(--fs-primary)',
+                  color: 'var(--color-ink-on-dark)',
+                  flexShrink: 0,
+                }}
+              >
+                <ArrowLeft size={20} aria-hidden="true" />
+              </span>
+            </button>
+          )}
 
-        {/* First-visit hint under the primary CTA — returning users only. The
-            zero-session FirstRunHero below already leads with this same guidance,
-            so showing both stacked the identical instruction twice on first-run.
-            Gate keeps one explainer per state. */}
-        {hasAnySession && (
-          <div style={{ marginTop: 12 }}>
+          {hasAnySession && (
             <CoachMark hintKey="hintDashboard" dismissLabel="הבנתי" dismissAriaLabel="הבנתי, סגירה">
               לחצו על הכפתור למעלה — בחרו תבנית או אימון ריק, והאפליקציה תנחה אתכם בסטים.
             </CoachMark>
-          </div>
-        )}
+          )}
 
-        {/* Coach-scheduled workout for today (invisible for guests / when empty) */}
-        <TodaysWorkoutCard />
+          <TodaysWorkoutCard />
 
-        {/* First load: dashboard-shaped skeleton so the page doesn't flash empty
-            then pop. Header + CTA above stay visible. */}
-        {showSkeleton ? (
-          <DashboardSkeleton />
-        ) : insightsError && !hasAnySession ? (
-          /* Load failed and we have nothing to show — surface the error with a
-             retry instead of a misleading "no workouts yet" first-run hero. */
-          <InsightErrorChip message={insightsError} onRetry={refreshData} />
-        ) : !hasAnySession ? (
-          /* Zero-session trainees: one composed first-run hero instead of the
-             stack of self-hidden cards (WeeklyGrid + empty history hidden). */
-          <FirstRunHero onStartTemplate={goToTemplates} onStartEmpty={handleEmptyWorkout} />
-        ) : (
-          renderPopulatedBody()
-        )}
+          {showSkeleton ? (
+            <DashboardSkeleton />
+          ) : insightsError && !hasAnySession ? (
+            <InsightErrorChip message={insightsError} onRetry={refreshData} />
+          ) : !hasAnySession ? (
+            <FirstRunHero onStartTemplate={goToTemplates} onStartEmpty={handleEmptyWorkout} />
+          ) : (
+            renderPopulatedBody()
+          )}
+        </div>
 
         <StartWorkoutSheet
           isOpen={isStartSheetOpen}
@@ -487,16 +474,14 @@ export default function Dashboard() {
   function renderPopulatedBody() {
     return (
       <>
-        {/* 1. Hero — weekly activity rings: the single glanceable "this week"
-            summary, promoted to the top so the eye lands on it first. */}
+        {/* Order for returning users:
+            1) Weekly rings (glance) → 2) readiness/now → 3) program → 4) streak
+            → 5) insight → 6) templates → 7) calendar → 8) coach connect */}
         {(weekData.workoutsThisWeek > 0 || weekData.volume > 0) && (
           <section
-            className="section-spotlight magnetic-card glass-surface scrim-noise fade-rise-in"
+            className="fs-surface-card-soft fade-rise-in"
             aria-label="סיכום שבועי"
             style={{
-              marginTop: 20,
-              padding: '20px 20px 24px',
-              borderRadius: '24px 16px 24px 16px',
               display: 'grid',
               gridTemplateColumns: 'auto minmax(0, 1fr)',
               gap: 18,
@@ -507,15 +492,16 @@ export default function Dashboard() {
             <div style={{ minWidth: 0, display: 'grid', gap: 10 }}>
               <span
                 style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 14,
-                  fontWeight: 700,
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-ink)',
                 }}
               >
                 סיכום שבועי
               </span>
-              <Stagger stagger={RING_STAGGER} style={{ display: 'grid', gap: 6 }}>
+              <Stagger stagger={RING_STAGGER} style={{ display: 'grid', gap: 8 }}>
                 <StaggerItem key={`accent-${refreshTick}`}>
                   <BentoRow
                     dot="accent"
@@ -536,8 +522,6 @@ export default function Dashboard() {
                     suffix={' ק״ג'}
                     delay={ringDelay(1)}
                     sub={volDeltaChip.text}
-                    // Zone-color the WoW delta: a drop is not a win — demote it to
-                    // neutral/muted instead of celebrating it in accent.
                     subColor={zoneColor(volDeltaChip.zone)}
                   />
                 </StaggerItem>
@@ -552,69 +536,46 @@ export default function Dashboard() {
                   />
                 </StaggerItem>
               </Stagger>
-              {/* Weekly review merged in as the rings' verdict/caption line
-                  instead of a second standalone twin card (compact mode). */}
               <CoachBriefCard sessions={workoutSessions} kind="weekly-review" compact />
             </div>
           </section>
         )}
 
-        {/* useFitnessInsights error (data still present) — surface it with a
-            retry instead of rendering nothing. */}
         {insightsError && <InsightErrorChip message={insightsError} onRetry={refreshData} />}
 
-        {/* 2. Today's readiness — the "now" protagonist. */}
         <CoachBriefCard sessions={workoutSessions} kind="daily-readiness" />
 
-        {/* 2b. Built-in 12-week program — surfaces the self-guided plan on home
-            (active/continue, not-started invite, or completed). Self-managed
-            states; reads progress without enrolling. */}
         <ProgramCard />
 
-        {/* 3. Streak — quiet supporting status, demoted below the hero. */}
-        <div style={{ marginTop: 16 }}>
-          <WorkoutStreak sessions={workoutSessions} />
-        </div>
+        <WorkoutStreak sessions={workoutSessions} />
 
-        {/* 4. One smart insight — the single trend line. */}
         <InsightCard insight={dashboardInsight} />
 
-        {/* 5. Templates — quick strip + library affordance. On a load failure,
-            surface the error + retry instead of silently vanishing into the
-            "no templates" empty (mirrors the recent-workouts pattern below). */}
         {templatesError ? (
-          <section style={{ marginTop: 24 }}>
+          <section className="section-block">
             <SectionTitle text="תבניות" action={{ label: 'כל התבניות', onClick: goToTemplates }} />
             <InsightErrorChip message="לא הצלחנו לטעון את התבניות" onRetry={loadTemplates} />
           </section>
         ) : sortedTemplates.length > 0 ? (
-          <section style={{ marginTop: 24 }}>
+          <section className="section-block">
             <SectionTitle text="תבניות" action={{ label: 'כל התבניות', onClick: goToTemplates }} />
             <TemplateStrip templates={sortedTemplates} onNavigate={handleNavigate} />
           </section>
         ) : null}
 
-        {/* 6. Weekly calendar */}
-        <section style={{ marginTop: 24 }}>
+        <section className="section-block">
           <SectionTitle text="יומן אימונים" />
-          <Card asymmetric style={{ padding: 20 }}>
+          <div className="fs-surface-card" style={{ padding: 16 }}>
             <WeeklyGrid
               sessions={workoutSessions}
               weekOffset={selectedWeekOffset}
               onPrevWeek={goToPrevWeek}
               onNextWeek={goToNextWeek}
             />
-          </Card>
+          </div>
         </section>
 
-        {/* Full recent-workout history + PR board live on Progress (the home's
-            stated contract: lean entry + glanceable weekly, deep analytics in
-            Progress). The weekly calendar above already shows this week's rhythm. */}
-
-        {/* Connect-a-coach prompt — self-hides once the trainee has a coach. */}
         <FindCoachCard />
-
-        <div style={{ height: 24 }} />
       </>
     );
   }
@@ -710,17 +671,14 @@ const FirstRunHero = memo(function FirstRunHero({
   onStartEmpty: () => void;
 }) {
   return (
-    <FadeIn style={{ marginTop: 16 }}>
+    <FadeIn>
       <section
         aria-label="התחלה מהירה — האימון הראשון"
-        className="magnetic-card glass-surface"
+        className="fs-surface-card-soft"
         style={{
           padding: '28px 22px',
-          border: 'none',
-          borderRadius: 'var(--radius-2xl)',
           display: 'grid',
           gap: 20,
-          boxShadow: 'var(--shadow-elevated)',
         }}
       >
         <span
@@ -977,20 +935,16 @@ const FindCoachCard = memo(function FindCoachCard() {
   if (!show) return null;
 
   return (
-    <section style={{ marginTop: 24 }}>
+    <section>
       <Link
         to="/my-coach"
         aria-label="התחברות למאמן"
-        className="magnetic-card focus-ring active:scale-[0.99]"
+        className="fs-surface-card focus-ring active:scale-[0.99]"
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 16,
           padding: '18px 20px',
-          background: 'var(--fs-surface)',
-          border: '1px solid var(--fs-surface-2)',
-          borderRadius: '22px 16px 22px 16px',
-          boxShadow: 'var(--shadow-card)',
           textDecoration: 'none',
           color: 'inherit',
         }}
@@ -1003,20 +957,21 @@ const FindCoachCard = memo(function FindCoachCard() {
             justifyContent: 'center',
             width: 48,
             height: 48,
-            borderRadius: 14,
-            background: 'var(--fs-accent)',
-            color: 'var(--color-ink-on-accent)',
+            borderRadius: 9999,
+            background: 'color-mix(in srgb, var(--fs-accent) 16%, transparent)',
+            color: 'var(--fs-accent)',
             flexShrink: 0,
           }}
         >
-          <UserPlus size={24} />
+          <UserPlus size={22} strokeWidth={1.75} />
         </span>
         <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
           <span
             style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontFamily: 'var(--font-body)',
+              fontWeight: 600,
               fontSize: 17,
+              letterSpacing: '-0.015em',
               color: 'var(--fs-ink)',
               lineHeight: 1.2,
             }}
@@ -1026,9 +981,10 @@ const FindCoachCard = memo(function FindCoachCard() {
           <span
             style={{
               fontFamily: 'var(--font-body)',
-              fontSize: 13,
+              fontSize: 14,
               color: 'var(--fs-muted)',
               lineHeight: 1.4,
+              letterSpacing: '-0.01em',
             }}
           >
             יש לך קוד הזמנה ממאמן? התחבר כדי לקבל תוכניות ומעקב.
@@ -1058,50 +1014,12 @@ const SectionTitle = memo(function SectionTitle({
   action?: SectionTitleAction;
 }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'baseline',
-        justifyContent: 'space-between',
-        gap: 12,
-        marginBottom: 12,
-      }}
-    >
-      <h2
-        style={{
-          fontFamily: 'var(--font-display)',
-          fontWeight: 700,
-          fontSize: 16,
-          lineHeight: 1.2,
-          color: 'var(--fs-ink)',
-          margin: 0,
-        }}
-      >
-        {text}
-      </h2>
+    <div className="section-heading">
+      <h2 className="section-heading-title">{text}</h2>
       {action && (
-        <button
-          type="button"
-          onClick={action.onClick}
-          className="focus-ring"
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '4px 0',
-            minHeight: 44,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 4,
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            color: 'var(--fs-accent-2)',
-          }}
-        >
+        <button type="button" onClick={action.onClick} className="section-heading-action focus-ring">
           {action.label}
-          <ChevronLeft size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
+          <ChevronLeft size={16} aria-hidden="true" style={{ flexShrink: 0 }} />
         </button>
       )}
     </div>
