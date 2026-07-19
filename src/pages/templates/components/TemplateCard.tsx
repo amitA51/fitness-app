@@ -97,12 +97,12 @@ export const TemplateCard = memo(function TemplateCard({
       >
         <span className="flex items-center gap-1.5">
           <Dumbbell size={12} />
-          {template.exercises.length} EX
+          {template.exercises.length} תרגילים
         </span>
         <span style={{ color: 'var(--fs-muted)' }}>·</span>
         <span className="flex items-center gap-1.5">
           <Clock size={12} />
-          {template.timesUsed > 0 ? `${template.timesUsed}×` : 'NEW'}
+          {template.timesUsed > 0 ? `${template.timesUsed}×` : 'חדש'}
         </span>
       </div>
 
