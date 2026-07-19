@@ -146,8 +146,7 @@ export const MacroStrip = memo(function MacroStrip({
                 fontSize: '10px',
                 letterSpacing: '0.22em',
                 color: 'var(--fs-muted)',
-                textTransform: 'uppercase',
-              }}
+                              }}
             >
               {m.icon}
               <span>{m.he}</span>
@@ -155,7 +154,7 @@ export const MacroStrip = memo(function MacroStrip({
             <div
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: '32px',
                 lineHeight: 0.9,
                 color: isOver ? 'var(--fs-warn)' : 'var(--fs-ink)',

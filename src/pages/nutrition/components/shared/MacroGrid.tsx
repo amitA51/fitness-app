@@ -55,8 +55,8 @@ export const MacroGrid = memo(function MacroGrid({ macros, variant = 'inline' }:
           </div>
           <div
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
               color: 'var(--fs-muted)',
               marginTop: 2,
             }}

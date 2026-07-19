@@ -31,11 +31,10 @@ export const MealPresetCard = memo(function MealPresetCard({
           <h4
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: '14px',
               color: 'var(--fs-ink)',
-              textTransform: 'uppercase',
-            }}
+                          }}
           >
             {preset.name}
           </h4>
@@ -97,14 +96,13 @@ export const MealPresetCard = memo(function MealPresetCard({
           style={{
             width: '100%',
             padding: '10px',
-            borderRadius: 0,
+            borderRadius: 12,
             backgroundColor: 'var(--fs-primary)',
             color: 'var(--fs-accent)',
             fontFamily: 'var(--font-display)',
             fontSize: '13px',
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            border: 'none',
+            fontWeight: 600,
+                        border: 'none',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',

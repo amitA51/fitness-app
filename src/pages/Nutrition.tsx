@@ -89,11 +89,7 @@ export default function NutritionPage() {
   );
 
   return (
-    <div
-      className="pb-[max(7rem,calc(4rem+env(safe-area-inset-bottom)))] ambient-mesh ambient-mesh-soft"
-      style={{ background: 'var(--fs-bg)' }}
-      dir="rtl"
-    >
+    <div style={{ background: 'var(--fs-bg)' }} dir="rtl">
       {/* Header */}
       <PageHeader
         title="תזונה"
@@ -107,6 +103,7 @@ export default function NutritionPage() {
         }
       />
 
+      <div className="page-shell page-stack" style={{ paddingTop: 8 }}>
       {/* Day axis — the control that scopes every number below it, placed first
           so the viewed day frames the calorie/macro/meal data (not after it). */}
       <DateNavigator
@@ -117,7 +114,7 @@ export default function NutritionPage() {
       />
 
       {/* First-visit hint at the top of the nutrition body */}
-      <div className="px-5 pt-4">
+      <div>
         <CoachMark hintKey="hintNutrition">
           לחצו &quot;הוסף ארוחה&quot; למטה — רשמו מה אכלתם. המים והקלוריות מתעדכנים מיד למעלה.
         </CoachMark>
@@ -349,6 +346,7 @@ export default function NutritionPage() {
         onSave={handleSaveGoals}
         onClose={() => setShowGoalsEditor(false)}
       />
+      </div>
     </div>
   );
 }

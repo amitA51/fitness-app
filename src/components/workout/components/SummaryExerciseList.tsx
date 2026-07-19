@@ -1,5 +1,4 @@
-// SummaryExerciseList - Fresh Steel / Obsidian
-// Sharp corners, surface cards, steel borders, Bricolage display
+// SummaryExerciseList — polished post-workout exercise rows
 
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { m } from 'framer-motion';
@@ -14,10 +13,6 @@ export interface ExerciseSummaryItemData {
   bestSet?: { weight: number; reps: number };
   isPR?: boolean;
 }
-
-// ============================================================
-// EXERCISE ITEM
-// ============================================================
 
 interface ExerciseSummaryItemProps {
   name: string;
@@ -40,13 +35,19 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: 12,
           padding: '14px 16px',
-          background: isPR ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
-          border: '2px solid var(--fs-primary)',
+          background: isPR
+            ? 'color-mix(in srgb, var(--fs-accent) 14%, var(--fs-surface))'
+            : 'var(--fs-surface)',
+          border: isPR
+            ? '1px solid color-mix(in srgb, var(--fs-accent) 40%, transparent)'
+            : '1px solid color-mix(in srgb, var(--color-border) 90%, transparent)',
+          borderRadius: 'var(--radius-2xl)',
+          boxShadow: 'var(--elevation-1)',
           position: 'relative',
         }}
       >
-        {/* PR badge */}
         {isPR && (
           <m.div
             initial={reduced ? false : { scale: 0 }}
@@ -58,50 +59,52 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
               position: 'absolute',
               top: -8,
               insetInlineEnd: 12,
-              padding: '2px 8px',
-              background: 'var(--fs-primary)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
-              fontWeight: 600,
-              letterSpacing: '0.2em',
-              color: 'var(--fs-accent)',
-              textTransform: 'uppercase',
+              padding: '3px 10px',
+              background: 'var(--fs-accent)',
+              borderRadius: 9999,
+              fontFamily: 'var(--font-body)',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '-0.01em',
+              color: 'var(--color-ink-on-accent)',
             }}
           >
-            PR
+            שיא
           </m.div>
         )}
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           {isPR && (
             <CheckCircleIcon
               size={16}
               strokeWidth={2.5}
-              style={{ color: 'var(--fs-heading)', flexShrink: 0 }}
+              style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
             />
           )}
           <span
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: 15,
-              color: isPR ? 'var(--fs-primary)' : 'var(--fs-ink)',
-              letterSpacing: '-0.01em',
+              fontWeight: 600,
+              fontSize: 16,
+              color: 'var(--fs-ink)',
+              letterSpacing: '-0.015em',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
             {name || 'תרגיל ללא שם'}
           </span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 shrink-0">
           <span
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              letterSpacing: '0.08em',
-              color: isPR ? 'var(--fs-primary)' : 'var(--fs-muted)',
-              textTransform: 'uppercase',
-              direction: 'ltr',
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              letterSpacing: '-0.01em',
+              color: 'var(--fs-muted)',
+              fontWeight: 500,
             }}
           >
             {setsCompleted} סטים
@@ -109,10 +112,11 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
           {bestSet && (
             <span
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 12,
-                letterSpacing: '0.05em',
-                color: isPR ? 'var(--fs-primary)' : 'var(--fs-ink)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                letterSpacing: '-0.01em',
+                color: 'var(--fs-ink)',
+                fontWeight: 600,
                 fontVariantNumeric: 'tabular-nums',
                 direction: 'ltr',
               }}
@@ -126,10 +130,6 @@ const ExerciseSummaryItem: React.FC<ExerciseSummaryItemProps> = memo(
   }
 );
 ExerciseSummaryItem.displayName = 'ExerciseSummaryItem';
-
-// ============================================================
-// SUMMARY LIST
-// ============================================================
 
 export interface SummaryExerciseListProps {
   exercises: ExerciseSummaryItemData[];
@@ -147,11 +147,11 @@ export const SummaryExerciseList: React.FC<SummaryExerciseListProps> = memo(
       <div className="flex flex-col gap-2">
         <div
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            letterSpacing: '0.18em',
-            color: 'var(--fs-muted)',
-            textTransform: 'uppercase',
+            fontFamily: 'var(--font-body)',
+            fontSize: 15,
+            fontWeight: 600,
+            letterSpacing: '-0.01em',
+            color: 'var(--fs-ink)',
             marginBottom: 4,
           }}
         >
@@ -171,13 +171,13 @@ export const SummaryExerciseList: React.FC<SummaryExerciseListProps> = memo(
         {hasMore && (
           <p
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: '0.12em',
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
-              textTransform: 'uppercase',
               textAlign: 'center',
               paddingTop: 8,
+              margin: 0,
             }}
           >
             + {exercises.length - maxItems!} תרגילים נוספים

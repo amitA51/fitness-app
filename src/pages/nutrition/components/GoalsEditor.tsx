@@ -167,14 +167,13 @@ export const GoalsEditor = memo(function GoalsEditor({
             width: '100%',
             minHeight: 52,
             padding: '16px',
-            borderRadius: 0,
+            borderRadius: 12,
             backgroundColor: 'var(--fs-primary)',
             color: 'var(--fs-accent)',
             fontFamily: 'var(--font-display)',
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: '16px',
-            textTransform: 'uppercase',
-            border: 'none',
+                        border: 'none',
             cursor: 'pointer',
           }}
         >
@@ -214,13 +213,12 @@ export const GoalsEditor = memo(function GoalsEditor({
               padding: '10px 16px',
               background: 'var(--fs-primary)',
               border: 'none',
-              borderRadius: 0,
+              borderRadius: 12,
               cursor: 'pointer',
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
               letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              color: 'var(--fs-accent)',
+                            color: 'var(--fs-accent)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -250,10 +248,9 @@ export const GoalsEditor = memo(function GoalsEditor({
             style={{
               fontFamily: 'var(--font-display)',
               fontSize: 14,
-              fontWeight: 800,
+              fontWeight: 600,
               color: 'var(--fs-ink)',
-              textTransform: 'uppercase',
-            }}
+                          }}
           >
             <Droplets size={15} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
             יעדי שתייה

@@ -110,14 +110,13 @@ export const AddMealModal = memo(function AddMealModal({
               width: '100%',
               minHeight: 52,
               padding: '16px',
-              borderRadius: 0,
+              borderRadius: 12,
               backgroundColor: hasFoods ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
               color: hasFoods ? 'var(--fs-accent)' : 'var(--fs-muted)',
               fontFamily: 'var(--font-display)',
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: '16px',
-              textTransform: 'uppercase',
-              border: 'none',
+                            border: 'none',
               cursor: hasFoods ? 'pointer' : 'not-allowed',
               opacity: hasFoods ? 1 : 0.4,
             }}
@@ -149,10 +148,9 @@ export const AddMealModal = memo(function AddMealModal({
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontSize: '14px',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   color: 'var(--fs-ink)',
-                  textTransform: 'uppercase',
-                }}
+                                  }}
               >
                 מזונות שנבחרו
               </h3>
@@ -385,8 +383,7 @@ const LIST_KICKER_STYLE: CSSProperties = {
   fontFamily: 'var(--font-mono)',
   fontSize: '10px',
   letterSpacing: '0.16em',
-  textTransform: 'uppercase',
-  color: 'var(--fs-muted)',
+    color: 'var(--fs-muted)',
   margin: '4px 2px 2px',
 };
 

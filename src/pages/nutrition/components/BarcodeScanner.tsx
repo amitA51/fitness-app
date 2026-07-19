@@ -274,7 +274,7 @@ export const BarcodeScanner = memo(function BarcodeScanner({
                     backgroundColor: manualValid ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
                     color: manualValid ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 14,
                     cursor: manualValid ? 'pointer' : 'not-allowed',
                   }}
@@ -405,10 +405,9 @@ export const BarcodeScanner = memo(function BarcodeScanner({
                 backgroundColor: 'var(--fs-accent)',
                 color: 'var(--color-ink-on-accent)',
                 fontFamily: 'var(--font-display)',
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 16,
-                textTransform: 'uppercase',
-                cursor: 'pointer',
+                                cursor: 'pointer',
               }}
             >
               הוסף
@@ -474,8 +473,7 @@ const KICKER_STYLE: CSSProperties = {
   fontFamily: 'var(--font-mono)',
   fontSize: 10,
   letterSpacing: '0.16em',
-  textTransform: 'uppercase',
-  color: 'var(--fs-muted)',
+    color: 'var(--fs-muted)',
 };
 
 const INLINE_ERROR_STYLE: CSSProperties = {

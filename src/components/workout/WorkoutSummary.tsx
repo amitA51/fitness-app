@@ -122,40 +122,7 @@ const crossedMilestone = (before: number, after: number): number | null => {
 // duplicating the press-feedback styling.
 function PrimaryAction({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fs-accent)]"
-      onPointerDown={(e) => {
-        e.preventDefault();
-        e.currentTarget.style.background = 'var(--color-primary-hover)';
-      }}
-      onPointerUp={(e) => {
-        e.currentTarget.style.background = 'var(--fs-accent)';
-      }}
-      onPointerLeave={(e) => {
-        e.currentTarget.style.background = 'var(--fs-accent)';
-      }}
-      style={{
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px 24px',
-        background: 'var(--fs-accent)',
-        // ink-on-accent: --fs-heading resolves near-white in dark and fails AA.
-        color: 'var(--color-ink-on-accent)',
-        border: 'none',
-        cursor: 'pointer',
-        fontFamily: 'var(--font-display)',
-        fontWeight: 800,
-        fontSize: 14,
-        letterSpacing: '0.08em',
-        textTransform: 'uppercase',
-        transition: 'background 150ms',
-        minHeight: 52,
-      }}
-    >
+    <button type="button" onClick={onClick} className="start-workout-btn focus-ring">
       {label}
     </button>
   );
@@ -574,14 +541,13 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           {/* Title area */}
           <div className="px-5 pt-6 pb-5">
             <h2
-              className="uppercase"
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 900,
+                fontWeight: 700,
                 fontSize: 48,
                 color: 'var(--color-ink-on-dark)',
-                lineHeight: 0.88,
-                letterSpacing: '-0.02em',
+                lineHeight: 0.95,
+                letterSpacing: '-0.03em',
                 direction: 'ltr',
                 textAlign: 'left',
               }}
@@ -596,7 +562,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                       color: 'var(--fs-accent)',
                       fontVariantNumeric: 'tabular-nums',
                       fontSize: 56,
-                      fontWeight: 900,
+                      fontWeight: 700,
                       display: 'inline-block',
                     }}
                   >
@@ -631,8 +597,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   fontSize: 10,
                   fontWeight: 700,
                   letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                }}
+                                  }}
               >
                 <Trophy size={13} strokeWidth={2.5} aria-hidden="true" />
                 שיא חדש
@@ -646,8 +611,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 fontSize: 10,
                 letterSpacing: '0.18em',
                 color: 'rgba(255,255,255,0.4)',
-                textTransform: 'uppercase',
-                marginTop: 8,
+                                marginTop: 8,
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
@@ -679,8 +643,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               className={`tab${view === v ? ' active' : ''}`}
               style={{
                 letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-              }}
+                              }}
             >
               {v === 'overview' ? 'סקירה' : 'פרטים'}
             </button>
@@ -732,8 +695,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                         fontWeight: 700,
                         letterSpacing: '0.14em',
                         color: 'var(--fs-muted)',
-                        textTransform: 'uppercase',
-                        textAlign: 'center',
+                                                textAlign: 'center',
                       }}
                     >
                       שרירים שעבדת
@@ -762,8 +724,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                       fontWeight: 700,
                       letterSpacing: '0.14em',
                       color: 'var(--fs-muted)',
-                      textTransform: 'uppercase',
-                    }}
+                                          }}
                   >
                     איך היה האימון?
                   </span>
@@ -868,7 +829,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                       <span
                         style={{
                           fontFamily: 'var(--font-display)',
-                          fontWeight: 800,
+                          fontWeight: 600,
                           fontSize: 14,
                           color: prExercises.has(ex.name ?? '')
                             ? 'var(--fs-primary)'
@@ -888,8 +849,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                           color: prExercises.has(ex.name ?? '')
                             ? 'var(--fs-primary)'
                             : 'var(--fs-muted)',
-                          textTransform: 'uppercase',
-                        }}
+                                                  }}
                       >
                         {pluralizeHe(ex.setsCompleted, HE_NOUNS.set)}
                       </span>
@@ -920,35 +880,18 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         <div
           className="flex flex-col gap-2 px-5 py-4"
           style={{
-            background: 'var(--fs-bg)',
-            borderTop: '2px solid var(--fs-surface-2)',
+            background: 'color-mix(in srgb, var(--fs-bg) 88%, transparent)',
+            backdropFilter: 'saturate(180%) blur(16px)',
+            WebkitBackdropFilter: 'saturate(180%) blur(16px)',
+            borderTop: '0.5px solid var(--color-separator)',
             flexShrink: 0,
+            paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
           }}
         >
-          {/* Main action — when a forward path exists, lead with "צפו
-              בהתקדמות" (finish → see it land in Progress) and demote סיום to a
-              quiet exit-to-home; otherwise סיום stays the single mint primary. */}
           {onViewProgress ? (
             <>
               <PrimaryAction label="צפו בהתקדמות" onClick={onViewProgress} />
-              <button
-                type="button"
-                onClick={onClose}
-                className="active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fs-accent)]"
-                style={{
-                  width: '100%',
-                  padding: '10px 16px',
-                  background: 'transparent',
-                  color: 'var(--fs-ink)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 700,
-                  fontSize: 13,
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                }}
-              >
+              <button type="button" onClick={onClose} className="cta-ghost focus-ring w-full">
                 סיום
               </button>
             </>
@@ -956,33 +899,8 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             <PrimaryAction label="סיום" onClick={onClose} />
           )}
 
-          {/* "Do it again" — repeat this session as a starting template, closing
-              the retention loop. Secondary weight so "סיום" stays the primary. */}
           {onRepeatWorkout && (
-            <button
-              type="button"
-              onClick={handleRepeat}
-              className="active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fs-accent)]"
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                padding: '12px 16px',
-                background: 'var(--fs-surface)',
-                color: 'var(--fs-ink)',
-                border: '2px solid var(--fs-accent)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 13,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                transition: reduced ? 'none' : 'transform 120ms ease',
-                minHeight: 48,
-              }}
-            >
+            <button type="button" onClick={handleRepeat} className="cta-secondary focus-ring w-full">
               <RotateCcw size={15} strokeWidth={2.5} aria-hidden="true" />
               חזרו על האימון
             </button>
@@ -991,82 +909,15 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           {/* Secondary actions */}
           <div className="flex gap-2">
             {typeof navigator !== 'undefined' && 'share' in navigator && (
-              <button
-                type="button"
-                onClick={handleShare}
-                className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fs-accent)]"
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  padding: '12px 16px',
-                  background: 'var(--fs-surface-2)',
-                  color: 'var(--fs-heading)',
-                  border: '2px solid var(--fs-primary)',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
-                  fontSize: 12,
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                  transition: 'all 150ms',
-                  minHeight: 44,
-                }}
-              >
+              <button type="button" onClick={handleShare} className="cta-secondary focus-ring" style={{ flex: 1 }}>
                 שתף
               </button>
             )}
-            <button
-              type="button"
-              onClick={handleExportCSV}
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                padding: '12px 16px',
-                background: 'var(--fs-surface-2)',
-                color: 'var(--fs-heading)',
-                border: '2px solid var(--fs-primary)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: 12,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                transition: 'all 150ms',
-                minHeight: 44,
-              }}
-            >
+            <button type="button" onClick={handleExportCSV} className="cta-secondary focus-ring" style={{ flex: 1 }}>
               ייצוא CSV
             </button>
             {onSaveAsTemplate && (
-              <button
-                type="button"
-                onClick={onSaveAsTemplate}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  padding: '12px 16px',
-                  background: 'var(--fs-surface-2)',
-                  color: 'var(--fs-heading)',
-                  border: '2px solid var(--fs-primary)',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
-                  fontSize: 12,
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                  transition: 'all 150ms',
-                  minHeight: 44,
-                }}
-              >
+              <button type="button" onClick={onSaveAsTemplate} className="cta-secondary focus-ring" style={{ flex: 1 }}>
                 שמור תבנית
               </button>
             )}

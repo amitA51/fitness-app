@@ -303,13 +303,12 @@ export const WaterTracker = memo(function WaterTracker({
         {!isToday ? (
           <span
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
               letterSpacing: '0.12em',
               color: 'var(--fs-muted)',
               alignSelf: 'center',
-              textTransform: 'uppercase',
-            }}
+                          }}
           >
             היום בלבד
           </span>

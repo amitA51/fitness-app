@@ -99,12 +99,9 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
   return (
     <MotionConfig reducedMotion="user">
       <div
-        className="fixed inset-0 z-overlay flex flex-col ambient-mesh ambient-mesh-soft"
+        className="fixed inset-0 z-overlay flex flex-col"
         style={{
           background: 'var(--fs-bg)',
-          backgroundImage:
-            'linear-gradient(rgba(19,35,39,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(19,35,39,0.03) 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
         }}
         dir="rtl"
       >
@@ -118,17 +115,19 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
             <button
               type="button"
               onClick={() => setShowSkipConfirm(true)}
+              className="focus-ring"
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '12px',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
+                fontFamily: 'var(--font-body)',
+                fontSize: 14,
+                fontWeight: 600,
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
                 minHeight: '44px',
                 minWidth: '44px',
+                paddingInline: 8,
               }}
             >
               דלגו
@@ -162,11 +161,12 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 'var(--text-label)',
-                    letterSpacing: '0.08em',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 13,
+                    letterSpacing: '-0.01em',
                     color: 'var(--fs-muted)',
                     textAlign: 'center',
+                    margin: 0,
                   }}
                 >
                   {hint}
@@ -306,18 +306,25 @@ function EquipmentStep({
               }`}
               style={{
                 background: isSelected ? 'var(--fs-accent)' : 'var(--fs-surface)',
-                border: isSelected ? '2px solid var(--fs-accent)' : '1px solid var(--fs-surface-2)',
-                borderRadius: 'var(--radius-asymmetric)',
+                border: isSelected
+                  ? '1px solid color-mix(in srgb, var(--fs-accent) 50%, transparent)'
+                  : '1px solid color-mix(in srgb, var(--color-border) 90%, transparent)',
+                borderRadius: 'var(--radius-2xl)',
+                boxShadow: isSelected
+                  ? '0 8px 24px color-mix(in srgb, var(--fs-accent) 22%, transparent)'
+                  : 'var(--elevation-1)',
               }}
             >
               <div
                 className="w-12 h-12 flex items-center justify-center shrink-0"
                 style={{
-                  background: isSelected ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
-                  borderRadius: 0,
+                  background: isSelected
+                    ? 'color-mix(in srgb, var(--color-ink-on-accent) 12%, transparent)'
+                    : 'var(--fs-surface-2)',
+                  borderRadius: 9999,
                 }}
               >
-                <span style={{ color: isSelected ? 'var(--fs-accent)' : 'var(--fs-muted)' }}>
+                <span style={{ color: isSelected ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)' }}>
                   {option.icon}
                 </span>
               </div>
@@ -327,8 +334,7 @@ function EquipmentStep({
                     fontFamily: 'var(--font-body)',
                     fontWeight: 600,
                     fontSize: '16px',
-                    // Selected card fills with --fs-accent; --fs-ink is near-white
-                    // in dark mode and fails AA on mint — use on-accent ink.
+                    letterSpacing: '-0.01em',
                     color: isSelected ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
                   }}
                 >
@@ -338,7 +344,10 @@ function EquipmentStep({
                   style={{
                     fontFamily: 'var(--font-body)',
                     fontSize: '14px',
-                    color: isSelected ? 'var(--fs-primary)' : 'var(--fs-muted)',
+                    letterSpacing: '-0.01em',
+                    color: isSelected
+                      ? 'color-mix(in srgb, var(--color-ink-on-accent) 78%, transparent)'
+                      : 'var(--fs-muted)',
                     marginTop: '2px',
                   }}
                 >
@@ -353,7 +362,7 @@ function EquipmentStep({
                   style={{
                     background: 'var(--fs-primary)',
                     color: 'var(--fs-accent)',
-                    borderRadius: 0,
+                    borderRadius: 9999,
                   }}
                 >
                   <Check size={16} strokeWidth={3} />

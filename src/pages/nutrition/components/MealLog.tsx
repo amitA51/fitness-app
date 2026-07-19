@@ -73,13 +73,12 @@ export const MealEntryCard = memo(function MealEntryCard({
       <h4
         style={{
           fontFamily: 'var(--font-display)',
-          fontWeight: 800,
+          fontWeight: 600,
           fontSize: '22px',
           lineHeight: 1,
           color: 'var(--fs-ink)',
           marginBottom: '6px',
-          textTransform: 'uppercase',
-        }}
+                  }}
       >
         {entry.name}
       </h4>
@@ -88,7 +87,7 @@ export const MealEntryCard = memo(function MealEntryCard({
         <span
           style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 900,
+            fontWeight: 700,
             fontSize: '36px',
             lineHeight: 0.9,
             color: 'var(--fs-ink)',
@@ -125,8 +124,7 @@ export const MealEntryCard = memo(function MealEntryCard({
           fontSize: '11px',
           letterSpacing: '0.12em',
           color: 'var(--fs-heading)',
-          textTransform: 'uppercase',
-          fontVariantNumeric: 'tabular-nums',
+                    fontVariantNumeric: 'tabular-nums',
         }}
       >
         <span>P {entry.totalMacros.protein}G</span>
@@ -196,11 +194,10 @@ export const GroupedMealLog = memo(function GroupedMealLog({
                 className="flex items-center gap-2"
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: 15,
                   color: 'var(--fs-ink)',
-                  textTransform: 'uppercase',
-                }}
+                                  }}
               >
                 <Icon size={15} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
                 {MEAL_TYPE_LABELS[group.type]}

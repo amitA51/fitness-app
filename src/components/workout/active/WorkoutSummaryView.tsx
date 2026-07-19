@@ -99,13 +99,14 @@ const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({ completedSessio
         >
           <div
             style={{
-              color: 'var(--fs-heading)',
-              fontFamily: 'var(--font-mono)',
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
+              color: 'var(--fs-muted)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 15,
+              fontWeight: 500,
+              letterSpacing: '-0.01em',
             }}
           >
-            תוצאות האימון...
+            טוענים תוצאות...
           </div>
         </div>
       }
