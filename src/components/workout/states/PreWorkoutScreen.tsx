@@ -284,10 +284,9 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
           <div className="flex items-start justify-between mb-6">
             <div>
               <h1
-                className="uppercase"
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 900,
+                  fontWeight: 700,
                   fontSize: 48,
                   color: 'var(--color-ink-on-dark)',
                   lineHeight: 0.88,
@@ -337,7 +336,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   className="kinetic-number"
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: 36,
                     color: 'var(--fs-accent)',
                     lineHeight: 0.9,
@@ -349,7 +348,6 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   {lastWorkoutLabel ? lastWorkoutLabel.exercises : '—'}
                 </div>
                 <div
-                  className="uppercase mt-1"
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
@@ -373,7 +371,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   className="kinetic-number"
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: 36,
                     color: 'var(--color-ink-on-dark)',
                     lineHeight: 0.9,
@@ -389,7 +387,6 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     : '—'}
                 </div>
                 <div
-                  className="uppercase mt-1"
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
@@ -407,7 +404,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   className="kinetic-number"
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: 36,
                     color: workoutStreak > 0 ? 'var(--fs-accent)' : 'var(--color-ink-on-dark)',
                     lineHeight: 0.9,
@@ -419,7 +416,6 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   {workoutStreak > 0 ? workoutStreak : '—'}
                 </div>
                 <div
-                  className="uppercase mt-1"
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 9,
@@ -441,7 +437,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               <div
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: 20,
                   color: 'var(--color-ink-on-dark)',
                   lineHeight: 1.05,
@@ -451,7 +447,6 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 האימון הראשון שלך
               </div>
               <div
-                className="uppercase mt-2"
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
@@ -473,8 +468,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 fontSize: 10,
                 letterSpacing: '0.15em',
                 color: 'rgba(255,255,255,0.35)',
-                textTransform: 'uppercase',
-                direction: 'ltr',
+                                direction: 'ltr',
               }}
             >
               אימון אחרון {lastWorkoutLabel.timeLabel}
@@ -523,8 +517,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     fontSize: 9,
                     letterSpacing: '0.2em',
                     color: 'var(--fs-primary)',
-                    textTransform: 'uppercase',
-                    fontWeight: 600,
+                                        fontWeight: 600,
                   }}
                 >
                   מהמאמן
@@ -536,8 +529,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                       fontSize: 10,
                       letterSpacing: '0.18em',
                       color: 'var(--fs-accent)',
-                      textTransform: 'uppercase',
-                      marginBottom: 6,
+                                            marginBottom: 6,
                     }}
                   >
                     האימון שהמאמן הקצה לך
@@ -545,7 +537,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   <p
                     style={{
                       fontFamily: 'var(--font-display)',
-                      fontWeight: 800,
+                      fontWeight: 600,
                       fontSize: 20,
                       color: 'var(--color-ink-on-dark)',
                       lineHeight: 1.05,
@@ -594,8 +586,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     fontSize: 10,
                     letterSpacing: '0.18em',
                     color: 'var(--fs-accent-2)',
-                    textTransform: 'uppercase',
-                    marginBottom: 6,
+                                        marginBottom: 6,
                   }}
                 >
                   תוכנית האימון
@@ -603,7 +594,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 <p
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontWeight: 800,
+                    fontWeight: 600,
                     fontSize: 18,
                     color: 'var(--fs-heading)',
                     lineHeight: 1.1,
@@ -620,8 +611,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                       fontSize: 10,
                       letterSpacing: '0.12em',
                       color: 'var(--fs-muted)',
-                      textTransform: 'uppercase',
-                    }}
+                                          }}
                   >
                     {programSubtitle}
                   </p>
@@ -646,8 +636,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontSize: 10,
                   letterSpacing: '0.2em',
                   color: 'var(--fs-muted)',
-                  textTransform: 'uppercase',
-                }}
+                                  }}
               >
                 התבניות שלך
               </div>
@@ -699,7 +688,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     <div
                       style={{
                         fontFamily: 'var(--font-display)',
-                        fontWeight: 800,
+                        fontWeight: 600,
                         fontSize: 13,
                         color: 'var(--fs-heading)',
                         lineHeight: 1.1,
@@ -716,8 +705,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                         fontSize: 9,
                         letterSpacing: '0.15em',
                         color: 'var(--fs-muted)',
-                        textTransform: 'uppercase',
-                      }}
+                                              }}
                     >
                       {pluralizeHe(template.exercises?.length || 0, HE_NOUNS.exercise)}
                     </div>

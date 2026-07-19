@@ -166,12 +166,6 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
             ))}
           </ol>
 
-          <div style={{ width: '100%', marginBottom: 16, textAlign: 'start' }}>
-            <CoachMark hintKey="hintWorkout">
-              אחרי כל סט — החליקו את הכפתור למטה. המנוחה תתחיל אוטומטית.
-            </CoachMark>
-          </div>
-
           <m.button
             onClick={() => {
               triggerHaptic('medium');
@@ -198,6 +192,12 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
           >
             בחרו תבנית מוכנה במקום
           </button>
+
+          <div style={{ width: '100%', marginTop: 4, marginBottom: 8, textAlign: 'start' }}>
+            <CoachMark hintKey="hintWorkout">
+              אחרי כל סט — החליקו את הכפתור למטה. המנוחה תתחיל אוטומטית.
+            </CoachMark>
+          </div>
 
           <button
             type="button"

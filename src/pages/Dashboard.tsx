@@ -800,48 +800,14 @@ const FirstRunHero = memo(function FirstRunHero({
         </button>
 
         {/* Secondary: empty workout */}
-        <button
-          type="button"
-          onClick={onStartEmpty}
-          className="active:scale-[0.98] focus-ring"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            width: '100%',
-            minHeight: 48,
-            padding: '12px 18px',
-            background: 'transparent',
-            border: '1px solid var(--color-border-strong)',
-            borderRadius: 'var(--radius-full)',
-            cursor: 'pointer',
-            color: 'var(--fs-ink)',
-            fontFamily: 'var(--font-body)',
-            fontWeight: 600,
-            fontSize: 16,
-            letterSpacing: '-0.01em',
-          }}
-        >
+        <button type="button" onClick={onStartEmpty} className="cta-secondary focus-ring">
           התחילו בלי תבנית
         </button>
 
         <Link
           to="/my-coach"
-          className="focus-ring"
-          style={{
-            textAlign: 'center',
-            fontFamily: 'var(--font-body)',
-            fontSize: 14,
-            letterSpacing: '-0.01em',
-            color: 'var(--fs-link)',
-            textDecoration: 'none',
-            minHeight: 44,
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 4,
-          }}
+          className="cta-ghost focus-ring"
+          style={{ width: '100%', textDecoration: 'none' }}
         >
           יש לכם קוד מאמן?
           <ChevronLeft size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
@@ -861,15 +827,12 @@ const DashboardSkeleton = memo(function DashboardSkeleton() {
       role="status"
       aria-busy="true"
       aria-label="טוען את מסך הבית"
-      style={{ marginTop: 20, display: 'grid', gap: 16 }}
+      style={{ margin: 0, display: 'grid', gap: 16 }}
     >
       {/* Rings-shaped block: ~156px circle + 3 legend bars */}
       <div
-        className="glass-surface"
+        className="fs-surface-card-soft"
         style={{
-          padding: '20px 20px 24px',
-          borderRadius: '24px 16px 24px 16px',
-          border: '1px solid var(--fs-surface-2)',
           display: 'grid',
           gridTemplateColumns: 'auto minmax(0, 1fr)',
           gap: 18,
@@ -886,7 +849,7 @@ const DashboardSkeleton = memo(function DashboardSkeleton() {
       </div>
 
       {/* Streak bar */}
-      <SkeletonBox height={64} borderRadius="var(--radius-asymmetric)" />
+      <SkeletonBox height={64} borderRadius="var(--radius-2xl)" />
 
       {/* 2-3 history rows */}
       {Array.from({ length: 3 }).map((_, i) => (
@@ -894,7 +857,7 @@ const DashboardSkeleton = memo(function DashboardSkeleton() {
           // biome-ignore lint/suspicious/noArrayIndexKey: fixed-count skeleton placeholders, never reordered
           key={i}
           height={82}
-          borderRadius="var(--radius-asymmetric)"
+          borderRadius="var(--radius-2xl)"
         />
       ))}
     </div>

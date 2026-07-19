@@ -102,18 +102,32 @@ export const OverviewTab = memo(function OverviewTab({
 
   if (sessions.length === 0) {
     return (
-      <div className="space-y-4">
-        <ChapterBreak title="סקירה" />
-        <SectionCard rail={false}>
-          <div className="flex flex-col items-center py-10 text-center gap-4 px-2">
-            <Trophy size={36} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
-            <div style={{ display: 'grid', gap: 8, maxWidth: 280 }}>
+      <div className="page-stack" style={{ paddingTop: 4 }}>
+        <div className="section-heading">
+          <h2 className="section-heading-title">סקירה</h2>
+        </div>
+        <div className="fs-surface-card-soft">
+          <div className="flex flex-col items-center py-8 text-center gap-5 px-2">
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 9999,
+                background: 'color-mix(in srgb, var(--fs-accent) 14%, transparent)',
+                color: 'var(--fs-accent)',
+                display: 'grid',
+                placeItems: 'center',
+              }}
+            >
+              <Trophy size={26} strokeWidth={1.75} aria-hidden="true" />
+            </div>
+            <div style={{ display: 'grid', gap: 8, maxWidth: 300 }}>
               <p
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontWeight: 600,
-                  fontSize: 22,
-                  letterSpacing: '-0.02em',
+                  fontSize: 24,
+                  letterSpacing: '-0.022em',
                   color: 'var(--fs-ink)',
                   margin: 0,
                 }}
@@ -132,6 +146,45 @@ export const OverviewTab = memo(function OverviewTab({
                 אחרי האימון הראשון יופיעו כאן סיכום שבועי, רצף, נפח ושיאים.
               </p>
             </div>
+            <ol
+              style={{
+                listStyle: 'none',
+                margin: 0,
+                padding: 0,
+                width: '100%',
+                maxWidth: 300,
+                display: 'grid',
+                gap: 10,
+                textAlign: 'start',
+              }}
+            >
+              {[
+                'בחרו תבנית מוכנה',
+                'השלימו אימון אחד',
+                'חזרו לכאן לראות התקדמות',
+              ].map((label, i) => (
+                <li key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 999,
+                      background: 'var(--fs-surface-2)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+                  <span style={{ fontSize: 15, fontWeight: 500, letterSpacing: '-0.01em' }}>{label}</span>
+                </li>
+              ))}
+            </ol>
             <button
               type="button"
               onClick={() => navigate('/templates')}
@@ -140,15 +193,11 @@ export const OverviewTab = memo(function OverviewTab({
             >
               בחרו תבנית והתחילו
             </button>
-            <button
-              type="button"
-              onClick={() => navigate('/workout')}
-              className="cta-ghost"
-            >
+            <button type="button" onClick={() => navigate('/workout')} className="cta-ghost">
               או אימון ריק
             </button>
           </div>
-        </SectionCard>
+        </div>
       </div>
     );
   }
@@ -174,8 +223,7 @@ export const OverviewTab = memo(function OverviewTab({
               fontSize: 10,
               letterSpacing: '0.15em',
               color: 'var(--fs-muted)',
-              textTransform: 'uppercase',
-            }}
+                          }}
           >
             השבוע האחרון
           </span>
@@ -229,8 +277,7 @@ export const OverviewTab = memo(function OverviewTab({
                 fontSize: 10,
                 letterSpacing: '0.15em',
                 color: 'var(--fs-muted)',
-                textTransform: 'uppercase',
-              }}
+                              }}
             >
               שיאים אחרונים
             </span>
@@ -298,7 +345,7 @@ export const OverviewTab = memo(function OverviewTab({
                       dir="ltr"
                       style={{
                         fontFamily: 'var(--font-display)',
-                        fontWeight: 900,
+                        fontWeight: 700,
                         fontSize: 22,
                         lineHeight: 1,
                         letterSpacing: '-0.02em',
