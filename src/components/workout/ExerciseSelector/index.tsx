@@ -54,6 +54,9 @@ const fromLibraryExercise = (pe: PersonalExercise, sets: Exercise['sets']): Exer
 interface ExerciseSelectorProps {
   isOpen: boolean;
   onSelect: (exercise: Exercise) => void;
+  /** Add a whole picked selection at once (keeps the runner on the FIRST pick).
+   *  Falls back to repeated onSelect calls when not provided. */
+  onSelectMany?: (exercises: Exercise[]) => void;
   onClose: () => void;
   onCreateNew: () => void;
   goal?: WorkoutGoal;
@@ -69,6 +72,7 @@ interface ExerciseSelectorProps {
 const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   isOpen,
   onSelect,
+  onSelectMany,
   onClose,
   onCreateNew,
   goal: _goal,
@@ -104,21 +108,20 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     if (pendingExercises.length === 0) return;
     triggerHaptic('success');
 
-    pendingExercises.forEach((personalExercise) => {
-      // Start every picked exercise with a single set; the trainee adds more
-      // during the workout via "הוסף סט". The library no longer prescribes a
-      // default set count.
-      const exercise = fromLibraryExercise(personalExercise, [
-        createWorkoutSet({ reps: 0, weight: 0 }),
-      ]);
+    // Start every picked exercise with a single set; the trainee adds more
+    // during the workout via "הוסף סט". The library no longer prescribes a
+    // default set count.
+    const exercises = pendingExercises.map((personalExercise) => {
       dataService.incrementExerciseUse(personalExercise.id).catch(() => {});
-      onSelect(exercise);
+      return fromLibraryExercise(personalExercise, [createWorkoutSet({ reps: 0, weight: 0 })]);
     });
+    if (onSelectMany) onSelectMany(exercises);
+    else exercises.forEach(onSelect);
 
     setSelectedExercises(new Set());
     setPendingExercises([]);
     onClose();
-  }, [pendingExercises, onSelect, onClose]);
+  }, [pendingExercises, onSelect, onSelectMany, onClose]);
 
   // Hand the current selection to the pre-workout planning table. Sets are left
   // empty here on purpose — the planning screen seeds each exercise with the
@@ -144,7 +147,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       if (!template.exercises || template.exercises.length === 0) return;
       triggerHaptic('success');
 
-      template.exercises.forEach((ex) => {
+      const exercises: Exercise[] = template.exercises.map((ex) => {
         const exercise: Exercise = {
           id: makeExerciseId(),
           name: ex.name,
@@ -157,14 +160,16 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   .fill(null)
                   .map(() => createWorkoutSet({ reps: 0, weight: 0 })),
         };
-        onSelect(exercise);
+        return exercise;
       });
+      if (onSelectMany) onSelectMany(exercises);
+      else exercises.forEach(onSelect);
 
       setSelectedExercises(new Set());
       setPendingExercises([]);
       onClose();
     },
-    [onSelect, onClose]
+    [onSelect, onSelectMany, onClose]
   );
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {

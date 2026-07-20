@@ -95,6 +95,7 @@ export function useWorkoutEffects({
         const template = await getWorkoutTemplate(initialTemplateId);
         if (template?.exercises && template.exercises.length > 0) {
           triggerHaptic('success');
+          const loaded: Exercise[] = [];
           for (const ex of template.exercises) {
             // Structured-program exercises carry programExtras (RPE target,
             // intensity technique, substitutions, coaching notes) and a target
@@ -129,8 +130,13 @@ export function useWorkoutEffects({
               programExtras: ex.programExtras,
               sets: [...warmupSets, ...workingSets],
             };
-            dispatch({ type: 'ADD_EXERCISE', payload: exercise });
+            loaded.push(exercise);
           }
+          // One batched add: a per-exercise ADD_EXERCISE loop would park the
+          // runner on the LAST exercise of the plan, so the workout opened at
+          // the end of the list and walked backwards. ADD_EXERCISES focuses the
+          // first exercise instead.
+          dispatch({ type: 'ADD_EXERCISES', payload: loaded });
         }
       } catch {
         dispatch({ type: 'OPEN_SELECTOR' });

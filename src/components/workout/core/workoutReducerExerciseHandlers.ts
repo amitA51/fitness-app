@@ -27,6 +27,20 @@ export const exerciseReducer = (draft: WorkoutState, action: WorkoutAction): voi
       break;
     }
 
+    case 'ADD_EXERCISES': {
+      const incoming = action.payload.filter((ex) => ex?.name?.trim());
+      if (incoming.length === 0) return;
+      const firstNewIndex = draft.exercises.length;
+      for (const ex of incoming) {
+        draft.exercises.push({ ...ex, name: (ex.name ?? '').trim() });
+      }
+      // Start at the head of what was just added, not its tail.
+      draft.currentExerciseIndex = firstNewIndex;
+      draft.showExerciseSelector = false;
+      draft.showQuickForm = false;
+      break;
+    }
+
     case 'REMOVE_EXERCISE': {
       const removedIdx = action.payload;
       // Capture the removed exercise's id BEFORE splicing so we can prune it

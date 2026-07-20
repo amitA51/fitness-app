@@ -258,6 +258,15 @@ export function useWorkoutHandlers({
     [dispatch]
   );
 
+  // Whole-selection add: lands the runner on the FIRST pick, so a multi-pick
+  // selection is trained in the order it was chosen.
+  const handleAddExercises = useCallback(
+    (list: Exercise[]) => {
+      dispatch({ type: 'ADD_EXERCISES', payload: list });
+    },
+    [dispatch]
+  );
+
   const handleSkipRest = useCallback(() => {
     dispatch({ type: 'SKIP_REST' });
   }, [dispatch]);
@@ -450,6 +459,7 @@ export function useWorkoutHandlers({
     handleCloseDrawer,
     handleCloseSelector,
     handleAddExercise,
+    handleAddExercises,
     handleSkipRest,
     handleAddRestTime,
     handleNumpadInput,

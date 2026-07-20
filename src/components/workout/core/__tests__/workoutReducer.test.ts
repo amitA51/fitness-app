@@ -349,6 +349,68 @@ describe('workoutReducer', () => {
   });
 
   // ============================================================
+  // ADD_EXERCISES (batch)
+  // ============================================================
+  describe('ADD_EXERCISES', () => {
+    it('appends the batch in order and focuses its FIRST exercise', () => {
+      const state = createInitialState([], 0, mkSettings());
+      const next = apply(state, {
+        type: 'ADD_EXERCISES',
+        payload: [
+          mkExercise({ id: 'a', name: 'לחיצת חזה' }),
+          mkExercise({ id: 'b', name: 'סקוואט' }),
+          mkExercise({ id: 'c', name: 'דדליפט' }),
+        ],
+      });
+      expect(next.exercises.map((e) => e.name)).toEqual(['לחיצת חזה', 'סקוואט', 'דדליפט']);
+      expect(next.currentExerciseIndex).toBe(0);
+    });
+
+    it('focuses the head of the batch when exercises already exist', () => {
+      const next = apply(baseState, {
+        type: 'ADD_EXERCISES',
+        payload: [mkExercise({ id: 'b', name: 'סקוואט' }), mkExercise({ id: 'c', name: 'דדליפט' })],
+      });
+      expect(next.exercises).toHaveLength(3);
+      expect(next.currentExerciseIndex).toBe(1);
+    });
+
+    it('ignores unnamed exercises and is a no-op for an empty batch', () => {
+      const next = apply(baseState, { type: 'ADD_EXERCISES', payload: [] });
+      expect(next.exercises).toHaveLength(1);
+      expect(next.currentExerciseIndex).toBe(0);
+    });
+  });
+
+  // ============================================================
+  // SKIP_SET / UPDATE_SET_SEGMENTS — both were implemented in the set slice but
+  // missing from the reducer's action routing, so every dispatch was silently
+  // dropped (the "דלג על סט החימום" button did nothing). These assert that the
+  // actions reach their handler through the top-level reducer.
+  // ============================================================
+  describe('SKIP_SET', () => {
+    it('marks the active set skipped + completed with no logged data', () => {
+      const next = apply(baseState, { type: 'SKIP_SET' });
+      const set = next.exercises[0]!.sets![0]!;
+      expect(set.skipped).toBe(true);
+      expect(set.isCompleted).toBe(true);
+      expect(set.completedAt).toBe(new Date().toISOString());
+      expect(set.weight).toBe(0);
+      expect(set.reps).toBe(0);
+    });
+  });
+
+  describe('UPDATE_SET_SEGMENTS', () => {
+    it('stores the drop-set legs on the addressed set', () => {
+      const next = apply(baseState, {
+        type: 'UPDATE_SET_SEGMENTS',
+        payload: { setIndex: 0, segments: [{ weight: 80, reps: 8 }] },
+      });
+      expect(next.exercises[0]!.sets![0]!.segments).toEqual([{ weight: 80, reps: 8 }]);
+    });
+  });
+
+  // ============================================================
   // FINALIZE_WORKOUT
   // ============================================================
   describe('FINALIZE_WORKOUT', () => {

@@ -24,8 +24,23 @@ interface ExerciseTutorialProps {
   equipment?: string;
   /** The exercise's own execution cue — segmented into ordered steps. */
   instructions?: string;
+  /** Current set's personal note. Edited here (the note strip used to sit at the
+   *  top of the active screen; it now lives with the AI coach). */
+  note?: string;
+  /** Persist the set note. Omitted when note editing isn't available. */
+  onSaveNote?: (note: string) => void;
   onClose: () => void;
 }
+
+/** One-tap note fragments for the set note. */
+const QUICK_NOTES = [
+  'כאב קל',
+  'הרגשה מצוינת',
+  'משקל קל מדי',
+  'משקל כבד מדי',
+  'טכניקה לקויה',
+  'שליטה מלאה',
+];
 
 interface TutorialStep {
   title: string;
@@ -41,6 +56,8 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   secondaryMuscles,
   equipment,
   instructions,
+  note,
+  onSaveNote,
   onClose,
 }) => {
   const [activeStep, setActiveStep] = useState(0);
@@ -54,6 +71,8 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   const [answer, setAnswer] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
   const [qaError, setQaError] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState(note ?? '');
+  const [noteSaved, setNoteSaved] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useFocusTrap(containerRef, { isOpen, onClose, closeOnEscape: true, lockScroll: true });
@@ -143,6 +162,30 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
       setFailedImgs(new Set());
     }
   }, [exerciseName]);
+
+  // Seed the editor from the saved note each time the panel OPENS (or lands on
+  // another exercise). Read through a ref, not a dep: saving updates `note`, and
+  // re-running on that change would wipe the "נשמר" confirmation the user just
+  // earned — and could clobber their in-progress edits.
+  const noteRef = useRef(note);
+  noteRef.current = note;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `note` is read via ref on purpose (see above)
+  useEffect(() => {
+    if (!isOpen) return;
+    setNoteDraft(noteRef.current ?? '');
+    setNoteSaved(false);
+  }, [isOpen, exerciseName]);
+
+  const handleSaveNote = useCallback(() => {
+    if (!onSaveNote) return;
+    onSaveNote(noteDraft.trim());
+    setNoteSaved(true);
+  }, [noteDraft, onSaveNote]);
+
+  const handleQuickNote = useCallback((chip: string) => {
+    setNoteSaved(false);
+    setNoteDraft((prev) => (prev.trim() ? `${prev}, ${chip}` : chip));
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -708,6 +751,106 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 </p>
               )}
             </div>
+
+            {/* Set note — moved here from the pinned strip at the top of the
+                active screen, so writing a note and asking the coach live in
+                the same place. */}
+            {onSaveNote && (
+              <div style={{ marginTop: 20 }}>
+                <label
+                  htmlFor="exercise-note"
+                  style={{
+                    display: 'block',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    letterSpacing: '-0.01em',
+                    color: 'var(--fs-muted)',
+                    marginBottom: 6,
+                  }}
+                >
+                  פתק לסט
+                </label>
+                <textarea
+                  id="exercise-note"
+                  rows={3}
+                  value={noteDraft}
+                  onChange={(e) => {
+                    setNoteDraft(e.target.value);
+                    setNoteSaved(false);
+                  }}
+                  placeholder="מה כדאי לזכור מהסט הזה?"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    background: 'rgba(var(--text-on-navy-rgb),0.06)',
+                    border: '1px solid rgba(var(--text-on-navy-rgb),0.15)',
+                    borderRadius: 12,
+                    color: 'var(--fs-ink)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 14,
+                    lineHeight: 1.5,
+                    resize: 'vertical',
+                    textAlign: 'start',
+                  }}
+                />
+                <div
+                  style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '8px 0 10px' }}
+                  role="group"
+                  aria-label="פתקים מהירים"
+                >
+                  {QUICK_NOTES.map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => handleQuickNote(chip)}
+                      style={{
+                        padding: '5px 11px',
+                        background: 'rgba(var(--text-on-navy-rgb),0.05)',
+                        border: '1px solid rgba(var(--text-on-navy-rgb),0.15)',
+                        borderRadius: 9999,
+                        color: 'var(--fs-muted)',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={handleSaveNote}
+                    style={{
+                      padding: '10px 18px',
+                      background: 'var(--fs-accent)',
+                      color: 'var(--color-ink-on-accent)',
+                      border: 'none',
+                      borderRadius: 12,
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 600,
+                      fontSize: 13,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    שמור פתק
+                  </button>
+                  <span
+                    role="status"
+                    aria-live="polite"
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 11,
+                      color: 'var(--fs-muted)',
+                    }}
+                  >
+                    {noteSaved ? 'הפתק נשמר' : ''}
+                  </span>
+                </div>
+              </div>
+            )}
           </m.div>
         )}
       </div>

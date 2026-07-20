@@ -131,6 +131,10 @@ export interface WorkoutState {
 // --- Exercise Actions ---
 export type ExerciseAction =
   | { type: 'ADD_EXERCISE'; payload: ActiveExercise }
+  // Add a whole picked selection at once. Unlike a loop of ADD_EXERCISE (which
+  // leaves the runner parked on the LAST pick, so the workout walks the list
+  // backwards) this focuses the FIRST exercise of the batch.
+  | { type: 'ADD_EXERCISES'; payload: ActiveExercise[] }
   | { type: 'REMOVE_EXERCISE'; payload: number }
   | { type: 'REORDER_EXERCISES'; payload: ActiveExercise[] }
   | { type: 'CHANGE_EXERCISE'; payload: number }

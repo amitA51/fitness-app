@@ -70,6 +70,7 @@ interface WorkoutOverlaysProps {
   // Exercise selector
   showExerciseSelector: boolean;
   onAddExercise: (ex: Exercise) => void;
+  onAddExercises?: (exercises: Exercise[]) => void;
   onCloseSelector: () => void;
   onOpenQuickForm: () => void;
   defaultWorkoutGoal?: WorkoutGoal;
@@ -95,6 +96,8 @@ interface WorkoutOverlaysProps {
   tutorialSecondaryMuscles?: string[];
   tutorialEquipment?: string;
   tutorialInstructions?: string;
+  tutorialNote?: string;
+  onSaveTutorialNote?: (note: string) => void;
   onCloseTutorial: () => void;
   onCloseAICoach: () => void;
 }
@@ -144,6 +147,7 @@ const WorkoutOverlays: React.FC<WorkoutOverlaysProps> = (props) => (
       onCreateSupersetGroup={props.onCreateSupersetGroup}
       showExerciseSelector={props.showExerciseSelector}
       onAddExercise={props.onAddExercise}
+      onAddExercises={props.onAddExercises}
       onCloseSelector={props.onCloseSelector}
       onOpenQuickForm={props.onOpenQuickForm}
       defaultWorkoutGoal={props.defaultWorkoutGoal}
@@ -165,6 +169,8 @@ const WorkoutOverlays: React.FC<WorkoutOverlaysProps> = (props) => (
       tutorialSecondaryMuscles={props.tutorialSecondaryMuscles}
       tutorialEquipment={props.tutorialEquipment}
       tutorialInstructions={props.tutorialInstructions}
+      tutorialNote={props.tutorialNote}
+      onSaveTutorialNote={props.onSaveTutorialNote}
       onCloseTutorial={props.onCloseTutorial}
       onCloseAICoach={props.onCloseAICoach}
     />

@@ -57,6 +57,7 @@ export interface WorkoutFlowOverlaysProps {
   // Exercise selector
   showExerciseSelector: boolean;
   onAddExercise: (ex: Exercise) => void;
+  onAddExercises?: (exercises: Exercise[]) => void;
   onCloseSelector: () => void;
   onOpenQuickForm: () => void;
   defaultWorkoutGoal?: WorkoutGoal;
@@ -82,6 +83,9 @@ export interface WorkoutFlowOverlaysProps {
   tutorialSecondaryMuscles?: string[];
   tutorialEquipment?: string;
   tutorialInstructions?: string;
+  /** Current set's note + its writer — the note strip now lives in the coach. */
+  tutorialNote?: string;
+  onSaveTutorialNote?: (note: string) => void;
   onCloseTutorial: () => void;
   onCloseAICoach: () => void;
 }
@@ -108,6 +112,7 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
   onCreateSupersetGroup,
   showExerciseSelector,
   onAddExercise,
+  onAddExercises,
   onCloseSelector,
   onOpenQuickForm,
   defaultWorkoutGoal,
@@ -129,6 +134,8 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
   tutorialSecondaryMuscles,
   tutorialEquipment,
   tutorialInstructions,
+  tutorialNote,
+  onSaveTutorialNote,
   onCloseTutorial,
   onCloseAICoach,
 }) => (
@@ -173,6 +180,7 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
         <ExerciseSelector
           isOpen={true}
           onSelect={onAddExercise}
+          onSelectMany={onAddExercises}
           onClose={onCloseSelector}
           onCreateNew={onOpenQuickForm}
           goal={defaultWorkoutGoal}
@@ -230,6 +238,8 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
             secondaryMuscles={tutorialSecondaryMuscles}
             equipment={tutorialEquipment}
             instructions={tutorialInstructions}
+            note={tutorialNote}
+            onSaveNote={onSaveTutorialNote}
             onClose={onCloseTutorial}
           />
         </React.Suspense>

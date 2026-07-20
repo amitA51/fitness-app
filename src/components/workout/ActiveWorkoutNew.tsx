@@ -439,6 +439,7 @@ export const WorkoutContent: React.FC<{
     handleCloseDrawer,
     handleCloseSelector,
     handleAddExercise,
+    handleAddExercises,
     handleSkipRest,
     handleAddRestTime,
     handleNumpadInput,
@@ -638,6 +639,7 @@ export const WorkoutContent: React.FC<{
               <ExerciseSelector
                 isOpen={true}
                 onSelect={(ex) => dispatch({ type: 'ADD_EXERCISE', payload: ex })}
+                onSelectMany={(exs) => dispatch({ type: 'ADD_EXERCISES', payload: exs })}
                 onClose={() => dispatch({ type: 'CLOSE_SELECTOR' })}
                 onCreateNew={() => dispatch({ type: 'OPEN_QUICK_FORM' })}
                 goal={workoutSettings.defaultWorkoutGoal}
@@ -741,7 +743,6 @@ export const WorkoutContent: React.FC<{
             nameSuggestions={nameSuggestions}
             onUpdateRPE={handleUpdateRPE}
             onUpdateRpeTag={handleUpdateRpeTag}
-            onUpdateNotes={handleUpdateNotes}
             onUndo={handleUndoSet}
             onSkipSet={handleSkipSet}
             onUpdateSetSegments={handleUpdateSetSegments}
@@ -810,6 +811,7 @@ export const WorkoutContent: React.FC<{
         onCreateSupersetGroup={confirmSuperset}
         showExerciseSelector={state.showExerciseSelector}
         onAddExercise={handleAddExercise}
+        onAddExercises={handleAddExercises}
         onCloseSelector={handleCloseSelector}
         onOpenQuickForm={handleOpenQuickForm}
         defaultWorkoutGoal={workoutSettings.defaultWorkoutGoal}
@@ -826,7 +828,10 @@ export const WorkoutContent: React.FC<{
         onCooldownSkip={handleCooldownSkip}
         showTutorial={state.showTutorial}
         tutorialExercise={state.tutorialExercise}
-        tutorialCustomNotes={derived.currentExercise?.programExtras?.notes as string | undefined}
+        tutorialCustomNotes={
+          (derived.currentExercise?.programExtras?.coachingNote ??
+            derived.currentExercise?.programExtras?.notes) as string | undefined
+        }
         tutorialPrimaryMuscle={
           derived.currentExercise?.targetMuscle ?? derived.currentExercise?.muscleGroup
         }
@@ -835,6 +840,8 @@ export const WorkoutContent: React.FC<{
         tutorialInstructions={
           derived.currentExercise?.tutorialText ?? derived.currentExercise?.instructions
         }
+        tutorialNote={derived.currentSet?.notes}
+        onSaveTutorialNote={handleUpdateNotes}
         onCloseTutorial={handleCloseTutorial}
         onCloseAICoach={handleCloseAICoach}
       />

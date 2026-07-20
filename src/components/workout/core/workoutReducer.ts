@@ -34,6 +34,7 @@ export { resolveActiveSet };
 // This prevents every action from going through all reducers
 const EXERCISE_ACTIONS = new Set([
   'ADD_EXERCISE',
+  'ADD_EXERCISES',
   'REMOVE_EXERCISE',
   'REORDER_EXERCISES',
   'CHANGE_EXERCISE',
@@ -49,6 +50,8 @@ const SET_ACTIONS = new Set([
   'UPDATE_SET',
   'COMPLETE_SET',
   'ADD_SET',
+  'SKIP_SET',
+  'UPDATE_SET_SEGMENTS',
   'UNDO_LAST_SET',
   'EDIT_SPECIFIC_SET',
   'DELETE_SET',

@@ -22,7 +22,6 @@ export { DeleteConfirmDialog } from './DeleteConfirmDialog';
 // Bottom sheets & overlays
 export { default as ActionChip } from './ActionChip';
 export { default as AlternativesSheet } from './AlternativesSheet';
-export { default as NotesBottomSheet } from './NotesBottomSheet';
 export { default as RPEPicker } from './RPEPicker';
 export { default as SlideToComplete } from './SlideToComplete';
 export { default as InlineRestTimer } from './InlineRestTimer';

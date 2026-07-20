@@ -6,12 +6,12 @@ import {
   Check,
   ChevronLeft,
   Edit,
-  FileText,
   Layers,
   Link2,
   Plus,
   RotateCcw,
   SkipForward,
+  Sparkles,
   Star,
   Unlink,
   Wrench,
@@ -31,8 +31,6 @@ import { usePreviousSetData } from '../hooks/usePreviousSetData';
 import ActionChip from './ActionChip';
 import AlternativesSheet from './AlternativesSheet';
 import DropSetSheet from './DropSetSheet';
-import ExerciseNoteBar from './ExerciseNoteBar';
-import NotesBottomSheet from './NotesBottomSheet';
 import RPEPicker from './RPEPicker';
 import SetEditBottomSheet from './SetEditBottomSheet';
 import SetInputCard from './SetInputCard';
@@ -58,7 +56,6 @@ interface ExerciseDisplayProps {
   onRenameExercise?: (name: string) => void;
   onEditSet?: (setIndex: number, updates: Partial<WorkoutSet>) => void;
   nameSuggestions?: string[];
-  onUpdateNotes?: (notes: string) => void;
   onUpdateRPE?: (rpe: number | null) => void;
   onUpdateRpeTag?: (tag: RpeTag | null) => void;
   onUndo?: () => void;
@@ -145,8 +142,6 @@ function PrescriptionBlock({ extras }: { extras: ProgramExtras }) {
     warmupRange,
     workingSets,
     intensityTechnique,
-    coachingNote,
-    notes,
   } = extras;
 
   // RPE: prefer the PDF's early→last arrow; fall back to the numeric last-set
@@ -163,16 +158,12 @@ function PrescriptionBlock({ extras }: { extras: ProgramExtras }) {
   // resolved count so the pill reads exactly like the program.
   const warmupValue = warmupRange && warmupRange.length > 0 ? warmupRange : `×${warmupSets}`;
   const hasWorkingSets = typeof workingSets === 'number' && workingSets > 0;
-  // Prefer the freeform PDF cue (tempo/pause/setup). For non-program templates
-  // (no rep range) fall back to the legacy composed note so coach-authored
-  // templates keep their guidance; for program days `coachingNote` is the cue
-  // and the structured pills already carry the rep/RPE/rest/warmup summary.
-  const note = coachingNote || (repRange ? undefined : notes);
-
+  // The freeform coaching cue (tempo/pause/setup) is NOT shown here — it lives
+  // in the AI coach panel now, so the card keeps only the compact prescription.
   const hasPills = Boolean(
     repRange || rpeText || restRange || hasWarmup || hasWorkingSets || intensityTechnique
   );
-  if (!hasPills && !note) return null;
+  if (!hasPills) return null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
@@ -186,30 +177,6 @@ function PrescriptionBlock({ extras }: { extras: ProgramExtras }) {
           {intensityTechnique && (
             <span style={coachPillStrong}>סט אחרון · {intensityTechnique}</span>
           )}
-        </div>
-      )}
-      {note && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 6,
-            alignItems: 'flex-start',
-            color: 'var(--fs-muted)',
-            fontSize: 12,
-            lineHeight: 1.35,
-          }}
-        >
-          <FileText size={13} aria-hidden style={{ flexShrink: 0, marginTop: 2 }} />
-          <span
-            style={{
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
-          >
-            {note}
-          </span>
         </div>
       )}
     </div>
@@ -232,7 +199,6 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     hasNextExercise = false,
     onOpenNumpad,
     onEditSet,
-    onUpdateNotes,
     onUpdateRPE,
     onUpdateRpeTag,
     onUndo,
@@ -252,7 +218,6 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
   }) => {
     const [showSetEditor, setShowSetEditor] = useState(false);
     const [showRPEPicker, setShowRPEPicker] = useState(false);
-    const [showNotesSheet, setShowNotesSheet] = useState(false);
     const [showAlternatives, setShowAlternatives] = useState(false);
     const [showDropSetSheet, setShowDropSetSheet] = useState(false);
     const [showToolsSheet, setShowToolsSheet] = useState(false);
@@ -420,7 +385,12 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     const showRpeChip = !isExerciseComplete && !!onUpdateRPE;
     const showInlineAddSet = !isExerciseComplete && !!onAddSet;
     const showUndoChip = completedSetsCount > 0 && !!onUndo;
-    const hasActionRow = showRpeChip || showInlineAddSet || tools.length > 0 || showUndoChip;
+    // The AI coach used to sit in the pinned note strip above the sets; that
+    // strip is gone, so the coach (which now also hosts the set note) gets its
+    // own chip here.
+    const showAiChip = !!onOpenAICoach;
+    const hasActionRow =
+      showRpeChip || showInlineAddSet || showAiChip || tools.length > 0 || showUndoChip;
 
     return (
       <div
@@ -520,15 +490,6 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             />
           </div>
         </div>
-
-        {/* ── NOTE + AI STRIP (pinned, top) ── */}
-        {onUpdateNotes && (
-          <ExerciseNoteBar
-            note={currentSet.notes || ''}
-            onEdit={() => setShowNotesSheet(true)}
-            onOpenAI={onOpenAICoach}
-          />
-        )}
 
         {/* ── SCROLLABLE CONTENT (spec §5) ── */}
         <div
@@ -837,6 +798,17 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   ariaLabel="הוסף סט לתרגיל"
                 />
               )}
+              {showAiChip && (
+                <ActionChip
+                  icon={<Sparkles size={14} strokeWidth={2.5} />}
+                  label="מאמן AI"
+                  onClick={() => {
+                    haptics.impact('light');
+                    onOpenAICoach?.();
+                  }}
+                  ariaLabel="מאמן AI, מדריך תרגיל ופתק לסט"
+                />
+              )}
               {tools.length > 0 && (
                 <ActionChip
                   icon={<Wrench size={14} strokeWidth={2.5} />}
@@ -888,17 +860,6 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             currentTag={currentSet.rpeTag}
             onSelectTag={onUpdateRpeTag}
             onClose={() => setShowRPEPicker(false)}
-          />
-        )}
-
-        {onUpdateNotes && (
-          <NotesBottomSheet
-            isOpen={showNotesSheet}
-            currentNotes={currentSet.notes || ''}
-            exerciseName={exercise.name || ''}
-            setIndex={displaySetIndex}
-            onSave={onUpdateNotes}
-            onClose={() => setShowNotesSheet(false)}
           />
         )}
 
