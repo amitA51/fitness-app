@@ -1,22 +1,27 @@
 // ExerciseDisplay - Fresh Steel v2 Active Workout Layout
-// Exercise card (pinned) → technique pills → input cards → previous badge → action group
+// Exercise card (pinned) → input cards → previous badge → action group
 // No dark hero panel, no internal SlideToComplete
 
 import {
   Check,
   ChevronLeft,
   Edit,
+  Flame,
   Layers,
   Link2,
   Plus,
+  Repeat,
   RotateCcw,
   SkipForward,
   Sparkles,
   Star,
+  Timer,
+  TrendingDown,
   Unlink,
   Wrench,
+  Zap,
 } from 'lucide-react';
-import { type CSSProperties, memo, useCallback, useMemo, useState } from 'react';
+import { type CSSProperties, type ReactNode, memo, useCallback, useMemo, useState } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import type {
   Exercise,
@@ -35,7 +40,6 @@ import RPEPicker from './RPEPicker';
 import SetEditBottomSheet from './SetEditBottomSheet';
 import SetInputCard from './SetInputCard';
 import { SetProgress } from './SetProgress';
-import SetTechniquePills from './SetTechniquePills';
 import WorkoutToolsSheet, { type WorkoutTool } from './WorkoutToolsSheet';
 
 // ============================================================
@@ -309,14 +313,108 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     );
     const handleCommitGhostReps = useCallback((v: number) => onUpdateSet('reps', v), [onUpdateSet]);
 
-    // Occasional tools — pulled out of the always-on panel into the כלים sheet so
-    // the live set surface keeps only the per-set actions inline. Each entry is
-    // gated by the same condition that used to guard its chip; the sheet trigger
-    // only renders when at least one applies, so it never opens empty.
+    // Everything occasional lives in the כלים sheet, grouped into short named
+    // sections so a nine-row list still reads at a glance. The live surface
+    // keeps only what a trainee touches every single set.
     const tools: WorkoutTool[] = [];
+
+    // Set type — these used to be an always-on pill row under the exercise card
+    // (חימום · דרופ · כשל · מנוחה-קצרה). They are marked once in a while, not
+    // every set, so they moved in here as toggles that keep the sheet open.
+    if (onToggleTechnique && !isExerciseComplete) {
+      const TECHNIQUES: {
+        id: SetTechnique;
+        label: string;
+        caption: string;
+        icon: ReactNode;
+        on: boolean;
+      }[] = [
+        {
+          id: 'warmup',
+          label: 'סט חימום',
+          caption: 'סט הרמה — לא נספר בנפח ולא בשיאים',
+          icon: <Flame size={19} strokeWidth={2.2} />,
+          on: !!currentSet.isWarmup,
+        },
+        {
+          id: 'dropSet',
+          label: 'דרופ-סט',
+          caption: 'הורדת משקל והמשך מיד באותו סט',
+          icon: <TrendingDown size={19} strokeWidth={2.2} />,
+          on: !!currentSet.isDropSet,
+        },
+        {
+          id: 'failure',
+          label: 'עד כשל',
+          caption: 'הסט בוצע עד כשל טכני',
+          icon: <Zap size={19} strokeWidth={2.2} />,
+          on: !!currentSet.isFailure,
+        },
+        {
+          id: 'restPause',
+          label: 'רסט-פוז',
+          caption: 'הפוגה קצרה בתוך הסט והמשך',
+          icon: <Timer size={19} strokeWidth={2.2} />,
+          on: !!currentSet.isRestPause,
+        },
+      ];
+      for (const t of TECHNIQUES) {
+        tools.push({
+          id: `technique-${t.id}`,
+          group: 'סוג הסט',
+          icon: t.icon,
+          label: t.label,
+          caption: t.caption,
+          active: t.on,
+          toggle: true,
+          keepOpen: true,
+          onSelect: () => onToggleTechnique(t.id, !t.on),
+        });
+      }
+    }
+
+    // Logging aids for the set that is open right now.
+    if (onUpdateRPE && !isExerciseComplete) {
+      const target = exercise.programExtras?.rpeTarget;
+      tools.push({
+        id: 'rpe',
+        group: 'רישום הסט',
+        icon: <Star size={18} strokeWidth={2.2} fill={currentSet.rpe ? 'currentColor' : 'none'} />,
+        label: 'דירוג מאמץ (RPE)',
+        caption: currentSet.rpe
+          ? `נבחר: ${currentSet.rpe}`
+          : target !== undefined
+            ? `היעד בתוכנית: ${target}`
+            : 'כמה קשה היה הסט',
+        dot: !!currentSet.rpe,
+        onSelect: () => setShowRPEPicker(true),
+      });
+    }
+    if (onUpdateSetSegments && currentSet.isDropSet) {
+      tools.push({
+        id: 'drop-segments',
+        group: 'רישום הסט',
+        icon: <Layers size={18} strokeWidth={2.2} />,
+        label: 'מקטעי דרופ-סט',
+        caption: 'רישום כל ירידת משקל בתוך הסט',
+        onSelect: () => setShowDropSetSheet(true),
+        dot: !!(currentSet.segments && currentSet.segments.length > 0),
+      });
+    }
+    if (completedSetsCount > 0 && onEditSet) {
+      tools.push({
+        id: 'edit-sets',
+        group: 'רישום הסט',
+        icon: <Edit size={18} strokeWidth={2.2} />,
+        label: 'עריכת סטים',
+        caption: 'תיקון משקל או חזרות בסטים שהושלמו',
+        onSelect: () => setShowSetEditor(true),
+      });
+    }
     if (onOpenPlateCalc) {
       tools.push({
         id: 'plates',
+        group: 'התרגיל',
         icon: (
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 800 }}>ק״ג</span>
         ),
@@ -325,38 +423,10 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
         onSelect: onOpenPlateCalc,
       });
     }
-    if (completedSetsCount > 0 && onEditSet) {
-      tools.push({
-        id: 'edit-sets',
-        icon: <Edit size={18} strokeWidth={2.2} />,
-        label: 'עריכת סטים',
-        caption: 'תיקון משקל או חזרות בסטים שהושלמו',
-        onSelect: () => setShowSetEditor(true),
-      });
-    }
-    if (onUpdateSetSegments && currentSet.isDropSet) {
-      tools.push({
-        id: 'drop-segments',
-        icon: <Layers size={18} strokeWidth={2.2} />,
-        label: 'מקטעי דרופ-סט',
-        caption: 'רישום כל ירידת משקל בתוך הסט',
-        onSelect: () => setShowDropSetSheet(true),
-        dot: !!(currentSet.segments && currentSet.segments.length > 0),
-      });
-    }
-    if (workingCompleted === 0 && onSwapExercise) {
-      const hasPresets = (exercise.programExtras?.alternatives?.length ?? 0) > 0;
-      tools.push({
-        id: 'alternatives',
-        icon: <RotateCcw size={18} strokeWidth={2.2} />,
-        label: 'תרגילים חלופיים',
-        caption: hasPresets ? 'החלפה בתנועה דומה או בתרגיל מהספרייה' : 'החלפה בתרגיל מהספרייה',
-        onSelect: () => setShowAlternatives(true),
-      });
-    }
     if (isInSuperset && onRemoveSuperset) {
       tools.push({
         id: 'superset-remove',
+        group: 'התרגיל',
         icon: <Unlink size={18} strokeWidth={2.2} />,
         label: 'בטל סופרסט',
         caption: 'הפרדת התרגיל מהסופרסט',
@@ -369,6 +439,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     } else if (onCreateSuperset) {
       tools.push({
         id: 'superset-create',
+        group: 'התרגיל',
         icon: <Link2 size={18} strokeWidth={2.2} />,
         label: 'צור סופרסט',
         caption: 'שילוב עם התרגיל הבא ללא מנוחה',
@@ -379,10 +450,11 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
       });
     }
 
-    // Inline per-set chips: RPE + add-set are meaningful only during an active
-    // set; once the exercise is complete the done-panel already offers add-set,
-    // and the only live actions are the כלים sheet (edit/superset/plates) + undo.
-    const showRpeChip = !isExerciseComplete && !!onUpdateRPE;
+    // Inline per-set chips. Swapping the movement is a decision made BEFORE the
+    // first working set, so it takes the front slot (RPE moved into the sheet);
+    // add-set is meaningful only while a set is open — once the exercise is done
+    // the completed panel already offers it.
+    const showAlternativesChip = workingCompleted === 0 && !!onSwapExercise && !isExerciseComplete;
     const showInlineAddSet = !isExerciseComplete && !!onAddSet;
     const showUndoChip = completedSetsCount > 0 && !!onUndo;
     // The AI coach used to sit in the pinned note strip above the sets; that
@@ -390,7 +462,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     // own chip here.
     const showAiChip = !!onOpenAICoach;
     const hasActionRow =
-      showRpeChip || showInlineAddSet || showAiChip || tools.length > 0 || showUndoChip;
+      showAlternativesChip || showInlineAddSet || showAiChip || tools.length > 0 || showUndoChip;
 
     return (
       <div
@@ -618,54 +690,46 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             </div>
           ) : (
             <>
-              {/* 5A: Technique pills */}
-              {onToggleTechnique && (
-                <SetTechniquePills set={currentSet} onToggle={onToggleTechnique} />
-              )}
-
               {/* Skip-warmup affordance — only while the active set is a warmup.
                   Warmups don't need to be logged rep-for-rep, so offer a one-tap
                   skip that advances without starting a rest timer. */}
               {activeIsWarmup && onSkipSet && (
-                <>
-                  <div style={{ height: 10, flexShrink: 0 }} />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      haptics.impact('light');
-                      onSkipSet();
-                    }}
-                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-[0.98]"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      width: '100%',
-                      minHeight: 44,
-                      borderRadius: 12,
-                      background: 'color-mix(in srgb, var(--fs-accent) 10%, var(--fs-surface))',
-                      border:
-                        '1px dashed color-mix(in srgb, var(--fs-accent) 45%, var(--fs-steel))',
-                      color: 'var(--fs-accent-2)',
-                      fontFamily: 'var(--font-display)',
-                      fontWeight: 600,
-                      fontSize: 13,
-                      letterSpacing: '0.04em',
-                      cursor: 'pointer',
-                    }}
-                    aria-label="דלג על סט החימום"
-                  >
-                    <SkipForward size={15} strokeWidth={2.5} />
-                    דלג על סט החימום
-                  </button>
-                </>
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptics.impact('light');
+                    onSkipSet();
+                  }}
+                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-[0.98]"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    width: '100%',
+                    minHeight: 44,
+                    borderRadius: 12,
+                    background: 'color-mix(in srgb, var(--fs-accent) 10%, var(--fs-surface))',
+                    border: '1px dashed color-mix(in srgb, var(--fs-accent) 45%, var(--fs-steel))',
+                    color: 'var(--fs-accent-2)',
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 600,
+                    fontSize: 13,
+                    letterSpacing: '0.04em',
+                    cursor: 'pointer',
+                  }}
+                  aria-label="דלג על סט החימום"
+                >
+                  <SkipForward size={15} strokeWidth={2.5} />
+                  דלג על סט החימום
+                </button>
               )}
 
-              {/* Gap after pills */}
-              <div style={{ height: 12, flexShrink: 0 }} />
+              {/* Gap above the inputs — only needed when the skip-warmup button
+                  sits above them; otherwise the scroll padding already spaces it. */}
+              {activeIsWarmup && onSkipSet && <div style={{ height: 12, flexShrink: 0 }} />}
 
-              {/* 5B: Input cards grid */}
+              {/* Input cards grid */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <SetInputCard
                   label="משקל"
@@ -772,19 +836,15 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                 scrollbarWidth: 'none',
               }}
             >
-              {showRpeChip && (
+              {showAlternativesChip && (
                 <ActionChip
-                  icon={
-                    <Star
-                      size={14}
-                      strokeWidth={2.5}
-                      fill={currentSet.rpe ? 'var(--fs-primary)' : 'none'}
-                    />
-                  }
-                  label={`RPE ${currentSet.rpe || '—'}`}
-                  onClick={() => setShowRPEPicker(true)}
-                  active={!!currentSet.rpe}
-                  ariaLabel="בחר RPE"
+                  icon={<Repeat size={14} strokeWidth={2.5} />}
+                  label="תרגיל חלופי"
+                  onClick={() => {
+                    haptics.impact('light');
+                    setShowAlternatives(true);
+                  }}
+                  ariaLabel="החלפת התרגיל בתרגיל חלופי"
                 />
               )}
               {showInlineAddSet && (

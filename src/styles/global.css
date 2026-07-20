@@ -64,7 +64,11 @@ body {
   letter-spacing: -0.01em;
   text-decoration: none;
   border-radius: var(--radius-full);
-  transform: translateY(-110%);
+  /* Park it fully clear of the viewport. A plain -110% left ~8px of the chip
+     bleeding under the top edge (the 12px offset outran the percentage), which
+     read as a stray green sliver above every screen. The extra 24px absolute
+     term covers the offset at any font size. */
+  transform: translateY(calc(-100% - 24px));
   transition: transform var(--duration-fast) ease;
 }
 

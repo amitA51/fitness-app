@@ -84,9 +84,19 @@ export function useWorkoutEffects({
     }
   }, [completedSetsCount, currentExercise, exercises, currentExerciseIndex, announceSetComplete]);
 
-  // Load initial template if provided
+  // Load initial template if provided.
+  // The `exercises.length` guard alone cannot hold: the load is async, so two
+  // invocations of this effect (StrictMode's double-mount, a dep change while
+  // the fetch is in flight) both pass the check with an empty list and both
+  // dispatch — which appended the whole plan TWICE (14 exercises for a 7-move
+  // day, the runner parked mid-list at the head of the second copy). This ref
+  // is claimed synchronously, before any await, so only the first invocation
+  // per template id ever reaches the dispatch.
+  const loadedTemplateIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!initialTemplateId || exercises.length > 0) return;
+    if (loadedTemplateIdRef.current === initialTemplateId) return;
+    loadedTemplateIdRef.current = initialTemplateId;
 
     const loadTemplate = async () => {
       try {

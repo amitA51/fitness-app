@@ -180,7 +180,13 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                 fontFamily: 'var(--font-display)',
                 fontWeight: 600,
                 fontSize: 14,
-                color: isActive ? 'var(--fs-primary)' : 'var(--fs-ink)',
+                // --fs-link, not --fs-primary: primary is the near-black obsidian
+                // used for borders and for ink ON the accent fill (see the badge
+                // above). As a bare text color it is #0a0a0a on #111 in dark =
+                // 1.05:1, invisible; in light it is 15.1:1 vs 16.2:1 for --fs-ink,
+                // so the active state never read at all. --fs-link is the AA-safe
+                // accent-text token (6.6:1 light / 11.0:1 dark).
+                color: isActive ? 'var(--fs-link)' : 'var(--fs-ink)',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',

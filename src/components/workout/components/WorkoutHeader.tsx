@@ -239,6 +239,12 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
           WebkitBackdropFilter: 'saturate(180%) blur(18px)',
           padding: '12px 16px',
           borderBottom: '0.5px solid var(--color-separator)',
+          // backdrop-filter makes this header its own stacking context, so the
+          // overflow menu's z-index is scoped INSIDE it — the exercise card, a
+          // later sibling, painted straight over the open menu. Lifting the whole
+          // header keeps its dropdown above the content below.
+          position: 'relative',
+          zIndex: 30,
         }}
       >
         {/* Left: Brand icon + workout label */}

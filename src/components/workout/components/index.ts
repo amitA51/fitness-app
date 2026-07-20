@@ -25,7 +25,6 @@ export { default as AlternativesSheet } from './AlternativesSheet';
 export { default as RPEPicker } from './RPEPicker';
 export { default as SlideToComplete } from './SlideToComplete';
 export { default as InlineRestTimer } from './InlineRestTimer';
-export { default as SetTechniquePills } from './SetTechniquePills';
 
 // Stats & charts
 export { SetProgress } from './SetProgress';

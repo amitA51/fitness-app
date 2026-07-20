@@ -1,9 +1,23 @@
-// ExerciseTutorial - Fresh Steel / Obsidian
-// Dark overlay · light text · sharp corners
-// VISION: Bold · Editorial · Confident · Narrative · Printed
+// ExerciseTutorial — the in-workout AI coach panel.
+//
+// Three jobs used to be dumped into one endless scroll (technique carousel,
+// grounded Q&A, set note), each in its own visual language: a navy masthead with
+// dark ink on it (unreadable), leftover gold #e8b82d tints from a retired
+// palette, white-on-bone surfaces that rendered as nothing, and one tracked-out
+// mono label on every single string. This is the same content on one system:
+// the app's own chrome (translucent --fs-bg header, --fs-surface cards, --fs-steel
+// edges, mint accent through color-mix), tokens only, and the three jobs split
+// into named tabs so each one is a short, readable panel.
 
 import { m } from 'framer-motion';
-import { X as CloseIcon } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  X as CloseIcon,
+  MessageCircleQuestion,
+  NotebookPen,
+  Sparkles,
+} from 'lucide-react';
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { translateEquipment } from '../../constants/equipmentNames';
 import { getExerciseImages } from '../../data/exerciseImages';
@@ -42,10 +56,58 @@ const QUICK_NOTES = [
   'שליטה מלאה',
 ];
 
+type TabId = 'guide' | 'ask' | 'note';
+
 interface TutorialStep {
   title: string;
   description: string;
   tip?: string;
+}
+
+// ── Shared surfaces ─────────────────────────────────────────────────────────
+// One card idiom for the whole panel, matching the active-workout surfaces.
+
+const card: React.CSSProperties = {
+  background: 'var(--fs-surface)',
+  border: '1px solid var(--fs-steel)',
+  borderRadius: 'var(--radius-lg)',
+  padding: 16,
+};
+
+const accentCard: React.CSSProperties = {
+  background: 'color-mix(in srgb, var(--fs-accent) 10%, var(--fs-surface))',
+  border: '1px solid color-mix(in srgb, var(--fs-accent) 28%, transparent)',
+  borderRadius: 'var(--radius-lg)',
+  padding: 14,
+};
+
+const fieldStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '11px 13px',
+  background: 'var(--fs-surface)',
+  border: '1px solid var(--fs-steel)',
+  borderRadius: 'var(--radius-md)',
+  color: 'var(--fs-ink)',
+  fontFamily: 'var(--font-body)',
+  fontSize: 15,
+  lineHeight: 1.5,
+};
+
+/** Section heading inside a panel. Plain display type — no tracked-out caps. */
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h3
+      style={{
+        fontFamily: 'var(--font-display)',
+        fontWeight: 600,
+        fontSize: 14,
+        color: 'var(--fs-muted)',
+        margin: '0 0 10px',
+      }}
+    >
+      {children}
+    </h3>
+  );
 }
 
 const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
@@ -60,6 +122,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   onSaveNote,
   onClose,
 }) => {
+  const [tab, setTab] = useState<TabId>('guide');
   const [activeStep, setActiveStep] = useState(0);
   // Track demo-image failures per index, so one broken frame hides only itself —
   // the working frame stays visible instead of the whole demonstration block.
@@ -74,20 +137,35 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   const [noteDraft, setNoteDraft] = useState(note ?? '');
   const [noteSaved, setNoteSaved] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Record<TabId, HTMLButtonElement | null>>({
+    guide: null,
+    ask: null,
+    note: null,
+  });
 
   useFocusTrap(containerRef, { isOpen, onClose, closeOnEscape: true, lockScroll: true });
 
+  // The bilingual catalog name is "Hebrew | English"; the Hebrew side carries the
+  // title and the English side is the catalog key.
+  const hebrewName = useMemo(() => {
+    const idx = exerciseName.lastIndexOf('|');
+    return (idx >= 0 ? exerciseName.slice(0, idx) : exerciseName).trim();
+  }, [exerciseName]);
+
+  // Generic fallback beats. The movement is NOT interpolated here: the masthead
+  // already names it two lines above, and splicing a bilingual label with a "45°"
+  // into an RTL sentence reordered the degree sign away from its number.
   const tutorialSteps: TutorialStep[] = useMemo(
     () => [
-      { title: 'תחילת תנועה', description: `התחל את תנועת ${exerciseName} מהמצב ההתחלתי הנכון` },
+      { title: 'תחילת תנועה', description: 'התחילו את התנועה מהמצב ההתחלתי הנכון' },
       {
         title: 'טכניקה',
-        description: 'בצע את התרגיל בתנועה מבוקרת וישרה',
-        tip: 'שמור על שרירי הליבה מכווצים לאורך כל התנועה',
+        description: 'בצעו את התרגיל בתנועה מבוקרת וישרה',
+        tip: 'שמרו על שרירי הליבה מכווצים לאורך כל התנועה',
       },
-      { title: 'סיום', description: 'השלם את הסט בצורה בטוחה ויציבה' },
+      { title: 'סיום', description: 'סיימו את הסט בצורה בטוחה ויציבה' },
     ],
-    [exerciseName]
+    []
   );
 
   const exerciseTips: Record<string, TutorialStep[]> = useMemo(
@@ -174,6 +252,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
     if (!isOpen) return;
     setNoteDraft(noteRef.current ?? '');
     setNoteSaved(false);
+    setTab('guide');
   }, [isOpen, exerciseName]);
 
   const handleSaveNote = useCallback(() => {
@@ -187,20 +266,28 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
     setNoteDraft((prev) => (prev.trim() ? `${prev}, ${chip}` : chip));
   }, []);
 
+  const lastStep = currentExerciseSteps.length - 1;
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
-      // RTL carousel: the "הבא" (next) button sits on the LEFT and the progress
-      // spine advances right-to-left, so ArrowLeft advances and ArrowRight goes
-      // back — matching the visual order (WAI-ARIA RTL convention).
-      if (e.key === 'ArrowLeft')
-        setActiveStep((prev) => Math.min(prev + 1, currentExerciseSteps.length - 1));
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      // Step arrows apply to the guide only, and never while the user is typing
+      // into the question box or the note.
+      if (tab !== 'guide') return;
+      const el = document.activeElement;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return;
+      // RTL carousel: "הבא" sits on the LEFT and the spine advances right-to-left,
+      // so ArrowLeft advances and ArrowRight goes back (WAI-ARIA RTL convention).
+      if (e.key === 'ArrowLeft') setActiveStep((prev) => Math.min(prev + 1, lastStep));
       else if (e.key === 'ArrowRight') setActiveStep((prev) => Math.max(prev - 1, 0));
-      else if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, currentExerciseSteps.length, onClose]);
+  }, [isOpen, lastStep, onClose, tab]);
 
   const handleShowTips = useCallback(async () => {
     setLoading(true);
@@ -242,17 +329,37 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
     }
   }, [question, asking, exerciseName]);
 
+  const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
+    { id: 'guide', label: 'ביצוע', icon: <Sparkles size={15} strokeWidth={2.3} /> },
+    { id: 'ask', label: 'שאלה', icon: <MessageCircleQuestion size={15} strokeWidth={2.3} /> },
+    ...(onSaveNote
+      ? [{ id: 'note' as TabId, label: 'פתק', icon: <NotebookPen size={15} strokeWidth={2.3} /> }]
+      : []),
+  ];
+
+  // RTL tablist: ArrowLeft moves to the NEXT tab (the one drawn to the left).
+  const handleTabKey = (e: React.KeyboardEvent) => {
+    const i = TABS.findIndex((t) => t.id === tab);
+    let next = i;
+    if (e.key === 'ArrowLeft') next = Math.min(i + 1, TABS.length - 1);
+    else if (e.key === 'ArrowRight') next = Math.max(i - 1, 0);
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = TABS.length - 1;
+    else return;
+    e.preventDefault();
+    const id = TABS[next]?.id;
+    if (!id) return;
+    setTab(id);
+    tabRefs.current[id]?.focus();
+  };
+
   if (!isOpen) return null;
 
   const currentStep = currentExerciseSteps[activeStep];
 
   return (
-    <m.div
+    <div
       ref={containerRef}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="tutorial-title"
@@ -263,657 +370,690 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
         zIndex: 11000,
         display: 'flex',
         flexDirection: 'column',
-        overflowY: 'auto',
       }}
     >
-      {/* Header */}
-      <div
+      {/* ── Masthead ─────────────────────────────────────────────────────── */}
+      <header
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '16px 20px',
-          borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)',
-          background: 'var(--fs-primary)',
+          gap: 12,
+          padding: '12px 16px',
+          background: 'color-mix(in srgb, var(--fs-bg) 86%, transparent)',
+          backdropFilter: 'saturate(180%) blur(18px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(18px)',
+          borderBottom: '0.5px solid var(--color-separator)',
           flexShrink: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: '-0.01em',
-              color: 'var(--fs-accent)',
-            }}
-          >
-            שלב {activeStep + 1}
-          </div>
+        <div style={{ minWidth: 0 }}>
           <h2
             id="tutorial-title"
             style={{
               fontFamily: 'var(--font-display)',
               fontWeight: 600,
-              fontSize: 20,
-              color: 'var(--fs-ink)',
+              fontSize: 19,
+              color: 'var(--fs-heading)',
               letterSpacing: '-0.01em',
+              lineHeight: 1.2,
             }}
           >
-            {exerciseName}
+            מאמן AI
           </h2>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
+              color: 'var(--fs-muted)',
+              lineHeight: 1.3,
+              marginTop: 2,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {hebrewName || exerciseName}
+          </p>
         </div>
         <button
           type="button"
           onClick={onClose}
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1"
           style={{
-            width: 44,
-            height: 44,
+            width: 42,
+            height: 42,
+            minWidth: 42,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(var(--text-on-navy-rgb),0.1)',
+            background: 'var(--fs-surface-2)',
             border: 'none',
-            borderRadius: 12,
+            borderRadius: 'var(--radius-full)',
+            color: 'var(--fs-ink)',
             cursor: 'pointer',
+            flexShrink: 0,
           }}
-          aria-label="סגור"
+          aria-label="סגור את המאמן"
         >
-          <CloseIcon style={{ width: 18, height: 18, color: 'var(--fs-ink)' }} />
+          <CloseIcon size={18} strokeWidth={2.25} />
         </button>
-      </div>
+      </header>
 
-      {/* Custom Notes */}
-      {customNotes && (
-        <div
-          style={{
-            margin: '16px 20px 0',
-            padding: '12px 16px',
-            background: 'rgba(232,184,45,0.15)',
-            border: '2px solid var(--fs-accent)',
-            borderRadius: 12,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, direction: 'rtl' }}>
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 9,
-                letterSpacing: '-0.01em',
-                color: 'var(--fs-accent)',
-                fontWeight: 600,
-                flexShrink: 0,
+      {/* ── Tabs ─────────────────────────────────────────────────────────── */}
+      <div
+        role="tablist"
+        aria-label="מדורי המאמן"
+        onKeyDown={handleTabKey}
+        style={{
+          display: 'flex',
+          gap: 4,
+          margin: '12px 16px 0',
+          padding: 4,
+          background: 'var(--fs-surface-2)',
+          borderRadius: 'var(--radius-full)',
+          flexShrink: 0,
+        }}
+      >
+        {TABS.map((t) => {
+          const active = t.id === tab;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              id={`coach-tab-${t.id}`}
+              aria-selected={active}
+              aria-controls={`coach-panel-${t.id}`}
+              tabIndex={active ? 0 : -1}
+              ref={(el) => {
+                tabRefs.current[t.id] = el;
               }}
-            >
-              NOTE
-            </span>
-            <p
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 14,
-                color: 'var(--fs-ink)',
-                lineHeight: 1.55,
-              }}
-            >
-              {customNotes}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Progress */}
-      <div style={{ padding: '20px 20px 0' }}>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {currentExerciseSteps.map((_, index) => (
-            <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: static step progress bars, fixed list, never reordered
-              key={index}
+              onClick={() => setTab(t.id)}
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)]"
               style={{
                 flex: 1,
-                height: 4,
-                background:
-                  index <= activeStep ? 'var(--fs-accent)' : 'rgba(var(--text-on-navy-rgb),0.15)',
-                borderRadius: 12,
-                transition: 'background 300ms',
-              }}
-            />
-          ))}
-        </div>
-        <p
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            letterSpacing: '0.15em',
-            color: 'var(--fs-muted)',
-            marginTop: 8,
-            textAlign: 'center',
-          }}
-        >
-          {activeStep + 1} מתוך {currentExerciseSteps.length}
-        </p>
-      </div>
-
-      {/* Main Content */}
-      <div style={{ flex: 1, padding: '24px 20px' }}>
-        {/* Persistent live region — announces each step on navigation. The visible
-            step content remounts per step (keyed by activeStep) so it wouldn't
-            announce on its own; this stable node updates its text instead. */}
-        <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-          {currentStep
-            ? `שלב ${activeStep + 1} מתוך ${currentExerciseSteps.length}${
-                currentStep.title ? `: ${currentStep.title}` : ''
-              }. ${currentStep.description}`
-            : ''}
-        </p>
-        {visibleDemoImages.length > 0 && (
-          <div
-            style={{
-              marginBottom: 20,
-              paddingBottom: 18,
-              borderBottom: '1px solid var(--color-border)',
-            }}
-          >
-            <p
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '0.15em',
-                color: 'var(--fs-muted)',
-                textAlign: 'center',
-                marginBottom: 14,
-              }}
-            >
-              הדגמת תרגיל
-            </p>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {visibleDemoImages.map(({ src, i }) => (
-                <div
-                  key={src}
-                  style={{
-                    flex: 1,
-                    border: '1px solid var(--color-border)',
-                    background: 'var(--fs-surface)',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <img
-                    src={src}
-                    alt={i === 0 ? `${exerciseName} — תנוחת התחלה` : `${exerciseName} — תנוחת סיום`}
-                    loading="lazy"
-                    onError={() => setFailedImgs((prev) => new Set(prev).add(i))}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      aspectRatio: '850 / 567',
-                      objectFit: 'cover',
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {(hasMuscleData || equipmentLabel) && (
-          <div
-            style={{
-              marginBottom: 20,
-              paddingBottom: 18,
-              borderBottom: '1px solid var(--color-border)',
-            }}
-          >
-            {hasMuscleData && (
-              <>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    letterSpacing: '0.15em',
-                    color: 'var(--fs-muted)',
-                    textAlign: 'center',
-                    marginBottom: 14,
-                  }}
-                >
-                  שרירים בעבודה
-                </p>
-                <MuscleMap
-                  primary={primaryMuscle ? [primaryMuscle] : []}
-                  secondary={secondaryMuscles ?? []}
-                />
-              </>
-            )}
-            {equipmentLabel && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 10,
-                  direction: 'rtl',
-                  marginTop: hasMuscleData ? 16 : 0,
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    letterSpacing: '0.15em',
-                    color: 'var(--fs-muted)',
-                  }}
-                >
-                  ציוד
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 600,
-                    fontSize: 13,
-                    color: 'var(--fs-ink)',
-                    background: 'rgba(232,184,45,0.15)',
-                    border: '1px solid var(--fs-accent)',
-                    borderRadius: 12,
-                    padding: '4px 12px',
-                  }}
-                >
-                  {equipmentLabel}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-        {currentStep && (
-          <m.div
-            key={activeStep}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
-          >
-            {/* Step Title */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 700,
-                  fontSize: 48,
-                  color: 'var(--fs-accent)',
-                  lineHeight: 0.9,
-                  letterSpacing: '-0.02em',
-                  direction: 'ltr',
-                  textAlign: 'left',
-                }}
-              >
-                {String(activeStep + 1).padStart(2, '0')}
-              </div>
-              <div>
-                {currentStep.title && (
-                  <h3
-                    style={{
-                      fontFamily: 'var(--font-display)',
-                      fontWeight: 600,
-                      fontSize: 22,
-                      color: 'var(--fs-ink)',
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
-                    {currentStep.title}
-                  </h3>
-                )}
-                <p
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    letterSpacing: '0.15em',
-                    color: 'var(--fs-muted)',
-                  }}
-                >
-                  שלב {activeStep + 1}
-                  {currentStep.title ? '' : ` מתוך ${currentExerciseSteps.length}`}
-                </p>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div
-              style={{
-                padding: 20,
-                background: 'rgba(var(--text-on-navy-rgb),0.05)',
-                border: '2px solid rgba(var(--text-on-navy-rgb),0.1)',
-                borderRadius: 12,
-              }}
-            >
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 16,
-                  color: 'var(--fs-ink)',
-                  lineHeight: 1.6,
-                  direction: 'rtl',
-                  textAlign: 'right',
-                }}
-              >
-                {currentStep.description}
-              </p>
-
-              {currentStep.tip && (
-                <div
-                  style={{
-                    marginTop: 12,
-                    padding: '10px 14px',
-                    background: 'rgba(232,184,45,0.15)',
-                    border: '1px solid var(--fs-accent)',
-                    borderRadius: 12,
-                  }}
-                >
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 10,
-                      letterSpacing: '0.15em',
-                      color: 'var(--fs-accent)',
-                      fontWeight: 600,
-                      marginBottom: 4,
-                    }}
-                  >
-                    טיפ
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 14,
-                      color: 'var(--fs-ink)',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {currentStep.tip}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Form tips — static technique reference (not AI-generated) */}
-            <button
-              type="button"
-              onClick={handleShowTips}
-              disabled={loading || showContent}
-              style={{
-                width: '100%',
-                padding: '14px 20px',
-                background: showContent ? 'rgba(232,184,45,0.1)' : 'transparent',
-                color: 'var(--fs-accent)',
-                border: '2px solid var(--fs-accent)',
-                borderRadius: 12,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                minHeight: 40,
+                borderRadius: 'var(--radius-full)',
+                border: 'none',
+                background: active ? 'var(--fs-surface)' : 'transparent',
+                color: active ? 'var(--fs-heading)' : 'var(--fs-muted)',
                 fontFamily: 'var(--font-display)',
                 fontWeight: 600,
-                fontSize: 13,
-                letterSpacing: '-0.01em',
-                cursor: loading || showContent ? 'default' : 'pointer',
-                opacity: loading || showContent ? 0.7 : 1,
+                fontSize: 14,
+                cursor: 'pointer',
+                transition: 'background 160ms ease, color 160ms ease',
               }}
             >
-              {loading ? 'טוען טיפים...' : showContent ? 'טיפים לטכניקה' : 'טיפים לטכניקה'}
+              <span style={{ color: active ? 'var(--fs-accent-2)' : 'var(--fs-muted)' }}>
+                {t.icon}
+              </span>
+              {t.label}
             </button>
+          );
+        })}
+      </div>
 
-            {showContent && tutorialContent && (
-              <m.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                style={{
-                  padding: 16,
-                  background: 'rgba(var(--text-on-navy-rgb),0.05)',
-                  border: '1px solid rgba(var(--text-on-navy-rgb),0.1)',
-                  borderRadius: 12,
-                  maxHeight: 200,
-                  overflowY: 'auto',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 14,
-                  color: 'var(--fs-ink)',
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: 1.6,
-                }}
-              >
-                {tutorialContent}
-              </m.div>
+      {/* ── Panels ───────────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 24px', minHeight: 0 }}>
+        {/* ---------------------------------------------------------- GUIDE */}
+        {tab === 'guide' && (
+          <div
+            role="tabpanel"
+            id="coach-panel-guide"
+            aria-labelledby="coach-tab-guide"
+            style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+          >
+            {/* The program's own coaching cue for this movement. */}
+            {customNotes && (
+              <div style={accentCard}>
+                <SectionTitle>הנחיית התוכנית</SectionTitle>
+                <p
+                  /* Program cues arrive in either language; let the first strong
+                     character pick the direction so an English line isn't
+                     reordered by the RTL panel around it. */
+                  dir="auto"
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 15,
+                    color: 'var(--fs-ink)',
+                    lineHeight: 1.6,
+                    margin: 0,
+                  }}
+                >
+                  {customNotes}
+                </p>
+              </div>
             )}
 
-            {/* Grounded per-exercise Q&A — answer anchored to the user's real numbers */}
-            <div style={{ marginTop: 16 }}>
+            {visibleDemoImages.length > 0 && (
+              <div>
+                <SectionTitle>הדגמת התרגיל</SectionTitle>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  {visibleDemoImages.map(({ src, i }) => (
+                    <div
+                      key={src}
+                      style={{
+                        flex: 1,
+                        border: '1px solid var(--fs-steel)',
+                        background: 'var(--fs-surface)',
+                        borderRadius: 'var(--radius-lg)',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <img
+                        src={src}
+                        alt={i === 0 ? `${hebrewName} — תנוחת התחלה` : `${hebrewName} — תנוחת סיום`}
+                        loading="lazy"
+                        onError={() => setFailedImgs((prev) => new Set(prev).add(i))}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          aspectRatio: '850 / 567',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(hasMuscleData || equipmentLabel) && (
+              <div style={card}>
+                {hasMuscleData && (
+                  <>
+                    <SectionTitle>שרירים בעבודה</SectionTitle>
+                    <MuscleMap
+                      primary={primaryMuscle ? [primaryMuscle] : []}
+                      secondary={secondaryMuscles ?? []}
+                    />
+                  </>
+                )}
+                {equipmentLabel && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      marginTop: hasMuscleData ? 16 : 0,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 14,
+                        color: 'var(--fs-muted)',
+                      }}
+                    >
+                      ציוד
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontWeight: 600,
+                        fontSize: 13,
+                        color: 'var(--fs-accent-2)',
+                        background: 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))',
+                        border: '1px solid color-mix(in srgb, var(--fs-accent) 26%, transparent)',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '4px 12px',
+                      }}
+                    >
+                      {equipmentLabel}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Persistent live region — announces each step on navigation. The
+                visible step content remounts per step (keyed by activeStep) so it
+                wouldn't announce on its own; this stable node updates instead. */}
+            <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+              {currentStep
+                ? `שלב ${activeStep + 1} מתוך ${currentExerciseSteps.length}${
+                    currentStep.title ? `: ${currentStep.title}` : ''
+                  }. ${currentStep.description}`
+                : ''}
+            </p>
+
+            {currentStep && (
+              <div>
+                <SectionTitle>שלבי הביצוע</SectionTitle>
+
+                {/* Segmented step spine — the ONE place the step count is stated. */}
+                <div style={{ display: 'flex', gap: 4, marginBottom: 14 }} aria-hidden>
+                  {currentExerciseSteps.map((s, index) => (
+                    <div
+                      key={`${s.title}-${s.description.slice(0, 12)}`}
+                      style={{
+                        flex: 1,
+                        height: 4,
+                        borderRadius: 'var(--radius-full)',
+                        background:
+                          index <= activeStep
+                            ? 'var(--fs-accent)'
+                            : 'color-mix(in srgb, var(--fs-steel) 70%, transparent)',
+                        transition: 'background 260ms ease',
+                      }}
+                    />
+                  ))}
+                </div>
+
+                <m.div
+                  key={activeStep}
+                  /* y-only: never start content at opacity 0 — a stalled animation
+                     would leave the step invisible. */
+                  initial={{ y: 8 }}
+                  animate={{ y: 0 }}
+                  transition={{ duration: 0.18 }}
+                  style={card}
+                >
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                    <span
+                      className="tabular-nums"
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 700,
+                        fontSize: 30,
+                        color: 'var(--fs-accent-2)',
+                        lineHeight: 1,
+                        direction: 'ltr',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {String(activeStep + 1).padStart(2, '0')}
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      {currentStep.title && (
+                        <h4
+                          style={{
+                            fontFamily: 'var(--font-display)',
+                            fontWeight: 600,
+                            fontSize: 18,
+                            color: 'var(--fs-heading)',
+                            letterSpacing: '-0.01em',
+                            margin: '0 0 6px',
+                          }}
+                        >
+                          {currentStep.title}
+                        </h4>
+                      )}
+                      <p
+                        dir="auto"
+                        style={{
+                          fontFamily: 'var(--font-body)',
+                          fontSize: 15,
+                          color: 'var(--fs-ink)',
+                          lineHeight: 1.6,
+                          margin: 0,
+                        }}
+                      >
+                        {currentStep.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  {currentStep.tip && (
+                    <div style={{ ...accentCard, marginTop: 14 }}>
+                      <p
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: 'var(--fs-accent-2)',
+                          margin: '0 0 4px',
+                        }}
+                      >
+                        טיפ
+                      </p>
+                      <p
+                        dir="auto"
+                        style={{
+                          fontFamily: 'var(--font-body)',
+                          fontSize: 14,
+                          color: 'var(--fs-ink)',
+                          lineHeight: 1.55,
+                          margin: 0,
+                        }}
+                      >
+                        {currentStep.tip}
+                      </p>
+                    </div>
+                  )}
+                </m.div>
+
+                {/* Step navigation — sits directly under the step it moves. */}
+                {currentExerciseSteps.length > 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+                    {/* Quiet, borderless — not an outlined twin of the filled
+                        button beside it. One action leads; going back is an
+                        affordance, so it carries no chrome of its own. */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveStep((p) => Math.max(p - 1, 0))}
+                      disabled={activeStep === 0}
+                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-[0.98]"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 4,
+                        minHeight: 44,
+                        flex: 1,
+                        background: 'transparent',
+                        color: 'var(--fs-muted)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-md)',
+                        cursor: activeStep === 0 ? 'not-allowed' : 'pointer',
+                        opacity: activeStep === 0 ? 0.4 : 1,
+                        fontFamily: 'var(--font-display)',
+                        fontWeight: 600,
+                        fontSize: 14,
+                      }}
+                    >
+                      <ChevronRight size={16} strokeWidth={2.5} />
+                      הקודם
+                    </button>
+                    <span
+                      className="tabular-nums"
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 13,
+                        color: 'var(--fs-muted)',
+                        direction: 'ltr',
+                        flexShrink: 0,
+                        minWidth: 44,
+                        textAlign: 'center',
+                      }}
+                    >
+                      {activeStep + 1}/{currentExerciseSteps.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveStep((p) => Math.min(p + 1, lastStep))}
+                      disabled={activeStep === lastStep}
+                      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-[0.98]"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 4,
+                        minHeight: 44,
+                        flex: 1,
+                        background: 'var(--fs-accent)',
+                        color: 'var(--color-ink-on-accent)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-md)',
+                        cursor: activeStep === lastStep ? 'not-allowed' : 'pointer',
+                        opacity: activeStep === lastStep ? 0.45 : 1,
+                        fontFamily: 'var(--font-display)',
+                        fontWeight: 600,
+                        fontSize: 14,
+                      }}
+                    >
+                      הבא
+                      <ChevronLeft size={16} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------- ASK */}
+        {tab === 'ask' && (
+          <div
+            role="tabpanel"
+            id="coach-panel-ask"
+            aria-labelledby="coach-tab-ask"
+            style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+          >
+            <div>
               <label
                 htmlFor="exercise-qa"
                 style={{
                   display: 'block',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  letterSpacing: '-0.01em',
-                  color: 'var(--fs-muted)',
-                  marginBottom: 6,
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: 'var(--fs-ink)',
+                  marginBottom: 8,
                 }}
               >
-                שאל על התרגיל
+                מה תרצו לשאול על התרגיל?
               </label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  id="exercise-qa"
-                  type="text"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAsk();
-                  }}
-                  placeholder="למשל: איזה משקל לנסות?"
-                  style={{
-                    flex: 1,
-                    padding: '10px 12px',
-                    background: 'rgba(var(--text-on-navy-rgb),0.06)',
-                    border: '1px solid rgba(var(--text-on-navy-rgb),0.15)',
-                    borderRadius: 12,
-                    color: 'var(--fs-ink)',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 14,
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleAsk}
-                  disabled={asking || !question.trim()}
-                  style={{
-                    padding: '10px 16px',
-                    background: 'var(--fs-accent)',
-                    color: 'var(--color-ink-on-accent)',
-                    border: 'none',
-                    borderRadius: 12,
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 600,
-                    fontSize: 13,
-                    cursor: asking || !question.trim() ? 'default' : 'pointer',
-                    opacity: asking || !question.trim() ? 0.6 : 1,
-                  }}
-                >
-                  {asking ? '...' : 'שאל'}
-                </button>
-              </div>
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 13,
+                  color: 'var(--fs-muted)',
+                  lineHeight: 1.5,
+                  margin: '0 0 10px',
+                }}
+              >
+                התשובה מבוססת על הנתונים האמיתיים שלכם בתרגיל הזה.
+              </p>
+              <input
+                id="exercise-qa"
+                type="text"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAsk();
+                }}
+                placeholder="למשל: איזה משקל לנסות?"
+                style={fieldStyle}
+              />
+              <button
+                type="button"
+                onClick={handleAsk}
+                disabled={asking || !question.trim()}
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-[0.98]"
+                style={{
+                  width: '100%',
+                  minHeight: 46,
+                  marginTop: 10,
+                  background: 'var(--fs-accent)',
+                  color: 'var(--color-ink-on-accent)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 600,
+                  fontSize: 15,
+                  cursor: asking || !question.trim() ? 'not-allowed' : 'pointer',
+                  opacity: asking || !question.trim() ? 0.5 : 1,
+                }}
+              >
+                {asking ? 'שולח…' : 'שלחו למאמן'}
+              </button>
+
               {answer && (
-                <p
-                  style={{
-                    margin: '10px 0 0',
-                    padding: 12,
-                    background: 'rgba(var(--text-on-navy-rgb),0.05)',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                    color: 'var(--fs-ink)',
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {answer}
-                </p>
+                <div style={{ ...card, marginTop: 14 }}>
+                  <SectionTitle>תשובת המאמן</SectionTitle>
+                  <p
+                    dir="auto"
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 15,
+                      lineHeight: 1.65,
+                      color: 'var(--fs-ink)',
+                      whiteSpace: 'pre-wrap',
+                      margin: 0,
+                    }}
+                  >
+                    {answer}
+                  </p>
+                </div>
               )}
               {qaError && (
-                <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--fs-warn, #d97706)' }}>
+                <p
+                  role="alert"
+                  style={{
+                    margin: '10px 0 0',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 14,
+                    lineHeight: 1.5,
+                    color: 'var(--fs-error)',
+                  }}
+                >
                   {qaError}
                 </p>
               )}
             </div>
 
-            {/* Set note — moved here from the pinned strip at the top of the
-                active screen, so writing a note and asking the coach live in
-                the same place. */}
-            {onSaveNote && (
-              <div style={{ marginTop: 20 }}>
-                <label
-                  htmlFor="exercise-note"
+            {/* Generated technique reference for this movement. */}
+            <div>
+              <SectionTitle>טיפים לטכניקה</SectionTitle>
+              {showContent && tutorialContent ? (
+                <div
+                  dir="auto"
                   style={{
-                    display: 'block',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    letterSpacing: '-0.01em',
-                    color: 'var(--fs-muted)',
-                    marginBottom: 6,
+                    ...card,
+                    maxHeight: 260,
+                    overflowY: 'auto',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 15,
+                    color: 'var(--fs-ink)',
+                    whiteSpace: 'pre-wrap',
+                    lineHeight: 1.65,
                   }}
                 >
-                  פתק לסט
-                </label>
-                <textarea
-                  id="exercise-note"
-                  rows={3}
-                  value={noteDraft}
-                  onChange={(e) => {
-                    setNoteDraft(e.target.value);
-                    setNoteSaved(false);
-                  }}
-                  placeholder="מה כדאי לזכור מהסט הזה?"
+                  {tutorialContent}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleShowTips}
+                  disabled={loading}
+                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-[0.98]"
                   style={{
                     width: '100%',
-                    padding: '10px 12px',
-                    background: 'rgba(var(--text-on-navy-rgb),0.06)',
-                    border: '1px solid rgba(var(--text-on-navy-rgb),0.15)',
-                    borderRadius: 12,
+                    minHeight: 46,
+                    background: 'var(--fs-surface)',
                     color: 'var(--fs-ink)',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 14,
-                    lineHeight: 1.5,
-                    resize: 'vertical',
-                    textAlign: 'start',
+                    border: '1px solid var(--fs-steel)',
+                    borderRadius: 'var(--radius-md)',
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 600,
+                    fontSize: 15,
+                    cursor: loading ? 'wait' : 'pointer',
+                    opacity: loading ? 0.6 : 1,
                   }}
-                />
-                <div
-                  style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '8px 0 10px' }}
-                  role="group"
-                  aria-label="פתקים מהירים"
                 >
-                  {QUICK_NOTES.map((chip) => (
-                    <button
-                      key={chip}
-                      type="button"
-                      onClick={() => handleQuickNote(chip)}
-                      style={{
-                        padding: '5px 11px',
-                        background: 'rgba(var(--text-on-navy-rgb),0.05)',
-                        border: '1px solid rgba(var(--text-on-navy-rgb),0.15)',
-                        borderRadius: 9999,
-                        color: 'var(--fs-muted)',
-                        fontFamily: 'var(--font-body)',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {chip}
-                    </button>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {loading ? 'טוען טיפים…' : 'הציגו טיפים לטכניקה'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------ NOTE */}
+        {tab === 'note' && onSaveNote && (
+          <div role="tabpanel" id="coach-panel-note" aria-labelledby="coach-tab-note">
+            <label
+              htmlFor="exercise-note"
+              style={{
+                display: 'block',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 600,
+                fontSize: 14,
+                color: 'var(--fs-ink)',
+                marginBottom: 8,
+              }}
+            >
+              פתק לסט הנוכחי
+            </label>
+            <textarea
+              id="exercise-note"
+              rows={4}
+              value={noteDraft}
+              onChange={(e) => {
+                setNoteDraft(e.target.value);
+                setNoteSaved(false);
+              }}
+              placeholder="מה כדאי לזכור מהסט הזה?"
+              style={{ ...fieldStyle, resize: 'vertical', textAlign: 'start' }}
+            />
+
+            <div style={{ marginTop: 14 }}>
+              <SectionTitle>הוספה מהירה</SectionTitle>
+              <div
+                style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}
+                role="group"
+                aria-label="פתקים מהירים"
+              >
+                {QUICK_NOTES.map((chip) => (
                   <button
+                    key={chip}
                     type="button"
-                    onClick={handleSaveNote}
+                    onClick={() => handleQuickNote(chip)}
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-[0.97]"
                     style={{
-                      padding: '10px 18px',
-                      background: 'var(--fs-accent)',
-                      color: 'var(--color-ink-on-accent)',
-                      border: 'none',
-                      borderRadius: 12,
-                      fontFamily: 'var(--font-display)',
-                      fontWeight: 600,
+                      padding: '8px 14px',
+                      minHeight: 36,
+                      background: 'var(--fs-surface)',
+                      border: '1px solid var(--fs-steel)',
+                      borderRadius: 'var(--radius-full)',
+                      color: 'var(--fs-ink)',
+                      fontFamily: 'var(--font-body)',
                       fontSize: 13,
+                      fontWeight: 600,
                       cursor: 'pointer',
                     }}
                   >
-                    שמור פתק
+                    {chip}
                   </button>
-                  <span
-                    role="status"
-                    aria-live="polite"
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 11,
-                      color: 'var(--fs-muted)',
-                    }}
-                  >
-                    {noteSaved ? 'הפתק נשמר' : ''}
-                  </span>
-                </div>
+                ))}
               </div>
-            )}
-          </m.div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSaveNote}
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-[0.98]"
+              style={{
+                width: '100%',
+                minHeight: 46,
+                marginTop: 18,
+                background: 'var(--fs-accent)',
+                color: 'var(--color-ink-on-accent)',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 600,
+                fontSize: 15,
+                cursor: 'pointer',
+              }}
+            >
+              שמירת הפתק
+            </button>
+            <p
+              role="status"
+              aria-live="polite"
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                color: 'var(--fs-accent-2)',
+                textAlign: 'center',
+                minHeight: 20,
+                margin: '8px 0 0',
+              }}
+            >
+              {noteSaved ? 'הפתק נשמר' : ''}
+            </p>
+          </div>
         )}
       </div>
 
-      {/* Navigation */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 8,
-          padding: '0 20px 20px',
-          flexShrink: 0,
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setActiveStep((prev) => Math.max(prev - 1, 0))}
-          disabled={activeStep === 0}
-          style={{
-            flex: 1,
-            padding: '14px 16px',
-            // This nav bar sits on --fs-bg (bone), not the navy masthead, so it
-            // must use neutral surface tokens — the old text-on-navy values made
-            // the label invisible (white text on bone) in light mode.
-            background: 'var(--fs-surface)',
-            color: 'var(--fs-ink)',
-            border: '2px solid var(--fs-steel)',
-            borderRadius: 12,
-            cursor: activeStep === 0 ? 'not-allowed' : 'pointer',
-            opacity: activeStep === 0 ? 0.4 : 1,
-            fontFamily: 'var(--font-display)',
-            fontWeight: 600,
-            fontSize: 13,
-            letterSpacing: '-0.01em',
-          }}
-        >
-          הקודם
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            if (activeStep === currentExerciseSteps.length - 1) onClose();
-            else setActiveStep((prev) => prev + 1);
-          }}
-          style={{
-            flex: 1,
-            padding: '14px 16px',
-            background: 'var(--fs-accent)',
-            color: 'var(--color-ink-on-accent)',
-            border: '2px solid var(--fs-accent)',
-            borderRadius: 12,
-            cursor: 'pointer',
-            fontFamily: 'var(--font-display)',
-            fontWeight: 600,
-            fontSize: 13,
-            letterSpacing: '-0.01em',
-          }}
-        >
-          {activeStep === currentExerciseSteps.length - 1 ? 'סיום' : 'הבא'}
-        </button>
-      </div>
-
-      <div style={{ height: 'env(safe-area-inset-bottom, 8px)', background: 'var(--fs-bg)' }} />
-    </m.div>
+      <div style={{ height: 'env(safe-area-inset-bottom, 8px)', flexShrink: 0 }} />
+    </div>
   );
 };
 

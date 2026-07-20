@@ -85,8 +85,20 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
             סט {setIndex + 1} — עריכה
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <div>
+          {/* minmax(0,1fr), not 1fr: a bare `1fr` is `minmax(auto,1fr)`, so each
+              column is floored at its MIN-CONTENT — and a <input type="number">
+              carries a wide intrinsic default width. Two of those plus four 36px
+              steppers forced the row past the viewport and the ק״ג column ran off
+              the screen edge. minmax(0,…) lets the columns actually shrink; the
+              `minWidth: 0` chain below lets that shrink reach the inputs. */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+              gap: 8,
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
               <label
                 htmlFor={weightId}
                 style={{
@@ -100,7 +112,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
               >
                 ק"ג
               </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
                 <button
                   type="button"
                   onClick={(e) => {
@@ -111,6 +123,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                   style={{
                     width: 36,
                     height: 36,
+                    flexShrink: 0,
                     background: 'var(--fs-surface)',
                     border: '2px solid var(--fs-primary)',
                     borderRadius: 12,
@@ -158,6 +171,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                   style={{
                     width: 36,
                     height: 36,
+                    flexShrink: 0,
                     background: 'var(--fs-primary)',
                     border: '2px solid var(--fs-primary)',
                     borderRadius: 12,
@@ -172,7 +186,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                 </button>
               </div>
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <label
                 htmlFor={repsId}
                 style={{
@@ -186,7 +200,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
               >
                 חזרות
               </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
                 <button
                   type="button"
                   onClick={(e) => {
@@ -197,6 +211,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                   style={{
                     width: 36,
                     height: 36,
+                    flexShrink: 0,
                     background: 'var(--fs-surface)',
                     border: '2px solid var(--fs-primary)',
                     borderRadius: 12,
@@ -244,6 +259,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                   style={{
                     width: 36,
                     height: 36,
+                    flexShrink: 0,
                     background: 'var(--fs-primary)',
                     border: '2px solid var(--fs-primary)',
                     borderRadius: 12,

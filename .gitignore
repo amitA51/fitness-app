@@ -15,9 +15,21 @@ dist/
 # Generated / build artifacts
 coverage/
 tsconfig.tsbuildinfo
+tsconfig.node.tsbuildinfo
 *.log
 temp_debug.txt
 everything-claude-code/
+
+# Compiled output of vite.config.ts. Must never be committed: Vite resolves
+# vite.config.js BEFORE vite.config.ts, so a stale checked-in .js silently
+# shadows the real config for everyone.
+vite.config.js
+vite.config.d.ts
+
+# Local UI preview harnesses. These live in public/, so Vite copies them into
+# dist/ and they would ship as broken public pages (they link /src/**.css,
+# which does not exist in a build).
+public/_preview_*.html
 
 # Program source materials — large binaries, not for git (the parsed data lives
 # in src/data/bbtProgram.generated.ts + program_extracted.json instead).
