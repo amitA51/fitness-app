@@ -159,8 +159,9 @@
 }
 
 .btn-primary:active {
-  transform: scale(0.98) translateY(0);
+  transform: scale(0.97) translateY(0);
   filter: brightness(0.97);
+  transition: transform 100ms ease-out, filter 100ms ease-out;
 }
 
 .btn-primary:disabled {
@@ -180,8 +181,9 @@
 }
 
 .btn-secondary:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
   background: var(--fs-overlay-active);
+  transition: transform 100ms ease-out, background 100ms ease-out;
 }
 
 .btn-ghost {
@@ -195,7 +197,8 @@
 
 .btn-ghost:active {
   background: var(--color-primary-glow);
-  transform: scale(0.98);
+  transform: scale(0.97);
+  transition: transform 100ms ease-out, background 100ms ease-out;
 }
 
 .btn-glass {
