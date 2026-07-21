@@ -13,7 +13,6 @@
 import { Dumbbell } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import PRHistoryTab from '../../../components/workout/PRHistoryTab';
 import WorkoutCalendar from '../../../components/workout/WorkoutCalendar';
 import { WorkoutHistory } from '../../../components/workout/history/WorkoutHistory';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
@@ -107,7 +106,15 @@ export const WorkoutsTab = memo(function WorkoutsTab({
           <div className="flex flex-col items-center py-10 text-center gap-3">
             <Dumbbell size={36} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
             <div style={{ display: 'grid', gap: 8, maxWidth: 280 }}>
-              <p style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 18, color: 'var(--fs-ink)', margin: 0 }}>
+              <p
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 600,
+                  fontSize: 18,
+                  color: 'var(--fs-ink)',
+                  margin: 0,
+                }}
+              >
                 עדיין אין אימונים
               </p>
               <p style={{ fontSize: 14, color: 'var(--fs-muted)', margin: 0, lineHeight: 1.5 }}>
@@ -209,9 +216,6 @@ export const WorkoutsTab = memo(function WorkoutsTab({
           className="space-y-4"
         >
           <StrengthSection sessions={sessions} prs={prs} />
-          {/* Full per-exercise PR history (grouped, latest-first) — complements
-              the PR board above with the complete record list. */}
-          <PRHistoryTab />
         </div>
       )}
     </div>

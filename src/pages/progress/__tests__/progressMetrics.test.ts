@@ -3,18 +3,27 @@ import type { PersonalRecord, WorkoutExercise, WorkoutSession, WorkoutSet } from
 import {
   DEFAULT_RANGE,
   RANGE_DAYS,
+  STRENGTH_DORMANT_DAYS,
+  bestWorkingSet,
+  buildExerciseProgress,
   buildPRBoard,
   buildStrengthCurves,
   buildVolumeTrend,
+  classifyStrengthTrend,
+  filterExerciseProgress,
   isRecentPR,
   onlyCompleted,
   recentPRs,
   sliceByRangeDays,
+  sortExerciseProgress,
+  strengthFilterCount,
+  summarizeStrength,
   summarizeWeeklyVolume,
   weekVerdict,
   weeklyCountDelta,
   weeklyVolumeDelta,
 } from '../progressMetrics';
+import type { ExerciseProgress, StrengthSessionPoint } from '../types';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -412,5 +421,242 @@ describe('sliceByRangeDays', () => {
 
   it('exposes a sensible default range that is a known key', () => {
     expect(RANGE_DAYS[DEFAULT_RANGE]).toBeGreaterThan(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// e1RM-based per-exercise progress
+// ---------------------------------------------------------------------------
+
+/** Build a raw set with explicit warmup/completion flags for e1RM fixtures. */
+const mkRawSet = (
+  id: string,
+  weight: number,
+  reps: number,
+  opts: { isWarmup?: boolean; isCompleted?: boolean } = {}
+): WorkoutSet => ({
+  ...mkSet(id, weight, reps),
+  isWarmup: opts.isWarmup ?? false,
+  isCompleted: opts.isCompleted ?? true,
+});
+
+const mkPoint = (date: string, e1RM: number): StrengthSessionPoint => ({
+  date,
+  e1RM,
+  topWeight: e1RM,
+  topReps: 5,
+  workingSets: 3,
+  volume: 1000,
+});
+
+const mkProgress = (
+  exerciseName: string,
+  over: Partial<ExerciseProgress> = {}
+): ExerciseProgress => ({
+  exerciseName,
+  points: [mkPoint('2026-05-01', 100), mkPoint('2026-05-08', 102), mkPoint('2026-05-13', 104)],
+  currentE1RM: 104,
+  latestTopWeight: 100,
+  latestTopReps: 5,
+  deltaE1RM: 4,
+  deltaPct: 4,
+  status: 'improving',
+  lastTrainedDate: '2026-05-13',
+  daysSinceLast: 2,
+  sessionCount: 3,
+  ...over,
+});
+
+describe('bestWorkingSet', () => {
+  it('picks the highest-e1RM completed set and excludes warmups + incomplete sets', () => {
+    // Arrange — a heavy warmup and an incomplete top single should both be ignored;
+    // 95x8 (e1RM ~120.3) beats 100x5 (e1RM ~116.7) despite the lighter weight.
+    const sets = [
+      mkRawSet('warm', 300, 1, { isWarmup: true }),
+      mkRawSet('inc', 200, 1, { isCompleted: false }),
+      mkRawSet('w1', 100, 5),
+      mkRawSet('w2', 95, 8),
+    ];
+
+    // Act
+    const best = bestWorkingSet(sets);
+
+    // Assert
+    expect(best?.weight).toBe(95);
+    expect(best?.reps).toBe(8);
+    expect(best?.e1RM).toBeCloseTo(120.3, 1);
+  });
+
+  it('returns null when there is no completed working set', () => {
+    expect(bestWorkingSet([mkRawSet('warm', 60, 10, { isWarmup: true })])).toBeNull();
+  });
+});
+
+describe('buildExerciseProgress', () => {
+  it('builds one point per training day from the best working set, newest-first', () => {
+    // Arrange — two bench days; the first day mixes a warmup + two working sets.
+    const sessions = [
+      mkSession('s1', '2026-05-10T10:00:00.000Z', 0, {
+        exerciseName: 'Bench Press',
+        sets: [
+          mkRawSet('s1-warm', 200, 5, { isWarmup: true }),
+          mkRawSet('s1-a', 100, 5), // e1RM ~116.7
+          mkRawSet('s1-b', 95, 8), // e1RM ~120.3 → best
+        ],
+      }),
+      mkSession('s2', '2026-05-14T10:00:00.000Z', 0, {
+        exerciseName: 'Bench Press',
+        sets: [mkRawSet('s2-a', 105, 5)], // e1RM ~122.5
+      }),
+    ];
+
+    // Act
+    const progress = buildExerciseProgress(onlyCompleted(sessions), NOW);
+
+    // Assert
+    expect(progress).toHaveLength(1);
+    const bench = progress[0]!;
+    expect(bench.sessionCount).toBe(2);
+    expect(bench.points.map((p) => p.date)).toEqual(['2026-05-10', '2026-05-14']);
+    // First day's stored point comes from the 95x8 set (best e1RM), not 100x5.
+    expect(bench.points[0]?.topWeight).toBe(95);
+    expect(bench.points[0]?.workingSets).toBe(2); // warmup excluded from the count
+    expect(bench.currentE1RM).toBe(123); // round(122.5)
+    expect(bench.latestTopWeight).toBe(105);
+  });
+
+  it('ignores non-completed sessions and exercises without a working set', () => {
+    // Arrange
+    const sessions = [
+      mkSession('active', '2026-05-14T10:00:00.000Z', 0, {
+        status: 'active',
+        exerciseName: 'Bench Press',
+        sets: [mkRawSet('a', 100, 5)],
+      }),
+      mkSession('warmonly', '2026-05-13T10:00:00.000Z', 0, {
+        exerciseName: 'Squat',
+        sets: [mkRawSet('w', 60, 10, { isWarmup: true })],
+      }),
+    ];
+
+    // Act
+    const progress = buildExerciseProgress(onlyCompleted(sessions), NOW);
+
+    // Assert
+    expect(progress).toHaveLength(0);
+  });
+});
+
+describe('classifyStrengthTrend', () => {
+  it('grades a clear rise as improving', () => {
+    const points = [
+      mkPoint('2026-05-01', 100),
+      mkPoint('2026-05-08', 103),
+      mkPoint('2026-05-13', 106),
+    ];
+    const { status, deltaE1RM } = classifyStrengthTrend(points, NOW);
+    expect(status).toBe('improving');
+    expect(deltaE1RM).toBe(6);
+  });
+
+  it('grades a clear drop as declining', () => {
+    const points = [
+      mkPoint('2026-05-01', 106),
+      mkPoint('2026-05-08', 103),
+      mkPoint('2026-05-13', 100),
+    ];
+    expect(classifyStrengthTrend(points, NOW).status).toBe('declining');
+  });
+
+  it('treats a sub-threshold move as stable', () => {
+    const points = [
+      mkPoint('2026-05-01', 100),
+      mkPoint('2026-05-08', 100),
+      mkPoint('2026-05-13', 101),
+    ];
+    expect(classifyStrengthTrend(points, NOW).status).toBe('stable');
+  });
+
+  it('is "new" with fewer than three points', () => {
+    const points = [mkPoint('2026-05-08', 100), mkPoint('2026-05-13', 110)];
+    expect(classifyStrengthTrend(points, NOW).status).toBe('new');
+  });
+
+  it('is "dormant" past the dormant window regardless of trend', () => {
+    // Last trained well beyond STRENGTH_DORMANT_DAYS before NOW.
+    const points = [
+      mkPoint('2026-03-01', 100),
+      mkPoint('2026-03-08', 103),
+      mkPoint('2026-03-15', 106),
+    ];
+    const { status } = classifyStrengthTrend(points, NOW);
+    expect(status).toBe('dormant');
+    // Sanity: the gap really is beyond the window.
+    const gapDays = (NOW - new Date('2026-03-15').getTime()) / 86400000;
+    expect(gapDays).toBeGreaterThan(STRENGTH_DORMANT_DAYS);
+  });
+});
+
+describe('sortExerciseProgress', () => {
+  const list: ExerciseProgress[] = [
+    mkProgress('בנץ', { deltaE1RM: 2, currentE1RM: 120, lastTrainedDate: '2026-05-10' }),
+    mkProgress('אבוקדו', { deltaE1RM: 8, currentE1RM: 90, lastTrainedDate: '2026-05-05' }),
+    mkProgress('סקוואט', { deltaE1RM: -1, currentE1RM: 160, lastTrainedDate: '2026-05-14' }),
+  ];
+
+  it('sorts by biggest improvement', () => {
+    expect(sortExerciseProgress(list, 'improved').map((e) => e.exerciseName)).toEqual([
+      'אבוקדו',
+      'בנץ',
+      'סקוואט',
+    ]);
+  });
+
+  it('sorts by most recently trained', () => {
+    expect(sortExerciseProgress(list, 'recent')[0]?.exerciseName).toBe('סקוואט');
+  });
+
+  it('sorts by heaviest current e1RM', () => {
+    expect(sortExerciseProgress(list, 'heaviest').map((e) => e.currentE1RM)).toEqual([
+      160, 120, 90,
+    ]);
+  });
+
+  it('does not mutate the input', () => {
+    const before = list.map((e) => e.exerciseName);
+    sortExerciseProgress(list, 'alpha');
+    expect(list.map((e) => e.exerciseName)).toEqual(before);
+  });
+});
+
+describe('filterExerciseProgress + summarizeStrength', () => {
+  const list: ExerciseProgress[] = [
+    mkProgress('a', { status: 'improving' }),
+    mkProgress('b', { status: 'improving' }),
+    mkProgress('c', { status: 'stable' }),
+    mkProgress('d', { status: 'declining' }),
+    mkProgress('e', { status: 'dormant' }),
+    mkProgress('f', { status: 'new' }),
+  ];
+
+  it('summarizes counts by bucket (stalled = stable + declining)', () => {
+    const s = summarizeStrength(list);
+    expect(s).toMatchObject({ tracked: 6, improving: 2, stalled: 2, dormant: 1, fresh: 1 });
+  });
+
+  it('filters "stalled" to stable + declining', () => {
+    expect(filterExerciseProgress(list, 'stalled').map((e) => e.exerciseName)).toEqual(['c', 'd']);
+  });
+
+  it('filter chip counts line up with the summary', () => {
+    const s = summarizeStrength(list);
+    expect(strengthFilterCount(s, 'all')).toBe(6);
+    expect(strengthFilterCount(s, 'improving')).toBe(2);
+    expect(strengthFilterCount(s, 'stalled')).toBe(2);
+    expect(strengthFilterCount(s, 'dormant')).toBe(1);
+  });
+
+  it('"all" returns the whole list unchanged', () => {
+    expect(filterExerciseProgress(list, 'all')).toHaveLength(6);
   });
 });

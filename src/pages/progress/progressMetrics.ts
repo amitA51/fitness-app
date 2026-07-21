@@ -6,9 +6,15 @@
 // definition and lets vitest cover the logic without rendering React.
 
 import type { PersonalRecord, WorkoutSession } from '../../types';
-import { oneRepMax, setVolume } from '../../utils/workoutMath';
+import { completedSetsVolume, oneRepMax, setVolume } from '../../utils/workoutMath';
 import type { Zone } from '../../utils/zoneColor';
-import type { ExerciseStrengthCurve, StrengthDataPoint } from './types';
+import type {
+  ExerciseProgress,
+  ExerciseStrengthCurve,
+  ExerciseTrendStatus,
+  StrengthDataPoint,
+  StrengthSessionPoint,
+} from './types';
 
 const DAY_MS = 86400000;
 
@@ -225,6 +231,276 @@ export function buildStrengthCurves(completedSessions: WorkoutSession[]): Exerci
   }
 
   return result.sort((a, b) => b.data.length - a.data.length);
+}
+
+// ============================================================================
+// e1RM-based per-exercise progress — the honest "am I getting stronger?" model.
+// ============================================================================
+// A session collapses many sets into ONE number, so it must be the RIGHT number
+// and it must be explainable. We take the best WORKING set (highest estimated
+// 1RM, warmups excluded) per session: e1RM normalizes weight AND reps onto one
+// comparable scale, so "heavier for fewer reps" vs "lighter for more" resolve
+// honestly instead of by whichever set happened to have the most raw volume.
+
+/** Recent sessions the trend/status is judged over (older points still charted). */
+export const STRENGTH_TREND_WINDOW = 8;
+/** Days without training after which an exercise is flagged dormant. */
+export const STRENGTH_DORMANT_DAYS = 21;
+/** Distinct training days required before a real trend (not "new") is claimed. */
+const STRENGTH_MIN_POINTS = 3;
+/** Percent move (either direction) that counts as improving/declining vs stable. */
+const STRENGTH_TREND_EPSILON_PCT = 2;
+/** Absolute floor: sub-1kg swings are noise, always stable. */
+const STRENGTH_TREND_EPSILON_KG = 1;
+
+/** A set as read for e1RM: only the fields we touch, incl. optional drop-set legs. */
+interface E1RMSet {
+  weight?: number;
+  reps?: number;
+  isWarmup?: boolean;
+  isCompleted?: boolean;
+  segments?: { weight?: number; reps?: number }[];
+}
+
+/** Best estimated 1RM producible from one set (handles drop-set legs). */
+function setBestE1RM(set: E1RMSet): { weight: number; reps: number; e1RM: number } | null {
+  const legs =
+    Array.isArray(set.segments) && set.segments.length > 0
+      ? set.segments
+      : [{ weight: set.weight, reps: set.reps }];
+  let best: { weight: number; reps: number; e1RM: number } | null = null;
+  for (const leg of legs) {
+    const w = typeof leg.weight === 'number' && leg.weight > 0 ? leg.weight : 0;
+    const r = typeof leg.reps === 'number' && leg.reps > 0 ? leg.reps : 0;
+    const e = oneRepMax(w, r);
+    if (e <= 0) continue;
+    if (!best || e > best.e1RM) best = { weight: w, reps: r, e1RM: e };
+  }
+  return best;
+}
+
+/**
+ * The best working set of an exercise within a session — the completed,
+ * non-warmup set with the highest estimated 1RM. Null when there is no such set.
+ */
+export function bestWorkingSet(
+  sets: WorkoutSession['exercises'][number]['sets']
+): { weight: number; reps: number; e1RM: number } | null {
+  let best: { weight: number; reps: number; e1RM: number } | null = null;
+  for (const set of sets || []) {
+    if (!set.isCompleted || set.isWarmup) continue;
+    const cand = setBestE1RM(set as E1RMSet);
+    if (cand && (!best || cand.e1RM > best.e1RM)) best = cand;
+  }
+  return best;
+}
+
+/**
+ * Classify an exercise's recent trend from its chronological e1RM points.
+ * dormant (stale) wins over everything, then new (too few points), then the
+ * windowed first→last e1RM move graded against the epsilon thresholds. Pure and
+ * `now`-injectable for tests.
+ */
+export function classifyStrengthTrend(
+  points: StrengthSessionPoint[],
+  now: number = Date.now()
+): { status: ExerciseTrendStatus; deltaE1RM: number; deltaPct: number } {
+  const window = points.slice(-STRENGTH_TREND_WINDOW);
+  const first = window[0];
+  const last = window[window.length - 1];
+  const deltaE1RM = first && last ? last.e1RM - first.e1RM : 0;
+  const deltaPct = first && first.e1RM > 0 ? Math.round((deltaE1RM / first.e1RM) * 1000) / 10 : 0;
+
+  const lastMs = last ? new Date(last.date).getTime() : Number.NaN;
+  const daysSinceLast = Number.isNaN(lastMs)
+    ? Number.POSITIVE_INFINITY
+    : Math.floor((now - lastMs) / DAY_MS);
+
+  if (daysSinceLast > STRENGTH_DORMANT_DAYS) return { status: 'dormant', deltaE1RM, deltaPct };
+  if (points.length < STRENGTH_MIN_POINTS) return { status: 'new', deltaE1RM, deltaPct };
+  if (Math.abs(deltaE1RM) < STRENGTH_TREND_EPSILON_KG)
+    return { status: 'stable', deltaE1RM, deltaPct };
+  if (deltaPct >= STRENGTH_TREND_EPSILON_PCT) return { status: 'improving', deltaE1RM, deltaPct };
+  if (deltaPct <= -STRENGTH_TREND_EPSILON_PCT) return { status: 'declining', deltaE1RM, deltaPct };
+  return { status: 'stable', deltaE1RM, deltaPct };
+}
+
+/**
+ * Build the per-exercise e1RM progress model from completed sessions. One point
+ * per training day (best working set; the higher e1RM wins when a day has
+ * several sessions). Exercises with no working set are dropped. Sorted by most
+ * recently trained so the default list leads with what the user is doing now.
+ */
+export function buildExerciseProgress(
+  completedSessions: WorkoutSession[],
+  now: number = Date.now()
+): ExerciseProgress[] {
+  const byExercise = new Map<string, Map<string, StrengthSessionPoint>>();
+
+  for (const session of completedSessions) {
+    const date = session.date || session.startTime?.slice(0, 10);
+    if (!date) continue;
+    for (const exercise of session.exercises) {
+      const name = exercise.exerciseName || exercise.name;
+      if (!name) continue;
+      const best = bestWorkingSet(exercise.sets);
+      if (!best) continue;
+      const workingSets = (exercise.sets || []).filter((s) => s.isCompleted && !s.isWarmup).length;
+      const point: StrengthSessionPoint = {
+        date,
+        e1RM: Math.round(best.e1RM),
+        topWeight: best.weight,
+        topReps: best.reps,
+        workingSets,
+        volume: completedSetsVolume(exercise.sets),
+      };
+      const byDate = byExercise.get(name) ?? new Map<string, StrengthSessionPoint>();
+      const existing = byDate.get(date);
+      if (!existing || point.e1RM > existing.e1RM) byDate.set(date, point);
+      byExercise.set(name, byDate);
+    }
+  }
+
+  const result: ExerciseProgress[] = [];
+  for (const [name, byDate] of byExercise) {
+    const points = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+    const latest = points[points.length - 1];
+    if (!latest) continue;
+    const { status, deltaE1RM, deltaPct } = classifyStrengthTrend(points, now);
+    const lastMs = new Date(latest.date).getTime();
+    const daysSinceLast = Number.isNaN(lastMs)
+      ? 0
+      : Math.max(0, Math.floor((now - lastMs) / DAY_MS));
+    result.push({
+      exerciseName: name,
+      points,
+      currentE1RM: latest.e1RM,
+      latestTopWeight: latest.topWeight,
+      latestTopReps: latest.topReps,
+      deltaE1RM,
+      deltaPct,
+      status,
+      lastTrainedDate: latest.date,
+      daysSinceLast,
+      sessionCount: points.length,
+    });
+  }
+
+  return result.sort((a, b) => b.lastTrainedDate.localeCompare(a.lastTrainedDate));
+}
+
+/** Sort keys for the strength master list. */
+export type StrengthSort = 'improved' | 'recent' | 'alpha' | 'heaviest';
+/** Status filter buckets for the strength master list. */
+export type StrengthFilter = 'all' | 'improving' | 'stalled' | 'dormant';
+
+export const STRENGTH_SORT_LABEL: Record<StrengthSort, string> = {
+  improved: 'שיפור',
+  recent: 'אחרון',
+  alpha: 'א־ב',
+  heaviest: 'הכי כבד',
+};
+
+export const STRENGTH_FILTER_LABEL: Record<StrengthFilter, string> = {
+  all: 'הכל',
+  improving: 'משתפרים',
+  stalled: 'תקועים',
+  dormant: 'זנוחים',
+};
+
+export const STRENGTH_STATUS_LABEL: Record<ExerciseTrendStatus, string> = {
+  improving: 'משתפר',
+  stable: 'יציב',
+  declining: 'ירידה',
+  new: 'חדש',
+  dormant: 'זנוח',
+};
+
+/** Zone grading per status — mint=good, warn=attention, muted=neutral (never lime). */
+export const STRENGTH_STATUS_ZONE: Record<ExerciseTrendStatus, Zone> = {
+  improving: 'good',
+  stable: 'neutral',
+  declining: 'attention',
+  new: 'neutral',
+  dormant: 'attention',
+};
+
+/** Pure, stable sort of the progress list (does not mutate the input). */
+export function sortExerciseProgress(
+  list: ExerciseProgress[],
+  sort: StrengthSort
+): ExerciseProgress[] {
+  const copy = [...list];
+  switch (sort) {
+    case 'improved':
+      return copy.sort((a, b) => b.deltaE1RM - a.deltaE1RM || b.currentE1RM - a.currentE1RM);
+    case 'recent':
+      return copy.sort(
+        (a, b) =>
+          b.lastTrainedDate.localeCompare(a.lastTrainedDate) || b.currentE1RM - a.currentE1RM
+      );
+    case 'alpha':
+      return copy.sort((a, b) => a.exerciseName.localeCompare(b.exerciseName, 'he'));
+    case 'heaviest':
+      return copy.sort((a, b) => b.currentE1RM - a.currentE1RM);
+  }
+}
+
+/** Filter the progress list by status bucket ("stalled" = stable OR declining). */
+export function filterExerciseProgress(
+  list: ExerciseProgress[],
+  filter: StrengthFilter
+): ExerciseProgress[] {
+  switch (filter) {
+    case 'all':
+      return list;
+    case 'improving':
+      return list.filter((e) => e.status === 'improving');
+    case 'stalled':
+      return list.filter((e) => e.status === 'stable' || e.status === 'declining');
+    case 'dormant':
+      return list.filter((e) => e.status === 'dormant');
+  }
+}
+
+export interface StrengthSummary {
+  /** Total exercises with at least one tracked point. */
+  tracked: number;
+  improving: number;
+  /** stable + declining. */
+  stalled: number;
+  dormant: number;
+  /** Too-new-to-judge. */
+  fresh: number;
+}
+
+/** One-glance counts for the summary line + the filter-chip badges. */
+export function summarizeStrength(list: ExerciseProgress[]): StrengthSummary {
+  let improving = 0;
+  let stalled = 0;
+  let dormant = 0;
+  let fresh = 0;
+  for (const e of list) {
+    if (e.status === 'improving') improving += 1;
+    else if (e.status === 'stable' || e.status === 'declining') stalled += 1;
+    else if (e.status === 'dormant') dormant += 1;
+    else fresh += 1;
+  }
+  return { tracked: list.length, improving, stalled, dormant, fresh };
+}
+
+/** Count for a given filter chip (so chips can show live badges). */
+export function strengthFilterCount(summary: StrengthSummary, filter: StrengthFilter): number {
+  switch (filter) {
+    case 'all':
+      return summary.tracked;
+    case 'improving':
+      return summary.improving;
+    case 'stalled':
+      return summary.stalled;
+    case 'dormant':
+      return summary.dormant;
+  }
 }
 
 // ============================================================================

@@ -1,82 +1,124 @@
 // ============================================================================
-// StrengthSection — the strength sub-area of the Workouts tab.
+// StrengthSection — the "כוח" area of the Workouts tab.
 // ============================================================================
-// Refactored from the former standalone StrengthTab. De-densified into three
-// clearly delineated, individually-headed cards instead of one long scroll:
-//   1. PR board (e1RM leaderboard)
-//   2. Exercise analysis — selector chips + the converged GlowAreaChart curve
-//   3. Weekly volume forecast for the selected exercise (ForecastChart)
-//   4. Per-exercise top-weight history
-// The hand-rolled SVG line chart is gone; trends use the shared GlowAreaChart
-// (the single chart style across Progress). PR math is the e1RM definition from
-// progressMetrics, shared with Overview — no duplicate sparkline logic.
+// Reworked from four always-on stacked cards into a master → detail flow:
+//
+//   LIST (the "big picture"): a one-line verdict, sort + status filters, and a
+//   scannable row per exercise (current e1RM, trend, recency, sparkline). Below
+//   it, the personal-records board + full PR history as secondary "records".
+//
+//   DETAIL (on tap): <ExerciseDetail> — the honest e1RM hero, a note on how the
+//   number is derived, the trend curve, the weekly forecast, and per-session
+//   history. Progressive disclosure (state-driven, no modal) keeps the default
+//   view calm while every detail stays one tap away.
+//
+// The metric is estimated 1RM of the best working set per session (warmups
+// excluded) — one comparable number whether you went heavier-for-fewer or
+// lighter-for-more, which is the honest answer to "am I getting stronger?".
 
-import { Dumbbell, TrendingDown, TrendingUp } from 'lucide-react';
+import { AnimatePresence, m } from 'framer-motion';
+import { Dumbbell } from 'lucide-react';
 import type React from 'react';
 import { memo, useEffect, useMemo, useState } from 'react';
-import { GlowAreaChart, type GlowAreaPoint } from '../../../components/charts';
-import ForecastChart from '../../../components/workout/ForecastChart';
+import PRHistoryTab from '../../../components/workout/PRHistoryTab';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
-import { zoneColor } from '../../../utils/zoneColor';
+import { ChartSummary, ChartSummaryNumber } from '../components/ChartSummary';
+import { ExerciseDetail } from '../components/ExerciseDetail';
+import { ExerciseProgressRow } from '../components/ExerciseProgressRow';
 import { SectionCard } from '../components/SectionCard';
-import { buildPRBoard, buildStrengthCurves } from '../progressMetrics';
-import type { StrengthDataPoint } from '../types';
+import {
+  STRENGTH_FILTER_LABEL,
+  STRENGTH_SORT_LABEL,
+  type StrengthFilter,
+  type StrengthSort,
+  type StrengthSummary,
+  buildExerciseProgress,
+  buildPRBoard,
+  filterExerciseProgress,
+  sortExerciseProgress,
+  strengthFilterCount,
+  summarizeStrength,
+} from '../progressMetrics';
+import { exerciseLabel } from '../strengthFormat';
 
-const exerciseLabel = (raw: string): string => raw.split('|')[0]?.trim() || raw;
+const FILTER_ORDER: StrengthFilter[] = ['all', 'improving', 'stalled', 'dormant'];
+const SORT_ORDER: StrengthSort[] = ['recent', 'improved', 'heaviest', 'alpha'];
+const PR_BOARD_COLLAPSED = 5;
 
-/** One history row: a data point plus its delta vs the chronologically previous point. */
-interface HistoryRow {
-  point: StrengthDataPoint;
-  /** Signed change vs the previous (older) tracked weight, or null for the first. */
-  diff: number | null;
-}
-
-/** A month bucket of history rows, newest month first, newest row first within. */
-interface HistoryMonth {
-  /** Mono uppercase month label, e.g. "מאי 2026". */
-  label: string;
-  rows: HistoryRow[];
-}
-
-/**
- * Group the most-recent `limit` history points into month buckets (newest first),
- * each row carrying its delta vs the chronologically previous point. Replaces the
- * flat 10-row divide-y list (the ui-preflight long-list smell) with real grouping.
- */
-function groupHistoryByMonth(data: StrengthDataPoint[], limit: number): HistoryMonth[] {
-  const recentNewestFirst = [...data].reverse().slice(0, limit);
-  const months: HistoryMonth[] = [];
-  for (let i = 0; i < recentNewestFirst.length; i++) {
-    const point = recentNewestFirst[i]!;
-    // The chronologically previous (older) point in the full series.
-    const olderIdx = data.length - 1 - i - 1;
-    const olderPoint = data[olderIdx];
-    const diff = olderPoint ? point.value - olderPoint.value : null;
-    const d = new Date(point.date);
-    const label = Number.isNaN(d.getTime())
-      ? '—'
-      : d.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
-    const bucket = months[months.length - 1];
-    if (bucket && bucket.label === label) {
-      bucket.rows.push({ point, diff });
-    } else {
-      months.push({ label, rows: [{ point, diff }] });
-    }
-  }
-  return months;
-}
-
-/** PR board rows shown before the "הצג הכל" expander appears. */
-const PR_BOARD_COLLAPSED = 6;
-/** Most-recent per-exercise history rows to render. */
-const HISTORY_ROWS = 10;
-
-const cardHeader: React.CSSProperties = {
+const kicker: React.CSSProperties = {
   fontFamily: 'var(--font-mono)',
   fontSize: 10,
   letterSpacing: '0.15em',
   color: 'var(--fs-muted)',
 };
+
+/** One-line, zone-tinted takeaway for the whole strength picture. */
+function StrengthVerdict({ summary }: { summary: StrengthSummary }) {
+  const { tracked, improving, stalled } = summary;
+  if (improving > 0) {
+    return (
+      <ChartSummary kicker="כוח · סיכום">
+        מתוך <ChartSummaryNumber value={tracked} /> תרגילים במעקב,{' '}
+        <ChartSummaryNumber value={improving} zone="good" /> במגמת שיפור.
+      </ChartSummary>
+    );
+  }
+  if (stalled > 0) {
+    return (
+      <ChartSummary kicker="כוח · סיכום">
+        <ChartSummaryNumber value={stalled} zone="attention" /> תרגילים תקועים — כדאי להעלות משקל או
+        חזרות באימון הבא.
+      </ChartSummary>
+    );
+  }
+  return (
+    <ChartSummary kicker="כוח · סיכום">
+      <ChartSummaryNumber value={tracked} /> תרגילים במעקב. עוד כמה אימונים ותהיה תמונת מגמה ברורה.
+    </ChartSummary>
+  );
+}
+
+/** A single sort/filter pill. */
+function Chip({
+  active,
+  onClick,
+  ariaPressed,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  ariaPressed: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={ariaPressed}
+      onClick={onClick}
+      className="shrink-0 active:scale-[0.97] motion-reduce:active:scale-100"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        minHeight: 40,
+        paddingInline: 14,
+        border: 'none',
+        borderRadius: 999,
+        cursor: 'pointer',
+        background: active ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+        color: active ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
+        fontFamily: 'var(--font-hebrew)',
+        fontSize: 13,
+        fontWeight: 600,
+        whiteSpace: 'nowrap',
+        transition: 'background 0.15s, color 0.15s, transform 0.1s',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
 export const StrengthSection = memo(function StrengthSection({
   sessions,
@@ -86,40 +128,33 @@ export const StrengthSection = memo(function StrengthSection({
   sessions: WorkoutSession[];
   prs: PersonalRecord[];
 }) {
-  const curves = useMemo(() => buildStrengthCurves(sessions), [sessions]);
+  const reduced = useReducedMotion();
+  const progress = useMemo(() => buildExerciseProgress(sessions), [sessions]);
+  const summary = useMemo(() => summarizeStrength(progress), [progress]);
   const prBoard = useMemo(() => buildPRBoard(prs), [prs]);
-  const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
+
+  const [selected, setSelected] = useState<string | null>(null);
+  const [sort, setSort] = useState<StrengthSort>('recent');
+  const [filter, setFilter] = useState<StrengthFilter>('all');
   const [showAllPRs, setShowAllPRs] = useState(false);
 
-  const visiblePRs = showAllPRs ? prBoard : prBoard.slice(0, PR_BOARD_COLLAPSED);
-  const hiddenPRCount = prBoard.length - PR_BOARD_COLLAPSED;
+  const visible = useMemo(
+    () => sortExerciseProgress(filterExerciseProgress(progress, filter), sort),
+    [progress, filter, sort]
+  );
 
+  const selectedProgress = useMemo(
+    () => (selected ? (progress.find((p) => p.exerciseName === selected) ?? null) : null),
+    [selected, progress]
+  );
+
+  // If the selected exercise disappears (e.g. data reload), fall back to the list.
   useEffect(() => {
-    setSelectedExercise((prev) => prev ?? (curves.length > 0 ? curves[0]!.exerciseName : null));
-  }, [curves]);
+    if (selected && !progress.some((p) => p.exerciseName === selected)) setSelected(null);
+  }, [selected, progress]);
 
-  const activeCurve = curves.find((c) => c.exerciseName === selectedExercise);
-
-  const curvePoints = useMemo<GlowAreaPoint[]>(
-    () =>
-      activeCurve
-        ? activeCurve.data.map((point) => ({
-            x: new Date(point.date).toLocaleDateString('he-IL', {
-              day: 'numeric',
-              month: 'numeric',
-            }),
-            y: point.value,
-          }))
-        : [],
-    [activeCurve]
-  );
-
-  const historyMonths = useMemo<HistoryMonth[]>(
-    () => (activeCurve ? groupHistoryByMonth(activeCurve.data, HISTORY_ROWS) : []),
-    [activeCurve]
-  );
-
-  if (curves.length === 0 && prBoard.length === 0) {
+  // ── Fully empty: no strength points and no PRs ──────────────────────────────
+  if (progress.length === 0 && prBoard.length === 0) {
     return (
       <SectionCard rail={false} style={{ padding: 20 }}>
         <div className="flex flex-col items-center py-12 text-center gap-3">
@@ -134,367 +169,263 @@ export const StrengthSection = memo(function StrengthSection({
           >
             אין נתוני כוח עדיין
           </p>
-          <p style={{ ...cardHeader, fontSize: 11 }}>השלם אימונים כדי לעקוב אחר התקדמות הכוח</p>
+          <p style={{ fontFamily: 'var(--font-hebrew)', fontSize: 13, color: 'var(--fs-muted)' }}>
+            השלימו אימונים עם משקלים כדי לעקוב אחרי ההתקדמות בכל תרגיל.
+          </p>
         </div>
       </SectionCard>
     );
   }
 
+  const easeOut: [number, number, number, number] = [0.16, 1, 0.3, 1];
+  const transition = reduced ? { duration: 0 } : { duration: 0.18, ease: easeOut };
+
   return (
-    <div className="space-y-4">
-      {/* ── Section 1: PR leaderboard (e1RM) ─────────────────────────────── */}
-      {prBoard.length > 0 && (
-        <SectionCard rail={false} style={{ padding: '16px 20px' }}>
-          <div className="flex items-baseline justify-between gap-2" style={{ marginBottom: 12 }}>
-            <h3 style={cardHeader}>לוח שיאים · PR BOARD (1RM)</h3>
-            <span style={{ ...cardHeader, fontSize: 9 }} dir="ltr">
-              {prBoard.length}
-            </span>
-          </div>
-          <div style={{ display: 'grid', gap: 6 }}>
-            {visiblePRs.map((entry, i) => (
+    <AnimatePresence mode="wait" initial={false}>
+      {selectedProgress ? (
+        <m.div
+          key="detail"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={transition}
+        >
+          <ExerciseDetail
+            progress={selectedProgress}
+            sessions={sessions}
+            onBack={() => setSelected(null)}
+          />
+        </m.div>
+      ) : (
+        <m.div
+          key="list"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={transition}
+          className="space-y-4"
+        >
+          {progress.length > 0 ? (
+            <>
+              <StrengthVerdict summary={summary} />
+
+              {/* Filters — status buckets with live counts (empty buckets hidden). */}
               <div
-                key={entry.exerciseName}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 12px',
-                  background:
-                    i === 0
-                      ? 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))'
-                      : 'var(--fs-surface-2)',
-                  borderRadius: 10,
-                  borderInlineStart: i === 0 ? '3px solid var(--fs-accent)' : 'none',
-                }}
+                role="group"
+                aria-label="סינון תרגילים"
+                className="flex gap-2 overflow-x-auto"
+                style={{ scrollbarWidth: 'none', paddingBottom: 2 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 10,
-                      fontWeight: 600,
-                      color: i === 0 ? 'var(--fs-accent)' : 'var(--fs-muted)',
-                      width: 20,
-                    }}
-                  >
-                    #{i + 1}
-                  </span>
-                  <span
-                    className="line-clamp-1"
-                    style={{
-                      fontFamily: 'var(--font-hebrew)',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: 'var(--fs-ink)',
-                    }}
-                  >
-                    {exerciseLabel(entry.exerciseName)}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexShrink: 0 }}>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-display)',
-                      fontWeight: 600,
-                      fontSize: 18,
-                      color: 'var(--fs-ink)',
-                      direction: 'ltr',
-                    }}
-                  >
-                    {entry.e1RM}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 9,
-                      fontWeight: 700,
-                      color: 'var(--fs-muted)',
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
-                    1RM
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 9,
-                      fontWeight: 600,
-                      color: 'var(--fs-muted)',
-                      letterSpacing: '0.04em',
-                      marginInlineStart: 4,
-                      direction: 'ltr',
-                    }}
-                  >
-                    {entry.weight}×{entry.reps}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-          {hiddenPRCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowAllPRs((v) => !v)}
-              className="active:scale-[0.98] motion-reduce:active:scale-100"
-              aria-expanded={showAllPRs}
-              style={{
-                marginTop: 10,
-                width: '100%',
-                minHeight: 44,
-                background: 'transparent',
-                border: '1px solid var(--fs-surface-2)',
-                borderRadius: 10,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: '-0.01em',
-                color: 'var(--fs-accent)',
-              }}
-            >
-              {showAllPRs ? (
-                'הצג פחות'
-              ) : (
-                <>
-                  הצג הכל · <span dir="ltr">+{hiddenPRCount}</span>
-                </>
-              )}
-            </button>
-          )}
-        </SectionCard>
-      )}
-
-      {/* ── Section 2: Exercise analysis — selector + curve ──────────────── */}
-      {curves.length > 0 && activeCurve && (
-        <SectionCard rail={false} style={{ padding: '16px 20px' }}>
-          <h3 style={{ ...cardHeader, marginBottom: 12 }}>ניתוח תרגיל · עקומת כוח</h3>
-
-          {/* Exercise selector — horizontally scrollable so EVERY tracked
-              exercise is reachable (was capped at 8 with no overflow path),
-              matching the Progress tab-bar scroll pattern. */}
-          <div
-            className="flex gap-2 overflow-x-auto"
-            role="tablist"
-            aria-label="בחירת תרגיל"
-            style={{
-              marginBottom: 16,
-              paddingBottom: 4,
-              scrollbarWidth: 'none',
-              WebkitOverflowScrolling: 'touch',
-            }}
-          >
-            {curves.map((curve, index) => {
-              const active = selectedExercise === curve.exerciseName;
-              return (
-                <button
-                  type="button"
-                  key={curve.exerciseName}
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setSelectedExercise(curve.exerciseName)}
-                  tabIndex={active ? 0 : -1}
-                  onKeyDown={(e) => {
-                    // Roving tabindex + RTL arrow nav (ArrowLeft = next), matching
-                    // every other tablist in the app (SegmentedControl / CoachMessages).
-                    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-                    e.preventDefault();
-                    const nextIdx =
-                      (index + (e.key === 'ArrowLeft' ? 1 : -1) + curves.length) % curves.length;
-                    const next = curves[nextIdx];
-                    if (!next) return;
-                    setSelectedExercise(next.exerciseName);
-                    const btns =
-                      e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
-                        '[role="tab"]'
-                      );
-                    btns?.[nextIdx]?.focus();
-                  }}
-                  className="chip shrink-0"
-                  style={{
-                    minHeight: 44,
-                    background: active ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
-                    color: active ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
-                    borderColor: active ? 'var(--fs-accent)' : 'transparent',
-                    borderWidth: 1,
-                    borderStyle: 'solid',
-                  }}
-                >
-                  <span style={{ fontFamily: 'var(--font-hebrew)', fontSize: 13, fontWeight: 600 }}>
-                    {exerciseLabel(curve.exerciseName)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Hero stat: latest top weight + change */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: 10,
-              flexWrap: 'wrap',
-              marginBottom: 14,
-            }}
-          >
-            <div
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 600,
-                fontSize: 44,
-                color: 'var(--fs-ink)',
-                lineHeight: 0.9,
-                direction: 'ltr',
-              }}
-            >
-              {activeCurve.latestWeight}
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 12,
-                  color: 'var(--fs-muted)',
-                  marginInlineStart: 6,
-                  letterSpacing: '-0.01em',
-                }}
-              >
-                KG
-              </span>
-            </div>
-            {activeCurve.change !== 0 &&
-              (() => {
-                // Strength gain is genuinely directional toward the goal, so the
-                // change chip is zone-graded (up=accent / down=warn) — never lime,
-                // which stays reserved for PR celebration. Zone-colored text on a
-                // matching subtle tint keeps AA in both themes.
-                const zc = zoneColor(activeCurve.change > 0 ? 'good' : 'attention');
-                return (
-                  <div
-                    className="inline-flex items-center gap-1.5"
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 11,
-                      letterSpacing: '-0.01em',
-                      background: `color-mix(in srgb, ${zc} 16%, var(--fs-surface))`,
-                      color: zc,
-                      padding: '4px 10px',
-                      borderRadius: 8,
-                      direction: 'ltr',
-                    }}
-                  >
-                    {activeCurve.change > 0 ? (
-                      <TrendingUp size={11} aria-hidden="true" />
-                    ) : (
-                      <TrendingDown size={11} aria-hidden="true" />
-                    )}
-                    {activeCurve.change > 0 ? '+' : ''}
-                    {activeCurve.change}KG ({activeCurve.changePct > 0 ? '+' : ''}
-                    {activeCurve.changePct}%)
-                  </div>
-                );
-              })()}
-          </div>
-
-          {/* Converged trend chart */}
-          {curvePoints.length >= 2 ? (
-            <GlowAreaChart
-              data={curvePoints}
-              height={170}
-              xAxis
-              yAxis
-              interactive
-              valueUnit="kg"
-              ariaLabel={`עקומת כוח ל${exerciseLabel(activeCurve.exerciseName)}`}
-            />
-          ) : (
-            <p style={{ ...cardHeader, fontSize: 11, textAlign: 'center', padding: '20px 0' }}>
-              צריך לפחות שתי נקודות מידע לעקומה
-            </p>
-          )}
-        </SectionCard>
-      )}
-
-      {/* ── Section 3: Weekly volume forecast for the selected exercise ───── */}
-      {/* Follows the SAME chip selection as the analysis card — no second
-          selector. Weekly actuals + a clearly-labeled next-week projection. */}
-      {activeCurve && (
-        <ForecastChart
-          sessions={sessions}
-          exerciseName={activeCurve.exerciseName}
-          exerciseLabel={exerciseLabel(activeCurve.exerciseName)}
-        />
-      )}
-
-      {/* ── Section 4: Per-exercise top-weight history ───────────────────── */}
-      {activeCurve && activeCurve.data.length > 0 && (
-        <SectionCard rail={false} style={{ padding: '16px 20px' }}>
-          <h3 style={{ ...cardHeader, marginBottom: 12 }}>
-            היסטוריית משקל · {exerciseLabel(activeCurve.exerciseName)}
-          </h3>
-          {/* Month-grouped instead of 10 flat divide-y rows (the ui-preflight
-              long-list smell): a mono month kicker leads each bucket, rows sit on
-              an inset surface (no per-row hairline). Strength gain is genuinely
-              directional toward the goal, so the delta is zone-graded
-              (up=accent / down=warn) — never lime, which stays PR-only. */}
-          <div className="space-y-4">
-            {historyMonths.map((month) => (
-              <div key={month.label}>
-                <div style={{ ...cardHeader, fontSize: 9, marginBottom: 6 }}>{month.label}</div>
-                <div style={{ display: 'grid', gap: 4 }}>
-                  {month.rows.map(({ point, diff }) => (
-                    <div
-                      key={point.date}
-                      className="flex items-center justify-between"
-                      style={{
-                        background: 'var(--fs-surface-2)',
-                        borderRadius: 8,
-                        padding: '8px 12px',
-                      }}
-                    >
-                      <span style={{ color: 'var(--fs-muted)', fontSize: 13 }}>
-                        {new Date(point.date).toLocaleDateString('he-IL', {
-                          day: 'numeric',
-                          month: 'short',
-                        })}
+                {FILTER_ORDER.map((f) => {
+                  const count = strengthFilterCount(summary, f);
+                  if (f !== 'all' && count === 0) return null;
+                  const active = filter === f;
+                  return (
+                    <Chip key={f} active={active} ariaPressed={active} onClick={() => setFilter(f)}>
+                      {STRENGTH_FILTER_LABEL[f]}
+                      <span
+                        dir="ltr"
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: active ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
+                        }}
+                      >
+                        {count}
                       </span>
-                      <div className="flex items-center gap-3">
-                        {diff !== null && diff !== 0 && (
-                          <span
-                            style={{
-                              fontFamily: 'var(--font-mono)',
-                              fontSize: 11,
-                              color: zoneColor(diff > 0 ? 'good' : 'attention'),
-                              direction: 'ltr',
-                            }}
-                          >
-                            {diff > 0 ? '+' : ''}
-                            {diff}
-                          </span>
-                        )}
-                        <span
-                          style={{
-                            fontFamily: 'var(--font-display)',
-                            fontWeight: 600,
-                            fontSize: 18,
-                            color: 'var(--fs-ink)',
-                            direction: 'ltr',
-                          }}
-                        >
-                          {point.value}
-                        </span>
-                        <span className="eyebrow" style={{ color: 'var(--fs-muted)' }}>
-                          KG
-                        </span>
-                      </div>
-                    </div>
+                    </Chip>
+                  );
+                })}
+              </div>
+
+              {/* Sort */}
+              <div
+                role="group"
+                aria-label="מיון תרגילים"
+                className="flex items-center gap-2 overflow-x-auto"
+                style={{ scrollbarWidth: 'none', paddingBottom: 2 }}
+              >
+                <span style={{ ...kicker, flexShrink: 0 }}>מיון</span>
+                {SORT_ORDER.map((s) => {
+                  const active = sort === s;
+                  return (
+                    <Chip key={s} active={active} ariaPressed={active} onClick={() => setSort(s)}>
+                      {STRENGTH_SORT_LABEL[s]}
+                    </Chip>
+                  );
+                })}
+              </div>
+
+              {/* The scannable master list */}
+              {visible.length > 0 ? (
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {visible.map((p) => (
+                    <ExerciseProgressRow
+                      key={p.exerciseName}
+                      progress={p}
+                      onOpen={() => setSelected(p.exerciseName)}
+                    />
                   ))}
                 </div>
+              ) : (
+                <p
+                  style={{
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: 13,
+                    color: 'var(--fs-muted)',
+                    textAlign: 'center',
+                    padding: '16px 0',
+                  }}
+                >
+                  אין תרגילים בקטגוריה הזו.
+                </p>
+              )}
+            </>
+          ) : (
+            <SectionCard rail={false} style={{ padding: 20 }}>
+              <p
+                style={{
+                  fontFamily: 'var(--font-hebrew)',
+                  fontSize: 13,
+                  color: 'var(--fs-muted)',
+                  textAlign: 'center',
+                }}
+              >
+                עוד לא נצברו מספיק נתונים למגמות כוח — השיאים שלכם למטה.
+              </p>
+            </SectionCard>
+          )}
+
+          {/* ── Records: PR leaderboard + full PR history (secondary) ──────────── */}
+          {prBoard.length > 0 && (
+            <SectionCard rail={false} style={{ padding: '16px 20px' }}>
+              <div
+                className="flex items-baseline justify-between gap-2"
+                style={{ marginBottom: 12 }}
+              >
+                <h3 style={kicker}>שיאים אישיים · PR</h3>
+                <span style={{ ...kicker, fontSize: 9 }} dir="ltr">
+                  {prBoard.length}
+                </span>
               </div>
-            ))}
-          </div>
-        </SectionCard>
+              <div style={{ display: 'grid', gap: 6 }}>
+                {(showAllPRs ? prBoard : prBoard.slice(0, PR_BOARD_COLLAPSED)).map((entry, i) => (
+                  <div
+                    key={entry.exerciseName}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 8,
+                      padding: '8px 12px',
+                      background:
+                        i === 0
+                          ? 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))'
+                          : 'var(--fs-surface-2)',
+                      borderRadius: 10,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: i === 0 ? 'var(--fs-accent)' : 'var(--fs-muted)',
+                          width: 18,
+                        }}
+                        dir="ltr"
+                      >
+                        #{i + 1}
+                      </span>
+                      <span
+                        className="line-clamp-1"
+                        style={{
+                          fontFamily: 'var(--font-hebrew)',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: 'var(--fs-ink)',
+                        }}
+                      >
+                        {exerciseLabel(entry.exerciseName)}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexShrink: 0 }}>
+                      <span
+                        className="kinetic-number"
+                        dir="ltr"
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontWeight: 600,
+                          fontSize: 18,
+                          color: 'var(--fs-ink)',
+                        }}
+                      >
+                        {entry.e1RM}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 9,
+                          fontWeight: 700,
+                          color: 'var(--fs-muted)',
+                        }}
+                      >
+                        1RM
+                      </span>
+                      <span
+                        dir="ltr"
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 9,
+                          fontWeight: 600,
+                          color: 'var(--fs-muted)',
+                          marginInlineStart: 4,
+                        }}
+                      >
+                        {entry.weight}×{entry.reps}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {prBoard.length > PR_BOARD_COLLAPSED && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllPRs((v) => !v)}
+                  aria-expanded={showAllPRs}
+                  className="active:scale-[0.98] motion-reduce:active:scale-100"
+                  style={{
+                    marginTop: 10,
+                    width: '100%',
+                    minHeight: 44,
+                    background: 'transparent',
+                    border: '1px solid var(--fs-surface-2)',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-hebrew)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: 'var(--fs-accent)',
+                  }}
+                >
+                  {showAllPRs ? (
+                    'הצג פחות'
+                  ) : (
+                    <>
+                      הצג הכל · <span dir="ltr">+{prBoard.length - PR_BOARD_COLLAPSED}</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </SectionCard>
+          )}
+
+          <PRHistoryTab />
+        </m.div>
       )}
-    </div>
+    </AnimatePresence>
   );
 });
 
