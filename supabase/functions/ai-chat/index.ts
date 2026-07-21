@@ -17,6 +17,8 @@
 
 // @ts-expect-error Deno runtime import
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+// @ts-expect-error remote ESM import (Deno)
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ----------------------------------------------------------------------------
 // PROVIDER CONFIG — שנה כאן כדי להחליף ספק
@@ -152,13 +154,15 @@ function authorize(
 }
 
 // ----------------------------------------------------------------------------
-// RATE LIMITING — Deno KV with per-user minute + daily buckets
+// RATE LIMITING — Postgres ledger (public.rate_limit_events) with per-user
+// minute + daily buckets. Deno KV is NOT used here: it is unavailable on this
+// project/tier (Deno.openKv() reliably rejects), which made the fail-closed
+// path block 100% of traffic. The same rate_limit_events table already backs
+// coach-invite-accept's throttling, so this reuses proven infrastructure.
 // ----------------------------------------------------------------------------
 
 const RATE_LIMIT_PER_MIN = 10;
 const RATE_LIMIT_PER_DAY = 100;
-const MIN_BUCKET_TTL_MS = 120_000; // 2 min — covers 1-min window + clock skew
-const DAY_BUCKET_TTL_MS = 90_000_000; // 25h — covers 24h window + clock skew
 
 interface RateLimitDecision {
   allowed: boolean;
@@ -167,93 +171,61 @@ interface RateLimitDecision {
 }
 
 async function checkRateLimit(userId: string): Promise<RateLimitDecision> {
-  // @ts-expect-error Deno namespace not declared in TS lib
-  let kv: Deno.Kv;
-  try {
+  // @ts-expect-error Deno global
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+  // @ts-expect-error Deno global
+  const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+  if (!SUPABASE_URL || !SERVICE_KEY) {
+    // FAIL CLOSED: without a service-role client we cannot enforce the quota.
     // @ts-expect-error Deno global
-    kv = await Deno.openKv();
-  } catch (e) {
-    // FAIL CLOSED: if KV is unavailable we cannot enforce the quota, so we must
-    // NOT let the request through (failing open would let anyone with the anon
-    // key drain the provider budget). Block and surface a 503 — consistent
-    // with coach-invite-accept's rate-limit hardening. Operators should enable
-    // Deno KV on their plan or add an ai_rate_limits table.
-    // @ts-expect-error Deno global
-    console.error('[ai-chat] Deno.openKv unavailable, rejecting request (fail-closed)', e);
+    console.error('[ai-chat] missing SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY, rejecting (fail-closed)');
     return { allowed: false, retryAfterSeconds: 60, bucket: null };
   }
 
+  const admin = createClient(SUPABASE_URL, SERVICE_KEY);
   const now = Date.now();
-  const minuteEpoch = Math.floor(now / 60_000);
-  const dayEpoch = Math.floor(now / 86_400_000);
+  const minuteAgo = new Date(now - 60_000).toISOString();
+  const dayAgo = new Date(now - 86_400_000).toISOString();
 
-  const minKey = ['rate', userId, 'min', minuteEpoch];
-  const dayKey = ['rate', userId, 'day', dayEpoch];
-
-  // Read current counters.
-  const [minEntry, dayEntry] = await kv.getMany([minKey, dayKey]);
-
-  const minCount = Number((minEntry.value as { value?: bigint } | null)?.value ?? 0n);
-  const dayCount = Number((dayEntry.value as { value?: bigint } | null)?.value ?? 0n);
-
-  if (minCount >= RATE_LIMIT_PER_MIN) {
-    const retryAfterSeconds = Math.max(1, 60 - Math.floor((now % 60_000) / 1000));
-    return { allowed: false, retryAfterSeconds, bucket: 'minute' };
-  }
-
-  if (dayCount >= RATE_LIMIT_PER_DAY) {
-    const retryAfterSeconds = Math.max(1, Math.ceil((86_400_000 - (now % 86_400_000)) / 1000));
-    return { allowed: false, retryAfterSeconds, bucket: 'day' };
-  }
-
-  // Atomic increment of both counters.
   try {
-    await kv
-      .atomic()
-      // @ts-expect-error Deno.KvU64 sum
-      .sum(minKey, 1n)
-      // @ts-expect-error Deno.KvU64 sum
-      .sum(dayKey, 1n)
-      .commit();
-  } catch {
-    // Fallback: best-effort non-atomic write if sum() unsupported.
-    try {
-      // @ts-expect-error Deno.KvU64 constructor
-      await kv.set(minKey, new Deno.KvU64(BigInt(minCount + 1)), { expireIn: MIN_BUCKET_TTL_MS });
-      // @ts-expect-error Deno.KvU64 constructor
-      await kv.set(dayKey, new Deno.KvU64(BigInt(dayCount + 1)), { expireIn: DAY_BUCKET_TTL_MS });
-    } catch (inner) {
-      // KV open succeeded but BOTH the atomic and fallback writes failed. Reads
-      // already enforced the limit for this request, so we proceed — but log so
-      // the outage is visible (never silently swallow).
-      // @ts-expect-error Deno global
-      console.warn(
-        '[ai-chat] rate-limit counter write failed (read-side limit still applied)',
-        inner
-      );
-    }
-  }
+    const [{ count: minCount }, { count: dayCount }] = await Promise.all([
+      admin
+        .from('rate_limit_events')
+        .select('id', { count: 'exact', head: true })
+        .eq('bucket', 'ai_chat_min')
+        .eq('subject', userId)
+        .gte('created_at', minuteAgo),
+      admin
+        .from('rate_limit_events')
+        .select('id', { count: 'exact', head: true })
+        .eq('bucket', 'ai_chat_day')
+        .eq('subject', userId)
+        .gte('created_at', dayAgo),
+    ]);
 
-  // Best-effort TTL refresh — set expiry only when the bucket is fresh so the
-  // entry self-evicts after the window closes.
-  if (minCount === 0) {
-    try {
-      // @ts-expect-error Deno.KvU64 + expireIn
-      await kv.set(minKey, new Deno.KvU64(BigInt(minCount + 1)), { expireIn: MIN_BUCKET_TTL_MS });
-    } catch {
-      /* sum() already incremented — ignore */
+    if ((minCount ?? 0) >= RATE_LIMIT_PER_MIN) {
+      return { allowed: false, retryAfterSeconds: 60, bucket: 'minute' };
     }
-  }
-  if (dayCount === 0) {
-    try {
-      // @ts-expect-error Deno.KvU64 + expireIn
-      await kv.set(dayKey, new Deno.KvU64(BigInt(dayCount + 1)), { expireIn: DAY_BUCKET_TTL_MS });
-    } catch {
-      /* sum() already incremented — ignore */
+    if ((dayCount ?? 0) >= RATE_LIMIT_PER_DAY) {
+      return { allowed: false, retryAfterSeconds: 3600, bucket: 'day' };
     }
-  }
 
-  return { allowed: true, retryAfterSeconds: 0, bucket: null };
+    // Record this request in both buckets. Best-effort: a failed write here
+    // does not let the request bypass the limit (reads above already gated).
+    await admin.from('rate_limit_events').insert([
+      { bucket: 'ai_chat_min', subject: userId },
+      { bucket: 'ai_chat_day', subject: userId },
+    ]);
+
+    return { allowed: true, retryAfterSeconds: 0, bucket: null };
+  } catch (e) {
+    // FAIL CLOSED: ledger unreachable — block rather than let traffic through
+    // unmetered (consistent with coach-invite-accept's hardening).
+    // @ts-expect-error Deno global
+    console.error('[ai-chat] rate_limit_events check failed, rejecting (fail-closed)', e);
+    return { allowed: false, retryAfterSeconds: 60, bucket: null };
+  }
 }
 
 function rateLimitResponse(req: Request, decision: RateLimitDecision): Response {
@@ -337,11 +309,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return errorResponse(req, 'unauthorized', authResult.error, 401);
   }
 
-  // Per-user rate limiting (Deno KV): caps each user at 10 req/min and
-  // 100 req/day before we ever spend provider budget on them.
+  // Per-user rate limiting (Postgres ledger): caps each user at 10 req/min
+  // and 100 req/day before we ever spend provider budget on them.
   const rateDecision = await checkRateLimit(authResult.userId);
   if (!rateDecision.allowed) {
-    // bucket === null means the limiter itself is unavailable (KV down). Fail
+    // bucket === null means the limiter itself is unavailable (DB down). Fail
     // CLOSED with 503 rather than 429 so we never serve traffic we can't meter.
     if (rateDecision.bucket === null) {
       return errorResponse(
