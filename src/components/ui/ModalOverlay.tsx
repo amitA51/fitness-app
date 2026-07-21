@@ -214,8 +214,8 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
       // a flick preceded it (§4). Interrupted cleanly by the next grab.
       animate(sheetY, 0, {
         type: 'spring',
-        stiffness: 480,
-        damping: 40,
+        bounce: 0,
+        duration: 0.4,
         velocity: info.velocity.y,
       });
       dismissArmedRef.current = false;

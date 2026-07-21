@@ -142,7 +142,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
         <span className="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-4">
           <m.div
             animate={{ rotate: isOpen ? 180 : 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

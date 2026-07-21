@@ -299,7 +299,7 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.08em;
     transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
-    min-height: 36px;
+    min-height: 44px;
   }
 
   .tab-item:hover {

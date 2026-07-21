@@ -132,7 +132,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           }}
           animate={{ x: checked ? knobTravel : 0 }}
           transition={
-            prefersReducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 30 }
+            prefersReducedMotion ? { duration: 0 } : { type: 'spring', bounce: 0, duration: 0.25 }
           }
           whileTap={{ scale: 0.9 }}
         />
