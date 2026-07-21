@@ -2,13 +2,14 @@
 // Supabase Edge Function: ai-chat
 // ----------------------------------------------------------------------------
 // מקבל {messages, model?, temperature?, maxTokens?} מהאפליקציה ומעביר אותו
-// ל-DeepSeek עם המפתח שיושב ב-Supabase Secrets (המפתח לעולם לא בקוד/ב-bundle).
+// ל-PoloAI (aggregator תואם-OpenAI) עם המפתח שיושב ב-Supabase Secrets
+// (המפתח לעולם לא בקוד/ב-bundle).
 //
 // פריסה:
 //   supabase functions deploy ai-chat
 //
 // הגדרת המפתח (פעם אחת):
-//   supabase secrets set DEEPSEEK_API_KEY=sk-xxxxx
+//   supabase secrets set POLOAI_API_KEY=sk-xxxxx
 //
 // החלפה לספק אחר (OpenAI / Anthropic / OpenRouter וכו'):
 //   שנה את PROVIDER_URL / PROVIDER_SECRET_NAME / ALLOWED_MODELS בסעיף PROVIDER CONFIG למטה.
@@ -21,22 +22,23 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 // PROVIDER CONFIG — שנה כאן כדי להחליף ספק
 // ----------------------------------------------------------------------------
 
-// Provider: DeepSeek direct API. It is OpenAI-format compatible (POST
-// /chat/completions, Bearer auth, choices[0].message.content), so the request
-// build and response parsing below are unchanged from the OpenRouter setup.
-const PROVIDER_URL = 'https://api.deepseek.com/chat/completions';
-const PROVIDER_SECRET_NAME = 'DEEPSEEK_API_KEY';
+// Provider: PoloAI (https://poloai.top) — an OpenAI-compatible aggregator
+// gateway (POST /v1/chat/completions, Bearer auth, choices[0].message.content),
+// so the request build and response parsing below are unchanged.
+const PROVIDER_URL = 'https://poloai.top/v1/chat/completions';
+const PROVIDER_SECRET_NAME = 'POLOAI_API_KEY';
 
-// OpenRouter-specific headers are not needed for the direct DeepSeek API.
+// No provider-specific extra headers needed.
 const EXTRA_HEADERS: Record<string, string> = {};
 
-const DEFAULT_MODEL = 'deepseek-v4-flash';
+// gpt-5.4-mini is the cheapest/fastest tier this provider offers (base mini,
+// not the -high/-xhigh reasoning variants) — good default for chat/coaching use.
+const DEFAULT_MODEL = 'gpt-5.4-mini';
 
 // Allowlist of models that clients are permitted to request. Any model not in
 // this list is silently replaced with DEFAULT_MODEL to prevent a malicious
-// caller from specifying an expensive model and burning quota. For the DeepSeek
-// DIRECT API these are bare model names (NOT provider-namespaced slugs).
-const ALLOWED_MODELS: readonly string[] = ['deepseek-v4-flash', 'deepseek-v4-pro'];
+// caller from specifying an expensive model and burning quota.
+const ALLOWED_MODELS: readonly string[] = ['gpt-5.4-mini', 'gpt-5.4', 'gpt-5.5'];
 const DEFAULT_TEMPERATURE = 0.7;
 const DEFAULT_MAX_TOKENS = 1024;
 
@@ -173,7 +175,7 @@ async function checkRateLimit(userId: string): Promise<RateLimitDecision> {
   } catch (e) {
     // FAIL CLOSED: if KV is unavailable we cannot enforce the quota, so we must
     // NOT let the request through (failing open would let anyone with the anon
-    // key drain the OpenRouter budget). Block and surface a 503 — consistent
+    // key drain the provider budget). Block and surface a 503 — consistent
     // with coach-invite-accept's rate-limit hardening. Operators should enable
     // Deno KV on their plan or add an ai_rate_limits table.
     // @ts-expect-error Deno global
@@ -329,14 +331,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   // Require an authenticated user (non-anon Supabase JWT). Prevents anyone
-  // with the public anon key from draining the OpenRouter quota.
+  // with the public anon key from draining the provider quota.
   const authResult = authorize(req);
   if (authResult.error !== null) {
     return errorResponse(req, 'unauthorized', authResult.error, 401);
   }
 
   // Per-user rate limiting (Deno KV): caps each user at 10 req/min and
-  // 100 req/day before we ever spend OpenRouter budget on them.
+  // 100 req/day before we ever spend provider budget on them.
   const rateDecision = await checkRateLimit(authResult.userId);
   if (!rateDecision.allowed) {
     // bucket === null means the limiter itself is unavailable (KV down). Fail

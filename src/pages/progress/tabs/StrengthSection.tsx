@@ -17,7 +17,7 @@
 // lighter-for-more, which is the honest answer to "am I getting stronger?".
 
 import { AnimatePresence, m } from 'framer-motion';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, ChevronDown } from 'lucide-react';
 import type React from 'react';
 import { memo, useEffect, useMemo, useState } from 'react';
 import PRHistoryTab from '../../../components/workout/PRHistoryTab';
@@ -137,6 +137,7 @@ export const StrengthSection = memo(function StrengthSection({
   const [sort, setSort] = useState<StrengthSort>('recent');
   const [filter, setFilter] = useState<StrengthFilter>('all');
   const [showAllPRs, setShowAllPRs] = useState(false);
+  const [isPRBoardOpen, setIsPRBoardOpen] = useState(false);
 
   const visible = useMemo(
     () => sortExerciseProgress(filterExerciseProgress(progress, filter), sort),
@@ -300,16 +301,40 @@ export const StrengthSection = memo(function StrengthSection({
           {/* ── Records: PR leaderboard + full PR history (secondary) ──────────── */}
           {prBoard.length > 0 && (
             <SectionCard rail={false} style={{ padding: '16px 20px' }}>
-              <div
-                className="flex items-baseline justify-between gap-2"
-                style={{ marginBottom: 12 }}
+              <button
+                type="button"
+                onClick={() => setIsPRBoardOpen((o) => !o)}
+                className="flex items-center justify-between w-full outline-none"
+                style={{ 
+                  background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                  marginBottom: isPRBoardOpen ? 12 : 0
+                }}
               >
-                <h3 style={kicker}>שיאים אישיים · PR</h3>
-                <span style={{ ...kicker, fontSize: 9 }} dir="ltr">
-                  {prBoard.length}
-                </span>
-              </div>
-              <div style={{ display: 'grid', gap: 6 }}>
+                <div className="flex items-baseline gap-2">
+                  <h3 style={kicker}>שיאים אישיים · PR</h3>
+                  <span style={{ ...kicker, fontSize: 9 }} dir="ltr">
+                    {prBoard.length}
+                  </span>
+                </div>
+                <ChevronDown
+                  size={16}
+                  style={{
+                    color: 'var(--fs-muted)',
+                    transform: isPRBoardOpen ? 'rotate(180deg)' : 'none',
+                    transition: 'transform 0.2s ease',
+                  }}
+                />
+              </button>
+
+              <AnimatePresence>
+                {isPRBoardOpen && (
+                  <m.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <div style={{ display: 'grid', gap: 6 }}>
                 {(showAllPRs ? prBoard : prBoard.slice(0, PR_BOARD_COLLAPSED)).map((entry, i) => (
                   <div
                     key={entry.exerciseName}
@@ -419,6 +444,9 @@ export const StrengthSection = memo(function StrengthSection({
                   )}
                 </button>
               )}
+                  </m.div>
+                )}
+              </AnimatePresence>
             </SectionCard>
           )}
 

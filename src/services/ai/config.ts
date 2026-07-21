@@ -4,9 +4,9 @@
 //
 // >>> כאן אתה משנה דברים <<<
 //
-// המפתח עצמו (OPENROUTER_API_KEY) יושב ב-Supabase Secrets ולא כאן.
+// המפתח עצמו (POLOAI_API_KEY) יושב ב-Supabase Secrets ולא כאן.
 // הפקודה להגדרה:
-//   supabase secrets set OPENROUTER_API_KEY=sk-or-v1-xxxxx
+//   supabase secrets set POLOAI_API_KEY=sk-xxxxx
 //
 // כאן בקובץ הזה יש רק דברים לא-סודיים: שם הספק, המודל, וה-persona.
 // ============================================================================
@@ -22,15 +22,16 @@ import type { ChatMessage } from './core';
 export const AI_FUNCTION_NAME = 'ai-chat';
 
 // המודל שישלח ל-Edge Function. שנה כאן כשתרצה מודל אחר.
-// DeepSeek direct API (https://api.deepseek.com) — שמות מודל בודדים:
-//   - 'deepseek-v4-flash'   מהיר וחסכוני (ברירת מחדל)
-//   - 'deepseek-v4-pro'     איכותי יותר
+// PoloAI (https://poloai.top) — aggregator תואם-OpenAI, שמות מודל בודדים:
+//   - 'gpt-5.4-mini'   מהיר וחסכוני ביותר (ברירת מחדל)
+//   - 'gpt-5.4'        איכותי יותר, יקר יותר
+//   - 'gpt-5.5'        המודל המתקדם ביותר שנבדק
 // המודל חייב להופיע גם ב-ALLOWED_MODELS ב-supabase/functions/ai-chat/index.ts.
 //
 // >>> שנה כאן את מודל ברירת המחדל <<<
-export const AI_DEFAULT_MODEL = 'deepseek-v4-flash';
+export const AI_DEFAULT_MODEL = 'gpt-5.4-mini';
 
-export const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
+export const POLOAI_BASE_URL = 'https://poloai.top';
 
 // ----------------------------------------------------------------------------
 // SECTION 2 · פרמטרים לבקשה

@@ -8,6 +8,8 @@
 
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, m } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import { type PersonalRecord, getAllPRs } from '../../services/prService';
 import { logger } from '../../utils/logger';
 
@@ -73,6 +75,7 @@ export default function PRHistoryTab() {
   const [prs, setPRs] = useState<PersonalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,46 +101,51 @@ export default function PRHistoryTab() {
 
   const grouped = useMemo(() => groupByExercise(prs), [prs]);
 
-  if (loading) {
-    return (
-      <section dir="rtl" className="text-right" style={cardStyle}>
-        <h3 style={{ ...kickerStyle, marginBottom: 8 }}>היסטוריית שיאים · PR HISTORY</h3>
-        <p style={{ fontSize: 13, color: 'var(--fs-muted)' }}>טוען שיאים…</p>
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section
-        dir="rtl"
-        className="text-right"
-        style={{ ...cardStyle, borderColor: 'var(--color-error)' }}
-        role="alert"
-      >
-        <h3 style={{ ...kickerStyle, marginBottom: 8 }}>היסטוריית שיאים · PR HISTORY</h3>
-        <p style={{ fontSize: 13, color: 'var(--color-error)' }}>{error}</p>
-      </section>
-    );
-  }
-
-  if (grouped.length === 0) {
-    return (
-      <section dir="rtl" className="text-right" style={cardStyle}>
-        <h3 style={{ ...kickerStyle, marginBottom: 8 }}>היסטוריית שיאים · PR HISTORY</h3>
-        <p style={{ fontSize: 13, color: 'var(--fs-muted)', lineHeight: 1.5 }}>
-          היסטוריית השיאים תופיע כאן אחרי שתתחילו לצבור אימונים ולהשלים סטים.
-        </p>
-      </section>
-    );
-  }
-
   return (
-    <section dir="rtl" style={cardStyle}>
-      <h3 className="text-right" style={{ ...kickerStyle, marginBottom: 12 }}>
-        היסטוריית שיאים · PR HISTORY
-      </h3>
-      <ul className="space-y-2">
+    <section dir="rtl" style={{ ...cardStyle, borderColor: error ? 'var(--color-error)' : 'var(--fs-surface-2)' }}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((o) => !o)}
+        className="flex items-center justify-between w-full outline-none"
+        style={{
+          background: 'none',
+          border: 'none',
+          padding: 0,
+          cursor: 'pointer',
+          marginBottom: isOpen ? 12 : 0,
+        }}
+      >
+        <h3 className="text-right" style={{ ...kickerStyle, margin: 0 }}>
+          היסטוריית שיאים · PR HISTORY
+        </h3>
+        <ChevronDown
+          size={16}
+          style={{
+            color: 'var(--fs-muted)',
+            transform: isOpen ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.2s ease',
+          }}
+        />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <m.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            style={{ overflow: 'hidden' }}
+          >
+            {loading ? (
+              <p style={{ fontSize: 13, color: 'var(--fs-muted)', marginTop: 12 }}>טוען שיאים…</p>
+            ) : error ? (
+              <p style={{ fontSize: 13, color: 'var(--color-error)', marginTop: 12 }}>{error}</p>
+            ) : grouped.length === 0 ? (
+              <p style={{ fontSize: 13, color: 'var(--fs-muted)', lineHeight: 1.5, marginTop: 12 }}>
+                היסטוריית השיאים תופיע כאן אחרי שתתחילו לצבור אימונים ולהשלים סטים.
+              </p>
+            ) : (
+              <ul className="space-y-2 mt-3">
         {grouped.map((g) => (
           <li
             key={g.exerciseName}
@@ -209,7 +217,11 @@ export default function PRHistoryTab() {
             </div>
           </li>
         ))}
-      </ul>
+              </ul>
+            )}
+          </m.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

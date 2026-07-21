@@ -7,22 +7,7 @@
 import { memo } from 'react';
 
 export const ChapterBreak = memo(function ChapterBreak({ title }: { title: string }) {
-  return (
-    <div className="chapter-break" style={{ marginInline: 'calc(-1 * var(--space-5))' }}>
-      <span className="left" />
-      <span
-        className="right"
-        style={{
-          fontFamily: 'var(--font-display)',
-          fontWeight: 700,
-          fontSize: 16,
-          color: 'var(--color-ink-on-dark)',
-        }}
-      >
-        {title}
-      </span>
-    </div>
-  );
+  return null;
 });
 
 export default ChapterBreak;

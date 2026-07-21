@@ -48,10 +48,10 @@ export const SegmentedControl = memo(function SegmentedControl<T extends string>
       aria-label={ariaLabel}
       style={{
         display: 'flex',
-        gap: 4,
-        padding: 4,
+        gap: 2,
+        padding: 3,
         background: 'var(--fs-surface-2)',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: 9,
       }}
     >
       {options.map((opt, idx) => {
@@ -70,17 +70,16 @@ export const SegmentedControl = memo(function SegmentedControl<T extends string>
             className="active:scale-[0.97] motion-reduce:active:scale-100"
             style={{
               flex: 1,
-              minHeight: 44,
+              minHeight: 32,
               border: 'none',
               cursor: 'pointer',
-              borderRadius: 'calc(var(--radius-md) - 2px)',
+              borderRadius: 7,
               background: active ? 'var(--fs-surface)' : 'transparent',
-              boxShadow: active ? 'var(--shadow-card)' : 'none',
+              boxShadow: active ? '0 1px 3px rgba(0,0,0,0.08), 0 1px 1px rgba(0,0,0,0.04)' : 'none',
               color: active ? 'var(--fs-ink)' : 'var(--fs-muted)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              fontWeight: active ? 700 : 500,
-              letterSpacing: '0.1em',
+              fontFamily: 'var(--font-hebrew)',
+              fontSize: 13,
+              fontWeight: active ? 600 : 500,
               transition: 'color 0.15s, background 0.15s, transform 0.1s',
             }}
           >

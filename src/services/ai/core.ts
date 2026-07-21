@@ -273,19 +273,19 @@ async function extractErrorDetails(
 }
 
 // ----------------------------------------------------------------------------
-// DirectDeepSeekProvider — REMOVED (security)
+// DirectProvider (client-side, raw key) — REMOVED (security)
 // ----------------------------------------------------------------------------
 //
-// A browser-side provider that called the DeepSeek API directly was removed.
+// A browser-side provider that called a paid AI provider directly was removed.
 // It required the raw API key in the client, which Vite would inline into the
 // public bundle — exposing the secret to every visitor. There is no safe way
 // to send a provider API key from the browser.
 //
-// DeepSeek (and any other paid provider) MUST be routed through a Supabase
-// Edge Function that reads the key from Supabase Secrets, exactly like
-// OPENROUTER_API_KEY in supabase/functions/ai-chat. To add DeepSeek, register
-// its model in that function's ALLOWED_MODELS / PROVIDER CONFIG and set the
-// secret with: supabase secrets set DEEPSEEK_API_KEY=...
+// Any paid provider (currently PoloAI, https://poloai.top) MUST be routed
+// through a Supabase Edge Function that reads the key from Supabase Secrets,
+// exactly like POLOAI_API_KEY in supabase/functions/ai-chat. To switch
+// provider, update PROVIDER_URL / ALLOWED_MODELS in that function and set the
+// secret with: supabase secrets set POLOAI_API_KEY=...
 // The client keeps using RemoteProvider, which never sees a key.
 
 // ----------------------------------------------------------------------------

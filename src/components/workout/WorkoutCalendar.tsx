@@ -14,39 +14,7 @@ interface WorkoutCalendarProps {
 
 const HEBREW_DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 
-const HEBREW_NUMBERS: Record<number, string> = {
-  1: 'א',
-  2: 'ב',
-  3: 'ג',
-  4: 'ד',
-  5: 'ה',
-  6: 'ו',
-  7: 'ז',
-  8: 'ח',
-  9: 'ט',
-  10: 'י',
-  11: 'י״א',
-  12: 'י״ב',
-  13: 'י״ג',
-  14: 'י״ד',
-  15: 'ט״ו',
-  16: 'ט״ז',
-  17: 'י״ז',
-  18: 'י״ח',
-  19: 'י״ט',
-  20: 'כ',
-  21: 'כ״א',
-  22: 'כ״ב',
-  23: 'כ״ג',
-  24: 'כ״ד',
-  25: 'כ״ה',
-  26: 'כ״ו',
-  27: 'כ״ז',
-  28: 'כ״ח',
-  29: 'כ״ט',
-  30: 'ל',
-  31: 'ל״א',
-};
+
 
 /**
  * WorkoutCalendar - Fresh Steel / Obsidian calendar heatmap
@@ -366,7 +334,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
                   letterSpacing: '0.02em',
                 }}
               >
-                {HEBREW_NUMBERS[dayData.day] || dayData.day}
+                {dayData.day}
               </span>
 
               {/* Workout indicator */}
