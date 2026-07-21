@@ -1,9 +1,10 @@
-// ExerciseLibraryTab - Fresh Steel / Obsidian
-// Clean surface background, no dark gradients.
+// ExerciseLibraryTab - fast, Hebrew-first exercise discovery.
 
-import { Plus as AddIcon } from 'lucide-react';
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { AlertCircle, Plus, RotateCcw } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { WORKOUT } from '../../constants';
+import { translateEquipment } from '../../constants/equipmentNames';
+import { resolveMuscleKey, translateMuscle } from '../../constants/muscleNames';
 import * as dataService from '../../services/dataService';
 import type { CreatePersonalExerciseInput, PersonalExercise } from '../../types';
 import { logger } from '../../utils/logger';
@@ -11,6 +12,7 @@ import { DeleteConfirmDialog } from './components/DeleteConfirmDialog';
 import { ExerciseFilter } from './components/ExerciseFilter';
 import { ExerciseForm } from './components/ExerciseForm';
 import { ExerciseList } from './components/ExerciseList';
+import './exercise-library.css';
 
 interface ExerciseLibraryTabProps {
   onSelect?: (exercise: PersonalExercise) => void;
@@ -30,6 +32,8 @@ interface FormData {
   notes: string;
 }
 
+type LoadStatus = 'loading' | 'ready' | 'error';
+
 const getInitialFormData = (): FormData => ({
   name: '',
   muscleGroup: '',
@@ -44,7 +48,7 @@ const getInitialFormData = (): FormData => ({
 
 const formDataToExerciseInput = (formData: FormData): CreatePersonalExerciseInput =>
   ({
-    name: formData.name,
+    name: formData.name.trim(),
     targetMuscle: formData.muscleGroup || 'Other',
     secondaryMuscles: [],
     equipment: formData.equipment,
@@ -55,16 +59,19 @@ const formDataToExerciseInput = (formData: FormData): CreatePersonalExerciseInpu
     isTimed: false,
     muscleGroup: formData.muscleGroup || 'Other',
     category: formData.category || 'strength',
-    tempo: formData.tempo || undefined,
-    tutorialText: formData.tutorialText || undefined,
+    tempo: formData.tempo.trim() || undefined,
+    tutorialText: formData.tutorialText.trim() || undefined,
     defaultRestTime: formData.defaultRestTime,
     defaultSets: formData.defaultSets,
-    notes: formData.notes || undefined,
+    notes: formData.notes.trim() || undefined,
     userId: '',
     lastWeight: null,
     lastReps: null,
     personalRecords: [],
   }) as CreatePersonalExerciseInput;
+
+const normalizeSearch = (value: string | undefined): string =>
+  (value ?? '').trim().toLocaleLowerCase('he');
 
 const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
   onSelect,
@@ -72,174 +79,257 @@ const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
   selectedIds,
 }) => {
   const [exercises, setExercises] = useState<PersonalExercise[]>([]);
+  const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');
+  const [operationError, setOperationError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('all');
-  const [selectedCategory] = useState<string>('all');
-  const [selectedEquipment, setSelectedEquipment] = useState<string>('all');
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState('all');
+  const [selectedEquipment, setSelectedEquipment] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [exerciseToDelete, setExerciseToDelete] = useState<PersonalExercise | null>(null);
   const [formData, setFormData] = useState<FormData>(getInitialFormData);
 
-  useEffect(() => {
-    loadExercises();
-  }, []);
-
   const loadExercises = useCallback(async () => {
+    setLoadStatus('loading');
+    setOperationError(null);
     try {
       const data = await dataService.getPersonalExercises();
-      if (data.length > 0) {
-        setExercises(data);
-        return;
-      }
-      await new Promise<void>((resolve) => setTimeout(resolve, 300));
-      const retried = await dataService.getPersonalExercises();
-      setExercises(retried);
+      setExercises(data);
+      setLoadStatus('ready');
     } catch (error) {
-      // Never leave the selector stuck behind the blur on a fresh/empty load:
-      // surface the failure and render an empty (but resolved) list.
       logger.workout.error('Failed to load personal exercises', error);
-      setExercises([]);
+      setLoadStatus('error');
     }
   }, []);
 
+  useEffect(() => {
+    void loadExercises();
+  }, [loadExercises]);
+
   const handleDelete = useCallback((exercise: PersonalExercise, e: React.MouseEvent) => {
     e.stopPropagation();
+    setDeleteError(null);
     setExerciseToDelete(exercise);
   }, []);
 
   const confirmDelete = useCallback(async () => {
-    if (!exerciseToDelete) return;
-    await dataService.deletePersonalExercise(exerciseToDelete.id);
-    setExerciseToDelete(null);
-    loadExercises();
-  }, [exerciseToDelete, loadExercises]);
+    if (!exerciseToDelete || isDeleting) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await dataService.deletePersonalExercise(exerciseToDelete.id);
+      setExercises((current) => current.filter((exercise) => exercise.id !== exerciseToDelete.id));
+      setExerciseToDelete(null);
+    } catch (error) {
+      logger.workout.error('Failed to delete personal exercise', error);
+      setDeleteError('לא הצלחנו למחוק את התרגיל. נסו שוב.');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [exerciseToDelete, isDeleting]);
 
   const cancelDelete = useCallback(() => {
+    if (isDeleting) return;
+    setDeleteError(null);
     setExerciseToDelete(null);
-  }, []);
+  }, [isDeleting]);
 
   const handleCreate = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!formData.name.trim()) return;
-      await dataService.createPersonalExercise(formDataToExerciseInput(formData));
-      setFormData(getInitialFormData());
-      setShowAddForm(false);
-      loadExercises();
+      if (!formData.name.trim() || isSaving) return;
+
+      setIsSaving(true);
+      setOperationError(null);
+      try {
+        const created = await dataService.createPersonalExercise(formDataToExerciseInput(formData));
+        setExercises((current) => [created, ...current]);
+        setFormData(getInitialFormData());
+        setShowAddForm(false);
+      } catch (error) {
+        logger.workout.error('Failed to create personal exercise', error);
+        setOperationError('לא הצלחנו לשמור את התרגיל. הפרטים נשארו בטופס.');
+      } finally {
+        setIsSaving(false);
+      }
     },
-    [formData, loadExercises]
+    [formData, isSaving]
   );
 
   const filteredExercises = useMemo(() => {
+    const query = normalizeSearch(searchQuery);
+
     return exercises
-      .filter((ex) => {
-        const matchesSearch = (ex.name ?? '').toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesMuscleGroup =
-          selectedMuscleGroup === 'all' || ex.muscleGroup === selectedMuscleGroup;
-        const matchesCategory = selectedCategory === 'all' || ex.category === selectedCategory;
+      .filter((exercise) => {
+        const muscleKey = resolveMuscleKey(exercise);
+        const muscleLabel = translateMuscle(muscleKey);
+        const equipmentLabel = translateEquipment(exercise.equipment);
+        const searchableText = normalizeSearch(
+          [
+            exercise.name,
+            muscleKey,
+            muscleLabel,
+            exercise.equipment,
+            equipmentLabel,
+            exercise.category,
+            exercise.notes,
+          ]
+            .filter(Boolean)
+            .join(' ')
+        );
+        const matchesSearch = !query || searchableText.includes(query);
+        const matchesMuscle = selectedMuscleGroup === 'all' || muscleKey === selectedMuscleGroup;
         const matchesEquipment =
-          selectedEquipment === 'all' || ex.equipment === selectedEquipment;
-        return matchesSearch && matchesMuscleGroup && matchesCategory && matchesEquipment;
+          selectedEquipment === 'all' || exercise.equipment === selectedEquipment;
+        return matchesSearch && matchesMuscle && matchesEquipment;
       })
-      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
-  }, [exercises, searchQuery, selectedMuscleGroup, selectedCategory, selectedEquipment]);
+      .sort((a, b) => {
+        if (!query) return 0;
+        const aName = normalizeSearch(a.name);
+        const bName = normalizeSearch(b.name);
+        const aStarts = aName.startsWith(query);
+        const bStarts = bName.startsWith(query);
+        if (aStarts !== bStarts) return aStarts ? -1 : 1;
+        return aName.localeCompare(bName, 'he');
+      });
+  }, [exercises, searchQuery, selectedMuscleGroup, selectedEquipment]);
+
+  const hasActiveFilters =
+    Boolean(searchQuery.trim()) || selectedMuscleGroup !== 'all' || selectedEquipment !== 'all';
+
+  const clearFilters = useCallback(() => {
+    setSearchQuery('');
+    setSelectedMuscleGroup('all');
+    setSelectedEquipment('all');
+  }, []);
+
+  const emptyTitle = searchQuery.trim() ? 'לא מצאנו תרגיל מתאים' : 'אין תרגילים בסינון הזה';
+  const emptyDescription = searchQuery.trim()
+    ? 'נסו שם קצר יותר, שריר או סוג ציוד.'
+    : 'נקו את הסינון או צרו תרגיל חדש.';
 
   return (
-    <div className="flex flex-col" style={{ flex: 1, background: 'transparent' }}>
-      <ExerciseFilter
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        selectedMuscleGroup={selectedMuscleGroup}
-        onMuscleGroupChange={setSelectedMuscleGroup}
-        selectedEquipment={selectedEquipment}
-        onEquipmentChange={setSelectedEquipment}
-        exercises={exercises}
-        onSuggestionSelect={onSelect}
-      />
+    <section
+      className="exercise-library"
+      aria-label="ספריית תרגילים"
+      aria-busy={loadStatus === 'loading'}
+    >
+      <div className="exercise-library__toolbar">
+        <ExerciseFilter
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedMuscleGroup={selectedMuscleGroup}
+          onMuscleGroupChange={setSelectedMuscleGroup}
+          selectedEquipment={selectedEquipment}
+          onEquipmentChange={setSelectedEquipment}
+          exercises={exercises}
+          onSuggestionSelect={onSelect}
+        />
+      </div>
+
+      {operationError && (
+        <div className="exercise-library__notice" role="alert">
+          <AlertCircle aria-hidden="true" />
+          <span>{operationError}</span>
+        </div>
+      )}
 
       {showAddForm && (
-        <div style={{ padding: '0 5px 12px' }}>
+        <div className="exercise-library__create-wrap">
           <ExerciseForm
             formData={formData}
             onChange={setFormData}
             onSubmit={handleCreate}
-            onCancel={() => setShowAddForm(false)}
+            onCancel={() => {
+              if (!isSaving) setShowAddForm(false);
+            }}
+            isSubmitting={isSaving}
           />
         </div>
       )}
 
-      {/* In-list "create" affordance. In selection mode the ExerciseSelector
-          already shows a sticky bottom "+ צור תרגיל חדש", so this duplicate is
-          shown ONLY when the filtered list is empty (the one moment the sticky
-          CTA isn't the obvious next action). Standalone (non-selection) keeps it
-          always visible. */}
-      {!showAddForm && (!isSelectionMode || filteredExercises.length === 0) && (
-        <div style={{ padding: '0 5px 12px' }}>
-          <AddExerciseButton onClick={() => setShowAddForm(true)} />
+      {loadStatus === 'ready' && (
+        <div className="exercise-library__summary">
+          <p className="exercise-library__result-count" role="status" aria-live="polite">
+            <bdi dir="ltr">{filteredExercises.length}</bdi>{' '}
+            {filteredExercises.length === 1 ? 'תרגיל' : 'תרגילים'}
+          </p>
+          {hasActiveFilters && (
+            <button type="button" className="exercise-library__reset" onClick={clearFilters}>
+              <RotateCcw aria-hidden="true" />
+              נקה סינון
+            </button>
+          )}
         </div>
       )}
 
-      {/* Exercise List */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          WebkitOverflowScrolling: 'touch',
-          padding: '0 5px 20px',
-          paddingLeft: 8,
-          minHeight: 0,
-        }}
-      >
-        <ExerciseList
-          exercises={filteredExercises}
-          isSelectionMode={isSelectionMode}
-          selectedIds={selectedIds}
-          onExerciseClick={onSelect}
-          onDeleteExercise={handleDelete}
-        />
+      {!showAddForm &&
+        (!isSelectionMode || (loadStatus === 'ready' && filteredExercises.length === 0)) && (
+          <div className="exercise-library__create-wrap">
+            <button
+              type="button"
+              className="exercise-library__create-button"
+              onClick={() => {
+                setOperationError(null);
+                setShowAddForm(true);
+              }}
+            >
+              <Plus aria-hidden="true" />
+              צרו תרגיל חדש
+            </button>
+          </div>
+        )}
+
+      <div className="exercise-library__scroll">
+        {loadStatus === 'loading' && <ExerciseLibrarySkeleton />}
+
+        {loadStatus === 'error' && (
+          <div className="exercise-library-empty" role="alert">
+            <div className="exercise-library-empty__icon">
+              <AlertCircle aria-hidden="true" />
+            </div>
+            <h2>הספרייה לא נטענה</h2>
+            <p>התרגילים השמורים לא נמחקו. נסו לטעון את הספרייה שוב.</p>
+            <button type="button" className="exercise-library__retry" onClick={loadExercises}>
+              נסו שוב
+            </button>
+          </div>
+        )}
+
+        {loadStatus === 'ready' && (
+          <ExerciseList
+            exercises={filteredExercises}
+            isSelectionMode={isSelectionMode}
+            selectedIds={selectedIds}
+            onExerciseClick={onSelect}
+            onDeleteExercise={handleDelete}
+            emptyTitle={emptyTitle}
+            emptyDescription={emptyDescription}
+          />
+        )}
       </div>
 
       <DeleteConfirmDialog
         exercise={exerciseToDelete}
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
+        isDeleting={isDeleting}
+        errorMessage={deleteError}
       />
-    </div>
+    </section>
   );
 };
 
-export default React.memo(ExerciseLibraryTab);
+const SKELETON_ROWS = ['row-a', 'row-b', 'row-c', 'row-d'] as const;
 
-interface AddExerciseButtonProps {
-  onClick: () => void;
-}
-
-const AddExerciseButton: React.FC<AddExerciseButtonProps> = ({ onClick }) => (
-  <button
-    onClick={onClick}
-    type="button"
-    className="active:scale-[0.98]"
-    style={{
-      width: '100%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-      padding: '14px 20px',
-      background: 'transparent',
-      border: '2px dashed var(--color-border-strong)',
-      borderRadius: 12,
-      cursor: 'pointer',
-      fontFamily: 'var(--font-display)',
-      fontWeight: 600,
-      fontSize: 13,
-      letterSpacing: '0.06em',
-      color: 'var(--fs-muted)',
-      transition: 'all 150ms',
-    }}
-  >
-    <AddIcon className="w-4 h-4" />
-    צור תרגיל חדש
-  </button>
+const ExerciseLibrarySkeleton = () => (
+  <div className="exercise-library-skeleton" role="status" aria-label="טוען תרגילים">
+    {SKELETON_ROWS.map((row) => (
+      <div className="exercise-library-skeleton__row" key={row} aria-hidden="true" />
+    ))}
+  </div>
 );
+
+export default React.memo(ExerciseLibraryTab);

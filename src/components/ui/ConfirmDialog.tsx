@@ -29,6 +29,12 @@ export interface ConfirmDialogProps {
   cancelLabel?: string;
   /** Intent — drives the icon tint and confirm-button variant. Defaults to `info`. */
   variant?: ConfirmVariant;
+  /** Locks dismissal and action buttons while an async confirmation is running. */
+  isPending?: boolean;
+  /** Label shown beside the loading indicator while pending. */
+  pendingLabel?: string;
+  /** Optional inline error that remains visible inside the active dialog. */
+  errorMessage?: string;
 }
 
 const VARIANT_META: Record<
@@ -57,6 +63,9 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   confirmLabel = 'אישור',
   cancelLabel = 'ביטול',
   variant = 'info',
+  isPending = false,
+  pendingLabel = 'מבצע…',
+  errorMessage,
 }) => {
   const titleId = useId();
   const descId = useId();
@@ -66,7 +75,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   return (
     <ModalOverlay
       isOpen={isOpen}
-      onClose={onCancel}
+      onClose={isPending ? () => {} : onCancel}
       variant="modal"
       ariaLabelledBy={titleId}
       ariaDescribedBy={descId}
@@ -114,11 +123,35 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           </div>
         </div>
 
+        {errorMessage && (
+          <p
+            role="alert"
+            style={{
+              margin: 0,
+              padding: '10px 12px',
+              color: 'var(--color-error-fg)',
+              background: 'var(--color-error-muted)',
+              borderRadius: 'var(--radius-md)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-body-sm)',
+              fontWeight: 600,
+              lineHeight: 'var(--leading-normal)',
+            }}
+          >
+            {errorMessage}
+          </p>
+        )}
+
         <div className="flex gap-3 justify-end mt-2">
-          <Button variant="ghost" onClick={onCancel}>
+          <Button variant="ghost" onClick={onCancel} disabled={isPending}>
             {cancelLabel}
           </Button>
-          <Button variant={meta.confirm} onClick={onConfirm}>
+          <Button
+            variant={meta.confirm}
+            onClick={onConfirm}
+            loading={isPending}
+            loadingLabel={pendingLabel}
+          >
             {confirmLabel}
           </Button>
         </div>

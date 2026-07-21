@@ -1,14 +1,11 @@
-// ExerciseForm - Fresh Steel / Obsidian
-// Sharp corners · surface background · steel border
-// VISION: Bold · Editorial · Confident · Narrative · Printed
+// ExerciseForm - focused essentials with optional details on demand.
 
-import { Plus as AddIcon } from 'lucide-react';
+import { Plus, Save, X } from 'lucide-react';
 import type React from 'react';
 import { useId } from 'react';
 import { EXERCISE_CATEGORIES, MUSCLE_GROUPS, WORKOUT } from '../../../constants';
 import { EQUIPMENT_KEYS, translateEquipment } from '../../../constants/equipmentNames';
 import { translateMuscle } from '../../../constants/muscleNames';
-import type { PersonalExercise } from '../../../types';
 
 interface ExerciseFormData {
   name: string;
@@ -27,6 +24,7 @@ interface ExerciseFormProps {
   onChange: (data: ExerciseFormData) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
+  isSubmitting?: boolean;
 }
 
 const muscleGroupOptions = Object.entries(MUSCLE_GROUPS)
@@ -37,14 +35,12 @@ const categoryOptions = Object.entries(EXERCISE_CATEGORIES)
   .filter(([key]) => key !== 'ALL')
   .map(([, value]) => value);
 
-// Hebrew labels for the exercise categories (the stored values stay the English
-// keys — only the display is localized, matching the Hebrew-first app).
 const CATEGORY_LABELS: Record<string, string> = {
   strength: 'כוח',
   cardio: 'אירובי',
   flexibility: 'גמישות',
   warmup: 'חימום',
-  cooldown: 'צינון',
+  cooldown: 'שחרור',
 };
 
 export const ExerciseForm: React.FC<ExerciseFormProps> = ({
@@ -52,6 +48,7 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
   onChange,
   onSubmit,
   onCancel,
+  isSubmitting = false,
 }) => {
   const nameId = useId();
   const muscleGroupId = useId();
@@ -60,234 +57,219 @@ export const ExerciseForm: React.FC<ExerciseFormProps> = ({
   const setsId = useId();
   const restTimeId = useId();
   const tempoId = useId();
+  const tutorialId = useId();
+  const notesId = useId();
+
   const updateField = <K extends keyof ExerciseFormData>(field: K, value: ExerciseFormData[K]) => {
     onChange({ ...formData, [field]: value });
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    background: 'var(--fs-surface)',
-    border: '2px solid var(--fs-primary)',
-    borderRadius: 12,
-    padding: '10px 14px',
-    fontFamily: 'var(--font-body)',
-    fontSize: 15,
-    color: 'var(--fs-ink)',
-    outline: 'none',
-    direction: 'rtl',
-    textAlign: 'right',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    fontFamily: 'var(--font-mono)',
-    fontSize: 10,
-    letterSpacing: '-0.01em',
-    color: 'var(--fs-muted)',
-    marginBottom: 6,
-    fontWeight: 600,
-  };
-
   return (
-    <form
-      onSubmit={onSubmit}
-      style={{
-        background: 'var(--fs-surface)',
-        border: '2px solid var(--fs-primary)',
-        padding: 16,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14,
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: '1px solid var(--fs-surface-2)',
-          paddingBottom: 10,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            letterSpacing: '-0.01em',
-            color: 'var(--fs-accent)',
-            fontWeight: 600,
-          }}
-        >
-          צור תרגיל
-        </span>
+    <form className="exercise-form" onSubmit={onSubmit} aria-busy={isSubmitting}>
+      <div className="exercise-form__header">
+        <div>
+          <h2>תרגיל חדש</h2>
+          <p>הגדירו את הפרטים שתרצו לראות בזמן האימון.</p>
+        </div>
         <button
           type="button"
+          className="exercise-form__close"
           onClick={onCancel}
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            letterSpacing: '-0.01em',
-            color: 'var(--fs-muted)',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-          }}
+          disabled={isSubmitting}
+          aria-label="סגרו את טופס יצירת התרגיל"
         >
-          ביטול
+          <X aria-hidden="true" />
         </button>
       </div>
 
-      {/* Name */}
-      <div>
-        <label htmlFor={nameId} style={labelStyle}>
-          שם התרגיל
+      <div className="exercise-form__field">
+        <label className="exercise-form__label" htmlFor={nameId}>
+          <span>שם התרגיל</span>
+          <span className="exercise-form__required">חובה</span>
         </label>
         <input
           id={nameId}
+          className="exercise-form__control"
+          disabled={isSubmitting}
           type="text"
+          dir="auto"
           value={formData.name}
-          onChange={(e) => updateField('name', e.target.value)}
-          placeholder="לדוגמה: לחיצת חזה | Bench Press"
-          style={inputStyle}
+          onChange={(event) => updateField('name', event.target.value)}
+          placeholder="לדוגמה: לחיצת חזה"
+          autoComplete="off"
           autoFocus
           required
         />
       </div>
 
-      {/* Muscle Group + Category */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <div>
-          <label htmlFor={muscleGroupId} style={labelStyle}>
+      <div className="exercise-form__grid">
+        <div className="exercise-form__field">
+          <label className="exercise-form__label" htmlFor={muscleGroupId}>
             שריר ראשי
           </label>
           <select
             id={muscleGroupId}
+            className="exercise-form__control"
+            disabled={isSubmitting}
             value={formData.muscleGroup}
-            onChange={(e) => updateField('muscleGroup', e.target.value)}
-            style={{ ...inputStyle, appearance: 'none' }}
+            onChange={(event) => updateField('muscleGroup', event.target.value)}
           >
-            <option value="">בחר...</option>
-            {muscleGroupOptions.map((g) => (
-              <option key={g} value={g}>
-                {translateMuscle(g)}
+            <option value="">בחרו שריר</option>
+            {muscleGroupOptions.map((group) => (
+              <option key={group} value={group}>
+                {translateMuscle(group)}
               </option>
             ))}
           </select>
         </div>
-        <div>
-          <label htmlFor={categoryId} style={labelStyle}>
-            קטגוריה
+
+        <div className="exercise-form__field">
+          <label className="exercise-form__label" htmlFor={categoryId}>
+            סוג אימון
           </label>
           <select
             id={categoryId}
+            className="exercise-form__control"
+            disabled={isSubmitting}
             value={formData.category}
-            onChange={(e) =>
-              updateField('category', (e.target.value as PersonalExercise['category']) ?? '')
-            }
-            style={{ ...inputStyle, appearance: 'none' }}
+            onChange={(event) => updateField('category', event.target.value)}
           >
-            <option value="">בחר...</option>
-            {categoryOptions.map((c) => (
-              <option key={c} value={c}>
-                {CATEGORY_LABELS[c] ?? c}
+            <option value="">בחרו סוג</option>
+            {categoryOptions.map((category) => (
+              <option key={category} value={category}>
+                {CATEGORY_LABELS[category] ?? category}
               </option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* Equipment */}
-      <div>
-        <label htmlFor={equipmentId} style={labelStyle}>
+      <div className="exercise-form__field">
+        <label className="exercise-form__label" htmlFor={equipmentId}>
           ציוד
         </label>
         <select
           id={equipmentId}
+          className="exercise-form__control"
+          disabled={isSubmitting}
           value={formData.equipment}
-          onChange={(e) => updateField('equipment', e.target.value)}
-          style={{ ...inputStyle, appearance: 'none' }}
+          onChange={(event) => updateField('equipment', event.target.value)}
         >
-          <option value="">בחר...</option>
-          {EQUIPMENT_KEYS.map((key) => (
-            <option key={key} value={key}>
-              {translateEquipment(key)}
+          <option value="">ללא ציוד מוגדר</option>
+          {EQUIPMENT_KEYS.map((equipment) => (
+            <option key={equipment} value={equipment}>
+              {translateEquipment(equipment)}
             </option>
           ))}
         </select>
       </div>
 
-      {/* Sets + Rest + Tempo */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-        <div>
-          <label htmlFor={setsId} style={labelStyle}>
+      <div className="exercise-form__grid exercise-form__grid--three">
+        <div className="exercise-form__field">
+          <label className="exercise-form__label" htmlFor={setsId}>
             סטים
           </label>
           <input
             id={setsId}
+            className="exercise-form__control"
+            disabled={isSubmitting}
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
+            dir="ltr"
             value={formData.defaultSets}
-            onChange={(e) =>
-              updateField('defaultSets', Number.parseInt(e.target.value) || WORKOUT.DEFAULT_SETS)
+            onChange={(event) =>
+              updateField(
+                'defaultSets',
+                Number.parseInt(event.target.value) || WORKOUT.DEFAULT_SETS
+              )
             }
-            style={{ ...inputStyle, textAlign: 'center' }}
+            aria-label="מספר סטים ברירת מחדל"
           />
         </div>
-        <div>
-          <label htmlFor={restTimeId} style={labelStyle}>
-            מנוחה (שניות)
+
+        <div className="exercise-form__field">
+          <label className="exercise-form__label" htmlFor={restTimeId}>
+            מנוחה
           </label>
           <input
             id={restTimeId}
+            className="exercise-form__control"
+            disabled={isSubmitting}
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
+            dir="ltr"
             value={formData.defaultRestTime}
-            onChange={(e) =>
+            onChange={(event) =>
               updateField(
                 'defaultRestTime',
-                Number.parseInt(e.target.value) || WORKOUT.DEFAULT_REST_TIME
+                Number.parseInt(event.target.value) || WORKOUT.DEFAULT_REST_TIME
               )
             }
-            style={{ ...inputStyle, textAlign: 'center' }}
+            aria-label="זמן מנוחה בשניות"
           />
         </div>
-        <div>
-          <label htmlFor={tempoId} style={labelStyle}>
+
+        <div className="exercise-form__field">
+          <label className="exercise-form__label" htmlFor={tempoId}>
             טמפו
           </label>
           <input
             id={tempoId}
+            className="exercise-form__control"
+            disabled={isSubmitting}
             type="text"
+            inputMode="numeric"
+            dir="ltr"
             value={formData.tempo}
-            onChange={(e) => updateField('tempo', e.target.value)}
+            onChange={(event) => updateField('tempo', event.target.value)}
             placeholder="3-1-1"
-            style={{ ...inputStyle, textAlign: 'center' }}
           />
         </div>
       </div>
 
-      {/* Submit */}
+      <details className="exercise-form__advanced">
+        <summary>פרטים נוספים</summary>
+        <div className="exercise-form__advanced-fields">
+          <div className="exercise-form__field">
+            <label className="exercise-form__label" htmlFor={tutorialId}>
+              הנחיות ביצוע
+            </label>
+            <textarea
+              id={tutorialId}
+              className="exercise-form__control"
+              disabled={isSubmitting}
+              dir="auto"
+              value={formData.tutorialText}
+              onChange={(event) => updateField('tutorialText', event.target.value)}
+              placeholder="דגשים קצרים לטכניקה"
+            />
+          </div>
+          <div className="exercise-form__field">
+            <label className="exercise-form__label" htmlFor={notesId}>
+              הערה אישית
+            </label>
+            <textarea
+              id={notesId}
+              className="exercise-form__control"
+              disabled={isSubmitting}
+              dir="auto"
+              value={formData.notes}
+              onChange={(event) => updateField('notes', event.target.value)}
+              placeholder="כל מה שכדאי לזכור באימון הבא"
+            />
+          </div>
+        </div>
+      </details>
+
       <button
         type="submit"
-        style={{
-          width: '100%',
-          padding: '14px 20px',
-          background: 'var(--fs-primary)',
-          color: 'var(--fs-accent)',
-          border: 'none',
-          borderRadius: 12,
-          fontFamily: 'var(--font-display)',
-          fontWeight: 600,
-          fontSize: 13,
-          letterSpacing: '-0.01em',
-          cursor: 'pointer',
-          minHeight: 48,
-        }}
+        className="exercise-form__submit"
+        disabled={isSubmitting || !formData.name.trim()}
       >
-        שמור והוסף
+        <Save aria-hidden="true" />
+        {isSubmitting ? 'שומר…' : 'שמרו תרגיל'}
       </button>
     </form>
   );
@@ -297,42 +279,10 @@ interface AddExerciseButtonProps {
   onClick: () => void;
 }
 
+/** Kept for callers that use the shared components barrel. */
 export const AddExerciseButton: React.FC<AddExerciseButtonProps> = ({ onClick }) => (
-  <button
-    onClick={onClick}
-    type="button"
-    style={{
-      width: '100%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-      padding: '14px 20px',
-      background: 'transparent',
-      border: '2px dashed var(--color-border-strong)',
-      borderRadius: 12,
-      cursor: 'pointer',
-      fontFamily: 'var(--font-display)',
-      fontWeight: 600,
-      fontSize: 13,
-      letterSpacing: '0.06em',
-      color: 'var(--fs-muted)',
-      transition: 'all 150ms',
-    }}
-  >
-    <div
-      style={{
-        width: 24,
-        height: 24,
-        background: 'var(--fs-primary)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-      }}
-    >
-      <AddIcon className="w-3.5 h-3.5" style={{ color: 'var(--fs-accent)' }} />
-    </div>
-    צור תרגיל מותאם אישית
+  <button type="button" className="exercise-library__create-button" onClick={onClick}>
+    <Plus aria-hidden="true" />
+    צרו תרגיל חדש
   </button>
 );

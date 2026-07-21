@@ -1,7 +1,7 @@
 // ExerciseSelector - Fresh Steel / Obsidian
 // Dark masthead · surface body · sharp corners · oversized display numerals.
 
-import { AnimatePresence, type PanInfo, m } from 'framer-motion';
+import { AnimatePresence, type PanInfo, m, useDragControls, useReducedMotion } from 'framer-motion';
 import {
   ClipboardList as ClipboardIcon,
   X as CloseIcon,
@@ -82,6 +82,8 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   const [activeTab, setActiveTab] = useState<'exercises' | 'templates'>('exercises');
   const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
   const [pendingExercises, setPendingExercises] = useState<PersonalExercise[]>([]);
+  const shouldReduceMotion = useReducedMotion();
+  const dragControls = useDragControls();
 
   const handleSelect = useCallback((personalExercise: PersonalExercise) => {
     if (!personalExercise.name?.trim()) return;
@@ -173,7 +175,8 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   );
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
-    if (info.offset.y > 150) onClose();
+    const projectedOffset = info.offset.y + info.velocity.y * 0.18;
+    if (projectedOffset > 120) onClose();
   };
 
   return (
@@ -192,22 +195,51 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     >
       <m.div
         className="fixed bottom-0 left-0 right-0 flex flex-col"
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        style={{ maxHeight: '90dvh' }}
+        initial={shouldReduceMotion ? { opacity: 0 } : { y: '100%' }}
+        animate={shouldReduceMotion ? { opacity: 1 } : { y: 0 }}
+        exit={shouldReduceMotion ? { opacity: 0 } : { y: '100%' }}
+        transition={
+          shouldReduceMotion
+            ? { duration: 0.15, ease: 'easeOut' }
+            : { type: 'spring', bounce: 0, duration: 0.38 }
+        }
+        style={{
+          maxHeight: '92dvh',
+          overflow: 'hidden',
+          borderRadius: '28px 28px 0 0',
+          boxShadow: 'var(--elevation-3)',
+        }}
         drag="y"
+        dragControls={dragControls}
+        dragListener={false}
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.5 }}
         onDragEnd={handleDragEnd}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── NAVY MASTHEAD ── */}
-        <div style={{ background: 'var(--fs-primary)' }}>
+        <div
+          style={{
+            background: 'color-mix(in srgb, var(--fs-primary) 96%, transparent)',
+            backdropFilter: 'blur(24px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(160%)',
+          }}
+        >
           {/* Drag Handle */}
-          <div className="flex justify-center pt-3 pb-2">
-            <div className="w-10 h-1" style={{ background: 'var(--fs-surface)', opacity: 0.3 }} />
+          <div
+            className="flex justify-center pt-3 pb-2"
+            onPointerDown={(event) => dragControls.start(event)}
+            aria-hidden="true"
+            style={{ touchAction: 'none', cursor: 'grab' }}
+          >
+            <div
+              className="w-10 h-1"
+              style={{
+                background: 'var(--color-ink-on-dark)',
+                opacity: 0.3,
+                borderRadius: 999,
+              }}
+            />
           </div>
 
           {/* Header */}
@@ -215,16 +247,15 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <h1
-                  className="uppercase"
                   style={{
-                    fontFamily: 'var(--font-display)',
+                    fontFamily: 'var(--font-body)',
                     fontWeight: 700,
-                    fontSize: 28,
+                    fontSize: 26,
                     color: 'var(--color-ink-on-dark)',
-                    letterSpacing: '-0.01em',
-                    lineHeight: 0.95,
-                    direction: 'ltr',
-                    textAlign: 'left',
+                    letterSpacing: 'normal',
+                    lineHeight: 1.1,
+                    direction: 'rtl',
+                    textAlign: 'start',
                   }}
                 >
                   בחרו תרגילים
@@ -232,14 +263,15 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 <p
                   className="mt-1"
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    letterSpacing: '-0.01em',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 13,
+                    lineHeight: 1.4,
+                    letterSpacing: 'normal',
                     color: 'var(--color-ink-on-dark)',
-                    opacity: 0.75,
+                    opacity: 0.76,
                   }}
                 >
-                  סמנו תרגילים ולחצו הוסיפו לאימון
+                  חפשו ובחרו את התרגילים לאימון
                 </p>
               </div>
               <button
@@ -249,7 +281,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 style={{
                   // Tint the BACKGROUND only — element-level opacity would ghost the icon too
                   background: 'rgba(var(--text-on-navy-rgb), 0.1)',
-                  borderRadius: 12,
+                  borderRadius: 999,
                 }}
                 aria-label="סגור"
               >
@@ -259,8 +291,14 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
             {/* Tabs — Apple Segmented */}
             <div
-              className="mt-4 grid grid-cols-2 gap-0"
-              style={{ background: 'rgba(var(--text-on-navy-rgb), 0.08)' }}
+              className="mt-4 grid grid-cols-2 gap-1"
+              role="group"
+              aria-label="סוג בחירה"
+              style={{
+                background: 'rgba(var(--text-on-navy-rgb), 0.1)',
+                borderRadius: 999,
+                padding: 3,
+              }}
             >
               <button
                 type="button"
@@ -268,17 +306,17 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   triggerHaptic('selection');
                   setActiveTab('exercises');
                 }}
-                aria-current={activeTab === 'exercises' ? 'page' : undefined}
-                className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
+                aria-pressed={activeTab === 'exercises'}
+                className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
                 style={{
                   background: activeTab === 'exercises' ? 'var(--fs-accent)' : 'transparent',
                   color:
                     activeTab === 'exercises'
                       ? 'var(--color-ink-on-accent)'
                       : 'rgba(var(--text-on-navy-rgb), 0.75)',
-                  fontFamily: 'var(--font-display)',
-                  letterSpacing: '0.04em',
-                  borderRadius: 12,
+                  fontFamily: 'var(--font-body)',
+                  letterSpacing: 'normal',
+                  borderRadius: 999,
                 }}
               >
                 תרגילים
@@ -289,17 +327,17 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   triggerHaptic('selection');
                   setActiveTab('templates');
                 }}
-                aria-current={activeTab === 'templates' ? 'page' : undefined}
-                className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
+                aria-pressed={activeTab === 'templates'}
+                className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
                 style={{
                   background: activeTab === 'templates' ? 'var(--fs-accent)' : 'transparent',
                   color:
                     activeTab === 'templates'
                       ? 'var(--color-ink-on-accent)'
                       : 'rgba(var(--text-on-navy-rgb), 0.75)',
-                  fontFamily: 'var(--font-display)',
-                  letterSpacing: '0.04em',
-                  borderRadius: 12,
+                  fontFamily: 'var(--font-body)',
+                  letterSpacing: 'normal',
+                  borderRadius: 999,
                 }}
               >
                 תבניות
@@ -314,7 +352,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
           style={{ background: 'var(--fs-surface)' }}
         >
           {activeTab === 'exercises' ? (
-            <div className="flex-1 flex flex-col overflow-y-auto -webkit-overflow-scrolling-touch">
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
               <ExerciseLibraryTab
                 isSelectionMode={true}
                 onSelect={handleSelect}
@@ -332,13 +370,16 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         <AnimatePresence>
           {pendingExercises.length > 0 ? (
             <m.div
-              initial={{ y: 100, opacity: 0 }}
+              initial={shouldReduceMotion ? { opacity: 0 } : { y: 24, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 100, opacity: 0 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { y: 24, opacity: 0 }}
+              transition={{ type: 'spring', bounce: 0, duration: 0.28 }}
               className="px-5 py-4"
               style={{
-                background: 'var(--fs-surface)',
-                borderTop: '2px solid var(--fs-primary)',
+                background: 'color-mix(in srgb, var(--fs-surface) 92%, transparent)',
+                borderTop: '1px solid var(--color-border)',
+                backdropFilter: 'blur(20px) saturate(160%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(160%)',
               }}
             >
               <button
@@ -346,14 +387,14 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 onClick={handleConfirmSelection}
                 className="w-full flex items-center justify-center gap-3 cursor-pointer"
                 style={{
-                  background: 'var(--fs-primary)',
-                  color: 'var(--fs-accent)',
-                  borderRadius: 12,
+                  background: 'var(--btn-primary-bg)',
+                  color: 'var(--btn-primary-text)',
+                  borderRadius: 999,
                   padding: '18px 24px',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 600,
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 700,
                   fontSize: 16,
-                  letterSpacing: '-0.01em',
+                  letterSpacing: 'normal',
                   minHeight: 56,
                 }}
                 aria-label={`${confirmLabel} עם ${pluralizeHe(pendingExercises.length, HE_NOUNS.exercise)}`}
@@ -369,20 +410,20 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   className="w-full flex items-center justify-center gap-2 cursor-pointer mt-2"
                   style={{
                     background: 'transparent',
-                    color: 'var(--fs-primary)',
-                    border: '2px solid var(--fs-primary)',
-                    borderRadius: 12,
+                    color: 'var(--fs-ink)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 999,
                     padding: '12px 24px',
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 600,
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 700,
                     fontSize: 14,
-                    letterSpacing: '0.06em',
+                    letterSpacing: 'normal',
                     minHeight: 48,
                   }}
-                  aria-label={`תכנן מראש ${pluralizeHe(pendingExercises.length, HE_NOUNS.exercise)} — סטים, משקל וחזרות`}
+                  aria-label={`תכננו מראש ${pluralizeHe(pendingExercises.length, HE_NOUNS.exercise)}. סטים, משקל וחזרות`}
                 >
                   <ClipboardIcon style={{ width: 18, height: 18, flexShrink: 0 }} />
-                  תכנן מראש ({pendingExercises.length})
+                  תכננו מראש ({pendingExercises.length})
                 </button>
               )}
             </m.div>
@@ -409,16 +450,16 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   // ink-on-accent: --fs-heading fails AA on the mint fill in dark.
                   color: 'var(--color-ink-on-accent)',
                   border: 'none',
-                  borderRadius: 12,
+                  borderRadius: 999,
                   padding: '14px 24px',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 600,
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 700,
                   fontSize: 14,
-                  letterSpacing: '0.06em',
+                  letterSpacing: 'normal',
                   minHeight: 48,
                 }}
               >
-                + צור תרגיל חדש
+                צרו תרגיל חדש
               </button>
               <button
                 type="button"
@@ -427,13 +468,13 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 style={{
                   background: 'transparent',
                   color: 'var(--fs-muted)',
-                  border: '2px solid var(--fs-surface-2)',
-                  borderRadius: 12,
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 999,
                   padding: '12px 24px',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 600,
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 700,
                   fontSize: 13,
-                  letterSpacing: '-0.01em',
+                  letterSpacing: 'normal',
                   minHeight: 44,
                 }}
               >

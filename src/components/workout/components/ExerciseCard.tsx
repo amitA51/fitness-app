@@ -1,261 +1,148 @@
-// ExerciseCard - Fresh Steel / Obsidian
-// Surface background · steel border · accent selected state
-// Sharp corners · IBM Plex Mono labels · Bricolage display.
+// ExerciseCard - fast-scanning row with quiet metadata and explicit selection.
 
-import { AnimatePresence, m } from 'framer-motion';
-import { Trash2 as TrashIcon } from 'lucide-react';
+import { m, useReducedMotion } from 'framer-motion';
+import { Check, Clock3, Trash2 } from 'lucide-react';
 import type React from 'react';
 import { memo } from 'react';
 import { translateEquipment } from '../../../constants/equipmentNames';
-import { translateMuscle } from '../../../constants/muscleNames';
+import { muscleLabel } from '../../../constants/muscleNames';
 import type { PersonalExercise } from '../../../types';
+import { CustomDumbbellIcon as DumbbellIcon } from '../../icons/CustomDumbbellIcon';
 
 const hasHebrew = (text: string) => /[\u0590-\u05FF]/.test(text);
 
 interface ExerciseCardProps {
   exercise: PersonalExercise;
   isSelectionMode?: boolean;
-  /**
-   * Selection state as a primitive boolean (NOT the whole `selectedIds` Set).
-   * Passing the Set broke `memo` — every card re-rendered whenever ANY card's
-   * selection changed because the Set reference was new each time. A boolean
-   * lets memo skip cards whose own selection is unchanged.
-   */
   isSelected?: boolean;
   onClick?: (exercise: PersonalExercise) => void;
   onDelete?: (exercise: PersonalExercise, e: React.MouseEvent) => void;
 }
 
-const NAME_PRIMARY_STYLE: React.CSSProperties = {
-  fontFamily: 'var(--font-display)',
-  fontWeight: 600,
-  fontSize: 15,
-  color: 'var(--fs-heading)',
-  lineHeight: 1.1,
-  display: 'block',
-};
-
-const NAME_SECONDARY_STYLE: React.CSSProperties = {
-  fontFamily: 'var(--font-mono)',
-  fontSize: 10,
-  letterSpacing: '0.1em',
-  color: 'var(--fs-muted)',
-};
-
-const NAME_SOLO_STYLE: React.CSSProperties = {
-  fontFamily: 'var(--font-display)',
-  fontWeight: 600,
-  fontSize: 15,
-  color: 'var(--fs-heading)',
-  lineHeight: 1.1,
-};
-
-// Hoisted out of the component body — pure function of `name`. Avoids
-// re-creating a closure for every card on every scroll repaint.
-function renderExerciseName(name: string) {
-  if (name.includes('|')) {
-    const [first = '', second = ''] = name.split('|').map((s) => s.trim());
-    const firstIsHebrew = hasHebrew(first);
+function ExerciseName({ name }: { name: string }) {
+  if (!name.includes('|')) {
     return (
-      <div style={{ textAlign: 'right' }}>
-        <span style={NAME_PRIMARY_STYLE}>{firstIsHebrew ? first : second}</span>
-        <span style={NAME_SECONDARY_STYLE}>{firstIsHebrew ? second : first}</span>
-      </div>
+      <bdi className="exercise-card__name" dir="auto">
+        {name}
+      </bdi>
     );
   }
-  return <span style={NAME_SOLO_STYLE}>{name}</span>;
+
+  const [first = '', second = ''] = name.split('|').map((part) => part.trim());
+  const firstIsHebrew = hasHebrew(first);
+  const secondIsHebrew = hasHebrew(second);
+  const isHebrewEnglishPair = firstIsHebrew !== secondIsHebrew;
+  const primary = isHebrewEnglishPair ? (firstIsHebrew ? first : second) : first;
+  const secondary = isHebrewEnglishPair ? (firstIsHebrew ? second : first) : second;
+  const secondaryIsEnglish = isHebrewEnglishPair && !hasHebrew(secondary);
+
+  return (
+    <span className="exercise-card__name">
+      <bdi className="exercise-card__name-primary" dir="auto">
+        {primary}
+      </bdi>
+      {secondary && (
+        <bdi
+          className="exercise-card__name-secondary"
+          dir="auto"
+          lang={secondaryIsEnglish ? 'en' : undefined}
+        >
+          {secondary}
+        </bdi>
+      )}
+    </span>
+  );
 }
 
 const ExerciseCard: React.FC<ExerciseCardProps> = memo(
   ({ exercise, isSelectionMode = false, isSelected = false, onClick, onDelete }) => {
-    // Hebrew-first chips: resolve the English catalog keys to Hebrew labels.
-    const muscleText = translateMuscle(exercise.muscleGroup);
+    const shouldReduceMotion = useReducedMotion();
+    const name = exercise.name?.trim() || 'תרגיל ללא שם';
+    const muscleText = muscleLabel(exercise);
     const equipmentText = translateEquipment(exercise.equipment);
+    const restSeconds = exercise.defaultRestTime || 90;
+    const isInteractive = Boolean(onClick);
+    const selectionText = isSelectionMode ? (isSelected ? 'נבחר' : 'לא נבחר') : '';
+    const accessibleMeta = [muscleText, equipmentText, `${restSeconds} שניות`, selectionText]
+      .filter(Boolean)
+      .join(', ');
+
     return (
       <m.div
-        key={exercise.id}
-        onClick={() => onClick?.(exercise)}
-        className="magnetic-card glass-surface"
-        aria-pressed={isSelectionMode ? isSelected : undefined}
-        style={{
-          position: 'relative',
-          padding: '14px',
-          background: isSelected
-            ? 'var(--fs-accent)'
-            : 'linear-gradient(135deg, var(--fs-surface-shine), transparent 48%), var(--fs-surface)',
-          border: '1px solid var(--fs-steel)',
-          borderRadius: '22px 16px 22px 16px',
-          cursor: 'pointer',
-          transition: 'all 150ms',
-          marginBottom: 0,
-          touchAction: 'manipulation',
-        }}
-        whileTap={{ scale: 0.98 }}
-        aria-label={`תרגיל: ${exercise.name ?? ''}`}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onClick?.(exercise);
-          }
-        }}
+        className="exercise-card"
+        data-selected={isSelected}
+        data-interactive={isInteractive}
+        role={isInteractive ? 'button' : undefined}
+        tabIndex={isInteractive ? 0 : undefined}
+        aria-pressed={isSelectionMode && isInteractive ? isSelected : undefined}
+        aria-label={isInteractive ? `${name}, ${accessibleMeta}` : undefined}
+        onClick={isInteractive ? () => onClick?.(exercise) : undefined}
+        onKeyDown={
+          isInteractive
+            ? (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onClick?.(exercise);
+                }
+              }
+            : undefined
+        }
+        whileTap={isInteractive && !shouldReduceMotion ? { scale: 0.985 } : undefined}
+        transition={{ type: 'spring', bounce: 0, duration: 0.22 }}
       >
-        {/* Selection Checkbox */}
-        {isSelectionMode && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 12,
-              left: 12,
-              width: 24,
-              height: 24,
-              background: isSelected ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
-              border: `2px solid ${isSelected ? 'var(--fs-primary)' : 'var(--fs-steel)'}`,
-              borderRadius: 12,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 150ms',
-            }}
-          >
-            <AnimatePresence>
-              {isSelected && (
-                <m.svg
-                  viewBox="0 0 24 24"
-                  role="img"
-                  aria-label="נבחר"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  width="14"
-                  height="14"
-                  fill="none"
-                  stroke={isSelected ? 'var(--fs-accent)' : 'var(--fs-primary)'}
-                  strokeWidth={3}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </m.svg>
-              )}
-            </AnimatePresence>
+        <div className="exercise-card__content">
+          <div className="exercise-card__visual" aria-hidden="true">
+            <DumbbellIcon />
           </div>
-        )}
 
-        {/* Content */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1, paddingLeft: isSelectionMode ? 40 : 0 }}>
-            {renderExerciseName(exercise.name ?? '')}
+          <div className="exercise-card__details">
+            <div className="exercise-card__title-row">
+              <ExerciseName name={name} />
+              {exercise.isCustom && <span className="exercise-card__personal">אישי</span>}
+            </div>
 
-            {/* Meta chips */}
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 6,
-                marginTop: 8,
-                direction: 'rtl',
-              }}
-            >
-              {muscleText && (
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 9,
-                    letterSpacing: '-0.01em',
-                    padding: '2px 8px',
-                    background: isSelected
-                      ? 'color-mix(in srgb, var(--fs-primary) 15%, transparent)'
-                      : 'var(--fs-surface-2)',
-                    color: isSelected ? 'var(--fs-primary)' : 'var(--fs-muted)',
-                    border: 'none',
-                    borderRadius: 999,
-                  }}
-                >
-                  {muscleText}
-                </span>
-              )}
-              {/* Equipment — secondary attribute, outlined to read distinct from
-                  the filled muscle chip (wger surfaces equipment per exercise). */}
+            <div className="exercise-card__meta">
+              <span>{muscleText}</span>
               {equipmentText && (
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 9,
-                    letterSpacing: '-0.01em',
-                    padding: '2px 8px',
-                    background: 'transparent',
-                    color: isSelected ? 'var(--fs-primary)' : 'var(--fs-muted)',
-                    border: `1px solid ${
-                      isSelected
-                        ? 'color-mix(in srgb, var(--fs-primary) 30%, transparent)'
-                        : 'var(--fs-steel)'
-                    }`,
-                    borderRadius: 999,
-                  }}
-                >
-                  {equipmentText}
-                </span>
+                <>
+                  <span className="exercise-card__meta-separator" aria-hidden="true">
+                    ·
+                  </span>
+                  <span>{equipmentText}</span>
+                </>
               )}
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 9,
-                  letterSpacing: '-0.01em',
-                  color: 'var(--fs-muted)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 3,
-                }}
-              >
-                {exercise.defaultRestTime || 90}s
+              <span className="exercise-card__meta-separator" aria-hidden="true">
+                ·
+              </span>
+              <span className="exercise-card__rest">
+                <Clock3 aria-hidden="true" />
+                <span>
+                  <bdi dir="ltr">{restSeconds}</bdi> שנ׳
+                </span>
               </span>
             </div>
 
-            {exercise.notes && (
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 12,
-                  color: 'var(--fs-muted)',
-                  marginTop: 6,
-                  fontStyle: 'italic',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {exercise.notes}
-              </p>
-            )}
+            {exercise.notes && <p className="exercise-card__notes">{exercise.notes}</p>}
           </div>
 
-          {!isSelectionMode && onDelete && (
-            <button
-              type="button"
-              className="active:scale-[0.92]"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(exercise, e);
-              }}
-              style={{
-                padding: 8,
-                minWidth: 44,
-                minHeight: 44,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--fs-muted)',
-                transition: 'color 150ms, transform 150ms',
-                flexShrink: 0,
-              }}
-              aria-label={`מחק ${exercise.name}`}
-            >
-              <TrashIcon className="w-4 h-4" />
-            </button>
+          {isSelectionMode ? (
+            <span className="exercise-card__action exercise-card__selection" aria-hidden="true">
+              {isSelected ? <Check /> : <span className="exercise-card__selection-placeholder" />}
+            </span>
+          ) : (
+            onDelete && (
+              <button
+                type="button"
+                className="exercise-card__action exercise-card__delete"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete(exercise, event);
+                }}
+                aria-label={`מחקו את ${name}`}
+              >
+                <Trash2 aria-hidden="true" />
+              </button>
+            )
           )}
         </div>
       </m.div>

@@ -12,12 +12,16 @@ interface DeleteConfirmDialogProps {
   exercise: PersonalExercise | null;
   onConfirm: () => void;
   onCancel: () => void;
+  isDeleting?: boolean;
+  errorMessage?: string | null;
 }
 
 export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   exercise,
   onConfirm,
   onCancel,
+  isDeleting = false,
+  errorMessage,
 }) => (
   <ConfirmDialog
     isOpen={!!exercise}
@@ -25,9 +29,12 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
     onCancel={onCancel}
     variant="danger"
     title="למחוק תרגיל?"
-    description={`${exercise?.name ?? ''} — המחיקה תסיר את התרגיל מהספרייה לצמיתות.`}
-    confirmLabel="מחק"
+    description={`${exercise?.name ?? ''}. המחיקה תסיר את התרגיל מהספרייה לצמיתות.`}
+    confirmLabel="מחקו תרגיל"
     cancelLabel="ביטול"
+    isPending={isDeleting}
+    pendingLabel="מוחק…"
+    errorMessage={errorMessage ?? undefined}
   />
 );
 
