@@ -1,5 +1,8 @@
 [build]
-  command = "npm run build"
+  # build:release = vite build + scripts/strip-sourcemaps.mjs. The build emits
+  # hidden source maps (for Sentry de-minification) and the script moves them out
+  # of dist/ so they are never served from the CDN.
+  command = "npm run build:release"
   publish = "dist"
   # VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in the Netlify dashboard
   # (Site settings -> Environment variables). Do not commit secrets here.

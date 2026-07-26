@@ -4,6 +4,11 @@ node_modules/
 # Build output
 dist/
 
+# Hidden source maps moved out of dist/ by scripts/strip-sourcemaps.mjs. They
+# contain full readable source and must never be committed or published; upload
+# them to Sentry for the release, then discard.
+sourcemaps/
+
 # Environment — never commit real env files; only .env.example is allowed.
 .env
 .env.*

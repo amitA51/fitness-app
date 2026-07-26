@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:release": "vite build && node scripts/strip-sourcemaps.mjs",
     "preview": "vite preview",
     "lint": "biome check ./src",
     "format": "biome format --write ./src",
@@ -18,7 +19,8 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "doctor": "npx react-doctor@latest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:test": "node scripts/db-test.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -45,6 +47,7 @@
     "web-vitals": "^5.3.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
     "@axe-core/react": "^4.11.3",
     "@biomejs/biome": "^1.9.4",
     "@playwright/test": "^1.60.0",

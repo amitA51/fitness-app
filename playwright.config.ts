@@ -14,6 +14,14 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
 
+  /* The visual-QA spec is a screenshot generator for manual review, not an
+     assertion suite: it writes ~50 PNGs and would make CI slow and noisy.
+     Run it locally with `npx playwright test e2e/visual-qa.spec.ts`. */
+  testIgnore: process.env.CI ? ['**/visual-qa.spec.ts'] : [],
+
+  /* A stray `test.only` must fail the build rather than silently skip the suite. */
+  forbidOnly: !!process.env.CI,
+
   /* Maximum time for a single test to run (ms). */
   timeout: 30_000,
 
@@ -70,7 +78,9 @@ export default defineConfig({
   webServer: {
     command: 'npm run preview -- --port 4173',
     url: 'http://localhost:4173',
-    reuseExistingServer: true,
+    // Locally this lets a developer keep a preview running; in CI it must always
+    // start a fresh server against the freshly built bundle.
+    reuseExistingServer: !process.env.CI,
     timeout: 60_000,
     /* Show preview server stdout only on failure so output is quiet in CI. */
     stdout: 'ignore',

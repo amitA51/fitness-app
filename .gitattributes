@@ -1,0 +1,23 @@
+# Line-ending policy
+# ----------------------------------------------------------------------------
+# Biome formats with LF (its default `lineEnding`). Without this file, a Windows
+# checkout gets CRLF working-copy files and `npm run format:check` reports every
+# source file as unformatted — 347 failures that have nothing to do with code
+# style, which made `npm run verify` permanently red locally while passing in CI.
+#
+# `text=auto eol=lf` normalizes to LF in the repository AND in the working copy,
+# so the formatter, the linter and CI all agree.
+* text=auto eol=lf
+
+# Binary assets must never be line-ending normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.mp4 binary
+*.woff binary
+*.woff2 binary
+*.ttf binary

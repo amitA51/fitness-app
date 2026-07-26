@@ -47,9 +47,11 @@ export default defineConfig({
         lang: 'he',
         categories: ['health', 'fitness'],
         icons: [
-          { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+          { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          // Maskable is a separate file: launchers crop to the inner 80% circle,
+          // so the mark is drawn smaller there than in the 'any' icons.
+          { src: '/pwa-maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
@@ -177,6 +179,15 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 200,
     reportCompressedSize: false,
-    sourcemap: false,
+    // 'hidden' emits .map files WITHOUT the //# sourceMappingURL comment: the
+    // browser will not fetch them (so they are not exposed to visitors), but they
+    // can be uploaded to Sentry so production stack traces are readable instead
+    // of minified. Previously sourcemap:false meant every production error
+    // arrived as unreadable single-letter frames.
+    //
+    // Deploy note: upload dist/**/*.map to Sentry as part of the release, then
+    // delete the .map files from the published output if your host serves the
+    // whole dist directory.
+    sourcemap: 'hidden',
   },
 });
