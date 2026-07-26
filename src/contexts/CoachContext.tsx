@@ -36,11 +36,18 @@ import { useAuth } from './AuthContext';
  * 'coach') may toggle — a coach still keeps access to their own personal
  * trainee side.
  *
- * Defaults to ON (the product is in development and the demo wants the switch
- * open to everyone). Set VITE_DEMO_VIEW_SWITCH='false' to lock it down for a
- * production build without touching code.
+ * SECURE BY DEFAULT. This used to be `!== 'false'`, i.e. open unless explicitly
+ * disabled — so a production deploy that simply forgot the variable silently let
+ * every signed-in user promote themselves to coach, outside any commercial funnel.
+ * A missing variable must never be the permissive case.
+ *
+ * Now: development is open (the demo convenience is kept) unless explicitly
+ * disabled, while a production build requires an explicit
+ * `VITE_DEMO_VIEW_SWITCH='true'` to open it.
  */
-const DEMO_OPEN_VIEW_SWITCH = import.meta.env.VITE_DEMO_VIEW_SWITCH !== 'false';
+const DEMO_OPEN_VIEW_SWITCH =
+  import.meta.env.VITE_DEMO_VIEW_SWITCH === 'true' ||
+  (import.meta.env.DEV && import.meta.env.VITE_DEMO_VIEW_SWITCH !== 'false');
 
 /** Set during onboarding when a user picks the coach role while unauthenticated
  * (guest). Honored here once a real session exists, since enableCoachMode needs

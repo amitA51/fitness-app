@@ -83,6 +83,11 @@ export const unsubscribeFromPush = async (): Promise<void> => {
  * Invoke the `coach-push-send` edge function to deliver a Web Push to a target
  * user (an active client, or self). Best-effort: never throws, so it can't
  * break the action that triggered it, and no-ops until the function is deployed.
+ *
+ * `url` must be an INTERNAL path (starting with `/`). The function rejects
+ * absolute URLs outright: the service worker opens whatever it is handed, so an
+ * external target would turn a notification carrying the app's own name and icon
+ * into a phishing link.
  */
 export const sendCoachPush = async (
   targetUserId: string,

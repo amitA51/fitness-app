@@ -17,6 +17,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 // @ts-expect-error remote ESM import (Deno)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { consumeRateLimits } from '../_shared/rateLimit.ts';
 // @ts-expect-error remote ESM import (Deno)
 import webpush from 'https://esm.sh/web-push@3.6.7';
 
@@ -76,21 +77,67 @@ Deno.serve(async (req: Request) => {
   const targetUserId = String(payload.targetUserId ?? '');
   const title = String(payload.title ?? '').slice(0, 120);
   const bodyText = String(payload.body ?? '').slice(0, 300);
-  // Only allow same-origin relative paths or absolute https URLs as the click target.
-  let url = String(payload.url ?? '/');
-  if (!url.startsWith('/') && !url.startsWith('https://')) url = '/';
+
+  // Click target: an INTERNAL path only.
+  //
+  // This used to accept any absolute `https://` URL, and public/push-sw.js opens
+  // whatever it is given on tap. That turned an authorized coach account (or a
+  // compromised one) into a way to deliver a system notification that opens an
+  // arbitrary site — a credible phishing vector, since the notification carries
+  // the app's own name and icon. Absolute URLs are now rejected rather than
+  // silently rewritten, so a caller sending one gets a clear error instead of a
+  // notification that quietly points somewhere else.
+  const rawUrl = String(payload.url ?? '/');
+  if (!rawUrl.startsWith('/') || rawUrl.startsWith('//') || rawUrl.length > 300) {
+    return json({ ok: false, error: 'invalid_url' }, 400, req);
+  }
+  // Reject anything that could be parsed as a scheme or a control character.
+  if (/[\u0000-\u001f\\]|^\/\s*\w+:/.test(rawUrl)) {
+    return json({ ok: false, error: 'invalid_url' }, 400, req);
+  }
+  const url = rawUrl;
+
   if (!targetUserId || !title) return json({ ok: false, error: 'invalid' }, 400, req);
 
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
+  // Send quota. Without one, a coach account can push to every client repeatedly;
+  // notifications are the most intrusive channel the product has. Per-sender and
+  // per-recipient, so neither a broadcast nor a single-target hammer gets through.
+  // Self-notifications (reminders the user set) are exempt from the sender cap.
+  if (targetUserId !== caller.id) {
+    const quota = await consumeRateLimits(
+      admin,
+      [
+        { bucket: 'coach_push_sender_hour', subject: caller.id, windowSeconds: 3600, maxEvents: 60 },
+        { bucket: 'coach_push_sender_day', subject: caller.id, windowSeconds: 86_400, maxEvents: 300 },
+        {
+          bucket: 'coach_push_target_day',
+          subject: `${caller.id}:${targetUserId}`,
+          windowSeconds: 86_400,
+          maxEvents: 10,
+        },
+      ],
+      '[coach-push-send]'
+    );
+    if (!quota.allowed) {
+      return json({ ok: false, error: 'rate_limited' }, quota.unavailable ? 503 : 429, req);
+    }
+  }
+
   // Authorize: self-push, or an ACTIVE coach->client link.
   if (targetUserId !== caller.id) {
-    const { count } = await admin
+    const { count, error: linkError } = await admin
       .from('coach_clients')
       .select('id', { count: 'exact', head: true })
       .eq('coach_id', caller.id)
       .eq('client_id', targetUserId)
       .eq('status', 'active');
+    // A failed lookup must not read as "no link" OR as permission: fail closed.
+    if (linkError) {
+      console.error('[coach-push-send] coach link check failed:', linkError.message);
+      return json({ ok: false, error: 'unavailable' }, 503, req);
+    }
     if (!count) return json({ ok: false, error: 'forbidden' }, 403, req);
   }
 
