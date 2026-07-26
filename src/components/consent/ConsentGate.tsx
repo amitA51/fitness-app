@@ -5,6 +5,9 @@
 // app with a full-screen consent prompt. It allowlists the public /legal/* and
 // /accessibility routes so the user can READ the documents before accepting.
 // Fail-open: dormant until the legal_documents seed exists (no rows → no block).
+// NOT fail-open on a real error, though: an unreadable consent status, or an
+// acceptance that could not be persisted, keeps the gate up with an explanation
+// rather than letting the user through as if they had consented.
 //
 // Design system: Fresh Steel / Obsidian (var(--fs-*) tokens only).
 // ============================================================================
@@ -19,7 +22,7 @@ import ConsentCheckboxes from './ConsentCheckboxes';
 const PUBLIC_ALLOWLIST = /^\/(legal\/|accessibility)/;
 
 export function ConsentGate({ children }: { children: ReactNode }) {
-  const { loading, needsConsent, accept } = useConsent();
+  const { loading, needsConsent, statusUnavailable, accept } = useConsent();
   const location = useLocation();
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
@@ -33,6 +36,14 @@ export function ConsentGate({ children }: { children: ReactNode }) {
     if (blocking) headingRef.current?.focus();
   }, [blocking]);
 
+  // Show why the gate is up when the status itself could not be read, instead of
+  // asking the user to re-accept documents we cannot even name.
+  useEffect(() => {
+    if (blocking && statusUnavailable) {
+      setError('לא הצלחנו לאמת את ההסכמות שלכם. בדקו את החיבור ונסו שוב.');
+    }
+  }, [blocking, statusUnavailable]);
+
   if (!blocking) return <>{children}</>;
 
   const canSubmit = acceptedTerms && acceptedPrivacy && !submitting;
@@ -42,7 +53,14 @@ export function ConsentGate({ children }: { children: ReactNode }) {
     setSubmitting(true);
     setError(null);
     try {
-      await accept();
+      // A false result means at least one acceptance was NOT persisted. Keeping
+      // the gate up is the point: letting the user through would leave them
+      // marked as having accepted something that was never recorded.
+      const recorded = await accept();
+      if (!recorded) {
+        setError('שמירת ההסכמה לא הושלמה. בדקו את החיבור ונסו שוב.');
+        setSubmitting(false);
+      }
     } catch {
       setError('שמירת ההסכמה נכשלה. בדקו את החיבור ונסו שוב.');
       setSubmitting(false);

@@ -2,9 +2,15 @@
 // CONSENT CONTEXT — loads the user's legal-consent status once after auth and
 // exposes whether a (re-)acceptance is required. Drives <ConsentGate>.
 //
-// UX-only gate (like CoachGuard): the server-side audit trail in user_consents
-// is the record of truth; this just decides when to prompt. Fail-open: only
-// authenticated cloud users are evaluated, and any backend gap → no block.
+// The server-side audit trail in user_consents is the record of truth; this
+// decides when to prompt. Only authenticated cloud users are evaluated, and a
+// backend that is not deployed yet never blocks.
+//
+// It does NOT, however, fail open on a real error any more. Previously a failed
+// status read returned an empty list that read as "nothing to accept", and a
+// failed write still dismissed the gate — so a user could end up having accepted
+// nothing while the app behaved as though they had. Both states are now visible:
+// `statusUnavailable` and a rejected `accept()`.
 // ============================================================================
 
 import {
@@ -27,8 +33,17 @@ interface ConsentContextValue {
   needsConsent: boolean;
   /** The documents awaiting acceptance. */
   pending: LegalVersionStatus[];
-  /** Record acceptance for all pending documents, then refresh. */
-  accept: (options?: RecordConsentOptions) => Promise<void>;
+  /**
+   * True when consent status could not be read. Treated as "unknown", never as
+   * "nothing to accept" — the gate stays up and offers a retry.
+   */
+  statusUnavailable: boolean;
+  /**
+   * Record acceptance for all pending documents, then refresh.
+   * Resolves false when at least one acceptance was not persisted, so the caller
+   * keeps the gate up instead of letting the user through unrecorded.
+   */
+  accept: (options?: RecordConsentOptions) => Promise<boolean>;
   /** Re-fetch consent status. */
   refresh: () => Promise<void>;
 }
@@ -39,17 +54,20 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
   const { status } = useAuth();
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<LegalVersionStatus[]>([]);
+  const [statusUnavailable, setStatusUnavailable] = useState(false);
 
   const refresh = useCallback(async () => {
     // Only cloud-authenticated users have a server-side consent record. Guests
     // (local-only) and unauthenticated states never hard-block here.
     if (status !== 'authenticated') {
       setPending([]);
+      setStatusUnavailable(false);
       setLoading(false);
       return;
     }
     setLoading(true);
-    const statuses = await getLegalConsentStatus();
+    const { statuses, unavailable } = await getLegalConsentStatus();
+    setStatusUnavailable(unavailable);
     setPending(statuses.filter((s) => s.needsConsent));
     setLoading(false);
   }, [status]);
@@ -60,15 +78,24 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
 
   const accept = useCallback(
     async (options?: RecordConsentOptions) => {
-      await acceptPendingConsents(pending, options);
+      const recorded = await acceptPendingConsents(pending, options);
       await refresh();
+      return recorded;
     },
     [pending, refresh]
   );
 
   const value = useMemo<ConsentContextValue>(
-    () => ({ loading, needsConsent: pending.length > 0, pending, accept, refresh }),
-    [loading, pending, accept, refresh]
+    () => ({
+      loading,
+      // An unreadable status is a reason to prompt, not a reason to proceed.
+      needsConsent: pending.length > 0 || statusUnavailable,
+      pending,
+      statusUnavailable,
+      accept,
+      refresh,
+    }),
+    [loading, pending, statusUnavailable, accept, refresh]
   );
 
   return <ConsentContext.Provider value={value}>{children}</ConsentContext.Provider>;
