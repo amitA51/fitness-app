@@ -1,0 +1,137 @@
+# SparkOS Fitness: מוכנות לפרודקשן ולמכירה
+
+**היקף והגבלה:** ששת הדוחות `01` עד `06` נקראו במלואם והושוו למקור הנוכחי. סטטוסים של `GO` כאן מציינים ראיית מקור ובדיקות מקומיות, לא אימות של Supabase, ספק תשלומים, סודות, חשבון סוחר או cron פרודקשן. נבדקו גם `npm run verify`, ארבע חבילות בדיקה ממוקדות ו־`npm run build`.
+
+## תקציר מנהלים
+- **החלטה:** `NO-GO` למכירה בתשלום היום; אפשר להמשיך בפיילוט חינמי או ברשימת המתנה, אך לא לגבות כסף.
+- ממצאי אבטחה ותפעול היסטוריים מהותיים תוקנו במקור: בידוד מידע בין חשבונות, מחיקת חשבון, המשך invite/reset, התאוששות offline queue, מכסת Free ואכיפת תוקף entitlement.
+- חסם המכירה הראשון הוא מסחר שלם וחוקי: ספק וסוחר, מחירים, חשבוניות/מע״מ, ביטול ומסמכים משפטיים מאושרים.
+- **חסם שני** הוא אמינות sync רב־מכשירי — **תוקן ואומת** לאחר כתיבת הדוח (`sync_lww_guard`, soft deletes, cross-tab lock). מה שנשאר בתחום הזה הוא בדיקת E2E של שני מכשירים מול Supabase אמיתי.
+- הערת עדכון: החסם שדווח כאן במקור על webhook שאינו בר־הפעלה מחדש **תוקן** לאחר כתיבת הדוח — ראו שורת ה־webhook בטבלת "מה תוקן בסבב הזה".
+- לאחר שני התיקונים האלה נשאר **חסם P0 אחד בלבד**, והוא אינו הנדסי: החלטות מסחריות ומשפטיות (ספק/סוחר, מחירים, מע״מ וחשבוניות, ביטול, אישור המסמכים).
+- הנתיב הקצר ללקוח משלם ראשון הוא **Consumer בלבד**: לסגור את שלושת P0, להפעיל sandbox אמיתי, ואז להדליק Billing. מכירת coach נשארת כבויה.
+- אין לשווק cloud sync כהבטחת ערך בתשלום לפני תיקון P0 של שלמות sync, או שיש להשבית/להחריג אותו מההצעה.
+
+## מה תוקן בסבב הזה
+הטבלה מתעדת רק תיקונים שנקראו במקור הנוכחי. כאשר דוח היסטורי סתר את הקוד העדכני, הוא מסומן כאן כתיקון ולא נספר כחסם פתוח.
+
+| ממצא | קבצים | אימות (test/verification) |
+|---|---|---|
+| **תוקן:** דליפת מידע מקומי בין חשבונות. יש registry למחיקת IndexedDB/`localStorage`/`sessionStorage`, מעבר זהות serialized וניקוי לפני `pullAllData()`. | `src/services/userScopedLocalData.ts:101-150`<br>`src/services/authSessionTransition.ts:45-65`<br>`src/contexts/AuthContext.tsx:86,117-123` | `src/services/__tests__/authSessionTransition.test.ts:52-127`; בהרצה הנוכחית: `5/5` עברו, כולל מעבר `A→B` ו־sign-out. |
+| **תוקן במקור:** מחיקת חשבון אמיתית, נפרדת מייצוא, עם typed-email gate, JWT, rate limit fail-closed, מחיקת Storage ו־`deleteUser()`. | `src/services/accountService.ts:61-101`<br>`src/pages/settings/sections/DangerZoneSection.tsx:37-53,126-131`<br>`supabase/functions/account-delete/index.ts`<br>`supabase/functions/account-delete/config.toml`<br>`supabase/migrations/20260726090000_account_deletion_audit.sql:4-36` | קריאת הזרימה מקצה לקצה. ייצוא ענן מלא **אינו** חלק מהתיקון ונשאר בבקלוג. |
+| **תוקן:** invite deep-link נשמר דרך login, ו־`/join` ו־`/reset-password` זמינים לפני auth; מסך recovery של reset password קיים. | `src/services/authContinuation.ts:26,38,73,93`<br>`src/AppRouter.tsx:303-308,323-324,404,614`<br>`src/pages/JoinPage.tsx:29,69,105`<br>`src/pages/ResetPasswordPage.tsx:46-` | קריאת זרימת שמירת continuation, ניווט ו־auto-accept; build כלל chunks נפרדים ל־`JoinPage` ול־`ResetPasswordPage`. |
+| **תוקן:** offline queue אינו מוחק עבודה אחרי ניסיונות; יש `isOffline`, backoff, `dead_letter_queue` ופעולות retry/export/discard. דיווח sync חלקי אינו חוזר כהצלחה כאשר קריאה מקומית נכשלה. | `src/services/offlineQueue.ts:61,78,82,90,573-683,758-787`<br>`src/pages/settings/sections/UnsyncedChangesSection.tsx`<br>`src/services/supabaseSyncOrchestrator.ts:132,149-153,462-467` | `src/services/__tests__/offlineQueueFeed.test.ts`; בהרצה הנוכחית `13/13` עברו, כולל offline starts, backoff, dead letter ו־retry recovery. |
+| **תוקן כיכולת מקור, עדיין כבוי במכוון:** מסלול checkout/webhook, קטלוג ו־RLS, מכסת שלוש תבניות Free ותפוגת entitlement. | `supabase/migrations/20260726100000_billing_core.sql:12-19,30-132,274-308,320-356,387-413`<br>`supabase/functions/_shared/billingAdapter.ts:11-68`<br>`supabase/functions/billing-checkout/index.ts:51,106-160`<br>`supabase/functions/billing-webhook/index.ts:47,63,85-157`<br>`src/services/billing/checkoutService.ts:76-100`<br>`src/services/templateDb.ts:51-81`<br>`src/services/billing/entitlementService.ts:75-99` | `templateFreeQuota.test.ts` `5/5` ו־`billingEnforcement.test.ts` `7/7` עברו. `VITE_BILLING_LIVE=false` נשאר ב־`.env.example:86`; אין להסיק שהמסחר הופעל. |
+| **תוקן בתנאי הפעלה:** אכיפת entitlement ל־AI מתבצעת בשרת, אך רק עם `AI_REQUIRES_ENTITLEMENT=true`. | `supabase/migrations/20260726100000_billing_core.sql:274-308`<br>`supabase/functions/ai-chat/index.ts:183-214`<br>`.env.example:84-86` | קריאת gate והוראת secret. הסוד בפרויקט Supabase הפעיל לא ניתן לאימות מהריפו. |
+| **תוקן:** התאמות Apple/design: reduced motion ברמת OS והעדפה פנימית, high contrast אמיתי, safe insets לוגיים, targets של `44px`, RTL arrows, progress מבוסס transform והסרת animation כפול. | `src/hooks/useReducedMotion.ts:19-58`<br>`src/App.tsx:21-37`<br>`src/styles/tokens.css:555-628`<br>`src/styles/global.css:800-835,978-990`<br>`src/pages/progress/components/SegmentedControl.tsx`<br>`src/components/ui/ToggleSwitch.tsx`<br>`src/components/ui/PageHeader.tsx`<br>`src/components/charts/AnimatedBar.tsx:88` | קריאת מימוש מול חוזה העיצוב RTL/נגישות. haptics ב־iOS נשאר חריג פתוח. |
+| **תוקן:** ניגודיות ותוכן נגישים בנקודות שסומנו, כולל ink-on-accent, caption לטבלה, טקסט לקורא מסך והצהרת נגישות כנה. | `src/pages/billing/PaywallScreen.tsx:94,122,188-219,396`<br>`src/components/workout/components/PlanSetRow.tsx:111-113`<br>`src/components/ui/ProfileAvatar.tsx:16-18`<br>`src/pages/AccessibilityStatement.tsx:159,186-225`<br>`src/components/ui/PremiumSelect.tsx:26`<br>`src/pages/MyCoach.tsx:243` | קריאת הקוד והקופי; `e2e/a11y.spec.ts` קיים ב־CI, אך אינו תחליף לבדיקה ידנית או למדידת contrast מלאה. |
+| **תוקן במקור:** תשתית funnel consent-aware, טבלת אירועים עם allowlist/RLS, axe ב־E2E, CI שמזמן E2E ו־hidden source maps עם script לשחרור. | `supabase/migrations/20260726110000_product_events.sql:39-65`<br>`src/services/analytics/funnel.ts:27-68`<br>`src/AppRouter.tsx:250`<br>`src/pages/billing/PaywallScreen.tsx:271,289`<br>`.github/workflows/ci.yml:102`<br>`vite.config.ts:191`<br>`scripts/strip-sourcemaps.mjs:4-` | קריאת call sites וקונפיגורציה. DSN והעלאת maps ל־Sentry בפרודקשן עדיין לא אומתו. |
+| **תוקן לאחר כתיבת הדוח:** שלמות sync רב־מכשירי. `sync_lww_guard` הוא BEFORE UPDATE trigger שמדלג (`RETURN NULL`) על כתיבה עם `updated_at` ישן מהמאוחסן, שומר tombstones מפני resurrection, מאפשר tombstone גם עם timestamp ישן ומשמר את clamp העתיד. ארבע המחיקות הפיזיות שנותרו הומרו ל־soft delete, ה־bulk push מסנן שורות tombstoned מקומיות, ו־`withSyncLock` מספק בלעדיות בין טאבים (Web Locks + lease ב־IndexedDB). | `supabase/migrations/20260726120000_sync_integrity.sql`<br>`src/services/supabaseSync.ts` (4 מחיקות)<br>`src/services/supabaseSyncOrchestrator.ts` (`liveOnly`, lock סביב push/pull)<br>`src/services/syncLock.ts`<br>`src/services/offlineQueue.ts` (DB v3 + lock) | `npm run db:test` הריץ את ה־migrations על Postgres 16 בקונטיינר והעביר 3 חבילות SQL, כולל הוכחה ש־`ON CONFLICT DO UPDATE` עם timestamp ישן מדלג ומשאיר את השורה החדשה (`INSERT 0 0`). ב־JS: `syncLock.test.ts` 6/6 ו־`softDeleteCloud.test.ts` 16/16; סה״כ 1,184 בדיקות עברו. |
+| **תוקן לאחר כתיבת הדוח:** הקשחת AI ומכסות. ה־persona וכללי הבטיחות עברו לשרת (`SYSTEM_PROMPT`) והפונקציה דוחה `system` מהלקוח; `temperature`/`maxTokens` נחתכים לטווח; יש תקרה למספר הודעות (30), לאורך הודעה (4,000) ולסך השיחה (24,000); שגיאות upstream לא מוחזרות ללקוח. rate limiting עבר ל־RPC אטומי אחד עם advisory lock, fail-closed. | `supabase/functions/ai-chat/index.ts`<br>`src/services/ai/config.ts` (`withPersona` → הקשר כ־user)<br>`supabase/migrations/20260726130000_rate_limit_atomic.sql`<br>`supabase/functions/_shared/rateLimit.ts`<br>`account-delete`, `coach-invite-accept`, `billing-checkout` | `npm run db:test`: `rate_limit_test.sql` עבר, ובדיקת concurrency עם `pgbench` — 10 clients, 50 נסיונות מול מכסה 5 — נתנה **5 allowed / 45 denied**, כלומר המכסה אטומית בפועל. ב־JS: `aiMessageContract.test.ts` 5/5 מוודא שהלקוח לא שולח `system` ושההקשר נשמר. |
+| **תוקן לאחר כתיבת הדוח:** mutation ללא בעלים אינו מאומץ יותר. כל enqueue מסמן בעלות מפורשת (`GUEST_OWNER` / `UNKNOWN_OWNER`), ובעת replay רשומה ללא בעלים עוברת ל־quarantine עם reason `ownerless` במקום להיכתב לחשבון המחובר; `retryDeadLetter` הוא האישור המפורש שמשייך אותה לחשבון הנוכחי, ומסרב כשאין חשבון. | `src/services/offlineQueue.ts`<br>`src/pages/settings/sections/UnsyncedChangesSection.tsx` | `offlineQueueFeed.test.ts` 15/15, כולל: ownerless עובר ל־quarantine ולא נכתב, retry משייך ומסנכרן, ו־retry כשאין חשבון מסרב בלי לאבד את השינוי. |
+| **תוקן ואומת כעת:** שער האיכות המקומי תקין לאחר normalisation של LF. | `.gitattributes:8-10`<br>`package.json:17` | `npm run verify` הסתיים `0`: `tsc --noEmit`, `biome check ./src`, `biome format ./src`. |
+| **תוקן לאחר כתיבת הדוח:** webhook בר־replay. `billing_events.processed_at` מפריד בין "נראה" לבין "הוחל": duplicate מוחזר רק כאשר `processed_at` מוגדר, ואירוע שנכתב אך נכשל ב־`billing_apply_subscription` יעבור שוב ב־retry של הספק במקום להיחשב duplicate ולהיעלם. | `supabase/migrations/20260726100000_billing_core.sql` §11<br>`supabase/functions/billing-webhook/index.ts:83-124,150-176` | קריאת הזרימה: insert → on 23505 קרא `processed_at` → apply → סימון `processed_at` רק לאחר הצלחה. בדיקת failure-injection מול ספק אמיתי נשארת חלק מ־sandbox החובה. |
+
+## GO / NO-GO לשיחרור
+
+| פריט | מצב (GO/NO-GO/בסיכון) | ראיה (file:line) |
+|---|---|---|
+| תשלומים | **NO-GO** | checkout קיים אך ההפעלה המתועדת דורשת ספק, סודות, מחירים ו־flag: `.env.example:73-86`; `src/services/billing/checkoutService.ts:76-100`. |
+| חשבוניות / מע״מ | **NO-GO** | ממשק הספק כולל רק `createCheckout()` ו־`parseWebhook()`, ללא מסמכים פיסקליים: `supabase/functions/_shared/billingAdapter.ts:60-68`; המחירים חייבים אישור מע״מ/רו״ח: `.env.example:76-77`. |
+| ניהול מנוי וביטול | **NO-GO** | אין ממשק portal/cancel במתאם: `supabase/functions/_shared/billingAdapter.ts:60-68`; ה־UI מבטיח ביטול אך אינו מספק מסלול ניהול מלא: `src/pages/billing/components/PurchasePanel.tsx:207`. |
+| RLS ובידוד נתונים | **בסיכון** (אומת מקומית, לא ב־DB חי) | `npm run db:test` מריץ את `supabase/tests/rls_2026_07_26_test.sql` בתפקיד `authenticated` עם `auth.uid()` אמיתי ומאמת: `billing_prices` חושף רק שורות פעילות, `entitlements` שורה עצמית בלבד, `billing_subscriptions` של משתמש אחר אינו נראה, `account_deletion_audit` חסום, ו־`product_events` מאפשר INSERT עצמי בלבד עם שם מרשימה — ללא קריאה, ללא user_id זר. `billing_apply_subscription` אינו callable מהלקוח. החלת migrations בפרודקשן עדיין דורשת אימות מפעיל. |
+| מחיקת חשבון + ייצוא | **בסיכון** | המחיקה אמיתית: `src/services/accountService.ts:61-101`; הייצוא קורא רק IndexedDB/`localStorage`: `src/services/settingsService.ts:128-204`, ולכן אין DSAR/export מלא לענן. |
+| Auth: join/reset | **GO** | continuation ו־redirect מאומתים: `src/services/authContinuation.ts:26-93`; routes ציבוריים: `src/AppRouter.tsx:303-324`; טיפול join: `src/pages/JoinPage.tsx:29-105`; reset: `src/pages/ResetPasswordPage.tsx:46-`. |
+| אובדן מידע ב־sync | **בסיכון** (הקוד תוקן, נדרש אימות מול DB חי) | guard בשרת: `supabase/migrations/20260726120000_sync_integrity.sql`; soft deletes: `src/services/supabaseSync.ts`; נעילה בין טאבים: `src/services/syncLock.ts`; אומת ב־`npm run db:test` על Postgres 16 — stale `ON CONFLICT DO UPDATE` דולג. נותר: E2E שני מכשירים מול Supabase אמיתי. |
+| Offline queue | **GO** | guard, backoff ו־dead letter: `src/services/offlineQueue.ts:573-683,758-787`; `13/13` בדיקות queue עברו בהרצה הנוכחית. |
+| Observability / Sentry | **בסיכון** | אתחול תלוי DSN והסכמה: `src/main.tsx:32-`; ה־DSN לדוגמה ריק: `.env.example:41`; build שומר maps מוסתרים: `vite.config.ts:191`, אך לא מעלה אותם אוטומטית. |
+| Analytics funnel | **GO** | funnel consent-aware: `src/services/analytics/funnel.ts:27-68`; call sites: `src/AppRouter.tsx:250`, `src/pages/billing/PaywallScreen.tsx:271,289`; טבלת האירועים מוגנת: `supabase/migrations/20260726110000_product_events.sql:39-65`. פריסה חיה עדיין דורשת אימות מפעיל. |
+| הצהרת נגישות + IS 5568 | **בסיכון** | ההצהרה מפרטת מגבלות ואי-כיסוי ידני: `src/pages/AccessibilityStatement.tsx:159,186-225`; אין אחראי נגישות מזוהה ואין הוכחת NVDA/JAWS/VoiceOver/TalkBack מלאה. |
+| Contrast | **בסיכון** | התיקונים בנקודות המדווחות קיימים: `src/pages/billing/PaywallScreen.tsx:94,122,188-219`; ההצהרה עדיין מציינת צורך באימות ידני: `src/pages/AccessibilityStatement.tsx:186-225`. |
+| E2E ב־CI | **בסיכון** | job קיים: `.github/workflows/ci.yml:102`; שלוש מסעות ליבה עדיין `test.fixme`: `e2e/journeys/auth-cloud-sync.spec.ts:56,78,89`, `workout-start-save-summary.spec.ts:38,64,79`, `paywall-entitlement.spec.ts:34,58,70`. |
+| Verify gate | **GO** | הפקודה מוגדרת: `package.json:17`; LF מוגדר: `.gitattributes:8-10`; `npm run verify` עבר כעת ללא תיקונים. |
+| שרשרת onboarding של coach | **בסיכון** | invite continuation/accept קיים: `src/pages/JoinPage.tsx:29-105`; אולם הגדרה תפעולית, נתוני seed ו־E2E מאומת חסרים: `e2e/journeys/auth-cloud-sync.spec.ts:56-89`. |
+| מודל מסחרי ל־coach | **NO-GO** | הודעת upgrade ללא יעד פעיל: `src/pages/coach/CoachInvites.tsx:161`; מסלולי coach אינם כוללים billing self-service: `src/AppRouter.tsx:481-571`. |
+| AI coach | **בסיכון** (הוקשח; תלוי secrets בפריסה) | entitlement בצד שרת: `supabase/functions/ai-chat/index.ts` (`checkAiEntitlement`, דורש `AI_REQUIRES_ENTITLEMENT=true`); ה־persona וכללי הבטיחות server-owned ו־`system` מהלקוח נדחה; `temperature`/`maxTokens`/מספר ההודעות/סך התווים חתוכים בשרת; rate limit אטומי (אומת ב־pgbench: 5 מתוך 50). נותר: הגדרת המפתח והסודות בפרויקט Supabase החי. |
+| Push reminders | **בסיכון** | dispatch דורש `CRON_SECRET`, VAPID ופריסה ייעודית: `supabase/functions/reminders-dispatch/index.ts`; activation ידני ב־`pg_cron`/`pg_net`: `supabase/migrations/20260613000000_reminder_dispatch.sql`. |
+| מסמכים משפטיים | **NO-GO** | שלושת המסמכים מוגדרים draft: `src/content/legal/legalDocs.ts:57,152,235`; routes ציבוריים קיימים רק ל־terms/privacy: `src/AppRouter.tsx:325-326,630,638`, ללא `/legal/coach-terms`. |
+
+## בקלוג מאוחד — מה נשאר
+
+**P0, חוסם מכירה**
+
+| # | משימה | תחום | קבצים | מדד קבלה | מורכבות (S/M/L) | מקור |
+|---|---|---|---|---|---|---|
+| 1 | להשלים מסחר חוקי ומלא ל־Consumer: החלטת ספק/סוחר, catalogue, מחירים, מע״מ/חשבוניות, ביטול/portal, refund policy ומסמכים משפטיים מאושרים. להשאיר מכירת coach כבויה. | Billing / Legal | `.env.example:65-86`<br>`supabase/functions/_shared/billingAdapter.ts:60-68`<br>`src/pages/billing/components/PurchasePanel.tsx:207`<br>`src/content/legal/legalDocs.ts:57,152,235` | לקוח sandbox ואז לקוח live מסוגל לרכוש, לקבל מסמך תקין, לבטל בעצמו ולקבל מדיניות מאושרת; כל המסמכים `isDraft: false`. | L | 01, 06 + מקור נוכחי |
+| 2 | ~~להפוך webhook לאטומי או בר־replay~~ **הקוד תוקן** (`processed_at`); מה שנשאר הוא הוכחה: failure-injection ב־sandbox של הספק + נוהל reconciliation ל־`billing_events` שבהם `processed_at IS NULL`. | Billing integrity | `supabase/functions/billing-webhook/index.ts:83-124,150-176`<br>`supabase/migrations/20260726100000_billing_core.sql` §11 | כשל מכוון ב־`billing_apply_subscription` ואחריו retry של הספק מוביל בדיוק למנוי אחד במצב הנכון, ללא event תקוע; שאילתת reconciliation מתועדת. | M | 01, 02 + מקור נוכחי |
+| 3 | ~~להגן על sync רב־מכשירי~~ **הקוד תוקן ואומת מול Postgres** (`sync_lww_guard`, soft deletes, `withSyncLock`). מה שנשאר: בדיקת E2E אמיתית של שני מכשירים/שני טאבים מול פרויקט Supabase, ומדיניות retention ל־tombstones. | Data integrity | `supabase/migrations/20260726120000_sync_integrity.sql`<br>`src/services/syncLock.ts`<br>`src/services/supabaseSync.ts`<br>`src/services/supabaseSyncOrchestrator.ts` | E2E של שני טאבים ושני מכשירים מוכיח שאין stale overwrite, resurrection או replay כפול מול DB אמיתי; מוגדר waterline למחיקת tombstones. | M | 02, 05, 06 + מקור נוכחי |
+
+**P1, לפני הרחבת ההשקה**
+
+| # | משימה | תחום | קבצים | מדד קבלה | מורכבות (S/M/L) | מקור |
+|---|---|---|---|---|---|---|
+| 4 | לחבר את שלוש מסעות E2E הקריטיים לסביבת test אמיתית ולהעלות את רצפת הכיסוי. | QA / Release | `e2e/journeys/*.spec.ts`<br>`vitest.config.ts:47-55` | אין `test.fixme` במסעות auth+sync, workout ו־paywall; רצפות כיסוי מאושרות משקפות סיכון אמיתי ולא `20%/37%`. | M | 01, 02, 05, 06 |
+| 5 | לבצע אימות פרודקשן של migrations, RLS, Edge Functions וסודות. | Security / Ops | `supabase/migrations/20260726100000_billing_core.sql`<br>`supabase/migrations/20260726110000_product_events.sql`<br>`supabase/functions/*/config.toml` | checklist פריסה חתום + בדיקות משתמש A/B, anonymous ו־service-role בסביבת staging/production. | M | 02, 01 |
+| 6 | להשלים נגישות תפעולית: מדידות contrast, בדיקות NVDA/JAWS/VoiceOver/TalkBack ומינוי איש קשר נגישות. | A11y / Legal | `e2e/a11y.spec.ts`<br>`src/pages/AccessibilityStatement.tsx:159,186-225` | דוח ידני מתועד לכל AT, ללא כשל WCAG AA ידוע, ופרטי אחראי נגישות בהצהרה. | M | 04 |
+| 7 | להגדיר Sentry בפרודקשן והעלאת source maps עם מדיניות consent. | Observability | `src/main.tsx:32-`<br>`.env.example:41`<br>`package.json:9`<br>`scripts/strip-sourcemaps.mjs` | error בדיקה מזוהה ב־Sentry עם stack trace מפוענח, ללא telemetry לפני consent. | M | 02, 05 |
+| 8 | ~~לחסום ownerless legacy queue mutations~~ **תוקן ואומת** (quarantine + claim מפורש). נותר: להפוך מעבר guest→cloud לבחירה מפורשת ואוטומטית אחרי הרשמה, במקום כפתור ידני ב־Settings. | Auth / Sync | `src/contexts/AuthContext.tsx:117-123`<br>`src/pages/settings/hooks/useCloudSync.ts:59-160`<br>`src/services/offlineQueue.ts` | משתמש אורח שנרשם מקבל בחירה ברורה "העבר את הנתונים שלי לחשבון", והבחירה מבוצעת אטומית לפני ה־pull הראשון. | M | 02, 06 |
+| 9 | לבנות DSAR/export מלא לנתוני ענן. | Privacy | `src/services/settingsService.ts:128-204` | export כולל data מ־Supabase, Storage והמטא־דאטה הרלוונטי, עם בדיקת שלמות. | M | 02, 06 |
+| 10 | להקשיח פלטפורמת coach: scopes/relationship server-side, שגיאות שאינן false-empty, והדגמה כבויה ב־production. | Security / Coach | `supabase/migrations/20260529000000_coach_platform.sql:326,383,446-452`<br>`src/services/coach/relationshipService.ts:157-170`<br>`src/services/coach/assignmentService.ts:222-252`<br>`src/contexts/CoachContext.tsx:43` | כל גישה נבדקת מול relationship פעיל ו־scope; כשל מוצג כשגיאה; `VITE_DEMO_VIEW_SWITCH=false` בפרודקשן. | L | 02, 06 |
+| 11 | להשלים מסלול מסחרי ל־coach רק לאחר Consumer: upgrade destination, billing UI, תנאים ו־seat enforcement. | Coach monetization | `src/pages/coach/CoachInvites.tsx:161`<br>`src/AppRouter.tsx:481-571` | מאמן יכול לשדרג, לשלם, לבטל ולקבל תנאים מתאימים; אין CTA ללא יעד. | L | 01, 06 |
+| 12 | ~~להקשיח AI ו־rate limits~~ **תוקן ואומת**: system prompt server-owned, clamps ל־tokens/temperature/מספר הודעות/סך תווים, ו־`consume_rate_limit` אטומי בכל ארבע הפונקציות. נותר: מכסה נפרדת לכל scope עסקי (למשל מכסת AI למשלמים לעומת trial) והחלטה על תקרת עלות חודשית. | AI / Abuse prevention | `supabase/functions/ai-chat/index.ts`<br>`supabase/functions/_shared/rateLimit.ts`<br>`supabase/migrations/20260726130000_rate_limit_atomic.sql` | מכסה מוגדרת לכל מסלול מנוי, ואזעקה כשעלות ה־AI חורגת מהתקציב שהוגדר. | M | 02, 06 |
+| 13 | לאכוף rate limit בצד שרת ל־community, ולהקשיח coach push URL/CORS/rate limit. | Security / Abuse prevention | `src/services/community/communityService.ts:212,295`<br>`supabase/migrations/20260611000000_community.sql:127-145`<br>`supabase/functions/coach-push-send/index.ts` | post/comment/push מעבר למכסה נדחים atomically; רק URL/Origin מאושרים נשלחים. | M | 02, 06 |
+| 14 | להפעיל ולנטר reminder dispatch באופן חוזר. | PWA / Operations | `supabase/functions/reminders-dispatch/index.ts`<br>`supabase/migrations/20260613000000_reminder_dispatch.sql` | cron פעיל, VAPID/`CRON_SECRET` מוגדרים, ולוג/alert מוכיחים מסירה ותגובה לכשל. | M | 05, 06 |
+| 15 | לסנכרן BBT progress ולפצל את payload הגדול. | Performance / Product completeness | `src/services/programService.ts:17-23,83-130`<br>`src/pages/Program.tsx:20` | progress עובר מכשירים; build אינו טוען `bbtProgram.generated` מראש במסלולים שאינם תוכנית. build הנוכחי מדד `217.98 kB` minified. | M | 05, 06 |
+| 16 | לשנות consent ל־fail-closed ולתעד fallback של Age Gate. | Privacy / Compliance | `src/services/consent/consentService.ts:31-69`<br>`src/contexts/ConsentContext.tsx:52-67`<br>`src/services/ageGate.ts` | שגיאת קריאה/כתיבה אינה מאפשרת עיבוד או ביטול gate ללא בחירה מפורשת ותיעוד. | M | 02, 04 |
+
+**P2, איכות ושיפור לאחר השקה מבוקרת**
+
+| # | משימה | תחום | קבצים | מדד קבלה | מורכבות (S/M/L) | מקור |
+|---|---|---|---|---|---|---|
+| 17 | להגן על workout draft בעת עדכון PWA ולבחון הארכת/שחזור draft מעבר ל־12 שעות. | Reliability / PWA | `src/components/workout/core/WorkoutProvider.tsx:39,139-142`<br>`src/components/pwa/PWAUpdatePrompt.tsx:7,78` | update אינו reload בזמן workout פעיל; draft משוחזר או נשמר לפי מדיניות מוסכמת. | M | 05 |
+| 18 | להוסיף haptics תואם iOS או להסביר אי-תמיכה בתוך ההעדפות. | Design polish | `src/utils/haptics.ts:18-21,87-94` | משוב מישושי עקבי במכשירים נתמכים וללא הבטחה שגויה ב־iOS. | S | 03 |
+| 19 | לטפל באזהרות chunking נוספות שנמדדו ב־build. | Performance | `vite.config.ts`<br>`src/services/programService.ts:17` | budget מוסכם לכל route, build ללא חריגות לא מוסכמות, והחלטות splitting מתועדות. | M | 05 |
+
+## מסלול לגו-לייב
+
+הפעילו את המסלול לפי הסדר. פריטים המסומנים **החלטה עסקית/משפטית** אינם החלטות שמהנדס רשאי לקבל במקום הבעלים, רו״ח או ייעוץ משפטי.
+
+- [ ] **להוכיח P0 2 ו־P0 3 מול DB חי.** הקוד של שניהם תוקן ואומת מקומית (`npm run db:test` על Postgres 16), אבל אין להפעיל גבייה לפני failure-injection של webhook בסביבת ה־sandbox של הספק ובדיקת שני מכשירים מול פרויקט Supabase אמיתי.
+- [ ] **החלטה עסקית/משפטית:** לבחור ספק תשלומים/merchant-of-record המתאים לישראל, לפתוח חשבון סוחר מאומת, להחליט מי המוכר המשפטי ובאיזו טריטוריה מוכרים.
+- [ ] **החלטה עסקית/משפטית:** לאשר SKU, מחיר, מטבע, מע״מ, trial, החזר, ביטול, חשבונית/קבלה ומדיניות renewal. לאשר תנאי שימוש, פרטיות ותנאי coach אם וכאשר coach יימכר. אין להפוך `isDraft` ל־false ללא אישור זה.
+- [ ] להחיל בפרודקשן את מיגרציות billing/RLS ולבדוק אותן בסביבת staging עם משתמשים מבודדים לפני כל הפעלה.
+- [ ] להגדיר secrets ב־Supabase לפי ההוראה במקור: `BILLING_PROVIDER=paddle`, `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `PADDLE_API_BASE=https://api.paddle.com` או ערכים מקבילים לספק שנבחר. הסודות אינם נכנסים ל־frontend או ל־Git.
+- [ ] לפרוס **מחדש** גם את `ai-chat`, `coach-invite-accept` ו־`account-delete`: כולן עברו להשתמש ב־`supabase/functions/_shared/rateLimit.ts` ובמיגרציה `20260726130000_rate_limit_atomic.sql`. פונקציה שלא נפרסה מחדש תמשיך להריץ את הגרסה הלא־אטומית, ופונקציה שנפרסה לפני החלת המיגרציה תיכשל סגור (503) עד שה־RPC קיים — לכן להחיל migrations קודם.
+- [ ] להכניס ל־`public.billing_prices` רק שורות מחיר מאושרות, עם מיפוי אמיתי למחיר הספק. `.env.example:75-77` מחייב גם החלטת מע״מ/רו״ח.
+- [ ] לפרוס `billing-checkout` ולפרוס `billing-webhook --no-verify-jwt`; ה־webhook מוגן ב־HMAC, לא ב־JWT, לפי `supabase/functions/billing-webhook/config.toml`.
+- [ ] לרשום אצל הספק את כתובת webhook הפרודקשן, לוודא signature secret, ולבצע sandbox מלא: checkout, success/cancel, duplicate delivery, expiry, cancel/refund, invoice/receipt ו־reconciliation לאחר כשל מכוון.
+- [ ] אם AI מוצע רק למנויים, להגדיר `AI_REQUIRES_ENTITLEMENT=true` ב־Supabase ולבדוק משתמש Free מול Premium. אחרת לתעד במפורש את עלות ה־AI ואת מגבלת השימוש.
+- [ ] להגדיר `VITE_SENTRY_DSN`, לבצע upload מאובטח של source maps ולוודא consent לפני telemetry; להגדיר alerting למסחר, webhook ו־reminders.
+- [ ] רק אחרי כל הוכחות ה־sandbox והאישורים, לפרוס build שבו `VITE_BILLING_LIVE=true`, לבצע smoke test עם תשלום חי מבוקר, ולנטר webhook/entitlement/analytics.
+- [ ] להשאיר את מסלול מכירת coach כבוי עד להשלמת P1 מספר 11; לא להציג CTA של upgrade ללא יעד.
+
+## מרשם סיכונים
+
+| סיכון | סבירות | השפעה | הפחתה |
+|---|---|---|---|
+| גבייה בלי ספק/סודות/מחיר/אישור סוחר | גבוהה | קריטית | לא להפעיל `VITE_BILLING_LIVE`; להשלים P0 1 ו־sandbox מלא. |
+| לקוח משלם אינו יכול לבטל או לקבל מסמך מס חוקי | גבוהה | קריטית | portal/cancel, מסמכים פיסקליים ומדיניות מאושרת לפני מכירה. |
+| webhook מתועד כ־duplicate לפני שה־entitlement הוחל | נמוכה (תוקן בקוד) | גבוהה | `processed_at` מאפשר replay; נדרשת עדיין בדיקת failure injection ושאילתת reconciliation לאירועים לא מעובדים. |
+| stale write או hard delete מחזיר/מוחק נתוני אימון | נמוכה (תוקן ואומת מול Postgres) | קריטית | `sync_lww_guard` מדלג על כתיבה ישנה ושומר tombstones; כל המחיקות soft; `withSyncLock` מונע התנגשות בין טאבים. נותר: E2E שני מכשירים ומדיניות retention ל־tombstones. |
+| פריסת Supabase שונה מהמקור, RLS או secrets חסרים | בינונית | גבוהה | checklist deployment, בדיקות תפקידים ב־staging ואימות production post-deploy. |
+| חשיפה משפטית או נגישותית במסמכי draft ובכיסוי AT חסר | בינונית | גבוהה | legal sign-off, owner לנגישות ובדיקות קוראי מסך/contrast מתועדות. |
+| incident אינו מתוחקר בגלל DSN/source maps חסרים | גבוהה | בינונית | להגדיר Sentry, upload maps ובדיקת event מבוקרת לאחר consent. |
+| רגרסיה במסעות קריטיים מסתתרת מאחורי `test.fixme` וכיסוי נמוך | גבוהה | בינונית | סביבת E2E עם seed/credentials ורצפות כיסוי גבוהות יותר. |
+| ניצול עלויות AI או spam דרך rate limit לא אטומי/קלט לא מוגבל | נמוכה (תוקן ואומת) | גבוהה | `consume_rate_limit` אטומי (advisory lock) בכל הפונקציות, אומת ב־pgbench; קלט חתוך בשרת; persona server-owned. נותר: תקרת עלות חודשית ואזעקה. |
+| תזכורת או workout draft אובדים בעדכון PWA/cron לא פעיל | בינונית | בינונית | guard לעדכון, שימור draft, cron monitoring ו־delivery alert. |
+
+## מה כבר מרשים
+
+- **הפרדה אמיתית בין זהויות:** מעבר החשבון מנקה מידע מקומי ו־queue לפני טעינת המשתמש הבא, עם בדיקות `A→B`: `src/services/authSessionTransition.ts:45-65`; `src/services/__tests__/authSessionTransition.test.ts:52-127`.
+- **מחיקת חשבון אינה cosmetic:** שרת מאמת JWT, בודק typed email, מוחק Storage ומשתמש דרך admin API, עם ledger audit חסום RLS: `supabase/functions/account-delete/index.ts`; `supabase/migrations/20260726090000_account_deletion_audit.sql:4-36`.
+- **Offline-first מטופל באחריות:** עבודה לא נזרקת אחרי retry; משתמש יכול retry/export/discard, וכל 13 בדיקות ההתאוששות עברו: `src/services/offlineQueue.ts:573-683,758-787`.
+- **המסלול המסחרי בנוי כמערכת ולא רק ככפתור:** catalogue, checkout שרתי, raw-body signature, entitlement, quota ו־expiry קיימים ומופרדים מהחלטת הספק: `supabase/migrations/20260726100000_billing_core.sql`; `supabase/functions/_shared/billingAdapter.ts:11-68`.
+- **הנגישות וה־RTL קיבלו טיפול קונקרטי:** logical safe areas, high contrast, reduced motion, targets של `44px`, contrast fixes והצהרת נגישות שאינה מבטיחה מעבר למה שנבדק: `src/styles/tokens.css:555-628`; `src/pages/progress/components/SegmentedControl.tsx`; `src/pages/AccessibilityStatement.tsx:159-225`.
+- **תהליך איכות רץ בפועל:** `npm run verify` עבר, `30/30` בדיקות תיקון ממוקדות עברו, ו־production build הצליח. כך קיימת נקודת בסיס אמינה להקשחה במקום שכתוב מחדש.
+- **תשתית מדידה שמכבדת הסכמה:** אירועי funnel הם consent-aware וטבלת האירועים מצמצמת כתיבה ל־allowlist/בעלים: `src/services/analytics/funnel.ts:27-68`; `supabase/migrations/20260726110000_product_events.sql:39-65`.
+- **ה־SQL אינו נשלח בלי הרצה:** `npm run db:test` (`scripts/db-test.mjs`) מרים Postgres 16 בקונטיינר, מחיל את ה־migrations, מריץ שלוש חבילות assertions (`supabase/tests/billing_core_test.sql`, `rls_2026_07_26_test.sql`, `sync_lww_guard_test.sql`) ואז מחיל את ה־migrations שוב כדי להוכיח idempotency. זה גם job ב־CI. לפני זה, מאות שורות SQL של מסלול הכספים והבידוד מעולם לא הורצו.
