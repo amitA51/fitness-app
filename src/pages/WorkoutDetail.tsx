@@ -7,7 +7,7 @@
  * math is delegated to the canonical workoutMath SSOT.
  */
 
-import { m, useReducedMotion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   ArrowLeft,
   BarChart2,
@@ -25,6 +25,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { WorkoutComparison } from '../components/fitness/WorkoutComparison';
 import { Card } from '../components/ui/Card';
 import EmptyState from '../components/ui/EmptyState';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
   formatDuration,
   formatHebrewDate,

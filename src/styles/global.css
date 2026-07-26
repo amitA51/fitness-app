@@ -156,8 +156,8 @@ body {
     letter-spacing: -0.01em;
     text-transform: none;
     cursor: pointer;
-    transition: filter var(--duration-fast) ease, transform var(--duration-fast) ease,
-      box-shadow var(--duration-fast) ease;
+    transition: filter var(--duration-fast) ease, transform var(--duration-fast) ease, box-shadow
+      var(--duration-fast) ease;
     min-height: 52px;
     box-shadow: 0 8px 24px color-mix(in srgb, var(--fs-accent) 26%, transparent);
   }
@@ -789,6 +789,21 @@ body {
    ============================================================================ */
 
 @layer utilities {
+  /* Bounded replacement for Tailwind's `transition-all`.
+     ------------------------------------------------------------------------
+     `transition-all` animates EVERY animatable property, including layout
+     values (width/height/inset) and properties a spring or layout animation
+     already owns — which produces double-driven, hard-to-tune motion. This
+     enumerates only the properties a press/hover/selection state should ever
+     move, on the iOS-like ease. Pair with Tailwind `duration-*` to override the
+     default. */
+  .transition-ui {
+    transition-property: transform, opacity, color, background-color, border-color, box-shadow,
+      filter;
+    transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+    transition-duration: 180ms;
+  }
+
   .text-balance {
     text-wrap: balance;
   }
@@ -809,12 +824,15 @@ body {
     padding-right: env(safe-area-inset-right, 0px);
   }
 
+  /* Direction-aware: --safe-inline-start/end swap under html[dir='rtl']
+     (tokens.css §13). Using the physical left/right insets here put the padding
+     on the wrong edge in Hebrew. */
   .safe-area-inline-start {
-    padding-inline-start: env(safe-area-inset-left, 0px);
+    padding-inline-start: var(--safe-inline-start);
   }
 
   .safe-area-inline-end {
-    padding-inline-end: env(safe-area-inset-right, 0px);
+    padding-inline-end: var(--safe-inline-end);
   }
 
   .no-scrollbar {
@@ -950,7 +968,15 @@ body {
   contain: layout style;
 }
 
-/* Page transition */
+/* Page transition
+   ----------------------------------------------------------------------------
+   Route transitions are owned by the Framer `m.div` in AppRouter (slide + fade,
+   220ms, ease [.16,1,.3,1]). This CSS rule used to run a SECOND, 200ms
+   translateY(8px) animation on every direct child of <main> at the same time,
+   so a single navigation played two overlapping motions with different curves —
+   impossible to tune and visibly not one surface.
+   The keyframe is kept for opt-in use (`animation: pageEnter …`) by non-routed
+   content; it is deliberately no longer applied to `main > *`. */
 @keyframes pageEnter {
   from {
     opacity: 0;
@@ -960,10 +986,6 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-main > * {
-  animation: pageEnter 200ms var(--ease-spring-smooth) both;
 }
 
 /* Scroll performance */

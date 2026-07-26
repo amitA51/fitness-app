@@ -11,13 +11,14 @@
 // value-change flash and the kinetic number snap (useNumberSnap is a no-op when
 // reduced).
 
-import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { ChevronUp } from 'lucide-react';
 import type React from 'react';
 import { memo, useCallback } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import { useIsRTL } from '../../../hooks/useIsRTL';
 import { useNumberSnap } from '../../../hooks/useNumberSnap';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 
 // ============================================================
 // TYPES

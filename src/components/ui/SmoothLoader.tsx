@@ -201,7 +201,7 @@ export const ErrorWithRetry: React.FC<{
         onClick={onRetry}
         className={`
           ${compact ? 'px-3 py-1.5 text-xs' : 'px-5 py-2.5 text-sm'}
-          transition-all duration-200
+          transition-ui duration-200
           active:scale-[0.97]
           flex items-center gap-2
         `}

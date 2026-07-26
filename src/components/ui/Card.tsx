@@ -80,7 +80,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
           'relative overflow-hidden',
           variant === 'glass' ? 'glass-surface' : '',
           interactive ? 'magnetic-card cursor-pointer active:scale-[0.985]' : '',
-          'transition-all duration-200 ease-out',
+          'transition-ui duration-200 ease-out',
           className,
         ]
           .filter(Boolean)

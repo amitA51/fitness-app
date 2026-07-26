@@ -1,5 +1,6 @@
-import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { Check } from 'lucide-react';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 
 /**
  * Subtle "נשמר" (saved) confirmation. Replaces the old full-width Save buttons:

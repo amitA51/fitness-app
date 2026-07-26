@@ -173,7 +173,7 @@ export const GoalsEditor = memo(function GoalsEditor({
             fontFamily: 'var(--font-display)',
             fontWeight: 600,
             fontSize: '16px',
-                        border: 'none',
+            border: 'none',
             cursor: 'pointer',
           }}
         >
@@ -218,7 +218,7 @@ export const GoalsEditor = memo(function GoalsEditor({
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
               letterSpacing: '-0.01em',
-                            color: 'var(--fs-accent)',
+              color: 'var(--fs-accent)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -250,7 +250,7 @@ export const GoalsEditor = memo(function GoalsEditor({
               fontSize: 14,
               fontWeight: 600,
               color: 'var(--fs-ink)',
-                          }}
+            }}
           >
             <Droplets size={15} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
             יעדי שתייה

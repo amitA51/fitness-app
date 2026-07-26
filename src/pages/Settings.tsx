@@ -28,6 +28,7 @@ import { NotificationsSection } from './settings/sections/NotificationsSection';
 import { ProfileEditSection } from './settings/sections/ProfileEditSection';
 import { ProfileSection } from './settings/sections/ProfileSection';
 import { ThemeSection } from './settings/sections/ThemeSection';
+import { UnsyncedChangesSection } from './settings/sections/UnsyncedChangesSection';
 import { WorkoutPrefsSection } from './settings/sections/WorkoutPrefsSection';
 
 // ============================================================================
@@ -128,7 +129,7 @@ export default function Settings() {
       {/* Header — shared PageHeader SSOT. Renders the same ~92px box (safe-area
           padding + 13/26 eyebrow+title + 2px accent border) the hand-rolled
           header did, so SETTINGS_HEADER_OFFSET/SECTION_SCROLL_MARGIN stay valid. */}
-      <PageHeader title="הגדרות" eyebrow="התאמות אישיות וסנכרון" />
+      <PageHeader title="הגדרות" eyebrow="התאמות אישיות וסנכרון" size="large" />
 
       <div className="px-5">
         <SettingsJumpNav items={JUMP_ITEMS} top={SETTINGS_HEADER_OFFSET} />
@@ -260,6 +261,10 @@ export default function Settings() {
               onSyncAll={cloudSync.handleSyncAll}
             />
           )}
+
+          {/* Renders only when the offline queue is holding changes it could not
+              push, which is what the "retry from Settings" toast points at. */}
+          <UnsyncedChangesSection />
 
           {/* Quarantine separator — detaches the destructive zone from the
               normal export/sync cards so it doesn't read as just another card.

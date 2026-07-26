@@ -107,7 +107,10 @@ const StepperField = memo<StepperFieldProps>(
             height: 32,
             background: 'var(--fs-accent)',
             borderRadius: 6,
-            color: 'var(--fs-heading)',
+            // --fs-heading resolves near-white in dark mode, which measured
+            // 1.50:1 against the accent fill. --color-ink-on-accent is the token
+            // that exists precisely for text/icons ON an accent surface.
+            color: 'var(--color-ink-on-accent)',
           }}
         >
           <Plus style={{ width: 15, height: 15 }} />

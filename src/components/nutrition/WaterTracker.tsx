@@ -308,7 +308,7 @@ export const WaterTracker = memo(function WaterTracker({
               letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
               alignSelf: 'center',
-                          }}
+            }}
           >
             היום בלבד
           </span>

@@ -407,7 +407,7 @@ export const BarcodeScanner = memo(function BarcodeScanner({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 600,
                 fontSize: 16,
-                                cursor: 'pointer',
+                cursor: 'pointer',
               }}
             >
               הוסף
@@ -473,7 +473,7 @@ const KICKER_STYLE: CSSProperties = {
   fontFamily: 'var(--font-mono)',
   fontSize: 10,
   letterSpacing: '-0.01em',
-    color: 'var(--fs-muted)',
+  color: 'var(--fs-muted)',
 };
 
 const INLINE_ERROR_STYLE: CSSProperties = {

@@ -50,7 +50,11 @@ async function computeProgramView(): Promise<ProgramView> {
   const totalDays = BBT_PROGRAM.totalWeeks * TRAINING_DAYS.length;
   const progress = getProgress();
   if (!progress)
-    return { kind: 'not-started', totalWeeks: BBT_PROGRAM.totalWeeks, titleHe: BBT_PROGRAM.titleHe };
+    return {
+      kind: 'not-started',
+      totalWeeks: BBT_PROGRAM.totalWeeks,
+      titleHe: BBT_PROGRAM.titleHe,
+    };
   if (progress.status === 'completed')
     return { kind: 'completed', totalWeeks: BBT_PROGRAM.totalWeeks };
 

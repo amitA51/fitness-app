@@ -169,7 +169,7 @@ export default function ProgressPage() {
       {/* Header — shared PageHeader SSOT (flattens the old bespoke masthead to the
           standard 26px title + 2px accent divider for cross-tab consistency). The
           date kicker becomes the eyebrow; its numbers render dir="ltr". */}
-      <PageHeader title="התקדמות" eyebrow={<span dir="ltr">{todayLabel}</span>} />
+      <PageHeader title="התקדמות" eyebrow={<span dir="ltr">{todayLabel}</span>} size="large" />
 
       {/* Editorial Tab Bar — four primary sections */}
       <FadeIn className="px-5 pt-4 pb-2">

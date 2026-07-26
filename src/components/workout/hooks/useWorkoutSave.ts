@@ -7,6 +7,7 @@ import type React from 'react';
 import { useCallback, useRef, useState } from 'react';
 
 import { showToast } from '../../../components/ui/GlobalToast';
+import { trackFunnel } from '../../../services/analytics/funnel';
 import { saveWorkoutSession } from '../../../services/dataService';
 import { persistSessionPRs } from '../../../services/prService';
 import { buildWorkoutSession } from '../../../services/workoutSessionBuilder';
@@ -121,6 +122,13 @@ export function useWorkoutSave({
       const session = buildResult.session;
 
       await saveWorkoutSession(session);
+
+      // Core retention event. Recorded after the save so it can never claim a
+      // workout that was not actually persisted.
+      trackFunnel('workout_completed', {
+        exercises: session.exercises?.length ?? 0,
+        durationMinutes: Math.round((session.duration ?? 0) / 60),
+      });
 
       // Best-effort verification — log but don't fail the save
       try {

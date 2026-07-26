@@ -137,11 +137,9 @@ export function AgeGate({ children }: { children: ReactNode }) {
       <div style={PANEL_STYLE}>
         <p style={EYEBROW_STYLE}>SparkOS Fitness</p>
         <h1 id="age-gate-title" ref={headingRef} tabIndex={-1} style={TITLE_STYLE}>
-          מה תאריך הלידה שלך?
+          מה תאריך הלידה?
         </h1>
-        <p style={BODY_STYLE}>
-          אנו זקוקים לתאריך הלידה כדי לוודא שאתה עומד בדרישות הגיל לשימוש באפליקציה.
-        </p>
+        <p style={BODY_STYLE}>נשתמש בתאריך כדי לוודא עמידה בדרישת הגיל לשימוש באפליקציה.</p>
 
         <label
           htmlFor="age-gate-dob"

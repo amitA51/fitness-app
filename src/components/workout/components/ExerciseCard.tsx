@@ -1,11 +1,12 @@
 // ExerciseCard - fast-scanning row with quiet metadata and explicit selection.
 
-import { m, useReducedMotion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Check, Clock3, Trash2 } from 'lucide-react';
 import type React from 'react';
 import { memo } from 'react';
 import { translateEquipment } from '../../../constants/equipmentNames';
 import { muscleLabel } from '../../../constants/muscleNames';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import type { PersonalExercise } from '../../../types';
 import { CustomDumbbellIcon as DumbbellIcon } from '../../icons/CustomDumbbellIcon';
 

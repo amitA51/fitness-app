@@ -85,7 +85,9 @@ export function regionsForMuscle(raw: string | undefined | null): MuscleRegion[]
 }
 
 /** Collapse a list of raw muscle keys into the unique set of regions to light up. */
-export function regionsForMuscles(raws: ReadonlyArray<string | undefined | null>): Set<MuscleRegion> {
+export function regionsForMuscles(
+  raws: ReadonlyArray<string | undefined | null>
+): Set<MuscleRegion> {
   const out = new Set<MuscleRegion>();
   for (const raw of raws) {
     for (const region of regionsForMuscle(raw)) out.add(region);

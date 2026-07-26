@@ -1,7 +1,8 @@
-import { m, useReducedMotion, useSpring, useTransform } from 'framer-motion';
+import { m, useSpring, useTransform } from 'framer-motion';
 // IntensityMeter - Real-time workout intensity visualization
 // Apple Fitness+ inspired intensity zones with animated gauge
 import { memo, useEffect, useId, useState } from 'react';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 
 // ============================================================
 // TYPES

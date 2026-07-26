@@ -49,8 +49,6 @@ describe('ProgramCard — lazy program data', () => {
       })
     );
     renderCard();
-    expect(
-      await screen.findByRole('button', { name: 'המשך לתוכנית האימון' })
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'המשך לתוכנית האימון' })).toBeInTheDocument();
   });
 });

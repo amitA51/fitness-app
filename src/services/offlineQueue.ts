@@ -5,6 +5,7 @@
  */
 
 import { logger } from '../utils/logger';
+import { BUSY, withSyncLock } from './syncLock';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,10 +56,62 @@ interface QueuedMutation {
   seq?: number;
   retryCount: number;
   lastError?: string;
+  // Earliest time this entry may be attempted again (ms epoch). Set on every
+  // retriable failure using exponential backoff, so a failing entry no longer
+  // burns one of its MAX_RETRIES attempts on every app open / 90s tick.
+  nextAttemptAt?: number;
+}
+
+/**
+ * A mutation that could not be synced and has stopped being retried. The
+ * payload is PRESERVED: previously these rows were deleted outright, so a user
+ * who opened the app offline five times silently lost the underlying change
+ * with no way to recover it.
+ */
+export interface DeadLetterMutation extends QueuedMutation {
+  /** When the entry was moved out of the active queue. */
+  failedAt: number;
+  /** Why it stopped being retried. */
+  reason: 'max_retries' | 'permanent_error' | 'ownerless';
+}
+
+/**
+ * Owner sentinels.
+ *
+ * A queued mutation with NO owner used to be replayed for whoever was signed in
+ * at the time — so a change made in guest mode, or while the auth lookup was
+ * failing, could be written into the next person's account on a shared device.
+ * Ownership is now always recorded, and these two values mark the cases where
+ * there is no account to attribute the change to. Replay quarantines them into
+ * the dead-letter store, where the user can explicitly claim (retry) or discard
+ * them.
+ */
+export const GUEST_OWNER = '__guest__';
+export const UNKNOWN_OWNER = '__unknown__';
+
+/** True when the entry has no real account behind it (incl. pre-ownership rows). */
+function isOwnerless(userId: string | undefined): boolean {
+  return !userId || userId === GUEST_OWNER || userId === UNKNOWN_OWNER;
 }
 
 const STORE_NAME = 'mutation_queue';
+const DEAD_LETTER_STORE = 'dead_letter_queue';
+/** Cross-tab lease store, read/written by services/syncLock.ts. */
+const LEASE_STORE = 'sync_leases';
 const MAX_RETRIES = 5;
+
+/** Backoff schedule per retry attempt (ms): 5s, 30s, 2m, 10m, 30m. */
+const RETRY_BACKOFF_MS = [5_000, 30_000, 120_000, 600_000, 1_800_000];
+
+function backoffFor(retryCount: number): number {
+  const index = Math.min(Math.max(retryCount - 1, 0), RETRY_BACKOFF_MS.length - 1);
+  return RETRY_BACKOFF_MS[index] ?? 1_800_000;
+}
+
+/** True when the browser reports no connectivity. Conservative: unknown = online. */
+function isOffline(): boolean {
+  return typeof navigator !== 'undefined' && navigator.onLine === false;
+}
 
 // Status codes that indicate a permanent failure — never retry these.
 // 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found,
@@ -139,7 +192,8 @@ function openQueueDB(): Promise<IDBDatabase> {
   if (queueDbOpenPromise) return queueDbOpenPromise;
 
   queueDbOpenPromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open('SparkOS_Queue', 1);
+    // v2 added the dead-letter store; v3 added the cross-tab lease store.
+    const request = indexedDB.open('SparkOS_Queue', 3);
     request.onerror = () => {
       queueDbOpenPromise = null;
       reject(request.error);
@@ -162,6 +216,16 @@ function openQueueDB(): Promise<IDBDatabase> {
         const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
         store.createIndex('timestamp', 'timestamp', { unique: false });
         store.createIndex('type', 'type', { unique: false });
+      }
+      if (!db.objectStoreNames.contains(DEAD_LETTER_STORE)) {
+        const dead = db.createObjectStore(DEAD_LETTER_STORE, { keyPath: 'id' });
+        dead.createIndex('failedAt', 'failedAt', { unique: false });
+      }
+      // v3: cross-tab lease store used by services/syncLock.ts when the Web
+      // Locks API is unavailable (Safari < 15.4). Lives in this database because
+      // the queue is already the durable home of sync coordination state.
+      if (!db.objectStoreNames.contains(LEASE_STORE)) {
+        db.createObjectStore(LEASE_STORE, { keyPath: 'name' });
       }
     };
   });
@@ -223,6 +287,49 @@ async function clearQueue(): Promise<void> {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
     const req = store.clear();
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// ── Dead-letter helpers ─────────────────────────────────────────────────────
+
+/**
+ * Move a mutation out of the active queue into the dead-letter store in ONE
+ * transaction, so a crash can never drop the payload without recording it.
+ */
+async function moveToDeadLetter(
+  mutation: QueuedMutation,
+  reason: DeadLetterMutation['reason']
+): Promise<void> {
+  const db = await openQueueDB();
+  const entry: DeadLetterMutation = { ...mutation, failedAt: Date.now(), reason };
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([STORE_NAME, DEAD_LETTER_STORE], 'readwrite');
+    tx.objectStore(DEAD_LETTER_STORE).put(entry);
+    tx.objectStore(STORE_NAME).delete(mutation.id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
+async function getAllDeadLetters(): Promise<DeadLetterMutation[]> {
+  const db = await openQueueDB();
+  const rows = await new Promise<DeadLetterMutation[]>((resolve, reject) => {
+    const tx = db.transaction(DEAD_LETTER_STORE, 'readonly');
+    const req = tx.objectStore(DEAD_LETTER_STORE).getAll();
+    req.onsuccess = () => resolve(req.result as DeadLetterMutation[]);
+    req.onerror = () => reject(req.error);
+  });
+  return rows.sort((a, b) => b.failedAt - a.failedAt);
+}
+
+async function clearDeadLetterStore(): Promise<void> {
+  const db = await openQueueDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DEAD_LETTER_STORE, 'readwrite');
+    const req = tx.objectStore(DEAD_LETTER_STORE).clear();
     req.onsuccess = () => resolve();
     req.onerror = () => reject(req.error);
   });
@@ -378,14 +485,18 @@ export async function queueMutation(type: MutationType, payload: unknown): Promi
   const dedupKey = getDedupKey(type, payload);
 
   // Stamp the owner so the entry can never replay into another account on a
-  // shared device. Best-effort: if auth lookup fails we leave it unset and the
-  // entry is treated as belonging to whichever user is signed in at replay.
-  let userId: string | undefined;
+  // shared device. Ownership is ALWAYS recorded — including the two "no real
+  // owner" cases — because an entry with no owner used to be adopted by whoever
+  // happened to be signed in at replay time, which silently wrote one person's
+  // data into another person's account.
+  let userId: string;
   try {
     const { getCurrentUser } = await import('./supabaseAuth');
-    userId = (await getCurrentUser())?.id;
+    userId = (await getCurrentUser())?.id ?? GUEST_OWNER;
   } catch {
-    // Auth unavailable — enqueue unowned rather than lose the mutation.
+    // Auth genuinely unavailable (not "signed out"). The mutation is kept, but
+    // marked so replay quarantines it instead of guessing an owner.
+    userId = UNKNOWN_OWNER;
   }
 
   const db = await openQueueDB();
@@ -470,23 +581,43 @@ export async function notifyRetriableFailures(): Promise<void> {
 }
 
 // ── Queue processing guard ──────────────────────────────────────────────────
+// `isProcessing` only serialises calls inside THIS tab. Cross-tab exclusion
+// comes from withSyncLock (services/syncLock.ts): two tabs replaying the same
+// mutation would double-count retries and make ordering non-deterministic.
 let isProcessing = false;
 
 /**
- * Process all queued mutations
- * Call on app start and when coming back online
+ * Process all queued mutations.
+ * Call on app start and when coming back online.
+ *
+ * Resolves with zeros when another tab holds the sync lock — sync is periodic
+ * and idempotent, so standing down is correct and the next tick will retry.
  */
 export async function processQueue(): Promise<{ success: number; failed: number }> {
   if (isProcessing) return { success: 0, failed: 0 };
   isProcessing = true;
   try {
-    return await processQueueInternal();
+    const outcome = await withSyncLock(() => processQueueInternal());
+    if (outcome === BUSY) {
+      logger.sync.info('Another tab is syncing, skipping queue pass');
+      return { success: 0, failed: 0 };
+    }
+    return outcome;
   } finally {
     isProcessing = false;
   }
 }
 
 async function processQueueInternal(): Promise<{ success: number; failed: number }> {
+  // Offline guard. Previously only the 90s timer checked connectivity, while
+  // initOfflineSync() called processQueue() immediately on every app start. Each
+  // offline start therefore burned one of MAX_RETRIES, so opening the app five
+  // times without a network connection DELETED the queued workout.
+  if (isOffline()) {
+    logger.sync.info('Offline, deferring queue processing');
+    return { success: 0, failed: 0 };
+  }
+
   const { getCurrentUser } = await import('./supabaseAuth');
   const user = await getCurrentUser();
   if (!user?.id) {
@@ -509,6 +640,10 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
   // Reported as a single, correctly-pluralized toast per run so a burst of
   // drops can't spam the user.
   let droppedCount = 0;
+  // Ownerless entries moved to quarantine in this pass. Reported separately: the
+  // user has to decide whether to claim them, so the message must not read like a
+  // sync failure.
+  let quarantinedCount = 0;
 
   // Track dedup keys we've already successfully synced in this pass. If a
   // later queued entry targets the same record we can drop it — the latest
@@ -516,10 +651,28 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
   const processedKeys = new Set<string>();
 
   for (const mutation of mutations) {
-    // Cross-account guard: an entry stamped with a different owner must never
-    // replay into the current user's account — drop it. Legacy entries with no
-    // userId are treated as the current user's (we are signed in here).
-    if (mutation.userId && mutation.userId !== user.id) {
+    // Respect the backoff window so a persistently failing entry is not retried
+    // (and charged an attempt) on every tick.
+    if (mutation.nextAttemptAt && mutation.nextAttemptAt > Date.now()) {
+      continue;
+    }
+
+    // Cross-account guard. An entry with a DIFFERENT owner is dropped: it can
+    // never legitimately replay here. An entry with NO owner (guest mode, a
+    // failed auth lookup, or a row written before ownership existed) is
+    // QUARANTINED rather than adopted — adopting it silently wrote one person's
+    // change into another person's account on a shared device.
+    if (isOwnerless(mutation.userId)) {
+      logger.sync.warn('Quarantining ownerless queued mutation', {
+        type: mutation.type,
+        id: mutation.id,
+        owner: mutation.userId ?? 'legacy',
+      });
+      await moveToDeadLetter(mutation, 'ownerless');
+      quarantinedCount++;
+      continue;
+    }
+    if (mutation.userId !== user.id) {
       logger.sync.warn('Dropping queued mutation owned by another user', {
         type: mutation.type,
         id: mutation.id,
@@ -554,14 +707,15 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
 
-      // Permanent failure → drop and stop retrying.
+      // Permanent failure → stop retrying, but KEEP the payload.
       if (!isRetriableError(err)) {
-        logger.sync.error('Non-retriable error, dropping mutation', {
+        logger.sync.error('Non-retriable error, moving mutation to dead letter', {
           type: mutation.type,
           id: mutation.id,
           error: errMsg,
         });
-        await deleteMutation(mutation.id);
+        mutation.lastError = errMsg;
+        await moveToDeadLetter(mutation, 'permanent_error');
         droppedCount++;
         failed++;
         continue;
@@ -569,14 +723,15 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
 
       mutation.retryCount++;
       mutation.lastError = errMsg;
+      mutation.nextAttemptAt = Date.now() + backoffFor(mutation.retryCount);
 
       if (mutation.retryCount >= MAX_RETRIES) {
-        logger.sync.error('Mutation exceeded max retries, dropping', {
+        logger.sync.error('Mutation exceeded max retries, moving to dead letter', {
           type: mutation.type,
           id: mutation.id,
           errors: mutation.lastError,
         });
-        await deleteMutation(mutation.id);
+        await moveToDeadLetter(mutation, 'max_retries');
         droppedCount++;
       } else {
         await putMutation(mutation);
@@ -584,6 +739,7 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
           type: mutation.type,
           id: mutation.id,
           retryCount: mutation.retryCount,
+          nextAttemptAt: mutation.nextAttemptAt,
           error: mutation.lastError,
         });
       }
@@ -591,12 +747,26 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
     }
   }
 
-  // One toast per run if anything was permanently dropped — correctly
-  // pluralized so a multi-drop pass doesn't claim "one change".
+  // One toast per run if anything stopped being retried. The wording matters:
+  // the change is NOT lost any more — it sits in the dead-letter store and can
+  // be retried or exported from Settings.
   if (droppedCount > 0) {
     await notify(
-      droppedCount === 1 ? 'שינוי אחד לא נשמר בענן' : `${droppedCount} שינויים לא נשמרו בענן`,
+      droppedCount === 1
+        ? 'שינוי אחד לא נשמר בענן. הוא נשמר במכשיר וניתן לנסות שוב מההגדרות'
+        : `${droppedCount} שינויים לא נשמרו בענן. הם נשמרו במכשיר וניתן לנסות שוב מההגדרות`,
       'error'
+    );
+  }
+
+  // Quarantine is not a failure: these changes were made without a signed-in
+  // account, so only the user can decide whether they belong to this account.
+  if (quarantinedCount > 0) {
+    await notify(
+      quarantinedCount === 1
+        ? 'שינוי אחד נוצר ללא חשבון מחובר. אשרו אותו מההגדרות כדי לשמור אותו בענן'
+        : `${quarantinedCount} שינויים נוצרו ללא חשבון מחובר. אשרו אותם מההגדרות כדי לשמור אותם בענן`,
+      'info'
     );
   }
 
@@ -622,8 +792,99 @@ export async function getQueueDepth(): Promise<number> {
  */
 export async function clearMutationQueue(): Promise<void> {
   await clearQueue();
+  await clearDeadLetterStore();
   retriableFailureNotified = false;
   logger.sync.info('Cleared mutation queue');
+}
+
+// ── Dead-letter recovery API ────────────────────────────────────────────────
+//
+// Mutations that stop being retried used to be deleted, which meant a failed
+// sync silently destroyed the user's change. They are now retained here so the
+// data can be recovered, retried once the cause is fixed, or exported before
+// being discarded deliberately.
+
+/** How many unsynced changes are being held for recovery. */
+export async function getDeadLetterCount(): Promise<number> {
+  const rows = await getAllDeadLetters();
+  return rows.length;
+}
+
+/** All held changes, newest failure first. */
+export async function listDeadLetters(): Promise<DeadLetterMutation[]> {
+  return getAllDeadLetters();
+}
+
+/**
+ * Put a held change back into the active queue with a clean retry budget, then
+ * attempt a pass immediately. Returns false when the id is unknown.
+ */
+export async function retryDeadLetter(id: string): Promise<boolean> {
+  const rows = await getAllDeadLetters();
+  const entry = rows.find((row) => row.id === id);
+  if (!entry) return false;
+
+  const { failedAt: _failedAt, reason, ...mutation } = entry;
+
+  // Re-queuing an OWNERLESS entry is the user's explicit act of claiming it for
+  // the account they are signed into now. Without re-stamping the owner it would
+  // be quarantined again on the next pass, and "retry" would appear broken.
+  let userId = mutation.userId;
+  if (reason === 'ownerless' || isOwnerless(userId)) {
+    try {
+      const { getCurrentUser } = await import('./supabaseAuth');
+      const current = (await getCurrentUser())?.id;
+      if (!current) {
+        logger.sync.warn('Cannot claim an ownerless change while signed out', { id });
+        return false;
+      }
+      userId = current;
+    } catch (err) {
+      logger.sync.warn('Cannot resolve the current account to claim a change', err);
+      return false;
+    }
+  }
+
+  await putMutation({ ...mutation, userId, retryCount: 0, nextAttemptAt: undefined });
+
+  const db = await openQueueDB();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(DEAD_LETTER_STORE, 'readwrite');
+    const req = tx.objectStore(DEAD_LETTER_STORE).delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+
+  await processQueue();
+  return true;
+}
+
+/** Retry every held change. Returns how many were re-queued. */
+export async function retryAllDeadLetters(): Promise<number> {
+  const rows = await getAllDeadLetters();
+  let requeued = 0;
+  for (const row of rows) {
+    if (await retryDeadLetter(row.id)) requeued++;
+  }
+  return requeued;
+}
+
+/** Permanently discard a held change. Only ever call this on explicit user intent. */
+export async function discardDeadLetter(id: string): Promise<void> {
+  const db = await openQueueDB();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(DEAD_LETTER_STORE, 'readwrite');
+    const req = tx.objectStore(DEAD_LETTER_STORE).delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+  logger.sync.warn('Discarded dead-letter mutation on user request', { id });
+}
+
+/** JSON snapshot of all held changes, so a user can keep their data before discarding. */
+export async function exportDeadLetters(): Promise<string> {
+  const rows = await getAllDeadLetters();
+  return JSON.stringify({ exportedAt: new Date().toISOString(), mutations: rows }, null, 2);
 }
 
 // ── Online/offline detection ────────────────────────────────────────────────

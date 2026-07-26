@@ -5,41 +5,92 @@ import { showToast } from '../components/ui/GlobalToast';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
 import { useCoach } from '../contexts/CoachContext';
+import { trackFunnel } from '../services/analytics/funnel';
+import {
+  clearInviteContinuation,
+  getPendingInviteCode,
+  rememberInviteContinuation,
+} from '../services/authContinuation';
 import { acceptInvite } from '../services/coach';
 import { inviteErrorMessage } from './coach/useAcceptInvite';
 
-const STORAGE_KEY = 'pending_invite_code';
-
 function getCode(urlCode: string) {
-  if (urlCode) return urlCode;
-  try {
-    return localStorage.getItem(STORAGE_KEY)?.trim().toUpperCase() || '';
-  } catch {
-    return '';
-  }
+  return urlCode || getPendingInviteCode() || '';
 }
 
 export default function JoinPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { status } = useAuth();
+  const code = getCode(params.get('code')?.trim().toUpperCase() || '');
+
+  useEffect(() => {
+    if (status === 'unauthenticated' && code) {
+      rememberInviteContinuation(code);
+    }
+  }, [status, code]);
+
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen min-h-[100dvh]" dir="rtl">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (status === 'unauthenticated') {
+    return (
+      <div
+        className="flex flex-col items-center justify-center min-h-screen min-h-[100dvh] gap-4 px-6"
+        dir="rtl"
+      >
+        <h1
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 22,
+            color: 'var(--fs-ink)',
+          }}
+        >
+          הוזמנת להתחבר למאמן
+        </h1>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 15,
+            color: 'var(--fs-muted)',
+            textAlign: 'center',
+          }}
+        >
+          כדי לקבל את ההזמנה, יש להירשם או להתחבר קודם.
+        </p>
+        <Button
+          variant="primary"
+          onClick={() => {
+            const redirect = rememberInviteContinuation(code);
+            navigate(`/login?next=${encodeURIComponent(redirect ?? '/join')}`);
+          }}
+        >
+          הרשמה / התחברות
+        </Button>
+      </div>
+    );
+  }
+
+  return <AuthenticatedJoinPage code={code} status={status} />;
+}
+
+function AuthenticatedJoinPage({
+  code,
+  status,
+}: {
+  code: string;
+  status: 'authenticated' | 'guest';
+}) {
+  const navigate = useNavigate();
   const { isCoach, loading: coachLoading, setViewMode } = useCoach();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const didRun = useRef(false);
-
-  const code = getCode(params.get('code')?.trim().toUpperCase() || '');
-
-  // Unauthenticated: stash code and show login prompt
-  useEffect(() => {
-    if (status === 'unauthenticated' && code) {
-      try {
-        localStorage.setItem(STORAGE_KEY, code);
-      } catch {
-        /* */
-      }
-    }
-  }, [status, code]);
 
   // Single accept path, callable from both the auto-run effect and the retry CTA.
   const runAccept = useCallback(async () => {
@@ -48,11 +99,10 @@ export default function JoinPage() {
     const res = await acceptInvite(code);
     setBusy(false);
     if (res.ok) {
-      try {
-        localStorage.removeItem(STORAGE_KEY);
-      } catch {
-        /* */
-      }
+      // The continuation has been consumed: clear it so the router stops
+      // redirecting back to /join and a brand-new account can reach onboarding.
+      clearInviteContinuation();
+      trackFunnel('coach_invite_accepted');
       showToast('מחובר למאמן', 'success');
       navigate('/my-coach', { replace: true });
     } else {
@@ -72,7 +122,7 @@ export default function JoinPage() {
   }, [status, code, coachLoading, isCoach, runAccept]);
 
   // Loading state
-  if (status === 'loading' || coachLoading || busy) {
+  if (coachLoading || busy) {
     return (
       <div className="flex items-center justify-center min-h-screen min-h-[100dvh]" dir="rtl">
         <LoadingSpinner />
@@ -109,6 +159,9 @@ export default function JoinPage() {
         <Button
           variant="primary"
           onClick={async () => {
+            // A coach can never consume a trainee invite: drop the continuation
+            // so the router stops sending them back here.
+            clearInviteContinuation();
             // Flip into coach view first so CoachGuard doesn't bounce a coach who
             // is currently in trainee view back to '/'.
             await setViewMode('coach');
@@ -116,39 +169,6 @@ export default function JoinPage() {
           }}
         >
           למרכז המאמן
-        </Button>
-      </div>
-    );
-  }
-
-  // Unauthenticated: prompt to login
-  if (status === 'unauthenticated') {
-    return (
-      <div
-        className="flex flex-col items-center justify-center min-h-screen min-h-[100dvh] gap-4 px-6"
-        dir="rtl"
-      >
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 22,
-            color: 'var(--fs-ink)',
-          }}
-        >
-          הוזמנת להתחבר למאמן
-        </h1>
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 15,
-            color: 'var(--fs-muted)',
-            textAlign: 'center',
-          }}
-        >
-          כדי לקבל את ההזמנה, יש להירשם או להתחבר קודם.
-        </p>
-        <Button variant="primary" onClick={() => navigate('/')}>
-          הרשמה / התחברות
         </Button>
       </div>
     );
@@ -193,7 +213,16 @@ export default function JoinPage() {
           <Button variant="primary" fullWidth onClick={retry}>
             נסה שוב
           </Button>
-          <Button variant="ghost" fullWidth onClick={() => navigate('/my-coach')}>
+          <Button
+            variant="ghost"
+            fullWidth
+            onClick={() => {
+              // Abandoning the deep link must release the continuation, or the
+              // router keeps returning the user to this failing screen.
+              clearInviteContinuation();
+              navigate('/my-coach');
+            }}
+          >
             להזין קוד ידנית
           </Button>
         </div>
@@ -216,7 +245,13 @@ export default function JoinPage() {
       >
         לא נמצא קוד הזמנה
       </p>
-      <Button variant="ghost" onClick={() => navigate('/')}>
+      <Button
+        variant="ghost"
+        onClick={() => {
+          clearInviteContinuation();
+          navigate('/');
+        }}
+      >
         חזרה
       </Button>
     </div>

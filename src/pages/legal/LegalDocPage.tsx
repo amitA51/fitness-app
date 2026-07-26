@@ -78,8 +78,8 @@ export default function LegalDocPage({ doc }: LegalDocPageProps) {
       <header
         style={{
           paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
-          paddingInlineStart: 'max(20px, env(safe-area-inset-right, 20px))',
-          paddingInlineEnd: 'max(20px, env(safe-area-inset-left, 20px))',
+          paddingInlineStart: 'max(20px, var(--safe-inline-start))',
+          paddingInlineEnd: 'max(20px, var(--safe-inline-end))',
           paddingBottom: 16,
           position: 'sticky',
           top: 0,

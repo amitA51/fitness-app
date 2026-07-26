@@ -116,7 +116,7 @@ export const AddMealModal = memo(function AddMealModal({
               fontFamily: 'var(--font-display)',
               fontWeight: 600,
               fontSize: '16px',
-                            border: 'none',
+              border: 'none',
               cursor: hasFoods ? 'pointer' : 'not-allowed',
               opacity: hasFoods ? 1 : 0.4,
             }}
@@ -150,7 +150,7 @@ export const AddMealModal = memo(function AddMealModal({
                   fontSize: '14px',
                   fontWeight: 600,
                   color: 'var(--fs-ink)',
-                                  }}
+                }}
               >
                 מזונות שנבחרו
               </h3>
@@ -383,7 +383,7 @@ const LIST_KICKER_STYLE: CSSProperties = {
   fontFamily: 'var(--font-mono)',
   fontSize: '10px',
   letterSpacing: '-0.01em',
-    color: 'var(--fs-muted)',
+  color: 'var(--fs-muted)',
   margin: '4px 2px 2px',
 };
 

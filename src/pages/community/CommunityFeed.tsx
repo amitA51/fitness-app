@@ -310,7 +310,7 @@ export default function CommunityFeed() {
       }}
     >
       {/* Sticky header */}
-      <PageHeader title="קהילה" />
+      <PageHeader title="קהילה" size="large" />
 
       {/* Content */}
       <main

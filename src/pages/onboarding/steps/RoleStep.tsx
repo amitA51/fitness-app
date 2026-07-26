@@ -55,7 +55,7 @@ export function RoleStep({ data, onChange, direction = 1 }: RoleStepProps) {
               whileTap={{ scale: 0.98 }}
               onClick={() => onChange({ role: option.value })}
               aria-pressed={isSelected}
-              className={`w-full p-4 transition-all flex items-center gap-4 text-right template-card magnetic-card ${
+              className={`w-full p-4 transition-ui flex items-center gap-4 text-right template-card magnetic-card ${
                 isSelected ? 'accent-glow' : ''
               }`}
               style={{

@@ -1,5 +1,5 @@
-import { addBreadcrumb } from '../lib/sentryLazy';
 import { type Metric, onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals';
+import { addBreadcrumb } from '../lib/sentryLazy';
 
 type MetricHandler = (metric: Metric) => void;
 

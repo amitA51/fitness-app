@@ -1,5 +1,7 @@
 import { m } from 'framer-motion';
 import { memo, useMemo } from 'react';
+import { useIsRTL } from '../../../hooks/useIsRTL';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 
 export const RecoveryBar = memo(function RecoveryBar({
   label,
@@ -8,6 +10,9 @@ export const RecoveryBar = memo(function RecoveryBar({
   color,
 }: { label: string; value: number; max: number; color: string }) {
   const pct = useMemo(() => Math.round((value / max) * 100), [value, max]);
+  const isRTL = useIsRTL();
+  const reduced = useReducedMotion();
+
   return (
     <div>
       <div className="flex items-center justify-between text-xs mb-1.5">
@@ -27,10 +32,19 @@ export const RecoveryBar = memo(function RecoveryBar({
         }}
       >
         <m.div
-          style={{ height: '100%', borderRadius: '9999px', backgroundColor: color }}
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.6 }}
+          // scaleX on a full-width fill rather than an animated width: width is a
+          // layout property, scaleX is composited. The origin follows the writing
+          // direction so the bar always grows from the reading-start edge.
+          style={{
+            height: '100%',
+            width: '100%',
+            borderRadius: '9999px',
+            backgroundColor: color,
+            transformOrigin: isRTL ? 'right center' : 'left center',
+          }}
+          initial={reduced ? false : { scaleX: 0 }}
+          animate={{ scaleX: pct / 100 }}
+          transition={reduced ? { duration: 0 } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
         />
       </div>
     </div>

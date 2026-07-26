@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { showToast } from '../../../components/ui/GlobalToast';
 import { onTemplatesChanged } from '../../../services/dataEvents';
 import { removeDuplicateExercises } from '../../../services/exerciseDb';
+import { isFreeTemplateLimitError } from '../../../services/templateDb';
 import {
   createWorkoutTemplate,
   deleteWorkoutTemplate,
@@ -12,6 +13,10 @@ import {
 import type { WorkoutTemplate, WorkoutTemplateExercise } from '../../../types';
 import { logger } from '../../../utils/logger';
 import type { TemplateExerciseInput } from '../components/CreateTemplateModal';
+
+/** Shown when a free user hits FREE_TEMPLATE_LIMIT; states the limit and the way out. */
+const FREE_TEMPLATE_LIMIT_MESSAGE =
+  'במסלול החינמי אפשר לשמור עד 3 תבניות. מחקו תבנית קיימת או שדרגו לפרו לתבניות ללא הגבלה.';
 
 export function useTemplates() {
   const navigate = useNavigate();
@@ -76,7 +81,19 @@ export function useTemplates() {
         lastUsed: null,
         timesUsed: 0,
         isFavorite: false,
+      }).catch((err) => {
+        // Free-plan quota is a product decision, not a bug: route the user to
+        // the upgrade screen instead of failing silently or throwing to the
+        // error boundary.
+        if (isFreeTemplateLimitError(err)) {
+          showToast(FREE_TEMPLATE_LIMIT_MESSAGE, 'error');
+          setShowCreateModal(false);
+          navigate('/paywall');
+          return null;
+        }
+        throw err;
       });
+      if (!newTemplate) return;
       setShowCreateModal(false);
       navigate(`/workout/${newTemplate.id}`);
     },
@@ -113,30 +130,41 @@ export function useTemplates() {
     }
   }, []);
 
-  const handleDuplicate = useCallback(async (template: WorkoutTemplate) => {
-    const exercises: WorkoutTemplateExercise[] = template.exercises.map((ex, i) => ({
-      id: crypto.randomUUID(),
-      exerciseId: ex.exerciseId,
-      exerciseName: ex.exerciseName,
-      targetMuscle: ex.targetMuscle,
-      targetSets: ex.targetSets,
-      targetReps: ex.targetReps,
-      targetWeight: ex.targetWeight,
-      restSeconds: ex.restSeconds,
-      order: i,
-      notes: ex.notes,
-    }));
-    const newTemplate = await createWorkoutTemplate({
-      name: `העתק של ${template.name}`,
-      description: '',
-      exercises,
-      updatedAt: new Date().toISOString(),
-      lastUsed: null,
-      timesUsed: 0,
-      isFavorite: false,
-    });
-    setTemplates((prev) => [...prev, newTemplate]);
-  }, []);
+  const handleDuplicate = useCallback(
+    async (template: WorkoutTemplate) => {
+      const exercises: WorkoutTemplateExercise[] = template.exercises.map((ex, i) => ({
+        id: crypto.randomUUID(),
+        exerciseId: ex.exerciseId,
+        exerciseName: ex.exerciseName,
+        targetMuscle: ex.targetMuscle,
+        targetSets: ex.targetSets,
+        targetReps: ex.targetReps,
+        targetWeight: ex.targetWeight,
+        restSeconds: ex.restSeconds,
+        order: i,
+        notes: ex.notes,
+      }));
+      const newTemplate = await createWorkoutTemplate({
+        name: `העתק של ${template.name}`,
+        description: '',
+        exercises,
+        updatedAt: new Date().toISOString(),
+        lastUsed: null,
+        timesUsed: 0,
+        isFavorite: false,
+      }).catch((err) => {
+        if (isFreeTemplateLimitError(err)) {
+          showToast(FREE_TEMPLATE_LIMIT_MESSAGE, 'error');
+          navigate('/paywall');
+          return null;
+        }
+        throw err;
+      });
+      if (!newTemplate) return;
+      setTemplates((prev) => [...prev, newTemplate]);
+    },
+    [navigate]
+  );
 
   const handleStartTemplate = useCallback(
     (templateId: string) => {

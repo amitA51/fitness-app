@@ -31,7 +31,8 @@ describe('RootErrorBoundary', () => {
     );
 
     expect(screen.getByText('אירעה שגיאה קריטית')).toBeInTheDocument();
-    expect(screen.getByText('נסה שוב')).toBeInTheDocument();
+    // Gender-neutral plural register (copy audit, report 04).
+    expect(screen.getByText('נסו שוב')).toBeInTheDocument();
     expect(screen.getByText('רענן דף')).toBeInTheDocument();
 
     consoleSpy.mockRestore();

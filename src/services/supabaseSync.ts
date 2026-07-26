@@ -73,12 +73,22 @@ export const fetchWorkoutTemplates = async (userId: string): Promise<WorkoutTemp
   }));
 };
 
+/**
+ * Soft-delete a cloud workout template by stamping `deleted_at`.
+ *
+ * This used to be a hard `.delete()`, which made deletions non-convergent: once
+ * the row was physically gone the cloud had no record that it had ever been
+ * deleted, so any device still holding a live copy re-inserted it on its next
+ * full push and the user's deletion silently reverted. A tombstone is the only
+ * representation that can propagate a deletion to devices that were offline when
+ * it happened.
+ */
 export const deleteCloudWorkoutTemplate = async (userId: string, id: string): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
   const { error } = await supabase
     .from('workout_templates')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
     .eq('user_id', userId);
 
@@ -238,12 +248,13 @@ export const fetchPersonalExercises = async (userId: string): Promise<PersonalEx
   }));
 };
 
+/** Soft-delete — see deleteCloudWorkoutTemplate for why a hard delete cannot converge. */
 export const deleteCloudPersonalExercise = async (userId: string, id: string): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
   const { error } = await supabase
     .from('personal_exercises')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
     .eq('user_id', userId);
 
@@ -362,12 +373,13 @@ export const fetchBodyMeasurements = async (userId: string): Promise<BodyMeasure
   }));
 };
 
+/** Soft-delete — see deleteCloudWorkoutTemplate for why a hard delete cannot converge. */
 export const deleteCloudBodyMeasurement = async (userId: string, id: string): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
   const { error } = await supabase
     .from('body_measurements')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
     .eq('user_id', userId);
 
@@ -454,12 +466,13 @@ export const fetchPersonalRecords = async (userId: string): Promise<PersonalReco
   }));
 };
 
+/** Soft-delete — see deleteCloudWorkoutTemplate for why a hard delete cannot converge. */
 export const deleteCloudPersonalRecord = async (userId: string, id: string): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
   const { error } = await supabase
     .from('personal_records')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
     .eq('user_id', userId);
 

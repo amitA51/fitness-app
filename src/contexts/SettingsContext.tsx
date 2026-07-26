@@ -144,6 +144,17 @@ const persistSettings = (settings: AppSettings) => {
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<AppSettings>(() => loadStoredSettings());
 
+  // Browser storage is cleared before a different auth identity is exposed.
+  // Reset this provider's in-memory copy at the same point so stale settings
+  // cannot remain visible until the next full reload.
+  useEffect(() => {
+    const resetForUserChange = () => {
+      setSettings({ ...DEFAULT_SETTINGS, darkMode: systemPrefersDark() });
+    };
+    window.addEventListener('auth:local-data-cleared', resetForUserChange);
+    return () => window.removeEventListener('auth:local-data-cleared', resetForUserChange);
+  }, []);
+
   // Keep state updaters pure (no side effects): React Strict Mode runs updaters
   // twice, which would double-write to localStorage. Persistence is handled by
   // the effect below instead.

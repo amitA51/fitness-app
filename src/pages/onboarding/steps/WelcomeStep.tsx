@@ -118,7 +118,12 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
         transition={{ delay: 0.75 }}
         className="px-6 pb-8 pt-4"
       >
-        <button type="button" onClick={onNext} className="start-workout-btn focus-ring" style={{ minHeight: 56 }}>
+        <button
+          type="button"
+          onClick={onNext}
+          className="start-workout-btn focus-ring"
+          style={{ minHeight: 56 }}
+        >
           בואו נתחיל
           {/* forward = left in RTL */}
           <ChevronLeft size={24} aria-hidden="true" />

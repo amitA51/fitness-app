@@ -1,6 +1,6 @@
-import { captureException } from '../lib/sentryLazy';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { captureException } from '../lib/sentryLazy';
 import { logger } from '../utils/logger';
 
 interface Props {
@@ -99,7 +99,7 @@ export class RootErrorBoundary extends Component<Props, State> {
             lineHeight: 1.5,
           }}
         >
-          המערכת נתקלה בבעיה בלתי צפויה. הנתונים שלך בטוחים. אנא נסה לרענן את הדף.
+          אירעה בעיה בלתי צפויה וייתכן שהפעולה האחרונה לא הושלמה. נסו לרענן את הדף.
         </p>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button
@@ -120,7 +120,7 @@ export class RootErrorBoundary extends Component<Props, State> {
             }}
           >
             <RefreshCcw size={18} />
-            נסה שוב
+            נסו שוב
           </button>
           <button
             type="button"

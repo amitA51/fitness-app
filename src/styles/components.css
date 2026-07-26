@@ -640,7 +640,11 @@ textarea {
   width: 60%;
   height: 80%;
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--fs-accent) 28%, transparent), transparent 70%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--fs-accent) 28%, transparent),
+    transparent 70%
+  );
   pointer-events: none;
 }
 
@@ -872,15 +876,15 @@ textarea {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-2xl);
   color: var(--fs-ink);
-  transition: background var(--duration-fast), border-color var(--duration-fast),
-    transform var(--duration-fast), box-shadow var(--duration-fast);
+  transition: background var(--duration-fast), border-color var(--duration-fast), transform
+    var(--duration-fast), box-shadow var(--duration-fast);
 }
 
 .choice-row:active {
   transform: scale(0.985);
 }
 
-.choice-row[data-accent='true'] {
+.choice-row[data-accent="true"] {
   background: color-mix(in srgb, var(--fs-accent) 14%, var(--fs-surface));
   border: 1.5px solid color-mix(in srgb, var(--fs-accent) 55%, transparent);
   box-shadow: 0 8px 24px color-mix(in srgb, var(--fs-accent) 12%, transparent);
@@ -898,7 +902,7 @@ textarea {
   color: var(--fs-accent);
 }
 
-.choice-row[data-accent='true'] .choice-row-icon {
+.choice-row[data-accent="true"] .choice-row-icon {
   background: var(--fs-accent);
   color: var(--color-ink-on-accent);
 }
@@ -1033,7 +1037,8 @@ textarea {
   color: var(--fs-ink);
   cursor: pointer;
   touch-action: manipulation;
-  transition: transform var(--duration-fast) var(--ease-spring-snappy), background var(--duration-fast);
+  transition: transform var(--duration-fast) var(--ease-spring-snappy), background
+    var(--duration-fast);
 }
 
 /* Press feedback on the shared 44x44 icon button (§1) — covers every call site
@@ -1328,6 +1333,9 @@ textarea {
    Honor the OS "Reduce Transparency" setting — drop the blur and solidify every
    translucent chrome surface so text stays crisp. Forcing --nav-bg opaque also
    neutralizes the BottomNav's inline backdrop-filter (nothing shows through it). */
+/* biome-ignore lint/correctness/noUnknownMediaFeatureName: prefers-reduced-transparency is a
+   standard Media Queries Level 5 feature (shipping in Safari 17+ / Chrome 118+); Biome 1.9.4's
+   known-feature list predates it. Removing the query would drop a real accessibility behaviour. */
 @media (prefers-reduced-transparency: reduce) {
   :root,
   html.dark {

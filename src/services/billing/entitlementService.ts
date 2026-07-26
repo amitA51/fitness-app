@@ -71,8 +71,24 @@ export async function getEntitlement(): Promise<Entitlement> {
  * Whether an entitlement grants paid (premium) access. A non-free plan counts
  * only while it is in a usable state (active or trialing); past_due / canceled
  * / expired fall back to free access.
+ *
+ * The billing period is also checked. Previously only plan + status were
+ * consulted, so a missed "subscription ended" webhook left a lapsed entitlement
+ * reading as premium forever. A 24h grace window keeps a genuine payer from
+ * being cut off by webhook lag; the same window is applied server-side in
+ * has_paid_entitlement() and current_entitlement().
  */
+const PERIOD_GRACE_MS = 24 * 60 * 60 * 1000;
+
 export function isPremium(entitlement: Entitlement): boolean {
   if (entitlement.plan === 'free') return false;
-  return entitlement.status === 'active' || entitlement.status === 'trialing';
+  if (entitlement.status !== 'active' && entitlement.status !== 'trialing') return false;
+
+  if (entitlement.currentPeriodEnd) {
+    const endsAt = Date.parse(entitlement.currentPeriodEnd);
+    // An unparseable timestamp must not silently revoke access.
+    if (Number.isFinite(endsAt) && endsAt + PERIOD_GRACE_MS <= Date.now()) return false;
+  }
+
+  return true;
 }

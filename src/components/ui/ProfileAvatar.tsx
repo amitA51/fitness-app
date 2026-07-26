@@ -13,7 +13,9 @@ export function ProfileAvatar({ name }: { name: string }) {
     <div className="flex flex-col items-center py-6" style={{ background: 'var(--fs-primary)' }}>
       <div
         className="w-20 h-20 flex items-center justify-center mb-3"
-        style={{ background: 'var(--fs-accent)', color: 'var(--fs-heading)' }}
+        // Ink ON an accent fill must use --color-ink-on-accent; --fs-heading
+        // resolves near-white in dark mode and fails AA on the mint background.
+        style={{ background: 'var(--fs-accent)', color: 'var(--color-ink-on-accent)' }}
       >
         {initials ? (
           <span

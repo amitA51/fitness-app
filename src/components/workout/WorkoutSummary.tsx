@@ -597,7 +597,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   fontSize: 10,
                   fontWeight: 700,
                   letterSpacing: '-0.01em',
-                                  }}
+                }}
               >
                 <Trophy size={13} strokeWidth={2.5} aria-hidden="true" />
                 שיא חדש
@@ -611,7 +611,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 fontSize: 10,
                 letterSpacing: '-0.01em',
                 color: 'rgba(255,255,255,0.4)',
-                                marginTop: 8,
+                marginTop: 8,
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
@@ -643,7 +643,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               className={`tab${view === v ? ' active' : ''}`}
               style={{
                 letterSpacing: '-0.01em',
-                              }}
+              }}
             >
               {v === 'overview' ? 'סקירה' : 'פרטים'}
             </button>
@@ -695,7 +695,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                         fontWeight: 700,
                         letterSpacing: '-0.01em',
                         color: 'var(--fs-muted)',
-                                                textAlign: 'center',
+                        textAlign: 'center',
                       }}
                     >
                       שרירים שעבדת
@@ -724,7 +724,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                       fontWeight: 700,
                       letterSpacing: '-0.01em',
                       color: 'var(--fs-muted)',
-                                          }}
+                    }}
                   >
                     איך היה האימון?
                   </span>
@@ -849,7 +849,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                           color: prExercises.has(ex.name ?? '')
                             ? 'var(--fs-primary)'
                             : 'var(--fs-muted)',
-                                                  }}
+                        }}
                       >
                         {pluralizeHe(ex.setsCompleted, HE_NOUNS.set)}
                       </span>
@@ -900,7 +900,11 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           )}
 
           {onRepeatWorkout && (
-            <button type="button" onClick={handleRepeat} className="cta-secondary focus-ring w-full">
+            <button
+              type="button"
+              onClick={handleRepeat}
+              className="cta-secondary focus-ring w-full"
+            >
               <RotateCcw size={15} strokeWidth={2.5} aria-hidden="true" />
               חזרו על האימון
             </button>
@@ -909,15 +913,30 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           {/* Secondary actions */}
           <div className="flex gap-2">
             {typeof navigator !== 'undefined' && 'share' in navigator && (
-              <button type="button" onClick={handleShare} className="cta-secondary focus-ring" style={{ flex: 1 }}>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="cta-secondary focus-ring"
+                style={{ flex: 1 }}
+              >
                 שתף
               </button>
             )}
-            <button type="button" onClick={handleExportCSV} className="cta-secondary focus-ring" style={{ flex: 1 }}>
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="cta-secondary focus-ring"
+              style={{ flex: 1 }}
+            >
               ייצוא CSV
             </button>
             {onSaveAsTemplate && (
-              <button type="button" onClick={onSaveAsTemplate} className="cta-secondary focus-ring" style={{ flex: 1 }}>
+              <button
+                type="button"
+                onClick={onSaveAsTemplate}
+                className="cta-secondary focus-ring"
+                style={{ flex: 1 }}
+              >
                 שמור תבנית
               </button>
             )}

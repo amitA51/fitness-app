@@ -468,7 +468,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 fontSize: 10,
                 letterSpacing: '0.15em',
                 color: 'rgba(255,255,255,0.35)',
-                                direction: 'ltr',
+                direction: 'ltr',
               }}
             >
               אימון אחרון {lastWorkoutLabel.timeLabel}
@@ -517,7 +517,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     fontSize: 9,
                     letterSpacing: '-0.01em',
                     color: 'var(--fs-primary)',
-                                        fontWeight: 600,
+                    fontWeight: 600,
                   }}
                 >
                   מהמאמן
@@ -529,7 +529,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                       fontSize: 10,
                       letterSpacing: '-0.01em',
                       color: 'var(--fs-accent)',
-                                            marginBottom: 6,
+                      marginBottom: 6,
                     }}
                   >
                     האימון שהמאמן הקצה לך
@@ -586,7 +586,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     fontSize: 10,
                     letterSpacing: '-0.01em',
                     color: 'var(--fs-accent-2)',
-                                        marginBottom: 6,
+                    marginBottom: 6,
                   }}
                 >
                   תוכנית האימון
@@ -611,7 +611,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                       fontSize: 10,
                       letterSpacing: '-0.01em',
                       color: 'var(--fs-muted)',
-                                          }}
+                    }}
                   >
                     {programSubtitle}
                   </p>
@@ -636,7 +636,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontSize: 10,
                   letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
-                                  }}
+                }}
               >
                 התבניות שלך
               </div>
@@ -705,7 +705,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                         fontSize: 9,
                         letterSpacing: '0.15em',
                         color: 'var(--fs-muted)',
-                                              }}
+                      }}
                     >
                       {pluralizeHe(template.exercises?.length || 0, HE_NOUNS.exercise)}
                     </div>

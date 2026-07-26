@@ -3,9 +3,10 @@
 // Warmup: dynamic movement warmup routine
 // Cooldown: guided stretching routine
 
-import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import React, { useEffect, useRef, useCallback, useReducer, useMemo } from 'react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { logger } from '../../utils/logger';
 import { safeJsonParseOr } from '../../utils/safeJson';
 import ActiveStep from './WarmupCooldownActiveStep';

@@ -224,11 +224,14 @@ export function SignInStep({
             </m.div>
           )}
 
-          {/* Supabase not configured notice */}
+          {/* Cloud sign-in unavailable. Deliberately says nothing about which
+              environment variables are missing: that is an operator detail and
+              belongs in the console, not in a customer-facing screen. */}
           {!isSupabaseConfigured && (
             <m.div
               variants={staggerItem}
               className="p-4"
+              role="status"
               style={{
                 background: 'var(--fs-accent)',
                 color: 'var(--color-ink-on-accent)',
@@ -237,14 +240,13 @@ export function SignInStep({
             >
               <p
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '11px',
-                  letterSpacing: '-0.01em',
+                  fontFamily: 'var(--font-hebrew)',
+                  fontSize: '13px',
                   lineHeight: 1.5,
                 }}
               >
-                Supabase not configured — login disabled. Add VITE_SUPABASE_URL and
-                VITE_SUPABASE_ANON_KEY to .env
+                ההתחברות לחשבון אינה זמינה כרגע. אפשר להמשיך כאורח ולהתחבר מאוחר יותר, או לפנות
+                לתמיכה אם החוזר נמשך.
               </p>
             </m.div>
           )}

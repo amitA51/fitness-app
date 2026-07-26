@@ -25,10 +25,14 @@ vi.mock('../../lib/supabase', () => ({
 }));
 
 import {
+  deleteCloudBodyMeasurement,
   deleteCloudBodyWeight,
   deleteCloudNutritionLog,
+  deleteCloudPersonalExercise,
+  deleteCloudPersonalRecord,
   deleteCloudRecoveryLog,
   deleteCloudWorkoutSession,
+  deleteCloudWorkoutTemplate,
 } from '../supabaseSync';
 
 const cases: Array<{
@@ -40,6 +44,25 @@ const cases: Array<{
   { name: 'deleteCloudBodyWeight', table: 'body_weight', fn: deleteCloudBodyWeight },
   { name: 'deleteCloudRecoveryLog', table: 'recovery_logs', fn: deleteCloudRecoveryLog },
   { name: 'deleteCloudNutritionLog', table: 'nutrition_logs', fn: deleteCloudNutritionLog },
+  // Converted from physical `.delete()` — a hard delete left no tombstone, so a
+  // device that was offline during the deletion re-inserted the row on its next
+  // push and the user's deletion silently reverted.
+  {
+    name: 'deleteCloudWorkoutTemplate',
+    table: 'workout_templates',
+    fn: deleteCloudWorkoutTemplate,
+  },
+  {
+    name: 'deleteCloudPersonalExercise',
+    table: 'personal_exercises',
+    fn: deleteCloudPersonalExercise,
+  },
+  {
+    name: 'deleteCloudBodyMeasurement',
+    table: 'body_measurements',
+    fn: deleteCloudBodyMeasurement,
+  },
+  { name: 'deleteCloudPersonalRecord', table: 'personal_records', fn: deleteCloudPersonalRecord },
 ];
 
 beforeEach(() => {

@@ -72,8 +72,8 @@ export default function AccessibilityStatement() {
       <header
         style={{
           paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
-          paddingInlineStart: 'max(20px, env(safe-area-inset-right, 20px))',
-          paddingInlineEnd: 'max(20px, env(safe-area-inset-left, 20px))',
+          paddingInlineStart: 'max(20px, var(--safe-inline-start))',
+          paddingInlineEnd: 'max(20px, var(--safe-inline-end))',
           paddingBottom: 16,
           position: 'sticky',
           top: 0,
@@ -152,24 +152,27 @@ export default function AccessibilityStatement() {
               margin: 0,
             }}
           >
-            <li>ניווט מלא באמצעות מקלדת בכל מסכי האפליקציה</li>
-            <li>תמיכה בקוראי מסך (NVDA, JAWS, VoiceOver, TalkBack)</li>
-            <li>ניגודיות צבעים עומדת ביחס 4.5:1 לפחות לטקסט רגיל (WCAG AA)</li>
+            <li>ניווט באמצעות מקלדת בכל המסכים המרכזיים, כולל קישור דילוג לתוכן</li>
+            <li>מבנה סמנטי ותוויות נגישות בעברית לכפתורים ולאלמנטים האינטראקטיביים</li>
+            <li>
+              יחס ניגודיות של 4.5:1 לפחות לטקסט הרגיל במסכים המרכזיים, בשתי ערכות הנושא. מרכיבים
+              בודדים עדיין נבדקים ומטופלים — ראו "מגבלות נגישות ידועות".
+            </li>
             <li>
               תמיכה בהעדפת הפחתת תנועה (
               <span dir="ltr" lang="en">
                 prefers-reduced-motion
               </span>
-              ) — אנימציות מופחתות לפי בחירת המשתמש
+              ), וכן מתג "הפחתת אנימציות" בהגדרות האפליקציה
             </li>
+            <li>מתג "ניגודיות גבוהה" ומתג "טקסט גדול" בהגדרות האפליקציה</li>
             <li>
-              מבנה כותרות תקין ועקבי (
+              מבנה כותרות היררכי (
               <span dir="ltr" lang="en">
                 h1 → h2 → h3
               </span>
-              ) לניווט קוראי מסך
+              ) בדפי התוכן והמסכים המרכזיים
             </li>
-            <li>תוויות נגישות בעברית לכל הכפתורים והאלמנטים האינטראקטיביים</li>
             <li>
               תמיכה בכיוון טקסט מימין לשמאל (
               <span dir="ltr" lang="en">
@@ -201,9 +204,21 @@ export default function AccessibilityStatement() {
               margin: 0,
             }}
           >
-            {/* TODO: Replace this placeholder with real known limitations before launch */}
             <li>
-              ייתכנו פערי נגישות בתרשימים ובגרפים — אנו פועלים להוספת חלופות טקסטואליות מלאות.
+              תרשימים וגרפים מסוימים מציגים תיאור מקוצר בלבד; אנו משלימים חלופה טקסטואלית מלאה
+              לנתונים.
+            </li>
+            <li>
+              טרם הושלמה בדיקה ידנית מקיפה עם קוראי מסך (NVDA, JAWS, VoiceOver, TalkBack) בכל
+              המסכים. תמיכה סמנטית קיימת, אך אנו לא מצהירים על התאמה מלאה עד להשלמת הבדיקה.
+            </li>
+            <li>
+              חלק מהמסכים המשניים כוללים אזורי לחיצה קטנים מ־44×44 פיקסלים. המסכים המרכזיים תוקנו,
+              והשאר בטיפול.
+            </li>
+            <li>
+              בדיקת נגישות אוטומטית (axe) מורצת בתהליך הבנייה על הדפים הציבוריים בלבד; המסכים
+              שמאחורי ההתחברות עדיין נבדקים ידנית.
             </li>
           </ul>
         </section>
@@ -220,9 +235,13 @@ export default function AccessibilityStatement() {
           <h2 style={SECTION_HEADING_STYLE}>פנייה בנושא נגישות</h2>
           <p style={BODY_TEXT_STYLE}>נתקלתם בבעיית נגישות או שיש לכם הצעה לשיפור? נשמח לשמוע.</p>
 
-          {/* TODO: Confirm coordinator full name and title with the app owner before publishing */}
+          {/* OWNER ACTION BEFORE PUBLISHING: Israeli accessibility regulations expect a
+              NAMED coordinator with a role, not a brand name. Replace the value below with
+              the real full name + title, and have a lawyer confirm the response-time
+              wording. Until then this reads as an organisational contact, which is honest
+              but not yet sufficient. */}
           <p style={MUTED_TEXT_STYLE}>
-            <strong style={{ color: 'var(--fs-ink)' }}>רכז/ת נגישות:</strong> SparkOS Fitness
+            <strong style={{ color: 'var(--fs-ink)' }}>אחראי/ת נגישות:</strong> צוות SparkOS Fitness
           </p>
           <p style={MUTED_TEXT_STYLE}>
             <strong style={{ color: 'var(--fs-ink)' }}>דוא״ל:</strong>{' '}
@@ -253,7 +272,7 @@ export default function AccessibilityStatement() {
             paddingBottom: '8px',
           }}
         >
-          גרסה 1.1 · תאריך עדכון אחרון: 9 ביוני 2026
+          גרסה 1.2 · תאריך עדכון אחרון: 26 ביולי 2026
         </p>
       </article>
     </div>

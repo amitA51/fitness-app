@@ -55,7 +55,7 @@ export function ExperienceStep({ data, onChange, direction = 1 }: ExperienceStep
             type="button"
             whileTap={{ scale: 0.98 }}
             onClick={() => onChange({ experienceLevel: level.value })}
-            className={`w-full p-4 transition-all flex items-center gap-4 text-right template-card magnetic-card ${
+            className={`w-full p-4 transition-ui flex items-center gap-4 text-right template-card magnetic-card ${
               data.experienceLevel === level.value ? 'accent-glow' : ''
             }`}
             style={{
@@ -152,7 +152,7 @@ export function ExperienceStep({ data, onChange, direction = 1 }: ExperienceStep
                 key={day}
                 type="button"
                 onClick={() => onChange({ preferredWorkoutDays: day })}
-                className="min-w-[52px] h-14 snap-center transition-all flex-shrink-0"
+                className="min-w-[52px] h-14 snap-center transition-ui flex-shrink-0"
                 style={{
                   fontFamily: '"Bricolage Grotesque", var(--font-display)',
                   fontWeight: 600,

@@ -6,10 +6,10 @@
 // white-on-bone (invisible) in the default light theme. It now uses the same
 // surface/ink/error tokens as the rest of the Progress board.
 
-import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { type PersonalRecord, getAllPRs } from '../../services/prService';
 import { logger } from '../../utils/logger';
 
@@ -102,7 +102,10 @@ export default function PRHistoryTab() {
   const grouped = useMemo(() => groupByExercise(prs), [prs]);
 
   return (
-    <section dir="rtl" style={{ ...cardStyle, borderColor: error ? 'var(--color-error)' : 'var(--fs-surface-2)' }}>
+    <section
+      dir="rtl"
+      style={{ ...cardStyle, borderColor: error ? 'var(--color-error)' : 'var(--fs-surface-2)' }}
+    >
       <button
         type="button"
         onClick={() => setIsOpen((o) => !o)}
@@ -146,61 +149,21 @@ export default function PRHistoryTab() {
               </p>
             ) : (
               <ul className="space-y-2 mt-3">
-        {grouped.map((g) => (
-          <li
-            key={g.exerciseName}
-            style={{
-              borderRadius: 12,
-              background: 'var(--fs-surface-2)',
-              border: '1px solid var(--fs-surface-2)',
-              padding: 12,
-            }}
-          >
-            <div className="flex items-baseline justify-between gap-3 mb-2">
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fs-ink)' }}>
-                {g.exerciseName}
-              </span>
-              <span
-                dir="ltr"
-                style={{ fontSize: 10, color: 'var(--fs-muted)', fontFamily: 'var(--font-mono)' }}
-              >
-                {formatDate(g.latest.date)}
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {g.records.slice(0, 3).map((pr) => (
-                <div
-                  key={pr.id}
-                  className="text-right"
-                  style={{
-                    background: 'var(--fs-surface)',
-                    borderRadius: 8,
-                    padding: 8,
-                    borderInlineStart: '2px solid var(--fs-accent)',
-                  }}
-                >
-                  <div
+                {grouped.map((g) => (
+                  <li
+                    key={g.exerciseName}
                     style={{
-                      fontSize: 9,
-                      letterSpacing: '-0.01em',
-                      color: 'var(--fs-muted)',
-                      fontFamily: 'var(--font-mono)',
-                      marginBottom: 4,
+                      borderRadius: 12,
+                      background: 'var(--fs-surface-2)',
+                      border: '1px solid var(--fs-surface-2)',
+                      padding: 12,
                     }}
                   >
-                    {TYPE_LABEL[pr.type] || pr.type}
-                  </div>
-                  <div
-                    dir="ltr"
-                    style={{ fontSize: 13, color: 'var(--fs-ink)', fontFamily: 'var(--font-mono)' }}
-                  >
-                    {pr.weight} × {pr.reps}
-                  </div>
-                  {(() => {
-                    const oneRM = pr.oneRepMax ?? 0;
-                    if (oneRM <= 0) return null;
-                    return (
-                      <div
+                    <div className="flex items-baseline justify-between gap-3 mb-2">
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fs-ink)' }}>
+                        {g.exerciseName}
+                      </span>
+                      <span
                         dir="ltr"
                         style={{
                           fontSize: 10,
@@ -208,15 +171,63 @@ export default function PRHistoryTab() {
                           fontFamily: 'var(--font-mono)',
                         }}
                       >
-                        e1RM {Math.round(oneRM)}
-                      </div>
-                    );
-                  })()}
-                </div>
-              ))}
-            </div>
-          </li>
-        ))}
+                        {formatDate(g.latest.date)}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {g.records.slice(0, 3).map((pr) => (
+                        <div
+                          key={pr.id}
+                          className="text-right"
+                          style={{
+                            background: 'var(--fs-surface)',
+                            borderRadius: 8,
+                            padding: 8,
+                            borderInlineStart: '2px solid var(--fs-accent)',
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 9,
+                              letterSpacing: '-0.01em',
+                              color: 'var(--fs-muted)',
+                              fontFamily: 'var(--font-mono)',
+                              marginBottom: 4,
+                            }}
+                          >
+                            {TYPE_LABEL[pr.type] || pr.type}
+                          </div>
+                          <div
+                            dir="ltr"
+                            style={{
+                              fontSize: 13,
+                              color: 'var(--fs-ink)',
+                              fontFamily: 'var(--font-mono)',
+                            }}
+                          >
+                            {pr.weight} × {pr.reps}
+                          </div>
+                          {(() => {
+                            const oneRM = pr.oneRepMax ?? 0;
+                            if (oneRM <= 0) return null;
+                            return (
+                              <div
+                                dir="ltr"
+                                style={{
+                                  fontSize: 10,
+                                  color: 'var(--fs-muted)',
+                                  fontFamily: 'var(--font-mono)',
+                                }}
+                              >
+                                e1RM {Math.round(oneRM)}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      ))}
+                    </div>
+                  </li>
+                ))}
               </ul>
             )}
           </m.div>

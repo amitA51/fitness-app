@@ -114,8 +114,10 @@ export const Sheet: React.FC<SheetProps> = ({
             aria-label="סגירה"
             className="inline-flex items-center justify-center shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
             style={{
-              width: 36,
-              height: 36,
+              // 44px is the HIG minimum. The visual circle stays modest via the
+              // icon size; the pressable area is the full square.
+              width: 44,
+              height: 44,
               borderRadius: 9999,
               color: 'var(--fs-ink)',
               background: 'var(--fs-surface-2)',

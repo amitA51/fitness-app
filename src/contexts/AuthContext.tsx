@@ -16,6 +16,8 @@ import {
   useState,
 } from 'react';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { getInviteContinuationCleanupOptions } from '../services/authContinuation';
+import { transitionAuthSession } from '../services/authSessionTransition';
 import { logger } from '../utils/logger';
 
 // ----------------------------------------------------------------------------
@@ -70,37 +72,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     let cancelled = false;
+    let transitionQueue: Promise<void> = Promise.resolve();
+    // Captured once: the async closures below run after awaits, where TypeScript
+    // can no longer prove the module-level `supabase` is still non-null.
+    const client = supabase;
 
-    // Prime state from the cached session (non-blocking).
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
+    const applySession = async (event: string, nextSession: Session | null): Promise<void> => {
+      const nextUserId = nextSession?.user.id ?? null;
+      try {
+        // Preserve an explicitly requested invite continuation only while the
+        // authentication round-trip is in progress. All other account state is
+        // wiped before a different user's data can be read or pulled.
+        await transitionAuthSession(
+          nextUserId,
+          nextUserId ? (getInviteContinuationCleanupOptions() ?? {}) : {}
+        );
+      } catch (err) {
+        logger.auth.error('Auth transition cleanup failed; refusing to load the session', err);
         if (cancelled) return;
-        const s = data.session ?? null;
-        setSession(s);
-        if (s) {
-          setStatus('authenticated');
-        } else {
-          setStatus(isGuestRef.current ? 'guest' : 'unauthenticated');
+        setSession(null);
+        setIsGuest(false);
+        setStatus('unauthenticated');
+        // A failed wipe must never leave another account's local records visible.
+        if (nextSession) {
+          void client.auth.signOut().catch((signOutErr) => {
+            logger.auth.error('Auth transition safety sign-out failed', signOutErr);
+          });
         }
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        logger.auth.warn('getSession failed, continuing offline', err);
-        setStatus(isGuestRef.current ? 'guest' : 'unauthenticated');
-      });
+        return;
+      }
 
-    // Subscribe once; Supabase SDK emits INITIAL_SESSION too.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      logger.auth.info('Auth event', { event });
-
-      // Session persistence is handled by the Supabase SDK internally.
-      // We no longer cache the full JWT in localStorage (XSS risk).
-      // Sign-out cleanup of the legacy key is handled in supabaseAuth.ts.
-
-      setSession(nextSession ?? null);
+      if (cancelled) return;
+      setSession(nextSession);
       if (nextSession) {
         // A real sign-in clears guest mode.
         try {
@@ -111,8 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsGuest(false);
         setStatus('authenticated');
 
-        // DA-13: Auto-pull cloud data on sign-in so new/returning devices
-        // see their data without a manual pull.
+        // Auto-pull only after transitionAuthSession has fully wiped a prior
+        // account. pullAllData merges rows, so this ordering is security-critical.
         if (event === 'SIGNED_IN') {
           import('../services/supabaseSync').then((m) => {
             m.pullAllData().catch(() => {
@@ -123,6 +126,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setStatus(isGuestRef.current ? 'guest' : 'unauthenticated');
       }
+    };
+
+    const enqueueSession = (event: string, nextSession: Session | null): void => {
+      transitionQueue = transitionQueue.then(
+        () => applySession(event, nextSession),
+        () => applySession(event, nextSession)
+      );
+    };
+
+    // Prime state from the cached session. It goes through the same transition
+    // gate as SDK events so a persisted session cannot bypass local cleanup.
+    supabase.auth
+      .getSession()
+      .then(({ data }) => enqueueSession('INITIAL_SESSION', data.session ?? null))
+      .catch((err) => {
+        if (cancelled) return;
+        logger.auth.warn('getSession failed, continuing offline', err);
+        setStatus(isGuestRef.current ? 'guest' : 'unauthenticated');
+      });
+
+    // Subscribe once; Supabase SDK emits INITIAL_SESSION too. The queue makes
+    // duplicate/rapid events deterministic and prevents interleaved cleanups.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      logger.auth.info('Auth event', { event });
+      enqueueSession(event, nextSession ?? null);
     });
 
     return () => {

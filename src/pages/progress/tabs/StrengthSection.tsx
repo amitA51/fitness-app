@@ -17,7 +17,7 @@
 // lighter-for-more, which is the honest answer to "am I getting stronger?".
 
 import { AnimatePresence, m } from 'framer-motion';
-import { Dumbbell, ChevronDown } from 'lucide-react';
+import { ChevronDown, Dumbbell } from 'lucide-react';
 import type React from 'react';
 import { memo, useEffect, useMemo, useState } from 'react';
 import PRHistoryTab from '../../../components/workout/PRHistoryTab';
@@ -305,9 +305,12 @@ export const StrengthSection = memo(function StrengthSection({
                 type="button"
                 onClick={() => setIsPRBoardOpen((o) => !o)}
                 className="flex items-center justify-between w-full outline-none"
-                style={{ 
-                  background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                  marginBottom: isPRBoardOpen ? 12 : 0
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  marginBottom: isPRBoardOpen ? 12 : 0,
                 }}
               >
                 <div className="flex items-baseline gap-2">
@@ -335,115 +338,126 @@ export const StrengthSection = memo(function StrengthSection({
                     style={{ overflow: 'hidden' }}
                   >
                     <div style={{ display: 'grid', gap: 6 }}>
-                {(showAllPRs ? prBoard : prBoard.slice(0, PR_BOARD_COLLAPSED)).map((entry, i) => (
-                  <div
-                    key={entry.exerciseName}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 8,
-                      padding: '8px 12px',
-                      background:
-                        i === 0
-                          ? 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))'
-                          : 'var(--fs-surface-2)',
-                      borderRadius: 10,
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                      <span
+                      {(showAllPRs ? prBoard : prBoard.slice(0, PR_BOARD_COLLAPSED)).map(
+                        (entry, i) => (
+                          <div
+                            key={entry.exerciseName}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: 8,
+                              padding: '8px 12px',
+                              background:
+                                i === 0
+                                  ? 'color-mix(in srgb, var(--fs-accent) 12%, var(--fs-surface))'
+                                  : 'var(--fs-surface-2)',
+                              borderRadius: 10,
+                            }}
+                          >
+                            <div
+                              style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}
+                            >
+                              <span
+                                style={{
+                                  fontFamily: 'var(--font-mono)',
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  color: i === 0 ? 'var(--fs-accent)' : 'var(--fs-muted)',
+                                  width: 18,
+                                }}
+                                dir="ltr"
+                              >
+                                #{i + 1}
+                              </span>
+                              <span
+                                className="line-clamp-1"
+                                style={{
+                                  fontFamily: 'var(--font-hebrew)',
+                                  fontSize: 13,
+                                  fontWeight: 600,
+                                  color: 'var(--fs-ink)',
+                                }}
+                              >
+                                {exerciseLabel(entry.exerciseName)}
+                              </span>
+                            </div>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'baseline',
+                                gap: 4,
+                                flexShrink: 0,
+                              }}
+                            >
+                              <span
+                                className="kinetic-number"
+                                dir="ltr"
+                                style={{
+                                  fontFamily: 'var(--font-display)',
+                                  fontWeight: 600,
+                                  fontSize: 18,
+                                  color: 'var(--fs-ink)',
+                                }}
+                              >
+                                {entry.e1RM}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'var(--font-mono)',
+                                  fontSize: 9,
+                                  fontWeight: 700,
+                                  color: 'var(--fs-muted)',
+                                }}
+                              >
+                                1RM
+                              </span>
+                              <span
+                                dir="ltr"
+                                style={{
+                                  fontFamily: 'var(--font-mono)',
+                                  fontSize: 9,
+                                  fontWeight: 600,
+                                  color: 'var(--fs-muted)',
+                                  marginInlineStart: 4,
+                                }}
+                              >
+                                {entry.weight}×{entry.reps}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                    {prBoard.length > PR_BOARD_COLLAPSED && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllPRs((v) => !v)}
+                        aria-expanded={showAllPRs}
+                        className="active:scale-[0.98] motion-reduce:active:scale-100"
                         style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 10,
-                          fontWeight: 700,
-                          color: i === 0 ? 'var(--fs-accent)' : 'var(--fs-muted)',
-                          width: 18,
-                        }}
-                        dir="ltr"
-                      >
-                        #{i + 1}
-                      </span>
-                      <span
-                        className="line-clamp-1"
-                        style={{
+                          marginTop: 10,
+                          width: '100%',
+                          minHeight: 44,
+                          background: 'transparent',
+                          border: '1px solid var(--fs-surface-2)',
+                          borderRadius: 10,
+                          cursor: 'pointer',
                           fontFamily: 'var(--font-hebrew)',
                           fontSize: 13,
                           fontWeight: 600,
-                          color: 'var(--fs-ink)',
+                          color: 'var(--fs-accent)',
                         }}
                       >
-                        {exerciseLabel(entry.exerciseName)}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexShrink: 0 }}>
-                      <span
-                        className="kinetic-number"
-                        dir="ltr"
-                        style={{
-                          fontFamily: 'var(--font-display)',
-                          fontWeight: 600,
-                          fontSize: 18,
-                          color: 'var(--fs-ink)',
-                        }}
-                      >
-                        {entry.e1RM}
-                      </span>
-                      <span
-                        style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 9,
-                          fontWeight: 700,
-                          color: 'var(--fs-muted)',
-                        }}
-                      >
-                        1RM
-                      </span>
-                      <span
-                        dir="ltr"
-                        style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 9,
-                          fontWeight: 600,
-                          color: 'var(--fs-muted)',
-                          marginInlineStart: 4,
-                        }}
-                      >
-                        {entry.weight}×{entry.reps}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {prBoard.length > PR_BOARD_COLLAPSED && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllPRs((v) => !v)}
-                  aria-expanded={showAllPRs}
-                  className="active:scale-[0.98] motion-reduce:active:scale-100"
-                  style={{
-                    marginTop: 10,
-                    width: '100%',
-                    minHeight: 44,
-                    background: 'transparent',
-                    border: '1px solid var(--fs-surface-2)',
-                    borderRadius: 10,
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-hebrew)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: 'var(--fs-accent)',
-                  }}
-                >
-                  {showAllPRs ? (
-                    'הצג פחות'
-                  ) : (
-                    <>
-                      הצג הכל · <span dir="ltr">+{prBoard.length - PR_BOARD_COLLAPSED}</span>
-                    </>
-                  )}
-                </button>
-              )}
+                        {showAllPRs ? (
+                          'הצג פחות'
+                        ) : (
+                          <>
+                            הצג הכל · <span dir="ltr">+{prBoard.length - PR_BOARD_COLLAPSED}</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </m.div>
                 )}
               </AnimatePresence>

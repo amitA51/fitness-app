@@ -9,9 +9,7 @@ describe('exerciseImages', () => {
   });
 
   it('accepts a bare English name', () => {
-    expect(getExerciseImage('Bench Press')).toContain(
-      '/Barbell_Bench_Press_-_Medium_Grip/0.jpg'
-    );
+    expect(getExerciseImage('Bench Press')).toContain('/Barbell_Bench_Press_-_Medium_Grip/0.jpg');
   });
 
   it('returns absolute jsDelivr CDN URLs', () => {

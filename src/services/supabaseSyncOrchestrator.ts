@@ -42,6 +42,7 @@ import {
   toCanonicalSession,
   toCanonicalTemplate,
 } from './supabaseSyncMappers';
+import { BUSY, withSyncLock } from './syncLock';
 import {
   mergeAIConversationsFromCloud,
   mergeBodyMeasurementsFromCloud,
@@ -96,12 +97,27 @@ export interface FullSyncCounts {
 }
 
 // Re-entrancy guards: concurrent calls coalesce onto the in-flight promise.
+// These are per-tab; cross-tab exclusion comes from withSyncLock below. Two tabs
+// running blind bulk upserts at the same time would let network timing decide the
+// last-write-wins outcome.
 let syncAllInFlight: Promise<SyncResult> | null = null;
 let pullAllInFlight: Promise<SyncResult> | null = null;
 
+/** Uniform result when another tab owns the sync lock: not a failure, just deferred. */
+const LOCK_BUSY_RESULT: SyncResult = {
+  success: false,
+  error: 'sync_in_progress_in_another_tab',
+};
+
 export const syncAllData = async (): Promise<SyncResult> => {
   if (syncAllInFlight) return syncAllInFlight;
-  syncAllInFlight = syncAllDataImpl();
+  syncAllInFlight = withSyncLock(() => syncAllDataImpl()).then((outcome) => {
+    if (outcome === BUSY) {
+      logger.sync.info('Another tab is syncing, skipping full push');
+      return LOCK_BUSY_RESULT;
+    }
+    return outcome;
+  });
   try {
     return await syncAllInFlight;
   } finally {
@@ -128,7 +144,9 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
     const { dbGetAll } = await import('./indexedDBCore');
 
     // Read each local store independently: one failed read must not abort the
-    // entire push. Failed reads default to an empty array (nothing to push).
+    // entire push. A failed read yields an empty array HERE so the other stores
+    // still upload, but it is recorded in `readFailed` and downgrades the final
+    // result to a failure — an unreadable store must never look like a backup.
     const readResults = await Promise.allSettled([
       dbGetAll<WorkoutTemplate>(STORES.WORKOUT_TEMPLATES),
       dbGetAll<WorkoutSession>(STORES.WORKOUT_SESSIONS),
@@ -153,21 +171,35 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
     }
     const unwrapRead = <T>(r: PromiseSettledResult<unknown> | undefined): T[] =>
       r && r.status === 'fulfilled' ? (r.value as T[]) : [];
+
+    /**
+     * Drop locally-tombstoned rows from the bulk push.
+     *
+     * The bulk mappers deliberately omit `deleted_at` (see the note below), so a
+     * row that is deleted locally but whose deletion has not yet reached the
+     * cloud would be pushed as if it were still LIVE — and with a fresh
+     * `updated_at`, since the tombstone bumps it. Deletions travel through the
+     * offline queue's `*:delete` mutations, which stamp `deleted_at` explicitly;
+     * the bulk push must simply leave them alone.
+     */
+    const liveOnly = <T>(rows: T[]): T[] =>
+      rows.filter((row) => !(row as { deletedAt?: string | null }).deletedAt);
+
     // Exclude the internal program-day scratch template (fixed non-UUID id,
     // isProgramHidden): pushing it burns a row every sync, conflicts LWW on a
     // fixed id, and — since WORKOUT_TEMPLATES ids are NOT uuid-normalized — a
     // uuid id column would 22P02-reject the whole 50-row batch, blocking the
     // user's real templates. It is regenerated on demand by startProgramDay.
-    const localTemplates = unwrapRead<WorkoutTemplate>(readResults[0]).filter(
-      (t) => !t.isProgramHidden
+    const localTemplates = liveOnly(
+      unwrapRead<WorkoutTemplate>(readResults[0]).filter((t) => !t.isProgramHidden)
     );
-    const localSessions = unwrapRead<WorkoutSession>(readResults[1]);
-    const localExercises = unwrapRead<PersonalExercise>(readResults[2]);
-    const localBodyWeight = unwrapRead<BodyWeightEntry>(readResults[3]);
-    const localBodyMeasurements = unwrapRead<BodyMeasurement>(readResults[4]);
-    const localPersonalRecords = unwrapRead<PersonalRecordRow>(readResults[5]);
-    const localRecoveryLogs = unwrapRead<RecoveryLog>(readResults[6]);
-    const localNutritionLogs = unwrapRead<NutritionLog>(readResults[7]);
+    const localSessions = liveOnly(unwrapRead<WorkoutSession>(readResults[1]));
+    const localExercises = liveOnly(unwrapRead<PersonalExercise>(readResults[2]));
+    const localBodyWeight = liveOnly(unwrapRead<BodyWeightEntry>(readResults[3]));
+    const localBodyMeasurements = liveOnly(unwrapRead<BodyMeasurement>(readResults[4]));
+    const localPersonalRecords = liveOnly(unwrapRead<PersonalRecordRow>(readResults[5]));
+    const localRecoveryLogs = liveOnly(unwrapRead<RecoveryLog>(readResults[6]));
+    const localNutritionLogs = liveOnly(unwrapRead<NutritionLog>(readResults[7]));
     const localUserSettings = unwrapRead<UserSetting>(readResults[8]);
     const localAIConversations = unwrapRead<AIConversation>(readResults[9]);
     const localWaterLogs = unwrapRead<{
@@ -442,9 +474,10 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
 
     logger.sync.info('Pushed all data to cloud', { userId, counts, failedItems });
 
-    // A partial push (operation rejected OR any batch lost records) is NOT a
-    // success — reporting it as such would let callers believe the cloud
-    // mirrors local state when records were silently dropped.
+    // A partial push (operation rejected OR any batch lost records OR a local
+    // store we could not even read) is NOT a success — reporting it as such
+    // would let callers believe the cloud mirrors local state when records were
+    // silently dropped or never read.
     const pushErrorParts: string[] = [];
     if (pushFailed.length > 0) {
       pushErrorParts.push(`${pushFailed.length} push operations failed`);
@@ -452,9 +485,16 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
     if (failedItems > 0) {
       pushErrorParts.push(`${failedItems} record(s) failed to push`);
     }
+    // Previously a rejected dbGetAll() was silently substituted with an empty
+    // array, so a store that failed to read (quota, corruption, blocked upgrade)
+    // pushed nothing and the sync still returned success: the user was told
+    // their data was backed up when an entire store had been skipped.
+    if (readFailed.length > 0) {
+      pushErrorParts.push(`${readFailed.length} local store(s) could not be read`);
+    }
 
     return {
-      success: pushFailed.length === 0 && failedItems === 0,
+      success: pushFailed.length === 0 && failedItems === 0 && readFailed.length === 0,
       syncedItems: totalSynced,
       failedItems,
       counts,
@@ -468,7 +508,15 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
 
 export const pullAllData = async (): Promise<SyncResult> => {
   if (pullAllInFlight) return pullAllInFlight;
-  pullAllInFlight = pullAllDataImpl();
+  // Pull merges cloud rows into IndexedDB, so it must not interleave with another
+  // tab's push of the same stores.
+  pullAllInFlight = withSyncLock(() => pullAllDataImpl()).then((outcome) => {
+    if (outcome === BUSY) {
+      logger.sync.info('Another tab is syncing, skipping pull');
+      return LOCK_BUSY_RESULT;
+    }
+    return outcome;
+  });
   try {
     return await pullAllInFlight;
   } finally {

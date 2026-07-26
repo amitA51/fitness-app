@@ -27,9 +27,9 @@ describe('splitInstructionSteps', () => {
   });
 
   it('splits an English comma-separated cue', () => {
-    expect(
-      splitInstructionSteps('Stand tall, jump feet out while raising arms overhead.')
-    ).toEqual(['Stand tall', 'jump feet out while raising arms overhead']);
+    expect(splitInstructionSteps('Stand tall, jump feet out while raising arms overhead.')).toEqual(
+      ['Stand tall', 'jump feet out while raising arms overhead']
+    );
   });
 
   it('splits on multiple sentence terminators', () => {

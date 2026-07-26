@@ -8,8 +8,8 @@
 
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { logger } from '../utils/logger';
-import { fetchAllPages } from './supabaseSyncPagination';
 import type { AIConversation, UserSetting } from './supabaseSyncMappers';
+import { fetchAllPages } from './supabaseSyncPagination';
 
 // ==================== USER SETTINGS ====================
 
@@ -153,10 +153,7 @@ export const deleteCloudAIConversation = async (userId: string, id: string): Pro
  * deleted_at, which a PostgREST upsert leaves untouched on conflict). This is
  * the propagating delete used by the single-conversation delete UX.
  */
-export const softDeleteCloudAIConversation = async (
-  userId: string,
-  id: string
-): Promise<void> => {
+export const softDeleteCloudAIConversation = async (userId: string, id: string): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
   const now = new Date().toISOString();

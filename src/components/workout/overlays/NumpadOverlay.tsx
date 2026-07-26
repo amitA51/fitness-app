@@ -1,8 +1,9 @@
-import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 // NumpadOverlay - Fresh Steel / Obsidian numpad for weight/reps
 // Dark masthead, surface body, sharp corners, oversized display numerals.
 // Uses Portal rendering via ModalOverlay for proper z-index stacking and focus management
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import { triggerHaptic } from '../../../utils/haptics';
 import { LiveRegion } from '../../ui/Accessible';
 import { ModalOverlay } from '../../ui/ModalOverlay';
@@ -259,7 +260,7 @@ const PresetButton = memo<{
         triggerHaptic();
         onSelect(value);
       }}
-      className="relative transition-all uppercase"
+      className="relative transition-ui uppercase"
       style={{
         padding: '8px 14px',
         borderRadius: 999,
@@ -322,7 +323,7 @@ const ValueStepper = memo<{
                 triggerHaptic();
                 onAdjust(-inc);
               }}
-              className="w-11 h-11 flex items-center justify-center transition-all"
+              className="w-11 h-11 flex items-center justify-center transition-ui"
               style={{
                 backgroundColor: 'var(--fs-surface)',
                 border: '2px solid var(--fs-warn)',
@@ -371,7 +372,7 @@ const ValueStepper = memo<{
               triggerHaptic();
               onAdjust(inc);
             }}
-            className="w-11 h-11 flex items-center justify-center transition-all"
+            className="w-11 h-11 flex items-center justify-center transition-ui"
             style={{
               backgroundColor: 'var(--fs-accent)',
               border: '2px solid var(--fs-primary)',

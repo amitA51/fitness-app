@@ -11,10 +11,12 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <!-- The manifest <link> is injected at build time by vite-plugin-pwa from the
          single source of truth in vite.config.ts. Do not add a static one here. -->
-    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>SparkOS Fitness</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png" />
+    <!-- Vector favicon last so browsers that support it win the cascade. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />

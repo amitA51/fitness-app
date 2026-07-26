@@ -21,7 +21,9 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
   value,
   onChange,
   label,
-  placeholder = 'Select an option',
+  // Hebrew-first: an English fallback leaked into the UI wherever a caller
+  // omitted the placeholder.
+  placeholder = 'בחרו אפשרות',
   className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);

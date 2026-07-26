@@ -67,7 +67,7 @@ export function GoalsStep({ data, onChange, direction = 1 }: GoalsStepProps) {
             type="button"
             whileTap={{ scale: 0.98 }}
             onClick={() => onChange({ primaryGoal: goal.value })}
-            className={`w-full p-4 transition-all flex items-center gap-4 text-right template-card magnetic-card ${
+            className={`w-full p-4 transition-ui flex items-center gap-4 text-right template-card magnetic-card ${
               data.primaryGoal === goal.value ? 'accent-glow' : ''
             }`}
             style={{

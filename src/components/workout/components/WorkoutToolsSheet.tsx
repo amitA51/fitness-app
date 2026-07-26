@@ -68,7 +68,7 @@ const WorkoutToolsSheet = memo<WorkoutToolsSheetProps>(
           tool.onSelect();
           if (!tool.keepOpen) onClose();
         }}
-        className="w-full min-h-[56px] flex items-center gap-3 p-3 transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fs-surface)]"
+        className="w-full min-h-[56px] flex items-center gap-3 p-3 transition-ui active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fs-surface)]"
         style={{
           borderRadius: 'var(--radius-asymmetric)',
           textAlign: 'start',

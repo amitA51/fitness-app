@@ -115,7 +115,9 @@ export const DashboardHeader = memo(function DashboardHeader({
             margin: '6px 0 0',
           }}
         >
-          {hasSessionToday ? 'יפה — אפשר להוסיף אימון נוסף אם בא לכם' : 'היום: התחילו אימון מהכפתור למטה'}
+          {hasSessionToday
+            ? 'יפה — אפשר להוסיף אימון נוסף אם בא לכם'
+            : 'היום: התחילו אימון מהכפתור למטה'}
         </p>
       </div>
       <Link

@@ -241,7 +241,6 @@ export default function MyCoach() {
   return (
     <CoachPage
       title="המאמן שלי"
-      subtitle="My Coach"
       onBack={() => {
         // Return to where the user came from (usually the screen that opened the
         // "עוד" sheet) by popping in-app history; fall back to home only on a

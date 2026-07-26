@@ -60,7 +60,6 @@ describe('importFullBackup (restore)', () => {
   });
 });
 
-
 describe('buildFullBackup ↔ importFullBackup full round-trip', () => {
   it('captures every user-data store (incl. body/nutrition/water) and restores after a wipe', async () => {
     await dbPut(STORES.WORKOUT_SESSIONS, { id: 'w1', startTime: '2026-06-01T10:00:00Z' });

@@ -1,8 +1,9 @@
 // ProgressBar - Ultra Premium Top Progress Indicator with Glow Effects
 // Features: Gradient animation, particle trail, milestone markers
 
-import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { memo } from 'react';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 
 // ============================================================
 // TYPES

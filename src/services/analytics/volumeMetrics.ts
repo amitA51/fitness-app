@@ -7,11 +7,11 @@ import { todayStr } from '../../utils/dateUtils';
 import { setVolume } from '../../utils/workoutMath';
 import { getWorkoutSessions } from '../workoutDb';
 import {
+  computeSessionStats,
   filterByWeeks,
   formatLocalDateStr,
   getISOWeek,
   getMuscleKey,
-  computeSessionStats,
   linearRegression,
   parseLocalDate,
 } from './shared';

@@ -20,6 +20,7 @@ import { type ReactNode, useCallback, useId, useState } from 'react';
 import { postOnboardingDestination, setPostOnboardingPath } from '../appOnboarding';
 import { Button } from '../components/ui/Button';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { useMotionConfigMode } from '../hooks/useReducedMotion';
 import { ProgressDots, StepHeader } from './onboarding/components/ProgressDots';
 import { CompleteStep } from './onboarding/steps/CompleteStep';
 import { ExperienceStep } from './onboarding/steps/ExperienceStep';
@@ -54,6 +55,9 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
   } = useOnboardingWizard(onComplete);
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
   const hintId = useId();
+  // Onboarding mounts its own MotionConfig, so it needs the combined
+  // OS + in-app reduced-motion signal explicitly.
+  const motionConfigMode = useMotionConfigMode();
 
   const hint = validationHint();
   const isLastInteractiveStep = currentStep === activeSteps.length - 2;
@@ -97,7 +101,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
   };
 
   return (
-    <MotionConfig reducedMotion="user">
+    <MotionConfig reducedMotion={motionConfigMode}>
       <div
         className="fixed inset-0 z-overlay flex flex-col"
         style={{
@@ -301,7 +305,7 @@ function EquipmentStep({
               whileTap={{ scale: 0.98 }}
               onClick={() => onChange({ equipment: option.value })}
               aria-pressed={isSelected}
-              className={`w-full p-4 transition-all flex items-center gap-4 text-right template-card magnetic-card ${
+              className={`w-full p-4 transition-ui flex items-center gap-4 text-right template-card magnetic-card ${
                 isSelected ? 'accent-glow' : ''
               }`}
               style={{
@@ -324,7 +328,9 @@ function EquipmentStep({
                   borderRadius: 9999,
                 }}
               >
-                <span style={{ color: isSelected ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)' }}>
+                <span
+                  style={{ color: isSelected ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)' }}
+                >
                   {option.icon}
                 </span>
               </div>

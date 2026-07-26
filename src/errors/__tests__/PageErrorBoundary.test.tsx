@@ -39,7 +39,7 @@ describe('PageErrorBoundary', () => {
     const alert = screen.getByRole('alert');
     expect(alert).toBeInTheDocument();
     expect(alert).toHaveTextContent('Workouts');
-    expect(screen.getByRole('button', { name: /נסה שוב/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /נסו שוב/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /רענן דף/ })).toBeInTheDocument();
   });
 
@@ -53,7 +53,7 @@ describe('PageErrorBoundary', () => {
       </PageErrorBoundary>
     );
 
-    await user.click(screen.getByRole('button', { name: /נסה שוב/ }));
+    await user.click(screen.getByRole('button', { name: /נסו שוב/ }));
     expect(onReset).toHaveBeenCalledTimes(1);
   });
 });

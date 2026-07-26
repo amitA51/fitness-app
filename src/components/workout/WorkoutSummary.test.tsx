@@ -1,7 +1,7 @@
+import { render, screen } from '@testing-library/react';
 import { LazyMotion, domAnimation } from 'framer-motion';
 import { useEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
 import type { WorkoutExercise, WorkoutSession, WorkoutSet } from '../../types';
 
 // WorkoutSummary pulls in GSAP, the spark burst, and haptics — none of which is

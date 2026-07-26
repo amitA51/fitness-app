@@ -93,7 +93,7 @@ export function ConsentGate({ children }: { children: ReactNode }) {
             outline: 'none',
           }}
         >
-          עדכנו את התנאים שלנו
+          התנאים ומדיניות הפרטיות עודכנו
         </h1>
         <p
           style={{
@@ -149,7 +149,7 @@ export function ConsentGate({ children }: { children: ReactNode }) {
             cursor: canSubmit ? 'pointer' : 'not-allowed',
           }}
         >
-          {submitting ? 'שומר…' : 'אני מאשר/ת וממשיך/ה'}
+          {submitting ? 'שומרים…' : 'אישור והמשך'}
         </button>
       </div>
     </div>

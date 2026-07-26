@@ -223,7 +223,7 @@ export const FoodLibrary = memo(function FoodLibrary({
                         fontFamily: 'var(--font-display)',
                         fontSize: '13px',
                         fontWeight: 600,
-                                                border: 'none',
+                        border: 'none',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',

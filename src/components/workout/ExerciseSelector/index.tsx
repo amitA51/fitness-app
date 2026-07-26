@@ -1,7 +1,7 @@
 // ExerciseSelector - Fresh Steel / Obsidian
 // Dark masthead · surface body · sharp corners · oversized display numerals.
 
-import { AnimatePresence, type PanInfo, m, useDragControls, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, type PanInfo, m, useDragControls } from 'framer-motion';
 import {
   ClipboardList as ClipboardIcon,
   X as CloseIcon,
@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useState } from 'react';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import * as dataService from '../../../services/dataService';
 import {
   type Exercise,

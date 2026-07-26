@@ -1,9 +1,7 @@
 import { m } from 'framer-motion';
-import React, { useId, useCallback } from 'react';
+import React, { useCallback, useId } from 'react';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { triggerHaptic } from '../../utils/haptics';
-
-const prefersReducedMotion =
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 interface ToggleSwitchProps {
   /** Whether the switch is on */
@@ -20,27 +18,40 @@ interface ToggleSwitchProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-// Fresh Steel / Obsidian toggles — sharp rect track, primary knob, accent active fill (--fs-* tokens)
+// ----------------------------------------------------------------------------
+// Apple-alignment pass
+// ----------------------------------------------------------------------------
+// Previously: 40x24 track with a 2px radius (a sharp rectangle), a knob that
+// scaled to 0.9 on press, and a reduced-motion check evaluated ONCE at module
+// load — so toggling the OS or in-app preference at runtime did nothing.
+//
+// Now: the `md` size matches the iOS system switch (51x31 track, 27px knob,
+// fully rounded), the press no longer shrinks the knob (a system switch never
+// does; the travel itself is the feedback), and reduced motion is read live from
+// the shared hook so the in-app "הפחתת אנימציות" setting applies here too.
 const sizeConfig = {
   sm: {
-    trackW: 32,
-    trackH: 18,
-    knob: 14,
-    padding: 2,
-  },
-  md: {
     trackW: 40,
     trackH: 24,
     knob: 20,
     padding: 2,
   },
+  md: {
+    trackW: 51,
+    trackH: 31,
+    knob: 27,
+    padding: 2,
+  },
   lg: {
-    trackW: 48,
-    trackH: 28,
-    knob: 22,
-    padding: 3,
+    trackW: 58,
+    trackH: 35,
+    knob: 31,
+    padding: 2,
   },
 };
+
+/** iOS-like settle for the knob travel. */
+const KNOB_SPRING = { type: 'spring', stiffness: 400, damping: 30, mass: 1 } as const;
 
 const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   checked,
@@ -53,6 +64,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   // Generate unique ID if not provided for accessibility
   const generatedId = useId();
   const switchId = id || generatedId;
+  const reducedMotion = useReducedMotion();
 
   const config = sizeConfig[size];
   const travel = config.trackW - config.knob - config.padding * 2;
@@ -104,22 +116,22 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           disabled={disabled}
         />
 
-        {/* Track — sharp rect, 1px navy border */}
+        {/* Track — fully rounded, like the system control */}
         <m.div
           className="block peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--fs-accent)] peer-focus-visible:ring-offset-2"
           style={{
             width: config.trackW,
             height: config.trackH,
-            borderRadius: 2,
+            borderRadius: 999,
             border: '1px solid var(--fs-primary)',
           }}
           animate={{
             backgroundColor: checked ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
           }}
-          transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
+          transition={reducedMotion ? { duration: 0 } : { duration: 0.2 }}
         />
 
-        {/* Knob — navy sharp square */}
+        {/* Knob — round, travels on transform only */}
         <m.div
           className="absolute"
           style={{
@@ -128,13 +140,11 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
             width: config.knob,
             height: config.knob,
             backgroundColor: 'var(--fs-primary)',
-            borderRadius: config.knob / 2,
+            borderRadius: 999,
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.18), 0 1px 1px rgba(0, 0, 0, 0.1)',
           }}
           animate={{ x: checked ? knobTravel : 0 }}
-          transition={
-            prefersReducedMotion ? { duration: 0 } : { type: 'spring', bounce: 0, duration: 0.25 }
-          }
-          whileTap={{ scale: 0.9 }}
+          transition={reducedMotion ? { duration: 0 } : KNOB_SPRING}
         />
       </div>
 

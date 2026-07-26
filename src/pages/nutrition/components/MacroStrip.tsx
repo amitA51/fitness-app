@@ -146,7 +146,7 @@ export const MacroStrip = memo(function MacroStrip({
                 fontSize: '10px',
                 letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
-                              }}
+              }}
             >
               {m.icon}
               <span>{m.he}</span>

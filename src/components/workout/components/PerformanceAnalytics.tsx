@@ -1,7 +1,8 @@
-import { m, useReducedMotion } from 'framer-motion';
+import { m } from 'framer-motion';
 // PerformanceAnalytics - Real-time workout performance tracking
 // Live stats, volume tracking, and workout insights
 import { memo, useMemo } from 'react';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import { computeSessionStats, setVolume } from '../../../utils/workoutMath';
 
 // ============================================================

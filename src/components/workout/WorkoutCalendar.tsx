@@ -14,8 +14,6 @@ interface WorkoutCalendarProps {
 
 const HEBREW_DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 
-
-
 /**
  * WorkoutCalendar - Fresh Steel / Obsidian calendar heatmap
  */

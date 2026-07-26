@@ -1,6 +1,6 @@
-import { captureException } from '../lib/sentryLazy';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { captureException } from '../lib/sentryLazy';
 import { logger } from '../utils/logger';
 
 interface PageErrorBoundaryProps {
@@ -71,12 +71,12 @@ export class PageErrorBoundary extends Component<PageErrorBoundaryProps, PageErr
           משהו השתבש ב{this.props.pageLabel}
         </h2>
         <p className="text-[13px] text-[var(--color-text-secondary)] max-w-[280px] mb-5">
-          הנתונים שלך בטוחים. אפשר לנסות שוב או לרענן את הדף.
+          ייתכן שהפעולה לא הושלמה. אפשר לנסות שוב או לרענן את הדף.
         </p>
         <div className="flex gap-2">
           <button type="button" onClick={this.handleReset} className="btn-primary gap-2 px-4 py-2">
             <RefreshCcw size={14} />
-            נסה שוב
+            נסו שוב
           </button>
           <button
             type="button"

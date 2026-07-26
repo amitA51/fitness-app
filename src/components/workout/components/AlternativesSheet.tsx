@@ -112,7 +112,7 @@ const AlternativesSheet = memo<AlternativesSheetProps>(
                       bg-[var(--fs-surface-2)] border border-[var(--color-border)]
                       hover:bg-[var(--fs-plate)] hover:border-[var(--fs-accent)]/40
                       focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fs-surface)]
-                      transition-all group
+                      transition-ui group
                     "
                     style={{ borderRadius: 'var(--radius-asymmetric)', textAlign: 'start' }}
                   >
@@ -162,7 +162,7 @@ const AlternativesSheet = memo<AlternativesSheetProps>(
               <button
                 type="button"
                 onClick={() => setShowLibrary(true)}
-                className="w-full min-h-[44px] flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fs-surface)] active:scale-[0.99] transition-all"
+                className="w-full min-h-[44px] flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fs-surface)] active:scale-[0.99] transition-ui"
                 style={{
                   marginTop: 14,
                   padding: '12px 16px',

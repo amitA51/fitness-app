@@ -78,7 +78,7 @@ export const MealEntryCard = memo(function MealEntryCard({
           lineHeight: 1,
           color: 'var(--fs-ink)',
           marginBottom: '6px',
-                  }}
+        }}
       >
         {entry.name}
       </h4>
@@ -124,7 +124,7 @@ export const MealEntryCard = memo(function MealEntryCard({
           fontSize: '11px',
           letterSpacing: '-0.01em',
           color: 'var(--fs-heading)',
-                    fontVariantNumeric: 'tabular-nums',
+          fontVariantNumeric: 'tabular-nums',
         }}
       >
         <span>P {entry.totalMacros.protein}G</span>
@@ -197,7 +197,7 @@ export const GroupedMealLog = memo(function GroupedMealLog({
                   fontWeight: 600,
                   fontSize: 15,
                   color: 'var(--fs-ink)',
-                                  }}
+                }}
               >
                 <Icon size={15} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
                 {MEAL_TYPE_LABELS[group.type]}

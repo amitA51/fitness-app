@@ -1,4 +1,4 @@
-import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { Unlink } from 'lucide-react';
 import {
   type ReactNode,
@@ -47,7 +47,13 @@ import { GuidanceProvider } from './contexts/GuidanceContext';
 import { PageThemeProvider } from './contexts/PageThemeContext';
 import { PageErrorBoundary } from './errors/PageErrorBoundary';
 import { useCloudDataReflection } from './hooks/useCloudDataReflection';
+import { useReducedMotion } from './hooks/useReducedMotion';
 import type { OnboardingData } from './pages/OnboardingFlow';
+import { trackFunnel } from './services/analytics/funnel';
+import {
+  INVITE_CONTINUATION_CHANGED_EVENT,
+  getPendingInviteRedirect,
+} from './services/authContinuation';
 import { enableCoachMode } from './services/coach';
 import { trackPageView } from './services/eventTracker';
 
@@ -62,6 +68,7 @@ import { cn } from './utils/styles';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Login = lazy(() => import('./pages/Login'));
+const ResetPassword = lazy(() => import('./pages/ResetPasswordPage'));
 const Nutrition = lazy(() => import('./pages/Nutrition'));
 const OnboardingFlow = lazy(() => import('./pages/OnboardingFlow'));
 const Progress = lazy(() => import('./pages/Progress'));
@@ -159,10 +166,39 @@ export function routeSlideOffset(isBack: boolean): number {
 // ----------------------------------------------------------------------------
 
 export function AppRouter() {
-  const { status, isGuest, clearGuest } = useAuth();
+  const { status, isGuest, clearGuest, user } = useAuth();
   const [onboardingDone, setOnboardingDone] = useState<boolean>(
     () => localStorage.getItem('onboarding_completed') === 'true'
   );
+  const [pendingInviteRedirect, setPendingInviteRedirect] = useState<string | null>(() =>
+    getPendingInviteRedirect()
+  );
+
+  // Local storage is wiped before a different account is exposed. Refresh
+  // router state in the same tick so in-memory onboarding state cannot bridge
+  // two users on a shared device.
+  useEffect(() => {
+    const refreshLocalAuthState = () => {
+      setOnboardingDone(localStorage.getItem('onboarding_completed') === 'true');
+      setPendingInviteRedirect(getPendingInviteRedirect());
+    };
+    window.addEventListener('auth:local-data-cleared', refreshLocalAuthState);
+    window.addEventListener(INVITE_CONTINUATION_CHANGED_EVENT, refreshLocalAuthState);
+    return () => {
+      window.removeEventListener('auth:local-data-cleared', refreshLocalAuthState);
+      window.removeEventListener(INVITE_CONTINUATION_CHANGED_EVENT, refreshLocalAuthState);
+    };
+  }, []);
+
+  // Re-read local auth-scoped state whenever the signed-in identity changes.
+  // `user?.id` is intentionally a trigger rather than a value the body reads:
+  // the auth transition wipes localStorage for a different account, so router
+  // state captured for the previous user must be re-derived at that exact point.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: identity change is the trigger, by design
+  useEffect(() => {
+    setOnboardingDone(localStorage.getItem('onboarding_completed') === 'true');
+    setPendingInviteRedirect(getPendingInviteRedirect());
+  }, [user?.id]);
 
   // When the user becomes authenticated or enters guest mode, hydrate profile
   // defaults from any previously saved onboarding data. Mirrors the old
@@ -210,6 +246,8 @@ export function AppRouter() {
   const handleOnboardingComplete = useCallback(
     (data: OnboardingData) => {
       saveOnboardingData(data);
+      // Activation step: the denominator for every later funnel rate.
+      trackFunnel('onboarding_completed', { role: data.role ?? 'trainee' });
 
       if (data.role === 'coach') {
         // Coach mode creates a coach_profiles row, which needs an authenticated
@@ -259,6 +297,21 @@ export function AppRouter() {
     return <PageLoader />;
   }
 
+  // Recovery links may establish a short-lived authenticated session. Handle
+  // this route before onboarding, consent, and the normal app shell so users
+  // always reach the password form instead of being redirected elsewhere.
+  if (typeof window !== 'undefined' && window.location.pathname === '/reset-password') {
+    return (
+      <BrowserRouter future={ROUTER_FUTURE}>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/reset-password" element={<ResetPassword />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    );
+  }
+
   if (status === 'unauthenticated') {
     // Legal + accessibility pages must be reachable WITHOUT auth (App Store /
     // Play require Terms + Privacy links outside the login wall). Everything
@@ -267,6 +320,8 @@ export function AppRouter() {
       <BrowserRouter future={ROUTER_FUTURE}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
+            <Route path="/join" element={<JoinPage />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/legal/terms" element={<TermsPage />} />
             <Route path="/legal/privacy" element={<PrivacyPage />} />
             <Route path="/accessibility" element={<AccessibilityStatement />} />
@@ -277,8 +332,9 @@ export function AppRouter() {
     );
   }
 
-  // authenticated or guest — either go through onboarding or into the app.
-  if (!onboardingDone) {
+  // Authenticated invite recipients must reach /join before onboarding; the
+  // invite is consumed there and clearing it returns new accounts to onboarding.
+  if (!onboardingDone && !pendingInviteRedirect) {
     return (
       <Suspense fallback={<PageLoader />}>
         <OnboardingFlow onComplete={handleOnboardingComplete} onSkip={handleOnboardingSkip} />
@@ -292,7 +348,7 @@ export function AppRouter() {
         <AgeGate>
           <ConsentProvider>
             <ConsentGate>
-              <AppShell />
+              <AppShell key={user?.id ?? 'guest'} />
             </ConsentGate>
           </ConsentProvider>
         </AgeGate>
@@ -345,6 +401,7 @@ function RoleHome() {
 function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
   return (
     <Routes location={location}>
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/" element={<RoleHome />} />
       {/* Coach personal-training mode ("האימונים שלי") — same Dashboard, but
           never role-redirects, so coaches can reach their own training data. */}
@@ -670,6 +727,18 @@ function NotFound() {
 // Memoized BottomNav to prevent re-renders on location changes within same accent
 const MemoizedBottomNav = memo(BottomNav);
 
+function PostAuthInviteRedirect({ location }: { location: ReturnType<typeof useLocation> }) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const redirect = getPendingInviteRedirect();
+    if (!redirect || `${location.pathname}${location.search}` === redirect) return;
+    navigate(redirect, { replace: true });
+  }, [location.pathname, location.search, navigate]);
+
+  return null;
+}
+
 // Separate component to render the main app content
 function AppShell() {
   const location = useLocation();
@@ -779,6 +848,7 @@ function AppShell() {
   return (
     <DataProvider>
       <CoachProvider>
+        <PostAuthInviteRedirect location={location} />
         <GuidanceProvider>
           <PageThemeProvider page={pageAccent}>
             <a href="#main-content" className="skip-link">

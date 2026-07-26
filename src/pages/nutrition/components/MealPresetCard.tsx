@@ -34,7 +34,7 @@ export const MealPresetCard = memo(function MealPresetCard({
               fontWeight: 600,
               fontSize: '14px',
               color: 'var(--fs-ink)',
-                          }}
+            }}
           >
             {preset.name}
           </h4>
@@ -102,7 +102,7 @@ export const MealPresetCard = memo(function MealPresetCard({
             fontFamily: 'var(--font-display)',
             fontSize: '13px',
             fontWeight: 600,
-                        border: 'none',
+            border: 'none',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',

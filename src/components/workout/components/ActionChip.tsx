@@ -21,7 +21,7 @@ const ActionChip = memo<ActionChipProps>(({ icon, label, onClick, active, ariaLa
     }}
     aria-label={ariaLabel}
     aria-pressed={active}
-    className="transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1"
+    className="transition-ui active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1"
     style={{
       display: 'flex',
       alignItems: 'center',

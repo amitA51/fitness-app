@@ -151,7 +151,7 @@ const variantStyles: Record<ButtonVariant, string> = {
 type EditorialVariant = 'editorial' | 'editorial-secondary' | 'editorial-ghost';
 
 const EDITORIAL_BASE =
-  'h-[52px] px-6 text-[17px] font-semibold tracking-[-0.01em] transition-all duration-150 ' +
+  'h-[52px] px-6 text-[17px] font-semibold tracking-[-0.01em] transition-ui duration-150 ' +
   'focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 ' +
   'active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 ' +
   'inline-flex items-center justify-center gap-3 cursor-pointer';

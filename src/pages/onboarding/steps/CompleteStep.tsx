@@ -182,7 +182,10 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
         )}
         {!isCoach && data.primaryGoal && (
           <div className="p-4 flex items-center gap-4" style={cardStyle}>
-            <div className="w-12 h-12 flex items-center justify-center shrink-0" style={iconBoxStyle}>
+            <div
+              className="w-12 h-12 flex items-center justify-center shrink-0"
+              style={iconBoxStyle}
+            >
               <Target size={22} />
             </div>
             <div className="text-right flex-1">
@@ -194,7 +197,10 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
 
         {!isCoach && (
           <div className="p-4 flex items-center gap-4" style={cardStyle}>
-            <div className="w-12 h-12 flex items-center justify-center shrink-0" style={iconBoxStyle}>
+            <div
+              className="w-12 h-12 flex items-center justify-center shrink-0"
+              style={iconBoxStyle}
+            >
               <Calendar size={22} />
             </div>
             <div className="text-right flex-1">
@@ -208,7 +214,10 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
 
         {!isCoach && (
           <div className="p-4 flex items-center gap-4" style={cardStyle}>
-            <div className="w-12 h-12 flex items-center justify-center shrink-0" style={iconBoxStyle}>
+            <div
+              className="w-12 h-12 flex items-center justify-center shrink-0"
+              style={iconBoxStyle}
+            >
               <Clock size={22} />
             </div>
             <div className="text-right flex-1">
@@ -247,7 +256,11 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
           <ChevronLeft size={22} aria-hidden="true" />
         </button>
 
-        <button type="button" onClick={() => onFinish(false)} className="cta-ghost focus-ring w-full">
+        <button
+          type="button"
+          onClick={() => onFinish(false)}
+          className="cta-ghost focus-ring w-full"
+        >
           כניסה למסך הבית
         </button>
       </m.div>
@@ -277,7 +290,11 @@ function CoachNextCard({
         <p style={valueStyle}>{label}</p>
       </div>
       {isInteractive && (
-        <ChevronLeft size={20} aria-hidden="true" style={{ color: 'var(--fs-accent)', flexShrink: 0 }} />
+        <ChevronLeft
+          size={20}
+          aria-hidden="true"
+          style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
+        />
       )}
     </>
   );

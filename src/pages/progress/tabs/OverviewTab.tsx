@@ -158,32 +158,32 @@ export const OverviewTab = memo(function OverviewTab({
                 textAlign: 'start',
               }}
             >
-              {[
-                'בחרו תבנית מוכנה',
-                'השלימו אימון אחד',
-                'חזרו לכאן לראות התקדמות',
-              ].map((label, i) => (
-                <li key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span
-                    aria-hidden
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 999,
-                      background: 'var(--fs-surface-2)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {i + 1}
-                  </span>
-                  <span style={{ fontSize: 15, fontWeight: 500, letterSpacing: '-0.01em' }}>{label}</span>
-                </li>
-              ))}
+              {['בחרו תבנית מוכנה', 'השלימו אימון אחד', 'חזרו לכאן לראות התקדמות'].map(
+                (label, i) => (
+                  <li key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span
+                      aria-hidden
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 999,
+                        background: 'var(--fs-surface-2)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {i + 1}
+                    </span>
+                    <span style={{ fontSize: 15, fontWeight: 500, letterSpacing: '-0.01em' }}>
+                      {label}
+                    </span>
+                  </li>
+                )
+              )}
             </ol>
             <button
               type="button"
@@ -223,7 +223,7 @@ export const OverviewTab = memo(function OverviewTab({
               fontSize: 10,
               letterSpacing: '0.15em',
               color: 'var(--fs-muted)',
-                          }}
+            }}
           >
             השבוע האחרון
           </span>
@@ -277,7 +277,7 @@ export const OverviewTab = memo(function OverviewTab({
                 fontSize: 10,
                 letterSpacing: '0.15em',
                 color: 'var(--fs-muted)',
-                              }}
+              }}
             >
               שיאים אחרונים
             </span>

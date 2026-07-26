@@ -1,5 +1,6 @@
-import { m, useReducedMotion } from 'framer-motion';
+import { m } from 'framer-motion';
 import React, { useId } from 'react';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 type SpinnerVariant = 'default' | 'dots' | 'pulse' | 'orbit' | 'gradient' | 'wave';
 type SpinnerSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';

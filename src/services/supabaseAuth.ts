@@ -6,54 +6,8 @@
 import type { Session, User } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { logger } from '../utils/logger';
-import { STORES, dbClear } from './indexedDBCore';
-
-/**
- * Stores that hold user-scoped data and must be cleared on sign-out
- * to prevent cross-user leakage on shared devices.
- */
-const USER_SCOPED_STORES: readonly string[] = [
-  STORES.WORKOUT_SESSIONS,
-  STORES.WORKOUT_TEMPLATES,
-  STORES.PERSONAL_RECORDS,
-  STORES.BODY_MEASUREMENTS,
-  STORES.BODY_WEIGHT,
-  STORES.RECOVERY_LOGS,
-  STORES.NUTRITION_LOGS,
-  STORES.WATER_LOGS,
-  STORES.AI_CONVERSATIONS,
-  STORES.PERSONAL_ITEMS,
-  STORES.PERSONAL_EXERCISES,
-  STORES.USER_SETTINGS,
-  STORES.PENDING_SYNC,
-];
-
-/**
- * Exact localStorage keys holding user-scoped state. Cleared on sign-out.
- */
-const USER_SCOPED_LS_KEYS: readonly string[] = [
-  'active_workout_v3_state',
-  'onboarding_data',
-  'user_profile',
-  'supabase_session',
-  'nutrition_goals',
-  'workout_prefs',
-  'last_sync_time',
-  'notification_settings',
-  // Role-split state: a stale coach intent or cached role must never leak to
-  // the next account on a shared device (it would promote/misroute them).
-  'pending_coach_intent',
-  'cached_role',
-  // Coach view state + reminder dedup (CoachContext.tsx / coach reminderService)
-  // — also user-scoped, must not leak across accounts on a shared device.
-  'view_mode',
-  'coach_reminders_fired',
-];
-
-/**
- * Prefixes for dynamic per-feature localStorage keys (e.g. ai_tutorial_<exercise>).
- */
-const USER_SCOPED_LS_KEY_PREFIXES: readonly string[] = ['ai_tutorial_'];
+import { getInviteConfirmationRedirectUrl } from './authContinuation';
+import { transitionAuthSession } from './authSessionTransition';
 
 export type AuthCallback = (session: Session | null) => void;
 export type AuthUserCallback = (user: User | null) => void;
@@ -124,6 +78,11 @@ const isSessionExpiredError = (err: unknown): boolean => {
 const handleExpiredSession = async (err: unknown): Promise<void> => {
   logger.auth.warn('Session expired or invalid — signing out', err);
   try {
+    await transitionAuthSession(null, { forceCleanup: true });
+  } catch (cleanupErr) {
+    logger.auth.error('Expired-session local cleanup failed', cleanupErr);
+  }
+  try {
     if (supabase) await supabase.auth.signOut();
   } catch (signOutErr) {
     logger.auth.error('signOut after expired session failed', signOutErr);
@@ -189,10 +148,14 @@ export const signUp = async (
     return { user: null, error: 'Supabase not configured' };
   }
 
+  const emailRedirectTo = getInviteConfirmationRedirectUrl();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: metadata },
+    options: {
+      data: metadata,
+      ...(emailRedirectTo ? { emailRedirectTo } : {}),
+    },
   });
 
   if (error) {
@@ -215,7 +178,12 @@ export const resendSignUpConfirmation = async (
     return { error: 'Supabase not configured' };
   }
 
-  const { error } = await supabase.auth.resend({ type: 'signup', email });
+  const emailRedirectTo = getInviteConfirmationRedirectUrl();
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    ...(emailRedirectTo ? { options: { emailRedirectTo } } : {}),
+  });
 
   if (error) {
     logger.auth.warn('Resend sign-up confirmation error', error);
@@ -254,7 +222,7 @@ export const signInWithGoogle = async (): Promise<{ user: User | null; error: st
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: window.location.origin,
+      redirectTo: getInviteConfirmationRedirectUrl() ?? window.location.origin,
     },
   });
 
@@ -267,86 +235,38 @@ export const signInWithGoogle = async (): Promise<{ user: User | null; error: st
 };
 
 /**
- * Clear user-scoped local data so the next user on the same device cannot see
- * the previous user's records. Best-effort: each step is wrapped in try/catch
- * so a single failure does not prevent the overall sign-out from completing.
- */
-const clearUserScopedLocalData = async (): Promise<void> => {
-  // 1. IndexedDB stores
-  for (const store of USER_SCOPED_STORES) {
-    try {
-      await dbClear(store);
-    } catch (err) {
-      logger.app.warn(`signOut cleanup: failed to clear IDB store "${store}"`, err);
-    }
-  }
-
-  // 2. Known localStorage keys
-  for (const key of USER_SCOPED_LS_KEYS) {
-    try {
-      localStorage.removeItem(key);
-    } catch (err) {
-      logger.app.warn(`signOut cleanup: failed to remove localStorage key "${key}"`, err);
-    }
-  }
-
-  // 3. Prefixed dynamic localStorage keys (e.g. ai_tutorial_*)
-  try {
-    const matched: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (!k) continue;
-      if (USER_SCOPED_LS_KEY_PREFIXES.some((prefix) => k.startsWith(prefix))) {
-        matched.push(k);
-      }
-    }
-    for (const k of matched) {
-      try {
-        localStorage.removeItem(k);
-      } catch (err) {
-        logger.app.warn(`signOut cleanup: failed to remove localStorage key "${k}"`, err);
-      }
-    }
-  } catch (err) {
-    logger.app.warn('signOut cleanup: failed to enumerate localStorage', err);
-  }
-};
-
-/**
  * Best-effort: flush pending offline mutations to the cloud before the local
  * wipe (data-loss guard), then clear the queue so leftover entries can never
  * replay into the next account on this device.
  */
-const flushAndClearMutationQueue = async (): Promise<void> => {
+const flushMutationQueue = async (): Promise<void> => {
   try {
-    const { getQueueDepth, processQueue, clearMutationQueue } = await import('./offlineQueue');
+    const { getQueueDepth, processQueue } = await import('./offlineQueue');
     if (typeof navigator === 'undefined' || navigator.onLine) {
       const depth = await getQueueDepth();
       if (depth > 0) {
         await processQueue();
       }
     }
-    await clearMutationQueue();
   } catch (err) {
-    logger.app.warn('signOut cleanup: offline-queue flush/clear failed', err);
+    logger.app.warn('signOut cleanup: offline-queue flush failed', err);
   }
 };
 
 export const signOut = async (): Promise<void> => {
   // Flush BEFORE wiping local stores: signing out must not silently discard
   // changes that never reached the cloud.
-  await flushAndClearMutationQueue();
+  await flushMutationQueue();
 
-  if (!isSupabaseConfigured() || !supabase) {
-    // Even when Supabase is not configured, still clear any local data
-    // so a manual sign-out from offline mode behaves predictably.
-    await clearUserScopedLocalData();
-    return;
+  // Use the shared transition path even when Supabase is unavailable. This
+  // force-wipes local data when a legacy install lacks an identity marker.
+  try {
+    await transitionAuthSession(null, { forceCleanup: true });
+  } catch (err) {
+    logger.auth.error('Sign-out local cleanup failed', err);
   }
 
-  // Clear local data BEFORE calling Supabase signOut so that if the network
-  // call hangs or fails, the device is already wiped.
-  await clearUserScopedLocalData();
+  if (!isSupabaseConfigured() || !supabase) return;
 
   try {
     const { error } = await supabase.auth.signOut();

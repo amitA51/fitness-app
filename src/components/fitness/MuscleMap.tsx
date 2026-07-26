@@ -155,8 +155,7 @@ export function MuscleMap({ primary = [], secondary = [], className }: MuscleMap
     const he = translateMuscle(m ?? undefined);
     if (he && he !== 'אחר') names.add(he);
   }
-  const ariaLabel =
-    names.size > 0 ? `שרירים בעבודה: ${[...names].join(', ')}` : 'מפת שרירים';
+  const ariaLabel = names.size > 0 ? `שרירים בעבודה: ${[...names].join(', ')}` : 'מפת שרירים';
 
   return (
     <div

@@ -174,7 +174,8 @@
     color-mix(in srgb, var(--fs-signal) 32%, transparent);
   --shadow-deep: 0 24px 60px -20px rgba(13, 21, 22, 0.28), 0 8px 24px -8px rgba(13, 21, 22, 0.14);
   --shadow-lift: 0 14px 36px -14px rgba(13, 21, 22, 0.2);
-  --shadow-glass: 0 10px 32px -12px rgba(13, 21, 22, 0.14), inset 0 0.5px 0 rgba(255, 255, 255, 0.55);
+  --shadow-glass: 0 10px 32px -12px rgba(13, 21, 22, 0.14), inset 0 0.5px 0
+    rgba(255, 255, 255, 0.55);
 
   /* ── Adaptive surface effects (auto-swap light↔dark) ── */
   --fs-surface-shine: rgba(255, 255, 255, 0.58);
@@ -539,4 +540,90 @@ html.dark {
   /* Accent glow shadows — mint pops on black */
   --shadow-glow-accent: 0 0 0 1px rgba(77, 220, 187, 0.18), 0 0 24px rgba(77, 220, 187, 0.1);
   --shadow-glow-signal: 0 0 0 1px rgba(226, 251, 112, 0.18), 0 0 24px rgba(226, 251, 112, 0.1);
+}
+
+/* ============================================================================
+   12. ACCESSIBILITY OVERRIDES
+   ============================================================================
+   Settings exposes three accessibility toggles that SettingsContext reflects
+   onto <html>: `reduce-motion`, `large-text` and `high-contrast`. The first two
+   already had implementations; `high-contrast` had a class and a UI switch but
+   no token block at all, so the toggle changed nothing. Only the OS-level
+   `prefers-contrast: more` query was handled (components.css).
+   ============================================================================ */
+
+html.high-contrast {
+  /* Pure black/white surfaces: maximum separation, no mid greys to squint at. */
+  --fs-bg: #000000;
+  --fs-surface: #000000;
+  --fs-surface-2: #111111;
+  --fs-ink: #ffffff;
+  --fs-muted: #f2f2f2;
+  --fs-heading: #ffffff;
+
+  /* Borders become visible structure rather than a hint. */
+  --color-border: #ffffff;
+  --color-border-strong: #ffffff;
+  --color-separator: #ffffff;
+
+  /* Status colours brightened so they clear AA against pure black. */
+  --fs-accent: #8efad8;
+  --color-accent: #8efad8;
+  --color-secondary: #8efad8;
+  --color-success: #7cf0a8;
+  --color-success-fg: #7cf0a8;
+  --color-error: #ff8a80;
+  --color-error-fg: #ff8a80;
+  --fs-error: #ff8a80;
+  --color-warning: #ffc06b;
+  --fs-warn: #ffc06b;
+  --color-ink-on-accent: #000000;
+  --color-ink-on-error: #000000;
+
+  /* Depth cues that rely on translucency stop carrying meaning here. */
+  --fs-body-overlay: transparent;
+  --fs-grid-line: transparent;
+  --fs-mesh-accent: transparent;
+  --fs-mesh-signal: transparent;
+}
+
+/* Translucent materials hurt contrast: make them opaque and give every glass
+   surface a real 2px border so its bounds are unambiguous. */
+html.high-contrast .glass,
+html.high-contrast .glass-strong,
+html.high-contrast .glass-subtle,
+html.high-contrast .glass-nav {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: var(--fs-surface) !important;
+  border: 2px solid var(--color-border) !important;
+}
+
+html.high-contrast .ambient-mesh,
+html.high-contrast .ambient-mesh-strong {
+  background-image: none !important;
+}
+
+/* ============================================================================
+   13. DIRECTION-AWARE SAFE AREAS + ALIASES
+   ============================================================================ */
+
+:root {
+  /* `--color-danger` was referenced by the swipe-action gradient in global.css
+     but never defined, which made that gradient invalid. Alias, not a copy, so
+     the dark-theme override of --color-error still applies. */
+  --color-danger: var(--color-error);
+
+  /* env(safe-area-inset-left/right) are PHYSICAL. In an RTL layout the inline
+     start edge is on the right, so using the physical values for logical
+     padding puts the inset on the wrong side of notched/curved devices. */
+  --safe-inline-start: env(safe-area-inset-left, 0px);
+  --safe-inline-end: env(safe-area-inset-right, 0px);
+  --safe-block-start: env(safe-area-inset-top, 0px);
+  --safe-block-end: env(safe-area-inset-bottom, 0px);
+}
+
+html[dir="rtl"] {
+  --safe-inline-start: env(safe-area-inset-right, 0px);
+  --safe-inline-end: env(safe-area-inset-left, 0px);
 }

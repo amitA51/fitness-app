@@ -103,7 +103,7 @@ export const AnnualPasswordInput = memo(function AnnualPasswordInput({
           enterKeyHint={enterKeyHint}
           autoFocus={autoFocus}
           className={cn(
-            'w-full h-14 transition-all duration-200 pe-12',
+            'w-full h-14 transition-ui duration-200 pe-12',
             'text-base',
             'placeholder:opacity-60',
             'focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--fs-focus-ring)]',

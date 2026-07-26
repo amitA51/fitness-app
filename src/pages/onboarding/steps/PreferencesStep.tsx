@@ -123,7 +123,7 @@ export function PreferencesStep({ data, onChange, direction = 1 }: PreferencesSt
                   key={opt.value}
                   type="button"
                   onClick={() => onChange({ preferredTime: opt.value })}
-                  className="flex-1 min-h-[56px] transition-all flex flex-col items-center justify-center gap-1"
+                  className="flex-1 min-h-[56px] transition-ui flex flex-col items-center justify-center gap-1"
                   style={{
                     fontFamily: 'var(--font-body)',
                     fontWeight: isSelected ? 700 : 500,
@@ -176,7 +176,7 @@ export function PreferencesStep({ data, onChange, direction = 1 }: PreferencesSt
                 key={sec}
                 type="button"
                 onClick={() => onChange({ restBetweenSets: sec })}
-                className="flex-1 min-h-[48px] transition-all"
+                className="flex-1 min-h-[48px] transition-ui"
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontWeight: data.restBetweenSets === sec ? 700 : 500,

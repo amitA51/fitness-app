@@ -415,7 +415,9 @@ export default function Dashboard() {
                     lineHeight: 1.3,
                   }}
                 >
-                  {hasSessionToday ? 'לחצו לבחירת תבנית או אימון ריק' : 'תבנית מוכנה · או אימון ריק'}
+                  {hasSessionToday
+                    ? 'לחצו לבחירת תבנית או אימון ריק'
+                    : 'תבנית מוכנה · או אימון ריק'}
                 </span>
               </span>
               <span
@@ -719,8 +721,8 @@ const FirstRunHero = memo(function FirstRunHero({
               margin: 0,
             }}
           >
-            התחילו באימון ראשון — מומלץ תבנית מוכנה עם תרגילים. אחרי שתסיימו יופיעו כאן
-            הטבעות, הרצף והתובנות.
+            התחילו באימון ראשון — מומלץ תבנית מוכנה עם תרגילים. אחרי שתסיימו יופיעו כאן הטבעות, הרצף
+            והתובנות.
           </p>
         </div>
 
@@ -949,7 +951,7 @@ const FindCoachCard = memo(function FindCoachCard() {
               letterSpacing: '-0.01em',
             }}
           >
-            יש לך קוד הזמנה ממאמן? התחבר כדי לקבל תוכניות ומעקב.
+            יש לכם קוד הזמנה ממאמן? התחברו כדי לקבל תוכניות ומעקב.
           </span>
         </span>
         <ArrowLeft
@@ -979,7 +981,11 @@ const SectionTitle = memo(function SectionTitle({
     <div className="section-heading">
       <h2 className="section-heading-title">{text}</h2>
       {action && (
-        <button type="button" onClick={action.onClick} className="section-heading-action focus-ring">
+        <button
+          type="button"
+          onClick={action.onClick}
+          className="section-heading-action focus-ring"
+        >
           {action.label}
           <ChevronLeft size={16} aria-hidden="true" style={{ flexShrink: 0 }} />
         </button>

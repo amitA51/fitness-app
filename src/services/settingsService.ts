@@ -8,8 +8,9 @@ import type { WorkoutSession } from '../types';
 import { logger } from '../utils/logger';
 import { calculateTDEE, getMacroGoalsForGoal } from '../utils/tdee';
 import { exportWorkoutHistoryCSV } from './exportService';
-import { STORES, dbClear, dbGetAll, dbPut } from './indexedDBCore';
+import { STORES, dbGetAll, dbPut } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
+import { clearUserScopedLocalData } from './userScopedLocalData';
 
 // ─── TDEE / Macro orchestration ─────────────────────────────────────────────
 
@@ -41,13 +42,6 @@ export function computeMacrosFromProfile(input: ComputeMacrosInput): MacroResult
 }
 
 // ─── DB Clear orchestration ─────────────────────────────────────────────────
-
-const SETTINGS_LOCALSTORAGE_KEYS = [
-  'user_profile',
-  'nutrition_goals',
-  'workout_prefs',
-  'last_sync_time',
-] as const;
 
 /** Every cloud table holding rows owned by a single user (keyed by user_id). */
 const USER_DATA_TABLES = [
@@ -111,13 +105,7 @@ export async function deleteAllUserData(): Promise<void> {
     logger.app.warn('deleteAllUserData: failed to clear offline mutation queue', err);
   }
 
-  const allStores = Object.values(STORES);
-  for (const store of allStores) {
-    await dbClear(store);
-  }
-  for (const key of SETTINGS_LOCALSTORAGE_KEYS) {
-    localStorage.removeItem(key);
-  }
+  await clearUserScopedLocalData();
 }
 
 // ─── CSV Export orchestration ───────────────────────────────────────────────

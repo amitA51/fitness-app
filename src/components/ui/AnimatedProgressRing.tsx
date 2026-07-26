@@ -1,6 +1,7 @@
-import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import type React from 'react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface AnimatedProgressRingProps {
   percentage: number;

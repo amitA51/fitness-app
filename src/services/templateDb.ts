@@ -42,6 +42,48 @@ export const getWorkoutTemplate = (id: string): Promise<WorkoutTemplate | null> 
 };
 
 /**
+ * Free-plan template quota.
+ *
+ * The paywall advertises "up to 3" templates on the free plan, and until now
+ * nothing enforced it: createWorkoutTemplate wrote straight to IndexedDB and the
+ * cloud accepted unlimited rows. The limit is enforced in TWO places on purpose:
+ * here (so the user gets an immediate, explainable refusal and an upgrade path)
+ * and in the database (trg_enforce_free_template_quota, migration
+ * 20260726100000_billing_core.sql) so no client path — duplicate, save-from-
+ * summary, offline replay — can bypass it.
+ *
+ * Program-day scratch templates (`isProgramHidden`) are app-managed and never
+ * counted against the user.
+ */
+export const FREE_TEMPLATE_LIMIT = 3;
+
+/** Thrown when a free user tries to exceed FREE_TEMPLATE_LIMIT. */
+export class FreeTemplateLimitError extends Error {
+  constructor() {
+    super('free_template_limit_reached');
+    this.name = 'FreeTemplateLimitError';
+  }
+}
+
+/** True when the DB rejected a write because of the server-side quota trigger. */
+export const isFreeTemplateLimitError = (err: unknown): boolean => {
+  if (err instanceof FreeTemplateLimitError) return true;
+  const message = err instanceof Error ? err.message : String(err ?? '');
+  return message.includes('free_template_limit_reached');
+};
+
+/**
+ * How many templates a free user may still create, or `null` when unlimited.
+ * Lets the UI disable the create affordance instead of failing after the fact.
+ */
+export const getRemainingFreeTemplates = async (): Promise<number | null> => {
+  const { getEntitlement, isPremium } = await import('./billing/entitlementService');
+  if (isPremium(await getEntitlement())) return null;
+  const existing = await getWorkoutTemplates();
+  return Math.max(FREE_TEMPLATE_LIMIT - existing.length, 0);
+};
+
+/**
  * Creates a new workout template.
  */
 export const createWorkoutTemplate = async (
@@ -49,6 +91,15 @@ export const createWorkoutTemplate = async (
 ): Promise<WorkoutTemplate> => {
   if (!templateData.name?.trim()) {
     throw new ValidationError('Template name is required.');
+  }
+
+  // Quota pre-check. Skipped for app-managed program-day templates, which are
+  // regenerated on demand and are not user content.
+  if (!templateData.isProgramHidden) {
+    const remaining = await getRemainingFreeTemplates();
+    if (remaining !== null && remaining <= 0) {
+      throw new FreeTemplateLimitError();
+    }
   }
 
   const newTemplate: WorkoutTemplate = {

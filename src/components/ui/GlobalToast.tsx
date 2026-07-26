@@ -5,9 +5,10 @@
 // Canonical toast for the whole app. Replaces ad-hoc toasts (e.g. the workout
 // WaterReminderToast) — see showToast() docs for the exact water call.
 
-import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Z_INDEX } from '../../constants/zIndex';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 /** Visual intent. `water` is the cyan hydration-reminder style (accent-tinted). */
 export type ToastVariant = 'success' | 'error' | 'info' | 'water';

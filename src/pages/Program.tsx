@@ -11,13 +11,14 @@
  * RTL bidi-isolation on composite numerals, and reduced-motion honored.
  */
 
-import { m, useReducedMotion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Check, ChevronDown, Dumbbell, PartyPopper, Play, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Stagger, StaggerItem } from '../components/motion/Stagger';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { BBT_PROGRAM, type BbtDay } from '../data/bbtProgram.generated';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
   TRAINING_DAYS,
   type TrainingDay,
@@ -189,11 +190,16 @@ export default function Program() {
                 }}
               >
                 <m.div
-                  initial={reduceMotion ? false : { width: 0 }}
-                  animate={{ width: `${pct}%` }}
-                  transition={reduceMotion ? { duration: 0 } : { duration: 0.5, ease: EASE_OUT }}
+                  // scaleX instead of width: width animation is a layout-driving
+                  // property, scaleX is composited. The track is `direction: ltr`
+                  // above, so the origin is the left edge in both locales.
+                  initial={reduceMotion ? false : { scaleX: 0 }}
+                  animate={{ scaleX: pct / 100 }}
+                  transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: EASE_OUT }}
                   style={{
                     height: '100%',
+                    width: '100%',
+                    transformOrigin: 'left center',
                     background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
                     borderRadius: 999,
                   }}

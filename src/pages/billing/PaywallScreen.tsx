@@ -10,10 +10,13 @@
 // ============================================================================
 
 import { ArrowRight, Check, Crown, Lock, Sparkles, Zap } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useEntitlement } from '../../contexts/EntitlementContext';
+import { trackFunnel } from '../../services/analytics/funnel';
 import type { PremiumFeature } from '../../services/billing/types';
 import { hasJoinedWaitlist, joinWaitlist } from '../../services/billing/waitlistService';
+import { PurchasePanel } from './components/PurchasePanel';
 
 // --------------------------------------------------------------------------
 // Feature catalogue
@@ -109,12 +112,17 @@ interface FeatureCheckProps {
 function FeatureCheck({ value, isPro }: FeatureCheckProps) {
   if (value === null) {
     return (
+      // An aria-label on a generic div is not a reliable accessible name inside
+      // a data cell. A visually-hidden text node is, and the dash stays purely
+      // decorative.
       <div
         className="w-5 h-5 flex items-center justify-center"
         style={{ color: 'var(--color-separator)' }}
-        aria-label="לא זמין"
       >
-        <span style={{ fontSize: 16, lineHeight: 1 }}>—</span>
+        <span className="sr-only">לא זמין</span>
+        <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1 }}>
+          —
+        </span>
       </div>
     );
   }
@@ -168,13 +176,16 @@ function WaitlistCta({ state, errorMessage, onJoin }: WaitlistCtaProps) {
           style={{
             height: 52,
             borderRadius: 'var(--radius-asymmetric)',
-            background: 'var(--fs-surface-2)',
+            // Accent-on-surface text measured 1.65:1 (WCAG AA needs 4.5:1).
+            // Inverting to an accent FILL with on-accent ink clears AA in both
+            // themes and reads as a completed state rather than a hint.
+            background: 'var(--fs-accent)',
             border: '1px solid var(--fs-accent)',
           }}
         >
           <Check
             size={20}
-            style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
+            style={{ color: 'var(--color-ink-on-accent)', flexShrink: 0 }}
             aria-hidden="true"
           />
           <span
@@ -182,10 +193,10 @@ function WaitlistCta({ state, errorMessage, onJoin }: WaitlistCtaProps) {
               fontFamily: 'var(--font-display)',
               fontWeight: 700,
               fontSize: '15px',
-              color: 'var(--fs-accent)',
+              color: 'var(--color-ink-on-accent)',
             }}
           >
-            נרשמת! נעדכן אותך כשהפרימיום יוצא
+            נרשמתם. נעדכן אותכם ברגע שהפרימיום ייצא לדרך
           </span>
         </div>
       </div>
@@ -245,10 +256,19 @@ export default function PaywallScreen() {
   const navigate = useNavigate();
   const [waitlistState, setWaitlistState] = useState<WaitlistState>('checking');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Null until PurchasePanel reports back, so we never flash the wrong CTA.
+  const [canPurchase, setCanPurchase] = useState<boolean | null>(null);
+  const { refresh: refreshEntitlement } = useEntitlement();
+  const handleAvailability = useCallback((available: boolean) => {
+    setCanPurchase(available);
+  }, []);
 
-  // On mount: check if already joined
+  // On mount: record the funnel step and check if already joined.
   useEffect(() => {
     let cancelled = false;
+    // Top of the conversion funnel: without this the operator cannot compute a
+    // paywall → checkout → subscribe rate at all.
+    trackFunnel('paywall_viewed');
     hasJoinedWaitlist().then((joined) => {
       if (cancelled) return;
       setWaitlistState(joined ? 'joined' : 'idle');
@@ -257,6 +277,20 @@ export default function PaywallScreen() {
       cancelled = true;
     };
   }, []);
+
+  // The provider redirects back to /paywall?checkout=success. The webhook is the
+  // source of truth for the entitlement, but it may land a moment later, so we
+  // re-read it here to avoid showing a just-paying customer a locked app.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const outcome = new URLSearchParams(window.location.search).get('checkout');
+    if (outcome !== 'success') return;
+
+    trackFunnel('checkout_completed');
+    void refreshEntitlement();
+    // Drop the query param so a refresh does not re-record the conversion.
+    window.history.replaceState({}, '', '/paywall');
+  }, [refreshEntitlement]);
 
   const handleJoin = async () => {
     setWaitlistState('submitting');
@@ -289,7 +323,7 @@ export default function PaywallScreen() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="flex items-center justify-center w-10 h-10 active:scale-[0.98]"
+          className="flex items-center justify-center w-11 h-11 active:scale-[0.98]"
           style={{ borderRadius: 'var(--radius-asymmetric)', background: 'var(--fs-surface-2)' }}
           aria-label="חזרה"
         >
@@ -330,7 +364,7 @@ export default function PaywallScreen() {
             margin: 0,
           }}
         >
-          הרם את האימון שלך לרמה הבאה
+          התקדמו באימון לרמה הבאה
         </h2>
         <p
           style={{
@@ -359,6 +393,7 @@ export default function PaywallScreen() {
             overflow: 'hidden',
           }}
         >
+          <caption className="sr-only">השוואת תכונות בין המסלול החינמי למסלול פרו</caption>
           {/* Column headers */}
           <thead>
             <tr style={{ borderBottom: '1px solid var(--color-separator)' }}>
@@ -453,50 +488,64 @@ export default function PaywallScreen() {
         </table>
       </section>
 
+      {/* ── Purchase path ── */}
+      {/* Renders only when billing is live (release flag + an active server
+          price). Until then it returns null and the waitlist below is the CTA,
+          which keeps the screen honest instead of showing a dead buy button. */}
+      <PurchasePanel onAvailabilityChange={handleAvailability} />
+
       {/* ── Pricing note ── */}
-      <section className="px-5 pb-4 flex flex-col items-center gap-2">
-        <div
-          className="flex items-center gap-2 px-4 py-3 w-full"
-          style={{
-            borderRadius: 'var(--radius-asymmetric)',
-            background: 'var(--fs-surface-2)',
-            border: '1px solid var(--color-separator)',
-          }}
-        >
-          <Zap size={16} style={{ color: 'var(--fs-accent)', flexShrink: 0 }} aria-hidden="true" />
-          <span
+      {canPurchase === false && (
+        <section className="px-5 pb-4 flex flex-col items-center gap-2">
+          <div
+            className="flex items-center gap-2 px-4 py-3 w-full"
             style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: '13px',
-              color: 'var(--fs-muted)',
-              lineHeight: 1.5,
+              borderRadius: 'var(--radius-asymmetric)',
+              background: 'var(--fs-surface-2)',
+              border: '1px solid var(--color-separator)',
             }}
           >
-            מנוי פרימיום יושק בקרוב. הירשמ/י לרשימת ההמתנה וקבל/י גישה מוקדמת.
-          </span>
-        </div>
-      </section>
+            <Zap
+              size={16}
+              style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
+              aria-hidden="true"
+            />
+            <span
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '13px',
+                color: 'var(--fs-muted)',
+                lineHeight: 1.5,
+              }}
+            >
+              מנוי הפרימיום יושק בקרוב. הצטרפו לרשימת ההמתנה וקבלו גישה מוקדמת.
+            </span>
+          </div>
+        </section>
+      )}
 
       {/* ── CTA ── */}
-      <section
-        className="px-5 pb-safe-bottom flex flex-col items-center gap-3"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--space-6))' }}
-      >
-        <WaitlistCta state={waitlistState} errorMessage={errorMessage} onJoin={handleJoin} />
-        {waitlistState !== 'joined' && (
-          <p
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: '12px',
-              color: 'var(--fs-muted)',
-              margin: 0,
-              textAlign: 'center',
-            }}
-          >
-            ביטול בכל עת. ללא התחייבות.
-          </p>
-        )}
-      </section>
+      {canPurchase === false && (
+        <section
+          className="px-5 pb-safe-bottom flex flex-col items-center gap-3"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--space-6))' }}
+        >
+          <WaitlistCta state={waitlistState} errorMessage={errorMessage} onJoin={handleJoin} />
+          {waitlistState !== 'joined' && (
+            <p
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '12px',
+                color: 'var(--fs-muted)',
+                margin: 0,
+                textAlign: 'center',
+              }}
+            >
+              ביטול בכל עת. ללא התחייבות.
+            </p>
+          )}
+        </section>
+      )}
     </div>
   );
 }

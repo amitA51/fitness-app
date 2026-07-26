@@ -70,7 +70,7 @@ export const CalorieHero = memo(function CalorieHero({
           fontFamily: 'var(--font-mono)',
           fontSize: 11,
           letterSpacing: '-0.01em',
-                  }}
+        }}
       >
         <SlidersHorizontal size={13} aria-hidden="true" />
         ערוך יעדים

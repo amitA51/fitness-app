@@ -212,7 +212,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
         initial="initial"
         animate="animate"
         onClick={onGuest}
-        className="w-full h-12 flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-[0.98]"
+        className="w-full h-12 flex items-center justify-center gap-3 transition-ui hover:opacity-90 active:scale-[0.98]"
         style={{
           background: 'transparent',
           border: '1px solid var(--fs-surface-2)',
@@ -243,7 +243,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             );
           }
         }}
-        className="w-full h-14 flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-[0.98]"
+        className="w-full h-14 flex items-center justify-center gap-3 transition-ui hover:opacity-90 active:scale-[0.98]"
         style={{
           background: 'var(--fs-surface)',
           border: '1px solid var(--fs-surface-2)',

@@ -97,11 +97,16 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
 
     // Per-second escalation: heavy impact at the 3/2/1 marks, a success pulse at
     // 0. Watch the integer second (timeLeft ticks at 100ms) and fire once per
-    // whole-second transition. Fully suppressed under prefers-reduced-motion —
-    // reduced users get only the color/number change, no haptic escalation.
+    // whole-second transition.
+    //
+    // NOT gated on prefers-reduced-motion: that preference is about visual
+    // motion (vestibular comfort), not about tactile feedback. Suppressing the
+    // countdown buzz for reduced-motion users removed the one cue that works
+    // when the phone is on the floor and out of sight. The user-facing haptics
+    // switch (useHapticFeedback → hapticsEnabled) remains the way to silence it.
     const lastSecondRef = useRef<number | null>(null);
     useEffect(() => {
-      if (!active || isPaused || prefersReduced) {
+      if (!active || isPaused) {
         lastSecondRef.current = null;
         return;
       }
@@ -117,7 +122,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
       } else if (sec === 0) {
         haptics.success();
       }
-    }, [timeLeft, active, isPaused, prefersReduced, haptics]);
+    }, [timeLeft, active, isPaused, haptics]);
 
     // ── COUNTDOWN AUDIO ───────────────────────────────────────────────────
     // Per-second beeps/voice as rest winds down, then a "get ready" cue exactly

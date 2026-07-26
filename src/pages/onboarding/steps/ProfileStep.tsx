@@ -76,7 +76,7 @@ export function ProfileStep({ data, onChange, direction = 1 }: ProfileStepProps)
                 key={opt.value}
                 type="button"
                 onClick={() => onChange({ gender: opt.value })}
-                className="flex-1 min-h-[56px] transition-all flex items-center justify-center"
+                className="flex-1 min-h-[56px] transition-ui flex items-center justify-center"
                 style={{
                   background: data.gender === opt.value ? 'var(--fs-accent)' : 'var(--fs-surface)',
                   border:

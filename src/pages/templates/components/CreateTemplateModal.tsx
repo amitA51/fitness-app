@@ -361,7 +361,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                   fontFamily: 'var(--font-display)',
                   fontSize: '14px',
                   fontWeight: 600,
-                                    background: 'transparent',
+                  background: 'transparent',
                   borderRadius: 12,
                   cursor: 'pointer',
                 }}
@@ -392,7 +392,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                           fontSize: '14px',
                           fontWeight: 600,
                           color: 'var(--fs-ink)',
-                                                  }}
+                        }}
                       >
                         בחר תרגיל
                       </span>
@@ -499,7 +499,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                     fontFamily: 'var(--font-mono)',
                     fontSize: '11px',
                     letterSpacing: '-0.01em',
-                                        color: 'var(--fs-muted)',
+                    color: 'var(--fs-muted)',
                   }}
                 >
                   זמן משוער
@@ -532,7 +532,8 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                   style={{
                     width: '20px',
                     height: '20px',
-                    border: '2px solid color-mix(in srgb, var(--color-ink-on-accent) 30%, transparent)',
+                    border:
+                      '2px solid color-mix(in srgb, var(--color-ink-on-accent) 30%, transparent)',
                     borderTopColor: 'var(--color-ink-on-accent)',
                     borderRadius: 999,
                     display: 'inline-block',
