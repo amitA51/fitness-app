@@ -46,6 +46,15 @@ function isRateLimited(error: { message?: string; code?: string } | null): boole
   return error.code === 'rate_limited';
 }
 
+/**
+ * True when create_comment refused because of a block relationship. The RPC
+ * enforces blocks in BOTH directions, so the feed's visual filtering is backed by
+ * the database rather than being cosmetic.
+ */
+function isBlocked(error: { message?: string } | null): boolean {
+  return (error?.message ?? '').includes('blocked');
+}
+
 /** Dedupes and drops null ids from a list of nullable string ids. */
 const uniqueIds = (ids: (string | null)[]): string[] => [
   ...new Set(ids.filter((id): id is string => id !== null)),
@@ -208,8 +217,9 @@ export async function createPost(
   if (!user) return { post: null, error: 'unauthenticated' };
 
   try {
-    // Direct INSERT policy was dropped — posts MUST be created via the
-    // rate-limited create_post RPC, which returns the inserted row.
+    // Posts can ONLY be created through the rate-limited create_post RPC: the
+    // direct INSERT policy and the table-level INSERT privilege were both removed
+    // in 20260726140000_community_write_rpcs.sql. The RPC returns the inserted row.
     const { data, error } = await supabase.rpc('create_post', {
       _body: input.body.trim(),
       _topic: input.topic ?? null,
@@ -292,8 +302,8 @@ export async function addComment(
   if (!user) return { comment: null, error: 'unauthenticated' };
 
   try {
-    // Direct INSERT goes through the rate-limited create_comment RPC, which
-    // returns the inserted post_comments row.
+    // Comments go through the rate-limited create_comment RPC, which also enforces
+    // block relationships in both directions and returns the inserted row.
     const { data, error } = await supabase.rpc('create_comment', {
       _post_id: postId,
       _body: body.trim(),
@@ -301,6 +311,7 @@ export async function addComment(
 
     if (error) {
       if (isRateLimited(error)) return { comment: null, error: 'rate_limited' };
+      if (isBlocked(error)) return { comment: null, error: 'blocked' };
       log.error('addComment failed', error);
       return { comment: null, error: error.message };
     }

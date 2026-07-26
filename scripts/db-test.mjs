@@ -26,11 +26,13 @@ const DB = 'sparkos_test';
 const SETUP = [
   'supabase/tests/fixtures/supabase_min_stub.sql',
   'supabase/migrations/20260610000100_entitlements.sql',
+  'supabase/migrations/20260611000000_community.sql',
   'supabase/migrations/20260726090000_account_deletion_audit.sql',
   'supabase/migrations/20260726100000_billing_core.sql',
   'supabase/migrations/20260726110000_product_events.sql',
   'supabase/migrations/20260726120000_sync_integrity.sql',
   'supabase/migrations/20260726130000_rate_limit_atomic.sql',
+  'supabase/migrations/20260726140000_community_write_rpcs.sql',
 ];
 
 /** Each is applied to a fresh transaction and must print "ALL ASSERTIONS PASSED". */
@@ -38,6 +40,7 @@ const SUITES = [
   'supabase/tests/billing_core_test.sql',
   'supabase/tests/rls_2026_07_26_test.sql',
   'supabase/tests/rate_limit_test.sql',
+  'supabase/tests/community_write_test.sql',
 ];
 
 /** Suites needing extra fixtures applied first. */

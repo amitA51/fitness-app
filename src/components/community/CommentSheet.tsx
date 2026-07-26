@@ -191,6 +191,9 @@ function CommentComposer({
         if (error === 'rate_limited') {
           // Friendly limit message goes to a toast at the host, not inline.
           onRateLimited();
+        } else if (error === 'blocked') {
+          // The RPC refuses when either side has blocked the other.
+          setSubmitError('לא ניתן להגיב לפוסט הזה.');
         } else {
           setSubmitError('שליחת התגובה נכשלה. נסו שוב.');
         }
