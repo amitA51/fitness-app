@@ -1,0 +1,6 @@
+# The payment provider cannot present a Supabase JWT. Authentication for this
+# endpoint is the provider's HMAC signature over the raw body, verified inside
+# the function (see _shared/billingAdapter.ts). Codified here rather than passed
+# as a deploy flag so the setting cannot drift between environments.
+[function_config]
+verify_jwt = false

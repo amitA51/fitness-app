@@ -15,6 +15,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 // @ts-expect-error remote ESM import (Deno)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { consumeRateLimits } from '../_shared/rateLimit.ts';
 
 // @ts-expect-error Deno global
 const env = (k: string): string => (Deno.env.get(k) ?? '') as string;
@@ -64,36 +65,21 @@ Deno.serve(async (req: Request) => {
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
   // Rate-limit accept attempts (brute-forcing invite codes), per-user and
-  // per-IP. Fails OPEN if the ledger is unavailable (e.g. migration not yet
-  // applied) — invite validity, consent and seat checks remain authoritative.
+  // per-IP, through the atomic RPC. The previous read-then-insert let concurrent
+  // attempts all observe a below-limit count, and read a PostgREST error as zero
+  // usage — see supabase/migrations/20260726130000_rate_limit_atomic.sql.
   const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
-  try {
-    await admin.from('rate_limit_events').insert([
-      { bucket: 'invite_accept_user', subject: caller.id },
-      { bucket: 'invite_accept_ip', subject: ip },
-    ]);
-    const since = new Date(Date.now() - 60_000).toISOString();
-    const [{ count: userHits }, { count: ipHits }] = await Promise.all([
-      admin
-        .from('rate_limit_events')
-        .select('id', { count: 'exact', head: true })
-        .eq('bucket', 'invite_accept_user')
-        .eq('subject', caller.id)
-        .gte('created_at', since),
-      admin
-        .from('rate_limit_events')
-        .select('id', { count: 'exact', head: true })
-        .eq('bucket', 'invite_accept_ip')
-        .eq('subject', ip)
-        .gte('created_at', since),
-    ]);
-    if ((userHits ?? 0) > 8 || (ipHits ?? 0) > 20) {
-      return json({ ok: false, error: 'rate_limited' }, 429, req);
-    }
-  } catch (_e) {
-    // Rate-limit infrastructure unavailable — fail CLOSED (S-9 security hardening).
-    console.error('[coach-invite-accept] rate-limit check failed, rejecting request:', _e);
-    return json({ ok: false, error: 'rate_limited' }, 503, req);
+  const rateVerdict = await consumeRateLimits(
+    admin,
+    [
+      { bucket: 'invite_accept_user', subject: caller.id, windowSeconds: 60, maxEvents: 8 },
+      { bucket: 'invite_accept_ip', subject: ip, windowSeconds: 60, maxEvents: 20 },
+    ],
+    '[coach-invite-accept]'
+  );
+  if (!rateVerdict.allowed) {
+    // Fail CLOSED on an unavailable limiter (503) vs an exhausted quota (429).
+    return json({ ok: false, error: 'rate_limited' }, rateVerdict.unavailable ? 503 : 429, req);
   }
 
   // Role split: a coach has no coach of their own. Reject coach callers before
