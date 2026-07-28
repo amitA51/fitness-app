@@ -1,0 +1,205 @@
+{
+  "base": "http://localhost:5199",
+  "dev": true,
+  "cpuThrottle": 1,
+  "routes": {},
+  "scenarios": {
+    "activeWorkout": {
+      "steps": {
+        "started": true,
+        "cardCount": 90,
+        "pickerDomNodes": 2378,
+        "commitsPerCardTap": 4,
+        "confirmed": true,
+        "goal": false,
+        "warmupSkipped": true,
+        "url": "http://localhost:5199/workout",
+        "hasStepper": true
+      },
+      "setLoggingIdle": {
+        "seconds": 5,
+        "commits": 5,
+        "commitsPerSec": 1,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "topRendered": [
+          "Memo(MonoTimer) x5"
+        ],
+        "updateRoots": [
+          "Memo(MonoTimer) x5"
+        ],
+        "renderedPerCommit": 1
+      },
+      "stepperTaps": [
+        {
+          "commits": 2,
+          "longTasks": 0,
+          "longTaskMs": 0,
+          "slowEvents": [],
+          "rendered": [
+            "Memo(?) x10",
+            "AnimatePresence x6",
+            "Sheet x5",
+            "ModalOverlay x5",
+            "ForwardRef(?) x4",
+            "WorkoutProvider x1",
+            "WorkoutContent x1",
+            "WorkoutAriaLive x1",
+            "Memo(ExerciseDisplay) x1",
+            "Memo(WorkoutToolsSheet) x1"
+          ],
+          "updateRoots": [
+            "WorkoutProvider x1"
+          ],
+          "renderedPerCommit": 24
+        },
+        {
+          "commits": 3,
+          "longTasks": 0,
+          "longTaskMs": 0,
+          "slowEvents": [],
+          "rendered": [
+            "Memo(?) x10",
+            "AnimatePresence x7",
+            "Sheet x5",
+            "ModalOverlay x5",
+            "ForwardRef(?) x4",
+            "PresenceChild x3",
+            "PopChild x3",
+            "PopChildMeasure x3",
+            "ForwardRef(motion.div) x3",
+            "WorkoutProvider x1"
+          ],
+          "updateRoots": [
+            "WorkoutProvider x1",
+            "AnimatePresence x1",
+            "Memo(MonoTimer) x1"
+          ],
+          "renderedPerCommit": 19.3
+        },
+        {
+          "commits": 2,
+          "longTasks": 0,
+          "longTaskMs": 0,
+          "slowEvents": [],
+          "rendered": [
+            "Memo(?) x10",
+            "AnimatePresence x7",
+            "Sheet x5",
+            "ModalOverlay x5",
+            "ForwardRef(?) x4",
+            "PresenceChild x3",
+            "PopChild x3",
+            "PopChildMeasure x3",
+            "ForwardRef(motion.div) x3",
+            "WorkoutProvider x1"
+          ],
+          "updateRoots": [
+            "WorkoutProvider x1",
+            "AnimatePresence x1"
+          ],
+          "renderedPerCommit": 28.5
+        },
+        {
+          "commits": 3,
+          "longTasks": 0,
+          "longTaskMs": 0,
+          "slowEvents": [],
+          "rendered": [
+            "Memo(?) x10",
+            "AnimatePresence x7",
+            "Sheet x5",
+            "ModalOverlay x5",
+            "ForwardRef(?) x4",
+            "PresenceChild x3",
+            "PopChild x3",
+            "PopChildMeasure x3",
+            "ForwardRef(motion.div) x3",
+            "WorkoutProvider x1"
+          ],
+          "updateRoots": [
+            "WorkoutProvider x1",
+            "AnimatePresence x1",
+            "Memo(MonoTimer) x1"
+          ],
+          "renderedPerCommit": 19.3
+        },
+        {
+          "commits": 2,
+          "longTasks": 0,
+          "longTaskMs": 0,
+          "slowEvents": [],
+          "rendered": [
+            "Memo(?) x10",
+            "AnimatePresence x7",
+            "Sheet x5",
+            "ModalOverlay x5",
+            "ForwardRef(?) x4",
+            "PresenceChild x3",
+            "PopChild x3",
+            "PopChildMeasure x3",
+            "ForwardRef(motion.div) x3",
+            "WorkoutProvider x1"
+          ],
+          "updateRoots": [
+            "WorkoutProvider x1",
+            "AnimatePresence x1"
+          ],
+          "renderedPerCommit": 28.5
+        }
+      ],
+      "setCompleted": true,
+      "restTimerIdle": {
+        "seconds": 5,
+        "commits": 55,
+        "commitsPerSec": 11,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "topRendered": [
+          "Memo(InlineRestTimer) x50",
+          "Memo(MonoTimer) x5"
+        ],
+        "updateRoots": [
+          "Memo(InlineRestTimer) x50",
+          "Memo(MonoTimer) x5"
+        ],
+        "renderedPerCommit": 1
+      },
+      "totals": {
+        "jsKB": 5063,
+        "domNodes": 188,
+        "heapMB": 36,
+        "slowEvents": [],
+        "longTaskMs": 214
+      }
+    },
+    "exerciseSearch": {
+      "found": true,
+      "cards": 90,
+      "commits": 4,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "longestTaskMs": 0,
+      "slowEvents": [],
+      "domNodesAfter": 286,
+      "cardsAfter": 6,
+      "topRendered": [
+        "ForwardRef(?) x16",
+        "Memo(?) x8",
+        "DeleteConfirmDialog x4",
+        "ConfirmDialog x4",
+        "ModalOverlay x4",
+        "AnimatePresence x4",
+        "ForwardRef(RotateCcw) x4",
+        "ExerciseFilter x4",
+        "ForwardRef(SlidersHorizontal) x4",
+        "ForwardRef(Search) x4",
+        "ForwardRef(X) x4"
+      ],
+      "updateRoots": [
+        "Memo(?) x4"
+      ],
+      "renderedPerCommit": 15
+    }
+  }
+}
