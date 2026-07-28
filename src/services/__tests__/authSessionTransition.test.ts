@@ -6,10 +6,21 @@
 // user B without user A pressing "log out" left A's IndexedDB rows on the
 // device, and pullAllData() then MERGED B's cloud data into them.
 //
-// These tests lock the three behaviours that make that impossible:
+// These tests lock the behaviours that make that impossible, while keeping the
+// wipe scoped to the moment the risk is actually real:
 //   1. switching identity wipes local stores (before any pull can run)
-//   2. sign-out / expiry wipes local stores even with no known previous user
+//   2. an EXPLICIT sign-out (forceCleanup) wipes them even with no known
+//      previous user
 //   3. the SAME user re-authenticating does NOT wipe anything (no data loss)
+//   4. losing the session WITHOUT an identity change — a token expiry — does NOT
+//      wipe, and keeps the owner marker so (3) still applies on re-login.
+//
+// (4) is a deliberate correction. Expiry used to take the same destructive path
+// as an account switch, because a null user id trivially differs from the stored
+// one. That protected nothing (an expired token says nothing about who signs in
+// next) and destroyed local-only state plus the offline mutation queue — the one
+// copy of writes that had not reached the cloud yet. A real user lost six weeks
+// of program progress to it.
 // ============================================================================
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -22,8 +33,15 @@ import {
 
 // The queue owns its own IndexedDB lifecycle; the transition only needs to know
 // that it was asked to drop pending mutations for the outgoing account.
+//
+// Two distinct calls, and which one is used matters:
+//   • clearMutationQueueForOwner — account SWITCH. Drops only the outgoing
+//     owner's rows, so another account's HELD (dead-letter) changes survive.
+//   • clearMutationQueue         — explicit sign-out / delete-my-data. Destroys
+//     everything, held changes included.
 const clearMutationQueue = vi.hoisted(() => vi.fn(async () => {}));
-vi.mock('../offlineQueue', () => ({ clearMutationQueue }));
+const clearMutationQueueForOwner = vi.hoisted(() => vi.fn(async () => {}));
+vi.mock('../offlineQueue', () => ({ clearMutationQueue, clearMutationQueueForOwner }));
 
 async function seedLocalUserData() {
   await dbPut(STORES.WORKOUT_SESSIONS, {
@@ -39,6 +57,7 @@ async function seedLocalUserData() {
 
 beforeEach(async () => {
   clearMutationQueue.mockClear();
+  clearMutationQueueForOwner.mockClear();
   localStorage.clear();
   sessionStorage.clear();
   await clearDatabase();
@@ -66,7 +85,11 @@ describe('transitionAuthSession — identity change', () => {
     expect(localStorage.getItem('bbt_program_progress_v1')).toBeNull();
     expect(localStorage.getItem('appSettings')).toBeNull();
     expect(sessionStorage.getItem('onboarding_step')).toBeNull();
-    expect(clearMutationQueue).toHaveBeenCalledTimes(1);
+    // Owner-scoped, NOT the destructive clear: another account's held/dead-letter
+    // changes must survive a switch, since they are the only copy of writes that
+    // never reached the cloud.
+    expect(clearMutationQueueForOwner).toHaveBeenCalledWith('user-a');
+    expect(clearMutationQueue).not.toHaveBeenCalled();
   });
 
   it('records the new identity so the next transition can compare against it', async () => {
@@ -103,6 +126,65 @@ describe('transitionAuthSession — same identity', () => {
     expect(await dbGetAll(STORES.WORKOUT_SESSIONS)).toHaveLength(1);
     expect(localStorage.getItem('user_profile')).not.toBeNull();
     expect(clearMutationQueue).not.toHaveBeenCalled();
+  });
+});
+
+describe('transitionAuthSession — session lost without an identity change', () => {
+  // This is the token-expiry path. It used to be indistinguishable from an
+  // account switch and wiped everything, which is how a user's 12-week program
+  // progress was destroyed by a single transient "invalid JWT".
+  it('preserves local data when the session goes away but nobody else signed in', async () => {
+    const { transitionAuthSession } = await import('../authSessionTransition');
+    localStorage.setItem(LAST_SIGNED_IN_USER_ID_KEY, 'user-a');
+    await seedLocalUserData();
+
+    const result = await transitionAuthSession(null);
+
+    expect(result.localDataCleared).toBe(false);
+    expect(await dbGetAll(STORES.WORKOUT_SESSIONS)).toHaveLength(1);
+    expect(localStorage.getItem('bbt_program_progress_v1')).not.toBeNull();
+    expect(localStorage.getItem('user_profile')).not.toBeNull();
+  });
+
+  it('does NOT destroy the offline queue, which holds writes not yet in the cloud', async () => {
+    const { transitionAuthSession } = await import('../authSessionTransition');
+    localStorage.setItem(LAST_SIGNED_IN_USER_ID_KEY, 'user-a');
+
+    await transitionAuthSession(null);
+
+    expect(clearMutationQueue).not.toHaveBeenCalled();
+  });
+
+  it('keeps the owner marker so the same user re-logging in is still a no-op', async () => {
+    const { getLastSignedInUserId, transitionAuthSession } = await import(
+      '../authSessionTransition'
+    );
+    localStorage.setItem(LAST_SIGNED_IN_USER_ID_KEY, 'user-a');
+    await seedLocalUserData();
+
+    await transitionAuthSession(null);
+    expect(getLastSignedInUserId()).toBe('user-a');
+
+    // …and the re-login therefore takes the same-identity path, not a wipe.
+    const back = await transitionAuthSession('user-a');
+    expect(back.localDataCleared).toBe(false);
+    expect(await dbGetAll(STORES.WORKOUT_SESSIONS)).toHaveLength(1);
+  });
+
+  it('still wipes if a DIFFERENT user signs in after the expiry', async () => {
+    // The security guarantee has to survive the change above: preserving data
+    // through an expiry must not let the next person read it.
+    const { transitionAuthSession } = await import('../authSessionTransition');
+    localStorage.setItem(LAST_SIGNED_IN_USER_ID_KEY, 'user-a');
+    await seedLocalUserData();
+
+    await transitionAuthSession(null);
+    const result = await transitionAuthSession('user-b');
+
+    expect(result.localDataCleared).toBe(true);
+    expect(await dbGetAll(STORES.WORKOUT_SESSIONS)).toHaveLength(0);
+    expect(localStorage.getItem('bbt_program_progress_v1')).toBeNull();
+    expect(clearMutationQueueForOwner).toHaveBeenCalledWith('user-a');
   });
 });
 

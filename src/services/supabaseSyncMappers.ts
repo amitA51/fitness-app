@@ -143,7 +143,14 @@ export interface PersonalRecordRow {
   weight: number;
   reps: number;
   date: string;
+  /**
+   * Canonical field name on `PersonalRecord` (src/types) and what every consumer
+   * filters on. The cloud column is `record_type`; the pull emits both this and
+   * `recordType` so a restored PR is not invisible to the UI.
+   */
+  type?: 'weight' | '1rm' | 'volume' | 'reps';
   recordType: 'weight' | '1rm' | 'volume' | 'reps';
+  notes?: string;
   createdAt?: string;
   updatedAt?: string;
   deletedAt?: string | null;
@@ -339,18 +346,27 @@ export const toCanonicalBodyWeight = (b: BodyWeightEntry): CanonicalBodyWeightEn
   weight: b.weight,
   notes: b.notes,
   createdAt: b.createdAt ?? new Date().toISOString(),
+  // `updatedAt` MUST survive. `mergeGenericRecords` compares `updatedAt` first
+  // and only falls back to `createdAt`; dropping it here made every pulled
+  // weight entry look as old as its creation date, so a newer cloud edit lost
+  // the last-write-wins comparison against a stale local copy.
+  updatedAt: b.updatedAt ?? b.createdAt ?? new Date().toISOString(),
   ...(b.deletedAt !== undefined && { deletedAt: b.deletedAt }),
 });
 
 /**
- * Rebuild the canonical local `MealEntry` from the flat Supabase nutrition row.
+ * Rebuild the canonical local `MealEntry` from the Supabase nutrition row.
  *
- * The cloud round-trip drops `totalMacros` from the entry and every meal, and
- * drops each meal's `foods` (push flattens them to bare `{calories,protein,...}`).
  * The local UI/services read `entry.totalMacros.*` and `meal.totalMacros.*`
  * without guards, so a row pulled on a second device would crash the nutrition
- * screen. We reconstruct `totalMacros` from the flat columns and restore an
- * empty `foods: []` on each meal so the result satisfies the local shape.
+ * screen if those were missing. Everything is therefore reconstructed here.
+ *
+ * `foods` used to be hard-coded to `[]` because the push flattened each meal to
+ * bare `{calories,protein,carbs,fat}` and genuinely had nowhere to keep them —
+ * so a meal restored on another device lost every food name, brand, serving size
+ * and barcode. `toNutritionRow` now stores `foods` and `totalMacros` inside the
+ * `meals` jsonb alongside the flat fields, so we prefer the rich values and fall
+ * back to the flat ones for rows written before that change.
  */
 export const toCanonicalNutritionLog = (
   log: NutritionLog
@@ -358,18 +374,24 @@ export const toCanonicalNutritionLog = (
   id: log.id,
   date: log.date,
   name: (log as { name?: string }).name ?? '',
-  meals: (log.meals ?? []).map((m) => ({
-    id: m.id,
-    name: m.name as CanonicalMealEntry['meals'][number]['name'],
-    foods: [],
-    time: m.time ?? '',
-    totalMacros: {
-      calories: m.calories ?? 0,
-      protein: m.protein ?? 0,
-      carbs: m.carbs ?? 0,
-      fat: m.fat ?? 0,
-    },
-  })),
+  meals: (log.meals ?? []).map((m) => {
+    const rich = m as typeof m & {
+      foods?: CanonicalMealEntry['meals'][number]['foods'];
+      totalMacros?: { calories?: number; protein?: number; carbs?: number; fat?: number };
+    };
+    return {
+      id: m.id,
+      name: m.name as CanonicalMealEntry['meals'][number]['name'],
+      foods: rich.foods ?? [],
+      time: m.time ?? '',
+      totalMacros: {
+        calories: rich.totalMacros?.calories ?? m.calories ?? 0,
+        protein: rich.totalMacros?.protein ?? m.protein ?? 0,
+        carbs: rich.totalMacros?.carbs ?? m.carbs ?? 0,
+        fat: rich.totalMacros?.fat ?? m.fat ?? 0,
+      },
+    };
+  }),
   totalMacros: {
     calories: log.calories ?? 0,
     protein: log.protein ?? 0,

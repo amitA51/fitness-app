@@ -10,15 +10,19 @@
  *  - Reconcile on workout-save: when the started day's workout completes, mark
  *    it done and advance to the next day.
  *
- * Progress lives in localStorage (consistent with onboarding/profile/draft
- * persistence in this app) so it survives reloads without a DB migration.
+ * Progress is written to localStorage synchronously (so every read path stays
+ * sync) and MIRRORED into the cloud-synced `user_settings` store. The mirror is
+ * not an optimisation: `bbt_program_progress_v1` is user-scoped local data that
+ * sign-out / session-expiry / account-switch all wipe, and without a cloud copy
+ * that wipe silently restarted the 12-week program at week 1.
+ * See `mirrorToCloud` and `restoreProgramProgressFromCloud` below.
  */
 
 import { BBT_PROGRAM, type BbtDay, type BbtExercise } from '../data/bbtProgram.generated';
 import type { WorkoutTemplate, WorkoutTemplateExercise } from '../types';
 import { logger } from '../utils/logger';
 import { safeJsonParse } from '../utils/safeJson';
-import { STORES, dbPut } from './indexedDBCore';
+import { STORES, dbGetAll, dbPut } from './indexedDBCore';
 
 const PROGRESS_KEY = 'bbt_program_progress_v1';
 /** Per-slot exercise substitutions chosen by the trainee (movement swaps). */
@@ -61,6 +65,12 @@ export interface ProgramProgress {
   status: 'active' | 'completed';
   /** Last session id reconciled — guards against double-advance on re-entry. */
   lastReconciledSessionId?: string;
+  /**
+   * Last local write, ISO. Used as the last-write-wins clock when the cloud copy
+   * is reconciled against the local one on sign-in — without it a stale cloud
+   * row could silently roll the trainee's week back.
+   */
+  updatedAt?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -99,12 +109,87 @@ export const getProgress = (): ProgramProgress | null => {
   }
 };
 
+/**
+ * Mirror a localStorage-only key into the cloud-synced `user_settings` store.
+ *
+ * Why this exists: `bbt_program_progress_v1` is listed in
+ * USER_SCOPED_STORAGE_REGISTRY, so `clearUserScopedLocalData()` deletes it on
+ * sign-out, on an expired/invalid session, and on an account switch. That wipe is
+ * correct — the next person at the keyboard must not inherit a stranger's
+ * progress — but with no cloud copy it was also PERMANENT: `getCurrentPosition()`
+ * fell through to `startProgram()` and silently restarted a 12-week commitment at
+ * week 1. A single transient "invalid JWT" was enough to erase weeks of training.
+ *
+ * The cloud copy makes the wipe recoverable instead of destructive: the row is
+ * re-pulled on the next sign-in and rehydrated by
+ * `restoreProgramProgressFromCloud()`.
+ *
+ * Fire-and-forget on purpose. Persisting progress must never block or fail the
+ * caller (this runs on the workout-save path); localStorage remains the
+ * synchronous source of truth and the offline queue retries the upload.
+ */
+const mirrorToCloud = (key: string, value: unknown, updatedAt: string): void => {
+  void (async () => {
+    try {
+      await dbPut(STORES.USER_SETTINGS, { key, value, updatedAt, createdAt: updatedAt });
+      const { queueMutation } = await import('./offlineQueue');
+      await queueMutation('setting:update', { key, value, updatedAt, createdAt: updatedAt });
+    } catch (err) {
+      logger.app?.warn?.('Failed to mirror program state to the cloud', err);
+    }
+  })();
+};
+
 const saveProgress = (p: ProgramProgress): void => {
+  const stamped: ProgramProgress = { ...p, updatedAt: new Date().toISOString() };
   try {
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(stamped));
   } catch (err) {
     logger.app?.warn?.('Failed to persist program progress', err);
   }
+  mirrorToCloud(PROGRESS_KEY, stamped, stamped.updatedAt as string);
+};
+
+/**
+ * Rehydrate program progress and swaps from the cloud-synced `user_settings`
+ * store. Call AFTER a pull has merged cloud rows into IndexedDB.
+ *
+ * Last-write-wins on `updatedAt`, so this can run on every sign-in: it restores
+ * progress that a local wipe destroyed, and leaves a genuinely newer local copy
+ * alone (e.g. an offline session that has not uploaded yet).
+ */
+export const restoreProgramProgressFromCloud = async (): Promise<boolean> => {
+  let restored = false;
+  try {
+    const rows = await dbGetAll<{ key: string; value: unknown; updatedAt?: string }>(
+      STORES.USER_SETTINGS
+    );
+
+    for (const key of [PROGRESS_KEY, SWAPS_KEY]) {
+      const row = rows.find((r) => r.key === key);
+      if (!row || row.value == null) continue;
+
+      const localRaw = localStorage.getItem(key);
+      if (localRaw) {
+        // Only overwrite when the cloud copy is strictly newer. A missing local
+        // timestamp is treated as epoch so a legacy local copy still loses to a
+        // stamped cloud copy rather than pinning it forever.
+        const localUpdatedAt =
+          safeJsonParse<{ updatedAt?: string }>(localRaw)?.updatedAt ?? '1970-01-01T00:00:00.000Z';
+        if (!row.updatedAt || row.updatedAt <= localUpdatedAt) continue;
+      }
+
+      try {
+        localStorage.setItem(key, JSON.stringify(row.value));
+        restored = true;
+      } catch (err) {
+        logger.app?.warn?.('Failed to write restored program state', err);
+      }
+    }
+  } catch (err) {
+    logger.app?.warn?.('Failed to restore program progress from the cloud', err);
+  }
+  return restored;
 };
 
 export const startProgram = (): ProgramProgress => {
@@ -130,6 +215,12 @@ export const resetProgram = (): void => {
   } catch (err) {
     logger.app?.warn?.('Failed to reset program progress', err);
   }
+  // An explicit user-initiated reset must also clear the cloud mirror, or the
+  // next `restoreProgramProgressFromCloud()` would resurrect the progress the
+  // trainee just chose to discard. Empty values are written (rather than the rows
+  // deleted) so the tombstone-free `user_settings` upsert path still applies.
+  mirrorToCloud(PROGRESS_KEY, null, new Date().toISOString());
+  mirrorToCloud(SWAPS_KEY, {}, new Date().toISOString());
 };
 
 export const isDayCompleted = (week: number, dayType: TrainingDay): boolean => {
@@ -227,6 +318,9 @@ const saveSwaps = (s: Record<string, string>): void => {
   } catch (err) {
     logger.app?.warn?.('Failed to persist program swaps', err);
   }
+  // Swaps are part of the trainee's program state; losing them silently reverts
+  // every movement substitution back to the PDF default.
+  mirrorToCloud(SWAPS_KEY, s, new Date().toISOString());
 };
 
 export const getSwapFor = (week: number, dayType: TrainingDay, order: number): string | null =>

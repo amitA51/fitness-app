@@ -485,6 +485,16 @@ export interface BodyWeightEntry {
   weight: number;
   notes?: string;
   createdAt: string;
+  /**
+   * Bumped on every edit. `bodyStatsService` has always written this and
+   `mergeGenericRecords` compares it FIRST for last-write-wins, but it was
+   * missing from this canonical type, so `toCanonicalBodyWeight` could not carry
+   * it through the pull — every pulled entry looked as old as its creation date
+   * and a newer cloud edit lost to a stale local copy.
+   */
+  updatedAt?: string;
+  /** Tombstone for cross-device delete propagation. */
+  deletedAt?: string | null;
 }
 
 // Workout goals (type alias)

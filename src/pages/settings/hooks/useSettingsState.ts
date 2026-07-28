@@ -6,6 +6,7 @@ import {
   subscribeToPush,
   unsubscribeFromPush,
 } from '../../../services/coach/pushService';
+import { mirrorLocalKey } from '../../../services/localStateMirror';
 import {
   getNotificationConfig,
   requestNotificationPermission,
@@ -44,10 +45,17 @@ export function useSettingsState() {
   // Autosave engines own the persistence + the shared "נשמר" flash. Profile is
   // pure localStorage; workout prefs also mirror three knobs into SettingsContext
   // so they keep applying app-wide (rest timer, auto-start, haptics).
-  const profileAutosave = useAutosave<UserProfile>(
-    (next) => saveToStorage('user_profile', next),
-    AUTOSAVE_DEBOUNCE_MS
-  );
+  //
+  // `mirrorLocalKey` additionally copies the value into the cloud-synced
+  // user_settings store. Without it these keys were localStorage-ONLY while also
+  // being wiped on an account switch, so a user's body metrics, goals and
+  // preferences were unrecoverable — the same defect that destroyed a real user's
+  // program progress. See services/localStateMirror.
+  const profileAutosave = useAutosave<UserProfile>((next) => {
+    const ok = saveToStorage('user_profile', next);
+    mirrorLocalKey('user_profile');
+    return ok;
+  }, AUTOSAVE_DEBOUNCE_MS);
   const workoutAutosave = useAutosave<WorkoutPrefs>((next) => {
     const ok = saveToStorage('workout_prefs', next);
     updateWorkoutSettings({
@@ -55,6 +63,7 @@ export function useSettingsState() {
       autoStartRest: next.autoStartRest,
       hapticsEnabled: next.hapticsEnabled,
     });
+    mirrorLocalKey('workout_prefs');
     return ok;
   }, AUTOSAVE_DEBOUNCE_MS);
   const notificationsFlash = useSavedFlash();

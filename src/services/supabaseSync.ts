@@ -4,8 +4,17 @@
  */
 
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
-import { isUuid } from '../utils/id';
 import { logger } from '../utils/logger';
+import {
+  toBodyWeightRow,
+  toExerciseRow,
+  toMeasurementRow,
+  toNutritionRow,
+  toPersonalRecordRow,
+  toRecoveryRow,
+  toSessionRow,
+  toTemplateRow,
+} from './supabaseRowMappers';
 import type {
   BodyMeasurement,
   BodyWeightEntry,
@@ -20,6 +29,11 @@ import { fetchAllPages } from './supabaseSyncPagination';
 
 // Row interfaces and row->canonical mappers live in ./supabaseSyncMappers.
 // The range-pagination helper (fetchAllPages) lives in ./supabaseSyncPagination.
+//
+// The local->cloud row shape for every table lives in ./supabaseRowMappers and is
+// shared with the bulk push in supabaseSyncOrchestrator. That sharing is the point:
+// the two paths used to hold separate copies of the same mapping and drifted, which
+// silently corrupted personal_records, body_measurements and nutrition_logs.
 
 // ==================== WORKOUT TEMPLATES ====================
 
@@ -29,20 +43,9 @@ export const syncWorkoutTemplate = async (
 ): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
-  const { error } = await supabase.from('workout_templates').upsert({
-    id: template.id,
-    user_id: userId,
-    name: template.name,
-    description: template.description || null,
-    exercises: template.exercises,
-    created_at: template.createdAt || new Date().toISOString(),
-    updated_at: template.updatedAt || new Date().toISOString(),
-    // Only write deleted_at when actually deleting. A live save must NOT send
-    // deleted_at: null — a PostgREST upsert would clear a tombstone set on
-    // another device (verified 2026-06-09), resurrecting the record. Omitting
-    // the column preserves the remote tombstone on the conflict-UPDATE branch.
-    ...(template.deletedAt ? { deleted_at: template.deletedAt } : {}),
-  });
+  const { error } = await supabase
+    .from('workout_templates')
+    .upsert(toTemplateRow(userId, template));
 
   if (error) {
     logger.sync.error('Error syncing workout template', error);
@@ -56,7 +59,9 @@ export const fetchWorkoutTemplates = async (userId: string): Promise<WorkoutTemp
   const data = await fetchAllPages('workout_templates', (from, to) =>
     supabase!
       .from('workout_templates')
-      .select('id, name, description, exercises, created_at, updated_at, deleted_at')
+      .select(
+        'id, name, description, exercises, last_used, times_used, is_favorite, muscle_groups, is_builtin, created_at, updated_at, deleted_at'
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .range(from, to)
@@ -67,6 +72,14 @@ export const fetchWorkoutTemplates = async (userId: string): Promise<WorkoutTemp
     name: row.name,
     description: row.description,
     exercises: row.exercises,
+    // Recovered by 20260728150000. `isBuiltin` matters most: without it
+    // dataService.initializeData() cannot tell built-ins apart and re-seeds
+    // them, so a restore produced duplicate standard templates.
+    lastUsed: row.last_used ?? null,
+    timesUsed: row.times_used ?? 0,
+    isFavorite: row.is_favorite ?? false,
+    muscleGroups: row.muscle_groups ?? undefined,
+    isBuiltin: row.is_builtin ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
@@ -106,22 +119,7 @@ export const syncWorkoutSession = async (
 ): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
-  const { error } = await supabase.from('workout_sessions').upsert({
-    id: session.id,
-    user_id: userId,
-    title: session.title || null,
-    date: session.date || new Date().toISOString(),
-    start_time: session.startTime,
-    end_time: session.endTime || null,
-    duration: session.duration || 0,
-    exercises: session.exercises,
-    total_volume: session.totalVolume || 0,
-    notes: session.notes || null,
-    created_at: session.startTime,
-    updated_at: session.updatedAt || session.startTime || new Date().toISOString(),
-    // Only write deleted_at when deleting — see syncWorkoutTemplate.
-    ...(session.deletedAt ? { deleted_at: session.deletedAt } : {}),
-  });
+  const { error } = await supabase.from('workout_sessions').upsert(toSessionRow(userId, session));
 
   if (error) {
     logger.sync.error('Error syncing workout session', error);
@@ -136,7 +134,7 @@ export const fetchWorkoutSessions = async (userId: string): Promise<WorkoutSessi
     supabase!
       .from('workout_sessions')
       .select(
-        'id, title, date, start_time, end_time, duration, exercises, total_volume, notes, created_at, updated_at, deleted_at'
+        'id, title, date, start_time, end_time, duration, exercises, total_volume, notes, status, template_id, rating, calories_burned, created_at, updated_at, deleted_at'
       )
       .eq('user_id', userId)
       .order('start_time', { ascending: false })
@@ -153,6 +151,14 @@ export const fetchWorkoutSessions = async (userId: string): Promise<WorkoutSessi
     exercises: row.exercises,
     totalVolume: row.total_volume,
     notes: row.notes,
+    // `toCanonicalSession` still supplies its end_time-derived fallback for rows
+    // written before these columns existed.
+    status: row.status ?? undefined,
+    templateId: row.template_id ?? null,
+    // Recovered by 20260728150000. `rating` is the user's own post-workout score,
+    // written by WorkoutSummary and displayed by WorkoutDetail.
+    rating: row.rating ?? null,
+    caloriesBurned: row.calories_burned ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
@@ -189,25 +195,9 @@ export const syncPersonalExercise = async (
 ): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
-  const { error } = await supabase.from('personal_exercises').upsert({
-    id: exercise.id,
-    user_id: userId,
-    name: exercise.name,
-    muscle_group: exercise.muscleGroup || null,
-    category: exercise.category || 'strength',
-    tempo: exercise.tempo || null,
-    default_rest_time: exercise.defaultRestTime || 60,
-    default_sets: exercise.defaultSets || 3,
-    notes: exercise.notes || null,
-    tutorial_text: exercise.tutorialText || null,
-    is_favorite: exercise.isFavorite || false,
-    use_count: exercise.useCount || 0,
-    last_used: exercise.lastUsed || null,
-    created_at: exercise.createdAt || new Date().toISOString(),
-    updated_at: exercise.updatedAt || exercise.createdAt || new Date().toISOString(),
-    // Only write deleted_at when deleting — see syncWorkoutTemplate.
-    ...(exercise.deletedAt ? { deleted_at: exercise.deletedAt } : {}),
-  });
+  const { error } = await supabase
+    .from('personal_exercises')
+    .upsert(toExerciseRow(userId, exercise));
 
   if (error) {
     logger.sync.error('Error syncing personal exercise', error);
@@ -269,16 +259,7 @@ export const deleteCloudPersonalExercise = async (userId: string, id: string): P
 export const syncBodyWeight = async (userId: string, entry: BodyWeightEntry): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
-  const { error } = await supabase.from('body_weight').upsert({
-    id: entry.id,
-    user_id: userId,
-    weight: entry.weight,
-    date: entry.date,
-    created_at: entry.createdAt ?? new Date().toISOString(),
-    updated_at: entry.updatedAt ?? entry.createdAt ?? new Date().toISOString(),
-    // Only write deleted_at when deleting — see syncWorkoutTemplate.
-    ...(entry.deletedAt ? { deleted_at: entry.deletedAt } : {}),
-  });
+  const { error } = await supabase.from('body_weight').upsert(toBodyWeightRow(userId, entry));
 
   if (error) {
     logger.sync.error('Error syncing body weight', error);
@@ -292,7 +273,7 @@ export const fetchBodyWeight = async (userId: string): Promise<BodyWeightEntry[]
   const data = await fetchAllPages('body_weight', (from, to) =>
     supabase!
       .from('body_weight')
-      .select('id, weight, date, created_at, updated_at, deleted_at')
+      .select('id, weight, date, notes, created_at, updated_at, deleted_at')
       .eq('user_id', userId)
       .order('date', { ascending: false })
       .range(from, to)
@@ -302,6 +283,8 @@ export const fetchBodyWeight = async (userId: string): Promise<BodyWeightEntry[]
     id: row.id,
     weight: row.weight,
     date: row.date,
+    // The column existed since 20260608000500 but was never read or written.
+    notes: row.notes ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
@@ -332,17 +315,9 @@ export const syncBodyMeasurement = async (
 ): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
-  const { error } = await supabase.from('body_measurements').upsert({
-    id: measurement.id,
-    user_id: userId,
-    date: measurement.date,
-    measurements: measurement.measurements,
-    notes: measurement.notes || null,
-    created_at: measurement.createdAt || new Date().toISOString(),
-    updated_at: measurement.updatedAt ?? measurement.createdAt ?? new Date().toISOString(),
-    // Only write deleted_at when deleting — see syncWorkoutTemplate.
-    ...(measurement.deletedAt ? { deleted_at: measurement.deletedAt } : {}),
-  });
+  const { error } = await supabase
+    .from('body_measurements')
+    .upsert(toMeasurementRow(userId, measurement));
 
   if (error) {
     logger.sync.error('Error syncing body measurement', error);
@@ -397,25 +372,9 @@ export const syncPersonalRecord = async (
 ): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
-  const { error } = await supabase.from('personal_records').upsert({
-    id: record.id,
-    user_id: userId,
-    // Local PR identity is the NORMALIZED EXERCISE NAME (see prService.
-    // stableExerciseKey), but the cloud column is uuid with an FK to
-    // personal_exercises(id). Pushing the name string 400s with 22P02, so we
-    // only forward a value that is actually UUID-shaped (legacy rows) and null
-    // everything else — name identity rides in exercise_name, which syncs.
-    exercise_id: isUuid(record.exerciseId) ? record.exerciseId : null,
-    exercise_name: record.exerciseName,
-    weight: record.weight,
-    reps: record.reps,
-    date: record.date,
-    record_type: record.recordType,
-    created_at: record.createdAt || new Date().toISOString(),
-    updated_at: record.updatedAt ?? record.createdAt ?? new Date().toISOString(),
-    // Only write deleted_at when deleting — see syncWorkoutTemplate.
-    ...(record.deletedAt ? { deleted_at: record.deletedAt } : {}),
-  });
+  const { error } = await supabase
+    .from('personal_records')
+    .upsert(toPersonalRecordRow(userId, record));
 
   if (error) {
     logger.sync.error('Error syncing personal record', error);
@@ -430,7 +389,7 @@ export const fetchPersonalRecords = async (userId: string): Promise<PersonalReco
     supabase!
       .from('personal_records')
       .select(
-        'id, exercise_id, exercise_name, weight, reps, date, record_type, created_at, updated_at, deleted_at'
+        'id, exercise_id, exercise_name, weight, reps, date, record_type, notes, created_at, updated_at, deleted_at'
       )
       .eq('user_id', userId)
       .order('date', { ascending: false })
@@ -459,7 +418,15 @@ export const fetchPersonalRecords = async (userId: string): Promise<PersonalReco
     weight: row.weight,
     reps: row.reps,
     date: row.date,
+    // BOTH names on purpose. `mergePersonalRecordsFromCloud` writes these rows
+    // straight into IndexedDB with no canonical conversion, and every consumer
+    // (prService, the PR screens, progression) filters on `pr.type` — the field
+    // name on the canonical `PersonalRecord`. Emitting only `recordType` meant a
+    // PR restored from the cloud matched no category filter and disappeared from
+    // the UI even though the row was present locally.
+    type: row.record_type,
     recordType: row.record_type,
+    notes: row.notes ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
@@ -487,24 +454,7 @@ export const deleteCloudPersonalRecord = async (userId: string, id: string): Pro
 export const syncRecoveryLog = async (userId: string, log: RecoveryLog): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
-  const { error } = await supabase.from('recovery_logs').upsert({
-    id: log.id,
-    user_id: userId,
-    date: log.date,
-    sleep_hours: log.sleepHours ?? null,
-    sleep_quality: log.sleepQuality ?? null,
-    soreness_level: log.sorenessLevel ?? null,
-    energy_level: log.energyLevel ?? null,
-    stress_level: log.stressLevel ?? null,
-    tight_areas: log.tightAreas ?? [],
-    overall_score: log.overallScore ?? null,
-    session_id: log.sessionId ?? null,
-    notes: log.notes || null,
-    created_at: log.createdAt || new Date().toISOString(),
-    updated_at: log.updatedAt ?? log.createdAt ?? new Date().toISOString(),
-    // Only write deleted_at when deleting — see syncWorkoutTemplate.
-    ...(log.deletedAt ? { deleted_at: log.deletedAt } : {}),
-  });
+  const { error } = await supabase.from('recovery_logs').upsert(toRecoveryRow(userId, log));
 
   if (error) {
     logger.sync.error('Error syncing recovery log', error);
@@ -565,21 +515,7 @@ export const deleteCloudRecoveryLog = async (userId: string, id: string): Promis
 export const syncNutritionLog = async (userId: string, log: NutritionLog): Promise<void> => {
   if (!isSupabaseConfigured() || !supabase) return;
 
-  const { error } = await supabase.from('nutrition_logs').upsert({
-    id: log.id,
-    user_id: userId,
-    date: log.date,
-    calories: log.calories || null,
-    protein: log.protein || null,
-    carbs: log.carbs || null,
-    fat: log.fat || null,
-    meals: log.meals,
-    notes: log.notes || null,
-    created_at: log.createdAt || new Date().toISOString(),
-    updated_at: log.updatedAt ?? log.createdAt ?? new Date().toISOString(),
-    // Only write deleted_at when deleting — see syncWorkoutTemplate.
-    ...(log.deletedAt ? { deleted_at: log.deletedAt } : {}),
-  });
+  const { error } = await supabase.from('nutrition_logs').upsert(toNutritionRow(userId, log));
 
   if (error) {
     logger.sync.error('Error syncing nutrition log', error);
@@ -594,7 +530,7 @@ export const fetchNutritionLogs = async (userId: string): Promise<NutritionLog[]
     supabase!
       .from('nutrition_logs')
       .select(
-        'id, date, calories, protein, carbs, fat, meals, notes, created_at, updated_at, deleted_at'
+        'id, date, name, calories, protein, carbs, fat, meals, notes, created_at, updated_at, deleted_at'
       )
       .eq('user_id', userId)
       .order('date', { ascending: false })
@@ -609,6 +545,9 @@ export const fetchNutritionLogs = async (userId: string): Promise<NutritionLog[]
     carbs: row.carbs,
     fat: row.fat,
     meals: row.meals || [],
+    // Column added by 20260728150000; previously the entry title was rebuilt
+    // as '' on every pull because there was nowhere to store it.
+    name: row.name ?? undefined,
     notes: row.notes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

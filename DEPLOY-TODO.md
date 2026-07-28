@@ -1,108 +1,65 @@
 # DEPLOY-TODO — מה חייב לקרות בפריסה הבאה
 
-> **סטטוס: הקוד ב-master, ה-DB לא נפרס.**
-> נכתב ב-26.07.2026. כל מה שכאן טרם בוצע מול Supabase החי.
+> **סטטוס: שלבים 0–2 נפרסו ואומתו (28.07.2026). שלבים 3–5 טרם בוצעו.**
+> נכתב ב-26.07.2026. כל מה שמסומן `[ ]` להלן טרם בוצע מול Supabase החי.
 > אחרי שמסיימים — למחוק את הסעיף שבוצע, לא להשאיר "וי" מטעה.
 
 ---
 
-## ⚠️ קודם כל: שתי דרכים לשבור את האפליקציה
+## שלב 0–2 — בוצע ב-28.07.2026
 
-הפריסה הזאת **אינה** אופציונלית ואינה תלוית-סדר-חופשי.
+Migrations ו-Edge Functions נפרסו מול הפרויקט החי `qxhgmqxiomidmimpnjvs`
+ואומתו. ההוראות המקוריות הוסרו כדי שלא יקראו כמשהו שעוד צריך לעשות.
 
-1. **פריסת Functions בלי Migrations → ה-AI, ההזמנות והמחיקה יחזירו 503.**
-   `ai-chat`, `coach-invite-accept`, `coach-push-send`, `account-delete`
-   ו-`billing-checkout` קוראים ל-RPC חדש בשם `consume_rate_limit`, והם
-   **fail-closed** בכוונה: אם ה-RPC לא קיים הם מסרבים לשרת בקשה במקום להגיש
-   תנועה שאי אפשר למדוד. זו התנהגות נכונה, אבל היא הופכת את הסדר לקריטי.
+**מה שנפרס בפועל — שמונה migrations, לא שש:**
 
-2. **פריסת Migrations בלי Functions → ה-rate limiting יישאר שבור.**
-   הפונקציות הקיימות ימשיכו להריץ את הגרסה הלא-אטומית (התבנית הישנה
-   read-then-insert, שבה 50 בקשות במקביל מול מכסה 5 עוברות כמעט כולן).
-
-**הסדר: Migrations קודם, Functions אחריהם.** לא הפוך.
-
----
-
-## שלב 0 — לפני שנוגעים בפרודקשן
-
-- [ ] **גיבוי / snapshot של ה-DB.** לא דילוג. `sync_lww_guard` **מחליף
-      טריגרים קיימים** ב-11 טבלאות (מסיר את `update_<table>_updated_at`
-      ומתקין `<table>_sync_lww_guard` במקומו).
-- [ ] להריץ על **staging** קודם. אם אין staging — לבקש מהעוזר להרים את
-      ה-schema המלא בקונטיינר ולהריץ את ה-migrations מולו.
-      > הערה על מה שכן נבדק: `npm run db:test` מריץ את כל ה-migrations על
-      > Postgres 16 בקונטיינר עם schema **מינימלי** ומעביר 6 חבילות
-      > assertions + הוכחת idempotency + בדיקת concurrency. זה **לא**
-      > תחליף להרצה מול ה-schema האמיתי.
-- [ ] לוודא שאין מכשיר של משתמש אמיתי באמצע אימון בזמן הפריסה (טיוטת אימון).
-
----
-
-## שלב 1 — Migrations
-
-```bash
-supabase db push
-```
-
-שש מיגרציות חדשות (בסדר הזה):
-
-| # | קובץ | מה זה עושה |
+| # | migration | הערה |
 |---|---|---|
-| 1 | `20260726090000_account_deletion_audit.sql` | טבלת audit למחיקת חשבון. RLS דלוקה ללא policies — service role בלבד. |
-| 2 | `20260726100000_billing_core.sql` | קטלוג מחירים, לקוחות, מנויים, checkout sessions, `has_feature_access`, מכסת 3 תבניות חינמיות, `current_entitlement` שמפוגג תקופה שהסתיימה. |
-| 3 | `20260726110000_product_events.sql` | טבלת אירועי funnel. INSERT-own בלבד עם allowlist של שמות. |
-| 4 | `20260726120000_sync_integrity.sql` | ⚠️ **מחליף טריגרים ב-11 טבלאות.** `sync_lww_guard` — דוחה כתיבה ישנה, שומר tombstones, מוסיף `deleted_at` ל-`water_logs`. |
-| 5 | `20260726130000_rate_limit_atomic.sql` | `consume_rate_limit` — ה-RPC שכל ה-Functions תלויות בו. |
-| 6 | `20260726140000_community_write_rpcs.sql` | `create_post` / `create_comment` (שלא היו קיימים בכלל — הקהילה לא עבדה), ומסיר את policies + privilege של INSERT ישיר. |
+| 1 | `clamp_updated_at_future` | **לא היה מתועד כחסר.** התגלה שהוא מעולם לא הוחל: ל-`update_updated_at_column` בפרודקשן לא היה clamp של 5 דקות. |
+| 2 | `account_deletion_audit` | |
+| 3 | `billing_core` | |
+| 4 | `product_events` | |
+| 5 | `sync_integrity` | החליף טריגרים ב-11 טבלאות. |
+| 6 | `rate_limit_atomic` | |
+| 7 | `community_write_rpcs` | נכשל ב-42P13 בהרצה ראשונה — ראה "drift" למטה. |
+| 8 | `workout_sessions_status_template` | **חדש.** `status` ו-`template_id` נזרקו בכל סנכרון. |
+| 9 | `revoke_trigger_function_grants` | **חדש.** סגירת פער שנוצר ב-`billing_core` ו-`sync_integrity`. |
+| 10 | `water_logs_updated_at` | **hotfix.** `sync_integrity` הצמיד `sync_lww_guard` ל-`water_logs`, שאין בה `updated_at` — כל UPDATE נכשל ב-`record "new" has no field "updated_at"`. אומת מול ה-DB החי לפני ואחרי. |
+| 11 | `recover_dropped_columns` | עמודות לשדות שהאפליקציה כותבת אבל לא היה איפה לשמור: `workout_templates.is_builtin/is_favorite/times_used/last_used/muscle_groups`, `workout_sessions.rating/calories_burned`, `nutrition_logs.name`. |
 
-### אימות אחרי הפריסה
+**אימות שעבר:**
 
-- [ ] ה-RPC קיים: `select public.consume_rate_limit('deploy_check','x',60,1);` → `true`
-- [ ] הטריגרים הוחלפו, ואין כפילות:
-      ```sql
-      select c.relname, t.tgname, p.proname
-      from pg_trigger t
-      join pg_class c on c.oid = t.tgrelid
-      join pg_proc  p on p.oid = t.tgfoid
-      where not t.tgisinternal
-        and p.proname in ('sync_lww_guard','update_updated_at_column')
-      order by 1, 2;
-      ```
-      מצפים ל-`sync_lww_guard` על 11 הטבלאות, ו-**אפס** `update_updated_at_column` עליהן.
-- [ ] `create_post` ו-`create_comment` קיימים, ו-INSERT ישיר ל-`posts` נחסם למשתמש מחובר.
+- `select public.consume_rate_limit('deploy_check','x',60,1)` → `true`
+- `sync_lww_guard` על 11 הטבלאות, **אפס** `update_updated_at_column` עליהן
+- שלוש ה-RPC של הקהילה קיימות; INSERT ישיר ל-`posts`/`post_comments`/`post_reports`
+  שלול מ-`authenticated`, ואפס policies של INSERT על `posts`
+- הטריגר נבדק בפועל מול שורה אמיתית: כתיבה עם `updated_at` של 2020 דווחה
+  כ-0 שורות ולא שינתה דבר (הוכחת `RETURN NULL`)
 
----
+**DB drift שהתגלה:** בפרודקשן היה
+`create_post(text, text DEFAULT NULL, text DEFAULT NULL)` שהוחל דרך ה-dashboard
+ואינו קיים ב-repo. `CREATE OR REPLACE` נכשל ב-42P13. `20260726140000` תוקן
+והוא מריץ `DROP FUNCTION` קודם. **המשמעות הרחבה: יש migrations בפרודקשן שאינם
+ב-repo** (`wave2_hardening`, `tier3_rate_limit_waitlist`, `create_fitness_tables`,
+`enable_rls_policies`) — לא להניח שה-repo הוא מקור האמת.
 
-## שלב 2 — Edge Functions
+**Functions:** כל השש נפרסו. `verify_jwt` **אינו** נלקח מ-`config.toml`
+של פונקציה בודדת ע"י ה-CLI — צריך לאמת אחרי כל פריסה:
 
-**כולן, כולל הקיימות.** שלוש מהן עברו ל-limiter המשותף
-(`supabase/functions/_shared/rateLimit.ts`) ופונקציה שלא נפרסה מחדש תמשיך
-להריץ את הגרסה השבורה.
+- `billing-webhook` נפרס בטעות עם `verify_jwt = true` (היה חוסם כל webhook
+  מהספק) → נפרס מחדש עם `--no-verify-jwt`
+- `coach-push-send` היה `false` בפרודקשן למרות ש-`config.toml` אומר `true`
+  → תוקן ל-`true`
+- מצב סופי: הכול `true` פרט ל-`billing-webhook` ו-`reminders-dispatch`
 
-```bash
-# עודכנו — חייבות פריסה מחדש
-supabase functions deploy ai-chat
-supabase functions deploy coach-invite-accept
-supabase functions deploy coach-push-send
+**⚠️ שינוי התנהגות חי:** `billing_core` התקין
+`trg_enforce_free_template_quota` (BEFORE INSERT על `workout_templates`,
+מקסימום 3 לחשבון חינמי). ל-`entitlements` אין שורות, כלומר **כל** המשתמשים
+חינמיים. שורות קיימות אינן נפגעות (upsert של קיים הולך ל-UPDATE), אבל
+**תבנית חדשה תידחה**. למשתמש `c363a4e2` יש 7 תבניות בענן.
 
-# חדשות
-supabase functions deploy account-delete
-supabase functions deploy billing-checkout
-supabase functions deploy billing-webhook --no-verify-jwt
-```
-
-`billing-webhook` נפרס עם `--no-verify-jwt` **בכוונה**: ספק תשלומים אינו יכול
-להציג JWT של Supabase. האימות שלו הוא חתימת HMAC על ה-raw body, מאומתת בתוך
-הפונקציה. ה-`config.toml` שלה כבר מקבע `verify_jwt = false` כדי שההגדרה לא
-תיסחף בין סביבות.
-
-### אימות אחרי הפריסה
-
-- [ ] `ai-chat` מחזיר תשובה תקינה (ולא 503 — 503 = ה-RPC חסר, חזור לשלב 1).
-- [ ] פרסום פוסט בקהילה עובד מהאפליקציה.
-- [ ] מחיקת חשבון על **חשבון בדיקה**: לוודא שה-Storage והשורות נמחקו ושיש
-      שורת audit.
+**Rollback:** לפני `sync_integrity` היו ל-10 טבלאות
+`update_<table>_updated_at`; ל-`water_logs` לא היה טריגר בכלל.
 
 ---
 

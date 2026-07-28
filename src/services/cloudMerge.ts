@@ -7,6 +7,7 @@
  * logs, nutrition logs, user settings, AI conversations).
  */
 
+import { logger } from '../utils/logger';
 import { STORES, dbGetAll, initDB } from './indexedDBCore';
 
 interface AIMessageLike {
@@ -118,7 +119,18 @@ export async function mergeGenericRecords<T extends TimestampedRecord>(
   storeName: string,
   cloudRecords: T[],
   keyField: 'id' | 'key' = 'id'
-): Promise<{ added: number; updated: number; kept: number; deleted: number }> {
+): Promise<{
+  added: number;
+  updated: number;
+  kept: number;
+  deleted: number;
+  /**
+   * Keys whose local copy was NEWER than the cloud tombstone that removed it.
+   * Delete-wins is intentional, but this makes the discarded edits countable
+   * instead of invisible.
+   */
+  conflictedDeletes: number;
+}> {
   const localRecords = await dbGetAll<T>(storeName);
   const localMap = new Map(
     localRecords.map((r) => [String((keyField === 'key' ? r.key : r.id) ?? ''), r])
@@ -131,14 +143,40 @@ export async function mergeGenericRecords<T extends TimestampedRecord>(
 
   const writes: T[] = [];
   const deletes: string[] = [];
+  const conflictedDeletes: string[] = [];
 
   for (const cloud of cloudRecords) {
     const cloudKey = String((keyField === 'key' ? cloud.key : cloud.id) ?? '');
     if (!cloudKey) continue; // skip records without a usable key
 
-    // DA-7: If cloud record is tombstoned, remove it locally
+    // DA-7: a tombstoned cloud record is removed locally.
+    //
+    // The delete WINS even against a newer local edit. That is the server's
+    // stated policy (`sync_lww_guard` applies a new tombstone regardless of
+    // timestamps: "a user's delete outranks a concurrent edit"), and the client
+    // has to converge on it — pushing the local edit back would be refused,
+    // because the guard restores `deleted_at` whenever an incoming payload omits
+    // it. Fighting it here would just produce a row that flickers.
+    //
+    // What was wrong was doing it SILENTLY. A user could edit a record on an
+    // offline phone, have it deleted on a laptop, and lose the edit with nothing
+    // logged anywhere. The comparison below does not change the outcome; it makes
+    // the discarded work visible in the logs and in the returned counts, which is
+    // what any support investigation needs.
     if (cloud.deletedAt) {
-      if (localMap.has(cloudKey)) {
+      const local = localMap.get(cloudKey);
+      if (local) {
+        const localTime = safeTimestamp(local.updatedAt) || safeTimestamp(local.createdAt);
+        const tombstoneTime = safeTimestamp(cloud.deletedAt);
+        if (localTime > tombstoneTime) {
+          conflictedDeletes.push(cloudKey);
+          logger.sync.warn('Cloud deletion discarded a newer local edit (delete-wins policy)', {
+            store: storeName,
+            key: cloudKey,
+            localUpdatedAt: local.updatedAt,
+            deletedAt: cloud.deletedAt,
+          });
+        }
         deletes.push(cloudKey);
         deleted++;
       }
@@ -180,7 +218,7 @@ export async function mergeGenericRecords<T extends TimestampedRecord>(
     });
   }
 
-  return { added, updated, kept, deleted };
+  return { added, updated, kept, deleted, conflictedDeletes: conflictedDeletes.length };
 }
 
 export const mergeBodyMeasurementsFromCloud = (

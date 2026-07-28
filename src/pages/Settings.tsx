@@ -87,17 +87,25 @@ export default function Settings() {
   };
 
   const handleSignOut = async () => {
-    // Data-loss guard: signOut wipes local stores, so unsynced mutations
-    // would be lost. Try to flush the offline queue first; if entries remain
-    // (flush failed or we're offline), warn before proceeding.
+    // Data-loss guard: signOut wipes local stores AND clears both the active
+    // queue and the dead-letter store, so anything unsynced is gone afterwards.
+    // Flush what we can, then warn if ANYTHING would be destroyed.
     try {
-      const { getQueueDepth, processQueue } = await import('../services/offlineQueue');
+      const { getDeadLetterCount, getQueueDepth, processQueue } = await import(
+        '../services/offlineQueue'
+      );
       let depth = await getQueueDepth();
       if (depth > 0 && navigator.onLine) {
         await processQueue();
         depth = await getQueueDepth();
       }
-      if (depth > 0) {
+      // Held ("dead letter") changes must be counted too. Checking only the
+      // ACTIVE queue missed the most likely case: a change that failed with a
+      // permanent error is MOVED to the held store, which drops the active depth
+      // to zero — so the warning never appeared and sign-out then deleted the
+      // very payload the recovery UI was keeping for the user.
+      const held = await getDeadLetterCount();
+      if (depth + held > 0) {
         setShowSignOutConfirm(true);
         return;
       }

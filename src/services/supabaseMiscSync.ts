@@ -18,7 +18,17 @@ export const syncUserSetting = async (userId: string, setting: UserSetting): Pro
 
   const { error } = await supabase.from('user_settings').upsert(
     {
-      id: setting.id || `${userId}:${setting.key}`,
+      // `id` is DELIBERATELY omitted.
+      //
+      // This used to send `setting.id || `${userId}:${setting.key}``. The cloud
+      // column is `uuid`, so that composite string was rejected with 22P02
+      // (invalid input syntax for type uuid) on EVERY write — user settings never
+      // reached the cloud at all, and the table stayed empty in production.
+      //
+      // The row's real identity is the UNIQUE (user_id, key) pair used by
+      // onConflict below; the surrogate `id` only exists to be a primary key and
+      // has a `uuid_generate_v4()` default. Omitting it lets the database mint one
+      // on insert and leaves the existing one untouched on conflict.
       user_id: userId,
       key: setting.key,
       value: setting.value,

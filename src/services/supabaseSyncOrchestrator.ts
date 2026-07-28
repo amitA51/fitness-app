@@ -7,11 +7,23 @@
  */
 
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
-import { isUuid } from '../utils/id';
 import { logger } from '../utils/logger';
 import { normalizeLegacyLocalIds } from './idNormalization';
 import { STORES } from './indexedDBCore';
 import { getCurrentUser } from './supabaseAuth';
+import {
+  toBodyWeightRow,
+  toConversationRow,
+  toExerciseRow,
+  toMeasurementRow,
+  toNutritionRow,
+  toPersonalRecordRow,
+  toRecoveryRow,
+  toSessionRow,
+  toSettingRow,
+  toTemplateRow,
+  toWaterRow,
+} from './supabaseRowMappers';
 import {
   fetchAIConversations,
   fetchBodyMeasurements,
@@ -100,8 +112,14 @@ export interface FullSyncCounts {
 // These are per-tab; cross-tab exclusion comes from withSyncLock below. Two tabs
 // running blind bulk upserts at the same time would let network timing decide the
 // last-write-wins outcome.
-let syncAllInFlight: Promise<SyncResult> | null = null;
-let pullAllInFlight: Promise<SyncResult> | null = null;
+//
+// The guards are keyed BY USER ID. They used to be bare promises, which made
+// coalescing unsound across an account change: sign in as A, start a pull, switch
+// to B before it resolves, and B's auto-pull received A's in-flight promise. B
+// therefore never pulled its own data, and A's response merged into the store
+// AFTER the wipe. Keying means a different identity always starts its own pass.
+let syncAllInFlight: { userId: string; promise: Promise<SyncResult> } | null = null;
+let pullAllInFlight: { userId: string; promise: Promise<SyncResult> } | null = null;
 
 /** Uniform result when another tab owns the sync lock: not a failure, just deferred. */
 const LOCK_BUSY_RESULT: SyncResult = {
@@ -110,27 +128,31 @@ const LOCK_BUSY_RESULT: SyncResult = {
 };
 
 export const syncAllData = async (): Promise<SyncResult> => {
-  if (syncAllInFlight) return syncAllInFlight;
-  syncAllInFlight = withSyncLock(() => syncAllDataImpl()).then((outcome) => {
+  // Resolve the identity BEFORE coalescing, so the guard can tell one account's
+  // in-flight pass from another's.
+  const userId = await getUserId();
+  if (!userId) return { success: false, error: 'Not authenticated' };
+
+  if (syncAllInFlight?.userId === userId) return syncAllInFlight.promise;
+
+  const promise = withSyncLock(() => syncAllDataImpl(userId)).then((outcome) => {
     if (outcome === BUSY) {
       logger.sync.info('Another tab is syncing, skipping full push');
       return LOCK_BUSY_RESULT;
     }
     return outcome;
   });
+  syncAllInFlight = { userId, promise };
   try {
-    return await syncAllInFlight;
+    return await promise;
   } finally {
-    syncAllInFlight = null;
+    // Only clear if we are still the current holder — a newer pass for another
+    // identity must not be cancelled by ours finishing.
+    if (syncAllInFlight?.promise === promise) syncAllInFlight = null;
   }
 };
 
-const syncAllDataImpl = async (): Promise<SyncResult> => {
-  const userId = await getUserId();
-  if (!userId) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
+const syncAllDataImpl = async (userId: string): Promise<SyncResult> => {
   if (!isSupabaseConfigured() || !supabase) {
     return { success: false, error: 'Supabase not configured' };
   }
@@ -283,181 +305,84 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
       // push — resurrecting records that were deleted on another device. Omission
       // is the correct, safe behavior. (CODE-AUDIT-2026-06-08 item #1 mis-modeled
       // the upsert semantics; do not "fix" this by adding deleted_at here.)
-      batchUpsert('workout_templates', localTemplates, (t) => ({
-        id: t.id,
-        user_id: userId,
-        name: t.name,
-        description: t.description || null,
-        exercises: t.exercises,
-        created_at: t.createdAt || new Date().toISOString(),
-        updated_at: t.updatedAt || new Date().toISOString(),
-      })).then((res) => {
-        counts.templates = res.synced;
-        failedItems += res.failed;
-      }),
+      // Every mapper below is the SAME function the immediate/queue path uses
+      // (./supabaseRowMappers). They used to be separate inline copies, and three
+      // of them had silently drifted onto fields that do not exist on the
+      // canonical IndexedDB record — personal_records read `recordType` instead
+      // of `type` and NOT-NULL-killed whole 50-row chunks, body_measurements read
+      // a nested `measurements` off a flat row and sent NULL, nutrition_logs read
+      // flat macros instead of `totalMacros` and overwrote correct cloud values
+      // with NULL. Sharing the mapper is what stops that recurring.
+      batchUpsert('workout_templates', localTemplates, (t) => toTemplateRow(userId, t)).then(
+        (res) => {
+          counts.templates = res.synced;
+          failedItems += res.failed;
+        }
+      ),
 
-      batchUpsert('workout_sessions', localSessions, (s) => ({
-        id: s.id,
-        user_id: userId,
-        title: s.title || null,
-        date: s.date || new Date().toISOString(),
-        start_time: s.startTime,
-        end_time: s.endTime || null,
-        duration: s.duration || 0,
-        exercises: s.exercises,
-        total_volume: s.totalVolume || 0,
-        notes: s.notes || null,
-        created_at: s.startTime,
-        updated_at: s.updatedAt || s.startTime || new Date().toISOString(),
-      })).then((res) => {
+      batchUpsert('workout_sessions', localSessions, (s) => toSessionRow(userId, s)).then((res) => {
         counts.sessions = res.synced;
         failedItems += res.failed;
       }),
 
-      batchUpsert('personal_exercises', localExercises, (e) => ({
-        id: e.id,
-        user_id: userId,
-        name: e.name,
-        muscle_group: e.muscleGroup || null,
-        category: e.category || 'strength',
-        tempo: e.tempo || null,
-        default_rest_time: e.defaultRestTime || 60,
-        default_sets: e.defaultSets || 3,
-        notes: e.notes || null,
-        tutorial_text: e.tutorialText || null,
-        is_favorite: e.isFavorite || false,
-        use_count: e.useCount || 0,
-        last_used: e.lastUsed || null,
-        created_at: e.createdAt || new Date().toISOString(),
-        updated_at: e.updatedAt || e.createdAt || new Date().toISOString(),
-      })).then((res) => {
-        counts.exercises = res.synced;
-        failedItems += res.failed;
-      }),
+      batchUpsert('personal_exercises', localExercises, (e) => toExerciseRow(userId, e)).then(
+        (res) => {
+          counts.exercises = res.synced;
+          failedItems += res.failed;
+        }
+      ),
 
-      batchUpsert('body_weight', localBodyWeight, (b) => ({
-        id: b.id,
-        user_id: userId,
-        weight: b.weight,
-        date: b.date,
-        created_at: b.createdAt ?? new Date().toISOString(),
-        updated_at: b.updatedAt ?? b.createdAt ?? new Date().toISOString(),
-      })).then((res) => {
+      batchUpsert('body_weight', localBodyWeight, (b) => toBodyWeightRow(userId, b)).then((res) => {
         counts.bodyWeight = res.synced;
         failedItems += res.failed;
       }),
 
-      batchUpsert('body_measurements', localBodyMeasurements, (m) => ({
-        id: m.id,
-        user_id: userId,
-        date: m.date,
-        measurements: m.measurements,
-        notes: m.notes || null,
-        created_at: m.createdAt || new Date().toISOString(),
-        updated_at: m.updatedAt ?? m.createdAt ?? new Date().toISOString(),
-      })).then((res) => {
+      batchUpsert('body_measurements', localBodyMeasurements, (m) =>
+        toMeasurementRow(userId, m)
+      ).then((res) => {
         counts.bodyMeasurements = res.synced;
         failedItems += res.failed;
       }),
 
-      batchUpsert('personal_records', localPersonalRecords, (r) => ({
-        id: r.id,
-        user_id: userId,
-        // Cloud column is uuid (FK -> personal_exercises). Local identity is
-        // the normalized exercise NAME — see syncPersonalRecord in
-        // supabaseSync.ts. A name string here 22P02s the WHOLE batch.
-        exercise_id: isUuid(r.exerciseId) ? r.exerciseId : null,
-        exercise_name: r.exerciseName,
-        weight: r.weight,
-        reps: r.reps,
-        date: r.date,
-        record_type: r.recordType,
-        created_at: r.createdAt || new Date().toISOString(),
-        updated_at: r.updatedAt ?? r.createdAt ?? new Date().toISOString(),
-      })).then((res) => {
+      batchUpsert('personal_records', localPersonalRecords, (r) =>
+        toPersonalRecordRow(userId, r)
+      ).then((res) => {
         counts.personalRecords = res.synced;
         failedItems += res.failed;
       }),
 
-      batchUpsert('recovery_logs', localRecoveryLogs, (l) => ({
-        id: l.id,
-        user_id: userId,
-        date: l.date,
-        sleep_hours: l.sleepHours ?? null,
-        sleep_quality: l.sleepQuality ?? null,
-        soreness_level: l.sorenessLevel ?? null,
-        energy_level: l.energyLevel ?? null,
-        stress_level: l.stressLevel ?? null,
-        tight_areas: l.tightAreas ?? [],
-        overall_score: l.overallScore ?? null,
-        session_id: l.sessionId ?? null,
-        notes: l.notes || null,
-        created_at: l.createdAt || new Date().toISOString(),
-        updated_at: l.updatedAt ?? l.createdAt ?? new Date().toISOString(),
-      })).then((res) => {
-        counts.recoveryLogs = res.synced;
-        failedItems += res.failed;
-      }),
+      batchUpsert('recovery_logs', localRecoveryLogs, (l) => toRecoveryRow(userId, l)).then(
+        (res) => {
+          counts.recoveryLogs = res.synced;
+          failedItems += res.failed;
+        }
+      ),
 
-      batchUpsert('nutrition_logs', localNutritionLogs, (l) => ({
-        id: l.id,
-        user_id: userId,
-        date: l.date,
-        calories: l.calories || null,
-        protein: l.protein || null,
-        carbs: l.carbs || null,
-        fat: l.fat || null,
-        meals: l.meals,
-        notes: l.notes || null,
-        created_at: l.createdAt || new Date().toISOString(),
-        updated_at: l.updatedAt ?? l.createdAt ?? new Date().toISOString(),
-      })).then((res) => {
-        counts.nutritionLogs = res.synced;
-        failedItems += res.failed;
-      }),
+      batchUpsert('nutrition_logs', localNutritionLogs, (l) => toNutritionRow(userId, l)).then(
+        (res) => {
+          counts.nutritionLogs = res.synced;
+          failedItems += res.failed;
+        }
+      ),
 
       batchUpsert(
         'user_settings',
         localUserSettings,
-        (s) => ({
-          id: s.id || `${userId}:${s.key}`,
-          user_id: userId,
-          key: s.key,
-          value: s.value,
-          created_at: s.createdAt || new Date().toISOString(),
-          updated_at: s.updatedAt || new Date().toISOString(),
-        }),
+        (s) => toSettingRow(userId, s),
         'user_id,key'
       ).then((res) => {
         counts.userSettings = res.synced;
         failedItems += res.failed;
       }),
 
-      batchUpsert('ai_conversations', localAIConversations, (c) => ({
-        id: c.id,
-        user_id: userId,
-        title: c.title || null,
-        messages: c.messages,
-        context: c.context || {},
-        created_at: c.createdAt || new Date().toISOString(),
-        updated_at: c.updatedAt || c.createdAt || new Date().toISOString(),
-      })).then((res) => {
+      batchUpsert('ai_conversations', localAIConversations, (c) =>
+        toConversationRow(userId, c)
+      ).then((res) => {
         counts.aiConversations = res.synced;
         failedItems += res.failed;
       }),
 
-      batchUpsert(
-        'water_logs',
-        localWaterLogs,
-        (w) => ({
-          id: w.id,
-          user_id: userId,
-          date: w.date,
-          amount_ml: w.amountMl,
-          created_at: w.createdAt,
-        }),
-        'id'
-      ).then((res) => {
+      batchUpsert('water_logs', localWaterLogs, (w) => toWaterRow(userId, w), 'id').then((res) => {
         failedItems += res.failed;
       }),
     ]);
@@ -507,29 +432,33 @@ const syncAllDataImpl = async (): Promise<SyncResult> => {
 };
 
 export const pullAllData = async (): Promise<SyncResult> => {
-  if (pullAllInFlight) return pullAllInFlight;
+  // Identity is resolved BEFORE coalescing. Sharing an un-keyed promise across an
+  // account change meant the incoming user received the outgoing user's pull:
+  // they never fetched their own data, and the old response merged in after the
+  // wipe had already run.
+  const userId = await getUserId();
+  if (!userId) return { success: false, error: 'Not authenticated' };
+
+  if (pullAllInFlight?.userId === userId) return pullAllInFlight.promise;
+
   // Pull merges cloud rows into IndexedDB, so it must not interleave with another
   // tab's push of the same stores.
-  pullAllInFlight = withSyncLock(() => pullAllDataImpl()).then((outcome) => {
+  const promise = withSyncLock(() => pullAllDataImpl(userId)).then((outcome) => {
     if (outcome === BUSY) {
       logger.sync.info('Another tab is syncing, skipping pull');
       return LOCK_BUSY_RESULT;
     }
     return outcome;
   });
+  pullAllInFlight = { userId, promise };
   try {
-    return await pullAllInFlight;
+    return await promise;
   } finally {
-    pullAllInFlight = null;
+    if (pullAllInFlight?.promise === promise) pullAllInFlight = null;
   }
 };
 
-const pullAllDataImpl = async (): Promise<SyncResult> => {
-  const userId = await getUserId();
-  if (!userId) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
+const pullAllDataImpl = async (userId: string): Promise<SyncResult> => {
   if (!isSupabaseConfigured() || !supabase) {
     return { success: false, error: 'Supabase not configured' };
   }
@@ -595,6 +524,23 @@ const pullAllDataImpl = async (): Promise<SyncResult> => {
       createdAt: string;
     }>(10);
 
+    // Identity re-check, immediately before anything touches local storage.
+    //
+    // The fetches above are network round-trips. If the account changed while
+    // they were in flight — sign-out, account switch, expiry — then the wipe has
+    // already run and merging these rows would write the PREVIOUS user's data
+    // back into a store that is now supposed to belong to someone else. Keying
+    // the in-flight promise stops the wrong caller from receiving this pull; this
+    // check stops the pull itself from writing after the ground moved.
+    const stillCurrentUser = await getUserId();
+    if (stillCurrentUser !== userId) {
+      logger.sync.warn('Identity changed during pull; discarding fetched rows without merging', {
+        startedAs: userId,
+        nowIs: stillCurrentUser,
+      });
+      return { success: false, error: 'identity_changed_during_pull' };
+    }
+
     // Merge each store independently: one failed merge must not discard the
     // others (they have already been fetched from the cloud). A store whose
     // fetch failed yields an empty array above, so nothing is merged for it —
@@ -632,6 +578,34 @@ const pullAllDataImpl = async (): Promise<SyncResult> => {
       userSettings: userSettings.length,
       aiConversations: aiConversations.length,
     };
+
+    // The 12-week program keeps its pointer in localStorage, which sign-out and
+    // session-expiry both wipe (USER_SCOPED_STORAGE_REGISTRY). Now that the
+    // cloud copy has been merged into the user_settings store, rehydrate it —
+    // otherwise the trainee is silently restarted at week 1. Last-write-wins, so
+    // a newer local copy is preserved. Best-effort: a failure here must not
+    // downgrade an otherwise successful pull.
+    try {
+      const { restoreProgramProgressFromCloud } = await import('./programService');
+      if (await restoreProgramProgressFromCloud()) {
+        logger.sync.info('Restored program progress from the cloud');
+      }
+    } catch (err) {
+      logger.sync.warn('Could not restore program progress from the cloud', err);
+    }
+
+    // Same treatment for the other localStorage-only state that an account switch
+    // destroys: body profile (drives TDEE and every macro target), workout
+    // preferences, nutrition goals, app settings. See ./localStateMirror.
+    try {
+      const { restoreMirroredLocalKeys } = await import('./localStateMirror');
+      const restoredKeys = await restoreMirroredLocalKeys();
+      if (restoredKeys.length > 0) {
+        logger.sync.info('Restored mirrored local settings from the cloud', { restoredKeys });
+      }
+    } catch (err) {
+      logger.sync.warn('Could not restore mirrored local settings', err);
+    }
 
     const totalItems = Object.values(counts).reduce((sum, count) => sum + count, 0);
 

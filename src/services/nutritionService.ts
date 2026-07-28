@@ -13,6 +13,7 @@ import { generateId } from '../utils/id';
 import { KCAL_PER_GRAM, kcalFromMacros } from '../utils/nutritionMath';
 import { writeJsonStorage } from '../utils/safeJson';
 import { STORES, dbDelete, dbGetAll, dbGetByRange, dbPut } from './indexedDBCore';
+import { mirrorLocalKey } from './localStateMirror';
 import { FOOD_LIBRARY, MEAL_PRESETS, type MealPreset } from './nutritionData';
 import { getCurrentUser } from './supabaseAuth';
 import { deleteCloudNutritionLog, syncNutritionLog } from './supabaseSync';
@@ -44,6 +45,10 @@ export function saveNutritionGoals(goals: MacroNutrients): void {
     carbs: goals.carbs,
     fat: goals.fat,
   });
+  // Back the goals up to the cloud. They were localStorage-only AND wiped on an
+  // account switch, so the targets the whole nutrition screen compares against
+  // were unrecoverable. See services/localStateMirror.
+  mirrorLocalKey(NUTRITION_GOALS_KEY);
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('settings-updated'));
   }

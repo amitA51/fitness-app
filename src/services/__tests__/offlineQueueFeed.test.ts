@@ -149,6 +149,83 @@ describe('offlineQueue backoff', () => {
   });
 });
 
+describe('offlineQueue replay vs concurrent enqueue (revision guard)', () => {
+  // `queueMutation` dedups by `type::recordId` and REUSES the existing row id, so
+  // a second edit to the same record replaces the queued row in place. Replay
+  // holds a snapshot taken before its `await syncFn()`, and used to delete /
+  // rewrite that row by id unconditionally. Both outcomes silently destroyed a
+  // revision that had never been sent anywhere.
+  it('does not delete a newer revision enqueued while the sync was in flight', async () => {
+    await queueMutation('session:update', { id: 's1', duration: 60 });
+
+    // Sync blocks until we let it finish, which is the window the race needs.
+    let releaseSync: () => void = () => {};
+    const syncStarted = new Promise<void>((resolveStarted) => {
+      mockSyncWorkoutSession.mockImplementation(
+        () =>
+          new Promise<void>((resolveSync) => {
+            releaseSync = resolveSync;
+            resolveStarted();
+          })
+      );
+    });
+
+    const replay = processQueue();
+    await syncStarted;
+
+    // The user edits the same session again mid-flight; its direct write failed,
+    // so it lands back on the queue — overwriting the same row.
+    await queueMutation('session:update', { id: 's1', duration: 120 });
+
+    releaseSync();
+    await replay;
+
+    // The newer revision must still be pending, not silently dropped.
+    expect(await getQueueDepth()).toBe(1);
+
+    // And it must actually be the NEW payload that survived.
+    mockSyncWorkoutSession.mockReset();
+    mockSyncWorkoutSession.mockResolvedValue(undefined);
+    await processQueue();
+    expect(mockSyncWorkoutSession).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ duration: 120 })
+    );
+    expect(await getQueueDepth()).toBe(0);
+  });
+
+  it('does not overwrite a newer revision when the in-flight attempt FAILS', async () => {
+    await queueMutation('session:update', { id: 's1', duration: 60 });
+
+    let failSync: () => void = () => {};
+    const syncStarted = new Promise<void>((resolveStarted) => {
+      mockSyncWorkoutSession.mockImplementation(
+        () =>
+          new Promise<void>((_resolve, reject) => {
+            failSync = () => reject(new TypeError('failed to fetch'));
+            resolveStarted();
+          })
+      );
+    });
+
+    const replay = processQueue();
+    await syncStarted;
+    await queueMutation('session:update', { id: 's1', duration: 120 });
+    failSync();
+    await replay;
+
+    // The retriable-failure path used to write its stale snapshot back over the
+    // newer payload. The newer one must win.
+    mockSyncWorkoutSession.mockReset();
+    mockSyncWorkoutSession.mockResolvedValue(undefined);
+    await processQueue();
+    expect(mockSyncWorkoutSession).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ duration: 120 })
+    );
+  });
+});
+
 describe('offlineQueue MAX_RETRIES exhaustion', () => {
   it('holds the mutation for recovery after 5 retriable failures instead of deleting it', async () => {
     const err = new TypeError('failed to fetch');

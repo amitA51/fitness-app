@@ -32,6 +32,15 @@
 -- a function's defaults with CREATE OR REPLACE ("cannot remove parameter defaults
 -- from existing function"), so adding one here would make any later migration
 -- that redefines the same function fail. The client always passes every argument.
+--
+-- The DROP below exists because that failure mode was hit for real: the live
+-- project carried a drifted `create_post(text, text DEFAULT NULL, text DEFAULT
+-- NULL)` from a dashboard-applied migration that never landed in this repo, and
+-- CREATE OR REPLACE aborted with 42P13. Dropping first is safe — every call site
+-- (communityService.createPost) passes all three arguments explicitly — and the
+-- EXECUTE grant is re-issued at the bottom of this file.
+DROP FUNCTION IF EXISTS public.create_post(text, text, text);
+
 CREATE OR REPLACE FUNCTION public.create_post(
   _body      text,
   _topic     text,

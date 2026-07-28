@@ -115,8 +115,47 @@ function isOffline(): boolean {
 
 // Status codes that indicate a permanent failure — never retry these.
 // 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found,
-// 409 Conflict, 422 Unprocessable Entity.
-const NON_RETRIABLE_STATUS = new Set<number>([400, 401, 403, 404, 409, 422]);
+// 413 Payload Too Large, 415 Unsupported Media Type, 422 Unprocessable Entity.
+//
+// 409 Conflict is deliberately NOT here. PostgREST answers 409 for a genuine
+// unique violation (permanent) but also for a serialization/deadlock conflict,
+// which is exactly the kind of failure that succeeds on the next attempt. The
+// SQLSTATE check below tells the two apart; treating every 409 as permanent
+// dead-lettered writes that would have gone through moments later.
+//
+// 413/415 are new here: they used to fall through to "retriable" and burn all
+// five attempts plus ~45 minutes of backoff on a request that can never succeed.
+const NON_RETRIABLE_STATUS = new Set<number>([400, 401, 403, 404, 413, 415, 422]);
+
+/**
+ * SQLSTATEs that are TRANSIENT despite being well-formed Postgres errors.
+ *
+ * The old rule was "any 5-character numeric code is permanent", which is wrong
+ * for the whole 40xxx class. `40001` is a serialization failure and `40P01` a
+ * deadlock — both are the database asking the caller to retry, and both are
+ * reachable here because `sync_lww_guard` and `consume_rate_limit` take row locks.
+ * Classing them as permanent sent a perfectly good write straight to the
+ * dead-letter store, where it needed manual intervention from Settings.
+ *
+ * 53xxx (insufficient resources: out of memory, too many connections) and 57014
+ * (statement cancelled / timeout) are capacity problems, not data problems.
+ * 08xxx is a connection failure.
+ */
+const RETRIABLE_SQLSTATES = new Set<string>([
+  '40001', // serialization_failure
+  '40P01', // deadlock_detected
+  '55P03', // lock_not_available
+  '57014', // query_canceled (statement timeout)
+  '53000', // insufficient_resources
+  '53100', // disk_full
+  '53200', // out_of_memory
+  '53300', // too_many_connections
+  '08000', // connection_exception
+  '08003', // connection_does_not_exist
+  '08006', // connection_failure
+  '08001', // sqlclient_unable_to_establish_sqlconnection
+  '08004', // sqlserver_rejected_establishment_of_sqlconnection
+]);
 
 // ── Error classification ────────────────────────────────────────────────────
 
@@ -149,20 +188,37 @@ export function isRetriableError(err: unknown): boolean {
         ? anyErr.statusCode
         : undefined;
 
-  if (typeof status === 'number') {
-    if (NON_RETRIABLE_STATUS.has(status)) return false;
-    // 5xx and anything else → retriable
-    return true;
-  }
-
   // PostgREST returns string .code values like '23505' (unique violation),
-  // 'PGRST301' (RLS), '42P01' (missing table). These are permanent.
+  // 'PGRST301' (RLS), '42P01' (missing table). Most are permanent.
+  //
+  // This is checked BEFORE the HTTP status on purpose: the SQLSTATE is the more
+  // specific signal. A 409 carrying '40001' is a serialization conflict the
+  // database wants us to retry, while a 409 carrying '23505' is a real duplicate.
+  // Reading only the status could not distinguish them.
   const code = typeof anyErr.code === 'string' ? anyErr.code : undefined;
   if (code) {
-    // Postgres error codes are 5 chars (SQLSTATE). All of these are permanent
-    // for our write paths — bad data, constraint violations, missing schema.
-    if (/^\d{5}$/.test(code)) return false;
+    if (RETRIABLE_SQLSTATES.has(code)) return true;
+    // Classes 40 (serialization/deadlock), 08 (connection) and 53 (resources) are
+    // transient as a class; anything else in them is safer retried than discarded.
+    if (/^(40|08|53)[0-9A-Z]{3}$/.test(code)) return true;
     if (code.startsWith('PGRST')) return false;
+    // Any other SQLSTATE is permanent for our write paths — bad data, constraint
+    // violations, missing schema. Note the character class: a SQLSTATE is five
+    // alphanumerics, NOT five digits. Matching only `\d{5}` let every lettered
+    // code (22P02 invalid-text-representation, 42P01 undefined-table, 23P01
+    // exclusion-violation) fall through to the "unknown → retriable" default, so
+    // the queue retried them five times and waited ~45 minutes before finally
+    // holding a write that could never have succeeded.
+    if (/^[0-9A-Z]{5}$/.test(code)) return false;
+  }
+
+  if (typeof status === 'number') {
+    if (NON_RETRIABLE_STATUS.has(status)) return false;
+    // 409 without a recognised SQLSTATE: assume a real conflict rather than
+    // retrying forever against a constraint that will not change.
+    if (status === 409) return false;
+    // 429 and 5xx and anything else → retriable
+    return true;
   }
 
   // Network-ish errors: fetch failure, timeout, aborted request → retriable.
@@ -278,6 +334,81 @@ async function deleteMutation(id: string): Promise<void> {
     const req = store.delete(id);
     req.onsuccess = () => resolve();
     req.onerror = () => reject(req.error);
+  });
+}
+
+/**
+ * Delete a queue row ONLY if it still holds the revision we replayed.
+ *
+ * The race this closes, which the plain `deleteMutation` above lost:
+ * `queueMutation` DEDUPS by `type::recordId` and REUSES the existing row id, so
+ * a second edit to the same record overwrites the queued row in place with a new
+ * payload and a new `seq`. Replay meanwhile holds a SNAPSHOT taken before its
+ * `await syncFn()`. Sequence:
+ *
+ *   1. replay picks up `session:update(s)` revision A and awaits the network
+ *   2. the user edits session `s` again; its direct write fails, so
+ *      `queueMutation` replaces that same row with revision B
+ *   3. A's request succeeds and replay deletes the row by id
+ *
+ * Revision B is now gone from the queue and was never sent anywhere. The
+ * mirror-image case is a retriable failure, where `putMutation` wrote snapshot A
+ * back over B. Comparing `seq` inside the transaction makes both cases leave the
+ * newer revision pending instead, so the next pass picks it up.
+ *
+ * @returns true when the row was deleted, false when a newer revision was found
+ *          and deliberately left in place.
+ */
+async function deleteMutationIfUnchanged(id: string, expectedSeq?: number): Promise<boolean> {
+  const db = await openQueueDB();
+  return new Promise((resolve, reject) => {
+    let deleted = false;
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    const read = store.get(id);
+    read.onsuccess = () => {
+      const current = read.result as QueuedMutation | undefined;
+      if (!current) {
+        // Already gone (another pass, or an explicit discard). Nothing to do.
+        deleted = true;
+        return;
+      }
+      if (current.seq !== expectedSeq) return; // superseded — keep the newer one
+      store.delete(id);
+      deleted = true;
+    };
+    tx.oncomplete = () => resolve(deleted);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
+/**
+ * Write back a retried mutation ONLY if the stored row is still the revision we
+ * replayed — otherwise the newer revision from `queueMutation` would be
+ * overwritten by our stale snapshot. See `deleteMutationIfUnchanged`.
+ */
+async function putMutationIfUnchanged(
+  mutation: QueuedMutation,
+  expectedSeq?: number
+): Promise<boolean> {
+  const db = await openQueueDB();
+  return new Promise((resolve, reject) => {
+    let written = false;
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    const read = store.get(mutation.id);
+    read.onsuccess = () => {
+      const current = read.result as QueuedMutation | undefined;
+      // Absent means it was superseded-then-removed; re-adding a stale snapshot
+      // would resurrect an old payload, so do nothing.
+      if (!current || current.seq !== expectedSeq) return;
+      store.put(mutation);
+      written = true;
+    };
+    tx.oncomplete = () => resolve(written);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
   });
 }
 
@@ -700,8 +831,22 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
 
     try {
       await syncFn();
-      await deleteMutation(mutation.id);
-      if (dedupKey) processedKeys.add(dedupKey);
+      // Revision-guarded: if the user re-edited this record while the request was
+      // in flight, `queueMutation` has already replaced this row with a newer
+      // payload under the SAME id. Deleting by id would silently discard that
+      // never-sent revision. See deleteMutationIfUnchanged.
+      const removed = await deleteMutationIfUnchanged(mutation.id, mutation.seq);
+      if (removed) {
+        // Only claim the record is up to date when nothing newer is queued for it,
+        // otherwise a later entry for the same record would be dropped as a
+        // duplicate before it was ever sent.
+        if (dedupKey) processedKeys.add(dedupKey);
+      } else {
+        logger.sync.info('Mutation superseded while syncing; keeping newer revision queued', {
+          type: mutation.type,
+          id: mutation.id,
+        });
+      }
       success++;
       logger.sync.info('Synced queued mutation', { type: mutation.type, id: mutation.id });
     } catch (err) {
@@ -734,14 +879,23 @@ async function processQueueInternal(): Promise<{ success: number; failed: number
         await moveToDeadLetter(mutation, 'max_retries');
         droppedCount++;
       } else {
-        await putMutation(mutation);
-        logger.sync.warn('Mutation failed, will retry', {
-          type: mutation.type,
-          id: mutation.id,
-          retryCount: mutation.retryCount,
-          nextAttemptAt: mutation.nextAttemptAt,
-          error: mutation.lastError,
-        });
+        // Also revision-guarded — writing the snapshot back unconditionally would
+        // overwrite a newer payload queued during the failed attempt.
+        const written = await putMutationIfUnchanged(mutation, mutation.seq);
+        if (written) {
+          logger.sync.warn('Mutation failed, will retry', {
+            type: mutation.type,
+            id: mutation.id,
+            retryCount: mutation.retryCount,
+            nextAttemptAt: mutation.nextAttemptAt,
+            error: mutation.lastError,
+          });
+        } else {
+          logger.sync.info('Mutation failed but was superseded; newer revision kept', {
+            type: mutation.type,
+            id: mutation.id,
+          });
+        }
       }
       failed++;
     }
@@ -788,13 +942,64 @@ export async function getQueueDepth(): Promise<number> {
 }
 
 /**
- * Clear the entire queue (use with caution)
+ * Clear the entire queue INCLUDING the held/dead-letter changes.
+ *
+ * This is the destructive variant. Only call it when the user has actually asked
+ * for their data to be gone — explicit "delete all my data", or a confirmed
+ * sign-out where the warning named the unsynced changes.
+ *
+ * For an ACCOUNT SWITCH use `clearMutationQueueForOwner` instead: it drops the
+ * outgoing account's entries (which can never replay anyway) without destroying
+ * held changes belonging to somebody else who may sign back in.
  */
 export async function clearMutationQueue(): Promise<void> {
   await clearQueue();
   await clearDeadLetterStore();
   retriableFailureNotified = false;
   logger.sync.info('Cleared mutation queue');
+}
+
+/**
+ * Drop only the entries owned by `userId`, leaving every other account's pending
+ * and held changes intact.
+ *
+ * Why this exists: the auth transition used to call `clearMutationQueue()`, which
+ * wipes the dead-letter store too. That store is the app's recovery mechanism —
+ * a change that hits a permanent error is MOVED there precisely so it is not
+ * lost, and Settings offers retry/export for it. Destroying it on an account
+ * switch deleted the one copy of writes that had never reached the cloud, and it
+ * did so silently, because moving a change out of the active queue drops the
+ * active depth to zero and the sign-out warning only looked at that.
+ *
+ * Scoping by owner keeps the security property (user A's entries never replay
+ * into user B's account — replay also refuses foreign owners) without the loss.
+ */
+export async function clearMutationQueueForOwner(userId: string | null): Promise<void> {
+  if (!userId) {
+    // No known owner: fall back to the full clear, which is what the previous
+    // behaviour did unconditionally. Better to be destructive here than to leave
+    // unattributable entries that replay into whoever signs in next.
+    await clearMutationQueue();
+    return;
+  }
+
+  const db = await openQueueDB();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction([STORE_NAME, DEAD_LETTER_STORE], 'readwrite');
+    for (const storeName of [STORE_NAME, DEAD_LETTER_STORE]) {
+      const req = tx.objectStore(storeName).getAll();
+      req.onsuccess = () => {
+        for (const row of (req.result ?? []) as QueuedMutation[]) {
+          if (row.userId === userId) tx.objectStore(storeName).delete(row.id);
+        }
+      };
+    }
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+  retriableFailureNotified = false;
+  logger.sync.info('Cleared queued mutations for the outgoing account', { userId });
 }
 
 // ── Dead-letter recovery API ────────────────────────────────────────────────

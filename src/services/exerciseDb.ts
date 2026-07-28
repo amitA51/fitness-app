@@ -10,6 +10,8 @@ import type { CreatePersonalExerciseInput, PersonalExercise } from '../types';
 import { generateId } from '../utils/id';
 import { mergeGenericRecords } from './cloudMerge';
 import { STORES, dbDelete, dbGetAll, dbGetByIndex, dbPut, initDB } from './indexedDBCore';
+// prService does NOT import this module, so there is no cycle here.
+import { deletePR } from './prService';
 import { getCurrentUser } from './supabaseAuth';
 import { syncPersonalExercise } from './supabaseSync';
 import { syncWithRetry } from './syncEngine';
@@ -206,13 +208,21 @@ export const updatePersonalExercise = async (
 export const deletePersonalExercise = async (id: string): Promise<void> => {
   const now = new Date().toISOString();
 
-  // Cascade: remove all personal records linked to this exercise
+  // Cascade: remove all personal records linked to this exercise.
+  //
+  // This used to `dbDelete` them and stop there. The exercise itself got a cloud
+  // tombstone, but its PRs did not — so they stayed LIVE in the cloud and the
+  // next pull faithfully re-added every one of them (mergeGenericRecords inserts
+  // any cloud row missing locally). The user deleted an exercise and its records
+  // reappeared, now orphaned from any exercise. `deletePR` is the only correct
+  // way to remove a PR: it stamps a tombstone in the cloud before deleting
+  // locally, so the deletion actually propagates.
   const orphanedPRs = await dbGetByIndex<{ id: string; exerciseId: string }>(
     STORES.PERSONAL_RECORDS,
     'exerciseId',
     id
   );
-  await Promise.all(orphanedPRs.map((pr) => dbDelete(STORES.PERSONAL_RECORDS, pr.id)));
+  await Promise.all(orphanedPRs.map((pr) => deletePR(pr.id)));
 
   // Hard-delete locally
   await dbDelete(STORES.PERSONAL_EXERCISES, id);
@@ -275,6 +285,8 @@ export const removeDuplicateExercises = async (): Promise<number> => {
 
   let removedCount = 0;
   const db = await initDB();
+  /** Ids whose deletion still has to be propagated to the cloud. */
+  const cloudTombstones: string[] = [];
 
   for (const [_key, group] of uniqueMap.entries()) {
     if (group.length > 1) {
@@ -301,7 +313,34 @@ export const removeDuplicateExercises = async (): Promise<number> => {
         tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
       });
 
+      // Propagate each removal as a cloud tombstone.
+      //
+      // Without this the cleanup was purely cosmetic and self-undoing: the rows
+      // were still LIVE in the cloud, so the next pull re-inserted every
+      // duplicate the user had just cleaned up (mergeGenericRecords adds any
+      // cloud row missing locally). The local delete stays inside its single
+      // transaction above — this only adds the outbound tombstone, which is
+      // queued and therefore survives being offline.
+      cloudTombstones.push(...remove.map((ex) => ex.id));
+
       removedCount += remove.length;
+    }
+  }
+
+  if (cloudTombstones.length > 0) {
+    const user = await getCurrentUser();
+    if (user) {
+      const now = new Date().toISOString();
+      for (const id of cloudTombstones) {
+        // Fire-and-forget with an offline-queue fallback, matching
+        // deletePersonalExercise. Cleanup must not block on the network.
+        syncWithRetry(
+          () => syncPersonalExercise(user.id, { id, name: '', deletedAt: now, updatedAt: now }),
+          `removeDuplicateExercise:${id}`,
+          3,
+          { type: 'exercise:delete', payload: id }
+        );
+      }
     }
   }
 

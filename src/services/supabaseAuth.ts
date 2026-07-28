@@ -71,22 +71,47 @@ const isSessionExpiredError = (err: unknown): boolean => {
 };
 
 /**
- * Clear a stale session from storage and notify the app layer so it can
- * bounce the user to the login screen. Best-effort — we swallow any error
- * from signOut since the session was already invalid.
+ * Handle an expired/invalid session: drop the credentials and bounce the user to
+ * the login screen, WITHOUT destroying their local data.
+ *
+ * This function used to call `transitionAuthSession(null, { forceCleanup: true })`,
+ * which wipes every user-scoped IndexedDB store, every registered localStorage
+ * key, AND the offline mutation queue including its dead-letter recovery store.
+ * That was wrong, and it is the exact mechanism that destroyed a real user's
+ * six weeks of 12-week-program progress: a single transient "invalid JWT" during
+ * a token refresh erased data that had no cloud copy.
+ *
+ * The reasoning behind the change:
+ *
+ *   • A wipe on IDENTITY CHANGE is genuinely necessary — user B must never see
+ *     user A's records. `transitionAuthSession` still does exactly that, keyed on
+ *     the stored owner marker, and it is untouched.
+ *   • A wipe on EXPIRY protects nothing. An expired token proves only that the
+ *     credential aged out; it says nothing about who will authenticate next. The
+ *     overwhelmingly common case is the SAME person re-logging in — and the
+ *     identity check in `transitionAuthSession` will preserve their data, because
+ *     the owner marker still matches. If a DIFFERENT user signs in, that same
+ *     check fires and wipes then, which is the correct moment.
+ *   • Destroying the offline queue here was strictly harmful: those are writes
+ *     that have not reached the cloud yet, so the wipe is the one thing that
+ *     makes them unrecoverable. Entries are owner-stamped and replay refuses to
+ *     apply another account's rows, so retaining them is safe.
+ *
+ * Net effect: an expired session now costs the user a login, not their data.
  */
 const handleExpiredSession = async (err: unknown): Promise<void> => {
-  logger.auth.warn('Session expired or invalid — signing out', err);
-  try {
-    await transitionAuthSession(null, { forceCleanup: true });
-  } catch (cleanupErr) {
-    logger.auth.error('Expired-session local cleanup failed', cleanupErr);
-  }
+  logger.auth.warn('Session expired or invalid — requiring re-authentication', err);
+
+  // Drop the credential only. `signOut()` clears the Supabase token from storage
+  // but does NOT touch our IndexedDB stores, localStorage keys or the queue.
   try {
     if (supabase) await supabase.auth.signOut();
   } catch (signOutErr) {
     logger.auth.error('signOut after expired session failed', signOutErr);
   }
+
+  // The auth listener will see the null session and re-run the identity check,
+  // which is where a real account change is detected and cleaned up.
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('auth:session-expired'));
   }
