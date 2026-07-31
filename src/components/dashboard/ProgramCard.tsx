@@ -15,12 +15,18 @@
 import { ChevronLeft, Sparkles, Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  BBT_PROGRAM_METADATA,
+  getBlockForWeek,
+  getProgramDayMetadata,
+} from '../../data/bbtProgramMetadata';
+import { TRAINING_DAYS, getProgress } from '../../services/programProgressService';
 import { Card } from '../ui/Card';
 
-// The 12-week program data (BBT_PROGRAM, ~350 KB of source) and programService are
-// loaded LAZILY (dynamic import in the effect below) so the Dashboard's first paint
-// never has to download them. ProgramCard is one card among many on the home screen;
-// its data streams in just after mount and swaps the skeleton for the real view.
+// The Dashboard only needs progress plus compact labels/counts. The full BBT
+// exercise catalog is 339 kB source / ~218 kB emitted, so this card must never
+// resolve it on mount: a trainee who never opens /program should not download it.
+// Keeping the async refresh preserves the existing aria-busy skeleton first paint.
 
 type ProgramView =
   | { kind: 'loading' }
@@ -37,29 +43,24 @@ type ProgramView =
     }
   | { kind: 'completed'; totalWeeks: number };
 
-// Lazily pulls in the heavy program data + service, then derives the card's view.
-// The dynamic import resolves from the module cache on every call after the first,
-// so the focus/visibility refreshes below stay cheap.
+// Resolves entirely from small, eagerly available metadata plus local progress.
+// It intentionally remains async so the existing skeleton and focus/visibility
+// refresh behavior stay unchanged without scheduling the generated catalog.
 async function computeProgramView(): Promise<ProgramView> {
-  const [{ BBT_PROGRAM }, { TRAINING_DAYS, getBlockForWeek, getProgramDay, getProgress }] =
-    await Promise.all([
-      import('../../data/bbtProgram.generated'),
-      import('../../services/programService'),
-    ]);
-
-  const totalDays = BBT_PROGRAM.totalWeeks * TRAINING_DAYS.length;
+  const totalDays = BBT_PROGRAM_METADATA.totalWeeks * TRAINING_DAYS.length;
   const progress = getProgress();
   if (!progress)
     return {
       kind: 'not-started',
-      totalWeeks: BBT_PROGRAM.totalWeeks,
-      titleHe: BBT_PROGRAM.titleHe,
+      totalWeeks: BBT_PROGRAM_METADATA.totalWeeks,
+      titleHe: BBT_PROGRAM_METADATA.titleHe,
     };
-  if (progress.status === 'completed')
-    return { kind: 'completed', totalWeeks: BBT_PROGRAM.totalWeeks };
+  if (progress.status === 'completed') {
+    return { kind: 'completed', totalWeeks: BBT_PROGRAM_METADATA.totalWeeks };
+  }
 
   const dayType = TRAINING_DAYS[progress.currentDayIndex] ?? 'Upper';
-  const day = getProgramDay(progress.currentWeek, dayType);
+  const day = getProgramDayMetadata(progress.currentWeek, dayType);
   const block = getBlockForWeek(progress.currentWeek);
   const completedCount = progress.completed.length;
 
@@ -68,7 +69,7 @@ async function computeProgramView(): Promise<ProgramView> {
     week: progress.currentWeek,
     dayHe: day?.dayHe ?? dayType,
     blockHe: block.nameHe,
-    exerciseCount: day?.exercises.length ?? 0,
+    exerciseCount: day?.exerciseCount ?? 0,
     completedCount,
     totalDays,
     pct: Math.round((completedCount / totalDays) * 100),
@@ -96,7 +97,8 @@ export function ProgramCard() {
     let active = true;
     // Re-read on return-to-tab: finishing a program day advances the pointer via
     // the save-flow reconcile, so the card should reflect it when the user comes
-    // back to the Dashboard. The dynamic import is cached, so refreshes are cheap.
+    // back to the Dashboard. Both reads are tiny synchronous metadata/progress
+    // lookups, so focus and visibility refreshes remain cheap.
     const refresh = () => {
       computeProgramView().then((next) => {
         if (active) setView(next);
@@ -114,7 +116,7 @@ export function ProgramCard() {
 
   const goToProgram = () => navigate('/program');
 
-  // ── Loading (program data streams in just after mount) ──────────────────────
+  // ── Loading (metadata refresh resolves just after mount) ───────────────────
   if (view.kind === 'loading') {
     return (
       <Card

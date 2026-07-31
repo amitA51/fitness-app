@@ -2,6 +2,7 @@ import { AnimatePresence, m } from 'framer-motion';
 import { Dumbbell, Plus, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import { getPersonalExercises } from '../../../services/workoutDb';
 import type { PersonalExercise } from '../../../types';
 import { springTransition } from '../constants';
@@ -29,6 +30,10 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
   const templateNameId = useId();
   const titleId = useId();
   const sheetRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+  const pickerTransition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const };
 
   // Trap Tab focus inside the sheet so it can't leak to the page behind the
   // backdrop. Escape stays owned by the handler below (it closes the picker
@@ -375,108 +380,113 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
             <AnimatePresence>
               {showExercisePicker && (
                 <m.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden rounded-xl"
+                  initial={{ gridTemplateRows: '0fr', opacity: 0 }}
+                  animate={{ gridTemplateRows: '1fr', opacity: 1 }}
+                  exit={{ gridTemplateRows: '0fr', opacity: 0 }}
+                  transition={pickerTransition}
+                  className="grid overflow-hidden rounded-xl"
                   style={{
                     background: 'var(--fs-surface)',
                     border: '1px solid var(--fs-surface-2)',
                   }}
                 >
-                  <div className="p-3">
-                    <div className="flex items-center justify-between mb-3">
-                      <span
-                        style={{
-                          fontFamily: 'var(--font-display)',
-                          fontSize: '14px',
-                          fontWeight: 600,
-                          color: 'var(--fs-ink)',
-                        }}
-                      >
-                        בחר תרגיל
-                      </span>
-                      <m.button
-                        whileTap={{ scale: 0.9 }}
-                        type="button"
-                        onClick={() => {
-                          setShowExercisePicker(false);
-                          setExerciseSearch('');
-                        }}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center"
-                        style={{ background: 'var(--fs-surface-2)' }}
-                      >
-                        <X size={12} style={{ color: 'var(--fs-heading)' }} />
-                      </m.button>
-                    </div>
-                    <input
-                      type="text"
-                      value={exerciseSearch}
-                      onChange={(e) => setExerciseSearch(e.target.value)}
-                      placeholder="חפשו תרגיל…"
-                      aria-label="חפש תרגיל"
-                      autoFocus
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        fontSize: '14px',
-                        background: 'var(--fs-surface-2)',
-                        border: '1px solid var(--fs-surface-2)',
-                        borderRadius: 12,
-                        color: 'var(--fs-ink)',
-                        fontFamily: 'var(--font-body)',
-                        outline: 'none',
-                      }}
-                    />
-                    <div
-                      className="mt-2 flex flex-col gap-1 max-h-[200px] overflow-y-auto"
-                      style={{
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: 'var(--fs-surface-2) transparent',
-                      }}
-                    >
-                      {filteredExercises.length === 0 && (
-                        <p
+                  {/* Variable library results need a real expansion. Grid rows avoid
+                      Framer's repeated `height: auto` measurement on every frame. */}
+                  <div style={{ minHeight: 0, overflow: 'hidden' }}>
+                    <div className="p-3">
+                      <div className="flex items-center justify-between mb-3">
+                        <span
                           style={{
-                            fontFamily: 'var(--font-body)',
-                            fontSize: '13px',
-                            color: 'var(--fs-muted)',
-                            textAlign: 'center',
-                            padding: '16px',
-                          }}
-                        >
-                          לא נמצאו תרגילים
-                        </p>
-                      )}
-                      {filteredExercises.map((ex) => (
-                        <m.button
-                          key={ex.id}
-                          type="button"
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => handleAddExercise(ex)}
-                          className="w-full text-right px-3 py-2.5 flex items-center justify-between"
-                          style={{
-                            fontFamily: 'var(--font-body)',
+                            fontFamily: 'var(--font-display)',
                             fontSize: '14px',
                             fontWeight: 600,
                             color: 'var(--fs-ink)',
-                            transition: 'background 0.15s',
-                            background: 'transparent',
-                            border: 'none',
-                            borderRadius: 12,
-                            cursor: 'pointer',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'var(--fs-surface-2)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'transparent';
                           }}
                         >
-                          <span>{ex.name || 'תרגיל'}</span>
-                          <Plus size={14} style={{ color: 'var(--fs-heading)' }} />
+                          בחר תרגיל
+                        </span>
+                        <m.button
+                          whileTap={{ scale: 0.9 }}
+                          type="button"
+                          onClick={() => {
+                            setShowExercisePicker(false);
+                            setExerciseSearch('');
+                          }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center"
+                          style={{ background: 'var(--fs-surface-2)' }}
+                        >
+                          <X size={12} style={{ color: 'var(--fs-heading)' }} />
                         </m.button>
-                      ))}
+                      </div>
+                      <input
+                        type="text"
+                        value={exerciseSearch}
+                        onChange={(e) => setExerciseSearch(e.target.value)}
+                        placeholder="חפשו תרגיל…"
+                        aria-label="חפש תרגיל"
+                        autoFocus
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          fontSize: '14px',
+                          background: 'var(--fs-surface-2)',
+                          border: '1px solid var(--fs-surface-2)',
+                          borderRadius: 12,
+                          color: 'var(--fs-ink)',
+                          fontFamily: 'var(--font-body)',
+                          outline: 'none',
+                        }}
+                      />
+                      <div
+                        className="mt-2 flex flex-col gap-1 max-h-[200px] overflow-y-auto"
+                        style={{
+                          scrollbarWidth: 'thin',
+                          scrollbarColor: 'var(--fs-surface-2) transparent',
+                        }}
+                      >
+                        {filteredExercises.length === 0 && (
+                          <p
+                            style={{
+                              fontFamily: 'var(--font-body)',
+                              fontSize: '13px',
+                              color: 'var(--fs-muted)',
+                              textAlign: 'center',
+                              padding: '16px',
+                            }}
+                          >
+                            לא נמצאו תרגילים
+                          </p>
+                        )}
+                        {filteredExercises.map((ex) => (
+                          <m.button
+                            key={ex.id}
+                            type="button"
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => handleAddExercise(ex)}
+                            className="w-full text-right px-3 py-2.5 flex items-center justify-between"
+                            style={{
+                              fontFamily: 'var(--font-body)',
+                              fontSize: '14px',
+                              fontWeight: 600,
+                              color: 'var(--fs-ink)',
+                              transition: 'background 0.15s',
+                              background: 'transparent',
+                              border: 'none',
+                              borderRadius: 12,
+                              cursor: 'pointer',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'var(--fs-surface-2)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'transparent';
+                            }}
+                          >
+                            <span>{ex.name || 'תרגיל'}</span>
+                            <Plus size={14} style={{ color: 'var(--fs-heading)' }} />
+                          </m.button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </m.div>

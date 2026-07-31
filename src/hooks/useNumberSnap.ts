@@ -17,7 +17,8 @@
 
 import { useRef } from 'react';
 import type { RefObject } from 'react';
-import { DUR, EASE, gsap, useGSAP } from '../lib/gsap';
+import { gsap, useGSAP } from '../lib/gsap';
+import { DUR, EASE } from '../lib/motionTokens';
 import { useReducedMotion } from './useReducedMotion';
 
 /**

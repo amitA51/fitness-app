@@ -1,7 +1,7 @@
 import { RingProgress } from '@/components/charts/RingProgress';
 import { VerdictLine, VerdictNumber } from '@/components/insights/VerdictLine';
 import { useCountUp } from '@/hooks/useCountUp';
-import { formatThousands } from '@/lib/gsap';
+import { formatThousands } from '@/utils/formatThousands';
 import { SlidersHorizontal } from 'lucide-react';
 import { memo, useRef } from 'react';
 

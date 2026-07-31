@@ -81,6 +81,9 @@ export interface WorkoutFlowOverlaysProps {
   tutorialCustomNotes?: string;
   tutorialPrimaryMuscle?: string;
   tutorialSecondaryMuscles?: string[];
+  tutorialMechanic?: string;
+  tutorialForce?: string;
+  tutorialLevel?: string;
   tutorialEquipment?: string;
   tutorialInstructions?: string;
   /** Current set's note + its writer — the note strip now lives in the coach. */
@@ -132,6 +135,9 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
   tutorialCustomNotes,
   tutorialPrimaryMuscle,
   tutorialSecondaryMuscles,
+  tutorialMechanic,
+  tutorialForce,
+  tutorialLevel,
   tutorialEquipment,
   tutorialInstructions,
   tutorialNote,
@@ -236,6 +242,9 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
             customNotes={tutorialCustomNotes}
             primaryMuscle={tutorialPrimaryMuscle}
             secondaryMuscles={tutorialSecondaryMuscles}
+            mechanic={tutorialMechanic}
+            force={tutorialForce}
+            level={tutorialLevel}
             equipment={tutorialEquipment}
             instructions={tutorialInstructions}
             note={tutorialNote}

@@ -17,27 +17,34 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Stagger, StaggerItem } from '../components/motion/Stagger';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+// AppRouter lazy-loads this route. Rendering its full day cards is the explicit
+// catalog boundary, so this direct import cannot enter the Dashboard graph.
 import { BBT_PROGRAM, type BbtDay } from '../data/bbtProgram.generated';
+import { getBlockForWeek } from '../data/bbtProgramMetadata';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import {
+  enDashRange,
+  getExerciseOptions,
+  restRangeHe,
+  startProgramDay,
+} from '../services/programCatalogService';
 import {
   TRAINING_DAYS,
   type TrainingDay,
-  enDashRange,
-  getBlockForWeek,
-  getExerciseOptions,
-  getProgramDay,
   getProgress,
   getSwaps,
   resetProgram,
-  restRangeHe,
   setSwap,
   startProgram,
-  startProgramDay,
-} from '../services/programService';
+} from '../services/programProgressService';
 import { ensurePersistentStorage } from '../services/storagePersistence';
 
 const TOTAL_DAYS = BBT_PROGRAM.totalWeeks * TRAINING_DAYS.length;
 const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+/** Full-day lookup is valid only on this route, which intentionally owns BBT_PROGRAM. */
+const getProgramDay = (week: number, dayType: TrainingDay): BbtDay | null =>
+  BBT_PROGRAM.days.find((day) => day.week === week && day.dayType === dayType) ?? null;
 
 export default function Program() {
   const navigate = useNavigate();

@@ -3,8 +3,9 @@
 
 import { useCountUp } from '@/hooks/useCountUp';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { DUR, gsap, useGSAP } from '@/lib/gsap';
+import { gsap, useGSAP } from '@/lib/gsap';
 import { fireSparks } from '@/lib/gsapSparks';
+import { DUR } from '@/lib/motionTokens';
 import { AnimatePresence, m } from 'framer-motion';
 import { CheckCircle as CheckCircleIcon, RotateCcw, Trophy } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
@@ -756,7 +757,10 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                               : '1px solid var(--fs-steel)',
                           borderRadius: 12,
                           cursor: 'pointer',
-                          transition: 'all 150ms ease',
+                          // The selected state only needs color and press-scale feedback.
+                          // Border width deliberately snaps so it never drives a layout animation.
+                          transition:
+                            'background 150ms var(--ease-out), border-color 150ms var(--ease-out), transform 150ms var(--ease-out)',
                           transform: workoutRating === r.value ? 'scale(1.1)' : 'scale(1)',
                         }}
                       >
@@ -880,9 +884,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         <div
           className="flex flex-col gap-2 px-5 py-4"
           style={{
-            background: 'color-mix(in srgb, var(--fs-bg) 88%, transparent)',
-            backdropFilter: 'saturate(180%) blur(16px)',
-            WebkitBackdropFilter: 'saturate(180%) blur(16px)',
+            // The summary sheet already establishes the elevation context. A solid
+            // footer preserves its action boundary without sampling the backdrop again.
+            background: 'var(--fs-bg)',
             borderTop: '0.5px solid var(--color-separator)',
             flexShrink: 0,
             paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',

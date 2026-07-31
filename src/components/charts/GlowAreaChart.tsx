@@ -1,5 +1,6 @@
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { DUR, EASE, gsap, useGSAP } from '@/lib/gsap';
+import { gsap, useGSAP } from '@/lib/gsap';
+import { DUR, EASE } from '@/lib/motionTokens';
 import type React from 'react';
 import { memo, useCallback, useId, useMemo, useRef, useState } from 'react';
 
@@ -365,8 +366,8 @@ export const GlowAreaChart = memo(function GlowAreaChart({
         )}
         {/* Scrub guide — a vertical rule under the inspected point. The SVG x
             stretches with the container (preserveAspectRatio="none") so it tracks
-            the HTML overlay dot. The animated transition is dropped under reduced
-            motion via the global reduced-motion rule + the no-transition guard. */}
+            the HTML overlay dot. Only x1/x2 move between inspected points; keeping
+            the transition scoped avoids watching unrelated SVG paint properties. */}
         {active && (
           <line
             x1={points[activeIdx as number]!.x}
@@ -377,7 +378,11 @@ export const GlowAreaChart = memo(function GlowAreaChart({
             strokeWidth={1}
             strokeOpacity={0.5}
             strokeDasharray="2 3"
-            style={reduced ? undefined : { transition: 'all 0.12s var(--ease-out, ease-out)' }}
+            style={
+              reduced
+                ? undefined
+                : { transition: 'x1 0.12s var(--ease-out), x2 0.12s var(--ease-out)' }
+            }
           />
         )}
         <g ref={axisRef}>

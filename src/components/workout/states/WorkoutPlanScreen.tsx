@@ -461,9 +461,9 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
         className="flex-shrink-0 px-5 pt-3 flex flex-col"
         style={{
           gap: 8,
-          background: 'color-mix(in srgb, var(--fs-surface) 92%, transparent)',
-          backdropFilter: 'saturate(180%) blur(16px)',
-          WebkitBackdropFilter: 'saturate(180%) blur(16px)',
+          // The sheet body already supplies depth. A solid action footer avoids
+          // stacking another backdrop sample above the persistent app chrome.
+          background: 'var(--fs-surface)',
           borderTop: '0.5px solid var(--color-separator)',
           paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
         }}

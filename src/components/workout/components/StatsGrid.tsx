@@ -4,8 +4,9 @@
 import { HeroStat } from '@/components/ui/HeroStat';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { DUR, EASE, formatInt, gsap, useGSAP } from '@/lib/gsap';
-import { formatThousandsDecimal } from '@/utils/formatThousands';
+import { gsap, useGSAP } from '@/lib/gsap';
+import { DUR, EASE } from '@/lib/motionTokens';
+import { formatInt, formatThousandsDecimal } from '@/utils/formatThousands';
 import { type Zone, zoneColor } from '@/utils/zoneColor';
 import { m } from 'framer-motion';
 import { Minus, TrendingDown, TrendingUp, Trophy } from 'lucide-react';

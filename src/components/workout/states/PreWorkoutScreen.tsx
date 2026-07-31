@@ -664,7 +664,9 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                       padding: '14px',
                       cursor: 'pointer',
                       textAlign: 'right',
-                      transition: 'all 150ms',
+                      // Pointer feedback changes only the surface color; `all` would also
+                      // subscribe this horizontally scrolling card to layout and paint work.
+                      transition: 'background 150ms var(--ease-out)',
                       minHeight: 72,
                       minWidth: 160,
                       flexShrink: 0,

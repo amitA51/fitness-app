@@ -6,7 +6,7 @@
 
 import { Pencil, Plus, Scale } from 'lucide-react';
 import { useState } from 'react';
-import { GradientSparkline } from '../../../../components/charts';
+import { GradientSparkline } from '../../../../components/charts/GradientSparkline';
 import { Button } from '../../../../components/ui/Button';
 import type { BodyMeasurement, PersonalRecordRow } from '../../../../services/supabaseSyncMappers';
 import type { BodyWeightEntry } from '../../../../types';

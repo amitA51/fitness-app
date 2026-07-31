@@ -9,6 +9,7 @@ import {
 import type React from 'react';
 import { memo } from 'react';
 import { translateMuscle } from '../../../constants/muscleNames';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import type { Exercise } from '../../../types';
 import { SetEditRow } from './SetEditRow';
 
@@ -61,6 +62,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
     onDeleteSet,
   }) => {
     const dragControls = useDragControls();
+    const reduceMotion = useReducedMotion();
     const isComplete = completedSets === totalSets && totalSets > 0;
     const inSuperset = !!supersetMembership;
 
@@ -326,12 +328,18 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
         <AnimatePresence>
           {isExpanded && (
             <m.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              initial={reduceMotion ? false : { opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -2 }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.16, ease: [0.16, 1, 0.3, 1] as const }
+              }
               style={{ overflow: 'hidden' }}
             >
+              {/* Reordering is a frequent workout interaction. Let surrounding layout
+                  settle immediately, then reveal only detail content on the compositor. */}
               <div
                 style={{
                   padding: '8px 16px 16px',

@@ -11,8 +11,9 @@
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { memo, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useReducedMotion } from '../../../hooks/useReducedMotion';
-import { DUR, EASE, gsap, useGSAP } from '../../../lib/gsap';
+import { gsap, useGSAP } from '../../../lib/gsap';
 import { fireSparks } from '../../../lib/gsapSparks';
+import { DUR, EASE } from '../../../lib/motionTokens';
 import { triggerHaptic, triggerHapticEffect } from '../../../utils/haptics';
 
 interface SlideToCompleteProps {

@@ -7,7 +7,7 @@
 
 import { Minus, Plus, Scale, TrendingDown, TrendingUp } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
-import type { GlowAreaPoint } from '../../../components/charts';
+import type { GlowAreaPoint } from '../../../components/charts/GlowAreaChart';
 import type { BodyWeightEntry, WeightTrend } from '../../../services/bodyStatsService';
 import { zoneColor } from '../../../utils/zoneColor';
 import { ChartSummary } from '../components/ChartSummary';

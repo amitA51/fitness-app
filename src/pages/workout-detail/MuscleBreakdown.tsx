@@ -118,12 +118,20 @@ export function MuscleBreakdown({ exercises, reduceMotion }: MuscleBreakdownProp
                   }}
                 >
                   <m.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${percentage}%` }}
+                    // A full-width fill scaled from inline-start keeps the bar's perceived
+                    // width while avoiding a layout pass for every animation frame.
+                    initial={reduceMotion ? false : { scaleX: 0 }}
+                    animate={{ scaleX: percentage / 100 }}
                     transition={
                       reduceMotion ? { duration: 0 } : { delay: 0.3 + index * 0.05, duration: 0.5 }
                     }
-                    style={{ height: '100%', borderRadius: 9999, backgroundColor: getColor(index) }}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: 9999,
+                      backgroundColor: getColor(index),
+                      transformOrigin: 'var(--progress-fill-origin-inline-start)',
+                    }}
                   />
                 </div>
               </div>

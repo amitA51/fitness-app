@@ -3,7 +3,7 @@ import { memo, useMemo } from 'react';
 import { useIsRTL } from '../../hooks/useIsRTL';
 import type { WorkoutSession } from '../../types';
 import { DAYS, HEBREW_DAYS, getWeekEnd, getWeekStart } from '../../utils/dateUtils';
-import { RingProgress } from '../charts';
+import { RingProgress } from '../charts/RingProgress';
 
 interface WeeklyGridProps {
   sessions: WorkoutSession[];

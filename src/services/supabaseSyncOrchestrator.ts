@@ -586,7 +586,7 @@ const pullAllDataImpl = async (userId: string): Promise<SyncResult> => {
     // a newer local copy is preserved. Best-effort: a failure here must not
     // downgrade an otherwise successful pull.
     try {
-      const { restoreProgramProgressFromCloud } = await import('./programService');
+      const { restoreProgramProgressFromCloud } = await import('./programProgressService');
       if (await restoreProgramProgressFromCloud()) {
         logger.sync.info('Restored program progress from the cloud');
       }

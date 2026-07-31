@@ -55,7 +55,34 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Audit measurement: the universal JS glob precached 2,533 KiB across
+        // 139 entries (110 JS files), including routes a trainee never opens.
+        // Keep only files index.html needs to boot offline plus launch branding.
+        // Route chunks are content-hashed and use the runtime CacheFirst rule
+        // below: an online visit seeds them, so previously visited routes still
+        // work offline without making first install download the whole app.
+        globPatterns: [
+          'index.html',
+          'manifest.webmanifest',
+          'assets/index-*.js',
+          'assets/react-vendor-*.js',
+          'assets/supabase-*.js',
+          'assets/framer-*.js',
+          'assets/icons-*.js',
+          'assets/immer-*.js',
+          'assets/tanstack-*.js',
+          'assets/index-*.css',
+          'assets/workbox-window*.js',
+          'push-sw.js',
+          'favicon.svg',
+          'favicon-32.png',
+          'favicon-64.png',
+          'logo.svg',
+          'apple-touch-icon.png',
+          'pwa-192x192.png',
+          'pwa-512x512.png',
+          'pwa-maskable-512x512.png',
+        ],
         // Delete precaches from previous builds so old hashed assets don't pile
         // up and can't be served after an update.
         cleanupOutdatedCaches: true,
@@ -65,6 +92,22 @@ export default defineConfig({
         // Custom Web Push handler (push + notificationclick) for coach reminders.
         importScripts: ['push-sw.js'],
         runtimeCaching: [
+          // Content-hashed route scripts are safe to cache by URL. Precaching
+          // still wins for the launch shell above; this fills on first online
+          // route visit and retains a bounded 30-day offline history instead of
+          // caching user-scoped API responses or every route at install time.
+          {
+            urlPattern: ({ url }) =>
+              url.origin === self.location.origin &&
+              url.pathname.startsWith('/assets/') &&
+              url.pathname.endsWith('.js'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'route-script-cache',
+              expiration: { maxEntries: 90, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           // NOTE: Supabase REST responses are intentionally NOT cached by the
           // service worker. Responses are scoped to the authenticated user and
           // caching them at the SW layer risks cross-user data leaks on shared
@@ -136,6 +179,14 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          const normalizedId = id.replace(/\\/g, '/');
+          // This catalog is intentionally reachable only from programCatalogService
+          // (dynamic import) and the route-lazy Program page. A named chunk makes
+          // that boundary measurable in build output without making it eager.
+          if (normalizedId.endsWith('/src/data/bbtProgram.generated.ts')) {
+            return 'bbt-program';
+          }
+
           const pkg = vendorPackageName(id);
           if (!pkg) return;
 

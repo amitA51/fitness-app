@@ -621,9 +621,18 @@ html.high-contrast .ambient-mesh-strong {
   --safe-inline-end: env(safe-area-inset-right, 0px);
   --safe-block-start: env(safe-area-inset-top, 0px);
   --safe-block-end: env(safe-area-inset-bottom, 0px);
+
+  /* transform-origin has no logical inline-start keyword. Components use this
+     semantic token instead of physical left/right so scaleX fills mirror with
+     the Hebrew document direction. */
+  --progress-fill-origin-inline-start: 0% center;
 }
 
 html[dir="rtl"] {
   --safe-inline-start: env(safe-area-inset-right, 0px);
   --safe-inline-end: env(safe-area-inset-left, 0px);
+}
+
+:root:dir(rtl) {
+  --progress-fill-origin-inline-start: 100% center;
 }

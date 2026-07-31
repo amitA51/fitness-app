@@ -10,7 +10,7 @@
 import { ArrowRight, TrendingDown, TrendingUp } from 'lucide-react';
 import type React from 'react';
 import { memo, useMemo } from 'react';
-import { GlowAreaChart, type GlowAreaPoint } from '../../../components/charts';
+import { GlowAreaChart, type GlowAreaPoint } from '../../../components/charts/GlowAreaChart';
 import ForecastChart from '../../../components/workout/ForecastChart';
 import type { WorkoutSession } from '../../../types';
 import { zoneColor } from '../../../utils/zoneColor';

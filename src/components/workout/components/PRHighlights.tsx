@@ -2,6 +2,7 @@ import { m } from 'framer-motion';
 // Extracted from WorkoutSummary.tsx
 import type React from 'react';
 import { memo, useMemo } from 'react';
+import { useReducedMotion } from '../../../hooks/useReducedMotion';
 
 const CONFETTI_COLORS = ['#a3e635', '#22d3ee', '#f43f5e', '#fbbf24', '#a855f7'];
 
@@ -79,6 +80,7 @@ export interface RPEDisplayProps {
 
 export const RPEDisplay: React.FC<RPEDisplayProps> = memo(
   ({ avgRpeActual, avgRpeTarget, delay = 0.45 }) => {
+    const reduceMotion = useReducedMotion();
     if (avgRpeActual === null) return null;
 
     return (
@@ -99,19 +101,23 @@ export const RPEDisplay: React.FC<RPEDisplayProps> = memo(
         <div className="flex items-center gap-3">
           <span className="text-2xl font-[800] text-white">{avgRpeActual}</span>
           <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+            {/* A full-width bar scaled from inline-start has the same percentage
+                appearance without measuring and laying out width on every frame. */}
             <m.div
               className="h-full rounded-full"
               style={{
+                width: '100%',
                 backgroundColor:
                   avgRpeActual <= 6
                     ? 'var(--color-success)'
                     : avgRpeActual <= 8
                       ? 'var(--fs-warn)'
                       : 'var(--color-error)',
+                transformOrigin: 'var(--progress-fill-origin-inline-start)',
               }}
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.min(avgRpeActual * 10, 100)}%` }}
-              transition={{ duration: 1, delay: delay + 0.1 }}
+              initial={reduceMotion ? false : { scaleX: 0 }}
+              animate={{ scaleX: Math.min(avgRpeActual * 10, 100) / 100 }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 1, delay: delay + 0.1 }}
             />
           </div>
           <span className="text-sm tabular-nums">{avgRpeActual.toFixed(1)}</span>

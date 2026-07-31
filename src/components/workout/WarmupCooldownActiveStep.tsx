@@ -291,7 +291,10 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               fontWeight: 700,
               fontSize: 18,
               opacity: currentIndex === 0 ? 0.5 : 1,
-              transition: 'all 150ms',
+              // Disabled state changes color and opacity only. Keeping the list explicit
+              // prevents a navigation control from animating incidental layout changes.
+              transition:
+                'background 150ms var(--ease-out), color 150ms var(--ease-out), opacity 150ms var(--ease-out)',
             }}
             aria-label="תרגיל קודם"
           >

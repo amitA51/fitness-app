@@ -10,7 +10,7 @@ import type React from 'react';
 import { memo, useMemo } from 'react';
 import type { WorkoutSession } from '../../types';
 import { logger } from '../../utils/logger';
-import { GlowAreaChart } from '../charts';
+import { GlowAreaChart } from '../charts/GlowAreaChart';
 import { MIN_SESSIONS_FOR_FORECAST, buildForecastSeries } from './forecastSeries';
 
 interface ForecastChartProps {

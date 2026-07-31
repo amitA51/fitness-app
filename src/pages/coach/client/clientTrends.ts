@@ -6,7 +6,7 @@
 // adherence streaks). No React, no fetching — keep it that way so the tests stay
 // fast and deterministic.
 
-import type { GlowAreaPoint } from '../../../components/charts';
+import type { GlowAreaPoint } from '../../../components/charts/GlowAreaChart';
 import type { DayAdherence } from '../../../services/coach/coachAnalytics';
 import type { BodyMeasurement } from '../../../services/supabaseSyncMappers';
 import type { BodyWeightEntry } from '../../../types';

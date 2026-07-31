@@ -42,7 +42,9 @@ describe('program progress survives a user-scoped local wipe', () => {
         ]),
     }));
 
-    const { getProgress, restoreProgramProgressFromCloud } = await import('../programService');
+    const { getProgress, restoreProgramProgressFromCloud } = await import(
+      '../programProgressService'
+    );
 
     // The wipe already happened: nothing local to fall back on.
     expect(getProgress()).toBeNull();
@@ -76,7 +78,9 @@ describe('program progress survives a user-scoped local wipe', () => {
       ]),
     }));
 
-    const { getProgress, restoreProgramProgressFromCloud } = await import('../programService');
+    const { getProgress, restoreProgramProgressFromCloud } = await import(
+      '../programProgressService'
+    );
 
     expect(await restoreProgramProgressFromCloud()).toBe(false);
     expect(getProgress()?.currentWeek).toBe(7);
@@ -93,7 +97,7 @@ describe('program progress survives a user-scoped local wipe', () => {
     }));
     vi.doMock('../offlineQueue', () => ({ queueMutation }));
 
-    const { startProgram } = await import('../programService');
+    const { startProgram } = await import('../programProgressService');
     startProgram();
 
     // mirrorToCloud is fire-and-forget; let its microtasks drain.

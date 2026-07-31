@@ -20,12 +20,17 @@ const hasNotificationPermission = vi.fn(() => true);
 const requestNotificationPermission = vi.fn(async () => true);
 const showRestEndNotification = vi.fn();
 const clearRestEndNotification = vi.fn();
-// Holds the latest visibility callback so a test can simulate hide/return.
-let visibilityCb: ((hidden: boolean) => void) | null = null;
+// Holds every live visibility callback so a test can simulate hide/return.
+// Both the screen-off notification effect AND the countdown resync subscribe,
+// so this has to fan out rather than keep only the last registration.
+let visibilityCbs: ((hidden: boolean) => void)[] = [];
+const emitVisibility = (hidden: boolean) => {
+  for (const cb of [...visibilityCbs]) cb(hidden);
+};
 const onVisibilityChange = vi.fn((cb: (hidden: boolean) => void) => {
-  visibilityCb = cb;
+  visibilityCbs.push(cb);
   return () => {
-    if (visibilityCb === cb) visibilityCb = null;
+    visibilityCbs = visibilityCbs.filter((c) => c !== cb);
   };
 });
 vi.mock('../../../../platform/web', () => ({
@@ -76,7 +81,7 @@ describe('useRestTimer', () => {
     showRestEndNotification.mockClear();
     clearRestEndNotification.mockClear();
     onVisibilityChange.mockClear();
-    visibilityCb = null;
+    visibilityCbs = [];
     setHidden(false);
   });
 
@@ -194,7 +199,7 @@ describe('useRestTimer', () => {
 
     // Act — a subsequent real hide transition re-invokes onHidden(true).
     act(() => {
-      visibilityCb?.(true);
+      emitVisibility(true);
     });
     // Let the single fire window elapse.
     act(() => {
@@ -216,7 +221,7 @@ describe('useRestTimer', () => {
     // Act — user returns to the app before rest ends.
     act(() => {
       setHidden(false);
-      visibilityCb?.(false);
+      emitVisibility(false);
       vi.advanceTimersByTime(30001);
     });
 
@@ -242,5 +247,81 @@ describe('useRestTimer', () => {
     // Assert — prompted contextually, but nothing scheduled without permission.
     expect(requestNotificationPermission).toHaveBeenCalledTimes(1);
     expect(showRestEndNotification).not.toHaveBeenCalled();
+  });
+
+  it('commits once per second, not ten times per second, while counting down', () => {
+    // Arrange — the measured regression: a 100ms poll storing a FLOAT re-rendered
+    // the consumer ~10x/second for a display that only changes at 1Hz (54 commits
+    // across 5 idle seconds of rest). Advance in 100ms steps, each in its own
+    // act(), so React can't batch 5 seconds of ticks into one commit and hide the
+    // real rate — under the old implementation all 50 steps committed.
+    const endTime = Date.now() + 5000;
+    const wrapper = makeWrapper(makeState());
+    let renders = 0;
+    renderHook(
+      () => {
+        renders += 1;
+        return useRestTimer(endTime, true);
+      },
+      { wrapper }
+    );
+    const rendersAfterMount = renders;
+
+    // Act — five full seconds of rest with no user interaction.
+    for (let step = 0; step < 50; step += 1) {
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+    }
+
+    // Assert — one commit per elapsed second (5), plus at most one for the
+    // terminal 0 tick. Not ~50.
+    const countdownRenders = renders - rendersAfterMount;
+    expect(countdownRenders).toBeLessThanOrEqual(6);
+    expect(countdownRenders).toBeGreaterThanOrEqual(4);
+  });
+
+  it('ticks on the second boundary when rest starts mid-second', () => {
+    // Arrange — 2400ms of rest: the first displayed change must happen after
+    // 400ms (03 → 02), not after a flat 1000ms, otherwise the countdown drifts
+    // and the final second is visibly short.
+    const endTime = Date.now() + 2400;
+    const wrapper = makeWrapper(makeState());
+    const { result } = renderHook(() => useRestTimer(endTime, true), { wrapper });
+
+    expect(result.current.timeLeft).toBe(3);
+
+    // Act / Assert — just before the boundary nothing has changed…
+    act(() => {
+      vi.advanceTimersByTime(399);
+    });
+    expect(result.current.timeLeft).toBe(3);
+
+    // …and crossing it drops exactly one second.
+    act(() => {
+      vi.advanceTimersByTime(2);
+    });
+    expect(result.current.timeLeft).toBe(2);
+  });
+
+  it('resyncs the remaining time when the tab returns after being throttled', () => {
+    // Arrange — background tabs throttle timers to as little as once per minute,
+    // so a 90s rest could show a stale number on return. The countdown must
+    // recompute from the clock on the visibility transition back.
+    const start = Date.now();
+    const endTime = start + 90000;
+    const wrapper = makeWrapper(makeState());
+    const { result } = renderHook(() => useRestTimer(endTime, true), { wrapper });
+    expect(result.current.timeLeft).toBe(90);
+
+    // Act — simulate a throttled background: move the clock forward WITHOUT
+    // letting the pending timeout run, then return to the foreground.
+    act(() => {
+      vi.setSystemTime(start + 40000);
+      emitVisibility(false);
+    });
+
+    // Assert — the display caught up instead of holding at 90.
+    expect(result.current.timeLeft).toBe(50);
   });
 });

@@ -81,9 +81,9 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
     <div
       className="w-full flex-shrink-0"
       style={{
-        background: 'color-mix(in srgb, var(--fs-bg) 82%, transparent)',
-        backdropFilter: 'saturate(180%) blur(18px)',
-        WebkitBackdropFilter: 'saturate(180%) blur(18px)',
+        // This footer can remain visible behind a sheet. An opaque surface keeps
+        // its hierarchy while avoiding a second backdrop sample on the same pixels.
+        background: 'var(--fs-bg)',
         borderTop: '0.5px solid var(--color-separator)',
         padding: '10px 16px calc(14px + env(safe-area-inset-bottom, 0px))',
         display: 'flex',

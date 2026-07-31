@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { type CSSProperties, type ReactNode, memo, useCallback, useMemo, useState } from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
+import { useMountWhileOpen } from '../../../hooks/useMountWhileOpen';
 import type {
   Exercise,
   ProgramExtras,
@@ -225,6 +226,18 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     const [showAlternatives, setShowAlternatives] = useState(false);
     const [showDropSetSheet, setShowDropSetSheet] = useState(false);
     const [showToolsSheet, setShowToolsSheet] = useState(false);
+    // Mount gates for the five bottom sheets below. Keeping them permanently
+    // mounted made every workout-state change (each `+` on the weight, each
+    // completed set) re-render five ModalOverlays, their focus traps, their
+    // motion values and their portals — invisible surfaces accounted for roughly
+    // a third of the renders per tap. These gates mount a sheet on first open and
+    // release it after its exit animation, so closed sheets cost nothing without
+    // clipping the dismissal. See useMountWhileOpen.
+    const toolsSheetMounted = useMountWhileOpen(showToolsSheet);
+    const setEditorMounted = useMountWhileOpen(showSetEditor);
+    const rpePickerMounted = useMountWhileOpen(showRPEPicker);
+    const dropSetSheetMounted = useMountWhileOpen(showDropSetSheet);
+    const alternativesMounted = useMountWhileOpen(showAlternatives);
     const haptics = useHapticFeedback();
 
     const { previousSet, showGhostWeight, showGhostReps } = usePreviousSetData(
@@ -889,15 +902,20 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           )}
         </div>
 
-        {/* ── BOTTOM SHEETS (portals, not layout) ── */}
-        <WorkoutToolsSheet
-          isOpen={showToolsSheet}
-          onClose={() => setShowToolsSheet(false)}
-          exerciseName={exercise.name || ''}
-          tools={tools}
-        />
+        {/* ── BOTTOM SHEETS (portals, not layout) ──
+            Each is gated on `*Mounted` so a sheet the user has not opened is
+            never constructed, and a sheet being dismissed survives long enough
+            to animate out. `isOpen` still drives the sheet's own transition. */}
+        {toolsSheetMounted && (
+          <WorkoutToolsSheet
+            isOpen={showToolsSheet}
+            onClose={() => setShowToolsSheet(false)}
+            exerciseName={exercise.name || ''}
+            tools={tools}
+          />
+        )}
 
-        {onEditSet && (
+        {onEditSet && setEditorMounted && (
           <SetEditBottomSheet
             isOpen={showSetEditor}
             sets={exercise.sets || []}
@@ -907,7 +925,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           />
         )}
 
-        {onUpdateRPE && (
+        {onUpdateRPE && rpePickerMounted && (
           <RPEPicker
             isOpen={showRPEPicker}
             currentValue={currentSet.rpe}
@@ -923,7 +941,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           />
         )}
 
-        {onUpdateSetSegments && (
+        {onUpdateSetSegments && dropSetSheetMounted && (
           <DropSetSheet
             isOpen={showDropSetSheet}
             set={currentSet}
@@ -935,7 +953,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
           />
         )}
 
-        {onSwapExercise && (
+        {onSwapExercise && alternativesMounted && (
           <AlternativesSheet
             isOpen={showAlternatives}
             alternatives={exercise.programExtras?.alternatives ?? []}
@@ -949,6 +967,10 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                 equipment: libEx.equipment,
                 tutorialText: libEx.tutorialText,
                 instructions: libEx.instructions,
+                primaryMuscle: libEx.primaryMuscle,
+                mechanic: libEx.mechanic,
+                force: libEx.force,
+                level: libEx.level,
               })
             }
             onClose={() => setShowAlternatives(false)}

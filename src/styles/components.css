@@ -201,10 +201,12 @@
   transition: transform 100ms ease-out, background 100ms ease-out;
 }
 
+/* Glass buttons are controls, not a separate material plane. An 8px frost keeps
+   the tactile treatment while avoiding a full nav-strength blur above a sheet. */
 .btn-glass {
   background: var(--fs-overlay-hover);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--color-text);
   border: 1px solid var(--color-border);
 }
@@ -386,24 +388,28 @@
    GLASS & BLUR SURFACES - משטחי זכוכית
    ============================================================================ */
 
+/* A sheet or popover can overlap persistent chrome. These non-navigation
+   materials stay below nav strength so the same pixels are not blurred twice. */
 .glass {
   background: color-mix(in srgb, var(--fs-surface) 82%, transparent);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
   border: 1px solid var(--color-border);
 }
 
 .glass-strong {
+  /* Its 92% surface is already visually dense; 12px retains that hierarchy
+     without multiplying raster work when used inside an overlay. */
   background: color-mix(in srgb, var(--fs-surface) 92%, transparent);
-  backdrop-filter: blur(32px) saturate(200%);
-  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
   border: 1px solid var(--color-border);
 }
 
 .glass-light {
   background: color-mix(in srgb, var(--fs-surface-2) 30%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid color-mix(in srgb, var(--fs-steel) 25%, transparent);
 }
 
@@ -1497,15 +1503,21 @@ textarea {
 .magnetic-card {
   transition: transform var(--duration-fast) var(--ease-premium), box-shadow var(--duration-fast)
     var(--ease-premium);
-  will-change: transform;
 }
 
-.magnetic-card:hover {
-  transform: translateY(-2px) scale(1.005);
-  box-shadow: var(--shadow-lift);
+/* A standing layer on every dashboard card consumes GPU memory even on touch-only
+   devices. Prepare the transform layer only while a fine-pointer hover or press
+   is actually in progress, then let the browser reclaim it immediately. */
+@media (hover: hover) and (pointer: fine) {
+  .magnetic-card:hover {
+    will-change: transform;
+    transform: translateY(-2px) scale(1.005);
+    box-shadow: var(--shadow-lift);
+  }
 }
 
 .magnetic-card:active {
+  will-change: transform;
   transform: translateY(0) scale(0.997);
   transition-duration: 80ms;
 }
@@ -1515,6 +1527,7 @@ textarea {
   .magnetic-card:hover,
   .magnetic-card:active {
     transform: none;
+    will-change: auto;
   }
 }
 

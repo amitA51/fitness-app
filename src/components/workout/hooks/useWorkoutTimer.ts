@@ -72,7 +72,10 @@ export function useWorkoutTimer({
 }
 
 /**
- * Hook for rest timer countdown
+ * Hook for rest timer countdown.
+ *
+ * `timeLeft` is WHOLE SECONDS remaining (already ceil'd) and changes at most
+ * once per second — see the countdown effect below for why that matters.
  */
 export function useRestTimer(
   endTime: number | null,
@@ -85,6 +88,7 @@ export function useRestTimer(
   // Undefined falls back to a generic body.
   nextSetBody?: string
 ): {
+  /** Whole seconds remaining. Updates at 1Hz, on the second boundary. */
   timeLeft: number;
   formatted: string;
   progress: number;
@@ -93,7 +97,6 @@ export function useRestTimer(
   const [timeLeft, setTimeLeft] = useState(0);
   const totalTimeRef = useRef<number>(0);
   const soundPlayedRef = useRef<boolean>(false);
-  const lastTickRef = useRef<number>(0);
   const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dispatch = useWorkoutDispatch();
   const workoutSettings = useWorkoutSettingsRaw();
@@ -179,14 +182,25 @@ export function useRestTimer(
     };
   }, [active, isPaused, endTime, restTimerSoundEnabled, restTimerVibrateEnabled]);
 
+  // ── COUNTDOWN (1 Hz, boundary-aligned) ────────────────────────────────────
+  // The display is whole seconds (`formatTime(timeLeft)`), so this only needs to
+  // commit once per second. It previously polled every 100ms and stored a float,
+  // which re-rendered the 500-line `InlineRestTimer` ~10x/second for a number
+  // that changed once — measured at 54 React commits across 5 idle seconds of
+  // rest on a throttled device.
+  //
+  // Ticks are scheduled ON the next second boundary, recomputed from `Date.now()`
+  // each time, so the countdown self-corrects instead of drifting the way a fixed
+  // `setInterval` does, and the rest-end cue lands within a frame of the true end
+  // rather than up to 100ms late.
   useEffect(() => {
     if (!active || !endTime) {
       setTimeLeft(0);
       return;
     }
 
-    // Explicitly paused: hold whatever is currently displayed and run no
-    // interval, so the countdown neither advances nor fires the rest-end ding.
+    // Explicitly paused: hold whatever is currently displayed and schedule
+    // nothing, so the countdown neither advances nor fires the rest-end ding.
     if (isPaused) {
       return;
     }
@@ -197,7 +211,7 @@ export function useRestTimer(
     // is always negative, snapping the display to 00:00 and firing a spurious
     // rest-end ding/dispatch the moment the timer is paused.
     if (endTime <= 0) {
-      const frozenLeft = -endTime / 1000;
+      const frozenLeft = Math.ceil(-endTime / 1000);
       totalTimeRef.current = Math.max(totalTimeRef.current, frozenLeft);
       setTimeLeft(frozenLeft);
       return;
@@ -205,34 +219,66 @@ export function useRestTimer(
 
     // Reset sound flag on new timer
     soundPlayedRef.current = false;
-    lastTickRef.current = 0;
 
-    // Calculate initial total time
-    const initialLeft = Math.max(0, (endTime - Date.now()) / 1000);
-    totalTimeRef.current = initialLeft;
-    setTimeLeft(initialLeft);
+    const secondsRemaining = () => Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
 
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const left = Math.max(0, (endTime - now) / 1000);
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-      setTimeLeft(left);
-
+    const fireEnd = () => {
       // Trigger when reaching 0. The local ding plays immediately; we also
       // dispatch SYNC_REST_TIMER so the reducer clears restTimer.active and
       // sets pendingHaptic='REST_END' (honoring vibrate/sound settings) even
       // when the timer ends in the FOREGROUND — previously this only happened
       // on visibilitychange, leaving the timer stuck active. soundPlayedRef
-      // guards against re-dispatching on subsequent ticks.
-      if (left <= 0 && !soundPlayedRef.current) {
-        soundPlayedRef.current = true;
-        if (restTimerSoundEnabled) playDing();
-        dispatch({ type: 'SYNC_REST_TIMER' });
+      // guards against re-firing if a resync lands after the final tick.
+      if (soundPlayedRef.current) return;
+      soundPlayedRef.current = true;
+      if (restTimerSoundEnabled) playDing();
+      dispatch({ type: 'SYNC_REST_TIMER' });
+    };
+
+    // Wait exactly until the ceil'd second changes, not a flat 1000ms, so the
+    // first tick lands on the boundary even when rest starts mid-second.
+    const scheduleNextTick = () => {
+      const remainingMs = endTime - Date.now();
+      const msUntilSecondChanges = remainingMs - (Math.ceil(remainingMs / 1000) - 1) * 1000;
+      timeoutId = setTimeout(tick, Math.max(16, msUntilSecondChanges));
+    };
+
+    function tick() {
+      const secs = secondsRemaining();
+      setTimeLeft(secs);
+      if (secs <= 0) {
+        fireEnd();
+        return;
       }
-    }, 100);
+      scheduleNextTick();
+    }
+
+    // Total is stored in whole seconds too, so `progress` below can never be a
+    // fraction-of-a-second off and produce a negative value on the first tick.
+    const initialLeft = secondsRemaining();
+    totalTimeRef.current = initialLeft;
+    setTimeLeft(initialLeft);
+
+    if (initialLeft <= 0) {
+      fireEnd();
+    } else {
+      scheduleNextTick();
+    }
+
+    // Background tabs throttle timers to as little as once per minute, so on
+    // return the number could otherwise be stale (or the end missed entirely)
+    // until the throttled callback happens to land. Resync immediately instead.
+    const removeVisibility = webPlatform.onVisibilityChange((hidden) => {
+      if (hidden) return;
+      if (timeoutId) clearTimeout(timeoutId);
+      tick();
+    });
 
     return () => {
-      clearInterval(interval);
+      if (timeoutId) clearTimeout(timeoutId);
+      removeVisibility();
       if (speakTimeoutRef.current) {
         clearTimeout(speakTimeoutRef.current);
         speakTimeoutRef.current = null;
@@ -245,7 +291,7 @@ export function useRestTimer(
 
   return {
     timeLeft,
-    formatted: formatTime(Math.ceil(timeLeft)),
+    formatted: formatTime(timeLeft),
     progress,
     totalTime: totalTimeRef.current,
   };

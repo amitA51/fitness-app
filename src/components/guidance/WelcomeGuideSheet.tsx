@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 // ChevronRight, Next/Finish uses ChevronLeft (mirrors OnboardingFlow).
 import { useEffect, useState } from 'react';
 import { useGuidance } from '../../contexts/GuidanceContext';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { Button } from '../ui/Button';
 import { Sheet } from '../ui/Sheet';
 import { GUIDANCE_STEPS, WELCOME_SHEET_TITLE } from './guidanceSteps';
@@ -19,6 +20,7 @@ const TOTAL = GUIDANCE_STEPS.length;
 
 export function WelcomeGuideSheet() {
   const { isWelcomeOpen, closeWelcomeAndMark } = useGuidance();
+  const reduceMotion = useReducedMotion();
   const [stepIndex, setStepIndex] = useState(0);
 
   // Always start a fresh open (initial first-use OR a Settings re-launch) at the
@@ -51,19 +53,40 @@ export function WelcomeGuideSheet() {
           role="img"
           aria-label={`שלב ${stepIndex + 1} מתוך ${TOTAL}`}
         >
-          {GUIDANCE_STEPS.map((s, i) => (
-            <span
-              key={s.title}
-              aria-hidden="true"
-              style={{
-                width: i === stepIndex ? 20 : 7,
-                height: 7,
-                borderRadius: 'var(--radius-full)',
-                background: i === stepIndex ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
-                transition: 'width 150ms ease, background 150ms ease',
-              }}
-            />
-          ))}
+          {/* The logical margin reserves each selected pill's final footprint in one
+              state update; only the visual scale/color transition runs per frame, avoiding
+              repeated width layout while keeping the RTL inline expansion direction. */}
+          {GUIDANCE_STEPS.map((s, i) => {
+            const isActive = i === stepIndex;
+            return (
+              <span
+                key={s.title}
+                aria-hidden="true"
+                style={{
+                  width: 7,
+                  height: 7,
+                  display: 'block',
+                  flexShrink: 0,
+                  marginInlineEnd: isActive ? 13 : 0,
+                }}
+              >
+                <span
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 'var(--radius-full)',
+                    background: isActive ? 'var(--fs-accent)' : 'var(--fs-surface-2)',
+                    transform: `scaleX(${isActive ? 20 / 7 : 1})`,
+                    transformOrigin: 'var(--progress-fill-origin-inline-start)',
+                    transition: reduceMotion
+                      ? 'none'
+                      : 'transform 150ms ease, background 150ms ease',
+                  }}
+                />
+              </span>
+            );
+          })}
         </div>
         <span
           dir="ltr"

@@ -310,8 +310,10 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
                   // finger/anchor instead of ballooning from its own center.
                   transformOrigin: 'top center',
                   background: 'color-mix(in srgb, var(--fs-surface) 95%, transparent)',
-                  backdropFilter: 'blur(24px)',
-                  WebkitBackdropFilter: 'blur(24px)',
+                  // The menu floats above a blurred scrim; 12px preserves material
+                  // separation without re-rasterizing the same backdrop at 24px.
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
                   border: '1px solid var(--color-border)',
                   boxShadow:
                     '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--fs-surface-shine-subtle) inset',

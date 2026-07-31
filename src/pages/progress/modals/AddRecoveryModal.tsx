@@ -165,7 +165,9 @@ export const AddRecoveryModal = memo(function AddRecoveryModal({
                     fontFamily: 'var(--font-display)',
                     border: 'none',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
+                    // Selection only changes the chip colors; a bounded transition avoids
+                    // accidental layout work when this form is rerendered.
+                    transition: 'background 0.15s var(--ease-out), color 0.15s var(--ease-out)',
                     background: active ? 'var(--fs-primary)' : 'var(--fs-surface-2)',
                     color: active ? 'var(--fs-accent)' : 'var(--fs-muted)',
                   }}

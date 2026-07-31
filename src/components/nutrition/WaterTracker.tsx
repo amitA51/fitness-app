@@ -1,6 +1,7 @@
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { DUR, EASE, gsap, useGSAP } from '@/lib/gsap';
+import { gsap, useGSAP } from '@/lib/gsap';
 import { fireSparks } from '@/lib/gsapSparks';
+import { DUR, EASE } from '@/lib/motionTokens';
 import { zoneColor } from '@/utils/zoneColor';
 import { Droplets, Minus, Plus } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';

@@ -11,7 +11,7 @@
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useCountUp } from '../../hooks/useCountUp';
-import { DUR } from '../../lib/gsap';
+import { DUR } from '../../lib/motionTokens';
 import {
   type CoachBrief,
   type CoachBriefFacts,

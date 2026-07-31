@@ -10,7 +10,7 @@
 
 import { type ForecastData, forecastProgress } from '../../services/analyticsService';
 import type { WorkoutSession } from '../../types';
-import type { GlowAreaPoint } from '../charts';
+import type { GlowAreaPoint } from '../charts/GlowAreaChart';
 
 /** Minimum completed sessions containing the exercise before a forecast shows. */
 export const MIN_SESSIONS_FOR_FORECAST = 3;

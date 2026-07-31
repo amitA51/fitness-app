@@ -9,7 +9,7 @@
 import { BarChart3 } from 'lucide-react';
 import type React from 'react';
 import { memo } from 'react';
-import { GlowAreaChart, type GlowAreaPoint } from '../../../components/charts';
+import { GlowAreaChart, type GlowAreaPoint } from '../../../components/charts/GlowAreaChart';
 
 interface TrendChartCardProps {
   title: string;

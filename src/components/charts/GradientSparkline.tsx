@@ -1,5 +1,6 @@
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { DUR, EASE, gsap, useGSAP } from '@/lib/gsap';
+import { gsap, useGSAP } from '@/lib/gsap';
+import { DUR, EASE } from '@/lib/motionTokens';
 import { memo, useId, useMemo, useRef } from 'react';
 
 // Line draw-on duration (seconds). Uses the shared DUR.count token so this

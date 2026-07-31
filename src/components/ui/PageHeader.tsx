@@ -122,8 +122,10 @@ const PageHeader = memo<PageHeaderProps>(
       top: sticky ? 0 : undefined,
       zIndex: sticky ? 20 : undefined,
       background: sticky ? 'color-mix(in srgb, var(--fs-bg) 78%, transparent)' : 'var(--fs-bg)',
-      backdropFilter: sticky ? 'saturate(180%) blur(20px)' : undefined,
-      WebkitBackdropFilter: sticky ? 'saturate(180%) blur(20px)' : undefined,
+      // Page headers can remain translucent without competing with the nav's
+      // 20px material layer when an overlay is open.
+      backdropFilter: sticky ? 'saturate(180%) blur(12px)' : undefined,
+      WebkitBackdropFilter: sticky ? 'saturate(180%) blur(12px)' : undefined,
       borderBottom: divider === 'accent' ? '0.5px solid var(--color-separator)' : undefined,
       paddingTop: 'max(20px, var(--safe-block-start))',
       // Logical padding needs the direction-aware inset (tokens.css §13):

@@ -1,6 +1,6 @@
 import { Activity, Battery, Dumbbell, Heart, Moon, Plus, Wind } from 'lucide-react';
 import { memo, useRef } from 'react';
-import { RingProgress } from '../../../components/charts';
+import { RingProgress } from '../../../components/charts/RingProgress';
 import { VerdictLine, VerdictNumber } from '../../../components/insights/VerdictLine';
 import { useCountUp } from '../../../hooks/useCountUp';
 import { getLegacyRecoveryScore } from '../../../services/bodyStatsService';

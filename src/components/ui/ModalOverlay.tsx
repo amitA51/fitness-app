@@ -82,7 +82,9 @@ const blurPxMap: Record<BlurLevel, string | undefined> = {
   none: undefined,
   sm: 'blur(8px)',
   md: 'blur(12px)',
-  xl: 'blur(24px)',
+  // Modal content sits above persistent chrome. Cap even the legacy "xl" label
+  // at the non-navigation material budget to avoid layered backdrop sampling.
+  xl: 'blur(12px)',
 };
 
 // Apple's exponential-decay momentum projection (Designing Fluid Interfaces):
@@ -316,11 +318,12 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
             .trim()}
           style={{
             zIndex: zIndexMap[zLevel],
-            // Premium glass backdrop — primary-tinted. Blur honors the `blur`
-            // prop (blur="none" => no filter), instead of a hardcoded 8px.
+            // Centered modals can retain the capped material blur. Bottom sheets
+            // deliberately use a dim scrim only: their persistent nav is already
+            // the material plane, and stacking filters multiplies rasterization.
             backgroundColor: `color-mix(in srgb, var(--fs-primary) ${backdropOpacity}%, transparent)`,
-            WebkitBackdropFilter: blurPxMap[blur],
-            backdropFilter: blurPxMap[blur],
+            WebkitBackdropFilter: isBottomSheet ? undefined : blurPxMap[blur],
+            backdropFilter: isBottomSheet ? undefined : blurPxMap[blur],
           }}
           onClick={handleBackdropClick}
         >

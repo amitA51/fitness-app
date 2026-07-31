@@ -204,9 +204,10 @@ export function useWorkoutSave({
         .catch(() => undefined);
 
       // Best-effort: advance the built-in 12-week program if this completed
-      // session corresponds to a program day the trainee started. Dynamic import
-      // keeps the program service out of the workout bundle; never blocks the save.
-      void import('../../../services/programService')
+      // session corresponds to a program day the trainee started. This progress
+      // module deliberately has no catalog import, so ordinary saves never
+      // schedule the generated BBT payload; never blocks the save.
+      void import('../../../services/programProgressService')
         .then(({ reconcileProgramOnSessionSave }) =>
           reconcileProgramOnSessionSave({
             startTime: session.startTime,

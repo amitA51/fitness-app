@@ -1,6 +1,7 @@
 import { useCountUp } from '@/hooks/useCountUp';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { DUR, EASE, gsap, useGSAP } from '@/lib/gsap';
+import { gsap, useGSAP } from '@/lib/gsap';
+import { DUR, EASE } from '@/lib/motionTokens';
 import { zoneColor } from '@/utils/zoneColor';
 import { Beef, Droplets, Wheat } from 'lucide-react';
 import { memo, useMemo, useRef } from 'react';

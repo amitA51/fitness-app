@@ -5,15 +5,10 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { ActiveExercise, PersonalItem, WorkoutSettings } from '../../types';
 
+import { getProgramDayMetadata } from '../../data/bbtProgramMetadata';
 import { syncTemplatesFromCloud } from '../../hooks/useCloudTemplateReflection';
 import { listMyAssignments } from '../../services/coach';
-import {
-  TRAINING_DAYS,
-  getBlockForWeek,
-  getProgramDay,
-  getProgress,
-  startProgramDay,
-} from '../../services/programService';
+import { TRAINING_DAYS, getProgress } from '../../services/programProgressService';
 import { ensurePersistentStorage } from '../../services/storagePersistence';
 import { logger } from '../../utils/logger';
 
@@ -201,12 +196,11 @@ export const WorkoutContent: React.FC<{
     const progress = getProgress();
     if (!progress || progress.status !== 'active') return;
     const dayType = TRAINING_DAYS[progress.currentDayIndex] ?? 'Upper';
-    const day = getProgramDay(progress.currentWeek, dayType);
+    const day = getProgramDayMetadata(progress.currentWeek, dayType);
     if (!day) return;
-    const block = getBlockForWeek(progress.currentWeek);
     setProgramDay({
       title: `שבוע ${progress.currentWeek} · ${day.dayHe}`,
-      subtitle: `${day.exercises.length} תרגילים · ${block.nameHe}`,
+      subtitle: `${day.exerciseCount} תרגילים · ${day.blockHe}`,
     });
   }, []);
 
@@ -534,6 +528,10 @@ export const WorkoutContent: React.FC<{
     // Best-effort durability ask before a multi-week commitment; never blocks.
     void ensurePersistentStorage();
     try {
+      // The actual exercise prescriptions are only needed after this explicit
+      // start action. Keeping this dynamic prevents normal free/template
+      // workouts from even scheduling the generated BBT catalog.
+      const { startProgramDay } = await import('../../services/programCatalogService');
       const id = await startProgramDay();
       if (id) navigate(`/workout/${id}`);
       else setStartingProgram(false);
@@ -833,9 +831,16 @@ export const WorkoutContent: React.FC<{
             derived.currentExercise?.programExtras?.notes) as string | undefined
         }
         tutorialPrimaryMuscle={
-          derived.currentExercise?.targetMuscle ?? derived.currentExercise?.muscleGroup
+          // Prefer the classified prime mover: the muscle map can highlight
+          // "גב רחב" precisely, where the coarse group lights up the whole back.
+          derived.currentExercise?.primaryMuscle ??
+          derived.currentExercise?.targetMuscle ??
+          derived.currentExercise?.muscleGroup
         }
         tutorialSecondaryMuscles={derived.currentExercise?.secondaryMuscles}
+        tutorialMechanic={derived.currentExercise?.mechanic}
+        tutorialForce={derived.currentExercise?.force}
+        tutorialLevel={derived.currentExercise?.level}
         tutorialEquipment={derived.currentExercise?.equipment}
         tutorialInstructions={
           derived.currentExercise?.tutorialText ?? derived.currentExercise?.instructions

@@ -1,21 +1,23 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  PROGRAM_DAY_TEMPLATE_ID,
-  TRAINING_DAYS,
   enDashRange,
   getExerciseOptions,
   getProgramDay,
-  getProgress,
-  getSwaps,
   parseRestRange,
   parseWarmupCount,
+  restRangeHe,
+  startProgramDay,
+} from '../programCatalogService';
+import {
+  PROGRAM_DAY_TEMPLATE_ID,
+  TRAINING_DAYS,
+  getProgress,
+  getSwaps,
   reconcileProgramOnSessionSave,
   resetProgram,
-  restRangeHe,
   setSwap,
   startProgram,
-  startProgramDay,
-} from '../programService';
+} from '../programProgressService';
 import { getWorkoutTemplate, getWorkoutTemplates } from '../templateDb';
 
 const completeCurrentDay = async (idSuffix: number) => {
@@ -178,8 +180,8 @@ describe('programService substitutions', () => {
     localStorage.clear();
   });
 
-  it('exposes the original movement plus its listed alternatives as options', () => {
-    const day = getProgramDay(1, 'Upper');
+  it('exposes the original movement plus its listed alternatives as options', async () => {
+    const day = await getProgramDay(1, 'Upper');
     const first = day?.exercises[0];
     expect(first).toBeDefined();
     if (!first) return;
@@ -192,7 +194,7 @@ describe('programService substitutions', () => {
 
   it('materializes the swapped movement (keeping the prescription) and can restore it', async () => {
     startProgram();
-    const day = getProgramDay(1, 'Upper');
+    const day = await getProgramDay(1, 'Upper');
     const first = day?.exercises[0];
     if (!first || !day) throw new Error('fixture missing');
     const options = getExerciseOptions(first);

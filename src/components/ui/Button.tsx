@@ -233,7 +233,9 @@ const fsStyles: Record<FsVariant, React.CSSProperties> = {
     background: 'var(--fs-overlay-hover)',
     color: 'var(--fs-ink)',
     border: '1px solid var(--color-border)',
-    backdropFilter: 'blur(20px)',
+    // A control needs only a light frost. Keeping it below the nav material
+    // budget avoids an expensive second backdrop sample inside sheets.
+    backdropFilter: 'blur(8px)',
   },
 };
 

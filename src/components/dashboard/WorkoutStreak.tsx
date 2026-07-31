@@ -1,8 +1,9 @@
+import { m } from 'framer-motion';
 import { memo, useEffect, useRef } from 'react';
 import { useCountUp } from '../../hooks/useCountUp';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { useWorkoutStreak } from '../../hooks/useWorkoutStreak';
-import { DUR, EASE, gsap, useGSAP } from '../../lib/gsap';
+import { DUR, FRAMER_EASE } from '../../lib/motionTokens';
 import type { WorkoutSession } from '../../types';
 import { logger } from '../../utils/logger';
 
@@ -11,6 +12,7 @@ interface WorkoutStreakProps {
 }
 
 const LAST_SEEN_STREAK_KEY = 'fitness_last_seen_streak';
+const NO_GLOW = 'drop-shadow(0 0 0 transparent)';
 
 const readLastSeenStreak = (): number => {
   try {
@@ -26,12 +28,13 @@ const readLastSeenStreak = (): number => {
 
 export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutStreakProps) {
   const streak = useWorkoutStreak(sessions);
-
+  const reduced = useReducedMotion();
   const currentRef = useRef<HTMLSpanElement>(null);
   const bestRef = useRef<HTMLSpanElement>(null);
 
   const lastSeenRef = useRef<number>(readLastSeenStreak());
   const shouldAnimate = streak.current > lastSeenRef.current;
+  const glowEnabled = shouldAnimate && !reduced;
 
   useEffect(() => {
     if (streak.current <= 0) return;
@@ -49,28 +52,6 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
   });
   useCountUp(bestRef, streak.best, { duration: DUR.base, enabled: shouldAnimate });
 
-  const reduced = useReducedMotion();
-  useGSAP(
-    () => {
-      const el = currentRef.current;
-      if (!el || reduced || !shouldAnimate) return;
-      gsap.fromTo(
-        el,
-        { filter: 'drop-shadow(0 0 0 transparent)' },
-        {
-          filter: 'drop-shadow(0 0 10px color-mix(in srgb, var(--fs-accent) 70%, transparent))',
-          duration: DUR.base,
-          delay: DUR.base,
-          ease: EASE.out,
-          yoyo: true,
-          repeat: 1,
-          onComplete: () => gsap.set(el, { clearProps: 'filter' }),
-        }
-      );
-    },
-    { dependencies: [shouldAnimate, reduced], scope: currentRef }
-  );
-
   if (streak.current === 0) return null;
 
   return (
@@ -87,23 +68,53 @@ export const WorkoutStreak = memo(function WorkoutStreak({ sessions }: WorkoutSt
       }}
     >
       <span style={{ fontWeight: 500, display: 'inline-flex', alignItems: 'baseline', gap: 6 }}>
-        <span
-          ref={currentRef}
-          className="kinetic-number"
-          dir="ltr"
-          style={{
-            display: 'inline-block',
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(22px, 5vw, 28px)',
-            fontWeight: 700,
-            lineHeight: 1,
-            letterSpacing: '-0.02em',
-            fontVariantNumeric: 'tabular-nums',
-            color: 'var(--fs-accent)',
-          }}
+        <m.span
+          // The former GSAP tween started after the 0.6s count, glowed for one
+          // DUR.base pass, then yoyoed out for another. This key intentionally
+          // replays that same one-shot only when a new streak is earned.
+          key={`${streak.current}-${glowEnabled ? 'glow' : 'still'}`}
+          initial={glowEnabled ? { filter: NO_GLOW } : false}
+          animate={
+            glowEnabled
+              ? {
+                  filter: [
+                    NO_GLOW,
+                    'drop-shadow(0 0 10px color-mix(in srgb, var(--fs-accent) 70%, transparent))',
+                    NO_GLOW,
+                  ],
+                }
+              : { filter: NO_GLOW }
+          }
+          transition={
+            glowEnabled
+              ? {
+                  duration: DUR.base * 2,
+                  delay: DUR.base,
+                  ease: FRAMER_EASE.out,
+                  times: [0, 0.5, 1],
+                }
+              : { duration: 0 }
+          }
+          style={{ display: 'inline-block' }}
         >
-          {streak.current}
-        </span>
+          <span
+            ref={currentRef}
+            className="kinetic-number"
+            dir="ltr"
+            style={{
+              display: 'inline-block',
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(22px, 5vw, 28px)',
+              fontWeight: 700,
+              lineHeight: 1,
+              letterSpacing: '-0.02em',
+              fontVariantNumeric: 'tabular-nums',
+              color: 'var(--fs-accent)',
+            }}
+          >
+            {streak.current}
+          </span>
+        </m.span>
         <span
           style={{
             fontFamily: 'var(--font-body)',

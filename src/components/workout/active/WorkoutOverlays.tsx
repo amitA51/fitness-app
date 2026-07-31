@@ -94,6 +94,9 @@ interface WorkoutOverlaysProps {
   tutorialCustomNotes?: string;
   tutorialPrimaryMuscle?: string;
   tutorialSecondaryMuscles?: string[];
+  tutorialMechanic?: string;
+  tutorialForce?: string;
+  tutorialLevel?: string;
   tutorialEquipment?: string;
   tutorialInstructions?: string;
   tutorialNote?: string;
@@ -167,6 +170,9 @@ const WorkoutOverlays: React.FC<WorkoutOverlaysProps> = (props) => (
       tutorialCustomNotes={props.tutorialCustomNotes}
       tutorialPrimaryMuscle={props.tutorialPrimaryMuscle}
       tutorialSecondaryMuscles={props.tutorialSecondaryMuscles}
+      tutorialMechanic={props.tutorialMechanic}
+      tutorialForce={props.tutorialForce}
+      tutorialLevel={props.tutorialLevel}
       tutorialEquipment={props.tutorialEquipment}
       tutorialInstructions={props.tutorialInstructions}
       tutorialNote={props.tutorialNote}

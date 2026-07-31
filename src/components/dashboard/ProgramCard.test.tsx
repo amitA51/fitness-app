@@ -3,10 +3,9 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ProgramCard } from './ProgramCard';
 
-// ProgramCard lazily dynamic-imports the heavy 12-week program data + service
-// (kept out of the Dashboard's eager bundle). These tests lock in that the card
-// renders an aria-busy skeleton first, then resolves to the real view derived
-// from localStorage progress.
+// ProgramCard keeps the existing asynchronous first-paint skeleton, but resolves
+// solely from compact metadata plus localStorage progress. These tests lock in
+// that the Dashboard card does not need full exercise payloads to render.
 
 const PROGRESS_KEY = 'bbt_program_progress_v1';
 

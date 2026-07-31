@@ -10,6 +10,7 @@ import { AnimatePresence, m } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { type PersonalRecord, getAllPRs } from '../../services/prService';
 import { logger } from '../../utils/logger';
 
@@ -76,6 +77,10 @@ export default function PRHistoryTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
+  const disclosureTransition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const };
 
   useEffect(() => {
     let cancelled = false;
@@ -134,102 +139,109 @@ export default function PRHistoryTab() {
       <AnimatePresence>
         {isOpen && (
           <m.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            style={{ overflow: 'hidden' }}
+            initial={{ gridTemplateRows: '0fr', opacity: 0 }}
+            animate={{ gridTemplateRows: '1fr', opacity: 1 }}
+            exit={{ gridTemplateRows: '0fr', opacity: 0 }}
+            transition={disclosureTransition}
+            style={{ display: 'grid', overflow: 'hidden' }}
           >
-            {loading ? (
-              <p style={{ fontSize: 13, color: 'var(--fs-muted)', marginTop: 12 }}>טוען שיאים…</p>
-            ) : error ? (
-              <p style={{ fontSize: 13, color: 'var(--color-error)', marginTop: 12 }}>{error}</p>
-            ) : grouped.length === 0 ? (
-              <p style={{ fontSize: 13, color: 'var(--fs-muted)', lineHeight: 1.5, marginTop: 12 }}>
-                היסטוריית השיאים תופיע כאן אחרי שתתחילו לצבור אימונים ולהשלים סטים.
-              </p>
-            ) : (
-              <ul className="space-y-2 mt-3">
-                {grouped.map((g) => (
-                  <li
-                    key={g.exerciseName}
-                    style={{
-                      borderRadius: 12,
-                      background: 'var(--fs-surface-2)',
-                      border: '1px solid var(--fs-surface-2)',
-                      padding: 12,
-                    }}
-                  >
-                    <div className="flex items-baseline justify-between gap-3 mb-2">
-                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fs-ink)' }}>
-                        {g.exerciseName}
-                      </span>
-                      <span
-                        dir="ltr"
-                        style={{
-                          fontSize: 10,
-                          color: 'var(--fs-muted)',
-                          fontFamily: 'var(--font-mono)',
-                        }}
-                      >
-                        {formatDate(g.latest.date)}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {g.records.slice(0, 3).map((pr) => (
-                        <div
-                          key={pr.id}
-                          className="text-right"
+            {/* Grid interpolation preserves the accordion's real content height
+                without Framer repeatedly measuring and animating `height: auto`. */}
+            <div style={{ minHeight: 0, overflow: 'hidden' }}>
+              {loading ? (
+                <p style={{ fontSize: 13, color: 'var(--fs-muted)', marginTop: 12 }}>טוען שיאים…</p>
+              ) : error ? (
+                <p style={{ fontSize: 13, color: 'var(--color-error)', marginTop: 12 }}>{error}</p>
+              ) : grouped.length === 0 ? (
+                <p
+                  style={{ fontSize: 13, color: 'var(--fs-muted)', lineHeight: 1.5, marginTop: 12 }}
+                >
+                  היסטוריית השיאים תופיע כאן אחרי שתתחילו לצבור אימונים ולהשלים סטים.
+                </p>
+              ) : (
+                <ul className="space-y-2 mt-3">
+                  {grouped.map((g) => (
+                    <li
+                      key={g.exerciseName}
+                      style={{
+                        borderRadius: 12,
+                        background: 'var(--fs-surface-2)',
+                        border: '1px solid var(--fs-surface-2)',
+                        padding: 12,
+                      }}
+                    >
+                      <div className="flex items-baseline justify-between gap-3 mb-2">
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fs-ink)' }}>
+                          {g.exerciseName}
+                        </span>
+                        <span
+                          dir="ltr"
                           style={{
-                            background: 'var(--fs-surface)',
-                            borderRadius: 8,
-                            padding: 8,
-                            borderInlineStart: '2px solid var(--fs-accent)',
+                            fontSize: 10,
+                            color: 'var(--fs-muted)',
+                            fontFamily: 'var(--font-mono)',
                           }}
                         >
+                          {formatDate(g.latest.date)}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {g.records.slice(0, 3).map((pr) => (
                           <div
+                            key={pr.id}
+                            className="text-right"
                             style={{
-                              fontSize: 9,
-                              letterSpacing: '-0.01em',
-                              color: 'var(--fs-muted)',
-                              fontFamily: 'var(--font-mono)',
-                              marginBottom: 4,
+                              background: 'var(--fs-surface)',
+                              borderRadius: 8,
+                              padding: 8,
+                              borderInlineStart: '2px solid var(--fs-accent)',
                             }}
                           >
-                            {TYPE_LABEL[pr.type] || pr.type}
+                            <div
+                              style={{
+                                fontSize: 9,
+                                letterSpacing: '-0.01em',
+                                color: 'var(--fs-muted)',
+                                fontFamily: 'var(--font-mono)',
+                                marginBottom: 4,
+                              }}
+                            >
+                              {TYPE_LABEL[pr.type] || pr.type}
+                            </div>
+                            <div
+                              dir="ltr"
+                              style={{
+                                fontSize: 13,
+                                color: 'var(--fs-ink)',
+                                fontFamily: 'var(--font-mono)',
+                              }}
+                            >
+                              {pr.weight} × {pr.reps}
+                            </div>
+                            {(() => {
+                              const oneRM = pr.oneRepMax ?? 0;
+                              if (oneRM <= 0) return null;
+                              return (
+                                <div
+                                  dir="ltr"
+                                  style={{
+                                    fontSize: 10,
+                                    color: 'var(--fs-muted)',
+                                    fontFamily: 'var(--font-mono)',
+                                  }}
+                                >
+                                  e1RM {Math.round(oneRM)}
+                                </div>
+                              );
+                            })()}
                           </div>
-                          <div
-                            dir="ltr"
-                            style={{
-                              fontSize: 13,
-                              color: 'var(--fs-ink)',
-                              fontFamily: 'var(--font-mono)',
-                            }}
-                          >
-                            {pr.weight} × {pr.reps}
-                          </div>
-                          {(() => {
-                            const oneRM = pr.oneRepMax ?? 0;
-                            if (oneRM <= 0) return null;
-                            return (
-                              <div
-                                dir="ltr"
-                                style={{
-                                  fontSize: 10,
-                                  color: 'var(--fs-muted)',
-                                  fontFamily: 'var(--font-mono)',
-                                }}
-                              >
-                                e1RM {Math.round(oneRM)}
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      ))}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+                        ))}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </m.div>
         )}
       </AnimatePresence>

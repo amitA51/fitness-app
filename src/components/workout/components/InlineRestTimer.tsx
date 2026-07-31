@@ -96,8 +96,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
     const isFinalCountdown = active && timeLeft <= 5 && timeLeft > 0;
 
     // Per-second escalation: heavy impact at the 3/2/1 marks, a success pulse at
-    // 0. Watch the integer second (timeLeft ticks at 100ms) and fire once per
-    // whole-second transition.
+    // 0. `timeLeft` is already whole seconds, so each change here IS a tick.
     //
     // NOT gated on prefers-reduced-motion: that preference is about visual
     // motion (vestibular comfort), not about tactile feedback. Suppressing the
@@ -110,7 +109,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
         lastSecondRef.current = null;
         return;
       }
-      const sec = Math.ceil(timeLeft);
+      const sec = timeLeft;
       if (sec === lastSecondRef.current) return;
       const prev = lastSecondRef.current;
       lastSecondRef.current = sec;
@@ -129,14 +128,14 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
     // when the timer hits 0 — i.e. precise audio right before the next set
     // begins. Independent of prefers-reduced-motion (it's audio, not motion) and
     // independent of the haptics effect so silencing one never mutes the other.
-    // The integer-second ref ensures each cue fires once per whole-second tick.
+    // `timeLeft` is whole seconds, so each change fires exactly one cue.
     const lastAudioSecondRef = useRef<number | null>(null);
     useEffect(() => {
       if (!active || isPaused) {
         lastAudioSecondRef.current = null;
         return;
       }
-      const sec = Math.ceil(timeLeft);
+      const sec = timeLeft;
       if (sec === lastAudioSecondRef.current) return;
       const prev = lastAudioSecondRef.current;
       lastAudioSecondRef.current = sec;
@@ -263,9 +262,13 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                 strokeDashoffset={offset}
                 strokeLinecap="round"
                 style={{
+                  // The countdown state now ticks at 1Hz, so the ring interpolates
+                  // across the FULL second, linearly. Net effect on screen is the
+                  // same continuous sweep as the old 100ms polling, at a tenth of
+                  // the React commits — the browser tweens it instead of us.
                   transition: prefersReduced
                     ? 'none'
-                    : 'stroke-dashoffset 0.3s linear, stroke 0.3s ease, stroke-width 0.3s ease',
+                    : 'stroke-dashoffset 1s linear, stroke 0.3s ease, stroke-width 0.3s ease',
                 }}
               />
             </svg>

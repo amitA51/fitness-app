@@ -15,8 +15,14 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ActivityRings } from '../components/charts';
-import { RING_DRAW_DURATION, RING_STAGGER, ringDelay } from '../components/charts/ActivityRings';
+// Keep Dashboard off the charts barrel: unused GSAP chart re-exports are side-effectful.
+// This direct import preserves the audit's 72.25 kB GSAP boundary.
+import {
+  ActivityRings,
+  RING_DRAW_DURATION,
+  RING_STAGGER,
+  ringDelay,
+} from '../components/charts/ActivityRings';
 import { CoachBriefCard } from '../components/dashboard/CoachBriefCard';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { InsightCard } from '../components/dashboard/InsightCard';
