@@ -5,6 +5,7 @@ import {
   LEVEL_KEYS,
   MECHANIC_KEYS,
   PRIMARY_MUSCLE_KEYS,
+  muscleGroupOfPrimary,
   translatePrimaryMuscle,
 } from '../../constants/exerciseClassification';
 import {
@@ -153,6 +154,17 @@ describe('built-in exercise catalog', () => {
       return !HEBREW.test(fine) && !HEBREW.test(coarse);
     });
     expect(untranslated).toEqual([]);
+  });
+
+  it('maps every prime mover it uses onto a coarse muscle group', () => {
+    // Two vocabularies describe muscles: the fine prime mover and the coarse group
+    // the library tabs by. If a new primaryMuscle is introduced without a coarse
+    // mapping the taxonomy has a hole, and anything deriving a group from it
+    // silently gets `undefined`.
+    const unmapped = [...new Set(catalog.map((exercise) => exercise.primaryMuscle))]
+      .filter((muscle): muscle is string => Boolean(muscle))
+      .filter((muscle) => !muscleGroupOfPrimary(muscle));
+    expect(unmapped).toEqual([]);
   });
 
   it('covers the training domains the app has categories for', () => {

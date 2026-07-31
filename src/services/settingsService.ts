@@ -147,8 +147,8 @@ const BACKUP_SETTINGS_TO_LS: Record<string, string> = {
   nutritionGoals: 'nutrition_goals',
   // The built-in 12-week program tracks progress only in localStorage (no cloud
   // sync yet); capture it so a manual backup preserves the commitment. Mirrors
-  // PROGRESS_KEY in programService.ts (a literal, to avoid importing the large
-  // generated program data here).
+  // PROGRESS_KEY in services/programProgressService.ts — duplicated as a literal
+  // so this module stays free of a service dependency. Keep the two in sync.
   programProgress: 'bbt_program_progress_v1',
 };
 

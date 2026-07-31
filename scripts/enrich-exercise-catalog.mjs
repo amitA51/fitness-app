@@ -11,7 +11,12 @@
  * upstream match and therefore need a hand-made decision.
  *
  * Usage:
- *   node scripts/enrich-exercise-catalog.mjs [path-to-exercises.json]
+ *   node scripts/enrich-exercise-catalog.mjs <path-to-exercises.json>
+ *   EXERCISE_DB_PATH=/path/to/exercises.json node scripts/enrich-exercise-catalog.mjs
+ *
+ * The dataset is not vendored into this repo (it is ~1 MB of third-party data and
+ * only needed when authoring the catalog), so the path must be supplied. Source:
+ * https://github.com/yuhonas/free-exercise-db
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -21,7 +26,6 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, '..');
 const CATALOG = join(REPO, 'src', 'data', 'builtInExercises.ts');
-const DEFAULT_DB = 'C:/Users/amit0/Desktop/db workout github/exercises.json';
 const OUT = join(REPO, 'tmp-catalog-enrichment.json');
 
 /** `'לחיצת חזה | Bench Press'` → `'Bench Press'`; Hebrew-only names return ''. */
@@ -40,23 +44,37 @@ const nameKey = (raw) =>
     .trim();
 
 // ---------------------------------------------------------------------------
-// Parse the TS catalog. A regex is adequate and dependency-free here because the
-// file is generated/maintained in one fixed shape: flat object literals with
-// single-quoted values, one `name:` per record.
+// Parse the TS catalog line by line. A whole-file regex silently missed the two
+// records whose Hebrew name contains an ASCII apostrophe (לאנג'ים, ת'ראסט) and so
+// are written with double quotes — which made this tool report "2 missing
+// classification" when none were missing.
 // ---------------------------------------------------------------------------
+const NAME_RX = /^(\s+)name: (?:'(.*)'|"(.*)"),\s*$/;
+
 const parseCatalog = (source) => {
+  const lines = source.split('\n');
   const records = [];
-  const objectRx = /\{\s*name:\s*'([^']*)'([\s\S]*?)\n  \}/g;
-  for (const match of source.matchAll(objectRx)) {
-    const [, name, body] = match;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const nameMatch = lines[i].match(NAME_RX);
+    if (!nameMatch) continue;
+
+    const name = nameMatch[2] ?? nameMatch[3];
+    // Collect this record's body up to its closing brace.
+    const body = [];
+    for (let j = i + 1; j < lines.length && !/^\s+\},?\s*$/.test(lines[j]); j += 1) {
+      body.push(lines[j]);
+    }
+    const text = body.join('\n');
     const field = (key) => {
-      const found = body.match(new RegExp(`${key}: '([^']*)'`));
+      const found = text.match(new RegExp(`${key}: '([^']*)'`));
       return found ? found[1] : undefined;
     };
     const numField = (key) => {
-      const found = body.match(new RegExp(`${key}: (\\d+)`));
+      const found = text.match(new RegExp(`${key}: (\\d+)`));
       return found ? Number(found[1]) : undefined;
     };
+
     records.push({
       name,
       english: englishPart(name),
@@ -75,7 +93,16 @@ const parseCatalog = (source) => {
   return records;
 };
 
-const dbPath = process.argv[2] ?? DEFAULT_DB;
+const dbPath = process.argv[2] ?? process.env.EXERCISE_DB_PATH;
+if (!dbPath) {
+  console.error(
+    'Missing dataset path.\n' +
+      '  node scripts/enrich-exercise-catalog.mjs <path-to-exercises.json>\n' +
+      '  (or set EXERCISE_DB_PATH)\n' +
+      'Dataset: https://github.com/yuhonas/free-exercise-db'
+  );
+  process.exit(2);
+}
 const db = JSON.parse(readFileSync(dbPath, 'utf8'));
 const catalog = parseCatalog(readFileSync(CATALOG, 'utf8'));
 
@@ -122,9 +149,9 @@ const report = {
   catalogEntries: catalog.length,
   matchedCount: matched.length,
   unmatchedCount: unmatched.length,
-  missingClassification: catalog.filter(
-    (r) => !r.mechanic || !r.force || !r.level || !r.primaryMuscle
-  ).length,
+  // `force` is deliberately absent on pure conditioning (nothing is pushed or
+  // pulled on a treadmill), so it is NOT part of "complete".
+  missingClassification: catalog.filter((r) => !r.mechanic || !r.level || !r.primaryMuscle).length,
   matched,
   unmatched,
 };
