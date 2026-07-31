@@ -198,6 +198,12 @@ export const exerciseReducer = (draft: WorkoutState, action: WorkoutAction): voi
         exercise.equipment = libraryMeta.equipment;
         exercise.tutorialText = libraryMeta.tutorialText;
         exercise.instructions = libraryMeta.instructions;
+        // Replaced wholesale like the rest of the reference data: a stale
+        // "מורכב / מתקדם" from the previous movement would misdescribe this one.
+        exercise.primaryMuscle = libraryMeta.primaryMuscle;
+        exercise.mechanic = libraryMeta.mechanic;
+        exercise.force = libraryMeta.force;
+        exercise.level = libraryMeta.level;
       }
       if (exercise.programExtras) {
         exercise.programExtras.alternatives = nextAlternatives;

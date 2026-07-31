@@ -1547,6 +1547,46 @@ describe('workoutReducer', () => {
       expect(ex.tutorialText).toBeUndefined();
     });
 
+    it('replaces classification wholesale on a library swap', () => {
+      const state = createInitialState(
+        [
+          mkExercise({
+            id: 'ex-1',
+            name: ORIG,
+            exerciseName: ORIG,
+            muscleGroup: 'Chest',
+            primaryMuscle: 'chest',
+            mechanic: 'compound',
+            force: 'push',
+            level: 'expert',
+          }),
+        ],
+        0,
+        mkSettings()
+      );
+      const next = apply(state, {
+        type: 'SWAP_EXERCISE',
+        payload: {
+          exerciseId: 'ex-1',
+          newName: 'כפיפת מוט | Barbell Curl',
+          libraryMeta: {
+            muscleGroup: 'Biceps',
+            primaryMuscle: 'biceps',
+            mechanic: 'isolation',
+            force: 'pull',
+            level: 'beginner',
+          },
+        },
+      });
+      const ex = next.exercises[0]!;
+      // A stale "compound / expert" from the replaced movement would misdescribe
+      // the new one in the tutorial and on the card.
+      expect(ex.primaryMuscle).toBe('biceps');
+      expect(ex.mechanic).toBe('isolation');
+      expect(ex.force).toBe('pull');
+      expect(ex.level).toBe('beginner');
+    });
+
     it('preserves muscleGroup/targetMuscle for a preset swap (no muscle payload)', () => {
       const state = createInitialState(
         [

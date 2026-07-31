@@ -181,8 +181,45 @@ export interface ProgramExtras {
 // AR-1: Decomposed Exercise types (catalog / active-runtime / template)
 // ----------------------------------------------------------------------------
 
+// ----------------------------------------------------------------------------
+// Exercise classification
+// ----------------------------------------------------------------------------
+// `muscleGroup` alone ("Legs", "Back") cannot answer the questions that actually
+// drive programming: is this a heavy multi-joint lift or a finisher? does it push
+// or pull? is it safe for a beginner? These three axes come from the standard
+// free-exercise-db vocabulary so the catalog stays comparable with public data,
+// and they are what the library UI sorts and filters on.
+
+/** Multi-joint lift (`compound`) vs single-joint accessory (`isolation`). */
+export type ExerciseMechanic = 'compound' | 'isolation';
+
+/**
+ * Direction of resistance. Drives push/pull split programming; `static` covers
+ * holds and carries (plank, dead hang) where nothing moves through a range.
+ */
+export type ExerciseForce = 'push' | 'pull' | 'static';
+
+/** Skill and control required to perform the movement safely. */
+export type ExerciseLevel = 'beginner' | 'intermediate' | 'expert';
+
+/**
+ * Classification shared by every catalog surface. Optional throughout because
+ * user-authored exercises are created from a short form and never carry it.
+ */
+export interface ExerciseClassification {
+  mechanic?: ExerciseMechanic;
+  force?: ExerciseForce;
+  level?: ExerciseLevel;
+  /**
+   * Fine-grained prime mover (`lats`, `quadriceps`, `glutes`), one level below
+   * the coarse `muscleGroup`. `muscleGroup` groups the library into tabs;
+   * this is what tells the user which muscle actually does the work.
+   */
+  primaryMuscle?: string;
+}
+
 /** Identity + catalog metadata for an exercise definition. */
-export interface ExerciseCatalogEntry {
+export interface ExerciseCatalogEntry extends ExerciseClassification {
   id: string;
   name?: string;
   targetMuscle?: string;
@@ -241,6 +278,12 @@ export interface Exercise {
   isCustom?: boolean;
   isTimed?: boolean; // e.g., plank - uses duration instead of reps
   createdAt?: string;
+  // Classification (see ExerciseClassification) — what the movement actually is,
+  // used by the library to sort and filter beyond the coarse muscle group.
+  mechanic?: ExerciseMechanic;
+  force?: ExerciseForce;
+  level?: ExerciseLevel;
+  primaryMuscle?: string;
   // Extended fields used by workout components
   sets?: WorkoutSet[];
   muscleGroup?: string;

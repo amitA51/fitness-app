@@ -48,6 +48,13 @@ const fromLibraryExercise = (pe: PersonalExercise, sets: Exercise['sets']): Exer
   tutorialText: pe.tutorialText,
   instructions: pe.instructions,
   tempo: pe.tempo,
+  // Classification, for the same reason as the fields above: without it the live
+  // tutorial cannot say what the movement is, and the muscle map falls back to
+  // the coarse group instead of the actual prime mover.
+  primaryMuscle: pe.primaryMuscle,
+  mechanic: pe.mechanic,
+  force: pe.force,
+  level: pe.level,
   targetRestTime: pe.defaultRestTime || 90,
   sets,
 });

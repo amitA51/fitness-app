@@ -15,6 +15,9 @@ export const EQUIPMENT_KEYS = [
   'machine',
   'bodyweight',
   'plate',
+  'kettlebell',
+  'band',
+  'ball',
 ] as const;
 
 export type EquipmentKey = (typeof EQUIPMENT_KEYS)[number];
@@ -28,6 +31,9 @@ const EQUIPMENT_LABELS_HE: Record<string, string> = {
   machine: 'מכונה',
   bodyweight: 'משקל גוף',
   plate: 'פלטה',
+  kettlebell: 'קטלבל',
+  band: 'גומייה',
+  ball: 'כדור',
 };
 
 /**

@@ -640,11 +640,44 @@ const VirtualizedItems = memo(function VirtualizedItems({
         parent.getBoundingClientRect().top -
         scrollEl.getBoundingClientRect().top +
         scrollEl.scrollTop;
-      setScrollMargin(offset);
+      // Guard the set: the observers below fire on attach and on every total-size
+      // change, and an unconditional set would re-render on each one.
+      setScrollMargin((previous) => (previous === offset ? previous : offset));
     };
     measure();
     window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+
+    // A window resize is not the only thing that moves this list. The charts and
+    // stat cards above it settle asynchronously as data loads, which shifts the
+    // list down inside the same scroll container. Without re-measuring, every
+    // virtual row stays positioned against the old offset and the month groups
+    // visibly detach from their slot. Observing the scroll container's children
+    // catches those height changes; the childList observer keeps that set current.
+    const scrollEl = getScrollElement();
+    let sizeObserver: ResizeObserver | undefined;
+    let childObserver: MutationObserver | undefined;
+
+    if (scrollEl && typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(measure);
+      sizeObserver = observer;
+      const observeSiblings = () => {
+        observer.disconnect();
+        observer.observe(scrollEl);
+        for (const child of Array.from(scrollEl.children)) observer.observe(child);
+      };
+      observeSiblings();
+
+      if (typeof MutationObserver !== 'undefined') {
+        childObserver = new MutationObserver(observeSiblings);
+        childObserver.observe(scrollEl, { childList: true });
+      }
+    }
+
+    return () => {
+      window.removeEventListener('resize', measure);
+      sizeObserver?.disconnect();
+      childObserver?.disconnect();
+    };
   }, [getScrollElement]);
 
   const virtualizer = useVirtualizer({

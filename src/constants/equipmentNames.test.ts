@@ -24,6 +24,9 @@ describe('translateEquipment', () => {
   });
 
   it('passes through unknown non-empty values unchanged', () => {
-    expect(translateEquipment('kettlebell')).toBe('kettlebell');
+    // Deliberately something the catalog does not model. `kettlebell` used to
+    // stand in here and stopped being a valid example once it became a real
+    // equipment type, so pick a value that will not graduate into the vocabulary.
+    expect(translateEquipment('trapeze')).toBe('trapeze');
   });
 });

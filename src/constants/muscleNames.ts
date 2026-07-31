@@ -34,6 +34,40 @@ const HE_CANONICAL: Record<string, string> = {
   ליבה: 'בטן',
 };
 
+// ----------------------------------------------------------------------------
+// Granular muscles
+// ----------------------------------------------------------------------------
+// `secondaryMuscles` and the classification's `primaryMuscle` are far more
+// specific than the coarse groups above: "Quads", "Obliques", "Hip Flexors".
+// Those were falling through this module untranslated, so MuscleMap's
+// screen-reader label read out English muscle names in a Hebrew-first app.
+// Both spellings of a muscle are listed where the catalog uses both
+// (`Quads` in secondaryMuscles vs `quadriceps` as a primaryMuscle key).
+const GRANULAR_MUSCLE_HE: Record<string, string> = {
+  quads: 'ארבע ראשי',
+  quadriceps: 'ארבע ראשי',
+  hamstrings: 'מיתרי הירך',
+  glutes: 'ישבן',
+  calves: 'תאומים',
+  soleus: 'שריר הסוליה',
+  achilles: 'גיד אכילס',
+  lats: 'גב רחב',
+  'middle back': 'גב אמצעי',
+  'lower back': 'גב תחתון',
+  traps: 'טרפזים',
+  forearms: 'אמות',
+  brachialis: 'שריר הזרוע',
+  grip: 'אחיזה',
+  obliques: 'בטן אלכסונית',
+  abdominals: 'בטן',
+  adductors: 'מקרבי הירך',
+  abductors: 'מרחיקי הירך',
+  'hip flexors': 'כופפי הירך',
+  tfl: 'מותח הפאשיה',
+  diaphragm: 'סרעפת',
+  neck: 'צוואר',
+};
+
 /**
  * Canonical field priority for an exercise's muscle. Always resolve through this
  * so every surface agrees on which field wins (was targetMuscle-first in one
@@ -51,11 +85,56 @@ export const resolveMuscleKey = (ex: {
 export const translateMuscle = (raw: string | undefined): string => {
   const value = raw?.trim();
   if (!value) return FALLBACK_HE;
-  const english = MUSCLE_HE[value.toLowerCase()];
+  const lower = value.toLowerCase();
+  const english = MUSCLE_HE[lower];
   if (english) return english;
+  const granular = GRANULAR_MUSCLE_HE[lower];
+  if (granular) return granular;
   return HE_CANONICAL[value] ?? value;
 };
 
 /** Convenience: resolve an exercise's muscle field and translate in one call. */
 export const muscleLabel = (ex: { targetMuscle?: string; muscleGroup?: string }): string =>
   translateMuscle(resolveMuscleKey(ex));
+
+// ============================================================================
+// Filter coverage
+// ============================================================================
+// The library filter offers coarse chips (חזה / גב / ידיים…), but the catalog
+// tags arm work as `Biceps` / `Triceps` and abs work as `Core`. Matching the chip
+// against the raw value therefore left the "ידיים" chip matching NOTHING while
+// every arm exercise stayed reachable only through search. A chip now covers a
+// SET of catalog values, which is also why `Abs` is not offered separately —
+// translateMuscle already collapses Core and Abs to the same Hebrew word.
+
+/** Coarse filter key → every catalog muscle value it should match. */
+const FILTER_COVERAGE: Record<string, readonly string[]> = {
+  Chest: ['Chest'],
+  Back: ['Back'],
+  Legs: ['Legs'],
+  Shoulders: ['Shoulders'],
+  Arms: ['Arms', 'Biceps', 'Triceps'],
+  Core: ['Core', 'Abs'],
+  Cardio: ['Cardio'],
+  Other: ['Other'],
+};
+
+/**
+ * Coarse muscle-group chips offered by the library filter, in display order.
+ * Derived from the coverage map so a chip can never exist without something to
+ * match, and `Abs` can never reappear as a duplicate of `Core`.
+ */
+export const MUSCLE_FILTER_KEYS = Object.keys(FILTER_COVERAGE);
+
+/** Does an exercise belong under a coarse filter chip? `all` matches everything. */
+export const matchesMuscleFilter = (
+  filterKey: string,
+  ex: { targetMuscle?: string; muscleGroup?: string }
+): boolean => {
+  if (filterKey === 'all') return true;
+  const value = resolveMuscleKey(ex);
+  const covered = FILTER_COVERAGE[filterKey];
+  if (covered) return covered.some((entry) => entry.toLowerCase() === value.toLowerCase());
+  // Unknown chip (user-authored muscle): fall back to an exact match.
+  return value.toLowerCase() === filterKey.toLowerCase();
+};

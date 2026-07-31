@@ -24,6 +24,13 @@ export type SwapLibraryMeta = Pick<
   | 'equipment'
   | 'tutorialText'
   | 'instructions'
+  // Classification travels with the movement for the same reason the muscle and
+  // equipment data do: after a swap the tutorial would otherwise describe the
+  // REPLACED movement as compound/expert when the new one is neither.
+  | 'primaryMuscle'
+  | 'mechanic'
+  | 'force'
+  | 'level'
 >;
 
 // ============================================================

@@ -11,15 +11,43 @@
   background: var(--fs-surface);
   direction: rtl;
   scrollbar-gutter: stable;
+  /* Keeps Tab-focus and scroll-into-view clear of the floating toolbar above.
+     The value is published by ExerciseLibraryTab from the toolbar's measured
+     height; 0 is a safe fallback before the first measurement. */
+  scroll-padding-block-start: var(--exercise-toolbar-block-size, 0px);
   -webkit-overflow-scrolling: touch;
 }
 
+/* Floating search chrome. In a 90-exercise catalog the search box scrolling away
+   was the real cost of a long list: you had to scroll back to the top to change
+   the query. Keeping it as a translucent layer that content passes beneath keeps
+   the control reachable and reads as a material rather than an opaque strip.
+   Solid fallbacks live in the prefers-reduced-transparency / prefers-contrast
+   blocks at the end of this file. */
 .exercise-library__toolbar {
-  position: relative;
+  position: sticky;
+  inset-block-start: 0;
   z-index: 2;
   padding: var(--space-4) var(--space-5) var(--space-3);
-  background: var(--fs-surface);
-  box-shadow: 0 14px 28px -30px color-mix(in srgb, var(--fs-ink) 34%, transparent);
+  background: color-mix(in srgb, var(--fs-surface) 72%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* Scroll edge effect instead of a 1px rule: content dissolves into the material
+   at the boundary, so the seam only reads where chrome actually overlaps content. */
+.exercise-library__toolbar::after {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 100%;
+  block-size: 14px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--fs-surface) 62%, transparent),
+    transparent
+  );
+  content: "";
+  pointer-events: none;
 }
 
 .exercise-library__summary {
@@ -44,6 +72,38 @@
   color: var(--fs-ink);
   font-variant-numeric: tabular-nums;
   unicode-bidi: isolate;
+}
+
+.exercise-library__summary-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.exercise-library__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fs-muted);
+  font: 600 var(--text-body-sm) / 1 var(--font-body);
+}
+
+.exercise-library__sort-label {
+  white-space: nowrap;
+}
+
+.exercise-library__sort-select {
+  min-block-size: 44px;
+  padding-inline: 8px;
+  color: var(--fs-ink);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-full);
+  font: 600 var(--text-body-sm) / 1 var(--font-body);
+  cursor: pointer;
+  /* `start` rather than `left`: the control lives in an RTL toolbar. */
+  text-align: start;
 }
 
 .exercise-library__reset {
@@ -126,6 +186,15 @@
   min-block-size: auto;
   overflow: visible;
   padding: var(--space-1) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+/* While the deferred filter catches up, the list recedes just enough to read as
+   "updating" without flashing or reflowing. Opacity only: it composites, it is
+   safe under reduced motion, and it deliberately does NOT set pointer-events,
+   so a card tapped during the transition still commits. */
+.exercise-library__scroll[data-stale="true"] {
+  opacity: 0.62;
 }
 
 .exercise-filters {
@@ -314,22 +383,28 @@
   box-shadow: 0 4px 12px -8px color-mix(in srgb, var(--fs-accent) 70%, transparent);
 }
 
+/* Explanatory line under a chip group. Replaces a `title` tooltip, which is
+   unreachable on touch. Quiet by design: it teaches, it does not compete. */
+.exercise-filter-hint {
+  margin: 6px 0 0;
+  color: var(--fs-muted);
+  font: 400 var(--text-caption) / 1.4 var(--font-body);
+  text-align: start;
+  text-wrap: pretty;
+}
+
 .exercise-equipment-panel {
   padding: var(--space-3);
   background: color-mix(in srgb, var(--fs-surface-2) 74%, transparent);
   border-radius: var(--radius-xl);
-  animation: exercise-panel-in 180ms var(--ease-out) both;
+  /* Scales from its top edge so it reads as unfolding from the toggle that opened
+     it. Enter/exit are owned by ExerciseFilter's spring — no keyframe here, or the
+     two would fight and the exit could never be interrupted. */
+  transform-origin: center top;
 }
 
 .exercise-equipment-panel .exercise-filter-row__label {
   margin-block-end: var(--space-2);
-}
-
-@keyframes exercise-panel-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.99);
-  }
 }
 
 .exercise-list {
@@ -350,8 +425,12 @@
   box-shadow: 0 1px 1px color-mix(in srgb, var(--fs-ink) 3%, transparent), 0 8px 22px -20px
     color-mix(in srgb, var(--fs-ink) 32%, transparent), inset 0 0.5px 0 var(--fs-surface-shine);
   text-align: start;
+  /* No `transform` here on purpose. The press scale is a Framer spring written to
+     the inline style; a CSS transition on transform would re-interpolate every
+     spring frame, adding lag to the one interaction that must feel instant and
+     stay grabbable mid-flight. Colour and shadow still cross-fade. */
   transition: background-color var(--duration-fast) ease, border-color var(--duration-fast) ease,
-    box-shadow var(--duration-fast) ease, transform 110ms var(--ease-out);
+    box-shadow var(--duration-fast) ease;
 }
 
 .exercise-card[data-interactive="true"] {
@@ -440,6 +519,23 @@
   color: var(--fs-muted);
   font-size: var(--text-body-sm);
   font-weight: var(--font-normal);
+}
+
+/* Level badge. Only rendered for non-beginner work, so its presence alone is the
+   signal; the expert tint is the one case worth escalating past neutral. */
+.exercise-card__level {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  color: var(--fs-muted);
+  background: var(--fs-surface-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-caption);
+  font-weight: var(--font-bold);
+}
+
+.exercise-card__level[data-level="expert"] {
+  color: var(--color-error-fg);
+  background: var(--color-error-muted);
 }
 
 .exercise-card__personal {
@@ -808,7 +904,6 @@
 .exercise-quick-pick:active,
 .exercise-filter-chip:active,
 .exercise-filter-toggle:active,
-.exercise-card[data-interactive="true"]:active,
 .exercise-card__delete:active,
 .exercise-form__close:active,
 .exercise-form__submit:active {
@@ -882,6 +977,22 @@
   .exercise-card[data-selected="true"] .exercise-card__selection {
     transform: none;
   }
+
+  /* Reduced motion removes the spring, not the response. The press still has to
+     acknowledge itself on pointer-down, so swap the scale for a flat tint —
+     non-vestibular, and instant because this block collapses transitions to 1ms. */
+  .exercise-card[data-interactive="true"]:active {
+    background: color-mix(in srgb, var(--fs-accent) 14%, var(--fs-surface));
+    border-color: var(--fs-accent);
+  }
+}
+
+/* Same substitution for the in-app "הפחתת אנימציות" toggle. useReducedMotion
+   treats the OS query and this class as one signal, so the press affordance has
+   to exist for both or the card goes silent for half the users who opt out. */
+html.reduce-motion .exercise-card[data-interactive="true"]:active {
+  background: color-mix(in srgb, var(--fs-accent) 14%, var(--fs-surface));
+  border-color: var(--fs-accent);
 }
 
 /* biome-ignore lint/correctness/noUnknownMediaFeatureName: Safari exposes this accessibility preference. */
@@ -890,6 +1001,13 @@
     background: var(--fs-surface);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    border-block-end: 1px solid var(--color-border);
+  }
+
+  /* The edge fade is itself a translucency effect, so it is not the right cue
+     here — the hairline above separates the layers without one. */
+  .exercise-library__toolbar::after {
+    content: none;
   }
 }
 
@@ -905,5 +1023,12 @@
 
   .exercise-library__toolbar {
     background: var(--fs-surface);
+    border-block-end: 1px solid currentColor;
+  }
+
+  /* A gradient edge is not a boundary at this contrast level — swap the fade for
+     the explicit border above. */
+  .exercise-library__toolbar::after {
+    content: none;
   }
 }

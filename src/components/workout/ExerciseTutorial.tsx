@@ -20,6 +20,11 @@ import {
 } from 'lucide-react';
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { translateEquipment } from '../../constants/equipmentNames';
+import {
+  translateForce,
+  translateLevel,
+  translateMechanic,
+} from '../../constants/exerciseClassification';
 import { getExerciseImages } from '../../data/exerciseImages';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { logger } from '../../utils/logger';
@@ -36,6 +41,12 @@ interface ExerciseTutorialProps {
   secondaryMuscles?: string[];
   /** Equipment catalog key (e.g. "barbell") — shown as a Hebrew badge. */
   equipment?: string;
+  /** Movement pattern — `compound` / `isolation`. Shown beside the equipment. */
+  mechanic?: string;
+  /** Resistance direction — `push` / `pull` / `static`. */
+  force?: string;
+  /** Required skill — `beginner` / `intermediate` / `expert`. */
+  level?: string;
   /** The exercise's own execution cue — segmented into ordered steps. */
   instructions?: string;
   /** Current set's personal note. Edited here (the note strip used to sit at the
@@ -117,6 +128,9 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   primaryMuscle,
   secondaryMuscles,
   equipment,
+  mechanic,
+  force,
+  level,
   instructions,
   note,
   onSaveNote,
@@ -223,6 +237,14 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   }, [englishName, exerciseName, exerciseTips, instructions, tutorialSteps]);
 
   const equipmentLabel = translateEquipment(equipment);
+  // What the movement IS, in the order a lifter asks: pattern, direction, skill.
+  // Rendered as plain labelled facts rather than badges so the equipment badge
+  // stays the single accent in this card.
+  const classificationFacts = [
+    { label: 'סוג', value: translateMechanic(mechanic) },
+    { label: 'כיוון', value: translateForce(force) },
+    { label: 'רמה', value: translateLevel(level) },
+  ].filter((fact) => Boolean(fact.value));
   const hasMuscleData = Boolean(primaryMuscle || (secondaryMuscles?.length ?? 0) > 0);
   const demoImages = useMemo(() => getExerciseImages(exerciseName), [exerciseName]);
   // The (up to two) frames that haven't failed to load — preserving each frame's
@@ -380,9 +402,9 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
           justifyContent: 'space-between',
           gap: 12,
           padding: '12px 16px',
-          background: 'color-mix(in srgb, var(--fs-bg) 86%, transparent)',
-          backdropFilter: 'saturate(180%) blur(18px)',
-          WebkitBackdropFilter: 'saturate(180%) blur(18px)',
+          // This full-screen surface has no content visible beneath its masthead;
+          // solid chrome preserves contrast and removes unnecessary backdrop work.
+          background: 'var(--fs-bg)',
           borderBottom: '0.5px solid var(--color-separator)',
           flexShrink: 0,
         }}
@@ -563,7 +585,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
               </div>
             )}
 
-            {(hasMuscleData || equipmentLabel) && (
+            {(hasMuscleData || equipmentLabel || classificationFacts.length > 0) && (
               <div style={card}>
                 {hasMuscleData && (
                   <>
@@ -607,6 +629,45 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                       {equipmentLabel}
                     </span>
                   </div>
+                )}
+
+                {classificationFacts.length > 0 && (
+                  <dl
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '4px 16px',
+                      margin: `${hasMuscleData || equipmentLabel ? 14 : 0}px 0 0`,
+                    }}
+                  >
+                    {classificationFacts.map((fact) => (
+                      <div
+                        key={fact.label}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                      >
+                        <dt
+                          style={{
+                            fontFamily: 'var(--font-body)',
+                            fontSize: 13,
+                            color: 'var(--fs-muted)',
+                          }}
+                        >
+                          {fact.label}
+                        </dt>
+                        <dd
+                          style={{
+                            margin: 0,
+                            fontFamily: 'var(--font-body)',
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: 'var(--fs-ink)',
+                          }}
+                        >
+                          {fact.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
                 )}
               </div>
             )}

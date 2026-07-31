@@ -5,7 +5,11 @@ import { Check, Clock3, Trash2 } from 'lucide-react';
 import type React from 'react';
 import { memo } from 'react';
 import { translateEquipment } from '../../../constants/equipmentNames';
-import { muscleLabel } from '../../../constants/muscleNames';
+import {
+  preciseMuscleLabel,
+  translateLevel,
+  translateMechanic,
+} from '../../../constants/exerciseClassification';
 import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import type { PersonalExercise } from '../../../types';
 import { CustomDumbbellIcon as DumbbellIcon } from '../../icons/CustomDumbbellIcon';
@@ -59,12 +63,26 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
   ({ exercise, isSelectionMode = false, isSelected = false, onClick, onDelete }) => {
     const shouldReduceMotion = useReducedMotion();
     const name = exercise.name?.trim() || 'תרגיל ללא שם';
-    const muscleText = muscleLabel(exercise);
+    // The precise prime mover, not the filing category: "גב רחב" tells you what
+    // the exercise trains, "גב" only tells you which tab it lives in.
+    const muscleText = preciseMuscleLabel(exercise);
     const equipmentText = translateEquipment(exercise.equipment);
+    const mechanicText = translateMechanic(exercise.mechanic);
+    // Beginner is the default for two thirds of the catalog, so labelling it adds
+    // noise. Only a level that should give you pause earns a badge.
+    const levelText =
+      exercise.level && exercise.level !== 'beginner' ? translateLevel(exercise.level) : '';
     const restSeconds = exercise.defaultRestTime || 90;
     const isInteractive = Boolean(onClick);
     const selectionText = isSelectionMode ? (isSelected ? 'נבחר' : 'לא נבחר') : '';
-    const accessibleMeta = [muscleText, equipmentText, `${restSeconds} שניות`, selectionText]
+    const accessibleMeta = [
+      muscleText,
+      mechanicText,
+      levelText,
+      equipmentText,
+      `${restSeconds} שניות`,
+      selectionText,
+    ]
       .filter(Boolean)
       .join(', ');
 
@@ -99,11 +117,24 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
           <div className="exercise-card__details">
             <div className="exercise-card__title-row">
               <ExerciseName name={name} />
+              {levelText && (
+                <span className="exercise-card__level" data-level={exercise.level}>
+                  {levelText}
+                </span>
+              )}
               {exercise.isCustom && <span className="exercise-card__personal">אישי</span>}
             </div>
 
             <div className="exercise-card__meta">
               <span>{muscleText}</span>
+              {mechanicText && (
+                <>
+                  <span className="exercise-card__meta-separator" aria-hidden="true">
+                    ·
+                  </span>
+                  <span>{mechanicText}</span>
+                </>
+              )}
               {equipmentText && (
                 <>
                   <span className="exercise-card__meta-separator" aria-hidden="true">
