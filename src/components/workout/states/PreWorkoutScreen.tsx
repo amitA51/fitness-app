@@ -434,24 +434,16 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 borderTop: '1px solid rgba(255,255,255,0.12)',
               }}
             >
-              <div
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 600,
-                  fontSize: 20,
-                  color: 'var(--color-ink-on-dark)',
-                  lineHeight: 1.05,
-                  marginTop: 12,
-                }}
-              >
+              <div className="text-center">
                 האימון הראשון שלך
               </div>
               <div
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 11,
                   letterSpacing: '-0.01em',
-                  color: 'rgba(255,255,255,0.5)',
+                  color: 'rgba(255,255,255,0.72)',
+                  textAlign: 'center',
                 }}
               >
                 3 צעדים: תבנית → סטים → סיום
