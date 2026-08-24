@@ -48,14 +48,15 @@ export function SettingsJumpNav({
               className="inline-flex items-center active:scale-[0.98] transition-transform"
               style={{
                 whiteSpace: 'nowrap',
-                padding: '6px 12px',
+                padding: '7px 14px',
                 borderRadius: 'var(--radius-full, 999px)',
                 background: 'var(--fs-surface)',
-                border: '1px solid var(--fs-surface-2)',
-                // mono kicker — AA on fs-bg via fs-ink (muted would be too faint
-                // for an interactive control).
-                fontFamily: 'var(--font-mono)',
-                fontSize: '11px',
+                border: '1px solid var(--color-border)',
+                // Body face at 12px/500 — the mono kicker look cramped Hebrew
+                // labels and read as legacy chrome.
+                fontFamily: 'var(--font-body)',
+                fontSize: '12px',
+                fontWeight: 500,
                 letterSpacing: '-0.01em',
                 color: 'var(--fs-ink)',
                 textDecoration: 'none',
