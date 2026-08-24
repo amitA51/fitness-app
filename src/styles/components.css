@@ -819,8 +819,11 @@ textarea {
   min-height: 50px;
   padding: 12px 20px;
   border-radius: var(--radius-full);
+  /* A faint hairline plus a whisper of fill: on the dark card a bare outline
+     read as broken (visual QA). The surface tint gives the pill body without
+     competing with the solid mint primary. */
   border: 1px solid var(--color-border-strong);
-  background: transparent;
+  background: color-mix(in srgb, var(--fs-surface-2) 55%, transparent);
   color: var(--fs-ink);
   font-family: var(--font-body);
   font-weight: 600;

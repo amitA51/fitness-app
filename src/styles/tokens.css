@@ -371,10 +371,11 @@ html.dark {
      ============================================================ */
   --fs-bg: #000000;
   --fs-surface: #111111;
-  /* #1a1a1a → #202020: the numbered-step circles and chip fills on dark cards
-     sat one shade above the card fill and vanished (visual QA). One step up
-     restores the separation without glare. */
-  --fs-surface-2: #202020;
+  /* #1a1a1a → #262626: the numbered-step circles and chip fills on dark cards
+     sat one shade above the card fill and vanished (visual QA). #202020 was
+     still too close on the FirstRunHero card; #262626 gives the circles a
+     visible step while staying quiet. */
+  --fs-surface-2: #262626;
   --fs-ink: #f0f0f0;
   /* #8c8c8c, not #808080 — 808080 is 4.4:1 on surface-2 (#1a1a1a), just under AA */
   --fs-muted: #8c8c8c;
