@@ -69,7 +69,10 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: '14px',
-            color: 'var(--fs-muted)',
+            /* ink-muted (not muted): #8c8c8c on black was sub-AA for a 3-line
+               paragraph; the darker token keeps it quiet but readable. */
+            color: 'var(--fs-ink-muted)',
+            fontWeight: 500,
             maxWidth: '280px',
             marginTop: '8px',
             lineHeight: 1.5,

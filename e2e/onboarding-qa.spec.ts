@@ -11,12 +11,20 @@ async function shoot(page: import('@playwright/test').Page, name: string) {
   await page.screenshot({ path: `visual-qa/${name}.png`, fullPage: false });
 }
 
+/** Flip to Obsidian (dark) before capturing — the onboarding steps have never
+ *  been reviewed in dark mode. */
+async function goDark(page: import('@playwright/test').Page) {
+  await page.evaluate(() => document.documentElement.classList.add('dark'));
+  await page.waitForTimeout(250);
+}
+
 test('capture the trimmed onboarding flow + D4 auto-sheet', async ({ page }) => {
   test.setTimeout(120_000);
 
   // Enter the wizard as a guest: skip consent, choose "המשיכו כאורח".
   await page.goto('/');
   await page.waitForTimeout(1500);
+  await goDark(page);
   for (const label of ['רק הכרחי', 'אישור הכל']) {
     const btn = page.getByRole('button', { name: label }).first();
     if (await btn.isVisible().catch(() => false)) {
