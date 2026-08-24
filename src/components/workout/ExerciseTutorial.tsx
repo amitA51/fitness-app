@@ -990,9 +990,9 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 </div>
               ) : (
                 <button
-                   type="button"
-                   onClick={handleShowTips}
-                   disabled={loading}
+                  type="button"
+                  onClick={handleShowTips}
+                  disabled={loading}
                   className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-[0.98]"
                   style={{
                     width: '100%',
@@ -1022,8 +1022,7 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                   margin: '10px 0 0',
                 }}
               >
-                טיפים אלה מנוסחים בעזרת AI — לא ייעוץ רפואי. התאימו את העומס
-                ליכולת שלכם.
+                טיפים אלה מנוסחים בעזרת AI — לא ייעוץ רפואי. התאימו את העומס ליכולת שלכם.
               </p>
             </div>
           </div>

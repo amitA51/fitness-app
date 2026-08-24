@@ -868,6 +868,19 @@ textarea {
   color: var(--fs-ink);
 }
 
+/* Instant press feedback on pointer-down (Apple §1) — ghosts respond too,
+   just more subtly than solid CTAs. */
+.cta-ghost:active {
+  color: var(--fs-ink);
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-ghost:active {
+    transform: none;
+  }
+}
+
 /* Choice row — used in start-workout sheets */
 .choice-row {
   display: flex;
