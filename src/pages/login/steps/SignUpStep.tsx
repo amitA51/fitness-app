@@ -323,7 +323,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
                 fontFamily: 'var(--font-mono)',
                 fontSize: '9px',
                 color: 'var(--fs-muted)',
-                letterSpacing: '0.28em',
+                letterSpacing: '-0.01em',
               }}
             >
               פרופיל
@@ -368,7 +368,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
                 fontFamily: 'var(--font-mono)',
                 fontSize: '9px',
                 color: 'var(--fs-muted)',
-                letterSpacing: '0.28em',
+                letterSpacing: '-0.01em',
               }}
             >
               אבטחה

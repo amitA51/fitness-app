@@ -73,7 +73,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.15em',
+              letterSpacing: '-0.01em',
               color: 'rgba(var(--text-on-navy-rgb),0.7)',
               marginTop: 8,
             }}
@@ -97,7 +97,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 11,
-                letterSpacing: '0.15em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-accent)',
               }}
             >
@@ -107,7 +107,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                letterSpacing: '0.15em',
+                letterSpacing: '-0.01em',
                 color: 'rgba(var(--text-on-navy-rgb),0.7)',
               }}
             >
@@ -189,7 +189,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 12,
-                  letterSpacing: '0.1em',
+                  letterSpacing: '-0.01em',
                   color: item.selected ? 'var(--fs-ink)' : 'var(--fs-muted)',
                   fontVariantNumeric: 'tabular-nums',
                   flexShrink: 0,

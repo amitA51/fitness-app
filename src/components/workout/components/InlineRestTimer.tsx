@@ -308,7 +308,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
-                  letterSpacing: '0.1em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-accent)',
                   marginTop: 2,
                   fontWeight: 700,
@@ -507,7 +507,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                 fontFamily: 'var(--font-display)',
                 fontWeight: 600,
                 fontSize: 15,
-                letterSpacing: '0.06em',
+                letterSpacing: '-0.01em',
                 cursor: 'pointer',
                 transition: prefersReduced ? 'none' : 'transform 120ms ease',
               }}

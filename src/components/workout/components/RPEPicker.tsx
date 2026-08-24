@@ -107,7 +107,7 @@ const RPEPicker = memo<RPEPickerProps>(
                 fontFamily: 'var(--font-mono)',
                 fontSize: 11,
                 color: 'var(--fs-muted)',
-                letterSpacing: '0.06em',
+                letterSpacing: '-0.01em',
               }}
             >
               בחר ערך

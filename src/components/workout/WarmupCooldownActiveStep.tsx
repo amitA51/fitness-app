@@ -76,7 +76,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
             fontFamily: 'var(--font-display)',
             fontWeight: 600,
             fontSize: 13,
-            letterSpacing: '0.06em',
+            letterSpacing: '-0.01em',
             color: 'rgba(var(--text-on-navy-rgb),0.5)',
           }}
         >
@@ -92,7 +92,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
             cursor: 'pointer',
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
-            letterSpacing: '0.15em',
+            letterSpacing: '-0.01em',
             padding: 0,
           }}
         >

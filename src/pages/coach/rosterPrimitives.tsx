@@ -155,7 +155,7 @@ export function StatusChip({
         fontFamily: 'var(--font-mono)',
         fontSize: 10,
         fontWeight: 700,
-        letterSpacing: '0.06em',
+        letterSpacing: '-0.01em',
         color,
       }}
     >
@@ -227,7 +227,7 @@ export function OverviewStat({
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: 9,
-          letterSpacing: '0.06em',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-muted)',
           marginTop: 6,
         }}

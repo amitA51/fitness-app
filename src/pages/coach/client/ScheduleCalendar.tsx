@@ -93,7 +93,7 @@ function StatusChip({ status }: { status: ScheduledWorkout['status'] }) {
       style={{
         fontFamily: 'var(--font-mono)',
         fontSize: 10,
-        letterSpacing: '0.06em',
+        letterSpacing: '-0.01em',
         color: meta.color,
         border: `1px solid ${meta.color}`,
         borderRadius: 999,

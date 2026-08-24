@@ -318,7 +318,7 @@ function PostCardComponent({ post, onLike, onReport, onBlock, onCommentOpen }: P
             fontSize: 11,
             color: 'var(--fs-accent)',
             fontWeight: 700,
-            letterSpacing: '0.06em',
+            letterSpacing: '-0.01em',
           }}
         >
           {post.topic}

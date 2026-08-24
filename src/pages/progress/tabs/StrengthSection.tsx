@@ -49,7 +49,7 @@ const PR_BOARD_COLLAPSED = 5;
 const kicker: React.CSSProperties = {
   fontFamily: 'var(--font-mono)',
   fontSize: 10,
-  letterSpacing: '0.15em',
+  letterSpacing: '-0.01em',
   color: 'var(--fs-muted)',
 };
 

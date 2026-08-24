@@ -189,7 +189,7 @@ export const WorkoutsTab = memo(function WorkoutsTab({
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 11,
-                  letterSpacing: '0.1em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
                   textAlign: 'center',
                   padding: '12px 0',

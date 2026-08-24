@@ -581,7 +581,7 @@ function DayCard({
                             fontFamily: 'var(--font-mono)',
                             fontSize: 9.5,
                             fontWeight: 700,
-                            letterSpacing: '0.1em',
+                            letterSpacing: '-0.01em',
                             color: 'var(--fs-accent-2)',
                           }}
                         >

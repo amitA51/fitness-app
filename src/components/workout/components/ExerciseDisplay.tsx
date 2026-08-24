@@ -797,7 +797,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                     fontSize: 10,
                     fontWeight: 700,
                     color: 'var(--fs-accent)',
-                    letterSpacing: '0.06em',
+                    letterSpacing: '-0.01em',
                   }}
                 >
                   אימון קודם:

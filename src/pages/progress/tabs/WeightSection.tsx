@@ -261,7 +261,7 @@ export const WeightSection = memo(function WeightSection({
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 11,
-                  letterSpacing: '0.1em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
                   textAlign: 'center',
                   margin: 0,

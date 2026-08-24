@@ -164,7 +164,7 @@ export const ChipSelector = memo<{
               color: 'var(--fs-heading)',
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
-              letterSpacing: '0.06em',
+              letterSpacing: '-0.01em',
               fontWeight: 700,
               cursor: 'pointer',
               transition: 'background-color 150ms ease',

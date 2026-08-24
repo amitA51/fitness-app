@@ -212,7 +212,7 @@ export default function CoachInvites() {
                     fontFamily: 'var(--font-mono)',
                     fontSize: 18,
                     fontWeight: 700,
-                    letterSpacing: '0.15em',
+                    letterSpacing: '-0.01em',
                     color: 'var(--fs-heading)',
                     textAlign: 'start',
                     background: 'none',

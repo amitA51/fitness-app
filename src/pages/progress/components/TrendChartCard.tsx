@@ -55,7 +55,7 @@ export const TrendChartCard = memo(function TrendChartCard({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.1em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
             }}
           >

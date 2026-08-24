@@ -84,7 +84,7 @@ export function NutritionTab({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
-              letterSpacing: '0.06em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
             }}
           >

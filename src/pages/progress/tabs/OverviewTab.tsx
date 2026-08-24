@@ -221,7 +221,7 @@ export const OverviewTab = memo(function OverviewTab({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.15em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
             }}
           >
@@ -275,7 +275,7 @@ export const OverviewTab = memo(function OverviewTab({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                letterSpacing: '0.15em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
               }}
             >

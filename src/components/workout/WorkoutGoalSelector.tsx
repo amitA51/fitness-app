@@ -115,7 +115,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                       style={{
                         fontFamily: 'var(--font-mono)',
                         color: 'var(--fs-muted)',
-                        letterSpacing: '0.05em',
+                        letterSpacing: '-0.01em',
                       }}
                     >
                       {goal.description}

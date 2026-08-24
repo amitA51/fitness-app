@@ -115,7 +115,7 @@ export const InsightCard = memo(function InsightCard({ insight }: InsightCardPro
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 9,
-              letterSpacing: '0.15em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
             }}
           >

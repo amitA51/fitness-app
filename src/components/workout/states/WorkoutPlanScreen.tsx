@@ -222,7 +222,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
-              letterSpacing: '0.05em',
+              letterSpacing: '-0.01em',
               color: 'rgba(255,255,255,0.55)',
             }}
           >
@@ -448,7 +448,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
             fontFamily: 'var(--font-display)',
             fontWeight: 600,
             fontSize: 13,
-            letterSpacing: '0.06em',
+            letterSpacing: '-0.01em',
           }}
         >
           <PlusIcon style={{ width: 16, height: 16 }} />

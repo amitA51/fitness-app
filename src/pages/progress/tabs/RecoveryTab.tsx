@@ -77,7 +77,7 @@ export const RecoveryTab = memo(function RecoveryTab({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.15em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
             }}
           >
@@ -202,7 +202,7 @@ export const RecoveryTab = memo(function RecoveryTab({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.15em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
             }}
           >
@@ -273,7 +273,7 @@ export const RecoveryTab = memo(function RecoveryTab({
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.15em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
             }}
           >

@@ -197,7 +197,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             fontFamily: 'var(--font-mono)',
             fontSize: '10px',
             color: 'var(--fs-muted)',
-            letterSpacing: '0.15em',
+            letterSpacing: '-0.01em',
           }}
         >
           או

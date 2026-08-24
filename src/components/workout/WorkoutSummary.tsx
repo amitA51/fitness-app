@@ -776,7 +776,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                         fontSize: 11,
                         fontWeight: 700,
                         color: 'var(--fs-accent)',
-                        letterSpacing: '0.06em',
+                        letterSpacing: '-0.01em',
                       }}
                     >
                       {
@@ -850,7 +850,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                         style={{
                           fontFamily: 'var(--font-mono)',
                           fontSize: 11,
-                          letterSpacing: '0.1em',
+                          letterSpacing: '-0.01em',
                           color: prExercises.has(ex.name ?? '')
                             ? 'var(--fs-primary)'
                             : 'var(--fs-muted)',
@@ -863,7 +863,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                           style={{
                             fontFamily: 'var(--font-mono)',
                             fontSize: 12,
-                            letterSpacing: '0.05em',
+                            letterSpacing: '-0.01em',
                             color: prExercises.has(ex.name ?? '')
                               ? 'var(--fs-primary)'
                               : 'var(--fs-ink)',

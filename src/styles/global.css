@@ -396,7 +396,6 @@ body {
     margin-top: 6px;
   }
 
-
   /* RTL keeps the ribbon at the top-right (inline-start) corner: the far
      (left) corner is owned by the hero's action button, and mirroring the
      ribbon there made the two overlap. */
@@ -443,79 +442,79 @@ body {
     color: var(--fs-muted);
   }
 
-/* ──── FRESH STEEL CARD ──── */
-.card-fs {
-  background: var(--fs-surface);
-  border: 1px solid var(--fs-surface-2);
-  border-radius: var(--radius-asymmetric, 22px 16px 22px 16px);
-  box-shadow: var(--shadow-card);
-  position: relative;
-  overflow: hidden;
-}
+  /* ──── FRESH STEEL CARD ──── */
+  .card-fs {
+    background: var(--fs-surface);
+    border: 1px solid var(--fs-surface-2);
+    border-radius: var(--radius-asymmetric, 22px 16px 22px 16px);
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+  }
 
-.card-fs::before {
-  content: "";
-  position: absolute;
-  inset: 9px auto 9px 0;
-  width: 4px;
-  border-radius: 999px;
-  background: var(--fs-accent);
-  opacity: 0;
-}
+  .card-fs::before {
+    content: "";
+    position: absolute;
+    inset: 9px auto 9px 0;
+    width: 4px;
+    border-radius: 999px;
+    background: var(--fs-accent);
+    opacity: 0;
+  }
 
-.card-fs.accent::before {
-  opacity: 1;
-}
+  .card-fs.accent::before {
+    opacity: 1;
+  }
 
-/* ──── FRESH STEEL PANEL ──── */
-.panel {
-  position: relative;
-  overflow: hidden;
-  padding: 14px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-asymmetric, 22px 16px 22px 16px);
-  background: linear-gradient(135deg, var(--fs-surface-shine), transparent 48%), var(--fs-surface);
-  box-shadow: var(--shadow-card);
-}
+  /* ──── FRESH STEEL PANEL ──── */
+  .panel {
+    position: relative;
+    overflow: hidden;
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-asymmetric, 22px 16px 22px 16px);
+    background: linear-gradient(135deg, var(--fs-surface-shine), transparent 48%), var(--fs-surface);
+    box-shadow: var(--shadow-card);
+  }
 
-.panel::before {
-  content: "";
-  position: absolute;
-  inset: 9px auto 9px 0;
-  width: 4px;
-  border-radius: 999px;
-  background: var(--fs-accent);
-  opacity: 0.85;
-}
+  .panel::before {
+    content: "";
+    position: absolute;
+    inset: 9px auto 9px 0;
+    width: 4px;
+    border-radius: 999px;
+    background: var(--fs-accent);
+    opacity: 0.85;
+  }
 
-.panel::after {
-  content: "";
-  position: absolute;
-  inset: 0 14px auto;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
-}
+  .panel::after {
+    content: "";
+    position: absolute;
+    inset: 0 14px auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+  }
 
-.panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
-}
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
 
-.panel-title {
-  margin: 0;
-  font-size: 17px;
-  line-height: 1.1;
-}
+  .panel-title {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.1;
+  }
 
-/* ============================================================================
+  /* ============================================================================
    UTILITY CLASSES
    ============================================================================ */
 
-@layer utilities {
-  /* Bounded replacement for Tailwind's `transition-all`.
+  @layer utilities {
+    /* Bounded replacement for Tailwind's `transition-all`.
      ------------------------------------------------------------------------
      `transition-all` animates EVERY animatable property, including layout
      values (width/height/inset) and properties a spring or layout animation
@@ -523,109 +522,109 @@ body {
      enumerates only the properties a press/hover/selection state should ever
      move, on the iOS-like ease. Pair with Tailwind `duration-*` to override the
      default. */
-  .transition-ui {
-    transition-property: transform, opacity, color, background-color, border-color, box-shadow,
-      filter;
-    transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
-    transition-duration: 180ms;
-  }
+    .transition-ui {
+      transition-property: transform, opacity, color, background-color, border-color, box-shadow,
+        filter;
+      transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+      transition-duration: 180ms;
+    }
 
-  .text-balance {
-    text-wrap: balance;
-  }
+    .text-balance {
+      text-wrap: balance;
+    }
 
-  .safe-area-top {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
+    .safe-area-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
 
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
+    .safe-area-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
 
-  .safe-area-left {
-    padding-left: env(safe-area-inset-left, 0px);
-  }
+    .safe-area-left {
+      padding-left: env(safe-area-inset-left, 0px);
+    }
 
-  .safe-area-right {
-    padding-right: env(safe-area-inset-right, 0px);
-  }
+    .safe-area-right {
+      padding-right: env(safe-area-inset-right, 0px);
+    }
 
-  /* Direction-aware: --safe-inline-start/end swap under html[dir='rtl']
+    /* Direction-aware: --safe-inline-start/end swap under html[dir='rtl']
      (tokens.css §13). Using the physical left/right insets here put the padding
      on the wrong edge in Hebrew. */
-  .safe-area-inline-start {
-    padding-inline-start: var(--safe-inline-start);
-  }
+    .safe-area-inline-start {
+      padding-inline-start: var(--safe-inline-start);
+    }
 
-  .safe-area-inline-end {
-    padding-inline-end: var(--safe-inline-end);
-  }
+    .safe-area-inline-end {
+      padding-inline-end: var(--safe-inline-end);
+    }
 
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
 
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
 
-  .focus-ring {
-    outline: none;
-  }
+    .focus-ring {
+      outline: none;
+    }
 
-  .focus-ring:focus-visible {
-    outline: 2px solid var(--fs-accent);
-    outline-offset: 2px;
-  }
+    .focus-ring:focus-visible {
+      outline: 2px solid var(--fs-accent);
+      outline-offset: 2px;
+    }
 
-  /* Navigation owns the single 20px material plane. General-purpose glass is
+    /* Navigation owns the single 20px material plane. General-purpose glass is
      capped at 12px so a card or sheet layer does not re-sample an already blurred
      backdrop, while retaining the translucent Apple-style separation. */
-  .glass {
-    background-color: color-mix(in srgb, var(--fs-surface) 90%, transparent);
-    backdrop-filter: blur(12px) saturate(1.8);
-    -webkit-backdrop-filter: blur(12px) saturate(1.8);
+    .glass {
+      background-color: color-mix(in srgb, var(--fs-surface) 90%, transparent);
+      backdrop-filter: blur(12px) saturate(1.8);
+      -webkit-backdrop-filter: blur(12px) saturate(1.8);
+    }
+
+    .text-gradient {
+      background: linear-gradient(135deg, var(--fs-primary), var(--fs-surface-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .fade-x {
+      mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+      -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+    }
+
+    .flex-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .line-clamp-1 {
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+    }
+
+    .line-clamp-2 {
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
   }
 
-  .text-gradient {
-    background: linear-gradient(135deg, var(--fs-primary), var(--fs-surface-2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .fade-x {
-    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
-    -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
-  }
-
-  .flex-center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .line-clamp-1 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-  }
-
-  .line-clamp-2 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
-}
-
-/* ============================================================================
+  /* ============================================================================
    ANIMATIONS (Keyframes)
    ============================================================================ */
 
-/*
+  /*
  * @keyframes shimmer and @keyframes spin removed here (consolidation F1).
  * They were duplicated in motion.css, which is imported after global.css in
  * main.tsx, so motion.css's definitions already won document-wide. The single
@@ -635,69 +634,69 @@ body {
  * the winning copy.)
  */
 
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
-  50% {
-    opacity: 0.5;
-  }
-}
 
-@keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(0.8);
+    }
   }
-  50% {
-    opacity: 0.4;
-    transform: scale(0.8);
-  }
-}
 
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
-}
 
-/* ============================================================================
+  /* ============================================================================
    RENDERING PERFORMANCE
    ============================================================================ */
 
-/* Offscreen content optimization for long lists/feeds */
-.card-outlined,
-.card-interactive,
-.card {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 200px;
-}
+  /* Offscreen content optimization for long lists/feeds */
+  .card-outlined,
+  .card-interactive,
+  .card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 200px;
+  }
 
-/* GPU acceleration for animated elements — only genuinely-looping motion keeps a
+  /* GPU acceleration for animated elements — only genuinely-looping motion keeps a
    standing compositor layer. One-shot entrance classes (.animate-stagger /
    -slide-up / -fade-scale / -scale-in) were dropped: a permanent will-change pins
    every revealed row to its own layer forever after its single animation ends,
    which is dead memory across long lists (§3/§11). */
-.animate-shimmer,
-.animate-spin,
-.animate-float {
-  will-change: transform, opacity;
-}
+  .animate-shimmer,
+  .animate-spin,
+  .animate-float {
+    will-change: transform, opacity;
+  }
 
-/* Containment for frequently re-rendered sections */
-[style*="contain"] {
-  contain: layout style;
-}
+  /* Containment for frequently re-rendered sections */
+  [style*="contain"] {
+    contain: layout style;
+  }
 
-/* Page transition
+  /* Page transition
    ----------------------------------------------------------------------------
    Route transitions are owned by the Framer `m.div` in AppRouter (slide + fade,
    220ms, ease [.16,1,.3,1]). This CSS rule used to run a SECOND, 200ms
@@ -706,304 +705,305 @@ body {
    impossible to tune and visibly not one surface.
    The keyframe is kept for opt-in use (`animation: pageEnter …`) by non-routed
    content; it is deliberately no longer applied to `main > *`. */
-@keyframes pageEnter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+  @keyframes pageEnter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  /* Scroll performance */
+  .scroll-container {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
   }
-}
 
-/* Scroll performance */
-.scroll-container {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-}
-
-/* ============================================================================
+  /* ============================================================================
    VIEW TRANSITIONS API
    ============================================================================ */
 
-/* View Transitions API styles - smooth page transitions */
-@supports (view-transition-name: none) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation-duration: var(--vt-duration, 250ms);
-    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  /* View Transitions API styles - smooth page transitions */
+  @supports (view-transition-name: none) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: var(--vt-duration, 250ms);
+      animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Fade + slide for page transitions */
+    ::view-transition-old(root) {
+      animation-name: vt-fade-out;
+    }
+
+    ::view-transition-new(root) {
+      animation-name: vt-fade-in;
+    }
+
+    @keyframes vt-fade-out {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(-6px);
+      }
+    }
+
+    @keyframes vt-fade-in {
+      from {
+        opacity: 0;
+        transform: translateX(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* RTL support */
+    [dir="rtl"] ::view-transition-old(root) {
+      animation-name: vt-fade-out-rtl;
+    }
+
+    [dir="rtl"] ::view-transition-new(root) {
+      animation-name: vt-fade-in-rtl;
+    }
+
+    @keyframes vt-fade-out-rtl {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(6px);
+      }
+    }
+
+    @keyframes vt-fade-in-rtl {
+      from {
+        opacity: 0;
+        transform: translateX(-6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Shared element transitions */
+    ::view-transition-old(card-hero),
+    ::view-transition-new(card-hero) {
+      animation-duration: 350ms;
+      animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    ::view-transition-old(workout-set),
+    ::view-transition-new(workout-set) {
+      animation-duration: 200ms;
+    }
+
+    ::view-transition-old(slide-up),
+    ::view-transition-new(slide-up) {
+      animation-duration: 300ms;
+    }
   }
 
-  /* Fade + slide for page transitions */
-  ::view-transition-old(root) {
-    animation-name: vt-fade-out;
+  /* Fallback for browsers without View Transitions API */
+  @supports not (view-transition-name: none) {
+    @media (prefers-reduced-motion: no-preference) {
+      main > * {
+        animation: page-fade-in 150ms ease-out;
+      }
+    }
   }
 
-  ::view-transition-new(root) {
-    animation-name: vt-fade-in;
-  }
-
-  @keyframes vt-fade-out {
+  @keyframes page-fade-in {
     from {
-      opacity: 1;
-      transform: translateX(0);
+      opacity: 0;
+      transform: translateY(4px);
     }
     to {
-      opacity: 0;
-      transform: translateX(-6px);
-    }
-  }
-
-  @keyframes vt-fade-in {
-    from {
-      opacity: 0;
-      transform: translateX(6px);
-    }
-    to {
       opacity: 1;
-      transform: translateX(0);
+      transform: translateY(0);
     }
   }
 
-  /* RTL support */
-  [dir="rtl"] ::view-transition-old(root) {
-    animation-name: vt-fade-out-rtl;
-  }
-
-  [dir="rtl"] ::view-transition-new(root) {
-    animation-name: vt-fade-in-rtl;
-  }
-
-  @keyframes vt-fade-out-rtl {
-    from {
-      opacity: 1;
-      transform: translateX(0);
-    }
-    to {
-      opacity: 0;
-      transform: translateX(6px);
-    }
-  }
-
-  @keyframes vt-fade-in-rtl {
-    from {
-      opacity: 0;
-      transform: translateX(-6px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  /* Shared element transitions */
-  ::view-transition-old(card-hero),
-  ::view-transition-new(card-hero) {
-    animation-duration: 350ms;
-    animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  ::view-transition-old(workout-set),
-  ::view-transition-new(workout-set) {
-    animation-duration: 200ms;
-  }
-
-  ::view-transition-old(slide-up),
-  ::view-transition-new(slide-up) {
-    animation-duration: 300ms;
-  }
-}
-
-/* Fallback for browsers without View Transitions API */
-@supports not (view-transition-name: none) {
-  @media (prefers-reduced-motion: no-preference) {
-    main > * {
-      animation: page-fade-in 150ms ease-out;
-    }
-  }
-}
-
-@keyframes page-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ============================================================================
+  /* ============================================================================
    SWIPE GESTURES
    ============================================================================ */
 
-/* Swipeable list item base */
-.swipeable-item {
-  position: relative;
-  overflow: hidden;
-  touch-action: pan-y;
-  user-select: none;
-}
+  /* Swipeable list item base */
+  .swipeable-item {
+    position: relative;
+    overflow: hidden;
+    touch-action: pan-y;
+    user-select: none;
+  }
 
-.swipeable-content {
-  position: relative;
-  z-index: 1;
-  background: inherit;
-  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
-}
+  .swipeable-content {
+    position: relative;
+    z-index: 1;
+    background: inherit;
+    transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-/* Swipe rows can be numerous. Promote only while a pointer is actively pressing
+  /* Swipe rows can be numerous. Promote only while a pointer is actively pressing
    or the row remains open, then release the layer instead of retaining one per row. */
-.swipeable-item:active .swipeable-content,
-.swipeable-item[data-swipe="left"] .swipeable-content,
-.swipeable-item[data-swipe="right"] .swipeable-content {
-  will-change: transform;
-}
+  .swipeable-item:active .swipeable-content,
+  .swipeable-item[data-swipe="left"] .swipeable-content,
+  .swipeable-item[data-swipe="right"] .swipeable-content {
+    will-change: transform;
+  }
 
-.swipeable-actions {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 200ms ease;
-}
+  .swipeable-actions {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
 
-.swipeable-actions-left {
-  inset-inline-start: 0;
-  padding-inline-start: 12px;
-  background: linear-gradient(to right, var(--color-success), transparent);
-}
+  .swipeable-actions-left {
+    inset-inline-start: 0;
+    padding-inline-start: 12px;
+    background: linear-gradient(to right, var(--color-success), transparent);
+  }
 
-.swipeable-actions-right {
-  inset-inline-end: 0;
-  padding-inline-end: 12px;
-  background: linear-gradient(to left, var(--color-danger), transparent);
-}
+  .swipeable-actions-right {
+    inset-inline-end: 0;
+    padding-inline-end: 12px;
+    background: linear-gradient(to left, var(--color-danger), transparent);
+  }
 
-.swipeable-item[data-swipe="left"] .swipeable-actions-left,
-.swipeable-item[data-swipe="right"] .swipeable-actions-right {
-  opacity: 1;
-}
+  .swipeable-item[data-swipe="left"] .swipeable-actions-left,
+  .swipeable-item[data-swipe="right"] .swipeable-actions-right {
+    opacity: 1;
+  }
 
-.swipeable-item[data-swipe="left"] .swipeable-content {
-  transform: translateX(80px);
-}
+  .swipeable-item[data-swipe="left"] .swipeable-content {
+    transform: translateX(80px);
+  }
 
-.swipeable-item[data-swipe="right"] .swipeable-content {
-  transform: translateX(-80px);
-}
+  .swipeable-item[data-swipe="right"] .swipeable-content {
+    transform: translateX(-80px);
+  }
 
-/* ============================================================================
+  /* ============================================================================
    MOBILE KEYBOARD HANDLING
    ============================================================================ */
 
-/* Prevent layout shift when keyboard opens */
-.app-shell {
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Focused form controls: raised z-index + keyboard focus ring. (Browser-native
-   scroll keeps the focused field above the soft keyboard — no JS hook needed.) */
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  position: relative;
-  z-index: 100;
-  /* Keyboard focus ring via box-shadow so it survives inline `outline: none`
-     (box-shadow is a separate property an inline outline reset can't override).
-     Gives every form control a visible focus indicator for keyboard users. */
-  box-shadow: 0 0 0 2px var(--fs-surface), 0 0 0 4px var(--fs-accent);
-}
-
-/* Visual viewport height for mobile */
-@supports (height: 100dvh) {
+  /* Prevent layout shift when keyboard opens */
   .app-shell {
     height: 100dvh;
+    display: flex;
+    flex-direction: column;
   }
-}
 
-/* ============================================================================
+  /* Focused form controls: raised z-index + keyboard focus ring. (Browser-native
+   scroll keeps the focused field above the soft keyboard — no JS hook needed.) */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    position: relative;
+    z-index: 100;
+    /* Keyboard focus ring via box-shadow so it survives inline `outline: none`
+     (box-shadow is a separate property an inline outline reset can't override).
+     Gives every form control a visible focus indicator for keyboard users. */
+    box-shadow: 0 0 0 2px var(--fs-surface), 0 0 0 4px var(--fs-accent);
+  }
+
+  /* Visual viewport height for mobile */
+  @supports (height: 100dvh) {
+    .app-shell {
+      height: 100dvh;
+    }
+  }
+
+  /* ============================================================================
    MOBILE TOUCH OPTIMIZATIONS
    ============================================================================ */
 
-/* Active states for touch */
-@media (hover: none) and (pointer: coarse) {
-  /* Larger touch targets on mobile */
-  .touch-target {
-    min-height: 48px;
-    min-width: 48px;
+  /* Active states for touch */
+  @media (hover: none) and (pointer: coarse) {
+    /* Larger touch targets on mobile */
+    .touch-target {
+      min-height: 48px;
+      min-width: 48px;
+    }
+
+    /* Prevent double-tap zoom */
+    .no-double-tap-zoom {
+      touch-action: manipulation;
+    }
+
+    /* Smooth scrolling */
+    * {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Disable text selection on interactive elements */
+    button,
+    [role="button"],
+    .btn,
+    .nav-item {
+      -webkit-user-select: none;
+      user-select: none;
+    }
   }
 
-  /* Prevent double-tap zoom */
-  .no-double-tap-zoom {
-    touch-action: manipulation;
-  }
-
-  /* Smooth scrolling */
-  * {
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Disable text selection on interactive elements */
-  button,
-  [role="button"],
-  .btn,
-  .nav-item {
-    -webkit-user-select: none;
-    user-select: none;
-  }
-}
-
-/* ============================================================================
+  /* ============================================================================
    MOBILE SCROLL PERFORMANCE
    ============================================================================ */
 
-/* Momentum scrolling for iOS */
-.scroll-momentum {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: auto;
-}
+  /* Momentum scrolling for iOS */
+  .scroll-momentum {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: auto;
+  }
 
-/* Snap scrolling for carousels */
-.scroll-snap {
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-}
+  /* Snap scrolling for carousels */
+  .scroll-snap {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
 
-.scroll-snap > * {
-  scroll-snap-align: start;
-}
+  .scroll-snap > * {
+    scroll-snap-align: start;
+  }
 
-/* ============================================================================
+  /* ============================================================================
    BOTTOM SHEET ENHANCEMENTS
    ============================================================================ */
 
-/* Improved drag handle for bottom sheets */
-.bottom-sheet-handle {
-  width: 40px;
-  height: 4px;
-  background: rgba(var(--ink-rgb), 0.2);
-  border-radius: 2px;
-  cursor: grab;
-  transition: background 150ms ease;
-}
+  /* Improved drag handle for bottom sheets */
+  .bottom-sheet-handle {
+    width: 40px;
+    height: 4px;
+    background: rgba(var(--ink-rgb), 0.2);
+    border-radius: 2px;
+    cursor: grab;
+    transition: background 150ms ease;
+  }
 
-.bottom-sheet-handle:active {
-  cursor: grabbing;
-  background: rgba(var(--ink-rgb), 0.4);
-}
+  .bottom-sheet-handle:active {
+    cursor: grabbing;
+    background: rgba(var(--ink-rgb), 0.4);
+  }
 
-/* Backdrop blur for modals */
-.backdrop-blur-modal {
-  backdrop-filter: blur(8px) saturate(1.2);
-  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  /* Backdrop blur for modals */
+  .backdrop-blur-modal {
+    backdrop-filter: blur(8px) saturate(1.2);
+    -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  }
 }

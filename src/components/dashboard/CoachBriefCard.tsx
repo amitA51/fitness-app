@@ -148,7 +148,7 @@ export const CoachBriefCard = memo(function CoachBriefCard({
         marginTop: 10,
         fontFamily: 'var(--font-mono)',
         fontSize: 9,
-        letterSpacing: '0.1em',
+        letterSpacing: '-0.01em',
         color: 'var(--fs-muted)',
       }}
     >

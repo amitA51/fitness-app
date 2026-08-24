@@ -153,7 +153,7 @@ export const AnnualPasswordInput = memo(function AnnualPasswordInput({
               fontFamily: 'var(--font-mono)',
               fontSize: '11px',
               color: 'var(--fs-muted)',
-              letterSpacing: '0.05em',
+              letterSpacing: '-0.01em',
             }}
           >
             {STRENGTH_HINTS[strengthScore]}
@@ -167,7 +167,7 @@ export const AnnualPasswordInput = memo(function AnnualPasswordInput({
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             color: 'var(--color-error)',
-            letterSpacing: '0.05em',
+            letterSpacing: '-0.01em',
           }}
         >
           <AlertCircle size={12} />

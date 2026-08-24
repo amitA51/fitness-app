@@ -169,7 +169,7 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
               fontFamily: 'var(--font-mono)',
               fontSize: 9,
               color: 'var(--fs-muted)',
-              letterSpacing: '0.05em',
+              letterSpacing: '-0.01em',
             }}
           >
             מול הקודם

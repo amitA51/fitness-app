@@ -78,7 +78,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
-              letterSpacing: '0.15em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-accent)',
             }}
           >
@@ -104,7 +104,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
-                  letterSpacing: '0.15em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
                   display: 'block',
                   marginBottom: 4,
@@ -192,7 +192,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
-                  letterSpacing: '0.15em',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
                   display: 'block',
                   marginBottom: 4,
@@ -290,7 +290,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                 fontFamily: 'var(--font-display)',
                 fontWeight: 600,
                 fontSize: 12,
-                letterSpacing: '0.06em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-heading)',
               }}
             >
@@ -309,7 +309,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
                 fontFamily: 'var(--font-display)',
                 fontWeight: 600,
                 fontSize: 12,
-                letterSpacing: '0.06em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-heading)',
               }}
             >
@@ -362,7 +362,7 @@ export const SetEditRow: React.FC<SetEditRowProps> = memo(
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
-                letterSpacing: '0.1em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
               }}
             >

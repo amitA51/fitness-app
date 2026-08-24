@@ -147,7 +147,7 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
                   fontSize: 8,
                   fontWeight: 400,
                   color: 'var(--fs-muted)',
-                  letterSpacing: '0.1em',
+                  letterSpacing: '-0.01em',
                   marginInlineEnd: 4,
                 }}
               >

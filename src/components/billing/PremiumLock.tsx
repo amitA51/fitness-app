@@ -101,7 +101,7 @@ function LockedOverlay({ compact }: LockedOverlayProps) {
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             fontWeight: 700,
-            letterSpacing: '0.1em',
+            letterSpacing: '-0.01em',
             color: 'var(--fs-accent)',
           }}
         >

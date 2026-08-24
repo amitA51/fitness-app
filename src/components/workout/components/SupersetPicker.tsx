@@ -244,7 +244,7 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
                         fontFamily: 'var(--font-mono)',
                         fontSize: 9,
                         fontWeight: 700,
-                        letterSpacing: '0.06em',
+                        letterSpacing: '-0.01em',
                         color: 'var(--fs-muted)',
                       }}
                     >
@@ -274,7 +274,7 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
               fontFamily: 'var(--font-display)',
               fontWeight: 600,
               fontSize: 15,
-              letterSpacing: '0.06em',
+              letterSpacing: '-0.01em',
               minHeight: 52,
               cursor: canConfirm ? 'pointer' : 'not-allowed',
             }}

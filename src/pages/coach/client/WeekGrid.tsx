@@ -144,7 +144,7 @@ export function WeekGrid({ days, loading, error, onRetry }: WeekGridProps) {
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
-                  letterSpacing: '0.06em',
+                  letterSpacing: '-0.01em',
                   fontWeight: isToday ? 700 : 400,
                   color: isToday ? 'var(--fs-heading)' : 'var(--fs-muted)',
                   lineHeight: 1.4,

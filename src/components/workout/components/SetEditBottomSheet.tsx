@@ -113,7 +113,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: 10,
-                        letterSpacing: '0.15em',
+                        letterSpacing: '-0.01em',
                         color: 'var(--fs-heading)',
                         fontWeight: 600,
                         borderBottom: '1px solid var(--color-border)',
@@ -132,7 +132,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                             display: 'block',
                             fontFamily: 'var(--font-mono)',
                             fontSize: 9,
-                            letterSpacing: '0.15em',
+                            letterSpacing: '-0.01em',
                             color: 'var(--fs-heading)',
                             marginBottom: 6,
                             fontWeight: 600,
@@ -193,7 +193,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                             display: 'block',
                             fontFamily: 'var(--font-mono)',
                             fontSize: 9,
-                            letterSpacing: '0.15em',
+                            letterSpacing: '-0.01em',
                             color: 'var(--fs-heading)',
                             marginBottom: 6,
                             fontWeight: 600,
@@ -262,7 +262,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                           fontFamily: 'var(--font-display)',
                           fontWeight: 600,
                           fontSize: 13,
-                          letterSpacing: '0.06em',
+                          letterSpacing: '-0.01em',
                           color: 'var(--fs-heading)',
                         }}
                       >
@@ -282,7 +282,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                           fontFamily: 'var(--font-display)',
                           fontWeight: 600,
                           fontSize: 13,
-                          letterSpacing: '0.06em',
+                          letterSpacing: '-0.01em',
                           color: 'var(--fs-accent)',
                         }}
                       >
@@ -329,7 +329,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                           style={{
                             fontFamily: 'var(--font-mono)',
                             fontSize: 9,
-                            letterSpacing: '0.1em',
+                            letterSpacing: '-0.01em',
                             color: 'var(--fs-muted)',
                           }}
                         >

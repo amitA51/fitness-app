@@ -98,7 +98,7 @@ export const AnnualInput = memo(function AnnualInput({
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             color: 'var(--color-error)',
-            letterSpacing: '0.05em',
+            letterSpacing: '-0.01em',
           }}
         >
           <AlertCircle size={12} />

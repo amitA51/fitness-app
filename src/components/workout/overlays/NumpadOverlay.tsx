@@ -628,7 +628,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
-                letterSpacing: '0.28em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-accent)',
                 fontWeight: 700,
               }}
@@ -650,7 +650,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
                   minHeight: 44,
                   fontFamily: 'var(--font-mono)',
                   fontSize: '11px',
-                  letterSpacing: '0.1em',
+                  letterSpacing: '-0.01em',
                   fontWeight: 700,
                   color: 'var(--fs-warn)',
                   background: 'transparent',

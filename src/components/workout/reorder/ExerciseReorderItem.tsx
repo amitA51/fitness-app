@@ -209,7 +209,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
-                  letterSpacing: '0.1em',
+                  letterSpacing: '-0.01em',
                   color: isComplete ? 'var(--color-success)' : 'var(--fs-muted)',
                 }}
               >
@@ -230,7 +230,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
-                      letterSpacing: '0.1em',
+                      letterSpacing: '-0.01em',
                       color: 'var(--fs-muted)',
                     }}
                   >
@@ -371,7 +371,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
                       paddingBottom: 12,
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
-                      letterSpacing: '0.1em',
+                      letterSpacing: '-0.01em',
                       color: 'var(--fs-muted)',
                     }}
                   >
@@ -400,7 +400,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
-                letterSpacing: '0.15em',
+                letterSpacing: '-0.01em',
                 color: 'var(--fs-warn)',
                 background: 'rgba(196,43,43,0.12)',
                 padding: '4px 12px',

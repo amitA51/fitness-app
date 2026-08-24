@@ -281,7 +281,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: '10px',
-                    letterSpacing: '0.15em',
+                    letterSpacing: '-0.01em',
                     color: 'var(--fs-muted)',
                   }}
                 >

@@ -304,7 +304,7 @@ export function PhotoTimeline({ clientId }: { clientId: string }) {
               border: '1px solid var(--fs-surface-2)',
               fontFamily: 'var(--font-mono)',
               fontSize: 12,
-              letterSpacing: '0.06em',
+              letterSpacing: '-0.01em',
               cursor: 'pointer',
             }}
           >
