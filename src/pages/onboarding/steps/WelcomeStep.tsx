@@ -112,10 +112,13 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
         </m.div>
       </div>
 
+      {/* CTA enters with the cascade (0.55s) — not 0.75s — so the primary
+          action is interactive as early as the content around it. The QA
+          capture at ~700ms missed it entirely; a late CTA reads as a dead end. */}
       <m.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.75 }}
+        transition={{ delay: 0.45 }}
         className="px-6 pb-8 pt-4"
       >
         <button
