@@ -158,6 +158,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                             value={tempWeight}
                             onChange={(e) => setTempWeight(Number(e.target.value))}
                             onClick={(e) => e.stopPropagation()}
+                            aria-label="משקל בקילוגרמים"
                             style={{
                               flex: 1,
                               height: 44,
@@ -218,6 +219,7 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                             value={tempReps}
                             onChange={(e) => setTempReps(Number(e.target.value))}
                             onClick={(e) => e.stopPropagation()}
+                            aria-label="מספר חזרות"
                             style={{
                               flex: 1,
                               height: 44,
