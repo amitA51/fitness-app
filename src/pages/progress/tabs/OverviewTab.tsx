@@ -167,7 +167,11 @@ export const OverviewTab = memo(function OverviewTab({
                         width: 28,
                         height: 28,
                         borderRadius: 999,
-                        background: 'var(--fs-surface-2)',
+                        /* Accent-tinted ring (matches the FirstRunHero steps):
+                           the flat surface fill vanished against the dark card. */
+                        background: 'color-mix(in srgb, var(--fs-accent) 12%, transparent)',
+                        border: '1px solid color-mix(in srgb, var(--fs-accent) 45%, transparent)',
+                        color: 'var(--fs-accent-2)',
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
