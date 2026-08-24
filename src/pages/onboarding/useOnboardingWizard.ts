@@ -94,8 +94,6 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
         return data.equipment === undefined || data.equipment === ''
           ? 'בחרו את הציוד הזמין כדי להמשיך'
           : null;
-      case 'preferences':
-        return data.preferredTime === '' ? 'בחרו שעת אימון מועדפת כדי להמשיך' : null;
       default:
         return null;
     }

@@ -25,7 +25,6 @@ import { ProgressDots, StepHeader } from './onboarding/components/ProgressDots';
 import { CompleteStep } from './onboarding/steps/CompleteStep';
 import { ExperienceStep } from './onboarding/steps/ExperienceStep';
 import { GoalsStep } from './onboarding/steps/GoalsStep';
-import { PreferencesStep } from './onboarding/steps/PreferencesStep';
 import { ProfileStep } from './onboarding/steps/ProfileStep';
 import { RoleStep } from './onboarding/steps/RoleStep';
 import { WelcomeStep } from './onboarding/steps/WelcomeStep';
@@ -91,8 +90,6 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
         return <ExperienceStep data={data} onChange={updateData} direction={direction} />;
       case 'equipment':
         return <EquipmentStep data={data} onChange={updateData} direction={direction} />;
-      case 'preferences':
-        return <PreferencesStep data={data} onChange={updateData} direction={direction} />;
       case 'complete':
         return <CompleteStep data={data} onFinish={handleFinish} />;
       default:

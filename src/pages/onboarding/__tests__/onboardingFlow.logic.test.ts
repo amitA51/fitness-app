@@ -31,9 +31,9 @@ describe('stepsForRole — equipment step', () => {
   it('includes the equipment step in the full trainee flow', () => {
     const ids = stepsForRole('trainee').map((s) => s.id);
     expect(ids).toContain('equipment');
-    // ordered between experience and preferences
+    // ordered after experience, last interactive step before complete
     expect(ids.indexOf('equipment')).toBeGreaterThan(ids.indexOf('experience'));
-    expect(ids.indexOf('equipment')).toBeLessThan(ids.indexOf('preferences'));
+    expect(ids[ids.length - 2]).toBe('equipment');
   });
 
   it('omits equipment (a personal step) from the coach flow', () => {
