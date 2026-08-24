@@ -609,10 +609,11 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             {/* Subtitle */}
             <p
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
+                fontFamily: 'var(--font-body)',
+                fontSize: 12,
+                fontWeight: 500,
                 letterSpacing: '-0.01em',
-                color: 'rgba(255,255,255,0.4)',
+                color: 'rgba(255,255,255,0.8)',
                 marginTop: 8,
                 fontVariantNumeric: 'tabular-nums',
               }}
