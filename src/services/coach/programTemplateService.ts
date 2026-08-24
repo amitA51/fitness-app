@@ -17,14 +17,18 @@ import { toProgramTemplate } from './mappers';
 
 /**
  * Return all program templates owned by the current coach, newest first.
- * Returns [] when Supabase is unreachable (CoachOfflineError propagates as []).
+ * Throws when Supabase is unreachable or the read fails, so CoachPrograms
+ * renders its error state with a retry — never a misleading empty library.
  */
 export const listProgramTemplates = async (): Promise<CoachProgramTemplate[]> => {
   let db: ReturnType<typeof requireClient>;
   try {
     db = requireClient();
-  } catch {
-    return [];
+  } catch (err) {
+    // Re-throw offline as a real error: a failed read must reach the UI's
+    // error state, not render as "no programs yet" (a coach reads an empty
+    // library as "my work vanished").
+    throw err instanceof Error ? err : new Error(String(err));
   }
 
   const { data, error } = await db
@@ -34,7 +38,7 @@ export const listProgramTemplates = async (): Promise<CoachProgramTemplate[]> =>
 
   if (error) {
     logger.db.error('listProgramTemplates failed', error);
-    return [];
+    throw new Error(error.message);
   }
 
   return (data ?? []).map(toProgramTemplate);

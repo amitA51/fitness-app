@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { showToast } from '../../../components/ui/GlobalToast';
 import { onTemplatesChanged } from '../../../services/dataEvents';
+import { initializeBuiltInWorkoutTemplates } from '../../../services/dataService';
 import { removeDuplicateExercises } from '../../../services/exerciseDb';
-import { isFreeTemplateLimitError } from '../../../services/templateDb';
+import { getWorkoutTemplateCount, isFreeTemplateLimitError } from '../../../services/templateDb';
 import {
   createWorkoutTemplate,
   deleteWorkoutTemplate,
@@ -14,9 +15,8 @@ import type { WorkoutTemplate, WorkoutTemplateExercise } from '../../../types';
 import { logger } from '../../../utils/logger';
 import type { TemplateExerciseInput } from '../components/CreateTemplateModal';
 
-/** Shown when a free user hits FREE_TEMPLATE_LIMIT; states the limit and the way out. */
-const FREE_TEMPLATE_LIMIT_MESSAGE =
-  'במסלול החינמי אפשר לשמור עד 3 תבניות. מחקו תבנית קיימת או שדרגו לפרו לתבניות ללא הגבלה.';
+/** Legacy: the free-quota trigger was dropped (2026-08). Kept only so a stale server rejection still maps to an honest message. */
+const FREE_TEMPLATE_LIMIT_MESSAGE = 'לא הצלחנו לשמור את התבנית. בדקו את החיבור ונסו שוב.';
 
 export function useTemplates() {
   const navigate = useNavigate();
@@ -33,6 +33,15 @@ export function useTemplates() {
     try {
       setIsLoading(true);
       setError(null);
+      // First-run seeding: a brand-new library gets the built-in Hebrew
+      // starter templates, so the home screen's recommended path ("בחרו תבנית
+      // מוכנה") always lands on real content instead of a dead end. Safe since
+      // the free-quota trigger was dropped (20260824000000) — the loop can no
+      // longer fail halfway against a 3-template cap. Idempotent: it checks
+      // for existing built-ins first and is skipped once any template exists.
+      if ((await getWorkoutTemplateCount()) === 0) {
+        await initializeBuiltInWorkoutTemplates();
+      }
       const data = await getWorkoutTemplates();
       setTemplates(data);
     } catch {
@@ -153,9 +162,11 @@ export function useTemplates() {
         timesUsed: 0,
         isFavorite: false,
       }).catch((err) => {
+        // Legacy quota rejections (trigger dropped) still map to an honest
+        // message instead of the old paywall redirect.
         if (isFreeTemplateLimitError(err)) {
           showToast(FREE_TEMPLATE_LIMIT_MESSAGE, 'error');
-          navigate('/paywall');
+          setShowCreateModal(false);
           return null;
         }
         throw err;

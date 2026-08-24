@@ -24,13 +24,17 @@ const DEBOUNCE_MS = 600;
  * Coach view: autosaving businessName + bio fields, navigation to /coach.
  */
 export function CoachSection() {
-  const { isCoach, coachProfile, loading, enable } = useCoach();
+  const { isCoach, coachProfile, loading, enable, disable } = useCoach();
   const navigate = useNavigate();
   const { saved, flash } = useSavedFlash();
 
   // Become-a-coach flow state
   const [enabling, setEnabling] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Leave-coach-mode flow state
+  const [leaving, setLeaving] = useState(false);
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
 
   // Local field state (controlled inputs, debounced save)
   const [businessName, setBusinessName] = useState(coachProfile?.businessName ?? '');
@@ -91,6 +95,27 @@ export function CoachSection() {
       showToast('המעבר לחשבון מאמן נכשל', 'error');
     } finally {
       setEnabling(false);
+    }
+  };
+
+  // ── Leave handler ───────────────────────────────────────────────────────────
+
+  const handleLeave = async () => {
+    setLeaveConfirmOpen(false);
+    setLeaving(true);
+    try {
+      await disable();
+      showToast('חזרת לחשבון מתאמן', 'success');
+      navigate('/');
+    } catch (err) {
+      // The server refuses while active/pending client links exist.
+      const message =
+        err instanceof Error && err.message.includes('coach_has_active_clients')
+          ? 'יש לכם מתאמנים פעילים. סיימו את הקשר איתם במסך המתאמנים ואז נסו שוב.'
+          : 'היציאה מחשבון מאמן נכשלה. נסו שוב.';
+      showToast(message, 'error');
+    } finally {
+      setLeaving(false);
     }
   };
 
@@ -284,7 +309,7 @@ export function CoachSection() {
             </IconBox>
           }
           label="ניהול מתאמנים"
-          divider={false}
+          divider
         >
           <button
             type="button"
@@ -303,7 +328,42 @@ export function CoachSection() {
             <NavChevron size={18} aria-hidden="true" />
           </button>
         </SettingsRow>
+
+        {/* Leave coach mode — the reversible exit (server refuses with active clients) */}
+        <div className="flex flex-col gap-3 ps-4 pe-4 py-4">
+          <Button
+            variant="secondary"
+            shape="sharp"
+            isLoading={leaving}
+            onClick={() => setLeaveConfirmOpen(true)}
+            aria-label="חזרה לחשבון מתאמן"
+            fullWidth
+          >
+            חזרה לחשבון מתאמן
+          </Button>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '12px',
+              color: 'var(--fs-muted)',
+              margin: 0,
+              lineHeight: 1.5,
+            }}
+          >
+            החשבון יחזור למצב מתאמן. אפשר לחזור למצב מאמן בכל עת.
+          </p>
+        </div>
       </SettingsCard>
+      <ConfirmDialog
+        isOpen={leaveConfirmOpen}
+        variant="warning"
+        title="לחזור לחשבון מתאמן?"
+        description="מסך הבית והניווט יחזרו לחווית המתאמן. אי אפשר לצאת ממצב מאמן כשיש מתאמנים פעילים — סיימו אותם קודם במסך המתאמנים."
+        confirmLabel="חזרה למתאמן"
+        cancelLabel="ביטול"
+        onConfirm={() => void handleLeave()}
+        onCancel={() => setLeaveConfirmOpen(false)}
+      />
     </div>
   );
 }

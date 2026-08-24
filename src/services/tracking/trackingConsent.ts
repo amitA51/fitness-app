@@ -90,6 +90,12 @@ export function setTrackingConsent(choice: { analytics: boolean; marketing: bool
 }
 
 export function acceptAllTracking(): void {
+  // A Global Privacy Control signal is a standing opt-out (the policy already
+  // advertises honouring it) — it overrides an "accept all" tap.
+  if (isGpcEnabled()) {
+    rejectNonEssentialTracking();
+    return;
+  }
   setTrackingConsent({ analytics: true, marketing: true });
 }
 

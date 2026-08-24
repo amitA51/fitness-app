@@ -65,7 +65,7 @@ const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({ completedSessio
   const [templateSaved, setTemplateSaved] = useState(false);
   const savingRef = useRef(false);
 
-  const handleSaveAsTemplate = useCallback(async () => {
+  const handleSaveAsTemplate = useCallback(async (): Promise<void> => {
     if (savingRef.current || templateSaved) return;
     savingRef.current = true;
     try {
@@ -74,7 +74,7 @@ const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({ completedSessio
       showToast('התבנית נשמרה', 'success');
     } catch (err) {
       logger.workout?.error?.('Failed to save workout as template', err);
-      showToast('שמירת התבנית נכשלה', { variant: 'error' });
+      showToast('שמירת התבנית נכשלה. בדקו את החיבור ונסו שוב.', { variant: 'error' });
     } finally {
       savingRef.current = false;
     }
@@ -87,7 +87,9 @@ const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({ completedSessio
   // we must NOT exit here (that would double-fire). Mirrors the onRepeatWorkout
   // handler in the useWorkoutFinish overlay path, minus the redundant onExit.
   const handleRepeatWorkout = useCallback(() => {
-    createWorkoutTemplate(buildTemplatePayload(completedSession, true)).catch(() => {});
+    createWorkoutTemplate(buildTemplatePayload(completedSession, true)).catch((err) => {
+      logger.workout?.warn?.('Repeat-workout template seed failed; session continues', err);
+    });
   }, [completedSession]);
 
   return (

@@ -1,5 +1,10 @@
 import { logger } from '../utils/logger';
-import { clearMutationQueue, clearMutationQueueForOwner } from './offlineQueue';
+import {
+  GUEST_OWNER,
+  adoptGuestDataForUser,
+  clearMutationQueue,
+  clearMutationQueueForOwner,
+} from './offlineQueue';
 import {
   LAST_SIGNED_IN_USER_ID_KEY,
   type UserScopedDataCleanupOptions,
@@ -15,6 +20,12 @@ export interface AuthSessionTransition {
 export type AuthSessionTransitionOptions = UserScopedDataCleanupOptions & {
   /** Sign-out and expiry must wipe local state even when the old marker is unavailable. */
   forceCleanup?: boolean;
+  /**
+   * Guest → FIRST account. The device belongs to one person who started as a
+   * guest; adopting their data is the promise the signup screen makes ("כדי
+   * לשמור את הנתונים שלכם"). Never set this on a real account switch.
+   */
+  claimGuestData?: boolean;
 };
 
 const readLastSignedInUserId = (): string | null => {
@@ -51,6 +62,11 @@ let transitionTail: Promise<void> = Promise.resolve();
  *
  *   • `nextUserId` is a DIFFERENT non-null id  → WIPE. This is the security case.
  *   • `nextUserId` is the SAME id              → no wipe (unchanged behaviour).
+ *   • `claimGuestData` + previous owner is the GUEST marker → NO WIPE. This is
+ *     a guest adopting their first account (the signup screen's "לשמור את
+ *     הנתונים שלכם" promise): queue entries are re-stamped and data is pushed
+ *     up instead of destroyed. Guarded on the previous owner actually being
+ *     the guest marker, so it can never fire for user A → user B switches.
  *   • `nextUserId` is null, no forceCleanup    → NO WIPE, and the owner marker is
  *     DELIBERATELY LEFT IN PLACE. This is a lost/expired credential, not a change
  *     of person. Keeping the marker means the same user logging back in matches
@@ -70,12 +86,30 @@ export const transitionAuthSession = (
   nextUserId: string | null,
   options: AuthSessionTransitionOptions = {}
 ): Promise<AuthSessionTransition> => {
-  const { forceCleanup = false, ...cleanupOptions } = options;
+  const { forceCleanup = false, claimGuestData = false, ...cleanupOptions } = options;
   const execute = async (): Promise<AuthSessionTransition> => {
     const previousUserId = readLastSignedInUserId();
 
     // Same identity: nothing to protect against.
     if (!forceCleanup && previousUserId === nextUserId) {
+      return { previousUserId, nextUserId, localDataCleared: false };
+    }
+
+    // Guest → first account. `claimGuestData` is only ever set when the guest
+    // themselves signed up, so this is an adoption, not an account switch: the
+    // wipe would destroy exactly the data signup promised to save. The guard
+    // is the OWNER MARKER, not the flag: a marker holding a real user id means
+    // an actual switch and must still wipe. Re-stamp guest-owned queue entries
+    // (they can never replay under __guest__) and push everything up BEFORE
+    // the incoming account's cloud pull merges in.
+    if (
+      !forceCleanup &&
+      claimGuestData &&
+      (previousUserId === null || previousUserId === GUEST_OWNER)
+    ) {
+      logger.auth.info('Adopting guest local data into the first signed-in account');
+      await adoptGuestDataForUser(nextUserId);
+      persistLastSignedInUserId(nextUserId);
       return { previousUserId, nextUserId, localDataCleared: false };
     }
 

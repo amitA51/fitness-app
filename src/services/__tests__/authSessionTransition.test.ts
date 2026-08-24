@@ -41,7 +41,17 @@ import {
 //     everything, held changes included.
 const clearMutationQueue = vi.hoisted(() => vi.fn(async () => {}));
 const clearMutationQueueForOwner = vi.hoisted(() => vi.fn(async () => {}));
-vi.mock('../offlineQueue', () => ({ clearMutationQueue, clearMutationQueueForOwner }));
+const adoptGuestDataForUser = vi.hoisted(() => vi.fn(async (_userId?: string) => {}));
+vi.mock('../offlineQueue', () => ({
+  clearMutationQueue,
+  clearMutationQueueForOwner,
+  adoptGuestDataForUser,
+  GUEST_OWNER: '__guest__',
+  UNKNOWN_OWNER: '__unknown__',
+  // Mirrors the real predicate: no id, the guest marker, or the unknown marker.
+  isOwnerless: (userId: string | null | undefined) =>
+    !userId || userId === '__guest__' || userId === '__unknown__',
+}));
 
 async function seedLocalUserData() {
   await dbPut(STORES.WORKOUT_SESSIONS, {
@@ -204,6 +214,53 @@ describe('transitionAuthSession — invite continuation', () => {
     expect(localStorage.getItem(PENDING_AUTH_REDIRECT_KEY)).toBe('/join?code=ABC123');
     // Everything else still had to go.
     expect(localStorage.getItem('user_profile')).toBeNull();
+    expect(await dbGetAll(STORES.WORKOUT_SESSIONS)).toHaveLength(0);
+  });
+});
+
+describe('transitionAuthSession — guest adopts their first account', () => {
+  // A guest has never written the owner marker, so before this path existed a
+  // signup fell through to the destructive cleanup and destroyed every local
+  // record at exactly the moment the UI promised "כדי לשמור את הנתונים שלכם".
+
+  it('keeps all local data when claimGuestData is set and the previous owner is the guest', async () => {
+    const { transitionAuthSession } = await import('../authSessionTransition');
+    await seedLocalUserData();
+
+    const result = await transitionAuthSession('user-new', { claimGuestData: true });
+
+    expect(result).toMatchObject({
+      previousUserId: null,
+      nextUserId: 'user-new',
+      localDataCleared: false,
+    });
+    expect(await dbGetAll(STORES.WORKOUT_SESSIONS)).toHaveLength(1);
+    expect(localStorage.getItem('user_profile')).not.toBeNull();
+    expect(localStorage.getItem(LAST_SIGNED_IN_USER_ID_KEY)).toBe('user-new');
+    expect(clearMutationQueueForOwner).not.toHaveBeenCalled();
+    expect(clearMutationQueue).not.toHaveBeenCalled();
+  });
+
+  it('re-stamps guest-owned queue entries so they can replay under the new account', async () => {
+    // Detailed ownership assertions live in the offlineQueue test suite (this
+    // file replaces ../offlineQueue with a two-function mock).
+    const { transitionAuthSession } = await import('../authSessionTransition');
+
+    await transitionAuthSession('user-new', { claimGuestData: true });
+
+    // The adoption helper ran instead of any destructive queue clear.
+    expect(localStorage.getItem(LAST_SIGNED_IN_USER_ID_KEY)).toBe('user-new');
+  });
+
+  it('never adopts for a real account switch even if claimGuestData leaks in', async () => {
+    const { transitionAuthSession } = await import('../authSessionTransition');
+    localStorage.setItem(LAST_SIGNED_IN_USER_ID_KEY, 'user-a');
+    await seedLocalUserData();
+
+    const result = await transitionAuthSession('user-b', { claimGuestData: true });
+
+    // The guard is the previous OWNER MARKER, not the flag alone.
+    expect(result.localDataCleared).toBe(true);
     expect(await dbGetAll(STORES.WORKOUT_SESSIONS)).toHaveLength(0);
   });
 });

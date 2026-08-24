@@ -1002,6 +1002,49 @@ export async function clearMutationQueueForOwner(userId: string | null): Promise
   logger.sync.info('Cleared queued mutations for the outgoing account', { userId });
 }
 
+/**
+ * Guest → first account. Re-stamps every queued/held entry owned by
+ * `GUEST_OWNER` to the real account id, then pushes all local data up so the
+ * cloud holds the guest's workouts BEFORE the incoming account's pull merges.
+ *
+ * This is what makes signup honest: the signup screen says "כדי לשמור את
+ * הנתונים שלכם", so a first sign-in must adopt local data, never wipe it.
+ * Queue entries stamped `__guest__` can never replay (replay quarantines
+ * ownerless owners), so re-stamping is also required for them to upload at all.
+ *
+ * Failures are logged per step but never thrown past a best-effort boundary:
+ * an unreachable network still leaves local data intact under the new owner
+ * marker, and the next successful sync drains it.
+ */
+export async function adoptGuestDataForUser(newUserId: string | null): Promise<void> {
+  if (!newUserId) return;
+
+  const db = await openQueueDB();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction([STORE_NAME, DEAD_LETTER_STORE], 'readwrite');
+    for (const storeName of [STORE_NAME, DEAD_LETTER_STORE]) {
+      const req = tx.objectStore(storeName).getAll();
+      req.onsuccess = () => {
+        for (const row of (req.result ?? []) as QueuedMutation[]) {
+          if (row.userId === GUEST_OWNER)
+            tx.objectStore(storeName).put({ ...row, userId: newUserId });
+        }
+      };
+    }
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+
+  try {
+    const { syncAllData } = await import('./supabaseSyncOrchestrator');
+    const result = await syncAllData();
+    logger.sync.info('Guest data adoption push finished', { result });
+  } catch (err) {
+    logger.sync.warn('Guest data adoption push failed; data stays queued locally', err);
+  }
+}
+
 // ── Dead-letter recovery API ────────────────────────────────────────────────
 //
 // Mutations that stop being retried used to be deleted, which meant a failed

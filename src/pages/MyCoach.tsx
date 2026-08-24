@@ -126,10 +126,12 @@ export default function MyCoach() {
     error: assignmentsError,
     reload: reloadAssignments,
   } = useAsyncData(() => listMyAssignments(), []);
-  const { data: groups, loading: groupsLoading } = useAsyncData<GroupThreadSummary[]>(
-    () => listGroupThreads('member'),
-    []
-  );
+  const {
+    data: groups,
+    loading: groupsLoading,
+    error: groupsError,
+    reload: reloadGroups,
+  } = useAsyncData<GroupThreadSummary[]>(() => listGroupThreads('member'), []);
   const [code, setCode] = useState('');
   const { busy, accept } = useAcceptInvite();
   const [startingId, setStartingId] = useState<string | null>(null);
@@ -314,6 +316,10 @@ export default function MyCoach() {
       {groupsLoading && coaches.length > 0 ? (
         <Section title="הקבוצות שלי">
           <ListSkeleton rows={2} />
+        </Section>
+      ) : groupsError && coaches.length > 0 ? (
+        <Section title="הקבוצות שלי">
+          <SectionError onRetry={reloadGroups} />
         </Section>
       ) : groups.length > 0 ? (
         <Section title="הקבוצות שלי">

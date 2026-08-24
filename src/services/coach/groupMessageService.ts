@@ -216,7 +216,7 @@ export const listGroupThreads = async (
       .eq('client_id', user.id);
     if (memberErr) {
       logger.db.error('listGroupThreads (member) memberships fetch failed', memberErr);
-      return [];
+      throw new Error(memberErr.message);
     }
 
     const rows = (memberRows ?? []) as { group_id: string; last_read_at: string | null }[];
@@ -229,7 +229,7 @@ export const listGroupThreads = async (
       .in('id', ids);
     if (groupErr) {
       logger.db.error('listGroupThreads (member) group names fetch failed', groupErr);
-      return [];
+      throw new Error(groupErr.message);
     }
 
     const nameMap = new Map<string, string>();

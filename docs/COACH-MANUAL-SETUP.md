@@ -64,7 +64,9 @@ Dashboard → **Authentication → Providers/Policies** → enable the HaveIBeen
 Ensure `.env.local` has `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (and `VITE_VAPID_PUBLIC_KEY` if using push).
 
 ### 8. Granting coach seats (until billing/Stripe is built)
-Coaches get `seat_limit = 3` by default when they enable coach mode. To grant more by hand:
+Coaches get `seat_limit = 5` by default when they enable coach mode
+(migration `20260824010000_free_coach_seats_five.sql`, which also backfilled
+existing free subscriptions). To grant more by hand:
 ```sql
 UPDATE public.coach_subscriptions SET seat_limit = 25, plan = 'pro' WHERE coach_id = '<coach-user-uuid>';
 ```

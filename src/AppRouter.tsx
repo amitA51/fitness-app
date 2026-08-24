@@ -749,6 +749,8 @@ function AppShell() {
   // Reflect coach edits to trainee-owned data live (pull-on-mount + realtime
   // merge). Self-guards for guests / unconfigured Supabase.
   useCloudDataReflection();
+  // Guest mode hides the pending-sync banner (a guest has no cloud target).
+  const { isGuest } = useAuth();
   const mainRef = useRef<HTMLElement | null>(null);
   const prevPathRef = useRef<string | null>(null);
 
@@ -858,7 +860,7 @@ function AppShell() {
               className="app-shell min-h-screen min-h-[100dvh] flex flex-col"
               style={{ background: 'var(--fs-bg)', color: 'var(--fs-ink)' }}
             >
-              <OfflineIndicator />
+              <OfflineIndicator isGuest={isGuest} />
               <ToastContainer />
               {/* First-use guidance — auto-opens once, re-launchable from Settings. */}
               <WelcomeGuideSheet />

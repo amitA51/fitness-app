@@ -4,6 +4,9 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// package.json version, injected as __APP_VERSION__ (Sentry release fallback).
+const version = JSON.parse((await import('node:fs')).readFileSync(new URL('./package.json', import.meta.url), 'utf-8')).version;
+
 /**
  * Extract the npm package name from a module id so manualChunks can match on
  * exact package boundaries instead of fragile substrings (e.g. `/react/` used
@@ -23,6 +26,11 @@ export function vendorPackageName(id: string): string | undefined {
 }
 
 export default defineConfig({
+  // Build-time constants: the app version feeds Sentry release attribution
+  // (see src/main.tsx) when Netlify's COMMIT_REF is unavailable (local builds).
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+  },
   plugins: [
     react(),
     VitePWA({

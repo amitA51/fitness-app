@@ -122,7 +122,7 @@ export function RoleStep({ data, onChange, direction = 1 }: RoleStepProps) {
           className="mt-2 px-1 text-center"
           style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--fs-muted)' }}
         >
-          תמיד אפשר לשנות בהגדרות בהמשך
+          אפשר לעבור לחשבון מאמן בהגדרות בהמשך, וגם לחזור לחשבון מתאמן משם
         </p>
       </div>
     </m.div>

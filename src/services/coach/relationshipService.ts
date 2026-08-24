@@ -59,6 +59,20 @@ export const enableCoachMode = async (businessName?: string): Promise<CoachProfi
   return profile;
 };
 
+/**
+ * Leave coach mode via the atomic `leave_coach_mode` RPC — the reverse of
+ * enableCoachMode. The server refuses while active/pending client links
+ * exist (end those from the roster first). Idempotent.
+ */
+export const leaveCoachMode = async (): Promise<void> => {
+  const supabase = requireClient();
+  const user = await getCurrentUser();
+  if (!user) throw new Error('unauthenticated');
+
+  const { error } = await supabase.rpc('leave_coach_mode');
+  if (error) throw error;
+};
+
 // ---- Entitlements ----------------------------------------------------------
 
 export const getMySubscription = async (): Promise<CoachSubscription | null> => {

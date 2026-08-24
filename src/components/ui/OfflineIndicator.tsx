@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getQueueDepth, processQueue } from '../../services/offlineQueue';
 
-export function OfflineIndicator() {
+interface OfflineIndicatorProps {
+  /**
+   * A guest has no cloud account to sync INTO — the queue never drains for
+   * them (processQueue skips unauthenticated users), so showing "pending
+   * sync" chrome with a dead button read as "my data is broken". Guest mode
+   * is local-only by design; the pending-sync branch must not render there.
+   */
+  isGuest?: boolean;
+}
+
+export function OfflineIndicator({ isGuest = false }: OfflineIndicatorProps) {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [queueDepth, setQueueDepth] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -48,7 +58,9 @@ export function OfflineIndicator() {
     void refreshQueueDepth();
   }, [refreshQueueDepth]);
 
-  const shouldPoll = isOffline || queueDepth > 0;
+  // A signed-out visitor with leftover queued rows used to poll every 5s
+  // forever behind a banner they could never clear.
+  const shouldPoll = !isGuest && (isOffline || queueDepth > 0);
 
   useEffect(() => {
     if (!shouldPoll) return;
@@ -71,6 +83,8 @@ export function OfflineIndicator() {
     };
   }, [shouldPoll]);
 
+  if (isGuest && !isOffline) return null;
+
   if (!isOffline && queueDepth === 0) return null;
 
   if (!isOffline && queueDepth > 0) {
@@ -90,16 +104,16 @@ export function OfflineIndicator() {
           <span dir="ltr" className="kinetic-number">
             {queueDepth}
           </span>{' '}
-          פעולות ממתינות לסנכרון
+          {queueDepth === 1 ? 'פעולה אחת ממתינה לסנכרון' : 'פעולות ממתינות לסנכרון'}
         </span>
         <button
           type="button"
           onClick={handleSyncNow}
           disabled={isSyncing}
           aria-label="סנכרן עכשיו"
-          className="font-mono uppercase transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
+          className="transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
           style={{
-            fontSize: '11px',
+            fontSize: '13px',
             letterSpacing: '-0.01em',
             fontWeight: 600,
             color: 'var(--fs-accent)',
@@ -129,7 +143,7 @@ export function OfflineIndicator() {
       }}
     >
       <span className="breathing-dot warn" aria-hidden="true" />
-      {queueDepth > 0 ? (
+      {queueDepth > 0 && !isGuest ? (
         <span>
           לא מחובר ·{' '}
           <span dir="ltr" className="kinetic-number">

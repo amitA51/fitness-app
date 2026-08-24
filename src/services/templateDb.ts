@@ -42,22 +42,28 @@ export const getWorkoutTemplate = (id: string): Promise<WorkoutTemplate | null> 
 };
 
 /**
- * Free-plan template quota.
- *
- * The paywall advertises "up to 3" templates on the free plan, and until now
- * nothing enforced it: createWorkoutTemplate wrote straight to IndexedDB and the
- * cloud accepted unlimited rows. The limit is enforced in TWO places on purpose:
- * here (so the user gets an immediate, explainable refusal and an upgrade path)
- * and in the database (trg_enforce_free_template_quota, migration
- * 20260726100000_billing_core.sql) so no client path — duplicate, save-from-
- * summary, offline replay — can bypass it.
- *
- * Program-day scratch templates (`isProgramHidden`) are app-managed and never
- * counted against the user.
+ * Total number of template rows in the store, INCLUDING tombstones and
+ * app-managed program-day templates. Used by the first-run seeding check:
+ * any prior content (even hidden or deleted rows) means the user already has
+ * history and must not receive the starter set.
  */
-export const FREE_TEMPLATE_LIMIT = 3;
+export const getWorkoutTemplateCount = async (): Promise<number> => {
+  const all = await dbGetAll<WorkoutTemplate>(STORES.WORKOUT_TEMPLATES);
+  return (all || []).length;
+};
 
-/** Thrown when a free user tries to exceed FREE_TEMPLATE_LIMIT. */
+/**
+ * Free-plan template quota — RETIRED (2026-08, migration 20260824000000).
+ *
+ * The trigger `trg_enforce_free_template_quota` was dropped: nothing is
+ * purchasable yet (`billing_not_configured`), so the cap only produced silent
+ * data loss — local write succeeded, the cloud rejected with P0001, and the
+ * mutation dead-lettered with no user-visible error. It also broke coach
+ * program-day splits written into a trainee's library. Re-introduce a quota
+ * only when billing ships, server-authoritative, with grandfathering.
+ */
+
+/** Legacy guard name kept so existing imports keep compiling. */
 export class FreeTemplateLimitError extends Error {
   constructor() {
     super('free_template_limit_reached');
@@ -65,22 +71,11 @@ export class FreeTemplateLimitError extends Error {
   }
 }
 
-/** True when the DB rejected a write because of the server-side quota trigger. */
+/** True when the DB rejected a write because of a (historical) quota trigger. */
 export const isFreeTemplateLimitError = (err: unknown): boolean => {
   if (err instanceof FreeTemplateLimitError) return true;
   const message = err instanceof Error ? err.message : String(err ?? '');
   return message.includes('free_template_limit_reached');
-};
-
-/**
- * How many templates a free user may still create, or `null` when unlimited.
- * Lets the UI disable the create affordance instead of failing after the fact.
- */
-export const getRemainingFreeTemplates = async (): Promise<number | null> => {
-  const { getEntitlement, isPremium } = await import('./billing/entitlementService');
-  if (isPremium(await getEntitlement())) return null;
-  const existing = await getWorkoutTemplates();
-  return Math.max(FREE_TEMPLATE_LIMIT - existing.length, 0);
 };
 
 /**
@@ -91,15 +86,6 @@ export const createWorkoutTemplate = async (
 ): Promise<WorkoutTemplate> => {
   if (!templateData.name?.trim()) {
     throw new ValidationError('Template name is required.');
-  }
-
-  // Quota pre-check. Skipped for app-managed program-day templates, which are
-  // regenerated on demand and are not user content.
-  if (!templateData.isProgramHidden) {
-    const remaining = await getRemainingFreeTemplates();
-    if (remaining !== null && remaining <= 0) {
-      throw new FreeTemplateLimitError();
-    }
   }
 
   const newTemplate: WorkoutTemplate = {

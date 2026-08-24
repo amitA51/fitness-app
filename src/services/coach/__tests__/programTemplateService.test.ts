@@ -86,21 +86,19 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('listProgramTemplates', () => {
-  it('returns [] when Supabase is not configured (offline)', async () => {
+  it('throws when Supabase is not configured (offline) — error state, not empty list', async () => {
     mockIsConfigured.mockReturnValue(false);
 
-    const result = await listProgramTemplates();
-
-    expect(result).toEqual([]);
+    await expect(listProgramTemplates()).rejects.toThrow();
     expect(mocks.mockFrom).not.toHaveBeenCalled();
   });
 
-  it('returns [] on a Supabase query error (graceful)', async () => {
+  it('throws on a Supabase query error so the UI renders its retry state', async () => {
     mocks.mockOrder.mockResolvedValue({ data: null, error: { message: 'network error' } });
 
-    const result = await listProgramTemplates();
-
-    expect(result).toEqual([]);
+    // A coach whose read fails must see "error + נסה שוב", never a misleading
+    // "no programs yet" empty library.
+    await expect(listProgramTemplates()).rejects.toThrow('network error');
   });
 
   it('returns mapped templates when the query succeeds', async () => {

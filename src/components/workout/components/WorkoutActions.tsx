@@ -9,6 +9,7 @@ import type { PersonalItem, WorkoutExercise, WorkoutSession } from '../../../typ
 import { todayStr } from '../../../utils/dateUtils';
 import { triggerHaptic } from '../../../utils/haptics';
 import { generateId } from '../../../utils/id';
+import { logger } from '../../../utils/logger';
 import { safeJsonParse } from '../../../utils/safeJson';
 import { setVolume } from '../../../utils/workoutMath';
 import { useWorkoutDerived, useWorkoutDispatch, useWorkoutState } from '../core/WorkoutContext';
@@ -152,14 +153,19 @@ const SummaryOverlayComponent: React.FC<{
           }
           onExit();
         }}
-        onSaveAsTemplate={async () => {
+        onSaveAsTemplate={async (): Promise<void> => {
+          // Propagating the rejection matters: WorkoutSummary owns the user-
+          // facing error toast, and a swallowed failure here looked like a
+          // successful save while the template never landed anywhere.
           await createWorkoutTemplate(buildTemplatePayload(completedSession, false));
         }}
         onRepeatWorkout={() => {
           // Pre-seed the next session as a favorite template (best-effort, fire
           // and forget) so it surfaces in the PreWorkoutScreen "התבניות שלך"
           // row, then exit back to the start flow.
-          createWorkoutTemplate(buildTemplatePayload(completedSession, true)).catch(() => {});
+          createWorkoutTemplate(buildTemplatePayload(completedSession, true)).catch((err) => {
+            logger.workout?.warn?.('Repeat-workout template seed failed; session continues', err);
+          });
           onExit();
         }}
       />

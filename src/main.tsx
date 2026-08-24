@@ -37,6 +37,10 @@ async function startAnalytics() {
       const Sentry = await loadSentry();
       Sentry.init({
         dsn: sentryDsn,
+        // Release attribution: without this, crash-free rate and per-release
+        // regression tracking cannot work. Netlify injects COMMIT_REF on every
+        // build; fall back to the package version locally.
+        release: import.meta.env.VITE_COMMIT_REF ?? `sparkos-fitness@${__APP_VERSION__}`,
         environment: import.meta.env.MODE,
         tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
         sendDefaultPii: false,
@@ -99,6 +103,27 @@ window.addEventListener('error', (event) => {
 
 window.addEventListener('unhandledrejection', (event) => {
   logger.app.error('Unhandled promise rejection', event.reason);
+});
+
+// Stale-chunk recovery. After a deploy, a long-lived tab can request a hashed
+// asset that no longer exists; the SPA fallback used to answer it with HTML
+// (now /assets/* 404s, but older cached SWs may still hold the bad body). The
+// failure surfaces as "Failed to fetch dynamically imported module" mid-session
+// — a hard stop for the user. One automatic reload picks up the new deploy;
+// the sessionStorage guard prevents a reload loop when the site itself is down.
+window.addEventListener('error', (event) => {
+  const message = typeof event.message === 'string' ? event.message : '';
+  const isChunkFailure =
+    message.includes('Failed to fetch dynamically imported module') ||
+    message.includes('Importing a module script failed');
+  if (!isChunkFailure) return;
+  try {
+    if (sessionStorage.getItem('chunk_error_reloaded')) return;
+    sessionStorage.setItem('chunk_error_reloaded', '1');
+  } catch {
+    // Storage unavailable — still reload once; worst case is an extra refresh.
+  }
+  window.location.reload();
 });
 
 initAI();

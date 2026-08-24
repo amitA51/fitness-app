@@ -83,10 +83,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Preserve an explicitly requested invite continuation only while the
         // authentication round-trip is in progress. All other account state is
         // wiped before a different user's data can be read or pulled.
-        await transitionAuthSession(
-          nextUserId,
-          nextUserId ? (getInviteContinuationCleanupOptions() ?? {}) : {}
-        );
+        //
+        // Guest signing into their FIRST account: adopt instead of wipe. A
+        // guest has no owner marker yet, so without this branch execution used
+        // to fall through to the destructive cleanup below and destroy every
+        // local record at exactly the moment signup promised "כדי לשמור את
+        // הנתונים שלכם". Only fires when this device was in guest mode.
+        const baseCleanupOptions = nextUserId ? (getInviteContinuationCleanupOptions() ?? {}) : {};
+        await transitionAuthSession(nextUserId, {
+          ...baseCleanupOptions,
+          ...(nextUserId && isGuestRef.current ? { claimGuestData: true } : {}),
+        });
       } catch (err) {
         logger.auth.error('Auth transition cleanup failed; refusing to load the session', err);
         if (cancelled) return;

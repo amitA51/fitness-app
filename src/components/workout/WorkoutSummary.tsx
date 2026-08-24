@@ -25,6 +25,7 @@ import { HE_NOUNS, pluralizeHe } from '../../utils/pluralizeHe';
 import { formatDuration } from '../../utils/workoutFormatters';
 import { computeSessionStats, setVolume } from '../../utils/workoutMath';
 import { MuscleMap } from '../fitness/MuscleMap';
+import { showToast } from '../ui/GlobalToast';
 import { ModalOverlay } from '../ui/ModalOverlay';
 import { type ComparisonData, StatsGrid } from './components/StatsGrid';
 import { SummaryExerciseList } from './components/SummaryExerciseList';
@@ -937,7 +938,14 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             {onSaveAsTemplate && (
               <button
                 type="button"
-                onClick={onSaveAsTemplate}
+                onClick={() => {
+                  // The handler may be async; a rejected promise must not become
+                  // an unhandled rejection — surface it as the save-failure toast.
+                  const result = onSaveAsTemplate();
+                  Promise.resolve(result).catch(() => {
+                    showToast('שמירת התבנית נכשלה. בדקו את החיבור ונסו שוב.', { variant: 'error' });
+                  });
+                }}
                 className="cta-secondary focus-ring"
                 style={{ flex: 1 }}
               >

@@ -22,7 +22,12 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { enableCoachMode, getMyCoachProfile, getMySubscription } from '../services/coach';
+import {
+  enableCoachMode,
+  getMyCoachProfile,
+  getMySubscription,
+  leaveCoachMode,
+} from '../services/coach';
 import { getMyProfile } from '../services/coach/profileService';
 import type { CoachProfile, CoachSubscription, UserRole, ViewMode } from '../types/coach';
 import { logger } from '../utils/logger';
@@ -129,6 +134,8 @@ interface CoachContextValue {
   loading: boolean;
   refresh: () => Promise<void>;
   enable: (businessName?: string) => Promise<void>;
+  /** Leave coach mode entirely (server RPC; refuses with active clients). */
+  disable: () => Promise<void>;
   /** Switch the active view. Flipping to coach lazily enables coach mode. */
   setViewMode: (mode: ViewMode) => Promise<void>;
   /** Convenience: flip between the two views. */
@@ -215,6 +222,15 @@ export const CoachProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     [refresh]
   );
 
+  const disable = useCallback(async () => {
+    await leaveCoachMode();
+    // Back to the trainee shell immediately, then re-pull the server role.
+    setViewModeState('trainee');
+    writeStoredViewMode('trainee');
+    setCoachProfile(null);
+    await refresh();
+  }, [refresh]);
+
   const setViewMode = useCallback(
     async (mode: ViewMode) => {
       // Reflect the choice immediately (optimistic) + persist it.
@@ -261,6 +277,7 @@ export const CoachProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       loading,
       refresh,
       enable,
+      disable,
       setViewMode,
       toggleView,
     };
@@ -273,6 +290,7 @@ export const CoachProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     loading,
     refresh,
     enable,
+    disable,
     setViewMode,
     toggleView,
   ]);

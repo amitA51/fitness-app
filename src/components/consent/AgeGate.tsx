@@ -13,8 +13,10 @@ import { m } from 'framer-motion';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAgeGate } from '../../contexts/AgeGateContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { computeAge } from '../../services/ageGate';
+import { logger } from '../../utils/logger';
 import { Button } from '../ui/Button';
 
 const PUBLIC_ALLOWLIST = /^\/(legal\/|accessibility)/;
@@ -55,6 +57,7 @@ const BODY_STYLE: React.CSSProperties = {
 
 export function AgeGate({ children }: { children: ReactNode }) {
   const { loading, needsBirthDate, blockedUnderAge, submit } = useAgeGate();
+  const { clearGuest } = useAuth();
   const location = useLocation();
   const reducedMotion = useReducedMotion();
   const [dob, setDob] = useState('');
@@ -102,6 +105,45 @@ export function AgeGate({ children }: { children: ReactNode }) {
               pgishonim@gmail.com
             </a>
           </p>
+          {/* Escape hatches. A wrong-typed birth year used to brick the account
+              here with no way out — not even sign-out. */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18 }}>
+            <Button
+              variant="primary"
+              onClick={() => {
+                // Guest mode skips the server age check entirely; a guest who
+                // mistyped their date gets a local-only session instead of a
+                // permanent wall.
+                clearGuest();
+                try {
+                  localStorage.setItem('skip_auth', 'true');
+                } catch (err) {
+                  logger.auth.warn('Age gate guest escape failed', err);
+                  window.location.reload();
+                  return;
+                }
+                window.location.reload();
+              }}
+              fullWidth
+            >
+              המשך במצב אורח
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={async () => {
+                try {
+                  const { signOut } = await import('../../services/supabaseAuth');
+                  await signOut();
+                } catch (err) {
+                  logger.auth.warn('Age gate sign-out failed', err);
+                }
+                window.location.href = '/';
+              }}
+              fullWidth
+            >
+              התנתקות מהחשבון
+            </Button>
+          </div>
         </div>
       </div>
     );
