@@ -6,8 +6,9 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { gsap, useGSAP } from '@/lib/gsap';
 import { fireSparks } from '@/lib/gsapSparks';
 import { DUR } from '@/lib/motionTokens';
+import { computeWorkoutXp } from '@/utils/workoutXp';
 import { AnimatePresence, m } from 'framer-motion';
-import { CheckCircle as CheckCircleIcon, RotateCcw, Trophy } from 'lucide-react';
+import { CheckCircle as CheckCircleIcon, RotateCcw, Trophy, Zap } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { HABIT_HAPTIC_PATTERNS } from '../../hooks/useHaptics';
 import { calculateStreak } from '../../services/achievementService';
@@ -156,6 +157,18 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   const headlineRef = useRef<HTMLSpanElement>(null);
 
   const stats = useMemo(() => computeStats(session), [session]);
+
+  // Session XP — derived from the same stats the grid shows, so the number on
+  // screen always reconciles with what the user can count themselves.
+  const xp = useMemo(
+    () =>
+      computeWorkoutXp({
+        totalVolumeKg: stats.totalVolume,
+        completedSets: stats.totalSets,
+        personalRecords: prsCount,
+      }),
+    [stats.totalVolume, stats.totalSets, prsCount]
+  );
 
   // Unique primary muscles the session touched — drives the "muscles worked"
   // recap map. WorkoutExercise carries no secondary muscles, so this is the
@@ -694,9 +707,9 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   >
                     <span
                       style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 10,
-                        fontWeight: 700,
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 11,
+                        fontWeight: 600,
                         letterSpacing: '-0.01em',
                         color: 'var(--fs-muted)',
                         textAlign: 'center',
@@ -705,6 +718,56 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                       שרירים שעבדת
                     </span>
                     <MuscleMap primary={workedMuscles} />
+                  </div>
+                )}
+
+                {/* Session XP — the earned number, right under the stats. The
+                    formula is legible by design (volume + sets + PRs), so the
+                    figure reads as deserved rather than arbitrary. Hidden for
+                    empty sessions. */}
+                {xp > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 10,
+                      padding: '12px 16px',
+                      background: 'color-mix(in srgb, var(--fs-accent) 10%, var(--fs-surface))',
+                      border: '1px solid color-mix(in srgb, var(--fs-accent) 30%, transparent)',
+                      borderRadius: 999,
+                    }}
+                  >
+                    <span
+                      style={{ color: 'var(--fs-accent)', display: 'inline-flex' }}
+                      aria-hidden="true"
+                    >
+                      <Zap size={16} strokeWidth={2.5} />
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontWeight: 700,
+                        fontSize: 18,
+                        color: 'var(--fs-ink)',
+                        letterSpacing: '-0.02em',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                      dir="ltr"
+                    >
+                      +{xp}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: 'var(--fs-muted)',
+                        letterSpacing: '-0.01em',
+                      }}
+                    >
+                      XP נצברו
+                    </span>
                   </div>
                 )}
 
