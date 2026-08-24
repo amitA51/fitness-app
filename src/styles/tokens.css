@@ -487,8 +487,8 @@ html.dark {
   --nav-bg: rgba(17, 17, 17, 0.86);
   --nav-border: rgba(255, 255, 255, 0.06);
   --nav-shadow: 0 -0.5px 0 rgba(255, 255, 255, 0.06), 0 -12px 36px rgba(0, 0, 0, 0.45);
-  --nav-icon-inactive: rgba(240, 240, 240, 0.5);
-  --nav-label-inactive: rgba(240, 240, 240, 0.55);
+  --nav-icon-inactive: rgba(240, 240, 240, 0.62);
+  --nav-label-inactive: rgba(240, 240, 240, 0.68);
   --nav-pill-bg: var(--fs-accent);
   /* Pill bg is the mint --fs-accent here, so its ink is the on-accent token. */
   --nav-pill-text: var(--color-ink-on-accent);
