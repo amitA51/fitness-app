@@ -306,11 +306,12 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 <p
                   className="mt-2"
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 11,
-                    letterSpacing: '0.04em',
-                    color: 'rgba(255,255,255,0.55)',
-                    lineHeight: 1.3,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    letterSpacing: '-0.01em',
+                    color: 'rgba(255,255,255,0.85)',
+                    lineHeight: 1.35,
                     textAlign: 'start',
                   }}
                 >
