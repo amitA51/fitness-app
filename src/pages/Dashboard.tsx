@@ -761,8 +761,11 @@ const FirstRunHero = memo(function FirstRunHero({
                   height: 28,
                   flexShrink: 0,
                   borderRadius: 999,
-                  background: 'var(--fs-surface-2)',
-                  color: 'var(--fs-ink)',
+                  /* Accent-tinted ring instead of a flat surface fill — the
+                     circle reads on BOTH themes without glare in dark. */
+                  background: 'color-mix(in srgb, var(--fs-accent) 12%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--fs-accent) 45%, transparent)',
+                  color: 'var(--fs-accent-2)',
                   fontFamily: 'var(--font-body)',
                   fontSize: 13,
                   fontWeight: 600,

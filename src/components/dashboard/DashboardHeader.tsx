@@ -111,7 +111,11 @@ export const DashboardHeader = memo(function DashboardHeader({
             fontFamily: 'var(--font-body)',
             fontSize: 13,
             letterSpacing: '-0.01em',
-            color: 'var(--fs-muted)',
+            /* #8c8c8c muted was too dim on black for this micro-instruction;
+               ink at reduced weight keeps it legible without shouting. */
+            color: 'var(--fs-ink-muted)',
+            fontWeight: 500,
+            opacity: 0.92,
             margin: '6px 0 0',
           }}
         >
