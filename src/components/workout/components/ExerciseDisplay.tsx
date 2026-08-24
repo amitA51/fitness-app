@@ -776,7 +776,9 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             </>
           )}
 
-          {/* 5C: Previous set badge */}
+          {/* 5C: Previous set badge — Strong/Hevy convention: show what you did
+              last time, plus a progressive-overload nudge (+2.5 ק״ג on barbell
+              lifts) so the next target is glanceable without mental math. */}
           {!isExerciseComplete && previousSet && (previousSet.weight || previousSet.reps) && (
             <>
               <div
@@ -793,9 +795,9 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               >
                 <span
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    fontWeight: 700,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 11,
+                    fontWeight: 600,
                     color: 'var(--fs-accent)',
                     letterSpacing: '-0.01em',
                   }}
@@ -818,16 +820,34 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                 {previousSet.rpe && (
                   <span
                     style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 9,
-                      fontWeight: 700,
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 10,
+                      fontWeight: 600,
                       color: 'var(--fs-muted)',
-                      letterSpacing: '0.04em',
+                      letterSpacing: '-0.01em',
                     }}
                   >
                     RPE {previousSet.rpe}
                   </span>
                 )}
+                {previousSet.weight ? (
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: 'var(--fs-accent)',
+                      letterSpacing: '-0.01em',
+                      padding: '1px 8px',
+                      background: 'color-mix(in srgb, var(--fs-accent) 14%, transparent)',
+                      borderRadius: 999,
+                      whiteSpace: 'nowrap',
+                    }}
+                    title="יעד מוצע לסט זה (עליית עומס)"
+                  >
+                    +{weightIncrement} ק״ג
+                  </span>
+                ) : null}
               </div>
               <div style={{ height: 12, flexShrink: 0 }} />
             </>
