@@ -437,7 +437,15 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 borderTop: '1px solid rgba(255,255,255,0.12)',
               }}
             >
-              <div className="text-center">
+              <div
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  color: 'var(--color-ink-on-dark)',
+                  textAlign: 'center',
+                }}
+              >
                 האימון הראשון שלך
               </div>
               <div
@@ -445,7 +453,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   fontFamily: 'var(--font-body)',
                   fontSize: 11,
                   letterSpacing: '-0.01em',
-                  color: 'rgba(255,255,255,0.72)',
+                  color: 'rgba(255,255,255,0.78)',
                   textAlign: 'center',
                 }}
               >
