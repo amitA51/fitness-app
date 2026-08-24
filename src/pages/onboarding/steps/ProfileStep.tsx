@@ -139,6 +139,23 @@ export function ProfileStep({ data, onChange, direction = 1 }: ProfileStepProps)
           step="0.1"
           error={weightError}
         />
+
+        {/* Health disclaimer at the point of body-data collection (D28). The
+            app computes training loads from these numbers; it does not diagnose
+            or replace professional guidance. */}
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 12,
+            lineHeight: 1.5,
+            color: 'var(--fs-muted)',
+            margin: 0,
+            padding: '0 4px',
+          }}
+        >
+          הנתונים משמשים לחישוב עומסי אימון ותזונה — האפליקציה אינה מהווה ייעוץ
+          רפואי. עם מצב רפואי, היוועצו ברופא לפני פעילות גופנית.
+        </p>
       </div>
     </m.div>
   );

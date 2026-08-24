@@ -141,19 +141,21 @@ export const CoachBriefCard = memo(function CoachBriefCard({
   const sign = facts.volumeChangePercent >= 0 ? '+' : '';
 
   // Source caption — fall back to "חישוב מתמטי" before the AI prose resolves so
-  // the line is honest about its origin during loading.
+  // the line is honest about its origin during loading. Carries the AI-disclosure
+  // (EU AI Act art. 50(1)) and the health disclaimer in one quiet line.
   const sourceCaption = (
     <div
       style={{
         marginTop: 10,
-        fontFamily: 'var(--font-mono)',
-        fontSize: 9,
+        fontFamily: 'var(--font-body)',
+        fontSize: 11,
         letterSpacing: '-0.01em',
         color: 'var(--fs-muted)',
       }}
     >
-      {brief?.source === 'ai' ? 'AI · מבוסס נתונים' : 'חישוב מתמטי'}
+      {brief?.source === 'ai' ? 'מנוסח בעזרת AI · מבוסס נתונים' : 'חישוב מתמטי'}
       {facts.confidence !== 'high' && ` · ביטחון ${facts.confidence === 'low' ? 'נמוך' : 'בינוני'}`}
+      {' · לא ייעוץ רפואי'}
     </div>
   );
 

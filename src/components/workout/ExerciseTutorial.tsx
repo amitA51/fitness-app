@@ -990,9 +990,9 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                 </div>
               ) : (
                 <button
-                  type="button"
-                  onClick={handleShowTips}
-                  disabled={loading}
+                   type="button"
+                   onClick={handleShowTips}
+                   disabled={loading}
                   className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-[0.98]"
                   style={{
                     width: '100%',
@@ -1011,6 +1011,20 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                   {loading ? 'טוען טיפים…' : 'הציגו טיפים לטכניקה'}
                 </button>
               )}
+              {/* AI-disclosure (EU AI Act art. 50(1)) + health disclaimer on the
+                  AI-generated tips surface. */}
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 11,
+                  lineHeight: 1.5,
+                  color: 'var(--fs-muted)',
+                  margin: '10px 0 0',
+                }}
+              >
+                טיפים אלה מנוסחים בעזרת AI — לא ייעוץ רפואי. התאימו את העומס
+                ליכולת שלכם.
+              </p>
             </div>
           </div>
         )}
