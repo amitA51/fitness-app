@@ -1335,6 +1335,54 @@ textarea {
   box-shadow: var(--shadow-glass);
 }
 
+/* ── Scroll edge effect (Apple materials §12) ────────────────────────────────
+   Sticky headers get a soft gradient "shadow" instead of a hard always-on
+   divider. The gradient fades in only once content actually scrolls under the
+   header — via a scroll-driven animation where supported (animation-timeline:
+   scroll()); the JS side also flips data-scrolled as a universal fallback. */
+.page-header-edge {
+  position: relative;
+}
+
+.page-header-edge::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: 12px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--fs-bg) 55%, transparent),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+@supports (animation-timeline: scroll()) {
+  .page-header-edge::after {
+    animation: header-edge-in linear both;
+    animation-timeline: scroll();
+    animation-range: 0 80px;
+    transition: none;
+  }
+}
+
+@keyframes header-edge-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.page-header-edge[data-scrolled="true"]::after {
+  opacity: 1;
+}
+
 /* ── Accessibility: reduced transparency (§14) ──────────────────────────────
    Honor the OS "Reduce Transparency" setting — drop the blur and solidify every
    translucent chrome surface so text stays crisp. Forcing --nav-bg opaque also

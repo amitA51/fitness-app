@@ -11,7 +11,7 @@
 
 import { type MotionValue, m, useScroll, useTransform } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
-import { type CSSProperties, type ReactNode, memo } from 'react';
+import { type CSSProperties, type ReactNode, memo, useEffect, useState } from 'react';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface PageHeaderProps {
@@ -89,6 +89,32 @@ function useCollapse(enabled: boolean, reduced: boolean): CollapseValues | null 
   return { fontSize, paddingTop, paddingBottom, eyebrowOpacity, eyebrowHeight };
 }
 
+/**
+ * Scroll edge effect fallback (Apple materials §12). Browsers with
+ * `animation-timeline: scroll()` drive the header's gradient edge purely in
+ * CSS; everywhere else this flips `data-scrolled` once the page passes a small
+ * threshold so the edge still appears. Uses MotionValue.on('change') — no
+ * React re-renders per scrolled pixel.
+ */
+function useEdgeScrolled(sticky: boolean): boolean {
+  const { scrollY } = useScroll();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (!sticky) return;
+    // Scroll-driven animation handles it natively — skip the JS path.
+    if (typeof CSS !== 'undefined' && CSS.supports?.('animation-timeline: scroll()')) return;
+
+    const unsubscribe = scrollY.on('change', (y) => {
+      const next = y > 8;
+      setScrolled((prev) => (prev === next ? prev : next));
+    });
+    return unsubscribe;
+  }, [sticky, scrollY]);
+
+  return scrolled;
+}
+
 const PageHeader = memo<PageHeaderProps>(
   ({
     title,
@@ -103,6 +129,7 @@ const PageHeader = memo<PageHeaderProps>(
   }) => {
     const reduced = useReducedMotion();
     const collapse = useCollapse(size === 'large', reduced);
+    const edgeScrolled = useEdgeScrolled(sticky);
 
     const titleStyle: CSSProperties = {
       fontFamily: 'var(--font-display)',
@@ -126,7 +153,10 @@ const PageHeader = memo<PageHeaderProps>(
       // 20px material layer when an overlay is open.
       backdropFilter: sticky ? 'saturate(180%) blur(12px)' : undefined,
       WebkitBackdropFilter: sticky ? 'saturate(180%) blur(12px)' : undefined,
-      borderBottom: divider === 'accent' ? '0.5px solid var(--color-separator)' : undefined,
+      // Scroll edge effect (Apple §12): the hard divider is replaced by a soft
+      // gradient that fades in only once content scrolls beneath the header —
+      // see .page-header-edge in components.css. divider='none' keeps it off.
+      borderBottom: undefined,
       paddingTop: 'max(20px, var(--safe-block-start))',
       // Logical padding needs the direction-aware inset (tokens.css §13):
       // in RTL the inline start edge is physically on the right.
@@ -164,6 +194,9 @@ const PageHeader = memo<PageHeaderProps>(
       return (
         <m.header
           aria-label={ariaLabel ?? title}
+          data-edge={divider === 'accent' && sticky ? 'true' : undefined}
+          data-scrolled={edgeScrolled ? 'true' : undefined}
+          className={divider === 'accent' && sticky ? 'page-header-edge' : undefined}
           style={{
             ...shellStyle,
             paddingTop: collapse.paddingTop,
@@ -194,7 +227,13 @@ const PageHeader = memo<PageHeaderProps>(
     }
 
     return (
-      <header aria-label={ariaLabel ?? title} style={shellStyle}>
+      <header
+        aria-label={ariaLabel ?? title}
+        data-edge={divider === 'accent' && sticky ? 'true' : undefined}
+        data-scrolled={edgeScrolled ? 'true' : undefined}
+        className={divider === 'accent' && sticky ? 'page-header-edge' : undefined}
+        style={shellStyle}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           {backButton}
           <div style={{ minWidth: 0 }}>
