@@ -416,8 +416,9 @@ function ContinueCard({
       <div>
         <div
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
+            fontFamily: 'var(--font-body)',
+            fontSize: 11,
+            fontWeight: 600,
             letterSpacing: '-0.01em',
             color: 'var(--fs-accent-2)',
             marginBottom: 4,
@@ -630,8 +631,9 @@ function DayCard({
                     <div style={{ marginTop: 8 }}>
                       <div
                         style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 9.5,
+                          fontFamily: 'var(--font-body)',
+                          fontSize: 10,
+                          fontWeight: 500,
                           letterSpacing: '-0.01em',
                           color: 'var(--fs-muted)',
                           marginBottom: 5,
