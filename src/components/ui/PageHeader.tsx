@@ -42,8 +42,11 @@ interface PageHeaderProps {
 const eyebrowStyle: CSSProperties = {
   fontFamily: 'var(--font-body)',
   fontSize: 13,
-  fontWeight: 400,
-  color: 'var(--fs-muted)',
+  fontWeight: 500,
+  /* ink-muted, not muted: the date line sat at #a3a3a3-on-black's dimmer
+     cousin and read as barely-there chrome. One weight step up keeps it
+     quiet but present on both themes. */
+  color: 'var(--fs-ink-muted)',
   margin: 0,
   lineHeight: 1.35,
   letterSpacing: '-0.01em',
