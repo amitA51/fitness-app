@@ -64,11 +64,13 @@ export const CalorieHero = memo(function CalorieHero({
           minHeight: 44,
           padding: '6px 12px',
           background: 'var(--fs-surface-2)',
-          border: '1px solid var(--fs-surface-2)',
+          border: '1px solid var(--color-border)',
+          borderRadius: 999,
           color: 'var(--fs-ink)',
           cursor: 'pointer',
-          fontFamily: 'var(--font-mono)',
-          fontSize: 11,
+          fontFamily: 'var(--font-body)',
+          fontSize: 12,
+          fontWeight: 500,
           letterSpacing: '-0.01em',
         }}
       >
