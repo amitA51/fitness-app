@@ -4,6 +4,18 @@ import { memo, useEffect, useState } from 'react';
 import type { WorkoutTemplate } from '../../../types';
 import { formatLastUsed, springTransition } from '../constants';
 
+/** English muscle-group key → Hebrew label (subset the templates use). */
+const MUSCLE_HE: Record<string, string> = {
+  Chest: 'חזה',
+  Back: 'גב',
+  Legs: 'רגליים',
+  Shoulders: 'כתפיים',
+  Arms: 'ידיים',
+  Core: 'ליבה',
+  Abs: 'בטן',
+  Cardio: 'אירובי',
+};
+
 interface TemplateCardProps {
   template: WorkoutTemplate;
   index: number;
@@ -42,6 +54,19 @@ export const TemplateCard = memo(function TemplateCard({
       setConfirmDelete(true);
     }
   };
+
+  // Unique muscle groups in template order, Hebrew labels, max two shown —
+  // "חזה · גב" tells the lifter what this session is at a glance without
+  // reading every chip.
+  const muscleSummary = (() => {
+    const seen: string[] = [];
+    for (const ex of template.exercises) {
+      const he = MUSCLE_HE[ex.muscleGroup ?? ex.targetMuscle ?? ''];
+      if (he && !seen.includes(he)) seen.push(he);
+      if (seen.length >= 2) break;
+    }
+    return seen.join(' · ');
+  })();
 
   return (
     <m.div
@@ -99,6 +124,12 @@ export const TemplateCard = memo(function TemplateCard({
           <Dumbbell size={12} />
           {template.exercises.length} תרגילים
         </span>
+        {muscleSummary && (
+          <>
+            <span style={{ color: 'var(--fs-muted)' }}>·</span>
+            <span>{muscleSummary}</span>
+          </>
+        )}
         <span style={{ color: 'var(--fs-muted)' }}>·</span>
         <span className="flex items-center gap-1.5">
           <Clock size={12} />
