@@ -378,7 +378,9 @@ body {
     font-weight: 600;
     letter-spacing: -0.01em;
     margin-bottom: 8px;
-    opacity: 0.75;
+    /* ink-muted instead of opacity: 0.75 on the heading ink — on dark the
+       multiplicative opacity left the label sub-AA (visual QA, nutrition). */
+    color: var(--fs-ink-muted);
   }
 
   .block-hero .number {
