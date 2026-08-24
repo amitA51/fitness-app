@@ -135,8 +135,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <m.span
             id={errorId}
             role="alert"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
             transition={{ duration: 0.2 }}
             style={{
               fontFamily: 'var(--font-body)',
@@ -144,6 +144,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               letterSpacing: '-0.01em',
               color: 'var(--fs-warn)',
               fontWeight: 600,
+              minHeight: 18,
+              display: 'block',
+              visibility: error ? 'visible' : 'hidden',
             }}
           >
             {error}
