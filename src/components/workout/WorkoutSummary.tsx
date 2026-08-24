@@ -6,7 +6,9 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { gsap, useGSAP } from '@/lib/gsap';
 import { fireSparks } from '@/lib/gsapSparks';
 import { DUR } from '@/lib/motionTokens';
+import { levelFromXp } from '@/utils/workoutLevels';
 import { computeWorkoutXp } from '@/utils/workoutXp';
+import { awardSessionXp, getTotalXp } from '@/utils/xpStore';
 import { AnimatePresence, m } from 'framer-motion';
 import { CheckCircle as CheckCircleIcon, RotateCcw, Trophy, Zap } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
@@ -169,6 +171,15 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
       }),
     [stats.totalVolume, stats.totalSets, prsCount]
   );
+
+  // Award once per session on mount; derive the resulting level + progress.
+  // isSessionCounted inside awardSessionXp guards re-opened summaries.
+  const [xpTotal, setXpTotal] = useState<number>(() => getTotalXp());
+  useEffect(() => {
+    if (xp <= 0) return;
+    setXpTotal(awardSessionXp(xp, session.id));
+  }, [xp, session.id]);
+  const { level, intoLevel, levelSpan } = useMemo(() => levelFromXp(xpTotal), [xpTotal]);
 
   // Unique primary muscles the session touched — drives the "muscles worked"
   // recap map. WorkoutExercise carries no secondary muscles, so this is the
@@ -729,45 +740,103 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   <div
                     style={{
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 10,
-                      padding: '12px 16px',
+                      flexDirection: 'column',
+                      gap: 8,
+                      padding: '14px 18px',
                       background: 'color-mix(in srgb, var(--fs-accent) 10%, var(--fs-surface))',
                       border: '1px solid color-mix(in srgb, var(--fs-accent) 30%, transparent)',
                       borderRadius: 999,
                     }}
                   >
-                    <span
-                      style={{ color: 'var(--fs-accent)', display: 'inline-flex' }}
-                      aria-hidden="true"
-                    >
-                      <Zap size={16} strokeWidth={2.5} />
-                    </span>
-                    <span
+                    <div
                       style={{
-                        fontFamily: 'var(--font-display)',
-                        fontWeight: 700,
-                        fontSize: 18,
-                        color: 'var(--fs-ink)',
-                        letterSpacing: '-0.02em',
-                        fontVariantNumeric: 'tabular-nums',
-                      }}
-                      dir="ltr"
-                    >
-                      +{xp}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: 'var(--font-body)',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: 'var(--fs-muted)',
-                        letterSpacing: '-0.01em',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 10,
                       }}
                     >
-                      XP נצברו
-                    </span>
+                      <span
+                        style={{ color: 'var(--fs-accent)', display: 'inline-flex' }}
+                        aria-hidden="true"
+                      >
+                        <Zap size={16} strokeWidth={2.5} />
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontWeight: 700,
+                          fontSize: 18,
+                          color: 'var(--fs-ink)',
+                          letterSpacing: '-0.02em',
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                        dir="ltr"
+                      >
+                        +{xp}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-body)',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: 'var(--fs-muted)',
+                          letterSpacing: '-0.01em',
+                        }}
+                      >
+                        XP נצברו
+                      </span>
+                    </div>
+                    {/* Level progress — thin accent bar under the XP line.
+                        intoLevel/levelSpan come from the ladder; the level chip
+                        anchors the inline-start edge. */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-body)',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: 'var(--color-ink-on-accent)',
+                          background: 'var(--fs-accent)',
+                          borderRadius: 999,
+                          padding: '1px 9px',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        דרגה {level}
+                      </span>
+                      <div
+                        role="progressbar"
+                        tabIndex={-1}
+                        aria-valuenow={Math.round((intoLevel / levelSpan) * 100)}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label={`התקדמות לדרגה ${level + 1}`}
+                        style={{
+                          flex: 1,
+                          height: 5,
+                          borderRadius: 999,
+                          background: 'color-mix(in srgb, var(--fs-accent) 18%, transparent)',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${Math.min(100, (intoLevel / levelSpan) * 100)}%`,
+                            height: '100%',
+                            borderRadius: 999,
+                            background: 'var(--fs-accent)',
+                            transition: 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
 
