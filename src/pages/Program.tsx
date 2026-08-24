@@ -142,8 +142,9 @@ export default function Program() {
           >
             <div
               style={{
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-body)',
                 fontSize: 11,
+                fontWeight: 600,
                 letterSpacing: '-0.01em',
                 color: 'var(--fs-accent-2)',
               }}
@@ -260,10 +261,11 @@ export default function Program() {
                 <div key={b.name}>
                   <div
                     style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 10,
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 11,
+                      fontWeight: 600,
                       letterSpacing: '-0.01em',
-                      color: 'var(--fs-muted)',
+                      color: 'var(--fs-ink-muted)',
                       marginBottom: 8,
                     }}
                   >
