@@ -377,9 +377,11 @@ html.dark {
      visible step while staying quiet. */
   --fs-surface-2: #262626;
   --fs-ink: #f0f0f0;
-  /* #8c8c8c, not #808080 — 808080 is 4.4:1 on surface-2 (#1a1a1a), just under AA */
-  --fs-muted: #8c8c8c;
-  --fs-ink-muted: var(--fs-muted);
+  /* #8c8c8c, not #808080 — 808080 is 4.4:1 on surface-2 (#1a1a1a), just under AA.
+     ink-muted aliases muted in dark (both sit on near-black), so raising muted
+     to #a3a3a3 (~7:1 on black) lifts every secondary label at once. */
+  --fs-muted: #a3a3a3;
+  --fs-ink-muted: #a3a3a3;
   --fs-primary: #0a0a0a;
   --fs-accent: #4ddcbb;
   --fs-accent-2: #38b5c9;
