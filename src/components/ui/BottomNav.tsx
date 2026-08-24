@@ -516,8 +516,8 @@ function BottomNav() {
           ref={ulRef}
           onPointerDown={ensureGsap}
           onPointerEnter={ensureGsap}
-          className="relative flex justify-around items-center h-16 max-w-md mx-auto px-1"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          className="relative flex justify-around items-center min-h-16 max-w-md mx-auto px-1"
+          style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 6px)' }}
         >
           {/* Shared flowing pill underlay — positioned instantly via DOM styles on
               first paint; GSAP (lazy-loaded on first interaction) animates the flow. */}
