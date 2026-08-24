@@ -203,7 +203,7 @@ export function ExportSection({
         <div className="flex flex-col">
           <ExportRow
             icon={<FileJson size={15} />}
-            label="גיבוי מלא (JSON)"
+            label="גיבוי מלא (JSON) — נתוני המכשיר"
             onClick={handleFullBackup}
             disabled={busy === 'backup'}
           />
