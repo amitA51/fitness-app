@@ -23,7 +23,6 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useMotionConfigMode } from '../hooks/useReducedMotion';
 import { ProgressDots, StepHeader } from './onboarding/components/ProgressDots';
 import { CompleteStep } from './onboarding/steps/CompleteStep';
-import { ExperienceStep } from './onboarding/steps/ExperienceStep';
 import { GoalsStep } from './onboarding/steps/GoalsStep';
 import { ProfileStep } from './onboarding/steps/ProfileStep';
 import { RoleStep } from './onboarding/steps/RoleStep';
@@ -86,8 +85,6 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
         return <ProfileStep data={data} onChange={updateData} direction={direction} />;
       case 'goals':
         return <GoalsStep data={data} onChange={updateData} direction={direction} />;
-      case 'experience':
-        return <ExperienceStep data={data} onChange={updateData} direction={direction} />;
       case 'equipment':
         return <EquipmentStep data={data} onChange={updateData} direction={direction} />;
       case 'complete':
@@ -287,93 +284,207 @@ function EquipmentStep({
       className="flex flex-col h-full"
     >
       <StepHeader
-        title="איפה מתאמנים?"
-        subtitle="נתאים את התרגילים לציוד שיש לכם"
+        title="האימון שלכם"
+        subtitle="ניסיון, ציוד ותדירות — הכל במסך אחד"
         icon={<Dumbbell size={24} />}
       />
 
       <div className="flex-1 px-4 space-y-4 overflow-y-auto pb-4">
-        {EQUIPMENT_OPTIONS.map((option) => {
-          const isSelected = data.equipment === option.value;
-          return (
-            <m.button
-              key={option.value}
-              type="button"
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onChange({ equipment: option.value })}
-              aria-pressed={isSelected}
-              className={`w-full p-4 transition-ui flex items-center gap-4 text-right template-card magnetic-card ${
-                isSelected ? 'accent-glow' : ''
-              }`}
-              style={{
-                background: isSelected ? 'var(--fs-accent)' : 'var(--fs-surface)',
-                border: isSelected
-                  ? '1px solid color-mix(in srgb, var(--fs-accent) 50%, transparent)'
-                  : '1px solid color-mix(in srgb, var(--color-border) 90%, transparent)',
-                borderRadius: 'var(--radius-2xl)',
-                boxShadow: isSelected
-                  ? '0 8px 24px color-mix(in srgb, var(--fs-accent) 22%, transparent)'
-                  : 'var(--elevation-1)',
-              }}
-            >
-              <div
-                className="w-12 h-12 flex items-center justify-center shrink-0"
-                style={{
-                  background: isSelected
-                    ? 'color-mix(in srgb, var(--color-ink-on-accent) 12%, transparent)'
-                    : 'var(--fs-surface-2)',
-                  borderRadius: 9999,
-                }}
-              >
-                <span
-                  style={{ color: isSelected ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)' }}
-                >
-                  {option.icon}
-                </span>
-              </div>
-              <div className="flex-1">
-                <p
+        {/* ── Experience level (merged from ExperienceStep) ── */}
+        <div>
+          <span
+            className="block mb-3 px-1"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              letterSpacing: '-0.01em',
+              color: 'var(--fs-muted)',
+            }}
+          >
+            רמת ניסיון
+          </span>
+          <div className="grid grid-cols-3 gap-2">
+            {(
+              [
+                { value: 'beginner', label: 'מתחיל' },
+                { value: 'intermediate', label: 'בינוני' },
+                { value: 'advanced', label: 'מנוסה' },
+              ] as const
+            ).map((lvl) => {
+              const selected = data.experienceLevel === lvl.value;
+              return (
+                <button
+                  key={lvl.value}
+                  type="button"
+                  onClick={() => onChange({ experienceLevel: lvl.value })}
+                  className="min-h-[48px] transition-ui flex items-center justify-center"
                   style={{
                     fontFamily: 'var(--font-body)',
                     fontWeight: 600,
-                    fontSize: '16px',
-                    letterSpacing: '-0.01em',
-                    color: isSelected ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
+                    fontSize: 14,
+                    background: selected ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                    color: selected ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)',
+                    border: selected
+                      ? '2px solid var(--fs-accent)'
+                      : '1px solid var(--fs-surface-2)',
+                    borderRadius: 12,
                   }}
                 >
-                  {option.title}
-                </p>
-                <p
+                  {lvl.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Equipment ── */}
+        <div>
+          <span
+            className="block mb-3 px-1"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              letterSpacing: '-0.01em',
+              color: 'var(--fs-muted)',
+            }}
+          >
+            איפה מתאמנים?
+          </span>
+          {EQUIPMENT_OPTIONS.map((option) => {
+            const isSelected = data.equipment === option.value;
+            return (
+              <m.button
+                key={option.value}
+                type="button"
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onChange({ equipment: option.value })}
+                aria-pressed={isSelected}
+                className={`w-full p-4 transition-ui flex items-center gap-4 text-right template-card magnetic-card ${
+                  isSelected ? 'accent-glow' : ''
+                }`}
+                style={{
+                  background: isSelected ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                  border: isSelected
+                    ? '1px solid color-mix(in srgb, var(--fs-accent) 50%, transparent)'
+                    : '1px solid color-mix(in srgb, var(--color-border) 90%, transparent)',
+                  borderRadius: 'var(--radius-2xl)',
+                  boxShadow: isSelected
+                    ? '0 8px 24px color-mix(in srgb, var(--fs-accent) 22%, transparent)'
+                    : 'var(--elevation-1)',
+                }}
+              >
+                <div
+                  className="w-12 h-12 flex items-center justify-center shrink-0"
                   style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '14px',
-                    letterSpacing: '-0.01em',
-                    color: isSelected
-                      ? 'color-mix(in srgb, var(--color-ink-on-accent) 78%, transparent)'
-                      : 'var(--fs-muted)',
-                    marginTop: '2px',
-                  }}
-                >
-                  {option.description}
-                </p>
-              </div>
-              {isSelected && (
-                <m.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="w-7 h-7 flex items-center justify-center shrink-0"
-                  style={{
-                    background: 'var(--fs-primary)',
-                    color: 'var(--fs-accent)',
+                    background: isSelected
+                      ? 'color-mix(in srgb, var(--color-ink-on-accent) 12%, transparent)'
+                      : 'var(--fs-surface-2)',
                     borderRadius: 9999,
                   }}
                 >
-                  <Check size={16} strokeWidth={3} />
-                </m.div>
-              )}
-            </m.button>
-          );
-        })}
+                  <span
+                    style={{ color: isSelected ? 'var(--color-ink-on-accent)' : 'var(--fs-muted)' }}
+                  >
+                    {option.icon}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontWeight: 600,
+                      fontSize: '16px',
+                      letterSpacing: '-0.01em',
+                      color: isSelected ? 'var(--color-ink-on-accent)' : 'var(--fs-ink)',
+                    }}
+                  >
+                    {option.title}
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '14px',
+                      letterSpacing: '-0.01em',
+                      color: isSelected
+                        ? 'color-mix(in srgb, var(--color-ink-on-accent) 78%, transparent)'
+                        : 'var(--fs-muted)',
+                      marginTop: '2px',
+                    }}
+                  >
+                    {option.description}
+                  </p>
+                </div>
+                {isSelected && (
+                  <m.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-7 h-7 flex items-center justify-center shrink-0"
+                    style={{
+                      background: 'var(--fs-primary)',
+                      color: 'var(--fs-accent)',
+                      borderRadius: 9999,
+                    }}
+                  >
+                    <Check size={16} strokeWidth={3} />
+                  </m.div>
+                )}
+              </m.button>
+            );
+          })}
+        </div>
+
+        {/* ── Weekly training days (from ExperienceStep) ── */}
+        <div className="mt-2">
+          <span
+            className="block mb-4 px-1"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              letterSpacing: '-0.01em',
+              color: 'var(--fs-muted)',
+            }}
+          >
+            כמה ימי אימון בשבוע?
+          </span>
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory">
+            {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+              <button
+                key={day}
+                type="button"
+                onClick={() => onChange({ preferredWorkoutDays: day })}
+                className="min-w-[52px] h-14 snap-center transition-ui flex-shrink-0"
+                style={{
+                  fontFamily: '"Bricolage Grotesque", var(--font-display)',
+                  fontWeight: 600,
+                  fontSize: '20px',
+                  background:
+                    data.preferredWorkoutDays === day ? 'var(--fs-accent)' : 'var(--fs-surface)',
+                  color:
+                    data.preferredWorkoutDays === day
+                      ? 'var(--color-ink-on-accent)'
+                      : 'var(--fs-muted)',
+                  border:
+                    data.preferredWorkoutDays === day
+                      ? '2px solid var(--fs-accent)'
+                      : '1px solid var(--fs-surface-2)',
+                  borderRadius: 12,
+                }}
+              >
+                {day}
+              </button>
+            ))}
+          </div>
+          <p
+            className="mt-3 px-1 text-center"
+            style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--fs-muted)' }}
+          >
+            {data.preferredWorkoutDays === 1
+              ? 'יום אימון אחד בשבוע'
+              : data.preferredWorkoutDays === 7
+                ? 'כל יום! (ללא מנוחה)'
+                : `${data.preferredWorkoutDays} ימי אימון בשבוע`}
+          </p>
+        </div>
       </div>
     </m.div>
   );

@@ -72,8 +72,7 @@ export const STEPS: OnboardingStep[] = [
   { id: 'role', title: 'מי אתה?', subtitle: 'מאמן או מתאמן' },
   { id: 'profile', title: 'פרופיל אישי', subtitle: 'ספר לנו על עצמך' },
   { id: 'goals', title: 'מטרות כושר', subtitle: 'מה המטרות שלך?' },
-  { id: 'experience', title: 'ניסיון', subtitle: 'רמת האימון שלך' },
-  { id: 'equipment', title: 'ציוד', subtitle: 'איפה אתה מתאמן?' },
+  { id: 'equipment', title: 'האימון שלכם', subtitle: 'ניסיון, ציוד ותדירות' },
   { id: 'complete', title: 'מוכן!', subtitle: 'בואו נתחיל' },
 ];
 
