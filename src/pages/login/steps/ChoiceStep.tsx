@@ -111,13 +111,13 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
               </h3>
               <p
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '11px',
                   color: 'var(--fs-muted)',
                   letterSpacing: '-0.01em',
                 }}
               >
-                משתמש קיים
+                כבר יש לכם חשבון
               </p>
             </div>
           </div>
@@ -169,8 +169,8 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
               </h3>
               <p
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '11px',
                   color: 'var(--color-ink-on-accent)',
                   opacity: 0.7,
                   letterSpacing: '-0.01em',
