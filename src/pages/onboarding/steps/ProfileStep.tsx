@@ -99,8 +99,9 @@ export function ProfileStep({ data, onChange, direction = 1 }: ProfileStepProps)
           </div>
         </div>
 
-        {/* Age & Height */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Age & Height — items-start so a validation error under one input
+            cannot push its neighbour's label up (labels stay level). */}
+        <div className="grid grid-cols-2 gap-4 items-start">
           <MobileInput
             type="number"
             value={data.age}
