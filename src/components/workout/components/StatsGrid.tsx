@@ -250,13 +250,15 @@ export interface StatsGridProps {
   duration: number;
   totalSets: number;
   prsCount: number | null;
+  /** MET-estimated energy cost of the session (kcal) — omitted when unknown. */
+  caloriesBurned?: number | null;
   comparison?: ComparisonData | null;
   /** Seconds to wait before the card stagger begins (after the headline lands). */
   startDelay?: number;
 }
 
 export const StatsGrid: React.FC<StatsGridProps> = memo(
-  ({ totalVolume, duration, totalSets, prsCount, comparison, startDelay = 0 }) => {
+  ({ totalVolume, duration, totalSets, prsCount, caloriesBurned, comparison, startDelay = 0 }) => {
     const reduced = useReducedMotion();
     const gridRef = useRef<HTMLDivElement>(null);
     const heroNumRef = useRef<HTMLSpanElement>(null);
@@ -412,7 +414,12 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
             </div>
           )}
           <StatCard label="סטים" value={totalSets} delay={cellDelay(1)} />
-          <StatCard label="משך" value={duration} suffix=" דק׳" delay={cellDelay(2)} />
+          <StatCard
+            label={caloriesBurned ? 'קק״ל' : 'משך'}
+            value={caloriesBurned ?? duration}
+            suffix={caloriesBurned ? '' : ' דק׳'}
+            delay={cellDelay(2)}
+          />
         </div>
 
         {/* Comparison section */}

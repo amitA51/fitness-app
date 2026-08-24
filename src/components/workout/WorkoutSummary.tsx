@@ -673,6 +673,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   duration={stats.duration}
                   totalSets={stats.totalSets}
                   prsCount={prsCount}
+                  caloriesBurned={session.caloriesBurned}
                   comparison={comparison}
                   startDelay={STATS_START}
                 />
