@@ -1130,6 +1130,14 @@ textarea {
   color: var(--color-ink-on-dark);
 }
 
+/* Perfect week — every day trained. Apple awards a special badge for the
+   full-ring week; we mark it with the accent fill so the completed row reads
+   as one earned unit instead of seven separate wins. */
+.day-cell.done.perfect-week {
+  background: var(--fs-accent);
+  color: var(--color-ink-on-accent);
+}
+
 .day-cell.today {
   border-color: var(--fs-accent);
   box-shadow: inset 0 0 0 1px var(--fs-accent);

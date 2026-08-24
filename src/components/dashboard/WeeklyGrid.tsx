@@ -23,7 +23,7 @@ export const WeeklyGrid = memo(function WeeklyGrid({
   // origin (right in RTL, left in LTR); "next/future" points the other way.
   const PrevIcon = isRTL ? ChevronRight : ChevronLeft;
   const NextIcon = isRTL ? ChevronLeft : ChevronRight;
-  const { days, weekLabel, isCurrentWeek, weekProgress } = useMemo(() => {
+  const { days, weekLabel, isCurrentWeek, weekProgress, perfectWeek } = useMemo(() => {
     const now = new Date();
     const currentWeekStart = getWeekStart(now);
     const targetWeekStart = new Date(currentWeekStart);
@@ -71,12 +71,15 @@ export const WeeklyGrid = memo(function WeeklyGrid({
 
     const activeCount = daysArray.filter((d) => d.active).length;
     const progress = Math.round((activeCount / 7) * 100);
+    // Perfect week: all seven days trained — the whole row earns accent fill.
+    const perfectWeek = activeCount === 7;
 
     return {
       days: daysArray,
       weekLabel,
       isCurrentWeek: weekOffset === 0,
       weekProgress: progress,
+      perfectWeek,
     };
   }, [sessions, weekOffset]);
 
@@ -201,6 +204,7 @@ export const WeeklyGrid = memo(function WeeklyGrid({
         {days.map((day) => {
           const classes = ['day-cell'];
           if (day.active) classes.push('done');
+          if (perfectWeek && day.active) classes.push('perfect-week');
           if (day.isToday) classes.push('today');
 
           // State is conveyed visually by color only — voice it for screen
