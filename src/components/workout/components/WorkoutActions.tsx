@@ -5,8 +5,10 @@ import { useCallback, useMemo, useState } from 'react';
 import type React from 'react';
 import { Suspense, lazy } from 'react';
 import { createWorkoutTemplate, saveWorkoutSession } from '../../../services/dataService';
+import { readAthleteProfile } from '../../../services/intelligence/profile';
 import type { PersonalItem, WorkoutExercise, WorkoutSession } from '../../../types';
 import { todayStr } from '../../../utils/dateUtils';
+import { estimateCaloriesBurned } from '../../../utils/estimateCaloriesBurned';
 import { triggerHaptic } from '../../../utils/haptics';
 import { generateId } from '../../../utils/id';
 import { logger } from '../../../utils/logger';
@@ -288,7 +290,14 @@ export const useWorkoutFinish = (): UseWorkoutFinishReturn => {
             (sum, ex) => sum + ex.sets.reduce((setSum, s) => setSum + setVolume(s), 0),
             0
           ),
-          caloriesBurned: null,
+          caloriesBurned: estimateCaloriesBurned(
+            workoutExercises.reduce(
+              (sum, ex) => sum + ex.sets.reduce((setSum, s) => setSum + setVolume(s), 0),
+              0
+            ),
+            Math.floor((Date.now() - state.startTimestamp - state.totalPausedTime) / 60000),
+            readAthleteProfile().weightKg
+          ),
           goalType: workoutSettings.defaultWorkoutGoal ?? 'general',
           exercises: workoutExercises,
           createdAt: new Date().toISOString(),
