@@ -223,14 +223,12 @@ h4,
 .tracking-widest {
   letter-spacing: 0.15em;
 }
-.tracking-editorial {
-  letter-spacing: 0.08em;
-}
-.tracking-label {
-  letter-spacing: 0.18em;
-}
+/* Hebrew UI never uses wide tracking — these utilities are retained only for
+   Latin numeral contexts and are unreferenced in JSX (dead but harmless). */
+.tracking-editorial,
+.tracking-label,
 .tracking-ribbon {
-  letter-spacing: 0.22em;
+  letter-spacing: -0.01em;
 }
 
 /* ============================================================================
