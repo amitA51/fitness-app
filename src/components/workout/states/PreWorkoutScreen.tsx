@@ -349,10 +349,11 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 </div>
                 <div
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 9,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 11,
+                    fontWeight: 500,
                     letterSpacing: '-0.01em',
-                    color: 'rgba(255,255,255,0.5)',
+                    color: 'rgba(255,255,255,0.78)',
                   }}
                 >
                   תרגילים
@@ -388,10 +389,11 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 </div>
                 <div
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 9,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 11,
+                    fontWeight: 500,
                     letterSpacing: '-0.01em',
-                    color: 'rgba(255,255,255,0.5)',
+                    color: 'rgba(255,255,255,0.78)',
                   }}
                 >
                   ק"ג
@@ -417,10 +419,11 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 </div>
                 <div
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 9,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 11,
+                    fontWeight: 500,
                     letterSpacing: '-0.01em',
-                    color: 'rgba(255,255,255,0.5)',
+                    color: 'rgba(255,255,255,0.78)',
                   }}
                 >
                   ימים
