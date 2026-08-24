@@ -62,6 +62,13 @@ export default function Dashboard() {
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [selectedWeekOffset, setSelectedWeekOffset] = useState(0);
   const [isStartSheetOpen, setIsStartSheetOpen] = useState(false);
+  /**
+   * D4 activation: a first-run user finishing onboarding lands with the
+   * start-workout sheet already open — the "ready-to-start beginner workout"
+   * instead of a dashboard they must re-interpret. One-shot; dismissed like
+   * any other sheet open.
+   */
+  const [autoOpenedStartSheet, setAutoOpenedStartSheet] = useState(false);
   // Bumped after a pull-to-refresh so the memo'd rings + legend count-ups replay
   // the cascade in lockstep even when the underlying values are unchanged.
   const [refreshTick, setRefreshTick] = useState(0);
@@ -140,6 +147,16 @@ export default function Dashboard() {
   // The zero-session first-run hero owns the start CTA + explanation; when it is
   // showing, the masthead start CTA above would be a second identical mint button.
   const showFirstRunHero = !showSkeleton && !insightsError && !hasAnySession;
+
+  // D4: on the very first render where the FirstRunHero is about to show,
+  // open the start-workout sheet once. The hero's numbered steps explain the
+  // flow; the sheet puts the recommended path one tap from a workout.
+  useEffect(() => {
+    if (autoOpenedStartSheet || showSkeleton || insightsError || hasAnySession) return;
+    setAutoOpenedStartSheet(true);
+    const id = window.setTimeout(() => setIsStartSheetOpen(true), 600);
+    return () => window.clearTimeout(id);
+  }, [autoOpenedStartSheet, showSkeleton, insightsError, hasAnySession]);
 
   const sortedTemplates = useMemo(() => {
     return [...templates.filter((t) => t.isFavorite), ...templates.filter((t) => !t.isFavorite)];
