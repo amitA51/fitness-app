@@ -139,43 +139,40 @@ export function useTemplates() {
     }
   }, []);
 
-  const handleDuplicate = useCallback(
-    async (template: WorkoutTemplate) => {
-      const exercises: WorkoutTemplateExercise[] = template.exercises.map((ex, i) => ({
-        id: crypto.randomUUID(),
-        exerciseId: ex.exerciseId,
-        exerciseName: ex.exerciseName,
-        targetMuscle: ex.targetMuscle,
-        targetSets: ex.targetSets,
-        targetReps: ex.targetReps,
-        targetWeight: ex.targetWeight,
-        restSeconds: ex.restSeconds,
-        order: i,
-        notes: ex.notes,
-      }));
-      const newTemplate = await createWorkoutTemplate({
-        name: `העתק של ${template.name}`,
-        description: '',
-        exercises,
-        updatedAt: new Date().toISOString(),
-        lastUsed: null,
-        timesUsed: 0,
-        isFavorite: false,
-      }).catch((err) => {
-        // Legacy quota rejections (trigger dropped) still map to an honest
-        // message instead of the old paywall redirect.
-        if (isFreeTemplateLimitError(err)) {
-          showToast(FREE_TEMPLATE_LIMIT_MESSAGE, 'error');
-          setShowCreateModal(false);
-          return null;
-        }
-        throw err;
-      });
-      if (!newTemplate) return;
-      setTemplates((prev) => [...prev, newTemplate]);
-    },
-    [navigate]
-  );
+  const handleDuplicate = useCallback(async (template: WorkoutTemplate) => {
+    const exercises: WorkoutTemplateExercise[] = template.exercises.map((ex, i) => ({
+      id: crypto.randomUUID(),
+      exerciseId: ex.exerciseId,
+      exerciseName: ex.exerciseName,
+      targetMuscle: ex.targetMuscle,
+      targetSets: ex.targetSets,
+      targetReps: ex.targetReps,
+      targetWeight: ex.targetWeight,
+      restSeconds: ex.restSeconds,
+      order: i,
+      notes: ex.notes,
+    }));
+    const newTemplate = await createWorkoutTemplate({
+      name: `העתק של ${template.name}`,
+      description: '',
+      exercises,
+      updatedAt: new Date().toISOString(),
+      lastUsed: null,
+      timesUsed: 0,
+      isFavorite: false,
+    }).catch((err) => {
+      // Legacy quota rejections (trigger dropped) still map to an honest
+      // message instead of the old paywall redirect.
+      if (isFreeTemplateLimitError(err)) {
+        showToast(FREE_TEMPLATE_LIMIT_MESSAGE, 'error');
+        setShowCreateModal(false);
+        return null;
+      }
+      throw err;
+    });
+    if (!newTemplate) return;
+    setTemplates((prev) => [...prev, newTemplate]);
+  }, []);
 
   const handleStartTemplate = useCallback(
     (templateId: string) => {

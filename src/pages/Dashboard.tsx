@@ -28,6 +28,7 @@ import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { InsightCard } from '../components/dashboard/InsightCard';
 import { ProgramCard } from '../components/dashboard/ProgramCard';
 import { StartWorkoutSheet } from '../components/dashboard/StartWorkoutSheet';
+import { StreakMilestone } from '../components/dashboard/StreakMilestone';
 import { TemplateStrip } from '../components/dashboard/TemplateQuickStart';
 import { TodaysWorkoutCard } from '../components/dashboard/TodaysWorkoutCard';
 import { WeeklyGrid } from '../components/dashboard/WeeklyGrid';
@@ -573,6 +574,8 @@ export default function Dashboard() {
         <ProgramCard />
 
         <WorkoutStreak sessions={workoutSessions} />
+
+        <StreakMilestone sessions={workoutSessions} />
 
         <InsightCard insight={dashboardInsight} />
 
