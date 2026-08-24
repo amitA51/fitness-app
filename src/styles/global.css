@@ -252,12 +252,11 @@ body {
 
   /* Eyebrow Label */
   .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: var(--font-semibold);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
     color: var(--color-text-secondary);
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
+    letter-spacing: -0.01em;
   }
 
   /* Divider */
@@ -288,16 +287,15 @@ body {
   /* Tab Bar Item */
   .tab-item {
     padding: 0.5rem 1rem;
-    border-radius: 0;
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
+    border-radius: 999px;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
     font-weight: var(--font-semibold);
     color: var(--fs-muted);
     background: transparent;
     border: none;
     cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: -0.01em;
     transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
     min-height: 44px;
   }
@@ -323,20 +321,19 @@ body {
   }
 
   .masthead .kicker {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0.06em;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
     color: var(--fs-accent);
-    text-transform: uppercase;
   }
 
   .masthead h1,
   .masthead h2 {
     font-family: var(--font-display);
-    font-weight: 900;
-    line-height: 0.9;
-    letter-spacing: -0.02em;
-    text-transform: uppercase;
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -0.022em;
     color: var(--color-ink-on-dark);
   }
 
@@ -351,19 +348,18 @@ body {
   }
 
   .chapter-break .left {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0.28em;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
     color: var(--fs-accent);
-    text-transform: uppercase;
   }
 
   .chapter-break .right {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -0.01em;
     color: var(--color-ink-on-dark);
   }
 
@@ -376,43 +372,30 @@ body {
   }
 
   .block-hero .label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
     margin-bottom: 8px;
     opacity: 0.75;
   }
 
   .block-hero .number {
     font-family: var(--font-display);
-    font-weight: 900;
-    font-size: 120px;
-    line-height: 0.85;
+    font-weight: 700;
+    font-size: 96px;
+    line-height: 0.9;
     letter-spacing: -0.03em;
   }
 
   .block-hero .sub {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 18px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 16px;
+    letter-spacing: -0.01em;
     margin-top: 6px;
   }
 
-  .block-hero .ribbon {
-    position: absolute;
-    top: 0;
-    right: 0;
-    background: var(--fs-primary);
-    color: var(--fs-accent);
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    padding: 6px 10px;
-    text-transform: uppercase;
-  }
 
   /* RTL keeps the ribbon at the top-right (inline-start) corner: the far
      (left) corner is owned by the hero's action button, and mirroring the
@@ -453,270 +436,12 @@ body {
   }
 
   .data-strip .lbl {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0.22em;
-    color: var(--fs-muted);
-    text-transform: uppercase;
-  }
-
-  /* Skill Bar */
-  .skill-row {
-    padding: 16px 0;
-    border-bottom: 1px solid var(--fs-surface-2);
-  }
-
-  .skill-row:last-child {
-    border-bottom: none;
-  }
-
-  .skill-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 10px;
-  }
-
-  .skill-name {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0;
-    color: var(--fs-ink);
-  }
-
-  .skill-pct {
-    font-family: var(--font-mono);
-    font-size: 14px;
+    font-family: var(--font-body);
+    font-size: 11px;
     font-weight: 500;
-    color: var(--fs-heading);
-  }
-
-  .skill-bar {
-    height: 8px;
-    background: var(--fs-surface-2);
-    position: relative;
-  }
-
-  .skill-fill {
-    height: 100%;
-    background: var(--fs-accent);
-    /* This base does not own a transform state. Keeping a width transition here
-       would force layout on every update; live progress fills use scaleX instead. */
-  }
-
-  /* Chapter Head — section intro with chapter number + meta + title */
-  .chapter-head {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: var(--space-4);
-    align-items: baseline;
-    padding-bottom: var(--space-4);
-    border-bottom: 3px solid var(--fs-primary);
-    margin-bottom: var(--space-5);
-  }
-
-  .chapter-head .chapter-num {
-    font-family: var(--font-display);
-    font-weight: 900;
-    font-size: 56px;
-    line-height: 0.85;
-    color: var(--fs-heading);
-    letter-spacing: -0.02em;
-  }
-
-  .chapter-head .chapter-meta {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--fs-muted);
-  }
-
-  .chapter-head .chapter-title {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 24px;
-    line-height: 0.95;
     letter-spacing: -0.01em;
-    color: var(--fs-ink);
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
-
-  /* Button Row — editorial 2fr 1fr primary + secondary */
-  .btn-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 2px;
-  }
-
-  /* ──── ACTIVE WORKOUT ──── */
-
-  /* AW Masthead — top bar with exercise + set counter */
-  .aw-masthead {
-    background: var(--fs-primary);
-    color: var(--color-ink-on-dark);
-    padding: 12px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--space-3);
-  }
-
-  .aw-masthead .exercise {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 18px;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    line-height: 1;
-  }
-
-  .aw-masthead .counter {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    color: var(--fs-accent);
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-
-  /* AW Hero — massive weight number on navy, flexes to fill available space */
-  .aw-hero {
-    background: var(--fs-primary);
-    color: var(--color-ink-on-dark);
-    text-align: center;
-    padding: 20px 20px;
-    position: relative;
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .aw-hero .num {
-    font-family: var(--font-display);
-    font-weight: 900;
-    font-size: clamp(80px, 22vmin, 140px);
-    line-height: 0.85;
-    letter-spacing: -0.04em;
-    color: var(--color-ink-on-dark);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .aw-hero .unit {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    letter-spacing: 0.28em;
-    text-transform: uppercase;
-    color: rgba(245, 241, 235, 0.7);
-  }
-
-  .aw-hero .rpe {
-    position: absolute;
-    top: 14px;
-    right: 16px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.16em;
-    background: var(--fs-accent);
-    color: var(--color-ink-on-accent);
-    padding: 3px 8px;
-    text-transform: uppercase;
-    font-weight: 500;
-  }
-
-  [dir="rtl"] .aw-hero .rpe {
-    right: auto;
-    left: 16px;
-  }
-
-  /* AW Sets — list of sets recorded */
-  .aw-sets {
-    padding: 16px 20px;
-  }
-
-  .aw-sets h3 {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0.28em;
-    color: var(--fs-muted);
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    font-weight: var(--font-semibold);
-  }
-
-  /* Set Row — individual set entry with states: done / active / future */
-  .set-row-annual {
-    display: grid;
-    grid-template-columns: 36px 1fr auto;
-    gap: 12px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--fs-surface-2);
-    align-items: center;
-    font-family: var(--font-mono);
-    font-size: 13px;
-  }
-
-  .set-row-annual:last-child {
-    border-bottom: none;
-  }
-
-  .set-row-annual .num {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 24px;
-    color: var(--fs-heading);
-    line-height: 1;
-  }
-
-  .set-row-annual .val {
-    color: var(--fs-ink);
-    letter-spacing: 0.04em;
-  }
-
-  .set-row-annual .mark {
-    color: var(--fs-accent);
-    font-size: 18px;
-    font-weight: 700;
-  }
-
-  /* Set Row — done */
-  .set-row-annual.done .num,
-  .set-row-annual.done .val {
     color: var(--fs-muted);
   }
-
-  /* Set Row — future */
-  .set-row-annual.future .num,
-  .set-row-annual.future .val {
-    color: var(--fs-surface-2);
-  }
-
-  /* Set Row — active (accent band) */
-  .set-row-annual.active {
-    background: var(--fs-accent);
-    margin: 0 -20px;
-    padding-left: 20px;
-    padding-right: 20px;
-  }
-
-  .set-row-annual.active .num,
-  .set-row-annual.active .val,
-  .set-row-annual.active .mark {
-    /* On the accent band — fs-heading is near-white in dark mode (1.5:1 on mint) */
-    color: var(--color-ink-on-accent);
-  }
-
-  .set-row-annual.active .val {
-    font-weight: 600;
-  }
-}
 
 /* ──── FRESH STEEL CARD ──── */
 .card-fs {
