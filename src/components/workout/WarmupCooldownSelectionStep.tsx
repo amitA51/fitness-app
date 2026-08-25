@@ -55,7 +55,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
         {/* Title area */}
         <div className="px-5 pt-5 pb-6">
           <h2
-            className="uppercase"
+            className=""
             style={{
               fontFamily: 'var(--font-display)',
               fontWeight: 700,

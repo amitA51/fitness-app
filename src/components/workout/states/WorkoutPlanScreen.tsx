@@ -205,7 +205,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
             תכנון מראש
           </p>
           <h1
-            className="uppercase"
+            className=""
             style={{
               fontFamily: 'var(--font-display)',
               fontWeight: 700,

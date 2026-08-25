@@ -97,10 +97,10 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
         <label
           id={labelId}
           htmlFor={buttonId}
-          className="block uppercase mb-2"
+          className="block mb-2"
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
+            fontFamily: 'var(--font-body)',
+            fontSize: '11px',
             letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
             fontWeight: 600,

@@ -122,7 +122,7 @@ const SupersetPicker: React.FC<SupersetPickerProps> = ({
           <div className="px-5 pb-4 flex items-center justify-between">
             <div>
               <h1
-                className="uppercase flex items-center gap-2"
+                className="flex items-center gap-2"
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontWeight: 700,

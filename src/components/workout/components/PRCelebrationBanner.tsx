@@ -77,7 +77,7 @@ const PRCelebrationBanner: React.FC<PRCelebrationBannerProps> = ({ pr, onDismiss
             </span>
             <div style={{ minWidth: 0 }}>
               <div
-                className="uppercase"
+                className=""
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: 9,
