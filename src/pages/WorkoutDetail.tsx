@@ -154,7 +154,14 @@ export default function WorkoutDetail() {
             >
               פרטי אימון
             </h1>
-            <p style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}>
+            <p
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                fontFamily: 'var(--font-body)',
+                color: 'var(--fs-muted)',
+              }}
+            >
               {formatHebrewDate(session.date || session.startTime)}
             </p>
           </div>
@@ -181,7 +188,12 @@ export default function WorkoutDetail() {
               <div className="flex items-center gap-2">
                 <Clock size={14} style={{ color: 'var(--fs-accent-2)' }} />
                 <span
-                  style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    fontFamily: 'var(--font-body)',
+                    color: 'var(--fs-muted)',
+                  }}
                 >
                   שעת התחלה
                 </span>
@@ -202,7 +214,12 @@ export default function WorkoutDetail() {
               <div className="flex items-center gap-2">
                 <Clock size={14} style={{ color: 'var(--fs-accent)' }} />
                 <span
-                  style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--fs-muted)' }}
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    fontFamily: 'var(--font-body)',
+                    color: 'var(--fs-muted)',
+                  }}
                 >
                   שעת סיום
                 </span>
