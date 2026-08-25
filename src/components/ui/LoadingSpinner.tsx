@@ -326,9 +326,9 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         <m.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={`${sizeMap[size].text} font-medium uppercase`}
+          className={`${sizeMap[size].text} font-medium`}
           style={{
-            fontFamily: 'var(--font-mono)',
+            fontFamily: 'var(--font-body)',
             letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
           }}

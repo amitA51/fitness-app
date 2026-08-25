@@ -91,9 +91,7 @@ export const RPEDisplay: React.FC<RPEDisplayProps> = memo(
         className="premium-card p-4"
       >
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold text-white/40 uppercase tracking-wider">
-            מאמץ (RPE)
-          </span>
+          <span className="text-xs font-bold text-white/40 tracking-wider">מאמץ (RPE)</span>
           {avgRpeTarget !== null && (
             <span className="text-[10px] text-white/30">יעד: {avgRpeTarget}</span>
           )}
