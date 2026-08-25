@@ -9,5 +9,5 @@ export { ActivityRings } from './ActivityRings';
 export type { ActivityRingData } from './ActivityRings';
 export { GradientSparkline } from './GradientSparkline';
 export { GlowAreaChart } from './GlowAreaChart';
-export type { GlowAreaPoint } from './GlowAreaChart';
+export type { GlowAreaPoint, GlowAreaMarker } from './GlowAreaChart';
 export { AnimatedBar } from './AnimatedBar';

@@ -9,6 +9,14 @@ export interface GlowAreaPoint {
   y: number;
 }
 
+/** A highlighted data index (e.g. a personal-record point on a strength curve). */
+export interface GlowAreaMarker {
+  /** Index into `data` of the point to mark. */
+  index: number;
+  /** Short caption rendered under the marker (kept to 2–3 chars: "PR"). */
+  label?: string;
+}
+
 interface GlowAreaChartProps {
   data: GlowAreaPoint[];
   height?: number;
@@ -26,6 +34,8 @@ interface GlowAreaChartProps {
   interactive?: boolean;
   /** Optional unit suffix appended to the inspected y value in the callout (e.g. "kg"). */
   valueUnit?: string;
+  /** Points of achievement (running-maximum e1RM etc.) drawn as ringed dots. */
+  markers?: GlowAreaMarker[];
 }
 
 interface XY {
@@ -111,6 +121,7 @@ export const GlowAreaChart = memo(function GlowAreaChart({
   ariaLabel,
   interactive = false,
   valueUnit,
+  markers,
 }: GlowAreaChartProps) {
   const reactId = useId();
   const gradientId = `glow-grad-${reactId}`;
@@ -364,6 +375,43 @@ export const GlowAreaChart = memo(function GlowAreaChart({
             }}
           />
         )}
+        {/* PR markers — ringed dots on achievement points (FitNotes/Strong
+            pattern: the record sessions are visible ON the curve). Static,
+            reduced-motion-safe; the scrub overlay paints above them. */}
+        {(markers ?? []).map((m) => {
+          const pt = points[m.index];
+          const datum = data[m.index];
+          if (!pt || !datum) return null;
+          return (
+            <g key={`marker-${m.index}`} aria-hidden="true">
+              <circle
+                cx={pt.x}
+                cy={pt.y}
+                r={5.5}
+                fill="var(--fs-bg-dark)"
+                stroke={accent2}
+                strokeWidth={2}
+                style={{
+                  filter: `drop-shadow(0 0 5px color-mix(in srgb, ${accent2} 65%, transparent))`,
+                }}
+              />
+              {m.label && (
+                <text
+                  x={pt.x}
+                  y={pt.y + 18}
+                  textAnchor="middle"
+                  fontFamily="var(--font-mono)"
+                  fontSize={9}
+                  fontWeight={700}
+                  fill={accent2}
+                  fillOpacity={0.95}
+                >
+                  {m.label}
+                </text>
+              )}
+            </g>
+          );
+        })}
         {/* Scrub guide — a vertical rule under the inspected point. The SVG x
             stretches with the container (preserveAspectRatio="none") so it tracks
             the HTML overlay dot. Only x1/x2 move between inspected points; keeping

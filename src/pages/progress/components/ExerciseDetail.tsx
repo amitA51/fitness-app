@@ -10,7 +10,11 @@
 import { ArrowRight, TrendingDown, TrendingUp } from 'lucide-react';
 import type React from 'react';
 import { memo, useMemo } from 'react';
-import { GlowAreaChart, type GlowAreaPoint } from '../../../components/charts/GlowAreaChart';
+import {
+  GlowAreaChart,
+  type GlowAreaMarker,
+  type GlowAreaPoint,
+} from '../../../components/charts/GlowAreaChart';
 import ForecastChart from '../../../components/workout/ForecastChart';
 import type { WorkoutSession } from '../../../types';
 import { zoneColor } from '../../../utils/zoneColor';
@@ -85,6 +89,26 @@ export const ExerciseDetail = memo(function ExerciseDetail({
       })),
     [progress.points]
   );
+
+  // PR markers: every point whose e1RM is a new running maximum (the record
+  // sessions, visible ON the curve — the FitNotes/Strong pattern from the
+  // design research). The final point only gets marked when it IS a record,
+  // so the marker never collides with the chart's own tail pulse.
+  const prMarkers = useMemo(() => {
+    const pts = progress.points.slice(-CHART_POINTS);
+    const markers: GlowAreaMarker[] = [];
+    let runningMax = Number.NEGATIVE_INFINITY;
+    for (let i = 0; i < pts.length; i++) {
+      const e = pts[i]!.e1RM;
+      if (e > runningMax) {
+        // Skip index 0 (the first session isn't an "achievement") and skip
+        // the last index when it's also the chart tail.
+        if (i > 0 && i < pts.length - 1) markers.push({ index: i, label: 'PR' });
+        runningMax = e;
+      }
+    }
+    return markers;
+  }, [progress.points]);
 
   const historyMonths = useMemo(
     () => groupByMonth(progress.points, HISTORY_ROWS),
@@ -245,6 +269,7 @@ export const ExerciseDetail = memo(function ExerciseDetail({
             yAxis
             interactive
             valueUnit="kg"
+            markers={prMarkers}
             ariaLabel={`עקומת 1RM משוער ל${label}`}
           />
         ) : (
