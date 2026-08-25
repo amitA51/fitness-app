@@ -11,6 +11,7 @@ import { useWorkoutStreak } from '../../../hooks/useWorkoutStreak';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
 import { formatVolume } from '../../../utils/dateUtils';
 import { zoneColor } from '../../../utils/zoneColor';
+import { BigThreeCard } from '../components/BigThreeCard';
 import { ChapterBreak } from '../components/ChapterBreak';
 import { LevelCard } from '../components/LevelCard';
 import { SectionCard } from '../components/SectionCard';
@@ -222,6 +223,10 @@ export const OverviewTab = memo(function OverviewTab({
           the first session awards XP). Sits right under the week's verdict so
           level progress reads as part of the same story. */}
       <LevelCard />
+
+      {/* The big three — squat/bench/deadlift e1RM at a glance (Hevy/Strong's
+          most-requested widget). Self-hides until one of the lifts is trained. */}
+      <BigThreeCard sessions={sessions} />
 
       {/* Weekly-review card: verdict headline + 3-up hero stats with WoW deltas. */}
       <SectionCard>

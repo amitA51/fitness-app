@@ -123,17 +123,20 @@ function Chip({
 export const StrengthSection = memo(function StrengthSection({
   sessions,
   prs,
+  initialSelected,
 }: {
   // Already status-filtered to completed by the parent (single data source).
   sessions: WorkoutSession[];
   prs: PersonalRecord[];
+  /** Deep-link entry (e.g. the big-three widget) opens this exercise's detail. */
+  initialSelected?: string | null;
 }) {
   const reduced = useReducedMotion();
   const progress = useMemo(() => buildExerciseProgress(sessions), [sessions]);
   const summary = useMemo(() => summarizeStrength(progress), [progress]);
   const prBoard = useMemo(() => buildPRBoard(prs), [prs]);
 
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(initialSelected ?? null);
   const [sort, setSort] = useState<StrengthSort>('recent');
   const [filter, setFilter] = useState<StrengthFilter>('all');
   const [showAllPRs, setShowAllPRs] = useState(false);

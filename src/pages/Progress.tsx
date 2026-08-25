@@ -292,7 +292,13 @@ export default function ProgressPage() {
                 aria-labelledby="progress-tab-workouts"
                 {...motionProps}
               >
-                <WorkoutsTab sessions={completedSessions} prs={prs} isLoading={isLoading} />
+                <WorkoutsTab
+                  sessions={completedSessions}
+                  prs={prs}
+                  isLoading={isLoading}
+                  initialSub={location.state?.subTab}
+                  initialStrengthSelection={location.state?.exercise}
+                />
               </m.div>
             )}
             {activeTab === 'body' && (

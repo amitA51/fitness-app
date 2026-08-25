@@ -79,13 +79,19 @@ export const WorkoutsTab = memo(function WorkoutsTab({
   sessions,
   prs,
   isLoading,
+  initialSub,
+  initialStrengthSelection,
 }: {
   sessions: WorkoutSession[];
   prs: PersonalRecord[];
   isLoading?: boolean;
+  /** Deep-link entry (e.g. the big-three widget) opens a specific sub-tab. */
+  initialSub?: WorkoutsSubTab;
+  /** Exercise name pre-selected inside the strength sub-tab (big-three deep link). */
+  initialStrengthSelection?: string | null;
 }) {
   const navigate = useNavigate();
-  const [sub, setSub] = useState<WorkoutsSubTab>('history');
+  const [sub, setSub] = useState<WorkoutsSubTab>(initialSub ?? 'history');
   const [range, setRange] = useState<RangeKey>(DEFAULT_RANGE);
   // Slice the already-loaded sessions by the selected date window (no re-fetch),
   // then build the trend over the full slice (length as limit, so a long range
@@ -215,7 +221,11 @@ export const WorkoutsTab = memo(function WorkoutsTab({
           aria-labelledby="workouts-sub-tab-strength"
           className="space-y-4"
         >
-          <StrengthSection sessions={sessions} prs={prs} />
+          <StrengthSection
+            sessions={sessions}
+            prs={prs}
+            initialSelected={initialStrengthSelection}
+          />
         </div>
       )}
     </div>
