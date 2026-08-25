@@ -89,8 +89,9 @@ export const WeightSection = memo(function WeightSection({
           </span>
           <div
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
+              fontFamily: 'var(--font-body)',
+              fontSize: 11,
+              fontWeight: 500,
               letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
               marginTop: 12,
@@ -154,8 +155,9 @@ export const WeightSection = memo(function WeightSection({
                 </div>
                 <div
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 9,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 11,
+                    fontWeight: 500,
                     color: 'var(--fs-muted)',
                     letterSpacing: '-0.01em',
                     marginTop: 4,
