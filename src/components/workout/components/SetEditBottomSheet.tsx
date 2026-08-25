@@ -42,6 +42,10 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
     const [editingSetIndex, setEditingSetIndex] = useState<number | null>(null);
     const [tempWeight, setTempWeight] = useState<number>(0);
     const [tempReps, setTempReps] = useState<number>(0);
+    // Apply-to-following (the #1 r/Hevy feature request): when saving an edit,
+    // also write the same weight+reps into every LATER set that hasn't been
+    // logged yet — so changing the first of six sets fixes all six at once.
+    const [applyToFollowing, setApplyToFollowing] = useState(false);
     const weightId = useId();
     const repsId = useId();
 
@@ -60,9 +64,28 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
     const handleSave = useCallback(() => {
       if (editingSetIndex !== null) {
         onUpdateSet(editingSetIndex, { weight: tempWeight, reps: tempReps });
+        if (applyToFollowing) {
+          // Later sets only, and never one that was already logged — history
+          // stays untouchable; only untouched/pending rows inherit.
+          for (let i = editingSetIndex + 1; i < sets.length; i++) {
+            if (sets[i]?.completedAt) continue;
+            onUpdateSet(i, { weight: tempWeight, reps: tempReps });
+          }
+        }
         setEditingSetIndex(null);
+        setApplyToFollowing(false);
       }
-    }, [editingSetIndex, tempWeight, tempReps, onUpdateSet]);
+    }, [editingSetIndex, tempWeight, tempReps, applyToFollowing, sets, onUpdateSet]);
+
+    /** How many later sets would inherit if the user flips the toggle. */
+    const followingCount = useMemo(() => {
+      if (editingSetIndex === null) return 0;
+      let n = 0;
+      for (let i = editingSetIndex + 1; i < sets.length; i++) {
+        if (!sets[i]?.completedAt) n += 1;
+      }
+      return n;
+    }, [editingSetIndex, sets]);
 
     const handleCancel = useCallback(() => {
       setEditingSetIndex(null);
@@ -248,6 +271,42 @@ const SetEditBottomSheet = memo<SetEditBottomSheetProps>(
                         </div>
                       </div>
                     </div>
+
+                    {/* Apply to following sets — the r/Hevy #1 ask. Only shown
+                        when there IS something later that would inherit. */}
+                    {followingCount > 0 && (
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          cursor: 'pointer',
+                          minHeight: 32,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={applyToFollowing}
+                          onChange={(e) => setApplyToFollowing(e.target.checked)}
+                          style={{
+                            width: 18,
+                            height: 18,
+                            accentColor: 'var(--fs-accent)',
+                            margin: 0,
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-body)',
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: 'var(--fs-heading)',
+                          }}
+                        >
+                          החל על {followingCount} הסטים {followingCount === 1 ? 'הבא' : 'הבאים'}
+                        </span>
+                      </label>
+                    )}
 
                     {/* Actions */}
                     <div style={{ display: 'flex', gap: 8 }}>
