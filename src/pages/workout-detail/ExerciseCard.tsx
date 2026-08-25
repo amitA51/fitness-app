@@ -55,8 +55,9 @@ export function ExerciseCard({ exercise, index, reduceMotion }: ExerciseCardProp
               <div className="flex items-center gap-2 mt-1">
                 <span
                   style={{
-                    fontSize: 10,
-                    fontFamily: 'var(--font-mono)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    fontFamily: 'var(--font-body)',
                     padding: '2px 8px',
                     borderRadius: 9999,
                     background: MUSCLE_COLOR.bg,
@@ -68,8 +69,9 @@ export function ExerciseCard({ exercise, index, reduceMotion }: ExerciseCardProp
                 {exercise.tempo && (
                   <span
                     style={{
-                      fontSize: 10,
-                      fontFamily: 'var(--font-mono)',
+                      fontSize: 11,
+                      fontWeight: 500,
+                      fontFamily: 'var(--font-body)',
                       color: 'var(--fs-muted)',
                     }}
                   >
