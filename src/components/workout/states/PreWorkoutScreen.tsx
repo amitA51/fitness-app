@@ -468,11 +468,11 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
             <div
               className="mt-3 text-center"
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
+                fontFamily: 'var(--font-body)',
+                fontSize: 12,
+                fontWeight: 500,
                 letterSpacing: '-0.01em',
-                color: 'rgba(255,255,255,0.35)',
-                direction: 'ltr',
+                color: 'rgba(255,255,255,0.65)',
               }}
             >
               אימון אחרון {lastWorkoutLabel.timeLabel}
@@ -517,11 +517,11 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   className="absolute top-0 left-0 px-2 py-1"
                   style={{
                     background: 'var(--fs-accent)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 9,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 11,
+                    fontWeight: 700,
                     letterSpacing: '-0.01em',
-                    color: 'var(--fs-primary)',
-                    fontWeight: 600,
+                    color: 'var(--color-ink-on-accent)',
                   }}
                 >
                   מהמאמן
@@ -529,8 +529,9 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 <div className="pt-3">
                   <p
                     style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 10,
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 11,
+                      fontWeight: 600,
                       letterSpacing: '-0.01em',
                       color: 'var(--fs-accent)',
                       marginBottom: 6,
@@ -586,8 +587,9 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               >
                 <p
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 11,
+                    fontWeight: 600,
                     letterSpacing: '-0.01em',
                     color: 'var(--fs-accent-2)',
                     marginBottom: 6,
@@ -611,8 +613,9 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   <p
                     className="mt-1"
                     style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 10,
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 11,
+                      fontWeight: 500,
                       letterSpacing: '-0.01em',
                       color: 'var(--fs-muted)',
                     }}
@@ -636,8 +639,9 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               <div
                 className="mb-3"
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 11,
+                  fontWeight: 600,
                   letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
                 }}
@@ -707,8 +711,9 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                     </div>
                     <div
                       style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 9,
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 10.5,
+                        fontWeight: 500,
                         letterSpacing: '-0.01em',
                         color: 'var(--fs-muted)',
                       }}
