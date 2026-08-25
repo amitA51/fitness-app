@@ -106,9 +106,9 @@ const AnimatedValue = memo<{ value: string; target: 'weight' | 'reps' | null }>(
 
         {/* Unit suffix — mono */}
         <m.span
-          className="absolute -end-10 bottom-3 uppercase"
+          className="absolute -end-10 bottom-3"
           style={{
-            fontFamily: 'var(--font-mono)',
+            fontFamily: 'var(--font-body)',
             fontSize: '14px',
             letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
@@ -260,7 +260,7 @@ const PresetButton = memo<{
         triggerHaptic();
         onSelect(value);
       }}
-      className="relative transition-ui uppercase"
+      className="relative transition-ui"
       style={{
         padding: '8px 14px',
         borderRadius: 999,
@@ -400,7 +400,7 @@ const GhostValue = memo<{ value: number; label: string; entryX?: number }>(
     const shouldReduceMotion = useReducedMotion();
     return (
       <m.div
-        className="flex items-center gap-2 px-3 py-1.5 uppercase"
+        className="flex items-center gap-2 px-3 py-1.5"
         style={{
           backgroundColor: 'var(--fs-surface-2)',
           borderRadius: 12,
@@ -609,13 +609,13 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
           <div className="px-6 py-4" style={{ backgroundColor: 'var(--fs-primary)' }}>
             {exerciseName && (
               <m.div
-                className="text-center mb-1 uppercase"
+                className="text-center mb-1"
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
-                  letterSpacing: '-0.01em',
-                  color: 'rgba(255,255,255,0.55)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '12px',
                   fontWeight: 600,
+                  letterSpacing: '-0.01em',
+                  color: 'rgba(255,255,255,0.85)',
                 }}
                 initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -624,10 +624,10 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
               </m.div>
             )}
             <div
-              className="text-center uppercase"
+              className="text-center"
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '11px',
+                fontFamily: 'var(--font-body)',
+                fontSize: '13px',
                 letterSpacing: '-0.01em',
                 color: 'var(--fs-accent)',
                 fontWeight: 700,
@@ -644,7 +644,7 @@ const NumpadOverlay = memo<NumpadOverlayProps>(
               <m.button
                 whileTap={{ scale: shouldReduceMotion ? 1 : 0.95 }}
                 onClick={handleClear}
-                className="absolute top-2 start-6 uppercase"
+                className="absolute top-2 start-6"
                 style={{
                   minWidth: 44,
                   minHeight: 44,
