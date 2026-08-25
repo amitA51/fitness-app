@@ -27,6 +27,13 @@ interface ConfirmExitOverlayProps {
   onCooldown?: () => void;
   isSaving?: boolean;
   saveError?: string | null;
+  /**
+   * Short-session gate (Apple HIG): the session started under a minute ago —
+   * ask whether to record it at all instead of silently saving a junk entry.
+   */
+  shortSessionAsk?: boolean;
+  /** User answered the ask: true records the micro-session, false drops it. */
+  onProceedWithSave?: (record: boolean) => void;
 }
 
 // ============================================================
@@ -52,6 +59,8 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
     onCooldown,
     isSaving = false,
     saveError = null,
+    shortSessionAsk = false,
+    onProceedWithSave,
   }) => {
     const handleConfirm = useCallback(() => {
       if (isSaving) {
@@ -71,6 +80,16 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
       onCooldown?.();
     }, [onCooldown]);
 
+    const handleRecordShortSession = useCallback(() => {
+      triggerHaptic();
+      onProceedWithSave?.(true);
+    }, [onProceedWithSave]);
+
+    const handleDropShortSession = useCallback(() => {
+      triggerHaptic();
+      onProceedWithSave?.(false);
+    }, [onProceedWithSave]);
+
     const isFinishing = intent === 'finish';
 
     return (
@@ -86,8 +105,11 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
         closeOnBackdropClick
         closeOnEscape
         // Destructive confirm (cancel intent): focus lands on the safe "חזור"
-        // so Enter doesn't discard the session by default.
-        initialFocusSelector={isFinishing ? undefined : '[data-safe-action]'}
+        // so Enter doesn't discard the session by default. In the short-session
+        // ask, focus lands on "record" — the non-destructive choice.
+        initialFocusSelector={
+          shortSessionAsk ? '[data-safe-action]' : isFinishing ? undefined : '[data-safe-action]'
+        }
         ariaLabel={isFinishing ? 'סיום אימון' : 'ביטול אימון'}
       >
         <m.div
@@ -129,11 +151,11 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
               <div
                 className=""
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 11,
                   letterSpacing: '-0.01em',
                   color: 'var(--fs-accent)',
-                  fontWeight: 600,
+                  fontWeight: 700,
                 }}
               >
                 {isFinishing ? 'סיום אימון' : 'ביטול אימון'}
@@ -150,7 +172,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   lineHeight: 0.95,
                 }}
               >
-                {isFinishing ? 'סיים אימון?' : 'לבטל אימון?'}
+                {shortSessionAsk ? 'לרשום את האימון?' : isFinishing ? 'סיים אימון?' : 'לבטל אימון?'}
               </h3>
             </div>
           </div>
@@ -166,11 +188,16 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                 color: 'var(--fs-muted)',
               }}
             >
-              {isFinishing ? 'האימון יישמר בהיסטוריה שלך' : 'כל ההתקדמות תאבד'}
+              {shortSessionAsk
+                ? 'האימון התחיל לפני פחות מדקה — לרשום אותו בהיסטוריה או לבטל?'
+                : isFinishing
+                  ? 'האימון יישמר בהיסטוריה שלך'
+                  : 'כל ההתקדמות תאבד'}
             </p>
 
-            {/* Stats (only for finishing) */}
-            {isFinishing && (
+            {/* Stats (only for finishing) — skipped in the short-session ask:
+                a sub-minute session's numbers are noise, not information. */}
+            {isFinishing && !shortSessionAsk && (
               <div
                 className="grid grid-cols-3 mb-4"
                 style={{
@@ -308,8 +335,8 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                 <p
                   className="text-center"
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '11px',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '13px',
                     letterSpacing: '-0.01em',
                     color: 'var(--fs-warn)',
                     fontWeight: 600,
@@ -321,109 +348,143 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
             )}
 
             {/* Actions */}
-            <div className="flex flex-col gap-2">
-              <m.button
-                whileHover={!isSaving ? { scale: 1.005 } : undefined}
-                whileTap={!isSaving ? { scale: 0.98 } : undefined}
-                onClick={(e) => {
-                  if (!isSaving) {
+            {shortSessionAsk ? (
+              <div className="flex flex-col gap-2">
+                <m.button
+                  data-safe-action
+                  whileHover={{ scale: 1.005 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={(e) => {
                     e.stopPropagation();
-                    handleConfirm();
-                  }
-                }}
-                disabled={isSaving}
-                className="btn-primary focus-ring flex items-center justify-center gap-2"
-                style={{
-                  backgroundColor: isFinishing ? 'var(--fs-primary)' : 'var(--color-error)',
-                  color: isFinishing ? 'var(--fs-accent)' : 'var(--color-ink-on-error)',
-                  opacity: isSaving ? 0.7 : 1,
-                  cursor: isSaving ? 'not-allowed' : 'pointer',
-                  minHeight: 44,
-                }}
-              >
-                {isSaving ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    <span>שומר...</span>
-                  </>
-                ) : isFinishing ? (
-                  'סיים ושמור'
-                ) : (
-                  'בטל אימון'
+                    handleRecordShortSession();
+                  }}
+                  className="btn-primary focus-ring flex items-center justify-center"
+                  style={{
+                    backgroundColor: 'var(--fs-primary)',
+                    color: 'var(--fs-accent)',
+                    minHeight: 44,
+                  }}
+                >
+                  כן, רשמו אותו
+                </m.button>
+                <m.button
+                  whileHover={{ scale: 1.005 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDropShortSession();
+                  }}
+                  className="btn-secondary focus-ring"
+                  style={{ minHeight: 44 }}
+                >
+                  לא, בטלו אותו
+                </m.button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <m.button
+                  whileHover={!isSaving ? { scale: 1.005 } : undefined}
+                  whileTap={!isSaving ? { scale: 0.98 } : undefined}
+                  onClick={(e) => {
+                    if (!isSaving) {
+                      e.stopPropagation();
+                      handleConfirm();
+                    }
+                  }}
+                  disabled={isSaving}
+                  className="btn-primary focus-ring flex items-center justify-center gap-2"
+                  style={{
+                    backgroundColor: isFinishing ? 'var(--fs-primary)' : 'var(--color-error)',
+                    color: isFinishing ? 'var(--fs-accent)' : 'var(--color-ink-on-error)',
+                    opacity: isSaving ? 0.7 : 1,
+                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                    minHeight: 44,
+                  }}
+                >
+                  {isSaving ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      <span>שומר...</span>
+                    </>
+                  ) : isFinishing ? (
+                    'סיים ושמור'
+                  ) : (
+                    'בטל אימון'
+                  )}
+                </m.button>
+
+                {isFinishing && onCooldown && (
+                  <m.button
+                    whileHover={{ scale: 1.005 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCooldown();
+                    }}
+                    className="btn-secondary focus-ring"
+                    style={{ minHeight: 44 }}
+                  >
+                    צינון מודרך לפני סיום
+                  </m.button>
                 )}
-              </m.button>
 
-              {isFinishing && onCooldown && (
+                {isFinishing && onSaveAsTemplate && (
+                  <m.button
+                    whileHover={{ scale: 1.005 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSaveAsTemplate();
+                    }}
+                    className="btn-secondary focus-ring"
+                    style={{ minHeight: 44 }}
+                  >
+                    שמור כתבנית
+                  </m.button>
+                )}
+
                 <m.button
+                  data-safe-action
                   whileHover={{ scale: 1.005 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleCooldown();
+                    handleCancel();
                   }}
-                  className="btn-secondary focus-ring"
-                  style={{ minHeight: 44 }}
-                >
-                  צינון מודרך לפני סיום
-                </m.button>
-              )}
-
-              {isFinishing && onSaveAsTemplate && (
-                <m.button
-                  whileHover={{ scale: 1.005 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSaveAsTemplate();
+                  className="focus-ring transition-colors"
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    letterSpacing: '-0.01em',
+                    color: 'var(--fs-muted)',
+                    padding: '14px 24px',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    borderRadius: 12,
+                    cursor: 'pointer',
+                    minHeight: 48,
                   }}
-                  className="btn-secondary focus-ring"
-                  style={{ minHeight: 44 }}
                 >
-                  שמור כתבנית
+                  חזור
                 </m.button>
-              )}
-
-              <m.button
-                data-safe-action
-                whileHover={{ scale: 1.005 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCancel();
-                }}
-                className="focus-ring transition-colors"
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  letterSpacing: '-0.01em',
-                  color: 'var(--fs-muted)',
-                  padding: '14px 24px',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  borderRadius: 12,
-                  cursor: 'pointer',
-                  minHeight: 48,
-                }}
-              >
-                חזור
-              </m.button>
-            </div>
+              </div>
+            )}
           </div>
         </m.div>
       </ModalOverlay>

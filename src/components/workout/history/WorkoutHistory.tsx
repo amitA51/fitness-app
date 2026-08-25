@@ -804,8 +804,9 @@ export const WorkoutHistory = memo(function WorkoutHistory({
                 cursor: 'pointer',
                 padding: '8px 0',
                 minHeight: 44,
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                fontWeight: 600,
                 letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
               }}
@@ -822,8 +823,9 @@ export const WorkoutHistory = memo(function WorkoutHistory({
                 border: 'none',
                 cursor: 'pointer',
                 padding: '6px 0',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                fontWeight: 600,
                 letterSpacing: '-0.01em',
                 color: 'var(--fs-accent-2)',
               }}
@@ -899,14 +901,47 @@ export const WorkoutHistory = memo(function WorkoutHistory({
         <Card variant="elevated" asymmetric style={{ padding: '32px 20px', textAlign: 'center' }}>
           <div
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              color: 'var(--fs-muted)',
-              letterSpacing: '-0.01em',
+              fontFamily: 'var(--font-body)',
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--fs-ink)',
             }}
           >
-            לא נמצאו אימונים תואמים
+            לא נמצאו אימונים תואמים לחיפוש
           </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
+              color: 'var(--fs-muted)',
+              marginTop: 4,
+            }}
+          >
+            חפשו לפי שם תרגיל או קבוצת שריר
+          </div>
+          {/* Recovery action — a zero-results state must offer a way forward,
+              not a dead end (NTC teardown: suggest alternatives, never a bare
+              "no results"). */}
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="focus-ring"
+            style={{
+              marginTop: 14,
+              minHeight: 40,
+              padding: '0 20px',
+              borderRadius: 9999,
+              border: '1px solid var(--color-border-strong)',
+              background: 'transparent',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--fs-accent-2)',
+            }}
+          >
+            נקו את החיפוש
+          </button>
         </Card>
       ) : shouldVirtualize ? (
         <VirtualizedItems

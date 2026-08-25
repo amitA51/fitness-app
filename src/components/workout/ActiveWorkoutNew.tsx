@@ -252,17 +252,25 @@ export const WorkoutContent: React.FC<{
   const enableQuickRepsButtons = workoutSettings.enableQuickRepsButtons ?? true;
 
   // Save/finish flow (summary state + confirm-finish handler) lives in a hook.
-  const { showSummary, completedSession, isSaving, saveError, setSaveError, handleConfirmFinish } =
-    useWorkoutSave({
-      state,
-      dispatch,
-      workoutSettings,
-      finishIntent,
-      setShowFinishConfirm,
-      item,
-      onExit,
-      templateId: initialTemplateId,
-    });
+  const {
+    showSummary,
+    completedSession,
+    isSaving,
+    saveError,
+    setSaveError,
+    shortSessionAsk,
+    resolveShortSession,
+    handleConfirmFinish,
+  } = useWorkoutSave({
+    state,
+    dispatch,
+    workoutSettings,
+    finishIntent,
+    setShowFinishConfirm,
+    item,
+    onExit,
+    templateId: initialTemplateId,
+  });
 
   // ── Back-button guard ─────────────────────────────────────────────────
   // A stray hardware-Back / swipe-back must not silently tear down a live
@@ -792,6 +800,8 @@ export const WorkoutContent: React.FC<{
         onCooldownFromFinish={handleCooldownFromFinish}
         isSaving={isSaving}
         saveError={saveError}
+        shortSessionAsk={shortSessionAsk}
+        onResolveShortSession={resolveShortSession}
         showSettings={state.showSettings}
         workoutSettings={workoutSettings}
         onCloseSettings={handleCloseSettings}

@@ -42,7 +42,37 @@ interface UseWorkoutSaveReturn {
   isSaving: boolean;
   saveError: string | null;
   setSaveError: React.Dispatch<React.SetStateAction<string | null>>;
+  /**
+   * True when confirm-finish was intercepted because the session lasted under
+   * SHORT_SESSION_SECONDS — the user is asked whether this accidental
+   * micro-session should be saved at all (Apple HIG Workouts pattern) instead
+   * of silently persisting a junk entry into history/streaks.
+   */
+  shortSessionAsk: boolean;
+  /**
+   * Resolve the short-session ask: `true` records the micro-session and
+   * continues the normal save; `false` drops the draft and exits the workout.
+   */
+  resolveShortSession: (record: boolean) => void;
   handleConfirmFinish: () => Promise<void>;
+}
+
+/**
+ * A finished session shorter than this is treated as likely-accidental (opened
+ * the workout, closed it immediately). Apple's HIG for workouts: "If a session
+ * ends a few seconds after it starts, either discard the data automatically or
+ * ask people if they want to record the data as a workout." We ask.
+ */
+export const SHORT_SESSION_SECONDS = 60;
+
+/** True when the session so far lasted under {@link SHORT_SESSION_SECONDS}. */
+export function isShortSession(
+  startTimestamp: number,
+  totalPausedTime: number,
+  now: number = Date.now()
+): boolean {
+  const elapsedSec = Math.floor((now - startTimestamp - totalPausedTime) / 1000);
+  return elapsedSec < SHORT_SESSION_SECONDS;
 }
 
 /**
@@ -64,6 +94,10 @@ export function useWorkoutSave({
 }: UseWorkoutSaveParams): UseWorkoutSaveReturn {
   const [showSummary, setShowSummary] = useState(false);
   const [completedSession, setCompletedSession] = useState<WorkoutSession | null>(null);
+  // Short-session gate: confirm-finish pauses here first so the user can decide
+  // whether an accidental micro-session deserves to be recorded at all.
+  const [shortSessionAsk, setShortSessionAsk] = useState(false);
+  const shortSessionApprovedRef = useRef(false);
   const [isSaving, setIsSaving] = useState(false);
   const isSavingRef = useRef(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -105,6 +139,18 @@ export function useWorkoutSave({
       // No completed sets - show message to user instead of silently exiting
       // Keep overlay open and show error
       setSaveError('לא הושלם אף סט. יש להשלים לפחות סט אחד כדי לשמור.');
+      return;
+    }
+
+    // Short-session gate (Apple HIG Workouts pattern): a session that ends a
+    // few seconds after it started is usually accidental. Pause here ONCE and
+    // let the user decide whether to record it at all — junk micro-sessions
+    // would otherwise pollute history, streaks and volume stats.
+    if (
+      !shortSessionApprovedRef.current &&
+      isShortSession(state.startTimestamp, state.totalPausedTime)
+    ) {
+      setShortSessionAsk(true);
       return;
     }
 
@@ -256,6 +302,25 @@ export function useWorkoutSave({
   // same pattern as sessionRef in WorkoutSummary).
   retryFinishRef.current = handleConfirmFinish;
 
+  // User answered the short-session ask. "Record" whitelists this session and
+  // immediately re-runs the save (one tap total); "discard" behaves exactly
+  // like the cancel flow — drop the draft and leave the workout.
+  const resolveShortSession = useCallback(
+    (record: boolean) => {
+      setShortSessionAsk(false);
+      if (!record) {
+        localStorage.removeItem('active_workout_v3_state');
+        dispatch({ type: 'FINALIZE_WORKOUT' });
+        setShowFinishConfirm(false);
+        onExit();
+        return;
+      }
+      shortSessionApprovedRef.current = true;
+      void handleConfirmFinish();
+    },
+    [dispatch, onExit, setShowFinishConfirm, handleConfirmFinish]
+  );
+
   return {
     showSummary,
     setShowSummary,
@@ -264,6 +329,8 @@ export function useWorkoutSave({
     isSaving,
     saveError,
     setSaveError,
+    shortSessionAsk,
+    resolveShortSession,
     handleConfirmFinish,
   };
 }

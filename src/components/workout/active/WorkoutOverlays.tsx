@@ -46,6 +46,10 @@ interface WorkoutOverlaysProps {
   onCooldownFromFinish: () => void;
   isSaving: boolean;
   saveError: string | null;
+  /** True when confirm-finish hit the short-session gate — show the ask UI. */
+  shortSessionAsk?: boolean;
+  /** User answered the short-session ask: record the micro-session, or drop it. */
+  onResolveShortSession?: (record: boolean) => void;
   // Settings
   showSettings: boolean;
   workoutSettings: Partial<WorkoutSettings>;
@@ -137,6 +141,8 @@ const WorkoutOverlays: React.FC<WorkoutOverlaysProps> = (props) => (
       onCooldownFromFinish={props.onCooldownFromFinish}
       isSaving={props.isSaving}
       saveError={props.saveError}
+      shortSessionAsk={props.shortSessionAsk}
+      onResolveShortSession={props.onResolveShortSession}
       isDrawerOpen={props.isDrawerOpen}
       exercises={props.exercises}
       currentExerciseIndex={props.currentExerciseIndex}

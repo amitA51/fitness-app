@@ -38,6 +38,10 @@ export interface WorkoutFlowOverlaysProps {
   onCooldownFromFinish: () => void;
   isSaving: boolean;
   saveError: string | null;
+  /** True when confirm-finish hit the short-session gate — show the ask UI. */
+  shortSessionAsk?: boolean;
+  /** User answered the short-session ask: record the micro-session, or drop it. */
+  onResolveShortSession?: (record: boolean) => void;
   // Drawer (exercise list reorder/edit)
   isDrawerOpen: boolean;
   exercises: Exercise[];
@@ -102,6 +106,8 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
   onCooldownFromFinish,
   isSaving,
   saveError,
+  shortSessionAsk = false,
+  onResolveShortSession,
   isDrawerOpen,
   exercises,
   currentExerciseIndex,
@@ -158,6 +164,8 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
           onCooldown={onCooldownFromFinish}
           isSaving={isSaving}
           saveError={saveError}
+          shortSessionAsk={shortSessionAsk}
+          onProceedWithSave={onResolveShortSession}
         />
       </React.Suspense>
     )}

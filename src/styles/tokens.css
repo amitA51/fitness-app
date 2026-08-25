@@ -198,7 +198,11 @@
 :root {
   --font-display: "Bricolage Grotesque", "Assistant", Impact, sans-serif;
   --font-body: "Assistant", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  /* Numeric face (tabular figures for timers/stats). Hebrew has no glyphs in
+     mono faces, so Hebrew text falls through to Assistant — a mono system
+     fallback on Hebrew violates the app-wide typography law (body face on ALL
+     Hebrew text). Latin/digits still get IBM Plex Mono. */
+  --font-mono: "IBM Plex Mono", "Assistant", ui-monospace, monospace;
   --font-hebrew: "Assistant", system-ui, sans-serif;
 
   --font-sans: var(--font-body);
