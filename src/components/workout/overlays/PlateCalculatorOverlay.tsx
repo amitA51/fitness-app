@@ -183,8 +183,9 @@ const PlateCalculatorOverlay = memo<PlateCalculatorOverlayProps>(
           >
             <span
               style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
+                fontFamily: 'var(--font-body)',
+                fontSize: 11,
+                fontWeight: 500,
                 letterSpacing: '-0.01em',
                 color: 'var(--fs-muted)',
               }}
@@ -210,7 +211,7 @@ const PlateCalculatorOverlay = memo<PlateCalculatorOverlayProps>(
                   textAlign: 'center',
                   color: 'var(--fs-muted)',
                   fontSize: 13,
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: 'var(--font-body)',
                   padding: '10px 0',
                 }}
               >
@@ -243,8 +244,9 @@ const PlateCalculatorOverlay = memo<PlateCalculatorOverlayProps>(
                     </span>
                     <span
                       style={{
-                        fontFamily: 'var(--font-mono)',
+                        fontFamily: 'var(--font-body)',
                         fontSize: 11,
+                        fontWeight: 500,
                         color: 'var(--fs-muted)',
                       }}
                     >
@@ -284,8 +286,9 @@ const FieldRow = memo<{ label: string; children: React.ReactNode }>(({ label, ch
     <span
       style={{
         display: 'block',
-        fontFamily: 'var(--font-mono)',
-        fontSize: 10,
+        fontFamily: 'var(--font-body)',
+        fontSize: 11,
+        fontWeight: 500,
         letterSpacing: '-0.01em',
         color: 'var(--fs-muted)',
         marginBottom: 6,
