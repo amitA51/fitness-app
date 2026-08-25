@@ -77,7 +77,7 @@ export const ForecastNudge = memo(function ForecastNudge({ sessions }: ForecastN
         style={{
           padding: '10px 14px',
           border: '1px solid var(--fs-surface-2)',
-          borderRadius: '22px 16px 22px 16px',
+          borderRadius: 'var(--radius-card)',
           fontFamily: 'var(--font-mono)',
           fontSize: 11,
           letterSpacing: '-0.01em',

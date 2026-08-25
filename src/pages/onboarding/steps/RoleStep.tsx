@@ -61,7 +61,7 @@ export function RoleStep({ data, onChange, direction = 1 }: RoleStepProps) {
               style={{
                 background: isSelected ? 'var(--fs-accent)' : 'var(--fs-surface)',
                 border: isSelected ? '2px solid var(--fs-accent)' : '1px solid var(--fs-surface-2)',
-                borderRadius: '22px 16px 22px 16px',
+                borderRadius: 'var(--radius-card)',
               }}
             >
               <div

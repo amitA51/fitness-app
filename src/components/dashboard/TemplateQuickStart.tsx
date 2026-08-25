@@ -23,7 +23,7 @@ export const TemplateItem = memo(function TemplateItem({ template, onClick }: Te
         whiteSpace: 'nowrap',
         background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
-        borderRadius: '22px 16px 22px 16px',
+        borderRadius: 'var(--radius-card)',
         cursor: 'pointer',
         boxShadow: 'var(--shadow-card)',
       }}
@@ -115,7 +115,7 @@ export const TemplateStrip = memo(function TemplateStrip({
             scrollSnapAlign: 'start',
             background: 'var(--fs-surface-2)',
             border: '1px solid var(--fs-surface-2)',
-            borderRadius: '22px 16px 22px 16px',
+            borderRadius: 'var(--radius-card)',
             cursor: 'pointer',
             fontFamily: 'var(--font-mono)',
             fontSize: 12,

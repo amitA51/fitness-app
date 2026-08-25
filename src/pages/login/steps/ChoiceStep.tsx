@@ -51,7 +51,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             background: 'var(--fs-surface)',
             border: '1px solid var(--fs-accent)',
             borderInlineStartWidth: '4px',
-            borderRadius: '22px 16px 22px 16px',
+            borderRadius: 'var(--radius-card)',
             padding: '12px 14px',
             cursor: 'pointer',
           }}
@@ -84,7 +84,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
           cursor: 'pointer',
           background: 'var(--fs-surface)',
           border: '1px solid var(--fs-surface-2)',
-          borderRadius: '22px 16px 22px 16px',
+          borderRadius: 'var(--radius-card)',
           padding: '20px',
           minHeight: '72px',
         }}
@@ -141,7 +141,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
           cursor: 'pointer',
           background: 'var(--fs-accent)',
           border: '1px solid var(--fs-accent)',
-          borderRadius: '22px 16px 22px 16px',
+          borderRadius: 'var(--radius-card)',
           padding: '20px',
           minHeight: '72px',
           boxShadow: 'var(--shadow-glow-accent)',
@@ -216,7 +216,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
         style={{
           background: 'transparent',
           border: '1px solid var(--fs-surface-2)',
-          borderRadius: '22px 16px 22px 16px',
+          borderRadius: 'var(--radius-card)',
           fontFamily: 'var(--font-body)',
           fontWeight: 600,
           fontSize: '14px',
@@ -247,7 +247,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
         style={{
           background: 'var(--fs-surface)',
           border: '1px solid var(--fs-surface-2)',
-          borderRadius: '22px 16px 22px 16px',
+          borderRadius: 'var(--radius-card)',
           fontFamily: 'var(--font-display)',
           fontWeight: 600,
           fontSize: '15px',

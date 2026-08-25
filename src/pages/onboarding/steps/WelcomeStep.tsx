@@ -13,7 +13,7 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
           className="w-28 h-28 flex items-center justify-center mb-6"
           style={{
             background: 'var(--fs-primary)',
-            borderRadius: '22px 16px 22px 16px',
+            borderRadius: 'var(--radius-card)',
           }}
         >
           <span
@@ -91,7 +91,7 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
           style={{
             background: 'var(--fs-surface)',
             border: '1px solid var(--fs-surface-2)',
-            borderRadius: '22px 16px 22px 16px',
+            borderRadius: 'var(--radius-card)',
             maxWidth: '320px',
           }}
         >

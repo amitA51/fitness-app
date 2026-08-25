@@ -113,7 +113,7 @@ export function SignInStep({
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
               className="w-14 h-14 flex items-center justify-center mb-4"
-              style={{ background: 'var(--fs-accent)', borderRadius: '22px 16px 22px 16px' }}
+              style={{ background: 'var(--fs-accent)', borderRadius: 'var(--radius-card)' }}
             >
               <LogIn size={26} style={{ color: 'var(--color-ink-on-accent)' }} aria-hidden="true" />
             </m.div>

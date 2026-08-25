@@ -61,7 +61,7 @@ export function StepHeader({ title, subtitle, icon }: StepHeaderProps) {
           style={{
             background: 'var(--fs-primary)',
             color: 'var(--fs-accent)',
-            borderRadius: '22px 16px 22px 16px',
+            borderRadius: 'var(--radius-card)',
           }}
         >
           {icon}

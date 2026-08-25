@@ -287,7 +287,7 @@ export const GlowAreaChart = memo(function GlowAreaChart({
         position: 'relative',
         width: '100%',
         padding: '14px 12px 10px',
-        borderRadius: '22px 16px 22px 16px',
+        borderRadius: 'var(--radius-card)',
         touchAction: interactive ? 'pan-y' : undefined,
       }}
       {...pointerHandlers}

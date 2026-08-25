@@ -77,7 +77,7 @@ export function GoalsStep({ data, onChange, direction = 1 }: GoalsStepProps) {
                 data.primaryGoal === goal.value
                   ? '2px solid var(--fs-accent)'
                   : '1px solid var(--fs-surface-2)',
-              borderRadius: '22px 16px 22px 16px',
+              borderRadius: 'var(--radius-card)',
             }}
           >
             <div

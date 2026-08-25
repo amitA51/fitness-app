@@ -630,7 +630,7 @@ const InsightErrorChip = memo(function InsightErrorChip({
         padding: '12px 16px',
         background: 'var(--fs-surface)',
         border: '1px solid var(--fs-surface-2)',
-        borderRadius: '22px 16px 22px 16px',
+        borderRadius: 'var(--radius-card)',
         boxShadow: 'var(--shadow-card)',
       }}
     >

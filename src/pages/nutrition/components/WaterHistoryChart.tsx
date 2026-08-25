@@ -22,7 +22,7 @@ export const WaterHistoryChart = memo(function WaterHistoryChart({
         style={{
           border: '2px solid var(--fs-primary)',
           background: 'var(--fs-surface)',
-          borderRadius: '22px 16px 22px 16px',
+          borderRadius: 'var(--radius-card)',
           padding: '18px 16px',
         }}
       >

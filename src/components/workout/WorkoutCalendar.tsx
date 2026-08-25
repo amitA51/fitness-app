@@ -128,7 +128,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
       className="magnetic-card glass-surface scrim-noise fs-accent-rail"
       style={{
         border: '1px solid var(--fs-surface-2)',
-        borderRadius: '22px 16px 22px 16px',
+        borderRadius: 'var(--radius-card)',
         padding: 20,
       }}
     >

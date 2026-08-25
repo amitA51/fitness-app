@@ -180,7 +180,7 @@ export const CoachBriefCard = memo(function CoachBriefCard({
         margin: '16px 0',
         padding: '16px 18px',
         border: '1px solid var(--fs-surface-2)',
-        borderRadius: '22px 16px 22px 16px',
+        borderRadius: 'var(--radius-card)',
         background: 'var(--fs-surface)',
       }}
     >

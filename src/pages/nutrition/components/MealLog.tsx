@@ -248,7 +248,7 @@ export const MealLogSkeleton = memo(function MealLogSkeleton() {
             style={{
               background: 'var(--fs-surface)',
               border: '1px solid var(--fs-surface-2)',
-              borderRadius: '22px 16px 22px 16px',
+              borderRadius: 'var(--radius-card)',
               padding: 20,
             }}
           >

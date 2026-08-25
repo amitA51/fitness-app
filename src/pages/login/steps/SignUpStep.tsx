@@ -135,7 +135,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
           className="w-20 h-20 flex items-center justify-center mb-6"
-          style={{ background: 'var(--fs-accent)', borderRadius: '22px 16px 22px 16px' }}
+          style={{ background: 'var(--fs-accent)', borderRadius: 'var(--radius-card)' }}
         >
           <MailOpen size={36} style={{ color: 'var(--color-ink-on-accent)' }} />
         </m.div>
@@ -283,7 +283,7 @@ export function SignUpStep({ onBack, isSupabaseConfigured }: SignUpStepProps) {
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
               className="w-14 h-14 flex items-center justify-center mb-4"
-              style={{ background: 'var(--fs-accent)', borderRadius: '22px 16px 22px 16px' }}
+              style={{ background: 'var(--fs-accent)', borderRadius: 'var(--radius-card)' }}
             >
               <UserPlus
                 size={26}

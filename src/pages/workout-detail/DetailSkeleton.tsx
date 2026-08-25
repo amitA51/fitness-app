@@ -25,7 +25,7 @@ export function DetailSkeleton() {
               key={i}
               style={{
                 background: 'var(--fs-surface)',
-                borderRadius: '22px 16px 22px 16px',
+                borderRadius: 'var(--radius-card)',
                 padding: 16,
                 height: 96,
               }}
@@ -40,7 +40,7 @@ export function DetailSkeleton() {
               key={i}
               style={{
                 background: 'var(--fs-surface)',
-                borderRadius: '22px 16px 22px 16px',
+                borderRadius: 'var(--radius-card)',
                 padding: 16,
                 height: 128,
               }}

@@ -57,7 +57,7 @@ export const RecentPRBanner = memo(function RecentPRBanner() {
         marginTop: 16,
         padding: '12px 16px',
         border: '1px solid var(--fs-surface-2)',
-        borderRadius: '22px 16px 22px 16px',
+        borderRadius: 'var(--radius-card)',
         boxShadow: 'var(--shadow-card)',
       }}
     >

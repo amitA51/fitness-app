@@ -31,7 +31,7 @@ const FoodLibrarySkeleton = memo(function FoodLibrarySkeleton() {
           style={{
             background: 'var(--fs-surface)',
             border: '1px solid var(--fs-surface-2)',
-            borderRadius: '22px 16px 22px 16px',
+            borderRadius: 'var(--radius-card)',
             padding: 12,
             display: 'flex',
             alignItems: 'center',
@@ -133,7 +133,7 @@ export const FoodLibrary = memo(function FoodLibrary({
             style={{
               background: 'var(--fs-surface)',
               border: '1px solid var(--fs-surface-2)',
-              borderRadius: '22px 16px 22px 16px',
+              borderRadius: 'var(--radius-card)',
               overflow: 'hidden',
               boxShadow: 'var(--shadow-card)',
             }}

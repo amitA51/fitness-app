@@ -84,7 +84,7 @@ export const AnnualInput = memo(function AnnualInput({
           style={{
             background: 'var(--fs-surface)',
             border: error ? '1px solid var(--color-error)' : '1px solid var(--fs-surface-2)',
-            borderRadius: '22px 16px 22px 16px',
+            borderRadius: 'var(--radius-card)',
             fontFamily: 'var(--font-body)',
             color: 'var(--fs-ink)',
           }}

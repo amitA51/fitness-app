@@ -99,7 +99,7 @@ export const StreakMilestone = memo(function StreakMilestone({ sessions }: Strea
             alignItems: 'center',
             gap: 14,
             padding: '16px 18px',
-            borderRadius: '22px 16px 22px 16px',
+            borderRadius: 'var(--radius-card)',
             background:
               'linear-gradient(135deg, color-mix(in srgb, var(--fs-accent) 16%, var(--fs-surface)), var(--fs-surface))',
             border: '1px solid color-mix(in srgb, var(--fs-accent) 38%, transparent)',

@@ -18,7 +18,7 @@ export function StatItem({ icon, label, value, subValue, trend }: StatItemProps)
       style={{
         flex: 1,
         background: 'var(--fs-surface)',
-        borderRadius: '22px 16px 22px 16px',
+        borderRadius: 'var(--radius-card)',
         border: '1px solid var(--color-border)',
         boxShadow: 'var(--shadow-card)',
         padding: 12,

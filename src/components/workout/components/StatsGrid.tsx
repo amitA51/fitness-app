@@ -102,7 +102,7 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
           padding: '12px 16px',
           background: 'var(--fs-surface-2)',
           border: '1px solid var(--fs-steel)',
-          borderRadius: '22px 16px 22px 16px',
+          borderRadius: 'var(--radius-card)',
         }}
       >
         <div>
@@ -335,7 +335,7 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
             padding: '18px 20px',
             background: 'var(--fs-surface-2)',
             border: `2px solid ${heroIsPr ? 'var(--fs-accent)' : 'var(--fs-primary)'}`,
-            borderRadius: '22px 16px 22px 16px',
+            borderRadius: 'var(--radius-card)',
           }}
         >
           <HeroStat

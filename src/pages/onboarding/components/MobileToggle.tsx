@@ -29,7 +29,7 @@ export const MobileToggle = memo(function MobileToggle({
       style={{
         background: checked ? 'var(--fs-surface-2)' : 'var(--fs-surface)',
         border: checked ? '2px solid var(--fs-accent)' : '1px solid var(--fs-surface-2)',
-        borderRadius: '22px 16px 22px 16px',
+        borderRadius: 'var(--radius-card)',
         minHeight: '72px',
         transition: 'background 0.2s, border-color 0.2s',
       }}

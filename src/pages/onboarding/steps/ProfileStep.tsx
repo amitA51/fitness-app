@@ -84,7 +84,7 @@ export function ProfileStep({ data, onChange, direction = 1 }: ProfileStepProps)
                     data.gender === opt.value
                       ? '2px solid var(--fs-accent)'
                       : '1px solid var(--fs-surface-2)',
-                  borderRadius: '22px 16px 22px 16px',
+                  borderRadius: 'var(--radius-card)',
                   // Selected-text-on-accent unified to the on-accent ink token
                   // (was --fs-primary) to match the card selectors across the flow.
                   color:

@@ -249,7 +249,7 @@ export default function ProgressPage() {
           <div
             style={{
               background: 'var(--fs-surface)',
-              borderRadius: '22px 16px 22px 16px',
+              borderRadius: 'var(--radius-card)',
               border: '1px solid var(--fs-surface-2)',
               padding: 16,
               marginTop: 16,

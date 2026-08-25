@@ -274,6 +274,8 @@ html.large-text {
   --radius-lg: 14px;
   --radius-xl: 18px;
   --radius-2xl: 22px;
+  /* Signature card corner: asymmetric "leaf" used across cards. */
+  --radius-card: 22px 16px 22px 16px;
   /* Signature card radius — continuous (was asymmetric 22/16); keeps token name for call sites */
   --radius-asymmetric: 20px;
   --radius-full: 9999px;
