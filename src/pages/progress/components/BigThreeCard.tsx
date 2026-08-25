@@ -97,7 +97,11 @@ export const BigThreeCard = memo(function BigThreeCard({
           <button
             key={e.short}
             type="button"
-            onClick={() => navigate('/progress/strength', { state: { openExercise: e.name } })}
+            onClick={() =>
+              navigate('/progress', {
+                state: { tab: 'workouts', subTab: 'strength', exercise: e.name },
+              })
+            }
             className="focus-ring"
             style={{
               display: 'grid',

@@ -1,7 +1,7 @@
 import { AnimatePresence, m } from 'framer-motion';
 import { Activity, CloudOff, Heart, LayoutGrid, User } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { FadeIn } from '../components/motion/FadeIn';
 import { showToast } from '../components/ui/GlobalToast';
@@ -54,6 +54,15 @@ export default function ProgressPage() {
     const requested = (location.state as { tab?: string } | null)?.tab;
     return TABS.some((t) => t.key === requested) ? (requested as ProgressTab) : 'overview';
   });
+  // Same-page deep links (the big-three widget lives ON this page) arrive as a
+  // new location.state while already mounted — the useState initializer above
+  // never re-runs for those, so react to state changes here too.
+  useEffect(() => {
+    const requested = (location.state as { tab?: string } | null)?.tab;
+    if (requested && TABS.some((t) => t.key === requested)) {
+      setActiveTab(requested as ProgressTab);
+    }
+  }, [location.state]);
   const {
     sessions,
     prs,
