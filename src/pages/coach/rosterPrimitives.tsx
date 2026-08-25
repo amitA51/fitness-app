@@ -152,8 +152,8 @@ export function StatusChip({
         display: 'inline-flex',
         alignItems: 'center',
         gap: 6,
-        fontFamily: 'var(--font-mono)',
-        fontSize: 10,
+        fontFamily: 'var(--font-body)',
+        fontSize: 11,
         fontWeight: 700,
         letterSpacing: '-0.01em',
         color,
@@ -225,8 +225,9 @@ export function OverviewStat({
       </div>
       <div
         style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 9,
+          fontFamily: 'var(--font-body)',
+          fontSize: 11,
+          fontWeight: 500,
           letterSpacing: '-0.01em',
           color: 'var(--fs-muted)',
           marginTop: 6,
@@ -288,8 +289,9 @@ export function QuickLink({
       </span>
       <span
         style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 10,
+          fontFamily: 'var(--font-body)',
+          fontSize: 12,
+          fontWeight: 600,
           letterSpacing: '-0.01em',
         }}
       >
