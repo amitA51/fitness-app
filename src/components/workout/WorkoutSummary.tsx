@@ -27,6 +27,7 @@ import { logger } from '../../utils/logger';
 import { HE_NOUNS, pluralizeHe } from '../../utils/pluralizeHe';
 import { formatDuration } from '../../utils/workoutFormatters';
 import { computeSessionStats, setVolume } from '../../utils/workoutMath';
+import { shareWorkoutCard } from '../../utils/workoutShareCard';
 import { MuscleMap } from '../fitness/MuscleMap';
 import { showToast } from '../ui/GlobalToast';
 import { ModalOverlay } from '../ui/ModalOverlay';
@@ -433,6 +434,26 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
       logger.workout.warn('Failed to share workout summary', err);
     }
   }, [stats, prsCount, prExercises, streakMilestone]);
+
+  // Image share (Strava share-card pattern): render the summary as a designed
+  // PNG and hand it to the OS share sheet. Falls back to the text share ONLY
+  // when the browser can't share files — never after a user cancellation.
+  const handleShareCard = useCallback(async () => {
+    const result = await shareWorkoutCard({
+      totalVolume: stats.totalVolume,
+      totalSets: stats.totalSets,
+      durationSec: stats.durationSec,
+      prsCount,
+    });
+    if (result === 'unsupported') {
+      await handleShare();
+      return;
+    }
+    if (result === 'shared') {
+      // Same canonical success effect the save path uses (Quiet-Luxury).
+      triggerHapticEffect('success');
+    }
+  }, [stats, prsCount, handleShare]);
 
   // Hero count-up: the giant PR number in the masthead rolls up and lands with
   // a settle pop as the screen settles. RAF-driven (no React re-render) and
@@ -1054,11 +1075,11 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             {typeof navigator !== 'undefined' && 'share' in navigator && (
               <button
                 type="button"
-                onClick={handleShare}
+                onClick={handleShareCard}
                 className="cta-secondary focus-ring"
                 style={{ flex: 1 }}
               >
-                שתף
+                שתפו כרטיס
               </button>
             )}
             <button
