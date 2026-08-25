@@ -311,8 +311,9 @@ const SessionRow = memo(function SessionRow({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
+              fontFamily: 'var(--font-body)',
+              fontSize: 11,
+              fontWeight: 500,
               letterSpacing: '-0.01em',
               color: today ? 'var(--fs-accent)' : 'var(--fs-muted)',
               marginBottom: 3,
@@ -338,10 +339,11 @@ const SessionRow = memo(function SessionRow({
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <span
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
+              fontWeight: 600,
               color: 'var(--fs-ink)',
-              letterSpacing: '0.03em',
+              letterSpacing: '-0.01em',
               whiteSpace: 'nowrap',
             }}
           >
