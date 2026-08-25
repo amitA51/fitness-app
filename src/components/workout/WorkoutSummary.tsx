@@ -713,7 +713,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                       padding: '14px 16px',
                       background: 'var(--fs-surface)',
                       border: '1px solid var(--fs-surface-2)',
-                      borderRadius: '18px 12px 18px 12px',
+                      borderRadius: 'var(--radius-inset)',
                     }}
                   >
                     <span
@@ -850,7 +850,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                     padding: '14px 16px',
                     background: 'var(--fs-surface)',
                     border: '1px solid var(--fs-surface-2)',
-                    borderRadius: '18px 12px 18px 12px',
+                    borderRadius: 'var(--radius-inset)',
                   }}
                 >
                   <span
