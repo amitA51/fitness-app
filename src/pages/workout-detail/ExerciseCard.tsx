@@ -109,7 +109,12 @@ export function ExerciseCard({ exercise, index, reduceMotion }: ExerciseCardProp
             >
               <Trophy size={14} style={{ color: MUSCLE_COLOR.text }} />
               <span
-                style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: MUSCLE_COLOR.text }}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-body)',
+                  color: MUSCLE_COLOR.text,
+                }}
               >
                 הסט הטוב ביותר:
               </span>
