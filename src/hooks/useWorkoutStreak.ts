@@ -18,7 +18,12 @@
  */
 import { useMemo } from 'react';
 import type { WorkoutSession } from '../types';
-import { computeStreak } from './fitness/insightsAggregator';
+import {
+  computeStreakWithRests,
+  getRestDays,
+  toRestDayKey,
+  useRestDaysVersion,
+} from '../utils/restDays';
 
 export interface WorkoutStreakResult {
   /** Consecutive-day streak ending today (or yesterday if today is unlogged). */
@@ -44,6 +49,11 @@ function toLocalDayKey(date: Date): string {
  * @returns Stable `{ current, best, activeToday }` (memoized on `sessions`).
  */
 export function useWorkoutStreak(sessions: readonly WorkoutSession[]): WorkoutStreakResult {
+  // Subscribing to the rest-day ledger version keeps every streak surface
+  // (Dashboard chip, Progress overview) live when a rest day is declared.
+  const restDaysVersion = useRestDaysVersion();
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: restDaysVersion deliberately forces recompute — getRestDays() reads external ledger state inside the memo
   return useMemo(() => {
     const completedDays = new Set<string>();
     for (const session of sessions) {
@@ -56,14 +66,18 @@ export function useWorkoutStreak(sessions: readonly WorkoutSession[]): WorkoutSt
     }
 
     const now = new Date();
-    const { currentStreak, longestStreak } = computeStreak(completedDays, now);
+    const { currentStreak, longestStreak } = computeStreakWithRests(
+      completedDays,
+      getRestDays(),
+      now
+    );
 
     return {
       current: currentStreak,
       best: Math.max(longestStreak, currentStreak),
-      activeToday: completedDays.has(toLocalDayKey(now)),
+      activeToday: completedDays.has(toRestDayKey(now)),
     };
-  }, [sessions]);
+  }, [sessions, restDaysVersion]);
 }
 
 export default useWorkoutStreak;

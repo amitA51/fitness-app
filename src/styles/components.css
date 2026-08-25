@@ -1111,10 +1111,13 @@ textarea {
   font-weight: 600;
 }
 
-/* Day cell (calendar / week grid) */
+/* Day cell (calendar / week grid). Rendered as <button>: tapping an
+   untrained day toggles a planned REST DAY (Apple Watch pattern) that
+   bridges the streak instead of breaking it. */
 .day-cell {
   display: grid;
   min-height: 48px;
+  padding: 0;
   place-items: center;
   border: 1px solid var(--fs-surface-2);
   border-radius: var(--radius-md);
@@ -1123,11 +1126,36 @@ textarea {
   font-family: var(--font-body);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  appearance: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Press feedback lives on the tap itself (pointer-down), not release. */
+.day-cell:not(.done):active {
+  transform: scale(0.92);
+  transition: transform 100ms ease-out;
+}
+
+.day-cell.done,
+.day-cell.perfect-week {
+  /* Already earned — nothing to toggle. */
+  cursor: default;
 }
 
 .day-cell.done {
   background: var(--fs-primary);
   color: var(--color-ink-on-dark);
+}
+
+/* Planned rest day — dashed edge + quiet accent tint reads as "deliberately
+   skipped", visually distinct from both trained and missed days. */
+.day-cell.rest {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--fs-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--fs-accent) 10%, transparent);
+  color: var(--fs-accent-2);
 }
 
 /* Perfect week — every day trained. Apple awards a special badge for the

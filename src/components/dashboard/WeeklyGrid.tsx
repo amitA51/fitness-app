@@ -3,6 +3,7 @@ import { memo, useMemo } from 'react';
 import { useIsRTL } from '../../hooks/useIsRTL';
 import type { WorkoutSession } from '../../types';
 import { DAYS, HEBREW_DAYS, getWeekEnd, getWeekStart } from '../../utils/dateUtils';
+import { addRestDay, isRestDay, removeRestDay, useRestDaysVersion } from '../../utils/restDays';
 import { RingProgress } from '../charts/RingProgress';
 
 interface WeeklyGridProps {
@@ -23,6 +24,10 @@ export const WeeklyGrid = memo(function WeeklyGrid({
   // origin (right in RTL, left in LTR); "next/future" points the other way.
   const PrevIcon = isRTL ? ChevronRight : ChevronLeft;
   const NextIcon = isRTL ? ChevronLeft : ChevronRight;
+
+  const restDaysVersion = useRestDaysVersion(); // re-render when the ledger changes
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: restDaysVersion deliberately forces recompute — isRestDay() reads external ledger state inside the memo
   const { days, weekLabel, isCurrentWeek, weekProgress, perfectWeek } = useMemo(() => {
     const now = new Date();
     const currentWeekStart = getWeekStart(now);
@@ -47,6 +52,8 @@ export const WeeklyGrid = memo(function WeeklyGrid({
         dayName: HEBREW_DAYS[d.getDay()],
         active: done.has(dateStr),
         isToday: dateStr === today,
+        rest: isRestDay(dateStr),
+        dateKey: dateStr,
         date: d,
       };
     });
@@ -81,7 +88,8 @@ export const WeeklyGrid = memo(function WeeklyGrid({
       weekProgress: progress,
       perfectWeek,
     };
-  }, [sessions, weekOffset]);
+    // restDaysVersion: isRestDay() reads the ledger during memo construction.
+  }, [sessions, weekOffset, restDaysVersion]);
 
   return (
     <div>
@@ -206,20 +214,27 @@ export const WeeklyGrid = memo(function WeeklyGrid({
           if (day.active) classes.push('done');
           if (perfectWeek && day.active) classes.push('perfect-week');
           if (day.isToday) classes.push('today');
+          if (day.rest && !day.active) classes.push('rest');
 
           // State is conveyed visually by color only — voice it for screen
-          // readers: "יום ראשון — אימון הושלם" / "ללא אימון", plus "היום".
+          // readers: "יום ראשון — אימון הושלם" / "יום מנוחה" / "ללא אימון".
           const ariaLabel = [
             `יום ${day.dayName}`,
             ...(day.isToday ? ['היום'] : []),
-            day.active ? 'אימון הושלם' : 'ללא אימון',
+            day.active ? 'אימון הושלם' : day.rest ? 'יום מנוחה — הרצף נשמר' : 'ללא אימון',
           ].join(' — ');
 
+          const toggleRest = (): void => {
+            if (day.rest) removeRestDay(day.dateKey);
+            else addRestDay(day.dateKey);
+          };
+
           return (
-            <div
+            <button
               key={day.date.toISOString().split('T')[0]}
-              role="img"
-              aria-label={ariaLabel}
+              type="button"
+              onClick={toggleRest}
+              aria-label={`${ariaLabel}. ${day.active ? '' : 'הקישו לסימון יום מנוחה'}`}
               className={classes.join(' ')}
               style={{
                 // width: 100% pins the cell to its track so aspect-ratio derives
@@ -231,10 +246,23 @@ export const WeeklyGrid = memo(function WeeklyGrid({
               }}
             >
               {day.letter}
-            </div>
+            </button>
           );
         })}
       </div>
+
+      {/* Discovery hint — rest-day affordance is invisible until needed. */}
+      <p
+        style={{
+          margin: '10px 2px 0',
+          color: 'var(--fs-muted)',
+          fontFamily: 'var(--font-body)',
+          fontSize: 12,
+          lineHeight: 1.5,
+        }}
+      >
+        יום מנוחה מתוכנן שומר על הרצף — הקישו על יום פנוי בשבוע כדי לסמן אותו.
+      </p>
     </div>
   );
 });
