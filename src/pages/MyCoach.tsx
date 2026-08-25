@@ -330,8 +330,8 @@ export default function MyCoach() {
               metaNode={
                 <div
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 11,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 12,
                     color: 'var(--fs-muted)',
                     marginTop: 2,
                     display: 'flex',
@@ -518,8 +518,9 @@ function AssignmentCard({
           {/* kind + date in mono; coach name stamped in mono. */}
           <div
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
+              fontWeight: 500,
               color: 'var(--fs-muted)',
               marginTop: 3,
             }}
@@ -528,8 +529,9 @@ function AssignmentCard({
           </div>
           <div
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
+              fontWeight: 500,
               color: 'var(--fs-muted)',
               marginTop: 2,
             }}
