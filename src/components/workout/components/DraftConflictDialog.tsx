@@ -77,7 +77,7 @@ const DraftConflictDialog = memo<DraftConflictDialogProps>(({ isOpen, onResume, 
           </div>
           <div className="flex-1">
             <div
-              className="uppercase"
+              className=""
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '10px',
@@ -89,7 +89,7 @@ const DraftConflictDialog = memo<DraftConflictDialogProps>(({ isOpen, onResume, 
               אימון פעיל
             </div>
             <h3
-              className="uppercase mt-1"
+              className="mt-1"
               style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: '22px',

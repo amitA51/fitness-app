@@ -48,7 +48,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
               <span className="kicker">בחר מטרה</span>
               <h2
                 id="goal-selector-title"
-                className="mt-2 text-3xl font-black uppercase tracking-tight leading-none"
+                className="mt-2 text-3xl font-black tracking-tight leading-none"
               >
                 מה מטרת האימון?
               </h2>
@@ -101,7 +101,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                   </span>
                   <div className="flex-1">
                     <div
-                      className="text-lg font-bold uppercase"
+                      className="text-lg font-bold"
                       style={{
                         fontFamily: 'var(--font-display)',
                         color: 'var(--fs-ink)',

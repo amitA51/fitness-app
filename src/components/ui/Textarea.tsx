@@ -40,7 +40,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="uppercase"
+            className=""
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '10px',
@@ -80,7 +80,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className="uppercase"
+            className=""
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '10px',

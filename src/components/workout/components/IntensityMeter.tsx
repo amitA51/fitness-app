@@ -377,10 +377,7 @@ const IntensityMeter = memo<IntensityMeterProps>(
           animate={{ opacity: 1, scale: 1 }}
         >
           <PulsingDot color={zoneData.color} isActive={isActive} />
-          <span
-            className="text-xs font-bold uppercase tracking-wider"
-            style={{ color: zoneData.color }}
-          >
+          <span className="text-xs font-bold tracking-wider" style={{ color: zoneData.color }}>
             {zoneData.labelHe}
           </span>
           <span className="text-xs" style={{ color: 'var(--fs-text-on-dark)' }}>
@@ -412,7 +409,7 @@ const IntensityMeter = memo<IntensityMeterProps>(
             </span>
           </div>
           <m.div
-            className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+            className="px-3 py-1 rounded-full text-xs font-bold tracking-wider"
             style={{
               background: `${zoneData.color}20`,
               color: zoneData.color,
@@ -455,7 +452,7 @@ const IntensityMeter = memo<IntensityMeterProps>(
         <div className="mb-4">
           <ZoneBar intensity={displayIntensity} />
           <div
-            className="flex justify-between mt-1 text-[10px] uppercase tracking-wider"
+            className="flex justify-between mt-1 text-[10px] tracking-wider"
             style={{ color: 'var(--fs-text-on-dark)' }}
           >
             <span>חימום</span>
