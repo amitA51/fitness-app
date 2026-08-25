@@ -279,11 +279,20 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
         exit: { opacity: 0, y: '100%' },
       }
     : isFullscreen
-      ? {
-          initial: { opacity: 0 },
-          animate: { opacity: 1 },
-          exit: { opacity: 0 },
-        }
+      ? // §12 materialize-not-fade: a full-screen surface arrives as a sheet of
+        // glass settling onto the screen (scale 1.02→1), not a bare fade.
+        // Reduced motion keeps the plain cross-fade (§14).
+        prefersReduced
+        ? {
+            initial: { opacity: 0 },
+            animate: { opacity: 1 },
+            exit: { opacity: 0 },
+          }
+        : {
+            initial: { opacity: 0, scale: 1.02 },
+            animate: { opacity: 1, scale: 1 },
+            exit: { opacity: 0, scale: 1.01 },
+          }
       : isNone
         ? {
             initial: { opacity: 0 },
