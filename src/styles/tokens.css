@@ -276,6 +276,11 @@ html.large-text {
   --radius-2xl: 22px;
   /* Signature card corner: asymmetric "leaf" used across cards. */
   --radius-card: 22px 16px 22px 16px;
+  /* Nested-radius ladder (inner = outer - padding, per 92learns rules):
+     card > panel > control > chip. */
+  --radius-panel: 14px 10px 14px 10px;
+  --radius-control: 12px 8px 12px 8px;
+  --radius-chip: 10px 6px 10px 6px;
   /* Signature card radius — continuous (was asymmetric 22/16); keeps token name for call sites */
   --radius-asymmetric: 20px;
   --radius-full: 9999px;

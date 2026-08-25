@@ -136,7 +136,7 @@ const PlateCalculatorOverlay = memo<PlateCalculatorOverlayProps>(
                   padding: '10px 0',
                   background: unit === u ? 'var(--fs-accent)' : 'var(--fs-bg)',
                   border: '1px solid var(--fs-steel)',
-                  borderRadius: '12px 8px 12px 8px',
+                  borderRadius: 'var(--radius-control)',
                   fontFamily: 'var(--font-mono)',
                   fontSize: 11,
                   fontWeight: 700,
@@ -175,7 +175,7 @@ const PlateCalculatorOverlay = memo<PlateCalculatorOverlayProps>(
               padding: '12px 14px',
               background: 'var(--fs-bg)',
               border: '1px solid var(--fs-steel)',
-              borderRadius: '14px 10px 14px 10px',
+              borderRadius: 'var(--radius-panel)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'baseline',
@@ -229,7 +229,7 @@ const PlateCalculatorOverlay = memo<PlateCalculatorOverlayProps>(
                       padding: '10px 14px',
                       background: 'var(--fs-bg)',
                       border: '1px solid var(--fs-steel)',
-                      borderRadius: '10px 6px 10px 6px',
+                      borderRadius: 'var(--radius-chip)',
                     }}
                   >
                     <span
@@ -316,7 +316,7 @@ const stepperBtn: React.CSSProperties = {
   minHeight: 44,
   background: 'var(--fs-surface)',
   border: '1px solid var(--fs-steel)',
-  borderRadius: '12px 8px 12px 8px',
+  borderRadius: 'var(--radius-control)',
   fontFamily: 'var(--font-display)',
   fontWeight: 600,
   fontSize: 22,
@@ -347,7 +347,7 @@ const NumericStepper = memo<NumericStepperProps>(
             justifyContent: 'center',
             background: 'var(--fs-bg)',
             border: '1px solid var(--fs-steel)',
-            borderRadius: '12px 8px 12px 8px',
+            borderRadius: 'var(--radius-control)',
           }}
         >
           <input

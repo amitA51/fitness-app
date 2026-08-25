@@ -284,7 +284,7 @@ export function ChoiceStep({ onSignIn, onSignUp, onGuest }: ChoiceStepProps) {
             padding: '10px 14px',
             background: 'var(--color-error-muted)',
             border: '1px solid var(--color-error)',
-            borderRadius: '12px 8px 12px 8px',
+            borderRadius: 'var(--radius-control)',
             color: 'var(--color-error)',
             fontFamily: 'var(--font-mono)',
             fontSize: 12,
