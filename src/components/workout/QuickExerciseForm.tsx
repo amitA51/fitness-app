@@ -5,6 +5,7 @@
 import { X as CloseIcon } from 'lucide-react';
 import type React from 'react';
 import { memo, useId, useRef, useState } from 'react';
+import { MUSCLE_FILTER_KEYS, translateMuscle } from '../../constants/muscleNames';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import * as dataService from '../../services/dataService';
 import { type CreatePersonalExerciseInput, type Exercise, createWorkoutSet } from '../../types';
@@ -83,21 +84,19 @@ const QuickExerciseForm: React.FC<QuickExerciseFormProps> = memo(({ onAdd, onClo
 
   // Stored values stay English (unchanged data shape); only the visible label is
   // Hebrew so the dropdown isn't stray English in the otherwise-RTL form.
-  const muscleGroups: { value: string; label: string }[] = [
-    { value: 'Chest', label: 'חזה' },
-    { value: 'Back', label: 'גב' },
-    { value: 'Legs', label: 'רגליים' },
-    { value: 'Shoulders', label: 'כתפיים' },
-    { value: 'Arms', label: 'ידיים' },
-    { value: 'Core', label: 'ליבה' },
-    { value: 'Cardio', label: 'אירובי' },
-    { value: 'Other', label: 'אחר' },
-  ];
+  // Options are DERIVED from the SSOT filter map — same coarse set as the
+  // library filter, same Hebrew labels as every other surface, and a new
+  // catalog group can never be missed here again. "Core" reads בטן like
+  // everywhere else (was ליבה).
+  const muscleGroups: { value: string; label: string }[] = MUSCLE_FILTER_KEYS.map((value) => ({
+    value,
+    label: translateMuscle(value),
+  }));
 
   const labelStyle: React.CSSProperties = {
     display: 'block',
-    fontFamily: 'var(--font-mono)',
-    fontSize: 10,
+    fontFamily: 'var(--font-body)',
+    fontSize: 12,
     letterSpacing: '-0.01em',
     color: 'var(--fs-muted)',
     marginBottom: 6,

@@ -1,11 +1,13 @@
 import { m } from 'framer-motion';
-import { Settings } from 'lucide-react';
+import { Settings, Zap } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { greeting } from '../../utils/dateUtils';
 import { safeJsonParse } from '../../utils/safeJson';
 import { parseUserProfile } from '../../utils/validation';
+import { levelFromXp } from '../../utils/workoutLevels';
+import { getTotalXp } from '../../utils/xpStore';
 
 interface DashboardHeaderProps {
   hasSessionToday?: boolean;
@@ -31,6 +33,16 @@ export const DashboardHeader = memo(function DashboardHeader({
 
   const currentGreeting = useMemo(() => greeting(), []);
   const reduced = useReducedMotion();
+
+  // Ambient XP presence: null until the lifter has earned their first XP
+  // (fresh installs show no dead chrome), otherwise the current ladder level.
+  const levelInfo = useMemo(() => {
+    const xpTotal = getTotalXp();
+    if (xpTotal <= 0) return null;
+    return levelFromXp(xpTotal);
+  }, []);
+  const level = levelInfo?.level ?? null;
+  const intoNext = levelInfo ? levelInfo.levelSpan - levelInfo.intoLevel : 0;
 
   return (
     <header
@@ -124,18 +136,58 @@ export const DashboardHeader = memo(function DashboardHeader({
             : 'היום: התחילו אימון מהכפתור למטה'}
         </p>
       </div>
-      <Link
-        to="/settings"
-        aria-label="הגדרות"
-        className="flex-shrink-0 flex items-center justify-center w-10 h-10 mt-1 transition-colors hover:opacity-80 active:scale-95"
-        style={{
-          background: 'var(--fs-surface-2)',
-          borderRadius: 9999,
-          border: 'none',
-        }}
-      >
-        <Settings size={18} style={{ color: 'var(--fs-ink)' }} aria-hidden="true" />
-      </Link>
+      <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+        {/* Level chip — quiet ambient presence for the XP ladder (hidden until
+            the first session awards XP). Links to Progress, where the full
+            level card lives. */}
+        {level !== null && (
+          <Link
+            to="/progress"
+            aria-label={`רמה ${level} · עוד ${intoNext} XP לרמה ${level + 1}`}
+            className="flex items-center justify-center w-10 h-10 transition-colors hover:opacity-80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] rounded-full"
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 3,
+                width: 40,
+                height: 40,
+                borderRadius: 9999,
+                background: 'var(--fs-surface-2)',
+              }}
+            >
+              <Zap size={13} strokeWidth={2.5} style={{ color: 'var(--fs-accent)' }} />
+              <span
+                dir="ltr"
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: 'var(--fs-ink)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {level}
+              </span>
+            </span>
+          </Link>
+        )}
+        <Link
+          to="/settings"
+          aria-label="הגדרות"
+          className="flex-shrink-0 flex items-center justify-center w-10 h-10 transition-colors hover:opacity-80 active:scale-95"
+          style={{
+            background: 'var(--fs-surface-2)',
+            borderRadius: 9999,
+            border: 'none',
+          }}
+        >
+          <Settings size={18} style={{ color: 'var(--fs-ink)' }} aria-hidden="true" />
+        </Link>
+      </div>
     </header>
   );
 });

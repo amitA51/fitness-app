@@ -78,8 +78,9 @@ export const ForecastNudge = memo(function ForecastNudge({ sessions }: ForecastN
           padding: '10px 14px',
           border: '1px solid var(--fs-surface-2)',
           borderRadius: 'var(--radius-card)',
-          fontFamily: 'var(--font-mono)',
-          fontSize: 11,
+          fontFamily: 'var(--font-body)',
+          fontSize: 12.5,
+          fontWeight: 500,
           letterSpacing: '-0.01em',
           color: 'var(--fs-ink)',
           display: 'flex',
@@ -92,7 +93,7 @@ export const ForecastNudge = memo(function ForecastNudge({ sessions }: ForecastN
           <Icon size={15} aria-hidden="true" style={{ color: iconColor, flexShrink: 0 }} />
           {nudge.label}
         </span>
-        <span style={{ color: 'var(--fs-muted)', fontSize: 10, flexShrink: 0 }}>{nudge.sub}</span>
+        <span style={{ color: 'var(--fs-muted)', fontSize: 11.5, flexShrink: 0 }}>{nudge.sub}</span>
       </div>
     </FadeIn>
   );

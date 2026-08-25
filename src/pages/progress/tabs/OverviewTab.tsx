@@ -12,6 +12,7 @@ import type { PersonalRecord, WorkoutSession } from '../../../types';
 import { formatVolume } from '../../../utils/dateUtils';
 import { zoneColor } from '../../../utils/zoneColor';
 import { ChapterBreak } from '../components/ChapterBreak';
+import { LevelCard } from '../components/LevelCard';
 import { SectionCard } from '../components/SectionCard';
 import {
   type StatDelta,
@@ -216,6 +217,11 @@ export const OverviewTab = memo(function OverviewTab({
         <VerdictNumber value={verdict.count} zone={verdict.zone} />
         {verdict.tail}
       </VerdictLine>
+
+      {/* XP level strip — the always-visible progression ladder (hidden until
+          the first session awards XP). Sits right under the week's verdict so
+          level progress reads as part of the same story. */}
+      <LevelCard />
 
       {/* Weekly-review card: verdict headline + 3-up hero stats with WoW deltas. */}
       <SectionCard>

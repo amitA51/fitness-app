@@ -9,6 +9,7 @@ import { Dumbbell as DumbbellIcon } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { translateMuscle } from '../../../constants/muscleNames';
 import { calculateStreak } from '../../../services/achievementService';
 import {
   type LastWorkoutSummary,
@@ -61,13 +62,18 @@ const MUSCLE_SUGGESTIONS: Record<string, string> = {
   Shoulders: 'כתפיים',
   Biceps: 'יד קדמית',
   Triceps: 'יד אחורית',
-  Quadriceps: 'ירך קדמית',
-  Hamstrings: 'ירך אחורית',
+  Quadriceps: 'ארבע ראשי',
+  Hamstrings: 'מיתרי הירך',
   Glutes: 'ישבן',
-  Calves: 'שוקיים',
+  Calves: 'תאומים',
   Abs: 'בטן',
-  Core: 'ליבה',
+  Core: 'בטן',
 };
+
+// Suggestion lines resolve labels through the SSOT first (translateMuscle), so
+// catalog values, Hebrew template values and these keys all land on one label.
+const muscleHe = (raw: string | undefined): string =>
+  translateMuscle(raw) || (raw ? (MUSCLE_SUGGESTIONS[raw] ?? raw) : '');
 
 interface PreWorkoutScreenProps {
   oledMode: boolean;
@@ -160,7 +166,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
     if (neglectedMuscles.length > 0) {
       const muscle = neglectedMuscles[0];
       if (!muscle) return null;
-      const hebrewName = MUSCLE_SUGGESTIONS[muscle.muscle] || muscle.muscle;
+      const hebrewName = muscleHe(muscle.muscle);
       const daysText = muscle.daysSince === 1 ? 'יום' : `${muscle.daysSince} ימים`;
       return {
         text: `מזמן לא אימנת ${hebrewName}`,
@@ -172,7 +178,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
     if (lastWorkout && lastWorkout.muscleGroups.length > 0) {
       const lastMuscle = lastWorkout.muscleGroups[0];
       if (!lastMuscle) return null;
-      const hebrewName = MUSCLE_SUGGESTIONS[lastMuscle] || lastMuscle;
+      const hebrewName = muscleHe(lastMuscle);
       const complements: Record<string, string> = {
         Chest: 'Back',
         Back: 'Chest',
@@ -184,7 +190,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
       };
       const complement = complements[lastMuscle];
       if (complement) {
-        const complementHe = MUSCLE_SUGGESTIONS[complement] || complement;
+        const complementHe = muscleHe(complement);
         return {
           text: `מה עם ${complementHe} היום?`,
           subtext: `אימנת ${hebrewName} לאחרונה`,

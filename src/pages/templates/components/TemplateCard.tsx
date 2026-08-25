@@ -1,20 +1,9 @@
 import { m } from 'framer-motion';
 import { Clock, Copy, Dumbbell, Play, Star, Trash2 } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
+import { resolveMuscleKey, translateMuscle } from '../../../constants/muscleNames';
 import type { WorkoutTemplate } from '../../../types';
 import { formatLastUsed, springTransition } from '../constants';
-
-/** English muscle-group key → Hebrew label (subset the templates use). */
-const MUSCLE_HE: Record<string, string> = {
-  Chest: 'חזה',
-  Back: 'גב',
-  Legs: 'רגליים',
-  Shoulders: 'כתפיים',
-  Arms: 'ידיים',
-  Core: 'ליבה',
-  Abs: 'בטן',
-  Cardio: 'אירובי',
-};
 
 interface TemplateCardProps {
   template: WorkoutTemplate;
@@ -61,7 +50,9 @@ export const TemplateCard = memo(function TemplateCard({
   const muscleSummary = (() => {
     const seen: string[] = [];
     for (const ex of template.exercises) {
-      const he = MUSCLE_HE[ex.muscleGroup ?? ex.targetMuscle ?? ''];
+      // SSOT translation — same labels every other surface shows, so a muscle
+      // can never read differently between cards and insights again.
+      const he = translateMuscle(resolveMuscleKey(ex));
       if (he && !seen.includes(he)) seen.push(he);
       if (seen.length >= 2) break;
     }

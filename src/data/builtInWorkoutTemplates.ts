@@ -298,7 +298,7 @@ export const getBuiltInWorkoutTemplates = (): BuiltInWorkoutTemplate[] => [
         targetRestTime: 60,
       },
     ],
-    muscleGroups: ['בטן', 'ליבה'],
+    muscleGroups: ['בטן'],
     icon: '§',
   },
 ];
