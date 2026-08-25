@@ -147,7 +147,7 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
       >
         <div className="flex-1 min-w-0">
           <div
-            className="uppercase"
+            className=""
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '10px',
@@ -190,7 +190,7 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
               toast.action?.onClick();
               onDismiss(toast.id);
             }}
-            className="transition-colors text-xs font-bold uppercase"
+            className="transition-colors text-xs font-bold"
             style={{
               fontFamily: 'var(--font-mono)',
               color: style.accent,
@@ -211,7 +211,7 @@ const ToastItem = memo<{ toast: ToastMessage; onDismiss: (id: number) => void }>
           type="button"
           onClick={() => onDismiss(toast.id)}
           aria-label="סגירת התראה"
-          className="transition-colors text-xs font-bold uppercase"
+          className="transition-colors text-xs font-bold"
           style={{
             fontFamily: 'var(--font-mono)',
             color: 'var(--fs-muted)',

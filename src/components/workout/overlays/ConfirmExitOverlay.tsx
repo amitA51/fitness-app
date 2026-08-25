@@ -127,7 +127,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
             </div>
             <div className="flex-1">
               <div
-                className="uppercase"
+                className=""
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: '10px',
@@ -139,7 +139,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                 {isFinishing ? 'סיום אימון' : 'ביטול אימון'}
               </div>
               <h3
-                className="uppercase mt-1"
+                className="mt-1"
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontSize: '22px',
@@ -195,7 +195,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                     {workoutStats.completedSets}
                   </div>
                   <div
-                    className="uppercase mt-1"
+                    className="mt-1"
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '10px',
@@ -223,7 +223,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                     {workoutStats.totalVolume.toLocaleString()}
                   </div>
                   <div
-                    className="uppercase mt-1"
+                    className="mt-1"
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '10px',
@@ -248,7 +248,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                     {workoutStats.duration}
                   </div>
                   <div
-                    className="uppercase mt-1"
+                    className="mt-1"
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '10px',
@@ -306,7 +306,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                 }}
               >
                 <p
-                  className="text-center uppercase"
+                  className="text-center"
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: '11px',
@@ -406,7 +406,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                   e.stopPropagation();
                   handleCancel();
                 }}
-                className="focus-ring uppercase transition-colors"
+                className="focus-ring transition-colors"
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontSize: '14px',

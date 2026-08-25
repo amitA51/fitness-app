@@ -124,10 +124,7 @@ const StatCard = memo<StatCardProps>(
       transition={{ type: 'spring', stiffness: 200, damping: 20 }}
     >
       <div className="flex items-center gap-2 mb-2">
-        <span
-          className="text-xs uppercase tracking-wider"
-          style={{ color: 'var(--fs-text-on-dark)' }}
-        >
+        <span className="text-xs tracking-wider" style={{ color: 'var(--fs-text-on-dark)' }}>
           {label}
         </span>
       </div>
@@ -398,7 +395,7 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
             >
               {stats.volume.toLocaleString()}
             </div>
-            <div className="text-[10px] uppercase" style={{ color: 'var(--fs-text-on-dark)' }}>
+            <div className="text-[10px]" style={{ color: 'var(--fs-text-on-dark)' }}>
               נפח
             </div>
           </div>
@@ -412,7 +409,7 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
             >
               {stats.completedSets}/{stats.totalSets}
             </div>
-            <div className="text-[10px] uppercase" style={{ color: 'var(--fs-text-on-dark)' }}>
+            <div className="text-[10px]" style={{ color: 'var(--fs-text-on-dark)' }}>
               סטים
             </div>
           </div>
@@ -426,7 +423,7 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
             >
               {formatDuration(stats.duration)}
             </div>
-            <div className="text-[10px] uppercase" style={{ color: 'var(--fs-text-on-dark)' }}>
+            <div className="text-[10px]" style={{ color: 'var(--fs-text-on-dark)' }}>
               זמן
             </div>
           </div>
