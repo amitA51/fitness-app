@@ -271,7 +271,7 @@ const PresetButton = memo<{
         color: isSelected ? 'var(--color-ink-on-accent)' : 'var(--fs-heading)',
         fontFamily: 'var(--font-mono)',
         fontSize: '12px',
-        letterSpacing: '0.04em',
+        letterSpacing: '-0.01em',
         fontWeight: 600,
       }}
       aria-label={`ערך ${value}`}

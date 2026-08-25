@@ -202,7 +202,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
               fontWeight: 600,
               fontSize: 14,
               color: 'var(--fs-heading)',
-              letterSpacing: '0.04em',
+              letterSpacing: '-0.01em',
               minWidth: 140,
               textAlign: 'center',
             }}
@@ -424,7 +424,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ sessions }) => {
             fontWeight: 600,
             fontSize: 14,
             color: 'var(--fs-heading)',
-            letterSpacing: '0.04em',
+            letterSpacing: '-0.01em',
           }}
         >
           {monthlyWorkoutDays} ימים

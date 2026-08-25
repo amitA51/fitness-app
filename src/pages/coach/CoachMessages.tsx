@@ -250,7 +250,7 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
               color: isActive ? 'var(--fs-heading)' : 'var(--fs-muted)',
               cursor: 'pointer',
               padding: '0 8px',
-              letterSpacing: '0.04em',
+              letterSpacing: '-0.01em',
               transition: 'color 120ms ease, border-color 120ms ease, font-weight 120ms ease',
             }}
           >

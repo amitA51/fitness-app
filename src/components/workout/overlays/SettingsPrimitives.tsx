@@ -286,7 +286,7 @@ export const GoalSelector = memo<{ value: string; onChange: (v: string) => void 
                 fontSize: 14,
                 fontWeight: 600,
                 color: 'var(--fs-heading)',
-                letterSpacing: '0.04em',
+                letterSpacing: '-0.01em',
                 textAlign: 'start',
                 cursor: 'pointer',
                 transition: 'background-color 150ms ease',

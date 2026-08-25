@@ -394,7 +394,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
                         fontFamily: 'var(--font-display)',
                         fontWeight: 700,
                         fontSize: 12,
-                        letterSpacing: '0.04em',
+                        letterSpacing: '-0.01em',
                         borderRadius: 8,
                       }}
                     >
@@ -417,7 +417,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
                           fontFamily: 'var(--font-display)',
                           fontWeight: 700,
                           fontSize: 12,
-                          letterSpacing: '0.04em',
+                          letterSpacing: '-0.01em',
                           borderRadius: 8,
                         }}
                         aria-label={`מלא משקל וחזרות מהאימון הקודם עבור ${ex.name}`}

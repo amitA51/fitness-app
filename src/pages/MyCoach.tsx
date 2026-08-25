@@ -977,7 +977,7 @@ function CheckInForm() {
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
-              letterSpacing: '0.04em',
+              letterSpacing: '-0.01em',
               color: 'var(--fs-warn)',
             }}
           >

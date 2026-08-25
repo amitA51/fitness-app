@@ -1099,7 +1099,7 @@ const BentoRow = memo(function BentoRow({
           fontFamily: 'var(--font-mono)',
           fontSize: 11,
           fontWeight: 600,
-          letterSpacing: '0.04em',
+          letterSpacing: '-0.01em',
         }}
       >
         <span

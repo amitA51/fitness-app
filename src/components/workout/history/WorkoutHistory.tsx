@@ -244,7 +244,7 @@ const ExerciseLine = memo(function ExerciseLine({
           flexShrink: 0,
           fontFamily: 'var(--font-mono)',
           fontSize: 11,
-          letterSpacing: '0.04em',
+          letterSpacing: '-0.01em',
           color: 'var(--fs-muted)',
         }}
       >
@@ -382,7 +382,7 @@ const SessionRow = memo(function SessionRow({
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
               color: 'var(--fs-muted)',
-              letterSpacing: '0.04em',
+              letterSpacing: '-0.01em',
             }}
           >
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -512,7 +512,7 @@ const MonthHeader = memo(function MonthHeader({ label, count }: { label: string;
           fontWeight: 600,
           fontSize: 13,
           color: 'var(--fs-ink)',
-          letterSpacing: '0.04em',
+          letterSpacing: '-0.01em',
         }}
       >
         {label}
@@ -593,7 +593,7 @@ function EmptyState({ compact }: { compact: boolean }) {
           fontFamily: 'var(--font-mono)',
           fontSize: 11,
           color: 'var(--fs-muted)',
-          letterSpacing: '0.04em',
+          letterSpacing: '-0.01em',
         }}
       >
         התחל להתאמן כדי לרשום את האימון הראשון שלך
@@ -902,7 +902,7 @@ export const WorkoutHistory = memo(function WorkoutHistory({
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
               color: 'var(--fs-muted)',
-              letterSpacing: '0.04em',
+              letterSpacing: '-0.01em',
             }}
           >
             לא נמצאו אימונים תואמים

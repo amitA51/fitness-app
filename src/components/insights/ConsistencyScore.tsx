@@ -176,7 +176,7 @@ export const ConsistencyScore = memo(function ConsistencyScore({
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             color: 'var(--fs-muted)',
-            letterSpacing: '0.04em',
+            letterSpacing: '-0.01em',
           }}
         >
           סה"כ אימונים (4 שבועות)

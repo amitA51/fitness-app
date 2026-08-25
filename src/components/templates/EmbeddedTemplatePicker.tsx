@@ -96,7 +96,7 @@ const TemplateRow = memo(function TemplateRow({
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
               color: 'var(--fs-muted)',
-              letterSpacing: '0.04em',
+              letterSpacing: '-0.01em',
             }}
           >
             {template.exercises.length} תרגילים · {estimateDurationLabel(template)}
@@ -180,7 +180,7 @@ export const EmbeddedTemplatePicker = memo(function EmbeddedTemplatePicker({
             fontFamily: 'var(--font-mono)',
             fontSize: 11,
             color: 'var(--fs-muted)',
-            letterSpacing: '0.04em',
+            letterSpacing: '-0.01em',
           }}
         >
           צור תבנית בעמוד התבניות

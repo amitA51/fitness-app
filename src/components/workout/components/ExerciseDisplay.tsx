@@ -545,7 +545,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                     fontSize: 10,
                     fontWeight: 700,
                     color: 'var(--fs-accent-2)',
-                    letterSpacing: '0.04em',
+                    letterSpacing: '-0.01em',
                     direction: 'ltr',
                   }}
                 >
@@ -634,7 +634,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                   fontFamily: 'var(--font-mono)',
                   fontSize: 11,
                   color: 'var(--fs-muted)',
-                  letterSpacing: '0.04em',
+                  letterSpacing: '-0.01em',
                   direction: 'ltr',
                 }}
               >
@@ -728,7 +728,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                     fontFamily: 'var(--font-display)',
                     fontWeight: 600,
                     fontSize: 13,
-                    letterSpacing: '0.04em',
+                    letterSpacing: '-0.01em',
                     cursor: 'pointer',
                   }}
                   aria-label="דלג על סט החימום"

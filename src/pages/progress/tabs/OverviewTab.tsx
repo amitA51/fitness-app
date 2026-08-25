@@ -61,7 +61,7 @@ function DeltaChip({ delta, format }: { delta: StatDelta; format: (v: number) =>
         fontFamily: 'var(--font-mono)',
         fontSize: 10,
         fontWeight: 700,
-        letterSpacing: '0.04em',
+        letterSpacing: '-0.01em',
         color,
       }}
     >
@@ -376,7 +376,7 @@ export const OverviewTab = memo(function OverviewTab({
                           fontSize: 9,
                           fontWeight: 700,
                           color: 'var(--fs-accent)',
-                          letterSpacing: '0.04em',
+                          letterSpacing: '-0.01em',
                           marginInlineStart: 4,
                         }}
                       >

@@ -471,7 +471,7 @@ export function ScheduleCalendar({ clientId }: { clientId: string }) {
               fontFamily: 'var(--font-mono)',
               fontSize: 12,
               color: 'var(--fs-muted)',
-              letterSpacing: '0.04em',
+              letterSpacing: '-0.01em',
             }}
           >
             <bdi dir="ltr">

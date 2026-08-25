@@ -155,7 +155,7 @@ const ComparisonBadge: React.FC<ComparisonBadgeProps> = memo(
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
               fontWeight: 700,
-              letterSpacing: '0.04em',
+              letterSpacing: '-0.01em',
             }}
           >
             <TrendIcon size={13} strokeWidth={2.75} aria-hidden="true" />

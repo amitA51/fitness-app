@@ -535,7 +535,7 @@ function DayDivider({ iso }: { iso?: string }) {
         fontFamily: 'var(--font-mono)',
         fontSize: 10,
         color: 'var(--fs-muted)',
-        letterSpacing: '0.04em',
+        letterSpacing: '-0.01em',
       }}
     >
       {label}

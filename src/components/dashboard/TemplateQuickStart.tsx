@@ -46,7 +46,7 @@ export const TemplateItem = memo(function TemplateItem({ template, onClick }: Te
           fontWeight: 700,
           fontSize: 13,
           color: 'var(--fs-ink)',
-          letterSpacing: '0.04em',
+          letterSpacing: '-0.01em',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',

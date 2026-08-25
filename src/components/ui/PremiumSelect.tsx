@@ -197,7 +197,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: '13px',
-                    letterSpacing: '0.04em',
+                    letterSpacing: '-0.01em',
                     color: isSelected ? 'var(--fs-primary)' : 'var(--fs-ink)',
                     backgroundColor: isSelected ? 'var(--fs-surface-2)' : 'transparent',
                     fontWeight: isSelected ? 600 : 400,
