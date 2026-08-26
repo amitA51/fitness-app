@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   ChevronLeft,
   Dumbbell,
+  Play,
   RefreshCw,
   Sparkles,
   UserPlus,
@@ -458,7 +459,10 @@ export default function Dashboard() {
                   flexShrink: 0,
                 }}
               >
-                <ArrowLeft size={20} aria-hidden="true" />
+                {/* Play/forward glyph — this opens the workout runner, it is NOT
+                    a back affordance (vision QA flagged the arrow as confusing
+                    on a home screen). RTL: forward = left. */}
+                <Play size={20} aria-hidden="true" style={{ transform: 'scaleX(-1)' }} />
               </span>
             </button>
           )}
