@@ -6,6 +6,7 @@ import {
   ClipboardList as ClipboardIcon,
   X as CloseIcon,
   Dumbbell as DumbbellIcon,
+  Plus,
 } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useState } from 'react';
@@ -233,14 +234,16 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
             WebkitBackdropFilter: 'blur(24px) saturate(160%)',
           }}
         >
-          {/* Drag Handle */}
+          {/* Drag Handle doubles as the compact masthead row: handle, title and
+              close share one line so the list starts ~70px higher than the old
+              stacked title/subtitle/tabs header. */}
           <div
-            className="flex justify-center pt-3 pb-2"
+            className="flex items-center justify-between pt-3 pb-1 px-4"
             onPointerDown={(event) => dragControls.start(event)}
-            aria-hidden="true"
             style={{ touchAction: 'none', cursor: 'grab' }}
           >
             <div
+              aria-hidden="true"
               className="w-10 h-1"
               style={{
                 background: 'var(--color-ink-on-dark)',
@@ -248,44 +251,37 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 borderRadius: 999,
               }}
             />
-          </div>
 
-          {/* Header */}
-          <div className="px-5 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontWeight: 700,
-                    fontSize: 26,
-                    color: 'var(--color-ink-on-dark)',
-                    letterSpacing: 'normal',
-                    lineHeight: 1.1,
-                    direction: 'rtl',
-                    textAlign: 'start',
-                  }}
-                >
-                  בחרו תרגילים
-                </h1>
-                <p
-                  className="mt-1"
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 13,
-                    lineHeight: 1.4,
-                    letterSpacing: 'normal',
-                    color: 'var(--color-ink-on-dark)',
-                    opacity: 0.76,
-                  }}
-                >
-                  חפשו ובחרו את התרגילים לאימון
-                </p>
-              </div>
+            <h1
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontWeight: 700,
+                fontSize: 17,
+                color: 'var(--color-ink-on-dark)',
+                letterSpacing: 'normal',
+                lineHeight: 1.2,
+                direction: 'rtl',
+                textAlign: 'center',
+                flex: 1,
+              }}
+            >
+              בחרו תרגילים
+            </h1>
+
+            {/* Spacer mirroring the handle keeps the title optically centered. */}
+            <div aria-hidden="true" style={{ inlineSize: 40 }} />
+
+            <div
+              style={{
+                position: 'absolute',
+                insetInlineEnd: 12,
+                top: 12,
+              }}
+            >
               <button
                 type="button"
                 onClick={onClose}
-                className="w-11 h-11 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-9 h-9 flex items-center justify-center transition-colors cursor-pointer"
                 style={{
                   // Tint the BACKGROUND only — element-level opacity would ghost the icon too
                   background: 'rgba(var(--text-on-navy-rgb), 0.1)',
@@ -296,61 +292,61 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 <CloseIcon className="w-5 h-5" style={{ color: 'var(--color-ink-on-dark)' }} />
               </button>
             </div>
+          </div>
 
-            {/* Tabs — Apple Segmented */}
-            <div
-              className="mt-4 grid grid-cols-2 gap-1"
-              role="group"
-              aria-label="סוג בחירה"
+          {/* Tabs — Apple Segmented */}
+          <div
+            className="mt-2 mx-4 mb-3 grid grid-cols-2 gap-1"
+            role="group"
+            aria-label="סוג בחירה"
+            style={{
+              background: 'rgba(var(--text-on-navy-rgb), 0.1)',
+              borderRadius: 999,
+              padding: 3,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic('selection');
+                setActiveTab('exercises');
+              }}
+              aria-pressed={activeTab === 'exercises'}
+              className="py-1.5 min-h-9 text-sm font-bold text-center transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
               style={{
-                background: 'rgba(var(--text-on-navy-rgb), 0.1)',
+                background: activeTab === 'exercises' ? 'var(--fs-accent)' : 'transparent',
+                color:
+                  activeTab === 'exercises'
+                    ? 'var(--color-ink-on-accent)'
+                    : 'rgba(var(--text-on-navy-rgb), 0.75)',
+                fontFamily: 'var(--font-body)',
+                letterSpacing: 'normal',
                 borderRadius: 999,
-                padding: 3,
               }}
             >
-              <button
-                type="button"
-                onClick={() => {
-                  triggerHaptic('selection');
-                  setActiveTab('exercises');
-                }}
-                aria-pressed={activeTab === 'exercises'}
-                className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
-                style={{
-                  background: activeTab === 'exercises' ? 'var(--fs-accent)' : 'transparent',
-                  color:
-                    activeTab === 'exercises'
-                      ? 'var(--color-ink-on-accent)'
-                      : 'rgba(var(--text-on-navy-rgb), 0.75)',
-                  fontFamily: 'var(--font-body)',
-                  letterSpacing: 'normal',
-                  borderRadius: 999,
-                }}
-              >
-                תרגילים
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  triggerHaptic('selection');
-                  setActiveTab('templates');
-                }}
-                aria-pressed={activeTab === 'templates'}
-                className="py-2.5 min-h-[44px] text-sm font-bold text-center transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
-                style={{
-                  background: activeTab === 'templates' ? 'var(--fs-accent)' : 'transparent',
-                  color:
-                    activeTab === 'templates'
-                      ? 'var(--color-ink-on-accent)'
-                      : 'rgba(var(--text-on-navy-rgb), 0.75)',
-                  fontFamily: 'var(--font-body)',
-                  letterSpacing: 'normal',
-                  borderRadius: 999,
-                }}
-              >
-                תבניות
-              </button>
-            </div>
+              תרגילים
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic('selection');
+                setActiveTab('templates');
+              }}
+              aria-pressed={activeTab === 'templates'}
+              className="py-1.5 min-h-9 text-sm font-bold text-center transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
+              style={{
+                background: activeTab === 'templates' ? 'var(--fs-accent)' : 'transparent',
+                color:
+                  activeTab === 'templates'
+                    ? 'var(--color-ink-on-accent)'
+                    : 'rgba(var(--text-on-navy-rgb), 0.75)',
+                fontFamily: 'var(--font-body)',
+                letterSpacing: 'normal',
+                borderRadius: 999,
+              }}
+            >
+              תבניות
+            </button>
           </div>
         </div>
 
@@ -440,53 +436,55 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               initial={{ opacity: 1 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="px-5 py-4 flex flex-col gap-2"
+              className="px-4 py-1.5 flex items-center justify-between"
               style={{
                 background: 'var(--fs-surface)',
                 borderTop: '1px solid var(--fs-surface-2)',
               }}
             >
+              {/* Compact utility row instead of two stacked full-width buttons:
+                  creating an exercise is the rare path, so it earns a quiet
+                  inline link — not ~130px of permanent footer that pushes the
+                  list up on every visit to this sheet. */}
               <button
                 type="button"
                 onClick={() => {
                   triggerHaptic('light');
                   onCreateNew();
                 }}
-                className="w-full cursor-pointer"
-                style={{
-                  background: 'var(--fs-accent)',
-                  // ink-on-accent: --fs-heading fails AA on the mint fill in dark.
-                  color: 'var(--color-ink-on-accent)',
-                  border: 'none',
-                  borderRadius: 999,
-                  padding: '14px 24px',
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: 700,
-                  fontSize: 14,
-                  letterSpacing: 'normal',
-                  minHeight: 48,
-                }}
-              >
-                צרו תרגיל חדש
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-full cursor-pointer"
+                className="flex items-center gap-1.5 cursor-pointer"
                 style={{
                   background: 'transparent',
-                  color: 'var(--fs-muted)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 999,
-                  padding: '12px 24px',
+                  color: 'var(--fs-link)',
+                  border: 'none',
+                  padding: '8px 6px',
                   fontFamily: 'var(--font-body)',
                   fontWeight: 700,
                   fontSize: 13,
                   letterSpacing: 'normal',
-                  minHeight: 44,
+                  minHeight: 36,
                 }}
               >
-                חזרה לאימון
+                <Plus style={{ width: 16, height: 16, flexShrink: 0 }} />
+                תרגיל חדש
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="cursor-pointer"
+                style={{
+                  background: 'transparent',
+                  color: 'var(--fs-muted)',
+                  border: 'none',
+                  padding: '8px 6px',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  letterSpacing: 'normal',
+                  minHeight: 36,
+                }}
+              >
+                ביטול
               </button>
             </m.div>
           )}

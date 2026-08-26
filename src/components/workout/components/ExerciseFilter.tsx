@@ -185,8 +185,11 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
         </div>
       )}
 
-      <div className="exercise-filter-row__topline">
-        <span className="exercise-filter-row__label">קבוצת שריר</span>
+      {/* One dense row: the muscle chips ARE the filter surface, so the group
+          needs no caption of its own — the chips' content labels them, and the
+          advanced-filter toggle rides at the end of the same row instead of
+          spending an entire toolbar line above it. */}
+      <div className="exercise-filter-row">
         {hasAdvancedFilters && (
           <button
             type="button"
@@ -200,9 +203,6 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
             סינון{activeAdvancedCount > 0 ? ` · ${activeAdvancedCount}` : ''}
           </button>
         )}
-      </div>
-
-      <div className="exercise-filter-row">
         <div className="exercise-filter-chips" role="group" aria-label="סינון לפי קבוצת שריר">
           <button
             type="button"

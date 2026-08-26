@@ -28,7 +28,7 @@
   position: sticky;
   inset-block-start: 0;
   z-index: 2;
-  padding: var(--space-4) var(--space-5) var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-2);
   background: color-mix(in srgb, var(--fs-surface) 72%, transparent);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -52,11 +52,11 @@
 
 .exercise-library__summary {
   display: flex;
-  min-block-size: 40px;
+  min-block-size: 30px;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: 0 var(--space-5) var(--space-2);
+  padding: 0 var(--space-4) var(--space-1);
 }
 
 .exercise-library__result-count {
@@ -94,7 +94,8 @@
 }
 
 .exercise-library__sort-select {
-  min-block-size: 44px;
+  /* Compact by design: a native select opens its own large touch surface. */
+  min-block-size: 32px;
   padding-inline: 8px;
   color: var(--fs-ink);
   background: transparent;
@@ -108,7 +109,7 @@
 
 .exercise-library__reset {
   display: inline-flex;
-  min-block-size: 44px;
+  min-block-size: 32px;
   align-items: center;
   gap: 6px;
   padding-inline: 10px;
@@ -131,7 +132,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
-  margin: 0 var(--space-5) var(--space-3);
+  margin: 0 var(--space-4) var(--space-3);
   padding: 10px 12px;
   color: var(--color-error-fg);
   background: var(--color-error-muted);
@@ -148,7 +149,7 @@
 }
 
 .exercise-library__create-wrap {
-  padding: 0 var(--space-5) var(--space-3);
+  padding: 0 var(--space-4) var(--space-3);
 }
 
 .exercise-library__create-button,
@@ -185,7 +186,7 @@
   flex: none;
   min-block-size: auto;
   overflow: visible;
-  padding: var(--space-1) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
+  padding: var(--space-1) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
   transition: opacity var(--duration-fast) var(--ease-out);
 }
 
@@ -200,13 +201,13 @@
 .exercise-filters {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .exercise-search {
   position: relative;
   display: flex;
-  min-block-size: 52px;
+  min-block-size: 46px;
   align-items: center;
   color: var(--fs-muted);
   background: var(--fs-surface-2);
@@ -235,7 +236,7 @@
 
 .exercise-search__input {
   inline-size: 100%;
-  min-block-size: 50px;
+  min-block-size: 44px;
   padding: 0 48px;
   color: var(--fs-ink);
   background: transparent;
@@ -316,7 +317,10 @@
 .exercise-filter-chip,
 .exercise-filter-toggle {
   flex: 0 0 auto;
-  min-block-size: 44px;
+  /* Filter chips are secondary controls: the card row behind them is the real
+     44px+ touch target. 34px keeps a finger-grade target while letting six
+     muscle groups plus the toggle share one thumb-width row. */
+  min-block-size: 34px;
   color: var(--fs-muted);
   background: var(--fs-surface-2);
   border: 1px solid transparent;
@@ -333,7 +337,7 @@
 
 .exercise-quick-pick,
 .exercise-filter-chip {
-  padding-inline: 14px;
+  padding-inline: 11px;
 }
 
 .exercise-quick-pick {
@@ -349,19 +353,12 @@
   min-inline-size: 0;
 }
 
-.exercise-filter-row__topline {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
 .exercise-filter-toggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-block-size: 44px;
-  padding-inline: 12px;
+  min-block-size: 34px;
+  padding-inline: 10px;
   color: var(--fs-link);
   background: transparent;
 }
@@ -410,18 +407,20 @@
 .exercise-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
 }
 
 .exercise-card {
   position: relative;
   inline-size: 100%;
-  min-block-size: 88px;
-  padding: 14px;
+  /* Dense scan row, not a poster: ~62px lets a 90-exercise catalog show three
+     extra exercises per viewport compared with the former 88px card. */
+  min-block-size: 62px;
+  padding: 10px 12px;
   color: var(--fs-ink);
   background: var(--fs-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   box-shadow: 0 1px 1px color-mix(in srgb, var(--fs-ink) 3%, transparent), 0 8px 22px -20px
     color-mix(in srgb, var(--fs-ink) 32%, transparent), inset 0 0.5px 0 var(--fs-surface-shine);
   text-align: start;
@@ -450,19 +449,19 @@
 .exercise-card__content {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 10px;
   min-inline-size: 0;
 }
 
 .exercise-card__visual {
   display: grid;
   flex: 0 0 auto;
-  inline-size: 46px;
-  block-size: 46px;
+  inline-size: 38px;
+  block-size: 38px;
   place-items: center;
   color: var(--fs-muted);
   background: var(--fs-surface-2);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   transition: color var(--duration-fast) ease, background-color var(--duration-fast) ease, transform
     var(--duration-base) var(--ease-out);
 }
@@ -473,8 +472,8 @@
 }
 
 .exercise-card__visual svg {
-  inline-size: 21px;
-  block-size: 21px;
+  inline-size: 18px;
+  block-size: 18px;
 }
 
 .exercise-card__details {
@@ -552,11 +551,12 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 5px;
-  margin-block-start: 7px;
+  gap: 4px;
+  margin-block-start: 3px;
   color: var(--fs-muted);
   font-family: var(--font-body);
-  font-size: var(--text-body-sm);
+  /* One size down from the title: the meta line is a scan aid, not content. */
+  font-size: var(--text-caption);
   font-weight: var(--font-normal);
   line-height: 1.25;
 }
@@ -577,7 +577,7 @@
 }
 
 .exercise-card__notes {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   color: var(--fs-muted);
   font: 400 var(--text-body-sm) / 1.35 var(--font-body);
   overflow: hidden;
@@ -595,6 +595,10 @@
 }
 
 .exercise-card__selection {
+  /* Visual-only affordance: the whole card is the hit target, so the ring can
+     shrink to match the denser row without shrinking the touch area. */
+  inline-size: 30px;
+  block-size: 30px;
   color: var(--fs-muted);
   background: var(--fs-surface-2);
   border: 1px solid var(--color-border);
@@ -610,14 +614,14 @@
 }
 
 .exercise-card__selection svg {
-  inline-size: 20px;
-  block-size: 20px;
-  stroke-width: 2.7;
+  inline-size: 16px;
+  block-size: 16px;
+  stroke-width: 3;
 }
 
 .exercise-card__selection-placeholder {
-  inline-size: 9px;
-  block-size: 9px;
+  inline-size: 7px;
+  block-size: 7px;
   background: currentColor;
   border-radius: 50%;
   opacity: 0.35;
@@ -640,11 +644,11 @@
 
 .exercise-library-empty {
   display: flex;
-  min-block-size: 260px;
+  min-block-size: 200px;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  padding: var(--space-8) var(--space-5);
+  padding: var(--space-6) var(--space-5);
   text-align: center;
 }
 
@@ -689,12 +693,12 @@
 .exercise-library-skeleton {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
 }
 
 .exercise-library-skeleton__row {
   position: relative;
-  min-block-size: 88px;
+  min-block-size: 62px;
   overflow: hidden;
   background: var(--fs-surface-2);
   border-radius: var(--radius-xl);
