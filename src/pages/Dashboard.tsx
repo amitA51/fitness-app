@@ -581,8 +581,6 @@ export default function Dashboard() {
 
         <StreakMilestone sessions={workoutSessions} />
 
-        <InsightCard insight={dashboardInsight} />
-
         {templatesError ? (
           <section className="section-block">
             <SectionTitle text="תבניות" action={{ label: 'כל התבניות', onClick: goToTemplates }} />
@@ -616,6 +614,10 @@ export default function Dashboard() {
             />
           </div>
         </section>
+
+        {/* Insight last: analytics inform, they don't gate the path to action
+            (Strong/Hevy order — actions before insights). */}
+        <InsightCard insight={dashboardInsight} />
 
         <FindCoachCard />
       </>

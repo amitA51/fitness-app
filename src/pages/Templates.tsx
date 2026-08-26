@@ -4,8 +4,7 @@
  */
 
 import { AnimatePresence, m } from 'framer-motion';
-import { Plus, Sparkles } from 'lucide-react';
-import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { Plus } from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader';
 import { useCloudTemplateReflection } from '../hooks/useCloudTemplateReflection';
 import { CreateTemplateModal } from './templates/components/CreateTemplateModal';
@@ -33,11 +32,6 @@ export default function Templates() {
     handleDelete,
     handleDuplicate,
     handleStartTemplate,
-    showCleanupConfirm,
-    isCleaning,
-    requestCleanup,
-    cancelCleanup,
-    confirmCleanup,
   } = useTemplates();
 
   if (isLoading) return <LoadingState />;
@@ -52,44 +46,15 @@ export default function Templates() {
         initial="hidden"
         animate="show"
       >
-        {/* Header */}
+        {/* Header — count eyebrow only. Library maintenance (duplicate-exercise
+            merge) was removed from the header: a maintenance action sitting in
+            the page chrome read as a primary action and confused the IA. */}
         <PageHeader
           title="תבניות"
           eyebrow={
             <>
               <span dir="ltr">{templates.length}</span> תבניות אימון
             </>
-          }
-          action={
-            /* Library maintenance — merge duplicate exercises */
-            <button
-              type="button"
-              onClick={requestCleanup}
-              disabled={isCleaning}
-              className="focus-ring"
-              aria-label="ניקוי תרגילים כפולים"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                minHeight: 40,
-                padding: '0 14px',
-                flexShrink: 0,
-                background: 'var(--fs-surface-2)',
-                border: 'none',
-                borderRadius: 9999,
-                cursor: isCleaning ? 'progress' : 'pointer',
-                color: 'var(--fs-ink)',
-                fontFamily: 'var(--font-body)',
-                fontSize: 13,
-                fontWeight: 600,
-                letterSpacing: '-0.01em',
-                opacity: isCleaning ? 0.6 : 1,
-              }}
-            >
-              <Sparkles size={14} aria-hidden="true" />
-              {isCleaning ? '...' : 'ניקוי'}
-            </button>
           }
         />
 
@@ -156,17 +121,6 @@ export default function Templates() {
           <CreateTemplateModal onClose={() => setShowCreateModal(false)} onCreate={handleCreate} />
         )}
       </AnimatePresence>
-
-      <ConfirmDialog
-        isOpen={showCleanupConfirm}
-        variant="info"
-        title="ניקוי כפילויות"
-        description="לאחד תרגילים כפולים בספרייה? נשמר התרגיל עם הנתונים העשירים ביותר."
-        confirmLabel="נקה"
-        cancelLabel="ביטול"
-        onConfirm={confirmCleanup}
-        onCancel={cancelCleanup}
-      />
     </>
   );
 }

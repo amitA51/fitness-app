@@ -5,7 +5,7 @@
  */
 
 import { AnimatePresence, type Variants, m } from 'framer-motion';
-import { Dumbbell as DumbbellIcon } from 'lucide-react';
+import { Dumbbell as DumbbellIcon, X } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -274,13 +274,52 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
         className="relative z-10 flex-shrink-0 glass-surface-dark scrim-noise"
         style={{ background: 'var(--fs-primary)' }}
       >
-        {/* Chapter strip */}
-        <div className="chapter-break" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+        {/* Chapter strip + close affordance. The ✕ sits in the masthead corner
+            (Apple full-screen-modal convention): the screen is a modal over the
+            tab bar (overlay > nav z-index), so dismissal lives top-corner, NOT
+            as a third stacked CTA at the bottom. */}
+        <div
+          className="chapter-break"
+          style={{ position: 'relative', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
+        >
           <span className="left" style={{ color: 'var(--fs-accent)' }}>
             אימון
           </span>
-          <span className="right">
-            {day} · {todayFull}
+          {/* Date + close live as ONE cluster at the inline end so the strip's
+              space-between can't push them into each other (QA round 1 found
+              the ✕ colliding with the date when both hugged the left edge). */}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+            <span className="right">{day} · {todayFull}</span>
+            <button
+              type="button"
+              onClick={handleCancel}
+              aria-label="סגירה וחזרה לבית"
+              className="focus-ring"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 34,
+                height: 34,
+                borderRadius: 9999,
+                border: 'none',
+                background: 'rgba(255,255,255,0.12)',
+                color: 'var(--color-ink-on-dark)',
+                cursor: 'pointer',
+                transition: 'background 150ms var(--ease-out)',
+              }}
+              onPointerDown={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.22)';
+              }}
+              onPointerUp={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
+              }}
+              onPointerLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
+              }}
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
           </span>
         </div>
 
@@ -777,15 +816,6 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               aria-label="התחילו אימון ריק — בחירת תרגילים"
             >
               {hasHistory ? 'אימון ריק — בחרו תרגילים' : 'התחילו בלי תבנית'}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="cta-ghost w-full mt-2 focus-ring"
-              aria-label="ביטול וחזרה לבית"
-            >
-              חזרה לבית
             </button>
           </m.div>
         </AnimatePresence>

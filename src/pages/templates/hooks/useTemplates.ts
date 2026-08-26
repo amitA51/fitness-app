@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { showToast } from '../../../components/ui/GlobalToast';
 import { onTemplatesChanged } from '../../../services/dataEvents';
 import { initializeBuiltInWorkoutTemplates } from '../../../services/dataService';
-import { removeDuplicateExercises } from '../../../services/exerciseDb';
 import { getWorkoutTemplateCount, isFreeTemplateLimitError } from '../../../services/templateDb';
 import {
   createWorkoutTemplate,
@@ -12,7 +11,6 @@ import {
   updateWorkoutTemplate,
 } from '../../../services/workoutDb';
 import type { WorkoutTemplate, WorkoutTemplateExercise } from '../../../types';
-import { logger } from '../../../utils/logger';
 import type { TemplateExerciseInput } from '../components/CreateTemplateModal';
 
 /** Legacy: the free-quota trigger was dropped (2026-08). Kept only so a stale server rejection still maps to an honest message. */
@@ -26,8 +24,6 @@ export function useTemplates() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [favoritingIds, setFavoritingIds] = useState<Set<string>>(new Set());
-  const [showCleanupConfirm, setShowCleanupConfirm] = useState(false);
-  const [isCleaning, setIsCleaning] = useState(false);
 
   const loadTemplates = useCallback(async () => {
     try {
@@ -181,28 +177,6 @@ export function useTemplates() {
     [navigate]
   );
 
-  // Library maintenance — merge duplicate personal exercises (folded in from the
-  // former WorkoutTemplates "ניקוי" action). Confirmation is handled by the UI
-  // via ConfirmDialog; this just performs the work and reports the result.
-  const requestCleanup = useCallback(() => setShowCleanupConfirm(true), []);
-  const cancelCleanup = useCallback(() => setShowCleanupConfirm(false), []);
-
-  const confirmCleanup = useCallback(async () => {
-    setShowCleanupConfirm(false);
-    setIsCleaning(true);
-    try {
-      const removed = await removeDuplicateExercises();
-      showToast(removed > 0 ? `נוקו ${removed} תרגילים כפולים` : 'לא נמצאו כפילויות', {
-        variant: 'success',
-      });
-    } catch (err) {
-      logger.workout.error('Template library cleanup failed', err);
-      showToast('שגיאה בניקוי הספרייה', { variant: 'error' });
-    } finally {
-      setIsCleaning(false);
-    }
-  }, []);
-
   return {
     templates,
     isLoading,
@@ -219,10 +193,5 @@ export function useTemplates() {
     handleDelete,
     handleDuplicate,
     handleStartTemplate,
-    showCleanupConfirm,
-    isCleaning,
-    requestCleanup,
-    cancelCleanup,
-    confirmCleanup,
   };
 }
