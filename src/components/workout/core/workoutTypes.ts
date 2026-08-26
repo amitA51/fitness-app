@@ -181,6 +181,13 @@ export type SetAction =
   | { type: 'UPDATE_SET'; payload: { field: 'weight' | 'reps'; value: number } }
   | { type: 'COMPLETE_SET' }
   | { type: 'ADD_SET' }
+  // Warm-up generator (Hevy's warm-up calculator pattern): insert a percentage
+  // ramp before the first working set of the active exercise. The payload is
+  // the CURRENT top working weight — the reducer computes the ramp from it.
+  | {
+      type: 'ADD_WARMUP_RAMP';
+      payload: { workingWeight: number; reps?: number };
+    }
   // Skip the active set (e.g. a warmup the user opts out of): mark it completed
   // + skipped, no rest timer, no volume. Advances to the next set.
   | { type: 'SKIP_SET' }

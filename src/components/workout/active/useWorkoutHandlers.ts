@@ -116,6 +116,16 @@ export function useWorkoutHandlers({
     [dispatch]
   );
 
+  // Warm-up generator: dispatch with the current working weight; the reducer
+  // computes the percentage ramp and refuses to double-insert.
+  const handleAddWarmupRamp = useCallback(
+    (workingWeight: number) => {
+      triggerHaptic('light');
+      dispatch({ type: 'ADD_WARMUP_RAMP', payload: { workingWeight } });
+    },
+    [dispatch]
+  );
+
   const handleOpenPlateCalc = useCallback(() => {
     dispatch({ type: 'OPEN_PLATE_CALC' });
   }, [dispatch]);
@@ -443,6 +453,7 @@ export function useWorkoutHandlers({
     handleUpdateRPE,
     handleUpdateRpeTag,
     handleToggleTechnique,
+    handleAddWarmupRamp,
     handleOpenPlateCalc,
     handleClosePlateCalc,
     handleUpdateNotes,

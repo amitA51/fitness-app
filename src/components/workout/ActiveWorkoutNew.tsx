@@ -425,6 +425,7 @@ export const WorkoutContent: React.FC<{
     handleUpdateRPE,
     handleUpdateRpeTag,
     handleToggleTechnique,
+    handleAddWarmupRamp,
     handleOpenPlateCalc,
     handleClosePlateCalc,
     handleUpdateNotes,
@@ -761,6 +762,7 @@ export const WorkoutContent: React.FC<{
             onCreateSuperset={openSupersetPicker}
             onRemoveSuperset={handleRemoveSuperset}
             onToggleTechnique={handleToggleTechnique}
+            onAddWarmupRamp={handleAddWarmupRamp}
             onOpenPlateCalc={handleOpenPlateCalc}
             onSwapExercise={handleSwapExercise}
             onOpenAICoach={handleOpenTutorial}

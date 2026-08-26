@@ -79,6 +79,8 @@ interface ExerciseDisplayProps {
   onRemoveSuperset?: (exerciseId: string) => void;
   onToggleTechnique?: (technique: SetTechnique, value: boolean) => void;
   onOpenPlateCalc?: () => void;
+  /** Insert the auto warm-up ramp (40/60/80%) before this exercise's working sets. */
+  onAddWarmupRamp?: (workingWeight: number) => void;
   /** Swap the live exercise's movement for a chosen alternative (bilingual label).
       A library swap also passes the chosen movement's catalog metadata so the
       muscle map, equipment badge and tutorial follow the new movement. Preset
@@ -218,6 +220,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     onRemoveSuperset,
     onToggleTechnique,
     onOpenPlateCalc,
+    onAddWarmupRamp,
     onSwapExercise,
     onOpenAICoach,
   }) => {
@@ -422,6 +425,24 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
         label: 'עריכת סטים',
         caption: 'תיקון משקל או חזרות בסטים שהושלמו',
         onSelect: () => setShowSetEditor(true),
+      });
+    }
+    // Warm-up generator (Hevy warm-up-calculator pattern): only when there is
+    // a meaningful working weight to ramp from and no warmups exist yet —
+    // the reducer is idempotent, but hiding a dead tool beats disabling it.
+    if (
+      onAddWarmupRamp &&
+      !isExerciseComplete &&
+      !(exercise.sets ?? []).some((s) => s.isWarmup) &&
+      (currentSet.weight ?? 0) >= 20
+    ) {
+      tools.push({
+        id: 'warmup-ramp',
+        group: 'חימום',
+        icon: <Flame size={18} strokeWidth={2.2} />,
+        label: 'סטי חימום אוטומטיים',
+        caption: `40% · 60% · 80% מתוך ${currentSet.weight} ק״ג`,
+        onSelect: () => onAddWarmupRamp(currentSet.weight ?? 0),
       });
     }
     if (onOpenPlateCalc) {

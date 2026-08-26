@@ -1,3 +1,4 @@
+import type { WorkoutSet } from '../../../types';
 import {
   DEFAULT_SUPERSET_ROUND_REST,
   SUPERSET_TRANSITION_REST,
@@ -238,6 +239,47 @@ export const setReducer = (draft: WorkoutState, action: WorkoutAction): void => 
       newSet.completedAt = null;
       sets.push(newSet);
       exercise.sets = sets;
+      break;
+    }
+
+    case 'ADD_WARMUP_RAMP': {
+      // Warm-up generator (Hevy warm-up-calculator pattern). Inserts a
+      // percentage ramp BEFORE the first working set: 40%×8 · 60%×5 · 80%×3 —
+      // the classic barbell ramp (VBTcoach: near-target singles tire you out;
+      // keep top-of-ramp reps low). Rounded to 2.5kg plates; a ramp lighter
+      // than one plate pair collapses to a single empty bar set. Idempotent:
+      // if warmups already exist, this is a no-op so it can't double-insert.
+      if (!exercise) return;
+      const sets = exercise.sets ?? [];
+      if (sets.some((s) => s.isWarmup)) return;
+
+      const { workingWeight } = action.payload;
+      const rampReps = [8, 5, 3];
+      const rampPcts = [0.4, 0.6, 0.8];
+      const round25 = (w: number): number => Math.max(2.5, Math.round(w / 2.5) * 2.5);
+
+      const warmups: WorkoutSet[] = [];
+      let prevWeight = 0;
+      for (let i = 0; i < rampPcts.length; i++) {
+        if (!workingWeight || workingWeight < 20) break; // too light to need a ramp
+        const w = round25(workingWeight * rampPcts[i]!);
+        if (w >= workingWeight || w === prevWeight) continue;
+        const s = createEmptySet(i + 1, exercise.isTimed);
+        s.weight = w;
+        s.reps = exercise.isTimed ? 0 : (action.payload.reps ?? rampReps[i]!);
+        if (exercise.isTimed && action.payload.reps) s.duration = 30;
+        s.isWarmup = true;
+        warmups.push(s);
+        prevWeight = w;
+      }
+      if (warmups.length === 0) return;
+
+      // Renumber everything: warmups first, then working sets resume numbering.
+      const renumbered = [...warmups, ...sets].map((s, i) => ({
+        ...s,
+        setNumber: i + 1,
+      }));
+      exercise.sets = renumbered;
       break;
     }
 
