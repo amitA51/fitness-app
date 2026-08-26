@@ -383,7 +383,7 @@ export const GlowAreaChart = memo(function GlowAreaChart({
           const datum = data[m.index];
           if (!pt || !datum) return null;
           return (
-            <g key={`marker-${m.index}`} aria-hidden="true">
+            <g key={`marker-${m.index}`}>
               <circle
                 cx={pt.x}
                 cy={pt.y}

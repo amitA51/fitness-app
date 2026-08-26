@@ -289,7 +289,9 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               space-between can't push them into each other (QA round 1 found
               the ✕ colliding with the date when both hugged the left edge). */}
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-            <span className="right">{day} · {todayFull}</span>
+            <span className="right">
+              {day} · {todayFull}
+            </span>
             <button
               type="button"
               onClick={handleCancel}
@@ -503,7 +505,9 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   textAlign: 'center',
                 }}
               >
-                3 צעדים: תבנית → סטים → סיום
+                {/* RTL: the flow reads right-to-left, so the step separator
+                    points LEFT (matches 'הבא ←' convention used app-wide). */}
+                3 צעדים: תבנית ← סטים ← סיום
               </div>
             </div>
           )}

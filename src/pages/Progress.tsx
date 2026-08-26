@@ -65,10 +65,11 @@ export default function ProgressPage() {
   }, [location.state]);
   // Dashboard "כל ההיסטוריה" deep link: land on the workouts tab with the
   // history sub-tab preselected (WorkoutsTab owns the history|strength split).
-  const initialSub = useMemo(() => {
-    const s = location.state as { subTab?: string } | null;
-    return s?.subTab === 'history' ? ('history' as const) : undefined;
-  }, [location.state?.subTab]);
+  const locationState = location.state as { subTab?: string } | null;
+  const initialSub = useMemo(
+    () => (locationState?.subTab === 'history' ? ('history' as const) : undefined),
+    [locationState?.subTab]
+  );
   const {
     sessions,
     prs,

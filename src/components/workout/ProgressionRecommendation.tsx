@@ -268,7 +268,10 @@ export const ProgressionSummary: React.FC<ProgressionSummaryProps> = ({ recommen
               <div key={r.exerciseId} className="flex justify-between text-sm">
                 <span className="text-slate-300">{r.exerciseName}</span>
                 <span className="text-green-400">
-                  {r.currentWeight} → {r.suggestedWeight} ק"ג
+                  <span dir="ltr">
+                    {r.currentWeight} → {r.suggestedWeight}
+                  </span>{' '}
+                  ק"ג
                 </span>
               </div>
             ))}
@@ -308,7 +311,10 @@ export const ProgressionSummary: React.FC<ProgressionSummaryProps> = ({ recommen
               <div key={r.exerciseId} className="flex justify-between text-sm">
                 <span className="text-slate-300">{r.exerciseName}</span>
                 <span className="text-red-400">
-                  {r.currentWeight} → {r.suggestedWeight} ק"ג
+                  <span dir="ltr">
+                    {r.currentWeight} → {r.suggestedWeight}
+                  </span>{' '}
+                  ק"ג
                 </span>
               </div>
             ))}

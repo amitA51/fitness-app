@@ -428,15 +428,19 @@ const SessionRow = memo(function SessionRow({
               background: 'var(--fs-bg)',
               border: '1px solid var(--fs-surface-2)',
               borderRadius: 'var(--radius-md, 8px)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
+              /* Body font per Hebrew typography law (mono micro-labels retired). */
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
+              fontWeight: 600,
               letterSpacing: '-0.01em',
               color: 'var(--fs-accent-2)',
               cursor: 'pointer',
               textAlign: 'center',
             }}
           >
-            לפרטים מלאים →
+            {/* RTL: forward = left; body font per Hebrew typography law
+                  (mono 10px chrome was retired app-wide). */}
+            לפרטים מלאים ←
           </button>
         </div>
       )}
@@ -830,7 +834,8 @@ export const WorkoutHistory = memo(function WorkoutHistory({
                 color: 'var(--fs-accent-2)',
               }}
             >
-              כל ההיסטוריה →
+              {/* RTL: forward = left */}
+              כל ההיסטוריה ←
             </button>
           </div>
         )}
