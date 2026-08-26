@@ -592,7 +592,17 @@ export default function Dashboard() {
         ) : null}
 
         <section className="section-block">
-          <SectionTitle text="יומן אימונים" />
+          {/* Full history is 3 levels deep (Progress → אימונים → היסטוריה) — the
+              Strava "You tab" lesson: everything of MINE gets a short path.
+              The calendar header links straight there. */}
+          <SectionTitle
+            text="יומן אימונים"
+            action={{
+              label: 'כל ההיסטוריה',
+              onClick: () =>
+                navigate('/progress', { state: { tab: 'workouts', subTab: 'history' } }),
+            }}
+          />
           <div className="fs-surface-card" style={{ padding: 16 }}>
             <WeeklyGrid
               sessions={workoutSessions}
