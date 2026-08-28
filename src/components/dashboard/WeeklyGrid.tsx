@@ -215,27 +215,14 @@ export const WeeklyGrid = memo(function WeeklyGrid({
                 width: '100%',
                 aspectRatio: '1 / 1',
                 fontSize: day.isToday ? 16 : 14,
-                // A trained day must be the most prominent cell in the row. The
-                // .done CSS rule pins --fs-primary, which is #16292d in Fresh
-                // Steel (11.83:1 against an empty cell — correct) but #0a0a0a in
-                // Obsidian, i.e. DARKER than the #262626 empty cell: 1.31:1 and
-                // inverted polarity, so dark mode could not show which days were
-                // trained. --nav-pill-* is the token pair that flips with the
-                // theme — navy + white in light, mint + near-black in dark — so
-                // "trained = most prominent" holds in both. Light values are
-                // identical to the current .done fill/ink, so light is unchanged.
-                ...(day.active
-                  ? {
-                      background: 'var(--nav-pill-bg)',
-                      color: 'var(--nav-pill-text)',
-                      // .today draws its ring in --fs-accent, which IS the dark
-                      // trained fill — invisible. On a filled cell the ring is
-                      // drawn in the fill's own ink instead, so today stays
-                      // distinguishable from a plain trained day in both themes.
-                      ...(day.isToday
-                        ? { boxShadow: 'inset 0 0 0 1.5px var(--nav-pill-text)' }
-                        : {}),
-                    }
+                // Fill and ink for every state live in `.day-cell*` — one source
+                // of truth. The only thing left inline is the today ring on an
+                // ALREADY-TRAINED cell: `.day-cell.today` draws its ring in
+                // --fs-accent, which IS the dark trained fill (1.00:1 — the ring
+                // disappears). On a filled cell the ring is redrawn in the fill's
+                // own ink instead: 15.12:1 light / 10.98:1 dark.
+                ...(day.active && day.isToday
+                  ? { boxShadow: 'inset 0 0 0 1.5px var(--nav-pill-text)' }
                   : {}),
               }}
             >

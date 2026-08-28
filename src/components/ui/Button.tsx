@@ -102,12 +102,15 @@ const variantStyles: Record<ButtonVariant, string> = {
     disabled:opacity-50 disabled:cursor-not-allowed
   `,
 
-  // Pill — compact tag-style, adaptive text
+  // Pill — compact tag-style, adaptive text.
+  // The pressed state carries its OWN ink: a touch device never fires :hover, so
+  // relying on hover:text- to colour the mint press left --fs-heading (near-white
+  // in dark) on the mint fill at 1.50:1. active: now states both fill and ink.
   pill: `
     bg-[var(--fs-surface-2)] text-[var(--fs-heading)]
     border border-transparent
     hover:bg-[var(--fs-accent)] hover:text-[var(--color-ink-on-accent)]
-    active:bg-[var(--fs-accent)]
+    active:bg-[var(--fs-accent)] active:text-[var(--color-ink-on-accent)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 

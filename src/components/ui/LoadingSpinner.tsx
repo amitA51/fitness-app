@@ -34,8 +34,8 @@ const DefaultSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => (
     className={`${sizeMap[size].container} rounded-full border-2`}
     style={{
       borderColor: 'var(--fs-surface-2)',
-      borderTopColor: 'var(--fs-primary)',
-      borderRightColor: 'var(--fs-primary)',
+      borderBlockStartColor: 'var(--fs-heading)',
+      borderInlineEndColor: 'var(--fs-heading)',
     }}
     animate={{ rotate: 360 }}
     transition={{
@@ -135,8 +135,8 @@ const OrbitSpinner: React.FC<{ size: SpinnerSize }> = ({ size }) => {
           className={`absolute ${dotSize} rounded-full`}
           style={{
             backgroundColor: 'var(--fs-primary)',
-            top: '50%',
-            left: '50%',
+            insetBlockStart: '50%',
+            insetInlineStart: '50%',
             transform: `rotate(${i * 90}deg) translateY(-150%)`,
             transformOrigin: 'center center',
           }}
@@ -313,8 +313,8 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
           className={`${sizeMap[size].container} rounded-full border-2`}
           style={{
             borderColor: 'var(--fs-surface-2)',
-            borderTopColor: 'var(--fs-primary)',
-            borderRightColor: 'var(--fs-primary)',
+            borderBlockStartColor: 'var(--fs-heading)',
+            borderInlineEndColor: 'var(--fs-heading)',
             opacity: 0.6,
           }}
         />

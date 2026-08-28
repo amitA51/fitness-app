@@ -364,7 +364,12 @@
 }
 
 .toggle-switch input:checked + .toggle-track {
-  background-color: var(--color-primary);
+  /* --btn-primary-bg, not --color-primary: --color-primary aliases --fs-primary,
+     which in dark is #0a0a0a — the exact value of --color-surface-input, the
+     unchecked track. Checked and unchecked rendered identically at 1.00:1, so
+     the control had no visible state. --btn-primary-bg inverts (navy light,
+     mint dark): 15.12:1 light (unchanged) / 11.57:1 dark against the off track. */
+  background-color: var(--btn-primary-bg);
 }
 
 .toggle-thumb {
@@ -715,8 +720,13 @@ textarea {
 
 /* Fresh Steel Buttons — Apple pill CTAs */
 .btn-primary-fs {
-  background: var(--fs-primary);
-  color: var(--color-ink-on-dark);
+  /* --btn-primary-* , not --fs-primary: --fs-primary does not invert, so a
+     near-black #0a0a0a fill sat on the #000000 Obsidian page at 1.06:1 — the
+     button vanished. The button pair flips: navy fill + mint ink in light
+     (7.16:1 ink, 13.48:1 against the page), mint fill + near-black ink in dark
+     (10.98:1 ink, 12.27:1 against the page). */
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
   font-family: var(--font-body);
   font-weight: 600;
   text-transform: none;
@@ -1121,7 +1131,13 @@ textarea {
   place-items: center;
   border: 1px solid var(--fs-surface-2);
   border-radius: var(--radius-md);
-  background: var(--fs-surface-2);
+  /* EMPTY state — the lightest of the three in light, the darkest in dark.
+     Mixing surface-2 toward --fs-surface moves the fill AWAY from the middle in
+     each theme (brighter in Fresh Steel, darker in Obsidian), which is the
+     headroom the rest state needs: with a flat --fs-surface-2 fill, trained and
+     empty were only 8.84:1 apart in dark and no third state could sit between
+     them at 3:1 on both sides. */
+  background: color-mix(in srgb, var(--fs-surface-2) 55%, var(--fs-surface));
   color: var(--fs-muted);
   font-family: var(--font-body);
   font-weight: 600;
@@ -1144,18 +1160,33 @@ textarea {
   cursor: default;
 }
 
+/* Trained day — the most prominent cell in the row, in BOTH themes.
+   NOT --fs-primary: that token does not invert (#16292d light, #0a0a0a dark),
+   so it painted a trained day DARKER than an empty one in Obsidian —
+   1.31:1 with the polarity flipped. --nav-pill-* is the pair that flips with
+   the theme (navy + white in light, mint + near-black in dark), which is what
+   "earned" has to look like on either canvas.
+   Measured trained-vs-empty: 13.23:1 light / 9.85:1 dark. */
 .day-cell.done {
-  background: var(--fs-primary);
-  color: var(--color-ink-on-dark);
+  background: var(--nav-pill-bg);
+  color: var(--nav-pill-text);
 }
 
-/* Planned rest day — dashed edge + quiet accent tint reads as "deliberately
-   skipped", visually distinct from both trained and missed days. */
+/* Planned rest day — the MIDDLE of the three states by luminance, in both
+   themes: literally the trained fill held back to just under half strength over
+   the muted plate, so it inherits the trained fill's theme inversion.
+   The old rule tinted the accent at 10% over the card, which left rest and empty
+   1.18:1 apart in light / 1.05:1 in dark and pushed the whole distinction onto a
+   dashed border at 1.35:1 / 2.99:1 — both under the 3:1 non-text floor — plus
+   letter hue, which colour-blind users cannot use at all.
+   Measured: trained-rest 4.34:1 light / 3.26:1 dark, rest-empty 3.05:1 / 3.02:1.
+   The dashed edge stays as a redundant SHAPE cue and now clears the floor too
+   (4.64:1 / 4.89:1), but luminance alone already separates all three states. */
 .day-cell.rest {
   border-style: dashed;
-  border-color: color-mix(in srgb, var(--fs-accent) 45%, transparent);
-  background: color-mix(in srgb, var(--fs-accent) 10%, transparent);
-  color: var(--fs-accent-2);
+  border-color: var(--fs-ink);
+  background: color-mix(in srgb, var(--nav-pill-bg) 46%, var(--fs-plate));
+  color: var(--fs-ink);
 }
 
 /* Perfect week — every day trained. Apple awards a special badge for the

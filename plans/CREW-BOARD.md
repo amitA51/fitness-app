@@ -929,7 +929,446 @@ and the newest source mtime was 8 minutes old, before any gate was run.
 
 ---
 
-# Batch 10 — dispatched 2026-08-28 15:08. Amit: "אל תתפשר", full autonomy, unlimited budget.
+# Batch 12 — Amit's Progress-screen ask (2026-08-28 16:02). AUDIT FIRST, dispatched immediately.
+
+### His three asks, verbatim intent
+1. **Progress overview**: too much data (he named "כמה RM"). Reorganize or delete so only what
+   genuinely helps remains. Whoever wants more can get more.
+2. **The workouts view inside Progress**: same treatment. Delete the irrelevant. He explicitly
+   offered the label **"מתקדם"** as the escape hatch. "תחשוב איך לעשות את זה בצורה חכמה ונוחה."
+3. **Body & Recovery** ("הגוף וההתאוששות" — dictation, he wrote התרוששות): he says it **looks
+   fine**, and asks whether it is too PERIPHERAL so nobody reaches it. Wants MY call, informed by
+   competitors, done **coherently**.
+Standing: no compromises, unlimited agents, "תנהל כמו מנהל צוות תכנות ועיצוב".
+
+### Why an audit first, and it is the same call that paid off three times already
+His ask is "keep only what helps" — but **nobody knows which numbers on that screen are TRUE.**
+This app's track record: the readiness score was two hardcoded values, the weekly ring arcs were
+pinned at 100% by construction, and 9 further PLACEHOLDER findings came out of `HOME-AUDIT.md`.
+**Arranging a screen before knowing which of its numbers are real means carefully arranging lies.**
+Amit himself ruled this order earlier: clean up the fake, then design. So T-035 is READ-ONLY
+mapping; the redesign is the batch that follows it.
+
+### Competitor evidence I gathered MYSELF (2026-08-28, web) — do not re-research
+- **Hevy** puts body composition, measurements and progress photos in **Profile → Measures**, and
+  advanced training stats in **Profile → Statistics**. So the market leader keeps body data
+  *further* from the main flow than we do — our Body tab is already MORE prominent than theirs.
+- **Hevy** shows 1RM (true or projected) at the **individual exercise** level, plus a Strength
+  Level percentile at the BOTTOM of the Summary tab for the big three only. **Not on the overview.**
+  That is exactly the "כמה RM" clutter Amit is complaining about, and the market answer is
+  "1RM belongs in exercise detail".
+- **Fitbod** justifies body data by making it DO something — its Body Composition feature "uses
+  that data to improve your exercise recommendations over time". Fitbod also derives intensity
+  from estimated 1RM and RIR and runs muscle-freshness scores.
+- Consensus shape across all three: **a thin overview, a separate advanced/statistics destination,
+  and body data deliberately secondary.** That is progressive disclosure enforced by navigation,
+  not by a toggle.
+
+### My provisional answer to ask 3 — placement is NOT the problem, payoff is
+Recorded here as reasoning, to be confirmed or corrected by T-035's findings.
+Two different things are being lumped together:
+- **BODY / measurements.** Competitors put this *more* peripheral than we already do. So "nobody
+  reaches it" is not a defect to fix by promotion — a tab on Progress is already generous. Leave
+  the placement.
+- **RECOVERY.** This one has a real defect, and it is not placement. The readiness engine needs
+  recovery logs, and **the app never prompts for one from anywhere** (`HOME-AUDIT.md` found every
+  readiness penalty inert for exactly this reason). So recovery is not hard to find — there is
+  **no reason to fill it in, because nothing consumes it.** Moving the tab would not change that.
+  Fitbod's model is the tell: body/recovery data earns its place by feeding a recommendation.
+  **We own ~900 lines of tested deterministic coaching math that consumes precisely this data and
+  has no runtime consumer** (`AI-COACH-AUDIT.md`). So ask 3 and the deferred engine decision are
+  the same question, and I should put that to Amit rather than move a tab and call it fixed.
+
+### Ownership — T-035 writes ONE plan file, so it cannot collide with batch 11
+Batch 11 currently holds `ToggleSwitch.tsx`, `components.css`, `WeeklyGrid.tsx(+test)`,
+`LoadingSpinner.tsx`, `ConfirmExitOverlay.tsx`, `Button.tsx`. **T-035 touches none of them** — it
+is read-only in `src/` and writes only `plans/PROGRESS-AUDIT.md`. It is explicitly forbidden from
+running any gate, because batch-11 workers are running the suite and concurrent runs pollute each
+other's counts. Dispatched now rather than held, because it is the long pole and idling it would
+delay the redesign for no safety gain.
+
+### Verified baseline — 2026-08-28 16:24, lead-measured after ALL batch-11 workers returned
+`spawn_list`: every batch-11 run `[done]`. T-035 (Progress audit) was still running, but it is
+READ-ONLY in `src/`, writes only `plans/PROGRESS-AUDIT.md`, and was explicitly forbidden from
+running any gate — and the newest source mtime was 3 minutes old before I started. The suite ran
+**TWICE with identical results**, which independently rules out concurrent-run pollution.
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **697** files (was 696; +1 = `ToggleSwitch.test.tsx`) |
+| `npm run test:run` | **159 files / 1396 tests**, exit 0 on both runs — NEW FLOOR |
+| arithmetic | 158 + 1 = 159 files; 1384 + 11 (`ToggleSwitch.test.tsx`) + 1 (new `WeeklyGrid` ring test) = 1396. Nothing deleted, skipped or weakened. |
+| debris | zero `contrast-probe*` leftovers (T-031 cleaned its own), `test-results/` absent, e2e still 13 specs |
+
+## [T-035] Progress screen — which of these numbers are actually true?
+- status: dispatched (batch 12)
+- owner: fitness-qa
+- goal: the fact base for decluttering Progress. Every number on all five tabs classified, plus a
+  proposed basic/advanced split argued item by item.
+- files: WRITES ONLY `plans/PROGRESS-AUDIT.md`. Read-only everywhere else. No gates, no browser.
+- done when: every metric on every tab is REAL / DERIVED / PLACEHOLDER with file:line; the 1RM
+  formula named and its honesty assessed; what a 3-workout beginner sees vs a 200-workout veteran;
+  and a proposed keep / demote-to-advanced / delete verdict for EVERY item with a one-line reason
+- notes: 30 files under `src/pages/progress/**`, five tabs (Overview, Workouts, Body, Recovery,
+  plus Strength/Weight/Measurements sections). The redesign is the next batch, deliberately.
+
+
+### Ground truth I verified MYSELF before writing these briefs — do not re-derive
+
+**1. The whole toggle fix is ONE file.** I read `ToggleSwitch.tsx:105-170`. The checked track
+is **inline**, not in the stylesheet: `animate={{ backgroundColor: checked ? 'var(--fs-accent)'
+: 'var(--fs-surface-2)' }}`. T-027 believed the fix required a stylesheet change and was
+therefore blocked; that was **slightly wrong** — everything it needed was in its own file.
+All three defects confirmed by my own read:
+- `:126` `border: '1px solid var(--fs-primary)'` → **1.05:1 dark**, the track edge is invisible.
+- `:159` `color: checked ? 'var(--fs-primary)' : 'var(--fs-muted)'` → **turning a toggle ON
+  makes its Hebrew label disappear in dark.** Confirmed with my own eyes, not on report.
+- knob `--fs-ink` (`#f0f0f0` dark) vs checked track `--fs-accent` (mint) = **1.50:1**, T-027's
+  disclosed residual. Fixable here after all.
+**Consequence: `components.css` is FREE this batch**, so the whole day-cell story goes to one
+owner instead of being split across two.
+
+**2. The billing system is FAR more built than `AI-COACH-AUDIT.md` implied.** That audit said
+"PremiumLock/PlanGate have zero call sites", which is true but narrow. A grep shows a whole
+billing stack already exists **with tests**: `src/contexts/EntitlementContext.tsx`,
+`src/services/billing/{entitlementService,checkoutService,waitlistService,types}.ts` plus
+`__tests__/{entitlementService,billingEnforcement}.test.ts`, `src/pages/billing/PaywallScreen.tsx`
++ `components/PurchasePanel.tsx`, `src/components/billing/PremiumLock.tsx`,
+**migrations `20260610000100_entitlements.sql` + `20260726100000_billing_core.sql` with
+`supabase/tests/billing_core_test.sql`**, **edge functions `billing-checkout`, `billing-webhook`,
+`_shared/billingAdapter.ts`**, `e2e/journeys/paywall-entitlement.spec.ts`, and
+`reports/01-MONETIZATION-BILLING.md`. **`supabase/functions/ai-chat/index.ts` has 17 matches —
+server-side entitlement enforcement may already exist.**
+**So Amit's "build something basic" is probably WIRING, not building.** Implementing against my
+previous summary would have duplicated a tested engine. **This is the readiness-score mistake
+waiting to happen again, so the billing work starts READ-ONLY.**
+
+### Amit's payment ruling (2026-08-28 15:50), verbatim intent
+He has **not** decided on a monetization model. He wants something **very basic that only the
+ADMIN sees** for now, to be upgraded into real payment when real users arrive. So: no provider,
+no prices, no tiers invented. The admin machinery already exists from batch 1 (`app_admins`,
+`is_app_admin()`, `useIsAppAdmin`, `AdminGuard`) and is the obvious seam to reuse.
+
+### Ownership map — disjoint, verified against real reads
+- **T-030** → `src/components/ui/ToggleSwitch.tsx` (+ a colocated test)
+- **T-031** → `src/styles/components.css` (ONLY rules ~367, ~718, ~1147) +
+  `src/components/dashboard/WeeklyGrid.tsx` + `WeeklyGrid.test.tsx`
+- **T-032** → `src/components/ui/LoadingSpinner.tsx` +
+  `src/components/workout/overlays/ConfirmExitOverlay.tsx`
+- **T-033** → `src/components/ui/Button.tsx`
+- **T-034** → WRITES ONLY `plans/BILLING-STATE-AUDIT.md`. Read-only everywhere else.
+- **Cross-declared:** T-030 fixes the LIVE toggle (inline, `ToggleSwitch.tsx`); T-031 fixes the
+  LATENT toggle-track RULE (`components.css:367`, no consumer). Same family, different files.
+- **Declared seam:** `WeeklyGrid.test.tsx` PINS the inline `--nav-pill-*` override T-031 removes
+  once the stylesheet is fixed. **Updating that test is part of T-031, not a regression.**
+- **NO PLAYWRIGHT ANYWHERE THIS BATCH** — deliberate. Batch 10 left three tasks owing pixels and
+  a screenshot pass must photograph a SETTLED tree. Batch 12 runs ONE pass covering batches 10+11
+  together. Contrast numbers this batch are computed from resolved token hexes, which is how
+  T-027 produced the best-evidenced result of the session.
+
+## [T-030] The toggle, whole — ACCEPTED on evidence 2026-08-28 16:13. Best report of the batch.
+- status: **accepted; my authoritative verify + test:run owed once the last two land**
+- 1 file + 1 new colocated test file, exactly its ownership. `src/styles/**` untouched as instructed.
+- **ALL THREE DEFECTS FIXED IN ONE PASS.** This is the payoff of scoping by surface: the previous
+  two passes each fixed one symptom and left the component broken.
+
+| Defect | Before | After |
+|---|---|---|
+| ON label (text, 12px/600) | **1.05:1** dark — vanished on activation | **16.57:1** dark · 16.19:1 light |
+| OFF label | — | 7.49:1 dark · 7.01:1 light |
+| Track border vs OFF fill | 1.31:1 dark | **13.28:1** dark · 12.67:1 light |
+| Knob/border vs ON track | **1.50:1** dark | **3.54:1** dark · 7.67:1 light |
+| ON track vs OFF track | — | **3.76:1** — state legible on FILL ALONE, not just knob position |
+
+- **⚠️ IT CORRECTED TWO NUMBERS IN MY BRIEF.** Dark `--fs-surface-2` is `#262626`, so the border
+  defect is **1.31:1 against the FILL** — the 1.05:1 I quoted is correct only against the CARD.
+  My brief conflated two comparison surfaces; it recomputed both and said which is which. Also
+  `--fs-muted` dark is `#a3a3a3`.
+- **⚠️ IT REJECTED THE TOKEN I RECOMMENDED, WITH ARITHMETIC.** I named `--color-border-strong` as
+  the house border fix. In dark it is `rgba(255,255,255,0.26)`, which **composites** to only
+  **2.33:1** over the dark track fill and 2.91:1 over the card — **both under the 3:1 that WCAG
+  1.4.11 asks of a component boundary, i.e. under the bar my own task set.** It used `--fs-ink`.
+- **The impossible residual is solved, and the value is DERIVED from our own house method:**
+  `TRACK_CHECKED_DARK = #318d78` is `--fs-accent` with every channel scaled **0.64** — explicitly
+  the same technique `tokens.css` already uses for `--btn-primary-bg-hover` (`#42bda1` = accent ×
+  0.86), which T-026 introduced in batch 10. **Identical hue (166.2°) and saturation, lower value,
+  so it is still the brand mint and no third accent is introduced** — the `PRODUCT.md` constraint
+  held. It re-derived the empty-set proof itself before accepting that the track had to move.
+  **This beats T-027's settlement**: that worker left ON at iOS's 2.22:1 and leaned on knob
+  position; this clears 3:1 on colour alone AND keeps the position channel.
+- **ENGINEERING CRAFT — three things nobody asked for:**
+  1. It needed the theme in JS. It found the house pattern rather than inventing one:
+     `useReducedMotion` already uses a MutationObserver on the `html` class with a documented
+     rationale, and `html.dark` is toggled the same way at `SettingsContext.tsx:204`.
+  2. **It routed the track colour through one tiny pure exported function**
+     (`trackBackgroundColor(checked, isDark)`) *because* there is no framer mock in this repo, so
+     `animate` values never reach the DOM in jsdom — a naive test would have had to duplicate the
+     logic and would assert a copy of the decision rather than the decision. Sharp testing insight.
+  3. It set the resolved fill on `style` as well as `animate` — same value, so no mount animation,
+     but it fixes **first paint before motion features load**, i.e. a flash of the wrong colour.
+- **It hit the grep-truncation trap and handled it right** ("the grep tool is truncating results,
+  let me read `tokens.css` directly") — the third worker this session to hit it.
+- process hygiene: captured the test baseline BEFORE editing; deleted its throwaway contrast
+  calculator before running verify; fixed a `noUncheckedIndexedAccess` error in its own test; and
+  when biome reported an error whose detail its filter had dropped, **widened the capture instead
+  of assuming**.
+- its own gates: verify exit 0; test:run **159 files / 1395 tests** — floor 158/1384 plus exactly
+  its 11 new tests. Nothing deleted, skipped or weakened.
+- **to eyeball at gate time:** the new MutationObserver hook — confirm it disconnects on unmount.
+
+### ⚠️⚠️ THIS UNDERMINES A PLAN WE HAVE NOT RUN YET — the 92-border sweep
+`TOKEN-POLARITY-AUDIT.md` prescribes **`--color-border-strong`** as the fix for its **92 at-risk
+borders** (Band B, "the mechanical sweep"). T-030 measured that token in dark: it is a 26% white
+overlay that composites to **2.33:1 over a dark surface fill and 2.91:1 over the card — both fail
+the 3:1 non-text floor.** So the audit's recommended mechanical fix may not actually clear WCAG on
+dark surfaces, which would make a 92-site sweep 92 sites of false confidence.
+**Before Band B runs, the replacement token itself has to be measured per surface.** Recorded here
+because it is exactly the kind of thing that gets executed on trust.
+
+- status: dispatched (batch 11)
+- owner: fitness-design
+- goal: `ToggleSwitch.tsx` is the control in every Settings row. Fix all three of its dark-mode
+  defects together, including the one a previous worker proved it could not reach.
+- done when: verify green; test:run >= 1384; contrast stated as a number in BOTH themes for the
+  track border, the ON label and knob-vs-both-track-states; light proven unchanged
+- notes: scoped by SURFACE because scoping by symptom left this component half-broken twice.
+
+## [T-031] The stylesheet source + the week strip — ACCEPTED 2026-08-28 16:21. Re-dispatch WORKED.
+- status: **accepted; my authoritative verify + test:run owed** (all batch-11 workers now returned)
+- 3 files, exactly its ownership. **It verified the previous no-op itself first** — "all three rules
+  are unchanged, and `WeeklyGrid.tsx` still carries the inline override. Nothing was done
+  previously." Then did all four ordered items.
+- **THE METHOD IS THE STANDOUT — it did not hand-pick colours, it searched the solution space.**
+  Its first attempt (a mid-luminance rest fill) returned **zero solutions**, and it identified why:
+  **the LETTER contrast, not the fill, is the binding constraint.** It then widened the search over
+  anchor pairs and ink tokens and found exactly one clean solution. That is the difference between
+  picking a colour and proving one exists.
+- **THE THREE STATES NOW WORK, by luminance, in both themes:**
+  | pair | light | dark |
+  |---|---|---|
+  | trained ↔ rest | **4.34** | **3.26** |
+  | rest ↔ empty | **3.05** | **3.02** |
+  Before, rest ↔ empty was **1.18 light / 1.05 dark** with the whole distinction resting on a
+  dashed border at 1.35 / 2.99 plus letter hue. **Every adjacent pair now clears the 3:1 WCAG
+  1.4.11 floor.** Letters all clear AA (trained 15.12/10.98, rest 4.64/4.89, empty 6.14/6.68), and
+  **the dashed edge survives as a redundant shape cue that now also clears the floor** — so the
+  colour-blind failure T-025 found is closed on two channels, not one.
+- trained ↔ empty **improved** rather than held: 11.83 → **13.23** light, 8.84 → **9.85** dark.
+- **`.btn-primary-fs` was worse than "latent"**: in dark it was `#0a0a0a` on a `#000000` page =
+  **1.06:1, an invisible button.** Now 12.27:1. Light fill unchanged at 13.48.
+- **The toggle-track rule confirmed the audit exactly**: checked and unchecked were **byte-identical
+  `#0a0a0a`** in dark, i.e. 1.00:1. Now 11.57:1. Light unchanged at 15.12.
+- **⚠️ IT DISCLOSED THE ONE NUMBER THAT MOVED DOWN, and proved the trade is forced.** The
+  empty-cell ↔ card boundary in light softens 1.19 → 1.11. Its argument: that boundary is not a
+  state signal and both values are far under 3:1 either way, **and brightening the light empty fill
+  is mathematically what creates room for a third state** — a dark-ink rest letter at 4.5:1 forces
+  the empty fill above L*0.822 while `--fs-surface-2` sits at 0.806. A real trade, with the
+  arithmetic that compels it.
+- **THE DECLARED SEAM HANDLED CORRECTLY:** `WeeklyGrid.test.tsx`'s pinning test was **rewritten, not
+  removed** — it now asserts the `.done` class is present AND that `style.background`,
+  `backgroundColor` and `color` are all EMPTY, i.e. the stylesheet owns the fill. **It also ADDED**
+  a test that an untrained today keeps only the ring, so the override cannot leak onto unfilled
+  cells. 4 tests in that file.
+- its own gates: verify exit 0 (697 files); test:run **159 files / 1396 tests**. Contrast computed
+  from resolved token hexes with a throwaway script **it deleted afterward** — the five
+  `contrast-probe*.mjs` files are gone from the tree, confirmed by my own `git status`.
+
+### ⚠️ A LIVE BUG it found and correctly left — this one has consumers
+**`components.css:1116` `.tab-row .tab.active`** carries the same `--fs-primary` fill + ink shape as
+the three rules it fixed — **but unlike those, this one HAS LIVE CONSUMERS, so an active tab renders
+`#0a0a0a` on a `#111111` card in dark.** `.chip-fs.active` (`:614`) is the same shape. Next batch.
+### Two more it surfaced
+- **`.day-cell.done.perfect-week`** fills with `--fs-accent`, which in dark **is** `--nav-pill-bg` —
+  so a perfect week and an ordinary trained day sit **1.00:1** apart in Obsidian. Pre-existing (the
+  old inline override collided the same way) and outside its named rules.
+- `.toggle-thumb` is `#ffffff` in both themes; on the dark checked track that is 1.83:1. **Latent
+  only** — the LIVE toggle is inline in `ToggleSwitch.tsx`, which T-030 fixed properly this batch.
+  Check the seam at gate time. `.toggle-track` unchecked is `#ffffff` in light, invisible on a white
+  card; it left that as not required to distinguish the two states.
+
+- status: dispatched (batch 11)
+- owner: fitness-design
+- goal: three rules still hold the flipping token, inert only because a component overrides them
+  inline — the next consumer regresses silently. Fix the rules, drop the redundant override, and
+  make trained / rest / empty mutually distinguishable by LUMINANCE.
+- done when: verify green; test:run >= 1384 with the pinning test updated and named; the three
+  states stated as numbers in both themes, >= 3:1 between adjacent states
+- notes: RE-DISPATCH — the first attempt was marked done having produced ZERO edits. ORDERED.
+  Hue alone is not a signal; it fails colour-blind users. WCAG 1.4.11 non-text floor is 3:1.
+
+## [T-032] The second spinner — ACCEPTED on evidence 2026-08-28 16:07
+- status: **accepted; my authoritative verify + test:run owed once the other four land**
+- 2 files, exactly its ownership. **Verified by `git status` that both actually changed** before
+  recording anything — per the new rule after T-028's false success.
+- **ALL FOUR SITES: dark 1.05:1 → 16.57:1. Light 15.12:1 → 15.12:1, identical.** And light is
+  proven unchanged **structurally, not by measurement luck**: `--fs-heading` is literally declared
+  as `var(--fs-primary)` in `:root`, so the computed hex is the same and light output is
+  byte-identical. (Against the app background rather than the surface: dark 1.06 → 18.43:1.)
+- **⚠️ MY BRIEF MISSED TWO THINGS AND IT FOUND BOTH.**
+  1. **A fifth physical-direction property** — `LoadingSpinner.tsx:139` `left: '50%'` in
+     `OrbitSpinner`. My sweep found 4 of 5. It said so plainly.
+  2. **The same token defect on the SAME ring at `:37` (`borderTopColor`)**, which my brief did not
+     name. Fixing only the inline-end arc would have left the block-start arc at `#0a0a0a` /
+     1.05:1 — **a two-tone half-invisible ring in dark that matches neither theme's intent**, so
+     the "frozen screen" symptom would not actually have been resolved. It fixed both, argued the
+     light cost is provably zero by the same construction, and offered the revert as a two-token
+     edit if I disagree. That is the right way to exceed a brief.
+- **THE DIRECTION ANALYSIS IS THE STANDOUT — it classified each site individually instead of
+  applying one rule to all five:**
+  - `:38` ring — **direction-independent.** It carries `animate={{ rotate: 360 }}` on an infinite
+    loop; mirroring a contiguous 180° half-ring gives the same shape rotated 90°, which a
+    continuous rotation reduces to a **phase shift**. So the logical property is the correct CODE,
+    not a visual fix. It said exactly that.
+  - `:317` — **genuinely mirrors.** This is the `prefersReducedMotion` branch: a STATIC div, no
+    rotation, so the lit half sits at a fixed angle and moving it is a real rendered change — and
+    the right one, since a static indicator should follow the reading direction.
+    **Same component, two branches, and only one of them mirrors, because one spins and one does
+    not.** A careless pass would have got both wrong.
+  - `:139` — direction-independent, rigorously: all four dots shift by the same vector so the ring
+    translates as a **rigid body**, and its parent spins continuously, so the offset only changes
+    the orbit's phase, never the swept annulus.
+- **⚠️ IT FOUND A REAL VISIBLE BUG NOBODY KNEW ABOUT** — `ConfirmExitOverlay.tsx:210` and `:238`.
+  A `grid grid-cols-3` under `dir="rtl"` (confirmed at `index.html`) lays cells right-to-left, so
+  cell 1 is the RIGHTMOST. `borderRight` on cells 1 and 2 therefore painted one border against the
+  container's own right edge (**doubling it to 4px**) and one internal divider — leaving the
+  **cell 2 | cell 3 boundary with NO divider at all.** The 3-up stat block was visibly asymmetric.
+  `borderInlineEnd` yields both internal dividers and no doubled outer edge. **So this was not
+  latent hygiene; the exit overlay was rendering wrong.**
+- its own gates: verify exit 0 (696 files, ×2); test:run **158 files / 1384 tests**, exit 0 —
+  exactly the floor. Physical-property re-sweep of both files: **CLEAN, zero remaining.**
+
+### ⚠️ FOLLOW-UP it surfaced, and it needs a PRODUCT call not just a fix
+**Five more spinner variants in the same file still measure 1.05:1 in dark** — `DotsSpinner:66`,
+`PulseSpinner:84`, `OrbitSpinner:135`, `GradientSpinner`'s gradient stop `:196`, `WaveSpinner:235`
+— plus the ring track `--fs-surface-2` at 1.25:1 dark. It judged fixing them a component rewrite
+and reported instead of guessing. **Correct restraint, but note the shape: I scoped the task to
+the FILE and then named specific LINES, and it read the lines as the boundary. My briefing error,
+not its scope creep.**
+**Before fixing them, check whether they have consumers at all.** If those variants are dead code,
+Amit's standing rule ("what does not help, delete") makes DELETE the right answer, not a
+five-variant contrast pass. That check comes first.
+
+- status: dispatched (batch 11)
+- owner: fitness-dev
+- goal: two files carry the flipping token AND a physical direction property on the same line.
+  One of them is a SECOND spinner component, so the dark-mode invisible spinner is only half
+  fixed.
+- done when: verify green; test:run >= 1384; contrast in both themes; zero physical direction
+  left in either file
+- notes: found by my own RTL sweep, not by any audit.
+
+## [T-033] The pill button on touch — ACCEPTED on evidence 2026-08-28 16:09
+- status: **accepted; my authoritative verify + test:run owed once the last three land**
+- 1 file, 1 declaration, 3 comment lines. `Button.tsx:113` gains
+  `active:text-[var(--color-ink-on-accent)]` beside the existing `active:bg-`. No token added or
+  edited; the primary variant's tokens untouched as instructed.
+- **PRESSED CONTRAST, computed WITHOUT assuming hover fired — i.e. the phone path:**
+  | theme | fill | ink | ratio |
+  |---|---|---|---|
+  | light | `#43c7a5` | `#071412` | **8.90:1** |
+  | dark | `#4ddcbb` | `#071412` | **10.98:1** |
+  | high-contrast | `#8efad8` | `#000000` | **16.81:1** |
+  Before, on the phone path: dark `#f0f0f0` on `#4ddcbb` = **1.50:1**. Light was 7.16:1 —
+  **which is exactly why this survived desktop and light-mode review: only the dark touch path
+  was broken.** Good account of why nobody caught it.
+- **Resting and hover proven unchanged STRUCTURALLY, not by measurement:** the new declaration
+  lives inside the `active:` variant, so it is inert unless `:active` matches — resting cannot
+  change by construction. And on a desktop press, where `:hover` and `:active` both match, the two
+  rules now resolve to the **same two values**, so whichever wins the cascade paints an identical
+  pixel. Resting stays 11.84:1 light / 13.28:1 dark.
+- **It ran the whole-file sibling audit I asked for and reasoned per variant rather than asserting:**
+  `primary`/`secondary`/`ghost`/`glass` set ink unconditionally at rest so the press inherits it;
+  `danger`/`card-action`/`start` press via `filter: brightness()` which scales fill and ink
+  together. **`pill` was the file's only instance of the shape.** One sibling searched for, none
+  found — and "none found" is a real answer, not a shrug.
+- its own gates: verify exit 0 (696 files ×2); test:run **158 files / 1384 tests**, the floor exactly.
+- **Three things it flagged and correctly left alone:**
+  1. `Button.tsx:425` — the arrow chevron has `group-hover:translate-x-0.5` but **no ancestor
+     carries the `group` class**, so that hover nudge can never fire. A dead style.
+  2. The same arrow pairs `text-[var(--fs-primary)]` with `bg-[var(--fs-accent)]`. It passes both
+     themes (7.16 / ~11.7) but it is the last place in the file putting *theme-varying* ink on a
+     mint fill where `--color-ink-on-accent` is the documented token. Consistency debt.
+  3. `danger`/`card-action`/`start` press via `brightness()`, so their pressed contrast is
+     **emergent rather than stated** — legible today, but a different class of fragility than the
+     one it was sent to fix. A sharp distinction, correctly not acted on.
+
+### ⚠️⚠️ MY OWN BLIND SPOT, surfaced by that worker and VERIFIED BY ME — this is bigger than the task
+It quoted a **high-contrast** theme. I did not brief that and did not know it existed, so I checked
+`src/styles/` myself rather than relay it. **It is real:**
+- `tokens.css:587` — `html.high-contrast`, and its own comment at `:581-584` says the class and a
+  **UI switch** already existed before the tokens were implemented
+- `tokens.css:250` — `html.large-text`
+- `components.css:1472` — `@media (prefers-contrast: more)`
+- plus a `reduce-motion` class named in the same comment block
+**Every contrast number this crew has produced across eleven batches — including the 214-site
+`TOKEN-POLARITY-AUDIT.md` — was computed for LIGHT and DARK only.** There is a third (and fourth)
+theme axis with a user-facing switch that nobody has ever measured. This does not invalidate the
+fixes we shipped (they are correct in light and dark), but it means an unexamined state exists,
+reachable by a real user, on every surface we have touched.
+**I have NOT verified whether `high-contrast` composes with `dark` (e.g. `html.dark.high-contrast`)
+or replaces it — that is exactly the kind of thing I refuse to assume.** It needs its own audit
+task, and it should run before we call the token work finished.
+
+- status: dispatched (batch 11)
+- owner: fitness-design
+- goal: the `pill` variant sets its press background but not its press text colour, and the text
+  colour is only set on hover — which a touch device never fires. This app is mobile-first, so
+  the broken path is the only path real users take.
+- done when: verify green; test:run >= 1384; pressed contrast in both themes WITHOUT relying on
+  hover; resting and hover states proven unchanged
+- notes: found by T-026 inside its own file and correctly left alone.
+
+## [T-034] Billing state — ACCEPTED 2026-08-28 16:17. Delivered `plans/BILLING-STATE-AUDIT.md` (277 lines)
+- status: **done** — read-only confirmed: `git status` shows it touched nothing in `src/` or
+  `supabase/`. Its only write is the plan doc.
+- **HEADLINE: "a complete, well-built, provider-agnostic billing stack exists and is switched off
+  on purpose."** My call to audit before building was right — this would have been duplicated work.
+- **SERVER-SIDE ENFORCEMENT IS REAL — you CANNOT forge premium.** No client write policy exists on
+  `entitlements`, `billing_subscriptions` or `billing_events`, and every gate keys off `auth.uid()`
+  inside `SECURITY DEFINER`. **But it is nearly unused:** `has_feature_access()` has **exactly one
+  caller in the whole tree** (`ai-chat/index.ts:215`), that call sits behind an unset
+  `AI_REQUIRES_ENTITLEMENT` flag **that fails OPEN**, and the AI surface it guards has zero UI call
+  sites. **Five of the six advertised features have no gate on either side.**
+- **⚠️ THE WAITLIST HAS NO BACKEND.** `waitlistService` calls `join_waitlist` and selects from
+  `public.waitlist`. **Neither exists in any of the 55 migrations** — a grep across all of
+  `supabase/` returns three comment lines and nothing else. **So the paywall's only actionable
+  button most likely errors for every user, and the mount check swallows the failure silently.**
+  It flagged honestly that it could not inspect the live DB, so the table may exist by hand.
+- **⚠️ TWO LIVE PROMISES ARE NOW FALSE:**
+  1. **"עד 3 תבניות"** stopped being enforced on **2026-08-24**, when
+     `trg_enforce_free_template_quota` was deliberately dropped — which also makes the
+     `navigate('/paywall')` at `useTemplates.ts:104` a **dead branch**.
+  2. **"מאמן AI · בקרוב"** advertises the surface **we deleted in batch 9.**
+- **⚠️ A TEST IS LYING, and it is the class I reject:** `db:test` is GREEN while still asserting
+  that dropped trigger, because `scripts/db-test.mjs` **never applies the drop migration**. The DB
+  suite is passing against a state that no longer exists.
+- **`billingAdapter` is NOT a stub** — it is a complete Paddle implementation with raw-body HMAC, a
+  300s replay window and a timing-safe compare. It is simply unreachable: `getAdapter()` returns
+  null without `BILLING_PROVIDER`. Two env files exist, both gitignored, **neither sets any billing
+  variable.**
+- **THE DELIVERABLE AMIT ASKED FOR: 9 ordered steps, and step 1 alone satisfies his brief** —
+  wrap `/paywall` in the **existing `AdminGuard`**, copying the `/admin` pattern that sits 10 lines
+  below it in the same file. Steps 2-4 stop the false promises; 5-8 fix the test drift.
+  **No new flag, no price, no provider invented** — exactly the constraint I set.
+- **One product decision it surfaced and correctly did not take:** `PurchasePanel` tells a buyer
+  **"אפשר לבטל בכל עת מההגדרות"** and **no cancel surface exists anywhere in `src/`.** Invisible
+  today; false the instant billing goes live. That is a consumer-protection problem, not a UX one.
+
+### Debris noted, deliberately NOT cleaned yet
+Five `contrast-probe*.mjs` files sit untracked in the repo ROOT, and `src/styles/components.css` is
+now modified — so T-031 is still mid-run and may be using them. **Cleaning them now would interfere
+with a live worker.** Sweep them after it returns, before any commit.
+
+- status: dispatched (batch 11)
+- owner: fitness-qa
+- goal: the fact base for Amit's admin-only payment scaffold. A tested billing stack already
+  exists and nobody knows what of it is live.
+- files: WRITES ONLY `plans/BILLING-STATE-AUDIT.md`. Read-only everywhere else.
+- done when: every billing surface classified LIVE / WIRED-BUT-UNREACHABLE / DEAD with file:line;
+  the answer to "is entitlement enforced server-side today"; whether `/paywall` is reachable by a
+  normal user; and the SMALLEST change that makes the whole surface admin-only
+- notes: no `src/` writes, no Playwright. Implementation is batch 12, deliberately.
+
 
 ### The token mechanics I verified MYSELF before writing these briefs — do not re-derive
 A grep suggested `--btn-primary-bg: var(--fs-primary)` — i.e. that our "house fix" was an

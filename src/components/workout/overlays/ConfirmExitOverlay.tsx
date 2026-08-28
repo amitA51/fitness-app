@@ -207,7 +207,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
               >
                 <div
                   className="text-center p-3"
-                  style={{ borderRight: '2px solid var(--fs-primary)' }}
+                  style={{ borderInlineEnd: '2px solid var(--fs-heading)' }}
                 >
                   <div
                     style={{
@@ -235,7 +235,7 @@ const ConfirmExitOverlay = memo<ConfirmExitOverlayProps>(
                 </div>
                 <div
                   className="text-center p-3"
-                  style={{ borderRight: '2px solid var(--fs-primary)' }}
+                  style={{ borderInlineEnd: '2px solid var(--fs-heading)' }}
                 >
                   <div
                     style={{
