@@ -670,12 +670,20 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
           </PageErrorBoundary>
         }
       />
+      {/* The billing stack is complete but switched off, and no monetization
+          model has been chosen yet — so the paywall is an admin-only scaffold:
+          a member of app_admins can open it to judge it, nobody else reaches
+          it. Same contract as the operator screen below, loader included: the
+          guard renders nothing until the app_admins lookup settles, because
+          redirecting early bounces a real admin home on every cold load. */}
       <Route
         path="/paywall"
         element={
-          <PageErrorBoundary pageLabel="מנוי פרימיום">
-            <PaywallScreen />
-          </PageErrorBoundary>
+          <AdminGuard>
+            <PageErrorBoundary pageLabel="מנוי פרימיום">
+              <PaywallScreen />
+            </PageErrorBoundary>
+          </AdminGuard>
         }
       />
       {/* Hidden operator screen. No nav entry anywhere — reached by URL only,

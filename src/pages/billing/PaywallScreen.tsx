@@ -30,10 +30,22 @@ interface FeatureRow {
   proValue: string;
 }
 
-// Order leads with genuinely-shipping differentiators (advanced progress, cloud
-// sync, unlimited templates, data export, progress photos). The AI coach is not
-// yet wired (the chat endpoint returns 503), so its row is honestly future-tense
-// ("בקרוב") and sits last instead of headlining a feature that does not exist.
+// Every row here must be a free/pro difference the product can actually deliver
+// today. Two rows were removed for being false, not for being unpolished:
+//
+//   • ai_coach ("מאמן AI · בקרוב") — the coach surface it advertised was deleted
+//     from the app. Of the eight coach surfaces that once existed exactly one was
+//     ever a real model call; the hardcoded ones were removed deliberately. So
+//     "בקרוב" promised a feature with nothing behind it, not a delayed one.
+//
+//   • unlimited_templates ("עד 3" on free) — the free cap of 3 templates stopped
+//     being enforced on 2026-08-24, when the DB trigger enforcing it was dropped.
+//     Free is unlimited today, so the row had no difference left to show: keeping
+//     it meant advertising a limit we do not impose, and rewording it to
+//     "ללא הגבלה / ללא הגבלה" would be a comparison row that compares nothing.
+//
+// Do not backfill this list to keep it looking long. A short true table beats a
+// padded one, and a row that overstates the product costs more than a short list.
 const FEATURE_ROWS: FeatureRow[] = [
   {
     key: 'advanced_progress',
@@ -50,13 +62,6 @@ const FEATURE_ROWS: FeatureRow[] = [
     proValue: 'כל המכשירים',
   },
   {
-    key: 'unlimited_templates',
-    label: 'תבניות אימון',
-    description: 'שמירת תוכניות אימון מותאמות אישית',
-    freeValue: 'עד 3',
-    proValue: 'ללא הגבלה',
-  },
-  {
     key: 'data_export',
     label: 'ייצוא נתונים',
     description: 'ייצוא האימונים שלך ל-CSV ו-JSON',
@@ -69,13 +74,6 @@ const FEATURE_ROWS: FeatureRow[] = [
     description: 'תיעוד חזותי של השינוי הגופני',
     freeValue: null,
     proValue: 'ללא הגבלה',
-  },
-  {
-    key: 'ai_coach',
-    label: 'מאמן AI',
-    description: 'תוכנית אימון מותאמת אישית מבוססת AI',
-    freeValue: null,
-    proValue: 'בקרוב',
   },
 ];
 

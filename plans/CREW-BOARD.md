@@ -1099,8 +1099,211 @@ The trainee-facing surface is small, but nutrition has **three other consumers**
 - **No new admin toggle SCREEN.** That is a UI for a feature he may delete. If he later wants a
   runtime switch, the flag is the seam and it is a separate, small task.
 
-## [T-041] Hide the nutrition area behind a reversible flag
-- status: dispatched (batch 14)
+# Batch 15 — dispatched 2026-08-28 18:02. Amit: nutrition goals STAY hidden · paywall = my call · then photos
+
+**His three rulings (2026-08-28 18:00):**
+1. **"יעדי תזונה שיהיה מוסתר"** — the trainee nutrition-goal editor STAYS hidden. That answers the open
+   question from T-041's disclosure. **No work needed: the current state is what he wants.** Recorded so
+   nobody "fixes" it back.
+2. **"מסך תשלום תעשה מה שאתה חושב"** — the paywall is my call.
+3. Screenshots + whatever verification makes it excellent, then hand him the next task's wording.
+
+### MY SEQUENCING CALL, and it is the reverse of what he listed
+**The code changes go FIRST, the photo round comes after — one round, not two.** T-044 edits the router
+and T-045 edits the paywall screen; photographing now would capture three settled surfaces and then
+need a second round for the paywall anyway. Same logic that worked for batches 10-12: photograph a
+settled tree once. **Nobody holds the browser this batch**, so all three slots go to code and analysis.
+
+### What I decided about the paywall, so it is not re-litigated
+`plans/BILLING-STATE-AUDIT.md` step 1 was "wrap `/paywall` in the existing `AdminGuard`" — ~10 lines,
+reusing the pattern that already sits ~10 lines below it in the same file. That is exactly his brief:
+admin-only, no provider, no prices, no tiers invented. Beyond the gate I am fixing only the **claims
+that are actively false**, because a screen that lies is worse than a screen nobody can reach:
+- **"מאמן AI · בקרוב"** advertises the surface we DELETED in batch 9.
+- **"עד 3 תבניות"** stopped being enforced on 2026-08-24 when its DB trigger was dropped — which also
+  makes the `navigate('/paywall')` at `useTemplates.ts:104` a branch that can never fire.
+- **NOT fixing the missing waitlist table.** `join_waitlist` and `public.waitlist` exist in none of the
+  55 migrations, so the paywall's only button likely errors silently. **But once the screen is
+  admin-only that button is admin-only too — building a table for a screen only Amit can open is the
+  same waste as fixing the hidden nutrition screen's dark mode.** Recorded, not scheduled.
+- **NOT fixing "אפשר לבטל בכל עת מההגדרות"** while no cancel screen exists: no purchase can happen
+  without a provider, so the sentence is unreachable rather than false today. A comment marks it.
+
+### Ownership map — disjoint, verified
+- **T-044** → `src/AppRouter.tsx`, `src/hooks/useTemplates.ts`, + a test
+- **T-045** → `src/pages/billing/PaywallScreen.tsx`, `src/pages/billing/components/PurchasePanel.tsx`
+- **T-046** → WRITES ONLY `plans/THEME-AXES-PROBE.md`. Read-only everywhere else.
+- **NO PLAYWRIGHT, no build** — deliberate, see the sequencing call above.
+
+## [T-044] Put the paywall behind the admin gate
+- status: dispatched (batch 15)
+- owner: fitness-dev
+- goal: a normal user cannot reach `/paywall`; the admin can; and the dead quota branch that pointed at
+  it is gone.
+- done when: verify green; test:run >= 1429 plus a test proving both directions; the dead
+  `navigate('/paywall')` branch removed with its reason stated
+- notes: reuse the EXISTING `AdminGuard`, do not write a second guard. Do not touch the billing screens
+  — T-045 owns them.
+
+## [T-045] Stop the paywall making false claims
+- status: dispatched (batch 15)
+- owner: fitness-design
+- goal: two of the features the paywall advertises do not exist. Remove the claims, change no pricing.
+- done when: verify green; test:run >= 1429; every changed string reported old -> new
+- notes: no provider, no price, no tier invented — the owner has not chosen a monetization model.
+
+## [T-045] Paywall false claims — ACCEPTED on evidence 2026-08-28 18:09
+- status: **accepted; my authoritative verify + test:run owed once T-044 and T-046 land**
+- 2 files, exactly its ownership. **Verified changed by `git status` before recording.** Self-reported
+  gates: verify exit 0 (701 files), test:run **163 files / 1429 tests** — the floor exactly, because
+  both fixes are DELETIONS and no Hebrew string was reworded.
+- **Both false rows deleted, not softened:** `מאמן AI · בקרוב` (advertised the surface deleted in batch
+  9 — "בקרוב" implies delayed, but there was never an implementation) and `תבניות אימון · עד 3`
+  (unenforced since 2026-08-24).
+- **Its remove-vs-reword argument is the good part, and it is a PRODUCT argument:** the only truthful
+  wording is `ללא הגבלה` in BOTH columns, which in a free-vs-pro table is **a row that compares
+  nothing**. And keeping `עד 3` is worse than merely false — **it understates the free product in order
+  to sell the paid one.** So the row is gone rather than neutered.
+- **It proved no test needed changing** instead of claiming it: grepped the whole repo for every symbol
+  and string it removed, and established the only paywall test is an e2e journey with **zero copy
+  assertions**. Nothing renamed, nothing touched.
+- **It replaced a comment that was itself a lie** — the old rationale block claimed the AI coach was
+  "not yet wired (the chat endpoint returns 503)" and listed unlimited templates as a shipping
+  differentiator. Now it records why each row was removed, plus "do not backfill this list to keep it
+  looking long."
+- No visual hole, and it verified why rather than asserting: the separator is computed per render as
+  `idx < FEATURE_ROWS.length - 1`, so 6 rows → 4 drops the trailing rule automatically.
+- It disclosed a self-inflicted mid-edit breakage (a `strReplace` swallowed the `<p>` style props),
+  caught by re-reading the region and repaired verbatim **before** any gate ran.
+
+### ⚠️ ITS BIGGEST FINDING — I CHECKED IT MYSELF, AND IT IS HALF RIGHT
+It reported that `מאמן AI` still renders inside the active-workout screen and that this may be "the same
+lie one screen deeper." I grepped rather than take it or dismiss it. **Two different answers:**
+1. **THE CHIP IS HONEST — false alarm, and here is the proof.** `ActiveWorkoutNew.tsx:764` wires
+   `onOpenAICoach={handleOpenTutorial}`. So the `מאמן AI` chip at `ExerciseDisplay.tsx:983` opens the
+   **exercise tutorial**, whose ask tab (`askExerciseQuestion`) is the ONE genuinely-real model call in
+   the app — the surface batch 9 deliberately kept, with its AI wording intact on purpose. Tapping that
+   chip really does reach a real coach. **Nothing to fix. Recorded so nobody "cleans" it later.**
+2. **BUT `CLOSE_AI_COACH` IS GENUINELY DEAD, AND IT IS A CHECK I OWED MYSELF SINCE BATCH 9.**
+   `OPEN_AI_COACH` was deleted then; `CLOSE_AI_COACH` survives at `workoutTypes.ts:246` and is
+   dispatched at `useWorkoutHandlers.ts:421`, threaded as `onCloseAICoach` through
+   `WorkoutFlowOverlays.tsx`, `WorkoutOverlays.tsx` and `ActiveWorkoutNew.tsx` — **a close handler for
+   an overlay nothing can open.** `workoutTypes.ts:245` even carries batch 9's own breadcrumb: "Remove
+   it together with `onCloseAICoach`."
+   **MY ERROR, precisely:** at batch 9 I wrote on this board "one thing I still owe a check on at gate
+   time: verify whether that is a required stub or leftover dead code" — **and I never ran it.** My
+   zero-hit grep then covered the symbols I knew about (`showAICoach`, `OPEN_AI_COACH`), not the family.
+   → Next batch: delete the dead action and its 4-file prop chain. Also `services/billing/types.ts:33`
+   still lists `ai_coach` and `unlimited_templates` as now-unreferenced entitlement keys.
+
+### My briefing error, minor, recorded
+I gave T-044 the path `src/hooks/useTemplates.ts`; the file is actually
+`src/pages/templates/hooks/useTemplates.ts`. The worker found the real one without being told.
+
+## [T-044] Paywall behind the admin gate — ACCEPTED 2026-08-28 18:12
+- status: **accepted.** 2 modified + 1 new, `git status`-verified. My own gates on a static `src/` tree
+  (the remaining worker is read-only there and forbidden from running gates): **verify exit 0, 702
+  files; test:run 164 files / 1434 tests, run TWICE, identical.** 163+1=164, 1429+5=1434 — closes exactly.
+- **It copied the `/admin` pattern verbatim, including a distinction I did not spell out:** the guard
+  goes OUTSIDE `PageErrorBoundary`, "so the loading state and the redirect are the guard's, not the
+  boundary's". Nesting it inside would have put a redirect under an error boundary.
+- **THE STANDOUT — it found the codebase's own precedent instead of inventing one.** `handleDuplicate`,
+  80 lines below in the same file, **already had the identical quota branch with the paywall redirect
+  already removed** by an earlier worker. So rather than deleting the whole `if`, it made `handleCreate`
+  **byte-identical to `handleDuplicate`**. Its reasoning: deleting the block in only one of the two
+  create paths would make them diverge — one toasts, the other throws to the error boundary.
+- **It proved no test asserted the removed branch:** `useTemplates.test.tsx` mocks the detector to
+  `false` and asserts `navigate` was not called, so it never exercised the redirect and passes
+  untouched; `templateFreeQuota.test.ts` pins the detector at the service layer and was not modified.
+- Its 5 tests include a structural assert that the route really is wrapped, plus one proving the legacy
+  quota rejection no longer redirects.
+
+### ⚠️ IT FOUND A LIVE CONSEQUENCE I FAILED TO PLAN FOR — and it is a UX dead end
+**`src/pages/Settings.tsx:163` has a `<Link to="/paywall">` and `src/components/billing/PremiumLock.tsx:81`
+calls `navigate('/paywall')`.** Both are still there. **So a normal user tapping that Settings row now
+lands silently on the home screen** — a dead end, which in UX terms is worse than a crash because
+nothing tells them anything happened. Both outside its file list, correctly reported not fixed.
+**MY PLANNING GAP, and it is a repeat:** T-041 taught me exactly this lesson 40 minutes earlier when it
+found the `MyCoach` copy pointing at the hidden nutrition screen — **when you make a route unreachable,
+sweep for everything that links to it.** I did not generalise it to the paywall, and a worker had to
+find it for me. **New standing rule: gating a route is not done until its inbound links are handled.**
+→ Next batch: hide the Settings row and the `PremiumLock` path behind the same admin check.
+
+## [T-046] Theme axes probe — ACCEPTED 2026-08-28 18:16. **Delivered `plans/THEME-AXES-PROBE.md`.**
+- status: **done** — read-only confirmed: `git status` shows it touched nothing in `src/`. Its only
+  write is the report. No build, no browser, no gates, as instructed.
+- **THE ANSWER: THEY STACK.** `html.dark.high-contrast` is a REACHABLE state.
+  `SettingsContext.tsx:194-203` fires four independent `classList.toggle` calls from four independent
+  booleans, and nothing clears one when another is set. `html.dark` sits at `tokens.css:381` and
+  `html.high-contrast` at `:587` — **identical specificity, and no `html.dark.high-contrast` selector
+  exists anywhere.** So per token: HC wins if it declares it, else dark's value survives, else light's.
+  **That third branch is the whole story.**
+- **VERDICT: PARTIALLY SAFE — and the failure is in the direction I did NOT predict.**
+  `dark + high-contrast` HOLDS: every re-checked surface passes or improves. But
+  **`light + high-contrast` RE-BREAKS precisely what batches 1-14 fixed, in the other theme, through
+  the same token.** HC repaints surfaces to pure black in BOTH themes yet **never overrides
+  `--fs-primary`** — which in light stays navy `#16292d` and is what `--nav-pill-bg` and
+  `--btn-primary-bg` resolve to.
+  | surface, light + high-contrast | ratio |
+  |---|---|
+  | active tab fill vs its track | **1.25:1** (dark+HC: 15.12) |
+  | active chip / primary CTA fill vs the page | **1.39:1**; pressed **1.18:1** |
+  | week strip trained vs empty | **1.31:1**, **and the polarity inverts** — `--fs-plate` stays pale, so the REST day becomes the brightest cell in the week |
+  | `--fs-link` on black | **3.17:1**, fails AA body text |
+  | route spinner | **21:1** — the one clean pass, because `--fs-heading` is one of the 25 tokens HC names directly |
+  **So a user who turns ON the accessibility mode in light gets a WORSE app than the default.** That is
+  a live defect with a real switch, not a hypothetical.
+- **NO AXIS IS DEAD.** All four have reachable Hebrew switches in `ThemeSection.tsx`, so the
+  `tokens.css:581-584` comment is historical. It proved this by grep rather than asserting it.
+- **`large-text` fails by INERTNESS, not clipping** — and that is the more interesting answer. The token
+  type scale and every CSS-file font size are px, so flipping it grows only Tailwind's named sizes
+  (which drag their rem paddings along, which is why nothing clips): **a patchy 12.5%** where two
+  labels in one row scale differently depending on `text-sm` vs `text-[13px]`.
+- **It calibrated its method before trusting it** — self-checked against three figures this repo
+  already asserts (`#318d78` L=0.2106, 4.69:1, 15.12:1); all three match. And it states plainly that
+  every ratio is a **hand derivation from the cascade, not a sampled pixel**, with a section listing
+  what it could not reach. Given two audit documents in this repo were later found to carry wrong
+  numbers, that disclosure is what makes these usable.
+- **⚠️ TWO UNVERIFIED ITEMS IT FLAGGED, and the first is probably a real bug:**
+  1. `useWorkoutSettings.ts:406-418` — a **SECOND, CONFLICTING WRITER**. `useAccessibilitySettings`
+     strips `high-contrast` and `reduce-motion` on unmount while `SettingsContext`'s deps are
+     unchanged, which predicts that **leaving a workout silently turns the mode off.**
+  2. `--font-scale` is written there and read by **zero stylesheets**.
+
+### Verified baseline — 2026-08-28 18:16, lead-measured
+Gates were run at 18:13 on a static `src/` tree (newest source mtime 18:06). T-046 finished after, but
+it is read-only in `src/` and wrote only `plans/`, which vitest does not scope — so these stand.
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **702** files (701 + 1 = `paywallRouteGuard.test.tsx`) |
+| `npm run test:run` | **164 files / 1434 tests**, exit 0 both runs — NEW FLOOR |
+| arithmetic | 163+1=164 files; 1429+5=1434 tests. Nothing deleted, skipped or weakened. |
+| debris | e2e **13** specs, `test-results/` absent, root swept |
+
+### Batch 16 queue, now evidence-led
+1. **`light + high-contrast`** — group A of the probe, the `tokens.css` fix. A real switch makes the app
+   worse; this is the highest-priority item on the board.
+2. **The two dead links to `/paywall`** (`Settings.tsx:163`, `PremiumLock.tsx:81`) — my planning gap.
+3. **The dead `CLOSE_AI_COACH` chain** across 4 files — the check I owed since batch 9.
+4. **Confirm the unmount bug** — does leaving a workout switch high-contrast off?
+5. **ONE screenshot round** covering: `ReadinessReadingCard`, the hidden-nutrition state, the new
+   `SettingsToggle`, the admin-gated paywall, and fixing `e2e/visual-qa.spec.ts:78,286` which still
+   navigate to `/nutrition`. **After the fixes above, not before.**
+
+
+
+- status: dispatched (batch 15)
+- owner: fitness-qa
+- goal: **every contrast number this crew produced across 14 batches was light + dark ONLY.** A third
+  and fourth axis exist with a user-facing switch (`html.high-contrast` at `tokens.css:587`,
+  `html.large-text` at `tokens.css:250`, plus a `prefers-contrast: more` block at `components.css:1472`).
+- done when: the composition question answered from the source — does high-contrast STACK on dark or
+  REPLACE it; every token it overrides listed; and the surfaces we "fixed" re-checked under it
+- notes: **must NOT be guessed.** Read-only, no browser, writes one plan file. This gates whether the
+  token work can ever be called finished.
+
+
 - owner: fitness-dev
 - goal: a normal user cannot reach nutrition; an admin still can; one line brings it back.
 - files: `src/AppRouter.tsx`, `src/components/ui/BottomNav.tsx`, a NEW flag module, any trainee-side

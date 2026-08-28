@@ -224,6 +224,13 @@ export function PurchasePanel({ onAvailabilityChange }: Props) {
         </p>
       )}
 
+      {/* "אפשר לבטל בכל עת מההגדרות" is true only while billing is off: no
+          purchase can happen without a payment provider and none is configured,
+          so today there is nothing to cancel. There is NO cancellation screen
+          anywhere in the app — the moment billing goes live this sentence
+          becomes a false promise to a paying user. Ship a cancel path in
+          Settings in the same change that turns VITE_BILLING_LIVE on, or cut
+          this clause. */}
       <p
         style={{
           fontFamily: 'var(--font-body)',

@@ -95,13 +95,12 @@ export function useTemplates() {
         timesUsed: 0,
         isFavorite: false,
       }).catch((err) => {
-        // Free-plan quota is a product decision, not a bug: route the user to
-        // the upgrade screen instead of failing silently or throwing to the
-        // error boundary.
+        // Legacy quota rejections (trigger dropped) still map to an honest
+        // message instead of the old paywall redirect — same shape as
+        // handleDuplicate below.
         if (isFreeTemplateLimitError(err)) {
           showToast(FREE_TEMPLATE_LIMIT_MESSAGE, 'error');
           setShowCreateModal(false);
-          navigate('/paywall');
           return null;
         }
         throw err;
@@ -114,7 +113,7 @@ export function useTemplates() {
       setShowCreateModal(false);
       showToast('התבנית נשמרה');
     },
-    [navigate, toTemplateExercises]
+    [toTemplateExercises]
   );
 
   /** Saves the sheet back onto an existing template (name + exercise list). */
