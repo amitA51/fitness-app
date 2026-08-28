@@ -366,7 +366,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       }}
     >
       <span id={instructionId} className="sr-only">
-        החלק עד סוף המסילה כדי לסמן את הסט. אפשר גם ללחוץ ולהחזיק, או להקיש Enter.
+        החליקו עד סוף המסילה כדי לסמן את הסט. אפשר גם ללחוץ ולהחזיק, או להקיש Enter.
       </span>
       {/* Polite SR feedback at the commit-threshold cross (visual users get the
           haptic + fill cues instead). */}

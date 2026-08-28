@@ -313,7 +313,7 @@ export default function Dashboard() {
           <TodaysWorkoutCard />
 
           {showSkeleton ? (
-            <DashboardSkeleton />
+            <DashboardSkeleton hasTemplatesSection={templatesError || sortedTemplates.length > 0} />
           ) : insightsError && !hasAnySession ? (
             <InsightErrorChip message={insightsError} onRetry={refreshData} />
           ) : !hasAnySession ? (
@@ -631,12 +631,20 @@ const FirstRunHero = memo(function FirstRunHero({
 
 // ── DashboardSkeleton — first-load placeholder matching the page shape ────────
 // Mirrors renderPopulatedBody() block-for-block: program card → streak card →
-// templates (heading + strip) → workout calendar (heading + action, week card).
+// templates (heading + strip, only when a templates section will actually
+// render) → workout calendar (heading + action, week card). Heights are the
+// measured heights of the real blocks so the page doesn't jump on hand-off.
 // The old rings circle is gone because the weekly-rings card it stood in for was
 // deleted from this screen. Header + CTA + TodaysWorkoutCard stay visible above
 // this. Built only from SkeletonBox (premium-shimmer); reduced-motion is handled
 // by the shimmer. Outer gap matches .page-stack-loose, inner gap .section-block.
-const DashboardSkeleton = memo(function DashboardSkeleton() {
+const DashboardSkeleton = memo(function DashboardSkeleton({
+  hasTemplatesSection,
+}: {
+  /** Mirrors the populated body's own gate — a skeleton strip for a section that
+      will not render collapses ~100px of layout at hand-off. */
+  hasTemplatesSection: boolean;
+}) {
   return (
     <div
       role="status"
@@ -645,16 +653,18 @@ const DashboardSkeleton = memo(function DashboardSkeleton() {
       style={{ margin: 0, display: 'grid', gap: 28 }}
     >
       {/* ProgramCard */}
-      <SkeletonBox height={150} borderRadius="var(--radius-2xl)" />
+      <SkeletonBox height={117} borderRadius="var(--radius-2xl)" />
 
       {/* WorkoutStreak */}
-      <SkeletonBox height={72} borderRadius="var(--radius-2xl)" />
+      <SkeletonBox height={54} borderRadius="var(--radius-2xl)" />
 
       {/* Templates: section heading (no action) + horizontal template strip */}
-      <div style={{ display: 'grid', gap: 12 }}>
-        <SkeletonBox height={22} width="28%" />
-        <SkeletonBox height={64} borderRadius="var(--radius-2xl)" />
-      </div>
+      {hasTemplatesSection && (
+        <div style={{ display: 'grid', gap: 12 }}>
+          <SkeletonBox height={22} width="28%" />
+          <SkeletonBox height={64} borderRadius="var(--radius-2xl)" />
+        </div>
+      )}
 
       {/* Workout calendar: section heading + "כל ההיסטוריה" action, then the
           week card (nav row + 7 day cells + rest-day hint). */}
@@ -663,7 +673,7 @@ const DashboardSkeleton = memo(function DashboardSkeleton() {
           <SkeletonBox height={22} width="34%" />
           <SkeletonBox height={22} width="26%" />
         </div>
-        <SkeletonBox height={176} borderRadius="var(--radius-2xl)" />
+        <SkeletonBox height={242} borderRadius="var(--radius-2xl)" />
       </div>
     </div>
   );

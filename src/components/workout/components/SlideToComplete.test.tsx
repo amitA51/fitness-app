@@ -60,8 +60,8 @@ beforeAll(() => {
 describe('SlideToComplete', () => {
   it('focuses the slider on pointer-down so a following Enter activates it', () => {
     // Arrange
-    render(<SlideToComplete label="החלק לסימון סט 1/3" onComplete={vi.fn()} />);
-    const slider = screen.getByRole('button', { name: 'החלק לסימון סט 1/3' });
+    render(<SlideToComplete label="החליקו לסיום סט 1" onComplete={vi.fn()} />);
+    const slider = screen.getByRole('button', { name: 'החליקו לסיום סט 1' });
     // A previously focused control simulates the real bug: without explicit
     // focus, Enter would activate this other element instead of the slider.
     const other = document.createElement('button');
@@ -119,8 +119,8 @@ describe('SlideToComplete tap-and-hold quick-complete (reduced motion)', () => {
     // Arrange — reduced motion path uses a HOLD_FILL_MS timeout (no rAF ramp).
     vi.useFakeTimers();
     const onComplete = vi.fn();
-    render(<SlideToComplete label="החלק לסיום סט 1/3" onComplete={onComplete} />);
-    const slider = screen.getByRole('button', { name: 'החלק לסיום סט 1/3' });
+    render(<SlideToComplete label="החליקו לסיום סט 1" onComplete={onComplete} />);
+    const slider = screen.getByRole('button', { name: 'החליקו לסיום סט 1' });
 
     // Act — press and hold, staying put, past the fill duration.
     fireEvent.pointerDown(slider, { pointerId: 1, clientX: 0 });
@@ -136,8 +136,8 @@ describe('SlideToComplete tap-and-hold quick-complete (reduced motion)', () => {
     // Arrange
     vi.useFakeTimers();
     const onComplete = vi.fn();
-    render(<SlideToComplete label="החלק לסיום סט 1/3" onComplete={onComplete} />);
-    const slider = screen.getByRole('button', { name: 'החלק לסיום סט 1/3' });
+    render(<SlideToComplete label="החליקו לסיום סט 1" onComplete={onComplete} />);
+    const slider = screen.getByRole('button', { name: 'החליקו לסיום סט 1' });
 
     // Act — quick tap: down then up well before HOLD_FILL_MS, then time passes.
     fireEvent.pointerDown(slider, { pointerId: 1, clientX: 0 });
@@ -158,8 +158,8 @@ describe('SlideToComplete tap-and-hold quick-complete (reduced motion)', () => {
     // if more than HOLD_FILL_MS elapses after release.
     vi.useFakeTimers();
     const onComplete = vi.fn();
-    render(<SlideToComplete label="החלק לסיום סט 1/3" onComplete={onComplete} />);
-    const slider = screen.getByRole('button', { name: 'החלק לסיום סט 1/3' });
+    render(<SlideToComplete label="החליקו לסיום סט 1" onComplete={onComplete} />);
+    const slider = screen.getByRole('button', { name: 'החליקו לסיום סט 1' });
 
     // Act
     fireEvent.pointerDown(slider, { pointerId: 1, clientX: 0 });
@@ -222,8 +222,8 @@ describe('SlideToComplete tap-and-hold quick-complete (default / animated motion
       });
 
     const onComplete = vi.fn();
-    render(<SlideToComplete label="החלק לסיום סט 1/3" onComplete={onComplete} />);
-    const slider = screen.getByRole('button', { name: 'החלק לסיום סט 1/3' });
+    render(<SlideToComplete label="החליקו לסיום סט 1" onComplete={onComplete} />);
+    const slider = screen.getByRole('button', { name: 'החליקו לסיום סט 1' });
 
     // Act — press (arms + auto-completes the ramp), then lift while still down.
     act(() => {

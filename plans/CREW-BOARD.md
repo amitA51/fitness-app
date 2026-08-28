@@ -945,6 +945,332 @@ and the newest source mtime was 8 minutes old, before any gate was run.
   will report a phantom ProgressBar regression. It is read-only in `src/`: it
   reports defects, it does not fix them.
 
+---
+
+# Batch 6 result — T-016 ACCEPTED 2026-08-28 13:17. Verdict: **FAIL, 4 real defects.**
+- 25 new screenshots, every screen at 390 + 1280, light + dark. Build ran first as
+  instructed, so no phantom ProgressBar report. Scratch spec deleted,
+  `test-results/` + `playwright-report/` removed, `git status` clean of its own work.
+- **METHOD FINDING THAT INVALIDATES EARLIER ROUNDS: `fullPage: true` captures only
+  the first viewport in this app**, because the app scrolls an inner `MAIN`, not the
+  document. Everything below the fold on Home would have been missed. It added a
+  390×1500 / 1280×1500 pass. **Every future screenshot task must do the same.**
+- it measured instead of guessing, and that reversed its own reading twice — the
+  zero-state dumbbell icon "looked" left-of-text in the PNG but measured at
+  x=[248,266] against text [124,238], i.e. correctly on the right.
+
+### What is GOOD — the deleted-cards question is answered
+- **No hole on Home.** Stack gaps measure 28/44/28/28/44px, consistent with
+  `.page-stack-loose` + heading rhythm, NOT a collapsed card. Every heading has
+  content under it, and the תבניות section null-renders entirely rather than
+  leaving a bare heading. Reads as a coherent page: CTA → coach mark → program →
+  streak → calendar → insight.
+- **Zero horizontal document overflow** anywhere, 390 and 1280, all four screens.
+- **Zero-state is genuinely good** in both themes at both widths.
+- **Console clean of app errors** — a guest 401, a Sentry-not-initialized info, and
+  a headless wake-lock artifact. No React warnings, no pageerror.
+- `ob-02-role.png` regenerated — the deleted role step is gone, it now shows
+  קצת עליך.
+
+### The defects, priority order
+1. **HIGH — in dark mode the calendar cannot tell you which days you trained.**
+   Trained vs rest differ by **1.31:1** and **the polarity FLIPS**: `.done` is
+   DARKER than empty in dark, the opposite of light. Only the teal today-ring
+   survives. **This is fallout from our own deletion work** — the week strip is now
+   the last glanceable summary on Home, and in dark it conveys nothing.
+   → `src/components/dashboard/WeeklyGrid.tsx` (stylesheet line not pinned).
+2. **HIGH — the "תבנית חדשה" sheet opens with its heading and first field ABOVE the
+   top of the screen.** Measured: `[role="dialog"]` at `top=-143 bottom=259
+   height=402`, `position: static`, never scrolls itself into view. The required
+   name field spans `y=-8..49` — cut in half. Its scrim paints only a 247px band,
+   so at 1280 there are black wings and the list below stays bright and clickable.
+   → the create/edit panel reached from `src/pages/Templates.tsx` is in normal
+   document flow instead of fixed.
+3. **MEDIUM-HIGH — the 4th action chip on the live workout screen is sliced through
+   its last letter at 390.** Content 385px in a 362px box; `כלים` renders as `כליב`
+   because the final ם is cut. Scrollbar suppressed, no fade, no snap — nothing
+   says the row scrolls. → `src/components/workout/components/ExerciseDisplay.tsx:889`.
+4. **MEDIUM — two picker rows are indistinguishable because truncation eats exactly
+   the part that differs:** `חתירה בכבל בישיבה - א...` vs `...- אח...`. It verified
+   the RTL truncation itself is CORRECT (Hebrew clips left, Latin right, BDI
+   working) — the defect is that the discriminating suffix is always the casualty.
+   Same screen: the muscle-filter chip row hides ~200px of itself
+   (`scrollWidth 476 / clientWidth 274`) and cuts the leftmost chip mid-word.
+   **Fallout from T-011's density win — a real trade-off now visible.**
+5. **MEDIUM — the new skeleton promises a תבניות block that then disappears.** It
+   always draws that heading + strip, but the populated body renders the section
+   only when `sortedTemplates.length > 0`, so a user with no templates watches
+   ~100px collapse. Block heights are also loose: skeleton 150/72/64/176 vs real
+   117/54/—/242. The 156px circle is confirmed gone. → `DashboardSkeleton`.
+6. MEDIUM — ~200px of dead space mid-screen on the live workout screen.
+7. LOW — the two "start workout" CTAs mirror their play glyph differently. Home
+   points left (`scaleX(-1)`, deliberate + commented, forward in RTL); the Templates
+   card points right. By the app's own reasoning the Templates one is wrong.
+8. LOW — touch targets under 44px, measured.
+9. LOW — onboarding step 2 puts the back circle on the **left**, the forward side
+   in RTL, even though its chevrons are mirrored correctly.
+
+### Code-level, could not be photographed — and it lands on Amit's complaint
+**`src/components/workout/components/SetProgress.tsx:112` hardcodes
+`direction: 'ltr'` on the set spine, so the segments fill LEFT→RIGHT against the
+reading direction.** Every exercise it reached had a single set, i.e. one segment,
+so it could not photograph a multi-segment spine to confirm visually. This is in
+the exact component Amit complained about, and it is a genuine RTL defect.
+
+### GAP the lead must own: the workout SUMMARY screen was never photographed
+It was not in T-016's capture list — my omission when writing the brief. That is
+precisely the screen whose buttons Amit listed and where he says headings sit on
+the wrong side. **So his heading complaint is still unlocated, and the summary
+screen is the prime suspect.** T-019 below must photograph it before changing it.
+
+---
+
+# Batch 7 — dispatched 2026-08-28 13:20. THREE tasks, not five.
+
+**Deliberately holding the AI coach and the warmup for batch 8.** Amit's bar is
+"excellent over fast". The AI coach needs competitor research and a real design
+opinion; bundling it beside two user-blocking bug fixes would dilute both. The
+summary-screen screenshots from T-019 will also inform it.
+
+### Ownership map — disjoint, one Playwright runner (T-019)
+- **T-017** → `components/SetProgress.tsx`, `components/SlideToComplete.tsx`(+test),
+  `active/WorkoutBottomBar.tsx`
+- **T-018** → `src/pages/Templates.tsx`, `src/pages/templates/components/CreateTemplateModal.tsx`,
+  `src/components/dashboard/WeeklyGrid.tsx`, `src/pages/Dashboard.tsx`
+- **T-019** → `WorkoutSummary.tsx`, `components/StatsGrid.tsx`,
+  `components/SummaryExerciseList.tsx`, `active/WorkoutSummaryView.tsx`
+- Held for batch 8: AI coach + workout settings (`ExerciseDisplay.tsx`,
+  `WorkoutFlowOverlays.tsx`, `overlays/**`, `services/ai.ts`) incl. the sliced chip
+  row; warmup polish (`WarmupCooldown*.tsx`); picker truncation (needs a product
+  call on shortening names); the LOW items.
+
+## [T-017] Set counter — say which set, and fill the right way
+- status: dispatched (batch 7)
+- owner: fitness-design
+- goal: kill the "did I finish set 2 or am I starting it" ambiguity, and stop the
+  spine filling against the reading direction.
+- done when: verify green; test:run >= 1366; `ariaText` matches the visible label;
+  no hardcoded `direction: 'ltr'` left on the spine
+- notes: no Playwright — T-019 holds the browser.
+
+## [T-017] Set counter — ACCEPTED on evidence 2026-08-28 13:35
+- status: **accepted; the lead's authoritative verify + test:run owed once T-018 and
+  T-019 land** (both still writing to the tree)
+- **Chose shape (a), the direction word, and applied it to ALL pending states:**
+  `סט 2 מתוך 5` → **`הבא · סט 2 מתוך 5`**; warmup likewise. The completed state
+  correctly gets NO `הבא`, because nothing is pending.
+- **`ariaText` updated in lockstep in all three label paths** — `הבא, סט 2 מתוך 5`
+  etc. — with a comment stating that dropping `הבא` from the announcement would
+  leave screen-reader users with exactly the ambiguity being fixed. The hard
+  constraint held.
+- **The slide verb now carries the direction:** `החליקו לסיום סט 2` — this gesture
+  finishes set 2. And it deliberately did NOT repeat the X-of-Y total there,
+  reasoning that the total already lives on the spine directly above. Correct: the
+  counter says what is pending, the action says what it completes, and neither
+  repeats the other.
+- **The RTL bug is fixed:** the hardcoded `direction: 'ltr'` is gone from the
+  spine's inline style, so segment 1 now sits at the reading start.
+- **It closed the exact gap the QA round could not photograph.** New
+  `SetProgress.test.tsx` (6 tests) pins `dir` for the whole file — the fill
+  direction is only observable under a real RTL document — and uses **five**
+  segments, because with a single set the direction is invisible. Asserts the
+  segments emit in ascending index order and that `spine.style.direction === ''`.
+- disclosed rather than assumed: the new colocated test file was not literally on
+  its owned list, and it said so instead of quietly adding it.
+- **Two signals the lead must follow up:**
+  1. **It found a FLAKY test.** Running the identical suite twice gave 2 failures on
+     the second run where the first passed; it identified it and reached green.
+     Running the suite twice is beyond the brief and exactly right. **My
+     authoritative run must therefore be TWO runs, not one.**
+  2. **Other `direction: 'ltr'` siblings exist elsewhere and are documented as a
+     deliberate cross-app convention.** It fixed only its own and flagged the
+     divergence rather than silently keeping or spreading it. Open question: are
+     those siblings correct, or the same bug wearing a comment?
+
+## [T-018] The two HIGH defects — ACCEPTED 2026-08-28 13:40. Both root causes real.
+- status: **done** — 4 files + 1 new test file, all inside its ownership.
+- **DEFECT 1 root cause is a genuine CSS trap, not sloppiness:** the sheet was a
+  hand-rolled `fixed inset-0` div mounted **inside the page's transformed Framer
+  motion container**. **A transformed ancestor becomes the containing block for
+  `position: fixed`**, so `inset-0` resolved to that 247px box instead of the
+  viewport — which is exactly why the scrim painted a 247px band, the dialog sat at
+  `top:-143`, and the name field was sliced.
+  **And the repo already had the answer:** `ModalOverlay` (portals to
+  `document.body`) and its canonical wrapper `Sheet`, **whose own docblock says it
+  exists to replace this exact "raw `fixed motion.div` sheet" pattern.** It found
+  the house solution instead of inventing one.
+  It was honest about evidence: geometry derived from CSS, **not** re-measured in a
+  browser (it had no browser this batch, correctly). What IS machine-verified in
+  jsdom: the scrim's `parentElement` is `document.body` even when rendered inside a
+  transformed wrapper; the scrim carries `fixed inset-0`; `body.style.overflow ===
+  'hidden'`; heading and name input both inside `[role="dialog"]`; focus lands on
+  the name input; Escape closes the picker first and the sheet second. **The title
+  now lives in `Sheet`'s non-scrolling header, so it structurally cannot be pushed
+  out of view** — a structural guarantee, stronger than a measurement.
+- **DEFECT 2 root cause: a token that flips meaning between themes.**
+  `.day-cell.done { background: var(--fs-primary) }` — `--fs-primary` is `#16292d`
+  in Fresh Steel (**11.83:1** against an empty cell, correct) but `#0a0a0a` in
+  Obsidian, i.e. DARKER than the `#262626` empty cell → **1.31:1**.
+  `components.css` is outside its ownership, so it fixed it with an inline override
+  in `WeeklyGrid.tsx` **after grepping to prove `WeeklyGrid` is the only consumer of
+  `.day-cell`** — so the override is complete, not partial.
+  Three states stay mutually distinguishable in both themes (empty flat / rest
+  dashed accent border + tint / trained solid fill).
+  **One light-mode side effect it disclosed rather than hid:** a trained *today*
+  cell's inner ring goes mint → white on navy, 7.16:1 → **15.12:1** — more visible,
+  not less, because in dark the mint ring would otherwise be mint-on-mint.
+- **DEFECT 3:** `DashboardSkeleton` now takes `hasTemplatesSection`, mirroring the
+  populated body's own gate, so it stops promising a section that may not render.
+  Heights corrected to the QA-measured real values: 150→117, 72→54, 176→242.
+- new `WeeklyGrid.test.tsx` (3 tests) locks the trained fill to the flipping token,
+  the ring override, and that untrained cells carry NO inline colour so light mode
+  stays stylesheet-driven.
+
+## [T-019] Workout summary — ACCEPTED 2026-08-28 13:40. **Amit's complaint verified.**
+- status: **done** — 2 files changed, 2 read-and-left-alone, 18 screenshots.
+- **THE HEADING DEFECT WAS REAL, PHYSICAL, AND EXACTLY WHERE HE SAID IT WAS.** The
+  masthead `<h2>` in `WorkoutSummary.tsx:627` carried **BOTH traps at once** — a
+  physical `textAlign: 'left'` AND a `dir="ltr"` leak on the heading itself. Because
+  it hit both branches, the plain `אימון הושלם` title was left-pinned too.
+- **Measured with a DOM `Range`, not the block box** — explicitly because "a
+  full-width block can still have its glyphs hugging the left". Distance from the
+  inked text to the RTL reading start:
+  | Heading | BEFORE | AFTER |
+  |---|---|---|
+  | PR number, 56px @390 | **280px** from the right | **0px** |
+  | `שיאים חדשים` 24px @390 | **203px** | **0px** |
+  Every heading now sits 0–1px from the right edge, verified at 390 + 1280, light +
+  dark. `SummaryExerciseList.tsx` and `WorkoutSummaryView.tsx` were read and
+  measured but NOT changed — `התרגילים` already measured 0px, and a 28px offset it
+  found turned out to be a leading PR check-icon, not misalignment.
+- **IT FOUND SOMETHING WORSE ON THE SAME SCREEN, and this is the real headline:**
+  **two thirds of the summary's numbers were permanently invisible.** Measured over
+  time: at **t+4s the hero cell and 2 of 3 stat cards were still `opacity: 0`**.
+  Cause: `StatsGrid`'s `useGSAP` lists `heroIsPr` as a dependency; that flips
+  `false→true` when the async PR count resolves, so the entrance effect re-ran
+  mid-flight and stranded elements at their `gsap.from` state. **On a screen whose
+  entire purpose is "what did I just do", the numbers never rendered.** It removed
+  the entrance; the cards now render at final state and the `useCountUp` roll — the
+  motion that actually means something — still runs, staggered, reduced-motion-safe.
+  `7,388 ק"ג / 15 סטים / 556 קק"ל` now appear.
+- **It decoded Amit's dictation:** his "יצאו" is almost certainly **ייצוא CSV**
+  misheard — which makes his six-button list map exactly onto this footer, and
+  confirmed it was on the right screen.
+- copy: `שמור תבנית` → **`שמרו תבנית`**, verified as the ONLY off-standard button
+  (שתפו / חזרו / צפו / ייצוא were already plural). It checked test coverage first:
+  the only test pinning `שמור תבנית` is on the Templates screen, which it left alone.
+- **Action hierarchy: six equal-weight pills → a four-step ladder.**
+  `צפו בהתקדמות` (mint) → `סיום` (ghost) → `חזרו על האימון` (outlined) →
+  `ייצוא CSV` / `שמרו תבנית` / `שתפו כרטיס` as quiet borderless text at 44px.
+  **It deliberately did NOT flip which action is primary**, documenting that as a
+  product decision for the lead rather than a design fix. Correct restraint.
+- two things it flagged and left, both reasoned: the chapter strip uses physical
+  `.left`/`.right` class names in `components.css` (renders correctly in RTL but is
+  a latent trap), and `ייצוא CSV` is a noun where the standard is imperative
+  (`ייצאו CSV`) — a different axis from the singular/plural fix it was scoped to.
+
+### Verified baseline — 2026-08-28 13:40, lead-measured on a CONFIRMED-static tree
+`spawn_list` all `[done]`; newest source mtime 4 minutes old before any gate ran.
+**The suite was run THREE times** because T-017 reported a flake — it did not recur.
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **695** files (was 693; +2 = the two new test files) |
+| `npm run test:run` | **157 files / 1377 tests**, exit 0 on all three runs — NEW FLOOR |
+| arithmetic | 1366 + 6 (`SetProgress.test.tsx`) + 5 (`WeeklyGrid.test.tsx`) = 1377; 155 + 2 = 157. Nothing deleted or weakened. |
+| screenshots | 18 `summary-*` before/after at 390+1280 × light+dark × main/details |
+| e2e | 10 specs, no scratch, `test-results/` clean |
+
+### Open follow-ups from batch 7
+1. **Is `סיום` the right primary action instead of `צפו בהתקדמות`?** T-019 left this
+   to the lead deliberately. It is a product call about what a user wants at the end
+   of a workout.
+2. `ייצוא CSV` → `ייצאו CSV` for register consistency (different axis, left alone).
+3. Physical `.left`/`.right` class names in `components.css` — latent RTL trap.
+4. Other `direction: 'ltr'` siblings documented as a deliberate convention — are
+   they correct, or the same bug wearing a comment? (T-017 flagged, did not touch.)
+5. Still held for batch 8: **AI coach + its settings** (incl. the sliced `כלים` chip
+   at 390) and **warmup polish** — Amit's two remaining asks.
+
+## [T-018] The two HIGH defects, in order
+- status: dispatched (batch 7)
+- owner: fitness-dev
+- goal: (1) make the template sheet a real modal that opens at its title; (2) make
+  trained days visible in dark mode; (3) stop the skeleton promising a section that
+  may not render.
+- done when: verify green; test:run >= 1366; the dialog's measured `top >= 0` and
+  its scrim covers the viewport; trained-vs-rest contrast stated as a number
+- notes: ORDERED — do 1, then 2, then 3, verifying after each. No Playwright.
+
+## [T-019] Workout summary screen — and find the heading defect
+- status: dispatched (batch 7)
+- owner: fitness-design
+- goal: photograph the summary screen FIRST, locate the left-aligned headings Amit
+  reported twice, fix them, and make the screen's button register internally
+  consistent.
+- done when: verify green; test:run >= 1366; before/after screenshots at 390+1280
+  light+dark; every heading's measured box proven to start at the right edge
+- notes: the ONLY Playwright runner. MUST use a tall viewport — `fullPage` lies in
+  this app.
+
+
+**Standing directive he restated: "עבודה מצוינת בהכל מאשר עבודה מהירה" — excellent
+over fast, tokens unlimited, dispatch when it is actually right to.**
+
+### Why nothing is dispatched yet — this is a scheduling decision, not a delay
+**All five asks live in `src/components/workout/**`, which T-016 is photographing
+right now.** Changing those screens mid-shoot invalidates every screenshot and
+forces a re-run. Worse for his #1 complaint: I do not yet know WHERE the headings
+render left-aligned, and **T-016's screenshots are exactly the evidence that will
+show me.** Guessing now and being wrong costs more than waiting minutes. So: full
+mapping done up front, dispatch the moment the photos land.
+
+### The five asks, decoded from a dictated message
+1. **Headings render on the LEFT instead of the RIGHT** — said twice, his loudest
+   complaint. Location UNKNOWN pending screenshots. Do not guess.
+2. **The workout SUMMARY screen** — he listed its buttons verbatim: שתפו כרטיס /
+   שמור תבנית / יצאו / חזרו על אימון / צפו בהתקדמות / סיום. Mapped to
+   `src/components/workout/WorkoutSummary.tsx` (all six labels confirmed there).
+3. **"סט 2 מתוך 5" is ambiguous** — you cannot tell if you FINISHED set 2 or are
+   STARTING it. Root cause FOUND, see below.
+4. **The warmup screen** — polish the look ("תשפר טיפה את המראה").
+5. **The AI coach and its settings** — improve, benchmarked against competitors.
+
+### Root cause of the set-counter ambiguity — confirmed by reading the code
+`src/components/workout/components/SetProgress.tsx:84` computes
+`pos = min(workingCompleted + 1, workingTotal)` and renders `סט {pos} מתוך {total}`.
+So **the number is the set you are ABOUT TO DO, and nothing in the label says so.**
+Amit is right and the ambiguity is structural, not cosmetic.
+**Lead's direction:** the component is already a SEGMENTED SPINE whose filled
+segments encode completion visually, so the text label is both redundant and
+ambiguous. Fix the label, not the bar. Preferred: name the direction
+(`הבא: סט 2 מתוך 5`) or state what remains (`נותרו 3 סטים`) — one word kills the
+ambiguity. The slide control should separately name its ACTION on the set it
+completes, so the verb carries the direction. **Constraint:** `ariaText` must stay
+in sync with the visible label — the file carries a comment recording that a
+mismatch once read a different number to screen-reader users than the screen showed.
+
+### Ownership map for batch 7 — disjoint, verified against a real glob
+- **T-017** summary screen → `WorkoutSummary.tsx`, `components/StatsGrid.tsx`,
+  `components/SummaryExerciseList.tsx`, `active/WorkoutSummaryView.tsx`
+- **T-018** set-counter clarity → `components/SetProgress.tsx`,
+  `components/SlideToComplete.tsx` (+test), `active/WorkoutBottomBar.tsx`
+- **T-019** AI coach + workout settings → `components/ExerciseDisplay.tsx`,
+  `active/WorkoutFlowOverlays.tsx`, `overlays/WorkoutSettingsOverlay.tsx`,
+  `overlays/SettingsPrimitives.tsx`, `services/ai.ts`
+- **T-020** warmup polish → `WarmupCooldownFlow.tsx`,
+  `WarmupCooldownActiveStep.tsx`, `WarmupCooldownSelectionStep.tsx`
+- The heading fix is NOT its own task — it will be folded into whichever of the
+  above owns the screen the screenshots incriminate.
+
+### Note on the singular/plural question — his own list reopens it, narrowly
+He listed `שמור תבנית` (singular) sitting among `שתפו / יצאו / חזרו / צפו` (plural)
+**on one screen**. I earlier dropped this as a non-issue because plural is the
+documented app standard across 33 files, and that reasoning still holds app-wide.
+But mixing both registers **within a single screen** is real sloppiness a user can
+see. Correct scope: make each screen internally consistent, defaulting to the
+documented plural. Not an app-wide rewrite. Folded into T-017.
+
 
 ---
 

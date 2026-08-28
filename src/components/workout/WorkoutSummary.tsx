@@ -134,6 +134,29 @@ function PrimaryAction({ label, onClick }: { label: string; onClick: () => void 
   );
 }
 
+// Third-tier utility action (share / export / save-as-template). Quiet by
+// design: no fill, no border — weight alone separates it from the primary CTA
+// and the secondary repeat action. minHeight keeps the 44px touch target that
+// the borderless look would otherwise lose. Tokens only, so both themes read.
+const utilityActionStyle: React.CSSProperties = {
+  flex: 1,
+  minHeight: 44,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  padding: '0 8px',
+  background: 'transparent',
+  border: 'none',
+  borderRadius: 'var(--radius-full)',
+  fontFamily: 'var(--font-body)',
+  fontSize: 13,
+  fontWeight: 600,
+  letterSpacing: '-0.01em',
+  color: 'var(--fs-muted)',
+  cursor: 'pointer',
+};
+
 const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   isOpen,
   session,
@@ -595,8 +618,13 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                 color: 'var(--color-ink-on-dark)',
                 lineHeight: 0.95,
                 letterSpacing: '-0.03em',
-                direction: 'ltr',
-                textAlign: 'left',
+                // RTL: the screen title starts at the reading start — the RIGHT
+                // edge. This heading used to force `direction: ltr` +
+                // `textAlign: left`, which pinned both the Hebrew title and the
+                // PR count to the LEFT edge (measured 280px away from the start
+                // at 390px wide). The PR number keeps its own dir="ltr" on the
+                // inner span, so digits stay LTR without dragging the heading.
+                textAlign: 'start',
               }}
             >
               {prsCount > 0 ? (
@@ -744,7 +772,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                         fontWeight: 600,
                         letterSpacing: '-0.01em',
                         color: 'var(--fs-muted)',
-                        textAlign: 'center',
+                        textAlign: 'start',
                       }}
                     >
                       שרירים שעבדת
@@ -881,6 +909,11 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                       fontWeight: 700,
                       letterSpacing: '-0.01em',
                       color: 'var(--fs-muted)',
+                      // Section label starts at the reading start. alignSelf
+                      // overrides the card's `alignItems: center` for this label
+                      // only — the 1-5 button row stays centred.
+                      alignSelf: 'stretch',
+                      textAlign: 'start',
                     }}
                   >
                     איך היה האימון?
@@ -1070,14 +1103,20 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             </button>
           )}
 
-          {/* Secondary actions */}
-          <div className="flex gap-2">
+          {/* Utilities — deliberately the quietest tier. These three are
+              "maybe later" actions (share / export / keep as a template); the
+              user's actual next step is one of the two buttons above. Rendering
+              them as filled/outlined `cta-secondary` pills put SIX actions at
+              near-equal weight in one footer, which is not a hierarchy. Quiet
+              text buttons keep them reachable (44px targets) without competing
+              with the primary CTA. */}
+          <div className="flex gap-1">
             {typeof navigator !== 'undefined' && 'share' in navigator && (
               <button
                 type="button"
                 onClick={handleShareCard}
-                className="cta-secondary focus-ring"
-                style={{ flex: 1 }}
+                className="focus-ring"
+                style={utilityActionStyle}
               >
                 שתפו כרטיס
               </button>
@@ -1085,8 +1124,8 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             <button
               type="button"
               onClick={handleExportCSV}
-              className="cta-secondary focus-ring"
-              style={{ flex: 1 }}
+              className="focus-ring"
+              style={utilityActionStyle}
             >
               ייצוא CSV
             </button>
@@ -1101,10 +1140,10 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                     showToast('שמירת התבנית נכשלה. בדקו את החיבור ונסו שוב.', { variant: 'error' });
                   });
                 }}
-                className="cta-secondary focus-ring"
-                style={{ flex: 1 }}
+                className="focus-ring"
+                style={utilityActionStyle}
               >
-                שמור תבנית
+                שמרו תבנית
               </button>
             )}
           </div>

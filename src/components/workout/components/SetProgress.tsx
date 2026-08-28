@@ -1,8 +1,14 @@
 // SetProgress — Fresh Steel segmented progress spine for the active workout.
 // A thin, segmented bar that fills var(--fs-accent) as sets complete, with the
-// current segment highlighted in --fs-accent-2 and a "סט X מתוך Y" label
+// current segment highlighted in --fs-accent-2 and a "הבא · סט X מתוך Y" label
 // (numbers dir="ltr"). Replaces the old per-set dots; tokenized for both light
 // (Fresh Steel) and dark (Obsidian) modes — no hardcoded colors.
+//
+// The label names the set you are ABOUT TO DO, so it carries the direction word
+// "הבא". Without it, "סט 3 מתוך 5" right after finishing set 2 is ambiguous —
+// the reader cannot tell whether 3 is done or pending. The filled segments
+// already encode how many are DONE; the text says what comes NEXT, and the
+// slide-to-complete verb names the set it will finish ("החליקו לסיום סט 3").
 
 import { type ReactNode, memo } from 'react';
 
@@ -49,8 +55,9 @@ export const SetProgress = memo<SetProgressProps>(
   }) => {
     if (total <= 0) return null;
 
-    // Label: completed → "הושלם", otherwise the 1-based position of the active
-    // set. Clamp so a virtual index past the end still reads as the last set.
+    // Label: completed → "הושלם", otherwise the 1-based position of the set the
+    // lifter is about to do, prefixed with "הבא" so the number's direction is
+    // explicit. Clamp so a virtual index past the end still reads as the last set.
     const isComplete = completed >= total;
     const activePosition = Math.min(current + 1, total);
 
@@ -60,7 +67,9 @@ export const SetProgress = memo<SetProgressProps>(
     // `ariaText` is the plain-text twin of `label` and is what the progressbar
     // announces. It MUST count the same sets the visible label counts — reading
     // out the all-sets tally while the screen shows the working-set tally gave
-    // screen-reader users a different number than everyone else.
+    // screen-reader users a different number than everyone else. It must also
+    // keep the "הבא" direction word, or the announcement is ambiguous in exactly
+    // the way the visible label no longer is.
     const hasWorking = typeof workingTotal === 'number';
     let label: ReactNode;
     let ariaText: string;
@@ -76,18 +85,18 @@ export const SetProgress = memo<SetProgressProps>(
         const pos = Math.min((warmupCompleted ?? 0) + 1, warmupTotal ?? 0);
         label = (
           <>
-            חימום · <span dir="ltr">{pos}</span> מתוך <span dir="ltr">{warmupTotal}</span>
+            הבא · חימום <span dir="ltr">{pos}</span> מתוך <span dir="ltr">{warmupTotal}</span>
           </>
         );
-        ariaText = `חימום ${pos} מתוך ${warmupTotal}`;
+        ariaText = `הבא, חימום ${pos} מתוך ${warmupTotal}`;
       } else {
         const pos = Math.min((workingCompleted ?? 0) + 1, workingTotal ?? 0);
         label = (
           <>
-            סט <span dir="ltr">{pos}</span> מתוך <span dir="ltr">{workingTotal}</span>
+            הבא · סט <span dir="ltr">{pos}</span> מתוך <span dir="ltr">{workingTotal}</span>
           </>
         );
-        ariaText = `סט ${pos} מתוך ${workingTotal}`;
+        ariaText = `הבא, סט ${pos} מתוך ${workingTotal}`;
       }
     } else if (isComplete) {
       label = (
@@ -99,18 +108,23 @@ export const SetProgress = memo<SetProgressProps>(
     } else {
       label = (
         <>
-          סט <span dir="ltr">{activePosition}</span> מתוך <span dir="ltr">{total}</span>
+          הבא · סט <span dir="ltr">{activePosition}</span> מתוך <span dir="ltr">{total}</span>
         </>
       );
-      ariaText = `סט ${activePosition} מתוך ${total}`;
+      ariaText = `הבא, סט ${activePosition} מתוך ${total}`;
     }
 
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
-        {/* Segmented spine */}
+        {/* Segmented spine. NO hardcoded `direction` — the spine inherits the
+            document direction so segment 1 sits at the READING START and the
+            fill advances the way the language is read (right→left in Hebrew).
+            A forced `direction: ltr` made the bar fill away from the reading
+            start, which is the mirrored-progress defect RTL platforms (iOS,
+            Android, Bootstrap RTL) all avoid. */}
         {/* biome-ignore lint/a11y/useFocusableInteractive: a progressbar is a read-only status indicator (WAI-ARIA APG); a keyboard tab stop here would be non-actionable and harm focus order (WCAG 2.4.3). */}
         <div
-          style={{ display: 'flex', gap: 3, flex: 1, direction: 'ltr' }}
+          style={{ display: 'flex', gap: 3, flex: 1 }}
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={total}
@@ -151,7 +165,7 @@ export const SetProgress = memo<SetProgressProps>(
           })}
         </div>
 
-        {/* "סט X מתוך Y" — numbers dir="ltr" */}
+        {/* "הבא · סט X מתוך Y" — numbers dir="ltr" */}
         <span
           style={{
             flexShrink: 0,

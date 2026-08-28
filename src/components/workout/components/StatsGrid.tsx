@@ -3,8 +3,6 @@
 
 import { HeroStat } from '@/components/ui/HeroStat';
 import { useCountUp } from '@/hooks/useCountUp';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { gsap, useGSAP } from '@/lib/gsap';
 import { DUR, EASE } from '@/lib/motionTokens';
 import { formatInt, formatThousandsDecimal } from '@/utils/formatThousands';
 import { type Zone, zoneColor } from '@/utils/zoneColor';
@@ -259,8 +257,6 @@ export interface StatsGridProps {
 
 export const StatsGrid: React.FC<StatsGridProps> = memo(
   ({ totalVolume, duration, totalSets, prsCount, caloriesBurned, comparison, startDelay = 0 }) => {
-    const reduced = useReducedMotion();
-    const gridRef = useRef<HTMLDivElement>(null);
     const heroNumRef = useRef<HTMLSpanElement>(null);
 
     // ONE metric is the protagonist. When the session earned PRs, the PR count
@@ -272,43 +268,22 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
     const heroValue = heroIsPr ? prCount : totalVolume;
     const heroFormat = heroIsPr ? formatInt : formatThousandsDecimal;
 
-    // Differentiated entrance: the hero settles FIRST with an overshoot
-    // (back.out via EASE.pop), then the demoted cells stagger in after it lands.
-    // Reduced motion: everything is already at its final state (guarded), and
-    // useCountUp snaps the hero number — so the screen is instant + complete.
+    // Count-up choreography. The stat cards themselves render at their final
+    // state — the ONLY motion here is the numbers rolling, which is the
+    // meaningful feedback ("here is what you just did").
+    //
+    // A GSAP `gsap.from()` entrance used to fade + lift the hero and stagger the
+    // three cells. It was removed because it permanently stranded content: the
+    // effect's dependency list includes `heroIsPr`, which flips false→true when
+    // the async PR count resolves, so the effect re-ran mid-flight and left the
+    // hero cell and two of the three cells at their `from` state — measured
+    // stuck at `opacity: 0` four seconds after the summary opened. The screen's
+    // most important numbers simply never appeared. Reliability beats a stagger.
     const heroDelay = startDelay;
     const stripStart = startDelay + 0.28;
-    useGSAP(
-      () => {
-        if (reduced) return; // cells + hero render at their final state already
-        const hero = gridRef.current?.querySelector<HTMLElement>('.js-hero-cell');
-        if (hero) {
-          gsap.from(hero, {
-            opacity: 0,
-            y: 18,
-            scale: 0.9,
-            duration: DUR.base,
-            ease: EASE.pop, // back.out overshoot — the protagonist lands with weight
-            delay: heroDelay,
-          });
-        }
-        const cells = gsap.utils.toArray<HTMLElement>('.js-stat-cell', gridRef.current);
-        if (cells.length === 0) return;
-        gsap.from(cells, {
-          opacity: 0,
-          y: 14,
-          scale: 0.96,
-          duration: DUR.base,
-          ease: EASE.reveal,
-          delay: stripStart,
-          stagger: gsap.utils.distribute({ amount: 0.2, ease: EASE.out }),
-        });
-      },
-      { scope: gridRef, dependencies: [reduced, startDelay, heroIsPr] }
-    );
 
-    // Hero number count-up trails its own (earlier) settle; the strip count-ups
-    // trail the strip stagger so each number rolls as its card lands.
+    // Hero number count-up leads; the strip count-ups trail it so each number
+    // rolls just after the hero lands.
     useCountUp(heroNumRef, heroValue, {
       delay: heroDelay,
       duration: DUR.count,
@@ -318,7 +293,7 @@ export const StatsGrid: React.FC<StatsGridProps> = memo(
     const cellDelay = (i: number): number => stripStart + i * 0.08;
 
     return (
-      <div className="flex flex-col gap-3" ref={gridRef}>
+      <div className="flex flex-col gap-3">
         {/* Hero protagonist — the single biggest number on the surface. PR count
             (mint) when earned, else total volume. */}
         {/* Hero sits on the neutral surface (not the navy --fs-primary fill) so

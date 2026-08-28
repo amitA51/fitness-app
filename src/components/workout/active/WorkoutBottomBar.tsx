@@ -21,7 +21,10 @@ const isExerciseDone = (ex: Exercise | undefined): boolean => {
   return total > 0 && done >= total;
 };
 
-const fmtCount = (pos: number, total: number) => `⁦${pos}/${total || 1}⁩`;
+// Bidi-isolate a number embedded in Hebrew copy (U+2066 LRI … U+2069 PDI) so it
+// never reorders against the surrounding RTL run. The slide label is a plain
+// string (it doubles as the aria-label), so it cannot use a <span dir="ltr">.
+const fmtNum = (n: number) => `\u2066${n}\u2069`;
 
 const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
   exercises,
@@ -62,15 +65,20 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
   const curCompletedSets = curSets.filter((s) => s.completedAt).length;
   const isExerciseComplete = curTotalSets > 0 && curCompletedSets >= curTotalSets;
   const activeIsWarmup = curSets.find((s) => !s.completedAt)?.isWarmup ?? false;
+  // The slide label names the ACTION and the set it COMPLETES, so the verb
+  // carries the direction ("החליקו לסיום סט 2" = this gesture finishes set 2).
+  // The X-of-Y total lives on the SetProgress spine above; repeating it here
+  // would put the same pair of numbers on screen twice and lengthen a label
+  // that must stay on one line inside the track.
   let completeLabel: string;
   if (isExerciseComplete) {
     completeLabel = 'התרגיל הושלם';
   } else if (activeIsWarmup) {
     const pos = Math.min(curWarmupCompleted + 1, Math.max(curWarmupTotal, 1));
-    completeLabel = `החלק לסיום חימום ${fmtCount(pos, curWarmupTotal)}`;
+    completeLabel = `החליקו לסיום חימום ${fmtNum(pos)}`;
   } else {
     const pos = Math.min(curWorkingCompleted + 1, Math.max(curWorkingTotal, 1));
-    completeLabel = `החלק לסיום סט ${fmtCount(pos, curWorkingTotal)}`;
+    completeLabel = `החליקו לסיום סט ${fmtNum(pos)}`;
   }
 
   const goToNextExercise = useCallback(() => {

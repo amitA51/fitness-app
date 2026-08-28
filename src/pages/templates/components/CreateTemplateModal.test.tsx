@@ -30,6 +30,67 @@ describe('CreateTemplateModal', () => {
     ]);
   });
 
+  // Regression: the sheet used to be a hand-rolled `fixed inset-0` div rendered
+  // inside the page's transformed motion container. A transformed ancestor
+  // becomes the containing block for `position: fixed`, so the scrim painted a
+  // ~247px band and the sheet resolved to top:-143 — heading off-screen, name
+  // field sliced in half, page below still bright and clickable. Sheet →
+  // ModalOverlay portals to <body>, which is what makes `fixed` viewport-
+  // relative again.
+  it('pins the sheet to the viewport, blocks the page beneath, and opens at its title', async () => {
+    render(
+      // Stand-in for the page's motion container — the transform is exactly what
+      // used to capture `position: fixed`.
+      <div style={{ transform: 'translateY(0px)' }}>
+        <CreateTemplateModal onClose={vi.fn()} onCreate={vi.fn()} />
+      </div>
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'תבנית חדשה' });
+    const scrim = dialog.parentElement as HTMLElement;
+
+    // Escaped the transformed subtree: the scrim is a direct child of <body>.
+    expect(scrim.parentElement).toBe(document.body);
+    expect(scrim.className).toContain('fixed');
+    expect(scrim.className).toContain('inset-0');
+
+    // The page beneath is genuinely inert, not merely dimmed.
+    expect(document.body.style.overflow).toBe('hidden');
+
+    // Title and the required first field are both inside the pinned dialog, and
+    // the title sits in the non-scrolling header so it cannot scroll away.
+    expect(dialog).toContainElement(screen.getByRole('heading', { name: 'תבנית חדשה' }));
+    expect(dialog).toContainElement(screen.getByLabelText('שם התבנית'));
+
+    // Focus lands on the first field, not on the page behind the scrim.
+    await waitFor(() => expect(screen.getByLabelText('שם התבנית')).toHaveFocus());
+  });
+
+  it('closes on Escape, dismissing the exercise picker first', async () => {
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+
+    render(<CreateTemplateModal onClose={onClose} onCreate={vi.fn()} />);
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /הוסף תרגיל/ }));
+    });
+    expect(await screen.findByLabelText('חפש תרגיל')).toBeInTheDocument();
+
+    // First Escape closes the picker, not the whole sheet.
+    await act(async () => {
+      await user.keyboard('{Escape}');
+    });
+    expect(screen.queryByLabelText('חפש תרגיל')).not.toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+
+    // Second Escape closes the sheet.
+    await act(async () => {
+      await user.keyboard('{Escape}');
+    });
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it('keeps picked exercise identity when submitting and removes chips by stable id', async () => {
     const onCreate = vi.fn().mockResolvedValue(undefined);
     const user = userEvent.setup();

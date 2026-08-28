@@ -7,12 +7,11 @@
 
 import { AnimatePresence, m } from 'framer-motion';
 import { Dumbbell, Plus, X } from 'lucide-react';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { useFocusTrap } from '../../../hooks/useFocusTrap';
+import { useEffect, useId, useMemo, useState } from 'react';
+import { Sheet } from '../../../components/ui/Sheet';
 import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import { getPersonalExercises } from '../../../services/workoutDb';
 import type { PersonalExercise, WorkoutTemplate } from '../../../types';
-import { springTransition } from '../constants';
 
 export interface TemplateExerciseInput {
   exerciseId?: string;
@@ -49,23 +48,10 @@ export function CreateTemplateModal({ template, onClose, onCreate }: CreateTempl
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const templateNameId = useId();
-  const titleId = useId();
-  const sheetRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
   const pickerTransition = reduceMotion
     ? { duration: 0 }
     : { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const };
-
-  // Trap Tab focus inside the sheet so it can't leak to the page behind the
-  // backdrop. Escape stays owned by the handler below (it closes the picker
-  // first, then the sheet); the input keeps its own autoFocus.
-  useFocusTrap(sheetRef, {
-    isOpen: true,
-    closeOnEscape: false,
-    autoFocus: false,
-    restoreFocus: true,
-    lockScroll: false,
-  });
 
   const [exercises, setExercises] = useState<DraftTemplateExercise[]>(() => toDraft(template));
   const [showExercisePicker, setShowExercisePicker] = useState(false);
@@ -78,21 +64,18 @@ export function CreateTemplateModal({ template, onClose, onCreate }: CreateTempl
     }
   }, [showExercisePicker]);
 
-  // Keyboard dismissal: Escape closes the picker first, then the whole sheet —
-  // backdrop tap was the only exit, which left keyboard users stuck.
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      if (showExercisePicker) {
-        setShowExercisePicker(false);
-        setExerciseSearch('');
-      } else {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showExercisePicker, onClose]);
+  // Dismissal funnels through here so Escape / backdrop tap / the header close
+  // button all close the exercise picker FIRST when it is open, then the sheet.
+  // Sheet (via ModalOverlay) owns the Escape key now, so the picker-first order
+  // has to live in the handler rather than in a local keydown listener.
+  const handleDismiss = (): void => {
+    if (showExercisePicker) {
+      setShowExercisePicker(false);
+      setExerciseSearch('');
+      return;
+    }
+    onClose();
+  };
 
   const filteredExercises = useMemo(
     () =>
@@ -159,434 +142,370 @@ export function CreateTemplateModal({ template, onClose, onCreate }: CreateTempl
   };
 
   return (
-    <m.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xl"
-      onClick={onClose}
-      dir="rtl"
+    // Sheet → ModalOverlay portals to document.body. The previous hand-rolled
+    // `fixed inset-0` wrapper was mounted inside the page's transformed motion
+    // container, which becomes the containing block for `fixed`: the scrim only
+    // painted a ~247px band and the sheet resolved to top:-143, pushing the
+    // title and half the name field above the viewport. Portalling makes `fixed`
+    // resolve against the viewport again, and Sheet's non-scrolling header keeps
+    // the title pinned in view. Scroll lock + focus trap come from ModalOverlay.
+    <Sheet
+      isOpen
+      onClose={handleDismiss}
+      title={isEditing ? 'עריכת תבנית' : 'תבנית חדשה'}
+      initialFocusSelector="[data-template-name-input]"
     >
-      <m.div
-        ref={sheetRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ ...springTransition, duration: 0.4 }}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg pt-3 pb-10 max-h-[90vh] overflow-y-auto"
-        style={{
-          background: 'var(--fs-surface)',
-          borderTop: '0.5px solid var(--color-separator)',
-          borderTopLeftRadius: 'var(--radius-2xl)',
-          borderTopRightRadius: 'var(--radius-2xl)',
-        }}
-      >
-        {/* Drag Handle */}
-        <div className="flex justify-center mb-5">
-          <div
+      <form onSubmit={handleSubmit} className="space-y-5" dir="rtl">
+        {/* Name Input */}
+        <div>
+          <label
+            htmlFor={templateNameId}
             style={{
-              width: '40px',
-              height: '4px',
-              background: 'var(--color-drag-handle)',
-              borderRadius: 999,
+              fontFamily: 'var(--font-body)',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: 'var(--fs-muted)',
+              marginBottom: '8px',
+              display: 'block',
+            }}
+          >
+            שם התבנית
+          </label>
+          <input
+            id={templateNameId}
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="למשל: אימון חזה + כתפיים"
+            autoFocus
+            data-template-name-input
+            style={{
+              width: '100%',
+              background: 'var(--fs-surface-2)',
+              border: '1px solid var(--fs-surface-2)',
+              borderRadius: 12,
+              padding: '16px',
+              color: 'var(--fs-ink)',
+              fontFamily: 'var(--font-body)',
+              fontSize: '16px',
+              outline: 'none',
             }}
           />
+          {error && (
+            <m.p
+              role="alert"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                marginTop: '8px',
+                fontFamily: 'var(--font-body)',
+                fontSize: '13px',
+                color: 'var(--color-error)',
+              }}
+            >
+              {error}
+            </m.p>
+          )}
         </div>
 
-        <div className="px-6">
-          {/* Title Row */}
-          <div className="flex items-center justify-between mb-7">
-            <h2
-              id={titleId}
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 600,
-                fontSize: '22px',
-                letterSpacing: '-0.02em',
-                color: 'var(--fs-ink)',
-              }}
-            >
-              {isEditing ? 'עריכת תבנית' : 'תבנית חדשה'}
-            </h2>
-            <m.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={onClose}
-              aria-label="סגור"
-              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
-              style={{
-                width: '44px',
-                height: '44px',
-                background: 'var(--fs-surface-2)',
-                border: 'none',
-                borderRadius: 9999,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <X size={16} style={{ color: 'var(--fs-ink)' }} />
-            </m.button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Name Input */}
-            <div>
-              <label
-                htmlFor={templateNameId}
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: 'var(--fs-muted)',
-                  marginBottom: '8px',
-                  display: 'block',
-                }}
-              >
-                שם התבנית
-              </label>
-              <input
-                id={templateNameId}
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="למשל: אימון חזה + כתפיים"
-                autoFocus
-                style={{
-                  width: '100%',
-                  background: 'var(--fs-surface-2)',
-                  border: '1px solid var(--fs-surface-2)',
-                  borderRadius: 12,
-                  padding: '16px',
-                  color: 'var(--fs-ink)',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '16px',
-                  outline: 'none',
-                }}
-              />
-              {error && (
-                <m.p
-                  role="alert"
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  style={{
-                    marginTop: '8px',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '13px',
-                    color: 'var(--color-error)',
-                  }}
-                >
-                  {error}
-                </m.p>
-              )}
-            </div>
-
-            {/* Exercise Builder Section */}
-            <div>
+        {/* Exercise Builder Section */}
+        <div>
+          <span
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: 'var(--fs-muted)',
+              marginBottom: '8px',
+              display: 'block',
+            }}
+          >
+            תרגילים
+            {exercises.length > 0 && (
               <span
+                className="ms-2"
+                dir="ltr"
                 style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '12px',
-                  fontWeight: 600,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
-                  marginBottom: '8px',
-                  display: 'block',
                 }}
               >
-                תרגילים
-                {exercises.length > 0 && (
-                  <span
-                    className="ms-2"
-                    dir="ltr"
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '11px',
-                      letterSpacing: '-0.01em',
-                      color: 'var(--fs-muted)',
-                    }}
-                  >
-                    {exercises.length}
-                  </span>
-                )}
+                {exercises.length}
               </span>
+            )}
+          </span>
 
-              {/* Added exercise chips */}
-              {exercises.length > 0 && (
-                <div className="flex flex-col gap-2 mb-3">
-                  {exercises.map((ex) => (
-                    <m.div
-                      key={ex.clientId}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      className="flex items-center justify-between rounded-xl px-3 py-2.5"
-                      style={{
-                        background: 'var(--fs-surface)',
-                        border: '1px solid var(--fs-surface-2)',
-                      }}
-                    >
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Dumbbell size={14} style={{ color: 'var(--fs-heading)' }} />
-                        <span
-                          className="truncate"
-                          style={{
-                            fontFamily: 'var(--font-body)',
-                            fontSize: '14px',
-                            fontWeight: 700,
-                            color: 'var(--fs-ink)',
-                          }}
-                        >
-                          {ex.exerciseName}
-                        </span>
-                        <span
-                          className="whitespace-nowrap"
-                          dir="ltr"
-                          style={{
-                            fontFamily: 'var(--font-mono)',
-                            fontSize: '11px',
-                            letterSpacing: '-0.01em',
-                            color: 'var(--fs-heading)',
-                          }}
-                        >
-                          {ex.targetSets}×{ex.targetReps}
-                        </span>
-                        <span
-                          className="whitespace-nowrap"
-                          style={{
-                            fontFamily: 'var(--font-mono)',
-                            fontSize: '10px',
-                            color: 'var(--fs-muted)',
-                          }}
-                        >
-                          מנוחה <span dir="ltr">{ex.restSeconds}</span> שנ׳
-                        </span>
-                      </div>
-                      <m.button
-                        whileTap={{ scale: 0.9 }}
-                        type="button"
-                        onClick={() => handleRemoveExercise(ex.clientId)}
-                        className="flex-shrink-0 rounded-lg flex items-center justify-center"
-                        style={{ background: 'var(--fs-surface-2)', width: 44, height: 44 }}
-                        aria-label={`הסר ${ex.exerciseName}`}
-                      >
-                        <X size={14} style={{ color: 'var(--fs-heading)' }} />
-                      </m.button>
-                    </m.div>
-                  ))}
-                </div>
-              )}
-
-              {/* Add Exercise button */}
-              <m.button
-                type="button"
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setShowExercisePicker(true)}
-                className="w-full flex items-center justify-center gap-2"
-                style={{
-                  minHeight: 48,
-                  border: '1.5px dashed var(--fs-surface-2)',
-                  color: 'var(--fs-heading)',
-                  fontFamily: 'var(--font-display)',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  background: 'transparent',
-                  borderRadius: 12,
-                  cursor: 'pointer',
-                }}
-              >
-                <Plus size={16} />
-                {exercises.length === 0 ? 'הוסף תרגיל ראשון' : 'הוסף תרגיל'}
-              </m.button>
-            </div>
-
-            {/* Exercise Picker Overlay */}
-            <AnimatePresence>
-              {showExercisePicker && (
+          {/* Added exercise chips */}
+          {exercises.length > 0 && (
+            <div className="flex flex-col gap-2 mb-3">
+              {exercises.map((ex) => (
                 <m.div
-                  initial={{ gridTemplateRows: '0fr', opacity: 0 }}
-                  animate={{ gridTemplateRows: '1fr', opacity: 1 }}
-                  exit={{ gridTemplateRows: '0fr', opacity: 0 }}
-                  transition={pickerTransition}
-                  className="grid overflow-hidden rounded-xl"
+                  key={ex.clientId}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="flex items-center justify-between rounded-xl px-3 py-2.5"
                   style={{
                     background: 'var(--fs-surface)',
                     border: '1px solid var(--fs-surface-2)',
                   }}
                 >
-                  {/* Variable library results need a real expansion. Grid rows avoid
-                      Framer's repeated `height: auto` measurement on every frame. */}
-                  <div style={{ minHeight: 0, overflow: 'hidden' }}>
-                    <div className="p-3">
-                      <div className="flex items-center justify-between mb-3">
-                        <span
-                          style={{
-                            fontFamily: 'var(--font-display)',
-                            fontSize: '14px',
-                            fontWeight: 600,
-                            color: 'var(--fs-ink)',
-                          }}
-                        >
-                          בחר תרגיל
-                        </span>
-                        <m.button
-                          whileTap={{ scale: 0.9 }}
-                          type="button"
-                          onClick={() => {
-                            setShowExercisePicker(false);
-                            setExerciseSearch('');
-                          }}
-                          className="rounded-lg flex items-center justify-center"
-                          style={{ background: 'var(--fs-surface-2)', width: 44, height: 44 }}
-                          aria-label="סגור את רשימת התרגילים"
-                        >
-                          <X size={14} style={{ color: 'var(--fs-heading)' }} />
-                        </m.button>
-                      </div>
-                      <input
-                        type="text"
-                        value={exerciseSearch}
-                        onChange={(e) => setExerciseSearch(e.target.value)}
-                        placeholder="חפש תרגיל…"
-                        aria-label="חפש תרגיל"
-                        autoFocus
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          fontSize: '14px',
-                          background: 'var(--fs-surface-2)',
-                          border: '1px solid var(--fs-surface-2)',
-                          borderRadius: 12,
-                          color: 'var(--fs-ink)',
-                          fontFamily: 'var(--font-body)',
-                          outline: 'none',
-                        }}
-                      />
-                      <div
-                        className="mt-2 flex flex-col gap-1 max-h-[200px] overflow-y-auto"
-                        style={{
-                          scrollbarWidth: 'thin',
-                          scrollbarColor: 'var(--fs-surface-2) transparent',
-                        }}
-                      >
-                        {filteredExercises.length === 0 && (
-                          <p
-                            style={{
-                              fontFamily: 'var(--font-body)',
-                              fontSize: '13px',
-                              color: 'var(--fs-muted)',
-                              textAlign: 'center',
-                              padding: '16px',
-                            }}
-                          >
-                            אין תרגיל בשם הזה. נסה שם אחר.
-                          </p>
-                        )}
-                        {filteredExercises.map((ex) => (
-                          <m.button
-                            key={ex.id}
-                            type="button"
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => handleAddExercise(ex)}
-                            className="w-full text-start px-3 flex items-center justify-between"
-                            style={{
-                              minHeight: 44,
-                              fontFamily: 'var(--font-body)',
-                              fontSize: '14px',
-                              fontWeight: 600,
-                              color: 'var(--fs-ink)',
-                              transition: 'background 0.15s',
-                              background: 'transparent',
-                              border: 'none',
-                              borderRadius: 12,
-                              cursor: 'pointer',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'var(--fs-surface-2)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'transparent';
-                            }}
-                          >
-                            <span>{ex.name || 'תרגיל'}</span>
-                            <Plus size={14} style={{ color: 'var(--fs-heading)' }} />
-                          </m.button>
-                        ))}
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Dumbbell size={14} style={{ color: 'var(--fs-heading)' }} />
+                    <span
+                      className="truncate"
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        color: 'var(--fs-ink)',
+                      }}
+                    >
+                      {ex.exerciseName}
+                    </span>
+                    <span
+                      className="whitespace-nowrap"
+                      dir="ltr"
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        letterSpacing: '-0.01em',
+                        color: 'var(--fs-heading)',
+                      }}
+                    >
+                      {ex.targetSets}×{ex.targetReps}
+                    </span>
+                    <span
+                      className="whitespace-nowrap"
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '10px',
+                        color: 'var(--fs-muted)',
+                      }}
+                    >
+                      מנוחה <span dir="ltr">{ex.restSeconds}</span> שנ׳
+                    </span>
                   </div>
+                  <m.button
+                    whileTap={{ scale: 0.9 }}
+                    type="button"
+                    onClick={() => handleRemoveExercise(ex.clientId)}
+                    className="flex-shrink-0 rounded-lg flex items-center justify-center"
+                    style={{ background: 'var(--fs-surface-2)', width: 44, height: 44 }}
+                    aria-label={`הסר ${ex.exerciseName}`}
+                  >
+                    <X size={14} style={{ color: 'var(--fs-heading)' }} />
+                  </m.button>
                 </m.div>
-              )}
-            </AnimatePresence>
+              ))}
+            </div>
+          )}
 
-            {exercises.length > 0 && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 16px',
-                  background: 'var(--fs-surface-2)',
-                  borderRadius: 12,
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '11px',
-                    letterSpacing: '-0.01em',
-                    color: 'var(--fs-muted)',
-                  }}
-                >
-                  זמן משוער
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 600,
-                    fontSize: '18px',
-                    color: 'var(--fs-accent)',
-                  }}
-                >
-                  <span dir="ltr">~{estimatedMinutes}</span> דק׳
-                </span>
-              </div>
-            )}
+          {/* Add Exercise button */}
+          <m.button
+            type="button"
+            whileTap={{ scale: 0.97 }}
+            onClick={() => setShowExercisePicker(true)}
+            className="w-full flex items-center justify-center gap-2"
+            style={{
+              minHeight: 48,
+              border: '1.5px dashed var(--fs-surface-2)',
+              color: 'var(--fs-heading)',
+              fontFamily: 'var(--font-display)',
+              fontSize: '14px',
+              fontWeight: 600,
+              background: 'transparent',
+              borderRadius: 12,
+              cursor: 'pointer',
+            }}
+          >
+            <Plus size={16} />
+            {exercises.length === 0 ? 'הוסף תרגיל ראשון' : 'הוסף תרגיל'}
+          </m.button>
+        </div>
 
-            <m.button
-              type="submit"
-              disabled={isSubmitting}
-              whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
-              className="start-workout-btn"
+        {/* Exercise Picker Overlay */}
+        <AnimatePresence>
+          {showExercisePicker && (
+            <m.div
+              initial={{ gridTemplateRows: '0fr', opacity: 0 }}
+              animate={{ gridTemplateRows: '1fr', opacity: 1 }}
+              exit={{ gridTemplateRows: '0fr', opacity: 0 }}
+              transition={pickerTransition}
+              className="grid overflow-hidden rounded-xl"
               style={{
-                opacity: isSubmitting ? 0.5 : 1,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                background: 'var(--fs-surface)',
+                border: '1px solid var(--fs-surface-2)',
               }}
             >
-              {isSubmitting ? (
-                <span
-                  style={{
-                    width: '20px',
-                    height: '20px',
-                    border:
-                      '2px solid color-mix(in srgb, var(--color-ink-on-accent) 30%, transparent)',
-                    borderTopColor: 'var(--color-ink-on-accent)',
-                    borderRadius: 999,
-                    display: 'inline-block',
-                    animation: 'spin 0.8s linear infinite',
-                  }}
-                />
-              ) : (
-                <>{isEditing ? 'שמור תבנית' : 'צור תבנית'}</>
-              )}
-            </m.button>
-          </form>
-        </div>
-      </m.div>
-    </m.div>
+              {/* Variable library results need a real expansion. Grid rows avoid
+                      Framer's repeated `height: auto` measurement on every frame. */}
+              <div style={{ minHeight: 0, overflow: 'hidden' }}>
+                <div className="p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: 'var(--fs-ink)',
+                      }}
+                    >
+                      בחר תרגיל
+                    </span>
+                    <m.button
+                      whileTap={{ scale: 0.9 }}
+                      type="button"
+                      onClick={() => {
+                        setShowExercisePicker(false);
+                        setExerciseSearch('');
+                      }}
+                      className="rounded-lg flex items-center justify-center"
+                      style={{ background: 'var(--fs-surface-2)', width: 44, height: 44 }}
+                      aria-label="סגור את רשימת התרגילים"
+                    >
+                      <X size={14} style={{ color: 'var(--fs-heading)' }} />
+                    </m.button>
+                  </div>
+                  <input
+                    type="text"
+                    value={exerciseSearch}
+                    onChange={(e) => setExerciseSearch(e.target.value)}
+                    placeholder="חפש תרגיל…"
+                    aria-label="חפש תרגיל"
+                    autoFocus
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      fontSize: '14px',
+                      background: 'var(--fs-surface-2)',
+                      border: '1px solid var(--fs-surface-2)',
+                      borderRadius: 12,
+                      color: 'var(--fs-ink)',
+                      fontFamily: 'var(--font-body)',
+                      outline: 'none',
+                    }}
+                  />
+                  <div
+                    className="mt-2 flex flex-col gap-1 max-h-[200px] overflow-y-auto"
+                    style={{
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: 'var(--fs-surface-2) transparent',
+                    }}
+                  >
+                    {filteredExercises.length === 0 && (
+                      <p
+                        style={{
+                          fontFamily: 'var(--font-body)',
+                          fontSize: '13px',
+                          color: 'var(--fs-muted)',
+                          textAlign: 'center',
+                          padding: '16px',
+                        }}
+                      >
+                        אין תרגיל בשם הזה. נסה שם אחר.
+                      </p>
+                    )}
+                    {filteredExercises.map((ex) => (
+                      <m.button
+                        key={ex.id}
+                        type="button"
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleAddExercise(ex)}
+                        className="w-full text-start px-3 flex items-center justify-between"
+                        style={{
+                          minHeight: 44,
+                          fontFamily: 'var(--font-body)',
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          color: 'var(--fs-ink)',
+                          transition: 'background 0.15s',
+                          background: 'transparent',
+                          border: 'none',
+                          borderRadius: 12,
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--fs-surface-2)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                        }}
+                      >
+                        <span>{ex.name || 'תרגיל'}</span>
+                        <Plus size={14} style={{ color: 'var(--fs-heading)' }} />
+                      </m.button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </m.div>
+          )}
+        </AnimatePresence>
+
+        {exercises.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 16px',
+              background: 'var(--fs-surface-2)',
+              borderRadius: 12,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                letterSpacing: '-0.01em',
+                color: 'var(--fs-muted)',
+              }}
+            >
+              זמן משוער
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 600,
+                fontSize: '18px',
+                color: 'var(--fs-accent)',
+              }}
+            >
+              <span dir="ltr">~{estimatedMinutes}</span> דק׳
+            </span>
+          </div>
+        )}
+
+        <m.button
+          type="submit"
+          disabled={isSubmitting}
+          whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+          className="start-workout-btn"
+          style={{
+            opacity: isSubmitting ? 0.5 : 1,
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {isSubmitting ? (
+            <span
+              style={{
+                width: '20px',
+                height: '20px',
+                border: '2px solid color-mix(in srgb, var(--color-ink-on-accent) 30%, transparent)',
+                borderTopColor: 'var(--color-ink-on-accent)',
+                borderRadius: 999,
+                display: 'inline-block',
+                animation: 'spin 0.8s linear infinite',
+              }}
+            />
+          ) : (
+            <>{isEditing ? 'שמור תבנית' : 'צור תבנית'}</>
+          )}
+        </m.button>
+      </form>
+    </Sheet>
   );
 }
