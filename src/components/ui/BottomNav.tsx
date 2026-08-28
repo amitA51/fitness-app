@@ -14,7 +14,9 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { NUTRITION_TRAINEE_UI_ENABLED } from '../../constants/featureFlags';
 import { useCoach } from '../../contexts/CoachContext';
+import { useIsAppAdmin } from '../../hooks/useIsAppAdmin';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { useUnreadMessages } from '../../hooks/useUnreadMessages';
 import { listMyCoaches } from '../../services/coach';
@@ -42,7 +44,10 @@ const EASE = { popHard: 'back.out(3)', slide: 'power3.inOut' } as const;
 // ============================================================================
 // BottomNav — 5 fixed tabs + a "More" sheet, branched by role.
 //
-// Trainee tabs: בית /, אימון /workout, התקדמות /progress, תזונה /nutrition.
+// Trainee tabs: בית /, אימון /workout, התקדמות /progress, תזונה /nutrition —
+// the תזונה tab is hidden while NUTRITION_TRAINEE_UI_ENABLED is off (see
+// constants/featureFlags.ts: the owner has not decided whether the nutrition
+// feature stays). An app admin still sees it, so the screen stays inspectable.
 // Coach tabs:   בית /coach, מתאמנים /coach/clients, הודעות /coach/messages,
 //               תוכניות /coach/programs (the coach IS the primary experience).
 // The "עוד" sheet is grouped into labeled sections (האימון שלי / מאמן וקהילה /
@@ -259,7 +264,18 @@ function BottomNav() {
   const firstRunRef = useRef(true);
   const prevUnreadRef = useRef(unread);
 
-  const mainTabs = isCoach ? COACH_MAIN_TABS : TRAINEE_MAIN_TABS;
+  // The trainee תזונה tab is hidden while NUTRITION_TRAINEE_UI_ENABLED is off
+  // (constants/featureFlags.ts). A member of app_admins keeps it — the owner
+  // cannot judge whether to keep the feature if he cannot reach the screen.
+  // Until the lookup settles the tab is absent, which is the quiet default.
+  const { isAdmin: isAppAdmin } = useIsAppAdmin();
+  const showNutritionTab = NUTRITION_TRAINEE_UI_ENABLED || isAppAdmin;
+
+  const mainTabs = useMemo(() => {
+    const tabs = isCoach ? COACH_MAIN_TABS : TRAINEE_MAIN_TABS;
+    if (showNutritionTab) return tabs;
+    return tabs.filter(({ path }) => path !== '/nutrition');
+  }, [isCoach, showNutritionTab]);
   const morePaths = isCoach ? COACH_MORE_PATHS : TRAINEE_MORE_PATHS;
 
   // Trainee chat deep-link target (resolved from active coaches). Coaches reach

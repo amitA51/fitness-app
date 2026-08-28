@@ -1,6 +1,8 @@
 // ============================================================================
 // BottomNav — role-branched navigation tests
-// Trainee: בית/אימון/התקדמות/תזונה + sheet(המאמן שלי, הגדרות).
+// Trainee: בית/אימון/התקדמות + sheet(המאמן שלי, הגדרות). The תזונה tab is
+//          hidden while NUTRITION_TRAINEE_UI_ENABLED is off (see
+//          constants/featureFlags.ts) — an app admin still gets it.
 // Coach:   בית/מתאמנים/הודעות/תוכניות + sheet(האימונים שלי, הגדרות);
 //          unread badge moves from "עוד" to the הודעות tab.
 // ============================================================================
@@ -19,6 +21,13 @@ vi.mock('../../contexts/CoachContext', () => ({
     isCoach: mockIsCoach,
     role: mockIsCoach ? 'coach' : 'trainee',
   }),
+}));
+
+// app_admins membership — the only thing that still surfaces the תזונה tab
+// while the nutrition surface is hidden.
+let mockIsAppAdmin = false;
+vi.mock('../../hooks/useIsAppAdmin', () => ({
+  useIsAppAdmin: () => ({ isAdmin: mockIsAppAdmin, loading: false }),
 }));
 
 let mockUnread = 0;
@@ -44,18 +53,27 @@ const renderNav = (initialPath = '/') =>
 beforeEach(() => {
   vi.clearAllMocks();
   mockIsCoach = false;
+  mockIsAppAdmin = false;
   mockUnread = 0;
 });
 
 describe('BottomNav per role', () => {
-  it('renders the trainee tab set for trainees', () => {
+  it('renders the trainee tab set for trainees, without the hidden תזונה tab', () => {
     renderNav('/');
 
     expect(screen.getByRole('link', { name: 'בית' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'אימון' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'התקדמות' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'תזונה' })).toBeInTheDocument();
+    // Hidden while the owner decides whether the nutrition feature stays.
+    expect(screen.queryByRole('link', { name: 'תזונה' })).toBeNull();
     expect(screen.queryByRole('link', { name: /מתאמנים/ })).toBeNull();
+  });
+
+  it('keeps the תזונה tab for an app admin so the screen stays reachable', () => {
+    mockIsAppAdmin = true;
+    renderNav('/');
+
+    expect(screen.getByRole('link', { name: 'תזונה' })).toHaveAttribute('href', '/nutrition');
   });
 
   it('renders the coach tab set for coaches', () => {

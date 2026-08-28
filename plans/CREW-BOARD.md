@@ -1100,16 +1100,145 @@ The trainee-facing surface is small, but nutrition has **three other consumers**
   runtime switch, the flag is the seam and it is a separate, small task.
 
 ## [T-041] Hide the nutrition area behind a reversible flag
-- status: planned (batch 14) — dispatches when T-038 releases the browser
+- status: dispatched (batch 14)
 - owner: fitness-dev
 - goal: a normal user cannot reach nutrition; an admin still can; one line brings it back.
 - files: `src/AppRouter.tsx`, `src/components/ui/BottomNav.tsx`, a NEW flag module, any trainee-side
   link into `/nutrition`, plus a test
 - MUST NOT TOUCH: all of `src/pages/coach/**`, `src/services/coach/**`, `src/services/supabaseSync*`,
   `src/services/offlineQueue.ts`, `src/services/nutritionService.ts`, `src/services/ai/**`
-- done when: verify green; test:run >= the then-current floor plus a test proving the route is
-  unreachable for a non-admin AND reachable for an admin; every entry point named
+- done when: verify green; test:run >= 1415 plus a test proving the route is unreachable for a
+  non-admin AND reachable for an admin; every entry point named
 - notes: hide, never delete. The comment explaining WHY is a deliverable, not decoration.
+
+## [T-042] Fix the toggle that actually ships, and delete the one that does not
+- status: dispatched (batch 14)
+- owner: fitness-design
+- goal: `SettingsToggle` is the control users really see (3 live consumers: `ThemeSection`,
+  `NotificationsSection`, `WorkoutPrefsSection`) and its track border is still **1.31:1 in dark**.
+  `ToggleSwitch` + `MobileToggle` are dead and are the reason this was missed.
+- files (EXCLUSIVE): `src/components/ui/SettingsToggle.tsx`; deletion of
+  `src/components/ui/ToggleSwitch.tsx` + its test + `MobileToggle.tsx`
+- done when: verify green; contrast stated as a number in both themes; the ONLY acceptable test-count
+  drop is exactly the tests whose subject was deleted, named one by one
+- **MY DECISION, so it is not re-litigated:** fix `SettingsToggle` IN PLACE rather than swapping its
+  three call sites to `ToggleSwitch`. Swapping would change the look of three Settings sections with
+  no screenshot budget this batch. But **LIFT T-030's technique** — the darkened ON-track value it
+  derived is already in the repo — so that work transfers as method even though its file dies.
+- notes: prove zero importers by grep BEFORE deleting. If any importer exists, STOP and report — do
+  not touch `AppRouter.tsx` or `BottomNav.tsx`, T-041 owns them.
+
+## [T-043] Lock the chart geometry in a test
+- status: dispatched (batch 14)
+- owner: fitness-qa
+- goal: `GlowAreaChart`'s new y-span floor is currently pinned ONLY by numbers in a report no build
+  will ever check, on a primitive with **zero tests** that backs six surfaces.
+- files: a NEW test file beside `src/components/charts/GlowAreaChart.tsx`. Read-only in the component.
+- done when: verify green; test:run >= 1415 + the new tests; a near-flat series proven to draw flat,
+  a real change proven to still fill, and the floored case proven centred
+- notes: T-038 measured 0.00% / 24.69% / 100% — reproduce that as assertions, do not invent new rules.
+
+### Deliberately NOT in batch 14
+- **The nutrition screen's invisible dark tab** (`global.css:309`). It is real, but we are hiding that
+  screen this batch and Amit may delete it. Fixing the dark mode of a screen only he can still reach
+  is investing in the thing he asked to stop investing in. Recorded, not scheduled.
+- **A photo pass for `ReadinessReadingCard` + the hidden nutrition state.** Both are new this round and
+  neither is photographed. Batch 15, once the tree settles again.
+
+## [T-041] Hide nutrition — ACCEPTED 2026-08-28 17:52
+- status: **done** — 4 modified + 2 new, all verified changed by `git status`. `src/pages/coach/**`,
+  `src/services/coach/**`, the sync layer and `src/services/ai/**` confirmed untouched.
+- **The docblock is exactly what Amit asked for, in his terms:** "`false` today, and that is a
+  DECISION, not a bug and not a half-finished migration… If you are reading this in three months and
+  the screen is still hidden, the question simply has not been answered yet — nothing here is broken,
+  and nothing was deleted." It then lists what is hidden, what is deliberately LEFT and why, and the
+  one line to flip. `src/constants/featureFlags.ts`.
+- **`NutritionGuard` copies `AdminGuard`'s LOADING contract, not just its shape** — renders nothing
+  until the `app_admins` lookup settles, "or an admin gets bounced home on every cold load". That is
+  the subtle bug it avoided rather than shipped.
+- **⚠️ IT FOUND AN ENTRY POINT I DID NOT ANTICIPATE.** `src/pages/MyCoach.tsx:405` told trainees their
+  nutrition targets appear "במסך התזונה" — copy pointing at a screen they can no longer open. Made
+  flag-conditional so it restores verbatim. **That is the difference between hiding and breaking.**
+- **It enumerated the entry points it deliberately LEFT, each with a reason** — `routePrefetch`,
+  `appPathMeta` (needed for the admin's own view), the loading skeleton, `COACH_MORE_PATHS`
+  (active-state matching only), and a `showNutritionReminder()` that is **already dead**. A real
+  inventory, not a claim.
+- It **inverted** the existing `BottomNav` test rather than deleting it, and added the admin
+  direction. 5 new route-guard tests incl. a structural assert that the route really is wrapped.
+- **⚠️ One file outside its lane, disclosed:** a one-line import sort in T-043's brand-new
+  `GlowAreaChart.test.tsx`, because its own DoD demanded verify exit 0 while a concurrent worker's
+  file was red. T-043 rewrote that file afterwards, so the net effect is nil. **MY BRIEFING FLAW:** I
+  told T-043 that a transient error in someone else's file is not its finding, and did not tell the
+  other two. T-042 worked that out unaided (checked mtimes, concluded concurrent, waited) — better
+  judgement than my brief required.
+- **Consequences it disclosed, all real and worth carrying:**
+  - `BottomNav` now does one `app_admins` row read per app load (indexed, fail-closed, skipped for
+    guests) — new traffic on an always-mounted component.
+  - For an app admin the nav paints 4 tabs and adds תזונה when the lookup settles: a one-round-trip pop.
+  - **A non-admin COACH who typed `/nutrition` loses their own personal nutrition logging.**
+  - **Trainees can no longer edit nutrition goals** — the editor lives inside the hidden page. Stored
+    goals persist and coach-assigned targets still display in MyCoach.
+  - **`e2e/visual-qa.spec.ts:78,286` still navigates to `/nutrition`**, so those two shots will land on
+    the dashboard. NOT part of `test:run`, so no gate caught it. **Fix in the next screenshot round.**
+
+## [T-042] The toggle that ships — ACCEPTED 2026-08-28 17:52
+- status: **done** — 1 modified + 1 new + **3 deleted**. I verified the deletions myself and swept
+  `src/` for residual references: **zero**.
+- **Dark, the live control:** border vs OFF fill **1.31 → 13.28**; knob-OFF vs fill **1.31 → 13.28**;
+  border vs card **1.05 → 16.57**; ON-vs-OFF **by fill alone 3.76** so state no longer depends on knob
+  position. Light: every ratio moves UP, never down.
+- **It LIFTED the derived value instead of re-deriving it,** exactly as instructed: `#318d78` =
+  `--fs-accent` × 0.64, the value T-030 computed for the component that just died. **So that work
+  transferred as method even though its file is gone** — which was the point of the instruction.
+- It re-proved the empty-set argument itself: no single edge fill clears 3:1 against BOTH dark track
+  states (needs `L ≥ 0.1581` and `L ≤ 0.1545`), so the ON track had to move.
+- **The deletion accounting is exactly what I demanded:** all 11 removed tests named one by one, with
+  the note that **9 of 11 are re-pinned against the live component** and the 2 label tests are gone
+  because `SettingsToggle` has no inline label. Zero importers proven before deleting (grep incl.
+  tests, no barrel files), zero after, typecheck clean.
+- **Disclosed and correctly NOT touched:** the light ON knob is **2.11:1** on the mint track — under
+  the 3:1 non-text floor, **pre-existing and unchanged**, and fixing it visibly changes three Settings
+  sections. Light ON-vs-OFF fill 1.65:1, same trade. The knob also animates `inset-inline-start`, a
+  layout property, against the house 60fps rule — pre-existing.
+
+## [T-043] Chart geometry pinned — ACCEPTED 2026-08-28 17:52. **Best-reasoned report of the batch.**
+- status: **done** — exactly ONE new file, 8 tests, `GlowAreaChart.tsx` read-only as instructed.
+- **IT TOLD ME WHICH OF ITS OWN TESTS ARE WORTHLESS AS PROOF.** A table naming, per assertion, whether
+  it would fail under the OLD min-max behaviour: **4 of 8 would, 4 would not** and are regression
+  guards only. A suite that passes both before and after a fix proves nothing, and it said which half
+  is which instead of implying all 8 were load-bearing.
+- **The sharpest test is the one I would not have specified:** 0.2 / 1 / 2 kg on the same mean must
+  draw in an exact **1 : 5 : 10** ratio. It is "the only one that distinguishes a floor from a
+  flatten" — under the old behaviour all three drew 100%, i.e. 1:1:1. That pins the property that
+  makes the rule honest rather than just quieter.
+- **It read the band off the component's OWN gridlines** rather than hardcoding a height, "so the
+  denominator is drawn by the component too", and it asserts the path grammar's length so a change of
+  path format fails loudly instead of mis-parsing silently.
+- **It established the old behaviour by MEASUREMENT, not assumption, and ran no git command.** The
+  floor is inert whenever a series' real range already exceeds it — so the 80→95 case IS the pure
+  min-max path, measured at 100% with the minimum exactly on the band's bottom edge. From that
+  measured fact it derived what min-max must have done to the other series.
+- **It corrected the source report's own number:** the flat fixture is a constant `80`, not
+  80.0→80.2, because `progressMetrics.ts:370` rounds e1RM to whole kg — so the real measured value is
+  0.00%, not 2.5%. It did not blindly reproduce the figure it was handed.
+- **Real jsdom gap found:** `getTotalLength` does not exist there, so rendering with motion ON threw.
+  It stubbed it test-side rather than dropping the animated-path coverage, and warned that any future
+  test rendering this chart with motion needs the same stub. It also switched to mocking
+  `useReducedMotion` (the repo's existing pattern) to clear `act()` warnings instead of ignoring them.
+
+### Verified baseline — 2026-08-28 17:52, lead-measured on a static tree
+All three runs `[done]`; newest source mtime 2.5 minutes old before any gate ran. Suite **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **701** files (700 + 4 new − 3 deleted = 701) |
+| `npm run test:run` | **163 files / 1429 tests**, exit 0 both runs — NEW FLOOR |
+| arithmetic | files 161 +1 nutritionRouteGuard +1 SettingsToggle.test −1 ToggleSwitch.test +1 GlowAreaChart.test = 163. tests 1415 +5 +1 +11 −11 +8 = 1429. **The only drop is the 11 whose subject was deleted, and 11 replaced them.** |
+| debris | e2e **13** specs, `test-results/` absent; three stray gitignored `*.log` files swept |
+
+
+
+
 
 
 

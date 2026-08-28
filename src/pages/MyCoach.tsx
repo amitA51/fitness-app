@@ -12,6 +12,7 @@ import EmptyState from '../components/ui/EmptyState';
 import { showToast } from '../components/ui/GlobalToast';
 import { Input } from '../components/ui/Input';
 import { Textarea } from '../components/ui/Textarea';
+import { NUTRITION_TRAINEE_UI_ENABLED } from '../constants/featureFlags';
 import { useAuth } from '../contexts/AuthContext';
 import { syncTemplatesFromCloud } from '../hooks/useCloudTemplateReflection';
 import {
@@ -398,8 +399,12 @@ export default function MyCoach() {
             marginBottom: 12,
           }}
         >
-          תוכניות האימון מופיעות במסך האימון, ויעדי התזונה במסך התזונה. כאן מרוכזת היסטוריית כל מה
-          שהמאמן שלח אליך.
+          {/* While the nutrition screen is hidden (NUTRITION_TRAINEE_UI_ENABLED,
+              see constants/featureFlags.ts) this sentence must not send trainees
+              to a screen they cannot open. Flipping the flag restores it. */}
+          {NUTRITION_TRAINEE_UI_ENABLED
+            ? 'תוכניות האימון מופיעות במסך האימון, ויעדי התזונה במסך התזונה. כאן מרוכזת היסטוריית כל מה שהמאמן שלח אליך.'
+            : 'תוכניות האימון מופיעות במסך האימון. כאן מרוכזת היסטוריית כל מה שהמאמן שלח אליך.'}
         </p>
         {aLoading ? (
           <ListSkeleton rows={3} />

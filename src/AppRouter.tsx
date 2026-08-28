@@ -37,6 +37,7 @@ import BottomNav from './components/ui/BottomNav';
 import { ToastContainer } from './components/ui/GlobalToast';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import { WorkoutProvider } from './components/workout/core';
+import { NUTRITION_TRAINEE_UI_ENABLED } from './constants/featureFlags';
 import { AgeGateProvider } from './contexts/AgeGateContext';
 import { useAuth } from './contexts/AuthContext';
 import { CoachProvider, useCoach } from './contexts/CoachContext';
@@ -377,6 +378,28 @@ export function AdminGuard({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * NutritionGuard — the single seam that keeps the trainee nutrition screen out
+ * of sight while NUTRITION_TRAINEE_UI_ENABLED is off. Read the flag's docblock
+ * (constants/featureFlags.ts) for WHY: the owner has not decided whether the
+ * nutrition feature stays, so the screen is hidden rather than removed.
+ *
+ * Off (today): everyone is redirected home EXCEPT a member of app_admins, who
+ * reaches the screen normally — the owner has to be able to open it to decide
+ * anything about it. On: a pass-through for everyone, which is what makes the
+ * flag a one-line revert.
+ *
+ * Same loading contract as AdminGuard: render nothing until the app_admins
+ * lookup settles, or an admin gets bounced home on every cold load.
+ */
+export function NutritionGuard({ children }: { children: ReactNode }) {
+  const { isAdmin, loading } = useIsAppAdmin();
+  if (NUTRITION_TRAINEE_UI_ENABLED) return <>{children}</>;
+  if (loading) return <PageLoader />;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 // ============================================================================
 // AppRoutes — single source of truth for the route tree.
 // Accepts the current location so AnimatePresence can key on pathname changes.
@@ -413,12 +436,17 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
           </PageErrorBoundary>
         }
       />
+      {/* Trainee nutrition surface — hidden behind NUTRITION_TRAINEE_UI_ENABLED
+          while the owner decides whether the feature stays. Non-admins are
+          redirected home; app admins reach it normally. */}
       <Route
         path="/nutrition"
         element={
-          <PageErrorBoundary pageLabel="עמוד התזונה">
-            <Nutrition />
-          </PageErrorBoundary>
+          <NutritionGuard>
+            <PageErrorBoundary pageLabel="עמוד התזונה">
+              <Nutrition />
+            </PageErrorBoundary>
+          </NutritionGuard>
         }
       />
       <Route
