@@ -25,7 +25,6 @@ export const USER_SCOPED_STORAGE_REGISTRY = {
     'workout_prefs',
     'last_sync_time',
     'notification_settings',
-    'pending_coach_intent',
     'cached_role',
     'view_mode',
     'coach_reminders_fired',

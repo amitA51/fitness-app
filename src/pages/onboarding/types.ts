@@ -1,8 +1,8 @@
 export type EquipmentAccess = 'gym' | 'home_full' | 'home_minimal' | 'bodyweight' | '';
 export type UnitSystem = 'metric' | 'imperial';
-/** Role chosen at onboarding. 'coach' routes to the coach experience (command
- * center home, coach nav) and is persisted server-side via become_coach();
- * 'trainee' (or empty) is the default trainee path. */
+/** Role carried on a persisted onboarding draft. Onboarding can no longer set
+ * this — coach status is assigned server-side (profiles.role) — so a new wizard
+ * run always leaves it empty and every user onboards as a trainee. */
 export type OnboardingRole = 'coach' | 'trainee' | '';
 
 export interface OnboardingData {
@@ -67,22 +67,12 @@ export interface OnboardingStep {
   subtitle: string;
 }
 
+/** The wizard steps, in order. One flat list — every user onboards as a trainee
+ * (coach status is granted server-side, never chosen here). */
 export const STEPS: OnboardingStep[] = [
   { id: 'welcome', title: 'ברוך הבא', subtitle: 'הכר את עצמך' },
-  { id: 'role', title: 'מי אתה?', subtitle: 'מאמן או מתאמן' },
   { id: 'profile', title: 'פרופיל אישי', subtitle: 'ספר לנו על עצמך' },
   { id: 'goals', title: 'מטרות כושר', subtitle: 'מה המטרות שלך?' },
   { id: 'equipment', title: 'האימון שלכם', subtitle: 'ניסיון, ציוד ותדירות' },
   { id: 'complete', title: 'מוכן!', subtitle: 'בואו נתחיל' },
 ];
-
-/** Step ids that only make sense for a trainee's personal training profile. */
-const TRAINEE_ONLY_STEP_IDS = new Set(['goals', 'experience', 'equipment', 'preferences']);
-
-/**
- * The wizard steps for a given role. Coaches get a short flow (welcome → role
- * → profile → complete) — their primary surface is managing trainees, so the
- * personal goals/experience/preferences steps are skipped.
- */
-export const stepsForRole = (role: OnboardingRole | undefined): OnboardingStep[] =>
-  role === 'coach' ? STEPS.filter((s) => !TRAINEE_ONLY_STEP_IDS.has(s.id)) : STEPS;

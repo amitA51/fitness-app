@@ -249,7 +249,7 @@ const TAB_CLASS =
 function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isCoachView } = useCoach();
+  const { isCoach } = useCoach();
   const unread = useUnreadMessages();
   const [moreOpen, setMoreOpen] = useState(false);
   const reduced = useReducedMotion();
@@ -259,12 +259,12 @@ function BottomNav() {
   const firstRunRef = useRef(true);
   const prevUnreadRef = useRef(unread);
 
-  const mainTabs = isCoachView ? COACH_MAIN_TABS : TRAINEE_MAIN_TABS;
-  const morePaths = isCoachView ? COACH_MORE_PATHS : TRAINEE_MORE_PATHS;
+  const mainTabs = isCoach ? COACH_MAIN_TABS : TRAINEE_MAIN_TABS;
+  const morePaths = isCoach ? COACH_MORE_PATHS : TRAINEE_MORE_PATHS;
 
   // Trainee chat deep-link target (resolved from active coaches). Coaches reach
-  // chat via the dedicated הודעות tab, so this only fetches in the trainee view.
-  const traineeChatTarget = useTraineeChatTarget(!isCoachView);
+  // chat via the dedicated הודעות tab, so this only fetches for trainees.
+  const traineeChatTarget = useTraineeChatTarget(!isCoach);
 
   // One very-light tick on tab selection — routed through the canonical
   // selection effect so the Settings haptics toggle gates it; reduced-motion
@@ -401,7 +401,7 @@ function BottomNav() {
   // (the built-in structured program vs the user's own reusable templates).
   const moreGroups = useMemo<NavGroup[]>(
     () =>
-      isCoachView
+      isCoach
         ? [
             {
               kicker: 'האימון שלי',
@@ -489,7 +489,7 @@ function BottomNav() {
             },
             { kicker: 'חשבון', items: [{ path: '/settings', label: 'הגדרות', icon: Settings }] },
           ],
-    [isCoachView, traineeChatTarget]
+    [isCoach, traineeChatTarget]
   );
 
   const handleMoreNavigate = (path: string) => {
@@ -543,7 +543,7 @@ function BottomNav() {
 
           {mainTabs.map(({ path, label, icon }) => {
             const isActive = path === activeMainPath;
-            const tabBadge = isCoachView && path === '/coach/messages' ? unread : 0;
+            const tabBadge = isCoach && path === '/coach/messages' ? unread : 0;
             return (
               <li key={path} className="flex-1 h-full">
                 <Link
@@ -586,14 +586,14 @@ function BottomNav() {
               aria-haspopup="dialog"
               aria-expanded={moreOpen}
               aria-current={isMoreActive ? 'page' : undefined}
-              aria-label={!isCoachView && unread > 0 ? `עוד (${unread} הודעות שלא נקראו)` : 'עוד'}
+              aria-label={!isCoach && unread > 0 ? `עוד (${unread} הודעות שלא נקראו)` : 'עוד'}
               className={TAB_CLASS}
             >
               <TabVisual
-                icon={!isCoachView && unread > 0 ? MessageSquare : MoreHorizontal}
+                icon={!isCoach && unread > 0 ? MessageSquare : MoreHorizontal}
                 label="עוד"
                 isActive={isMoreActive}
-                badgeCount={isCoachView ? 0 : unread}
+                badgeCount={isCoach ? 0 : unread}
               />
             </button>
           </li>

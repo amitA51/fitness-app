@@ -9,9 +9,9 @@
 //   • ArrowRight always advanced the index. In an RTL layout ArrowRight moves
 //     visually toward the PREVIOUS segment, so keyboard navigation felt
 //     inverted; direction now drives the delta.
-//   • Selection was silent while the sibling ViewModeBar buzzed. A single
-//     'selection' haptic now fires on an actual change (never on re-selecting
-//     the current segment, and never on mere focus movement).
+//   • Selection was silent. A single 'selection' haptic now fires on an actual
+//     change (never on re-selecting the current segment, and never on mere
+//     focus movement).
 //   • The active pill was a background swap. It now slides between segments as
 //     one shared element with an iOS-like spring (400/30/1), which is what makes
 //     the control read as a physical switch rather than two buttons.

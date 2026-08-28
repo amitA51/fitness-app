@@ -1,22 +1,21 @@
 // ============================================================================
 // CoachContext — role SSOT tests
 // isCoach must derive from profiles.role (server), with coach_profiles as a
-// resilience fallback; pending guest coach intent promotes via enableCoachMode.
+// resilience fallback. There is NO client-side view mode and no self-serve
+// promotion: nothing local may flip a user's shell or grant coach status.
 // ============================================================================
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CoachProvider, useCoach } from '../CoachContext';
 
 const getMyCoachProfile = vi.fn();
 const getMySubscription = vi.fn();
-const enableCoachMode = vi.fn();
 const getMyProfile = vi.fn();
 
 vi.mock('../../services/coach', () => ({
   getMyCoachProfile: () => getMyCoachProfile(),
   getMySubscription: () => getMySubscription(),
-  enableCoachMode: (name?: string) => enableCoachMode(name),
 }));
 
 vi.mock('../../services/coach/profileService', () => ({
@@ -29,23 +28,19 @@ vi.mock('../AuthContext', () => ({
 }));
 
 function Probe() {
-  const { isCoach, role, loading, viewMode, isCoachView, canSwitchView, setViewMode } = useCoach();
+  const { isCoach, role, loading } = useCoach();
   if (loading) return <div>loading</div>;
   return (
     <div>
       <span data-testid="role">{role ?? 'null'}</span>
       <span data-testid="isCoach">{String(isCoach)}</span>
-      <span data-testid="viewMode">{viewMode}</span>
-      <span data-testid="isCoachView">{String(isCoachView)}</span>
-      <span data-testid="canSwitchView">{String(canSwitchView)}</span>
-      <button type="button" onClick={() => void setViewMode('coach')}>
-        toCoach
-      </button>
-      <button type="button" onClick={() => void setViewMode('trainee')}>
-        toTrainee
-      </button>
     </div>
   );
+}
+
+/** Surfaces the context's public surface so a re-introduced view switch fails here. */
+function ApiProbe() {
+  return <span data-testid="api">{Object.keys(useCoach()).sort().join(' ')}</span>;
 }
 
 beforeEach(() => {
@@ -105,27 +100,6 @@ describe('CoachContext role SSOT', () => {
     await waitFor(() => expect(screen.getByTestId('isCoach')).toHaveTextContent('true'));
   });
 
-  it('honors a pending guest coach intent by promoting once after sign-in', async () => {
-    localStorage.setItem('pending_coach_intent', 'true');
-    getMyProfile.mockResolvedValue({
-      id: 'u1',
-      displayName: 'x',
-      avatarUrl: null,
-      role: 'trainee',
-    });
-    getMyCoachProfile.mockResolvedValue(null);
-    enableCoachMode.mockResolvedValue({ id: 'u1', businessName: null, bio: null, settings: {} });
-
-    render(
-      <CoachProvider>
-        <Probe />
-      </CoachProvider>
-    );
-
-    await waitFor(() => expect(enableCoachMode).toHaveBeenCalledOnce());
-    expect(localStorage.getItem('pending_coach_intent')).toBeNull();
-  });
-
   it('caches the resolved role for first-paint hints', async () => {
     getMyProfile.mockResolvedValue({ id: 'u1', displayName: 'x', avatarUrl: null, role: 'coach' });
     getMyCoachProfile.mockResolvedValue({ id: 'u1', businessName: null, bio: null, settings: {} });
@@ -154,22 +128,25 @@ describe('CoachContext role SSOT', () => {
   });
 });
 
-describe('CoachContext active view mode', () => {
-  it('defaults the active view to the resolved role (coach → coach view)', async () => {
+describe('CoachContext — no client-side view mode', () => {
+  it('exposes no view-switch or self-promotion API (the shell follows the server role only)', async () => {
     getMyProfile.mockResolvedValue({ id: 'u1', displayName: 'x', avatarUrl: null, role: 'coach' });
     getMyCoachProfile.mockResolvedValue({ id: 'u1', businessName: null, bio: null, settings: {} });
 
     render(
       <CoachProvider>
-        <Probe />
+        <ApiProbe />
       </CoachProvider>
     );
 
-    await waitFor(() => expect(screen.getByTestId('viewMode')).toHaveTextContent('coach'));
-    expect(screen.getByTestId('isCoachView')).toHaveTextContent('true');
+    const api = await screen.findByTestId('api');
+    // Exact surface: a re-introduced view-switch or `enable` member fails here.
+    expect(api.textContent).toBe('coachProfile disable isCoach loading refresh role subscription');
   });
 
-  it('defaults a trainee to the trainee view but lets anyone switch (demo)', async () => {
+  it('cannot be promoted by a leftover local view preference (trainee stays trainee)', async () => {
+    // A stale key from the old mode switch must never grant the coach shell.
+    localStorage.setItem('view_mode', 'coach');
     getMyProfile.mockResolvedValue({
       id: 'u1',
       displayName: 'x',
@@ -184,38 +161,11 @@ describe('CoachContext active view mode', () => {
       </CoachProvider>
     );
 
-    await waitFor(() => expect(screen.getByTestId('viewMode')).toHaveTextContent('trainee'));
-    expect(screen.getByTestId('isCoachView')).toHaveTextContent('false');
-    expect(screen.getByTestId('canSwitchView')).toHaveTextContent('true');
+    await waitFor(() => expect(screen.getByTestId('role')).toHaveTextContent('trainee'));
+    expect(screen.getByTestId('isCoach')).toHaveTextContent('false');
   });
 
-  it('lazily enables coach mode and persists the choice when a trainee switches to coach view', async () => {
-    getMyProfile.mockResolvedValue({
-      id: 'u1',
-      displayName: 'x',
-      avatarUrl: null,
-      role: 'trainee',
-    });
-    getMyCoachProfile.mockResolvedValue(null);
-    enableCoachMode.mockResolvedValue({ id: 'u1', businessName: null, bio: null, settings: {} });
-
-    render(
-      <CoachProvider>
-        <Probe />
-      </CoachProvider>
-    );
-
-    await waitFor(() => expect(screen.getByTestId('viewMode')).toHaveTextContent('trainee'));
-
-    fireEvent.click(screen.getByRole('button', { name: 'toCoach' }));
-
-    await waitFor(() => expect(screen.getByTestId('isCoachView')).toHaveTextContent('true'));
-    expect(enableCoachMode).toHaveBeenCalled();
-    expect(localStorage.getItem('view_mode')).toBe('coach');
-  });
-
-  it('respects an explicit stored view choice over the resolved role', async () => {
-    // A coach who previously stepped into their personal trainee side.
+  it('cannot be demoted by a leftover local view preference (coach stays coach)', async () => {
     localStorage.setItem('view_mode', 'trainee');
     getMyProfile.mockResolvedValue({ id: 'u1', displayName: 'x', avatarUrl: null, role: 'coach' });
     getMyCoachProfile.mockResolvedValue({ id: 'u1', businessName: null, bio: null, settings: {} });
@@ -227,7 +177,20 @@ describe('CoachContext active view mode', () => {
     );
 
     await waitFor(() => expect(screen.getByTestId('role')).toHaveTextContent('coach'));
-    expect(screen.getByTestId('viewMode')).toHaveTextContent('trainee');
-    expect(screen.getByTestId('isCoachView')).toHaveTextContent('false');
+    expect(screen.getByTestId('isCoach')).toHaveTextContent('true');
+  });
+
+  it('never persists a view preference of its own', async () => {
+    getMyProfile.mockResolvedValue({ id: 'u1', displayName: 'x', avatarUrl: null, role: 'coach' });
+    getMyCoachProfile.mockResolvedValue({ id: 'u1', businessName: null, bio: null, settings: {} });
+
+    render(
+      <CoachProvider>
+        <Probe />
+      </CoachProvider>
+    );
+
+    await waitFor(() => expect(screen.getByTestId('isCoach')).toHaveTextContent('true'));
+    expect(localStorage.getItem('view_mode')).toBeNull();
   });
 });

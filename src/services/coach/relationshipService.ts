@@ -1,8 +1,10 @@
 // ============================================================================
 // COACH PLATFORM — Relationship service
 // ============================================================================
-// Coach-mode enablement, entitlements/seats, and the coach<->client links
-// (roster, consent, disconnect). All online (direct Supabase).
+// Coach-mode state (read + voluntary exit), entitlements/seats, and the
+// coach<->client links (roster, consent, disconnect). Coach status itself is
+// assigned server-side — there is no client path into it. All online (direct
+// Supabase).
 
 import type { CoachClient, CoachProfile, CoachSubscription } from '../../types/coach';
 import { logger } from '../../utils/logger';
@@ -39,30 +41,10 @@ export const getMyCoachProfile = async (): Promise<CoachProfile | null> => {
 };
 
 /**
- * Enable coach mode via the atomic `become_coach` RPC: creates the
- * coach_profiles row + default subscription AND flips profiles.role to
- * 'coach' (the server-side role SSOT) in one transaction. Idempotent.
- * Returns the (possibly pre-existing) coach profile.
- */
-export const enableCoachMode = async (businessName?: string): Promise<CoachProfile> => {
-  const supabase = requireClient();
-  const user = await getCurrentUser();
-  if (!user) throw new Error('unauthenticated');
-
-  const { error } = await supabase.rpc('become_coach', {
-    _business_name: businessName ?? null,
-  });
-  if (error) throw error;
-
-  const profile = await getMyCoachProfile();
-  if (!profile) throw new Error('coach_profile_missing_after_become_coach');
-  return profile;
-};
-
-/**
- * Leave coach mode via the atomic `leave_coach_mode` RPC — the reverse of
- * enableCoachMode. The server refuses while active/pending client links
- * exist (end those from the roster first). Idempotent.
+ * Leave coach mode via the atomic `leave_coach_mode` RPC. Coach status itself is
+ * granted server-side (there is no client path INTO coach mode); this is only
+ * the voluntary exit. The server refuses while active/pending client links exist
+ * (end those from the roster first). Idempotent.
  */
 export const leaveCoachMode = async (): Promise<void> => {
   const supabase = requireClient();

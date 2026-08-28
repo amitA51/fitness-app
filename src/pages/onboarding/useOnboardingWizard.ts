@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  DEFAULT_ONBOARDING,
-  type OnboardingData,
-  type OnboardingStep,
-  stepsForRole,
-} from './types';
+import { DEFAULT_ONBOARDING, type OnboardingData, type OnboardingStep, STEPS } from './types';
 
 export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) {
   const [currentStep, setCurrentStep] = useState(() => {
@@ -28,12 +23,12 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
     }
   });
 
-  // The step list is role-derived: coaches skip the trainee-only steps
-  // (goals/experience/preferences). All indexing below runs against this list.
-  const activeSteps: OnboardingStep[] = useMemo(() => stepsForRole(data.role), [data.role]);
+  // One flat step list for everybody — there is no role branch in onboarding.
+  // All indexing below runs against this list.
+  const activeSteps: OnboardingStep[] = useMemo(() => STEPS, []);
 
-  // Switching role at the role step shrinks/grows the list; clamp a persisted
-  // index so it can never point past the end of the new list.
+  // A draft persisted by an older (longer) step list can hold an index past the
+  // end of this one; clamp it so it can never point outside the list.
   const safeStep = Math.min(currentStep, activeSteps.length - 1);
   const stepId = activeSteps[safeStep]?.id ?? 'welcome';
 
@@ -68,11 +63,9 @@ export function useOnboardingWizard(onComplete: (data: OnboardingData) => void) 
 
   // Per-step reason the user cannot advance yet — null when the step is valid.
   // Surfaced near the disabled "הבא" button so the block is explained, not silent.
-  // Keyed by step id (not index) so the role-derived list stays correct.
+  // Keyed by step id (not index) so it survives any reordering of the list.
   const validationHint = useCallback((): string | null => {
     switch (stepId) {
-      case 'role':
-        return data.role === undefined || data.role === '' ? 'בחרו תפקיד כדי להמשיך' : null;
       case 'profile':
         if (data.name.trim().length === 0) return 'הזינו את שמכם כדי להמשיך';
         if (data.gender === '') return 'בחרו מגדר כדי להמשיך';

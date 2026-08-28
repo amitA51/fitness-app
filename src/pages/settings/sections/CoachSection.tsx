@@ -19,18 +19,14 @@ const DEBOUNCE_MS = 600;
 /**
  * Coach section — Fresh Steel / Obsidian design language.
  *
- * Trainee view: explanation + "הפוך למאמן" (confirmed role change — the whole
- * app experience switches to the coach shell: coach home, coach nav).
- * Coach view: autosaving businessName + bio fields, navigation to /coach.
+ * Coach-only: autosaving businessName + bio fields, navigation to /coach, and
+ * the voluntary exit back to a trainee account. Coach status is granted
+ * server-side, so a trainee has nothing to see here.
  */
 export function CoachSection() {
-  const { isCoach, coachProfile, loading, enable, disable } = useCoach();
+  const { isCoach, coachProfile, loading, disable } = useCoach();
   const navigate = useNavigate();
   const { saved, flash } = useSavedFlash();
-
-  // Become-a-coach flow state
-  const [enabling, setEnabling] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Leave-coach-mode flow state
   const [leaving, setLeaving] = useState(false);
@@ -81,23 +77,6 @@ export function CoachSection() {
     }, DEBOUNCE_MS);
   };
 
-  // ── Enable handler ─────────────────────────────────────────────────────────
-
-  const handleEnable = async () => {
-    setConfirmOpen(false);
-    setEnabling(true);
-    try {
-      await enable();
-      // Role flips to coach server-side; the app re-routes to the coach shell.
-      showToast('החשבון הפך לחשבון מאמן', 'success');
-      navigate('/coach');
-    } catch {
-      showToast('המעבר לחשבון מאמן נכשל', 'error');
-    } finally {
-      setEnabling(false);
-    }
-  };
-
   // ── Leave handler ───────────────────────────────────────────────────────────
 
   const handleLeave = async () => {
@@ -124,56 +103,9 @@ export function CoachSection() {
   // Avoid flicker while context initialises
   if (loading) return null;
 
-  // ── Trainee view: become a coach ────────────────────────────────────────────
-  if (!isCoach) {
-    return (
-      <div className="mb-7">
-        <SectionLabel>מאמן</SectionLabel>
-        <SettingsCard>
-          <div className="flex flex-col gap-4 ps-4 pe-4 py-4">
-            <div className="flex items-start gap-3">
-              <IconBox>
-                <UserCog size={15} />
-              </IconBox>
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '14px',
-                  lineHeight: '1.55',
-                  color: 'var(--fs-muted)',
-                  margin: 0,
-                  flex: 1,
-                }}
-              >
-                חשבון מאמן מאפשר לנהל מתאמנים: לראות את האימונים והתזונה שלהם, לשייך תוכניות ולשלוח
-                הודעות.
-              </p>
-            </div>
-            <Button
-              variant="primary"
-              shape="sharp"
-              isLoading={enabling}
-              onClick={() => setConfirmOpen(true)}
-              aria-label="הפוך למאמן"
-              fullWidth
-            >
-              הפוך למאמן
-            </Button>
-          </div>
-        </SettingsCard>
-        <ConfirmDialog
-          isOpen={confirmOpen}
-          variant="warning"
-          title="להפוך לחשבון מאמן?"
-          description="מסך הבית והניווט יתחלפו לממשק ניהול המתאמנים. האימונים האישיים שלך יישארו זמינים דרך ״האימונים שלי״. חשבון מאמן לא יכול להתחבר למאמן אחר."
-          confirmLabel="הפוך למאמן"
-          cancelLabel="ביטול"
-          onConfirm={() => void handleEnable()}
-          onCancel={() => setConfirmOpen(false)}
-        />
-      </div>
-    );
-  }
+  // Coach status is server-assigned — a trainee has no coach settings to show
+  // and no way to grant themselves any.
+  if (!isCoach) return null;
 
   // ── Coach view ──────────────────────────────────────────────────────────────
 

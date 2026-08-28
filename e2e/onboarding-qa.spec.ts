@@ -1,8 +1,8 @@
 /**
  * VISUAL QA — ONBOARDING WIZARD (post-D3/D4 trim)
- * Captures every step of the trimmed 6-step trainee wizard (welcome → role →
- * profile → goals → האימון שלכם → complete) plus the D4 auto-opened
- * start-workout sheet on the first-run dashboard. Output: ./visual-qa/ob-*.png
+ * Captures every step of the trimmed 5-step trainee wizard (welcome → profile →
+ * goals → האימון שלכם → complete) plus the D4 auto-opened start-workout sheet on
+ * the first-run dashboard. Output: ./visual-qa/ob-*.png
  * Run: npx playwright test e2e/onboarding-qa.spec.ts --project="Mobile Chrome (Pixel 5)"
  */
 import { test, expect } from '@playwright/test';
@@ -55,36 +55,25 @@ test('capture the trimmed onboarding flow + D4 auto-sheet', async ({ page }) => 
     }
   };
 
-  // role
-  await next();
-  await page.waitForTimeout(500);
-  await shoot(page, 'ob-02-role');
-  // pick trainee so the personal steps appear
-  const trainee = page.getByText('מתאמן').first();
-  if (await trainee.isVisible().catch(() => false)) {
-    await trainee.click().catch(() => {});
-    await page.waitForTimeout(400);
-  }
-
   // profile — fill the minimum then continue
   await next();
   await page.waitForTimeout(500);
-  await shoot(page, 'ob-03-profile');
+  await shoot(page, 'ob-02-profile');
 
   // goals — pick the first goal card
   await page.locator('button').nth(4).click({ force: true }).catch(() => {});
   await next();
-  await shoot(page, 'ob-04-goals');
+  await shoot(page, 'ob-03-goals');
 
   // האימון שלכם (merged experience+equipment+days)
   await next();
   await page.waitForTimeout(500);
-  await shoot(page, 'ob-05-training-context');
+  await shoot(page, 'ob-04-training-context');
 
   // complete
   await next();
   await page.waitForTimeout(600);
-  await shoot(page, 'ob-06-complete');
+  await shoot(page, 'ob-05-complete');
 
   void expect;
 });

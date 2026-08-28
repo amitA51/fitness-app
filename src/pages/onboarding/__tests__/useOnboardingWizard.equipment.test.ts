@@ -1,20 +1,17 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_ONBOARDING, stepsForRole } from '../types';
+import { DEFAULT_ONBOARDING, STEPS } from '../types';
 import { useOnboardingWizard } from '../useOnboardingWizard';
 
 // Covers the equipment-step validation gate added when the orphaned
 // OnboardingData.equipment field was wired into a real selection step.
 
-// The equipment step index in the full trainee flow.
-const EQUIPMENT_INDEX = stepsForRole('trainee').findIndex((s) => s.id === 'equipment');
+// The equipment step index in the (single, flat) wizard flow.
+const EQUIPMENT_INDEX = STEPS.findIndex((s) => s.id === 'equipment');
 
 function seedAtEquipmentStep(equipment: '' | 'gym'): void {
   sessionStorage.setItem('onboarding_step', String(EQUIPMENT_INDEX));
-  sessionStorage.setItem(
-    'onboarding_draft',
-    JSON.stringify({ ...DEFAULT_ONBOARDING, role: 'trainee', equipment })
-  );
+  sessionStorage.setItem('onboarding_draft', JSON.stringify({ ...DEFAULT_ONBOARDING, equipment }));
 }
 
 describe('useOnboardingWizard — equipment gate', () => {

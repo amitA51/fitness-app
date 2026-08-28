@@ -87,7 +87,7 @@ function AuthenticatedJoinPage({
   status: 'authenticated' | 'guest';
 }) {
   const navigate = useNavigate();
-  const { isCoach, loading: coachLoading, setViewMode } = useCoach();
+  const { isCoach, loading: coachLoading } = useCoach();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const didRun = useRef(false);
@@ -158,13 +158,10 @@ function AuthenticatedJoinPage({
         </p>
         <Button
           variant="primary"
-          onClick={async () => {
+          onClick={() => {
             // A coach can never consume a trainee invite: drop the continuation
             // so the router stops sending them back here.
             clearInviteContinuation();
-            // Flip into coach view first so CoachGuard doesn't bounce a coach who
-            // is currently in trainee view back to '/'.
-            await setViewMode('coach');
             navigate('/coach', { replace: true });
           }}
         >

@@ -36,7 +36,6 @@ import { WelcomeGuideSheet } from './components/guidance/WelcomeGuideSheet';
 import BottomNav from './components/ui/BottomNav';
 import { ToastContainer } from './components/ui/GlobalToast';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
-import { ViewModeBar } from './components/ui/ViewModeBar';
 import { WorkoutProvider } from './components/workout/core';
 import { AgeGateProvider } from './contexts/AgeGateContext';
 import { useAuth } from './contexts/AuthContext';
@@ -47,6 +46,7 @@ import { GuidanceProvider } from './contexts/GuidanceContext';
 import { PageThemeProvider } from './contexts/PageThemeContext';
 import { PageErrorBoundary } from './errors/PageErrorBoundary';
 import { useCloudDataReflection } from './hooks/useCloudDataReflection';
+import { useIsAppAdmin } from './hooks/useIsAppAdmin';
 import { useReducedMotion } from './hooks/useReducedMotion';
 import type { OnboardingData } from './pages/OnboardingFlow';
 import { trackFunnel } from './services/analytics/funnel';
@@ -54,7 +54,6 @@ import {
   INVITE_CONTINUATION_CHANGED_EVENT,
   getPendingInviteRedirect,
 } from './services/authContinuation';
-import { enableCoachMode } from './services/coach';
 import { trackPageView } from './services/eventTracker';
 
 import type { PersonalItem } from './types';
@@ -98,6 +97,9 @@ const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'));
 const CommunityFeed = lazy(() => import('./pages/community/CommunityFeed'));
 const PublicProfilePage = lazy(() => import('./pages/profile/PublicProfilePage'));
 const PaywallScreen = lazy(() => import('./pages/billing/PaywallScreen'));
+
+// Hidden operator screen — reached by typing /admin, never linked from the UI.
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
 
 const WorkoutContent = lazy(async () => {
   const mod = await import('./components/workout/ActiveWorkoutNew');
@@ -166,7 +168,7 @@ export function routeSlideOffset(isBack: boolean): number {
 // ----------------------------------------------------------------------------
 
 export function AppRouter() {
-  const { status, isGuest, clearGuest, user } = useAuth();
+  const { status, user } = useAuth();
   const [onboardingDone, setOnboardingDone] = useState<boolean>(
     () => localStorage.getItem('onboarding_completed') === 'true'
   );
@@ -243,46 +245,14 @@ export function AppRouter() {
     }
   }, [status, onboardingDone]);
 
-  const handleOnboardingComplete = useCallback(
-    (data: OnboardingData) => {
-      saveOnboardingData(data);
-      // Activation step: the denominator for every later funnel rate.
-      trackFunnel('onboarding_completed', { role: data.role ?? 'trainee' });
-
-      if (data.role === 'coach') {
-        // Coach mode creates a coach_profiles row, which needs an authenticated
-        // user id. Record the intent so it's honored even across the
-        // guest -> sign-up -> sign-in gap; CoachContext reconciles it on mount.
-        try {
-          localStorage.setItem('pending_coach_intent', 'true');
-        } catch (err) {
-          logger.app.warn('Failed to persist coach intent', err);
-        }
-
-        if (status === 'authenticated') {
-          // Already authenticated — enable immediately. CoachContext also
-          // reconciles from the flag on mount, so a failure here is recoverable.
-          enableCoachMode()
-            .then(() => {
-              try {
-                localStorage.removeItem('pending_coach_intent');
-              } catch {
-                /* best-effort */
-              }
-            })
-            .catch((err) => logger.app.warn('enableCoachMode on onboarding failed', err));
-        } else if (isGuest) {
-          // Guests have no user id — coach mode can't be created yet. Send them
-          // to the auth screen (onboarding itself is already saved). The stored
-          // intent is honored by CoachContext after they sign in.
-          clearGuest();
-        }
-      }
-
-      setOnboardingDone(true);
-    },
-    [status, isGuest, clearGuest]
-  );
+  const handleOnboardingComplete = useCallback((data: OnboardingData) => {
+    saveOnboardingData(data);
+    // Activation step: the denominator for every later funnel rate. The role a
+    // user picks here is reported only — coach status is granted by the app
+    // owner on the server (profiles.role), never by the client.
+    trackFunnel('onboarding_completed', { role: data.role ?? 'trainee' });
+    setOnboardingDone(true);
+  }, []);
 
   const handleOnboardingSkip = useCallback((data: OnboardingData) => {
     // The skip dialog promises "you can complete this in settings later", so we
@@ -358,39 +328,53 @@ export function AppRouter() {
 }
 
 // ============================================================================
-// View guards (UX-only — Supabase RLS is the real authorization boundary).
-// These key off the ACTIVE VIEW (`isCoachView`), not the server role, so the
-// top mode bar can flip the whole shell: CoachGuard keeps the trainee view out
-// of /coach/*; TraineeGuard keeps the coach view out of trainee-only surfaces
-// (/my-coach*, /join). RoleHome makes "/" land each view on its own home: coach
-// view → /coach command center, trainee view → personal Dashboard. A coach in
-// trainee view sees their own personal training; /me ("האימונים שלי") also
-// reaches it directly and never redirects.
+// Route guards (UX-only — Supabase RLS is the real authorization boundary).
+// These key off the SERVER role (`isCoach`, from profiles.role): CoachGuard
+// keeps trainees out of /coach/*; TraineeGuard keeps coaches out of
+// trainee-only surfaces (/my-coach*, /join). RoleHome makes "/" land each
+// account on its own home: coach → /coach command center, trainee → personal
+// Dashboard. A coach still has personal training of their own: /me
+// ("האימונים שלי") reaches it directly and never redirects.
 // ============================================================================
 
 function CoachGuard({ children }: { children: ReactNode }) {
-  const { isCoachView, loading } = useCoach();
+  const { isCoach, loading } = useCoach();
   if (loading) return <PageLoader />;
-  if (!isCoachView) return <Navigate to="/" replace />;
+  if (!isCoach) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
 function TraineeGuard({ children }: { children: ReactNode }) {
-  const { isCoachView, loading } = useCoach();
+  const { isCoach, loading } = useCoach();
   if (loading) return <PageLoader />;
-  if (isCoachView) return <Navigate to="/coach" replace />;
+  if (isCoach) return <Navigate to="/coach" replace />;
   return <>{children}</>;
 }
 
 function RoleHome() {
-  const { isCoachView, loading } = useCoach();
+  const { isCoach, loading } = useCoach();
   if (loading) return <PageLoader />;
-  if (isCoachView) return <Navigate to="/coach" replace />;
+  if (isCoach) return <Navigate to="/coach" replace />;
   return (
     <PageErrorBoundary pageLabel="מסך הבית">
       <Dashboard />
     </PageErrorBoundary>
   );
+}
+
+/**
+ * AdminGuard — same shape as CoachGuard, keyed off app_admins membership
+ * instead of profiles.role. Exported so the redirect can be unit-tested: with
+ * coach promotion now living behind /admin, this guard is the only client-side
+ * gate on the screen (the RPCs refuse a non-admin server-side regardless).
+ * Renders nothing but the loader while the check is in flight — redirecting
+ * early would bounce a real admin home on every cold load.
+ */
+export function AdminGuard({ children }: { children: ReactNode }) {
+  const { isAdmin, loading } = useIsAppAdmin();
+  if (loading) return <PageLoader />;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return <>{children}</>;
 }
 
 // ============================================================================
@@ -666,6 +650,18 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
           </PageErrorBoundary>
         }
       />
+      {/* Hidden operator screen. No nav entry anywhere — reached by URL only,
+          and only by a member of app_admins. */}
+      <Route
+        path="/admin"
+        element={
+          <AdminGuard>
+            <PageErrorBoundary pageLabel="ניהול משתמשים">
+              <AdminUsers />
+            </PageErrorBoundary>
+          </AdminGuard>
+        }
+      />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -867,10 +863,6 @@ function AppShell() {
               <div className="sr-only" aria-live="polite" aria-atomic="true">
                 {liveAnnouncement}
               </div>
-              {/* App-level mode switch (מתאמן ⟷ מאמן). Self-hides when the user
-                  can't switch and during an active workout. Sits above <main>
-                  as a flex sibling, so it stays pinned while content scrolls. */}
-              {!isWorkoutActive && <ViewModeBar />}
               {/* Scroll/focus container — IS the <main> landmark. Pages that
                 previously rendered their own <main> now use <div> to avoid
                 nested-main invalid HTML (Dashboard, coach/_shared). */}

@@ -1,16 +1,6 @@
 import { m } from 'framer-motion';
-import {
-  Calendar,
-  Check,
-  ChevronLeft,
-  ClipboardList,
-  Clock,
-  Dumbbell,
-  Target,
-  UserPlus,
-  Users,
-} from 'lucide-react';
-import { type ReactNode, useEffect } from 'react';
+import { Calendar, Check, ChevronLeft, Clock, Dumbbell, Target } from 'lucide-react';
+import { useEffect } from 'react';
 import { useHaptics } from '../../../hooks/useHaptics';
 import type { OnboardingData } from '../types';
 
@@ -18,8 +8,8 @@ interface CompleteStepProps {
   data: OnboardingData;
   /**
    * Finish onboarding. `toFirstAction=true` deep-links into the user's highest-
-   * intent next step (trainee → workout flow, coach → invite flow); the quiet
-   * secondary path finishes onto the default home instead.
+   * intent next step (the workout flow); the quiet secondary path finishes onto
+   * the default home instead.
    */
   onFinish: (toFirstAction: boolean) => void;
 }
@@ -54,8 +44,6 @@ const iconBoxStyle = {
 } as const;
 
 export function CompleteStep({ data, onFinish }: CompleteStepProps) {
-  const isCoach = data.role === 'coach';
-
   const { hapticSuccess } = useHaptics();
   useEffect(() => {
     const t = setTimeout(hapticSuccess, 200);
@@ -107,7 +95,7 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
           padding: '6px 14px',
         }}
       >
-        {isCoach ? <Users size={15} aria-hidden="true" /> : <Target size={15} aria-hidden="true" />}
+        <Target size={15} aria-hidden="true" />
         <span
           style={{
             fontFamily: 'var(--font-body)',
@@ -116,7 +104,7 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
             letterSpacing: '-0.01em',
           }}
         >
-          {isCoach ? 'מאמן' : 'מתאמן'}
+          מתאמן
         </span>
       </m.div>
 
@@ -133,7 +121,7 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
         }}
       >
         {data.name ? `${data.name}, ` : ''}
-        {isCoach ? 'מרכז המאמן מוכן!' : 'מוכנים לאימון!'}
+        מוכנים לאימון!
       </m.h1>
 
       <m.p
@@ -149,9 +137,7 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
           lineHeight: 1.5,
         }}
       >
-        {isCoach
-          ? 'נהלו מתאמנים, שלחו תוכניות ויעדים ועקבו אחרי ההתקדמות שלהם — הכל ממקום אחד.'
-          : 'הפרופיל הוגדר. בשלב הבא תבחרו תבנית אימון ותתחילו — זה לוקח דקה.'}
+        הפרופיל הוגדר. בשלב הבא תבחרו תבנית אימון ותתחילו — זה לוקח דקה.
       </m.p>
 
       <m.div
@@ -160,27 +146,7 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
         transition={{ delay: 0.6 }}
         className="w-full space-y-3"
       >
-        {isCoach && (
-          <>
-            <CoachNextCard
-              icon={<UserPlus size={22} />}
-              kicker="צעד ראשון"
-              label="הזמינו מתאמנים עם קוד הזמנה"
-              onClick={() => onFinish(true)}
-            />
-            <CoachNextCard
-              icon={<ClipboardList size={22} />}
-              kicker="צעד שני"
-              label="בנו תוכנית אימון בספרייה"
-            />
-            <CoachNextCard
-              icon={<Users size={22} />}
-              kicker="צעד שלישי"
-              label="עקבו אחרי הביצועים בזמן אמת"
-            />
-          </>
-        )}
-        {!isCoach && data.primaryGoal && (
+        {data.primaryGoal && (
           <div className="p-4 flex items-center gap-4" style={cardStyle}>
             <div
               className="w-12 h-12 flex items-center justify-center shrink-0"
@@ -195,39 +161,29 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
           </div>
         )}
 
-        {!isCoach && (
-          <div className="p-4 flex items-center gap-4" style={cardStyle}>
-            <div
-              className="w-12 h-12 flex items-center justify-center shrink-0"
-              style={iconBoxStyle}
-            >
-              <Calendar size={22} />
-            </div>
-            <div className="text-right flex-1">
-              <p style={labelStyle}>תדירות אימונים</p>
-              <p style={{ ...valueStyle, fontVariantNumeric: 'tabular-nums' }}>
-                {data.preferredWorkoutDays} ימים בשבוע
-              </p>
-            </div>
+        <div className="p-4 flex items-center gap-4" style={cardStyle}>
+          <div className="w-12 h-12 flex items-center justify-center shrink-0" style={iconBoxStyle}>
+            <Calendar size={22} />
           </div>
-        )}
+          <div className="text-right flex-1">
+            <p style={labelStyle}>תדירות אימונים</p>
+            <p style={{ ...valueStyle, fontVariantNumeric: 'tabular-nums' }}>
+              {data.preferredWorkoutDays} ימים בשבוע
+            </p>
+          </div>
+        </div>
 
-        {!isCoach && (
-          <div className="p-4 flex items-center gap-4" style={cardStyle}>
-            <div
-              className="w-12 h-12 flex items-center justify-center shrink-0"
-              style={iconBoxStyle}
-            >
-              <Clock size={22} />
-            </div>
-            <div className="text-right flex-1">
-              <p style={labelStyle}>משך כל אימון</p>
-              <p style={{ ...valueStyle, fontVariantNumeric: 'tabular-nums' }}>
-                {data.workoutDuration} דקות
-              </p>
-            </div>
+        <div className="p-4 flex items-center gap-4" style={cardStyle}>
+          <div className="w-12 h-12 flex items-center justify-center shrink-0" style={iconBoxStyle}>
+            <Clock size={22} />
           </div>
-        )}
+          <div className="text-right flex-1">
+            <p style={labelStyle}>משך כל אימון</p>
+            <p style={{ ...valueStyle, fontVariantNumeric: 'tabular-nums' }}>
+              {data.workoutDuration} דקות
+            </p>
+          </div>
+        </div>
       </m.div>
 
       <m.div
@@ -242,17 +198,8 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
           className="start-workout-btn focus-ring"
           style={{ minHeight: 56 }}
         >
-          {isCoach ? (
-            <>
-              <UserPlus size={20} aria-hidden="true" />
-              הזמינו מתאמן ראשון
-            </>
-          ) : (
-            <>
-              <Dumbbell size={20} aria-hidden="true" />
-              בואו נתחיל — אימון ראשון
-            </>
-          )}
+          <Dumbbell size={20} aria-hidden="true" />
+          בואו נתחיל — אימון ראשון
           <ChevronLeft size={22} aria-hidden="true" />
         </button>
 
@@ -265,56 +212,5 @@ export function CompleteStep({ data, onFinish }: CompleteStepProps) {
         </button>
       </m.div>
     </m.div>
-  );
-}
-
-function CoachNextCard({
-  icon,
-  kicker,
-  label,
-  onClick,
-}: {
-  icon: ReactNode;
-  kicker: string;
-  label: string;
-  onClick?: () => void;
-}) {
-  const isInteractive = typeof onClick === 'function';
-  const inner = (
-    <>
-      <div className="w-12 h-12 flex items-center justify-center shrink-0" style={iconBoxStyle}>
-        {icon}
-      </div>
-      <div className="text-right flex-1">
-        <p style={labelStyle}>{kicker}</p>
-        <p style={valueStyle}>{label}</p>
-      </div>
-      {isInteractive && (
-        <ChevronLeft
-          size={20}
-          aria-hidden="true"
-          style={{ color: 'var(--fs-accent)', flexShrink: 0 }}
-        />
-      )}
-    </>
-  );
-
-  if (isInteractive) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className="w-full p-4 flex items-center gap-4 text-right active:scale-[0.98] transition-transform focus-ring"
-        style={{ ...cardStyle, cursor: 'pointer' }}
-      >
-        {inner}
-      </button>
-    );
-  }
-
-  return (
-    <div className="p-4 flex items-center gap-4" style={cardStyle}>
-      {inner}
-    </div>
   );
 }

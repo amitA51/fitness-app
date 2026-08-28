@@ -505,8 +505,8 @@ function PrintStyles() {
       @page { size: A4; margin: 14mm; }
       @media print {
         .report-no-print { display: none !important; }
-        /* Show ONLY the report: hides BottomNav / ViewModeBar / toasts without
-           coupling to their class names. */
+        /* Show ONLY the report: hides BottomNav / toasts without coupling to
+           their class names. */
         body * { visibility: hidden; }
         .client-report, .client-report * { visibility: visible; }
         .client-report {

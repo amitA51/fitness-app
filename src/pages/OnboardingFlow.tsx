@@ -25,7 +25,6 @@ import { ProgressDots, StepHeader } from './onboarding/components/ProgressDots';
 import { CompleteStep } from './onboarding/steps/CompleteStep';
 import { GoalsStep } from './onboarding/steps/GoalsStep';
 import { ProfileStep } from './onboarding/steps/ProfileStep';
-import { RoleStep } from './onboarding/steps/RoleStep';
 import { WelcomeStep } from './onboarding/steps/WelcomeStep';
 import type { EquipmentAccess, OnboardingData, OnboardingProps } from './onboarding/types';
 import { useOnboardingWizard } from './onboarding/useOnboardingWizard';
@@ -63,7 +62,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
 
   // Finish from the completion screen. `toFirstAction` pre-seeds the deep-link
   // route so the app mounts straight into the user's highest-intent next step
-  // (workout / invite flow); the quiet "go home" path skips that and lands on
+  // (the workout flow); the quiet "go home" path skips that and lands on
   // the default home. Both then run the wizard finish (onComplete → onboardingDone).
   const handleFinish = useCallback(
     (toFirstAction: boolean) => {
@@ -73,14 +72,11 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
     [data, goNext]
   );
 
-  // Steps render by id — the list itself is role-derived (coaches skip the
-  // trainee-only goals/experience/preferences steps).
+  // Steps render by id — one flat list, identical for every user.
   const renderStep = () => {
     switch (stepId) {
       case 'welcome':
         return <WelcomeStep onNext={goNext} />;
-      case 'role':
-        return <RoleStep data={data} onChange={updateData} direction={direction} />;
       case 'profile':
         return <ProfileStep data={data} onChange={updateData} direction={direction} />;
       case 'goals':
@@ -226,8 +222,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) 
 
 // ============================================================================
 // EquipmentStep — captures OnboardingData.equipment (consumed downstream by the
-// intelligence profile in services/intelligence/profile.ts). Mirrors RoleStep's
-// 4-card selection pattern. Trainee-only (coaches skip personal steps).
+// intelligence profile in services/intelligence/profile.ts). 4-card selection.
 // ============================================================================
 
 interface EquipmentOption {
