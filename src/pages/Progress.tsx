@@ -100,15 +100,22 @@ export default function ProgressPage() {
   const [showAddWeight, setShowAddWeight] = useState(false);
   const [showAddMeasurement, setShowAddMeasurement] = useState(false);
   const [showAddRecovery, setShowAddRecovery] = useState(false);
-  const [userHeight] = useState(() => {
+  // Height is OPTIONAL in onboarding (useOnboardingWizard.ts:75-77 — the wizard
+  // stores '' when skipped), so it is genuinely unknown for many users. There is
+  // NO default: BMI and its category are a health claim, and a claim derived from
+  // an assumed height is worse than no claim — a wrong height flips the category
+  // label, not just a digit. null here means "do not show BMI at all".
+  // The accepted band matches the app's own profile validation (100-250 cm).
+  const [userHeight] = useState<number | null>(() => {
     try {
       const raw = localStorage.getItem('user_profile');
-      if (!raw) return 175;
-      const parsed = safeJsonParse<{ height?: number }>(raw);
-      if (!parsed) return 175;
-      return typeof parsed.height === 'number' && parsed.height > 0 ? parsed.height : 175;
+      if (!raw) return null;
+      const parsed = safeJsonParse<{ height?: number | string }>(raw);
+      const height = typeof parsed?.height === 'string' ? Number(parsed.height) : parsed?.height;
+      if (typeof height !== 'number' || !Number.isFinite(height)) return null;
+      return height >= 100 && height <= 250 ? height : null;
     } catch {
-      return 175;
+      return null;
     }
   });
 
@@ -116,7 +123,7 @@ export default function ProgressPage() {
   const completedSessions = useMemo(() => onlyCompleted(sessions), [sessions]);
 
   const bmi = useMemo(
-    () => (latestWeight ? calculateBMI(latestWeight.weight, userHeight) : null),
+    () => (latestWeight && userHeight ? calculateBMI(latestWeight.weight, userHeight) : null),
     [latestWeight, userHeight]
   );
   const bmiCategory = useMemo(() => (bmi ? getBMICategory(bmi) : null), [bmi]);

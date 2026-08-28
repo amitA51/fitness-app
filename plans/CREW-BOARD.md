@@ -1067,14 +1067,112 @@ help, delete") the honest options are **delete the recovery log** or **connect t
 pinned bar regardless — a bar reading `75/25` is a defect under either outcome, and the fix is two
 lines.
 
-## [T-036] Delete the false numbers on Progress
+## [T-036] The false numbers — ACCEPTED on evidence 2026-08-28 16:49
+- status: **accepted; my authoritative verify + test:run owed once T-037 lands** (still writing)
+- 6 files changed, all inside its ownership. **Verified by `git status` before recording anything.**
+- **ITEM 1 — the pinned bars, and it found WHY the bug was ever written.** `max` was the
+  component's **WEIGHT in the overall score** (0.30 / 0.25 / 0.25 / 0.20 → "25"), **not its range**,
+  while `calculateRecoveryScore` returns a true 0-100 per component. Before: `sleepScore 36` drew a
+  100%-full bar labelled `36/25`. After: `36/100` at 36% fill. **It also hardened the component
+  rather than only the call site** — a clamp plus a non-finite guard, so "a full bar always means
+  the value reached max". That fixes the class, not the instance.
+- **ITEM 2 — BMI hidden when height is unknown, not hedged.** Its argument is the right one:
+  **a wrong height flips the CATEGORY LABEL, not just a digit** — it is a health claim, not a
+  number. It used **the app's own profile validation band (100-250 cm)** rather than inventing a
+  rule, and handles string / non-finite stored values. No prompt, no new flow — scope held.
+- **ITEM 3 — PR dedupe: one row per exercise per calendar day, keeping the highest e1RM.** It
+  **wrote the failing tests FIRST and proved they fail** (`2 failed | 39 passed` at `:252` and
+  `:266` before the fix). Three new tests, and one of them guards the OPPOSITE direction — "still
+  shows the same exercise on different days" — so the dedupe cannot over-collapse. Deduping per DAY
+  rather than per timestamp also folds two near-identical sets of the same lift, which it reasoned
+  about rather than stumbled into.
+- **ITEM 4 — the chart rule, and it rejected the obvious alternative with a reason.** Rule: **the
+  drawn y-span never shrinks below 10% of the series' own mean, and a near-flat series is centred
+  in that span.** It considered a 0-based axis and rejected it: "honest for volume but useless for
+  bodyweight — every point crushed into the top 16% of an 80 → 0 kg axis". Scaling the floor to the
+  series mean makes the slope proportional **in the series' own unit**, so one rule serves kg,
+  volume and e1RM with **no axis and no gridlines added**.
+  Measured: 80.0 → 80.2 kg was a full-height climb, now **~2.5% of the plot, reads flat**.
+  80 → 95 kg unchanged, still fills the card. Volume 5,000 → 5,050 flat; 5,000 → 6,000 unchanged.
+  **It also fixed the knock-on:** the optional y-axis labels now report the DRAWN domain instead of
+  the raw extremes, so they cannot contradict the line.
+- `TrendChartCard.tsx` was in scope and **needed no edit** — "the dishonesty was in the chart
+  primitive, not the wrapper." Correct, and better than touching both.
+- its own gates: **verify exit 0 after EACH of the four items**; test:run **159 files / 1399 tests**
+  — the 1396 floor plus exactly its 3 new tests. Nothing deleted, skipped or weakened.
+
+### ⚠️ Two loose ends it disclosed, and the first one is MY scoping error
+1. **An empty `BMI —` pill now renders.** `tabs/WeightSection.tsx:88` prints `BMI {bmi ?? '—'}`, so
+   with height unknown the invented number and the category are gone but **a bare `BMI —` chip
+   remains.** That file was in NEITHER worker's list — my omission. One-line fix, batch 13.
+2. **`GlowAreaChart` is SHARED and four more surfaces changed visually.** Beyond the two Progress
+   trend charts it backs `ExerciseDetail`'s strength curve, `ForecastChart`, and the coach
+   `MetricsTab` / `TrainingTab`. All now draw flatter lines for small deltas — intended, but
+   **unscreenshotted, and it noted no test covered this component before or after: "the change is
+   geometry only, so a wrong choice shows up visually, not in a test."**
+   → **The batch-13 screenshot round must cover the coach surfaces too, not just Progress.**
+### Two judgement calls it flagged, correctly not acted on
+- The 10% floor is tunable by one constant. A genuine 3-8% move now reads shallower than before —
+  that is the point, but if Amit reads a 5% gain as "too flat", that is the dial.
+- Deduping per day means two genuinely different PRs on the same lift on the same day show only the
+  stronger one in `שיאים אחרונים`. The full record stays in PR history; `buildPRBoard` and
+  `isRecentPR` untouched.
+- BMI also disappears for an existing user whose stored height is outside 100-250 cm (they used to
+  get the silent 175 fallback). Intended, but it will read as a removed feature to them.
+
 - status: dispatched (batch 12)
 - owner: fitness-dev
 - goal: five numbers on this screen state things the data cannot support. Remove or correct each.
 - done when: verify green; test:run >= 1396; each of the five fixed or deleted with its reason
 - notes: ORDERED. The pinned bar and the invented BMI are the two a user would notice first.
 
-## [T-037] Progress information architecture — basic first, depth on request
+## [T-037] Progress information architecture — ACCEPTED 2026-08-28 16:55
+- status: **done** — 6 files, all inside its ownership. `LevelCard.tsx` and `ExerciseProgressRow.tsx`
+  were in scope and needed no edit. Verified by `git status` before recording.
+- **ONE disclosure idiom, built as a real component** — `AdvancedSection` in `SectionCard.tsx`:
+  same component, same `מתקדם` label, same geometry (full width, **44px**, hairline border, accent
+  label, rotating chevron) in every tab. Amit asked for coherence and this is what coherence looks
+  like in code: not two expanders that resemble each other, one expander used twice.
+  - **Children are UNMOUNTED while collapsed**, so a closed section costs no render — a correctness
+    and cost decision, not just a visual one.
+  - It honours the repo's existing `prefers-reduced-motion` rule (`global.css:663`) rather than
+    inventing its own motion handling.
+- **1RM went from THREE places on/near Overview to the strength surface**, which is the Hevy shape
+  and Amit's actual complaint. Deleted from Overview: the `BigThreeCard` top-level slot, the
+  `1RM ~{e1RM}` chip on the PR rows, the duplicate weekly headline, and a `ChapterBreak`.
+- **⚠️ AND IT DID NOT JUST MOVE THE CARD — IT HEDGED IT.** The audit's point was that the strength
+  list hedges honestly while `BigThreeCard` did not. It reused **the exercise-row `חדש` pill**
+  instead of a bare `—`, so a thin-data estimate now says so at its new home too. It also replaced
+  the router `navigate` with an `onSelect` callback so the card works in place, and added a Hebrew
+  `aria-label` spelling out "אחד חזרה מרבי משוער N קילוגרם" — otherwise a screen reader reads that
+  number as noise.
+- **Overview: top level cut to 3 cards, 4 items behind `מתקדם`.**
+- **Workouts: calendar + log lead** — "the calendar answers *did I show up*" — with the range
+  control and the volume trend behind `מתקדם`, the big three relocated into כוח with a remount
+  token, and the `±%` plus a coaching directive **deleted**.
+- `ExerciseDetail`: the forecast card behind the same expander — "defensible, not load-bearing, and
+  a whole card", so one tap away rather than always on screen.
+- **`ChapterBreak` handled honestly:** it deleted the 3 call sites in its own files and **kept the
+  no-op component with the 3 REMAINING call sites recorded in a comment** — "delete these three,
+  then delete this file". Correct: it could not reach files it did not own, and it left the next
+  worker a precise breadcrumb instead of a silent half-deletion.
+
+### Gap worth one follow-up, not a rejection
+`AdvancedSection` is a NEW interactive component (expand/collapse, unmounts children) and **has no
+test**. The batch-13 screenshot round covers how it looks, not how it behaves. One focused test —
+collapsed renders no children, expanded renders them, the trigger is ≥44px — belongs in batch 13.
+
+### Verified baseline — 2026-08-28 16:56, lead-measured on a static tree
+`spawn_list`: every run `[done]`. Newest source mtime 5 minutes old before any gate ran. Suite run
+**TWICE with identical results.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **697** files (unchanged — batch 12 added no test file) |
+| `npm run test:run` | **159 files / 1399 tests**, exit 0 on both runs — NEW FLOOR |
+| arithmetic | 1396 + 3 (T-036's PR-dedupe tests) = 1399. T-037 added none. Nothing deleted, skipped or weakened. |
+| debris | no scratch files in root, `test-results/` absent, e2e still 13 specs |
+
 - status: dispatched (batch 12)
 - owner: fitness-design
 - goal: Amit's ask. The overview and the workouts tab hold too much; keep what helps at the top

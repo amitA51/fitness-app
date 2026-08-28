@@ -4,8 +4,9 @@
 // was copy-pasted across the weight/measurements/recovery/strength tabs.
 // ============================================================================
 
+import { ChevronDown } from 'lucide-react';
 import type React from 'react';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 
 interface SectionCardProps {
   children: React.ReactNode;
@@ -56,3 +57,76 @@ export const SectionCard = memo(function SectionCard({
 });
 
 export default SectionCard;
+
+// ============================================================================
+// AdvancedSection — the ONE progressive-disclosure idiom on Progress.
+// ============================================================================
+// Each tab keeps at its top level only what answers "how is training going",
+// and puts the analysis behind this expander. Same component, same `מתקדם`
+// label, same geometry (full-width, 44px, hairline border, accent label,
+// rotating chevron) in every tab — two different expander patterns on one
+// screen is the density problem wearing a disguise. The geometry deliberately
+// matches the PR-board `הצג הכל` button already shipping in StrengthSection.
+//
+// Children are UNMOUNTED while collapsed, so a closed section costs no render
+// work. The chevron rotates on `transform` only; the global
+// prefers-reduced-motion rule (`global.css:663`) collapses its duration.
+
+export const AdvancedSection = memo(function AdvancedSection({
+  children,
+  id,
+  label = 'מתקדם',
+}: {
+  children: React.ReactNode;
+  /** Unique id — the panel gets `${id}-panel` for aria-controls. */
+  id: string;
+  label?: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={`${id}-panel`}
+        className="active:scale-[0.98] motion-reduce:active:scale-100"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          width: '100%',
+          minHeight: 44,
+          background: 'transparent',
+          border: '1px solid var(--fs-surface-2)',
+          borderRadius: 10,
+          cursor: 'pointer',
+          fontFamily: 'var(--font-hebrew)',
+          fontSize: 13,
+          fontWeight: 600,
+          color: 'var(--fs-accent)',
+          transition: 'transform 0.1s var(--ease-out, ease-out)',
+        }}
+      >
+        {label}
+        <ChevronDown
+          size={16}
+          aria-hidden="true"
+          style={{
+            transform: open ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.2s var(--ease-out, ease-out)',
+          }}
+        />
+      </button>
+      <div id={`${id}-panel`}>
+        {open && (
+          <div className="space-y-4" style={{ marginTop: 16 }}>
+            {children}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});

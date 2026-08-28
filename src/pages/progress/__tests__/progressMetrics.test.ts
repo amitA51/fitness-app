@@ -232,6 +232,54 @@ describe('recentPRs', () => {
     // Assert
     expect(result.map((p) => p.exerciseName)).toEqual(['B', 'C']);
   });
+
+  it('collapses the weight/volume/reps records a single set writes into one row', () => {
+    // Arrange — prService writes up to three records per set (weight, volume,
+    // reps) that share exercise, date, weight and reps, so an un-deduped list
+    // renders the same lift twice with identical numbers.
+    const stamp = '2026-05-10T09:30:00.000Z';
+    const prs: PersonalRecord[] = [
+      { ...mkPR('Bench Press', 100, 5, stamp, 117), id: 'w', type: 'weight' },
+      { ...mkPR('Bench Press', 100, 5, stamp, 117), id: 'v', type: 'volume' },
+      { ...mkPR('Bench Press', 100, 5, stamp, 117), id: 'r', type: 'reps' },
+      mkPR('Squat', 140, 1, '2026-05-08T09:30:00.000Z', 140),
+    ];
+
+    // Act
+    const result = recentPRs(prs, 2);
+
+    // Assert — one Bench row, and the second slot goes to a different lift
+    expect(result.map((p) => p.exerciseName)).toEqual(['Bench Press', 'Squat']);
+  });
+
+  it('keeps one row per exercise per day, preferring the strongest record', () => {
+    // Arrange — two real sets of the same lift on the same day
+    const prs = [
+      mkPR('Deadlift', 150, 3, '2026-05-11T08:00:00.000Z', 165),
+      mkPR('Deadlift', 160, 3, '2026-05-11T08:40:00.000Z', 176),
+    ];
+
+    // Act
+    const result = recentPRs(prs, 3);
+
+    // Assert
+    expect(result).toHaveLength(1);
+    expect(result[0]?.weight).toBe(160);
+  });
+
+  it('still shows the same exercise on different days', () => {
+    // Arrange
+    const prs = [
+      mkPR('Row', 80, 5, '2026-05-11T08:00:00.000Z', 93),
+      mkPR('Row', 75, 5, '2026-05-09T08:00:00.000Z', 88),
+    ];
+
+    // Act
+    const result = recentPRs(prs, 3);
+
+    // Assert
+    expect(result).toHaveLength(2);
+  });
 });
 
 describe('buildVolumeTrend', () => {

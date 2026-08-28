@@ -4,21 +4,25 @@
 // Merges the former standalone Workouts and Strength tabs behind a secondary
 // segmented control so the surface is no longer one long undifferentiated
 // scroll:
-//   • היסטוריה — volume trend (converged GlowAreaChart) + the unified
-//                <WorkoutHistory mode="full" /> surface (search, summary stats,
-//                month grouping, virtualization).
-//   • כוח      — the de-densified <StrengthSection /> (PR board, exercise
-//                analysis curve, per-exercise history).
+//   • היסטוריה — the calendar heatmap + the unified <WorkoutHistory mode="full" />
+//                surface (search, summary stats, month grouping, virtualization).
+//                The range control and the volume-trend chart live behind the
+//                shared `מתקדם` expander: the calendar answers "did I show up"
+//                honestly and instantly, while the trend is range-scoped
+//                analysis nobody needs to read the log.
+//   • כוח      — the big-three tiles (relocated off Overview) above the
+//                de-densified <StrengthSection /> (PR board, exercise analysis
+//                curve, per-exercise history).
 
 import { Dumbbell } from 'lucide-react';
-import { memo, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import WorkoutCalendar from '../../../components/workout/WorkoutCalendar';
 import { WorkoutHistory } from '../../../components/workout/history/WorkoutHistory';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
-import { ChapterBreak } from '../components/ChapterBreak';
-import { ChartSummary, ChartSummaryNumber } from '../components/ChartSummary';
-import { SectionCard } from '../components/SectionCard';
+import { BigThreeCard } from '../components/BigThreeCard';
+import { ChartSummary } from '../components/ChartSummary';
+import { AdvancedSection, SectionCard } from '../components/SectionCard';
 import { type SegmentOption, SegmentedControl } from '../components/SegmentedControl';
 import { TrendChartCard } from '../components/TrendChartCard';
 import {
@@ -48,26 +52,19 @@ const RANGE_LABEL_HE: Record<RangeKey, string> = {
   Y: 'שנה',
 };
 
-// First→last volume change across the trend window, as a graded takeaway.
-function volumeTrendSummary(data: { y: number }[]): {
-  pct: number;
-  zone: 'good' | 'neutral' | 'attention';
-  sentence: string;
-} {
+// Direction of the volume trend across the window — direction ONLY.
+// The signed `±N%` this used to print was first-session-vs-last-session, which
+// at the 3-session minimum is two data points; presenting that as a percentage
+// (and attaching "שווה לחזק את העומס" to it) asserted far more than the data
+// supports. Until there is a real regression here, the sentence states which
+// way the window went and nothing else.
+function volumeTrendSummary(data: { y: number }[]): string {
   const first = data[0]?.y ?? 0;
   const last = data[data.length - 1]?.y ?? 0;
   const pct = first > 0 ? Math.round(((last - first) / first) * 100) : 0;
-  if (pct >= 5) {
-    return { pct, zone: 'good', sentence: 'נפח האימונים במגמת עלייה לאורך התקופה.' };
-  }
-  if (pct <= -5) {
-    return {
-      pct,
-      zone: 'attention',
-      sentence: 'נפח האימונים ירד לאורך התקופה — שווה לחזק את העומס.',
-    };
-  }
-  return { pct, zone: 'neutral', sentence: 'נפח האימונים יציב לאורך התקופה.' };
+  if (pct >= 5) return 'נפח האימונים גבוה בסוף התקופה מאשר בתחילתה.';
+  if (pct <= -5) return 'נפח האימונים נמוך בסוף התקופה מאשר בתחילתה.';
+  return 'נפח האימונים דומה בתחילת התקופה ובסופה.';
 }
 
 const SUB_TABS: readonly SegmentOption<WorkoutsSubTab>[] = [
@@ -93,6 +90,20 @@ export const WorkoutsTab = memo(function WorkoutsTab({
   const navigate = useNavigate();
   const [sub, setSub] = useState<WorkoutsSubTab>(initialSub ?? 'history');
   const [range, setRange] = useState<RangeKey>(DEFAULT_RANGE);
+
+  // Strength drill-down pick. The big-three tiles now live INSIDE the strength
+  // panel, so a tap arrives while <StrengthSection /> is already mounted — and
+  // it seeds its own selection from `initialSelected` in a useState initializer
+  // that never re-runs. The bumped token is the remount key, so every tap opens
+  // its exercise (including the same tile twice after backing out to the list).
+  const [pick, setPick] = useState<{ exercise: string | null; token: number }>({
+    exercise: initialStrengthSelection ?? null,
+    token: 0,
+  });
+  const openExercise = useCallback((exerciseName: string) => {
+    setPick((p) => ({ exercise: exerciseName, token: p.token + 1 }));
+  }, []);
+
   // Slice the already-loaded sessions by the selected date window (no re-fetch),
   // then build the trend over the full slice (length as limit, so a long range
   // isn't re-capped by buildVolumeTrend's default count).
@@ -100,14 +111,13 @@ export const WorkoutsTab = memo(function WorkoutsTab({
     const ranged = sliceByRangeDays(sessions, RANGE_DAYS[range], (s) => s.startTime);
     return buildVolumeTrend(ranged, ranged.length || 1);
   }, [sessions, range]);
-  const volumeSummary = useMemo(() => volumeTrendSummary(volumeData), [volumeData]);
+  const volumeSentence = useMemo(() => volumeTrendSummary(volumeData), [volumeData]);
 
   // Composed empty state (parity with Overview/Recovery) — only once data has
   // loaded and there is genuinely nothing to show, not a bare "אין נתונים".
   if (!isLoading && sessions.length === 0) {
     return (
       <div className="space-y-4">
-        <ChapterBreak title="אימונים" />
         <SectionCard rail={false}>
           <div className="flex flex-col items-center py-10 text-center gap-3">
             <Dumbbell size={36} style={{ color: 'var(--fs-accent)' }} aria-hidden="true" />
@@ -143,8 +153,6 @@ export const WorkoutsTab = memo(function WorkoutsTab({
 
   return (
     <div className="space-y-4">
-      <ChapterBreak title="אימונים" />
-
       <SegmentedControl
         options={SUB_TABS}
         value={sub}
@@ -160,59 +168,55 @@ export const WorkoutsTab = memo(function WorkoutsTab({
           aria-labelledby="workouts-sub-tab-history"
           className="space-y-4"
         >
-          <div className="space-y-3">
-            <SegmentedControl
-              options={RANGE_OPTIONS}
-              value={range}
-              onChange={setRange}
-              ariaLabel="טווח זמן למגמת הנפח"
-              idPrefix="volume-range"
-            />
-            {volumeData.length >= 3 ? (
-              <div>
-                <ChartSummary
-                  kicker={`מגמת נפח · ${RANGE_LABEL_HE[range]} · ${volumeData.length} אימונים`}
-                >
-                  {volumeSummary.sentence}
-                  {volumeSummary.pct !== 0 && (
-                    <>
-                      {' '}
-                      <ChartSummaryNumber
-                        value={`${volumeSummary.pct > 0 ? '+' : ''}${volumeSummary.pct}%`}
-                        zone={volumeSummary.zone}
-                      />
-                    </>
-                  )}
-                </ChartSummary>
-                <TrendChartCard
-                  title="מגמת נפח"
-                  data={volumeData}
-                  ariaLabel="מגמת נפח האימונים לאורך זמן"
-                />
-              </div>
-            ) : (
-              <p
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  letterSpacing: '-0.01em',
-                  color: 'var(--fs-muted)',
-                  textAlign: 'center',
-                  padding: '12px 0',
-                  margin: 0,
-                }}
-              >
-                אין מספיק אימונים בטווח הזה — בחרו טווח רחב יותר
-              </p>
-            )}
-          </div>
-
           {/* Month calendar heatmap of training days — the wger-style workout
-              log, complementing the volume trend above and the detailed list
-              below. Each day click-throughs to that session's detail. */}
+              log. The fastest honest read of "did I show up", and it needs no
+              range control to be true. Each day click-throughs to its session. */}
           <WorkoutCalendar sessions={sessions} />
 
           <WorkoutHistory mode="full" sessions={sessions} isLoading={isLoading} />
+
+          {/* מתקדם — the range-scoped volume trend. Range-picking plus a
+              min–max chart is analysis; the calendar and the log above answer
+              the tab's actual question without it. */}
+          <AdvancedSection id="workouts-history-advanced">
+            <div className="space-y-3">
+              <SegmentedControl
+                options={RANGE_OPTIONS}
+                value={range}
+                onChange={setRange}
+                ariaLabel="טווח זמן למגמת הנפח"
+                idPrefix="volume-range"
+              />
+              {volumeData.length >= 3 ? (
+                <div>
+                  <ChartSummary
+                    kicker={`מגמת נפח · ${RANGE_LABEL_HE[range]} · ${volumeData.length} אימונים`}
+                  >
+                    {volumeSentence}
+                  </ChartSummary>
+                  <TrendChartCard
+                    title="מגמת נפח"
+                    data={volumeData}
+                    ariaLabel="מגמת נפח האימונים לאורך זמן"
+                  />
+                </div>
+              ) : (
+                <p
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 11,
+                    letterSpacing: '-0.01em',
+                    color: 'var(--fs-muted)',
+                    textAlign: 'center',
+                    padding: '12px 0',
+                    margin: 0,
+                  }}
+                >
+                  אין מספיק אימונים בטווח הזה — בחרו טווח רחב יותר
+                </p>
+              )}
+            </div>
+          </AdvancedSection>
         </div>
       ) : (
         <div
@@ -221,10 +225,15 @@ export const WorkoutsTab = memo(function WorkoutsTab({
           aria-labelledby="workouts-sub-tab-strength"
           className="space-y-4"
         >
+          {/* The big three — squat/bench/deadlift e1RM, at the strength surface
+              instead of on Overview. Self-hides until one is trained. */}
+          <BigThreeCard sessions={sessions} onSelect={openExercise} />
+
           <StrengthSection
+            key={pick.token}
             sessions={sessions}
             prs={prs}
-            initialSelected={initialStrengthSelection}
+            initialSelected={pick.exercise}
           />
         </div>
       )}

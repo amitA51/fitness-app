@@ -21,7 +21,7 @@ import { zoneColor } from '../../../utils/zoneColor';
 import { STRENGTH_STATUS_LABEL, STRENGTH_STATUS_ZONE } from '../progressMetrics';
 import { exerciseLabel, formatDaysAgo } from '../strengthFormat';
 import type { ExerciseProgress, StrengthSessionPoint } from '../types';
-import { SectionCard } from './SectionCard';
+import { AdvancedSection, SectionCard } from './SectionCard';
 
 /** Most-recent history rows to spell out under the chart. */
 const HISTORY_ROWS = 12;
@@ -279,12 +279,16 @@ export const ExerciseDetail = memo(function ExerciseDetail({
         )}
       </SectionCard>
 
-      {/* Weekly-volume forecast (existing component) */}
-      <ForecastChart
-        sessions={sessions}
-        exerciseName={progress.exerciseName}
-        exerciseLabel={label}
-      />
+      {/* מתקדם — a one-week linear extrapolation of a noisy weekly series.
+          Defensible, not load-bearing, and a whole card; the same expander the
+          two tabs use keeps it one tap away instead of always on screen. */}
+      <AdvancedSection id={`exercise-forecast-${progress.exerciseName}`}>
+        <ForecastChart
+          sessions={sessions}
+          exerciseName={progress.exerciseName}
+          exerciseLabel={label}
+        />
+      </AdvancedSection>
 
       {/* Per-session history — the full detail, on demand */}
       <SectionCard rail={false} style={{ padding: '16px 20px' }}>

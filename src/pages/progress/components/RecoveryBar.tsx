@@ -9,7 +9,15 @@ export const RecoveryBar = memo(function RecoveryBar({
   max,
   color,
 }: { label: string; value: number; max: number; color: string }) {
-  const pct = useMemo(() => Math.round((value / max) * 100), [value, max]);
+  // `max` MUST be the real top of the value's scale. Passing a smaller max used to
+  // pin every bar at 100% inside the overflow-hidden track while the label printed
+  // an impossible reading (a 0-100 sub-score against max=25 showed "75/25"). The
+  // clamp keeps an out-of-range or malformed value from silently re-pinning the
+  // fill, so a full bar always means "value reached max".
+  const pct = useMemo(() => {
+    if (!(max > 0) || !Number.isFinite(value)) return 0;
+    return Math.min(100, Math.max(0, Math.round((value / max) * 100)));
+  }, [value, max]);
   const isRTL = useIsRTL();
   const reduced = useReducedMotion();
 

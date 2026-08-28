@@ -145,10 +145,29 @@ export function buildPRBoard(prs: PersonalRecord[]): PRBoardEntry[] {
   return [...best.values()].sort((a, b) => b.e1RM - a.e1RM);
 }
 
-/** Most recent PR records (any type), newest first. */
+/**
+ * Most recent PR records, newest first, at most ONE row per exercise per day.
+ *
+ * A single set can write up to three records — weight, volume and reps
+ * (`prService.diffSetAgainstPRs`) — that share the same exercise, date, weight
+ * and reps. Rendered un-deduped, the identical lift appears twice and reads as
+ * two separate achievements. Collapsing per exercise + calendar day keeps the
+ * strongest record (highest e1RM) so the row is still true, and frees the other
+ * slot for a different lift.
+ */
 export function recentPRs(prs: PersonalRecord[], limit = 3): PersonalRecord[] {
-  return [...prs]
-    .filter((p) => p.weight > 0)
+  const bestPerDay = new Map<string, PersonalRecord>();
+
+  for (const pr of prs) {
+    if (pr.weight <= 0) continue;
+    const time = new Date(pr.date).getTime();
+    if (Number.isNaN(time)) continue;
+    const key = `${(pr.exerciseName ?? '').trim().toLowerCase()}|${pr.date.slice(0, 10)}`;
+    const existing = bestPerDay.get(key);
+    if (!existing || recordE1RM(pr) > recordE1RM(existing)) bestPerDay.set(key, pr);
+  }
+
+  return [...bestPerDay.values()]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, limit);
 }

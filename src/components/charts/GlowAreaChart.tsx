@@ -49,31 +49,60 @@ const PAD_TOP = 14;
 const PAD_BOTTOM_AXIS = 22;
 const PAD_BOTTOM_NOAXIS = 10;
 
+/**
+ * Smallest y-span the chart will draw, as a fraction of the series' own typical
+ * value. Pure min-max normalization made every series fill the card, so
+ * 80.0 -> 80.2 kg climbed exactly as steeply as 80 -> 95 kg. Flooring the span at
+ * 10% of the mean value makes the drawn slope proportional to the real change in
+ * the series' own unit: a 0.25% move now occupies ~2.5% of the card height and
+ * reads flat, while a 19% move still fills it. Scaling by the mean (rather than a
+ * fixed number of kg) keeps the rule correct for bodyweight, volume and e1RM
+ * alike, and it needs no axis or gridline to be honest.
+ */
+const MIN_SPAN_FRACTION = 0.1;
+
+interface YDomain {
+  min: number;
+  max: number;
+}
+
+/** Drawn y-range for a series: the data range, widened to the minimum span. */
+function computeYDomain(ys: number[]): YDomain {
+  if (ys.length === 0) return { min: 0, max: 0 };
+  const dataMin = Math.min(...ys);
+  const dataMax = Math.max(...ys);
+  const magnitude = Math.abs(ys.reduce((sum, y) => sum + y, 0) / ys.length);
+  const minSpan = magnitude > 0 ? magnitude * MIN_SPAN_FRACTION : 1;
+  if (dataMax - dataMin >= minSpan) return { min: dataMin, max: dataMax };
+  // Centre the near-flat series in the floored span so it reads as a small
+  // wiggle mid-card rather than being pinned to an edge.
+  const mid = (dataMin + dataMax) / 2;
+  return { min: mid - minSpan / 2, max: mid + minSpan / 2 };
+}
+
 function computePoints(
   data: GlowAreaPoint[],
   height: number,
   showXAxis: boolean
-): { points: XY[]; bottomY: number } {
+): { points: XY[]; bottomY: number; domain: YDomain } {
   const padBottom = showXAxis ? PAD_BOTTOM_AXIS : PAD_BOTTOM_NOAXIS;
   const bottomY = height - padBottom;
-  if (data.length === 0) return { points: [], bottomY };
+  const domain = computeYDomain(data.map((p) => p.y));
+  if (data.length === 0) return { points: [], bottomY, domain };
 
-  const ys = data.map((p) => p.y);
-  const min = Math.min(...ys);
-  const max = Math.max(...ys);
-  const range = max - min || 1;
+  const range = domain.max - domain.min || 1;
   const innerW = VIEW_WIDTH - PAD_X * 2;
   const innerH = bottomY - PAD_TOP;
   const stepX = data.length > 1 ? innerW / (data.length - 1) : 0;
 
   const points = data.map((p, i) => {
-    const normalized = (p.y - min) / range;
+    const normalized = (p.y - domain.min) / range;
     return {
       x: PAD_X + i * stepX,
       y: PAD_TOP + (1 - normalized) * innerH,
     };
   });
-  return { points, bottomY };
+  return { points, bottomY, domain };
 }
 
 function buildSmoothPath(points: XY[]): string {
@@ -127,7 +156,7 @@ export const GlowAreaChart = memo(function GlowAreaChart({
   const gradientId = `glow-grad-${reactId}`;
   const lineGradId = `glow-line-${reactId}`;
 
-  const { points, bottomY } = useMemo(
+  const { points, bottomY, domain } = useMemo(
     () => computePoints(data, height, xAxis),
     [data, height, xAxis]
   );
@@ -140,9 +169,10 @@ export const GlowAreaChart = memo(function GlowAreaChart({
   }, [linePath, points, bottomY]);
 
   const xLabels = useMemo(() => (xAxis ? pickXLabels(data) : []), [data, xAxis]);
-  const ys = data.map((p) => p.y);
-  const yMin = ys.length > 0 ? Math.min(...ys) : 0;
-  const yMax = ys.length > 0 ? Math.max(...ys) : 0;
+  // Axis labels describe the axis that was actually drawn, so they stay truthful
+  // when a near-flat series is rendered inside the floored span.
+  const yMin = domain.min;
+  const yMax = domain.max;
   const lastPoint = points.length > 0 ? points[points.length - 1]! : null;
 
   // Scrub-to-inspect: index of the data point under the pointer (null = idle).

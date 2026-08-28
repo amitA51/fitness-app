@@ -126,22 +126,27 @@ export const RecoveryTab = memo(function RecoveryTab({
               </div>
 
               <div className="flex-1 space-y-3">
+                {/* calculateRecoveryScore returns every sub-score on a TRUE 0-100
+                    scale (bodyStatsService: levelToScore = (level-1)/4*100), so the
+                    bars must read against 100. They previously passed max={25} —
+                    the weight of each component in the overall score, not its range
+                    — which pinned all four bars and printed labels like "75/25". */}
                 <RecoveryBar
                   label="שינה"
                   value={recoveryScore.sleepScore}
-                  max={25}
+                  max={100}
                   color="var(--fs-accent)"
                 />
                 <RecoveryBar
                   label="כאב"
                   value={recoveryScore.sorenessScore}
-                  max={25}
+                  max={100}
                   color="var(--fs-warn)"
                 />
                 <RecoveryBar
                   label="אנרגיה"
                   value={recoveryScore.energyScore}
-                  max={25}
+                  max={100}
                   // Neutral accent — siblings use accent/warn/neutral and lime
                   // (--fs-signal) is reserved for PR celebration, not a metric bar.
                   color="var(--fs-accent)"
@@ -149,7 +154,7 @@ export const RecoveryTab = memo(function RecoveryTab({
                 <RecoveryBar
                   label="לחץ"
                   value={recoveryScore.stressScore}
-                  max={25}
+                  max={100}
                   color="var(--fs-accent)"
                 />
               </div>

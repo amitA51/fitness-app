@@ -11,13 +11,10 @@ import { useWorkoutStreak } from '../../../hooks/useWorkoutStreak';
 import type { PersonalRecord, WorkoutSession } from '../../../types';
 import { formatVolume } from '../../../utils/dateUtils';
 import { zoneColor } from '../../../utils/zoneColor';
-import { BigThreeCard } from '../components/BigThreeCard';
-import { ChapterBreak } from '../components/ChapterBreak';
 import { LevelCard } from '../components/LevelCard';
-import { SectionCard } from '../components/SectionCard';
+import { AdvancedSection, SectionCard } from '../components/SectionCard';
 import {
   type StatDelta,
-  buildPRBoard,
   isRecentPR,
   recentPRs,
   summarizeWeeklyVolume,
@@ -95,7 +92,6 @@ export const OverviewTab = memo(function OverviewTab({
   // can never drift apart. Replaces the local computeStreak wiring.
   const streak = useWorkoutStreak(sessions);
 
-  const board = useMemo(() => buildPRBoard(prs), [prs]);
   const latestPRs = useMemo(() => recentPRs(prs, 2), [prs]);
 
   const verdict = useMemo(() => weekVerdict(weekly, streak.current), [weekly, streak.current]);
@@ -210,8 +206,6 @@ export const OverviewTab = memo(function OverviewTab({
 
   return (
     <div className="space-y-4">
-      <ChapterBreak title="סקירה" />
-
       {/* Verdict line — the week's takeaway leads, with the driving number tinted. */}
       <VerdictLine kicker="סיכום השבוע">
         {verdict.lead}
@@ -219,18 +213,11 @@ export const OverviewTab = memo(function OverviewTab({
         {verdict.tail}
       </VerdictLine>
 
-      {/* XP level strip — the always-visible progression ladder (hidden until
-          the first session awards XP). Sits right under the week's verdict so
-          level progress reads as part of the same story. */}
-      <LevelCard />
-
-      {/* The big three — squat/bench/deadlift e1RM at a glance (Hevy/Strong's
-          most-requested widget). Self-hides until one of the lifts is trained. */}
-      <BigThreeCard sessions={sessions} />
-
-      {/* Weekly-review card: verdict headline + 3-up hero stats with WoW deltas. */}
+      {/* Weekly-review card: 3-up hero stats with WoW deltas. The verdict
+          headline that used to sit here said the same thing as the line above
+          it, 15px higher — one week gets one verdict. */}
       <SectionCard>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
           <Flame size={16} style={{ color: zoneColor(verdict.zone) }} aria-hidden="true" />
           <span
             style={{
@@ -243,20 +230,6 @@ export const OverviewTab = memo(function OverviewTab({
             השבוע האחרון
           </span>
         </div>
-
-        <p
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 600,
-            fontSize: 20,
-            letterSpacing: '-0.01em',
-            lineHeight: 1.2,
-            color: 'var(--fs-ink)',
-            margin: '0 0 14px',
-          }}
-        >
-          {verdict.headline}
-        </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
           <div style={{ minWidth: 0 }}>
@@ -299,7 +272,6 @@ export const OverviewTab = memo(function OverviewTab({
           </div>
           <div style={{ display: 'grid', gap: 6 }}>
             {latestPRs.map((pr) => {
-              const boardEntry = board.find((b) => b.exerciseName === pr.exerciseName);
               const fresh = isRecentPR(pr);
               return (
                 <div
@@ -380,20 +352,6 @@ export const OverviewTab = memo(function OverviewTab({
                     >
                       ק"ג × {pr.reps}
                     </span>
-                    {boardEntry && (
-                      <span
-                        style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 9,
-                          fontWeight: 700,
-                          color: 'var(--fs-accent)',
-                          letterSpacing: '-0.01em',
-                          marginInlineStart: 4,
-                        }}
-                      >
-                        1RM ~{boardEntry.e1RM}
-                      </span>
-                    )}
                   </div>
                 </div>
               );
@@ -402,11 +360,15 @@ export const OverviewTab = memo(function OverviewTab({
         </SectionCard>
       )}
 
-      {/* Consistency + muscle distribution — migrated from the Dashboard. These
-          insights belong to Progress now; each self-hides when there is no data. */}
-      <ConsistencyScore sessions={sessions} />
-      <MuscleDistribution sessions={sessions} />
-      <MuscleBalanceInsight sessions={sessions} />
+      {/* מתקדם — everything that is analysis rather than status. Nothing here
+          is needed to read the three cards above it: the verdict, the weekly
+          numbers and the PRs stand on their own. */}
+      <AdvancedSection id="overview-advanced">
+        <LevelCard />
+        <ConsistencyScore sessions={sessions} />
+        <MuscleDistribution sessions={sessions} />
+        <MuscleBalanceInsight sessions={sessions} />
+      </AdvancedSection>
     </div>
   );
 });
