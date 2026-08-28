@@ -123,7 +123,7 @@ export default function PRHistoryTab() {
           marginBottom: isOpen ? 12 : 0,
         }}
       >
-        <h3 className="text-right" style={{ ...kickerStyle, margin: 0 }}>
+        <h3 className="text-start" style={{ ...kickerStyle, margin: 0 }}>
           היסטוריית שיאים · PR HISTORY
         </h3>
         <ChevronDown
@@ -189,7 +189,7 @@ export default function PRHistoryTab() {
                         {g.records.slice(0, 3).map((pr) => (
                           <div
                             key={pr.id}
-                            className="text-right"
+                            className="text-start"
                             style={{
                               background: 'var(--fs-surface)',
                               borderRadius: 8,

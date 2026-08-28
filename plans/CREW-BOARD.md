@@ -795,6 +795,156 @@ verified in a browser, so that is a suspicion, not a finding.
 - done when: verify green; test:run >= 1362; every changed string reported old -> new
 - notes: screenshots OWED. No Playwright.
 
+---
+
+# Batch 5 — dispatched 2026-08-28 12:42. Closing the leftovers so the screenshot
+# pass in batch 6 photographs a FINAL app, not a half-changed one.
+
+### Two lead decisions, one of them a REVERSAL of my own earlier call
+
+1. **The singular/plural imperative task is CANCELLED. My earlier decision was
+   wrong.** I told Amit "go singular". But `src/components/guidance/guidanceSteps.tsx:6`
+   carries a written convention — *"Copy register is plural-imperative (לחצו, בחרו)
+   to match the app standard"* — and the plural form appears in **33 files / 73
+   matches**. Going singular would have rewritten the majority to match the
+   minority, against a documented standard. T-012 was right that there is
+   divergence and right to refuse to normalize half of it; I was wrong about which
+   direction. Dropped entirely rather than reversed: both forms are idiomatic
+   Hebrew UI, nobody is confused, and Amit's bar is "does it help".
+2. **The 20-session limit is a DEFAULT, not a cap.** `sessionDb.ts:72` is
+   `getWorkoutSessions(limit = 20)`, and other call sites already pass more —
+   Progress passes **400**, workout-detail 30, coach-client 10. Only `DataContext`
+   calls it bare. So this is a one-argument fix with existing precedent for the
+   number, and it **also repairs `WorkoutStreak`'s "שיא N"**, which is labelled
+   all-time but was measured over 20 sessions. Raising the window fixes the
+   mislabel without touching the copy.
+
+### Ownership map — disjoint, and only T-015 holds the browser
+- **T-014** → `src/pages/Dashboard.tsx`, `src/contexts/DataContext.tsx`
+- **T-015** → `src/components/workout/components/{ProgressBar,PerformanceAnalytics}.tsx`,
+  `src/components/workout/{PRHistoryTab,ProgressionRecommendation,WorkoutGoalSelector}.tsx`,
+  `src/components/workout/reorder/ExerciseReorderItem.tsx`,
+  `src/components/workout/states/PreWorkoutScreen.tsx`
+- Batch 6 (NOT dispatched): `fitness-qa` screenshot pass over Home, workout,
+  templates + regenerating the stale `visual-qa/ob-02-role.png`. Held back
+  deliberately — it must photograph a settled tree, and it needs the browser
+  T-015 is holding this batch.
+
+## [T-014] Home leftovers — the skeleton lies, and the streak is short-sighted
+- status: dispatched (batch 5)
+- owner: fitness-dev
+- goal: stop the first paint promising a card that no longer exists, and stop the
+  streak record being computed over a truncated history.
+- files (EXCLUSIVE): `src/pages/Dashboard.tsx`, `src/contexts/DataContext.tsx`
+- done when: verify green; test:run >= 1366; the skeleton's shape matches what the
+  screen actually renders; the new session window stated with its reasoning
+- notes: no Playwright — T-015 holds the browser. Screenshots come in batch 6.
+
+## [T-014] Home leftovers — ACCEPTED on evidence 2026-08-28 12:48
+- status: **accepted; the lead's authoritative verify + test:run owed once T-015 lands**
+- 2 files, exactly its declared ownership. The lead checked the forbidden paths
+  explicitly: `src/services/sessionDb.ts` and all of `src/components/dashboard/`
+  are untouched. Zero crossing.
+- **Skeleton:** now mirrors `renderPopulatedBody()` block-for-block — program card
+  150px → streak 72px → heading + 64px → two small headings → 176px. The 156px
+  circle and its 3 legend bars are gone with the card they stood in for. It reused
+  the existing `SkeletonBox` / premium-shimmer and matched the existing gap tokens
+  instead of inventing a style, and replaced a mapped placeholder (dropping a
+  `biome-ignore` for an array-index key) with explicit blocks.
+- **Session window: 400, and the reasoning is better than the brief asked for.**
+  It did not just pick a bigger number — it matched `useProgressData.ts`, which
+  already passes 400, **so home and Progress can never report a different streak
+  record for the same history.** Its comment also states 400 ≈ two years at
+  4 sessions/week. It renamed the constant `RECENT_SESSIONS_LIMIT` →
+  `SESSION_HISTORY_LIMIT` because "recent" was the wrong concept for an all-time
+  label, which is a real naming defect it was not asked to find.
+- `sessionDb.ts`'s default of 20 left alone as instructed — it is correct for the
+  other callers.
+
+## [T-015] RTL debt in the workout area — the one place it may be visibly wrong
+- status: dispatched (batch 5)
+- owner: fitness-design
+- goal: replace physical-direction CSS with logical properties in the seven files
+  that still carry it, and verify in a browser that the progress-bar milestone
+  markers land on the correct side in RTL.
+- files (EXCLUSIVE): the seven listed in the ownership map above
+- done when: verify green; test:run >= 1366; zero physical-direction CSS left in
+  those files; a before/after screenshot of the progress bar at 390px proving the
+  milestone markers moved (or proving they were already correct)
+- notes: the ONLY Playwright runner this batch. `ProgressBar.tsx`'s
+  `style={{ right: 'N%' }}` markers are the prime suspect — the lead flagged them
+  as a suspicion, not a finding, because they were never seen rendered.
+
+## [T-015] RTL debt — ACCEPTED 2026-08-28 12:52. Best-evidenced task of the run.
+- status: **done** — 7 files, all inside its ownership, scratch spec created then
+  deleted (net zero tree change), `test-results/` removed.
+- **VERDICT ON THE MILESTONE MARKERS — the lead's suspicion was wrong, in the
+  useful direction.** They were **already visually correct**, and the worker proved
+  it with measured geometry rather than asserting it: at 390px `dir="rtl"`, track
+  width 328px, the fill measured x=162.2 w=196.8 — exactly 60% of 328 occupying the
+  right 60%, so it anchors to the same edge the markers measure from. `right: N%`
+  and `inset-inline-start: N%` are **the same edge in RTL**, so the conversion is
+  pixel-identical. **But the physical version was only correct because the document
+  is RTL — in LTR it measured from the wrong end.** Latently wrong, not visibly
+  wrong. Now correct in both directions.
+- **It found a real bug nobody asked about, and correctly did NOT fix it:** the
+  **100% milestone marker never renders.** At `inset-inline-start: 100%` its 2px box
+  sits at x=29–31 while the track starts at x=31 — entirely outside, `visible=false`,
+  identically before and after. 25/50/75 render fine. Classified as a GEOMETRY bug,
+  not a direction bug, and left alone as out of scope. Open follow-up.
+- **One extra RTL defect beyond the lead's list, and this one really was broken:**
+  `borderRight` ×2 on the `PreWorkoutScreen` stat dividers → `borderInlineEnd`.
+  Reported as "rendered result changed — a correction", verified by computed style.
+- **Two documented, reasoned exceptions — both right:**
+  1. `transform-origin` has no logical keyword in CSS. Instead of leaving it
+     physical it routed all four call sites through the EXISTING token
+     `--progress-fill-origin-inline-start` (`0% center` LTR / `100% center` RTL),
+     already the house pattern in `PRHighlights`, `MuscleBreakdown` and
+     `WelcomeGuideSheet`. It found the convention instead of inventing one.
+  2. `left-1/2 -translate-x-1/2` on the completion dot is a **centering idiom**, not
+     a direction choice — the physical inset and physical translate cancel, so it
+     centres both ways. Converting only the inset would push the dot off the marker
+     by its own width. Left with a comment.
+- it proved Tailwind's behaviour instead of inferring it: its first probe emitted
+  nothing (no `@tailwind` directive), it noticed, retried properly, and demonstrated
+  that this project's own config compiles `.start-0` to `inset-inline-start: 0px`.
+
+### ⚠️ CRITICAL for batch 6 — this would have produced a FALSE bug report
+**`start-0` is a NEW class in this repo.** Tailwind JIT never emitted it, so the
+current `dist/` bundle does not contain it. Until a rebuild, a preview of the stale
+bundle shows the **ProgressBar track unpinned** — which looks exactly like a
+regression and is not one. **The screenshot pass MUST run a fresh build first.**
+`end-0`, `text-start`, `text-end` were already in the bundle.
+
+### Verified baseline — 2026-08-28 12:52, lead-measured on a CONFIRMED-static tree
+Discipline applied after the earlier failure: `spawn_list` showed every run `[done]`,
+and the newest source mtime was 8 minutes old, before any gate was run.
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, 693 files |
+| `npm run test:run` | **155 files / 1366 tests** — unchanged; batch 5 was behavioural + CSS, added no test file, weakened nothing |
+| screenshots | 8 new `rtl-logical-*` incl. progress-bar before/after at 390px light+dark |
+| e2e specs | 10, no scratch left behind |
+
+---
+
+# Batch 6 — the screenshot pass. Nobody has SEEN the app since 352 lines left Home.
+
+## [T-016] Photograph the settled app
+- status: dispatched (batch 6)
+- owner: fitness-qa
+- goal: produce the visual evidence the last three batches owe, on a tree that is
+  finally final, and report anything that looks wrong.
+- files: WRITES ONLY `visual-qa/**` and at most one e2e spec. Read-only in `src/`.
+- done when: Home (zero-state, populated, and the loading skeleton), the workout
+  screen, the templates screen and the picker are all captured at 390px AND ~1280px
+  in BOTH light and dark; the stale `visual-qa/ob-02-role.png` is regenerated; and
+  every visual defect found is reported with the screenshot that shows it.
+- notes: **MUST `npm run build` FIRST** — see the `start-0` warning above, or it
+  will report a phantom ProgressBar regression. It is read-only in `src/`: it
+  reports defects, it does not fix them.
+
 
 ---
 

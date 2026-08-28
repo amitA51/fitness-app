@@ -374,7 +374,10 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 className="text-center"
                 style={{
                   padding: '12px 8px',
-                  borderRight: '1px solid rgba(255,255,255,0.15)',
+                  // Divider AFTER this column (the third stat card has none), so it
+                  // belongs on the inline end. Physical `borderRight` put it on the
+                  // grid's outer right edge in RTL and left the 2|3 boundary bare.
+                  borderInlineEnd: '1px solid rgba(255,255,255,0.15)',
                 }}
               >
                 <div
@@ -410,7 +413,10 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 className="text-center"
                 style={{
                   padding: '12px 8px',
-                  borderRight: '1px solid rgba(255,255,255,0.15)',
+                  // Divider AFTER this column (the third stat card has none), so it
+                  // belongs on the inline end. Physical `borderRight` put it on the
+                  // grid's outer right edge in RTL and left the 2|3 boundary bare.
+                  borderInlineEnd: '1px solid rgba(255,255,255,0.15)',
                 }}
               >
                 <div
@@ -552,7 +558,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   background: 'var(--fs-primary)',
                   border: '2px solid var(--fs-accent)',
                   padding: '18px 20px',
-                  textAlign: 'right',
+                  textAlign: 'start',
                   cursor: isStartingCoachProgram ? 'wait' : 'pointer',
                   opacity: isStartingCoachProgram ? 0.7 : 1,
                 }}
@@ -560,7 +566,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               >
                 {/* Ribbon */}
                 <div
-                  className="absolute top-0 left-0 px-2 py-1"
+                  className="absolute top-0 end-0 px-2 py-1"
                   style={{
                     background: 'var(--fs-accent)',
                     fontFamily: 'var(--font-body)',
@@ -613,7 +619,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                   border: '1px solid var(--fs-surface-2)',
                   borderRadius: '20px 14px 20px 14px',
                   padding: '18px 20px',
-                  textAlign: 'right',
+                  textAlign: 'start',
                   cursor: isStartingProgram ? 'wait' : 'pointer',
                   opacity: isStartingProgram ? 0.7 : 1,
                 }}
@@ -705,7 +711,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                       borderRadius: '20px 14px 20px 14px',
                       padding: '14px',
                       cursor: 'pointer',
-                      textAlign: 'right',
+                      textAlign: 'start',
                       // Pointer feedback changes only the surface color; `all` would also
                       // subscribe this horizontally scrolling card to layout and paint work.
                       transition: 'background 150ms var(--ease-out)',

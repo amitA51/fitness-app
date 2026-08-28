@@ -20,7 +20,7 @@ interface ProgressBarProps {
 
 const ProgressParticle = memo<{ delay: number }>(({ delay }) => (
   <m.div
-    className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-white"
+    className="absolute start-0 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-white"
     initial={{ opacity: 0, scale: 0, x: 0 }}
     animate={{
       opacity: [0, 1, 0],
@@ -52,7 +52,7 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
 
   return (
     <div
-      className="absolute top-0 left-0 right-0 h-1.5 z-sticky"
+      className="absolute top-0 start-0 end-0 h-1.5 z-sticky"
       style={{ background: 'var(--fs-surface-2)' }}
     >
       {/* Background Track */}
@@ -60,12 +60,14 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
 
       {/* Progress Fill */}
       <m.div
-        className="absolute top-0 right-0 h-full w-full shadow-[0_0_15px_var(--fs-accent)]"
+        className="absolute top-0 start-0 h-full w-full shadow-[0_0_15px_var(--fs-accent)]"
         style={{
           background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
-          // RTL: the fill grows from the reading start (right) toward the left,
-          // matching the app's other progress fills (MacroStrip, AnimatedBar).
-          transformOrigin: 'right center',
+          // The fill grows from the reading start toward the reading end, matching
+          // the app's other progress fills (MacroStrip, AnimatedBar, PRHighlights).
+          // transform-origin has no logical `inline-start` keyword, so this uses the
+          // project token that resolves to 0%/100% per document direction.
+          transformOrigin: 'var(--progress-fill-origin-inline-start)',
         }}
         initial={{ scaleX: 0 }}
         animate={{ scaleX: clampedProgress / 100 }}
@@ -96,7 +98,7 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
         {/* Leading edge glow */}
         {!shouldReduce && (
           <m.div
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full accent-glow"
+            className="absolute end-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full accent-glow"
             style={{
               background:
                 'radial-gradient(circle, color-mix(in srgb, var(--fs-accent) 80%, transparent) 0%, transparent 70%)',
@@ -123,7 +125,11 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
                         absolute top-0 bottom-0 w-[2px]
                         ${clampedProgress >= milestone ? 'bg-white/50' : 'bg-white/10'}
                     `}
-            style={{ right: `${milestone}%` }}
+            // Milestones are measured along the fill's travel, i.e. from the
+            // reading start — the same edge `--progress-fill-origin-inline-start`
+            // anchors the fill to. In RTL this resolves to the physical right,
+            // which is where these markers already rendered.
+            style={{ insetInlineStart: `${milestone}%` }}
           >
             {/* Completion indicator */}
             <AnimatePresence>
@@ -131,6 +137,10 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
                 <m.div
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
+                  // `left-1/2 -translate-x-1/2` is the centering idiom, not a
+                  // direction choice: the physical offset and the physical
+                  // translate cancel out, so the dot centres on the marker in
+                  // both directions. Converting only the inset would break it.
                   className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-lg shadow-white/50"
                 />
               )}

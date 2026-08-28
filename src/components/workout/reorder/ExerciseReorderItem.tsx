@@ -119,7 +119,11 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
             style={{
               cursor: 'grab',
               padding: 8,
-              marginLeft: -8,
+              // Negative margin on the inline END: it tightens the gap between the
+              // handle and the number badge that follows it. Physical `marginLeft`
+              // resolved to this same edge in the RTL document, so the rendered
+              // spacing is unchanged.
+              marginInlineEnd: -8,
               borderRadius: 12,
               background: 'transparent',
               border: 'none',
@@ -170,7 +174,7 @@ export const ExerciseReorderItem: React.FC<ExerciseReorderItemProps> = memo(
             }}
             style={{
               flex: 1,
-              textAlign: 'right',
+              textAlign: 'start',
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',

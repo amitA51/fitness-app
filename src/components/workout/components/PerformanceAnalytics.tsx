@@ -224,8 +224,9 @@ const VolumeComparisonBar = memo<{
             className="h-full w-full rounded-full"
             style={{
               background: 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
-              // RTL: fill from the reading start (right).
-              transformOrigin: 'right center',
+              // Fill from the reading start. transform-origin has no logical
+              // keyword, so use the direction-aware project token.
+              transformOrigin: 'var(--progress-fill-origin-inline-start)',
             }}
             initial={{ scaleX: 0 }}
             animate={{ scaleX: currentPercent / 100 }}
@@ -234,12 +235,15 @@ const VolumeComparisonBar = memo<{
           {targetPercent && (
             <div
               className="absolute top-0 bottom-0 w-0.5"
-              style={{ right: `${targetPercent}%`, background: 'var(--fs-text-on-dark)' }}
+              style={{
+                insetInlineStart: `${targetPercent}%`,
+                background: 'var(--fs-text-on-dark)',
+              }}
             />
           )}
         </div>
         <span
-          className="text-xs font-medium tabular-nums w-16 text-right"
+          className="text-xs font-medium tabular-nums w-16 text-start"
           style={{ color: 'var(--color-ink-on-dark)' }}
         >
           {current.toLocaleString()}
@@ -257,14 +261,17 @@ const VolumeComparisonBar = memo<{
         >
           <m.div
             className="h-full w-full rounded-full"
-            style={{ transformOrigin: 'right center', background: 'var(--fs-border-on-dark)' }}
+            style={{
+              transformOrigin: 'var(--progress-fill-origin-inline-start)',
+              background: 'var(--fs-border-on-dark)',
+            }}
             initial={{ scaleX: 0 }}
             animate={{ scaleX: previousPercent / 100 }}
             transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.1 }}
           />
         </div>
         <span
-          className="text-xs tabular-nums w-16 text-right"
+          className="text-xs tabular-nums w-16 text-start"
           style={{ color: 'var(--fs-text-on-dark)' }}
         >
           {previous.toLocaleString()}
@@ -533,7 +540,7 @@ const PerformanceAnalytics = memo<PerformanceAnalyticsProps>(
                   stats.progress >= 1
                     ? 'linear-gradient(90deg, var(--fs-signal), var(--fs-accent))'
                     : 'linear-gradient(90deg, var(--fs-accent), var(--fs-accent-2))',
-                transformOrigin: 'right center',
+                transformOrigin: 'var(--progress-fill-origin-inline-start)',
               }}
               initial={{ scaleX: 0 }}
               animate={{ scaleX: Math.min(stats.progress, 1) }}

@@ -630,48 +630,41 @@ const FirstRunHero = memo(function FirstRunHero({
 });
 
 // ── DashboardSkeleton — first-load placeholder matching the page shape ────────
-// Compact rings-shaped block + streak bar + history rows so the first paint
-// doesn't flash empty then pop. Header + CTA stay visible above this. Built only
-// from SkeletonBox (premium-shimmer); reduced-motion is handled by the shimmer.
+// Mirrors renderPopulatedBody() block-for-block: program card → streak card →
+// templates (heading + strip) → workout calendar (heading + action, week card).
+// The old rings circle is gone because the weekly-rings card it stood in for was
+// deleted from this screen. Header + CTA + TodaysWorkoutCard stay visible above
+// this. Built only from SkeletonBox (premium-shimmer); reduced-motion is handled
+// by the shimmer. Outer gap matches .page-stack-loose, inner gap .section-block.
 const DashboardSkeleton = memo(function DashboardSkeleton() {
   return (
     <div
       role="status"
       aria-busy="true"
       aria-label="טוען את מסך הבית"
-      style={{ margin: 0, display: 'grid', gap: 16 }}
+      style={{ margin: 0, display: 'grid', gap: 28 }}
     >
-      {/* Rings-shaped block: ~156px circle + 3 legend bars */}
-      <div
-        className="fs-surface-card-soft"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'auto minmax(0, 1fr)',
-          gap: 18,
-          alignItems: 'center',
-        }}
-      >
-        <SkeletonBox width={156} height={156} borderRadius="full" />
-        <div style={{ minWidth: 0, display: 'grid', gap: 10 }}>
-          <SkeletonBox height={14} width="50%" />
-          <SkeletonBox height={12} width="100%" />
-          <SkeletonBox height={12} width="100%" />
-          <SkeletonBox height={12} width="80%" />
-        </div>
+      {/* ProgramCard */}
+      <SkeletonBox height={150} borderRadius="var(--radius-2xl)" />
+
+      {/* WorkoutStreak */}
+      <SkeletonBox height={72} borderRadius="var(--radius-2xl)" />
+
+      {/* Templates: section heading (no action) + horizontal template strip */}
+      <div style={{ display: 'grid', gap: 12 }}>
+        <SkeletonBox height={22} width="28%" />
+        <SkeletonBox height={64} borderRadius="var(--radius-2xl)" />
       </div>
 
-      {/* Streak bar */}
-      <SkeletonBox height={64} borderRadius="var(--radius-2xl)" />
-
-      {/* 2-3 history rows */}
-      {Array.from({ length: 3 }).map((_, i) => (
-        <SkeletonBox
-          // biome-ignore lint/suspicious/noArrayIndexKey: fixed-count skeleton placeholders, never reordered
-          key={i}
-          height={82}
-          borderRadius="var(--radius-2xl)"
-        />
-      ))}
+      {/* Workout calendar: section heading + "כל ההיסטוריה" action, then the
+          week card (nav row + 7 day cells + rest-day hint). */}
+      <div style={{ display: 'grid', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <SkeletonBox height={22} width="34%" />
+          <SkeletonBox height={22} width="26%" />
+        </div>
+        <SkeletonBox height={176} borderRadius="var(--radius-2xl)" />
+      </div>
     </div>
   );
 });

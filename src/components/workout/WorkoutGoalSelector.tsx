@@ -72,7 +72,7 @@ export default function WorkoutGoalSelector({ onSelect, onClose }: WorkoutGoalSe
                 type="button"
                 onClick={() => onSelect(goal.id)}
                 aria-label={`${goal.label}: ${goal.description}`}
-                className="w-full group text-right transition-ui duration-150 ease-out"
+                className="w-full group text-start transition-ui duration-150 ease-out"
                 style={{
                   background: 'var(--fs-surface)',
                   border: '2px solid var(--fs-primary)',

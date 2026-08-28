@@ -64,7 +64,7 @@ export const ProgressionRecommendation: React.FC<ProgressionRecommendationProps>
         </div>
 
         {/* Weight Display */}
-        <div className="text-right">
+        <div className="text-start">
           <div className="text-2xl font-bold text-white">
             {data.suggestedWeight > 0 ? (
               <>

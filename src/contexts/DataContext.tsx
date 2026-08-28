@@ -1,7 +1,7 @@
 // ============================================================================
 // SPARKOS FITNESS - Data Context
 // ============================================================================
-// Provides the recent workout-session list (capped) to the dashboard. Exercise
+// Provides the workout-session history window (capped) to the dashboard. Exercise
 // and template data is loaded on demand by the screens that need it (via the
 // workoutDb services directly), so this provider intentionally does NOT eagerly
 // load or expose them — that keeps app startup light and avoids re-rendering
@@ -22,7 +22,12 @@ import { getWorkoutSessions } from '../services/dataService';
 import type { WorkoutSession } from '../types';
 import { logger } from '../utils/logger';
 
-const RECENT_SESSIONS_LIMIT = 20;
+// Home reads an all-time-ish window, not a "recent" page: WorkoutStreak labels
+// its record "שיא" (all-time best) and the weekly calendar pages backwards, so a
+// short window silently turns unloaded days into "you did not train". 400 ≈ two
+// years at 4 sessions/week and matches useProgressData.ts, so home and Progress
+// can never disagree on the same record.
+const SESSION_HISTORY_LIMIT = 400;
 
 interface DataContextValue {
   sessions: WorkoutSession[];
@@ -61,8 +66,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const loadData = useCallback(async () => {
     try {
-      logger.db.info('Loading recent sessions from IndexedDB...');
-      const loadedSessions = await getWorkoutSessions(RECENT_SESSIONS_LIMIT);
+      logger.db.info('Loading session history from IndexedDB...');
+      const loadedSessions = await getWorkoutSessions(SESSION_HISTORY_LIMIT);
       setSessions(loadedSessions);
       logger.db.info('Sessions loaded successfully', { sessions: loadedSessions.length });
     } catch (err) {
