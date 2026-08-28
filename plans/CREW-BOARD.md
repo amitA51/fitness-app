@@ -929,7 +929,235 @@ and the newest source mtime was 8 minutes old, before any gate was run.
 
 ---
 
-# Batch 6 — the screenshot pass. Nobody has SEEN the app since 352 lines left Home.
+# Batch 8 — dispatched 2026-08-28 13:52. Amit's last two asks + his primary-action ruling.
+
+**Amit decided: `סיום` becomes the primary action on the summary footer.** He then said
+"תמשיך מה שצריך אני סומך עלייך" — so the rest of batch 8 is my call.
+
+### The one thing I checked before writing these briefs
+`WorkoutSummary.tsx:127` already carries a comment saying the footer "can swap which
+action is primary (סיום vs the forward צפו בהתקדמות) without" restructuring — T-019
+built the seam for exactly this decision. And `:49-50` documents that
+`צפו בהתקדמות` becomes primary **only when `onViewProgress` is provided**, so the
+swap has a second branch to handle. This is a small task, not a refactor.
+
+### Lead decision — the AI coach is RESEARCH this batch, not implementation
+Amit's bar is excellent-over-fast and he said to follow what competitors do. I do not
+yet know what our own coach actually does — how much of it is a real model call versus
+a canned string, or which of its settings are even wired. Building against that guess
+is how the readiness score happened: it looked like a feature and was two hardcoded
+values. **T-021 establishes the fact base; implementation is batch 9**, with the
+sliced `כלים` chip folded in because it lives in the same file (`ExerciseDisplay.tsx`).
+
+### Lead decision — the browser goes to WARMUP, not to the verification pass
+Only one Playwright runner per batch (port 4173). The template-sheet and dark-calendar
+fixes from batch 7 were made **without a browser** and still need photographing — a
+real gap I own. But "improve the look of the warmup screen" is impossible to do
+responsibly blind, while those two fixes are structurally sound and jsdom-verified
+(scrim portals to `document.body`; title in a non-scrolling header; contrast computed
+from the resolved token hexes). **So warmup takes the browser, and batch 9 runs ONE
+screenshot pass covering the template sheet, the dark calendar, the new summary
+footer and the AI-coach work together.** More efficient than photographing twice.
+
+### Ownership map — disjoint, verified against a real glob
+- **T-020** → `src/components/workout/WorkoutSummary.tsx`
+- **T-021** → WRITES ONLY `plans/AI-COACH-AUDIT.md`. Read-only in `src/`.
+- **T-022** → `WarmupCooldownFlow.tsx`, `WarmupCooldownActiveStep.tsx`,
+  `WarmupCooldownSelectionStep.tsx`, `warmupCooldownData.ts`
+  (`core/__tests__/warmupRamp.test.ts` exists and is OFF-LIMITS — different concern)
+- Held for batch 9: AI-coach implementation + `overlays/**` + `services/ai.ts`, the
+  sliced `כלים` chip at 390 (`ExerciseDisplay.tsx:889`), the screenshot pass, and the
+  LOW items (play-glyph mirroring, sub-44px targets, onboarding back control).
+
+## [T-020] `סיום` is now primary — ACCEPTED on evidence 2026-08-28 14:00
+- status: **accepted; the lead's authoritative verify + test:run owed once T-021 and
+  T-022 land** (both still writing to the tree — no gates run yet, deliberately)
+- 1 file, exactly its declared ownership. Zero scope creep.
+- **THE SAFETY CHECK PASSED, AND IT WAS TRACED, NOT ASSERTED.** `סיום` calls
+  `onClose`; the worker followed it to both render sites. `onClose` clears a
+  localStorage key that is the **in-progress draft, NOT the session**. The session
+  is already persisted before the summary can render — `await
+  saveWorkoutSession(session)` at `useWorkoutSave.ts:170` and
+  `WorkoutActions.tsx:307`, and only *then* does `setShowSummary(true)` fire. The
+  rating persists on selection, not on close. And **`onViewProgress` performs the
+  IDENTICAL draft cleanup**, so the two exits are equivalent in data terms.
+  Verdict: safe "finish and leave", no discard path. Promoting it is sound.
+- **The second branch I warned about was handled the right way:** because
+  `PrimaryAction label="סיום"` is now unconditional, the old ternary COLLAPSED —
+  removing the duplicated primary instead of leaving one in each arm. The new
+  `{onViewProgress && …}` guard copies the `{onRepeatWorkout && …}` shape already
+  used one line below, so the no-`onViewProgress` branch ends with `סיום` primary
+  and simply has no tier 2. Nothing orphaned, nothing double-primary.
+- new order: **1** `סיום` mint fill (unconditional) · **2** `צפו בהתקדמות`
+  `.cta-ghost` 44px, self-hides when unwired · **3** `חזרו על האימון`
+  `.cta-secondary` · **4** `שתפו כרטיס` / `ייצאו CSV` / `שמרו תבנית` quiet text.
+  No button added or removed, no handler rewired, no navigation changed.
+- both docblocks (`:49-50`, `:127`) rewritten to describe the new reality — a
+  comment that lies was called out in the brief as a defect, and it complied.
+- `ייצוא CSV` → `ייצאו CSV` applied.
+- **It proved "no test needed changing" instead of claiming it:** grepped
+  `צפו בהתקדמות` / `ייצוא CSV` / `cta-ghost` across every `*.test.tsx` — no hits;
+  the only `סיום` matches are `SlideToComplete.test.tsx` on the unrelated string
+  `החליקו לסיום סט 1`. Its own run: 157 files / 1377 tests, exit 0.
+
+### Follow-up T-020 surfaced and correctly did NOT fix — fold into batch 9
+**Tiers 2 and 3 are visually inverted relative to their DOM order.**
+`.cta-secondary` (tier 3, outlined + fill, 50px/16px) is HEAVIER than `.cta-ghost`
+(tier 2, borderless, 44px/15px), so the third action reads as more important than
+the second. This predates the swap — `סיום` sat in that same ghost slot before — so
+restyling `חזרו על האימון` was out of its scope and it said so rather than widening.
+**Lead's call: fix it in batch 9** (`צפו בהתקדמות` → `.cta-secondary`,
+`חזרו על האימון` → ghost). Two-line change on a settled file, and it makes the
+cascade actually read as a cascade.
+
+## [T-020] Make `סיום` the primary action
+- status: dispatched (batch 8)
+- owner: fitness-design
+- goal: Amit's ruling — at the end of a workout the default intent is "I'm done",
+  not "browse my progress". Swap the weight; change no behaviour.
+- files (EXCLUSIVE): `src/components/workout/WorkoutSummary.tsx`
+- done when: verify green; test:run >= 1377; the new four-tier order stated;
+  `ייצוא CSV` → `ייצאו CSV`; what `סיום`'s handler actually does, stated
+- notes: **must verify `סיום` is not destructive before promoting it.** If it can
+  discard or skip saving the session, STOP and report rather than make a
+  data-losing action the primary button. No Playwright — T-022 holds it.
+
+## [T-021] AI coach audit — ACCEPTED 2026-08-28 14:11. Delivered `plans/AI-COACH-AUDIT.md`
+- status: **done** — wrote only the plan doc, `src/` untouched as instructed.
+- **CLASSIFICATION: REAL 1 · DERIVED 3 · CANNED 4.** The single REAL output is the
+  ask-tab answer (`ExerciseTutorial.tsx:344` → `askExerciseQuestion`), and it is REAL
+  **only while `RemoteProvider` is active — there is no `.env` in the repo**, so a
+  plain checkout answers from a **keyword table** (`core.ts:74-121`). So in practice
+  the one genuine AI surface degrades to a lookup table.
+- **THE HEADLINE, and it lands on OUR OWN deletion work:** the app contains a
+  **complete, tested deterministic coaching engine** — readiness, fatigue,
+  acute:chronic ratio, per-muscle recovery, **data-sufficiency hedging** — and **no
+  runtime path reaches it.** `calculateTrainingLoad` has one non-test caller
+  (`contextBuilder.ts:246`) whose three callers are themselves dead. **The
+  `CoachBriefCard` we deleted in batch 4 was its last consumer.** ~900 lines of
+  maintained, correct math no user can see.
+  Note the irony worth keeping: the ENGINE hedges when data is thin; the CARD we
+  deleted showed a confident 92/67. The card was a bad presentation of decent math.
+- **A real wiring bug found on the way:** `generateAIWorkoutInsight` passes **no
+  `recoveryLogs`**, so the prompt reports "אין יומן התאוששות" even for a user who
+  logs it. Part of the input starvation `HOME-AUDIT.md` blamed on missing features
+  was actually plumbing.
+- **DEAD TOGGLES, named:**
+  - `enablePRAlerts` ("התראות שיא אישי", `WorkoutSettingsOverlay.tsx:432-437`) —
+    fully dead. PR celebrations are gated by `prCelebrationIntensity`, which is not
+    in this overlay. Its two purpose-built accessors have zero consumers.
+  - The entire `showAICoach` / `OPEN_AI_COACH` machinery — `OPEN_AI_COACH` is never
+    dispatched, nothing renders on the flag.
+- **NOTHING PREMIUM IS ACTUALLY LOCKED.** `PremiumLock` / `PlanGate` exist and have
+  **zero call sites anywhere in `src/`** — client-side gating for EVERY premium
+  feature is currently nil, while `/paywall` advertises "מאמן AI · בקרוב". This is a
+  revenue hole wider than the coach and was not on anyone's list.
+- **COMPETITIVE FINDING THAT REFRAMES AMIT'S ASK:** three of four strength apps ship
+  **no in-app LLM at all.** Hevy put its *deterministic* Trainer behind $2.99/mo and
+  **outsourced the LLM to the user's own ChatGPT**. Fitbod ships an adaptive
+  recommender. **Strong — 5M users, 4.9★ — ships zero AI**, tagline "Everything you
+  need. Nothing you don't." So "do what competitors do" points AWAY from a chat
+  coach and TOWARD a deterministic engine — which we already own, unplugged.
+- its top 3: (1) delete `טיפים לטכניקה` — the ביצוע tab already shows technique
+  steps, so it is a worse second copy carrying an unsupportable AI claim;
+  (2) decide the engine's fate — delete, or plug in shaped like Hevy Trainer
+  (6-question onboarding, a *stated* progression rule, Replace/Exclude, injury
+  substitution), and deleting is explicitly legitimate; (3) remove the dead toggles.
+
+## [T-021] AI coach — what do we actually have, and what do competitors ship?
+- status: dispatched (batch 8)
+- owner: fitness-qa
+- goal: the fact base for the batch-9 build, so we do not design against a guess.
+- files: WRITES ONLY `plans/AI-COACH-AUDIT.md`. Read-only everywhere else.
+- done when: every coach surface classified REAL / DERIVED / CANNED with file:line;
+  every settings toggle marked wired or dead; `services/ai.ts` documented (model,
+  prompt, failure path, cost guard); 3-4 named competitors with concrete shipped
+  features, not marketing claims; a prioritized build/delete recommendation
+- notes: same method as `plans/HOME-AUDIT.md`, which proved the readiness score was
+  two hardcoded values. No `src/` writes, no Playwright.
+
+## [T-022] Warmup screen — ACCEPTED 2026-08-28 14:23. **Not cosmetic. A broken screen.**
+- status: **done** — 2 of its 4 owned files changed (`WarmupCooldownFlow.tsx` and
+  `warmupCooldownData.ts` needed nothing), 16 screenshots, scratch spec deleted,
+  `test-results/` + `playwright-report/` removed, `e2e/` back to its original 13 specs.
+- **THE HEADLINE: the warmup timer was invisible in dark mode.** The `0:59`
+  countdown — **54.6px, the single biggest thing on the screen** — measured
+  **1.05:1** (`#0a0a0a` on `#111111`). In light it is 15.12:1. `PRODUCT.md` says
+  this app is used in "gym lighting (often dark rooms → dark mode matters)". So the
+  one number a warmup exists to show could not be seen where the app is actually used.
+- **SAME ROOT CAUSE AS THE DARK CALENDAR — this is now the THIRD instance.**
+  `--fs-primary` again: a token whose resolved value flips polarity between themes.
+  It also hit both primary CTAs (fill **1.05:1** in dark — only the mint text showed)
+  and the prev-button border (1.25:1). **The press-feedback token flipped too**, so
+  it moved press feedback to opacity instead. Fix used the EXISTING
+  `--btn-primary-bg` / `--btn-primary-text` pair that already inverts correctly —
+  the house solution, found rather than invented, for the third batch running.
+- **The `textAlign:'left'` + `dir='ltr'` pair I told it to hunt was there too.** The
+  selection-step `<h2>` "חימום" was pinned to the far edge, opposite the subtitle
+  directly under it. **That is Amit's original complaint, on a second screen.**
+- measured BEFORE → AFTER, all from the live DOM in both themes:
+  | | before | after |
+  |---|---|---|
+  | timer contrast, dark | **1.05:1** | **16.57:1** |
+  | `דלג על הכל` tap target | **14.7px** | **44px** |
+  | CTA fill vs backdrop, dark | **1.05** | **11.03** (text 10.98:1) |
+  | heading | `textAlign:left dir:ltr` | `textAlign:start dir:rtl` |
+  | content width @1280 | **1240px** (ignored the documented 480px cap) | **440px** |
+  | header title | 4.36:1 — under AA at 13px | fixed |
+  | smallest type | **9px** (below the scale's 10px floor) | 11px |
+  Light mode contrast unchanged — those tokens resolve identically there, so nothing
+  regressed in the theme that was already fine.
+- **It deleted before it added, per Amit's rule, and the reason is good:** the word
+  **`חימום` appeared FOUR times in the masthead.** It removed the duplicated title
+  from the chapter rail and deleted the bordered `סה״כ` duration badge outright. The
+  rail now carries the count and total; the `<h2>` carries the title.
+- copy moved to the documented plural-imperative: `בחרו`, `התחילו`, `דלגו`, `לחצו`.
+  Two Hebrew sentences moved off `--font-mono` onto `--font-body`.
+- **Process worth keeping:** it could not reach the warmup screen and its first three
+  approaches failed. Instead of guessing a fourth time it ran a discovery pass that
+  PRINTED the real control labels at each stage, found the template path, and got in.
+  It also rebuilt `dist/` before BOTH screenshot rounds, and checked for tests
+  asserting the copy before changing any of it.
+- **New finding it surfaced in passing:** `defaultWorkoutGoal` is **not read from
+  `appSettings`**, so the goal dialog appears even when a default is set. Another
+  setting that does not do what it says — same family as T-021's dead toggles. Open.
+
+### Verified baseline — 2026-08-28 14:23, lead-measured on a CONFIRMED-static tree
+`spawn_list` all `[done]`; newest source mtime 5 minutes old before any gate ran.
+Suite run TWICE per the flake protocol — identical both times.
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **695** files (unchanged — batch 8 added no test files) |
+| `npm run test:run` | **1377 tests**, exit 0 on both runs — floor held exactly |
+| RTL | `PHYSICAL_HITS=0` across all `WarmupCooldown*.tsx` |
+| screenshots | 16 `warmup-*` before/after × selection/active × 390/1280 × light/dark |
+| e2e | 13 specs, no scratch, `test-results/` + `playwright-report/` clean |
+
+### ⚠️ SYSTEMIC — a task in its own right, bigger than any one screen
+**`--fs-primary` flips polarity between themes and has now silently broken three
+separate surfaces**: the home calendar's trained-day fill (batch 7), the warmup
+timer, and both warmup CTAs. Each was found by accident, one screen at a time, by
+whoever happened to be measuring contrast that batch. **Nobody has ever swept the
+app for other consumers of it.** That sweep is batch 9 work and it is not cosmetic —
+each instance so far made a real thing unreadable in the theme this app is used in.
+
+## [T-022] Warmup screen — polish the look
+- status: dispatched (batch 8)
+- owner: fitness-design
+- goal: Amit asked to improve how the warmup screen looks. Photograph it first,
+  then decide what is actually wrong.
+- files (EXCLUSIVE): the four warmup files in the ownership map above
+- done when: verify green; test:run >= 1377; before/after screenshots at 390 AND
+  1280 in light AND dark on a TALL viewport; every change stated with measured
+  before/after numbers
+- notes: the ONLY Playwright runner. **`npm run build` first** or the preview serves
+  a stale bundle. **`fullPage: true` LIES in this app** — the inner `MAIN` scrolls,
+  not the document, so use 390×1500 / 1280×1500. Check specifically for
+  `textAlign:'left'` + `direction:'ltr'` — that exact pair was just found pinning
+  the summary heading to the wrong edge.
+
+
 
 ## [T-016] Photograph the settled app
 - status: dispatched (batch 6)

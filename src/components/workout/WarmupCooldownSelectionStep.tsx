@@ -25,7 +25,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
   onSkip,
 }) => {
   const title = type === 'warmup' ? 'חימום' : 'צינון';
-  const subtitle = type === 'warmup' ? 'בחר תרגילי חימום' : 'בחר מתיחות לצינון';
+  const subtitle = type === 'warmup' ? 'בחרו תרגילי חימום' : 'בחרו מתיחות לצינון';
 
   return (
     <m.div
@@ -34,16 +34,21 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="flex flex-col h-full"
+      // The overlay is fixed inset-0, so without a cap the rows measured 1240px
+      // wide at desktop. --max-width is the app-wide 480px column.
+      style={{ maxWidth: 'var(--max-width)', marginInline: 'auto', width: '100%' }}
     >
       {/* Masthead */}
       <div style={{ background: 'var(--fs-primary)', flexShrink: 0 }}>
-        {/* Chapter strip */}
+        {/* Data rail — how many and how long. The title is NOT repeated here:
+            it already sits 40px below as the h2, and the dialog is labelled
+            "חימום" for screen readers. */}
         <div
           className="chapter-break"
           style={{ borderBottom: '1px solid rgba(var(--text-on-navy-rgb),0.1)' }}
         >
-          <span className="left" style={{ color: 'var(--fs-accent)' }}>
-            {title}
+          <span className="left" dir="ltr" style={{ color: 'var(--fs-accent)' }}>
+            {formatTime(totalDuration)}
           </span>
           <span className="right">
             {activeItems.length === 1
@@ -53,9 +58,11 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
         </div>
 
         {/* Title area */}
-        <div className="px-5 pt-5 pb-6">
+        <div className="px-5 pt-5 pb-5">
+          {/* No direction/text-align override: the Hebrew title must follow the
+              document's RTL flow and sit at the start edge, in line with the
+              subtitle below it. Hardcoding ltr/left pinned it to the far side. */}
           <h2
-            className=""
             style={{
               fontFamily: 'var(--font-display)',
               fontWeight: 700,
@@ -63,57 +70,22 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
               color: 'var(--color-ink-on-dark)',
               lineHeight: 0.9,
               letterSpacing: '-0.02em',
-              direction: 'ltr',
-              textAlign: 'left',
             }}
           >
             {title}
           </h2>
+          {/* font-body, not font-mono: this is a Hebrew sentence, and mono is
+              reserved for sparse micro labels. */}
           <p
             style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: '-0.01em',
+              fontFamily: 'var(--font-body)',
+              fontSize: 13,
               color: 'rgba(var(--text-on-navy-rgb),0.7)',
-              marginTop: 8,
+              marginTop: 10,
             }}
           >
             {subtitle}
           </p>
-
-          {/* Total duration badge */}
-          <div
-            className="mt-3"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              background: 'rgba(var(--text-on-navy-rgb),0.08)',
-              padding: '6px 12px',
-              border: '1px solid rgba(var(--text-on-navy-rgb),0.15)',
-            }}
-          >
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                letterSpacing: '-0.01em',
-                color: 'var(--fs-accent)',
-              }}
-            >
-              {formatTime(totalDuration)}
-            </span>
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                letterSpacing: '-0.01em',
-                color: 'rgba(var(--text-on-navy-rgb),0.7)',
-              }}
-            >
-              סה״כ
-            </span>
-          </div>
         </div>
       </div>
 
@@ -179,7 +151,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
                     // #1a1a1a in dark mode (1.1:1 — the invisible-warmup bug)
                     color: item.selected ? 'var(--fs-ink)' : 'var(--fs-muted)',
                     letterSpacing: '-0.01em',
-                    textAlign: 'right',
+                    textAlign: 'start',
                   }}
                 >
                   {item.nameHe}
@@ -217,29 +189,35 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             padding: '18px 24px',
-            background: 'var(--fs-primary)',
-            color: 'var(--fs-accent)',
+            // btn-primary-*, not fs-primary/fs-accent: fs-primary is #0a0a0a in
+            // dark and the fill measured 1.05:1 against the #111 surface — the
+            // CTA had no visible edge. This token pair inverts in dark (mint
+            // fill, dark ink) and is identical to the old values in light.
+            background: 'var(--btn-primary-bg)',
+            color: 'var(--btn-primary-text)',
             border: 'none',
             cursor: 'pointer',
             fontFamily: 'var(--font-display)',
             fontWeight: 600,
-            fontSize: 14,
+            fontSize: 15,
             letterSpacing: '-0.01em',
             opacity: activeItems.length === 0 ? 0.5 : 1,
-            transition: 'all 150ms',
+            transition: 'opacity 150ms var(--ease-out)',
             minHeight: 52,
           }}
+          // Press feedback via opacity so it reads the same in both themes; a
+          // background swap needed a token that flips polarity in dark.
           onPointerDown={(e) => {
-            e.currentTarget.style.background = 'var(--color-primary-hover)';
+            e.currentTarget.style.opacity = '0.85';
           }}
           onPointerUp={(e) => {
-            e.currentTarget.style.background = 'var(--fs-primary)';
+            e.currentTarget.style.opacity = '1';
           }}
           onPointerLeave={(e) => {
-            e.currentTarget.style.background = 'var(--fs-primary)';
+            e.currentTarget.style.opacity = '1';
           }}
         >
-          התחל {title} ({activeItems.length})
+          התחילו {title}
         </button>
         <button
           type="button"
@@ -258,12 +236,14 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
             fontWeight: 600,
             fontSize: 13,
             letterSpacing: '-0.01em',
-            transition: 'all 150ms',
+            transition: 'color 150ms var(--ease-out), border-color 150ms var(--ease-out)',
             minHeight: 48,
           }}
+          // fs-ink, not fs-primary: fs-primary is near-black in dark, so pressing
+          // this button used to make it disappear into the surface.
           onPointerDown={(e) => {
-            e.currentTarget.style.color = 'var(--fs-primary)';
-            e.currentTarget.style.borderColor = 'var(--fs-primary)';
+            e.currentTarget.style.color = 'var(--fs-ink)';
+            e.currentTarget.style.borderColor = 'var(--fs-ink)';
           }}
           onPointerUp={(e) => {
             e.currentTarget.style.color = 'var(--fs-muted)';
@@ -274,7 +254,7 @@ const SelectionStep: React.FC<SelectionStepProps> = ({
             e.currentTarget.style.borderColor = 'var(--fs-muted)';
           }}
         >
-          דלג על {title}
+          דלגו על {title}
         </button>
       </div>
     </m.div>

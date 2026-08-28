@@ -46,10 +46,12 @@ interface WorkoutSummaryProps {
    */
   onRepeatWorkout?: () => void;
   /**
-   * Forward loop-closer — "צפו בהתקדמות" → Progress (Workouts tab). When
-   * provided it becomes the PRIMARY footer action and "סיום" demotes to a quiet
-   * exit-to-home, so finishing a workout lands the user on the trend it just
-   * moved instead of back on the Dashboard "start another workout" CTA.
+   * Forward loop-closer — "צפו בהתקדמות" → Progress (Workouts tab). Rendered as
+   * the SECOND-tier footer action directly under the primary "סיום": at the end
+   * of a workout the default intent is "I'm done", not "browse my progress", so
+   * "סיום" owns the mint fill in BOTH branches and this stays the opt-in detour
+   * onto the trend the session just moved. Omitted ⇒ the action isn't rendered
+   * and the footer simply loses its second tier.
    */
   onViewProgress?: () => void;
 }
@@ -123,9 +125,10 @@ const crossedMilestone = (before: number, after: number): number | null => {
   return crossed;
 };
 
-// Primary footer action — the single mint-fill CTA. Extracted so the summary
-// can swap which action is primary (סיום vs the forward "צפו בהתקדמות") without
-// duplicating the press-feedback styling.
+// Primary footer action — the single mint-fill CTA. Always "סיום": finishing is
+// the user's default intent at the end of a workout. Kept extracted so the
+// summary can re-point which action is primary without duplicating the
+// press-feedback styling.
 function PrimaryAction({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} className="start-workout-btn focus-ring">
@@ -1081,15 +1084,15 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
           }}
         >
-          {onViewProgress ? (
-            <>
-              <PrimaryAction label="צפו בהתקדמות" onClick={onViewProgress} />
-              <button type="button" onClick={onClose} className="cta-ghost focus-ring w-full">
-                סיום
-              </button>
-            </>
-          ) : (
-            <PrimaryAction label="סיום" onClick={onClose} />
+          {/* Tier 1 — "סיום" owns the mint fill unconditionally. At the end of a
+              workout the default intent is "I'm done"; the forward detour to
+              Progress is tier 2 below, and self-hides when not wired. */}
+          <PrimaryAction label="סיום" onClick={onClose} />
+
+          {onViewProgress && (
+            <button type="button" onClick={onViewProgress} className="cta-ghost focus-ring w-full">
+              צפו בהתקדמות
+            </button>
           )}
 
           {onRepeatWorkout && (
@@ -1127,7 +1130,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
               className="focus-ring"
               style={utilityActionStyle}
             >
-              ייצוא CSV
+              ייצאו CSV
             </button>
             {onSaveAsTemplate && (
               <button

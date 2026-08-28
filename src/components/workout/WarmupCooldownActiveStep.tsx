@@ -47,13 +47,23 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="flex flex-col"
-      style={{ height: '100%', background: 'var(--fs-surface)' }}
+      // Without a cap the fixed inset-0 overlay stretched the nav row across the
+      // full desktop width. --max-width is the app-wide 480px column.
+      style={{
+        height: '100%',
+        background: 'var(--fs-surface)',
+        maxWidth: 'var(--max-width)',
+        marginInline: 'auto',
+        width: '100%',
+      }}
     >
       {/* Navy header strip */}
       <div
         style={{
           background: 'var(--fs-primary)',
-          padding: '16px 20px',
+          // 6px block padding + a 44px tap target = a 56px strip. The old
+          // 16px/20px padding with a zero-padding button gave a 14.7px target.
+          padding: '6px 8px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -64,9 +74,10 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
           dir="ltr"
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: 11,
+            fontSize: 12,
             letterSpacing: '-0.01em',
             color: 'var(--fs-accent)',
+            paddingInline: 12,
           }}
         >
           {currentIndex + 1} / {totalItems}
@@ -77,7 +88,8 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
             fontWeight: 600,
             fontSize: 13,
             letterSpacing: '-0.01em',
-            color: 'rgba(var(--text-on-navy-rgb),0.5)',
+            // 0.5 alpha measured 4.36:1 on the light navy — under AA. 0.72 clears it.
+            color: 'rgba(var(--text-on-navy-rgb),0.72)',
           }}
         >
           {title}
@@ -91,12 +103,13 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
             color: 'rgba(var(--text-on-navy-rgb),0.7)',
             cursor: 'pointer',
             fontFamily: 'var(--font-mono)',
-            fontSize: 10,
+            fontSize: 12,
             letterSpacing: '-0.01em',
-            padding: 0,
+            minHeight: 44,
+            paddingInline: 12,
           }}
         >
-          דלג על הכל
+          דלגו על הכל
         </button>
       </div>
 
@@ -112,7 +125,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
         <span
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: 10,
+            fontSize: 11,
             letterSpacing: '-0.01em',
             color: 'var(--fs-muted)',
           }}
@@ -127,8 +140,7 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
             color: 'var(--fs-heading)',
             lineHeight: 1,
             letterSpacing: '-0.02em',
-            marginTop: 6,
-            direction: 'rtl',
+            marginTop: 8,
           }}
         >
           {currentItem?.nameHe}
@@ -213,7 +225,12 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
                 fontFamily: 'var(--font-display)',
                 fontWeight: 700,
                 fontSize: 'clamp(48px, 14vw, 72px)',
-                color: isWarning ? 'var(--fs-warn)' : 'var(--fs-primary)',
+                // fs-heading, not fs-primary. fs-primary is #0a0a0a in dark and
+                // this number measured 1.05:1 on the #111 surface — the single
+                // largest element on the screen was invisible. fs-heading is the
+                // same #16292d in light and flips to #f0f0f0 in dark. It is also
+                // what the exercise name above already uses.
+                color: isWarning ? 'var(--fs-warn)' : 'var(--fs-heading)',
                 letterSpacing: '-0.03em',
                 lineHeight: 1,
                 fontVariantNumeric: 'tabular-nums',
@@ -225,10 +242,10 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: 9,
+                  fontSize: 11,
                   letterSpacing: '-0.01em',
                   color: 'var(--fs-muted)',
-                  marginTop: 4,
+                  marginTop: 6,
                 }}
               >
                 מושהה
@@ -238,10 +255,10 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: 9,
+                  fontSize: 11,
                   letterSpacing: '-0.01em',
                   color: 'var(--color-success)',
-                  marginTop: 4,
+                  marginTop: 6,
                 }}
               >
                 הושלם!
@@ -261,15 +278,16 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
       >
         <div
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 9,
-            letterSpacing: '-0.01em',
+            // font-body 12, not mono 9: this is a Hebrew sentence, and 9px is
+            // below the smallest size in the type scale.
+            fontFamily: 'var(--font-body)',
+            fontSize: 12,
             color: 'var(--fs-muted)',
             textAlign: 'center',
             marginBottom: 12,
           }}
         >
-          לחץ על השעון להשהייה / המשך
+          לחצו על השעון להשהייה או המשך
         </div>
         <div className="flex gap-2">
           <button
@@ -283,8 +301,11 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               background: 'var(--fs-surface-2)',
-              color: currentIndex === 0 ? 'var(--fs-muted)' : 'var(--fs-primary)',
-              border: '2px solid var(--fs-primary)',
+              // fs-ink / color-border-strong, not fs-primary: fs-primary is
+              // #0a0a0a in dark, so both the glyph and the 2px border measured
+              // ~1.25:1 on the #262626 fill and vanished.
+              color: currentIndex === 0 ? 'var(--fs-muted)' : 'var(--fs-ink)',
+              border: '2px solid var(--color-border-strong)',
               borderRadius: 12,
               cursor: currentIndex === 0 ? 'not-allowed' : 'pointer',
               fontFamily: 'var(--font-display)',
@@ -310,26 +331,29 @@ const ActiveStep: React.FC<ActiveStepProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               padding: '16px 24px',
-              background: 'var(--fs-primary)',
-              color: 'var(--fs-accent)',
+              // btn-primary-*: fs-primary fill measured 1.05:1 against the dark
+              // surface, so the primary CTA had no visible edge. Identical values
+              // in light; inverts to a mint fill in dark.
+              background: 'var(--btn-primary-bg)',
+              color: 'var(--btn-primary-text)',
               border: 'none',
               borderRadius: 12,
               cursor: 'pointer',
               fontFamily: 'var(--font-display)',
               fontWeight: 600,
-              fontSize: 14,
+              fontSize: 15,
               letterSpacing: '-0.01em',
-              transition: 'background 150ms',
+              transition: 'opacity 150ms var(--ease-out)',
               minHeight: 52,
             }}
             onPointerDown={(e) => {
-              e.currentTarget.style.background = 'var(--color-primary-hover)';
+              e.currentTarget.style.opacity = '0.85';
             }}
             onPointerUp={(e) => {
-              e.currentTarget.style.background = 'var(--fs-primary)';
+              e.currentTarget.style.opacity = '1';
             }}
             onPointerLeave={(e) => {
-              e.currentTarget.style.background = 'var(--fs-primary)';
+              e.currentTarget.style.opacity = '1';
             }}
           >
             {isLast ? 'סיום' : 'הבא ←'}
