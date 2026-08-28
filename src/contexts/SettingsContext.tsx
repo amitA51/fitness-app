@@ -59,7 +59,6 @@ export const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
   confirmExerciseComplete: false,
   enableSupersets: false,
   showRestBetweenExercises: true,
-  enablePRAlerts: true,
   prCelebrationIntensity: 'full',
   trackVolumeRecords: true,
   timerDisplayMode: 'countup',

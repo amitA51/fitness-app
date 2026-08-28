@@ -87,7 +87,6 @@ export const DEFAULT_WORKOUT_SETTINGS: WorkoutSettings = {
   autoAddSets: false,
 
   // Personal Records
-  enablePRAlerts: true,
   prCelebrationIntensity: 'full',
   trackVolumeRecords: true,
 
@@ -521,11 +520,9 @@ export function usePRSettings() {
   const { get, updateSetting } = useWorkoutSettings();
 
   return {
-    alertsEnabled: get('enablePRAlerts'),
     celebrationIntensity: get('prCelebrationIntensity'),
     trackVolumeRecords: get('trackVolumeRecords'),
 
-    setAlertsEnabled: (enabled: boolean) => updateSetting('enablePRAlerts', enabled),
     setCelebrationIntensity: (intensity: 'off' | 'subtle' | 'full') =>
       updateSetting('prCelebrationIntensity', intensity),
     setTrackVolumeRecords: (enabled: boolean) => updateSetting('trackVolumeRecords', enabled),
@@ -655,10 +652,6 @@ export function useAutoStartRest(): boolean {
 
 export function useVoiceCountdownEnabled(): boolean {
   return useWorkoutSettingValue('voiceCountdownEnabled');
-}
-
-export function useEnablePRAlerts(): boolean {
-  return useWorkoutSettingValue('enablePRAlerts');
 }
 
 export function usePRCelebrationIntensity(): 'off' | 'subtle' | 'full' {

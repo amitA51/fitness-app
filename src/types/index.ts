@@ -649,7 +649,6 @@ export interface WorkoutSettings {
   autoAddSets?: boolean;
 
   // Personal Records
-  enablePRAlerts: boolean;
   prCelebrationIntensity: 'off' | 'subtle' | 'full';
   trackVolumeRecords: boolean;
 

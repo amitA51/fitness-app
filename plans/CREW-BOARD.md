@@ -929,6 +929,244 @@ and the newest source mtime was 8 minutes old, before any gate was run.
 
 ---
 
+# Batch 9 — dispatched 2026-08-28 14:32. Amit: "לך על זה — תנקה, תסרוק, ואחר כך נחבר את המנוע"
+
+So the order is settled: **clean up the fake, map the broken token, and the engine is a
+later decision.** Not building an AI coach.
+
+### The recon that changed this batch's shape — do not re-run it
+- **`--fs-primary` appears 249 times across 89 files.** It is not a niche token. A
+  "fix every consumer" task cannot hold exclusive ownership of 89 files and would
+  collide with every other task. **So T-024 is READ-ONLY mapping.** The three known
+  instances are already fixed; what is unknown is how many more exist. Finding them
+  is the urgent half, fixing them is mechanical once the list is real.
+  **Also important for the brief:** the bug only bites where the token is a
+  FILL / BACKGROUND / BORDER whose surrounding surface does NOT flip with it. As a
+  text colour on a surface that flips alongside it, it is fine. Without that
+  distinction the worker would report 249 false alarms.
+- **The dead coach machinery spans 10 files**, including two shared ones
+  (`src/contexts/SettingsContext.tsx`, `src/types/index.ts`). Those are normally
+  lead-serialized; safe here only because T-023 is the sole writer this batch.
+
+### Lead decision — the sliced `כלים` chip is dropped from this batch
+It lives in `ExerciseDisplay.tsx`, which T-023 may need for the tutorial-tab
+deletion, and verifying a 390px overflow needs the browser T-025 is holding. It is a
+clipped letter, not a broken feature. Batch 10 gets it with the browser, alongside
+photographing the new summary footer.
+
+### Ownership map — disjoint, verified against a real grep
+- **T-023** → `ExerciseTutorial.tsx`, `overlays/WorkoutSettingsOverlay.tsx`,
+  `hooks/useWorkoutSettings.ts`, `core/{workoutTypes,workoutReducer,workoutReducerUiHandlers}.ts`,
+  `core/{WorkoutContext,WorkoutProvider}.tsx`, `src/contexts/SettingsContext.tsx`,
+  `src/types/index.ts`, plus `components/ExerciseDisplay.tsx` if the tab deletion
+  requires it
+- **T-024** → WRITES ONLY `plans/TOKEN-POLARITY-AUDIT.md`. Read-only in `src/`.
+- **T-025** → WRITES ONLY `visual-qa/**` + at most one scratch e2e spec it deletes.
+  Read-only in `src/`. **HOLDS Playwright.**
+- Held for batch 10: the `כלים` chip, the summary footer tier 2/3 weight inversion
+  (`צפו בהתקדמות` → `.cta-secondary`, `חזרו על האימון` → ghost), fixing whatever
+  T-024 finds, the engine decision, the paywall gating hole, and the LOW items.
+
+## [T-023] Fake AI deleted — ACCEPTED on evidence 2026-08-28 14:47
+- status: **accepted; the lead's authoritative verify + test:run owed once T-024 and
+  T-025 land** (no gates run yet — deliberately, the tree is still moving)
+- **BOTH HARD CONSTRAINTS HELD, and it checked before acting rather than after.**
+  1. It confirmed the `ביצוע` tab renders REAL technique content before deleting
+     `טיפים לטכניקה`: a `שלבי הביצוע` carousel (`ExerciseTutorial.tsx:685`) with a
+     title, description and tip per step, resolved at `:231` from the exercise
+     catalogue's own instructions via `splitInstructionSteps(instructions)`. So the
+     deleted tab really was a worse second copy, not the only guidance.
+  2. **The ask tab is untouched** — `askExerciseQuestion` (`:329`), `שלחו למאמן`,
+     `תשובת המאמן` and its `role="alert"` are exactly as they were.
+- **Zero-hit grep confirmed across all of `src/`** for `enablePRAlerts`,
+  `OPEN_AI_COACH`, `showAICoach` — plus the now-orphaned accessors it found and
+  removed on its own: `usePRSettings`, `useEnablePRAlerts`, `getExerciseTutorial`
+  (the canned tips table itself, not just its tab).
+- **Test arithmetic closes at zero: 157/1377 before → 157/1377 after.** And it proved
+  that instead of asserting it — scanned every `*.{test,spec}.{ts,tsx}` in the repo
+  for all six deleted symbols, zero matches, and identified that
+  `ExerciseTutorial.test.tsx` (2 tests) only asserts the `סוג`/`כיוון`/`רמה`
+  classification facts in the ביצוע tab, so it neither needed changing nor broke.
+- **Item 4 judgement call, and it was right:** the only remaining in-scope "AI" label
+  is the panel title, which still fronts the genuinely-real ask tab. It left the
+  claim intact and explained why rather than stripping it — stripping would have made
+  the one real feature under-claim.
+- **One thing I still owe a check on at gate time:** it left a `// No-op: the
+  AI-coach overlay state was deleted (nothing ever opened it)` comment. Verify
+  whether that is a required stub (a switch arm the types demand) or leftover dead
+  code that should go with the rest.
+
+## [T-023] Delete the fake AI and the dead toggles
+- status: dispatched (batch 9)
+- owner: fitness-dev
+- goal: nothing in the app claims to be AI unless it is, and no settings control
+  exists that changes nothing.
+- files (EXCLUSIVE): the 10 mapped above
+- done when: verify green; test:run >= 1377 minus only tests whose subject was
+  deleted, named one by one; zero `enablePRAlerts` / `OPEN_AI_COACH` / `showAICoach`
+  left in `src/`; the ordered list reported item-by-item
+- notes: ORDERED, partial-in-order acceptable. **Must confirm the ביצוע tab really
+  shows technique content BEFORE deleting `טיפים לטכניקה`** — otherwise we delete the
+  only technique guidance. **Must NOT touch the ask tab** (`ExerciseTutorial.tsx:344`
+  → `askExerciseQuestion`) — that is the one genuinely real AI surface and it keeps
+  its claim. No Playwright.
+
+## [T-024] Token polarity audit — ACCEPTED 2026-08-28 14:50. **VERDICT: FAIL, 214 sites.**
+- status: **done** — delivered `plans/TOKEN-POLARITY-AUDIT.md`, `src/` untouched.
+- **IT IS NOT THREE INSTANCES. IT IS 214 AT-RISK PAINT SITES OUT OF 249.**
+  | Role | At risk | Safe |
+  |---|---|---|
+  | fill / background | 112 | 1 |
+  | border | 92 | 0 |
+  | **total** | **214** | **14** |
+  Banded so it is executable, not a panic: **Band A** real breakage · **Band B** the 92
+  borders · **Band C** ~40 "deliberately dark chrome" fills that are degraded, not broken.
+- **THE BLOCKER NOBODY CAUGHT — and it indicts our own three fixes.**
+  `src/components/ui/Button.tsx:66-67`: the shared primary button's hover/active state
+  **overrides the correctly-inverting `--btn-primary-bg` with `--color-primary-hover`,
+  a sibling token carrying the SAME defect** (`#0d1a1c` light → `#050505` dark).
+  Light **8.42:1**, dark **1.08:1**. So **pressing ANY primary CTA anywhere in the app**
+  turns it into a near-black rectangle with near-black text for the duration of the
+  press. Our batch 7/8 fixes corrected the RESTING state and left the PRESSED state
+  broken — they were right and incomplete.
+- **Runner-up, worst pure number:** `src/AppRouter.tsx:939`, the global route spinner —
+  **15.12:1 → 1.05:1**. Its point: unlike a CTA there is no label to rescue it, the
+  element IS pure geometry, so **every lazy route load shows a blank screen in dark.**
+- **Runner-up by inversion:** `src/components/ui/ToggleSwitch.tsx:142` — the knob is the
+  crispest thing in the track in light (11.84:1) and the DARKEST thing in it in dark
+  (1.31:1). That is every toggle in Settings.
+- **Sibling tokens sharing the defect:** `--navy`, `--color-primary`, `--navy-deep`,
+  `--color-primary-hover`, `--navy-light`, `--fs-rubber` (`#0d1516` → `#050505`,
+  **18.49:1 → 1.08:1**, live at `InlineRestTimer.tsx:249`).
+  **And it named four that are fixed ON PURPOSE and are correct — `--color-ink-on-accent`,
+  `--fs-signal`, `--color-on-mustard`, `--color-scrim` — "do not touch them."** That
+  restraint is what keeps the fix from becoming a wrecking ball.
+- **LATENT LANDMINES — the best catch, and it is a critique of our own batch-7 work:**
+  `components.css:1148` STILL holds bug #1's original
+  `.day-cell.done { background: var(--fs-primary) }`. **It is inert only because
+  `WeeklyGrid.tsx` inline-overrides it — the next consumer of that class regresses
+  silently.** Likewise `components.css:718` (`.btn-primary-fs`) is bug #3's exact shape
+  with no consumer yet, and `components.css:367` would render a checked and an unchecked
+  toggle track **identically at 1.00:1** in dark.
+- **Fix plan: 21 FILE-EXCLUSIVE tasks, P0→P6.** P0 = `Button.tsx` **plus a new
+  `--btn-primary-bg-hover` token, because no existing token fits — flagged rather than
+  invented.** P1-P3 the controls and data-viz that lose state. P5 the mechanical
+  92-border sweep to `--color-border-strong`, split by directory. House replacements
+  that already exist and already carry explanatory comments: `--nav-pill-bg` /
+  `--nav-pill-text`, `--btn-primary-bg` / `--btn-primary-text`, `--fs-heading`,
+  `--color-border-strong`.
+- **Honest about its one gap:** for ~25 fills it could not tell whether the intent is
+  "deliberately dark chrome" (keep the fill, add an edge) or "prominent selected fill"
+  (swap to `--nav-pill-bg`). Both read 1.05-1.31:1 in dark; only the correct fix
+  differs. It said a visual pass settles it in minutes and that it could not run one.
+  → fold that decision into the next batch that holds the browser.
+
+## [T-024] Map every consumer of the token that flips polarity
+- status: dispatched (batch 9)
+- owner: fitness-qa
+- goal: the fact base for a bounded fix — which of the 249 uses are actually at risk.
+- files: WRITES ONLY `plans/TOKEN-POLARITY-AUDIT.md`. Read-only everywhere else.
+- done when: every at-risk use listed with file:line, its ROLE (fill / border / text),
+  and the measured contrast in BOTH themes; safe uses summarized as a count, not
+  enumerated; a prioritized fix list grouped so each group can be one owned task
+- notes: calibration — the three known instances are `WeeklyGrid`'s trained-day fill
+  (11.83:1 light / 1.31:1 dark, polarity inverted), the warmup timer (15.12 / 1.05)
+  and both warmup CTAs. No `src/` writes, no Playwright.
+
+## [T-025] Screenshot verification — ACCEPTED 2026-08-28 14:55. **PASS on all three.**
+- status: **done** — 20 PNGs, build run first (clean, 9.26s), scratch spec deleted,
+  `e2e/` back to 13 specs, `test-results/` + `playwright-report/` clean. No `fullPage`.
+- **SURFACE 1 — the template sheet: PASS.** `[role="dialog"]` top = **+1134.23** in all
+  four combos (was `-143`). Name field fully inside the viewport. Scrim measures
+  **1500/1500 tall and 390/390 · 1280/1280 wide** — the 247px band is gone.
+  **It went past the brief in the way that mattered:** an `elementFromPoint` probe at
+  y=567, up in the template list, returns **the scrim itself, not a list row** — so the
+  list below is dimmed AND unclickable. Measuring the scrim alone would not have proven
+  that, and click-through was half of the original defect.
+  Heading `תבנית חדשה` inked-glyph right edge sits **0.00px** from the content-box right
+  edge in all four combos. Nothing under 44px.
+  **Honest, and it caught a gap in MY brief:** the sheet's fit on a real 390×844 phone is
+  *derived* (content is a fixed 365.77px, bottom-anchored under `maxHeight: 85vh`, so it
+  fits anything taller than ~431px), not measured — because I specified 1500-tall
+  viewports, so no real phone height was ever photographed.
+- **SURFACE 2 — the week strip: PASS on the reported bug.** trained vs empty
+  **11.83:1 light / 8.84:1 dark** (was 1.31:1 dark, inverted). In dark the trained cell
+  is now the **lightest** cell in the row, so "trained = most prominent" holds in both
+  themes. Today-ring on a trained day still visible: 15.12:1 light / 10.98:1 dark.
+- **⚠️ MEDIUM DEFECT, AND IT CORRECTS A CLAIM I ACCEPTED IN BATCH 7.** T-018 reported
+  "three states stay mutually distinguishable in both themes". **Measured, that is false.**
+  A declared REST day is not distinguishable from an EMPTY day by luminance:
+  rest-vs-empty fill **1.04:1 dark / 1.19:1 light**. The entire distinction rests on a
+  1px dashed border and letter hue — border vs empty fill **2.47:1 dark / 1.10:1 light**,
+  **both under the 3:1 WCAG 1.4.11 non-text floor** — and the rest letter vs the empty
+  letter is **1.04:1 in dark**, i.e. differing essentially only in HUE (teal vs grey),
+  which fails for colour-blind users outright.
+  Not a regression (the fix only touched `.done`) but it means **the strip conveys two
+  states reliably, not three.** → batch 10.
+- **LOW — the latent landmine confirmed a SECOND time, independently.**
+  `.day-cell.done { background: var(--fs-primary) }` at `src/styles/components.css:1147`
+  still holds the `#0a0a0a`-in-dark value; it renders correctly today ONLY because
+  `WeeklyGrid.tsx` sets `--nav-pill-bg` inline on every active cell. T-024 found this by
+  reading CSS, T-025 by reading both files — two workers, same trap. That raises it from
+  a note to a real task.
+- **LOW — a FOURTH `--fs-primary` instance, on the screen we just fixed:** the warmup
+  timer step's "Navy header strip" paints `#0a0a0a` on a `#111111` body ≈ **1.04:1**, so
+  the band is invisible and only its text marks it. Controls on it stay legible (8.62:1),
+  so cosmetic — but T-022's warmup fix was also incomplete on its own screen.
+- **LOW, out of scope, correctly labelled:** `ActionChip` bleeds **2.97px** past the left
+  edge at 390 — found on the set-logging screen *behind* the warmup overlay, not on any
+  of the three surfaces. `src/components/workout/components/ActionChip.tsx`. This is
+  almost certainly the same family as the sliced `כלים` chip held for batch 10, and now
+  it has a precise location.
+- **It refused a false positive:** the centred `h2` on the active timer step measures
+  equal gaps both sides (116.56 each) — `text-align: center` by design, not a broken RTL
+  start edge. Every other Hebrew heading measured flush right at 0.00px.
+- **Two measurement bugs it hit, fixed, and disclosed** — worth carrying forward:
+  1. An in-progress workout persists in storage, so combos 2-4 resumed set-logging
+     instead of reaching the warmup. Fixed by wiping localStorage + all IndexedDB stores
+     per combo.
+  2. **The workout's own elapsed clock is also `mm:ss`, so an unscoped selector read it
+     as the warmup countdown. Its first S3 numbers were wrong for that reason and it
+     said so**, reporting only the scoped re-run.
+
+### Verified baseline — 2026-08-28 14:55, lead-measured on a CONFIRMED-static tree
+`spawn_list` all `[done]`; newest source mtime 15 minutes old before any gate ran.
+Suite run TWICE per the flake protocol — identical both times.
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **695** files (unchanged — batch 9 added no test files) |
+| `npm run test:run` | **1377 tests**, exit 0 on both runs — floor held exactly |
+| dead symbols | **lead-verified ZERO hits** for `enablePRAlerts` / `OPEN_AI_COACH` / `showAICoach` across `src/` — not taken on report |
+| screenshots | 20 new `ev-s*` PNGs, 3 surfaces × 390/1280 × light/dark |
+| e2e | 13 specs, no scratch, `test-results/` + `playwright-report/` clean |
+
+### Batch 10 queue — now driven by evidence, in priority order
+1. **P0 `Button.tsx`** — every primary CTA in the app goes ~black-on-black while pressed
+   in dark (1.08:1). Needs the new `--btn-primary-bg-hover` token T-024 flagged.
+2. **The route spinner** (`AppRouter.tsx:939`, 1.05:1) and **every Settings toggle**
+   (`ToggleSwitch.tsx:142`, polarity inverted).
+3. **The rest-vs-empty day cell** — two states, not three, and hue-only is not a signal.
+4. **The three latent CSS rules** (`components.css:1147`, `:718`, `:367`) — fix the
+   stylesheet, not just the inline override.
+5. The `ActionChip` / `כלים` overflow at 390 · the summary footer tier 2/3 inversion ·
+   the ~25 fills needing a 5-minute visual call · the paywall gating hole · the engine.
+
+## [T-025] Photograph what was fixed without a browser
+- status: dispatched (batch 9)
+- owner: fitness-qa
+- goal: close the evidence debt I own — the template sheet and the dark calendar were
+  fixed in batch 7 with no browser, and nobody has seen either since.
+- files: WRITES ONLY `visual-qa/**`. Read-only in `src/`. Reports defects, fixes none.
+- done when: the "תבנית חדשה" sheet, the home week strip and the warmup screen are all
+  captured at 390 AND 1280 in BOTH themes; the sheet's dialog `top` measured `>= 0`
+  and its scrim measured covering the full viewport; trained-vs-empty calendar
+  contrast stated as a number in both themes
+- notes: the ONLY Playwright runner. **`npm run build` FIRST.** **`fullPage: true`
+  LIES in this app** — use 390×1500 / 1280×1500.
+
+
+
 # Batch 8 — dispatched 2026-08-28 13:52. Amit's last two asks + his primary-action ruling.
 
 **Amit decided: `סיום` becomes the primary action on the summary footer.** He then said

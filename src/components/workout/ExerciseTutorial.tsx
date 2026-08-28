@@ -141,9 +141,6 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   // Track demo-image failures per index, so one broken frame hides only itself —
   // the working frame stays visible instead of the whole demonstration block.
   const [failedImgs, setFailedImgs] = useState<ReadonlySet<number>>(() => new Set());
-  const [showContent, setShowContent] = useState(false);
-  const [tutorialContent, setTutorialContent] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
@@ -257,8 +254,6 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
   useEffect(() => {
     if (exerciseName) {
       setActiveStep(0);
-      setShowContent(false);
-      setTutorialContent(null);
       setFailedImgs(new Set());
     }
   }, [exerciseName]);
@@ -310,20 +305,6 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, lastStep, onClose, tab]);
-
-  const handleShowTips = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { getExerciseTutorial } = await import('../../services/ai');
-      const tips = await getExerciseTutorial(exerciseName);
-      setTutorialContent(tips);
-      setShowContent(true);
-    } catch (error) {
-      logger.workout.error('Failed to load tips', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [exerciseName]);
 
   // Grounded per-exercise Q&A: the answer is anchored to the user's REAL recent
   // numbers for this exercise (most-recent set + estimated 1RM) and the model is
@@ -967,63 +948,6 @@ const ExerciseTutorial: React.FC<ExerciseTutorialProps> = ({
                   {qaError}
                 </p>
               )}
-            </div>
-
-            {/* Generated technique reference for this movement. */}
-            <div>
-              <SectionTitle>טיפים לטכניקה</SectionTitle>
-              {showContent && tutorialContent ? (
-                <div
-                  dir="auto"
-                  style={{
-                    ...card,
-                    maxHeight: 260,
-                    overflowY: 'auto',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 15,
-                    color: 'var(--fs-ink)',
-                    whiteSpace: 'pre-wrap',
-                    lineHeight: 1.65,
-                  }}
-                >
-                  {tutorialContent}
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleShowTips}
-                  disabled={loading}
-                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 active:scale-[0.98]"
-                  style={{
-                    width: '100%',
-                    minHeight: 46,
-                    background: 'var(--fs-surface)',
-                    color: 'var(--fs-ink)',
-                    border: '1px solid var(--fs-steel)',
-                    borderRadius: 'var(--radius-md)',
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 600,
-                    fontSize: 15,
-                    cursor: loading ? 'wait' : 'pointer',
-                    opacity: loading ? 0.6 : 1,
-                  }}
-                >
-                  {loading ? 'טוען טיפים…' : 'הציגו טיפים לטכניקה'}
-                </button>
-              )}
-              {/* AI-disclosure (EU AI Act art. 50(1)) + health disclaimer on the
-                  AI-generated tips surface. */}
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 11,
-                  lineHeight: 1.5,
-                  color: 'var(--fs-muted)',
-                  margin: '10px 0 0',
-                }}
-              >
-                טיפים אלה מנוסחים בעזרת AI — לא ייעוץ רפואי. התאימו את העומס ליכולת שלכם.
-              </p>
             </div>
           </div>
         )}

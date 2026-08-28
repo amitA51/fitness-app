@@ -91,7 +91,6 @@ export interface WorkoutState {
   showCooldown: boolean;
   showWaterReminder: boolean;
   showTutorial: boolean;
-  showAICoach: boolean;
   showPlateCalc: boolean;
 
   // === Celebration State ===
@@ -240,7 +239,10 @@ export type UIAction =
   | { type: 'CLOSE_QUICK_FORM' }
   | { type: 'OPEN_EXERCISE_LIBRARY' }
   | { type: 'CLOSE_EXERCISE_LIBRARY' }
-  | { type: 'OPEN_AI_COACH' }
+  // No-op: the AI-coach overlay state was deleted (nothing ever opened it). This
+  // member only survives because its dispatch chain (useWorkoutHandlers /
+  // WorkoutOverlays / WorkoutFlowOverlays / ActiveWorkoutNew) is outside the
+  // scope of this cleanup. Remove it together with `onCloseAICoach`.
   | { type: 'CLOSE_AI_COACH' }
   | { type: 'OPEN_PLATE_CALC' }
   | { type: 'CLOSE_PLATE_CALC' };
@@ -274,7 +276,7 @@ export type WorkoutAction =
   | DataAction;
 
 // Modal Type
-export type ModalType = 'goal' | 'warmup' | 'cooldown' | 'water' | 'tutorial' | 'aicoach';
+export type ModalType = 'goal' | 'warmup' | 'cooldown' | 'water' | 'tutorial';
 
 // ============================================================
 // CONTEXT TYPES
@@ -368,7 +370,6 @@ export const createInitialState = (
     showCooldown: false,
     showWaterReminder: false,
     showTutorial: false,
-    showAICoach: false,
     showPlateCalc: false,
 
     tutorialExercise: null,

@@ -109,14 +109,6 @@ export const uiReducer = (draft: WorkoutState, action: WorkoutAction): void => {
       draft.showExerciseLibrary = false;
       break;
 
-    case 'OPEN_AI_COACH':
-      draft.showAICoach = true;
-      break;
-
-    case 'CLOSE_AI_COACH':
-      draft.showAICoach = false;
-      break;
-
     case 'OPEN_PLATE_CALC':
       draft.showPlateCalc = true;
       break;
@@ -139,7 +131,6 @@ export const modalReducer = (draft: WorkoutState, action: WorkoutAction): void =
       if (action.payload.modal === 'cooldown') draft.showCooldown = action.payload.isOpen;
       if (action.payload.modal === 'water') draft.showWaterReminder = action.payload.isOpen;
       if (action.payload.modal === 'tutorial') draft.showTutorial = action.payload.isOpen;
-      if (action.payload.modal === 'aicoach') draft.showAICoach = action.payload.isOpen;
       break;
 
     case 'SHOW_TUTORIAL':

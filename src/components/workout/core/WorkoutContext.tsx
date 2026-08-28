@@ -152,7 +152,6 @@ export function useWorkoutOverlays() {
       showCooldown: state.showCooldown,
       showWaterReminder: state.showWaterReminder,
       showTutorial: state.showTutorial,
-      showAICoach: state.showAICoach,
       numpad: state.numpad,
       isDrawerOpen: state.isDrawerOpen,
     }),
@@ -166,7 +165,6 @@ export function useWorkoutOverlays() {
       state.showCooldown,
       state.showWaterReminder,
       state.showTutorial,
-      state.showAICoach,
       state.numpad,
       state.isDrawerOpen,
     ]

@@ -429,12 +429,6 @@ const WorkoutSettingsOverlay = memo<WorkoutSettingsOverlayProps>(
                       onChange={(v) => onUpdateSetting('weightIncrementAmount', v)}
                     />
                   )}
-                  <Toggle
-                    label="התראות שיא אישי"
-                    description="הצג חגיגה כשנשבר שיא"
-                    value={get('enablePRAlerts') ?? true}
-                    onChange={(v) => onUpdateSetting('enablePRAlerts', v)}
-                  />
                   <Divider />
 
                   <SectionHeader title="נגישות" />

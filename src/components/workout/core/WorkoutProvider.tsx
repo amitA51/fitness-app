@@ -184,7 +184,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ item, children
         showExerciseSelector: false,
         showQuickForm: false,
         showExerciseLibrary: false,
-        showAICoach: false,
         showPlateCalc: false,
         showGoalSelector: false,
         showWarmup: false,
