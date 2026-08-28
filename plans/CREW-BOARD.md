@@ -589,6 +589,69 @@ default answer is no.
    survives but loses its "next workout" claim, so only one thing on the screen
    claims to be next.
 
+## [T-013] UNPLANNED — the runtime silently RETRIED the timed-out T-008 brief
+- status: **partially accepted 2026-08-28 12:35 — back-bug fix KEPT, density DISCARDED**
+- **What happened, and it is an operational lesson, not a worker error.** `cfa8f0d7`
+  (T-008) died at the 30-minute timeout in batch 3. The runtime then spawned
+  `75aba446` with the SAME brief. It was never on this board, so the batch-4
+  ownership map could not protect against it, and it began editing
+  `ActiveWorkoutNew.tsx` — which batch 4 had declared lead-serialized — because its
+  brief predated that rule. It was operating on a stale contract, correctly.
+- **The lead's own process failure:** the batch-4 completion event said "wave
+  finished, all results delivered", and the lead ran gates and committed on that
+  word. Two e2e files then appeared in `git add` that were absent from the
+  `git status` taken 90 seconds earlier. **File mtimes, not the completion event,
+  are the proof that a tree is static.** `69d7d87` and `efa95fc` were nonetheless
+  green — confirmed against the diff — but that was luck, not method.
+- **It found a SECOND, INDEPENDENT defect the merged fix does not cover, and
+  proved it in Chromium.** The merged T-008 fix hardens the in-component
+  `autoOpenedSelectorRef` one-shot inside `useWorkoutEffects`. But the intent is
+  persisted in `sessionStorage`, and `AppRouter` keys the route subtree on
+  `location.pathname`, so a real Back **unmounts `WorkoutContent` before the
+  in-place `showExerciseSelector` true→false edge can ever fire** — leaving
+  `sparkos_prewo_started` at `'1'`. Measured: Back landed on `/` with the flag
+  still `1`, and returning to `/workout` came up with the picker open again.
+  **So T-008's fix was incomplete and the lead accepted it as complete.**
+- the fix's subtle part is the good part: `isOnWorkoutRoute(pathname)` is the
+  discriminator between two unmounts that look identical from inside the component
+  — an in-place remount (provider hydration) must KEEP the intent so the sheet can
+  be restored, while a real navigation away must SPEND it. A naive clear-on-unmount
+  would have broken the restore path the merged fix depends on.
+- it proved its own test by **temporarily neutering the fix**: 3 of 9 fail without
+  the unmount rule, all 9 pass with it.
+- **DISCARDED by the lead: its density changes** to `exercise-library.css` and
+  `ExerciseSelector/index.tsx` (row 46px→44px, padding 6→4px, gap 6→4px, action
+  buttons 48→44px). Reason: T-011 already hit the 10-row target with before/after
+  screenshots at 390px, and this second uncoordinated pass shaved the remaining
+  headroom above the 44px touch floor to exactly zero with **no screenshot
+  evidence** of its own. Keeping the newly-found information, discarding the
+  duplicated work.
+- it honoured the steer exactly: halted on receipt, made no further edits, did not
+  attempt a revert, ran no git command, and answered in the requested format.
+- one lead correction it earned: it flagged that `ActiveWorkoutNew.tsx` would need
+  a full restore. It did not — `tsc` came back clean once the tree was static; the
+  TS6133 the lead quoted was a transient mid-write state.
+
+### Verified baseline — 2026-08-28 12:35, measured by the lead on a static tree
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, 693 files |
+| `npm run test:run` | **155 files / 1366 tests** — this is the NEW FLOOR |
+| arithmetic | 1357 + 9 = 1366, all 9 from `usePreWorkoutIntent.test.ts`. Nothing deleted or weakened. |
+
+### Host trap learned here — put it in every future dispatch review
+**A timed-out subagent may be silently RETRIED with its original brief.** The retry
+is invisible to the board, does not appear in the batch's completion event, and can
+therefore violate an ownership rule written after its brief was issued. Before
+gating or committing: run `spawn_list` to confirm nothing is `[running]`, and check
+file mtimes against the clock — not the "wave finished" message.
+
+### Shell trap learned here
+The `shell` tool truncates at the first **non-ASCII** character — that includes
+biome's box-drawing glyphs (`━ │ ✖`), not just Hebrew. A biome diagnostic piped
+through `Select-String` returns EMPTY, which reads as "no errors" and is a lie.
+Sanitize per line first: `... | ForEach-Object { $_ -replace '[^\x20-\x7E]','' }`.
+
 ## [T-011] Picker chrome — ACCEPTED 2026-08-28 12:28
 - status: **done** — 4 files + 1 test + `e2e/picker-chrome-qa.spec.ts`
 - **Target hit and the lead confirmed it by eye, not on report:** the 390px AFTER

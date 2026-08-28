@@ -50,6 +50,7 @@ import {
   useWorkoutEffects,
   useWorkoutHandlers,
 } from './active';
+import { usePreWorkoutIntent } from './active/usePreWorkoutIntent';
 
 // Lazy loaded components (heavy - only loaded when needed)
 const ExerciseSelector = React.lazy(() => import('./ExerciseSelector'));
@@ -57,12 +58,6 @@ const QuickExerciseForm = React.lazy(() => import('./QuickExerciseForm'));
 const WorkoutPlanScreen = React.lazy(() => import('./states/WorkoutPlanScreen'));
 
 import { cn } from '../../utils/styles';
-
-// sessionStorage key for the "user started a fresh workout / wants the selector"
-// intent. Namespaced to avoid collisions; survives remounts of both
-// WorkoutContent and WorkoutProvider, and is explicitly cleared once the
-// workout has exercises or the user cancels.
-const PREWO_STARTED_KEY = 'sparkos_prewo_started';
 
 // ============================================================
 // TYPES
@@ -93,34 +88,11 @@ export const WorkoutContent: React.FC<{
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Track whether the user started a fresh workout and wants the selector. This
-  // intent is persisted in sessionStorage under a single namespaced key so it
-  // SURVIVES remounts of both WorkoutContent (local useState would reset to
-  // false) AND WorkoutProvider (the reducer sanitizes showExerciseSelector to
-  // false on init). The lazy initializer recovers the true value after any
-  // remount, which lets the safety-net effect in useWorkoutEffects re-open the
-  // selector. The flag is cleared the moment the workout truly starts (an
-  // exercise exists) or the user cancels, so it can never leak into a later or
-  // mid-workout session.
-  const [preWorkoutScreenShown, setPreWorkoutScreenShownState] = useState(() => {
-    try {
-      return sessionStorage.getItem(PREWO_STARTED_KEY) === '1';
-    } catch {
-      return false;
-    }
-  });
-  const setPreWorkoutScreenShown = useCallback((v: boolean) => {
-    try {
-      if (v) {
-        sessionStorage.setItem(PREWO_STARTED_KEY, '1');
-      } else {
-        sessionStorage.removeItem(PREWO_STARTED_KEY);
-      }
-    } catch (err) {
-      logger.workout?.warn?.('prewo flag persist failed', err);
-    }
-    setPreWorkoutScreenShownState(v);
-  }, []);
+  // Track whether the user started a fresh workout and wants the selector. The
+  // intent is persisted (see usePreWorkoutIntent) so it SURVIVES remounts of both
+  // WorkoutContent and WorkoutProvider, and is spent the moment the workout truly
+  // starts, the user dismisses the sheet, or the user leaves the workout route.
+  const [preWorkoutScreenShown, setPreWorkoutScreenShown] = usePreWorkoutIntent();
 
   // Clear the persisted pre-workout intent as soon as the workout actually has
   // exercises (currentExercise is truthy). From that point we have left the
