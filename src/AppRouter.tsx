@@ -936,7 +936,13 @@ function WorkoutPlaceholder() {
             <div
               className="w-8 h-8 animate-spin"
               style={{
-                border: '2px solid var(--fs-primary)',
+                // The spinner is pure geometry — no text label survives a bad
+                // fill, so the stroke must invert with the theme. --fs-primary
+                // does not (navy in light, near-black #0a0a0a in dark → 1.05:1
+                // on --fs-surface, i.e. an apparently frozen screen). --fs-heading
+                // is the house token for the strongest foreground mark on
+                // bg/surface and inverts on purpose (#16292d → #f0f0f0).
+                border: '2px solid var(--fs-heading)',
                 borderTopColor: 'transparent',
                 borderRadius: '50%',
               }}

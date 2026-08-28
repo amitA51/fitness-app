@@ -21,7 +21,16 @@ import {
   Wrench,
   Zap,
 } from 'lucide-react';
-import { type CSSProperties, type ReactNode, memo, useCallback, useMemo, useState } from 'react';
+import {
+  type CSSProperties,
+  type ReactNode,
+  memo,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useHapticFeedback } from '../../../hooks/useHapticFeedback';
 import { useMountWhileOpen } from '../../../hooks/useMountWhileOpen';
 import type {
@@ -89,6 +98,15 @@ interface ExerciseDisplayProps {
   /** Open the AI coach / exercise guide (surfaced beside the note at the top). */
   onOpenAICoach?: () => void;
 }
+
+// The per-set action chip row is a horizontal scroller (the row itself carries
+// the arithmetic). When it genuinely overflows, both inline edges are feathered
+// so a Hebrew label at the clip edge FADES OUT instead of being sliced down the
+// middle of a letter. The gradient is deliberately symmetric: mirrored it is
+// identical, so there is no RTL variant of it to get wrong, and nothing here has
+// to read scrollLeft — whose sign flips between directions.
+const ACTION_ROW_EDGE_FADE =
+  'linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%)';
 
 // ============================================================
 // PRESCRIPTION BLOCK
@@ -495,8 +513,36 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
     // strip is gone, so the coach (which now also hosts the set note) gets its
     // own chip here.
     const showAiChip = !!onOpenAICoach;
-    const hasActionRow =
-      showAlternativesChip || showInlineAddSet || showAiChip || tools.length > 0 || showUndoChip;
+    // Chip count drives both whether the row renders and whether it can overflow.
+    const actionChipCount =
+      (showAlternativesChip ? 1 : 0) +
+      (showInlineAddSet ? 1 : 0) +
+      (showAiChip ? 1 : 0) +
+      (tools.length > 0 ? 1 : 0) +
+      (showUndoChip ? 1 : 0);
+    const hasActionRow = actionChipCount > 0;
+
+    // Whether the chip row actually overflows. Only then is it feathered at the
+    // inline edges — a row that fits keeps hard, clean edges rather than fading
+    // its first chip for no reason. Measured rather than assumed, because the
+    // chip count is conditional and Hebrew label widths depend on whether the
+    // Assistant webfont has landed or system-ui is still standing in.
+    const actionRowRef = useRef<HTMLDivElement | null>(null);
+    const [actionRowOverflows, setActionRowOverflows] = useState(false);
+    useLayoutEffect(() => {
+      const row = actionRowRef.current;
+      if (!row || actionChipCount === 0) {
+        setActionRowOverflows(false);
+        return;
+      }
+      const measure = () => {
+        // 1px tolerance so sub-pixel text metrics cannot latch the fade on.
+        setActionRowOverflows(row.scrollWidth - row.clientWidth > 1);
+      };
+      measure();
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
+    }, [actionChipCount]);
 
     return (
       <div
@@ -606,7 +652,13 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
             display: 'flex',
             flexDirection: 'column',
             gap: 0,
-            touchAction: 'pan-y',
+            // This panel scrolls vertically only — it has no horizontal overflow
+            // of its own. But `pan-y` alone also blocks a horizontal drag from
+            // ever reaching a DESCENDANT scroller (the effective touch-action is
+            // the intersection down the ancestor chain), which left the action
+            // chip row un-draggable by finger. Both axes are named so the gesture
+            // passes through; there is still nothing here for pan-x to move.
+            touchAction: 'pan-x pan-y',
             overscrollBehavior: 'contain',
           }}
         >
@@ -880,6 +932,7 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
               stays uncluttered. Undo trails as a quick safety affordance. */}
           {hasActionRow && (
             <div
+              ref={actionRowRef}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -888,6 +941,18 @@ const ExerciseDisplay = memo<ExerciseDisplayProps>(
                 flexShrink: 0,
                 overflowX: 'auto',
                 scrollbarWidth: 'none',
+                // Five chips is reachable (a completed warmup lets "תרגיל חלופי"
+                // and undo coexist) and needs ~418.7px of content inside a 362px
+                // row at a 390px viewport. The 56.7px cannot be reclaimed: undo
+                // is a 44px touch target and the labelled chips would have to
+                // drop to ~4px of inline padding. So the row scrolls — but the
+                // overflow has to be reachable and legible, not a mystery.
+                touchAction: 'pan-x',
+                overscrollBehaviorInline: 'contain',
+                scrollSnapType: 'inline proximity',
+                scrollPaddingInline: 2,
+                maskImage: actionRowOverflows ? ACTION_ROW_EDGE_FADE : undefined,
+                WebkitMaskImage: actionRowOverflows ? ACTION_ROW_EDGE_FADE : undefined,
               }}
             >
               {showAlternativesChip && (

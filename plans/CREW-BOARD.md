@@ -929,6 +929,266 @@ and the newest source mtime was 8 minutes old, before any gate was run.
 
 ---
 
+# Batch 10 — dispatched 2026-08-28 15:08. Amit: "אל תתפשר", full autonomy, unlimited budget.
+
+### The token mechanics I verified MYSELF before writing these briefs — do not re-derive
+A grep suggested `--btn-primary-bg: var(--fs-primary)` — i.e. that our "house fix" was an
+alias of the broken token, which would have made batches 7/8 wrong. **The grep output was
+TRUNCATED and I refused to conclude from it.** Reading `tokens.css` directly settles it:
+- light `:root`: `--btn-primary-bg: var(--fs-primary)` (navy) · `--btn-primary-text: var(--fs-accent)` (mint)
+- **`html.dark` (`:376`) REDEFINES the pair**: `--btn-primary-bg: var(--fs-accent)` (`#4ddcbb`
+  bright mint) · `--btn-primary-text: #071412` (near-black ink).
+**So the resting pair genuinely inverts and our three previous fixes were correct.**
+- The defect is the PRESS state only: `--color-primary-hover: var(--navy-deep)`, and
+  `--navy-deep` is `#0d1a1c` light but **`#050505` in dark**. So pressing a primary button
+  in dark paints `#050505` under `#071412` ink → **1.08:1**. Navy-family token on a button
+  whose dark identity is mint. That is the whole bug, precisely located.
+- `--fs-rubber: #050505` in dark confirmed. `--color-on-mustard` is explicitly redefined in
+  dark to the same value by intent — the audit's do-not-touch list stands.
+
+### Ownership map — disjoint, verified against real reads
+- **T-026** → `src/components/ui/Button.tsx` + `src/styles/tokens.css`. **HOLDS Playwright**
+  (the press state is only observable in a real interaction).
+- **T-027** → `src/AppRouter.tsx` + `src/components/ui/ToggleSwitch.tsx`
+- **T-028** → `src/styles/components.css` (ONLY the three named rules) +
+  `src/components/dashboard/WeeklyGrid.tsx` + `WeeklyGrid.test.tsx`
+- **T-029** → `src/components/workout/components/ActionChip.tsx` + `ExerciseDisplay.tsx`
+- **Cross-declared so nobody is surprised:** T-027 fixes the LIVE toggle knob in
+  `ToggleSwitch.tsx`; T-028 fixes the LATENT toggle-track rule at `components.css:367`.
+  Same component family, different files, neither crosses.
+- **Declared seam:** `WeeklyGrid.test.tsx` currently PINS the inline `--nav-pill-*` override
+  (its own comment says so). T-028 removes that override once the stylesheet is fixed, so
+  **updating that test is part of T-028, not a regression.**
+- Held for batch 11: the 92-border sweep (Band B — weak but functional), the ~25 fills
+  needing a visual call, the paywall gating hole, the engine decision, one screenshot pass
+  covering everything batch 10 touches.
+
+## [T-026] P0 pressed primary button — ACCEPTED on evidence 2026-08-28 15:30
+- status: **accepted; the lead's authoritative verify + test:run owed once T-028 and T-029
+  land** (both still writing — no gates run yet, deliberately)
+- 2 files, exactly its ownership: `Button.tsx` + `tokens.css`. `--color-primary-hover` left
+  untouched at `:69` and `:447` as instructed; the four do-not-touch tokens untouched; no
+  variants, sizes or props added.
+- **THE FOUR NUMBERS:**
+  | | fill | ink | contrast |
+  |---|---|---|---|
+  | light resting | `#16292d` | `#43c7a5` | 7.16:1 |
+  | light pressed | `#0d1a1c` | `#43c7a5` | **8.42:1** |
+  | dark resting | `#4ddcbb` | `#071412` | 10.98:1 |
+  | dark pressed | `#42bda1` | `#071412` | **8.07:1 (was 1.08:1)** |
+  Both pressed states clear 4.5:1 with margin. Identical at 390 and 1280.
+- **The dark value is DERIVED, not hand-picked:** it scaled every channel of `--fs-accent`
+  by 0.86, which holds hue and saturation exactly and only drops value — "so it cannot
+  drift into a different colour". Press depth: light ΔL* 7.00, dark ΔL* 10.25, and it
+  argued the asymmetry deliberately — a large bright fill needs more depth to register.
+- **Light did not regress, structurally:** `--btn-primary-bg-hover` and
+  `--color-primary-hover` both resolve to `var(--navy-deep)` in `:root`, so pressed light is
+  the same hex and the same 8.42:1 measured before the fix. Resting light untouched.
+- **THE VERIFICATION IS THE BEST PART — it refused to trust its own eye.** It sampled the
+  rendered PNG pixels and got back `#42bda1` dark-pressed, `#4ddcbb` dark-resting,
+  `#0d1a1c` light-pressed, `#16292d` light-resting. **And it found a SECOND, independent
+  proof the press was genuinely live at capture time: the crop narrows 472→454px under
+  press, i.e. framer-motion's 0.96 tap scale was active.** The standing risk when
+  photographing a `:active` state is capturing the resting state and believing otherwise;
+  it closed that with a signal that has nothing to do with colour.
+- It built FIRST and confirmed the brand-new custom property was actually present in
+  `dist/` for both themes before measuring — the stale-bundle trap did not bite.
+- cleanup: scratch spec `e2e/zz-scratch-btn.spec.ts` deleted, `e2e/` back to exactly 13
+  specs, `test-results/` removed. 16 screenshots
+  (`btn-press-{light,dark}-{390,1280}-{resting,pressed}` + crops).
+- its own gates: verify exit 0; **157 files / 1377 tests**, the floor exactly.
+
+### ⚠️ NEW DEFECT it found and correctly did NOT fix — batch 11, and it is mobile-only
+**The same failure mode is latent in the `pill` variant, `Button.tsx:113`.** It sets
+`hover:bg-[var(--fs-accent)] hover:text-[var(--color-ink-on-accent)]` but
+`active:bg-[var(--fs-accent)]` with **no matching `active:text-`**. On desktop hover fires
+before active so the ink gets set — **but a phone has no hover**, so a pill pressed on
+touch paints mint under `--fs-heading`, which is near-white in dark. **This app is
+mobile-first, so the broken path is the only path real users take.** Same severity shape as
+the P0 just fixed, different variant.
+
+## [T-026] P0 — every primary button goes black-on-black while pressed
+- status: dispatched (batch 10)
+- owner: fitness-design
+- goal: pressing a primary CTA in dark mode must stay legible. Add the missing
+  `--btn-primary-bg-hover` in BOTH theme blocks and consume it.
+- done when: verify green; test:run >= 1377; pressed-state contrast stated as a number in
+  BOTH themes, resting state proven unchanged; before/after screenshots of a pressed button
+- notes: the ONLY Playwright runner. No existing token fits — T-024 flagged this rather
+  than inventing one. Light must keep its current correct behaviour.
+
+## [T-027] Spinner + toggle knob — ACCEPTED on evidence 2026-08-28 15:26
+- status: **accepted; the lead's authoritative verify + test:run owed once T-026, T-028 and
+  T-029 land** (three still writing — no gates run yet, deliberately)
+- 2 files, exactly its ownership: `AppRouter.tsx:945`, `ToggleSwitch.tsx:148`. No
+  `src/styles/**`, no props, no animation timing, no routing logic, no physical direction.
+- **It validated its own method before using it, which nobody asked for:** it stated the
+  WCAG linearization formula and showed **its arithmetic reproduces the audit's published
+  15.12 / 1.05 and 11.84 / 1.31 EXACTLY.** That pins the comparison surfaces the audit
+  used (spinner vs `--fs-surface`, knob vs the unchecked track `--fs-surface-2`), so its
+  before/after numbers are directly comparable rather than measured against a new baseline.
+- **It hit the grep-truncation trap and handled it right** — "grep truncated, reading
+  `tokens.css` directly". Same trap I hit this same turn.
+- **SPINNER → `--fs-heading`.** light **15.12:1 → 15.12:1**, dark **1.05:1 → 16.57:1**.
+  Light is byte-identical because `--fs-heading` resolves to `var(--fs-primary)` in `:root`
+  — so, in its words, "zero light regression is structural, not measured luck."
+  Token chosen because `--fs-heading`'s own comment states exactly the spinner's contract
+  ("headings on bg/surface only, NEVER on accent/primary fills") and the spinner is never
+  on an accent fill. **It considered and REJECTED `--btn-primary-bg`** (11.03:1 dark)
+  because a spinner is not a button fill and it scores lower.
+- **KNOB → `--fs-ink`.** vs the unchecked track: light **11.84 → 12.67**, dark
+  **1.31 → 13.28**. Polarity restored (`#132327` → `#f0f0f0`: dark figure in light, light
+  figure in dark). Light improves in both states, so no regression anywhere in light.
+- **⚠️ IT DISCLOSED A REGRESSION IT CAUSED AND PROVED IT UNAVOIDABLE.** Knob vs the
+  **checked** track (a state the audit never quoted — it went and checked it anyway):
+  dark **11.57 → 1.50:1**. Its proof: in dark the two track fills bracket the range
+  (unchecked L=0.019, checked L=0.563), so clearing 3:1 on both needs `L >= 0.1581` AND
+  `L <= 0.1545` — **an empty set. No single knob fill can clear 3:1 against both dark
+  tracks.** The real fix is the CHECKED TRACK token, a stylesheet change it was forbidden
+  from making. Its call: fix the state that was actually broken, and leave ON at the
+  polarity **the iOS system switch itself ships** (white knob on green = 2.22:1), with the
+  existing knob shadow carrying the edge — and note checked/unchecked stay mutually
+  distinguishable regardless, because **both the track fill AND the knob position change**,
+  i.e. state rides on two independent channels, not on contrast alone. **Accepted.**
+- **COORDINATION — check this when T-028 lands:** T-028 owns `components.css:367`, the
+  toggle TRACK rule. The residual 1.50:1 above is exactly a checked-track problem. Verify
+  whether T-028's change resolves it, and if not, it is a batch-11 follow-up.
+- **Two siblings it surfaced in its own file and correctly did NOT fix**, because I scoped
+  it to the knob:
+  1. `ToggleSwitch.tsx:126` — the track BORDER is `var(--fs-primary)` → **1.05:1 dark**, so
+     the track edge is invisible. It named `--color-border-strong` as the fit.
+  2. `ToggleSwitch.tsx:159` — the checked LABEL is `var(--fs-primary)` → **1.05:1 dark**, so
+     **turning a toggle ON makes its Hebrew label disappear.** A real user-facing bug.
+- **MY OWN LESSON, recorded:** I scoped this task by SYMPTOM ("the knob") when the symptom
+  had siblings in the same file. The worker obeyed the scope and the toggle is still partly
+  broken. **Scope by SURFACE, not by symptom, when a defect has siblings in one file.**
+  → batch 11 takes `ToggleSwitch.tsx` whole.
+
+## [T-027] The two controls that lose their state in dark
+- status: dispatched (batch 10)
+- owner: fitness-dev
+- goal: the route spinner is invisible (1.05:1, pure geometry so no label rescues it — every
+  lazy route load looks like a frozen screen) and the toggle knob's polarity is inverted
+  (crispest thing in light, darkest in dark). Both in dark mode only.
+- done when: verify green; test:run >= 1377; contrast stated as a number in both themes for
+  both controls; light mode proven unchanged
+- notes: no Playwright — T-026 holds it. Do NOT touch `src/styles/**`.
+
+## [T-028] Fix the source — ⛔ NO-OP, REJECTED 2026-08-28 15:34. Must be re-dispatched.
+- status: **rejected — the worker produced NOTHING while being marked `[done]` with no error.**
+- **Verified, not assumed:** `git status --short` on all three owned files
+  (`src/styles/components.css`, `WeeklyGrid.tsx`, `WeeklyGrid.test.tsx`) returns **EMPTY**.
+  Zero edits. Its `result.txt` contains exactly one line — "I'll start by reading the
+  relevant files to ground everything in the actual source." — and nothing after it.
+- **How it was caught, and each step was needed because the previous one lied:**
+  the batch event reported ✅ → `spawn_status` grep returned an empty transcript (1 line
+  total) → read `result.txt` from disk directly → confirmed against `git status`.
+- **⚠️ NEW HOST FAILURE MODE, distinct from the two already on this board.** Not the
+  30-minute timeout (that at least records `error: Timed out`), and not "wrote full results
+  to disk then the process died" (output was complete there). This is **a success mark over
+  zero work**, with no error recorded anywhere. It stopped after its first sentence, which
+  looks like a runtime death at turn 1 rather than an over-wide task — but I did not
+  establish the cause and am not going to guess it.
+  **Rule going forward: a completion event is not evidence. For every task, confirm the
+  owned files actually changed before recording any verdict.**
+- **Consequence to carry:** T-027's residual depended on this. Its checked-track knob
+  contrast (dark **1.50:1**) could only be resolved by the toggle TRACK rule at
+  `components.css:367`, which was T-028's item 3. **That rule was never touched, so the
+  residual is definitely still open.**
+- Re-dispatch unchanged, including the declared seam about `WeeklyGrid.test.tsx` pinning the
+  inline override. Consider splitting the 4 ordered items into two narrower tasks.
+
+## [T-028] Fix the source, not the override
+- status: dispatched (batch 10)
+- owner: fitness-design
+- goal: three stylesheet rules still hold the flipping token and are inert only because a
+  component overrides them inline — the next consumer regresses silently. Fix the rules, drop
+  the now-redundant override, and make the week strip convey THREE states, not two.
+- done when: verify green; test:run >= 1377 with the pinning test updated and named;
+  trained/rest/empty mutually distinguishable by LUMINANCE in both themes, stated as numbers
+- notes: ORDERED. Hue alone is not a signal — it fails colour-blind users. The 3:1 WCAG
+  1.4.11 non-text floor is the bar. No Playwright.
+
+## [T-029] The chip row — ACCEPTED 2026-08-28 15:40. **Better root cause than my brief had.**
+- status: **done** — 2 files + 1 new test file, exactly its ownership.
+- **THE DIAGNOSIS CORRECTS MINE. It was never an overflow problem — it was a SHRINK problem.**
+  Chips inherited `flex-shrink: 1`, so the browser took the row's deficit out of their
+  **padding boxes** while `white-space: nowrap` held each label at full width. The text then
+  painted **outside its own box** and the scroller clipped it. **That is exactly the
+  `left: -2.97px` bleed I reported — the same mechanism produced both symptoms.**
+  `flexShrink: 0` removes the mechanism; the row scrolls instead.
+- **It calibrated its arithmetic against MY measurement rather than inventing a model:** it
+  back-solved my 385px to 167px of Hebrew across four labels (5.76px/char at 13px Assistant
+  600), and its per-label breakdown reproduces my number to within **0.3px**.
+- **It found the case that actually decides the design, which I did not know about — FIVE
+  chips.** `completedSetsCount` counts warmups (`:253`) while `showAlternativesChip` gates on
+  `workingCompleted === 0`, so **one completed warmup shows the alternatives chip AND undo
+  together**: 418.7px of content in a 362px row, over by **56.7px**.
+- **It rejected "make it fit" with arithmetic and settled it with MY OWN constraint:** the
+  56.7px has nowhere to come from — undo was the only compressible item and was already
+  **40px** (under the floor, so it must GROW), and squeezing the four labelled chips needs
+  ~4px inline padding. Even the 4-chip fit at padding 10 leaves 9.3px / 2.6% slack, **inside
+  the error bar of `--font-body: "Assistant", system-ui`** whose Hebrew fallback runs wider.
+  Its words: "a fit that depends on a webfont having arrived is not a fix."
+- **Overflow is MEASURED, not assumed:** `scrollWidth - clientWidth > 1` in a layout effect,
+  re-measured on resize, 1px tolerance so sub-pixel text metrics cannot latch the fade on —
+  and the edge feather is **OFF for 1-3 chips**, so a row that fits keeps hard clean edges.
+- **⚠️ THE SUBTLE FIND, and it would have shipped a fade over dead content.** The ancestor
+  panel had `touch-action: pan-y`, and **effective touch-action is the INTERSECTION down the
+  ancestor chain** — so `pan-x` on the row alone is nullified and the hidden chip is
+  **unreachable by finger**. It widened the ancestor to `pan-x pan-y`, reasoning that panel
+  has no horizontal overflow of its own. **It flagged this as the one thing it could not
+  test without a real device.** Honest about exactly the right thing.
+- **RTL discipline is the strongest of the batch:** every property logical; the mask gradient
+  uses `to right` but is **symmetric, so mirrored it is byte-identical — no RTL variant to
+  get wrong**; and it **deliberately never reads `scrollLeft`**, "whose sign flips between
+  directions, and that is precisely where these bugs hide." Its test asserts the chip and its
+  dot carry no inline-axis physical property.
+- undo chip **40px → 44px** (`minWidth`), a pre-existing breach a scrolling row would have
+  made the most-often-clipped target. All labelled chips 44px tall.
+- it hit a biome `useExhaustiveDependencies` warning, **checked whether it was its own**, and
+  restructured the effect around one real dependency instead of suppressing it.
+- **owed: screenshots.** T-026 held the browser, so it has arithmetic, not pixels, and said so.
+- **Three things it surfaced and correctly left alone:** the `flex: 1` spacer before undo
+  collapses to 0 once the row overflows (so undo's "far end" placement only applies to short
+  rows); `overflow-x: auto` makes the row a scroll container on both axes, clipping each
+  chip's elevation shadow and focus ring vertically; and **`--font-body` has no explicit
+  Hebrew fallback before `system-ui`, so every width budget on this screen silently depends
+  on the Assistant webfont arriving** — a `tokens.css` question, and a systemic one.
+
+### Verified baseline — 2026-08-28 15:40, lead-measured on a CONFIRMED-static tree
+`spawn_list` all `[done]`; newest source mtime 6 minutes old before any gate ran.
+Suite run TWICE per the flake protocol — **identical both times, no flake.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **696** files (was 695; +1 = `ActionChip.test.tsx`) |
+| `npm run test:run` | **158 files / 1384 tests**, exit 0 on both runs — NEW FLOOR |
+| arithmetic | 157 + 1 = 158; 1377 + 7 = 1384, all 7 from `ActionChip.test.tsx`. Nothing deleted, skipped or weakened. |
+| RTL | **zero new physical-direction CSS in the four touched files.** `ExerciseDisplay.tsx:571-572`'s `left:0/right:0` is pre-existing and the symmetric house idiom; `ActionChip.test.tsx:97`'s `right` is the guard COMMENT asserting it must not appear |
+| e2e | 13 specs, no scratch, `test-results/` + `playwright-report/` absent |
+| tree | 7 modified + 1 new — exactly T-026, T-027, T-029 and the board. **T-028's three files absent, confirming the no-op a third time.** |
+
+### ⚠️ NEW from my own RTL sweep — two files carry BOTH defects at once
+Not this batch's scope, recorded so they are not lost. Each has the flipping token **and** a
+physical direction property on the same line:
+- **`src/components/ui/LoadingSpinner.tsx:38` and `:317`** — `borderRightColor: var(--fs-primary)`.
+  **This is a SECOND spinner component.** T-027 fixed the router's spinner at
+  `AppRouter.tsx:945`; this one is separate and still broken, so the dark-mode invisible
+  spinner is only half fixed.
+- **`src/components/workout/overlays/ConfirmExitOverlay.tsx:210` and `:238`** —
+  `borderRight: '2px solid var(--fs-primary)'`.
+
+- status: dispatched (batch 10)
+- owner: fitness-design
+- goal: Amit reported `כלים` rendering as `כליב` — the 4th action chip is cut through its
+  last letter at 390px, and a chip bleeds 2.97px past the edge.
+- done when: verify green; test:run >= 1377; the row either fits or scrolls with a visible
+  affordance; measured content vs container width stated before and after
+- notes: no Playwright. Nothing may drop below 44px.
+
+
+
 # Batch 9 — dispatched 2026-08-28 14:32. Amit: "לך על זה — תנקה, תסרוק, ואחר כך נחבר את המנוע"
 
 So the order is settled: **clean up the fake, map the broken token, and the engine is a

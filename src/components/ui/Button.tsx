@@ -63,8 +63,8 @@ const variantStyles: Record<ButtonVariant, string> = {
   // Primary — uses dedicated button tokens for dark/light visibility
   primary: `
     bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)]
-    hover:bg-[var(--color-primary-hover)]
-    active:bg-[var(--color-primary-hover)]
+    hover:bg-[var(--btn-primary-bg-hover)]
+    active:bg-[var(--btn-primary-bg-hover)]
     disabled:opacity-40 disabled:cursor-not-allowed
   `,
 

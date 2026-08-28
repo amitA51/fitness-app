@@ -53,6 +53,11 @@
   /* Button-specific tokens — light: navy fill + mint ink (brand) */
   --btn-primary-bg: var(--fs-primary);
   --btn-primary-text: var(--fs-accent);
+  /* Pressed/hovered primary fill. Must invert per-theme exactly like the resting
+     pair above: in light the primary button IS navy, so pressing deepens the navy.
+     Do NOT use --color-primary-hover here — it resolves to a near-black in dark,
+     which paints #050505 under the near-black dark ink (1.08:1). */
+  --btn-primary-bg-hover: var(--navy-deep);
 
   --text-on-navy-rgb: 238, 243, 241;
   --ink-rgb: 19, 35, 39;
@@ -425,6 +430,12 @@ html.dark {
   /* Button-specific tokens */
   --btn-primary-bg: var(--fs-accent);
   --btn-primary-text: #071412;
+  /* Pressed/hovered primary fill — the dark primary button is a MINT fill with
+     near-black ink, so the press must be a deeper MINT, never a navy/near-black.
+     #42bda1 is --fs-accent (#4ddcbb) with every channel scaled 0.86: identical
+     hue and saturation, lower value, so it reads as "the mint button, pressed".
+     8.09:1 against --btn-primary-text; ΔL* 10.2 below the resting fill. */
+  --btn-primary-bg-hover: #42bda1;
 
   --text-on-navy-rgb: 240, 240, 240;
   --ink-rgb: 240, 240, 240;

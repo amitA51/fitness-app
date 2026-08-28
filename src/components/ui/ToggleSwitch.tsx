@@ -139,7 +139,13 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
             insetInlineStart: config.padding,
             width: config.knob,
             height: config.knob,
-            backgroundColor: 'var(--fs-primary)',
+            // The knob is the control's foreground figure, so it must be the
+            // dark element on a light theme and the light element on a dark one.
+            // --fs-primary never inverts (#16292d → #0a0a0a), which made the knob
+            // the DARKEST thing in the track on dark (1.31:1 on --fs-surface-2).
+            // --fs-ink is the base foreground token and does invert
+            // (#132327 → #f0f0f0), restoring the polarity in both themes.
+            backgroundColor: 'var(--fs-ink)',
             borderRadius: 999,
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.18), 0 1px 1px rgba(0, 0, 0, 0.1)',
           }}
