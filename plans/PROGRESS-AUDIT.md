@@ -156,13 +156,13 @@ Sub-segmented: `משקל | מידות | תמונות` (`:41-45`).
 
 | # | Item | Claim | Source | Class |
 |---|---|---|---|---|
-| R1 | Verdict `ציון ההתאוששות שלך עומד על 46 — אפשר להתאמן, אך כדאי לשמור על עומס מתון.` | Today's readiness + advice | `RecoveryTab.tsx:64-70` | **DERIVED**, and the advice is generated from the score alone. See R8 |
+| R1 | Verdict `ציון ההתאוששות שלך עומד על 46 — אפשר להתאמן, אך כדאי לשמור על עומס מתון.` | Today's readiness + advice | `RecoveryTab.tsx:65-70` | **DERIVED**, and the advice is generated from the score alone. See R8 |
 | R2 | Ring gauge + count-up score 0–100 + label (`גרועה/חלשה/בינונית/טובה`) | Recovery score | `RecoveryTab.tsx:108-124`, `bodyStatsService.ts:440-465` | **DERIVED** — weighted sum: sleep 30%, soreness 25%, energy 25%, stress 20%. Assumes those weights and that a 1–5 Likert maps linearly to 0–100 |
 | R3 | Four bars `שינה / כאב / אנרגיה / לחץ` reading `NN/25` | Sub-score out of 25 | `RecoveryTab.tsx:127-153`, `RecoveryBar.tsx:13` | **PLACEHOLDER — broken.** Values are 0–100, `max` is 25. Any component ≥ 25 (i.e. any Likert answer above the worst) pins the bar and prints a label like `75/25`. Only `sorenessLevel = 1` (score 0) or `= 2` (score 25) can render below full |
-| R4 | `אזורים תפוסים` chips | Tight areas you reported | `RecoveryTab.tsx:158-176` | **REAL** — but nothing consumes them (§5) |
-| R5 | `ממוצע שבועי` 2×2: `SLEEP N H`, `ENERGY N/5`, `SORENESS N/5`, `STRESS N/5` | 7-day averages | `RecoveryTab.tsx:182-259`, `bodyStatsService.ts:494` | **REAL** — mean over logs in the last 7 days. With one log it is that log |
-| R6 | `היסטוריית התאוששות` — up to 7 rows: date, label, score circle | Recent reports | `RecoveryTab.tsx:262-311` | **REAL** — window is 7 days (`useProgressData.ts:91`), so this is never more than a week regardless of history |
-| R7 | `עדכן` / `התחל דיווח` | — | `RecoveryTab.tsx:74-88` | action |
+| R4 | `אזורים תפוסים` chips | Tight areas you reported | `RecoveryTab.tsx:157-176` | **REAL** — but nothing consumes them (§5) |
+| R5 | `ממוצע שבועי` 2×2: `SLEEP N H`, `ENERGY N/5`, `SORENESS N/5`, `STRESS N/5` | 7-day averages | `RecoveryTab.tsx:198-266`, `bodyStatsService.ts:494` | **REAL** — mean over logs in the last 7 days. With one log it is that log |
+| R6 | `היסטוריית התאוששות` — up to 7 rows: date, label, score circle | Recent reports | `RecoveryTab.tsx:269-311` | **REAL** — window is 7 days (`useProgressData.ts:91`), so this is never more than a week regardless of history |
+| R7 | `עדכן` / `התחל דיווח` | — | `RecoveryTab.tsx:88`, `:190` | action |
 | R8 | *(implicit)* the score you get from tapping save without touching anything | — | `AddRecoveryModal.tsx:28-32` | **PLACEHOLDER.** Defaults are `sleepHours 7`, all four Likerts `3`. Saving untouched yields sleep 36, soreness 50, energy 50, stress 50 → **overall 46**, label `חלשה`, and R1 tells the user to keep the load moderate. A number nobody chose, presented as a diagnosis |
 
 Also worth naming: the sleep sub-score is `hours-curve × (quality/5)` (`bodyStatsService.ts:450`). A
@@ -190,7 +190,7 @@ strength cannot disagree. No Brzycki, no bespoke variant, no RPE adjustment anyw
 | `הגדולות · 1RM משוער` tiles on **Overview** | `BigThreeCard.tsx:90`, `:140` | **No** — full-size number from one session |
 | `1RM ~{n}` chip in Overview's recent-PR rows | `OverviewTab.tsx:394` | No (the `~` is the only signal) |
 | Strength list row, big number + `1RM` unit | `ExerciseProgressRow.tsx:87` | **Yes** — `חדש` status pill below 3 training days |
-| PR board `{e1RM} 1RM` | `StrengthSection.tsx:~430` (board rows) | No |
+| PR board `{e1RM} 1RM` | `StrengthSection.tsx:415`, `:425` | No |
 | Exercise detail hero `{n} KG · 1RM` | `ExerciseDetail.tsx:195` | **Yes** — status pill + the derivation sentence at `:257` |
 | `עקומת כוח · 1RM משוער` chart | `ExerciseDetail.tsx:263` | **Yes** — refuses to draw under 2 points |
 
@@ -271,15 +271,15 @@ not invention.
 | Page shell | Header + 4 tabs always render | fine |
 | Load in flight | `ProgressSkeleton` | fine |
 | Load failed | Dedicated card `טעינת נתוני ההתקדמות נכשלה` + `נסו שוב` (`Progress.tsx:230-256`) | good — explicitly added so users with data don't see the first-run state |
-| **סקירה** | Full composed empty state: trophy, `עדיין אין נתונים`, an explanatory line, a numbered 3-step list, primary CTA `בחרו תבנית והתחילו`, ghost CTA `או אימון ריק` (`OverviewTab.tsx:108-206`) | **best empty state in the app** |
-| **אימונים** | Composed: dumbbell, `עדיין אין אימונים`, `האימון הראשון יופיע כאן עם נפח, משך ותרגילים.`, CTA (`WorkoutsTab.tsx:108-146`) | good |
-| **אימונים › כוח** | Composed: `אין נתוני כוח עדיין` + explanation (`StrengthSection.tsx:165-183`). No CTA | good, slightly weaker (no action) |
-| **גוף** (weight/measurements) | Composed: scale, `עדיין אין נתוני גוף — תיעוד המשקל הראשון יתחיל את המעקב.`, CTA (`BodyTab.tsx:390-410`) | good |
+| **סקירה** | Full composed empty state: trophy, `עדיין אין נתונים`, an explanatory line, a numbered 3-step list, primary CTA `בחרו תבנית והתחילו`, ghost CTA `או אימון ריק` (`OverviewTab.tsx:137` and the block around it) | **best empty state in the app** |
+| **אימונים** | Composed: dumbbell, `עדיין אין אימונים`, `האימון הראשון יופיע כאן עם נפח, משך ותרגילים.`, CTA (`WorkoutsTab.tsx:124`) | good |
+| **אימונים › כוח** | Composed: `אין נתוני כוח עדיין` + explanation (`StrengthSection.tsx:174`). No CTA | good, slightly weaker (no action) |
+| **גוף** (weight/measurements) | Composed: scale, `עדיין אין נתוני גוף — תיעוד המשקל הראשון יתחיל את המעקב.`, CTA (`BodyTab.tsx:409`) | good |
 | **גוף › תמונות** | Five distinct states — signed-out, loading skeleton, error+retry, composed empty, populated (`BodyTab.tsx:212-278`) | **most thorough state handling on the screen** |
-| **גוף › משקל** with 1 entry | Hero + BMI + category, **no** trend strip, **no** chart | correct gating, except the BMI placeholder |
+| **גוף › משקל** with 1 entry | Hero + BMI + category, **no** trend strip, **no** chart (gated at `WeightSection.tsx:233` and `:242`) | correct gating, except the BMI placeholder |
 | **גוף › מידות** alone | `עדיין לא תועדו מידות` + `הוסף מידות ראשונות` | good |
-| **התאוששות** | Composed: heart, `עדיין לא דיווחת על ההתאוששות שלך`, CTA `התחל דיווח`. Weekly-average card and history card both self-hide (`RecoveryTab.tsx:181`, `:261`) | good |
-| Trend charts below threshold | `אין מספיק אימונים בטווח הזה — בחרו טווח רחב יותר` (`WorkoutsTab.tsx:205`), same for weight (`WeightSection.tsx:250`) | good — actionable, not a bare "no data" |
+| **התאוששות** | Composed: heart, `עדיין לא דיווחת על ההתאוששות שלך`, CTA `התחל דיווח` (`RecoveryTab.tsx:188-190`). Weekly-average card and history card both self-hide (`RecoveryTab.tsx:198`, `:269`) | good |
+| Trend charts below threshold | `אין מספיק אימונים בטווח הזה — בחרו טווח רחב יותר` (`WorkoutsTab.tsx:205`), same for weight (`WeightSection.tsx:272`) | good — actionable, not a bare "no data" |
 
 **No tab renders a bare heading, and no tab renders a chart of nothing.** Zero state is the
 strongest part of this screen. Every self-hide is a real self-hide, not a card of dashes.
@@ -312,8 +312,9 @@ There *is* a consumer-shaped path, and it is dead:
 
 - `trainingLoadService.ts:272-274` — `calculateTrainingLoad(sessions, recoveryLogs = [], ...)`.
 - `:127-130` — `latestRecoveryScore()` returns `null` for an empty array.
-- `:158-165` — `getPrimaryConstraint()` skips the `'recovery'` constraint entirely when the
-  score is `null`. Muscle-level `isTight` flags come from `tightAreas` and likewise never fire.
+- `:157-165` — `getPrimaryConstraint()` skips the `'recovery'` constraint entirely when the
+  score is `null`. Muscle-level `isTight` flags come from `tightAreas` (`:228`) and likewise
+  never fire.
 - The only production caller is `ai/contextBuilder.ts:240-246` → `buildContext(sessions, recoveryLogs = [], ...)`.
 - `buildContext`'s only production caller is `aiWorkoutInsightService.ts:14-19`, which calls
   **`buildContext(sessions)`** — no recovery argument.
@@ -398,7 +399,7 @@ this screen and are buried one level deeper still.
 | S3 | Sort chips | **DEMOTE** — collapse to a single sort control | Four sort chips plus four filter chips is two rows of pills before any content |
 | S4 | Exercise rows | **KEEP** | The honest core of the screen |
 | S5 | Sparkline | **KEEP** | Cheap, decorative, correctly `aria-hidden` |
-| S6 | PR board | **DEMOTE** — keep as the existing collapsible | Correct as built; it is already collapsed by default |
+| S6 | PR board | **DEMOTE** — keep as the existing collapsible | Correct as built; it is already collapsed by default (`StrengthSection.tsx:143`) |
 | S7 | `PRHistoryTab` | **DELETE** | Superset of S6 with worse presentation, and it re-fetches PRs independently (`PRHistoryTab.tsx:89`) after the parent already loaded them. Two PR surfaces stacked in one section is the densest point on the screen |
 | D1–D5 | Detail hero, delta, top set, derivation note, curve | **KEEP** (advanced by construction — one tap in) | This is what a well-built drill-down looks like. D4 is the only place the app explains its own math; it should be the model for everything else |
 | D6 | Volume forecast chart | **DEMOTE** — expandable within the detail view | A one-week linear extrapolation of a noisy series. Defensible, not load-bearing, and it is a whole card |
@@ -434,7 +435,7 @@ this screen and are buried one level deeper still.
 | R6 | 7-day history list | **DEMOTE** — advanced section | Also raise the window: a week is not a history |
 | R7 | Add/update action | **KEEP** | |
 | R8 | The defaults themselves | **fix, not a display item** | A save that produces a 46/`חלשה` verdict from an untouched form must either require input or not compute a score |
-| — | `ChapterBreak` call sites ×4 | **DELETE** | Renders `null`; already marked deprecated |
+| — | `ChapterBreak` call sites ×6 | **DELETE** | Renders `null`; already marked deprecated |
 
 ### Shape the advanced surface should take
 
@@ -444,7 +445,7 @@ Three different shapes, deliberately:
   (per-exercise forecast). These are *about* the content next to them; a separate destination
   would orphan them. Collapsed by default, one tap, no navigation.
 - **A collapsible section** for R5, R6 and R1 within Recovery, and for S6 within Strength —
-  the pattern the PR board already uses successfully (`StrengthSection.tsx:305-320`).
+  the pattern the PR board already uses successfully (`StrengthSection.tsx:143`, `:305-330`).
 - **Promotion, not demotion, for photos** (B12–B14). Everything else here competes for the same
   screen; photos compete with nothing and prove more.
 

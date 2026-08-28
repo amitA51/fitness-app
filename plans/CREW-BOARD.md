@@ -1000,7 +1000,89 @@ running any gate — and the newest source mtime was 3 minutes old before I star
 | arithmetic | 158 + 1 = 159 files; 1384 + 11 (`ToggleSwitch.test.tsx`) + 1 (new `WeeklyGrid` ring test) = 1396. Nothing deleted, skipped or weakened. |
 | debris | zero `contrast-probe*` leftovers (T-031 cleaned its own), `test-results/` absent, e2e still 13 specs |
 
-## [T-035] Progress screen — which of these numbers are actually true?
+## [T-035] Progress audit — ACCEPTED 2026-08-28 16:28. `plans/PROGRESS-AUDIT.md`, 484 lines, 59 items
+- status: **done** — read-only confirmed; its only write is the report. No build, no test, no browser.
+- **FIVE REAL DEFECTS, and two of them are the same failure class we already deleted twice:**
+  1. **The four recovery sub-score bars are PINNED and cannot move.** `RecoveryTab.tsx:127-153`
+     passes 0–100 sub-scores into `RecoveryBar` with `max={25}`; `RecoveryBar.tsx:13` computes
+     `pct = value/max*100`, so anything ≥25 renders ≥100% inside an `overflow:hidden` track.
+     **The numeric label literally reads `75/25`.** Same shape as the `max(actual, goal)` rings.
+  2. **BMI is computed against a height the user may never have given.** `Progress.tsx:103-112`
+     falls back to **175 cm**, and height is OPTIONAL in onboarding (default `''`). The badge still
+     states a confident `BMI 24.5` plus a Hebrew category with **no hedge**. A health number
+     invented from a default. PLACEHOLDER.
+  3. **NOTHING ANYWHERE CONSUMES LOGGED RECOVERY DATA.** The one production path into
+     `calculateTrainingLoad` passes an **empty array**. Traced, not inferred.
+  4. **Nothing on the trainee side consumes measurements** either — only sync and a coach-side read.
+  5. **"שיאים אחרונים" can show the same lift twice with identical numbers.** `prService.ts:201-273`
+     writes up to three PR rows per set (weight / volume / reps) sharing one date, and
+     `recentPRs(prs, 2)` (`progressMetrics.ts:149`) **does not dedupe**.
+- **Two more that hit beginners hardest:**
+  6. **Trend charts are min–max normalized with no y-axis** (`GlowAreaChart.tsx:63-66`,
+     `range = max - min || 1`; `TrendChartCard` never passes `yAxis`). So **80.0 → 80.2 kg draws the
+     same full-height climb as 80 → 95 kg.** Actively misleading, not merely sparse.
+  7. **`ChapterBreak` renders `null`** (marked deprecated) and is still called **six times**.
+- **THE 1RM ANSWER — and it is narrower than Amit feared, in a useful way.** Epley, one
+  implementation (`workoutMath.ts:79-83`), **no minimum: a single set produces a displayed e1RM**
+  (a trend needs 3 training days). The strength LIST and DETAIL **hedge honestly** — a `חדש` pill
+  plus the only self-explaining sentence on the whole screen (`ExerciseDetail.tsx:257`).
+  **`BigThreeCard` on Overview does NOT hedge**: a 26px number from a single high-rep set, exactly
+  where Epley over-estimates most. 1RM appears in **three places** on or one tap from Overview.
+  **There is no percentile anywhere, so there is nothing fake to delete — it is placement and
+  prominence.** That matches the Hevy shape I researched: 1RM belongs in exercise detail.
+- Its own honesty section names what it could not check: the calendar click-through and coach-side
+  displays were out of scope, and `getWorkoutAdvice` having no caller rests on a grep that a
+  dynamically-built invocation would not surface.
+
+---
+
+# Batch 12 — dispatched 2026-08-28 16:31. Amit's Progress ask, now evidence-led.
+
+### The audit changed the shape of this work, and it is the order Amit himself ruled
+He asked to declutter. But five numbers on that screen are **false, not merely crowded** — a bar
+that cannot move, a BMI from an invented height, a chart where 200g looks like 15kg, a PR list that
+repeats itself. **Rearranging those would be arranging lies.** So T-036 removes the falsehoods and
+T-037 does the information architecture, in parallel on disjoint files.
+
+### Ownership map — disjoint, and the IA is deliberately ONE owner
+- **T-036** (truth layer) → `components/RecoveryBar.tsx`, `tabs/RecoveryTab.tsx`, `Progress.tsx`,
+  `progressMetrics.ts` + `__tests__/progressMetrics.test.ts`, `components/TrendChartCard.tsx`,
+  `src/components/charts/GlowAreaChart.tsx`
+- **T-037** (information architecture) → `tabs/OverviewTab.tsx`, `tabs/WorkoutsTab.tsx`,
+  `components/BigThreeCard.tsx`, `components/LevelCard.tsx`, `components/ExerciseProgressRow.tsx`,
+  `components/ExerciseDetail.tsx`, `components/SectionCard.tsx`, `components/ChapterBreak.tsx`
+- **Amit said "coherently", so the basic/advanced split is a SINGLE owner.** Splitting it across two
+  designers is how two tabs end up with two different disclosure idioms.
+- **Deliberate constraint on T-037: the advanced path lives INSIDE each tab as collapsible
+  sections, NOT as a tab-bar mode switch.** That keeps `Progress.tsx` out of its hands (T-036 owns
+  it, for the BMI fix), and it is also the better design — it matches what Hevy ships and the
+  audit's own suggestion of a `הצג הכל` expander.
+- **NO PLAYWRIGHT** — the screenshot round for batches 10+11+12 runs once, in batch 13, on a
+  settled tree.
+
+### Held for Amit, not decided by me
+The audit proves nothing consumes recovery data or measurements. By his own rule ("what does not
+help, delete") the honest options are **delete the recovery log** or **connect the orphaned
+900-line engine**. That is a product decision with real consequences and it is his. I am fixing the
+pinned bar regardless — a bar reading `75/25` is a defect under either outcome, and the fix is two
+lines.
+
+## [T-036] Delete the false numbers on Progress
+- status: dispatched (batch 12)
+- owner: fitness-dev
+- goal: five numbers on this screen state things the data cannot support. Remove or correct each.
+- done when: verify green; test:run >= 1396; each of the five fixed or deleted with its reason
+- notes: ORDERED. The pinned bar and the invented BMI are the two a user would notice first.
+
+## [T-037] Progress information architecture — basic first, depth on request
+- status: dispatched (batch 12)
+- owner: fitness-design
+- goal: Amit's ask. The overview and the workouts tab hold too much; keep what helps at the top
+  level, demote depth behind an explicit expander, delete what helps nobody.
+- done when: verify green; test:run >= 1396; every moved/deleted item named with its reason
+- notes: 1RM moves OFF the overview to exercise level (Hevy's shape). `ChapterBreak` renders null
+  and is called 6 times — delete the calls it owns and report the rest.
+
 - status: dispatched (batch 12)
 - owner: fitness-qa
 - goal: the fact base for decluttering Progress. Every number on all five tabs classified, plus a
