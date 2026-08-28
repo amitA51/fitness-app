@@ -27,7 +27,7 @@ const WorkoutSettingsOverlays: React.FC<WorkoutSettingsOverlaysProps> = ({
   if (!showSettings) return null;
 
   return (
-    <OverlayErrorBoundary fallbackLabel="שגיאה בהגדרות" onDismiss={onCloseSettings}>
+    <OverlayErrorBoundary fallbackLabel="ההגדרות לא נפתחו" onDismiss={onCloseSettings}>
       <React.Suspense fallback={<OverlayLoader />}>
         <WorkoutSettingsOverlay
           isOpen={showSettings}

@@ -28,7 +28,7 @@
   position: sticky;
   inset-block-start: 0;
   z-index: 2;
-  padding: var(--space-3) var(--space-4) var(--space-2);
+  padding: var(--space-2) var(--space-4);
   background: color-mix(in srgb, var(--fs-surface) 72%, transparent);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -50,56 +50,36 @@
   pointer-events: none;
 }
 
-.exercise-library__summary {
-  display: flex;
-  min-block-size: 30px;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: 0 var(--space-4) var(--space-1);
+/* Result count. Measured at 390px, a visible count cost the chips row ~70px and
+   clipped the ACTIVE chip in half — the list itself already shows how many
+   matched, so the number only carries information a sighted user gets for free.
+   What does not come for free is the announcement, so this stays as a live
+   region: Hebrew screen readers still hear the new match count after every
+   filter change. */
+.exercise-filter-row__count {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
-.exercise-library__result-count {
-  margin: 0;
-  color: var(--fs-muted);
-  font-family: var(--font-body);
-  font-size: var(--text-body-sm);
-  font-weight: var(--font-semibold);
-  line-height: 1.4;
-}
-
-.exercise-library__result-count bdi {
-  color: var(--fs-ink);
+.exercise-filter-row__count bdi {
   font-variant-numeric: tabular-nums;
   unicode-bidi: isolate;
 }
 
-.exercise-library__summary-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-inline-size: 0;
-}
-
-.exercise-library__sort {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--fs-muted);
-  font: 600 var(--text-body-sm) / 1 var(--font-body);
-}
-
-.exercise-library__sort-label {
-  white-space: nowrap;
-}
-
 .exercise-library__sort-select {
-  /* Compact by design: a native select opens its own large touch surface. */
-  min-block-size: 32px;
-  padding-inline: 8px;
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding-inline: 12px;
   color: var(--fs-ink);
-  background: transparent;
-  border: 0;
+  background: var(--fs-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   font: 600 var(--text-body-sm) / 1 var(--font-body);
   cursor: pointer;
@@ -107,25 +87,27 @@
   text-align: start;
 }
 
+/* Icon-only, 44px: with the count beside it in the chips row there is no width
+   left for a label, and the reset only exists while something is filtered — the
+   state that explains it. */
 .exercise-library__reset {
-  display: inline-flex;
-  min-block-size: 32px;
-  align-items: center;
-  gap: 6px;
-  padding-inline: 10px;
+  display: grid;
+  flex: 0 0 auto;
+  inline-size: 44px;
+  block-size: 44px;
+  place-items: center;
   color: var(--fs-link);
   background: transparent;
   border: 0;
   border-radius: var(--radius-full);
-  font: 600 var(--text-body-sm) / 1 var(--font-body);
   cursor: pointer;
   touch-action: manipulation;
   transition: background-color var(--duration-fast) ease, transform 100ms var(--ease-out);
 }
 
 .exercise-library__reset svg {
-  inline-size: 15px;
-  block-size: 15px;
+  inline-size: 17px;
+  block-size: 17px;
 }
 
 .exercise-library__notice {
@@ -207,7 +189,7 @@
 .exercise-search {
   position: relative;
   display: flex;
-  min-block-size: 46px;
+  min-block-size: 44px;
   align-items: center;
   color: var(--fs-muted);
   background: var(--fs-surface-2);
@@ -317,10 +299,11 @@
 .exercise-filter-chip,
 .exercise-filter-toggle {
   flex: 0 0 auto;
-  /* Filter chips are secondary controls: the card row behind them is the real
-     44px+ touch target. 34px keeps a finger-grade target while letting six
-     muscle groups plus the toggle share one thumb-width row. */
-  min-block-size: 34px;
+  /* 44px, the touch minimum. The former 34px let one more chip share the row,
+     but a filter you have to aim at is not a shortcut — and the row's height is
+     set by this value, so it is the one place where the minimum is also the
+     maximum worth spending. */
+  min-block-size: 44px;
   color: var(--fs-muted);
   background: var(--fs-surface-2);
   border: 1px solid transparent;
@@ -357,7 +340,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-block-size: 34px;
+  min-block-size: 44px;
   padding-inline: 10px;
   color: var(--fs-link);
   background: transparent;
@@ -407,16 +390,17 @@
 .exercise-list {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
 }
 
 .exercise-card {
   position: relative;
   inline-size: 100%;
-  /* Dense scan row, not a poster: ~62px lets a 90-exercise catalog show three
-     extra exercises per viewport compared with the former 88px card. */
-  min-block-size: 62px;
-  padding: 10px 12px;
+  /* Two lines — name, then the metadata that tells you what it trains. Nothing
+     else earns a line here, so the row is exactly as tall as those two plus a
+     hair of padding, and still comfortably past the 44px touch minimum. */
+  min-block-size: 46px;
+  padding: 6px 12px;
   color: var(--fs-ink);
   background: var(--fs-surface);
   border: 1px solid var(--color-border);
@@ -456,8 +440,11 @@
 .exercise-card__visual {
   display: grid;
   flex: 0 0 auto;
-  inline-size: 38px;
-  block-size: 38px;
+  /* 32px, down from 38: the tile was the tallest thing in the row, so it — not
+     the text — was setting the row height. It stays because it is what turns
+     accent when a row is selected. */
+  inline-size: 32px;
+  block-size: 32px;
   place-items: center;
   color: var(--fs-muted);
   background: var(--fs-surface-2);
@@ -571,7 +558,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 4px;
-  margin-block-start: 3px;
+  margin-block-start: 2px;
   color: var(--fs-muted);
   font-family: var(--font-body);
   /* One size down from the title: the meta line is a scan aid, not content. */
@@ -593,15 +580,6 @@
 .exercise-card__rest svg {
   inline-size: 13px;
   block-size: 13px;
-}
-
-.exercise-card__notes {
-  margin: 4px 0 0;
-  color: var(--fs-muted);
-  font: 400 var(--text-body-sm) / 1.35 var(--font-body);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .exercise-card__action {
@@ -712,12 +690,12 @@
 .exercise-library-skeleton {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
 }
 
 .exercise-library-skeleton__row {
   position: relative;
-  min-block-size: 62px;
+  min-block-size: 48px;
   overflow: hidden;
   background: var(--fs-surface-2);
   border-radius: var(--radius-xl);
@@ -971,7 +949,6 @@
 
 @media (max-width: 359px) {
   .exercise-library__toolbar,
-  .exercise-library__summary,
   .exercise-library__create-wrap,
   .exercise-library__scroll {
     padding-inline: var(--space-4);

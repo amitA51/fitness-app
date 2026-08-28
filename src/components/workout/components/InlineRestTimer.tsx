@@ -26,7 +26,7 @@ interface InlineRestTimerProps {
   /** Freeze the countdown while the workout is paused. */
   isPaused?: boolean;
   /**
-   * "התחל סט הבא": skip rest AND jump straight to entering the next set's
+   * "התחל את הסט הבא": skip rest AND jump straight to entering the next set's
    * weight (removes the skip-then-find-input step). Falls back to onSkip when
    * not provided.
    */
@@ -172,8 +172,8 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
       setExpanded((prev) => !prev);
     };
 
-    // "התחל סט הבא": skip rest and jump to entering the next set. Collapses the
-    // panel first so the header is clean when the numpad/input takes focus.
+    // "התחל את הסט הבא": skip rest and jump to entering the next set. Collapses
+    // the panel first so the header is clean when the numpad/input takes focus.
     const handleStartNextSet = () => {
       triggerHaptic('medium');
       setExpanded(false);
@@ -512,7 +512,7 @@ const InlineRestTimer = memo<InlineRestTimerProps>(
                 transition: prefersReduced ? 'none' : 'transform 120ms ease',
               }}
             >
-              התחילו סט הבא
+              התחל את הסט הבא
             </button>
           </div>
         )}

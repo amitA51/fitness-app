@@ -298,7 +298,6 @@ export function ProgramCard() {
             gap: 8,
           }}
         >
-          {kicker('האימון הבא שלך')}
           <span
             style={{
               fontFamily: 'var(--font-mono)',

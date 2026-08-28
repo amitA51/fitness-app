@@ -1,6 +1,6 @@
 // ExerciseLibraryTab - fast, Hebrew-first exercise discovery.
 
-import { AlertCircle, Plus, RotateCcw } from 'lucide-react';
+import { AlertCircle, Plus } from 'lucide-react';
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { WORKOUT } from '../../constants';
 import { translateEquipment } from '../../constants/equipmentNames';
@@ -100,8 +100,6 @@ const SORT_LABELS: Record<SortMode, string> = {
   name: 'שם',
   level: 'רמה',
 };
-
-const SORT_MODES = Object.keys(SORT_LABELS) as SortMode[];
 
 const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
   onSelect,
@@ -385,6 +383,12 @@ const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
           onLevelChange={setSelectedLevel}
           exercises={exercises}
           onSuggestionSelect={onSelect}
+          resultCount={loadStatus === 'ready' ? filteredExercises.length : null}
+          sortMode={sortMode}
+          sortLabels={SORT_LABELS}
+          onSortChange={(mode) => setSortMode(mode as SortMode)}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearFilters}
         />
       </div>
 
@@ -406,38 +410,6 @@ const ExerciseLibraryTab: React.FC<ExerciseLibraryTabProps> = ({
             }}
             isSubmitting={isSaving}
           />
-        </div>
-      )}
-
-      {loadStatus === 'ready' && (
-        <div className="exercise-library__summary">
-          <p className="exercise-library__result-count" role="status" aria-live="polite">
-            <bdi dir="ltr">{filteredExercises.length}</bdi>{' '}
-            {filteredExercises.length === 1 ? 'תרגיל' : 'תרגילים'}
-          </p>
-          <div className="exercise-library__summary-actions">
-            {/* Sort sits next to the count because that is the value it reorders. */}
-            <label className="exercise-library__sort">
-              <span className="exercise-library__sort-label">מיון</span>
-              <select
-                className="exercise-library__sort-select"
-                value={sortMode}
-                onChange={(event) => setSortMode(event.target.value as SortMode)}
-              >
-                {SORT_MODES.map((mode) => (
-                  <option key={mode} value={mode}>
-                    {SORT_LABELS[mode]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {hasActiveFilters && (
-              <button type="button" className="exercise-library__reset" onClick={clearFilters}>
-                <RotateCcw aria-hidden="true" />
-                נקה סינון
-              </button>
-            )}
-          </div>
         </div>
       )}
 

@@ -159,8 +159,6 @@ const ExerciseCard: React.FC<ExerciseCardProps> = memo(
                 </span>
               </span>
             </div>
-
-            {exercise.notes && <p className="exercise-card__notes">{exercise.notes}</p>}
           </div>
 
           {isSelectionMode ? (

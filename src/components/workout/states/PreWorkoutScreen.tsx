@@ -160,6 +160,11 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
     loadData();
   }, []);
 
+  // Only `text` is rendered (the quiet caption under the greeting), so the
+  // suggestion carries no second line. A suggestion is returned ONLY when there
+  // is something real to say — a neglected muscle group, or the complement of
+  // the last one trained. With no such signal there is no caption: the two CTAs
+  // below already say what to do.
   const suggestion = useMemo(() => {
     const neglectedMuscles = recentMuscles.filter((m) => m.daysSince >= 3);
 
@@ -167,10 +172,8 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
       const muscle = neglectedMuscles[0];
       if (!muscle) return null;
       const hebrewName = muscleHe(muscle.muscle);
-      const daysText = muscle.daysSince === 1 ? 'יום' : `${muscle.daysSince} ימים`;
       return {
         text: `מזמן לא אימנת ${hebrewName}`,
-        subtext: `בפעם האחרונה לפני ${daysText}`,
         type: 'neglected' as const,
       };
     }
@@ -178,7 +181,6 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
     if (lastWorkout && lastWorkout.muscleGroups.length > 0) {
       const lastMuscle = lastWorkout.muscleGroups[0];
       if (!lastMuscle) return null;
-      const hebrewName = muscleHe(lastMuscle);
       const complements: Record<string, string> = {
         Chest: 'Back',
         Back: 'Chest',
@@ -193,17 +195,12 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
         const complementHe = muscleHe(complement);
         return {
           text: `מה עם ${complementHe} היום?`,
-          subtext: `אימנת ${hebrewName} לאחרונה`,
           type: 'complement' as const,
         };
       }
     }
 
-    return {
-      text: 'מה נתאמן היום?',
-      subtext: 'בחר את התרגילים שלך',
-      type: 'default' as const,
-    };
+    return null;
   }, [recentMuscles, lastWorkout]);
 
   const handleStartWorkout = () => {
@@ -295,7 +292,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
             <button
               type="button"
               onClick={handleCancel}
-              aria-label="סגירה וחזרה לבית"
+              aria-label="סגור וחזור למסך הבית"
               className="focus-ring"
               style={{
                 display: 'inline-flex',
@@ -578,18 +575,6 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
                 <div className="pt-3">
                   <p
                     style={{
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      letterSpacing: '-0.01em',
-                      color: 'var(--fs-accent)',
-                      marginBottom: 6,
-                    }}
-                  >
-                    האימון שהמאמן הקצה לך
-                  </p>
-                  <p
-                    style={{
                       fontFamily: 'var(--font-display)',
                       fontWeight: 600,
                       fontSize: 20,
@@ -807,7 +792,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               }}
               className="start-workout-btn focus-ring"
               style={{ marginBottom: 10 }}
-              aria-label="בחרו תבנית מוכנה"
+              aria-label={favoriteTemplates.length > 0 ? 'עוד תבניות' : 'בחרו תבנית מוכנה'}
             >
               <DumbbellIcon style={{ width: 20, height: 20, flexShrink: 0 }} />
               {favoriteTemplates.length > 0 ? 'עוד תבניות' : 'בחרו תבנית מוכנה'}
@@ -817,7 +802,7 @@ const PreWorkoutScreen: PreWorkoutScreenFC = ({
               type="button"
               onClick={handleStartWorkout}
               className="cta-secondary focus-ring"
-              aria-label="התחילו אימון ריק — בחירת תרגילים"
+              aria-label={hasHistory ? 'אימון ריק — בחרו תרגילים' : 'התחילו בלי תבנית'}
             >
               {hasHistory ? 'אימון ריק — בחרו תרגילים' : 'התחילו בלי תבנית'}
             </button>

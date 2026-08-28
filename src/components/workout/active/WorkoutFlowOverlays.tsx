@@ -237,7 +237,7 @@ const WorkoutFlowOverlays: React.FC<WorkoutFlowOverlaysProps> = ({
     {/* Tutorial + AI Coach — own error boundary so an AI failure can't blank the workout */}
     {showTutorial && tutorialExercise && (
       <OverlayErrorBoundary
-        fallbackLabel="שגיאה ב-AI"
+        fallbackLabel="המדריך לא נפתח"
         onDismiss={() => {
           onCloseTutorial();
           onCloseAICoach();

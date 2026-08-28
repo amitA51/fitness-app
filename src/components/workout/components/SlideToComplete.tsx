@@ -287,7 +287,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
         // One-shot at the cross into the committed zone: firmer impact haptic
         // + a polite SR announcement so non-visual users know they can release.
         triggerHapticEffect('impact', 'medium');
-        setThresholdAnnounce('עברת את נקודת האישור');
+        setThresholdAnnounce('אפשר לשחרר — הסט יסומן');
       } else if (nextRatio < THRESHOLD && prevRatio >= THRESHOLD) {
         // Dropped back below the threshold — clear so the next cross re-announces.
         setThresholdAnnounce('');
@@ -366,8 +366,7 @@ const SlideToComplete = memo<SlideToCompleteProps>(({ label, onComplete, disable
       }}
     >
       <span id={instructionId} className="sr-only">
-        ניתן לגרור עד סוף המסילה, ללחוץ ולהחזיק לסימון מהיר, או ללחוץ Enter או רווח כדי לסמן את הסט
-        כבוצע.
+        החלק עד סוף המסילה כדי לסמן את הסט. אפשר גם ללחוץ ולהחזיק, או להקיש Enter.
       </span>
       {/* Polite SR feedback at the commit-threshold cross (visual users get the
           haptic + fill cues instead). */}

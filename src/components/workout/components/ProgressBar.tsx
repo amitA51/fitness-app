@@ -137,12 +137,6 @@ const ProgressBar = memo<ProgressBarProps>(({ progress, showMilestones = false }
             </AnimatePresence>
           </div>
         ))}
-
-      {/* Percentage display on hover area (invisible) */}
-      <div
-        className="absolute inset-0 cursor-default"
-        title={`${Math.round(clampedProgress)}% completed`}
-      />
     </div>
   );
 });

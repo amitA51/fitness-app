@@ -26,11 +26,12 @@ interface ExerciseListItemProps {
 }
 
 const VIRTUALIZE_THRESHOLD = 20;
-// Matches the one-line row (.exercise-card min-block-size 62px) plus the gap
-// below. A stale 88 here over-reported the total size by ~30% until every row
-// had been measured, which made the scrollbar jump on the first flick.
-const ESTIMATED_CARD_HEIGHT = 62;
-const VIRTUAL_ITEM_GAP = 10;
+// Matches the two-line row (.exercise-card min-block-size 46px, name + meta)
+// plus the gap below. These two numbers ARE the on-screen pitch for a 166-item
+// catalog — the CSS `.exercise-list` gap never applies once virtualized — so a
+// stale value here silently undoes any density work in the card itself.
+const ESTIMATED_CARD_HEIGHT = 48;
+const VIRTUAL_ITEM_GAP = 6;
 
 type FocusEdge = 'first' | 'last';
 

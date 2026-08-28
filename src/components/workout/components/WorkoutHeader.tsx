@@ -297,7 +297,7 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
                 e.stopPropagation();
                 onTogglePause();
               }}
-              aria-label={isPaused ? 'המשך אימון' : 'השהיית אימון'}
+              aria-label={isPaused ? 'המשך אימון' : 'השהה אימון'}
               aria-pressed={isPaused}
               className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1"
               style={{
@@ -336,7 +336,7 @@ const WorkoutHeader = memo<WorkoutHeaderProps>(
               handleFinish();
             }}
             disabled={isSaving}
-            aria-label="סיים אימון"
+            aria-label={isSaving ? 'שומר את האימון' : 'סיים אימון'}
             aria-busy={isSaving}
             className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-1 disabled:cursor-not-allowed"
             style={{

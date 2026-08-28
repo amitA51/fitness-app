@@ -553,3 +553,185 @@ Amit's asks, verbatim intent:
 
 ---
 
+# Batch 4 — dispatched 2026-08-28 11:47. Amit's ruling: **DELETE what does not help.**
+
+His words: "מה שלא עוזר אז למחוק, שיהיה קל ופשוט ונוח לעין וחוויית משתמש."
+This settles the open question from batch 3: **the מוכנות /100 score is deleted**,
+not gated and not re-derived. The bar for every card is now "does it help", and the
+default answer is no.
+
+### Ownership map — these three sets are disjoint, verified against a real glob
+- **T-010** → `src/pages/Dashboard.tsx` + all of `src/components/dashboard/**`
+- **T-011** → the picker surface only: `ExerciseSelector/index.tsx`,
+  `ExerciseLibraryTab.tsx(+test)`, `exercise-library.css`,
+  `components/{ExerciseFilter,ExerciseCard(+test),ExerciseList}.tsx`,
+  `__tests__/{ExerciseLibraryFilters,ExercisePicker.performance}.test.tsx`
+- **T-012** → the active-workout surface only: `active/**`, `states/**`,
+  `components/{SlideToComplete(+test),WorkoutHeader,WorkoutActions,WorkoutAriaLive,
+  InlineRestTimer,SetInputCard,SetProgress,ProgressBar,IntensityMeter,RPEPicker}.tsx`
+- **`src/components/workout/ActiveWorkoutNew.tsx` is LEAD-SERIALIZED — nobody
+  touches it this batch.** It is the composition root both T-011 and T-012 could
+  reach for. A worker that believes it must edit it stops and reports instead.
+- Same for `src/components/workout/components/index.ts` (shared barrel).
+
+### Lead decisions
+1. **Only T-011 runs Playwright.** T-010 and T-012 owe screenshots — a declared
+   debt collected in batch 5 by `fitness-qa`, exactly as T-009's debt was.
+2. **T-010 is deliberately large but is ORDERED.** It is a deletion list, and the
+   worker is told to work top-down, verify after each item, and report precisely
+   where it stopped. Partial completion in order is acceptable; a worker that dies
+   halfway still leaves a coherent tree. This is the mitigation for the
+   `AcpProcessDied` / 30-minute-timeout failure mode that killed T-008.
+3. **The rings card dies, and the weekly `CoachBriefCard` dies with it** — it was
+   nested inside. So both brief instances go: the weekly one by containment, the
+   daily one by Amit's ruling.
+4. `TodaysWorkoutCard` SURVIVES — it is real coach-scheduled data. `ProgramCard`
+   survives but loses its "next workout" claim, so only one thing on the screen
+   claims to be next.
+
+## [T-011] Picker chrome — ACCEPTED 2026-08-28 12:28
+- status: **done** — 4 files + 1 test + `e2e/picker-chrome-qa.spec.ts`
+- **Target hit and the lead confirmed it by eye, not on report:** the 390px AFTER
+  screenshot shows **10 full exercise rows plus a partial 11th**, up from ~6.
+- What it actually cut, and the reasoning is the good part:
+  - The sheet masthead is gone, and **the close button moved onto the tabs row** —
+    two rows became one, with a 44px dismiss target preserved.
+  - **Sort moved into the advanced drawer** rather than being deleted: "sort lives
+    in the drawer, not in permanent chrome". The function survives, the permanent
+    space cost does not.
+  - **The result count became screen-reader-only inside an aria-live region.** It
+    measured that a visible count cost the chips row ~70px and *clipped the active
+    chip* at 390px. So Hebrew screen readers still hear the match count after every
+    filter change while sighted users get the space back. A deletion that kept the
+    information.
+  - The per-exercise description line is gone; the row went 62px → 46px.
+- **It chose accessibility over density and said so:** the filter chips were 34px,
+  below the touch minimum, and it raised them to **44px** while noting the cost —
+  the old 34px let one more chip share the row. It also found and fixed one
+  remaining sub-44px target (the no-selection footer links).
+- screenshots EXCEED the gate: it captured `picker-chrome-before-*` AND
+  `picker-chrome-after-*` at 390 + 1280 in light + dark, plus two filtered states,
+  so the improvement is evidenced rather than asserted.
+- it noticed another worker's in-flight rename of the pre-workout entry button and
+  adapted its spec path instead of breaking. It also cleaned up its own scratch
+  files — the T-008 debris problem did not recur.
+
+### Verified baseline — 2026-08-28 12:28 (after batch 4), measured by the lead
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **691** files (was 698; −7 = the 6 deleted sources + 1 deleted test) |
+| `npm run test:run` | **154 files / 1357 tests** — this is the NEW FLOOR |
+| test arithmetic | 1362 − 5 = 1357, all 5 from `ringGoals.test.ts`. Confirmed independently by TWO workers, one via `git show HEAD:`. Nothing weakened. |
+| screenshots | before/after picker pairs @390+1280 × light+dark |
+| RTL | **no new physical-direction CSS introduced by this batch** — see below |
+
+### RTL audit the lead ran across all of `src/components/workout/**`
+16 matches in 11 files. Every one is either pre-existing in a file nobody was
+assigned, or the symmetric `fixed bottom-0 left-0 right-0` bottom-sheet idiom that
+is direction-neutral and already the house pattern in 4 untouched files. T-012
+proactively disclosed the two in files it owned (`ProgressBar.tsx`,
+`PreWorkoutScreen.tsx`) rather than leaving them to be found. **Real debt worth a
+task:** `text-right` in `PerformanceAnalytics.tsx`, `PRHistoryTab.tsx`,
+`ProgressionRecommendation.tsx`, `WorkoutGoalSelector.tsx`; `marginLeft: -8` in
+`reorder/ExerciseReorderItem.tsx`; and `ProgressBar.tsx`'s `style={{ right: 'N%' }}`
+milestone markers, which in RTL are the likeliest to be visually wrong — not
+verified in a browser, so that is a suspicion, not a finding.
+
+## [T-010] Home screen — ACCEPTED on evidence 2026-08-28 12:15
+- status: **accepted; the lead's authoritative verify + test:run still owed once
+  T-011 lands** (the picker worker was still writing to the tree)
+- **All 9 ordered items applied.** `Dashboard.tsx` went **+12 / −352 lines**.
+  Six files deleted outright: `CoachBriefCard.tsx`, `Greeting.tsx`,
+  `ForecastNudge.tsx`, `RecentPRBanner.tsx`, `StreakMilestone.tsx`, `ringGoals.ts`
+  (+ `ringGoals.test.ts`).
+- **Test arithmetic closes exactly: 1362 → 1357, and every one of the −5 is
+  `ringGoals.test.ts`,** whose only subject `deriveRingGoals` died with the rings
+  card in item 1. 155 → 154 files, same cause. Nothing else deleted, skipped or
+  weakened.
+- **It did NOT delete the tests whose behaviour changed — it inverted them.**
+  `insightPicker.test.ts` kept all 11 tests: the three cases whose subject was
+  removed now assert the new `null` contract, and it ADDED a case for
+  progression-beats-neglect precedence.
+- Verified before acting rather than assuming, twice: it grepped for importers
+  before deleting each file (and caught that the `greeting` hits were
+  `utils/dateUtils`, not the component), and before removing the "כל התבניות"
+  header action it confirmed `/templates` is reachable as a BottomNav tab.
+- **Correct lane discipline under pressure:** mid-run it hit new TS errors coming
+  from `src/components/workout/**` — the other worker's live edits — recognised
+  they were not its own, and left them alone instead of "fixing" a file it did not
+  own.
+- honest leftover it refused to fix as out of scope: **`DashboardSkeleton` still
+  paints a 156px circle + 3 legend bars** for the card that no longer exists, so
+  first mount-load flashes a rings-shaped placeholder. Batch 5.
+
+## [T-012] Workout-screen words — ACCEPTED on evidence 2026-08-28 12:15
+- status: **accepted; lead's authoritative run owed with T-010's**
+- 17 files, ALL inside its declared ownership — **zero scope creep.** The lead
+  checked this specifically: `ExerciseFilter/ExerciseCard/ExerciseList` show as
+  modified in the shared directory but belong to T-011's live run, and T-012's own
+  report never names them.
+- It independently re-derived the test count instead of trusting the bar it was
+  given: `git show HEAD:` proved `ringGoals.test.ts` held exactly 5 tests, so
+  1362 − 5 = 1357 — the other worker's deletion, not its own. **Tests touched: none.**
+- **It found real defects past the copy brief:**
+  - **WCAG 2.5.3 label-in-name violations** — aria-labels that did not contain
+    their visible text. One said `בחרו תבנית מוכנה` while the button read
+    `בחרו תבנית מוכנה במקום`, silently dropping `במקום`. Fixed by making the visible
+    text the accessible name.
+  - **Dead Hebrew strings that never reach the DOM** — `בפעם האחרונה לפני N ימים`
+    and `אימנת {muscle} לאחרונה`; only `suggestion.text` renders.
+  - **An English tooltip in a Hebrew app** — `title="{n}% completed"` on
+    `ProgressBar`, restating the bar it sat on. Deleted with the invisible div.
+  - Bottom-bar copy that **pointed at a button label not on screen.**
+  - A CoachMark repeating step 3 of the numbered list 40px above it. Deleted.
+  - `מה נתאמן היום?` deleted — a rhetorical question answered by the two CTAs below.
+
+### Follow-ups T-012 surfaced and deliberately did NOT touch (batch 5)
+1. **Singular vs plural imperative is inconsistent app-wide.** Buttons are singular
+   in 6+ files (`התחל אימון`, `הוסף תרגיל`) but `בחרו תבנית מוכנה` /
+   `התחילו בלי תבנית` sit verbatim in `Dashboard.tsx`, which it does not own. It
+   refused to normalize only its half because that would INCREASE divergence —
+   correct call. **Lead's decision: go SINGULAR**, applied in one pass across
+   `Dashboard.tsx`, `StartWorkoutSheet.tsx`, `OverviewTab.tsx` and the two state
+   screens together.
+2. **Pre-existing RTL defects in files it owned but was scoped out of:**
+   `ProgressBar.tsx` uses `left-0 right-0`, `left-0` and `style={{ right: 'N%' }}`
+   for milestone markers; `PreWorkoutScreen.tsx` has `textAlign: 'right'` on three
+   cards plus `top-0 left-0` on the coach ribbon.
+3. `hintWorkout` has no UI consumer after the CoachMark deletion — the key is still
+   registered in `guidanceService.ts`. Retire it or place the mark somewhere it is
+   not a duplicate.
+4. English data fallbacks `'My Workout'` / `'Unknown'` surface in Hebrew UI; the
+   same pattern lives in 8 files it does not own. App-wide call.
+
+## [T-010] Home screen — delete everything that does not help
+- status: dispatched (batch 4)
+- owner: fitness-dev
+- goal: cut the home screen down to what is true and useful, in a fixed order.
+- files (EXCLUSIVE): `src/pages/Dashboard.tsx`, `src/components/dashboard/**`
+- done when: verify green; test:run >= 1362 minus only tests whose subject was
+  deleted, named one by one; the ordered list reported item-by-item done/skipped
+- notes: screenshots OWED (T-011 holds the browser). No Playwright.
+
+## [T-011] Exercise picker — cut the chrome above the list
+- status: dispatched (batch 4)
+- owner: fitness-design
+- goal: the six stacked bars above the first exercise are what eat the screen, not
+  the rows. Get 10+ exercises visible at 390px instead of ~6.
+- files (EXCLUSIVE): the picker surface listed in the ownership map above
+- done when: verify green; test:run >= 1362; screenshots light+dark @390 and @1280;
+  the chrome height reported in px before and after, measured not estimated
+- notes: the ONLY Playwright runner this batch.
+
+## [T-012] Workout screen — make the words actually help
+- status: dispatched (batch 4)
+- owner: fitness-design
+- goal: Amit's stated #1 priority for this screen. Every user-visible string on the
+  active-workout surface either tells the user what to do next, or is deleted.
+- files (EXCLUSIVE): the active-workout surface listed in the ownership map above
+- done when: verify green; test:run >= 1362; every changed string reported old -> new
+- notes: screenshots OWED. No Playwright.
+
+
+---
+

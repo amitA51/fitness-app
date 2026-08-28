@@ -227,7 +227,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
             }}
           >
             {pluralizeHe(draft.length, HE_NOUNS.exercise)} · {pluralizeHe(totalSets, HE_NOUNS.set)}{' '}
-            — קבע סטים, משקל וחזרות מראש (אופציונלי)
+            · אפשר להתחיל גם בלי למלא
           </p>
         </div>
       </div>
@@ -420,7 +420,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
                           letterSpacing: '-0.01em',
                           borderRadius: 8,
                         }}
-                        aria-label={`מלא משקל וחזרות מהאימון הקודם עבור ${ex.name}`}
+                        aria-label={`מלא מהקודם — משקל וחזרות של ${ex.name}`}
                       >
                         <WandIcon style={{ width: 14, height: 14 }} />
                         מלא מהקודם
@@ -473,7 +473,7 @@ const WorkoutPlanScreen: React.FC<WorkoutPlanScreenProps> = ({
           onClick={handleStart}
           disabled={draft.length === 0}
           className="start-workout-btn focus-ring disabled:opacity-40 disabled:cursor-not-allowed"
-          aria-label="התחל את האימון עם התוכנית"
+          aria-label="התחל אימון לפי התוכנית"
         >
           <DumbbellIcon style={{ width: 20, height: 20 }} />
           התחל אימון

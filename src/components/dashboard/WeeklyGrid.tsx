@@ -4,7 +4,6 @@ import { useIsRTL } from '../../hooks/useIsRTL';
 import type { WorkoutSession } from '../../types';
 import { DAYS, HEBREW_DAYS, getWeekEnd, getWeekStart } from '../../utils/dateUtils';
 import { addRestDay, isRestDay, removeRestDay, useRestDaysVersion } from '../../utils/restDays';
-import { RingProgress } from '../charts/RingProgress';
 
 interface WeeklyGridProps {
   sessions: WorkoutSession[];
@@ -28,7 +27,7 @@ export const WeeklyGrid = memo(function WeeklyGrid({
   const restDaysVersion = useRestDaysVersion(); // re-render when the ledger changes
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: restDaysVersion deliberately forces recompute — isRestDay() reads external ledger state inside the memo
-  const { days, weekLabel, isCurrentWeek, weekProgress, perfectWeek } = useMemo(() => {
+  const { days, weekLabel, isCurrentWeek } = useMemo(() => {
     const now = new Date();
     const currentWeekStart = getWeekStart(now);
     const targetWeekStart = new Date(currentWeekStart);
@@ -76,17 +75,10 @@ export const WeeklyGrid = memo(function WeeklyGrid({
           : `${startDay} ${startMonth} - ${endDay} ${endMonth}`;
     }
 
-    const activeCount = daysArray.filter((d) => d.active).length;
-    const progress = Math.round((activeCount / 7) * 100);
-    // Perfect week: all seven days trained — the whole row earns accent fill.
-    const perfectWeek = activeCount === 7;
-
     return {
       days: daysArray,
       weekLabel,
       isCurrentWeek: weekOffset === 0,
-      weekProgress: progress,
-      perfectWeek,
     };
     // restDaysVersion: isRestDay() reads the ledger during memo construction.
   }, [sessions, weekOffset, restDaysVersion]);
@@ -154,25 +146,6 @@ export const WeeklyGrid = memo(function WeeklyGrid({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <RingProgress
-            value={weekProgress}
-            size={48}
-            strokeWidth={6}
-            variant="accent"
-            centerContent={
-              <span
-                style={{
-                  fontSize: 11,
-                  fontFamily: 'var(--font-mono)',
-                  color: 'var(--fs-ink)',
-                  fontWeight: 700,
-                }}
-              >
-                {weekProgress}%
-              </span>
-            }
-            ariaLabel={`התקדמות שבועית ${weekProgress}%`}
-          />
           <button
             type="button"
             onClick={onNextWeek}
@@ -212,7 +185,6 @@ export const WeeklyGrid = memo(function WeeklyGrid({
         {days.map((day) => {
           const classes = ['day-cell'];
           if (day.active) classes.push('done');
-          if (perfectWeek && day.active) classes.push('perfect-week');
           if (day.isToday) classes.push('today');
           if (day.rest && !day.active) classes.push('rest');
 

@@ -57,8 +57,13 @@ export const SetProgress = memo<SetProgressProps>(
     // Working-set-aware label: counts working sets only, with warmups shown as a
     // distinct "חימום" phase. Falls back to the plain all-sets label when no
     // working counts are supplied.
+    // `ariaText` is the plain-text twin of `label` and is what the progressbar
+    // announces. It MUST count the same sets the visible label counts — reading
+    // out the all-sets tally while the screen shows the working-set tally gave
+    // screen-reader users a different number than everyone else.
     const hasWorking = typeof workingTotal === 'number';
     let label: ReactNode;
+    let ariaText: string;
     if (hasWorking) {
       if (isComplete) {
         label = (
@@ -66,6 +71,7 @@ export const SetProgress = memo<SetProgressProps>(
             הושלם · <span dir="ltr">{`${workingTotal}/${workingTotal}`}</span>
           </>
         );
+        ariaText = `הושלם, ${workingTotal} מתוך ${workingTotal}`;
       } else if (activeIsWarmup) {
         const pos = Math.min((warmupCompleted ?? 0) + 1, warmupTotal ?? 0);
         label = (
@@ -73,6 +79,7 @@ export const SetProgress = memo<SetProgressProps>(
             חימום · <span dir="ltr">{pos}</span> מתוך <span dir="ltr">{warmupTotal}</span>
           </>
         );
+        ariaText = `חימום ${pos} מתוך ${warmupTotal}`;
       } else {
         const pos = Math.min((workingCompleted ?? 0) + 1, workingTotal ?? 0);
         label = (
@@ -80,6 +87,7 @@ export const SetProgress = memo<SetProgressProps>(
             סט <span dir="ltr">{pos}</span> מתוך <span dir="ltr">{workingTotal}</span>
           </>
         );
+        ariaText = `סט ${pos} מתוך ${workingTotal}`;
       }
     } else if (isComplete) {
       label = (
@@ -87,12 +95,14 @@ export const SetProgress = memo<SetProgressProps>(
           הושלם · <span dir="ltr">{`${total}/${total}`}</span>
         </>
       );
+      ariaText = `הושלם, ${total} מתוך ${total}`;
     } else {
       label = (
         <>
           סט <span dir="ltr">{activePosition}</span> מתוך <span dir="ltr">{total}</span>
         </>
       );
+      ariaText = `סט ${activePosition} מתוך ${total}`;
     }
 
     return (
@@ -105,7 +115,7 @@ export const SetProgress = memo<SetProgressProps>(
           aria-valuemin={0}
           aria-valuemax={total}
           aria-valuenow={completed}
-          aria-label={`התקדמות סטים: ${completed} מתוך ${total}`}
+          aria-label={`התקדמות סטים, ${ariaText}`}
         >
           {Array.from({ length: total }).map((_, idx) => {
             const isCompleted = idx < completed;

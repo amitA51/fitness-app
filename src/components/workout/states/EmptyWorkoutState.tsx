@@ -6,7 +6,6 @@ import { m } from 'framer-motion';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { triggerHaptic } from '../../../utils/haptics';
-import { CoachMark } from '../../guidance/CoachMark';
 
 interface EmptyWorkoutStateProps {
   /** Whether OLED mode is enabled */
@@ -188,24 +187,12 @@ const EmptyWorkoutState = React.memo<EmptyWorkoutStateProps>(
             }}
             className="cta-secondary"
             style={{ marginBottom: 8 }}
-            aria-label="בחרו תבנית מוכנה"
           >
             בחרו תבנית מוכנה במקום
           </button>
 
-          <div style={{ width: '100%', marginTop: 4, marginBottom: 8, textAlign: 'start' }}>
-            <CoachMark hintKey="hintWorkout">
-              אחרי כל סט — החליקו את הכפתור למטה. המנוחה תתחיל אוטומטית.
-            </CoachMark>
-          </div>
-
-          <button
-            type="button"
-            onClick={onCancel}
-            className="cta-ghost"
-            aria-label="ביטול האימון וחזרה"
-          >
-            ביטול וחזרה
+          <button type="button" onClick={onCancel} className="cta-ghost">
+            ביטול האימון
           </button>
         </m.div>
       </div>

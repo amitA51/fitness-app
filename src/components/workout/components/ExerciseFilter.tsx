@@ -1,7 +1,7 @@
 // ExerciseFilter - direct search, progressive filters, and quick picks.
 
 import { AnimatePresence, m } from 'framer-motion';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { RotateCcw, Search, SlidersHorizontal, X } from 'lucide-react';
 import type React from 'react';
 import { useMemo, useRef, useState } from 'react';
 import { EQUIPMENT_KEYS, translateEquipment } from '../../../constants/equipmentNames';
@@ -41,6 +41,14 @@ interface ExerciseFilterProps {
   onLevelChange?: (level: string) => void;
   exercises?: PersonalExercise[];
   onSuggestionSelect?: (exercise: PersonalExercise) => void;
+  /** Matches currently in the list. `null` while the catalog is still loading. */
+  resultCount?: number | null;
+  /** Current sort key, and the Hebrew label for every available key. */
+  sortMode?: string;
+  sortLabels?: Record<string, string>;
+  onSortChange?: (mode: string) => void;
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
 }
 
 const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
@@ -58,6 +66,12 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
   onLevelChange,
   exercises = [],
   onSuggestionSelect,
+  resultCount = null,
+  sortMode,
+  sortLabels,
+  onSortChange,
+  hasActiveFilters = false,
+  onClearFilters,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const hasAdvancedFilters = Boolean(
@@ -186,9 +200,11 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
       )}
 
       {/* One dense row: the muscle chips ARE the filter surface, so the group
-          needs no caption of its own — the chips' content labels them, and the
-          advanced-filter toggle rides at the end of the same row instead of
-          spending an entire toolbar line above it. */}
+          needs no caption of its own — the chips' content labels them. The
+          advanced-filter toggle rides at the start and the reset at the end, and
+          the match count rides along as a screen-reader-only live region. That
+          is what retired the separate count/sort bar: a whole row of chrome for
+          one number and one rarely-touched preference. */}
       <div className="exercise-filter-row">
         {hasAdvancedFilters && (
           <button
@@ -224,6 +240,21 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
             </button>
           ))}
         </div>
+        {resultCount !== null && (
+          <p className="exercise-filter-row__count" role="status" aria-live="polite">
+            <bdi dir="ltr">{resultCount}</bdi> {resultCount === 1 ? 'תרגיל' : 'תרגילים'}
+          </p>
+        )}
+        {hasActiveFilters && onClearFilters && (
+          <button
+            type="button"
+            className="exercise-library__reset"
+            onClick={onClearFilters}
+            aria-label="נקה סינון"
+          >
+            <RotateCcw aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       <AnimatePresence initial={false}>
@@ -353,6 +384,26 @@ const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
                     </button>
                   ))}
                 </div>
+              </>
+            )}
+            {sortMode && sortLabels && onSortChange && (
+              <>
+                {/* Sort lives in the drawer, not in permanent chrome: it is a
+                    view preference touched once in a session, and the bar it
+                    used to own cost the list a row on every visit. */}
+                <div className="exercise-filter-row__label">מיון</div>
+                <select
+                  className="exercise-library__sort-select"
+                  aria-label="מיון"
+                  value={sortMode}
+                  onChange={(event) => onSortChange(event.target.value)}
+                >
+                  {Object.entries(sortLabels).map(([mode, label]) => (
+                    <option key={mode} value={mode}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
               </>
             )}
           </m.div>

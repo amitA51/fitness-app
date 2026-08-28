@@ -110,7 +110,7 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
                   opacity: 0.9,
                 }}
               >
-                התרגיל הושלם · הבא
+                התרגיל הבא
               </span>
               <span
                 style={{
@@ -164,7 +164,7 @@ const WorkoutBottomBar: React.FC<WorkoutBottomBarProps> = ({
                 letterSpacing: '-0.01em',
               }}
             >
-              לחצו &quot;סיים&quot; למעלה כדי לשמור את האימון
+              הקישו ✓ למעלה כדי לשמור את האימון
             </span>
           </div>
         ) : (

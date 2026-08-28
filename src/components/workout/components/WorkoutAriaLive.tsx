@@ -12,9 +12,9 @@ const ANNOUNCE_THROTTLE_MS = 800;
 
 const MESSAGES = {
   SET_COMPLETE: 'סט הושלם',
-  REST_START: (seconds: number) => `מנוחה התחילה: ${seconds} שניות`,
-  REST_END: 'מנוחה הסתיימה, התחל סט',
-  PR: (exerciseName: string) => (exerciseName ? `שיא חדש! ${exerciseName}` : 'שיא חדש!'),
+  REST_START: (seconds: number) => `המנוחה התחילה: ${seconds} שניות`,
+  REST_END: 'המנוחה הסתיימה, התחל סט',
+  PR: (exerciseName: string) => (exerciseName ? `שיא חדש ב${exerciseName}` : 'שיא חדש'),
 } as const;
 
 function WorkoutAriaLive(): ReactElement {

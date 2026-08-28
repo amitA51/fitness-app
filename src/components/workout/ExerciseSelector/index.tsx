@@ -213,7 +213,11 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
             : { type: 'spring', bounce: 0, duration: 0.38 }
         }
         style={{
-          maxHeight: '92dvh',
+          // 96dvh, not 92: the 67px of app chrome that used to peek above the
+          // sheet was the first of six bars stacked over the exercise list. A
+          // 34px backdrop strip still reads as "sheet", and dismissal has four
+          // other routes (drag, X, Escape, backdrop tap).
+          maxHeight: '96dvh',
           overflow: 'hidden',
           borderRadius: '28px 28px 0 0',
           boxShadow: 'var(--elevation-3)',
@@ -234,11 +238,13 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
             WebkitBackdropFilter: 'blur(24px) saturate(160%)',
           }}
         >
-          {/* Drag Handle doubles as the compact masthead row: handle, title and
-              close share one line so the list starts ~70px higher than the old
-              stacked title/subtitle/tabs header. */}
+          {/* Grabber only. The title row that used to sit here said
+              "בחרו תרגילים" directly above tabs reading תרגילים / תבניות — the
+              tabs already say where the user is, so the title was a whole bar
+              spent on a repeat. The sheet keeps its accessible name from
+              ModalOverlay's ariaLabel. */}
           <div
-            className="flex items-center justify-between pt-3 pb-1 px-4"
+            className="flex items-center justify-center pt-2 pb-0.5"
             onPointerDown={(event) => {
               // A pointer-down on a control inside this row is a TAP, not a grab.
               // Starting the drag here hands the pointer to Framer, which then
@@ -258,101 +264,81 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 borderRadius: 999,
               }}
             />
+          </div>
 
-            <h1
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontWeight: 700,
-                fontSize: 17,
-                color: 'var(--color-ink-on-dark)',
-                letterSpacing: 'normal',
-                lineHeight: 1.2,
-                direction: 'rtl',
-                textAlign: 'center',
-                flex: 1,
-              }}
-            >
-              בחרו תרגילים
-            </h1>
-
-            {/* Spacer mirroring the handle keeps the title optically centered. */}
-            <div aria-hidden="true" style={{ inlineSize: 40 }} />
-
+          {/* Tabs and close share one row — Apple Segmented + a 44px dismiss. */}
+          <div className="flex items-center gap-2 px-4 pb-1">
             <div
+              className="flex-1 grid grid-cols-2 gap-1"
+              role="group"
+              aria-label="סוג בחירה"
               style={{
-                position: 'absolute',
-                insetInlineEnd: 12,
-                top: 12,
+                background: 'rgba(var(--text-on-navy-rgb), 0.1)',
+                borderRadius: 999,
+                padding: 3,
               }}
             >
               <button
                 type="button"
-                onClick={onClose}
-                className="w-9 h-9 flex items-center justify-center transition-colors cursor-pointer"
+                onClick={() => {
+                  triggerHaptic('selection');
+                  setActiveTab('exercises');
+                }}
+                aria-pressed={activeTab === 'exercises'}
+                className="min-h-11 text-sm font-bold text-center transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
                 style={{
-                  // Tint the BACKGROUND only — element-level opacity would ghost the icon too
-                  background: 'rgba(var(--text-on-navy-rgb), 0.1)',
+                  background: activeTab === 'exercises' ? 'var(--fs-accent)' : 'transparent',
+                  color:
+                    activeTab === 'exercises'
+                      ? 'var(--color-ink-on-accent)'
+                      : 'rgba(var(--text-on-navy-rgb), 0.75)',
+                  fontFamily: 'var(--font-body)',
+                  letterSpacing: 'normal',
                   borderRadius: 999,
                 }}
-                aria-label="סגור"
               >
-                <CloseIcon className="w-5 h-5" style={{ color: 'var(--color-ink-on-dark)' }} />
+                תרגילים
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('selection');
+                  setActiveTab('templates');
+                }}
+                aria-pressed={activeTab === 'templates'}
+                className="min-h-11 text-sm font-bold text-center transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
+                style={{
+                  background: activeTab === 'templates' ? 'var(--fs-accent)' : 'transparent',
+                  color:
+                    activeTab === 'templates'
+                      ? 'var(--color-ink-on-accent)'
+                      : 'rgba(var(--text-on-navy-rgb), 0.75)',
+                  fontFamily: 'var(--font-body)',
+                  letterSpacing: 'normal',
+                  borderRadius: 999,
+                }}
+              >
+                תבניות
               </button>
             </div>
-          </div>
 
-          {/* Tabs — Apple Segmented */}
-          <div
-            className="mt-2 mx-4 mb-3 grid grid-cols-2 gap-1"
-            role="group"
-            aria-label="סוג בחירה"
-            style={{
-              background: 'rgba(var(--text-on-navy-rgb), 0.1)',
-              borderRadius: 999,
-              padding: 3,
-            }}
-          >
             <button
               type="button"
-              onClick={() => {
-                triggerHaptic('selection');
-                setActiveTab('exercises');
-              }}
-              aria-pressed={activeTab === 'exercises'}
-              className="py-1.5 min-h-9 text-sm font-bold text-center transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
+              onClick={onClose}
+              className="flex items-center justify-center transition-colors cursor-pointer"
               style={{
-                background: activeTab === 'exercises' ? 'var(--fs-accent)' : 'transparent',
-                color:
-                  activeTab === 'exercises'
-                    ? 'var(--color-ink-on-accent)'
-                    : 'rgba(var(--text-on-navy-rgb), 0.75)',
-                fontFamily: 'var(--font-body)',
-                letterSpacing: 'normal',
+                // 44px, not the former 36: this is a primary dismiss control and
+                // it was the smallest tap target in the whole sheet.
+                inlineSize: 44,
+                blockSize: 44,
+                flex: '0 0 auto',
+                // Tint the BACKGROUND only — element-level opacity would ghost the icon too
+                background: 'rgba(var(--text-on-navy-rgb), 0.1)',
                 borderRadius: 999,
               }}
+              aria-label="סגור"
             >
-              תרגילים
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                triggerHaptic('selection');
-                setActiveTab('templates');
-              }}
-              aria-pressed={activeTab === 'templates'}
-              className="py-1.5 min-h-9 text-sm font-bold text-center transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--fs-signal)] focus-visible:outline-offset-[-2px]"
-              style={{
-                background: activeTab === 'templates' ? 'var(--fs-accent)' : 'transparent',
-                color:
-                  activeTab === 'templates'
-                    ? 'var(--color-ink-on-accent)'
-                    : 'rgba(var(--text-on-navy-rgb), 0.75)',
-                fontFamily: 'var(--font-body)',
-                letterSpacing: 'normal',
-                borderRadius: 999,
-              }}
-            >
-              תבניות
+              <CloseIcon className="w-5 h-5" style={{ color: 'var(--color-ink-on-dark)' }} />
             </button>
           </div>
         </div>
@@ -476,7 +462,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   fontWeight: 700,
                   fontSize: 13,
                   letterSpacing: 'normal',
-                  minHeight: 36,
+                  minHeight: 44,
                 }}
               >
                 <Plus style={{ width: 16, height: 16, flexShrink: 0 }} />
@@ -495,7 +481,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   fontWeight: 600,
                   fontSize: 13,
                   letterSpacing: 'normal',
-                  minHeight: 36,
+                  minHeight: 44,
                 }}
               >
                 ביטול

@@ -16,6 +16,9 @@ import { test } from '@playwright/test';
 const MOBILE = { width: 390, height: 844 };
 const DESKTOP = { width: 1280, height: 800 };
 
+/** Both variants of the "start without a template" entry on the pre-workout screen. */
+const START_EMPTY_LABEL = /התחילו בלי תבנית|אימון ריק/;
+
 async function setTheme(page: import('@playwright/test').Page, theme: 'light' | 'dark') {
   await page.evaluate((t) => {
     document.documentElement.classList.toggle('dark', t === 'dark');
@@ -57,7 +60,10 @@ async function openPickerWithSelection(page: import('@playwright/test').Page) {
   await page.goto('/workout');
   await page.waitForTimeout(2200);
 
-  const start = page.getByRole('button', { name: /התחילו אימון ריק/ }).first();
+  // The entry label is conditional on whether the trainee has history:
+  // "התחילו בלי תבנית" for a fresh user, "אימון ריק — בחרו תרגילים" once there is
+  // history. Match both — pinning only one is what made this harness go stale.
+  const start = page.getByRole('button', { name: START_EMPTY_LABEL }).first();
   if (await start.isVisible().catch(() => false)) {
     await start.click({ force: true }).catch(() => {});
   }
@@ -179,7 +185,7 @@ test('picker back gesture — closing the sheet keeps it closed', async ({ page 
 
   const stillOpen = (await page.locator('.exercise-library').count()) > 0;
   const backOnWelcome = await page
-    .getByRole('button', { name: /התחילו אימון ריק/ })
+    .getByRole('button', { name: START_EMPTY_LABEL })
     .first()
     .isVisible()
     .catch(() => false);

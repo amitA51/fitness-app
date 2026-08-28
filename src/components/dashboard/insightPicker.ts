@@ -8,41 +8,28 @@
 //   2. Most-neglected muscle (any group, including Chest/Back/Legs) within the
 //      useful window — this insight is the only dashboard surface that calls out
 //      an overdue muscle.
-// Streak is deliberately NOT an insight kind: WorkoutStreak renders the streak
-// number directly above this card, so a streak insight would print the same
-// figure twice. The fallback tier below (consistency / balanced split) fills
-// the slot with a non-duplicative line when no real insight qualifies.
+// When neither qualifies the picker returns null and the card renders nothing.
+// An always-fillable affirmation (a monthly workout count, a "balanced split")
+// restates data already shown elsewhere on the page — it is not an insight, and
+// labelling it one makes the slot untrustworthy.
 
 import type { MuscleGroupLastTrained, ProgressDelta } from '../../services/analyticsService';
 
 /** Minimum week-over-week volume gain (%) worth celebrating. */
 export const MIN_PROGRESSION_PCT = 10;
-/** Minimum streak length before the nudge appears. */
-export const MIN_STREAK_DAYS = 3;
 /** A muscle counts as neglected from this many days since last trained… */
 export const NEGLECT_MIN_DAYS = 7;
 /** …and stops being a useful nudge past this (stale guilt, not insight). */
 export const NEGLECT_MAX_DAYS = 30;
-/** Distinct muscle groups trained this month to read as a "balanced split". */
-export const BALANCED_SPLIT_MIN_MUSCLES = 3;
 
 export type DashboardInsight =
   | { kind: 'progression'; exerciseName: string; changePct: number }
-  | { kind: 'neglected'; muscle: string; daysSince: number }
-  // Fallback tier — always-fillable affirmations over already-aggregated data so
-  // the insight slot is never dark while real workouts exist.
-  | { kind: 'consistency'; workoutsThisMonth: number }
-  | { kind: 'balanced'; muscleCount: number };
+  | { kind: 'neglected'; muscle: string; daysSince: number };
 
 export interface InsightPickerInput {
   /** Week-over-week per-exercise volume deltas (aggregated locally). */
   weekOverWeekDeltas: readonly ProgressDelta[];
   muscleGroups: readonly MuscleGroupLastTrained[];
-  currentStreak: number;
-  /** Completed workouts this calendar month (already aggregated). */
-  workoutsThisMonth: number;
-  /** Total completed workouts ever — used only to gate true zero-data. */
-  totalWorkouts: number;
 }
 
 export function pickDashboardInsight(input: InsightPickerInput): DashboardInsight | null {
@@ -70,26 +57,6 @@ export function pickDashboardInsight(input: InsightPickerInput): DashboardInsigh
     return { kind: 'neglected', muscle: neglected.muscle, daysSince: neglected.daysSince };
   }
 
-  // ── Fallback tier — the two rare thresholds above both missed, but real
-  // workouts still exist. Fill the slot with a useful affirmation instead of
-  // going dark; only true zero-data (no workouts ever) returns null.
-  if (input.totalWorkouts <= 0) return null;
-
-  // 3. Consistency this month — concrete and motivating when ≥1 logged.
-  if (input.workoutsThisMonth > 0) {
-    return { kind: 'consistency', workoutsThisMonth: input.workoutsThisMonth };
-  }
-
-  // 4. Balanced split — affirm a well-rounded muscle spread when enough distinct
-  //    groups were trained recently (within the same neglect window we track).
-  const trainedMuscleCount = input.muscleGroups.filter(
-    (m) => m.daysSince <= NEGLECT_MAX_DAYS
-  ).length;
-  if (trainedMuscleCount >= BALANCED_SPLIT_MIN_MUSCLES) {
-    return { kind: 'balanced', muscleCount: trainedMuscleCount };
-  }
-
-  // Has past workouts but none this month and a thin recent split — fall back to
-  // the consistency frame on the lifetime count so the slot still says something.
-  return { kind: 'consistency', workoutsThisMonth: input.workoutsThisMonth };
+  // Nothing real qualifies — the caller renders nothing.
+  return null;
 }

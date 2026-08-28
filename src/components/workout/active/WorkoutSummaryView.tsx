@@ -108,7 +108,7 @@ const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({ completedSessio
               letterSpacing: '-0.01em',
             }}
           >
-            טוענים תוצאות...
+            טוען סיכום…
           </div>
         </div>
       }

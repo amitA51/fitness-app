@@ -235,7 +235,10 @@ describe('exercise library sorting', () => {
     renderLibrary();
     await screen.findByText('סקוואט');
 
-    await user.selectOptions(screen.getByRole('combobox'), 'level');
+    // Sort is a view preference, so it lives in the סינון drawer rather than in
+    // permanent chrome above the list.
+    await user.click(screen.getByRole('button', { name: 'סינון' }));
+    await user.selectOptions(await screen.findByRole('combobox', { name: 'מיון' }), 'level');
 
     const names = visibleNames();
     // Beginners fill the top; the expert lift is last.
@@ -251,7 +254,8 @@ describe('exercise library sorting', () => {
 
     // Sorting is a view preference. Offering "clear filters" after merely
     // reordering told the user something was filtered when nothing was.
-    await user.selectOptions(screen.getByRole('combobox'), 'name');
+    await user.click(screen.getByRole('button', { name: 'סינון' }));
+    await user.selectOptions(await screen.findByRole('combobox', { name: 'מיון' }), 'name');
     expect(screen.queryByRole('button', { name: /נקה סינון/ })).not.toBeInTheDocument();
 
     // A real filter still surfaces the reset.
@@ -264,7 +268,8 @@ describe('exercise library sorting', () => {
     renderLibrary();
     await screen.findByText('סקוואט');
 
-    await user.selectOptions(screen.getByRole('combobox'), 'name');
+    await user.click(screen.getByRole('button', { name: 'סינון' }));
+    await user.selectOptions(await screen.findByRole('combobox', { name: 'מיון' }), 'name');
 
     const names = visibleNames();
     const sorted = [...names].sort((a, b) => a.localeCompare(b, 'he'));

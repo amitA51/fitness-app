@@ -16,64 +16,35 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-// Keep Dashboard off the charts barrel: unused GSAP chart re-exports are side-effectful.
-// This direct import preserves the audit's 72.25 kB GSAP boundary.
-import {
-  ActivityRings,
-  RING_DRAW_DURATION,
-  RING_STAGGER,
-  ringDelay,
-} from '../components/charts/ActivityRings';
-import { CoachBriefCard } from '../components/dashboard/CoachBriefCard';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { InsightCard } from '../components/dashboard/InsightCard';
 import { ProgramCard } from '../components/dashboard/ProgramCard';
 import { StartWorkoutSheet } from '../components/dashboard/StartWorkoutSheet';
-import { StreakMilestone } from '../components/dashboard/StreakMilestone';
 import { TemplateStrip } from '../components/dashboard/TemplateQuickStart';
 import { TodaysWorkoutCard } from '../components/dashboard/TodaysWorkoutCard';
 import { WeeklyGrid } from '../components/dashboard/WeeklyGrid';
 import { WorkoutStreak } from '../components/dashboard/WorkoutStreak';
 import { pickDashboardInsight } from '../components/dashboard/insightPicker';
-import { deriveRingGoals } from '../components/dashboard/ringGoals';
 import { CoachMark } from '../components/guidance/CoachMark';
 import { FadeIn } from '../components/motion/FadeIn';
-import { Stagger, StaggerItem } from '../components/motion/Stagger';
 import { SkeletonBox } from '../components/ui/SkeletonLoader';
 import { Z_INDEX } from '../constants/zIndex';
 import { useCoach } from '../contexts/CoachContext';
 import { useData } from '../contexts/DataContext';
 import { useFitnessInsights } from '../hooks/fitness/useFitnessInsights';
-import { useCountUp } from '../hooks/useCountUp';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { listMyCoaches } from '../services/coach/relationshipService';
 import { onWorkoutSaved } from '../services/dataEvents';
 import { getCurrentUser } from '../services/supabaseAuth';
 import { getWorkoutTemplates } from '../services/workoutDb';
 import type { WorkoutTemplate } from '../types';
-import { getWeekStart } from '../utils/dateUtils';
-import { formatThousands } from '../utils/formatThousands';
 import { logger } from '../utils/logger';
-import { zoneColor } from '../utils/zoneColor';
-
-/** |WoW volume change| below this (%) reads as flat ("ללא שינוי"), not a delta. */
-const FLAT_DELTA_PCT = 0.5;
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [selectedWeekOffset, setSelectedWeekOffset] = useState(0);
   const [isStartSheetOpen, setIsStartSheetOpen] = useState(false);
-  /**
-   * D4 activation: a first-run user finishing onboarding lands with the
-   * start-workout sheet already open — the "ready-to-start beginner workout"
-   * instead of a dashboard they must re-interpret. One-shot; dismissed like
-   * any other sheet open.
-   */
-  const [autoOpenedStartSheet, setAutoOpenedStartSheet] = useState(false);
-  // Bumped after a pull-to-refresh so the memo'd rings + legend count-ups replay
-  // the cascade in lockstep even when the underlying values are unchanged.
-  const [refreshTick, setRefreshTick] = useState(0);
   // First-load skeleton gate: only show the page skeleton on the very first
   // mount-load, never on pull-to-refresh (which keeps the populated page).
   const hasLoadedOnce = useRef(false);
@@ -83,25 +54,15 @@ export default function Dashboard() {
     workoutSessions,
     weekOverWeekDeltas,
     muscleGroups,
-    currentStreak,
-    workoutsThisMonth,
-    totalWorkouts,
     error: insightsError,
   } = useFitnessInsights(dataContextSessions);
 
-  // One locally-computed insight (progression → neglected muscle →
-  // always-fillable fallback). Pure math over the already-aggregated insights —
-  // no AI calls here.
+  // One locally-computed insight (progression → neglected muscle). Pure math
+  // over the already-aggregated insights — no AI calls here. Returns null when
+  // nothing real qualifies, and InsightCard then renders nothing.
   const dashboardInsight = useMemo(
-    () =>
-      pickDashboardInsight({
-        weekOverWeekDeltas,
-        muscleGroups,
-        currentStreak,
-        workoutsThisMonth,
-        totalWorkouts,
-      }),
-    [weekOverWeekDeltas, muscleGroups, currentStreak, workoutsThisMonth, totalWorkouts]
+    () => pickDashboardInsight({ weekOverWeekDeltas, muscleGroups }),
+    [weekOverWeekDeltas, muscleGroups]
   );
 
   const [templatesError, setTemplatesError] = useState(false);
@@ -118,7 +79,6 @@ export default function Dashboard() {
   const { isPulling, isRefreshing, pullDistance, threshold, handlers } = usePullToRefresh({
     onRefresh: async () => {
       await Promise.all([refreshData(), loadTemplates()]);
-      setRefreshTick((tick) => tick + 1);
     },
     threshold: 80,
   });
@@ -149,16 +109,6 @@ export default function Dashboard() {
   // The zero-session first-run hero owns the start CTA + explanation; when it is
   // showing, the masthead start CTA above would be a second identical mint button.
   const showFirstRunHero = !showSkeleton && !insightsError && !hasAnySession;
-
-  // D4: on the very first render where the FirstRunHero is about to show,
-  // open the start-workout sheet once. The hero's numbered steps explain the
-  // flow; the sheet puts the recommended path one tap from a workout.
-  useEffect(() => {
-    if (autoOpenedStartSheet || showSkeleton || insightsError || hasAnySession) return;
-    setAutoOpenedStartSheet(true);
-    const id = window.setTimeout(() => setIsStartSheetOpen(true), 600);
-    return () => window.clearTimeout(id);
-  }, [autoOpenedStartSheet, showSkeleton, insightsError, hasAnySession]);
 
   const sortedTemplates = useMemo(() => {
     return [...templates.filter((t) => t.isFavorite), ...templates.filter((t) => !t.isFavorite)];
@@ -205,134 +155,21 @@ export default function Dashboard() {
     setSelectedWeekOffset((prev) => Math.min(prev + 1, 0));
   }, []);
 
-  // Week calculation
-  const getWeekData = useCallback(
-    (offset: number) => {
-      const now = new Date();
-      const currentWeekStart = getWeekStart(now);
-      const targetWeekStart = new Date(currentWeekStart);
-      targetWeekStart.setDate(targetWeekStart.getDate() + offset * 7);
-      const targetWeekEnd = new Date(targetWeekStart);
-      targetWeekEnd.setDate(targetWeekEnd.getDate() + 7);
-
-      const completed = completedSessions;
-
-      const weekSessions = completed.filter((s) => {
-        const d = new Date(s.startTime);
-        return d >= targetWeekStart && d < targetWeekEnd;
-      });
-
-      const volume = weekSessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
-      const prevWeekStart = new Date(targetWeekStart);
-      prevWeekStart.setDate(prevWeekStart.getDate() - 7);
-      const prevSessions = completed.filter((s) => {
-        const d = new Date(s.startTime);
-        return d >= prevWeekStart && d < targetWeekStart;
-      });
-      const prevVolume = prevSessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
-
-      const totalMinutes = Math.round(
-        weekSessions.reduce((sum, s) => sum + (s.duration || 0), 0) / 60
-      );
-
-      const avgDurationMin =
-        weekSessions.length > 0 ? Math.round(totalMinutes / weekSessions.length) : 0;
-
-      return {
-        workoutsThisWeek: weekSessions.length,
-        volume,
-        avgDurationMin,
-        totalMinutes,
-        // Keep "no prior data" distinct from "no change": hasPrevWeek lets the
-        // chip say "שבוע ראשון" instead of conflating both as a dash.
-        hasPrevWeek: prevVolume > 0,
-        volDeltaPct: prevVolume > 0 ? ((volume - prevVolume) / prevVolume) * 100 : 0,
-      };
-    },
-    [completedSessions]
-  );
-
-  const weekData = useMemo(
-    () => getWeekData(selectedWeekOffset),
-    [getWeekData, selectedWeekOffset]
-  );
-
-  // Per-user ring goals from the trailing baseline (independent of the selected
-  // week so the targets stay stable while paging history).
-  const ringGoals = useMemo(
-    () => deriveRingGoals(completedSessions, getWeekStart(new Date())),
-    [completedSessions]
-  );
-
+  // Completed only: an abandoned/in-progress session started today must not
+  // light up the "פעיל היום" chip or relabel the CTA to "אימון נוסף".
   const hasSessionToday = useMemo(() => {
     const now = new Date();
     const y = now.getFullYear();
     const m = now.getMonth();
     const d = now.getDate();
-    return workoutSessions.some((s) => {
+    return completedSessions.some((s) => {
       const sd = new Date(s.startTime);
       return sd.getFullYear() === y && sd.getMonth() === m && sd.getDate() === d;
     });
-  }, [workoutSessions]);
+  }, [completedSessions]);
 
   const handleNavigate = useCallback((path: string) => navigate(path), [navigate]);
   const goToTemplates = useCallback(() => navigate('/templates'), [navigate]);
-
-  // Weekly volume WoW chip. Distinguishes three honest cases instead of dressing
-  // a ~0% change as "+0.0%" or conflating "no prior data" with "no change":
-  //   • no prior week's volume → "שבוע ראשון" (neutral, no comparison)
-  //   • |Δ| < FLAT_DELTA_PCT     → "ללא שינוי" (flat, neutral)
-  //   • otherwise               → signed percentage (good up / neutral down)
-  const volDeltaChip = useMemo(() => {
-    if (!weekData.hasPrevWeek || !Number.isFinite(weekData.volDeltaPct)) {
-      // No prior week to compare against — say so rather than show a dash that
-      // looks like "no change".
-      return { text: 'אין השוואה', zone: 'neutral' as const };
-    }
-    if (Math.abs(weekData.volDeltaPct) < FLAT_DELTA_PCT) {
-      return { text: 'ללא שינוי', zone: 'neutral' as const };
-    }
-    const sign = weekData.volDeltaPct > 0 ? '+' : '';
-    return {
-      text: `${sign}${weekData.volDeltaPct.toFixed(1)}%`,
-      // A drop is not a win — demote it to neutral instead of celebrating it.
-      zone: weekData.volDeltaPct < 0 ? ('neutral' as const) : ('good' as const),
-    };
-  }, [weekData.hasPrevWeek, weekData.volDeltaPct]);
-
-  // Stabilise rings array so ActivityRings (memo'd) doesn't re-render on parent re-renders.
-  const heroRings = useMemo(
-    () => [
-      {
-        value: weekData.workoutsThisWeek,
-        max: ringGoals.workouts,
-        label: 'אימונים',
-        variant: 'accent' as const,
-      },
-      {
-        value: weekData.volume,
-        // Cap at the personal goal but never below the actual week (a record week
-        // still fills the ring instead of overflowing it).
-        max: Math.max(weekData.volume, ringGoals.volume),
-        label: 'נפח',
-        variant: 'signal' as const,
-      },
-      {
-        value: weekData.totalMinutes,
-        max: Math.max(weekData.totalMinutes, ringGoals.minutes),
-        label: 'דקות',
-        variant: 'warn' as const,
-      },
-    ],
-    [
-      weekData.workoutsThisWeek,
-      weekData.volume,
-      weekData.totalMinutes,
-      ringGoals.workouts,
-      ringGoals.volume,
-      ringGoals.minutes,
-    ]
-  );
 
   return (
     <div
@@ -498,88 +335,17 @@ export default function Dashboard() {
     </div>
   );
 
-  // The full populated body (rings + insight + templates + calendar + history +
-  // discovery). Extracted so the zero-session / loading branches above stay
+  // The full populated body (program + streak + templates + calendar + insight
+  // + discovery). Extracted so the zero-session / loading branches above stay
   // readable. Closes over the component's memos/handlers.
   function renderPopulatedBody() {
     return (
       <>
-        {/* Order for returning users:
-            1) Weekly rings (glance) → 2) readiness/now → 3) program → 4) streak
-            → 5) insight → 6) templates → 7) calendar → 8) coach connect */}
-        {(weekData.workoutsThisWeek > 0 || weekData.volume > 0) && (
-          <section
-            className="fs-surface-card-soft fade-rise-in"
-            aria-label="סיכום שבועי"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'auto minmax(0, 1fr)',
-              gap: 18,
-              alignItems: 'center',
-            }}
-          >
-            <ActivityRings size={156} rings={heroRings} trigger={refreshTick} />
-            <div style={{ minWidth: 0, display: 'grid', gap: 10 }}>
-              <span
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 15,
-                  fontWeight: 600,
-                  letterSpacing: '-0.01em',
-                  color: 'var(--fs-ink)',
-                }}
-              >
-                סיכום שבועי
-              </span>
-              <Stagger stagger={RING_STAGGER} style={{ display: 'grid', gap: 8 }}>
-                <StaggerItem key={`accent-${refreshTick}`}>
-                  <BentoRow
-                    dot="accent"
-                    label="אימונים"
-                    value={weekData.workoutsThisWeek}
-                    suffix={` / ${ringGoals.workouts}`}
-                    ltr
-                    delay={ringDelay(0)}
-                  />
-                </StaggerItem>
-                <StaggerItem key={`signal-${refreshTick}`}>
-                  <BentoRow
-                    dot="signal"
-                    label="נפח"
-                    value={weekData.volume}
-                    format={formatThousands}
-                    ltr
-                    suffix={' ק״ג'}
-                    delay={ringDelay(1)}
-                    sub={volDeltaChip.text}
-                    subColor={zoneColor(volDeltaChip.zone)}
-                  />
-                </StaggerItem>
-                <StaggerItem key={`warn-${refreshTick}`}>
-                  <BentoRow
-                    dot="warn"
-                    label="זמן"
-                    value={weekData.totalMinutes}
-                    suffix={`′ / ${ringGoals.minutes}′`}
-                    ltr
-                    delay={ringDelay(2)}
-                  />
-                </StaggerItem>
-              </Stagger>
-              <CoachBriefCard sessions={workoutSessions} kind="weekly-review" compact />
-            </div>
-          </section>
-        )}
-
         {insightsError && <InsightErrorChip message={insightsError} onRetry={refreshData} />}
-
-        <CoachBriefCard sessions={workoutSessions} kind="daily-readiness" />
 
         <ProgramCard />
 
         <WorkoutStreak sessions={workoutSessions} />
-
-        <StreakMilestone sessions={workoutSessions} />
 
         {templatesError ? (
           <section className="section-block">
@@ -588,7 +354,7 @@ export default function Dashboard() {
           </section>
         ) : sortedTemplates.length > 0 ? (
           <section className="section-block">
-            <SectionTitle text="תבניות" action={{ label: 'כל התבניות', onClick: goToTemplates }} />
+            <SectionTitle text="תבניות" />
             <TemplateStrip templates={sortedTemplates} onNavigate={handleNavigate} />
           </section>
         ) : null}
@@ -1035,112 +801,6 @@ const SectionTitle = memo(function SectionTitle({
           <ChevronLeft size={16} aria-hidden="true" style={{ flexShrink: 0 }} />
         </button>
       )}
-    </div>
-  );
-});
-
-// ── BentoRow — single legend line under hero rings ───────────────────────────
-// Each number counts up in lockstep with its matching ring: it STARTS at the
-// ring's stagger delay and runs for RING_DRAW_DURATION, so ring + number finish
-// together. useCountUp already guards reduced-motion (snaps to final).
-const BentoRow = memo(function BentoRow({
-  dot,
-  label,
-  value,
-  suffix,
-  sub,
-  subColor,
-  delay,
-  format,
-  ltr,
-}: {
-  dot: 'accent' | 'signal' | 'warn';
-  label: string;
-  value: number;
-  suffix?: string;
-  sub?: string;
-  /** Zone color for the sub chip (defaults to accent for positive trends). */
-  subColor?: string;
-  delay: number;
-  format?: (value: number) => string;
-  ltr?: boolean;
-}) {
-  const dotColor =
-    dot === 'signal' ? 'var(--fs-signal)' : dot === 'warn' ? 'var(--fs-warn)' : 'var(--fs-accent)';
-
-  const numberRef = useRef<HTMLSpanElement>(null);
-  // pop: a back.out scale settle the instant the count finishes — lands together
-  // with the matching ring's goal-met pulse. useCountUp guards reduced-motion.
-  useCountUp(numberRef, value, { delay, duration: RING_DRAW_DURATION, format, pop: true });
-
-  const fallback = format ? format(value) : String(Math.round(value));
-  const numberSpan = (
-    <span ref={numberRef} style={{ fontVariantNumeric: 'tabular-nums' }}>
-      {fallback}
-    </span>
-  );
-
-  // In LTR mode wrap the number AND its suffix together so fraction-style
-  // suffixes ("1 / 4", "12′ / 240′") don't bidi-reorder into "4 /1" inside the
-  // RTL card. Otherwise only the number was isolated and the suffix reordered.
-  const valueGroup = ltr ? (
-    <span className="kinetic-number" dir="ltr">
-      {numberSpan}
-      {suffix}
-    </span>
-  ) : (
-    <span className="kinetic-number">
-      {numberSpan}
-      {suffix}
-    </span>
-  );
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'baseline',
-        justifyContent: 'space-between',
-        gap: 8,
-        borderBottom: '1px solid var(--fs-surface-2)',
-        paddingBottom: 6,
-      }}
-    >
-      <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 7,
-          color: 'var(--fs-muted)',
-          fontFamily: 'var(--font-mono)',
-          fontSize: 11,
-          fontWeight: 600,
-          letterSpacing: '-0.01em',
-        }}
-      >
-        <span
-          aria-hidden="true"
-          style={{ width: 6, height: 6, borderRadius: 999, background: dotColor }}
-        />
-        {label}
-      </span>
-      <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'baseline',
-          gap: 6,
-          color: 'var(--fs-ink)',
-          fontFamily: 'var(--font-mono)',
-          fontSize: 13,
-          fontWeight: 600,
-          fontVariantNumeric: 'tabular-nums',
-          minWidth: '3ch',
-          textAlign: 'end',
-        }}
-      >
-        {valueGroup}
-        {sub && <span style={{ color: subColor ?? 'var(--fs-accent)', fontSize: 10 }}>{sub}</span>}
-      </span>
     </div>
   );
 });

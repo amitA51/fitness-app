@@ -37,7 +37,20 @@ const RPE_LABELS: Record<number, string> = {
   7: 'קשה',
   8: 'קשה מאוד',
   9: 'כמעט מקסימלי',
-  10: 'מקסימלי!',
+  10: 'מקסימלי',
+};
+
+// Short form for the chip caption. Previously the chip rendered
+// RPE_LABELS[rpe].slice(0, 4), which produced meaningless fragments ("בינו",
+// "מקסי") — and since the chip has no other text, that fragment WAS the radio's
+// accessible name. Each short form is a prefix of its full label so the visible
+// text stays contained in the accessible name (WCAG 2.5.3 Label in Name).
+const RPE_SHORT: Record<number, string> = {
+  6: 'בינוני',
+  7: 'קשה',
+  8: 'קשה מאוד',
+  9: 'כמעט',
+  10: 'מקסימלי',
 };
 
 const RPEPicker = memo<RPEPickerProps>(
@@ -167,6 +180,7 @@ const RPEPicker = memo<RPEPickerProps>(
                 onClick={() => handleSelect(rpe)}
                 role="radio"
                 aria-checked={isActive}
+                aria-label={`RPE ${rpe} — ${RPE_LABELS[rpe]}`}
                 tabIndex={isActive || (selected === null && rpe === RPE_VALUES[0]) ? 0 : -1}
                 className={`chip magnetic-card${isActive ? ' accent-glow' : ''}`}
                 style={{
@@ -204,7 +218,7 @@ const RPEPicker = memo<RPEPickerProps>(
                     letterSpacing: '-0.01em',
                   }}
                 >
-                  {RPE_LABELS[rpe as keyof typeof RPE_LABELS]?.slice(0, 4) ?? ''}
+                  {RPE_SHORT[rpe] ?? ''}
                 </span>
               </m.button>
             );
