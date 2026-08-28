@@ -77,4 +77,73 @@ describe('CreateTemplateModal', () => {
       },
     ]);
   });
+
+  // Editing reuses the same sheet: the user adds exercises to an existing
+  // template without leaving the templates screen.
+  it('opens pre-filled in edit mode and saves the extended exercise list', async () => {
+    const onCreate = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+
+    const template = {
+      id: 'template-1',
+      name: 'Pull',
+      description: '',
+      exercises: [
+        {
+          id: 'row-1',
+          exerciseId: 'lat-pulldown',
+          exerciseName: 'Lat Pulldown',
+          targetMuscle: 'גב',
+          targetSets: 3,
+          targetReps: 12,
+          targetWeight: null,
+          restSeconds: 60,
+          order: 0,
+          notes: '',
+        },
+      ],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      lastUsed: null,
+      timesUsed: 0,
+      isFavorite: false,
+    };
+
+    render(<CreateTemplateModal template={template} onClose={vi.fn()} onCreate={onCreate} />);
+
+    const dialog = screen.getByRole('dialog', { name: 'עריכת תבנית' });
+    expect(screen.getByLabelText('שם התבנית')).toHaveValue('Pull');
+    expect(screen.getByText('Lat Pulldown')).toBeInTheDocument();
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /הוסף תרגיל/ }));
+    });
+    await act(async () => {
+      await user.click(await screen.findByRole('button', { name: /Bench Press/ }));
+    });
+
+    await act(async () => {
+      await user.click(within(dialog).getByRole('button', { name: 'שמור תבנית' }));
+    });
+
+    await waitFor(() => expect(onCreate).toHaveBeenCalledOnce());
+    expect(onCreate).toHaveBeenCalledWith('Pull', [
+      {
+        exerciseId: 'lat-pulldown',
+        exerciseName: 'Lat Pulldown',
+        targetMuscle: 'גב',
+        targetSets: 3,
+        targetReps: 12,
+        restSeconds: 60,
+      },
+      {
+        exerciseId: 'bench-press',
+        exerciseName: 'Bench Press',
+        targetMuscle: 'חזה',
+        targetSets: 4,
+        targetReps: 10,
+        restSeconds: 90,
+      },
+    ]);
+  });
 });

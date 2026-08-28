@@ -239,7 +239,14 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               stacked title/subtitle/tabs header. */}
           <div
             className="flex items-center justify-between pt-3 pb-1 px-4"
-            onPointerDown={(event) => dragControls.start(event)}
+            onPointerDown={(event) => {
+              // A pointer-down on a control inside this row is a TAP, not a grab.
+              // Starting the drag here hands the pointer to Framer, which then
+              // swallows the ensuing click — so tapping the X did nothing at all
+              // and the sheet read as stuck open ("back doesn't go back").
+              if ((event.target as HTMLElement).closest('button')) return;
+              dragControls.start(event);
+            }}
             style={{ touchAction: 'none', cursor: 'grab' }}
           >
             <div
@@ -378,7 +385,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               animate={{ y: 0, opacity: 1 }}
               exit={shouldReduceMotion ? { opacity: 0 } : { y: 24, opacity: 0 }}
               transition={{ type: 'spring', bounce: 0, duration: 0.28 }}
-              className="px-5 py-4"
+              className="px-4 py-2.5 flex items-center gap-2"
               style={{
                 background: 'color-mix(in srgb, var(--fs-surface) 92%, transparent)',
                 borderTop: '1px solid var(--color-border)',
@@ -386,48 +393,55 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 WebkitBackdropFilter: 'blur(20px) saturate(160%)',
               }}
             >
+              {/* One row, not two stacked full-width pills. The stacked version
+                  cost ~148px of a 844px screen — a third of the list — for two
+                  taps that are each reachable in a 48px row. */}
               <button
                 type="button"
                 onClick={handleConfirmSelection}
-                className="w-full flex items-center justify-center gap-3 cursor-pointer"
+                className="flex-1 flex items-center justify-center gap-2 cursor-pointer"
                 style={{
                   background: 'var(--btn-primary-bg)',
                   color: 'var(--btn-primary-text)',
                   borderRadius: 999,
-                  padding: '18px 24px',
+                  padding: '12px 16px',
                   fontFamily: 'var(--font-body)',
                   fontWeight: 700,
-                  fontSize: 16,
+                  fontSize: 15,
                   letterSpacing: 'normal',
-                  minHeight: 56,
+                  minInlineSize: 0,
+                  minHeight: 48,
                 }}
                 aria-label={`${confirmLabel} עם ${pluralizeHe(pendingExercises.length, HE_NOUNS.exercise)}`}
               >
-                <DumbbellIcon style={{ width: 20, height: 20, flexShrink: 0 }} />
-                {confirmLabel} ({pendingExercises.length})
+                <DumbbellIcon style={{ width: 18, height: 18, flexShrink: 0 }} />
+                <span style={{ whiteSpace: 'nowrap' }}>
+                  {confirmLabel} ({pendingExercises.length})
+                </span>
               </button>
 
               {onPlanRequested && (
                 <button
                   type="button"
                   onClick={handlePlanSelection}
-                  className="w-full flex items-center justify-center gap-2 cursor-pointer mt-2"
+                  className="flex items-center justify-center gap-1.5 cursor-pointer"
                   style={{
                     background: 'transparent',
                     color: 'var(--fs-ink)',
                     border: '1px solid var(--color-border)',
                     borderRadius: 999,
-                    padding: '12px 24px',
+                    padding: '12px 14px',
                     fontFamily: 'var(--font-body)',
                     fontWeight: 700,
                     fontSize: 14,
                     letterSpacing: 'normal',
+                    flex: '0 0 auto',
                     minHeight: 48,
                   }}
                   aria-label={`תכננו מראש ${pluralizeHe(pendingExercises.length, HE_NOUNS.exercise)}. סטים, משקל וחזרות`}
                 >
-                  <ClipboardIcon style={{ width: 18, height: 18, flexShrink: 0 }} />
-                  תכננו מראש ({pendingExercises.length})
+                  <ClipboardIcon style={{ width: 16, height: 16, flexShrink: 0 }} />
+                  <span style={{ whiteSpace: 'nowrap' }}>תכננו מראש</span>
                 </button>
               )}
             </m.div>

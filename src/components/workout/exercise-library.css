@@ -496,25 +496,44 @@
   font-size: var(--text-body);
   font-weight: var(--font-bold);
   line-height: 1.25;
-  overflow-wrap: anywhere;
+  /* One line, clipped with an ellipsis. Wrapping is what made a long bilingual
+     name grow the row to ~96px; the full name stays in the aria-label. */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Hebrew and English on the SAME row. Baseline alignment because the two halves
+   are set at different sizes; the English half is capped so the Hebrew name —
+   the one a Hebrew-first trainee actually reads — always keeps the majority of
+   the row and is never the half that gets truncated first. */
+.exercise-card__name--pair {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
 }
 
 .exercise-card__name-primary,
 .exercise-card__name-secondary {
-  display: block;
+  min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .exercise-card__name-primary {
+  /* Adjacent, both hugging the start — not pushed to opposite ends of a wide
+     row. Shrink factor 1 against the English half's 3, so a cramped row eats
+     into the English before the Hebrew name loses a character. */
+  flex: 0 1 auto;
   color: var(--fs-ink);
   font-size: var(--text-body);
   font-weight: var(--font-bold);
 }
 
 .exercise-card__name-secondary {
-  margin-block-start: 2px;
+  flex: 0 3 auto;
+  max-inline-size: 45%;
   color: var(--fs-muted);
   font-size: var(--text-body-sm);
   font-weight: var(--font-normal);

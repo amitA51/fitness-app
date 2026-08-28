@@ -61,3 +61,34 @@ describe('ExerciseCard classification', () => {
     expect(label).toContain('כבל');
   });
 });
+
+describe('ExerciseCard bilingual name row', () => {
+  it('puts the Hebrew and English halves in one row container', () => {
+    render(<ExerciseCard exercise={build()} onClick={vi.fn()} />);
+
+    const hebrew = screen.getByText('משיכת פולי עליון');
+    const english = screen.getByText('Lat Pulldown');
+    // Same parent => same row. Stacked halves are what made the row two lines
+    // tall and cost the picker a third of its visible exercises.
+    expect(hebrew.parentElement).toBe(english.parentElement);
+    expect(hebrew.parentElement?.className).toContain('exercise-card__name--pair');
+  });
+
+  it('pins the English half to LTR so its punctuation is not mangled in the RTL row', () => {
+    render(<ExerciseCard exercise={build({ name: 'לחיצת חזה בשיפוע | (45°) Incline Press' })} />);
+
+    const english = screen.getByText('(45°) Incline Press');
+    // `dir="auto"` sniffs the FIRST strong character; a leading bracket/digit has
+    // none, so the label could adopt the surrounding RTL and move the bracket.
+    expect(english).toHaveAttribute('dir', 'ltr');
+    expect(english).toHaveAttribute('lang', 'en');
+  });
+
+  it('leaves a Hebrew-only pair on auto direction', () => {
+    render(<ExerciseCard exercise={build({ name: 'סקוואט | מכונה' })} />);
+
+    const second = screen.getByText('מכונה');
+    expect(second).toHaveAttribute('dir', 'auto');
+    expect(second).not.toHaveAttribute('lang');
+  });
+});

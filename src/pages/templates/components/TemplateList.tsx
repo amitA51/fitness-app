@@ -10,6 +10,7 @@ interface TemplateListProps {
   deletingIds: Set<string>;
   favoritingIds: Set<string>;
   onStart: (templateId: string) => void;
+  onEdit: (template: WorkoutTemplate) => void;
   onToggleFavorite: (template: WorkoutTemplate) => void;
   onDuplicate: (template: WorkoutTemplate) => void;
   onDelete: (id: string) => void;
@@ -22,6 +23,7 @@ export function TemplateList({
   deletingIds,
   favoritingIds,
   onStart,
+  onEdit,
   onToggleFavorite,
   onDuplicate,
   onDelete,
@@ -74,7 +76,7 @@ export function TemplateList({
               marginBottom: 20,
             }}
           >
-            תבנית = רשימת תרגילים מוכנה. צרו אחת עכשיו — ואז תוכלו להתחיל אימון בלחיצה.
+            תבנית = רשימת התרגילים של אימון קבוע. לחץ על הכפתור, תן לתבנית שם והוסף לה תרגילים.
           </p>
           <m.button
             whileTap={{ scale: 0.98 }}
@@ -101,6 +103,7 @@ export function TemplateList({
                 template={template}
                 index={index}
                 onStart={onStart}
+                onEdit={onEdit}
                 onToggleFavorite={onToggleFavorite}
                 onDuplicate={onDuplicate}
                 onDelete={onDelete}
@@ -127,6 +130,7 @@ export function TemplateList({
                 template={template}
                 index={favorites.length + index}
                 onStart={onStart}
+                onEdit={onEdit}
                 onToggleFavorite={onToggleFavorite}
                 onDuplicate={onDuplicate}
                 onDelete={onDelete}

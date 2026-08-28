@@ -359,6 +359,197 @@ Admin route is `/admin`. A non-admin gets `<Navigate to="/" replace />`.
 - `memory/` is an unmanaged directory inside the repo — add it to `.gitignore`
   before any commit.
 
+## Batch 3 — dispatched 2026-08-28 10:52. Amit's two new page-level tasks.
+## Batches 1+2 are COMMITTED and PUSHED: `35c74bf` on `feat/coach-role-server-assigned`.
+
+Amit's asks, verbatim intent:
+- **Home screen:** kill the weekly-summary ring; make "מוכנות היום" genuinely
+  useful and **verify its numbers are real, not the same for everyone**; trim the
+  pile of cards (next workout / streak / templates / calendar / insight) down to
+  what earns its place; the screen's job is to get the user into a workout.
+- **Workout area:** copy must actually help; the templates flow must be
+  understandable without bouncing between screens; the exercise picker wastes
+  screen space (action bar too big, cards too tall, names too long); and **back
+  re-opens the picker instead of going back — a bug.**
+
+### What the lead mapped before dispatch (do not re-investigate)
+- Home = `src/pages/Dashboard.tsx` composing `src/components/dashboard/*`:
+  WeeklyGrid, DashboardHeader, Greeting, ForecastNudge, TemplateQuickStart,
+  StreakMilestone, RecentPRBanner, CoachBriefCard, InsightCard + insightPicker.ts,
+  ProgramCard, WorkoutStreak, TodaysWorkoutCard, StartWorkoutSheet, ringGoals.ts
+- Readiness feeds from `src/services/trainingLoadService.ts`,
+  `src/services/intelligence/scoringThresholds.ts`, `src/services/ai/coachBrief.ts`
+- Picker = `src/components/workout/ExerciseSelector/index.tsx` (holds the exact
+  strings "הוסיפו לאימון" / "תכננו מראש"), with `ExerciseLibraryTab.tsx` and
+  `ActiveWorkoutNew.tsx` alongside it
+- Templates = `src/pages/Templates.tsx`, `src/pages/templates/**`,
+  `src/components/templates/EmbeddedTemplatePicker.tsx`
+
+### Lead decisions for this batch
+1. **The home screen is NOT being redesigned yet.** Amit demanded the readiness
+   numbers be verified deeply; redesigning before knowing which numbers are real
+   would be guessing. T-007 establishes the facts first. Implementation is batch 4.
+2. **Picker bug + picker density go to ONE worker.** They live in the same file,
+   and file ownership is exclusive. Density is normally design work, but Amit's
+   spec is concrete (one line, English + Hebrew, smaller action bar), so it is
+   implementation, not open design.
+3. **The workout-screen COPY is deferred to batch 4.** It lives inside
+   `src/components/workout/**`, which T-008 owns exclusively this batch.
+4. **Only T-008 may run Playwright** (port 4173). T-009 therefore owes screenshots
+   — a deliberate debt, scheduled for a separate pass, not an oversight.
+
+## [T-007] Home-screen audit — are the numbers real?
+- status: dispatched (batch 3)
+- owner: fitness-qa
+- goal: card inventory + data provenance for every number on the home screen,
+  with the readiness score interrogated specifically, plus zero-state behaviour.
+- files: WRITES ONLY `plans/HOME-AUDIT.md`. Read-only everywhere else.
+- done when: every card classified REAL / DERIVED / PLACEHOLDER with file:line,
+  and the zero-state answer for a user with no logged workouts
+- notes: the fact base for the batch-4 home redesign. No Playwright.
+
+## [T-007] Home-screen audit — ACCEPTED by the lead 2026-08-28 11:07
+- status: **done** — delivered `plans/HOME-AUDIT.md`, read-only, nothing else touched
+- **VERDICT ON THE READINESS SCORE: Amit's suspicion was correct.**
+  `readiness = 100 − fatigue` (`src/services/trainingLoadService.ts:349`). With no
+  recovery log and no logged RPE — the default state, and the app never prompts for
+  either from home — every penalty is 0 except a hardcoded `recoveryPenalty = 8`
+  (`:337`). So the score is effectively TWO-VALUED: **92 if you trained this week,
+  67 if you did not.** A one-workout beginner and a 4×/week veteran both read
+  `92/100 · העלו עומס`. `rest` is mathematically unreachable; `deload` needs an
+  acute:chronic ratio >= 2.34. Someone who has not trained in three weeks is shown
+  `67/100 · העלו עומס`.
+- 9 PLACEHOLDER findings total. Other load-bearing ones:
+  - **The ring arcs cannot convey anything**: `max: Math.max(actual, goal)`
+    (`Dashboard.tsx:316,322`) pins the arc at 100% once you are above baseline.
+  - Ring goals fall back to invented defaults nobody chose — 4 workouts / 8000 kg /
+    240 min (`ringGoals.ts:7-9,67-72`), presented as "your goal".
+  - `WeeklyGrid`'s progress % uses a denominator of **7** (`WeeklyGrid.tsx:80`),
+    contradicting the 4-workout ring goal a few hundred px above it.
+  - **13 distinct start-a-workout affordances on one screen**, landing on three
+    different destinations, with three competing notions of "the next workout"
+    (`TodaysWorkoutCard` vs `ProgramCard` vs the sheet's "המשך"). This is the real
+    source of the clutter Amit described.
+  - `DataContext` loads only the **20 most recent sessions**
+    (`DataContext.tsx:25,65`), which truncates the 28-day chronic baseline for a
+    5-6×/week lifter and manufactures a false load spike — a serious user gets a
+    WORSE readiness score because of a data-loading limit.
+- **The lead's dispatch was wrong on one point and the worker corrected it:**
+  `Greeting.tsx`, `ForecastNudge.tsx`, `RecentPRBanner.tsx` are **dead files**,
+  imported by nothing. They are not home-screen surfaces. Do not redesign them.
+- Real bugs found in passing, worth fixing regardless of any redesign:
+  `hasSessionToday` (`Dashboard.tsx:267-279`) counts abandoned sessions, so a
+  half-started workout flips "פעיל היום" on; `InsightCard` prints
+  "1 אימונים החודש" (Hebrew plural); `StreakMilestone`'s aria-label says
+  "איזו יש!" while the visible text says "איזה רצף!".
+- honest about its limits: no browser, no Playwright, no gates run — every finding
+  is a static read. Said so up front rather than implying it had verified visually.
+
+## [T-008] Exercise picker — ACCEPTED 2026-08-28 11:26, worker DIED but work landed
+- status: **done (accepted)** — the worker was killed by the 30-minute timeout with
+  its last tool still running (`npm run build` + a Playwright diag run). It
+  reported NOTHING. The lead found the work by inspecting the tree, per the
+  survival protocol. **All 7 files plus 2 new test files were already on disk and
+  green**, and its 4 required screenshots were already written.
+- **Root cause of the back bug, recovered from the regression test it left behind**
+  (`src/components/workout/active/__tests__/useWorkoutEffects.selectorReopen.test.ts`):
+  the auto-open-selector effect in `useWorkoutEffects` **re-satisfied its own
+  condition every time the sheet closed.** The workout still had no exercises and
+  the pre-workout intent was still set — exactly the state that opened the sheet in
+  the first place — so CLOSE was immediately followed by a fresh OPEN and "back"
+  never reached the welcome screen. The one-shot was never claimed.
+- the subtlest case is pinned by test 3: "התחל אימון" dispatches `OPEN_SELECTOR` in
+  the SAME tap that sets the intent, so the effect's first render already sees the
+  sheet open. The intent must count as served anyway, or the first close reopens the
+  sheet on the next commit — **the worker measured that reopen in a real browser at
+  4 ms.** That is what its throwaway diag specs were for, and what cost it the 30
+  minutes.
+- test 4 proves the fix is not a blunt "never auto-open again": it re-arms once the
+  intent is cleared, so a genuine fresh start still opens the picker.
+- **Lead's own gates on the now-static tree: `npm run verify` exit 0 (698 files) ·
+  `npm run test:run` exit 0 · 155 files / 1362 tests.** Floor was 154/1352, so +1
+  file / +10 tests. Nothing was deleted, skipped or weakened — the count moved only
+  up.
+- screenshots present and meeting the gate exactly: `picker-selected-{390,1280}-{light,dark}.png`
+  with an exercise selected. 102 PNGs in `visual-qa/` total.
+- **the lead verified the density claim by reading the 390px screenshot directly,
+  because the worker died before reporting its px numbers.** What is actually true:
+  the English + Hebrew names now share ONE line with truncation (full name kept in
+  the aria-label — a genuinely good a11y call), and the action bar is a single row
+  ("הוסיפו לאימון (1)" primary + "תכננו מראש" secondary). **But each row is still
+  three lines**, because the description line survived, and the real space consumer
+  turned out to be the CHROME above the list: workout bar + sheet header + tabs +
+  search + filter chips + sort row ≈ 300px of a 844px viewport before the first
+  exercise appears. Roughly 6 exercises fit. See the follow-up below.
+- **debris cleaned by the lead:** the dead worker left `e2e/_diag2.spec.ts` and
+  `e2e/_diag3.spec.ts` behind. `npx playwright test` globs `e2e/`, so those two
+  throwaway specs would have run and broken the e2e suite for everyone. Deleted.
+  Its real spec `e2e/picker-density-qa.spec.ts` was kept.
+
+### Verified baseline — 2026-08-28 11:26 (after batch 3)
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, 698 files |
+| `npm run test:run` | **155 files / 1362 tests** — this is the NEW FLOOR |
+| screenshots | 102 PNGs incl. the 4 required picker states |
+| tree | batch 3 committed, see below |
+
+### Follow-up for batch 4, from the lead's own screenshot read (NOT dispatched yet)
+- **The picker's chrome, not its rows, is what eats the screen.** Six stacked bars
+  sit above the first exercise. Candidates: fold the sort/count row into the filter
+  row, drop the sheet's own header (the tabs already say where you are), and either
+  cut the per-exercise description line or move it behind a tap. This is the
+  remaining half of Amit's complaint and it is a design task, not a bug.
+
+## [T-009] Templates flow — ACCEPTED on evidence 2026-08-28 11:13
+- status: **accepted pending the lead's authoritative verify + test:run once T-008
+  lands** (the picker worker was still writing to the tree)
+- **The worker found the real root cause, and it was not cosmetic.** Two dead ends:
+  1. After creating a template the app **navigated the user into a live workout**
+     (`/workout/<newId>`), so they never saw the template they had just built. That
+     is the "throws you to another screen" Amit described.
+  2. **There was NO path to add exercises to an existing template at all.**
+     Exercises could only be added during creation; after saving, the list was
+     frozen forever. `updateWorkoutTemplate` was wired only to the favourite
+     toggle. And `EmbeddedTemplatePicker`'s empty state told the user
+     "צור תבנית בעמוד התבניות" — pointing at a screen where that could not be
+     finished.
+- delivered: create no longer navigates away; a pencil/ערוך path opens the SAME
+  sheet pre-filled with name + exercises; a 0-exercise template's primary button
+  is now "הוסף תרגילים" and opens that sheet, killing the empty-template dead end.
+  The only remaining navigation away is "התחל אימון" → `/workout/:id`, which is
+  the entire point of that button.
+- 8 files touched, ALL inside its declared ownership — zero scope creep.
+- lead verified by grep: zero physical-direction CSS in `src/pages/templates/**`
+  and `src/components/templates/**`; the worker also fixed a real RTL defect it
+  found on the way (`text-right` → `text-start` in the picker overlay).
+- tests rewritten, not weakened: the old
+  `expect(navigate).toHaveBeenCalledWith('/workout/template-new')` became an
+  explicit NO-navigation assertion plus two new cases. Its area went 2 → 5 tests.
+- its reported 155 files / 1361 tests is NOT authoritative — T-008 was landing
+  files concurrently, and the worker said so itself rather than claiming the delta.
+
+## [T-008] Exercise picker — back bug + density
+- status: dispatched (batch 3)
+- owner: fitness-dev
+- goal: fix back re-opening the picker; give the exercise list materially more
+  screen height at 390px and put each exercise on one line.
+- files (EXCLUSIVE): everything under `src/components/workout/**` + its tests
+- done when: verify green; test:run >= 1352 plus a regression test that fails
+  before the fix; screenshots light+dark @390 and @1280 with an exercise
+  selected; before/after row and action-bar heights reported in px
+- notes: the ONLY Playwright runner this batch.
+
+## [T-009] Templates flow — make it one continuous task
+- status: dispatched (batch 3)
+- owner: fitness-design
+- goal: creating a template and adding exercises to it should read as one task,
+  not a tour of the app; native Hebrew that says what to do.
+- files (EXCLUSIVE): `src/pages/Templates.tsx`, `src/pages/templates/**`,
+  `src/components/templates/**`
+- done when: verify green; test:run >= 1352; before/after flow written out in
+  steps; every Hebrew string changed reported old -> new
+- notes: screenshots deliberately OWED, not skipped — T-008 holds the browser.
+
 ---
 
-# Archive

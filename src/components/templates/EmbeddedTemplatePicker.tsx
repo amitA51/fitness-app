@@ -30,7 +30,9 @@ const estimateDurationLabel = (template: WorkoutTemplate): string => {
     0
   );
   const mins = totalSets * 3;
-  return mins < 60 ? `${mins} דק׳` : `${Math.round(mins / 60)} שעה`;
+  if (mins < 60) return `${mins} דק׳`;
+  const hours = Math.round(mins / 60);
+  return hours === 1 ? 'שעה' : `${hours} שעות`;
 };
 
 const TemplateRow = memo(function TemplateRow({
@@ -177,13 +179,14 @@ export const EmbeddedTemplatePicker = memo(function EmbeddedTemplatePicker({
         </div>
         <div
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 11,
+            fontFamily: 'var(--font-body)',
+            fontSize: 13,
+            lineHeight: 1.45,
             color: 'var(--fs-muted)',
             letterSpacing: '-0.01em',
           }}
         >
-          צור תבנית בעמוד התבניות
+          צור תבנית במסך התבניות והיא תופיע כאן.
         </div>
       </Card>
     );

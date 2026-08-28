@@ -22,6 +22,7 @@ export function useTemplates() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [favoritingIds, setFavoritingIds] = useState<Set<string>>(new Set());
 
@@ -64,9 +65,10 @@ export function useTemplates() {
     };
   }, [templates]);
 
-  const handleCreate = useCallback(
-    async (name: string, templateExercises: TemplateExerciseInput[] = []) => {
-      const exercises: WorkoutTemplateExercise[] = templateExercises.map((ex, i) => ({
+  /** Maps the sheet's draft rows onto the stored template shape. */
+  const toTemplateExercises = useCallback(
+    (templateExercises: TemplateExerciseInput[]): WorkoutTemplateExercise[] =>
+      templateExercises.map((ex, i) => ({
         id: crypto.randomUUID(),
         exerciseId: ex.exerciseId ?? '',
         exerciseName: ex.exerciseName,
@@ -77,7 +79,13 @@ export function useTemplates() {
         restSeconds: ex.restSeconds,
         order: i,
         notes: '',
-      }));
+      })),
+    []
+  );
+
+  const handleCreate = useCallback(
+    async (name: string, templateExercises: TemplateExerciseInput[] = []) => {
+      const exercises = toTemplateExercises(templateExercises);
       const newTemplate = await createWorkoutTemplate({
         name,
         description: '',
@@ -99,10 +107,30 @@ export function useTemplates() {
         throw err;
       });
       if (!newTemplate) return;
+      // Stay on the templates screen. Saving a template used to navigate
+      // straight into a live workout, so the user never saw the thing they
+      // just built and had no way back in to add exercises.
+      setTemplates((prev) => [...prev, newTemplate]);
       setShowCreateModal(false);
-      navigate(`/workout/${newTemplate.id}`);
+      showToast('התבנית נשמרה');
     },
-    [navigate]
+    [navigate, toTemplateExercises]
+  );
+
+  /** Saves the sheet back onto an existing template (name + exercise list). */
+  const handleUpdate = useCallback(
+    async (name: string, templateExercises: TemplateExerciseInput[] = []) => {
+      const target = editingTemplate;
+      if (!target) return;
+      const updated = await updateWorkoutTemplate(target.id, {
+        name,
+        exercises: toTemplateExercises(templateExercises),
+      });
+      setTemplates((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+      setEditingTemplate(null);
+      showToast('התבנית נשמרה');
+    },
+    [editingTemplate, toTemplateExercises]
   );
 
   const handleToggleFavorite = useCallback(async (template: WorkoutTemplate) => {
@@ -183,12 +211,15 @@ export function useTemplates() {
     error,
     showCreateModal,
     setShowCreateModal,
+    editingTemplate,
+    setEditingTemplate,
     deletingIds,
     favoritingIds,
     favorites,
     regular,
     loadTemplates,
     handleCreate,
+    handleUpdate,
     handleToggleFavorite,
     handleDelete,
     handleDuplicate,

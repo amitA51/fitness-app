@@ -22,12 +22,15 @@ export default function Templates() {
     error,
     showCreateModal,
     setShowCreateModal,
+    editingTemplate,
+    setEditingTemplate,
     deletingIds,
     favoritingIds,
     favorites,
     regular,
     loadTemplates,
     handleCreate,
+    handleUpdate,
     handleToggleFavorite,
     handleDelete,
     handleDuplicate,
@@ -36,6 +39,8 @@ export default function Templates() {
 
   if (isLoading) return <LoadingState />;
   if (error) return <ErrorState onRetry={loadTemplates} />;
+
+  const sheetTemplate = editingTemplate ?? undefined;
 
   return (
     <>
@@ -59,35 +64,8 @@ export default function Templates() {
         />
 
         <div className="page-shell page-stack" style={{ paddingTop: 12 }}>
-          {templates.length > 0 && (
-            <m.div variants={itemVariants} className="fs-tip-banner">
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: 600,
-                  fontSize: 16,
-                  letterSpacing: '-0.015em',
-                  color: 'var(--fs-ink)',
-                  margin: '0 0 4px',
-                }}
-              >
-                בחרו תבנית ולחצו &quot;התחל אימון&quot;
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 14,
-                  lineHeight: 1.45,
-                  letterSpacing: '-0.01em',
-                  color: 'var(--fs-muted)',
-                  margin: 0,
-                }}
-              >
-                תבנית = רשימת תרגילים מוכנה. אחרי הלחיצה תעברו ישר לאימון.
-              </p>
-            </m.div>
-          )}
-
+          {/* Action before explanation: the create button sits directly under the
+              header so the primary task is reachable without reading first. */}
           {templates.length > 0 && (
             <m.div variants={itemVariants}>
               <m.button
@@ -102,12 +80,43 @@ export default function Templates() {
             </m.div>
           )}
 
+          {templates.length > 0 && (
+            <m.div variants={itemVariants} className="fs-tip-banner">
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 600,
+                  fontSize: 16,
+                  letterSpacing: '-0.015em',
+                  color: 'var(--fs-ink)',
+                  margin: '0 0 4px',
+                }}
+              >
+                תבנית = רשימת התרגילים של אימון קבוע
+              </p>
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 14,
+                  lineHeight: 1.45,
+                  letterSpacing: '-0.01em',
+                  color: 'var(--fs-muted)',
+                  margin: 0,
+                }}
+              >
+                &quot;התחל אימון&quot; פותח את האימון לפי התבנית. &quot;ערוך&quot; מוסיף ומוריד
+                תרגילים מהתבנית עצמה.
+              </p>
+            </m.div>
+          )}
+
           <TemplateList
             favorites={favorites}
             regular={regular}
             deletingIds={deletingIds}
             favoritingIds={favoritingIds}
             onStart={handleStartTemplate}
+            onEdit={setEditingTemplate}
             onToggleFavorite={handleToggleFavorite}
             onDuplicate={handleDuplicate}
             onDelete={handleDelete}
@@ -117,8 +126,16 @@ export default function Templates() {
       </m.div>
 
       <AnimatePresence>
-        {showCreateModal && (
-          <CreateTemplateModal onClose={() => setShowCreateModal(false)} onCreate={handleCreate} />
+        {(showCreateModal || editingTemplate) && (
+          <CreateTemplateModal
+            key={editingTemplate?.id ?? 'new-template'}
+            template={sheetTemplate}
+            onClose={() => {
+              setShowCreateModal(false);
+              setEditingTemplate(null);
+            }}
+            onCreate={editingTemplate ? handleUpdate : handleCreate}
+          />
         )}
       </AnimatePresence>
     </>

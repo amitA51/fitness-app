@@ -26,7 +26,10 @@ interface ExerciseListItemProps {
 }
 
 const VIRTUALIZE_THRESHOLD = 20;
-const ESTIMATED_CARD_HEIGHT = 88;
+// Matches the one-line row (.exercise-card min-block-size 62px) plus the gap
+// below. A stale 88 here over-reported the total size by ~30% until every row
+// had been measured, which made the scrollbar jump on the first flick.
+const ESTIMATED_CARD_HEIGHT = 62;
 const VIRTUAL_ITEM_GAP = 10;
 
 type FocusEdge = 'first' | 'last';

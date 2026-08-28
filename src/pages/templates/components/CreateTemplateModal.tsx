@@ -1,10 +1,17 @@
+// ============================================================================
+// CreateTemplateModal — the ONE sheet that builds a template.
+// ============================================================================
+// Serves both "new template" and "edit an existing template": pass `template`
+// and the same sheet opens pre-filled. Naming and exercises live in one place
+// so filling a template never means leaving the templates screen.
+
 import { AnimatePresence, m } from 'framer-motion';
 import { Dumbbell, Plus, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import { getPersonalExercises } from '../../../services/workoutDb';
-import type { PersonalExercise } from '../../../types';
+import type { PersonalExercise, WorkoutTemplate } from '../../../types';
 import { springTransition } from '../constants';
 
 export interface TemplateExerciseInput {
@@ -19,12 +26,26 @@ export interface TemplateExerciseInput {
 type DraftTemplateExercise = TemplateExerciseInput & { clientId: string };
 
 interface CreateTemplateModalProps {
+  /** When provided the sheet edits this template instead of creating a new one. */
+  template?: WorkoutTemplate;
   onClose: () => void;
   onCreate: (name: string, exercises: TemplateExerciseInput[]) => Promise<void>;
 }
 
-export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalProps) {
-  const [name, setName] = useState('');
+const toDraft = (template?: WorkoutTemplate): DraftTemplateExercise[] =>
+  (template?.exercises ?? []).map((ex) => ({
+    clientId: crypto.randomUUID(),
+    exerciseId: ex.exerciseId,
+    exerciseName: ex.exerciseName,
+    targetMuscle: ex.targetMuscle,
+    targetSets: ex.targetSets,
+    targetReps: ex.targetReps,
+    restSeconds: ex.restSeconds,
+  }));
+
+export function CreateTemplateModal({ template, onClose, onCreate }: CreateTemplateModalProps) {
+  const isEditing = template != null;
+  const [name, setName] = useState(template?.name ?? '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const templateNameId = useId();
@@ -46,7 +67,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
     lockScroll: false,
   });
 
-  const [exercises, setExercises] = useState<DraftTemplateExercise[]>([]);
+  const [exercises, setExercises] = useState<DraftTemplateExercise[]>(() => toDraft(template));
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [allExercises, setAllExercises] = useState<PersonalExercise[]>([]);
@@ -119,7 +140,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) {
-      setError('יש להזין שם לתבנית');
+      setError('תן שם לתבנית');
       return;
     }
     setIsSubmitting(true);
@@ -130,7 +151,9 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
         exercises.map(({ clientId: _clientId, ...exercise }) => exercise)
       );
     } catch {
-      setError('שגיאה ביצירת התבנית. נסה שוב.');
+      setError(
+        isEditing ? 'לא הצלחנו לשמור את השינויים. נסה שוב.' : 'לא הצלחנו ליצור את התבנית. נסה שוב.'
+      );
       setIsSubmitting(false);
     }
   };
@@ -187,7 +210,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                 color: 'var(--fs-ink)',
               }}
             >
-              תבנית חדשה
+              {isEditing ? 'עריכת תבנית' : 'תבנית חדשה'}
             </h2>
             <m.button
               whileHover={{ scale: 1.05 }}
@@ -196,8 +219,8 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
               aria-label="סגור"
               className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
               style={{
-                width: '36px',
-                height: '36px',
+                width: '44px',
+                height: '44px',
                 background: 'var(--fs-surface-2)',
                 border: 'none',
                 borderRadius: 9999,
@@ -276,17 +299,20 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                 }}
               >
                 תרגילים
-                <span
-                  className="ms-2"
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '10px',
-                    letterSpacing: '-0.01em',
-                    color: 'var(--fs-muted)',
-                  }}
-                >
-                  {exercises.length > 0 ? `${exercises.length} EXERCISES` : 'OPTIONAL'}
-                </span>
+                {exercises.length > 0 && (
+                  <span
+                    className="ms-2"
+                    dir="ltr"
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      letterSpacing: '-0.01em',
+                      color: 'var(--fs-muted)',
+                    }}
+                  >
+                    {exercises.length}
+                  </span>
+                )}
               </span>
 
               {/* Added exercise chips */}
@@ -319,6 +345,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                         </span>
                         <span
                           className="whitespace-nowrap"
+                          dir="ltr"
                           style={{
                             fontFamily: 'var(--font-mono)',
                             fontSize: '11px',
@@ -336,18 +363,18 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                             color: 'var(--fs-muted)',
                           }}
                         >
-                          {ex.restSeconds}s
+                          מנוחה <span dir="ltr">{ex.restSeconds}</span> שנ׳
                         </span>
                       </div>
                       <m.button
                         whileTap={{ scale: 0.9 }}
                         type="button"
                         onClick={() => handleRemoveExercise(ex.clientId)}
-                        className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center me-1"
-                        style={{ background: 'var(--fs-surface-2)' }}
+                        className="flex-shrink-0 rounded-lg flex items-center justify-center"
+                        style={{ background: 'var(--fs-surface-2)', width: 44, height: 44 }}
                         aria-label={`הסר ${ex.exerciseName}`}
                       >
-                        <X size={12} style={{ color: 'var(--fs-heading)' }} />
+                        <X size={14} style={{ color: 'var(--fs-heading)' }} />
                       </m.button>
                     </m.div>
                   ))}
@@ -359,8 +386,9 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setShowExercisePicker(true)}
-                className="w-full py-3 flex items-center justify-center gap-2"
+                className="w-full flex items-center justify-center gap-2"
                 style={{
+                  minHeight: 48,
                   border: '1.5px dashed var(--fs-surface-2)',
                   color: 'var(--fs-heading)',
                   fontFamily: 'var(--font-display)',
@@ -372,7 +400,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                 }}
               >
                 <Plus size={16} />
-                הוסף תרגיל
+                {exercises.length === 0 ? 'הוסף תרגיל ראשון' : 'הוסף תרגיל'}
               </m.button>
             </div>
 
@@ -412,17 +440,18 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                             setShowExercisePicker(false);
                             setExerciseSearch('');
                           }}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center"
-                          style={{ background: 'var(--fs-surface-2)' }}
+                          className="rounded-lg flex items-center justify-center"
+                          style={{ background: 'var(--fs-surface-2)', width: 44, height: 44 }}
+                          aria-label="סגור את רשימת התרגילים"
                         >
-                          <X size={12} style={{ color: 'var(--fs-heading)' }} />
+                          <X size={14} style={{ color: 'var(--fs-heading)' }} />
                         </m.button>
                       </div>
                       <input
                         type="text"
                         value={exerciseSearch}
                         onChange={(e) => setExerciseSearch(e.target.value)}
-                        placeholder="חפשו תרגיל…"
+                        placeholder="חפש תרגיל…"
                         aria-label="חפש תרגיל"
                         autoFocus
                         style={{
@@ -454,7 +483,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                               padding: '16px',
                             }}
                           >
-                            לא נמצאו תרגילים
+                            אין תרגיל בשם הזה. נסה שם אחר.
                           </p>
                         )}
                         {filteredExercises.map((ex) => (
@@ -463,8 +492,9 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                             type="button"
                             whileTap={{ scale: 0.98 }}
                             onClick={() => handleAddExercise(ex)}
-                            className="w-full text-right px-3 py-2.5 flex items-center justify-between"
+                            className="w-full text-start px-3 flex items-center justify-between"
                             style={{
+                              minHeight: 44,
                               fontFamily: 'var(--font-body)',
                               fontSize: '14px',
                               fontWeight: 600,
@@ -522,7 +552,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                     color: 'var(--fs-accent)',
                   }}
                 >
-                  ~{estimatedMinutes} דק׳
+                  <span dir="ltr">~{estimatedMinutes}</span> דק׳
                 </span>
               </div>
             )}
@@ -551,7 +581,7 @@ export function CreateTemplateModal({ onClose, onCreate }: CreateTemplateModalPr
                   }}
                 />
               ) : (
-                'צור תבנית'
+                <>{isEditing ? 'שמור תבנית' : 'צור תבנית'}</>
               )}
             </m.button>
           </form>

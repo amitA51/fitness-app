@@ -1,5 +1,5 @@
 import { m } from 'framer-motion';
-import { Clock, Copy, Dumbbell, Play, Star, Trash2 } from 'lucide-react';
+import { Clock, Copy, Dumbbell, Pencil, Play, Plus, Star, Trash2 } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 import { resolveMuscleKey, translateMuscle } from '../../../constants/muscleNames';
 import type { WorkoutTemplate } from '../../../types';
@@ -9,6 +9,7 @@ interface TemplateCardProps {
   template: WorkoutTemplate;
   index: number;
   onStart: (templateId: string) => void;
+  onEdit: (template: WorkoutTemplate) => void;
   onToggleFavorite: (template: WorkoutTemplate) => void;
   onDuplicate: (template: WorkoutTemplate) => void;
   onDelete: (id: string) => void;
@@ -20,6 +21,7 @@ export const TemplateCard = memo(function TemplateCard({
   template,
   index,
   onStart,
+  onEdit,
   onToggleFavorite,
   onDuplicate,
   onDelete,
@@ -27,6 +29,9 @@ export const TemplateCard = memo(function TemplateCard({
   isFavoriting,
 }: TemplateCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // An empty template can't run a workout. Its primary action is filling it,
+  // not starting it — otherwise the tap lands the user in a blank session.
+  const isEmpty = template.exercises.length === 0;
 
   useEffect(() => {
     if (!confirmDelete) return;
@@ -113,7 +118,7 @@ export const TemplateCard = memo(function TemplateCard({
       >
         <span className="flex items-center gap-1.5">
           <Dumbbell size={12} />
-          {template.exercises.length} תרגילים
+          <span dir="ltr">{template.exercises.length}</span> תרגילים
         </span>
         {muscleSummary && (
           <>
@@ -124,7 +129,13 @@ export const TemplateCard = memo(function TemplateCard({
         <span style={{ color: 'var(--fs-muted)' }}>·</span>
         <span className="flex items-center gap-1.5">
           <Clock size={12} />
-          {template.timesUsed > 0 ? `${template.timesUsed}×` : 'חדש'}
+          {template.timesUsed > 0 ? (
+            <>
+              <span dir="ltr">{template.timesUsed}</span> אימונים
+            </>
+          ) : (
+            'חדש'
+          )}
         </span>
       </div>
 
@@ -144,91 +155,122 @@ export const TemplateCard = memo(function TemplateCard({
         </div>
       )}
 
-      {/* Action row */}
+      {/* Action row — one full-width primary action, secondary tools beneath.
+          Five controls on one line wrapped unpredictably at 390px and made the
+          primary action compete with the icon chips. */}
       <div
-        className="flex items-center gap-2 flex-wrap pt-3"
-        style={{ borderTop: '1px solid var(--fs-surface-2)' }}
+        className="pt-3"
+        style={{ borderTop: '1px solid var(--fs-surface-2)', display: 'grid', gap: 10 }}
       >
         <m.button
           whileTap={{ scale: 0.97 }}
-          onClick={() => onStart(template.id)}
+          onClick={() => (isEmpty ? onEdit(template) : onStart(template.id))}
           className="start-workout-btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fs-accent)] focus-visible:ring-offset-2"
           style={{
-            flex: 1,
             minHeight: 48,
             fontSize: 15,
             boxShadow: '0 6px 18px color-mix(in srgb, var(--fs-accent) 24%, transparent)',
           }}
-          aria-label={`התחל אימון: ${template.name}`}
+          aria-label={
+            isEmpty ? `הוסף תרגילים לתבנית: ${template.name}` : `התחל אימון: ${template.name}`
+          }
         >
-          <Play size={14} strokeWidth={2.5} />
-          התחל אימון
-        </m.button>
-        <m.button
-          whileTap={{ scale: isFavoriting ? 1 : 0.95 }}
-          onClick={() => onToggleFavorite(template)}
-          disabled={isFavoriting}
-          className="chip"
-          style={{
-            background: template.isFavorite ? 'var(--fs-accent)' : 'var(--fs-surface)',
-            minHeight: '44px',
-            padding: '0 14px',
-            opacity: isFavoriting ? 0.6 : 1,
-          }}
-          aria-label={template.isFavorite ? 'הסר ממועדפים' : 'הוסף למועדפים'}
-          aria-busy={isFavoriting}
-        >
-          {isFavoriting ? (
-            <div
-              className="w-4 h-4 border-2 border-t-transparent animate-spin"
-              style={{ borderColor: 'var(--fs-primary)', borderTopColor: 'transparent' }}
-            />
-          ) : (
-            <Star
-              size={14}
-              fill={template.isFavorite ? 'var(--fs-primary)' : 'none'}
-              style={{ color: template.isFavorite ? 'var(--fs-primary)' : 'var(--fs-primary)' }}
-            />
-          )}
-        </m.button>
-        <m.button
-          whileTap={{ scale: 0.95 }}
-          onClick={() => onDuplicate(template)}
-          className="chip"
-          style={{
-            background: 'var(--fs-surface)',
-            minHeight: '44px',
-            padding: '0 14px',
-          }}
-          aria-label="שכפל תבנית"
-        >
-          <Copy size={14} />
-        </m.button>
-        <m.button
-          whileTap={{ scale: isDeleting ? 1 : 0.95 }}
-          onClick={handleDeleteClick}
-          onBlur={() => setConfirmDelete(false)}
-          disabled={isDeleting}
-          className="chip"
-          style={{
-            background: confirmDelete ? 'var(--color-error)' : 'var(--fs-surface)',
-            color: confirmDelete ? 'var(--color-ink-on-error)' : 'var(--fs-primary)',
-            minHeight: '44px',
-            padding: '0 14px',
-            opacity: isDeleting ? 0.6 : 1,
-          }}
-          aria-label={confirmDelete ? 'אישור מחיקת תבנית' : 'מחק תבנית'}
-          aria-busy={isDeleting}
-        >
-          {isDeleting ? (
-            <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin" />
+          {isEmpty ? (
+            <>
+              <Plus size={14} strokeWidth={2.5} />
+              הוסף תרגילים
+            </>
           ) : (
             <>
-              <Trash2 size={14} />
-              {confirmDelete && <span className="me-1">?</span>}
+              <Play size={14} strokeWidth={2.5} />
+              התחל אימון
             </>
           )}
         </m.button>
+        <div className="flex items-center gap-2">
+          {!isEmpty && (
+            <m.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onEdit(template)}
+              className="chip"
+              style={{
+                background: 'var(--fs-surface)',
+                minHeight: '44px',
+                padding: '0 14px',
+              }}
+              aria-label={`ערוך תבנית: ${template.name}`}
+            >
+              <Pencil size={14} />
+            </m.button>
+          )}
+          <m.button
+            whileTap={{ scale: isFavoriting ? 1 : 0.95 }}
+            onClick={() => onToggleFavorite(template)}
+            disabled={isFavoriting}
+            className="chip"
+            style={{
+              background: template.isFavorite ? 'var(--fs-accent)' : 'var(--fs-surface)',
+              minHeight: '44px',
+              padding: '0 14px',
+              opacity: isFavoriting ? 0.6 : 1,
+            }}
+            aria-label={template.isFavorite ? 'הסר ממועדפים' : 'הוסף למועדפים'}
+            aria-busy={isFavoriting}
+          >
+            {isFavoriting ? (
+              <div
+                className="w-4 h-4 border-2 border-t-transparent animate-spin"
+                style={{ borderColor: 'var(--fs-primary)', borderTopColor: 'transparent' }}
+              />
+            ) : (
+              <Star
+                size={14}
+                fill={template.isFavorite ? 'var(--fs-primary)' : 'none'}
+                style={{ color: template.isFavorite ? 'var(--fs-primary)' : 'var(--fs-primary)' }}
+              />
+            )}
+          </m.button>
+          <m.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onDuplicate(template)}
+            className="chip"
+            style={{
+              background: 'var(--fs-surface)',
+              minHeight: '44px',
+              padding: '0 14px',
+            }}
+            aria-label={`שכפל תבנית: ${template.name}`}
+          >
+            <Copy size={14} />
+          </m.button>
+          <m.button
+            whileTap={{ scale: isDeleting ? 1 : 0.95 }}
+            onClick={handleDeleteClick}
+            onBlur={() => setConfirmDelete(false)}
+            disabled={isDeleting}
+            className="chip"
+            style={{
+              background: confirmDelete ? 'var(--color-error)' : 'var(--fs-surface)',
+              color: confirmDelete ? 'var(--color-ink-on-error)' : 'var(--fs-primary)',
+              minHeight: '44px',
+              padding: '0 14px',
+              opacity: isDeleting ? 0.6 : 1,
+            }}
+            aria-label={
+              confirmDelete ? `אישור מחיקת ${template.name}` : `מחק תבנית: ${template.name}`
+            }
+            aria-busy={isDeleting}
+          >
+            {isDeleting ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin" />
+            ) : (
+              <>
+                <Trash2 size={14} />
+                {confirmDelete && <span className="me-1">?</span>}
+              </>
+            )}
+          </m.button>
+        </div>
       </div>
     </m.div>
   );

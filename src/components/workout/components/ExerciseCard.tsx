@@ -41,15 +41,21 @@ function ExerciseName({ name }: { name: string }) {
   const secondary = isHebrewEnglishPair ? (firstIsHebrew ? second : first) : second;
   const secondaryIsEnglish = isHebrewEnglishPair && !hasHebrew(secondary);
 
+  // Both halves share ONE row (see .exercise-card__name--pair). Stacking them
+  // was what made a row ~96px tall and cost the list a third of its rows.
   return (
-    <span className="exercise-card__name">
+    <span className="exercise-card__name exercise-card__name--pair">
       <bdi className="exercise-card__name-primary" dir="auto">
         {primary}
       </bdi>
       {secondary && (
         <bdi
           className="exercise-card__name-secondary"
-          dir="auto"
+          // Explicit `ltr`, not `auto`: a Latin name that opens with a digit or a
+          // bracket ("45° Incline", "(Barbell) Row") has no strong LTR character
+          // to sniff at that position, so inside this RTL row `auto` can flip the
+          // punctuation to the wrong end. `bdi` keeps it isolated either way.
+          dir={secondaryIsEnglish ? 'ltr' : 'auto'}
           lang={secondaryIsEnglish ? 'en' : undefined}
         >
           {secondary}

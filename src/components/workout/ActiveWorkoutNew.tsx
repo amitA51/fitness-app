@@ -237,6 +237,30 @@ export const WorkoutContent: React.FC<{
   const [planningMode, setPlanningMode] = useState(false);
   const [planDraft, setPlanDraft] = useState<ActiveExercise[]>([]);
 
+  // Dismissing the picker with nothing picked SPENDS the pre-workout intent.
+  // Watched as a true→false edge rather than a standing condition, and read after
+  // the commit, which is what lets it tell the three closes apart in one place:
+  // a confirm lands ADD_EXERCISES in the same batch (exercises are no longer
+  // empty), "תכננו מראש" lands planningMode in the same batch, and a real
+  // dismissal lands neither. Without this the flag stayed '1' in sessionStorage,
+  // so the next remount of this component — provider hydration, a route bounce —
+  // read the intent back out and re-opened the sheet the user had just closed.
+  const selectorWasOpenRef = useRef(false);
+  useEffect(() => {
+    const wasOpen = selectorWasOpenRef.current;
+    selectorWasOpenRef.current = state.showExerciseSelector;
+    if (!wasOpen || state.showExerciseSelector) return;
+    if (state.exercises.length === 0 && !planningMode && preWorkoutScreenShown) {
+      setPreWorkoutScreenShown(false);
+    }
+  }, [
+    state.showExerciseSelector,
+    state.exercises.length,
+    planningMode,
+    preWorkoutScreenShown,
+    setPreWorkoutScreenShown,
+  ]);
+
   // Track pending setTimeout IDs to clear on unmount (prevent dispatch-after-unmount)
   const pendingTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
 

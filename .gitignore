@@ -74,3 +74,4 @@ graphify-out/.graphify_*
 
 # KiroCrew agent memory store — auto-created inside the project, machine-local.
 memory/
+memory_index.db

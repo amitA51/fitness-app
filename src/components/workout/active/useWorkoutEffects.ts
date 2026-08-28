@@ -194,16 +194,35 @@ export function useWorkoutEffects({
   // exercises — and never while a flow modal is open. With the start flow no
   // longer firing during PreWorkoutScreen, showGoalSelector/showWarmup stay
   // false here, so the selector reliably opens for the empty-start path.
+  //
+  // This is a ONE-SHOT intent, not a standing invariant, and the ref is what
+  // makes the difference. Expressed as a condition ("pre-workout + empty ⇒ open")
+  // the effect re-fired the instant CLOSE_SELECTOR landed — the workout is still
+  // empty and the intent is still set, so Back/X/"ביטול"/backdrop each closed the
+  // sheet and had it slammed straight back open (measured: 4 ms), and the welcome
+  // screen behind it was unreachable.
+  //
+  // The intent counts as served the moment the sheet is ON SCREEN, whoever opened
+  // it — both real entry points ("התחל אימון" and the ?startEmpty deep link)
+  // dispatch OPEN_SELECTOR themselves and beat this effect to it, so claiming the
+  // ref only when this effect dispatches would leave it unclaimed and reopen on
+  // the first close. What is left is a genuine safety net: a remount that
+  // sanitized showExerciseSelector back to false still gets its sheet, and a
+  // dismissal stays dismissed. Re-armed when the intent itself is cleared, so the
+  // next "התחל אימון" opens the picker again.
+  const autoOpenedSelectorRef = useRef(false);
   useEffect(() => {
-    if (
-      preWorkoutScreenShown &&
-      exercises.length === 0 &&
-      !showExerciseSelector &&
-      !showQuickForm &&
-      !showGoalSelector &&
-      !showWarmup &&
-      !showCooldown
-    ) {
+    if (!preWorkoutScreenShown) {
+      autoOpenedSelectorRef.current = false;
+      return;
+    }
+    if (showExerciseSelector || showQuickForm) {
+      autoOpenedSelectorRef.current = true;
+      return;
+    }
+    if (autoOpenedSelectorRef.current) return;
+    if (exercises.length === 0 && !showGoalSelector && !showWarmup && !showCooldown) {
+      autoOpenedSelectorRef.current = true;
       dispatch({ type: 'OPEN_SELECTOR' });
     }
   }, [
