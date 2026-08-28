@@ -612,10 +612,21 @@ textarea {
   color: var(--fs-muted);
 }
 
+/* Selected chip. --nav-pill-*, NOT --fs-primary/--color-ink-on-dark:
+   --fs-primary does not invert (#16292d light, #0a0a0a dark), so in Obsidian the
+   selected chip painted #0a0a0a on the #111111 card — 1.05:1, the selection
+   simply gone. --nav-pill-bg/-text is the SELECTED-state pair that flips with
+   the theme (navy + white in light, mint + near-black in dark), already carrying
+   .day-cell.done and .tab-item.active. The action pair (--btn-primary-*) is for
+   CTAs and would recolour the light chip's ink white → mint; a chip is a
+   selection, not a call to action.
+   Chip vs card: 15.12:1 light (unchanged) / 11.04:1 dark. Ink on fill: 15.12:1 /
+   10.98:1. In light both tokens alias the exact two this rule used before, so the
+   light computed style is byte-identical. */
 .chip-fs.active {
-  background: var(--fs-primary);
-  color: var(--color-ink-on-dark);
-  border-color: var(--fs-primary);
+  background: var(--nav-pill-bg);
+  color: var(--nav-pill-text);
+  border-color: var(--nav-pill-bg);
 }
 
 /* Hero Card — cinematic dark block (Apple Fitness+ session card) */
@@ -1114,10 +1125,19 @@ textarea {
   touch-action: manipulation;
 }
 
+/* Selected tab. --nav-pill-*, NOT --fs-primary: that token does not invert
+   (#16292d light, #0a0a0a dark), so in Obsidian the active tab painted #0a0a0a
+   inside the #262626 tab-row on the #111111 card — 1.31:1 against its own track,
+   1.05:1 against the card: the selected tab was invisible in the theme the app is
+   used in. --nav-pill-bg/-text is the same selected-state pair the bottom-nav
+   pill, .day-cell.done and .tab-item.active use, and it flips with the theme.
+   Active tab vs tab-row track: 11.83:1 light (unchanged) / 8.84:1 dark.
+   Ink on the active fill: 15.12:1 light (unchanged) / 10.98:1 dark.
+   In light --nav-pill-bg IS --fs-primary and --nav-pill-text IS
+   --color-ink-on-dark, so light is byte-identical to the old rule. */
 .tab-row .tab.active {
-  background: var(--fs-primary);
-  /* ink-on-dark, not fs-ink — fs-ink is dark-on-dark in light mode */
-  color: var(--color-ink-on-dark);
+  background: var(--nav-pill-bg);
+  color: var(--nav-pill-text);
   font-weight: 600;
 }
 

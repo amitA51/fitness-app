@@ -82,6 +82,7 @@ export default function ProgressPage() {
     recoveryScore,
     recoveryHistory,
     weeklyRecovery,
+    trainingLoad,
     isLoading,
     loadError,
     reload,
@@ -360,6 +361,7 @@ export default function ProgressPage() {
                   recoveryScore={recoveryScore}
                   weeklyRecovery={weeklyRecovery}
                   history={recoveryHistory}
+                  trainingLoad={trainingLoad}
                   onAdd={handleShowAddRecovery}
                 />
               </m.div>

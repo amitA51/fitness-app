@@ -1,0 +1,165 @@
+{
+  "combo": "1280-dark",
+  "theme": {
+    "htmlClass": "dark page-dashboard",
+    "bodyBg": "rgb(0, 0, 0)"
+  },
+  "weekStrip": {
+    "cellCount": 7,
+    "trained": {
+      "cls": "day-cell done",
+      "bg": "rgb(77, 220, 187)",
+      "color": "rgb(7, 20, 18)",
+      "borderStyle": "solid",
+      "borderColor": "rgb(38, 38, 38)",
+      "relLuminance": 0.5635
+    },
+    "rest": {
+      "cls": "day-cell rest",
+      "bg": "color(srgb 0.193961 0.451922 0.392392)",
+      "color": "rgb(240, 240, 240)",
+      "borderStyle": "dashed",
+      "borderColor": "rgb(240, 240, 240)",
+      "relLuminance": 0.0001
+    },
+    "empty": {
+      "cls": "day-cell",
+      "bg": "color(srgb 0.111961 0.111961 0.111961)",
+      "color": "rgb(163, 163, 163)",
+      "borderStyle": "solid",
+      "borderColor": "rgb(38, 38, 38)",
+      "relLuminance": 0
+    },
+    "contrast": {
+      "trainedVsEmpty": 12.26,
+      "trainedVsRest": 12.24,
+      "restVsEmpty": 1
+    }
+  },
+  "pressedPrimary": "NOT_FOUND_ON_HOME",
+  "progressTabs": [
+    "סקירה",
+    "אימונים",
+    "גוף",
+    "התאוששות"
+  ],
+  "overviewCollapsedCharts": [],
+  "overviewHasAdvanced": true,
+  "overviewExpandedCharts": [],
+  "overviewAdvancedExpanded": "true",
+  "workoutsHasAdvanced": true,
+  "workoutsExpandedCharts": [
+    {
+      "aria": "מגמת נפח האימונים לאורך זמן",
+      "viewBoxH": 170,
+      "innerH": 134,
+      "drawnExtent": 116.75,
+      "drawnExtentPctOfInner": 87.12,
+      "yAxisLabels": [],
+      "yAxisLabelsIdentical": false,
+      "xLabelCount": 5
+    }
+  ],
+  "strengthCurves": {
+    "flat": [
+      {
+        "aria": "עקומת 1RM משוער ללחיצת חזה",
+        "viewBoxH": 170,
+        "innerH": 134,
+        "drawnExtent": 0,
+        "drawnExtentPctOfInner": 0,
+        "yAxisLabels": [
+          "84",
+          "76"
+        ],
+        "yAxisLabelsIdentical": false,
+        "xLabelCount": 5
+      }
+    ],
+    "flat-forecast": [
+      {
+        "aria": "עקומת 1RM משוער ללחיצת חזה",
+        "viewBoxH": 170,
+        "innerH": 134,
+        "drawnExtent": 0,
+        "drawnExtentPctOfInner": 0,
+        "yAxisLabels": [
+          "84",
+          "76"
+        ],
+        "yAxisLabelsIdentical": false,
+        "xLabelCount": 5
+      },
+      {
+        "aria": "נפח שבועי ותחזית לשבוע הבא עבור לחיצת חזה",
+        "viewBoxH": 180,
+        "innerH": 144,
+        "drawnExtent": 145.33,
+        "drawnExtentPctOfInner": 100.93,
+        "yAxisLabels": [],
+        "yAxisLabelsIdentical": false,
+        "xLabelCount": 5
+      }
+    ],
+    "steep": [
+      {
+        "aria": "עקומת 1RM משוער לסקוואט",
+        "viewBoxH": 170,
+        "innerH": 134,
+        "drawnExtent": 134,
+        "drawnExtentPctOfInner": 100,
+        "yAxisLabels": [
+          "95",
+          "80"
+        ],
+        "yAxisLabelsIdentical": false,
+        "xLabelCount": 15
+      }
+    ],
+    "steep-forecast": [
+      {
+        "aria": "עקומת 1RM משוער לסקוואט",
+        "viewBoxH": 170,
+        "innerH": 134,
+        "drawnExtent": 134,
+        "drawnExtentPctOfInner": 100,
+        "yAxisLabels": [
+          "95",
+          "80"
+        ],
+        "yAxisLabelsIdentical": false,
+        "xLabelCount": 15
+      },
+      {
+        "aria": "נפח שבועי ותחזית לשבוע הבא עבור סקוואט",
+        "viewBoxH": 180,
+        "innerH": 144,
+        "drawnExtent": 146.23,
+        "drawnExtentPctOfInner": 101.55,
+        "yAxisLabels": [],
+        "yAxisLabelsIdentical": false,
+        "xLabelCount": 5
+      }
+    ],
+    "lowmag": "ROW_NOT_FOUND"
+  },
+  "switchCount": 0,
+  "coachClientsBody": "דלג לתוכן הראשי\nניווט: בית\n\nיום שישי, 28 באוגוסט · פעיל היום\n\nערב טוב, דנה\n\nיפה — אפשר להוסיף אימון נוסף אם בא לכם\n\nאימון נוסף\nלחצו לבחירת תבנית או אימון ריק\n12 שבועות · 5 אימונים בשבוע\nתוכנית האימון\nהתקדמות מודרכת לפי RPE — התחילו את מערכת השינוי לפיתוח גוף.\n1\nיום ברצף\nהיום\nשיא 2\nיומן אימונים\nכל ההיסטוריה\nהשבוע\nהיום\nא\nב\nג\nד\nה\nו\nש\n\nיום מנוחה מתוכנן שומר על הרצף — הקישו על יום פנוי בשבוע כדי לסמן א",
+  "coachHasClientRow": false,
+  "consoleErrors": [
+    "[error] Failed to load resource: the server responded with a status of 401 ()",
+    "[error] Failed to load resource: the server responded with a status of 401 ()",
+    "[warning] [2026-08-28T14:17:19.658Z] [App] Sentry NOT initialized — error reporting disabled in production ",
+    "[warning] [2026-08-28T14:17:20.317Z] [App] Sentry NOT initialized — error reporting disabled in production ",
+    "[error] Failed to load resource: the server responded with a status of 401 ()",
+    "[warning] [2026-08-28T14:17:23.146Z] [App] Sentry NOT initialized — error reporting disabled in production ",
+    "[error] Failed to load resource: the server responded with a status of 401 ()",
+    "[error] Error: <svg> attribute height: Expected length, \"auto\".",
+    "[error] Error: <svg> attribute height: Expected length, \"auto\".",
+    "[warning] [2026-08-28T14:17:43.242Z] [App] Sentry NOT initialized — error reporting disabled in production ",
+    "[error] Failed to load resource: the server responded with a status of 401 ()",
+    "[error] Failed to load resource: the server responded with a status of 401 ()",
+    "[warning] [2026-08-28T14:17:45.696Z] [App] Sentry NOT initialized — error reporting disabled in production ",
+    "[error] Failed to load resource: the server responded with a status of 401 ()"
+  ]
+}

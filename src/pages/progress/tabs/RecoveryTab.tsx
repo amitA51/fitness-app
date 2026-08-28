@@ -5,8 +5,10 @@ import { VerdictLine, VerdictNumber } from '../../../components/insights/Verdict
 import { useCountUp } from '../../../hooks/useCountUp';
 import { getLegacyRecoveryScore } from '../../../services/bodyStatsService';
 import type { RecoveryLog } from '../../../services/bodyStatsService';
+import type { TrainingLoadResult } from '../../../services/trainingLoadService';
 import { type Zone, zoneColor } from '../../../utils/zoneColor';
 import { ChapterBreak } from '../components/ChapterBreak';
+import { ReadinessReadingCard } from '../components/ReadinessReadingCard';
 import { RecoveryBar } from '../components/RecoveryBar';
 import { SectionCard } from '../components/SectionCard';
 import type { WeeklyRecoveryAverage } from '../types';
@@ -43,6 +45,7 @@ export const RecoveryTab = memo(function RecoveryTab({
   recoveryScore,
   weeklyRecovery,
   history,
+  trainingLoad,
   onAdd,
 }: {
   todayRecovery: RecoveryLog | null;
@@ -51,6 +54,8 @@ export const RecoveryTab = memo(function RecoveryTab({
   // Recovery history is loaded once by the parent's single data source and passed
   // down — the tab no longer fetches its own logs.
   history: RecoveryLog[];
+  /** Deterministic engine reading over the same sessions + logs (see useProgressData). */
+  trainingLoad: TrainingLoadResult;
   onAdd: () => void;
 }) {
   const scoreColor = recoveryScore?.color ?? 'var(--fs-muted)';
@@ -198,6 +203,11 @@ export const RecoveryTab = memo(function RecoveryTab({
           </div>
         )}
       </SectionCard>
+
+      {/* What the recovery log actually changed — the deterministic engine
+          reading (trainingLoadService), rendered directly and hedged by its own
+          data-sufficiency flags. Sits right BELOW the log it is derived from. */}
+      <ReadinessReadingCard load={trainingLoad} />
 
       {/* Weekly avg */}
       {weeklyRecovery.avgScore > 0 && (

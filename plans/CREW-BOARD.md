@@ -929,7 +929,282 @@ and the newest source mtime was 8 minutes old, before any gate was run.
 
 ---
 
-# Batch 12 — Amit's Progress-screen ask (2026-08-28 16:02). AUDIT FIRST, dispatched immediately.
+## [T-039] Connect the recovery engine — ACCEPTED on evidence 2026-08-28 17:26
+- status: **accepted; my authoritative verify + test:run owed once T-038 lands** (still holding the browser)
+- 3 files modified + 2 new, **verified changed by `git status` before recording**. Self-reported gates:
+  verify exit 0 (**700** files, was 697 = +3 new files), test:run **161 files / 1415 tests**.
+  Arithmetic closes: 1399 + 12 (its card tests) + 4 (T-040's expander tests) = 1415.
+- **THE BEST JUDGEMENT IN THE BATCH — it caught the deleted card's failure mode in a NEW place.**
+  When `hasChronicBaseline` is false the engine falls back to **ratio 1.0**, and it recognised that
+  1.0 would read to a user as **"right on target"** — a confident-looking lie. So it **SUPPRESSES the
+  whole load-vs-baseline row** rather than showing 1.0 with a caveat. That is precisely the mistake
+  `CoachBriefCard` made, found somewhere nobody had flagged.
+- **The hedge has a PRECEDENCE order, not three independent warnings.** `hasRecoveryData === false`
+  wins: **no number, no `/100`, no recommendation at all** — just `אין עדיין קריאת מוכנות` plus what to
+  do about it. Its reasoning: with no reading shown, caveats about RPE or baseline would be "footnotes
+  on a withheld figure". **So the two-valued 92/67 problem is structurally gone: no log → no number.**
+- Partial states both show the reading + a `קריאה חלקית` badge: no RPE names the assumed effort of 7;
+  no baseline suppresses the ratio row. Both name the action that improves the reading.
+- **Its tests feed REAL `calculateTrainingLoad` output into the card**, so the flags under test are the
+  engine's own rather than hand-written booleans — a test with a hand-set `hasRpeData: false` would
+  pass even if the engine never produced that state. One test asserts the score is **absent** from the
+  DOM in the thin-data case, not merely that a hedge appeared. 12 tests.
+- **It fixed the AI wiring bug without touching a file it did not own.** The live caller is
+  `useFitnessInsights.ts:150`, not its file, so it made `recoveryLogs` an OPTIONAL param that
+  self-loads the last 7 days when absent — fixing the live path from inside its own lane.
+- **⚠️ ONE FILE OUTSIDE ITS LIST, disclosed by the worker itself:** `src/pages/Progress.tsx`,
+  **`+2/-0`** — destructure `trainingLoad`, pass it to `<RecoveryTab>`. I confirmed the diff size
+  myself. Unavoidable: `RecoveryTab` takes every input as an explicit prop from that render site, and
+  the alternative (a second data load inside the tab) would break the hook's single-source design.
+  **Accepted as in-latitude and logged so it is not silent.**
+- It declined to touch `services/ai/features.ts` with a reason: `getWorkoutAdvice` has **no live
+  caller**, so adding a DB fetch to a dead path is scope creep. Correct — and it raises a real
+  question for the backlog: if that function is dead, Amit's own rule says delete it.
+- **Risks it disclosed:** the card has **no visual test**, and the `קריאה חלקית` badge's dark-mode
+  contrast is unmeasured — T-038 deliberately excluded the Recovery tab, so **this card needs its own
+  photo pass.** Also `generateAIWorkoutInsight` now does one IndexedDB read on the no-args path
+  (try/catch degrading to `[]`).
+- `graphify update .` deliberately not run — concurrent workers share `graphify-out/`.
+
+## [T-040] Three closures — ACCEPTED on evidence 2026-08-28 17:18
+- status: **accepted; my authoritative run owed with T-039's.** 2 modified + 1 new, `git status`-verified.
+- **Active tab in dark: 1.05:1 → 11.04:1** against the card, **8.84:1** against its own track. It was
+  invisible in the theme this app is actually used in.
+- **It rejected one of the two token pairs I offered, on a DESIGN argument not arithmetic:**
+  `--btn-primary-*` is the ACTION pair and resolves to navy + **mint** ink in light, which would have
+  recoloured both labels. Its reasoning: **"a tab and a filter chip are selections, not calls to
+  action."** It read the token's semantic role, not just its value.
+- **Light is byte-identical BY CONSTRUCTION:** in `:root`, `--nav-pill-bg` IS `--fs-primary` and
+  `--nav-pill-text` IS `--color-ink-on-dark` — literally the two tokens the old rules named.
+- **It calibrated its own method before trusting it**, reproducing this repo's published figures
+  (15.12 / 1.05 / 1.31 / 10.98) exactly, then disclosed the one number that moved DOWN (ink on fill
+  17.37 → 10.98, still ~2.4× the AA floor).
+- The empty `BMI —` chip is gone — and it also **zeroed the margin below it**, so hiding the chip
+  leaves no hole. `AdvancedSection` now has 4 tests incl. `aria-controls` wiring and the 44px floor.
+
+### ⚠️ TWO findings from T-040 that change what we can trust
+1. **The same bug is LIVE on the nutrition screen** — `global.css:309` `.tab-item.active`, reachable
+   via `Nutrition.tsx:214`. Out of its scope, correctly reported.
+2. **`TOKEN-POLARITY-AUDIT.md` now has TWO proven defects.** T-030 showed its recommended replacement
+   token composites to only **2.33:1** in dark; T-040 found it records the tab-row track as `#1a1a1a`
+   when `--fs-surface-2` is **`#262626`**, so a published figure is right only by coincidence.
+   **The 92-border sweep must NOT run on that document's numbers. Re-measure per surface first.**
+
+### ⚠️ Debris to sweep before any commit — this exact class broke the suite once
+`e2e/_scratch-debt-qa.spec.ts` AND `e2e/_scratch-debt-gaps.spec.ts` are both untracked in the tree.
+They belong to T-038, which is still running and was told to delete them. **`npx playwright test`
+globs `e2e/`, so a leftover scratch spec breaks the e2e suite for everyone.** Verify they are gone.
+
+## [T-038] Photograph batches 10-12 — ACCEPTED 2026-08-28 17:32. **VERDICT: PASS, 6 findings, 0 blockers.**
+- status: **done** — read-only in `src/` confirmed; 68 PNGs (`visual-qa/debt-*.png`), report at
+  `reports/visual-debt-qa-8e4d102.md`, raw measurements in `reports/_measure-*.json` + `_gaps-*.json`.
+  Built FIRST as instructed. Scratch specs deleted, `e2e/` back to exactly 13, no `test-results/`.
+- **THE CHART CHANGE IS MEASURED, NOT EYEBALLED — and it proved the rule SCALES rather than flattens.**
+  Drawn line extent as a share of the card's inner band: a 0.2 kg e1RM wobble → **0.00%** (reads flat);
+  a realistic 2 kg bodyweight loss → **24.69%**, which is exactly 2.0÷8.1, so the floor **scales** the
+  drawing instead of crushing every small delta to nothing; 80→95 kg → **100%**, unchanged.
+  Centring exact in every floored case (`lineMid 81.00` vs `bandMid 81.00`, off-centre 0.00%).
+  **That distinction matters:** a floor that flattened everything small would have traded one lie for
+  another. It does not.
+- **Week strip passes in both themes:** three monotonic fill luminances that invert with the theme, all
+  three adjacent pairs ≥3:1 (light 13.25 / 4.33 / 3.06; dark 9.90 / 3.25 / 3.05). **So the dashed
+  border is now redundant rather than load-bearing** — exactly what T-031 claimed, independently confirmed.
+- Pressed primary ~**10.2:1** in dark, and it explained why that holds by construction: `brightness()`
+  scales fill and ink together.
+
+### ⚠️⚠️ THE FINDING THAT LANDS ON ME — `ToggleSwitch` HAS NO MOUNT POINT
+**`ToggleSwitch.tsx`'s only importer is `MobileToggle.tsx`, which is never rendered anywhere.**
+`/settings` reports **0** `input[role="switch"]`. So **T-030 — which I called the best report of batch
+11, and which was genuinely excellent work — fixed a component no user can reach.**
+**And the toggle that DOES ship is a different component, `SettingsToggle`, which still borders its
+track with the non-inverting `--fs-primary`: `rgb(10,10,10)` on `rgb(38,38,38)` = 1.31:1 in dark.**
+The exact defect `ToggleSwitch` documents fixing is still live in its sibling.
+**MY ERROR, precisely:** I wrote "check for consumers first — if dead, DELETE per his rule" into this
+board for the five spinner variants, and then did not apply that same check to the toggle.
+**New rule: before dispatching a component fix, confirm the component has a live mount point.**
+A whole-component brief is worthless if nothing renders the component.
+
+### Two more it disclosed, both honest
+- **The two coach charts are STILL unphotographed.** With no `.env` the coach data reads short-circuit
+  before any request, so the charts never mount, and `/coach/clients` redirects to the trainee
+  dashboard in guest mode. **So the coach-side `GlowAreaChart` risk is not closed** — it is now
+  understood to be unreachable without credentials, which is a different problem from unverified.
+- **`RecoveryBar` has only one consumer** — the `RecoveryTab` I deliberately excluded — so the N/100
+  fix is visually unconfirmed. It has unit coverage, so this is low.
+- **It re-checked the tree AFTER capturing** and found six `src/` files had been modified mid-run by
+  the other two workers, so it stated plainly that **all its evidence describes `8e4d102`, not the
+  current working tree.** That is the disclosure that makes the rest of the report trustworthy.
+
+### Gap it named and correctly did not fill
+**`GlowAreaChart` still has ZERO tests.** The geometry above is pinned only by numbers in a report
+that no build will ever check. It said three assertions would lock it permanently and left them
+unwritten rather than widen its own scope. **Those three tests are batch 14 work.**
+
+### Verified baseline — 2026-08-28 17:33, lead-measured on a CONFIRMED-static tree
+`spawn_list`: all 37 runs `[done]`. Suite run **TWICE, identical.**
+
+| Gate | Result |
+|---|---|
+| `npm run verify` | exit 0, **700** files (was 697; +3 = `ReadinessReadingCard.tsx` + its test + `SectionCard.test.tsx`) |
+| `npm run test:run` | **161 files / 1415 tests**, exit 0 both runs — NEW FLOOR |
+| arithmetic | 159+2=161 files; 1399 + 12 (T-039) + 4 (T-040) = 1415. Nothing deleted, skipped or weakened. |
+| debris | e2e **13** specs, **zero** `_scratch-*` leftovers, `test-results/` + `playwright-report/` absent |
+| evidence | 68 new `debt-*` PNGs + a 15.8KB measured report |
+
+# Batch 14 — PLANNED, not yet dispatched. Amit: hide the nutrition area, reversibly.
+
+
+
+**His words (2026-08-28 17:23):** he wants the nutrition area **hidden, not deleted**. Reason: he has
+**not decided** whether to keep it — "אני מרגיש שהוא לא באמת אפקטיבי כל כך" — and he does not want to
+invest time in it. He wants to be able to bring it back later **via the admin screen or by asking me
+to change the code**, and he explicitly asked that **the code SAY that this screen is currently
+de-prioritized because the decision is open.**
+
+### ⚠️ Why this is NOT dispatched yet — a real risk, not caution theatre
+Hiding a route means editing `src/AppRouter.tsx`. That file is the router: a transient TS error in it
+fails `npm run build`, and **T-038 is holding the browser and depends on that build**. T-038 is the
+accumulated screenshot evidence for THREE batches; breaking it means running it a third time.
+**So batch 14 dispatches the moment T-038 returns.** Cost of waiting: a few minutes. Cost of not
+waiting: re-running the whole photo round.
+
+### Ground truth I mapped MYSELF — do not re-derive. Nutrition is ~99 files, not one screen.
+The trainee-facing surface is small, but nutrition has **three other consumers**:
+1. **The COACH side reads and WRITES it.** `coach/client/tabs/NutritionTab.tsx`;
+   `coach/ClientDetail.tsx:38` registers a `תזונה` tab; `coach/client/EditNutritionSheet.tsx` lets a
+   coach EDIT a trainee's log; `coach/ClientReport.tsx` includes it; `services/coach/coachApi.ts:203`
+   `getClientNutrition`; `coachAnalytics.ts` derives calorie adherence;
+   `coach/client/reportMetrics.ts` `computeNutritionSummary` (+ its tests).
+2. **The data layer syncs it.** `supabaseSync.ts:513-515`, `supabaseSyncOrchestrator.ts`,
+   `offlineQueue.ts:30-32` (`nutrition:create|update|delete`).
+3. **The AI prompt reports it.** `contextBuilder.ts:93` interpolates nutrition adherence.
+
+### MY DECISION, and the reasoning is his own instruction
+**Hide the TRAINEE-facing surface only. Do not touch the coach side, the sync layer or the data.**
+- He said he does not want to invest time in nutrition. Rewriting the coach tab, its analytics and
+  its tests **is** investing time in nutrition — the opposite of the ask.
+- The data layer must keep syncing: stopping it risks losing logs he may want if he keeps the feature.
+  Hidden UI + live data is the reversible state; hidden UI + dead sync is not.
+- **Reported to him rather than decided silently:** a coach will still see a `תזונה` tab for a trainee
+  who can no longer log. Historical data, still true, but a known seam.
+
+### The mechanism — one flag, reusing machinery that already exists
+- ONE exported constant (default OFF) in its own small module, carrying a docblock in **his own
+  terms**: the decision is open, the screen is de-prioritized, here is the single line to flip.
+- The nav tab is not rendered and the route redirects — **EXCEPT for an app admin.**
+  **Why admin-visible is required, not scope creep:** he cannot decide whether to keep a screen he
+  cannot look at, and he named the admin screen himself as a restore path. `useIsAppAdmin` already
+  exists (`hooks/useIsAppAdmin.ts`) and is exactly what `AdminGuard` uses at `AppRouter.tsx:373-374`,
+  so this is reuse, not new infrastructure. No migration, no new table, no admin UI to build.
+- **No new admin toggle SCREEN.** That is a UI for a feature he may delete. If he later wants a
+  runtime switch, the flag is the seam and it is a separate, small task.
+
+## [T-041] Hide the nutrition area behind a reversible flag
+- status: planned (batch 14) — dispatches when T-038 releases the browser
+- owner: fitness-dev
+- goal: a normal user cannot reach nutrition; an admin still can; one line brings it back.
+- files: `src/AppRouter.tsx`, `src/components/ui/BottomNav.tsx`, a NEW flag module, any trainee-side
+  link into `/nutrition`, plus a test
+- MUST NOT TOUCH: all of `src/pages/coach/**`, `src/services/coach/**`, `src/services/supabaseSync*`,
+  `src/services/offlineQueue.ts`, `src/services/nutritionService.ts`, `src/services/ai/**`
+- done when: verify green; test:run >= the then-current floor plus a test proving the route is
+  unreachable for a non-admin AND reachable for an admin; every entry point named
+- notes: hide, never delete. The comment explaining WHY is a deliverable, not decoration.
+
+
+
+**HIS DECISION, FINALLY MADE: connect the engine.** So the recovery log stays and earns its place.
+That closes the question I put to him twice — recovery and the orphaned 900-line engine were the same
+decision, and he chose connect over delete.
+
+### Ground truth I verified MYSELF before writing these briefs — do not re-derive
+I read `trainingLoadService.ts` and grepped every consumer. Two findings reshaped the task.
+
+**1. The engine was BUILT to be consumed honestly. It already hedges.**
+`calculateTrainingLoad(sessions, recoveryLogs = [], { now })` at `:272` returns `TrainingLoadResult`
+carrying **three data-sufficiency flags with docblocks telling consumers to hedge**:
+- `hasRpeData` — "consumers should treat the recommendation as lower-confidence"
+- `hasRecoveryData` — "True when a recovery log fed the recovery penalty (else a default was used)"
+- `hasChronicBaseline` — ">=1 prior week for a meaningful ACWR"
+It is also **actively corrected code, not rot**: its comments cite fix ids TL-1, TL-2, RN-1, RN-4.
+TL-2 moved the chronic baseline to `[-28d, -7d)` so it EXCLUDES the acute week — "previously the
+28-day window CONTAINED the acute week, so a spike inflated both sides and the ratio was biased
+toward 1". Somebody fixed real math here and nothing consumes it.
+**So the deleted `CoachBriefCard` was not the engine's fault.** The engine hands you the hedge; the
+card threw it away and printed a confident 92/67. That distinction is the whole task.
+
+**2. ⚠️ EVERY consumer of `readinessScore` today is an LLM PROMPT, not a UI.**
+- `contextBuilder.ts:86` interpolates it into Hebrew prompt text: `- ציון מוכנות מתמטי: ${...}/100`
+- `coachBrief.ts` — the card we deleted in batch 4
+- `aiWorkoutInsightService.ts:19` — `buildContext(sessions)` with **NO recovery logs at all**, which
+  is the starved-input bug `AI-COACH-AUDIT.md` found
+- `features.ts:29` — `recoveryLogs || []`
+**There is NO non-AI consumer anywhere.** So "connect the engine" is not un-commenting a call: it is
+building the first UI that reads `TrainingLoadResult` **directly and deterministically**. That is
+exactly the Hevy/Fitbod shape my own competitor research found — ship a smart engine, not a chat.
+
+**3. The inputs are ALREADY LOADED on the Progress screen.** `useProgressData.ts:107` already calls
+`getRecoveryLogsByDateRange(weekAgo, today)` and the screen already has sessions. On that surface
+this genuinely is wiring.
+
+### My placement call, and why NOT the two obvious alternatives
+**The recovery tab itself.** The user has just logged sleep / soreness / energy / stress; show them
+what that log CHANGED. That is precisely the defect I diagnosed to Amit — "recovery is not hard to
+find, there is no reason to fill it in, because nothing consumes it". Payoff adjacent to cost, zero
+navigation added, inputs already in hand.
+- **REJECTED — home screen.** That re-creates the card Amit deleted. Not undoing his own ruling.
+- **REJECTED — the pre-workout / active path.** Highest leverage but it is the app's hot path, and
+  `PRODUCT.md`'s first design principle is "log first, admire later — nothing may slow set entry".
+  Worth revisiting once the deterministic card exists and has been seen.
+
+### Ownership map — disjoint, verified against the files I read
+- **T-038** → WRITES ONLY `visual-qa/**` + at most one scratch e2e spec it deletes. Read-only in
+  `src/`. **HOLDS PLAYWRIGHT.**
+- **T-039** → `src/pages/progress/tabs/RecoveryTab.tsx`, a NEW component under
+  `src/pages/progress/components/`, `src/pages/progress/useProgressData.ts`,
+  `src/services/aiWorkoutInsightService.ts`, `src/services/ai/features.ts`
+- **T-040** → `src/pages/progress/tabs/WeightSection.tsx`, `src/styles/components.css` (ONLY rules
+  ~614 and ~1116), a NEW test file beside `src/pages/progress/components/SectionCard.tsx`
+- **Declared seam:** T-039 may **IMPORT** `AdvancedSection` from `SectionCard.tsx` but must NOT EDIT
+  that file — T-040 owns it for the test.
+- **Declared seam:** T-038 photographs the COMMITTED tree (`8e4d102`, batches 10-12). **The Recovery
+  tab is deliberately EXCLUDED from its list** because T-039 is rewriting it this batch — it gets
+  photographed with the engine work instead. Not skipped, sequenced.
+- T-038 is warned in its brief that two workers are writing `src/`, so a transient TS error from
+  their files is NOT its finding. Precedent: this exact overlap worked in batches 4 and 10.
+
+## [T-038] Photograph batches 10-12, coach side included
+- status: dispatched (batch 13)
+- owner: fitness-qa
+- goal: the accumulated visual debt of three batches, on a settled committed tree — and the four
+  `GlowAreaChart` surfaces nobody has ever looked at.
+- done when: Progress Overview + Workouts (collapsed AND expanded `מתקדם`), `ExerciseDetail`,
+  `ForecastChart`, coach `MetricsTab`, coach `TrainingTab`, the week strip, `ToggleSwitch` on+off and
+  a pressed primary button, all at 390 AND 1280 in BOTH themes; every defect reported with the PNG
+- notes: the ONLY Playwright runner. **`npm run build` FIRST.** **`fullPage: true` LIES here** — use
+  390×1500 / 1280×1500. Read-only in `src/`: reports defects, fixes none.
+
+## [T-039] Connect the recovery engine — the first deterministic consumer
+- status: dispatched (batch 13)
+- owner: fitness-dev
+- goal: a real UI reads `TrainingLoadResult` directly, and the recovery log the user fills in finally
+  changes something on screen.
+- done when: verify green; test:run >= 1399 plus tests proving the hedge; all three sufficiency flags
+  honoured; the starved `buildContext(sessions)` call fixed; NO model call added
+- notes: **the engine already hedges — throwing that away is how the deleted card happened.** No home
+  card. No new AI surface. Hebrew copy in the documented plural-imperative register.
+
+## [T-040] Three closures
+- status: dispatched (batch 13)
+- owner: fitness-design
+- goal: the empty `BMI —` pill (my scoping omission), the untested new expander, and the dark active
+  tab that HAS live consumers.
+- done when: verify green; test:run >= 1399 + the new expander tests; tab/chip contrast stated as a
+  number in both themes
+- notes: `components.css:1116` `.tab-row .tab.active` and `.chip-fs.active:614` render `#0a0a0a` on
+  `#111111` in dark. Found by T-031, deliberately left because it owns live consumers.
+
+
 
 ### His three asks, verbatim intent
 1. **Progress overview**: too much data (he named "כמה RM"). Reorganize or delete so only what

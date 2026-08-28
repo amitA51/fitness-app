@@ -7,7 +7,7 @@
 // over a uniform window and hands the results down as props, so every tab reads
 // from the same data and the same point in time.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   calculateWeightTrend,
   getBodyMeasurementsByDateRange,
@@ -27,6 +27,7 @@ import type {
 } from '../../services/bodyStatsService';
 import { getWorkoutSessions } from '../../services/dataService';
 import { getAllPRs } from '../../services/prService';
+import { type TrainingLoadResult, calculateTrainingLoad } from '../../services/trainingLoadService';
 import type { PersonalRecord, WorkoutSession } from '../../types';
 import { toLocalDateStr, todayStr } from '../../utils/dateUtils';
 import { logger } from '../../utils/logger';
@@ -65,6 +66,14 @@ export interface ProgressData {
   recoveryScore: ReturnType<typeof getLegacyRecoveryScore> | null;
   recoveryHistory: RecoveryLog[];
   weeklyRecovery: WeeklyRecoveryAverage;
+  /**
+   * Deterministic training-load reading over the SAME sessions + recovery logs
+   * loaded above. Computed here rather than in a tab so the recovery logs this
+   * hook already fetches actually reach the engine — every previous caller of
+   * calculateTrainingLoad from the UI side passed an empty array, which left
+   * every recovery-driven penalty inert.
+   */
+  trainingLoad: TrainingLoadResult;
   isLoading: boolean;
   /** True when the last load failed — the page shows an explicit error + retry. */
   loadError: boolean;
@@ -134,6 +143,13 @@ export function useProgressData(): ProgressData {
     reload();
   }, [reload]);
 
+  // recoveryHistory is the last 7 days of logs; the engine reads the most recent
+  // one for its recovery penalty, so this is exactly the input it needs.
+  const trainingLoad = useMemo(
+    () => calculateTrainingLoad(sessions, recoveryHistory),
+    [sessions, recoveryHistory]
+  );
+
   return {
     sessions,
     prs,
@@ -146,6 +162,7 @@ export function useProgressData(): ProgressData {
     recoveryScore,
     recoveryHistory,
     weeklyRecovery,
+    trainingLoad,
     isLoading,
     loadError,
     reload,

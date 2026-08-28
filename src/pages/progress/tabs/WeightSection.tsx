@@ -73,20 +73,26 @@ export const WeightSection = memo(function WeightSection({
       {/* Hero stat block */}
       {latestWeight ? (
         <SectionCard style={{ padding: 20 }}>
-          <span
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
-              letterSpacing: '-0.01em',
-              // Neutral data label — graded via the zone vocabulary, not lime.
-              // (--fs-signal is reserved for PR celebration.)
-              background: zoneColor('neutral'),
-              color: 'var(--color-ink-on-dark)',
-              padding: '3px 8px',
-            }}
-          >
-            BMI {bmi ?? '—'}
-          </span>
+          {/* BMI needs a real height. When the height is unknown the number AND
+              the category are both withheld on purpose — a wrong height flips the
+              health CATEGORY LABEL, not merely a digit — so the chip is not
+              rendered at all. A bare "BMI —" is a label with nothing to label. */}
+          {bmi !== null && (
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                letterSpacing: '-0.01em',
+                // Neutral data label — graded via the zone vocabulary, not lime.
+                // (--fs-signal is reserved for PR celebration.)
+                background: zoneColor('neutral'),
+                color: 'var(--color-ink-on-dark)',
+                padding: '3px 8px',
+              }}
+            >
+              BMI {bmi}
+            </span>
+          )}
           <div
             style={{
               fontFamily: 'var(--font-body)',
@@ -94,7 +100,8 @@ export const WeightSection = memo(function WeightSection({
               fontWeight: 500,
               letterSpacing: '-0.01em',
               color: 'var(--fs-muted)',
-              marginTop: 12,
+              // The chip above owns this gap; with no chip there is nothing to clear.
+              marginTop: bmi !== null ? 12 : 0,
             }}
           >
             משקל נוכחי · CURRENT
